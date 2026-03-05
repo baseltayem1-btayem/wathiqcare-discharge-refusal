@@ -1,268 +1,194 @@
 """
-audit_logger.py
----------------
-Immutable audit log and PDPL-compliant logging for the WathiqCare Discharge
-Refusal Module.
-
-Responsibilities:
-- Immutable, append-only audit trail for every significant system event
-- PDPL (Saudi Personal Data Protection Law) compliant logging
-  (no sensitive PII in free-text fields; structured, traceable entries)
-- Role-based access control enforcement (Doctor, Nurse, Legal Officer, Admin)
+discharge_engine.py
+Clinical discharge workflow engine for WathiqCare.
 """
 
 from __future__ import annotations
 
-import hashlib
-import json
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional
 
-
-# ---------------------------------------------------------------------------
-# Role definitions
-# ---------------------------------------------------------------------------
-
-class UserRole(str, Enum):
-    DOCTOR = "DOCTOR"
-    NURSE = "NURSE"
-    LEGAL_OFFICER = "LEGAL_OFFICER"
-    ADMIN = "ADMIN"
+from backend.icd11.validator import ICD11Validator
+from backend.forms.pdf_generator import generate_discharge_refusal_pdf
+from backend.legal.evidence_bundle import build_discharge_refusal_bundle
+from backend.audit.audit_logger import AuditLogger, UserRole
 
 
-# Mapping of roles to the audit event categories they are permitted to query.
-_ROLE_READ_PERMISSIONS: dict[UserRole, set[str]] = {
-    UserRole.DOCTOR: {"DISCHARGE_ORDER", "REFUSAL_RECORD", "ICD11_VALIDATION"},
-    UserRole.NURSE: {"REFUSAL_RECORD", "REFUSAL_FORM"},
-    UserRole.LEGAL_OFFICER: {
-        "REFUSAL_RECORD",
-        "LEGAL_CASE",
-        "ESCALATION",
-        "REFUSAL_FORM",
-        "REFUSAL_DOCUMENTATION",
-    },
-    UserRole.ADMIN: {
-        "DISCHARGE_ORDER",
-        "REFUSAL_RECORD",
-        "ICD11_VALIDATION",
-        "REFUSAL_FORM",
-        "LEGAL_CASE",
-        "ESCALATION",
-        "REFUSAL_DOCUMENTATION",
-        "AUDIT_ACCESS",
-        "SYSTEM",
-    },
-}
+class DischargeStatus(str, Enum):
+    ORDERED = "ORDERED"
+    REFUSED = "REFUSED"
+    ACCEPTED = "ACCEPTED"
+    ESCALATED = "ESCALATED"
+    RESOLVED = "RESOLVED"
 
 
-# ---------------------------------------------------------------------------
-# Audit entry
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True)
-class AuditEntry:
-    """
-    An immutable audit log entry.
-
-    ``frozen=True`` prevents accidental modification after creation.
-    Each entry is linked to the previous one via ``previous_hash`` to form
-    a tamper-evident chain.
-    """
-
-    entry_id: str
-    timestamp: str           # ISO-8601 UTC
-    actor_id: str            # User / system component that performed the action
-    actor_role: str          # UserRole value
-    event_category: str      # High-level category (e.g. "DISCHARGE_ORDER")
-    event_action: str        # Specific action (e.g. "CREATE", "ESCALATE")
-    resource_id: str         # ID of the affected resource
-    resource_type: str       # Type of resource (e.g. "DischargeOrder")
-    outcome: str             # "SUCCESS" or "FAILURE"
-    previous_hash: str       # SHA-256 hash of the previous entry (chain link)
-    entry_hash: str          # SHA-256 hash of this entry's canonical form
+@dataclass
+class DischargeOrder:
+    order_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    patient_id: str = ""
+    physician_id: str = ""
+    diagnosis_codes: List[str] = field(default_factory=list)
+    discharge_notes: str = ""
+    ordered_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    status: DischargeStatus = DischargeStatus.ORDERED
 
 
-def _compute_entry_hash(
-    entry_id: str,
-    timestamp: str,
-    actor_id: str,
-    actor_role: str,
-    event_category: str,
-    event_action: str,
-    resource_id: str,
-    resource_type: str,
-    outcome: str,
-    previous_hash: str,
-) -> str:
-    canonical = json.dumps(
-        {
-            "entry_id": entry_id,
-            "timestamp": timestamp,
-            "actor_id": actor_id,
-            "actor_role": actor_role,
-            "event_category": event_category,
-            "event_action": event_action,
-            "resource_id": resource_id,
-            "resource_type": resource_type,
-            "outcome": outcome,
-            "previous_hash": previous_hash,
-        },
-        sort_keys=True,
-    )
-    return hashlib.sha256(canonical.encode()).hexdigest()
+@dataclass
+class RefusalRecord:
+    refusal_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    order_id: str = ""
+    patient_id: str = ""
+    reason: str = ""
+    refused_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    witness_id: Optional[str] = None
+    nurse_id: Optional[str] = None
+    pdf_path: Optional[str] = None
+    bundle_path: Optional[str] = None
 
 
-# ---------------------------------------------------------------------------
-# Audit logger
-# ---------------------------------------------------------------------------
+class DischargeEngine:
+    def __init__(self, icd11_validator: Optional[ICD11Validator] = None) -> None:
+        self._validator = icd11_validator or ICD11Validator()
+        self._orders: dict[str, DischargeOrder] = {}
+        self._refusals: dict[str, RefusalRecord] = {}
+        self._audit = AuditLogger()
 
-class AuditLogger:
-    """
-    Append-only audit logger with hash-chaining for tamper evidence.
+    def create_discharge_order(
+        self,
+        patient_id: str,
+        physician_id: str,
+        diagnosis_codes: List[str],
+        discharge_notes: str = "",
+    ) -> DischargeOrder:
+        invalid = [c for c in diagnosis_codes if not self._validator.is_valid(c)]
+        if invalid:
+            raise ValueError(f"Invalid ICD-11 code(s): {invalid}")
 
-    PDPL compliance notes:
-    - No free-text PII is stored in log entries; only opaque identifiers.
-    - Every entry is linked via SHA-256 hashes forming a verifiable chain.
-    - Role-based read access is enforced by :meth:`get_entries`.
+        order = DischargeOrder(
+            patient_id=patient_id,
+            physician_id=physician_id,
+            diagnosis_codes=diagnosis_codes,
+            discharge_notes=discharge_notes,
+        )
+        self._orders[order.order_id] = order
 
-    Usage::
-
-        logger = AuditLogger()
-        logger.log(
-            actor_id="DR-042",
+        self._audit.log(
+            actor_id=physician_id,
             actor_role=UserRole.DOCTOR,
             event_category="DISCHARGE_ORDER",
             event_action="CREATE",
-            resource_id="ord-123",
+            resource_id=order.order_id,
             resource_type="DischargeOrder",
+            outcome="SUCCESS",
         )
-    """
 
-    def __init__(self) -> None:
-        self._entries: List[AuditEntry] = []
-        self._last_hash: str = "GENESIS"  # sentinel for the first entry
+        return order
 
-    # ------------------------------------------------------------------
-    # Write
-    # ------------------------------------------------------------------
+    def get_order(self, order_id: str) -> DischargeOrder:
+        try:
+            return self._orders[order_id]
+        except KeyError:
+            raise KeyError(f"Discharge order not found: {order_id}") from None
 
-    def log(
+    def record_patient_refusal(
         self,
-        actor_id: str,
-        actor_role: UserRole,
-        event_category: str,
-        event_action: str,
-        resource_id: str,
-        resource_type: str,
-        outcome: str = "SUCCESS",
-    ) -> AuditEntry:
-        """Append an immutable audit entry to the log."""
-        entry_id = str(uuid.uuid4())
-        timestamp = datetime.now(timezone.utc).isoformat()
-        entry_hash = _compute_entry_hash(
-            entry_id=entry_id,
-            timestamp=timestamp,
-            actor_id=actor_id,
-            actor_role=actor_role.value,
-            event_category=event_category,
-            event_action=event_action,
-            resource_id=resource_id,
-            resource_type=resource_type,
-            outcome=outcome,
-            previous_hash=self._last_hash,
+        order_id: str,
+        patient_id: str,
+        reason: str,
+        witness_id: Optional[str] = None,
+        nurse_id: Optional[str] = None,
+    ) -> RefusalRecord:
+        order = self.get_order(order_id)
+
+        if order.patient_id != patient_id:
+            raise ValueError("Patient ID does not match the discharge order.")
+
+        refusal = RefusalRecord(
+            order_id=order_id,
+            patient_id=patient_id,
+            reason=reason,
+            witness_id=witness_id,
+            nurse_id=nurse_id,
         )
-        entry = AuditEntry(
-            entry_id=entry_id,
-            timestamp=timestamp,
-            actor_id=actor_id,
-            actor_role=actor_role.value,
-            event_category=event_category,
-            event_action=event_action,
-            resource_id=resource_id,
-            resource_type=resource_type,
-            outcome=outcome,
-            previous_hash=self._last_hash,
-            entry_hash=entry_hash,
+
+        self._refusals[refusal.refusal_id] = refusal
+        order.status = DischargeStatus.REFUSED
+
+        self._audit.log(
+            actor_id=nurse_id or "SYSTEM",
+            actor_role=UserRole.NURSE if nurse_id else UserRole.ADMIN,
+            event_category="REFUSAL_RECORD",
+            event_action="CREATE",
+            resource_id=refusal.refusal_id,
+            resource_type="RefusalRecord",
+            outcome="SUCCESS",
         )
-        self._entries.append(entry)
-        self._last_hash = entry_hash
-        return entry
 
-    # ------------------------------------------------------------------
-    # Read
-    # ------------------------------------------------------------------
+        pdf_path = generate_discharge_refusal_pdf(
+            order_id=order.order_id,
+            patient_id=order.patient_id,
+            physician_id=order.physician_id,
+            diagnosis=", ".join(order.diagnosis_codes),
+            refusal_reason=reason,
+        )
+        refusal.pdf_path = pdf_path
 
-    def get_entries(
-        self,
-        requesting_role: UserRole,
-        event_category: Optional[str] = None,
-        actor_id: Optional[str] = None,
-        resource_id: Optional[str] = None,
-    ) -> List[AuditEntry]:
-        """
-        Return audit entries filtered by the caller's role permissions.
+        self._audit.log(
+            actor_id="SYSTEM",
+            actor_role=UserRole.ADMIN,
+            event_category="REFUSAL_FORM",
+            event_action="GENERATE_PDF",
+            resource_id=refusal.refusal_id,
+            resource_type="RefusalRecord",
+            outcome="SUCCESS",
+        )
 
-        Raises :class:`PermissionError` if the role has no read access to
-        the requested category.
-        """
-        allowed_categories = _ROLE_READ_PERMISSIONS.get(requesting_role, set())
+        bundle_result = build_discharge_refusal_bundle(
+            order=order,
+            refusal=refusal,
+            pdf_path=pdf_path,
+        )
 
-        if event_category and event_category not in allowed_categories:
-            raise PermissionError(
-                f"Role {requesting_role.value} is not permitted to read "
-                f"audit entries in category '{event_category}'."
-            )
+        if isinstance(bundle_result, str):
+            refusal.bundle_path = bundle_result
+        elif isinstance(bundle_result, dict) and "bundle_path" in bundle_result:
+            refusal.bundle_path = bundle_result["bundle_path"]
+        else:
+            refusal.bundle_path = None
 
-        results = [
-            e
-            for e in self._entries
-            if e.event_category in allowed_categories
-        ]
+        self._audit.log(
+            actor_id="SYSTEM",
+            actor_role=UserRole.ADMIN,
+            event_category="REFUSAL_DOCUMENTATION",
+            event_action="BUILD_EVIDENCE_BUNDLE",
+            resource_id=refusal.refusal_id,
+            resource_type="RefusalRecord",
+            outcome="SUCCESS",
+        )
 
-        if event_category:
-            results = [e for e in results if e.event_category == event_category]
-        if actor_id:
-            results = [e for e in results if e.actor_id == actor_id]
-        if resource_id:
-            results = [e for e in results if e.resource_id == resource_id]
+        return refusal
 
-        return results
+    def get_refusal(self, refusal_id: str) -> RefusalRecord:
+        try:
+            return self._refusals[refusal_id]
+        except KeyError:
+            raise KeyError(f"Refusal record not found: {refusal_id}") from None
 
-    # ------------------------------------------------------------------
-    # Verification
-    # ------------------------------------------------------------------
+    def update_order_status(self, order_id: str, status: DischargeStatus) -> DischargeOrder:
+        order = self.get_order(order_id)
+        order.status = status
 
-    def verify_chain(self) -> bool:
-        """
-        Verify the integrity of the entire audit log chain.
+        self._audit.log(
+            actor_id="SYSTEM",
+            actor_role=UserRole.ADMIN,
+            event_category="SYSTEM",
+            event_action="UPDATE_ORDER_STATUS",
+            resource_id=order.order_id,
+            resource_type="DischargeOrder",
+            outcome="SUCCESS",
+        )
 
-        Returns ``True`` if all hashes are consistent; ``False`` if any
-        entry has been tampered with.
-        """
-        previous_hash = "GENESIS"
-        for entry in self._entries:
-            if entry.previous_hash != previous_hash:
-                return False
-            expected_hash = _compute_entry_hash(
-                entry_id=entry.entry_id,
-                timestamp=entry.timestamp,
-                actor_id=entry.actor_id,
-                actor_role=entry.actor_role,
-                event_category=entry.event_category,
-                event_action=entry.event_action,
-                resource_id=entry.resource_id,
-                resource_type=entry.resource_type,
-                outcome=entry.outcome,
-                previous_hash=entry.previous_hash,
-            )
-            if entry.entry_hash != expected_hash:
-                return False
-            previous_hash = entry.entry_hash
-        return True
-
-    def entry_count(self) -> int:
-        """Return the total number of audit entries."""
-        return len(self._entries)
+        return order
