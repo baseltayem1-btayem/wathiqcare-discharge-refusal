@@ -8,6 +8,7 @@ Responsibilities:
 - Record patient refusal
 - Capture and persist reason for refusal
 - Coordinate with the ICD-11 validator for diagnosis code verification
+- Generate refusal PDF and build legal evidence bundle on refusal
 """
 
 from __future__ import annotations
@@ -21,6 +22,8 @@ from typing import List, Optional
 from backend.icd11.validator import ICD11Validator
 from backend.forms.pdf_generator import generate_discharge_refusal_pdf
 from backend.legal.evidence_bundle import build_discharge_refusal_bundle
+
+
 class DischargeStatus(str, Enum):
     ORDERED = "ORDERED"
     REFUSED = "REFUSED"
@@ -53,6 +56,7 @@ class RefusalRecord:
     refused_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     witness_id: Optional[str] = None
     nurse_id: Optional[str] = None
+    pdf_path: Optional[str] = None  # where the generated PDF was saved
 
 
 class DischargeEngine:
@@ -112,6 +116,12 @@ class DischargeEngine:
         except KeyError:
             raise KeyError(f"Discharge order not found: {order_id}") from None
 
+    def update_order_status(self, order_id: str, status: DischargeStatus) -> DischargeOrder:
+        """Update the status of an existing discharge order."""
+        order = self.get_order(order_id)
+        order.status = status
+        return order
+
     # ------------------------------------------------------------------
     # Patient refusal management
     # ------------------------------------------------------------------
@@ -126,8 +136,8 @@ class DischargeEngine:
     ) -> RefusalRecord:
         """
         Record a patient's refusal of a discharge order.
-
         Updates the associated order status to REFUSED.
+        Generates a refusal PDF and builds the legal evidence bundle.
         """
         order = self.get_order(order_id)
         if order.patient_id != patient_id:
@@ -140,24 +150,29 @@ class DischargeEngine:
             witness_id=witness_id,
             nurse_id=nurse_id,
         )
+
+        # Persist refusal + update status
         self._refusals[refusal.refusal_id] = refusal
-       order.status = DischargeStatus.REFUSED
+        order.status = DischargeStatus.REFUSED
 
-pdf_path = generate_discharge_refusal_pdf(
-    order_id=order_id,
-    patient_id=patient_id,
-    physician_id=order.physician_id,
-    diagnosis=order.diagnosis_code,
-    refusal_reason=reason
-)
+        # Generate refusal PDF
+        pdf_path = generate_discharge_refusal_pdf(
+            order_id=order.order_id,
+            patient_id=order.patient_id,
+            physician_id=order.physician_id,
+            diagnosis=", ".join(order.diagnosis_codes),
+            refusal_reason=refusal.reason,
+        )
+        refusal.pdf_path = pdf_path
 
-refusal.pdf_path = pdf_path
-build_discharge_refusal_bundle(
-    order=order,
-    refusal=refusal,
-    pdf_path=refusal.pdf_path
-)
-return refusall
+        # Build legal evidence bundle
+        build_discharge_refusal_bundle(
+            order=order,
+            refusal=refusal,
+            pdf_path=refusal.pdf_path,
+        )
+
+        return refusal
 
     def get_refusal(self, refusal_id: str) -> RefusalRecord:
         """Return the refusal record with the given ID."""
@@ -165,9 +180,3 @@ return refusall
             return self._refusals[refusal_id]
         except KeyError:
             raise KeyError(f"Refusal record not found: {refusal_id}") from None
-
-    def update_order_status(self, order_id: str, status: DischargeStatus) -> DischargeOrder:
-        """Update the status of an existing discharge order."""
-        order = self.get_order(order_id)
-        order.status = status
-        return order
