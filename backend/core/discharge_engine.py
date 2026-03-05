@@ -14,6 +14,7 @@ from typing import List, Optional
 from backend.icd11.validator import ICD11Validator
 from backend.forms.pdf_generator import generate_discharge_refusal_pdf
 from backend.legal.evidence_bundle import build_discharge_refusal_bundle
+from backend.audit.audit_logger import AuditLogger
 
 
 # -------------------------------------------------------
@@ -62,11 +63,13 @@ class RefusalRecord:
 class DischargeEngine:
 
     def __init__(self, icd11_validator: Optional[ICD11Validator] = None):
-
         self._validator = icd11_validator or ICD11Validator()
 
         self._orders: dict[str, DischargeOrder] = {}
         self._refusals: dict[str, RefusalRecord] = {}
+
+        # Append-only, hash-chained audit log
+        self._audit = AuditLogger()
 
     # ---------------------------------------------------
     # Create discharge order
@@ -81,7 +84,6 @@ class DischargeEngine:
     ) -> DischargeOrder:
 
         invalid = [c for c in diagnosis_codes if not self._validator.is_valid(c)]
-
         if invalid:
             raise ValueError(f"Invalid ICD-11 code(s): {invalid}")
 
@@ -94,6 +96,20 @@ class DischargeEngine:
 
         self._orders[order.order_id] = order
 
+        # Audit
+        self._audit.log_event(
+            event_type="discharge_order_created",
+            actor_role="DOCTOR",
+            actor_id=physician_id,
+            patient_id=patient_id,
+            order_id=order.order_id,
+            refusal_id=None,
+            payload={
+                "diagnosis_codes": diagnosis_codes,
+                "notes_len": len(discharge_notes or ""),
+            },
+        )
+
         return order
 
     # ---------------------------------------------------
@@ -101,10 +117,8 @@ class DischargeEngine:
     # ---------------------------------------------------
 
     def get_order(self, order_id: str) -> DischargeOrder:
-
         try:
             return self._orders[order_id]
-
         except KeyError:
             raise KeyError(f"Discharge order not found: {order_id}") from None
 
@@ -135,8 +149,21 @@ class DischargeEngine:
         )
 
         self._refusals[refusal.refusal_id] = refusal
-
         order.status = DischargeStatus.REFUSED
+
+        # Audit: refusal recorded
+        self._audit.log_event(
+            event_type="patient_refusal_recorded",
+            actor_role="NURSE" if nurse_id else "SYSTEM",
+            actor_id=nurse_id or "system",
+            patient_id=patient_id,
+            order_id=order_id,
+            refusal_id=refusal.refusal_id,
+            payload={
+                "reason_len": len(reason or ""),
+                "has_witness": bool(witness_id),
+            },
+        )
 
         # ------------------------------------------------
         # Generate refusal PDF
@@ -152,6 +179,17 @@ class DischargeEngine:
 
         refusal.pdf_path = pdf_path
 
+        # Audit: PDF generated
+        self._audit.log_event(
+            event_type="refusal_pdf_generated",
+            actor_role="SYSTEM",
+            actor_id="system",
+            patient_id=patient_id,
+            order_id=order_id,
+            refusal_id=refusal.refusal_id,
+            payload={"pdf_path": pdf_path},
+        )
+
         # ------------------------------------------------
         # Build legal evidence bundle
         # ------------------------------------------------
@@ -162,6 +200,17 @@ class DischargeEngine:
             pdf_path=pdf_path,
         )
 
+        # Audit: bundle built
+        self._audit.log_event(
+            event_type="legal_bundle_built",
+            actor_role="SYSTEM",
+            actor_id="system",
+            patient_id=patient_id,
+            order_id=order_id,
+            refusal_id=refusal.refusal_id,
+            payload={"bundle": "generated"},
+        )
+
         return refusal
 
     # ---------------------------------------------------
@@ -169,10 +218,8 @@ class DischargeEngine:
     # ---------------------------------------------------
 
     def get_refusal(self, refusal_id: str) -> RefusalRecord:
-
         try:
             return self._refusals[refusal_id]
-
         except KeyError:
             raise KeyError(f"Refusal record not found: {refusal_id}") from None
 
@@ -187,7 +234,17 @@ class DischargeEngine:
     ) -> DischargeOrder:
 
         order = self.get_order(order_id)
-
         order.status = status
+
+        # Audit: status updated
+        self._audit.log_event(
+            event_type="order_status_updated",
+            actor_role="SYSTEM",
+            actor_id="system",
+            patient_id=order.patient_id,
+            order_id=order_id,
+            refusal_id=None,
+            payload={"new_status": status.value},
+        )
 
         return order
