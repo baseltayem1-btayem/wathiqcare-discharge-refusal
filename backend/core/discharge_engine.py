@@ -20,7 +20,7 @@ from typing import List, Optional
 
 from backend.icd11.validator import ICD11Validator
 from backend.forms.pdf_generator import generate_discharge_refusal_pdf
-
+from backend.legal.evidence_bundle import build_discharge_refusal_bundle
 class DischargeStatus(str, Enum):
     ORDERED = "ORDERED"
     REFUSED = "REFUSED"
@@ -152,7 +152,11 @@ pdf_path = generate_discharge_refusal_pdf(
 )
 
 refusal.pdf_path = pdf_path
-
+build_discharge_refusal_bundle(
+    order=order,
+    refusal=refusal,
+    pdf_path=refusal.pdf_path
+)
 return refusall
 
     def get_refusal(self, refusal_id: str) -> RefusalRecord:
