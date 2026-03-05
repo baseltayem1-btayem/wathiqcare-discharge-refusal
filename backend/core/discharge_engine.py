@@ -15,9 +15,12 @@ from backend.icd11.validator import ICD11Validator
 from backend.forms.pdf_generator import generate_discharge_refusal_pdf
 from backend.legal.evidence_bundle import build_discharge_refusal_bundle
 
-# إذا كان عندك AuditLogger بنفس الاسم في backend/audit/audit_logger.py
-from backend.audit.audit_logger import AuditLogger
+from backend.audit.audit_logger import AuditLogger, UserRole
 
+
+# -------------------------------------------------------
+# Status
+# -------------------------------------------------------
 
 class DischargeStatus(str, Enum):
     ORDERED = "ORDERED"
@@ -26,6 +29,10 @@ class DischargeStatus(str, Enum):
     ESCALATED = "ESCALATED"
     RESOLVED = "RESOLVED"
 
+
+# -------------------------------------------------------
+# Data Models
+# -------------------------------------------------------
 
 @dataclass
 class DischargeOrder:
@@ -51,14 +58,22 @@ class RefusalRecord:
     bundle_path: Optional[str] = None
 
 
+# -------------------------------------------------------
+# Engine
+# -------------------------------------------------------
+
 class DischargeEngine:
     def __init__(self, icd11_validator: Optional[ICD11Validator] = None) -> None:
         self._validator = icd11_validator or ICD11Validator()
         self._orders: dict[str, DischargeOrder] = {}
         self._refusals: dict[str, RefusalRecord] = {}
 
-        # Audit logger (append-only, hash-chained)
+        # Append-only audit logger (hash-chained)
         self._audit = AuditLogger()
+
+    # ---------------------------------------------------
+    # Create discharge order
+    # ---------------------------------------------------
 
     def create_discharge_order(
         self,
@@ -79,26 +94,32 @@ class DischargeEngine:
         )
         self._orders[order.order_id] = order
 
-        # Audit
-        self._audit.append(
-            event_type="DISCHARGE_ORDER_CREATED",
-            subject_id=order.order_id,
-            actor_role="DOCTOR",
-            payload={
-                "patient_id": patient_id,
-                "physician_id": physician_id,
-                "diagnosis_codes": diagnosis_codes,
-                "ordered_at": order.ordered_at.isoformat(),
-            },
+        # Audit (PDPL-safe: IDs only)
+        self._audit.log(
+            actor_id=physician_id,
+            actor_role=UserRole.DOCTOR,
+            event_category="DISCHARGE_ORDER",
+            event_action="CREATE",
+            resource_id=order.order_id,
+            resource_type="DischargeOrder",
+            outcome="SUCCESS",
         )
 
         return order
+
+    # ---------------------------------------------------
+    # Get order
+    # ---------------------------------------------------
 
     def get_order(self, order_id: str) -> DischargeOrder:
         try:
             return self._orders[order_id]
         except KeyError:
             raise KeyError(f"Discharge order not found: {order_id}") from None
+
+    # ---------------------------------------------------
+    # Record refusal
+    # ---------------------------------------------------
 
     def record_patient_refusal(
         self,
@@ -142,25 +163,26 @@ class DischargeEngine:
         )
         refusal.bundle_path = bundle_path
 
-        # 3) Audit log (hash-chain)
-        self._audit.append(
-            event_type="PATIENT_REFUSAL_RECORDED",
-            subject_id=refusal.refusal_id,
-            actor_role="NURSE",
-            payload={
-                "order_id": order.order_id,
-                "patient_id": order.patient_id,
-                "reason": reason,
-                "witness_id": witness_id,
-                "nurse_id": nurse_id,
-                "pdf_path": pdf_path,
-                "bundle_path": bundle_path,
-                "refused_at": refusal.refused_at.isoformat(),
-                "new_status": order.status.value,
-            },
+        # 3) Audit
+        # اختر actor_id بشكل منطقي: nurse_id إن وجد، وإلا witness_id، وإلا "SYSTEM"
+        actor_id = nurse_id or witness_id or "SYSTEM"
+        actor_role = UserRole.NURSE if nurse_id else UserRole.LEGAL_OFFICER if witness_id else UserRole.ADMIN
+
+        self._audit.log(
+            actor_id=actor_id,
+            actor_role=actor_role,
+            event_category="REFUSAL_RECORD",
+            event_action="CREATE",
+            resource_id=refusal.refusal_id,
+            resource_type="RefusalRecord",
+            outcome="SUCCESS",
         )
 
         return refusal
+
+    # ---------------------------------------------------
+    # Get refusal
+    # ---------------------------------------------------
 
     def get_refusal(self, refusal_id: str) -> RefusalRecord:
         try:
@@ -168,19 +190,22 @@ class DischargeEngine:
         except KeyError:
             raise KeyError(f"Refusal record not found: {refusal_id}") from None
 
+    # ---------------------------------------------------
+    # Update order status
+    # ---------------------------------------------------
+
     def update_order_status(self, order_id: str, status: DischargeStatus) -> DischargeOrder:
         order = self.get_order(order_id)
         order.status = status
 
-        self._audit.append(
-            event_type="ORDER_STATUS_UPDATED",
-            subject_id=order.order_id,
-            actor_role="ADMIN",
-            payload={
-                "patient_id": order.patient_id,
-                "status": status.value,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            },
+        self._audit.log(
+            actor_id="ADMIN",
+            actor_role=UserRole.ADMIN,
+            event_category="DISCHARGE_ORDER",
+            event_action=f"STATUS_{status.value}",
+            resource_id=order.order_id,
+            resource_type="DischargeOrder",
+            outcome="SUCCESS",
         )
 
         return order
