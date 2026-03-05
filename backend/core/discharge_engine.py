@@ -19,7 +19,7 @@ from enum import Enum
 from typing import List, Optional
 
 from backend.icd11.validator import ICD11Validator
-
+from backend.forms.pdf_generator import generate_discharge_refusal_pdf
 
 class DischargeStatus(str, Enum):
     ORDERED = "ORDERED"
@@ -141,8 +141,19 @@ class DischargeEngine:
             nurse_id=nurse_id,
         )
         self._refusals[refusal.refusal_id] = refusal
-        order.status = DischargeStatus.REFUSED
-        return refusal
+       order.status = DischargeStatus.REFUSED
+
+pdf_path = generate_discharge_refusal_pdf(
+    order_id=order_id,
+    patient_id=patient_id,
+    physician_id=order.physician_id,
+    diagnosis=order.diagnosis_code,
+    refusal_reason=reason
+)
+
+refusal.pdf_path = pdf_path
+
+return refusall
 
     def get_refusal(self, refusal_id: str) -> RefusalRecord:
         """Return the refusal record with the given ID."""
