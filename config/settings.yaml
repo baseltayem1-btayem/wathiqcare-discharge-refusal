@@ -1,0 +1,16 @@
+app:
+  name: "WathiqCare"
+  version: "1.0.0"
+  debug: false
+
+database:
+  url: "sqlite:///./wathiqcare.db"
+
+auth:
+  secret_key: "CHANGE_ME_INSECURE_DEFAULT_DO_NOT_USE_IN_PRODUCTION"
+  algorithm: "HS256"
+  access_token_expire_minutes: 30
+
+fhir:
+  server_url: "http://fhir.example.com/R4"
+  api_key: ""
