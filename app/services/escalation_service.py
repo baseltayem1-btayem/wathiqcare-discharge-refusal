@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from sqlalchemy.orm import Session
@@ -31,7 +31,7 @@ def create_escalation(
         raise ValueError(f"Consent {consent_id} not found")
     consent.status = "escalated"
     consent.is_escalated = True
-    consent.escalated_at = datetime.utcnow()
+    consent.escalated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(consent)
     legal_officers = (

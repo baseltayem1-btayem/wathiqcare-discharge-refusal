@@ -1,6 +1,6 @@
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -22,7 +22,8 @@ def log_event(
 ) -> AuditLog:
     last = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).first()
     prev_hash = last.entry_hash if last else ""
-    timestamp = datetime.utcnow()
+    # Use naive UTC datetime for consistent storage and hash computation across backends
+    timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
     entry_hash = _compute_hash(prev_hash, payload, timestamp.isoformat())
     log = AuditLog(
         event_type=event_type,

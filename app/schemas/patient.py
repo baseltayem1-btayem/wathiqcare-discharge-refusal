@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class PatientCreate(BaseModel):
@@ -24,6 +24,8 @@ class PatientUpdate(BaseModel):
 
 
 class PatientOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     national_id: str
     full_name: str
@@ -36,6 +38,3 @@ class PatientOut(BaseModel):
     registered_by: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True

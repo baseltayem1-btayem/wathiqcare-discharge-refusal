@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -54,7 +54,7 @@ def update_patient(
         return None
     for field, value in update_data.model_dump(exclude_unset=True).items():
         setattr(patient, field, value)
-    patient.updated_at = datetime.utcnow()
+    patient.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(patient)
     audit_service.log_event(

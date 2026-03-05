@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ConsentCreate(BaseModel):
@@ -20,6 +20,8 @@ class ConsentUpdate(BaseModel):
 
 
 class ConsentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     patient_id: str
     consent_type: str
@@ -35,6 +37,3 @@ class ConsentOut(BaseModel):
     escalated_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
