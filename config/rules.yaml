@@ -1,0 +1,29 @@
+legal:
+  escalation_trigger_days: 3
+  refusal_requires_legal_review: true
+  high_risk_icd11_codes:
+    - "XY9Z"
+    - "C34.9"
+    - "I21.9"
+    - "N18.9"
+  minimum_witness_roles: ["legal_officer", "admin"]
+  pdpl_data_retention_days: 3650
+
+clinical:
+  high_risk_procedures:
+    - "surgery"
+    - "chemotherapy"
+    - "dialysis"
+    - "blood_transfusion"
+  consent_validity_days: 90
+  discharge_refusal_observation_hours: 24
+
+notifications:
+  escalation_recipients: ["legal_officer", "admin"]
+  consent_update_recipients: ["doctor", "nurse"]
+  channels: ["email", "sms", "in_app"]
+
+compliance:
+  pdpl_enabled: true
+  require_national_id: true
+  audit_chain_verification_interval_hours: 24
