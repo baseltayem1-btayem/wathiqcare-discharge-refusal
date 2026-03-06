@@ -1,12 +1,19 @@
 import json
 import hashlib
 import zipfile
-from datetime import datetime, timezone
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Dict, Any
 
+from backend.core.database import SessionLocal
+from backend.models.discharge_case import DischargeCase
+from backend.models.patient import Patient
+from backend.models.user import User
+from backend.models.tenant import Tenant
+from backend.models.audit_log import AuditLog
 
 BUNDLE_DIR = Path("backend/generated/bundles")
+PDF_DIR = Path("backend/generated")
 BUNDLE_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -26,110 +33,136 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def build_discharge_refusal_bundle(
-    case_id: str,
-    case_summary: Dict[str, Any],
-    audit_logs: list[Dict[str, Any]] | None = None,
-    pdf_path: str | None = None,
-) -> Dict[str, Any]:
-    """
-    Creates a legal evidence bundle for a discharge refusal case.
+def generate_evidence_bundle(discharge_case_id: str) -> Dict[str, Any]:
+    db = SessionLocal()
 
-    Bundle contents:
-      - case_summary.json
-      - audit_logs.json
-      - refusal pdf (if available)
-      - manifest.json
-      - evidence_bundle_<case_id>.zip
-    """
+    try:
+        case = db.query(DischargeCase).filter(DischargeCase.id == discharge_case_id).first()
+        if not case:
+            raise ValueError(f"Discharge case '{discharge_case_id}' not found")
 
-    bundle_id = f"evidence_bundle_{case_id}"
-    bundle_path = BUNDLE_DIR / bundle_id
-    bundle_path.mkdir(parents=True, exist_ok=True)
+        patient = db.query(Patient).filter(Patient.id == case.patient_id).first()
+        user = db.query(User).filter(User.id == case.created_by).first()
+        tenant = db.query(Tenant).filter(Tenant.id == case.tenant_id).first()
 
-    generated_at = _utc_now_iso()
+        audit_logs = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.entity_type == "discharge_case",
+                AuditLog.entity_id == case.id
+            )
+            .order_by(AuditLog.created_at.asc())
+            .all()
+        )
 
-    artifacts = {
-        "refusal_pdf": None,
-        "case_summary_json": "case_summary.json",
-        "audit_logs_json": "audit_logs.json",
-        "manifest_json": "manifest.json",
-    }
+        if not case.pdf_file:
+            raise ValueError("No PDF file recorded for this discharge case")
 
-    if audit_logs is None:
-        audit_logs = []
+        pdf_name = Path(case.pdf_file).name
+        pdf_path = PDF_DIR / pdf_name
+        if not pdf_path.exists():
+            raise ValueError(f"PDF file not found on disk: {pdf_name}")
 
-    payload: Dict[str, Any] = {
-        "bundle_id": bundle_id,
-        "generated_at": generated_at,
-        "case_type": "DISCHARGE_REFUSAL",
-        "case_summary": case_summary,
-        "audit_logs_count": len(audit_logs),
-        "artifacts": artifacts,
-    }
+        bundle_id = f"evidence_bundle_{case.id}"
+        bundle_folder = BUNDLE_DIR / bundle_id
+        bundle_folder.mkdir(parents=True, exist_ok=True)
 
-    pdf_hash = None
-    pdf_name = None
-
-    if pdf_path:
-        src = Path(pdf_path)
-        if src.exists():
-            pdf_name = src.name
-            dst = bundle_path / pdf_name
-            dst.write_bytes(src.read_bytes())
-            artifacts["refusal_pdf"] = pdf_name
-            pdf_hash = _sha256_file(dst)
-
-    case_summary_file = bundle_path / "case_summary.json"
-    case_summary_text = json.dumps(payload, ensure_ascii=False, indent=2)
-    case_summary_file.write_text(case_summary_text, encoding="utf-8")
-
-    audit_logs_file = bundle_path / "audit_logs.json"
-    audit_logs_text = json.dumps(audit_logs, ensure_ascii=False, indent=2)
-    audit_logs_file.write_text(audit_logs_text, encoding="utf-8")
-
-    manifest = {
-        "bundle_id": bundle_id,
-        "bundle_path": str(bundle_path),
-        "generated_at": generated_at,
-        "case_id": case_id,
-        "files": [
-            {
-                "name": "case_summary.json",
-                "sha256": _sha256_bytes(case_summary_text.encode("utf-8")),
+        case_summary = {
+            "bundle_id": bundle_id,
+            "generated_at": _utc_now_iso(),
+            "case_type": "DISCHARGE_REFUSAL",
+            "discharge_case": {
+                "id": case.id,
+                "status": case.status,
+                "refusal_reason": case.refusal_reason,
+                "created_at": case.created_at.isoformat() if case.created_at else None,
+                "signed_at": case.signed_at.isoformat() if case.signed_at else None,
+                "pdf_file": pdf_name,
             },
-            {
-                "name": "audit_logs.json",
-                "sha256": _sha256_bytes(audit_logs_text.encode("utf-8")),
+            "tenant": {
+                "id": tenant.id if tenant else None,
+                "code": tenant.code if tenant else None,
+                "name": tenant.name if tenant else None,
             },
-        ],
-    }
+            "patient": {
+                "id": patient.id if patient else None,
+                "mrn": patient.mrn if patient else None,
+                "full_name": patient.full_name if patient else None,
+            },
+            "created_by": {
+                "id": user.id if user else None,
+                "email": user.email if user else None,
+                "full_name": user.full_name if user else None,
+                "role": user.role if user else None,
+            },
+            "signature": {
+                "signer_name": case.signer_name,
+                "signer_role": case.signer_role,
+                "signature_text": case.signature_text,
+            },
+        }
 
-    if pdf_name and pdf_hash:
-        manifest["files"].append({
-            "name": pdf_name,
-            "sha256": pdf_hash,
-        })
+        audit_payload = [
+            {
+                "id": log.id,
+                "action": log.action,
+                "details": log.details,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
+            }
+            for log in audit_logs
+        ]
 
-    manifest_file = bundle_path / "manifest.json"
-    manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2)
-    manifest_file.write_text(manifest_text, encoding="utf-8")
+        copied_pdf = bundle_folder / pdf_name
+        copied_pdf.write_bytes(pdf_path.read_bytes())
 
-    zip_name = f"{bundle_id}.zip"
-    zip_path = BUNDLE_DIR / zip_name
+        case_summary_text = json.dumps(case_summary, ensure_ascii=False, indent=2)
+        audit_logs_text = json.dumps(audit_payload, ensure_ascii=False, indent=2)
 
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.write(case_summary_file, arcname="case_summary.json")
-        zf.write(audit_logs_file, arcname="audit_logs.json")
-        zf.write(manifest_file, arcname="manifest.json")
+        case_summary_file = bundle_folder / "case_summary.json"
+        audit_logs_file = bundle_folder / "audit_logs.json"
+        manifest_file = bundle_folder / "manifest.json"
 
-        if pdf_name:
-            zf.write(bundle_path / pdf_name, arcname=pdf_name)
+        case_summary_file.write_text(case_summary_text, encoding="utf-8")
+        audit_logs_file.write_text(audit_logs_text, encoding="utf-8")
 
-    return {
-        "bundle_id": bundle_id,
-        "bundle_folder": str(bundle_path),
-        "bundle_zip": str(zip_path),
-        "generated_at": generated_at,
-        "manifest": manifest,
-    }
+        manifest = {
+            "bundle_id": bundle_id,
+            "generated_at": _utc_now_iso(),
+            "discharge_case_id": case.id,
+            "files": [
+                {
+                    "name": pdf_name,
+                    "sha256": _sha256_file(copied_pdf),
+                },
+                {
+                    "name": "case_summary.json",
+                    "sha256": _sha256_bytes(case_summary_text.encode("utf-8")),
+                },
+                {
+                    "name": "audit_logs.json",
+                    "sha256": _sha256_bytes(audit_logs_text.encode("utf-8")),
+                },
+            ],
+        }
+
+        manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2)
+        manifest_file.write_text(manifest_text, encoding="utf-8")
+
+        zip_name = f"{bundle_id}.zip"
+        zip_path = BUNDLE_DIR / zip_name
+
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.write(copied_pdf, arcname=pdf_name)
+            zf.write(case_summary_file, arcname="case_summary.json")
+            zf.write(audit_logs_file, arcname="audit_logs.json")
+            zf.write(manifest_file, arcname="manifest.json")
+
+        return {
+            "message": "Evidence bundle generated successfully",
+            "bundle_id": bundle_id,
+            "bundle_file": zip_name,
+            "bundle_path": str(zip_path),
+        }
+
+    finally:
+        db.close()

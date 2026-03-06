@@ -1,108 +1,88 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
-from typing import List, Optional
+from pathlib import Path
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import FileResponse
 
-from backend.core.discharge_engine import DischargeEngine
+from backend.schemas.discharge import DischargeRefusalRequest
+from backend.core.discharge_service import create_discharge_refusal
+from backend.legal.evidence_bundle import generate_evidence_bundle
+from backend.api.deps import get_current_user, require_roles
+from backend.core.discharge_query_service import (
+    list_discharge_cases_for_tenant,
+    get_discharge_case_detail,
+    list_audit_logs_for_case,
+    list_bundles,
+)
 
-router = APIRouter()
+router = APIRouter(prefix="/api/discharge", tags=["Discharge"])
 
-engine = DischargeEngine()
-
-
-# -------------------------------------------
-# Request Models
-# -------------------------------------------
-
-class DischargeOrderRequest(BaseModel):
-    patient_id: str
-    physician_id: str
-    diagnosis_codes: List[str]
-    discharge_notes: Optional[str] = ""
-
-
-class RefusalRequest(BaseModel):
-    order_id: str
-    patient_id: str
-    reason: str
-    witness_id: Optional[str] = None
-    nurse_id: Optional[str] = None
-
-
-# -------------------------------------------
-# Create discharge order
-# -------------------------------------------
-
-@router.post("/discharge/order")
-def create_discharge_order(data: DischargeOrderRequest):
-
+@router.post("/refusal")
+def create_refusal(
+    payload: DischargeRefusalRequest,
+    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor"))
+):
     try:
-
-        result = engine.create_discharge_order(
-            patient_id=data.patient_id,
-            physician_id=data.physician_id,
-            diagnosis_codes=data.diagnosis_codes,
-            discharge_notes=data.discharge_notes,
+        return create_discharge_refusal(
+            tenant_code=current_user["tenant_code"],
+            user_email=current_user["email"],
+            patient_mrn=payload.patient_mrn,
+            patient_name=payload.patient_name,
+            refusal_reason=payload.refusal_reason,
+            signer_name=payload.signer_name,
+            signer_role=payload.signer_role,
+            signature_text=payload.signature_text,
         )
-
-        return jsonable_encoder(result)
-
-    except Exception as e:
-
+    except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-
-# -------------------------------------------
-# Record refusal
-# -------------------------------------------
-
-@router.post("/discharge/refusal")
-def record_refusal(data: RefusalRequest):
-
-    try:
-
-        result = engine.record_patient_refusal(
-            order_id=data.order_id,
-            patient_id=data.patient_id,
-            reason=data.reason,
-            witness_id=data.witness_id,
-            nurse_id=data.nurse_id,
-        )
-
-        return jsonable_encoder(result)
-
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-        raise HTTPException(status_code=400, detail=str(e))
+@router.get("/cases")
+def get_cases(current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer"))):
+    return list_discharge_cases_for_tenant(current_user["tenant_id"])
 
+@router.get("/cases/{case_id}")
+def get_case(case_id: str, current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer"))):
+    result = get_discharge_case_detail(current_user["tenant_id"], case_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return result
 
-# -------------------------------------------
-# Get discharge order
-# -------------------------------------------
+@router.get("/audit/{case_id}")
+def get_case_audit(case_id: str, current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer"))):
+    result = list_audit_logs_for_case(current_user["tenant_id"], case_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return result
 
-@router.get("/discharge/order/{order_id}")
-def get_order(order_id: str):
+@router.get("/bundles")
+def get_bundles(current_user=Depends(require_roles("tenant_admin", "legal_admin"))):
+    return list_bundles()
 
+@router.get("/pdf/{filename}")
+def get_pdf(filename: str, current_user=Depends(get_current_user)):
+    file_path = Path("backend/generated") / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="PDF file not found")
+    return FileResponse(path=str(file_path), filename=filename, media_type="application/pdf")
+
+@router.post("/evidence-bundle/{discharge_case_id}")
+def build_evidence_bundle(
+    discharge_case_id: str,
+    current_user=Depends(require_roles("tenant_admin", "legal_admin"))
+):
     try:
-
-        return engine.get_order(order_id)
-
-    except Exception as e:
-
+        return generate_evidence_bundle(discharge_case_id)
+    except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-
-
-# -------------------------------------------
-# Get refusal record
-# -------------------------------------------
-
-@router.get("/discharge/refusal/{refusal_id}")
-def get_refusal(refusal_id: str):
-
-    try:
-
-        return engine.get_refusal(refusal_id)
-
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-        raise HTTPException(status_code=404, detail=str(e))
+@router.get("/evidence-bundle/download/{filename}")
+def download_evidence_bundle(
+    filename: str,
+    current_user=Depends(require_roles("tenant_admin", "legal_admin"))
+):
+    file_path = Path("backend/generated/bundles") / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Evidence bundle not found")
+    return FileResponse(path=str(file_path), filename=filename, media_type="application/zip")

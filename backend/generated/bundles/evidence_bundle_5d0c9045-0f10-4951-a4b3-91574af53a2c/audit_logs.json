@@ -1,0 +1,8 @@
+[
+  {
+    "id": "c8b6f61f-cbca-4100-9519-9a357da6bd64",
+    "action": "create_discharge_refusal_with_signature",
+    "details": "Discharge refusal created for patient MRN MRN-8001; signed by Basel Auth Patient (Patient); PDF generated at backend/generated/refusal_5d0c9045-0f10-4951-a4b3-91574af53a2c.pdf",
+    "created_at": "2026-03-06T20:16:46.095615"
+  }
+]
