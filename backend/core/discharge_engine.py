@@ -14,7 +14,6 @@ from typing import List, Optional
 from backend.icd11.validator import ICD11Validator
 from backend.forms.pdf_generator import generate_discharge_refusal_pdf
 from backend.legal.evidence_bundle import build_discharge_refusal_bundle
-
 from backend.audit.audit_logger import AuditLogger, UserRole
 
 
@@ -84,6 +83,16 @@ class DischargeEngine:
     ) -> DischargeOrder:
         invalid = [c for c in diagnosis_codes if not self._validator.is_valid(c)]
         if invalid:
+            # Audit failure (PDPL-safe: IDs only)
+            self._audit.log(
+                actor_id=physician_id or "SYSTEM",
+                actor_role=UserRole.DOCTOR,
+                event_category="ICD11_VALIDATION",
+                event_action="FAIL",
+                resource_id="N/A",
+                resource_type="DischargeOrder",
+                outcome="FAILURE",
+            )
             raise ValueError(f"Invalid ICD-11 code(s): {invalid}")
 
         order = DischargeOrder(
@@ -94,9 +103,9 @@ class DischargeEngine:
         )
         self._orders[order.order_id] = order
 
-        # Audit (PDPL-safe: IDs only)
+        # Audit success
         self._audit.log(
-            actor_id=physician_id,
+            actor_id=physician_id or "SYSTEM",
             actor_role=UserRole.DOCTOR,
             event_category="DISCHARGE_ORDER",
             event_action="CREATE",
@@ -130,7 +139,18 @@ class DischargeEngine:
         nurse_id: Optional[str] = None,
     ) -> RefusalRecord:
         order = self.get_order(order_id)
+
         if order.patient_id != patient_id:
+            # Audit failure
+            self._audit.log(
+                actor_id=nurse_id or witness_id or "SYSTEM",
+                actor_role=UserRole.NURSE if nurse_id else (UserRole.LEGAL_OFFICER if witness_id else UserRole.ADMIN),
+                event_category="REFUSAL_RECORD",
+                event_action="CREATE",
+                resource_id=order_id,
+                resource_type="DischargeOrder",
+                outcome="FAILURE",
+            )
             raise ValueError("Patient ID does not match the discharge order.")
 
         refusal = RefusalRecord(
@@ -156,17 +176,18 @@ class DischargeEngine:
         refusal.pdf_path = pdf_path
 
         # 2) Build legal evidence bundle
-        bundle_path = build_discharge_refusal_bundle(
+        # (قد ترجع مسار أو لا ترجع شيء — ما نكسر الكود)
+        maybe_bundle_path = build_discharge_refusal_bundle(
             order=order,
             refusal=refusal,
             pdf_path=pdf_path,
         )
-        refusal.bundle_path = bundle_path
+        if isinstance(maybe_bundle_path, str) and maybe_bundle_path.strip():
+            refusal.bundle_path = maybe_bundle_path
 
-        # 3) Audit
-        # اختر actor_id بشكل منطقي: nurse_id إن وجد، وإلا witness_id، وإلا "SYSTEM"
+        # 3) Audit success
         actor_id = nurse_id or witness_id or "SYSTEM"
-        actor_role = UserRole.NURSE if nurse_id else UserRole.LEGAL_OFFICER if witness_id else UserRole.ADMIN
+        actor_role = UserRole.NURSE if nurse_id else (UserRole.LEGAL_OFFICER if witness_id else UserRole.ADMIN)
 
         self._audit.log(
             actor_id=actor_id,
@@ -175,6 +196,17 @@ class DischargeEngine:
             event_action="CREATE",
             resource_id=refusal.refusal_id,
             resource_type="RefusalRecord",
+            outcome="SUCCESS",
+        )
+
+        # Also audit status change
+        self._audit.log(
+            actor_id=actor_id,
+            actor_role=actor_role,
+            event_category="DISCHARGE_ORDER",
+            event_action="STATUS_REFUSED",
+            resource_id=order.order_id,
+            resource_type="DischargeOrder",
             outcome="SUCCESS",
         )
 
