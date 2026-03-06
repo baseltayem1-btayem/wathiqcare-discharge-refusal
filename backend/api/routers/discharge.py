@@ -1,17 +1,14 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 
 from backend.core.discharge_engine import DischargeEngine
 
 router = APIRouter()
-
 engine = DischargeEngine()
 
-
-# -------------------------------------------
-# Request Models
-# -------------------------------------------
 
 class DischargeOrderRequest(BaseModel):
     patient_id: str
@@ -28,80 +25,48 @@ class RefusalRequest(BaseModel):
     nurse_id: Optional[str] = None
 
 
-# -------------------------------------------
-# Create discharge order
-# -------------------------------------------
-
 @router.post("/discharge/order")
-def create_discharge_order(data: DischargeOrderRequest):
-
+def create_discharge_order(payload: DischargeOrderRequest):
     try:
-
-        order = engine.create_discharge_order(
-            patient_id=data.patient_id,
-            physician_id=data.physician_id,
-            diagnosis_codes=data.diagnosis_codes,
-            discharge_notes=data.discharge_notes,
+        result = engine.create_discharge_order(
+            patient_id=payload.patient_id,
+            physician_id=payload.physician_id,
+            diagnosis_codes=payload.diagnosis_codes,
+            discharge_notes=payload.discharge_notes or "",
         )
-
-        return order
-
+        return jsonable_encoder(result)
     except Exception as e:
-
         raise HTTPException(status_code=400, detail=str(e))
 
-
-# -------------------------------------------
-# Record refusal
-# -------------------------------------------
 
 @router.post("/discharge/refusal")
-def record_refusal(data: RefusalRequest):
-
+def record_refusal(payload: RefusalRequest):
     try:
-
-        refusal = engine.record_patient_refusal(
-            order_id=data.order_id,
-            patient_id=data.patient_id,
-            reason=data.reason,
-            witness_id=data.witness_id,
-            nurse_id=data.nurse_id,
+        result = engine.record_patient_refusal(
+            order_id=payload.order_id,
+            patient_id=payload.patient_id,
+            reason=payload.reason,
+            witness_id=payload.witness_id,
+            nurse_id=payload.nurse_id,
         )
-
-        return refusal
-
+        return jsonable_encoder(result)
     except Exception as e:
-
         raise HTTPException(status_code=400, detail=str(e))
 
-
-# -------------------------------------------
-# Get discharge order
-# -------------------------------------------
 
 @router.get("/discharge/order/{order_id}")
 def get_order(order_id: str):
-
     try:
-
-        return engine.get_order(order_id)
-
+        result = engine.get_order(order_id)
+        return jsonable_encoder(result)
     except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-        raise HTTPException(status_code=404, detail=str(e))
-
-
-# -------------------------------------------
-# Get refusal record
-# -------------------------------------------
 
 @router.get("/discharge/refusal/{refusal_id}")
 def get_refusal(refusal_id: str):
-
     try:
-
-        return engine.get_refusal(refusal_id)
-
+        result = engine.get_refusal(refusal_id)
+        return jsonable_encoder(result)
     except Exception as e:
-
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
