@@ -1,13 +1,26 @@
-from typing import List, Optional
+from dataclasses import asdict, is_dataclass
+from datetime import datetime
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, HTTPException
-from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 
 from backend.core.discharge_engine import DischargeEngine
 
 router = APIRouter()
 engine = DischargeEngine()
+
+
+def to_jsonable(obj: Any):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if is_dataclass(obj):
+        return to_jsonable(asdict(obj))
+    if isinstance(obj, dict):
+        return {k: to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [to_jsonable(v) for v in obj]
+    return obj
 
 
 class DischargeOrderRequest(BaseModel):
@@ -34,7 +47,7 @@ def create_discharge_order(payload: DischargeOrderRequest):
             diagnosis_codes=payload.diagnosis_codes,
             discharge_notes=payload.discharge_notes or "",
         )
-        return jsonable_encoder(result)
+        return to_jsonable(result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -49,7 +62,7 @@ def record_refusal(payload: RefusalRequest):
             witness_id=payload.witness_id,
             nurse_id=payload.nurse_id,
         )
-        return jsonable_encoder(result)
+        return to_jsonable(result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -58,7 +71,7 @@ def record_refusal(payload: RefusalRequest):
 def get_order(order_id: str):
     try:
         result = engine.get_order(order_id)
-        return jsonable_encoder(result)
+        return to_jsonable(result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -67,6 +80,6 @@ def get_order(order_id: str):
 def get_refusal(refusal_id: str):
     try:
         result = engine.get_refusal(refusal_id)
-        return jsonable_encoder(result)
+        return to_jsonable(result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
