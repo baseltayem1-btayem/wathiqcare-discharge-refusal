@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { apiFetch, clearToken } from "@/lib/api";
+import { apiFetch, clearToken } from "../../lib/api";
 import { useRouter } from "next/navigation";
 
 type CaseItem = {
