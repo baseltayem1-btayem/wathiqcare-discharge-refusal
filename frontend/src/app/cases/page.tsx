@@ -24,8 +24,8 @@ export default function CasesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch<CaseItem[]>("/api/discharge/cases")
-      .then(setCases)
+    apiFetch("/api/discharge/cases")
+      .then((data) => setCases(data as CaseItem[]))
       .catch((err) => {
         setError(err.message);
         if (err.message.includes("401") || err.message.includes("Invalid")) {
