@@ -2,19 +2,36 @@ import { NextResponse } from "next/server";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
 
+function normalizeUrl(value: string): string {
+  return value.replace(/\/$/, "");
+}
+
+function isRedirectStatus(status: number): boolean {
+  return status === 301 || status === 302 || status === 303 || status === 307 || status === 308;
+}
+
 function buildLoginTargets(request: Request, configuredBaseUrl: string | null): string[] {
   const targets = new Set<string>();
+  const currentRequestUrl = normalizeUrl(request.url);
+
+  const addTarget = (value: string) => {
+    const normalized = normalizeUrl(value);
+    if (normalized === currentRequestUrl) {
+      return;
+    }
+    targets.add(normalized);
+  };
 
   if (configuredBaseUrl) {
-    const normalizedBase = configuredBaseUrl.replace(/\/$/, "");
-    targets.add(`${normalizedBase}/auth/login`);
-    targets.add(`${normalizedBase}/api/auth/login`);
+    const normalizedBase = normalizeUrl(configuredBaseUrl);
+    addTarget(`${normalizedBase}/auth/login`);
+    addTarget(`${normalizedBase}/api/auth/login`);
 
     if (normalizedBase.endsWith("/api")) {
       const withoutApiSuffix = normalizedBase.slice(0, -4);
       if (withoutApiSuffix.length > 0) {
-        targets.add(`${withoutApiSuffix}/auth/login`);
-        targets.add(`${withoutApiSuffix}/api/auth/login`);
+        addTarget(`${withoutApiSuffix}/auth/login`);
+        addTarget(`${withoutApiSuffix}/api/auth/login`);
       }
     }
 
@@ -22,16 +39,16 @@ function buildLoginTargets(request: Request, configuredBaseUrl: string | null): 
     // also try the host root to handle mismatched deployment path prefixes.
     try {
       const parsed = new URL(normalizedBase);
-      const origin = parsed.origin.replace(/\/$/, "");
-      targets.add(`${origin}/auth/login`);
-      targets.add(`${origin}/api/auth/login`);
+      const origin = normalizeUrl(parsed.origin);
+      addTarget(`${origin}/auth/login`);
+      addTarget(`${origin}/api/auth/login`);
     } catch {
       // Ignore malformed URLs and rely on the direct configured base value.
     }
   }
 
   // Same-origin fallback relies on Next.js rewrite rules.
-  targets.add(new URL("/auth/login", request.url).toString());
+  addTarget(new URL("/auth/login", request.url).toString());
 
   return [...targets];
 }
@@ -52,6 +69,7 @@ export async function POST(request: Request) {
 
     let backendResponse: Response | null = null;
     let lastNotFoundResponse: Response | null = null;
+    let lastRedirectResponse: Response | null = null;
     let lastServerErrorResponse: Response | null = null;
 
     for (const target of targets) {
@@ -63,7 +81,13 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify(payload),
           cache: "no-store",
+          redirect: "manual",
         });
+
+        if (isRedirectStatus(response.status)) {
+          lastRedirectResponse = response;
+          continue;
+        }
 
         if (response.status === 404 || response.status === 405) {
           lastNotFoundResponse = response;
@@ -83,7 +107,7 @@ export async function POST(request: Request) {
     }
 
     if (!backendResponse) {
-      backendResponse = lastNotFoundResponse ?? lastServerErrorResponse;
+      backendResponse = lastNotFoundResponse ?? lastRedirectResponse ?? lastServerErrorResponse;
     }
 
     if (!backendResponse) {
@@ -101,6 +125,10 @@ export async function POST(request: Request) {
         throw new ApiError(502, "Authentication service is unavailable");
       }
 
+      if (isRedirectStatus(backendResponse.status)) {
+        throw new ApiError(502, "Authentication service redirected unexpectedly");
+      }
+
       if (backendResponse.status === 404 || backendResponse.status === 405) {
         throw new ApiError(502, "Authentication service endpoint is unavailable");
       }
@@ -110,6 +138,11 @@ export async function POST(request: Request) {
       }
 
       throw new ApiError(backendResponse.status, backendDetail || "Authentication request failed");
+    }
+
+    const contentType = backendResponse.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+      throw new ApiError(502, "Authentication service returned non-JSON response");
     }
 
     const accessToken = body?.access_token;
