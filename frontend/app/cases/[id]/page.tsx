@@ -621,6 +621,14 @@ export default function CaseDetailsPage() {
               {t("common.backToCases")}
             </Link>
 
+            <Link
+              href={`/cases/${caseId}/home-healthcare-agreement`}
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+            >
+              <FileText className="h-4 w-4" />
+              Home Healthcare Agreement
+            </Link>
+
             <button
               type="button"
               onClick={() => void runWorkflowAction("record_discharge_decision")}
@@ -880,6 +888,14 @@ export default function CaseDetailsPage() {
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href={`/cases/${caseId}/home-healthcare-agreement`}
+                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Home Healthcare Agreement
+                    </Link>
+
                     {caseDetail?.pdf_file ? (
                       <button
                         type="button"
