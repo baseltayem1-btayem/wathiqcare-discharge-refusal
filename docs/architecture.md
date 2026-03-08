@@ -137,6 +137,34 @@ implementation for testing and development.
 
 ---
 
+### 7. Case Orchestration Layer (`backend/core/case_orchestrator.py`)
+
+`CaseOrchestrator` is an additive coordination layer that composes existing
+workflow engines without changing their internal implementations.
+
+| Orchestrator Method | Integration Points |
+|---|---|
+| `create_case()` | Calls `DischargeEngine.create_discharge_order()` and registers workflow state |
+| `record_refusal()` | Calls `DischargeEngine.record_patient_refusal()` and `RefusalFormService.create_form()` |
+| `escalate_case()` | Calls `EscalationEngine.open_case()` / `EscalationEngine.escalate()` |
+| `generate_documents()` | Reads `RefusalFormService` output and optional legal documentation package |
+
+The orchestrator writes its own append-only audit events through
+`AuditLogger.log()` while preserving existing engine-level auditing.
+
+Supporting modules:
+- `backend/workflow/workflow_registry.py`: configurable state registry for
+  `CASE_CREATED`, `DISCHARGE_ORDERED`, `REFUSAL_RECORDED`, `SOCIAL_REVIEW`,
+  `ESCALATION_TRIGGERED`, `LEGAL_REVIEW`, and `CASE_CLOSED`.
+- `backend/risk/risk_engine.py`: optional rules-based scoring (`LOW`, `MEDIUM`,
+  `HIGH`, `CRITICAL`) exposed via `evaluate(case_data)`; not wired into existing
+  production flows yet.
+
+This design keeps all legacy code paths intact and backward-compatible while
+enabling future orchestration-first workflows.
+
+---
+
 ## Data Flow
 
 ```
