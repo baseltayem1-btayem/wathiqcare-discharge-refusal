@@ -2,6 +2,29 @@ import { NextResponse } from "next/server";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
 
+function buildLoginTargets(request: Request, configuredBaseUrl: string | null): string[] {
+  const targets = new Set<string>();
+
+  if (configuredBaseUrl) {
+    const normalizedBase = configuredBaseUrl.replace(/\/$/, "");
+    targets.add(`${normalizedBase}/auth/login`);
+    targets.add(`${normalizedBase}/api/auth/login`);
+
+    if (normalizedBase.endsWith("/api")) {
+      const withoutApiSuffix = normalizedBase.slice(0, -4);
+      if (withoutApiSuffix.length > 0) {
+        targets.add(`${withoutApiSuffix}/auth/login`);
+        targets.add(`${withoutApiSuffix}/api/auth/login`);
+      }
+    }
+  }
+
+  // Same-origin fallback relies on Next.js rewrite rules.
+  targets.add(new URL("/auth/login", request.url).toString());
+
+  return [...targets];
+}
+
 export async function POST(request: Request) {
   try {
     const payload = (await request.json().catch(() => null)) as {
@@ -14,18 +37,10 @@ export async function POST(request: Request) {
     }
 
     const configuredBaseUrl = getConfiguredBackendApiBaseUrl();
-    const sameOriginUrl = new URL("/auth/login", request.url).toString();
-    const targets = [
-      configuredBaseUrl ? `${configuredBaseUrl}/auth/login` : null,
-      sameOriginUrl,
-    ].filter((value, index, array): value is string => {
-      if (!value) {
-        return false;
-      }
-      return array.indexOf(value) === index;
-    });
+    const targets = buildLoginTargets(request, configuredBaseUrl);
 
     let backendResponse: Response | null = null;
+    let lastNotFoundResponse: Response | null = null;
     let lastServerErrorResponse: Response | null = null;
 
     for (const target of targets) {
@@ -38,6 +53,11 @@ export async function POST(request: Request) {
           body: JSON.stringify(payload),
           cache: "no-store",
         });
+
+        if (response.status === 404 || response.status === 405) {
+          lastNotFoundResponse = response;
+          continue;
+        }
 
         if (response.status >= 500) {
           lastServerErrorResponse = response;
@@ -52,7 +72,7 @@ export async function POST(request: Request) {
     }
 
     if (!backendResponse) {
-      backendResponse = lastServerErrorResponse;
+      backendResponse = lastNotFoundResponse ?? lastServerErrorResponse;
     }
 
     if (!backendResponse) {
@@ -68,6 +88,10 @@ export async function POST(request: Request) {
 
       if (backendResponse.status >= 500) {
         throw new ApiError(502, "Authentication service is unavailable");
+      }
+
+      if (backendResponse.status === 404 || backendResponse.status === 405) {
+        throw new ApiError(502, "Authentication service endpoint is unavailable");
       }
 
       if (backendResponse.status === 400 || backendResponse.status === 401) {
