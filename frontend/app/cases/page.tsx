@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight, FileText, PlusCircle, RefreshCw } from "lucide-react";
+import AppShell from "@/components/AppShell";
+import AuthGuard from "@/components/AuthGuard";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch, clearToken } from "@/utils/api";
 
 type CaseItem = {
@@ -22,6 +26,7 @@ type CaseItem = {
 
 export default function CasesPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -40,21 +45,48 @@ export default function CasesPage() {
   }, [router]);
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Discharge Cases</h1>
-            <p className="mt-1 text-slate-600">Tenant-scoped legal-medical case list.</p>
-          </div>
-          <Link href="/bundles" className="rounded-xl border px-4 py-2 font-medium text-slate-700">
-            Evidence Bundles
-          </Link>
-        </div>
+    <AuthGuard>
+      <AppShell
+        title={t("cases.title")}
+        subtitle={t("cases.subtitle")}
+        actions={
+          <>
+            <Link
+              href="/cases/new"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              <PlusCircle className="h-4 w-4" />
+              {t("cases.newCase")}
+            </Link>
 
-        {loading ? (
-          <div className="text-slate-600">Loading...</div>
-        ) : null}
+            <Link
+              href="/bundles"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+            >
+              <FileText className="h-4 w-4" />
+              {t("bundles.title")}
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => void apiFetch<CaseItem[]>("/api/cases")
+                .then((data) => setCases(data as CaseItem[]))
+                .catch((err) => {
+                  setError(err.message);
+                  if (err.message.includes("401") || err.message.includes("Invalid")) {
+                    clearToken();
+                    router.push("/login");
+                  }
+                })}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {t("common.refresh")}
+            </button>
+          </>
+        }
+      >
+        {loading ? <div className="text-sm text-slate-600">{t("cases.loading")}</div> : null}
 
         {error ? (
           <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -67,12 +99,12 @@ export default function CasesPage() {
             <table className="w-full text-sm">
               <thead className="bg-slate-100 text-slate-700">
                 <tr>
-                  <th className="px-4 py-3 text-left">MRN</th>
-                  <th className="px-4 py-3 text-left">Patient</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left">Signer</th>
-                  <th className="px-4 py-3 text-left">Created</th>
-                  <th className="px-4 py-3 text-left">Action</th>
+                  <th className="px-4 py-3 text-left">{t("cases.table.mrn")}</th>
+                  <th className="px-4 py-3 text-left">{t("cases.table.patient")}</th>
+                  <th className="px-4 py-3 text-left">{t("cases.table.status")}</th>
+                  <th className="px-4 py-3 text-left">{t("cases.table.signer")}</th>
+                  <th className="px-4 py-3 text-left">{t("cases.table.created")}</th>
+                  <th className="px-4 py-3 text-left">{t("cases.table.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -80,7 +112,7 @@ export default function CasesPage() {
                   <tr key={item.id} className="border-t">
                     <td className="px-4 py-3">{item.medicalRecordNo || item.patient_mrn || "-"}</td>
                     <td className="px-4 py-3">{item.patientName || item.patient_name || "-"}</td>
-                    <td className="px-4 py-3">{item.status}</td>
+                    <td className="px-4 py-3">{item.status || "-"}</td>
                     <td className="px-4 py-3 text-slate-700">
                       {item.signer_name ? `${item.signer_name}${item.signer_role ? ` (${item.signer_role})` : ""}` : "-"}
                     </td>
@@ -88,9 +120,10 @@ export default function CasesPage() {
                     <td className="px-4 py-3">
                       <Link
                         href={`/cases/${item.id}`}
-                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-white"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-white"
                       >
-                        View
+                        {t("cases.open")}
+                        <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
                     </td>
                   </tr>
@@ -99,7 +132,7 @@ export default function CasesPage() {
                 {cases.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
-                      No cases found.
+                      {t("cases.noCases")}
                     </td>
                   </tr>
                 ) : null}
@@ -107,7 +140,7 @@ export default function CasesPage() {
             </table>
           </div>
         ) : null}
-      </div>
-    </main>
+      </AppShell>
+    </AuthGuard>
   );
 }
