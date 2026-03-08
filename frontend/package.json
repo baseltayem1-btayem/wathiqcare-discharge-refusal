@@ -7,7 +7,7 @@
     "build": "npm run prisma:generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "prisma:generate": "prisma generate --schema ../prisma/schema.prisma"
+    "prisma:generate": "prisma generate --schema ./prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
