@@ -44,6 +44,8 @@ def build_homecare_context(*, case_id: str, payload: Dict[str, Any]) -> Dict[str
         "legal_guardian": _safe(payload.get("legal_guardian")),
         "relationship": _safe(payload.get("relationship")),
         "guardian_id": _safe(payload.get("guardian_id")),
+        "ack_homecare_provision": _safe(payload.get("ack_homecare_provision")),
+        "ack_discharge_decision_notice": _safe(payload.get("ack_discharge_decision_notice")),
         "date": _safe(payload.get("date")) or _today(),
         "verification_method": _safe(payload.get("verification_method")),
         "timestamp": _safe(payload.get("timestamp")),
@@ -124,6 +126,8 @@ def render_homecare_agreement_html(context: Dict[str, str]) -> str:
       <div><div class=\"label\">Case ID</div><div class=\"value\">{_safe(context.get('case_id'))}</div></div>
       <div><div class=\"label\">Verification Method</div><div class=\"value\">{_safe(context.get('verification_method'))}</div></div>
       <div><div class=\"label\">Timestamp</div><div class=\"value\">{_safe(context.get('timestamp'))}</div></div>
+      <div><div class=\"label\">Acknowledged Home Care Provision</div><div class=\"value\">{_safe(context.get('ack_homecare_provision'))}</div></div>
+      <div><div class=\"label\">Notified of Discharge Decision</div><div class=\"value\">{_safe(context.get('ack_discharge_decision_notice'))}</div></div>
     </div>
   </div>
 

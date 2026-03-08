@@ -74,6 +74,16 @@ export const CASE_WORKFLOW_STEPS: WorkflowStep[] = [
           { label: "Not Yet Stable", value: "not_yet_stable" },
         ],
       },
+      {
+        id: "patient_notified_discharge_decision",
+        label: "Patient/Guardian Notified of Medical Discharge Decision",
+        options: YES_NO,
+      },
+      {
+        id: "patient_ack_homecare_provision",
+        label: "Patient/Guardian Acknowledged Home Health Care Provision",
+        options: YES_NO,
+      },
     ],
   },
   {

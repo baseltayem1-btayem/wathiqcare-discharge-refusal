@@ -26,6 +26,7 @@ export default function HomeHealthcareAgreementPage() {
   const caseId = params?.id || "";
 
   const [previewHtml, setPreviewHtml] = useState("");
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [status, setStatus] = useState("pending");
@@ -43,6 +44,8 @@ export default function HomeHealthcareAgreementPage() {
   const [legalGuardian, setLegalGuardian] = useState("");
   const [relationship, setRelationship] = useState("");
   const [guardianId, setGuardianId] = useState("");
+  const [ackHomecareProvision, setAckHomecareProvision] = useState("");
+  const [ackDischargeDecisionNotice, setAckDischargeDecisionNotice] = useState("");
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -61,11 +64,25 @@ export default function HomeHealthcareAgreementPage() {
       legal_guardian: legalGuardian,
       relationship,
       guardian_id: guardianId,
+      ack_homecare_provision: ackHomecareProvision,
+      ack_discharge_decision_notice: ackDischargeDecisionNotice,
       date: new Date().toISOString().slice(0, 10),
       case_id: caseId,
       verification_method: selectedMethod,
     }),
-    [patientName, urn, currentLocation, roomNumber, legalGuardian, relationship, guardianId, caseId, selectedMethod]
+    [
+      patientName,
+      urn,
+      currentLocation,
+      roomNumber,
+      legalGuardian,
+      relationship,
+      guardianId,
+      ackHomecareProvision,
+      ackDischargeDecisionNotice,
+      caseId,
+      selectedMethod,
+    ]
   );
 
   const isHomecareSelected = careModel === HOME_HEALTHCARE_MODEL;
@@ -96,6 +113,7 @@ export default function HomeHealthcareAgreementPage() {
       return;
     }
 
+    queueMicrotask(() => setPreviewLoading(true));
     void apiFetch<{ html_content: string; context: Record<string, string> }>(
       `/api/discharge/cases/${caseId}/home-healthcare-agreement/preview`,
       {
@@ -115,7 +133,13 @@ export default function HomeHealthcareAgreementPage() {
           setRoomNumber(res.context.room_number);
         }
       })
-      .catch((err: Error) => setMessage(err.message));
+      .catch((err: Error) => {
+        setPreviewHtml("");
+        setMessage(err.message);
+      })
+      .finally(() => {
+        setPreviewLoading(false);
+      });
   }, [caseId, isHomecareSelected, payload, patientName, roomNumber, urn]);
 
   const selectCareModel = async (nextModel: string) => {
@@ -251,6 +275,31 @@ export default function HomeHealthcareAgreementPage() {
               <input className="rounded-lg border px-3 py-2 text-sm" placeholder="Guardian ID" value={guardianId} onChange={(e) => setGuardianId(e.target.value)} />
             </div>
 
+            <h3 className="mt-4 text-sm font-semibold text-slate-800">Patient Acknowledgments</h3>
+            <div className="mt-2 grid gap-2">
+              <label className="text-xs font-medium text-slate-600">Patient/Guardian acknowledged home health care provision</label>
+              <select
+                value={ackHomecareProvision}
+                onChange={(e) => setAckHomecareProvision(e.target.value)}
+                className="rounded-lg border px-3 py-2 text-sm"
+              >
+                <option value="">Select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+
+              <label className="text-xs font-medium text-slate-600">Patient/Guardian notified of medical discharge decision</label>
+              <select
+                value={ackDischargeDecisionNotice}
+                onChange={(e) => setAckDischargeDecisionNotice(e.target.value)}
+                className="rounded-lg border px-3 py-2 text-sm"
+              >
+                <option value="">Select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
             <h3 className="mt-4 text-sm font-semibold text-slate-800">Signature Method</h3>
             <div className="mt-2 grid gap-2">
               {methods.map((item) => (
@@ -324,10 +373,14 @@ export default function HomeHealthcareAgreementPage() {
             <h2 className="text-sm font-semibold text-slate-800">Agreement Preview</h2>
             <div className="mt-3 max-h-[760px] overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
               {isHomecareSelected ? (
-                previewHtml ? (
-                  <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
-                ) : (
+                previewLoading ? (
                   <p className="text-sm text-slate-500">Loading...</p>
+                ) : previewHtml ? (
+                  <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                ) : message ? (
+                  <p className="text-sm text-rose-700">Failed to load agreement preview: {message}</p>
+                ) : (
+                  <p className="text-sm text-slate-500">Agreement preview is not available yet.</p>
                 )
               ) : (
                 <p className="text-sm text-slate-500">Select Home Health Care Agreement to activate this workflow.</p>

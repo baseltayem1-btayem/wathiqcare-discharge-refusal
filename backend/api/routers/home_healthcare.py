@@ -39,7 +39,19 @@ def _build_case_defaults(*, case_id: str, tenant_id: str) -> Dict[str, str]:
             .first()
         )
         if not row:
-            raise ValueError("Case not found")
+            # Keep preview non-blocking even when discharge-case linkage is unavailable.
+            return {
+                "patient_name": "",
+                "medical_record_number": "",
+                "urn": "",
+                "current_location": "",
+                "room_number": "",
+                "legal_guardian": "",
+                "relationship": "",
+                "guardian_id": "",
+                "date": datetime.utcnow().strftime("%Y-%m-%d"),
+                "case_id": case_id,
+            }
 
         discharge_case, patient = row
         return {
