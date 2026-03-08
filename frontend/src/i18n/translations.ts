@@ -216,7 +216,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.backToCases": "العودة إلى الحالات",
     "common.logout": "تسجيل الخروج",
 
-    "app.name": "وثيق كير",
+    "app.name": "واثق كير",
     "app.moduleName": "رفض الخروج",
     "app.moduleTagline": "سير عمل قانوني طبي يركز على الامتثال.",
     "app.activeWorkspace": "مساحة العمل النشطة",
@@ -227,13 +227,13 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.bundles": "الحزم",
     "nav.admin": "الإدارة",
 
-    "home.title": "لوحة وثيق كير",
+    "home.title": "لوحة واثق كير",
     "home.subtitle": "إدارة رفض الخروج الطبي القانوني مع سجل تدقيق وحزم أدلة.",
     "home.login": "تسجيل الدخول",
     "home.cases": "الحالات",
 
     "login.badge": "دخول آمن",
-    "login.title": "تسجيل دخول وثيق كير",
+    "login.title": "تسجيل دخول واثق كير",
     "login.subtitle": "سجل الدخول للوصول إلى اللوحة القانونية الطبية.",
     "login.email": "البريد الإلكتروني",
     "login.password": "كلمة المرور",
