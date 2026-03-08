@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Boxes, CircleDot, Plus, RefreshCw, ArrowUpRight } from "lucide-react";
-import AppShell from "../../src/components/AppShell";
-import AuthGuard from "../../src/components/AuthGuard";
-import { useI18n } from "../../src/i18n/I18nProvider";
-import { apiFetch, clearToken } from "../../src/lib/api";
+import AppShell from "@/components/AppShell";
+import AuthGuard from "@/components/AuthGuard";
+import { useI18n } from "@/i18n/I18nProvider";
+import { apiFetch, clearToken } from "@/utils/api";
 
 type CaseItem = {
   id: string;
