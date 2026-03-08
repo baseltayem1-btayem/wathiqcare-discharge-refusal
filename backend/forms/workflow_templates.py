@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Dict, List, Optional
 
+from backend.discharge.home_healthcare.homecare_agreement_engine import render_homecare_agreement_html
+
 
 TemplateRenderer = Callable[[Dict[str, str]], str]
 
@@ -209,4 +211,19 @@ WORKFLOW_TEMPLATES: Dict[str, WorkflowTemplate] = {
         ],
         renderer=render_financial_responsibility_notice,
     ),
+      "home_healthcare_agreement": WorkflowTemplate(
+        key="home_healthcare_agreement",
+        title="Acknowledgment & Informed Consent",
+        document_code="IMC-HHC-PDN-01",
+        required_fields=[
+          "patient_name",
+          "medical_record_number",
+          "room_number",
+          "legal_guardian",
+          "relationship",
+          "date",
+          "case_id",
+        ],
+        renderer=render_homecare_agreement_html,
+      ),
 }

@@ -266,6 +266,54 @@ config files were modified for this feature.
 
 ---
 
+### 11. Post-Discharge Legal Agreements
+
+WathiqCare now supports an additive post-discharge legal agreement path for
+home-based care planning:
+
+- **Home Health Care (HHC) agreement generation** with dynamic case context
+- **Private Duty Nursing (PDN) responsibility acknowledgment** for legal guardians
+- **Caregiver training acknowledgment** as part of final consent documentation
+- **Legal liability and financial responsibility transfer capture** in a signed record
+
+New backend module:
+- `backend/discharge/home_healthcare/homecare_agreement_engine.py`
+- `backend/discharge/home_healthcare/homecare_agreement_template.json`
+- `backend/discharge/home_healthcare/homecare_agreement_pdf.py`
+- `backend/discharge/home_healthcare/homecare_workflow.py`
+
+Post-discharge care model options now include:
+- Home Medical Equipment Support
+- Family Care Undertaking
+- Home Health Care Agreement
+- Extended Care Transfer
+
+When **Home Health Care Agreement** is selected, the system triggers the
+home-healthcare agreement workflow and supports signature verification via
+`SMS_OTP`, `TABLET_SIGNATURE`, and provider-guarded `NAFATH`.
+
+Case-level metadata persisted for this agreement includes:
+- `case_id`
+- `document_type = home_healthcare_agreement`
+- `signature_method`
+- `signed_at`
+- `guardian_name`
+- `guardian_id`
+- `pdf_path`
+
+Audit events include:
+- `agreement_viewed`
+- `agreement_sent_for_signature`
+- `signature_verified`
+- `pdf_generated`
+- `document_attached_to_case`
+
+This implementation is intentionally non-destructive and does not modify
+existing authentication, deployment configuration, or core discharge-refusal
+workflow behavior.
+
+---
+
 ## Data Flow
 
 ```

@@ -4,7 +4,10 @@ from pydantic import BaseModel, Field
 
 
 class StartAcknowledgmentRequest(BaseModel):
-    document_type: str = Field(..., description="discharge_refusal_form | financial_responsibility_notice")
+    document_type: str = Field(
+        ...,
+        description="discharge_refusal_form | financial_responsibility_notice | home_healthcare_agreement",
+    )
     method: str = Field(..., description="SMS_OTP | NAFATH | TABLET_SIGNATURE")
     payload: Dict[str, Any] = Field(default_factory=dict)
 

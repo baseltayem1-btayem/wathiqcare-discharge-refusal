@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from backend.discharge.home_healthcare.homecare_agreement_pdf import generate_homecare_agreement_pdf
+from backend.discharge.home_healthcare.homecare_workflow import persist_homecare_case_record
 from backend.core.database import SessionLocal
 from backend.forms.workflow_templates import WORKFLOW_TEMPLATES
 from backend.models.audit_log import AuditLog
@@ -44,6 +46,8 @@ def _normalize_document_type(document_type: str) -> str:
         return "discharge_refusal_form"
     if normalized in {"financial_responsibility_notice", "financial_notice"}:
         return "financial_responsibility_notice"
+    if normalized in {"home_healthcare_agreement", "home_healthcare", "hhc_pdn_agreement"}:
+        return "home_healthcare_agreement"
     raise ValueError("Unsupported document type")
 
 
@@ -52,7 +56,13 @@ def _template_version_for(template_key: str) -> str:
         return "IMC-PAT-DIS-REF-01"
     if template_key == "financial_responsibility_notice":
         return "IMC-PAT-DIS-NOT-01"
+    if template_key == "home_healthcare_agreement":
+        return "IMC-HHC-PDN-01"
     return "1.0"
+
+
+def _is_homecare(document_type: str) -> bool:
+    return document_type == "home_healthcare_agreement"
 
 
 def _ensure_workflow(db, *, discharge_case: DischargeCase, patient: Patient) -> DischargeRefusalWorkflow:
@@ -109,6 +119,16 @@ def _save_session(session: Dict[str, Any]) -> None:
     path.write_text(json.dumps(session, indent=2, ensure_ascii=True), encoding="utf-8")
 
 
+def _append_session_event(session: Dict[str, Any], *, action: str, status: str, details: Dict[str, Any]) -> None:
+    event = {
+        "event_at": _iso_now(),
+        "action": action,
+        "status": status,
+        "details": details,
+    }
+    session.setdefault("event_log", []).append(event)
+
+
 def _load_session(session_id: str) -> Dict[str, Any]:
     path = _session_path(session_id)
     if not path.exists():
@@ -138,6 +158,14 @@ def _build_template_context(
         "financial_notice_generated_at": _iso_now(),
         "generated_at": _iso_now(),
         "reference_number": f"ACK-{discharge_case.id[:8]}-{_utc_now().strftime('%Y%m%d%H%M')}",
+        "urn": str(payload.get("urn") or payload.get("medical_record_number") or workflow.medical_record_number or patient.mrn or ""),
+        "current_location": str(payload.get("current_location") or ""),
+        "legal_guardian": str(payload.get("legal_guardian") or payload.get("guardian_name") or ""),
+        "relationship": str(payload.get("relationship") or ""),
+        "guardian_id": str(payload.get("guardian_id") or ""),
+        "date": str(payload.get("date") or _utc_now().strftime("%Y-%m-%d")),
+        "timestamp": _iso_now(),
+        "verification_method": str(payload.get("verification_method") or ""),
     }
 
 
@@ -264,10 +292,42 @@ class SignatureProofService:
                 "created_at": _iso_now(),
                 "updated_at": _iso_now(),
                 "provider_result": {},
+                "proof_metadata": {
+                    "verification_method": selected_method.value,
+                    "result_status": "pending",
+                },
                 "audit_event_ids": [],
+                "event_log": [],
                 "rendered_html": html_content,
                 "context": context,
             }
+
+            if _is_homecare(template_key):
+                session["case_record_metadata"] = {
+                    "case_id": case_id,
+                    "document_type": "home_healthcare_agreement",
+                    "signature_method": selected_method.value,
+                    "signed_at": None,
+                    "guardian_name": context.get("legal_guardian") or "",
+                    "guardian_id": context.get("guardian_id") or "",
+                    "pdf_path": None,
+                }
+
+            viewed_action = "agreement_viewed" if _is_homecare(template_key) else "form_viewed"
+            sent_action = "agreement_sent_for_signature" if _is_homecare(template_key) else "acknowledgment_method_selected"
+
+            _append_session_event(
+                session,
+                action=viewed_action,
+                status="success",
+                details={"document_type": template_key},
+            )
+            _append_session_event(
+                session,
+                action=sent_action,
+                status="success",
+                details={"method": selected_method.value},
+            )
 
             audit_ids = [
                 _write_audit(
@@ -275,7 +335,7 @@ class SignatureProofService:
                     tenant_id=tenant_id,
                     user_id=current_user["id"],
                     case_id=case_id,
-                    action="form_viewed",
+                    action=viewed_action,
                     details={"document_type": template_key, "session_id": session_id},
                 ),
                 _write_audit(
@@ -283,7 +343,7 @@ class SignatureProofService:
                     tenant_id=tenant_id,
                     user_id=current_user["id"],
                     case_id=case_id,
-                    action="acknowledgment_method_selected",
+                    action=sent_action,
                     details={"method": selected_method.value, "session_id": session_id},
                 ),
             ]
@@ -304,6 +364,23 @@ class SignatureProofService:
                     "stub_mode": dispatch.stub_mode,
                     "otp_debug_code": dispatch.otp_debug_code,
                 }
+                session["proof_metadata"].update(
+                    {
+                        "phone_number_masked": session["phone_number_masked"],
+                        "otp_sent_at": dispatch.otp_sent_at,
+                        "delivery_status": dispatch.delivery_status,
+                        "challenge_id": dispatch.challenge_id,
+                    }
+                )
+                _append_session_event(
+                    session,
+                    action="sms_otp_sent",
+                    status="success",
+                    details={
+                        "challenge_id": dispatch.challenge_id,
+                        "delivery_status": dispatch.delivery_status,
+                    },
+                )
                 audit_ids.append(
                     _write_audit(
                         db,
@@ -331,6 +408,19 @@ class SignatureProofService:
                     "provider": start.provider,
                 }
                 session["verification_status"] = "unavailable" if start.status == "unavailable" else "pending"
+                session["proof_metadata"].update(
+                    {
+                        "nafath_request_id": start.request_id,
+                        "nafath_initiated_at": start.initiated_at,
+                        "nafath_status": start.status,
+                    }
+                )
+                _append_session_event(
+                    session,
+                    action="nafath_verification_started",
+                    status="success" if start.status != "unavailable" else "unavailable",
+                    details={"request_id": start.request_id, "status": start.status},
+                )
                 audit_ids.append(
                     _write_audit(
                         db,
@@ -345,6 +435,13 @@ class SignatureProofService:
             elif selected_method == AcknowledgmentMethod.TABLET_SIGNATURE:
                 session["verification_status"] = "awaiting_signature"
                 session["provider_result"] = {"device_source": "TABLET"}
+                session["proof_metadata"].update({"device_source": "TABLET"})
+                _append_session_event(
+                    session,
+                    action="tablet_signature_started",
+                    status="success",
+                    details={"device_source": "TABLET"},
+                )
                 audit_ids.append(
                     _write_audit(
                         db,
@@ -400,11 +497,39 @@ class SignatureProofService:
                 "verification_method": "SMS_OTP",
                 "otp_verified_at": _iso_now() if verified else None,
             }
+            session["proof_metadata"].update(
+                {
+                    "verification_method": "SMS_OTP",
+                    "otp_verified_at": verification_result.get("otp_verified_at"),
+                    "result_status": "verified" if verified else "failed",
+                }
+            )
+            _append_session_event(
+                session,
+                action="sms_otp_verified" if verified else "sms_otp_verification_failed",
+                status="success" if verified else "failed",
+                details={"verification_method": "SMS_OTP"},
+            )
 
         elif selected_method == AcknowledgmentMethod.NAFATH:
             request_id = str(session.get("provider_result", {}).get("request_id") or "")
             verification_result = self.nafath_provider.verify(request_id=request_id, payload=payload)
             verified = bool(verification_result.get("verified"))
+            session["proof_metadata"].update(
+                {
+                    "verification_method": "NAFATH",
+                    "nafath_request_id": request_id,
+                    "nafath_status": verification_result.get("status"),
+                    "result_status": "verified" if verified else "pending",
+                    "verified_at": verification_result.get("verified_at"),
+                }
+            )
+            _append_session_event(
+                session,
+                action="nafath_verification_completed",
+                status="success" if verified else str(verification_result.get("status") or "pending"),
+                details={"request_id": request_id, "status": verification_result.get("status")},
+            )
 
         elif selected_method == AcknowledgmentMethod.TABLET_SIGNATURE:
             signature_payload = str(payload.get("signature_payload") or "").strip()
@@ -414,17 +539,56 @@ class SignatureProofService:
                 operator_id=current_user.get("id"),
             )
             verified = bool(verification_result.get("verified"))
+            session["proof_metadata"].update(
+                {
+                    "verification_method": "TABLET_SIGNATURE",
+                    "signature_hash": verification_result.get("signature_hash"),
+                    "signed_at": verification_result.get("signed_at"),
+                    "device_source": verification_result.get("device_source"),
+                    "witness_name": verification_result.get("witness_name"),
+                    "result_status": "verified" if verified else "failed",
+                }
+            )
+            _append_session_event(
+                session,
+                action="tablet_signature_captured" if verified else "tablet_signature_failed",
+                status="success" if verified else "failed",
+                details={"device_source": verification_result.get("device_source")},
+            )
 
         session["provider_result"] = {**session.get("provider_result", {}), **verification_result}
         session["verification_status"] = "verified" if verified else "pending"
         session["updated_at"] = _iso_now()
 
         if not verified:
+            db = SessionLocal()
+            try:
+                failure_action = {
+                    AcknowledgmentMethod.SMS_OTP: "sms_otp_verification_failed",
+                    AcknowledgmentMethod.NAFATH: "nafath_verification_completed",
+                    AcknowledgmentMethod.TABLET_SIGNATURE: "tablet_signature_failed",
+                }[selected_method]
+                _write_audit(
+                    db,
+                    tenant_id=tenant_id,
+                    user_id=current_user["id"],
+                    case_id=case_id,
+                    action=failure_action,
+                    details={
+                        "session_id": session_id,
+                        "verification_status": session["verification_status"],
+                        "provider_result": session["provider_result"],
+                    },
+                )
+                db.commit()
+            finally:
+                db.close()
             _save_session(session)
             return {
                 "session_id": session_id,
                 "verification_status": session["verification_status"],
                 "provider_result": session["provider_result"],
+                "proof_metadata": session.get("proof_metadata"),
             }
 
         db = SessionLocal()
@@ -445,7 +609,19 @@ class SignatureProofService:
             template = WORKFLOW_TEMPLATES[document_type]
 
             html_file_name, html_file_path = _write_final_html(case_id, document_type, html_content)
-            pdf_info = _try_write_pdf(case_id, document_type, html_content)
+            if _is_homecare(document_type):
+                context_with_proof = {
+                    **(session.get("context") or {}),
+                    "verification_method": selected_method.value,
+                    "timestamp": _iso_now(),
+                }
+                pdf_info = generate_homecare_agreement_pdf(
+                    case_id=case_id,
+                    output_root=str(FINAL_DOCS_DIR),
+                    context=context_with_proof,
+                )
+            else:
+                pdf_info = _try_write_pdf(case_id, document_type, html_content)
             pdf_path = pdf_info[1] if pdf_info else None
 
             document = DischargeWorkflowDocument(
@@ -508,6 +684,22 @@ class SignatureProofService:
                     )
                 )
 
+            if _is_homecare(document_type):
+                audit_ids.append(
+                    _write_audit(
+                        db,
+                        tenant_id=tenant_id,
+                        user_id=current_user["id"],
+                        case_id=case_id,
+                        action="signature_verified",
+                        details={
+                            "session_id": session_id,
+                            "verification_method": selected_method.value,
+                            "verified": True,
+                        },
+                    )
+                )
+
             evidence_payload = {
                 "case_id": case_id,
                 "document_type": document_type,
@@ -534,6 +726,8 @@ class SignatureProofService:
                 "workflow_document_id": document.id,
                 "audit_event_ids": audit_ids,
                 "verification_result_status": "verified",
+                "proof_metadata": session.get("proof_metadata"),
+                "event_log": session.get("event_log"),
             }
 
             evidence_bundle = self.evidence_builder.build(evidence_payload)
@@ -581,6 +775,21 @@ class SignatureProofService:
             session["workflow_document_id"] = document.id
             session["pdf_path"] = pdf_path
             session["html_path"] = html_file_path
+            session.setdefault("proof_metadata", {})["result_status"] = "verified"
+            session["proof_metadata"]["verified_at"] = session["verified_at"]
+
+            if _is_homecare(document_type):
+                case_record = {
+                    "document_type": "home_healthcare_agreement",
+                    "signature_method": selected_method.value,
+                    "signed_at": session["verified_at"],
+                    "guardian_name": session.get("context", {}).get("legal_guardian") or "",
+                    "guardian_id": session.get("context", {}).get("guardian_id") or "",
+                    "pdf_path": pdf_path,
+                }
+                case_record_path = persist_homecare_case_record(case_id, case_record)
+                session["case_record_path"] = case_record_path
+                session["case_record_metadata"] = case_record
 
             _save_session(session)
             db.commit()
@@ -593,6 +802,7 @@ class SignatureProofService:
                 "pdf_path": pdf_path,
                 "html_path": html_file_path,
                 "provider_result": session["provider_result"],
+                "proof_metadata": session.get("proof_metadata"),
             }
         except Exception:
             db.rollback()
