@@ -340,13 +340,89 @@ async function seedProductionAdmin() {
     },
   });
 
-  return { tenant, user };
+  const starterPlan = await prisma.plan.findUniqueOrThrow({
+    where: { code: PlanCode.STARTER },
+  });
+
+  const now = new Date();
+  const currentPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  const activeSeats = await prisma.tenantMembership.count({
+    where: {
+      tenantId: tenant.id,
+      status: MembershipStatus.ACTIVE,
+    },
+  });
+
+  const existingSubscription = await prisma.subscription.findFirst({
+    where: { tenantId: tenant.id },
+    orderBy: { createdAt: "desc" },
+  });
+
+  let subscription;
+  if (existingSubscription) {
+    subscription = await prisma.subscription.update({
+      where: { id: existingSubscription.id },
+      data: {
+        planId: starterPlan.id,
+        status: SubscriptionStatus.ACTIVE,
+        billingInterval: BillingInterval.MONTHLY,
+        seatLimit: Math.max(starterPlan.seatLimit, activeSeats),
+        trialEndsAt: null,
+        currentPeriodStart: now,
+        currentPeriodEnd,
+      },
+    });
+  } else {
+    subscription = await prisma.subscription.create({
+      data: {
+        tenantId: tenant.id,
+        planId: starterPlan.id,
+        status: SubscriptionStatus.ACTIVE,
+        billingInterval: BillingInterval.MONTHLY,
+        seatLimit: Math.max(starterPlan.seatLimit, activeSeats),
+        trialEndsAt: null,
+        currentPeriodStart: now,
+        currentPeriodEnd,
+      },
+    });
+  }
+
+  const existingSeedEvent = await prisma.subscriptionEvent.findFirst({
+    where: {
+      tenantId: tenant.id,
+      subscriptionId: subscription.id,
+      eventType: SubscriptionEventType.UPDATED,
+    },
+  });
+
+  if (!existingSeedEvent) {
+    await prisma.subscriptionEvent.create({
+      data: {
+        tenantId: tenant.id,
+        subscriptionId: subscription.id,
+        eventType: SubscriptionEventType.UPDATED,
+        status: "success",
+        actorUserId: user.id,
+        metadata: {
+          source: "seed",
+          note: "Default active subscription seeded for production admin tenant",
+        },
+      },
+    });
+  }
+
+  return { tenant, user, subscription };
 }
 
 async function main() {
   await seedPlans();
   const { tenant, owner } = await seedDemoTenant();
-  const { tenant: productionTenant, user: productionAdmin } = await seedProductionAdmin();
+  const {
+    tenant: productionTenant,
+    user: productionAdmin,
+    subscription: productionSubscription,
+  } = await seedProductionAdmin();
 
   console.log("Seed complete");
   console.log(`tenant_code=${tenant.code}`);
@@ -354,6 +430,7 @@ async function main() {
   console.log("owner_password=DemoOwner@123");
   console.log(`production_tenant_code=${productionTenant.code}`);
   console.log(`production_admin_email=${productionAdmin.email}`);
+  console.log(`production_subscription_status=${productionSubscription.status}`);
   console.log("production_admin_password=WCare@2026");
 }
 
