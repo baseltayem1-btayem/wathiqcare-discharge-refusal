@@ -10,8 +10,8 @@ import { setToken, apiFetch } from "@/utils/api";
 export default function LoginPage() {
   const router = useRouter();
   const { t } = useI18n();
-  const [email, setEmail] = useState("admin@imc.local");
-  const [password, setPassword] = useState("Admin@123");
+  const [email, setEmail] = useState("admin@wathiqcare.online");
+  const [password, setPassword] = useState("WCare@2026");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
