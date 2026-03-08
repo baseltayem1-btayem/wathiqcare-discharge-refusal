@@ -165,6 +165,38 @@ enabling future orchestration-first workflows.
 
 ---
 
+### 8. Workflow Tree UI
+
+The case details experience now includes a **Workflow Tree UI** for discharge
+refusal cases. The tree renders a structured, dropdown-driven workflow that
+captures operational decisions without requiring free-text input.
+
+Implemented stages:
+- Case Created
+- Risk Identified
+- Discharge Planned
+- Patient Refusal Recorded
+- Social Review
+- Administrative Escalation
+- Financial Notice
+- Legal Review
+- Case Closed
+
+Each step includes:
+- Status badge (`Not Started`, `In Progress`, `Completed`)
+- One or more constrained dropdown fields
+- Local save action for UI selections
+
+Current persistence path is intentionally low-risk and additive:
+- Selections are stored in browser local storage per case ID
+- Existing authentication, routing, backend engines, and deployment behavior
+  remain unchanged
+
+Future backend persistence can be added behind dedicated workflow endpoints
+(`GET`/`PATCH`) while preserving the current UI contracts.
+
+---
+
 ## Data Flow
 
 ```

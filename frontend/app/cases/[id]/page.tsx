@@ -22,6 +22,7 @@ import {
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import DocumentPreviewModal from "@/components/workflow/DocumentPreviewModal";
+import CaseWorkflowTree from "@/components/cases/CaseWorkflowTree";
 import WorkflowDataForm, { WorkflowDraft } from "@/components/workflow/WorkflowDataForm";
 import WorkflowDocumentList from "@/components/workflow/WorkflowDocumentList";
 import WorkflowTimelinePanel from "@/components/workflow/WorkflowTimelinePanel";
@@ -893,9 +894,12 @@ export default function CaseDetailsPage() {
             ) : null}
 
             {activeTab === "workflow" ? (
-              <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-                <WorkflowDataForm data={draft} onChange={setDraft} />
-                <WorkflowTimelinePanel workflow={workflow} />
+              <section className="space-y-4">
+                <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+                  <WorkflowDataForm data={draft} onChange={setDraft} />
+                  <WorkflowTimelinePanel workflow={workflow} />
+                </div>
+                <CaseWorkflowTree key={caseId} caseId={caseId} />
               </section>
             ) : null}
 
