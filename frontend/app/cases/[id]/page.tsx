@@ -353,23 +353,30 @@ export default function CaseDetailsPage() {
 
   const [preview, setPreview] = useState<WorkflowPreviewResponse | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [workflowBackendUnavailable, setWorkflowBackendUnavailable] = useState(false);
 
   const loadCaseData = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [detail, workflowContract] = await Promise.all([
-        dischargeCasesService.getCaseDetail(caseId),
-        dischargeRefusalWorkflowService.getByCaseId(caseId),
-      ]);
-
-      const workflowData = mapContractWorkflowToUi(workflowContract);
-
+      const detail = await dischargeCasesService.getCaseDetail(caseId);
       setCaseDetail(detail);
-      setAuditItems(mapContractAuditToUi(workflowContract.auditTrail));
-      setWorkflow(workflowData);
-      setDraft(buildDraft(detail, workflowData));
+
+      try {
+        const workflowContract = await dischargeRefusalWorkflowService.getByCaseId(caseId);
+        const workflowData = mapContractWorkflowToUi(workflowContract);
+        setAuditItems(mapContractAuditToUi(workflowContract.auditTrail));
+        setWorkflow(workflowData);
+        setDraft(buildDraft(detail, workflowData));
+        setWorkflowBackendUnavailable(false);
+      } catch {
+        // Keep Case Details usable even when upstream workflow endpoints are unavailable.
+        setAuditItems([]);
+        setWorkflow(null);
+        setDraft(buildDraft(detail, null));
+        setWorkflowBackendUnavailable(true);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : t("caseDetails.failedLoad");
       setError(message);
@@ -597,6 +604,7 @@ export default function CaseDetailsPage() {
   const canEscalate = Boolean(workflow?.escalation_required && hasOfficialNotice && processingAction === null);
 
   const hasGeneratedDocuments = (workflow?.documents?.length || 0) > 0;
+  const workflowActionsEnabled = !workflowBackendUnavailable;
 
   return (
     <AuthGuard>
@@ -616,7 +624,7 @@ export default function CaseDetailsPage() {
             <button
               type="button"
               onClick={() => void runWorkflowAction("record_discharge_decision")}
-              disabled={!canRecordDecision}
+              disabled={!canRecordDecision || !workflowActionsEnabled}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-60"
             >
               <Stethoscope className="h-4 w-4" />
@@ -627,7 +635,7 @@ export default function CaseDetailsPage() {
               <button
                 type="button"
                 onClick={() => void runWorkflowAction("start_refusal_workflow")}
-                disabled={!canStartRefusal}
+                disabled={!canStartRefusal || !workflowActionsEnabled}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-60"
               >
                 <PlayCircle className="h-4 w-4" />
@@ -639,7 +647,7 @@ export default function CaseDetailsPage() {
               <button
                 type="button"
                 onClick={() => void openPreview("discharge_refusal_form")}
-                disabled={!canGenerateRefusalForm}
+                disabled={!canGenerateRefusalForm || !workflowActionsEnabled}
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
               >
                 <FileBadge2 className="h-4 w-4" />
@@ -651,7 +659,7 @@ export default function CaseDetailsPage() {
               <button
                 type="button"
                 onClick={() => void openPreview("financial_responsibility_notice")}
-                disabled={!canGenerateFinancialNotice}
+                disabled={!canGenerateFinancialNotice || !workflowActionsEnabled}
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
               >
                 <FileText className="h-4 w-4" />
@@ -663,7 +671,7 @@ export default function CaseDetailsPage() {
               <button
                 type="button"
                 onClick={() => void runWorkflowAction("mark_patient_counseled")}
-                disabled={!canMarkCounseled}
+                disabled={!canMarkCounseled || !workflowActionsEnabled}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-60"
               >
                 <MessageSquareHeart className="h-4 w-4" />
@@ -675,7 +683,7 @@ export default function CaseDetailsPage() {
               <button
                 type="button"
                 onClick={() => void runWorkflowAction("refer_social_services")}
-                disabled={!canReferSocialServices}
+                disabled={!canReferSocialServices || !workflowActionsEnabled}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-60"
               >
                 <HandHelping className="h-4 w-4" />
@@ -687,7 +695,7 @@ export default function CaseDetailsPage() {
               <button
                 type="button"
                 onClick={() => void runWorkflowAction("escalate_legal_compliance")}
-                disabled={!canEscalate}
+                disabled={!canEscalate || !workflowActionsEnabled}
                 className="inline-flex items-center gap-2 rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
               >
                 <Gavel className="h-4 w-4" />
@@ -742,6 +750,12 @@ export default function CaseDetailsPage() {
             <p className="mt-1 text-xs text-rose-700">
               {t("caseDetails.escalationBody")}
             </p>
+          </div>
+        ) : null}
+
+        {workflowBackendUnavailable ? (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Workflow actions are temporarily unavailable in this environment. Core case details are still accessible.
           </div>
         ) : null}
 
