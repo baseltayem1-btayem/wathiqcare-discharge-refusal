@@ -11,23 +11,48 @@ import { apiFetch, clearToken } from "@/utils/api";
 
 type DischargeCaseDetail = {
   id: string;
-  patient_mrn: string;
-  patient_name: string;
-  refusal_reason?: string;
-  signer_name?: string;
-  signer_role?: string;
-  signature_text?: string;
+  patientName?: string | null;
+  patientIdNumber?: string | null;
+  medicalRecordNo?: string | null;
+  roomNumber?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
-type CreateRefusalResponse = {
-  discharge_case_id: string;
+type CreateCaseResponse = {
+  id: string;
 };
 
-type WorkflowActionResponse = {
-  workflow: {
-    id: string;
-  };
-};
+function readMetadataField(
+  metadata: Record<string, unknown> | null | undefined,
+  ...keys: string[]
+): string {
+  if (!metadata) {
+    return "";
+  }
+
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === "string") {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function toDateTimeLocal(raw: string): string {
+  if (!raw) {
+    return "";
+  }
+
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const pad = (value: number) => `${value}`.padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 export default function NewCasePage() {
   const router = useRouter();
@@ -71,14 +96,34 @@ export default function NewCasePage() {
     setPrefillLoading(true);
     setError("");
 
-    apiFetch<DischargeCaseDetail>(`/api/discharge/cases/${fromCase}`)
+    apiFetch<DischargeCaseDetail>(`/api/cases/${fromCase}`)
       .then((existingCase) => {
-        setPatientMrn(existingCase.patient_mrn || "");
-        setPatientName(existingCase.patient_name || "");
-        setRefusalReason(existingCase.refusal_reason || "");
-        setSignerName(existingCase.signer_name || "");
-        setSignerRole(existingCase.signer_role || "");
-        setSignatureText(existingCase.signature_text || "");
+        const metadata =
+          existingCase.metadata && typeof existingCase.metadata === "object"
+            ? existingCase.metadata
+            : null;
+
+        setPatientMrn(
+          existingCase.medicalRecordNo ||
+            readMetadataField(metadata, "medical_record_number", "patient_mrn")
+        );
+        setPatientName(existingCase.patientName || readMetadataField(metadata, "patient_name"));
+        setPatientIdNumber(
+          existingCase.patientIdNumber || readMetadataField(metadata, "patient_id_number")
+        );
+        setRoomNumber(existingCase.roomNumber || readMetadataField(metadata, "room_number"));
+        setAttendingPhysician(readMetadataField(metadata, "attending_physician"));
+        setDischargeDecisionAt(toDateTimeLocal(readMetadataField(metadata, "discharge_decision_at")));
+        setDiscussionSummary(readMetadataField(metadata, "discussion_summary"));
+        setSocialAdministrativeInterventions(
+          readMetadataField(metadata, "social_administrative_interventions")
+        );
+        setInsuranceCoverageStatus(readMetadataField(metadata, "insurance_coverage_status"));
+
+        setRefusalReason(readMetadataField(metadata, "refusal_reason"));
+        setSignerName(readMetadataField(metadata, "signer_name"));
+        setSignerRole(readMetadataField(metadata, "signer_role"));
+        setSignatureText(readMetadataField(metadata, "signature_text"));
       })
       .catch((err) => {
         const message = err instanceof Error ? err.message : t("newCase.failedLoad");
@@ -98,19 +143,7 @@ export default function NewCasePage() {
     setSaving(true);
 
     try {
-      const response = await apiFetch<CreateRefusalResponse>("/api/discharge/refusal", {
-        method: "POST",
-        body: JSON.stringify({
-          patient_mrn: patientMrn,
-          patient_name: patientName,
-          refusal_reason: refusalReason,
-          signer_name: signerName,
-          signer_role: signerRole,
-          signature_text: signatureText,
-        }),
-      });
-
-      const workflowPayload = {
+      const metadata = {
         patient_name: patientName,
         patient_id_number: patientIdNumber,
         medical_record_number: patientMrn,
@@ -121,25 +154,26 @@ export default function NewCasePage() {
         discussion_summary: discussionSummary,
         social_administrative_interventions: socialAdministrativeInterventions,
         insurance_coverage_status: insuranceCoverageStatus,
+        signer_name: signerName,
+        signer_role: signerRole,
+        signature_text: signatureText,
       };
 
-      await apiFetch<WorkflowActionResponse>(`/api/discharge/cases/${response.discharge_case_id}/workflow/actions`, {
+      await apiFetch<CreateCaseResponse>("/api/cases", {
         method: "POST",
         body: JSON.stringify({
-          action: "record_discharge_decision",
-          payload: workflowPayload,
+          caseType: "DISCHARGE_REFUSAL",
+          workflowType: "discharge_refusal",
+          title: `Discharge refusal - ${patientName}`,
+          patientName,
+          patientIdNumber,
+          medicalRecordNo: patientMrn,
+          roomNumber,
+          metadata,
         }),
       });
 
-      await apiFetch<WorkflowActionResponse>(`/api/discharge/cases/${response.discharge_case_id}/workflow/actions`, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "start_refusal_workflow",
-          payload: workflowPayload,
-        }),
-      });
-
-      router.push(`/cases/${response.discharge_case_id}`);
+      router.push("/cases");
     } catch (err) {
       const message = err instanceof Error ? err.message : t("newCase.failedSave");
       setError(message);
