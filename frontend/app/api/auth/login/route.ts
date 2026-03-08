@@ -1,154 +1,102 @@
+import crypto from "node:crypto";
 import { NextResponse } from "next/server";
-import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
+import { prisma } from "@/lib/server/prisma";
 import { ApiError, handleApiError } from "@/lib/server/http";
+import bcrypt from "bcryptjs";
 
-function normalizeUrl(value: string): string {
-  return value.replace(/\/$/, "");
+type LoginPayload = {
+  email?: string;
+  password?: string;
+};
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET_KEY;
+  if (!secret || secret === "change-me") {
+    throw new ApiError(500, "JWT_SECRET_KEY is not configured");
+  }
+  return secret;
 }
 
-function isRedirectStatus(status: number): boolean {
-  return status === 301 || status === 302 || status === 303 || status === 307 || status === 308;
+function getTokenTtlSeconds(): number {
+  const raw = process.env.ACCESS_TOKEN_EXPIRE_MINUTES ?? "60";
+  const minutes = Number(raw);
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    throw new ApiError(500, "ACCESS_TOKEN_EXPIRE_MINUTES is invalid");
+  }
+  return Math.floor(minutes * 60);
 }
 
-function buildLoginTargets(request: Request, configuredBaseUrl: string | null): string[] {
-  const targets = new Set<string>();
-  const currentRequestUrl = normalizeUrl(request.url);
+function base64UrlEncode(value: string): string {
+  return Buffer.from(value, "utf8").toString("base64url");
+}
 
-  const addTarget = (value: string) => {
-    const normalized = normalizeUrl(value);
-    if (normalized === currentRequestUrl) {
-      return;
-    }
-    targets.add(normalized);
+function createAccessToken(payload: Record<string, unknown>, secret: string): string {
+  const header = {
+    alg: "HS256",
+    typ: "JWT",
   };
 
-  if (configuredBaseUrl) {
-    const normalizedBase = normalizeUrl(configuredBaseUrl);
-    addTarget(`${normalizedBase}/auth/login`);
-    addTarget(`${normalizedBase}/api/auth/login`);
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const data = `${encodedHeader}.${encodedPayload}`;
 
-    if (normalizedBase.endsWith("/api")) {
-      const withoutApiSuffix = normalizedBase.slice(0, -4);
-      if (withoutApiSuffix.length > 0) {
-        addTarget(`${withoutApiSuffix}/auth/login`);
-        addTarget(`${withoutApiSuffix}/api/auth/login`);
-      }
-    }
+  const signature = crypto
+    .createHmac("sha256", secret)
+    .update(data)
+    .digest("base64url");
 
-    // If the configured base URL contains path segments (for example /v1 or /api/v1),
-    // also try the host root to handle mismatched deployment path prefixes.
-    try {
-      const parsed = new URL(normalizedBase);
-      const origin = normalizeUrl(parsed.origin);
-      addTarget(`${origin}/auth/login`);
-      addTarget(`${origin}/api/auth/login`);
-    } catch {
-      // Ignore malformed URLs and rely on the direct configured base value.
-    }
-  }
-
-  // Same-origin fallback relies on Next.js rewrite rules.
-  addTarget(new URL("/auth/login", request.url).toString());
-
-  return [...targets];
+  return `${data}.${signature}`;
 }
 
 export async function POST(request: Request) {
   try {
-    const payload = (await request.json().catch(() => null)) as {
-      email?: string;
-      password?: string;
-    } | null;
+    if (!process.env.DATABASE_URL) {
+      throw new ApiError(500, "DATABASE_URL is not configured");
+    }
 
-    if (!payload?.email || !payload?.password) {
+    const payload = (await request.json().catch(() => null)) as LoginPayload | null;
+    const email = payload?.email?.trim().toLowerCase();
+    const password = payload?.password;
+
+    if (!email || !password) {
       throw new ApiError(400, "Email and password are required");
     }
 
-    const configuredBaseUrl = getConfiguredBackendApiBaseUrl();
-    const targets = buildLoginTargets(request, configuredBaseUrl);
-
-    let backendResponse: Response | null = null;
-    let lastNotFoundResponse: Response | null = null;
-    let lastRedirectResponse: Response | null = null;
-    let lastServerErrorResponse: Response | null = null;
-
-    for (const target of targets) {
-      try {
-        const response = await fetch(target, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        primaryTenant: {
+          select: {
+            code: true,
           },
-          body: JSON.stringify(payload),
-          cache: "no-store",
-          redirect: "manual",
-        });
+        },
+      },
+    });
 
-        if (isRedirectStatus(response.status)) {
-          lastRedirectResponse = response;
-          continue;
-        }
-
-        if (response.status === 404 || response.status === 405) {
-          lastNotFoundResponse = response;
-          continue;
-        }
-
-        if (response.status >= 500) {
-          lastServerErrorResponse = response;
-          continue;
-        }
-
-        backendResponse = response;
-        break;
-      } catch {
-        backendResponse = null;
-      }
+    if (!user || !user.hashedPassword || !user.isActive) {
+      throw new ApiError(401, "Invalid credentials");
     }
 
-    if (!backendResponse) {
-      backendResponse = lastNotFoundResponse ?? lastRedirectResponse ?? lastServerErrorResponse;
+    const validPassword = await bcrypt.compare(password, user.hashedPassword);
+    if (!validPassword) {
+      throw new ApiError(401, "Invalid credentials");
     }
 
-    if (!backendResponse) {
-      throw new ApiError(502, "Authentication service is unavailable");
-    }
+    const secret = getJwtSecret();
+    const now = Math.floor(Date.now() / 1000);
+    const exp = now + getTokenTtlSeconds();
 
-    const body = await backendResponse.json().catch(() => ({}));
-    if (!backendResponse.ok) {
-      const backendDetail =
-        typeof body?.detail === "string" && body.detail.trim().length > 0
-          ? body.detail
-          : "";
-
-      if (backendResponse.status >= 500) {
-        throw new ApiError(502, "Authentication service is unavailable");
-      }
-
-      if (isRedirectStatus(backendResponse.status)) {
-        throw new ApiError(502, "Authentication service redirected unexpectedly");
-      }
-
-      if (backendResponse.status === 404 || backendResponse.status === 405) {
-        throw new ApiError(502, "Authentication service endpoint is unavailable");
-      }
-
-      if (backendResponse.status === 400 || backendResponse.status === 401) {
-        throw new ApiError(backendResponse.status, backendDetail || "Invalid credentials");
-      }
-
-      throw new ApiError(backendResponse.status, backendDetail || "Authentication request failed");
-    }
-
-    const contentType = backendResponse.headers.get("content-type") ?? "";
-    if (!contentType.includes("application/json")) {
-      throw new ApiError(502, "Authentication service returned non-JSON response");
-    }
-
-    const accessToken = body?.access_token;
-    if (typeof accessToken !== "string" || accessToken.length === 0) {
-      throw new ApiError(502, "Backend auth response missing token");
-    }
+    const accessToken = createAccessToken(
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        tenant_id: user.tenantId,
+        tenant_code: user.primaryTenant?.code ?? null,
+        exp,
+      },
+      secret,
+    );
 
     const response = NextResponse.json({ access_token: accessToken });
     response.cookies.set("wathiqcare_access_token", accessToken, {
@@ -156,7 +104,7 @@ export async function POST(request: Request) {
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60,
+      maxAge: getTokenTtlSeconds(),
     });
 
     return response;
