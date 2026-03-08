@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckSquare, LogIn, Square } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -58,6 +59,19 @@ export default function LoginPage() {
 
             <div className="p-5 md:p-7 lg:p-9" dir={isRtl ? "rtl" : "ltr"}>
               <div className="mx-auto w-full max-w-xl rounded-2xl border border-slate-200 bg-slate-50/70 p-5 md:p-6">
+                <div className="mb-5 flex justify-center">
+                  <div className="relative w-[160px] sm:w-[190px] md:w-[210px]">
+                    <Image
+                      src="https://cdn.phototourl.com/uploads/2026-03-08-8e081936-6059-4849-a3de-b482e86049fd.png"
+                      alt="WathiqCare"
+                      width={420}
+                      height={120}
+                      className="h-auto w-full object-contain"
+                      priority
+                    />
+                  </div>
+                </div>
+
                 <h2 className="text-2xl font-semibold text-slate-900">{t("login.formTitle")}</h2>
                 <p className="mt-2 text-sm text-slate-600">{t("login.formSubtitle")}</p>
 

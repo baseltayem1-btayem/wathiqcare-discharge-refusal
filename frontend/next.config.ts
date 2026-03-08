@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: monorepoRoot,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.phototourl.com",
+        pathname: "/**",
+      },
+    ],
+  },
 
   async rewrites() {
     const backendBaseUrl =
