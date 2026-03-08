@@ -219,6 +219,53 @@ mobile/tablet arrangement.
 
 ---
 
+### 10. Patient Signature Proof Engine
+
+The platform now includes an additive **Patient Signature Proof Engine** for
+approved discharge-refusal policy documents. The implementation is intentionally
+non-destructive and backward-compatible with existing workflows.
+
+Supported acknowledgment methods:
+- `SMS_OTP`
+- `NAFATH`
+- `TABLET_SIGNATURE`
+
+Key backend modules:
+- `backend/signature/acknowledgment_engine.py`: provider abstraction and method availability matrix
+- `backend/signature/providers/sms_otp_provider.py`: SMS OTP dispatch/verify with safe stub mode
+- `backend/signature/providers/nafath_provider.py`: provider-ready Nafath hook with feature/config guard
+- `backend/signature/providers/tablet_signature_provider.py`: tablet signature capture + integrity hash
+- `backend/signature/evidence/evidence_bundle_builder.py`: evidentiary bundle generation and persistence
+- `backend/signature/signature_proof_service.py`: end-to-end orchestration (method flow, evidence, audit, final document)
+
+Official form rendering:
+- `backend/forms/discharge_refusal/template.py`
+- `backend/forms/financial_responsibility/template.py`
+
+Both wrappers reuse the existing approved template renderers from
+`backend/forms/workflow_templates.py`, preserving approved policy text exactly.
+
+Evidence bundle includes:
+- case and patient identifiers already present in the workflow
+- document type/version and stable content hash
+- selected acknowledgment method
+- timestamps (`otp_sent_at`, `otp_verified_at`, `signed_at`, `verified_at`) when applicable
+- provider result summary
+- staff/device/session context
+- final document references (HTML/PDF path)
+- linked audit event IDs
+
+Safe fallback behavior:
+- SMS remains available via stub mode when provider config is absent.
+- Nafath is exposed as provider-ready; when unconfigured it returns a safe
+  unavailable state without breaking routes/UI.
+- Tablet signature remains available locally without external dependencies.
+
+No existing auth/login flows, stable routes, environment files, or deployment
+config files were modified for this feature.
+
+---
+
 ## Data Flow
 
 ```
