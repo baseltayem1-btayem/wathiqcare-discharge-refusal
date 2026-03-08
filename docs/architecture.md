@@ -197,6 +197,28 @@ Future backend persistence can be added behind dedicated workflow endpoints
 
 ---
 
+### 9. Login UI Aligned With Dashboard Theme
+
+The login page now follows the same visual language as the active WathiqCare
+dashboard experience:
+- soft light background and rounded card surfaces
+- dark navy primary action button styling
+- subtle slate/cyan borders and restrained shadows
+- sidebar-card inspired brand panel
+
+The implementation is RTL-first for Arabic presentation while preserving
+English support through existing i18n translation keys.
+
+Authentication behavior is unchanged:
+- same login route and submit contract (`/api/auth/login`)
+- same token persistence path
+- same post-login navigation behavior
+
+The layout is responsive with a two-panel desktop composition and a stacked
+mobile/tablet arrangement.
+
+---
+
 ## Data Flow
 
 ```
