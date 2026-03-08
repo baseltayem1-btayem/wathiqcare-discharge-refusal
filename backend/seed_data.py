@@ -79,7 +79,7 @@ try:
         email="admin@wathiqcare.online",
         full_name="WathiqCare Admin",
         role="tenant_admin",
-        password="ChangeMe123!",
+        password="WCare@2026",
     )
 
     db.commit()
