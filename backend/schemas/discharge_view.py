@@ -1,5 +1,24 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
+
+
+class WorkflowCaseDocumentItem(BaseModel):
+    id: str
+    template_key: str
+    document_code: Optional[str] = None
+    title: str
+    file_name: str
+    generated_at: Optional[str] = None
+
+
+class PolicyDocumentationSnapshot(BaseModel):
+    decision_recorded_at: Optional[str] = None
+    discussion_summary: Optional[str] = None
+    refusal_reasons: Optional[str] = None
+    forms_issued: Optional[str] = None
+    social_administrative_interventions: Optional[str] = None
+    last_validated_at: Optional[str] = None
+    last_validation_status: Optional[str] = None
 
 
 class DischargeCaseListItem(BaseModel):
@@ -29,6 +48,8 @@ class DischargeCaseDetail(BaseModel):
     signed_at: Optional[str] = None
     pdf_file: Optional[str] = None
     created_at: Optional[str] = None
+    generated_documents: List[WorkflowCaseDocumentItem] = Field(default_factory=list)
+    policy_documentation: Optional[PolicyDocumentationSnapshot] = None
 
 
 class AuditLogItem(BaseModel):

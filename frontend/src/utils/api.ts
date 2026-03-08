@@ -42,7 +42,12 @@ function getErrorMessage(status: number, statusText: string, body: unknown): str
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const isAbsoluteUrl = /^https?:\/\//i.test(path);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const url = isAbsoluteUrl ? path : `${API_BASE_URL}${normalizedPath}`;
+  const isNextApiRoute = normalizedPath.startsWith("/api/");
+  const url = isAbsoluteUrl
+    ? path
+    : isNextApiRoute
+      ? normalizedPath
+      : `${API_BASE_URL}${normalizedPath}`;
 
   const headers = new Headers(init.headers ?? {});
   const hasBody = init.body !== undefined && init.body !== null;

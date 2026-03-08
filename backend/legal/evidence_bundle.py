@@ -17,6 +17,39 @@ PDF_DIR = Path("backend/generated")
 BUNDLE_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def build_discharge_refusal_bundle(order: Any, refusal: Any, pdf_path: str) -> str:
+    """
+    Backward-compatible helper used by in-memory workflow tests.
+
+    Creates a small evidence zip from runtime objects without requiring DB records.
+    """
+    order_id = str(getattr(order, "order_id", "unknown-order"))
+    refusal_id = str(getattr(refusal, "refusal_id", "unknown-refusal"))
+
+    bundle_name = f"discharge_refusal_bundle_{order_id}_{refusal_id}.zip"
+    bundle_path = BUNDLE_DIR / bundle_name
+
+    payload = {
+        "generated_at": _utc_now_iso(),
+        "order_id": order_id,
+        "patient_id": str(getattr(order, "patient_id", "")),
+        "physician_id": str(getattr(order, "physician_id", "")),
+        "diagnosis_codes": list(getattr(order, "diagnosis_codes", []) or []),
+        "refusal_id": refusal_id,
+        "refusal_reason": str(getattr(refusal, "reason", "")),
+        "pdf_file": Path(pdf_path).name if pdf_path else None,
+    }
+
+    with zipfile.ZipFile(bundle_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("refusal_summary.json", json.dumps(payload, ensure_ascii=True, indent=2))
+
+        pdf_file_path = Path(pdf_path)
+        if pdf_path and pdf_file_path.exists():
+            archive.write(pdf_file_path, arcname=pdf_file_path.name)
+
+    return str(bundle_path)
+
+
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 

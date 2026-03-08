@@ -2,6 +2,7 @@ from pathlib import Path
 
 from backend.core.database import SessionLocal
 from backend.models.discharge_case import DischargeCase
+from backend.models.discharge_workflow import DischargeRefusalWorkflow
 from backend.models.patient import Patient
 from backend.models.audit_log import AuditLog
 
@@ -52,6 +53,42 @@ def get_discharge_case_detail(tenant_id: str, case_id: str):
             return None
 
         case, patient = row
+        workflow = (
+            db.query(DischargeRefusalWorkflow)
+            .filter(
+                DischargeRefusalWorkflow.tenant_id == tenant_id,
+                DischargeRefusalWorkflow.case_id == case.id,
+            )
+            .first()
+        )
+
+        generated_documents = []
+        if workflow:
+            for document in workflow.documents:
+                generated_documents.append(
+                    {
+                        "id": document.id,
+                        "template_key": document.template_key,
+                        "document_code": document.document_code,
+                        "title": document.title,
+                        "file_name": document.file_name,
+                        "generated_at": document.generated_at.isoformat() if document.generated_at else None,
+                    }
+                )
+
+        policy_documentation = None
+        if workflow and workflow.case_documentation:
+            case_doc = workflow.case_documentation
+            policy_documentation = {
+                "decision_recorded_at": case_doc.decision_recorded_at.isoformat() if case_doc.decision_recorded_at else None,
+                "discussion_summary": case_doc.discussion_summary,
+                "refusal_reasons": case_doc.refusal_reasons,
+                "forms_issued": case_doc.forms_issued,
+                "social_administrative_interventions": case_doc.social_administrative_interventions,
+                "last_validated_at": case_doc.last_validated_at.isoformat() if case_doc.last_validated_at else None,
+                "last_validation_status": case_doc.last_validation_status,
+            }
+
         return {
             "id": case.id,
             "tenant_id": case.tenant_id,
@@ -67,6 +104,8 @@ def get_discharge_case_detail(tenant_id: str, case_id: str):
             "signed_at": case.signed_at.isoformat() if case.signed_at else None,
             "pdf_file": case.pdf_file,
             "created_at": case.created_at.isoformat() if case.created_at else None,
+            "generated_documents": generated_documents,
+            "policy_documentation": policy_documentation,
         }
     finally:
         db.close()

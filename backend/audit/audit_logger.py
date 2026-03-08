@@ -1,194 +1,198 @@
 """
-discharge_engine.py
-Clinical discharge workflow engine for WathiqCare.
+audit_logger.py
+Immutable, hash-chained audit logging for WathiqCare workflows.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List, Optional
-
-from backend.icd11.validator import ICD11Validator
-from backend.forms.pdf_generator import generate_discharge_refusal_pdf
-from backend.legal.evidence_bundle import build_discharge_refusal_bundle
-from backend.audit.audit_logger import AuditLogger, UserRole
+from typing import Iterable, List, Optional
 
 
-class DischargeStatus(str, Enum):
-    ORDERED = "ORDERED"
-    REFUSED = "REFUSED"
-    ACCEPTED = "ACCEPTED"
-    ESCALATED = "ESCALATED"
-    RESOLVED = "RESOLVED"
+class UserRole(str, Enum):
+    DOCTOR = "DOCTOR"
+    NURSE = "NURSE"
+    LEGAL_OFFICER = "LEGAL_OFFICER"
+    ADMIN = "ADMIN"
 
 
-@dataclass
-class DischargeOrder:
-    order_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    patient_id: str = ""
-    physician_id: str = ""
-    diagnosis_codes: List[str] = field(default_factory=list)
-    discharge_notes: str = ""
-    ordered_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    status: DischargeStatus = DischargeStatus.ORDERED
+@dataclass(frozen=True)
+class AuditEntry:
+    entry_id: str
+    timestamp: str
+    actor_id: str
+    actor_role: str
+    event_category: str
+    event_action: str
+    resource_id: str
+    resource_type: str
+    outcome: str
+    details: Optional[str]
+    previous_hash: str
+    entry_hash: str
 
 
-@dataclass
-class RefusalRecord:
-    refusal_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    order_id: str = ""
-    patient_id: str = ""
-    reason: str = ""
-    refused_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    witness_id: Optional[str] = None
-    nurse_id: Optional[str] = None
-    pdf_path: Optional[str] = None
-    bundle_path: Optional[str] = None
+class AuditLogger:
+    def __init__(self) -> None:
+        self._entries: List[AuditEntry] = []
 
-
-class DischargeEngine:
-    def __init__(self, icd11_validator: Optional[ICD11Validator] = None) -> None:
-        self._validator = icd11_validator or ICD11Validator()
-        self._orders: dict[str, DischargeOrder] = {}
-        self._refusals: dict[str, RefusalRecord] = {}
-        self._audit = AuditLogger()
-
-    def create_discharge_order(
+    def log(
         self,
-        patient_id: str,
-        physician_id: str,
-        diagnosis_codes: List[str],
-        discharge_notes: str = "",
-    ) -> DischargeOrder:
-        invalid = [c for c in diagnosis_codes if not self._validator.is_valid(c)]
-        if invalid:
-            raise ValueError(f"Invalid ICD-11 code(s): {invalid}")
+        actor_id: str,
+        actor_role: UserRole | str,
+        event_category: str,
+        event_action: str,
+        resource_id: str,
+        resource_type: str,
+        outcome: str = "SUCCESS",
+        details: Optional[str] = None,
+    ) -> AuditEntry:
+        normalized_role = self._normalize_role(actor_role)
+        previous_hash = self._entries[-1].entry_hash if self._entries else "GENESIS"
+        timestamp = datetime.now(timezone.utc).isoformat()
 
-        order = DischargeOrder(
-            patient_id=patient_id,
-            physician_id=physician_id,
-            diagnosis_codes=diagnosis_codes,
-            discharge_notes=discharge_notes,
+        entry_id = str(uuid.uuid4())
+        hash_payload = {
+            "entry_id": entry_id,
+            "timestamp": timestamp,
+            "actor_id": actor_id,
+            "actor_role": normalized_role,
+            "event_category": event_category,
+            "event_action": event_action,
+            "resource_id": resource_id,
+            "resource_type": resource_type,
+            "outcome": outcome,
+            "details": details,
+            "previous_hash": previous_hash,
+        }
+
+        entry_hash = self._compute_hash(hash_payload)
+        entry = AuditEntry(
+            entry_id=entry_id,
+            timestamp=timestamp,
+            actor_id=actor_id,
+            actor_role=normalized_role,
+            event_category=event_category,
+            event_action=event_action,
+            resource_id=resource_id,
+            resource_type=resource_type,
+            outcome=outcome,
+            details=details,
+            previous_hash=previous_hash,
+            entry_hash=entry_hash,
         )
-        self._orders[order.order_id] = order
 
-        self._audit.log(
-            actor_id=physician_id,
-            actor_role=UserRole.DOCTOR,
-            event_category="DISCHARGE_ORDER",
-            event_action="CREATE",
-            resource_id=order.order_id,
-            resource_type="DischargeOrder",
-            outcome="SUCCESS",
-        )
+        self._entries.append(entry)
+        return entry
 
-        return order
-
-    def get_order(self, order_id: str) -> DischargeOrder:
-        try:
-            return self._orders[order_id]
-        except KeyError:
-            raise KeyError(f"Discharge order not found: {order_id}") from None
-
-    def record_patient_refusal(
+    def get_entries(
         self,
-        order_id: str,
-        patient_id: str,
-        reason: str,
-        witness_id: Optional[str] = None,
-        nurse_id: Optional[str] = None,
-    ) -> RefusalRecord:
-        order = self.get_order(order_id)
+        requester_role: UserRole | str,
+        *,
+        event_category: Optional[str] = None,
+        resource_id: Optional[str] = None,
+    ) -> List[AuditEntry]:
+        normalized_role = self._normalize_role(requester_role)
+        self._ensure_read_permission(normalized_role, event_category)
 
-        if order.patient_id != patient_id:
-            raise ValueError("Patient ID does not match the discharge order.")
+        allowed_categories = self._allowed_categories(normalized_role)
 
-        refusal = RefusalRecord(
-            order_id=order_id,
-            patient_id=patient_id,
-            reason=reason,
-            witness_id=witness_id,
-            nurse_id=nurse_id,
-        )
+        filtered = self._entries
+        if event_category:
+            filtered = [entry for entry in filtered if entry.event_category == event_category]
+        elif normalized_role != UserRole.ADMIN.value:
+            filtered = [entry for entry in filtered if entry.event_category in allowed_categories]
 
-        self._refusals[refusal.refusal_id] = refusal
-        order.status = DischargeStatus.REFUSED
+        if resource_id:
+            filtered = [entry for entry in filtered if entry.resource_id == resource_id]
 
-        self._audit.log(
-            actor_id=nurse_id or "SYSTEM",
-            actor_role=UserRole.NURSE if nurse_id else UserRole.ADMIN,
-            event_category="REFUSAL_RECORD",
-            event_action="CREATE",
-            resource_id=refusal.refusal_id,
-            resource_type="RefusalRecord",
-            outcome="SUCCESS",
-        )
+        return filtered
 
-        pdf_path = generate_discharge_refusal_pdf(
-            order_id=order.order_id,
-            patient_id=order.patient_id,
-            physician_id=order.physician_id,
-            diagnosis=", ".join(order.diagnosis_codes),
-            refusal_reason=reason,
-        )
-        refusal.pdf_path = pdf_path
+    def entry_count(self) -> int:
+        return len(self._entries)
 
-        self._audit.log(
-            actor_id="SYSTEM",
-            actor_role=UserRole.ADMIN,
-            event_category="REFUSAL_FORM",
-            event_action="GENERATE_PDF",
-            resource_id=refusal.refusal_id,
-            resource_type="RefusalRecord",
-            outcome="SUCCESS",
-        )
+    def verify_chain(self) -> bool:
+        previous_hash = "GENESIS"
 
-        bundle_result = build_discharge_refusal_bundle(
-            order=order,
-            refusal=refusal,
-            pdf_path=pdf_path,
-        )
+        for entry in self._entries:
+            if entry.previous_hash != previous_hash:
+                return False
 
-        if isinstance(bundle_result, str):
-            refusal.bundle_path = bundle_result
-        elif isinstance(bundle_result, dict) and "bundle_path" in bundle_result:
-            refusal.bundle_path = bundle_result["bundle_path"]
-        else:
-            refusal.bundle_path = None
+            hash_payload = {
+                "entry_id": entry.entry_id,
+                "timestamp": entry.timestamp,
+                "actor_id": entry.actor_id,
+                "actor_role": entry.actor_role,
+                "event_category": entry.event_category,
+                "event_action": entry.event_action,
+                "resource_id": entry.resource_id,
+                "resource_type": entry.resource_type,
+                "outcome": entry.outcome,
+                "details": entry.details,
+                "previous_hash": entry.previous_hash,
+            }
+            expected = self._compute_hash(hash_payload)
+            if expected != entry.entry_hash:
+                return False
 
-        self._audit.log(
-            actor_id="SYSTEM",
-            actor_role=UserRole.ADMIN,
-            event_category="REFUSAL_DOCUMENTATION",
-            event_action="BUILD_EVIDENCE_BUNDLE",
-            resource_id=refusal.refusal_id,
-            resource_type="RefusalRecord",
-            outcome="SUCCESS",
-        )
+            previous_hash = entry.entry_hash
 
-        return refusal
+        return True
 
-    def get_refusal(self, refusal_id: str) -> RefusalRecord:
-        try:
-            return self._refusals[refusal_id]
-        except KeyError:
-            raise KeyError(f"Refusal record not found: {refusal_id}") from None
+    def to_dicts(self) -> List[dict]:
+        return [asdict(entry) for entry in self._entries]
 
-    def update_order_status(self, order_id: str, status: DischargeStatus) -> DischargeOrder:
-        order = self.get_order(order_id)
-        order.status = status
+    @staticmethod
+    def _compute_hash(payload: dict) -> str:
+        serialized = json.dumps(payload, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
-        self._audit.log(
-            actor_id="SYSTEM",
-            actor_role=UserRole.ADMIN,
-            event_category="SYSTEM",
-            event_action="UPDATE_ORDER_STATUS",
-            resource_id=order.order_id,
-            resource_type="DischargeOrder",
-            outcome="SUCCESS",
-        )
+    @staticmethod
+    def _normalize_role(role: UserRole | str) -> str:
+        if isinstance(role, UserRole):
+            return role.value
+        normalized = str(role).strip().upper()
+        if normalized not in {item.value for item in UserRole}:
+            raise ValueError(f"Unsupported user role: {role}")
+        return normalized
 
-        return order
+    @staticmethod
+    def _allowed_categories(role: str) -> Iterable[str]:
+        if role == UserRole.ADMIN.value:
+            return {
+                "SYSTEM",
+                "DISCHARGE_ORDER",
+                "REFUSAL_RECORD",
+                "REFUSAL_FORM",
+                "REFUSAL_DOCUMENTATION",
+                "LEGAL_CASE",
+                "ESCALATION",
+                "ICD11_VALIDATION",
+            }
+
+        if role == UserRole.DOCTOR.value:
+            return {"DISCHARGE_ORDER", "REFUSAL_RECORD", "ICD11_VALIDATION"}
+
+        if role == UserRole.NURSE.value:
+            return {"REFUSAL_RECORD", "REFUSAL_FORM"}
+
+        if role == UserRole.LEGAL_OFFICER.value:
+            return {"LEGAL_CASE", "ESCALATION", "REFUSAL_DOCUMENTATION"}
+
+        return set()
+
+    def _ensure_read_permission(self, role: str, event_category: Optional[str]) -> None:
+        if role == UserRole.ADMIN.value:
+            return
+
+        if event_category is None:
+            return
+
+        allowed = set(self._allowed_categories(role))
+        if event_category not in allowed:
+            raise PermissionError(f"Role '{role}' cannot access event category '{event_category}'")

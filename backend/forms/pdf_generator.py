@@ -2,13 +2,29 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
 
 GENERATED_DIR = Path("backend/generated")
 GENERATED_DIR.mkdir(parents=True, exist_ok=True)
 
-def generate_discharge_refusal_pdf(data: dict) -> str:
-    filename = f"refusal_{data['discharge_case_id']}.pdf"
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+def _normalize_payload(data: Optional[Dict[str, Any]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    payload: Dict[str, Any] = dict(data or {})
+    payload.update(kwargs)
+
+    if not payload.get("discharge_case_id"):
+        payload["discharge_case_id"] = payload.get("order_id") or _utc_now().strftime("%Y%m%d%H%M%S")
+
+    return payload
+
+
+def generate_discharge_refusal_pdf(data: Optional[Dict[str, Any]] = None, **kwargs: Any) -> str:
+    payload = _normalize_payload(data, kwargs)
+    filename = f"refusal_{payload['discharge_case_id']}.pdf"
     filepath = GENERATED_DIR / filename
 
     c = canvas.Canvas(str(filepath), pagesize=A4)
@@ -21,7 +37,7 @@ def generate_discharge_refusal_pdf(data: dict) -> str:
 
     y -= 12 * mm
     c.setFont("Helvetica", 11)
-    c.drawString(20 * mm, y, f"Generated At: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    c.drawString(20 * mm, y, f"Generated At: {_utc_now().strftime('%Y-%m-%d %H:%M:%S')} UTC")
 
     y -= 12 * mm
     c.setFont("Helvetica-Bold", 12)
@@ -30,12 +46,12 @@ def generate_discharge_refusal_pdf(data: dict) -> str:
     y -= 8 * mm
     c.setFont("Helvetica", 11)
     lines = [
-        f"Tenant Code: {data.get('tenant_code', '')}",
-        f"Patient MRN: {data.get('patient_mrn', '')}",
-        f"Patient Name: {data.get('patient_name', '')}",
-        f"User Email: {data.get('user_email', '')}",
-        f"Discharge Case ID: {data.get('discharge_case_id', '')}",
-        f"Status: {data.get('status', '')}",
+        f"Tenant Code: {payload.get('tenant_code', '')}",
+        f"Patient MRN: {payload.get('patient_mrn', '')}",
+        f"Patient Name: {payload.get('patient_name', '')}",
+        f"User Email: {payload.get('user_email', '')}",
+        f"Discharge Case ID: {payload.get('discharge_case_id', '')}",
+        f"Status: {payload.get('status', '')}",
     ]
 
     for line in lines:
@@ -49,7 +65,7 @@ def generate_discharge_refusal_pdf(data: dict) -> str:
     y -= 8 * mm
     c.setFont("Helvetica", 11)
 
-    refusal_reason = data.get("refusal_reason", "")
+    refusal_reason = payload.get("refusal_reason", "")
     wrapped_lines = []
     words = refusal_reason.split()
     current_line = ""
@@ -75,10 +91,10 @@ def generate_discharge_refusal_pdf(data: dict) -> str:
     y -= 8 * mm
     c.setFont("Helvetica", 11)
     signer_lines = [
-        f"Signer Name: {data.get('signer_name', '')}",
-        f"Signer Role: {data.get('signer_role', '')}",
-        f"Signed At: {data.get('signed_at', '')}",
-        f"Signature Text: {data.get('signature_text', '')}",
+        f"Signer Name: {payload.get('signer_name', '')}",
+        f"Signer Role: {payload.get('signer_role', '')}",
+        f"Signed At: {payload.get('signed_at', '')}",
+        f"Signature Text: {payload.get('signature_text', '')}",
     ]
     for line in signer_lines:
         c.drawString(20 * mm, y, line)

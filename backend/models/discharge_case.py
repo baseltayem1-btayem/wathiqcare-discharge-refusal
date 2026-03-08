@@ -28,3 +28,21 @@ class DischargeCase(Base):
     patient = relationship("Patient")
     user = relationship("User")
     tenant = relationship("Tenant")
+    workflow = relationship(
+        "DischargeRefusalWorkflow",
+        back_populates="case",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    workflow_documents = relationship(
+        "DischargeWorkflowDocument",
+        back_populates="case",
+        cascade="all, delete-orphan",
+        order_by="DischargeWorkflowDocument.generated_at.desc()",
+    )
+    workflow_case_documentation = relationship(
+        "DischargeWorkflowCaseDocumentation",
+        back_populates="case",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
