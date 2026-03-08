@@ -3,17 +3,20 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch, clearToken } from "../../src/lib/api";
+import { apiFetch, clearToken } from "@/utils/api";
 
 type CaseItem = {
   id: string;
-  patient_mrn: string;
-  patient_name: string;
+  patient_mrn?: string;
+  patient_name?: string;
+  medicalRecordNo?: string;
+  patientName?: string;
   status: string;
   refusal_reason?: string;
   signer_name?: string;
   signer_role?: string;
   pdf_file?: string;
+  createdAt?: string;
   created_at?: string;
 };
 
@@ -24,7 +27,7 @@ export default function CasesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch("/api/discharge/cases")
+    apiFetch<CaseItem[]>("/api/cases")
       .then((data) => setCases(data as CaseItem[]))
       .catch((err) => {
         setError(err.message);
@@ -75,13 +78,13 @@ export default function CasesPage() {
               <tbody>
                 {cases.map((item) => (
                   <tr key={item.id} className="border-t">
-                    <td className="px-4 py-3">{item.patient_mrn}</td>
-                    <td className="px-4 py-3">{item.patient_name}</td>
+                    <td className="px-4 py-3">{item.medicalRecordNo || item.patient_mrn || "-"}</td>
+                    <td className="px-4 py-3">{item.patientName || item.patient_name || "-"}</td>
                     <td className="px-4 py-3">{item.status}</td>
                     <td className="px-4 py-3 text-slate-700">
-                      {item.signer_name} {item.signer_role ? `(${item.signer_role})` : ""}
+                      {item.signer_name ? `${item.signer_name}${item.signer_role ? ` (${item.signer_role})` : ""}` : "-"}
                     </td>
-                    <td className="px-4 py-3">{item.created_at || "-"}</td>
+                    <td className="px-4 py-3">{item.createdAt || item.created_at || "-"}</td>
                     <td className="px-4 py-3">
                       <Link
                         href={`/cases/${item.id}`}
