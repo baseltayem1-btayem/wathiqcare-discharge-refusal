@@ -13,6 +13,7 @@ const {
 const prisma = new PrismaClient();
 
 const DEMO_PASSWORD_HASH = "$2b$12$UDpU/m7nylRxuya184DaUO0nR/W/axLZf0yYR2cIJlElFRerSiGZq";
+const PRODUCTION_ADMIN_PASSWORD_HASH = "$2b$12$qLNuStRuC7vGTJMn7L4WyuVuLSj/UnTceQQkS8uOCQ5RjgObOOEgG";
 
 async function seedPlans() {
   const plans = [
@@ -277,14 +278,83 @@ async function seedDemoTenant() {
   return { tenant, owner };
 }
 
+async function seedProductionAdmin() {
+  const tenant = await prisma.tenant.upsert({
+    where: { code: "wathiqcare" },
+    update: {
+      name: "WathiqCare",
+      domain: "wathiqcare.online",
+      isActive: true,
+      metadata: {
+        seededBy: "prisma-seed",
+        environment: "production",
+      },
+    },
+    create: {
+      name: "WathiqCare",
+      code: "wathiqcare",
+      domain: "wathiqcare.online",
+      isActive: true,
+      metadata: {
+        seededBy: "prisma-seed",
+        environment: "production",
+      },
+    },
+  });
+
+  const user = await prisma.user.upsert({
+    where: { email: "admin@wathiqcare.online" },
+    update: {
+      tenantId: tenant.id,
+      fullName: "WathiqCare Admin",
+      role: "tenant_admin",
+      isActive: true,
+      hashedPassword: PRODUCTION_ADMIN_PASSWORD_HASH,
+    },
+    create: {
+      tenantId: tenant.id,
+      email: "admin@wathiqcare.online",
+      fullName: "WathiqCare Admin",
+      role: "tenant_admin",
+      isActive: true,
+      hashedPassword: PRODUCTION_ADMIN_PASSWORD_HASH,
+    },
+  });
+
+  await prisma.tenantMembership.upsert({
+    where: {
+      tenantId_userId: {
+        tenantId: tenant.id,
+        userId: user.id,
+      },
+    },
+    update: {
+      role: MembershipRole.ADMIN,
+      status: MembershipStatus.ACTIVE,
+    },
+    create: {
+      tenantId: tenant.id,
+      userId: user.id,
+      role: MembershipRole.ADMIN,
+      status: MembershipStatus.ACTIVE,
+    },
+  });
+
+  return { tenant, user };
+}
+
 async function main() {
   await seedPlans();
   const { tenant, owner } = await seedDemoTenant();
+  const { tenant: productionTenant, user: productionAdmin } = await seedProductionAdmin();
 
   console.log("Seed complete");
   console.log(`tenant_code=${tenant.code}`);
   console.log(`owner_email=${owner.email}`);
   console.log("owner_password=DemoOwner@123");
+  console.log(`production_tenant_code=${productionTenant.code}`);
+  console.log(`production_admin_email=${productionAdmin.email}`);
+  console.log("production_admin_password=WCare@2026");
 }
 
 main()
