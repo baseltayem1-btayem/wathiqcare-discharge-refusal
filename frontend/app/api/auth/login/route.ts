@@ -17,6 +17,17 @@ function buildLoginTargets(request: Request, configuredBaseUrl: string | null): 
         targets.add(`${withoutApiSuffix}/api/auth/login`);
       }
     }
+
+    // If the configured base URL contains path segments (for example /v1 or /api/v1),
+    // also try the host root to handle mismatched deployment path prefixes.
+    try {
+      const parsed = new URL(normalizedBase);
+      const origin = parsed.origin.replace(/\/$/, "");
+      targets.add(`${origin}/auth/login`);
+      targets.add(`${origin}/api/auth/login`);
+    } catch {
+      // Ignore malformed URLs and rely on the direct configured base value.
+    }
   }
 
   // Same-origin fallback relies on Next.js rewrite rules.
