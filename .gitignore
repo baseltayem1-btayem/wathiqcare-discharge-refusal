@@ -188,6 +188,14 @@ cython_debug/
 #  you could uncomment the following to ignore the entire vscode folder
 # .vscode/
 
+# Node / Prisma
+node_modules/
+npm-debug.log*
+
+# Keep Next.js frontend source libraries tracked.
+!frontend/src/lib/
+!frontend/src/lib/**
+
 # Ruff stuff:
 .ruff_cache/
 
