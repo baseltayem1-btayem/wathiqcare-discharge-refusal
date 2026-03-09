@@ -118,7 +118,8 @@ const ISSUANCE_DOCUMENTS: Array<{
   {
     key: "informed_consent",
     label: "Informed Consent",
-    supportedGeneration: false,
+    supportedGeneration: true,
+    signaturePath: "informed-consent",
   },
   {
     key: "financial_responsibility_notice",
@@ -673,6 +674,9 @@ export default function CaseDetailsPage() {
     if (key === "home_healthcare_agreement") {
       return availableTemplateKeys.has(key) || Boolean(caseDetail?.pdf_file);
     }
+    if (key === "informed_consent") {
+      return Boolean(caseDetail?.signed_at);
+    }
     return availableTemplateKeys.has(key);
   };
 
@@ -689,6 +693,11 @@ export default function CaseDetailsPage() {
 
     if (key === "home_healthcare_agreement") {
       router.push(`/cases/${caseId}/home-healthcare-agreement`);
+      return;
+    }
+
+    if (key === "informed_consent") {
+      router.push(`/cases/${caseId}/informed-consent`);
       return;
     }
 
