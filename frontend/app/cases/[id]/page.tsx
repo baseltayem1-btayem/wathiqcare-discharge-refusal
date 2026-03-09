@@ -1103,6 +1103,16 @@ export default function CaseDetailsPage() {
                   <h2 className="text-base font-semibold text-slate-900">Consents | الموافقات</h2>
                   <p className="mt-1 text-sm text-slate-600">عرض حالة الموافقات المستنيرة والتواقيع المرتبطة بالحالة.</p>
 
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      href={`/cases/${caseId}/informed-consent`}
+                      className="inline-flex items-center gap-2 rounded-lg border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100"
+                    >
+                      <FileCheck2 className="h-4 w-4" />
+                      Open Informed Consent
+                    </Link>
+                  </div>
+
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
                       <p className="text-slate-500">اسم الموقّع</p>

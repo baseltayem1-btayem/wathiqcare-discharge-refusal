@@ -8,6 +8,10 @@ const {
   UsageMetric,
   InvoiceStatus,
   SubscriptionEventType,
+  CaseStatus,
+  CaseType,
+  DocumentType,
+  DocumentStatus,
 } = require("@prisma/client");
 
 const prisma = new PrismaClient();
@@ -415,6 +419,163 @@ async function seedProductionAdmin() {
   return { tenant, user, subscription };
 }
 
+async function upsertSampleCase({
+  tenantId,
+  userId,
+  caseNumber,
+  patientName,
+  patientIdNumber,
+  medicalRecordNo,
+  roomNumber,
+  refusalReason,
+  attendingPhysician,
+  status,
+}) {
+  const createdAt = new Date();
+  const existing = await prisma.case.findFirst({
+    where: {
+      tenantId,
+      caseNumber,
+    },
+  });
+
+  const data = {
+    tenantId,
+    caseNumber,
+    caseType: CaseType.DISCHARGE_REFUSAL,
+    title: `Discharge refusal - ${patientName}`,
+    status,
+    workflowType: "discharge_refusal",
+    patientName,
+    patientIdNumber,
+    medicalRecordNo,
+    roomNumber,
+    createdByUserId: userId,
+    updatedByUserId: userId,
+    metadata: {
+      patient_name: patientName,
+      patient_id_number: patientIdNumber,
+      medical_record_number: medicalRecordNo,
+      room_number: roomNumber,
+      attending_physician: attendingPhysician,
+      refusal_reason: refusalReason,
+      signer_name: "Patient Guardian",
+      signer_role: "Father",
+      signed_at: createdAt.toISOString(),
+      discharge_decision_at: new Date(createdAt.getTime() - 6 * 60 * 60 * 1000).toISOString(),
+      discussion_summary: "Patient family requested postponement and financial consultation.",
+      social_administrative_interventions: "Counseling provided by nursing and patient affairs.",
+      forms_issued: "Discharge Refusal Form; Financial Responsibility Notice",
+      insurance_coverage_status: "partially_covered",
+    },
+  };
+
+  const sampleCase = existing
+    ? await prisma.case.update({ where: { id: existing.id }, data })
+    : await prisma.case.create({ data });
+
+  const existingDocument = await prisma.document.findFirst({
+    where: {
+      tenantId,
+      caseId: sampleCase.id,
+      templateKey: "discharge_refusal_form",
+      versionLabel: "1.0",
+    },
+  });
+
+  if (existingDocument) {
+    await prisma.document.update({
+      where: { id: existingDocument.id },
+      data: {
+        documentType: DocumentType.DISCHARGE_REFUSAL_FORM,
+        status: DocumentStatus.GENERATED,
+        titleEn: "Discharge Refusal Form",
+        fileName: `${caseNumber.toLowerCase()}-refusal-form.html`,
+        generatedByUserId: userId,
+      },
+    });
+  } else {
+    await prisma.document.create({
+      data: {
+        tenantId,
+        caseId: sampleCase.id,
+        documentType: DocumentType.DISCHARGE_REFUSAL_FORM,
+        status: DocumentStatus.GENERATED,
+        documentCode: "IMC-PAT-DIS-REF-01",
+        titleEn: "Discharge Refusal Form",
+        titleAr: "نموذج رفض الخروج",
+        templateKey: "discharge_refusal_form",
+        versionLabel: "1.0",
+        fileName: `${caseNumber.toLowerCase()}-refusal-form.html`,
+        mimeType: "text/html",
+        payloadJson: {
+          patientName,
+          patientIdNumber,
+          medicalRecordNo,
+        },
+        generatedByUserId: userId,
+        generatedAt: createdAt,
+      },
+    });
+  }
+
+  const existingSeedAudit = await prisma.auditLog.findFirst({
+    where: {
+      tenantId,
+      entityId: sampleCase.id,
+      action: "seed_case_ready",
+    },
+  });
+
+  if (!existingSeedAudit) {
+    await prisma.auditLog.create({
+      data: {
+        tenantId,
+        userId,
+        entityType: "case",
+        entityId: sampleCase.id,
+        action: "seed_case_ready",
+        details: `Sample case seeded for pilot demo (${caseNumber})`,
+        caseId: sampleCase.id,
+        metadataJson: {
+          status,
+          source: "seed",
+        },
+      },
+    });
+  }
+
+  return sampleCase;
+}
+
+async function seedSampleCases({ tenantId, userId, prefix }) {
+  await upsertSampleCase({
+    tenantId,
+    userId,
+    caseNumber: `${prefix}-1001`,
+    patientName: "Fatimah Al Harbi",
+    patientIdNumber: "1029384756",
+    medicalRecordNo: "MRN-445001",
+    roomNumber: "A-312",
+    refusalReason: "Family requested additional 24h home-care planning.",
+    attendingPhysician: "Dr. Saad Al Rashid",
+    status: CaseStatus.IN_PROGRESS,
+  });
+
+  await upsertSampleCase({
+    tenantId,
+    userId,
+    caseNumber: `${prefix}-1002`,
+    patientName: "Khalid Al Otaibi",
+    patientIdNumber: "2039485761",
+    medicalRecordNo: "MRN-445002",
+    roomNumber: "B-207",
+    refusalReason: "Patient refused discharge until insurance clarification.",
+    attendingPhysician: "Dr. Huda Al Enezi",
+    status: CaseStatus.OPEN,
+  });
+}
+
 async function main() {
   await seedPlans();
   const { tenant, owner } = await seedDemoTenant();
@@ -423,6 +584,8 @@ async function main() {
     user: productionAdmin,
     subscription: productionSubscription,
   } = await seedProductionAdmin();
+  await seedSampleCases({ tenantId: tenant.id, userId: owner.id, prefix: "DEMO-REF" });
+  await seedSampleCases({ tenantId: productionTenant.id, userId: productionAdmin.id, prefix: "IMC-REF" });
 
   console.log("Seed complete");
   console.log(`tenant_code=${tenant.code}`);

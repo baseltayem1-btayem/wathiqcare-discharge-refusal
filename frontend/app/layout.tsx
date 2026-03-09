@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Noto_Sans_Arabic } from "next/font/google";
+import { Manrope, Geist_Mono, Noto_Kufi_Arabic } from "next/font/google";
 import I18nProvider from "@/i18n/I18nProvider";
 import "./globals.css";
 
-const geistSans = Geist({
+const manrope = Manrope({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const notoSansArabic = Noto_Sans_Arabic({
+const notoSansArabic = Noto_Kufi_Arabic({
   variable: "--font-arabic",
   subsets: ["arabic", "latin"],
 });
@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${notoSansArabic.variable} antialiased`}>
+      <body className={`${manrope.variable} ${geistMono.variable} ${notoSansArabic.variable} antialiased`}>
         <I18nProvider>{children}</I18nProvider>
       </body>
     </html>

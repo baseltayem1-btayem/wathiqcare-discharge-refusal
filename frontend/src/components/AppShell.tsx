@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Archive, FileCog, FilePlus2, FolderKanban, LayoutGrid, LogOut, Rocket, ShieldCheck, Stethoscope } from "lucide-react";
+import { Archive, FileCheck2, FileCog, FilePlus2, FolderKanban, Gavel, LayoutGrid, LogOut, Rocket, ShieldCheck, Stethoscope, Timer, ClipboardList } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clearToken } from "@/utils/api";
@@ -22,10 +22,14 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/", labelKey: "nav.dashboard", icon: <LayoutGrid className="h-4 w-4" /> },
+  { href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutGrid className="h-4 w-4" /> },
   { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
+  { href: "/consents", labelKey: "nav.consents", icon: <FileCheck2 className="h-4 w-4" /> },
   { href: "/cases/new", labelKey: "nav.newCase", icon: <FilePlus2 className="h-4 w-4" /> },
   { href: "/workflow", labelKey: "nav.workflowDocs", icon: <FileCog className="h-4 w-4" /> },
+  { href: "/escalation-timeline", labelKey: "nav.escalationTimeline", icon: <Timer className="h-4 w-4" /> },
+  { href: "/legal-case-file", labelKey: "nav.legalCaseFile", icon: <Gavel className="h-4 w-4" /> },
+  { href: "/audit-log", labelKey: "nav.auditViewer", icon: <ClipboardList className="h-4 w-4" /> },
   { href: "/launch-status", labelKey: "nav.launchStatus", icon: <Rocket className="h-4 w-4" /> },
   { href: "/compliance", labelKey: "nav.compliance", icon: <ShieldCheck className="h-4 w-4" /> },
   { href: "/bundles", labelKey: "nav.bundles", icon: <Archive className="h-4 w-4" /> },
@@ -67,7 +71,12 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
   const router = useRouter();
   const { t } = useI18n();
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Cookie clearing is best-effort; local token is still removed below.
+    }
     clearToken();
     router.push("/login");
   }
@@ -106,7 +115,9 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
 
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={() => {
+              void handleLogout();
+            }}
             className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <LogOut className="h-4 w-4" />
@@ -126,7 +137,9 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
                   <LanguageSwitcher className="md:hidden" />
                   <button
                     type="button"
-                    onClick={handleLogout}
+                    onClick={() => {
+                      void handleLogout();
+                    }}
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 md:hidden"
                   >
                     <LogOut className="h-4 w-4" />

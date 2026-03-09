@@ -11,6 +11,31 @@ export type AuthContext = {
   exp?: number;
 };
 
+const ROLE_ALIASES: Record<string, string> = {
+  tenant_admin: "ADMIN",
+  legal_admin: "ADMIN",
+  admin: "ADMIN",
+  owner: "OWNER",
+  doctor: "MANAGER",
+  nurse: "MEMBER",
+  legal_officer: "MANAGER",
+  viewer: "VIEWER",
+};
+
+function normalizeRole(role: string): string {
+  const cleaned = role.trim();
+  if (!cleaned) {
+    return "";
+  }
+
+  const alias = ROLE_ALIASES[cleaned.toLowerCase()];
+  if (alias) {
+    return alias;
+  }
+
+  return cleaned.toUpperCase();
+}
+
 function decodeBase64Url(input: string): string {
   const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
   const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
@@ -96,8 +121,10 @@ export function requireTenantAccess(request: NextRequest, tenantId: string): Aut
 }
 
 export function requireRole(auth: AuthContext, allowedRoles: string[]): void {
-  const role = auth.role ?? "";
-  if (!allowedRoles.includes(role)) {
+  const role = normalizeRole(auth.role ?? "");
+  const normalizedAllowedRoles = allowedRoles.map((item) => normalizeRole(item));
+
+  if (!normalizedAllowedRoles.includes(role)) {
     throw new ApiError(403, "Insufficient role permissions");
   }
 }

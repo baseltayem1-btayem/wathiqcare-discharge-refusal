@@ -18,6 +18,54 @@ Validation baseline:
 - Frontend production build: passed
 - Full verification script: passed (`./check_all.sh`)
 
+## Public Homepage Release (WATHIQCARE.ONLINE)
+
+Release objective:
+- Serve bilingual public landing page on root route `/`
+- Keep authenticated system reachable and unchanged via `/login` and existing protected routes
+
+Production route map:
+- Public homepage: `https://wathiqcare.online/`
+- System entry: `https://wathiqcare.online/login`
+- Authenticated modules (must remain reachable after login):
+  - `/dashboard`
+  - `/cases`
+  - `/consents`
+  - `/workflow`
+  - `/escalation-timeline`
+  - `/audit-log`
+  - `/legal-case-file`
+  - `/admin`
+  - `/bundles`
+
+Public landing acceptance checklist:
+- Root route displays public website content, not the internal dashboard
+- Language toggle switches Arabic and English correctly
+- Arabic displays RTL layout correctly
+- English displays LTR layout correctly
+- Enter System CTA routes to `/login`
+- Request Demo CTA opens configured contact channel (`mailto:` placeholder is acceptable)
+- Existing login flow and post-login redirects still work
+- Existing protected modules continue to function without route regressions
+
+Production verification commands:
+```bash
+curl -I https://wathiqcare.online/
+curl -I https://wathiqcare.online/login
+```
+
+Expected result:
+- `https://wathiqcare.online/` returns 200 and serves landing HTML
+- `https://wathiqcare.online/login` returns 200 and serves login page
+
+Manual browser validation (required):
+1. Open `https://wathiqcare.online/`
+2. Switch EN/AR from landing header
+3. Confirm RTL/LTR and section content changes
+4. Click Enter System and confirm navigation to `/login`
+5. Login with pilot account and confirm redirect to dashboard/app
+6. Open `cases`, `consents`, `workflow`, and `audit-log` to confirm continuity
+
 ## Included Product Scope
 
 ### Core Experience
@@ -91,6 +139,8 @@ Validation baseline:
 - Start services
 - Perform smoke tests:
   - Login and redirect to dashboard
+  - Open public root URL and validate landing page first-render
+  - Validate Enter System CTA to `/login`
   - Create case
   - Open patient workspace
   - Generate document
@@ -110,12 +160,18 @@ Validation baseline:
 
 Go if all are true:
 - Quality gate passes (`./check_all.sh`)
+- Root domain serves public landing (`/`)
+- Enter System routes to `/login`
+- Login and protected routes remain functional
 - No blocker in signature verification
 - No blocker in document generation and archive
 - No critical authentication or tenant-access errors
 - No critical data-loss or audit-log failures
 
 No-Go if any are true:
+- Root route still serves internal app unexpectedly
+- Enter System does not route to `/login`
+- Authenticated modules inaccessible after landing release
 - Login/session instability
 - Final signed PDF cannot be issued
 - Evidence bundles fail consistently

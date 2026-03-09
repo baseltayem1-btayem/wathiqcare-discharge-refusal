@@ -50,6 +50,8 @@ def _normalize_document_type(document_type: str) -> str:
         return "discharge_refusal_form"
     if normalized in {"financial_responsibility_notice", "financial_notice"}:
         return "financial_responsibility_notice"
+    if normalized in {"informed_consent", "consent", "patient_consent"}:
+        return "informed_consent"
     if normalized in {"home_healthcare_agreement", "home_healthcare", "hhc_pdn_agreement"}:
         return "home_healthcare_agreement"
     raise ValueError("Unsupported document type")
@@ -60,6 +62,8 @@ def _template_version_for(template_key: str) -> str:
         return "IMC-PAT-DIS-REF-01"
     if template_key == "financial_responsibility_notice":
         return "IMC-PAT-DIS-NOT-01"
+    if template_key == "informed_consent":
+        return "IMC-PAT-CONS-01"
     if template_key == "home_healthcare_agreement":
         return "IMC-HHC-PDN-01"
     return "1.0"
