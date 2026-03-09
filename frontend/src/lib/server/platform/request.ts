@@ -6,7 +6,8 @@ export type PlatformPayload = {
   caseId?: string;
   payload: Record<string, unknown>;
   signatureMethod: SignatureMethod;
-  signatureRecord: string;
+  signatureRecord?: string;
+  signatureSessionId?: string;
 };
 
 const SUPPORTED_METHODS: SignatureMethod[] = ["SMS_OTP", "TABLET_SIGNATURE", "NAFATH"];
@@ -17,6 +18,7 @@ export async function parsePlatformPayload(request: NextRequest): Promise<Platfo
     payload?: Record<string, unknown>;
     signatureMethod?: SignatureMethod;
     signatureRecord?: string;
+    signatureSessionId?: string;
   } | null;
 
   if (!body?.payload || typeof body.payload !== "object") {
@@ -28,15 +30,19 @@ export async function parsePlatformPayload(request: NextRequest): Promise<Platfo
     throw new ApiError(400, "signatureMethod must be one of SMS_OTP, TABLET_SIGNATURE, NAFATH");
   }
 
-  if (!body.signatureRecord || typeof body.signatureRecord !== "string") {
-    throw new ApiError(400, "signatureRecord is required");
+  if (
+    (typeof body.signatureRecord !== "string" || body.signatureRecord.trim().length === 0) &&
+    (typeof body.signatureSessionId !== "string" || body.signatureSessionId.trim().length === 0)
+  ) {
+    throw new ApiError(400, "Either signatureRecord or signatureSessionId is required");
   }
 
   return {
     caseId: body.caseId,
     payload: body.payload,
     signatureMethod: method,
-    signatureRecord: body.signatureRecord,
+    signatureRecord: typeof body.signatureRecord === "string" ? body.signatureRecord : undefined,
+    signatureSessionId: typeof body.signatureSessionId === "string" ? body.signatureSessionId : undefined,
   };
 }
 

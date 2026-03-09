@@ -5,6 +5,7 @@ import { isProductionSaasUpgradeEnabled } from "@/lib/server/platform/feature-fl
 import { requireActiveSubscriptionContext } from "@/lib/server/platform/subscription-guard";
 import { runAgreementEngine } from "@/lib/server/platform/agreement-engine";
 import { getRequestDeviceInfo, getRequestIpAddress, parsePlatformPayload } from "@/lib/server/platform/request";
+import { resolveVerifiedSignatureRecord } from "@/lib/server/platform/signature-providers";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +16,9 @@ export async function POST(request: NextRequest) {
     const auth = requireAuth(request);
     const body = await parsePlatformPayload(request);
     const subscription = await requireActiveSubscriptionContext(auth.tenant_id);
+    const signatureRecord = body.signatureSessionId
+      ? resolveVerifiedSignatureRecord(body.signatureSessionId, body.signatureMethod)
+      : (body.signatureRecord as string);
 
     const generated = await runAgreementEngine({
       tenantId: auth.tenant_id,
@@ -25,7 +29,7 @@ export async function POST(request: NextRequest) {
         subscription_context: subscription,
       },
       signatureMethod: body.signatureMethod,
-      signatureRecord: body.signatureRecord,
+      signatureRecord,
       requestIp: getRequestIpAddress(request),
       deviceInfo: getRequestDeviceInfo(request),
     });

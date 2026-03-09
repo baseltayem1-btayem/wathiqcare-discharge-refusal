@@ -14,14 +14,29 @@ type SubscriptionContext = {
   signature_quota: number;
 };
 
+type PlatformReadiness = {
+  ok: boolean;
+  platformEnabled: boolean;
+  signatureProviders: {
+    smsOtpConfigured: boolean;
+    tabletSignatureConfigured: boolean;
+    nafathConfigured: boolean;
+  };
+};
+
 export default function PlatformAdminPage() {
   const [context, setContext] = useState<SubscriptionContext | null>(null);
+  const [readiness, setReadiness] = useState<PlatformReadiness | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     apiFetch<{ ok: boolean; context: SubscriptionContext }>("/api/platform/v1/subscription/context")
       .then((response) => setContext(response.context))
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load platform context"));
+
+    apiFetch<PlatformReadiness>("/api/platform/v1/health/readiness")
+      .then((response) => setReadiness(response))
+      .catch((err) => setError((prev) => prev || (err instanceof Error ? err.message : "Failed to load readiness")));
   }, []);
 
   return (
@@ -60,6 +75,24 @@ export default function PlatformAdminPage() {
           ) : (
             <p className="mt-2 text-sm text-slate-600">Loading plan configuration...</p>
           )}
+        </section>
+
+        <section className="mt-4 rounded-2xl border border-slate-200 p-4">
+          <h3 className="text-sm font-semibold text-slate-900">Provider Key Readiness</h3>
+          {readiness ? (
+            <dl className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+              <div><dt className="text-slate-500">Platform Enabled</dt><dd className="font-medium">{String(readiness.platformEnabled)}</dd></div>
+              <div><dt className="text-slate-500">SMS OTP Keys</dt><dd className="font-medium">{String(readiness.signatureProviders.smsOtpConfigured)}</dd></div>
+              <div><dt className="text-slate-500">Tablet Signature</dt><dd className="font-medium">{String(readiness.signatureProviders.tabletSignatureConfigured)}</dd></div>
+              <div><dt className="text-slate-500">Nafath Keys</dt><dd className="font-medium">{String(readiness.signatureProviders.nafathConfigured)}</dd></div>
+            </dl>
+          ) : (
+            <p className="mt-2 text-sm text-slate-600">Loading provider readiness...</p>
+          )}
+
+          <p className="mt-3 text-xs text-slate-500">
+            Signature session APIs: /api/platform/v1/signature/session/start and /api/platform/v1/signature/session/verify
+          </p>
         </section>
       </AppShell>
     </AuthGuard>
