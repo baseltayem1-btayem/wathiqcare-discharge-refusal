@@ -191,7 +191,7 @@ export default function HomePage() {
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
               <Link
-                href="mailto:demo@wathiqcare.online?subject=WathiqCare%20Demo%20Request"
+                href="/request-demo"
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
               >
                 {content.requestDemo}
@@ -273,7 +273,7 @@ export default function HomePage() {
               </Link>
               <span className="text-slate-300">|</span>
               <Link
-                href="mailto:demo@wathiqcare.online?subject=WathiqCare%20Demo%20Request"
+                href="/request-demo"
                 className="font-semibold text-slate-800 hover:text-slate-900"
               >
                 {content.requestDemo}
