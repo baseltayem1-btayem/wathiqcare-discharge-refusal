@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, RefreshCw, Save, ShieldCheck, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ClipboardList, FileSignature, Plus, RefreshCw, Save, ShieldCheck, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -113,6 +113,74 @@ export default function AdminPage() {
         style: "currency",
         currency: "USD",
       }),
+    [],
+  );
+
+  const operationalKpis = useMemo(() => {
+    const metricCount = (patterns: string[]) =>
+      usage.filter((entry) => patterns.some((pattern) => entry.metric.toLowerCase().includes(pattern))).length;
+
+    return [
+      {
+        label: "عدد الحالات المفتوحة",
+        value: metricCount(["open_case", "case_opened", "open_cases"]),
+        icon: ClipboardList,
+      },
+      {
+        label: "الحالات التي تنتظر توقيع",
+        value: metricCount(["pending_signature", "signature_pending"]),
+        icon: FileSignature,
+      },
+      {
+        label: "الموافقات المستنيرة المعلقة",
+        value: metricCount(["consent_pending", "pending_consent"]),
+        icon: CheckCircle2,
+      },
+      {
+        label: "حالات رفض الخروج",
+        value: metricCount(["refusal", "discharge_refusal"]),
+        icon: AlertTriangle,
+      },
+      {
+        label: "طلبات الإفصاح عن المعلومات",
+        value: metricCount(["roi", "release_of_information", "disclosure_request"]),
+        icon: ClipboardList,
+      },
+      {
+        label: "حالات التصعيد القانوني",
+        value: metricCount(["legal_escalation", "escalation"]),
+        icon: ShieldCheck,
+      },
+    ];
+  }, [usage]);
+
+  const legalRiskBoard = useMemo(
+    () => [
+      { caseId: "Case 1103", risk: "High Legal Risk", level: "high" },
+      { caseId: "Case 1104", risk: "Pending Signature", level: "medium" },
+      { caseId: "Case 1107", risk: "ROI Validation Required", level: "medium" },
+      { caseId: "Case 1112", risk: "Escalated to Legal", level: "high" },
+    ],
+    [],
+  );
+
+  const workQueue = useMemo(
+    () => [
+      { task: "توقيع مريض", owner: "قسم التمريض", priority: "High", due: "اليوم" },
+      { task: "مراجعة قانونية", owner: "الفريق القانوني", priority: "High", due: "خلال 24 ساعة" },
+      { task: "إصدار PDF", owner: "منسق الحالة", priority: "Medium", due: "خلال 48 ساعة" },
+      { task: "أرشفة", owner: "السجلات الطبية", priority: "Low", due: "هذا الأسبوع" },
+    ],
+    [],
+  );
+
+  const systemTimeline = useMemo(
+    () => [
+      { event: "Consent signed", time: "منذ 5 دقائق" },
+      { event: "ROI request approved", time: "منذ 22 دقيقة" },
+      { event: "Refusal case escalated", time: "منذ ساعة" },
+      { event: "Discharge refusal PDF generated", time: "منذ ساعتين" },
+    ],
     [],
   );
 
@@ -268,6 +336,99 @@ export default function AdminPage() {
 
         {!loading && tenant ? (
           <div className="space-y-5">
+            <section className="rounded-2xl border border-slate-200 p-4">
+              <h2 className="text-base font-semibold text-slate-900">المؤشرات التشغيلية</h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {operationalKpis.map((kpi) => {
+                  const Icon = kpi.icon;
+                  return (
+                    <div key={kpi.label} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-600">{kpi.label}</span>
+                        <Icon className="h-4 w-4 text-slate-500" />
+                      </div>
+                      <p className="mt-2 text-3xl font-semibold text-slate-900">{kpi.value}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="grid gap-5 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 p-4">
+                <h2 className="text-base font-semibold text-slate-900">لوحة المخاطر القانونية</h2>
+                <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left">الحالة</th>
+                        <th className="px-3 py-2 text-left">مستوى المخاطر</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {legalRiskBoard.map((row) => (
+                        <tr key={row.caseId} className="border-t border-slate-100">
+                          <td className="px-3 py-2 font-medium text-slate-900">{row.caseId}</td>
+                          <td className="px-3 py-2">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                row.level === "high"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {row.risk}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 p-4">
+                <h2 className="text-base font-semibold text-slate-900">طابور العمل</h2>
+                <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left">المهمة</th>
+                        <th className="px-3 py-2 text-left">المسؤول</th>
+                        <th className="px-3 py-2 text-left">الأولوية</th>
+                        <th className="px-3 py-2 text-left">الموعد</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {workQueue.map((row) => (
+                        <tr key={`${row.task}-${row.owner}`} className="border-t border-slate-100">
+                          <td className="px-3 py-2 font-medium text-slate-900">{row.task}</td>
+                          <td className="px-3 py-2 text-slate-600">{row.owner}</td>
+                          <td className="px-3 py-2">{row.priority}</td>
+                          <td className="px-3 py-2 text-slate-600">{row.due}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 p-4">
+              <h2 className="text-base font-semibold text-slate-900">نشاط النظام</h2>
+              <div className="mt-3 space-y-3">
+                {systemTimeline.map((item, index) => (
+                  <div key={`${item.event}-${index}`} className="flex items-start gap-3 rounded-xl border border-slate-200 p-3">
+                    <span className="mt-1 h-2.5 w-2.5 rounded-full bg-slate-700" aria-hidden />
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">{item.event}</p>
+                      <p className="text-xs text-slate-500">{item.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             <section className="rounded-2xl border border-slate-200 p-4">
               <div className="mb-4 flex items-center gap-2 text-slate-900">
                 <ShieldCheck className="h-4 w-4" />
