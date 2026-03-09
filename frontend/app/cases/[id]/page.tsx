@@ -54,6 +54,8 @@ import {
   WorkflowPolicyValidation,
   WorkflowPolicyRequirement,
 } from "@/types/dischargeWorkflow";
+import CaseWorkspacePanels from "@/ui/components/CaseWorkspacePanels";
+import ConsentIntelligencePanel from "@/ui/components/ConsentIntelligencePanel";
 
 type AuditItem = {
   id: string;
@@ -837,8 +839,17 @@ export default function CaseDetailsPage() {
             </section>
 
             {activeTab === "overview" ? (
-              <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-                <div className="rounded-2xl border border-slate-200 p-5">
+              <section className="space-y-4">
+                <CaseWorkspacePanels caseId={caseId} />
+
+                <ConsentIntelligencePanel
+                  required={["Discharge Refusal Consent", "Financial Responsibility Acknowledgment"]}
+                  recommended={["Home Healthcare Follow-up Consent", "Social Support Coordination Consent"]}
+                  missing={workflow?.refusal_form_generated_at ? [] : ["Discharge Refusal Consent"]}
+                />
+
+                <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+                  <div className="rounded-2xl border border-slate-200 p-5">
                   <h2 className="text-base font-semibold text-slate-900">{t("caseDetails.overview.caseProfile")}</h2>
                   <dl className="mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
                     <div>
@@ -919,7 +930,8 @@ export default function CaseDetailsPage() {
                   </div>
                 </div>
 
-                <WorkflowTimelinePanel workflow={workflow} />
+                  <WorkflowTimelinePanel workflow={workflow} />
+                </div>
               </section>
             ) : null}
 
