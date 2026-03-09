@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Archive, FileCog, FilePlus2, FolderKanban, LayoutGrid, LogOut, ShieldCheck, Stethoscope } from "lucide-react";
+import { Archive, FileCog, FilePlus2, FolderKanban, LayoutGrid, LogOut, Rocket, ShieldCheck, Stethoscope } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clearToken } from "@/utils/api";
@@ -26,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
   { href: "/cases/new", labelKey: "nav.newCase", icon: <FilePlus2 className="h-4 w-4" /> },
   { href: "/workflow", labelKey: "nav.workflowDocs", icon: <FileCog className="h-4 w-4" /> },
+  { href: "/launch-status", labelKey: "nav.launchStatus", icon: <Rocket className="h-4 w-4" /> },
   { href: "/compliance", labelKey: "nav.compliance", icon: <ShieldCheck className="h-4 w-4" /> },
   { href: "/bundles", labelKey: "nav.bundles", icon: <Archive className="h-4 w-4" /> },
   { href: "/admin", labelKey: "nav.admin", icon: <ShieldCheck className="h-4 w-4" /> },
