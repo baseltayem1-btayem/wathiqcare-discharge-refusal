@@ -23,7 +23,7 @@ import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import DocumentPreviewModal from "@/components/workflow/DocumentPreviewModal";
 import CaseWorkflowTree from "@/components/cases/CaseWorkflowTree";
-import WorkflowDataForm, { WorkflowDraft } from "@/components/workflow/WorkflowDataForm";
+import { WorkflowDraft } from "@/components/workflow/WorkflowDataForm";
 import WorkflowDocumentList from "@/components/workflow/WorkflowDocumentList";
 import WorkflowTimelinePanel from "@/components/workflow/WorkflowTimelinePanel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -62,7 +62,7 @@ type AuditItem = {
   created_at?: string;
 };
 
-type TabKey = "overview" | "workflow" | "documents" | "audit";
+type TabKey = "overview" | "consents" | "agreements" | "roi" | "archive" | "audit";
 
 const WORKFLOW_STAGE_LABELS: Record<string, string> = {
   medical_discharge_decision: "قرار الخروج الطبي",
@@ -342,7 +342,7 @@ export default function CaseDetailsPage() {
 
   const [draft, setDraft] = useState<WorkflowDraft>(buildDraft(null, null));
 
-  const [activeTab, setActiveTab] = useState<TabKey>("workflow");
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [loading, setLoading] = useState(true);
   const [processingAction, setProcessingAction] = useState<WorkflowActionKey | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -440,7 +440,7 @@ export default function CaseDetailsPage() {
       setDraft(buildDraft(caseDetail, nextWorkflow));
       setInfoMessage(t("caseDetails.actionCompleted", { action: actionLabelMap[action] }));
       if (action === "escalate_legal_compliance") {
-        setActiveTab("workflow");
+        setActiveTab("audit");
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : t("caseDetails.workflowActionFailed");
@@ -549,7 +549,7 @@ export default function CaseDetailsPage() {
       );
       setPreviewOpen(false);
       setPreview(null);
-      setActiveTab("documents");
+      setActiveTab("archive");
     } catch (err) {
       const message = err instanceof Error ? err.message : t("caseDetails.failedGenerateDocument");
       setError(message);
@@ -605,6 +605,17 @@ export default function CaseDetailsPage() {
 
   const hasGeneratedDocuments = (workflow?.documents?.length || 0) > 0;
   const workflowActionsEnabled = !workflowBackendUnavailable;
+  const consentDocuments = (workflow?.documents || []).filter((item) =>
+    item.template_key.toLowerCase().includes("consent") || item.title.toLowerCase().includes("consent")
+  );
+  const agreementDocuments = (workflow?.documents || []).filter((item) =>
+    item.template_key.toLowerCase().includes("agreement") || item.title.toLowerCase().includes("agreement")
+  );
+  const roiDocuments = (workflow?.documents || []).filter((item) =>
+    item.template_key.toLowerCase().includes("roi") || item.title.toLowerCase().includes("release")
+  );
+
+  const roiStatus = caseDetail?.status === "ESCALATED" ? "Pending Legal Review" : "No Open ROI Escalation";
 
   return (
     <AuthGuard>
@@ -714,7 +725,7 @@ export default function CaseDetailsPage() {
             <button
               type="button"
               onClick={() => {
-                setActiveTab("documents");
+                setActiveTab("archive");
                 setInfoMessage(t("caseDetails.useCardsDownload"));
               }}
               disabled={!hasGeneratedDocuments}
@@ -727,7 +738,7 @@ export default function CaseDetailsPage() {
             <button
               type="button"
               onClick={() => {
-                setActiveTab("documents");
+                setActiveTab("archive");
                 setInfoMessage(t("caseDetails.useCardsView"));
               }}
               disabled={!hasGeneratedDocuments}
@@ -816,9 +827,11 @@ export default function CaseDetailsPage() {
               <div className="flex flex-wrap gap-2">
                 {([
                   ["overview", t("caseDetails.tab.overview")],
-                  ["workflow", t("caseDetails.tab.workflow")],
-                  ["documents", t("caseDetails.tab.documents")],
-                  ["audit", t("caseDetails.tab.audit")],
+                  ["consents", "Consents | الموافقات"],
+                  ["agreements", "Agreements | الاتفاقيات"],
+                  ["roi", "ROI | الإفصاح عن المعلومات"],
+                  ["archive", "Archive | الأرشيف"],
+                  ["audit", "Audit Log | سجل الأحداث"],
                 ] as Array<[TabKey, string]>).map(([key, label]) => (
                   <button
                     key={key}
@@ -839,15 +852,58 @@ export default function CaseDetailsPage() {
             {activeTab === "overview" ? (
               <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
                 <div className="rounded-2xl border border-slate-200 p-5">
-                  <h2 className="text-base font-semibold text-slate-900">{t("caseDetails.overview.caseProfile")}</h2>
+                  <h2 className="text-base font-semibold text-slate-900">Patient Workspace | مساحة المريض</h2>
+                  <p className="mt-1 text-sm text-slate-600">البيانات الأساسية وملخص الحالة الحالية.</p>
+
+                  <h3 className="mt-5 text-sm font-semibold text-slate-900">بيانات المريض</h3>
                   <dl className="mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
                     <div>
-                      <dt className="text-slate-500">{t("caseDetails.overview.mrn")}</dt>
+                      <dt className="text-slate-500">MRN</dt>
                       <dd className="font-medium text-slate-900">{caseDetail?.patient_mrn || t("common.na")}</dd>
                     </div>
                     <div>
-                      <dt className="text-slate-500">{t("caseDetails.overview.patient")}</dt>
+                      <dt className="text-slate-500">الاسم</dt>
                       <dd className="font-medium text-slate-900">{caseDetail?.patient_name || t("common.na")}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">رقم الهوية</dt>
+                      <dd className="font-medium text-slate-900">{caseDetail?.patient_id_number || t("common.na")}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">تاريخ الميلاد</dt>
+                      <dd className="font-medium text-slate-900">{toReadable(caseDetail?.date_of_birth, locale)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">الجنس</dt>
+                      <dd className="font-medium text-slate-900">{caseDetail?.gender || t("common.na")}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">رقم الجوال</dt>
+                      <dd className="font-medium text-slate-900">{caseDetail?.mobile_number || t("common.na")}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">اسم ولي الأمر</dt>
+                      <dd className="font-medium text-slate-900">{caseDetail?.guardian_name || t("common.na")}</dd>
+                    </div>
+                  </dl>
+
+                  <h3 className="mt-5 text-sm font-semibold text-slate-900">معلومات إضافية</h3>
+                  <dl className="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+                    <div>
+                      <dt className="text-slate-500">الطبيب المعالج</dt>
+                      <dd className="font-medium text-slate-900">
+                        {workflow?.attending_physician || caseDetail?.attending_physician || t("common.na")}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">القسم</dt>
+                      <dd className="font-medium text-slate-900">{caseDetail?.department || t("common.na")}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">رقم الغرفة</dt>
+                      <dd className="font-medium text-slate-900">
+                        {workflow?.room_number || caseDetail?.room_number || t("common.na")}
+                      </dd>
                     </div>
                     <div>
                       <dt className="text-slate-500">{t("caseDetails.overview.status")}</dt>
@@ -869,7 +925,8 @@ export default function CaseDetailsPage() {
                     </div>
                   </dl>
 
-                  <div className="mt-4">
+                  <div className="mt-5">
+                    <h3 className="text-sm font-semibold text-slate-900">ملخص الحالة</h3>
                     <h3 className="text-sm font-medium text-slate-700">{t("caseDetails.overview.refusalReason")}</h3>
                     <p className="mt-1 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                       {caseDetail?.refusal_reason || t("caseDetails.overview.noRefusalReason")}
@@ -923,17 +980,98 @@ export default function CaseDetailsPage() {
               </section>
             ) : null}
 
-            {activeTab === "workflow" ? (
+            {activeTab === "consents" ? (
               <section className="space-y-4">
-                <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-                  <WorkflowDataForm data={draft} onChange={setDraft} />
-                  <WorkflowTimelinePanel workflow={workflow} />
+                <div className="rounded-2xl border border-slate-200 p-5">
+                  <h2 className="text-base font-semibold text-slate-900">Consents | الموافقات</h2>
+                  <p className="mt-1 text-sm text-slate-600">عرض حالة الموافقات المستنيرة والتواقيع المرتبطة بالحالة.</p>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                      <p className="text-slate-500">اسم الموقّع</p>
+                      <p className="font-medium text-slate-900">{caseDetail?.signer_name || t("common.na")}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                      <p className="text-slate-500">وقت التوقيع</p>
+                      <p className="font-medium text-slate-900">{toReadable(caseDetail?.signed_at, locale)}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    {consentDocuments.length === 0 ? (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
+                        لا توجد مستندات موافقات حالياً.
+                      </div>
+                    ) : (
+                      <WorkflowDocumentList documents={consentDocuments} />
+                    )}
+                  </div>
                 </div>
+
                 <CaseWorkflowTree key={caseId} caseId={caseId} />
               </section>
             ) : null}
 
-            {activeTab === "documents" ? (
+            {activeTab === "agreements" ? (
+              <section className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 p-5">
+                  <h2 className="text-base font-semibold text-slate-900">Agreements | الاتفاقيات</h2>
+                  <p className="mt-1 text-sm text-slate-600">الاتفاقيات الخاصة بالحالة مثل Home Healthcare Agreement.</p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href={`/cases/${caseId}/home-healthcare-agreement`}
+                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Home Healthcare Agreement
+                    </Link>
+                  </div>
+
+                  <div className="mt-4">
+                    {agreementDocuments.length === 0 ? (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
+                        لا توجد وثائق اتفاقيات منشورة بعد.
+                      </div>
+                    ) : (
+                      <WorkflowDocumentList documents={agreementDocuments} />
+                    )}
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {activeTab === "roi" ? (
+              <section className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 p-5">
+                  <h2 className="text-base font-semibold text-slate-900">ROI | الإفصاح عن المعلومات</h2>
+                  <p className="mt-1 text-sm text-slate-600">حالة طلبات الإفصاح عن المعلومات والمتطلبات القانونية المرتبطة بها.</p>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                      <p className="text-slate-500">ROI Status</p>
+                      <p className="font-medium text-slate-900">{roiStatus}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                      <p className="text-slate-500">Responsible Department</p>
+                      <p className="font-medium text-slate-900">Medical Records / Legal</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    {roiDocuments.length === 0 ? (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
+                        لا توجد مستندات ROI مرفقة بعد.
+                      </div>
+                    ) : (
+                      <WorkflowDocumentList documents={roiDocuments} />
+                    )}
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {activeTab === "archive" ? (
               <section className="space-y-4">
                 <WorkflowDocumentList documents={workflow?.documents || []} />
                 <div className="flex items-center justify-end">
