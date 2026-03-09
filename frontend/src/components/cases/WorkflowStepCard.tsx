@@ -24,9 +24,9 @@ function statusStyles(status: WorkflowStepStatus): string {
 }
 
 function statusLabel(status: WorkflowStepStatus): string {
-  if (status === "completed") return "Completed";
-  if (status === "in_progress") return "In Progress";
-  return "Not Started";
+  if (status === "completed") return "مكتمل";
+  if (status === "in_progress") return "قيد التنفيذ";
+  return "لم يبدأ";
 }
 
 export default function WorkflowStepCard({

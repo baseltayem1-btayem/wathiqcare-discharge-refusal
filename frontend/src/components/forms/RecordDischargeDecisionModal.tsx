@@ -18,9 +18,9 @@ export default function RecordDischargeDecisionModal({
   return (
     <BaseWorkflowModal
       open={open}
-      title="Record Medical Discharge Decision"
-      description="Capture discharge decision timestamp and physician details."
-      submitLabel="Record Decision"
+      title="تسجيل قرار الخروج الطبي"
+      description="تسجيل وقت قرار الخروج وتفاصيل الطبيب المعالج."
+      submitLabel="تسجيل القرار"
       submitting={submitting}
       onClose={onClose}
       onSubmit={onSubmit}

@@ -65,13 +65,13 @@ type AuditItem = {
 type TabKey = "overview" | "workflow" | "documents" | "audit";
 
 const WORKFLOW_STAGE_LABELS: Record<string, string> = {
-  medical_discharge_decision: "Medical Discharge Decision",
-  initial_communication: "Initial Communication",
-  support_and_intervention: "Support and Intervention",
-  refusal_form: "Refusal Form",
-  official_notification: "Official Notification",
-  escalation: "Escalation",
-  closed: "Closed",
+  medical_discharge_decision: "قرار الخروج الطبي",
+  initial_communication: "التواصل الأولي",
+  support_and_intervention: "الدعم والتدخل",
+  refusal_form: "نموذج الرفض",
+  official_notification: "الإشعار الرسمي",
+  escalation: "التصعيد",
+  closed: "مغلقة",
 };
 
 const VALIDATION_FIELD_MAP: Record<string, string> = {

@@ -2,6 +2,7 @@
 
 import { FileText } from "lucide-react";
 import DocumentDownloadButton from "@/components/documents/DocumentDownloadButton";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type DocumentCardProps = {
   title: string;
@@ -16,6 +17,8 @@ export default function DocumentCard({
   onPreview,
   onDownload,
 }: DocumentCardProps) {
+  const { t } = useI18n();
+
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-3">
       <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-900">
@@ -30,7 +33,7 @@ export default function DocumentCard({
             onClick={onPreview}
             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Preview
+            {t("common.preview")}
           </button>
         ) : null}
         {onDownload ? <DocumentDownloadButton onClick={onDownload} /> : null}

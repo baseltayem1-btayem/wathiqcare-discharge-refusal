@@ -69,7 +69,7 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
     }
 
     window.localStorage.setItem(storageKey(caseId), JSON.stringify(selectionState));
-    setSaveMessage("Workflow selections saved locally.");
+    setSaveMessage("تم حفظ اختيارات سير العمل محليًا.");
     window.setTimeout(() => setSaveMessage(""), 2000);
   }
 
@@ -77,15 +77,15 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
     <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Case Workflow Tree</h2>
+          <h2 className="text-base font-semibold text-slate-900">شجرة سير عمل الحالة</h2>
           <p className="text-sm text-slate-600">
-            Structured dropdown workflow for discharge refusal case handling.
+            سير عمل منظم بالقوائم المنسدلة للتعامل مع حالات رفض الخروج.
           </p>
         </div>
 
         <div className="text-sm text-slate-600">
           <span className="rounded-full bg-white px-2.5 py-1 font-medium text-slate-700">
-            {progressSummary.completed}/{progressSummary.total} steps completed
+            {progressSummary.completed}/{progressSummary.total} خطوة مكتملة
           </span>
         </div>
       </div>
@@ -113,7 +113,7 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
           onClick={handleSave}
           className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
         >
-          Save Workflow Selections
+          حفظ اختيارات سير العمل
         </button>
         {saveMessage ? <span className="text-sm text-emerald-700">{saveMessage}</span> : null}
       </div>

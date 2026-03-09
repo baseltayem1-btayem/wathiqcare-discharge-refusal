@@ -14,9 +14,9 @@ type WorkflowAuditTrailProps = {
 export default function WorkflowAuditTrail({ items }: WorkflowAuditTrailProps) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4">
-      <h3 className="text-sm font-semibold text-slate-900">Workflow Audit Trail</h3>
+      <h3 className="text-sm font-semibold text-slate-900">سجل تدقيق سير العمل</h3>
       {items.length === 0 ? (
-        <p className="mt-2 text-sm text-slate-500">No audit records found.</p>
+        <p className="mt-2 text-sm text-slate-500">لا توجد سجلات تدقيق.</p>
       ) : (
         <ul className="mt-3 space-y-2">
           {items.map((item) => (

@@ -32,21 +32,21 @@ export const dischargeRefusalFormTemplate: DocumentTemplate<DischargeRefusalTemp
   renderHtml(payload): string {
     return `
       <div>
-        <h1>Medical Discharge Refusal Form</h1>
-        <p><strong>Code:</strong> ${DOCUMENT_CODES.dischargeRefusalForm}</p>
-        <p><strong>Full Name:</strong> ${payload.patientName ?? ""}</p>
-        <p><strong>ID / Iqama Number:</strong> ${payload.patientIdNumber ?? ""}</p>
-        <p><strong>Medical Record Number:</strong> ${payload.medicalRecordNumber ?? ""}</p>
-        <p><strong>Room Number:</strong> ${payload.roomNumber ?? ""}</p>
-        <p><strong>Attending Physician Name:</strong> ${payload.attendingPhysicianName ?? ""}</p>
-        <p><strong>Discharge Decision Date:</strong> ${payload.dischargeDecisionAt ?? ""}</p>
-        <p><strong>Case details / explanation:</strong> ${payload.discussionSummary ?? ""}</p>
-        <p><strong>Reasons for refusal:</strong> ${payload.refusalReason ?? ""}</p>
-        <p><strong>Social Services / Patient Affairs:</strong> ${payload.socialServicesSummary ?? ""}</p>
-        <p><strong>Patient acknowledgment:</strong> The patient/legal representative acknowledges refusal of medical discharge after explanation.</p>
-        <p><strong>Patient/Representative Signature:</strong> ____________________</p>
-        <p><strong>Witness 1 Signature:</strong> ____________________</p>
-        <p><strong>Witness 2 Signature:</strong> ____________________</p>
+        <h1>نموذج رفض الخروج الطبي</h1>
+        <p><strong>الرمز:</strong> ${DOCUMENT_CODES.dischargeRefusalForm}</p>
+        <p><strong>الاسم الكامل:</strong> ${payload.patientName ?? ""}</p>
+        <p><strong>رقم الهوية / الإقامة:</strong> ${payload.patientIdNumber ?? ""}</p>
+        <p><strong>رقم السجل الطبي:</strong> ${payload.medicalRecordNumber ?? ""}</p>
+        <p><strong>رقم الغرفة:</strong> ${payload.roomNumber ?? ""}</p>
+        <p><strong>اسم الطبيب المعالج:</strong> ${payload.attendingPhysicianName ?? ""}</p>
+        <p><strong>تاريخ قرار الخروج:</strong> ${payload.dischargeDecisionAt ?? ""}</p>
+        <p><strong>تفاصيل الحالة / الشرح:</strong> ${payload.discussionSummary ?? ""}</p>
+        <p><strong>أسباب الرفض:</strong> ${payload.refusalReason ?? ""}</p>
+        <p><strong>الخدمات الاجتماعية / علاقات المرضى:</strong> ${payload.socialServicesSummary ?? ""}</p>
+        <p><strong>إقرار المريض:</strong> يقر المريض / الممثل النظامي برفض الخروج الطبي بعد الشرح والتوضيح.</p>
+        <p><strong>توقيع المريض / الممثل النظامي:</strong> ____________________</p>
+        <p><strong>توقيع الشاهد الأول:</strong> ____________________</p>
+        <p><strong>توقيع الشاهد الثاني:</strong> ____________________</p>
       </div>
     `;
   },

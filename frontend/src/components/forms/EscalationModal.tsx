@@ -18,9 +18,9 @@ export default function EscalationModal({
   return (
     <BaseWorkflowModal
       open={open}
-      title="Escalate to Legal & Compliance"
-      description="Escalation is allowed only when refusal persists and escalation due time has passed."
-      submitLabel="Escalate"
+      title="التصعيد إلى الشؤون القانونية والامتثال"
+      description="يُسمح بالتصعيد فقط عند استمرار الرفض وتجاوز موعد التصعيد المحدد."
+      submitLabel="تصعيد"
       submitting={submitting}
       onClose={onClose}
       onSubmit={onSubmit}

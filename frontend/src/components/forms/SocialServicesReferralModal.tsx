@@ -18,9 +18,9 @@ export default function SocialServicesReferralModal({
   return (
     <BaseWorkflowModal
       open={open}
-      title="Refer to Social Services"
-      description="Record support and intervention referral details."
-      submitLabel="Refer"
+      title="التحويل إلى الخدمات الاجتماعية"
+      description="تسجيل تفاصيل التحويل للدعم والتدخل."
+      submitLabel="تحويل"
       submitting={submitting}
       onClose={onClose}
       onSubmit={onSubmit}

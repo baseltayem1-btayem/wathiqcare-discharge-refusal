@@ -154,7 +154,7 @@ export default function HomeHealthcareAgreementPage() {
         }
       );
       if (!res.trigger_home_healthcare_workflow) {
-        setMessage("Home Healthcare Agreement activates only when option 3 is selected.");
+        setMessage("يتم تفعيل اتفاقية الرعاية المنزلية فقط عند اختيار الخيار الثالث.");
       }
     } catch (err) {
       setMessage((err as Error).message);
@@ -194,7 +194,7 @@ export default function HomeHealthcareAgreementPage() {
 
   const verifyAndGeneratePdf = async () => {
     if (!sessionId) {
-      setMessage("Start a signature session first.");
+      setMessage("ابدأ جلسة التوقيع أولًا.");
       return;
     }
 
@@ -221,7 +221,7 @@ export default function HomeHealthcareAgreementPage() {
 
       setStatus(res.verification_status || "pending");
       if (res.verification_status === "verified") {
-        setMessage(`PDF generated and attached to case. ${res.pdf_path || ""}`.trim());
+        setMessage(`تم إنشاء ملف PDF وإرفاقه بالحالة. ${res.pdf_path || ""}`.trim());
       }
     } catch (err) {
       setMessage((err as Error).message);
@@ -232,24 +232,24 @@ export default function HomeHealthcareAgreementPage() {
     setSelectedMethod("TABLET_SIGNATURE");
     await startAgreement("TABLET_SIGNATURE");
     if (!signaturePayload.trim()) {
-      setMessage("Paste a Base64 signature payload, then click Generate PDF.");
+      setMessage("ألصق بيانات التوقيع بصيغة Base64 ثم اضغط على إنشاء PDF.");
     }
   };
 
   return (
     <AuthGuard>
       <AppShell
-        title="Acknowledgment & Informed Consent"
-        subtitle="Home Health Care (HHC) - Private Duty Nursing (PDN) - Caregiver Training"
+        title="إقرار وموافقة مستنيرة"
+        subtitle="الرعاية الصحية المنزلية - التمريض الخاص - تدريب مقدم الرعاية"
         actions={
           <Link href={`/cases/${caseId}`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
-            Back to case
+            العودة إلى الحالة
           </Link>
         }
       >
         <div className="grid gap-4 lg:grid-cols-2">
           <section className="rounded-2xl border bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-800">Post-Discharge Care Model</h2>
+            <h2 className="text-sm font-semibold text-slate-800">نموذج الرعاية بعد الخروج</h2>
             <div className="mt-3 grid gap-2">
               {careModels.map((model) => (
                 <label key={model.value} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
@@ -264,47 +264,47 @@ export default function HomeHealthcareAgreementPage() {
               ))}
             </div>
 
-            <h3 className="mt-4 text-sm font-semibold text-slate-800">Patient and Guardian Details</h3>
+            <h3 className="mt-4 text-sm font-semibold text-slate-800">بيانات المريض وولي الأمر</h3>
             <div className="mt-2 grid gap-2">
-              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="Patient Name" value={patientName} onChange={(e) => setPatientName(e.target.value)} />
+              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="اسم المريض" value={patientName} onChange={(e) => setPatientName(e.target.value)} />
               <input className="rounded-lg border px-3 py-2 text-sm" placeholder="URN / MRN" value={urn} onChange={(e) => setUrn(e.target.value)} />
-              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="Current Location" value={currentLocation} onChange={(e) => setCurrentLocation(e.target.value)} />
-              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="Room Number" value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} />
-              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="Legal Guardian" value={legalGuardian} onChange={(e) => setLegalGuardian(e.target.value)} />
-              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="Relationship" value={relationship} onChange={(e) => setRelationship(e.target.value)} />
-              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="Guardian ID" value={guardianId} onChange={(e) => setGuardianId(e.target.value)} />
+              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="الموقع الحالي" value={currentLocation} onChange={(e) => setCurrentLocation(e.target.value)} />
+              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="رقم الغرفة" value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} />
+              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="ولي الأمر" value={legalGuardian} onChange={(e) => setLegalGuardian(e.target.value)} />
+              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="صلة القرابة" value={relationship} onChange={(e) => setRelationship(e.target.value)} />
+              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="رقم هوية ولي الأمر" value={guardianId} onChange={(e) => setGuardianId(e.target.value)} />
             </div>
 
-            <h3 className="mt-4 text-sm font-semibold text-slate-800">Patient Acknowledgments</h3>
+            <h3 className="mt-4 text-sm font-semibold text-slate-800">إقرارات المريض</h3>
             <div className="mt-2 grid gap-2">
-              <label className="text-xs font-medium text-slate-600">Patient/Guardian acknowledged home health care provision</label>
+              <label className="text-xs font-medium text-slate-600">إقرار المريض / ولي الأمر بخدمات الرعاية المنزلية</label>
               <select
                 value={ackHomecareProvision}
                 onChange={(e) => setAckHomecareProvision(e.target.value)}
                 className="rounded-lg border px-3 py-2 text-sm"
               >
-                <option value="">Select</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
+                <option value="">اختر</option>
+                <option value="yes">نعم</option>
+                <option value="no">لا</option>
               </select>
 
-              <label className="text-xs font-medium text-slate-600">Patient/Guardian notified of medical discharge decision</label>
+              <label className="text-xs font-medium text-slate-600">إبلاغ المريض / ولي الأمر بقرار الخروج الطبي</label>
               <select
                 value={ackDischargeDecisionNotice}
                 onChange={(e) => setAckDischargeDecisionNotice(e.target.value)}
                 className="rounded-lg border px-3 py-2 text-sm"
               >
-                <option value="">Select</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
+                <option value="">اختر</option>
+                <option value="yes">نعم</option>
+                <option value="no">لا</option>
               </select>
             </div>
 
-            <h3 className="mt-4 text-sm font-semibold text-slate-800">Signature Method</h3>
+            <h3 className="mt-4 text-sm font-semibold text-slate-800">طريقة التوقيع</h3>
             <div className="mt-2 grid gap-2">
               {methods.map((item) => (
                 <label key={item.method} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
-                  <span>{item.method}</span>
+                  <span>{item.label_ar || item.method}</span>
                   <input
                     type="radio"
                     name="signature-method"
@@ -317,18 +317,18 @@ export default function HomeHealthcareAgreementPage() {
             </div>
 
             <div className="mt-3 grid gap-2">
-              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="Phone number for OTP" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
-              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="OTP code" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
+              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="رقم الجوال لاستقبال رمز التحقق" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="رمز التحقق" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
               <textarea
                 className="rounded-lg border px-3 py-2 text-sm"
                 rows={4}
-                placeholder="Tablet signature payload (Base64)"
+                placeholder="بيانات توقيع الجهاز اللوحي (Base64)"
                 value={signaturePayload}
                 onChange={(e) => setSignaturePayload(e.target.value)}
               />
               <select value={nafathStatus} onChange={(e) => setNafathStatus(e.target.value)} className="rounded-lg border px-3 py-2 text-sm">
-                <option value="pending">Nafath Pending</option>
-                <option value="approved">Nafath Approved</option>
+                <option value="pending">نفاذ - بانتظار التحقق</option>
+                <option value="approved">نفاذ - تم التحقق</option>
               </select>
             </div>
 
@@ -342,7 +342,7 @@ export default function HomeHealthcareAgreementPage() {
                 disabled={!isHomecareSelected}
                 className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-50"
               >
-                Send OTP
+                إرسال رمز التحقق
               </button>
               <button
                 type="button"
@@ -350,7 +350,7 @@ export default function HomeHealthcareAgreementPage() {
                 disabled={!isHomecareSelected}
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
               >
-                Capture Tablet Signature
+                التقاط توقيع الجهاز اللوحي
               </button>
               <button
                 type="button"
@@ -358,32 +358,32 @@ export default function HomeHealthcareAgreementPage() {
                 disabled={!isHomecareSelected}
                 className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
               >
-                Generate PDF
+                إنشاء PDF
               </button>
             </div>
 
-            {fallbackMode ? <p className="mt-2 text-xs text-amber-700">Fallback mode: OTP stub is available if external SMS/Nafath is not configured.</p> : null}
-            {debugOtp ? <p className="mt-1 text-xs text-slate-500">Dev OTP: {debugOtp}</p> : null}
-            <p className="mt-2 text-sm text-slate-700">Status: {status}</p>
-            {sessionId ? <p className="text-xs text-slate-500">Session: {sessionId}</p> : null}
+            {fallbackMode ? <p className="mt-2 text-xs text-amber-700">وضع بديل: يتوفر رمز تحقق تجريبي عند عدم تهيئة خدمات الرسائل النصية أو نفاذ.</p> : null}
+            {debugOtp ? <p className="mt-1 text-xs text-slate-500">رمز تحقق بيئة التطوير: {debugOtp}</p> : null}
+            <p className="mt-2 text-sm text-slate-700">الحالة: {status}</p>
+            {sessionId ? <p className="text-xs text-slate-500">معرّف الجلسة: {sessionId}</p> : null}
             {message ? <p className="mt-2 text-sm text-slate-700">{message}</p> : null}
           </section>
 
           <section className="rounded-2xl border bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-800">Agreement Preview</h2>
+            <h2 className="text-sm font-semibold text-slate-800">معاينة الاتفاقية</h2>
             <div className="mt-3 max-h-[760px] overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
               {isHomecareSelected ? (
                 previewLoading ? (
-                  <p className="text-sm text-slate-500">Loading...</p>
+                  <p className="text-sm text-slate-500">جار التحميل...</p>
                 ) : previewHtml ? (
                   <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
                 ) : message ? (
-                  <p className="text-sm text-rose-700">Failed to load agreement preview: {message}</p>
+                  <p className="text-sm text-rose-700">فشل تحميل معاينة الاتفاقية: {message}</p>
                 ) : (
-                  <p className="text-sm text-slate-500">Agreement preview is not available yet.</p>
+                  <p className="text-sm text-slate-500">معاينة الاتفاقية غير متاحة بعد.</p>
                 )
               ) : (
-                <p className="text-sm text-slate-500">Select Home Health Care Agreement to activate this workflow.</p>
+                <p className="text-sm text-slate-500">اختر اتفاقية الرعاية الصحية المنزلية لتفعيل هذا المسار.</p>
               )}
             </div>
           </section>

@@ -18,9 +18,9 @@ export default function StartRefusalWorkflowModal({
   return (
     <BaseWorkflowModal
       open={open}
-      title="Start Refusal Workflow"
-      description="Start workflow after patient/legal representative refuses discharge."
-      submitLabel="Start Workflow"
+      title="بدء سير عمل رفض الخروج"
+      description="ابدأ سير العمل بعد رفض المريض / الممثل النظامي للخروج الطبي."
+      submitLabel="بدء سير العمل"
       submitting={submitting}
       onClose={onClose}
       onSubmit={onSubmit}

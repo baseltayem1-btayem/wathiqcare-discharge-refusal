@@ -18,9 +18,9 @@ export default function GenerateRefusalFormModal({
   return (
     <BaseWorkflowModal
       open={open}
-      title="Generate Discharge Refusal Form"
-      description="Generate the IMC-PAT-DIS-REF-01 form after required fields are complete."
-      submitLabel="Generate Refusal Form"
+      title="إنشاء نموذج رفض الخروج الطبي"
+      description="إنشاء نموذج IMC-PAT-DIS-REF-01 بعد استكمال الحقول المطلوبة."
+      submitLabel="إنشاء نموذج الرفض"
       submitting={submitting}
       onClose={onClose}
       onSubmit={onSubmit}

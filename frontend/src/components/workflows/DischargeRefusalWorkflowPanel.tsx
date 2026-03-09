@@ -33,9 +33,9 @@ export default function DischargeRefusalWorkflowPanel({
   return (
     <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white p-3">
-        <h3 className="text-sm font-semibold text-slate-900">Discharge Refusal Workflow</h3>
+        <h3 className="text-sm font-semibold text-slate-900">سير عمل رفض الخروج</h3>
         <div className="inline-flex items-center gap-2">
-          <span className="text-xs text-slate-500">Case ID: {caseId}</span>
+          <span className="text-xs text-slate-500">معرّف الحالة: {caseId}</span>
           <DischargeRefusalStatusBadge status={workflow?.status} />
         </div>
       </div>

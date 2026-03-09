@@ -14,7 +14,7 @@ type DischargeRefusalActionBarProps = {
 export default function DischargeRefusalActionBar({ actions }: DischargeRefusalActionBarProps) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4">
-      <h3 className="text-sm font-semibold text-slate-900">Workflow Actions</h3>
+      <h3 className="text-sm font-semibold text-slate-900">إجراءات سير العمل</h3>
       <div className="mt-3 flex flex-wrap gap-2">
         {actions.map((action) => (
           <button

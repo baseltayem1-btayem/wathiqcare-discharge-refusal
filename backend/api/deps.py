@@ -13,17 +13,17 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     try:
         payload = decode_access_token(token)
     except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise HTTPException(status_code=401, detail="رمز الدخول غير صالح أو منتهي الصلاحية")
 
     user_id = payload.get("sub")
     if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token payload")
+        raise HTTPException(status_code=401, detail="بيانات رمز الدخول غير صحيحة")
 
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+            raise HTTPException(status_code=401, detail="المستخدم غير موجود")
 
         return {
             "id": user.id,
@@ -38,6 +38,6 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 def require_roles(*allowed_roles):
     def role_checker(current_user=Depends(get_current_user)):
         if current_user["role"] not in allowed_roles:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
+            raise HTTPException(status_code=403, detail="الصلاحيات غير كافية")
         return current_user
     return role_checker

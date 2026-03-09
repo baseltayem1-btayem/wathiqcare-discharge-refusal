@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/discharge", tags=["Home Healthcare Agreement"])
 
 
 class CareModelSelectionRequest(BaseModel):
-    care_model: str = Field(..., description="Selected post-discharge care model")
+    care_model: str = Field(..., description="نموذج الرعاية المختار بعد الخروج")
 
 
 class HomecarePreviewRequest(BaseModel):
@@ -93,12 +93,12 @@ def select_post_discharge_care_model(
     selected = (request.care_model or "").strip().lower()
     allowed = {item["value"] for item in POST_DISCHARGE_CARE_MODELS}
     if selected not in allowed:
-        raise HTTPException(status_code=400, detail="Unsupported post-discharge care model")
+        raise HTTPException(status_code=400, detail="نموذج الرعاية بعد الخروج غير مدعوم")
 
     return {
         "care_model": selected,
         "trigger_home_healthcare_workflow": is_home_healthcare_model(selected),
-        "next_step": "start_home_healthcare_agreement" if is_home_healthcare_model(selected) else "continue_standard_discharge_planning",
+        "next_step": "بدء اتفاقية الرعاية الصحية المنزلية" if is_home_healthcare_model(selected) else "متابعة تخطيط الخروج المعتاد",
     }
 
 
@@ -115,11 +115,11 @@ def preview_home_healthcare_agreement(
         html_content = render_homecare_agreement_html(context)
         return {
             "template_key": "home_healthcare_agreement",
-            "title": "Acknowledgment & Informed Consent",
+            "title": "إقرار وموافقة مستنيرة",
             "html_content": html_content,
             "context": context,
         }
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {exc}")
+        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {exc}")

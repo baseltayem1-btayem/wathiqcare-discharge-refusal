@@ -35,7 +35,16 @@ def _iso(value: Optional[datetime]) -> Optional[str]:
 
 
 def _titleize_action(action: str) -> str:
-    return action.replace("_", " ").strip().title()
+    labels = {
+        "start_refusal_workflow": "بدء سير عمل الرفض",
+        "record_discharge_decision": "تسجيل قرار الخروج",
+        "mark_patient_counseled": "تسجيل إرشاد المريض",
+        "refer_social_services": "التحويل إلى الخدمات الاجتماعية",
+        "generate_refusal_form": "إنشاء نموذج الرفض",
+        "generate_financial_notice": "إنشاء الإشعار المالي",
+        "escalate_legal_compliance": "التصعيد إلى الشؤون القانونية والامتثال",
+    }
+    return labels.get(action, action.replace("_", " ").strip().title())
 
 
 def _normalize_document_type(template_key: str) -> str:
@@ -126,7 +135,7 @@ def _load_audit_trail(*, tenant_id: str, case_id: str) -> List[Dict[str, Any]]:
         results: List[Dict[str, Any]] = []
         for log, user in rows:
             action_name = (log.action or "").strip() or "unknown_action"
-            actor_name = user.full_name if user and user.full_name else (user.email if user else "System")
+            actor_name = user.full_name if user and user.full_name else (user.email if user else "النظام")
             actor_role = user.role if user else None
 
             results.append(
@@ -270,7 +279,7 @@ def _build_contract_workflow(*, tenant_id: str, case_id: str) -> Dict[str, Any]:
     snapshot = get_workflow_snapshot(tenant_id=tenant_id, case_id=case_id)
     case_detail = get_discharge_case_detail(tenant_id=tenant_id, case_id=case_id)
     if not case_detail:
-        raise ValueError("Case not found")
+        raise ValueError("الحالة غير موجودة")
 
     documents = _load_case_documents(tenant_id=tenant_id, case_id=case_id)
     audit_trail = _load_audit_trail(tenant_id=tenant_id, case_id=case_id)
@@ -516,7 +525,7 @@ def download_document_v2(
 
     path = Path(document.file_path)
     if not path.exists():
-        raise HTTPException(status_code=404, detail="Document file not found")
+        raise HTTPException(status_code=404, detail="ملف المستند غير موجود")
 
     return FileResponse(path=str(path), filename=document.file_name, media_type="text/html")
 
@@ -530,7 +539,7 @@ def close_workflow_todo(
     # Safe abstraction placeholder to avoid breaking clients before close-state server logic is finalized.
     return {
         "success": False,
-        "message": "Close workflow endpoint is not yet connected.",
-        "todo": "Wire close-state transition in backend workflow service.",
+        "message": "واجهة إغلاق سير العمل غير مفعلة بعد.",
+        "todo": "ربط انتقال حالة الإغلاق في خدمة سير العمل الخلفية.",
         "caseId": case_id,
     }

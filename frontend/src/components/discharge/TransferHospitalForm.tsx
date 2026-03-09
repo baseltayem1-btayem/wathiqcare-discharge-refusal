@@ -12,10 +12,10 @@ type Props = {
 export default function TransferHospitalForm({ value, onChange }: Props) {
   return (
     <section className="md:col-span-2 rounded-xl border border-slate-300 bg-white p-4">
-      <h3 className="text-base font-semibold text-slate-900">Transfer Authorization Form</h3>
+      <h3 className="text-base font-semibold text-slate-900">نموذج تصريح التحويل</h3>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Receiving Hospital</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">المستشفى المستقبِل</span>
           <input
             value={value.receivingHospital}
             onChange={(event) => onChange({ ...value, receivingHospital: event.target.value })}
@@ -24,7 +24,7 @@ export default function TransferHospitalForm({ value, onChange }: Props) {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Transfer Reason</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">سبب التحويل</span>
           <input
             value={value.transferReason}
             onChange={(event) => onChange({ ...value, transferReason: event.target.value })}
@@ -40,7 +40,7 @@ export default function TransferHospitalForm({ value, onChange }: Props) {
               onChange({ ...value, medicalStabilityConfirmation: event.target.checked })
             }
           />
-          Medical Stability Confirmation
+          تأكيد الاستقرار الطبي
         </label>
       </div>
     </section>

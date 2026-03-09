@@ -49,7 +49,7 @@ def create_refusal(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {str(e)}")
 
 @router.get("/cases")
 def get_cases(current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer"))):
@@ -59,7 +59,7 @@ def get_cases(current_user=Depends(require_roles("tenant_admin", "legal_admin", 
 def get_case(case_id: str, current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer"))):
     result = get_discharge_case_detail(current_user["tenant_id"], case_id)
     if not result:
-        raise HTTPException(status_code=404, detail="Case not found")
+        raise HTTPException(status_code=404, detail="الحالة غير موجودة")
     return result
 
 
@@ -91,7 +91,7 @@ def run_case_workflow_action(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {str(e)}")
 
 
 @router.post("/cases/{case_id}/workflow/preview")
@@ -140,7 +140,7 @@ def generate_case_workflow_document(
     }.get(payload.template_key)
 
     if not action:
-        raise HTTPException(status_code=400, detail="Unsupported template key")
+        raise HTTPException(status_code=400, detail="مفتاح النموذج غير مدعوم")
 
     try:
         return run_workflow_action(
@@ -153,7 +153,7 @@ def generate_case_workflow_document(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {str(e)}")
 
 
 @router.get("/cases/{case_id}/documents")
@@ -192,7 +192,7 @@ def download_case_document(
 
     path = Path(document.file_path)
     if not path.exists():
-        raise HTTPException(status_code=404, detail="Document file not found")
+        raise HTTPException(status_code=404, detail="ملف المستند غير موجود")
 
     return FileResponse(path=str(path), filename=document.file_name, media_type="text/html")
 
@@ -200,7 +200,7 @@ def download_case_document(
 def get_case_audit(case_id: str, current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer"))):
     result = list_audit_logs_for_case(current_user["tenant_id"], case_id)
     if result is None:
-        raise HTTPException(status_code=404, detail="Case not found")
+        raise HTTPException(status_code=404, detail="الحالة غير موجودة")
     return result
 
 @router.get("/bundles")
@@ -211,7 +211,7 @@ def get_bundles(current_user=Depends(require_roles("tenant_admin", "legal_admin"
 def get_pdf(filename: str, current_user=Depends(get_current_user)):
     file_path = Path("backend/generated") / filename
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="PDF file not found")
+        raise HTTPException(status_code=404, detail="ملف PDF غير موجود")
     return FileResponse(path=str(file_path), filename=filename, media_type="application/pdf")
 
 @router.post("/evidence-bundle/{discharge_case_id}")
@@ -224,7 +224,7 @@ def build_evidence_bundle(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {str(e)}")
 
 @router.get("/evidence-bundle/download/{filename}")
 def download_evidence_bundle(
@@ -233,5 +233,5 @@ def download_evidence_bundle(
 ):
     file_path = Path("backend/generated/bundles") / filename
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Evidence bundle not found")
+        raise HTTPException(status_code=404, detail="حزمة الأدلة غير موجودة")
     return FileResponse(path=str(file_path), filename=filename, media_type="application/zip")

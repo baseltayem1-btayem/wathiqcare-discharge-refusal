@@ -12,10 +12,10 @@ type Props = {
 export default function EquipmentRequestForm({ value, onChange }: Props) {
   return (
     <section className="md:col-span-2 rounded-xl border border-slate-300 bg-white p-4">
-      <h3 className="text-base font-semibold text-slate-900">Equipment Request Form</h3>
+      <h3 className="text-base font-semibold text-slate-900">نموذج طلب المعدات</h3>
       <div className="mt-4 grid gap-4 md:grid-cols-3">
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Requested Equipment</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">المعدات المطلوبة</span>
           <input
             value={value.requestedEquipment}
             onChange={(event) => onChange({ ...value, requestedEquipment: event.target.value })}
@@ -24,7 +24,7 @@ export default function EquipmentRequestForm({ value, onChange }: Props) {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Department</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">القسم</span>
           <select
             value={value.department}
             onChange={(event) =>
@@ -35,14 +35,14 @@ export default function EquipmentRequestForm({ value, onChange }: Props) {
             }
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
-            <option value="respiratory_therapy">Respiratory Therapy</option>
-            <option value="physical_therapy">Physical Therapy</option>
-            <option value="occupational_therapy">Occupational Therapy</option>
+            <option value="respiratory_therapy">العلاج التنفسي</option>
+            <option value="physical_therapy">العلاج الطبيعي</option>
+            <option value="occupational_therapy">العلاج الوظيفي</option>
           </select>
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Status</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">الحالة</span>
           <select
             value={value.status}
             onChange={(event) =>
@@ -50,16 +50,16 @@ export default function EquipmentRequestForm({ value, onChange }: Props) {
             }
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="unavailable">Unavailable</option>
+            <option value="pending">بانتظار الإجراء</option>
+            <option value="approved">مُعتمد</option>
+            <option value="unavailable">غير متوفر</option>
           </select>
         </label>
       </div>
 
       {value.status === "unavailable" ? (
         <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          Temporary Equipment Approval will be generated automatically.
+          سيتم إنشاء اعتماد مؤقت للمعدات تلقائيًا.
         </p>
       ) : null}
     </section>

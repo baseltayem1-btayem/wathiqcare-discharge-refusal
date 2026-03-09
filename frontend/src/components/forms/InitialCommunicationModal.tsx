@@ -18,9 +18,9 @@ export default function InitialCommunicationModal({
   return (
     <BaseWorkflowModal
       open={open}
-      title="Record Initial Communication"
-      description="Document initial communication with patient and family."
-      submitLabel="Record Communication"
+      title="تسجيل التواصل الأولي"
+      description="توثيق التواصل الأولي مع المريض والأسرة."
+      submitLabel="تسجيل التواصل"
       submitting={submitting}
       onClose={onClose}
       onSubmit={onSubmit}

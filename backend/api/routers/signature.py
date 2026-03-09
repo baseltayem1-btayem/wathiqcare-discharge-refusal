@@ -36,7 +36,7 @@ def start_acknowledgment(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {exc}")
+        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {exc}")
 
 
 @router.post("/cases/{case_id}/acknowledgment/{session_id}/verify")
@@ -57,7 +57,7 @@ def verify_acknowledgment(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {exc}")
+        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {exc}")
 
 
 @router.get("/cases/{case_id}/acknowledgment/{session_id}")
@@ -69,9 +69,9 @@ def get_acknowledgment_session(
     try:
         session = service.get_session(session_id=session_id)
         if session.get("case_id") != case_id or session.get("tenant_id") != current_user["tenant_id"]:
-            raise ValueError("Acknowledgment session does not match case or tenant")
+            raise ValueError("جلسة الإقرار لا تطابق الحالة أو المستأجر")
         return session
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {exc}")
+        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {exc}")

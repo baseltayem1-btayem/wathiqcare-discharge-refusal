@@ -8,7 +8,7 @@ type DocumentDownloadButtonProps = {
   label?: string;
 };
 
-export default function DocumentDownloadButton({ disabled, onClick, label = "Download" }: DocumentDownloadButtonProps) {
+export default function DocumentDownloadButton({ disabled, onClick, label = "تنزيل" }: DocumentDownloadButtonProps) {
   return (
     <button
       type="button"

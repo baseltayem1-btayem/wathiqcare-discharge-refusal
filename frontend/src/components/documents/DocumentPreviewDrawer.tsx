@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type DocumentPreviewDrawerProps = {
   open: boolean;
@@ -15,6 +16,8 @@ export default function DocumentPreviewDrawer({
   htmlContent,
   onClose,
 }: DocumentPreviewDrawerProps) {
+  const { t } = useI18n();
+
   if (!open) {
     return null;
   }
@@ -35,7 +38,7 @@ export default function DocumentPreviewDrawer({
         <div className="p-4">
           <iframe
             title={title}
-            srcDoc={htmlContent || "<p>No preview available.</p>"}
+            srcDoc={htmlContent || `<p>${t("common.noPreview")}</p>`}
             className="h-[80vh] w-full rounded-lg border border-slate-200"
           />
         </div>

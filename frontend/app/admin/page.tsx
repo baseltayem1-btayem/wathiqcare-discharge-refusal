@@ -125,7 +125,7 @@ export default function AdminPage() {
       const me = await apiFetch<AuthMeResponse>("/api/auth/me");
       const resolvedTenantId = me?.claims?.tenant_id;
       if (!resolvedTenantId) {
-        throw new Error("Could not resolve tenant from current session.");
+        throw new Error("تعذر تحديد المستأجر من الجلسة الحالية.");
       }
 
       setTenantId(resolvedTenantId);
@@ -158,7 +158,7 @@ export default function AdminPage() {
         seatLimit: subscriptionData.seatLimit ?? 10,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load SaaS admin dashboard");
+      setError(err instanceof Error ? err.message : "فشل تحميل لوحة إدارة المنصة.");
     } finally {
       setLoading(false);
     }
@@ -184,10 +184,10 @@ export default function AdminPage() {
           country: tenantForm.country || null,
         }),
       });
-      setNotice("Tenant profile updated");
+      setNotice("تم تحديث ملف المستأجر");
       await loadDashboard();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update tenant");
+      setError(err instanceof Error ? err.message : "فشل تحديث بيانات المستأجر");
     } finally {
       setSavingTenant(false);
     }
@@ -204,10 +204,10 @@ export default function AdminPage() {
         method: "PATCH",
         body: JSON.stringify(subscriptionForm),
       });
-      setNotice("Subscription updated");
+      setNotice("تم تحديث الاشتراك");
       await loadDashboard();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update subscription");
+      setError(err instanceof Error ? err.message : "فشل تحديث الاشتراك");
     } finally {
       setSavingSubscription(false);
     }
@@ -224,11 +224,11 @@ export default function AdminPage() {
         method: "POST",
         body: JSON.stringify(memberForm),
       });
-      setNotice("Member added");
+      setNotice("تمت إضافة العضو");
       setMemberForm({ email: "", fullName: "", role: "MEMBER" });
       await loadDashboard();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add member");
+      setError(err instanceof Error ? err.message : "فشل إضافة العضو");
     } finally {
       setAddingMember(false);
     }
@@ -237,8 +237,8 @@ export default function AdminPage() {
   return (
     <AuthGuard>
       <AppShell
-        title="SaaS Admin"
-        subtitle="Tenant controls, subscription, members, usage, and billing"
+        title="إدارة المنصة"
+        subtitle="إدارة المستأجر والاشتراك والأعضاء والاستخدام والفوترة"
         actions={
           <button
             type="button"
@@ -252,7 +252,7 @@ export default function AdminPage() {
       >
         {loading ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            Loading SaaS admin workspace...
+            جار تحميل مساحة إدارة المنصة...
           </div>
         ) : null}
 
@@ -271,12 +271,12 @@ export default function AdminPage() {
             <section className="rounded-2xl border border-slate-200 p-4">
               <div className="mb-4 flex items-center gap-2 text-slate-900">
                 <ShieldCheck className="h-4 w-4" />
-                <h2 className="text-base font-semibold">Tenant Profile</h2>
+                <h2 className="text-base font-semibold">ملف المستأجر</h2>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="text-sm text-slate-700">
-                  Name
+                  الاسم
                   <input
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={tenantForm.name}
@@ -284,7 +284,7 @@ export default function AdminPage() {
                   />
                 </label>
                 <label className="text-sm text-slate-700">
-                  Billing Email
+                  البريد الإلكتروني للفوترة
                   <input
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={tenantForm.billingEmail}
@@ -292,7 +292,7 @@ export default function AdminPage() {
                   />
                 </label>
                 <label className="text-sm text-slate-700">
-                  Timezone
+                  المنطقة الزمنية
                   <input
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={tenantForm.timezone}
@@ -300,7 +300,7 @@ export default function AdminPage() {
                   />
                 </label>
                 <label className="text-sm text-slate-700">
-                  Country
+                  الدولة
                   <input
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={tenantForm.country}
@@ -310,8 +310,8 @@ export default function AdminPage() {
               </div>
 
               <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-                <span>Tenant Code: {tenant.code}</span>
-                <span>Status: {tenant.isActive ? "Active" : "Inactive"}</span>
+                <span>رمز المستأجر: {tenant.code}</span>
+                <span>الحالة: {tenant.isActive ? "نشط" : "غير نشط"}</span>
               </div>
 
               <button
@@ -321,23 +321,23 @@ export default function AdminPage() {
                 className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
               >
                 <Save className="h-4 w-4" />
-                {savingTenant ? "Saving..." : "Save Tenant"}
+                {savingTenant ? "جار الحفظ..." : "حفظ بيانات المستأجر"}
               </button>
             </section>
 
             <section className="rounded-2xl border border-slate-200 p-4">
-              <h2 className="text-base font-semibold text-slate-900">Subscription & Plan</h2>
+              <h2 className="text-base font-semibold text-slate-900">الاشتراك والخطة</h2>
               {subscription ? (
                 <p className="mt-1 text-xs text-slate-600">
-                  Current: {subscription.plan?.name ?? subscription.plan?.code ?? "Unknown plan"} | Status: {subscription.status}
+                  الحالي: {subscription.plan?.name ?? subscription.plan?.code ?? "خطة غير معروفة"} | الحالة: {subscription.status}
                   {subscription.trialEndsAt
-                    ? ` | Trial ends ${new Date(subscription.trialEndsAt).toLocaleDateString()}`
+                    ? ` | تنتهي الفترة التجريبية في ${new Date(subscription.trialEndsAt).toLocaleDateString()}`
                     : ""}
                 </p>
               ) : null}
               <div className="mt-3 grid gap-3 md:grid-cols-4">
                 <label className="text-sm text-slate-700">
-                  Plan
+                  الخطة
                   <select
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={subscriptionForm.planCode}
@@ -353,7 +353,7 @@ export default function AdminPage() {
                   </select>
                 </label>
                 <label className="text-sm text-slate-700">
-                  Billing
+                  الفوترة
                   <select
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={subscriptionForm.billingInterval}
@@ -369,7 +369,7 @@ export default function AdminPage() {
                   </select>
                 </label>
                 <label className="text-sm text-slate-700">
-                  Status
+                  الحالة
                   <select
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={subscriptionForm.status}
@@ -385,7 +385,7 @@ export default function AdminPage() {
                   </select>
                 </label>
                 <label className="text-sm text-slate-700">
-                  Seat Limit
+                  حد المقاعد
                   <input
                     type="number"
                     min={1}
@@ -408,14 +408,14 @@ export default function AdminPage() {
                 className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
               >
                 <Save className="h-4 w-4" />
-                {savingSubscription ? "Saving..." : "Save Subscription"}
+                {savingSubscription ? "جار الحفظ..." : "حفظ الاشتراك"}
               </button>
             </section>
 
             <section className="rounded-2xl border border-slate-200 p-4">
               <div className="mb-3 flex items-center gap-2 text-slate-900">
                 <Users className="h-4 w-4" />
-                <h2 className="text-base font-semibold">Members ({members.length})</h2>
+                <h2 className="text-base font-semibold">الأعضاء ({members.length})</h2>
               </div>
 
               <div className="grid gap-3 md:grid-cols-4">
@@ -427,7 +427,7 @@ export default function AdminPage() {
                 />
                 <input
                   className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  placeholder="Full name"
+                  placeholder="الاسم الكامل"
                   value={memberForm.fullName}
                   onChange={(e) => setMemberForm((prev) => ({ ...prev, fullName: e.target.value }))}
                 />
@@ -449,7 +449,7 @@ export default function AdminPage() {
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
                 >
                   <Plus className="h-4 w-4" />
-                  {addingMember ? "Adding..." : "Add Member"}
+                  {addingMember ? "جار الإضافة..." : "إضافة عضو"}
                 </button>
               </div>
 
@@ -457,10 +457,10 @@ export default function AdminPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-3 py-2 text-left">Name</th>
-                      <th className="px-3 py-2 text-left">Email</th>
-                      <th className="px-3 py-2 text-left">Role</th>
-                      <th className="px-3 py-2 text-left">Status</th>
+                      <th className="px-3 py-2 text-left">الاسم</th>
+                      <th className="px-3 py-2 text-left">البريد الإلكتروني</th>
+                      <th className="px-3 py-2 text-left">الدور</th>
+                      <th className="px-3 py-2 text-left">الحالة</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -475,7 +475,7 @@ export default function AdminPage() {
                     {members.length === 0 ? (
                       <tr>
                         <td className="px-3 py-6 text-center text-slate-500" colSpan={4}>
-                          No members found.
+                          لا يوجد أعضاء.
                         </td>
                       </tr>
                     ) : null}
@@ -486,14 +486,14 @@ export default function AdminPage() {
 
             <section className="grid gap-5 lg:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 p-4">
-                <h2 className="text-base font-semibold text-slate-900">Usage (Last 30 Days)</h2>
+                <h2 className="text-base font-semibold text-slate-900">الاستخدام (آخر 30 يومًا)</h2>
                 <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full text-sm">
                     <thead className="bg-slate-50">
                       <tr>
-                        <th className="px-3 py-2 text-left">Metric</th>
-                        <th className="px-3 py-2 text-left">Value</th>
-                        <th className="px-3 py-2 text-left">Date</th>
+                        <th className="px-3 py-2 text-left">المؤشر</th>
+                        <th className="px-3 py-2 text-left">القيمة</th>
+                        <th className="px-3 py-2 text-left">التاريخ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -507,7 +507,7 @@ export default function AdminPage() {
                       {usage.length === 0 ? (
                         <tr>
                           <td className="px-3 py-6 text-center text-slate-500" colSpan={3}>
-                            No usage records yet.
+                            لا توجد سجلات استخدام حتى الآن.
                           </td>
                         </tr>
                       ) : null}
@@ -517,15 +517,15 @@ export default function AdminPage() {
               </div>
 
               <div className="rounded-2xl border border-slate-200 p-4">
-                <h2 className="text-base font-semibold text-slate-900">Invoices</h2>
+                <h2 className="text-base font-semibold text-slate-900">الفواتير</h2>
                 <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full text-sm">
                     <thead className="bg-slate-50">
                       <tr>
-                        <th className="px-3 py-2 text-left">Invoice #</th>
-                        <th className="px-3 py-2 text-left">Status</th>
-                        <th className="px-3 py-2 text-left">Total</th>
-                        <th className="px-3 py-2 text-left">Due</th>
+                        <th className="px-3 py-2 text-left">رقم الفاتورة</th>
+                        <th className="px-3 py-2 text-left">الحالة</th>
+                        <th className="px-3 py-2 text-left">الإجمالي</th>
+                        <th className="px-3 py-2 text-left">الاستحقاق</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -542,7 +542,7 @@ export default function AdminPage() {
                       {invoices.length === 0 ? (
                         <tr>
                           <td className="px-3 py-6 text-center text-slate-500" colSpan={4}>
-                            No invoices found.
+                            لا توجد فواتير.
                           </td>
                         </tr>
                       ) : null}

@@ -17,7 +17,7 @@ type MethodItem = {
 const METHOD_LABELS: Record<string, string> = {
   SMS_OTP: "رسالة نصية",
   NAFATH: "نفاذ",
-  TABLET_SIGNATURE: "توقيع على التابلت",
+  TABLET_SIGNATURE: "توقيع على الجهاز اللوحي",
 };
 
 export default function RefusalFormSignaturePage() {
@@ -136,11 +136,11 @@ export default function RefusalFormSignaturePage() {
   return (
     <AuthGuard>
       <AppShell
-        title="Medical Discharge Refusal Form"
+        title="نموذج رفض الخروج الطبي"
         subtitle="طريقة الإقرار / التوقيع"
         actions={
           <Link href={`/cases/${caseId}`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
-            رجوع إلى الحالة
+            العودة إلى الحالة
           </Link>
         }
       >
@@ -148,7 +148,7 @@ export default function RefusalFormSignaturePage() {
           <section className="rounded-2xl border bg-white p-4">
             <h2 className="text-sm font-semibold text-slate-800">النص الرسمي المعتمد</h2>
             <div className="mt-3 max-h-[520px] overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
-              {previewHtml ? <div dangerouslySetInnerHTML={{ __html: previewHtml }} /> : <p className="text-sm text-slate-500">Loading...</p>}
+              {previewHtml ? <div dangerouslySetInnerHTML={{ __html: previewHtml }} /> : <p className="text-sm text-slate-500">جار التحميل...</p>}
             </div>
           </section>
 
@@ -178,7 +178,7 @@ export default function RefusalFormSignaturePage() {
                 <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
                 <label className="text-sm text-slate-700">رمز التحقق</label>
                 <input value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
-                {debugCode ? <p className="text-xs text-slate-500">Dev OTP: {debugCode}</p> : null}
+                {debugCode ? <p className="text-xs text-slate-500">رمز تحقق بيئة التطوير: {debugCode}</p> : null}
               </div>
             ) : null}
 
@@ -214,7 +214,7 @@ export default function RefusalFormSignaturePage() {
 
             <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
               <p>الحالة: {status}</p>
-              {sessionId ? <p className="text-xs text-slate-500">Session: {sessionId}</p> : null}
+              {sessionId ? <p className="text-xs text-slate-500">معرّف الجلسة: {sessionId}</p> : null}
             </div>
 
             {message ? <p className="mt-2 text-sm text-slate-700">{message}</p> : null}

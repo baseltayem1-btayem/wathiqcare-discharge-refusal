@@ -43,18 +43,18 @@ export const financialResponsibilityNoticeTemplate: DocumentTemplate<FinancialRe
   renderHtml(payload): string {
     return `
       <div>
-        <h1>Notification and Acknowledgment of Financial Responsibility for Refusal of Medical Discharge</h1>
-        <p><strong>Code:</strong> ${DOCUMENT_CODES.financialResponsibilityNotice}</p>
-        <p><strong>Date:</strong> ${payload.documentDate ?? ""}</p>
-        <p><strong>Ref:</strong> ${payload.referenceNumber ?? ""}</p>
-        <p><strong>Patient / Legal Guardian Name:</strong> ${payload.patientOrGuardianName ?? payload.patientName ?? ""}</p>
-        <p><strong>National ID Number:</strong> ${payload.patientIdNumber ?? ""}</p>
-        <p><strong>Medical Record Number:</strong> ${payload.medicalRecordNumber ?? ""}</p>
-        <p><strong>Room Number:</strong> ${payload.roomNumber ?? ""}</p>
-        <p><strong>Date of Medical Discharge Decision:</strong> ${payload.dischargeDecisionAt ?? ""}</p>
-        <p><strong>Acknowledgment:</strong> Continued refusal after discharge decision may result in financial responsibility per hospital policy and regulations.</p>
-        <p><strong>Patient / Legal Guardian Signature:</strong> ____________________</p>
-        <p><strong>Patient Affairs Signature / Stamp:</strong> ____________________</p>
+        <h1>إشعار وإقرار بتحمل المسؤولية المالية الناتجة عن رفض الخروج الطبي</h1>
+        <p><strong>الرمز:</strong> ${DOCUMENT_CODES.financialResponsibilityNotice}</p>
+        <p><strong>التاريخ:</strong> ${payload.documentDate ?? ""}</p>
+        <p><strong>المرجع:</strong> ${payload.referenceNumber ?? ""}</p>
+        <p><strong>اسم المريض / ولي الأمر:</strong> ${payload.patientOrGuardianName ?? payload.patientName ?? ""}</p>
+        <p><strong>رقم الهوية الوطنية:</strong> ${payload.patientIdNumber ?? ""}</p>
+        <p><strong>رقم السجل الطبي:</strong> ${payload.medicalRecordNumber ?? ""}</p>
+        <p><strong>رقم الغرفة:</strong> ${payload.roomNumber ?? ""}</p>
+        <p><strong>تاريخ قرار الخروج الطبي:</strong> ${payload.dischargeDecisionAt ?? ""}</p>
+        <p><strong>الإقرار:</strong> استمرار الرفض بعد قرار الخروج قد يترتب عليه تحمل التكاليف المالية وفقًا لسياسات المستشفى والأنظمة المعمول بها.</p>
+        <p><strong>توقيع المريض / ولي الأمر:</strong> ____________________</p>
+        <p><strong>توقيع / ختم علاقات المرضى:</strong> ____________________</p>
       </div>
     `;
   },

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type BaseWorkflowModalProps = {
   open: boolean;
@@ -23,6 +24,8 @@ export default function BaseWorkflowModal({
   onClose,
   onSubmit,
 }: BaseWorkflowModalProps) {
+  const { t } = useI18n();
+
   if (!open) {
     return null;
   }
@@ -41,7 +44,7 @@ export default function BaseWorkflowModal({
             onClick={onClose}
             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           {onSubmit ? (
             <button
@@ -50,7 +53,7 @@ export default function BaseWorkflowModal({
               disabled={submitting}
               className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
             >
-              {submitting ? "Submitting..." : submitLabel}
+              {submitting ? t("common.submitting") : submitLabel}
             </button>
           ) : null}
         </div>

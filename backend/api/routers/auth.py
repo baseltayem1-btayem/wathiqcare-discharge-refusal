@@ -13,10 +13,10 @@ def login(payload: LoginRequest):
     try:
         user = db.query(User).filter(User.email == payload.email).first()
         if not user or not user.hashed_password:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
 
         if not verify_password(payload.password, user.hashed_password):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
 
         tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
 

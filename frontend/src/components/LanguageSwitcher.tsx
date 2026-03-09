@@ -41,7 +41,7 @@ export default function LanguageSwitcher({ className = "" }: Props) {
           }
           aria-label={t("language.arabic")}
         >
-          ع
+          عربي
         </button>
       </div>
     </div>

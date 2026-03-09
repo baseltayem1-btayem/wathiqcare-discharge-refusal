@@ -18,9 +18,9 @@ export default function GenerateFinancialNoticeModal({
   return (
     <BaseWorkflowModal
       open={open}
-      title="Generate Financial Responsibility Notice"
-      description="Generate the official financial notice after minimum required data validation passes."
-      submitLabel="Generate Financial Notice"
+      title="إنشاء إشعار المسؤولية المالية"
+      description="إنشاء الإشعار المالي الرسمي بعد اجتياز الحد الأدنى من التحقق من البيانات المطلوبة."
+      submitLabel="إنشاء الإشعار المالي"
       submitting={submitting}
       onClose={onClose}
       onSubmit={onSubmit}
