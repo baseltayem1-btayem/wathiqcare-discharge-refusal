@@ -1,15 +1,17 @@
 import crypto from "node:crypto";
-import { GovernanceSignatureMethod, SignatureProofStatus } from "@prisma/client";
+
+export type GovernanceSignatureMethodValue = "SMS_OTP" | "NAFATH" | "TABLET";
+export type SignatureProofStatusValue = "PENDING" | "VERIFIED" | "SIGNED" | "FAILED";
 
 export type SignatureInitArgs = {
-  method: GovernanceSignatureMethod;
+  method: GovernanceSignatureMethodValue;
   mobileNumber?: string | null;
   userAgent?: string | null;
   ipAddress?: string | null;
 };
 
 export type SignatureInitResult = {
-  status: SignatureProofStatus;
+  status: SignatureProofStatusValue;
   providerSummary: string;
   otpReference?: string;
   otpCodeHash?: string;
@@ -17,7 +19,7 @@ export type SignatureInitResult = {
 };
 
 export function initializeSignatureProof(args: SignatureInitArgs): SignatureInitResult {
-  if (args.method === GovernanceSignatureMethod.SMS_OTP) {
+  if (args.method === "SMS_OTP") {
     const code = process.env.NODE_ENV === "production" ? `${Math.floor(100000 + Math.random() * 900000)}` : "123456";
     const otpReference = `otp_${Date.now()}`;
     const otpCodeHash = crypto.createHash("sha256").update(code).digest("hex");
@@ -26,7 +28,7 @@ export function initializeSignatureProof(args: SignatureInitArgs): SignatureInit
       : undefined;
 
     return {
-      status: SignatureProofStatus.PENDING,
+      status: "PENDING",
       providerSummary: "SMS OTP initialized (mock-safe mode)",
       otpReference,
       otpCodeHash,
@@ -34,15 +36,15 @@ export function initializeSignatureProof(args: SignatureInitArgs): SignatureInit
     };
   }
 
-  if (args.method === GovernanceSignatureMethod.NAFATH) {
+  if (args.method === "NAFATH") {
     return {
-      status: SignatureProofStatus.PENDING,
+      status: "PENDING",
       providerSummary: "Nafath provider is feature-gated and currently running in placeholder mode",
     };
   }
 
   return {
-    status: SignatureProofStatus.SIGNED,
+    status: "SIGNED",
     providerSummary: "Tablet signature captured",
   };
 }

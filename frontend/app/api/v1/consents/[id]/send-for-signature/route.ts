@@ -1,4 +1,3 @@
-import { ConsentLifecycleStatus, SignatureProofStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -7,6 +6,28 @@ import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
 import { initializeSignatureProof } from "@/lib/server/governance/signature-proof-service";
+
+const governanceDb = prisma as unknown as {
+  consent: {
+    findUnique: (args: { where: { id: string } }) => Promise<
+      | {
+          id: string;
+          tenantId: string;
+          patientId: string;
+          caseId: string | null;
+          signatureMethod: "SMS_OTP" | "NAFATH" | "TABLET" | null;
+        }
+      | null
+    >;
+    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<{ caseId: string | null }>;
+  };
+  patient: {
+    findUnique: (args: { where: { id: string } }) => Promise<{ mobileNumber: string | null } | null>;
+  };
+  signature: {
+    create: (args: { data: Record<string, unknown> }) => Promise<{ id: string; otpReference: string | null; phoneMasked: string | null }>;
+  };
+};
 
 export async function POST(
   request: NextRequest,
@@ -20,7 +41,7 @@ export async function POST(
     const auth = requireAuth(request);
     const { id } = await params;
 
-    const consent = await prisma.consent.findUnique({ where: { id } });
+    const consent = await governanceDb.consent.findUnique({ where: { id } });
     if (!consent) {
       throw new ApiError(404, "Consent not found");
     }
@@ -31,7 +52,7 @@ export async function POST(
       throw new ApiError(400, "signatureMethod must be set before sending for signature");
     }
 
-    const patient = await prisma.patient.findUnique({ where: { id: consent.patientId } });
+    const patient = await governanceDb.patient.findUnique({ where: { id: consent.patientId } });
     const init = initializeSignatureProof({
       method: consent.signatureMethod,
       mobileNumber: patient?.mobileNumber,
@@ -39,7 +60,7 @@ export async function POST(
       userAgent: request.headers.get("user-agent"),
     });
 
-    const signature = await prisma.signature.create({
+    const signature = await governanceDb.signature.create({
       data: {
         tenantId: auth.tenant_id,
         consentId: consent.id,
@@ -57,14 +78,14 @@ export async function POST(
       },
     });
 
-    const updated = await prisma.consent.update({
+    const updated = await governanceDb.consent.update({
       where: { id },
       data: {
-        status: ConsentLifecycleStatus.SIGNATURE_PENDING,
+        status: "SIGNATURE_PENDING",
         signatureStatus:
-          init.status === SignatureProofStatus.SIGNED
-            ? SignatureProofStatus.SIGNED
-            : SignatureProofStatus.PENDING,
+          init.status === "SIGNED"
+            ? "SIGNED"
+            : "PENDING",
       },
     });
 

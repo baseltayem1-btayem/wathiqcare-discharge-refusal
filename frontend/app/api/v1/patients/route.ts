@@ -1,4 +1,4 @@
-import { PatientCapacityStatus, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -7,12 +7,44 @@ import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
 
-function parseCapacityStatus(raw: string | undefined): PatientCapacityStatus {
+type PatientCapacityStatusValue = "CAPABLE" | "MINOR" | "LACKS_CAPACITY" | "UNKNOWN";
+
+const governanceDb = prisma as unknown as {
+  patient: {
+    findMany: (args: {
+      where: { tenantId: string };
+      orderBy: { createdAt: "desc" };
+      take: number;
+    }) => Promise<Array<Record<string, unknown>>>;
+    create: (args: {
+      data: {
+        tenantId: string;
+        mrn: string | null;
+        urn: string | null;
+        fullName: string;
+        nationalId: string | null;
+        mobileNumber: string | null;
+        email: string | null;
+        dob: Date | null;
+        gender: string | null;
+        preferredLanguage: string | null;
+        legalGuardianName: string | null;
+        guardianRelationship: string | null;
+        capacityStatus: PatientCapacityStatusValue;
+        hisIdentifier: string | null;
+        archiveReference: string | null;
+        metadata?: Prisma.InputJsonValue;
+      };
+    }) => Promise<{ id: string; mrn: string | null; fullName: string }>;
+  };
+};
+
+function parseCapacityStatus(raw: string | undefined): PatientCapacityStatusValue {
   const value = (raw ?? "").trim().toUpperCase();
-  if (value === "CAPABLE") return PatientCapacityStatus.CAPABLE;
-  if (value === "MINOR") return PatientCapacityStatus.MINOR;
-  if (value === "LACKS_CAPACITY") return PatientCapacityStatus.LACKS_CAPACITY;
-  return PatientCapacityStatus.UNKNOWN;
+  if (value === "CAPABLE") return "CAPABLE";
+  if (value === "MINOR") return "MINOR";
+  if (value === "LACKS_CAPACITY") return "LACKS_CAPACITY";
+  return "UNKNOWN";
 }
 
 export async function GET(request: NextRequest) {
@@ -22,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     const auth = requireAuth(request);
-    const patients = await prisma.patient.findMany({
+    const patients = await governanceDb.patient.findMany({
       where: { tenantId: auth.tenant_id },
       orderBy: { createdAt: "desc" },
       take: 200,
@@ -65,7 +97,7 @@ export async function POST(request: NextRequest) {
       throw new ApiError(400, "fullName is required");
     }
 
-    const created = await prisma.patient.create({
+    const created = await governanceDb.patient.create({
       data: {
         tenantId: auth.tenant_id,
         mrn: payload.mrn?.trim() || null,

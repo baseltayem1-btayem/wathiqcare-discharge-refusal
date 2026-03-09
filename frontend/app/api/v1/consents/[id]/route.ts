@@ -5,6 +5,18 @@ import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
 
+const governanceDb = prisma as unknown as {
+  consent: {
+    findUnique: (args: { where: { id: string } }) => Promise<{ tenantId: string } | null>;
+  };
+  signature: {
+    findFirst: (args: { where: { tenantId: string; consentId: string }; orderBy: { createdAt: "desc" } }) => Promise<unknown | null>;
+  };
+  archiveRecord: {
+    findFirst: (args: { where: { tenantId: string; consentId: string }; orderBy: { createdAt: "desc" } }) => Promise<unknown | null>;
+  };
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -17,7 +29,7 @@ export async function GET(
     const auth = requireAuth(request);
     const { id } = await params;
 
-    const consent = await prisma.consent.findUnique({ where: { id } });
+    const consent = await governanceDb.consent.findUnique({ where: { id } });
     if (!consent) {
       throw new ApiError(404, "Consent not found");
     }
@@ -25,12 +37,12 @@ export async function GET(
       throw new ApiError(403, "Tenant access denied");
     }
 
-    const signature = await prisma.signature.findFirst({
+    const signature = await governanceDb.signature.findFirst({
       where: { tenantId: auth.tenant_id, consentId: id },
       orderBy: { createdAt: "desc" },
     });
 
-    const archive = await prisma.archiveRecord.findFirst({
+    const archive = await governanceDb.archiveRecord.findFirst({
       where: { tenantId: auth.tenant_id, consentId: id },
       orderBy: { createdAt: "desc" },
     });

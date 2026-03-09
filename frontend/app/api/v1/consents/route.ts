@@ -1,9 +1,4 @@
 import {
-  ConsentLifecycleStatus,
-  GovernanceArchiveStatus,
-  GovernanceSignatureMethod,
-  GovernanceSignerType,
-  SignatureProofStatus,
   type Prisma,
 } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -15,19 +10,43 @@ import { writeAuditLog } from "@/lib/server/saas-services";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
 import { deriveConsentRecommendations } from "@/lib/server/governance/consent-intelligence";
 
-function parseSignerType(raw: string | undefined): GovernanceSignerType {
+type GovernanceSignerTypeValue = "PATIENT" | "GUARDIAN" | "SURROGATE" | "WITNESS";
+type GovernanceSignatureMethodValue = "SMS_OTP" | "NAFATH" | "TABLET";
+
+const governanceDb = prisma as unknown as {
+  consent: {
+    findMany: (args: {
+      where: { tenantId: string };
+      orderBy: { createdAt: "desc" };
+      take: number;
+    }) => Promise<Array<Record<string, unknown>>>;
+    create: (args: {
+      data: Record<string, unknown>;
+    }) => Promise<{
+      id: string;
+      caseId: string | null;
+      patientId: string;
+      status: string;
+    }>;
+  };
+  patient: {
+    findUnique: (args: { where: { id: string } }) => Promise<{ tenantId: string } | null>;
+  };
+};
+
+function parseSignerType(raw: string | undefined): GovernanceSignerTypeValue {
   const value = (raw ?? "PATIENT").trim().toUpperCase();
-  if (value === "GUARDIAN") return GovernanceSignerType.GUARDIAN;
-  if (value === "SURROGATE") return GovernanceSignerType.SURROGATE;
-  if (value === "WITNESS") return GovernanceSignerType.WITNESS;
-  return GovernanceSignerType.PATIENT;
+  if (value === "GUARDIAN") return "GUARDIAN";
+  if (value === "SURROGATE") return "SURROGATE";
+  if (value === "WITNESS") return "WITNESS";
+  return "PATIENT";
 }
 
-function parseSignatureMethod(raw: string | undefined): GovernanceSignatureMethod | null {
+function parseSignatureMethod(raw: string | undefined): GovernanceSignatureMethodValue | null {
   const value = (raw ?? "").trim().toUpperCase();
-  if (value === "SMS_OTP" || value === "SMS") return GovernanceSignatureMethod.SMS_OTP;
-  if (value === "NAFATH") return GovernanceSignatureMethod.NAFATH;
-  if (value === "TABLET") return GovernanceSignatureMethod.TABLET;
+  if (value === "SMS_OTP" || value === "SMS") return "SMS_OTP";
+  if (value === "NAFATH") return "NAFATH";
+  if (value === "TABLET") return "TABLET";
   return null;
 }
 
@@ -38,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     const auth = requireAuth(request);
-    const consents = await prisma.consent.findMany({
+    const consents = await governanceDb.consent.findMany({
       where: { tenantId: auth.tenant_id },
       orderBy: { createdAt: "desc" },
       take: 300,
@@ -88,7 +107,7 @@ export async function POST(request: NextRequest) {
       throw new ApiError(400, "patientId is required");
     }
 
-    const patient = await prisma.patient.findUnique({ where: { id: payload.patientId } });
+    const patient = await governanceDb.patient.findUnique({ where: { id: payload.patientId } });
     if (!patient || patient.tenantId !== auth.tenant_id) {
       throw new ApiError(404, "Patient not found");
     }
@@ -110,14 +129,14 @@ export async function POST(request: NextRequest) {
       Object.assign(metadata, payload.metadata as Prisma.InputJsonObject);
     }
 
-    const created = await prisma.consent.create({
+    const created = await governanceDb.consent.create({
       data: {
         tenantId: auth.tenant_id,
         patientId: payload.patientId,
         caseId: payload.caseId ?? null,
         consentTypeId: payload.consentTypeId ?? null,
         templateId: payload.templateId ?? null,
-        status: ConsentLifecycleStatus.DRAFT,
+        status: "DRAFT",
         linkedProcedureId: payload.linkedProcedureId ?? null,
         linkedServiceModel: payload.linkedServiceModel ?? null,
         signerType: parseSignerType(payload.signerType),
@@ -125,8 +144,8 @@ export async function POST(request: NextRequest) {
         signerIdNumber: payload.signerIdNumber ?? null,
         signatureMethod: parseSignatureMethod(payload.signatureMethod ?? undefined),
         expiresAt: payload.expiresAt ? new Date(payload.expiresAt) : null,
-        archiveStatus: GovernanceArchiveStatus.PENDING,
-        signatureStatus: SignatureProofStatus.PENDING,
+        archiveStatus: "PENDING",
+        signatureStatus: "PENDING",
         language: payload.language ?? null,
         payloadJson: payload.payloadJson ?? undefined,
         metadata,

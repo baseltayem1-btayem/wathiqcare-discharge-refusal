@@ -1,8 +1,3 @@
-import {
-  ConsentLifecycleStatus,
-  GovernanceArchiveStatus,
-  SignatureProofStatus,
-} from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -12,6 +7,38 @@ import { writeAuditLog } from "@/lib/server/saas-services";
 import { indexArchiveRecord } from "@/lib/server/governance/archive-service";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
 import { issueGovernancePdf } from "@/lib/server/governance/pdf-issuer";
+
+const governanceDb = prisma as unknown as {
+  consent: {
+    findUnique: (args: { where: { id: string } }) => Promise<
+      | {
+          id: string;
+          tenantId: string;
+          patientId: string;
+          caseId: string | null;
+          templateId: string | null;
+          version: number;
+          signatureMethod: string | null;
+          language: string | null;
+        }
+      | null
+    >;
+    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<{
+      id: string;
+      patientId: string;
+      caseId: string | null;
+      templateId: string | null;
+      version: number;
+      pdfAttachmentId: string | null;
+    }>;
+  };
+  signature: {
+    findFirst: (args: {
+      where: { tenantId: string; consentId: string };
+      orderBy: { createdAt: "desc" };
+    }) => Promise<{ id: string; signatureMethod: string | null; status: string } | null>;
+  };
+};
 
 export async function POST(
   request: NextRequest,
@@ -25,7 +52,7 @@ export async function POST(
     const auth = requireAuth(request);
     const { id } = await params;
 
-    const consent = await prisma.consent.findUnique({ where: { id } });
+    const consent = await governanceDb.consent.findUnique({ where: { id } });
     if (!consent) {
       throw new ApiError(404, "Consent not found");
     }
@@ -33,12 +60,12 @@ export async function POST(
       throw new ApiError(403, "Tenant access denied");
     }
 
-    const signature = await prisma.signature.findFirst({
+    const signature = await governanceDb.signature.findFirst({
       where: { tenantId: auth.tenant_id, consentId: id },
       orderBy: { createdAt: "desc" },
     });
 
-    const signatureOk = !signature || signature.status === SignatureProofStatus.SIGNED || signature.status === SignatureProofStatus.VERIFIED;
+    const signatureOk = !signature || signature.status === "SIGNED" || signature.status === "VERIFIED";
     if (!signatureOk) {
       throw new ApiError(400, "Signature is not verified/signed yet");
     }
@@ -93,14 +120,14 @@ export async function POST(
       issuedAt: new Date().toISOString(),
     });
 
-    const updated = await prisma.consent.update({
+    const updated = await governanceDb.consent.update({
       where: { id },
       data: {
-        status: ConsentLifecycleStatus.SIGNED,
-        signatureStatus: SignatureProofStatus.SIGNED,
+        status: "SIGNED",
+        signatureStatus: "SIGNED",
         signedAt: new Date(),
         pdfAttachmentId: pdf.storagePath,
-        archiveStatus: GovernanceArchiveStatus.PENDING,
+        archiveStatus: "PENDING",
       },
     });
 
@@ -120,9 +147,9 @@ export async function POST(
       },
     });
 
-    await prisma.consent.update({
+    await governanceDb.consent.update({
       where: { id },
-      data: { archiveStatus: GovernanceArchiveStatus.ARCHIVED },
+      data: { archiveStatus: "ARCHIVED" },
     });
 
     await writeAuditLog({

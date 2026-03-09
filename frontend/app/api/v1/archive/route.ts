@@ -1,10 +1,21 @@
-import { GovernanceArchiveStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
+
+const VALID_ARCHIVE_STATUSES = new Set(["PENDING", "INDEXED", "ARCHIVED", "VERIFIED", "FAILED"]);
+
+const governanceDb = prisma as unknown as {
+  archiveRecord: {
+    findMany: (args: {
+      where: Record<string, unknown>;
+      orderBy: { createdAt: "desc" };
+      take: number;
+    }) => Promise<Array<Record<string, unknown>>>;
+  };
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,12 +32,9 @@ export async function GET(request: NextRequest) {
     const legalOnly = url.searchParams.get("legal") === "true";
     const statusParam = (url.searchParams.get("status") ?? "").toUpperCase();
 
-    const status =
-      statusParam in GovernanceArchiveStatus
-        ? (statusParam as GovernanceArchiveStatus)
-        : undefined;
+    const status = VALID_ARCHIVE_STATUSES.has(statusParam) ? statusParam : undefined;
 
-    const rows = await prisma.archiveRecord.findMany({
+    const rows = await governanceDb.archiveRecord.findMany({
       where: {
         tenantId: auth.tenant_id,
         ...(patientId ? { patientId } : {}),

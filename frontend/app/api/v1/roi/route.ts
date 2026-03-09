@@ -1,4 +1,4 @@
-import { GovernanceRoiStatus, type Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -7,6 +7,20 @@ import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
 
+const governanceDb = prisma as unknown as {
+  roiRequest: {
+    findMany: (args: {
+      where: { tenantId: string };
+      orderBy: { createdAt: "desc" };
+      take: number;
+    }) => Promise<Array<Record<string, unknown>>>;
+    create: (args: { data: Record<string, unknown> }) => Promise<{ id: string; patientId: string; status: string }>;
+  };
+  patient: {
+    findUnique: (args: { where: { id: string } }) => Promise<{ tenantId: string } | null>;
+  };
+};
+
 export async function GET(request: NextRequest) {
   try {
     if (!isGovernanceModuleEnabled()) {
@@ -14,7 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     const auth = requireAuth(request);
-    const rows = await prisma.roiRequest.findMany({
+    const rows = await governanceDb.roiRequest.findMany({
       where: { tenantId: auth.tenant_id },
       orderBy: { createdAt: "desc" },
       take: 200,
@@ -53,12 +67,12 @@ export async function POST(request: NextRequest) {
       throw new ApiError(400, "patientId and requesterName are required");
     }
 
-    const patient = await prisma.patient.findUnique({ where: { id: payload.patientId } });
+    const patient = await governanceDb.patient.findUnique({ where: { id: payload.patientId } });
     if (!patient || patient.tenantId !== auth.tenant_id) {
       throw new ApiError(404, "Patient not found");
     }
 
-    const created = await prisma.roiRequest.create({
+    const created = await governanceDb.roiRequest.create({
       data: {
         tenantId: auth.tenant_id,
         patientId: payload.patientId,
@@ -69,7 +83,7 @@ export async function POST(request: NextRequest) {
         dateRange: payload.dateRange,
         authorizedRecipient: payload.authorizedRecipient ?? null,
         identityVerificationMethod: payload.identityVerificationMethod ?? "sms_otp",
-        status: GovernanceRoiStatus.IDENTITY_PENDING,
+        status: "IDENTITY_PENDING",
         minimumNecessaryConfirmed: Boolean(payload.minimumNecessaryConfirmed),
         pdplBasis: payload.pdplBasis ?? null,
         metadata: payload.metadata,

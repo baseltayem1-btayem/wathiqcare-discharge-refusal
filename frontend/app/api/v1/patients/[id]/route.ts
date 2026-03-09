@@ -1,4 +1,4 @@
-import { PatientCapacityStatus, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -7,12 +7,32 @@ import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
 
-function parseCapacityStatus(raw: string | undefined): PatientCapacityStatus {
+type PatientCapacityStatusValue = "CAPABLE" | "MINOR" | "LACKS_CAPACITY" | "UNKNOWN";
+
+const governanceDb = prisma as unknown as {
+  patient: {
+    findUnique: (args: { where: { id: string } }) => Promise<
+      | {
+          id: string;
+          tenantId: string;
+          mrn: string | null;
+          fullName: string;
+        }
+      | null
+    >;
+    update: (args: {
+      where: { id: string };
+      data: Record<string, unknown>;
+    }) => Promise<{ id: string; mrn: string | null; fullName: string }>;
+  };
+};
+
+function parseCapacityStatus(raw: string | undefined): PatientCapacityStatusValue {
   const value = (raw ?? "").trim().toUpperCase();
-  if (value === "CAPABLE") return PatientCapacityStatus.CAPABLE;
-  if (value === "MINOR") return PatientCapacityStatus.MINOR;
-  if (value === "LACKS_CAPACITY") return PatientCapacityStatus.LACKS_CAPACITY;
-  return PatientCapacityStatus.UNKNOWN;
+  if (value === "CAPABLE") return "CAPABLE";
+  if (value === "MINOR") return "MINOR";
+  if (value === "LACKS_CAPACITY") return "LACKS_CAPACITY";
+  return "UNKNOWN";
 }
 
 export async function GET(
@@ -27,7 +47,7 @@ export async function GET(
     const auth = requireAuth(request);
     const { id } = await params;
 
-    const patient = await prisma.patient.findUnique({ where: { id } });
+    const patient = await governanceDb.patient.findUnique({ where: { id } });
     if (!patient) {
       throw new ApiError(404, "Patient not found");
     }
@@ -53,7 +73,7 @@ export async function PUT(
     const auth = requireAuth(request);
     const { id } = await params;
 
-    const existing = await prisma.patient.findUnique({ where: { id } });
+    const existing = await governanceDb.patient.findUnique({ where: { id } });
     if (!existing) {
       throw new ApiError(404, "Patient not found");
     }
@@ -85,7 +105,7 @@ export async function PUT(
       throw new ApiError(400, "Invalid JSON body");
     }
 
-    const updated = await prisma.patient.update({
+    const updated = await governanceDb.patient.update({
       where: { id },
       data: {
         ...(payload.mrn !== undefined ? { mrn: payload.mrn } : {}),
@@ -113,7 +133,7 @@ export async function PUT(
           ? { archiveReference: payload.archiveReference }
           : {}),
         ...(payload.metadata !== undefined
-          ? { metadata: payload.metadata === null ? Prisma.JsonNull : payload.metadata }
+          ? { metadata: payload.metadata === null ? null : payload.metadata }
           : {}),
       },
     });

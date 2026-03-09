@@ -6,6 +6,17 @@ import { prisma } from "@/lib/server/prisma";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
 import { GOVERNANCE_TEMPLATE_SEEDS } from "@/lib/server/governance/template-registry";
 
+const governanceDb = prisma as unknown as {
+  consentTemplate: {
+    findMany: (args: {
+      where: { tenantId: string };
+      orderBy: { createdAt: "asc" };
+    }) => Promise<Array<Record<string, unknown>>>;
+    create: (args: { data: Record<string, unknown> }) => Promise<Record<string, unknown>>;
+  };
+  $transaction: <T>(promises: Promise<T>[]) => Promise<T[]>;
+};
+
 export async function GET(request: NextRequest) {
   try {
     if (!isGovernanceModuleEnabled()) {
@@ -14,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     const auth = requireAuth(request);
 
-    const existing = await prisma.consentTemplate.findMany({
+    const existing = await governanceDb.consentTemplate.findMany({
       where: { tenantId: auth.tenant_id },
       orderBy: { createdAt: "asc" },
     });
@@ -23,9 +34,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(toJsonSafe(existing));
     }
 
-    const seeded = await prisma.$transaction(
+    const seeded = await governanceDb.$transaction(
       GOVERNANCE_TEMPLATE_SEEDS.map((seed) =>
-        prisma.consentTemplate.create({
+        governanceDb.consentTemplate.create({
           data: {
             tenantId: auth.tenant_id,
             templateName: seed.name,

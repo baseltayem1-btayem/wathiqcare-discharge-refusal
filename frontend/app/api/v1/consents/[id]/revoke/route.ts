@@ -1,4 +1,3 @@
-import { ConsentLifecycleStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -6,6 +5,13 @@ import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
+
+const governanceDb = prisma as unknown as {
+  consent: {
+    findUnique: (args: { where: { id: string } }) => Promise<{ tenantId: string } | null>;
+    update: (args: { where: { id: string }; data: { status: string } }) => Promise<{ caseId: string | null }>;
+  };
+};
 
 export async function POST(
   request: NextRequest,
@@ -19,7 +25,7 @@ export async function POST(
     const auth = requireAuth(request);
     const { id } = await params;
 
-    const existing = await prisma.consent.findUnique({ where: { id } });
+    const existing = await governanceDb.consent.findUnique({ where: { id } });
     if (!existing) {
       throw new ApiError(404, "Consent not found");
     }
@@ -27,9 +33,9 @@ export async function POST(
       throw new ApiError(403, "Tenant access denied");
     }
 
-    const updated = await prisma.consent.update({
+    const updated = await governanceDb.consent.update({
       where: { id },
-      data: { status: ConsentLifecycleStatus.REVOKED },
+      data: { status: "REVOKED" },
     });
 
     await writeAuditLog({

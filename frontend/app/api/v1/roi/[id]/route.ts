@@ -1,4 +1,3 @@
-import { GovernanceArchiveStatus, GovernanceRoiStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -7,6 +6,25 @@ import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { indexArchiveRecord } from "@/lib/server/governance/archive-service";
 import { isGovernanceModuleEnabled } from "@/lib/server/governance/feature-flag";
+
+const governanceDb = prisma as unknown as {
+  roiRequest: {
+    findUnique: (args: { where: { id: string } }) => Promise<
+      | {
+          id: string;
+          tenantId: string;
+          patientId: string;
+          status: string;
+        }
+      | null
+    >;
+    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<{
+      id: string;
+      patientId: string;
+      status: string;
+    }>;
+  };
+};
 
 export async function GET(
   request: NextRequest,
@@ -19,7 +37,7 @@ export async function GET(
     const auth = requireAuth(request);
     const { id } = await params;
 
-    const row = await prisma.roiRequest.findUnique({ where: { id } });
+    const row = await governanceDb.roiRequest.findUnique({ where: { id } });
     if (!row) {
       throw new ApiError(404, "ROI request not found");
     }
@@ -50,7 +68,7 @@ export async function POST(
       throw new ApiError(400, "action is required");
     }
 
-    const existing = await prisma.roiRequest.findUnique({ where: { id } });
+    const existing = await governanceDb.roiRequest.findUnique({ where: { id } });
     if (!existing) {
       throw new ApiError(404, "ROI request not found");
     }
@@ -62,20 +80,20 @@ export async function POST(
     let status = existing.status;
 
     if (action === "verify-identity") {
-      status = GovernanceRoiStatus.READY_FOR_REVIEW;
+      status = "READY_FOR_REVIEW";
     } else if (action === "approve") {
-      status = GovernanceRoiStatus.APPROVED;
+      status = "APPROVED";
     } else if (action === "release") {
-      status = GovernanceRoiStatus.RELEASED;
+      status = "RELEASED";
     } else if (action === "archive") {
-      status = GovernanceRoiStatus.ARCHIVED;
+      status = "ARCHIVED";
     } else if (action === "reject") {
-      status = GovernanceRoiStatus.REJECTED;
+      status = "REJECTED";
     } else {
       throw new ApiError(400, "Unsupported action");
     }
 
-    const updated = await prisma.roiRequest.update({
+    const updated = await governanceDb.roiRequest.update({
       where: { id },
       data: {
         status,
@@ -118,7 +136,7 @@ export async function POST(
         legalDocumentFlag: true,
       });
 
-      await prisma.roiRequest.update({
+      await governanceDb.roiRequest.update({
         where: { id },
         data: { archiveAttachmentId: archive.id },
       });
@@ -132,7 +150,7 @@ export async function POST(
         details: "ROI package archived",
         metadataJson: {
           archiveId: archive.id,
-          archiveStatus: GovernanceArchiveStatus.INDEXED,
+          archiveStatus: "INDEXED",
         },
         request,
       });
