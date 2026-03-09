@@ -25,10 +25,10 @@ export default function HomePage() {
             {t("home.login")}
           </Link>
           <Link
-            href="/cases"
+            href="/modules"
             className="rounded-xl border px-5 py-2.5 font-medium text-slate-700"
           >
-            {t("home.cases")}
+            {t("home.modules")}
           </Link>
         </div>
       </div>

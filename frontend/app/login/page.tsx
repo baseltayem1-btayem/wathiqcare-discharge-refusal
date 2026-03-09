@@ -34,8 +34,8 @@ export default function LoginPage() {
       setToken(result.access_token);
       const nextPath =
         typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("next") || "/cases"
-          : "/cases";
+          ? new URLSearchParams(window.location.search).get("next") || "/modules"
+          : "/modules";
       router.push(nextPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("login.failed"));

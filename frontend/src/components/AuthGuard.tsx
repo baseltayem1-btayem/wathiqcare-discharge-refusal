@@ -20,7 +20,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     if (!authenticated) {
-      const nextPath = pathname || "/cases";
+      const nextPath = pathname || "/modules";
       router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
     }
   }, [authenticated, pathname, router]);

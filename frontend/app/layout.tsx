@@ -19,8 +19,8 @@ const notoSansArabic = Noto_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "WathiqCare",
-  description: "WathiqCare discharge refusal workflow",
+  title: "Wathiq Care System | واثق كير سيستم",
+  description: "Wathiq Care System for medico-legal workflow modules",
 };
 
 export default function RootLayout({

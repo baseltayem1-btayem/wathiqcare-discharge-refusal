@@ -23,6 +23,7 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
+  { href: "/modules", labelKey: "nav.modules", icon: <LayoutGrid className="h-4 w-4" /> },
   { href: "/", labelKey: "nav.dashboard", icon: <LayoutGrid className="h-4 w-4" /> },
   { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
   { href: "/cases/new", labelKey: "nav.newCase", icon: <FilePlus2 className="h-4 w-4" /> },
@@ -70,14 +71,14 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
   const navItems = governanceEnabled
     ? [
         ...NAV_ITEMS,
-        { href: "/patients", labelKey: "Patients", icon: <FolderKanban className="h-4 w-4" /> },
-        { href: "/consents", labelKey: "Consents", icon: <FileCog className="h-4 w-4" /> },
+        { href: "/patients", labelKey: "nav.patients", icon: <FolderKanban className="h-4 w-4" /> },
+        { href: "/consents", labelKey: "nav.consents", icon: <FileCog className="h-4 w-4" /> },
         {
           href: "/release-of-information",
-          labelKey: "Release of Information",
+          labelKey: "nav.roi",
           icon: <Archive className="h-4 w-4" />,
         },
-        { href: "/archive", labelKey: "Archive", icon: <Archive className="h-4 w-4" /> },
+        { href: "/archive", labelKey: "nav.archive", icon: <Archive className="h-4 w-4" /> },
       ]
     : NAV_ITEMS;
 
