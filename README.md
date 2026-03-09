@@ -69,6 +69,8 @@ role permissions, and EMR connector.
 See [`docs/architecture.md`](docs/architecture.md) for a detailed description
 of every component, the data flow, and security/compliance notes.
 
+For launch operations, see [`docs/internal-soft-launch.md`](docs/internal-soft-launch.md).
+
 ---
 
 ## Roles
