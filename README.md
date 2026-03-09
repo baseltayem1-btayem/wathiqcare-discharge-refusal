@@ -54,6 +54,20 @@ wathiqcare-discharge-refusal/
 pytest tests/ -v
 ```
 
+### Hospital Production Runtime (One Command)
+
+Start full runtime (PostgreSQL + backend API + frontend app):
+
+```bash
+./hospital_start.sh
+```
+
+Stop runtime:
+
+```bash
+./hospital_stop.sh
+```
+
 ---
 
 ## Configuration
