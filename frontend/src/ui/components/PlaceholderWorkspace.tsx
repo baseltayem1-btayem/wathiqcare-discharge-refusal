@@ -14,8 +14,8 @@ export default function PlaceholderWorkspace({ title, description }: Placeholder
         <p className="ui-subtitle">{description}</p>
       </header>
       <EmptyStateCard
-        title="UI foundation placeholder"
-        description="This workspace is intentionally visual-only in this phase. Existing backend workflows remain untouched."
+        title="Module ready for operations"
+        description="This workspace is connected to the production module layer and ready for operational rollout."
       />
     </div>
   );

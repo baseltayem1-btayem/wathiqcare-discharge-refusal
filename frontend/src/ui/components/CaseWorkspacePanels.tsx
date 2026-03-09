@@ -14,7 +14,7 @@ export default function CaseWorkspacePanels({ caseId }: CaseWorkspacePanelsProps
         <p className="ui-kicker">Case Overview</p>
         <h3 className="mt-1 text-base font-semibold text-[var(--ui-text)]">Case #{caseId.slice(0, 8)}</h3>
         <p className="mt-2 text-sm text-[var(--ui-muted)]">
-          This panel is additive and visual-only. Existing discharge refusal logic and actions remain intact below.
+          Operational case command panel for medico-legal workflows, signatures, documents, archive, and escalation paths.
         </p>
       </article>
 
@@ -33,10 +33,10 @@ export default function CaseWorkspacePanels({ caseId }: CaseWorkspacePanelsProps
         <div className="mt-3 grid gap-2">
           <Link href="/consents/new"><PrimaryActionButton type="button" className="w-full">Create Consent</PrimaryActionButton></Link>
           <Link href="/agreements/new"><SecondaryActionButton type="button" className="w-full">Create Agreement</SecondaryActionButton></Link>
-          <SecondaryActionButton type="button" className="w-full">Send for Signature</SecondaryActionButton>
-          <SecondaryActionButton type="button" className="w-full">Generate PDF</SecondaryActionButton>
-          <SecondaryActionButton type="button" className="w-full">Archive</SecondaryActionButton>
-          <SecondaryActionButton type="button" className="w-full">Escalate</SecondaryActionButton>
+          <Link href={`/consents/new?caseId=${encodeURIComponent(caseId)}&intent=signature`}><SecondaryActionButton type="button" className="w-full">Send for Signature</SecondaryActionButton></Link>
+          <Link href={`/consents/new?caseId=${encodeURIComponent(caseId)}&intent=pdf`}><SecondaryActionButton type="button" className="w-full">Generate PDF</SecondaryActionButton></Link>
+          <Link href={`/archive?case=${encodeURIComponent(caseId)}`}><SecondaryActionButton type="button" className="w-full">Archive</SecondaryActionButton></Link>
+          <Link href={`/cases/${encodeURIComponent(caseId)}?tab=audit`}><SecondaryActionButton type="button" className="w-full">Escalate</SecondaryActionButton></Link>
         </div>
       </article>
     </section>
