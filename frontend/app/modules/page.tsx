@@ -6,7 +6,7 @@ import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
 import { isGovernanceModuleEnabledClient } from "@/lib/server/governance/feature-flag";
-import { getTokenClaims } from "@/utils/api";
+import { getNormalizedUserRole } from "@/utils/api";
 
 type ModuleCard = {
   key: string;
@@ -20,7 +20,7 @@ type ModuleCard = {
 export default function ModulesPage() {
   const { t } = useI18n();
   const governanceEnabled = isGovernanceModuleEnabledClient();
-  const role = (getTokenClaims()?.role ?? "").toUpperCase();
+  const role = getNormalizedUserRole();
 
   const roleCanUseGovernance = ["OWNER", "ADMIN", "MANAGER"].includes(role);
   const roleCanUseDischarge = ["OWNER", "ADMIN", "MANAGER", "MEMBER", "VIEWER"].includes(role);

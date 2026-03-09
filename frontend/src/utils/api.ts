@@ -2,9 +2,15 @@ const TOKEN_KEY = "wathiqcare_access_token";
 
 export type TokenClaims = {
   sub?: string;
+  email?: string;
   role?: string;
   tenant_id?: string;
   exp?: number;
+};
+
+const LEGACY_ROLE_ALIASES: Record<string, string> = {
+  TENANT_ADMIN: "ADMIN",
+  LEGAL_ADMIN: "MANAGER",
 };
 
 const API_BASE_URL =
@@ -62,6 +68,11 @@ export function getTokenClaims(): TokenClaims | null {
   } catch {
     return null;
   }
+}
+
+export function getNormalizedUserRole(): string {
+  const rawRole = (getTokenClaims()?.role ?? "").trim().toUpperCase();
+  return LEGACY_ROLE_ALIASES[rawRole] ?? rawRole;
 }
 
 function getErrorMessage(status: number, statusText: string, body: unknown): string {

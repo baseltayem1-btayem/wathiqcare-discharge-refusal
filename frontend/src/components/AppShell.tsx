@@ -7,7 +7,7 @@ import { Archive, FileCog, FilePlus2, FolderKanban, LayoutGrid, LogOut, ShieldCh
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
 import { isGovernanceModuleEnabledClient } from "@/lib/server/governance/feature-flag";
-import { clearToken, getTokenClaims } from "@/utils/api";
+import { clearToken, getNormalizedUserRole } from "@/utils/api";
 
 type AppShellProps = {
   title: string;
@@ -67,7 +67,7 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
   const router = useRouter();
   const { t } = useI18n();
   const governanceEnabled = isGovernanceModuleEnabledClient();
-  const role = (getTokenClaims()?.role ?? "").toUpperCase();
+  const role = getNormalizedUserRole();
   const governanceRoleAllowed = ["OWNER", "ADMIN", "MANAGER"].includes(role);
 
   const navItems = governanceEnabled && governanceRoleAllowed
