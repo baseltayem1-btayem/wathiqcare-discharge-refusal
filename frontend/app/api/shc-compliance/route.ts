@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
@@ -7,6 +8,32 @@ import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 
 function isEnabled(): boolean {
   return process.env.SHC_COMPLIANCE_MODULE === "true";
+}
+
+function toInputJsonValue(value: unknown): Prisma.InputJsonValue | null {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => toInputJsonValue(item));
+  }
+
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const jsonObj: Record<string, Prisma.InputJsonValue | null> = {};
+    for (const [key, val] of Object.entries(obj)) {
+      jsonObj[key] = toInputJsonValue(val);
+    }
+    return jsonObj;
+  }
+
+  return null;
 }
 
 export async function POST(request: NextRequest) {
@@ -87,12 +114,12 @@ export async function POST(request: NextRequest) {
         ...shc,
         backend_result: backendResult,
       },
-    };
+    } satisfies Record<string, unknown>;
 
     await prisma.case.update({
       where: { id: payload.caseId },
       data: {
-        metadata: updatedMetadata,
+        metadata: toInputJsonValue(updatedMetadata) as Prisma.InputJsonObject,
         updatedByUserId: auth.sub,
       },
     });
