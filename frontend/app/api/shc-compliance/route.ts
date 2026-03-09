@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     await prisma.case.update({
       where: { id: payload.caseId },
       data: {
-        metadata: updatedMetadata,
+        metadata: updatedMetadata as Prisma.InputJsonObject,
         updatedByUserId: auth.sub,
       },
     });
