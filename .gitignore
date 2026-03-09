@@ -192,6 +192,11 @@ cython_debug/
 node_modules/
 npm-debug.log*
 
+# Generated runtime artifacts
+backend/generated/**/*.pdf
+backend/generated/**/*.zip
+backend/generated/signed_documents/
+
 # Keep Next.js frontend source libraries tracked.
 !frontend/src/lib/
 !frontend/src/lib/**
