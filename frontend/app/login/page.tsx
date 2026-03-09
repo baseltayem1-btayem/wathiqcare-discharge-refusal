@@ -10,6 +10,21 @@ import PasswordField from "@/components/login/PasswordField";
 import { useI18n } from "@/i18n/I18nProvider";
 import { setToken, apiFetch } from "@/utils/api";
 
+function resolvePostLoginPath(search: string): string {
+  const requestedPath = new URLSearchParams(search).get("next") || "";
+
+  // Keep redirects internal and route legacy cases default to module selector.
+  if (!requestedPath || !requestedPath.startsWith("/") || requestedPath === "/cases") {
+    return "/modules";
+  }
+
+  if (requestedPath.startsWith("/login")) {
+    return "/modules";
+  }
+
+  return requestedPath;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { t, isRtl } = useI18n();
@@ -33,9 +48,7 @@ export default function LoginPage() {
 
       setToken(result.access_token);
       const nextPath =
-        typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("next") || "/modules"
-          : "/modules";
+        typeof window !== "undefined" ? resolvePostLoginPath(window.location.search) : "/modules";
       router.push(nextPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("login.failed"));
