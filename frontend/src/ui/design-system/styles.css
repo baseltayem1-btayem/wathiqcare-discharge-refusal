@@ -1,0 +1,51 @@
+:root {
+  --ui-bg: #f6f8fb;
+  --ui-surface: #ffffff;
+  --ui-surface-2: #f8fafc;
+  --ui-border: #d8dee8;
+  --ui-text: #10243e;
+  --ui-muted: #56657a;
+  --ui-primary: #0f3d75;
+  --ui-primary-soft: #e8f0fa;
+  --ui-accent: #008d7f;
+  --ui-success: #197a45;
+  --ui-warning: #ad6c00;
+  --ui-danger: #b42318;
+  --ui-info: #155eef;
+}
+
+.ui-panel {
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.ui-kicker {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ui-muted);
+}
+
+.ui-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ui-text);
+}
+
+.ui-subtitle {
+  color: var(--ui-muted);
+  font-size: 0.9rem;
+}
+
+.ui-grid-auto {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+html[dir="rtl"] .ui-rtl-flip {
+  transform: scaleX(-1);
+}
