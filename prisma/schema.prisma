@@ -104,6 +104,63 @@ enum SubscriptionEventType {
   PAYMENT_SUCCEEDED
 }
 
+enum PatientCapacityStatus {
+  CAPABLE
+  MINOR
+  LACKS_CAPACITY
+  UNKNOWN
+}
+
+enum ConsentLifecycleStatus {
+  DRAFT
+  READY_FOR_REVIEW
+  READY_FOR_SIGNATURE
+  SIGNATURE_PENDING
+  SIGNED
+  ARCHIVED
+  REJECTED
+  REVOKED
+  EXPIRED
+}
+
+enum GovernanceSignerType {
+  PATIENT
+  GUARDIAN
+  SURROGATE
+  WITNESS
+}
+
+enum GovernanceSignatureMethod {
+  SMS_OTP
+  NAFATH
+  TABLET
+}
+
+enum SignatureProofStatus {
+  PENDING
+  VERIFIED
+  SIGNED
+  FAILED
+}
+
+enum GovernanceRoiStatus {
+  DRAFT
+  IDENTITY_PENDING
+  READY_FOR_REVIEW
+  APPROVED
+  RELEASED
+  REJECTED
+  ARCHIVED
+}
+
+enum GovernanceArchiveStatus {
+  PENDING
+  INDEXED
+  ARCHIVED
+  VERIFIED
+  FAILED
+}
+
 model Tenant {
   id                 String              @id @default(uuid())
   name               String
@@ -132,6 +189,16 @@ model Tenant {
   usageRecords       UsageRecord[]
   invoices           Invoice[]
   subscriptionEvents SubscriptionEvent[]
+  patients           Patient[]
+  consentTypes       ConsentType[]
+  procedureCatalog   ProcedureCatalog[]
+  procedureConsentMappings ProcedureConsentMapping[]
+  consentTemplates   ConsentTemplate[]
+  consents           Consent[]
+  signatures         Signature[]
+  signatureEvidence  SignatureEvidence[]
+  roiRequests        RoiRequest[]
+  archiveRecords     ArchiveRecord[]
 
   @@map("tenants")
 }
@@ -520,4 +587,266 @@ model SubscriptionEvent {
   @@index([tenantId, occurredAt])
   @@index([subscriptionId])
   @@map("subscription_events")
+}
+
+model Patient {
+  id                   String                @id @default(uuid())
+  tenantId             String                @map("tenant_id")
+  mrn                  String?               @map("mrn")
+  urn                  String?               @map("urn")
+  fullName             String                @map("full_name")
+  nationalId           String?               @map("national_id")
+  mobileNumber         String?               @map("mobile_number")
+  email                String?
+  dob                  DateTime?             @db.Date
+  gender               String?
+  preferredLanguage    String?               @map("preferred_language")
+  legalGuardianName    String?               @map("legal_guardian_name")
+  guardianRelationship String?               @map("guardian_relationship")
+  capacityStatus       PatientCapacityStatus @default(UNKNOWN) @map("capacity_status")
+  hisIdentifier        String?               @map("his_identifier")
+  archiveReference     String?               @map("archive_reference")
+  metadata             Json?
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+
+  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, fullName])
+  @@index([tenantId, mrn])
+  @@index([tenantId, nationalId])
+  @@map("patients")
+}
+
+model ConsentType {
+  id             String    @id @default(uuid())
+  tenantId       String    @map("tenant_id")
+  code           String
+  name           String
+  description    String?
+  category       String?
+  active         Boolean   @default(true)
+  metadata       Json?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, active])
+  @@map("consent_types")
+}
+
+model ProcedureCatalog {
+  id                    String   @id @default(uuid())
+  tenantId              String   @map("tenant_id")
+  code                  String
+  name                  String
+  highRisk              Boolean  @default(false) @map("high_risk")
+  requiresAnesthesia    Boolean  @default(false) @map("requires_anesthesia")
+  requiresBloodProducts Boolean  @default(false) @map("requires_blood_products")
+  serviceModel          String?  @map("service_model")
+  active                Boolean  @default(true)
+  metadata              Json?
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, active])
+  @@map("procedure_catalog")
+}
+
+model ProcedureConsentMapping {
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  procedureCode  String   @map("procedure_code")
+  consentTypeCode String  @map("consent_type_code")
+  required       Boolean  @default(true)
+  reason         String?
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, procedureCode])
+  @@index([tenantId, consentTypeCode])
+  @@map("procedure_consent_mapping")
+}
+
+model ConsentTemplate {
+  id                    String   @id @default(uuid())
+  tenantId              String   @map("tenant_id")
+  templateName          String   @map("template_name")
+  templateType          String   @map("template_type")
+  languageMode          String   @default("bilingual") @map("language_mode")
+  formNumber            String?  @map("form_number")
+  version               String   @default("1.0")
+  active                Boolean  @default(true)
+  requiresWitness       Boolean  @default(false) @map("requires_witness")
+  allowsSms             Boolean  @default(true) @map("allows_sms")
+  allowsNafath          Boolean  @default(false) @map("allows_nafath")
+  allowsTablet          Boolean  @default(true) @map("allows_tablet")
+  validityDays          Int?     @map("validity_days")
+  linkedProcedureTypes  Json?    @map("linked_procedure_types")
+  linkedPolicyReference String?  @map("linked_policy_reference")
+  legalText             String?  @map("legal_text") @db.Text
+  metadata              Json?
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, active])
+  @@index([tenantId, templateType])
+  @@map("consent_templates")
+}
+
+model Consent {
+  id                   String                    @id @default(uuid())
+  tenantId             String                    @map("tenant_id")
+  patientId            String                    @map("patient_id")
+  caseId               String?                   @map("case_id")
+  consentTypeId        String?                   @map("consent_type_id")
+  templateId           String?                   @map("template_id")
+  status               ConsentLifecycleStatus    @default(DRAFT)
+  linkedProcedureId    String?                   @map("linked_procedure_id")
+  linkedServiceModel   String?                   @map("linked_service_model")
+  signerType           GovernanceSignerType      @default(PATIENT) @map("signer_type")
+  signerName           String?                   @map("signer_name")
+  signerIdNumber       String?                   @map("signer_id_number")
+  signatureMethod      GovernanceSignatureMethod? @map("signature_method")
+  signedAt             DateTime?                 @map("signed_at")
+  expiresAt            DateTime?                 @map("expires_at")
+  version              Int                       @default(1)
+  pdfAttachmentId      String?                   @map("pdf_attachment_id")
+  archiveStatus        GovernanceArchiveStatus   @default(PENDING) @map("archive_status")
+  signatureStatus      SignatureProofStatus      @default(PENDING) @map("signature_status")
+  language             String?                   @map("language")
+  payloadJson          Json?
+  metadata             Json?
+  createdAt            DateTime                  @default(now()) @map("created_at")
+  updatedAt            DateTime                  @updatedAt @map("updated_at")
+
+  tenant               Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId])
+  @@index([tenantId, caseId])
+  @@index([tenantId, status])
+  @@map("consents")
+}
+
+model Signature {
+  id                     String                    @id @default(uuid())
+  tenantId               String                    @map("tenant_id")
+  consentId              String?                   @map("consent_id")
+  patientId              String?                   @map("patient_id")
+  caseId                 String?                   @map("case_id")
+  signatureMethod        GovernanceSignatureMethod @map("signature_method")
+  status                 SignatureProofStatus      @default(PENDING)
+  providerName           String?                   @map("provider_name")
+  otpReference           String?                   @map("otp_reference")
+  otpCodeHash            String?                   @map("otp_code_hash")
+  phoneMasked            String?                   @map("phone_masked")
+  signaturePayload       Json?                     @map("signature_payload")
+  verifiedAt             DateTime?                 @map("verified_at")
+  signedAt               DateTime?                 @map("signed_at")
+  metadata               Json?
+  createdAt              DateTime                  @default(now()) @map("created_at")
+  updatedAt              DateTime                  @updatedAt @map("updated_at")
+
+  tenant                 Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, consentId])
+  @@index([tenantId, status])
+  @@map("signatures")
+}
+
+model SignatureEvidence {
+  id                     String                    @id @default(uuid())
+  tenantId               String                    @map("tenant_id")
+  signatureId            String                    @map("signature_id")
+  consentId              String?                   @map("consent_id")
+  patientId              String?                   @map("patient_id")
+  caseId                 String?                   @map("case_id")
+  signatureMethod        GovernanceSignatureMethod @map("signature_method")
+  status                 SignatureProofStatus      @default(PENDING)
+  verifiedAt             DateTime?                 @map("verified_at")
+  signedAt               DateTime?                 @map("signed_at")
+  ipAddress              String?                   @map("ip_address")
+  userAgent              String?                   @map("user_agent")
+  deviceSource           String?                   @map("device_source")
+  phoneMasked            String?                   @map("phone_masked")
+  providerSummary        String?                   @map("provider_summary")
+  templateVersion        String?                   @map("template_version")
+  pdfHash                String?                   @map("pdf_hash")
+  auditReference         String?                   @map("audit_reference")
+  metadataJson           Json?                     @map("metadata_json")
+  createdAt              DateTime                  @default(now()) @map("created_at")
+
+  tenant                 Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, signatureId])
+  @@index([tenantId, consentId])
+  @@map("signature_evidence")
+}
+
+model RoiRequest {
+  id                          String               @id @default(uuid())
+  tenantId                    String               @map("tenant_id")
+  patientId                   String               @map("patient_id")
+  requesterName               String               @map("requester_name")
+  requesterRelationship       String?              @map("requester_relationship")
+  purpose                     String?
+  documentsRequested          Json?                @map("documents_requested")
+  dateRange                   Json?                @map("date_range")
+  authorizedRecipient         String?              @map("authorized_recipient")
+  identityVerificationMethod  String?              @map("identity_verification_method")
+  otpVerified                 Boolean              @default(false) @map("otp_verified")
+  status                      GovernanceRoiStatus  @default(DRAFT)
+  minimumNecessaryConfirmed   Boolean              @default(false) @map("minimum_necessary_confirmed")
+  pdplBasis                   String?              @map("pdpl_basis")
+  releasedAt                  DateTime?            @map("released_at")
+  releasedBy                  String?              @map("released_by")
+  archiveAttachmentId         String?              @map("archive_attachment_id")
+  metadata                    Json?
+  createdAt                   DateTime             @default(now()) @map("created_at")
+  updatedAt                   DateTime             @updatedAt @map("updated_at")
+
+  tenant                      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId])
+  @@index([tenantId, status])
+  @@map("roi_requests")
+}
+
+model ArchiveRecord {
+  id                          String                  @id @default(uuid())
+  tenantId                    String                  @map("tenant_id")
+  patientId                   String?                 @map("patient_id")
+  caseId                      String?                 @map("case_id")
+  episodeNumber               String?                 @map("episode_number")
+  consentId                   String?                 @map("consent_id")
+  roiRequestId                String?                 @map("roi_request_id")
+  formNumber                  String?                 @map("form_number")
+  formTitle                   String?                 @map("form_title")
+  documentCategory            String?                 @map("document_category")
+  inpatientOutpatientCategory String?                 @map("inpatient_outpatient_category")
+  pdfAttachmentId             String?                 @map("pdf_attachment_id")
+  archiveReferenceId          String?                 @map("archive_reference_id")
+  indexedAt                   DateTime?               @map("indexed_at")
+  archiveStatus               GovernanceArchiveStatus @default(PENDING) @map("archive_status")
+  legalDocumentFlag           Boolean                 @default(false) @map("legal_document_flag")
+  metadata                    Json?
+  createdAt                   DateTime                @default(now()) @map("created_at")
+  updatedAt                   DateTime                @updatedAt @map("updated_at")
+
+  tenant                      Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, patientId])
+  @@index([tenantId, caseId])
+  @@index([tenantId, archiveStatus])
+  @@map("archive_records")
 }

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Archive, FileCog, FilePlus2, FolderKanban, LayoutGrid, LogOut, ShieldCheck, Stethoscope } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
+import { isGovernanceModuleEnabledClient } from "@/lib/server/governance/feature-flag";
 import { clearToken } from "@/utils/api";
 
 type AppShellProps = {
@@ -64,6 +65,21 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useI18n();
+  const governanceEnabled = isGovernanceModuleEnabledClient();
+
+  const navItems = governanceEnabled
+    ? [
+        ...NAV_ITEMS,
+        { href: "/patients", labelKey: "Patients", icon: <FolderKanban className="h-4 w-4" /> },
+        { href: "/consents", labelKey: "Consents", icon: <FileCog className="h-4 w-4" /> },
+        {
+          href: "/release-of-information",
+          labelKey: "Release of Information",
+          icon: <Archive className="h-4 w-4" />,
+        },
+        { href: "/archive", labelKey: "Archive", icon: <Archive className="h-4 w-4" /> },
+      ]
+    : NAV_ITEMS;
 
   function handleLogout() {
     clearToken();
@@ -81,11 +97,11 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
           </div>
 
           <nav className="mt-6 space-y-2">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <NavLink
                 key={item.href}
                 href={item.href}
-                label={t(item.labelKey)}
+                label={item.labelKey.includes(".") ? t(item.labelKey) : item.labelKey}
                 icon={item.icon}
                 active={isActive(pathname, item.href)}
               />
@@ -134,11 +150,11 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
               </div>
 
               <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 md:hidden">
-                {NAV_ITEMS.map((item) => (
+                {navItems.map((item) => (
                   <NavLink
                     key={`mobile-${item.href}`}
                     href={item.href}
-                    label={t(item.labelKey)}
+                    label={item.labelKey.includes(".") ? t(item.labelKey) : item.labelKey}
                     icon={item.icon}
                     active={isActive(pathname, item.href)}
                   />

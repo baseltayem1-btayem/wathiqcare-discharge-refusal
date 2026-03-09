@@ -314,6 +314,134 @@ workflow behavior.
 
 ---
 
+### 12. WathiqCare Governance Module
+
+The repository now includes an additive standalone governance feature area for:
+
+- patient-centered identity records
+- consent lifecycle management
+- consent intelligence recommendations
+- signature proof workflows
+- release of information (ROI) control flow
+- archive indexing and retrieval
+- template registry/versioning
+- audit/compliance reporting
+
+#### Module boundaries and coexistence
+
+- Existing discharge refusal routes, workflow engines, and behavior are untouched.
+- Governance features are isolated under dedicated namespaces and new routes.
+- New data entities are additive only (no destructive schema rewrite).
+- Existing login/auth flow remains unchanged and is reused by governance APIs.
+
+#### Feature flag behavior
+
+Governance module runtime is controlled by:
+
+- `WATHIQCARE_GOVERNANCE_MODULE_ENABLED=true` (server/API gate)
+- `NEXT_PUBLIC_WATHIQCARE_GOVERNANCE_MODULE_ENABLED=true` (UI visibility)
+
+When disabled, governance routes return safe `404` and the main application
+continues to behave exactly as before.
+
+#### Backend governance namespaces
+
+- `backend/modules/governance/intelligence/`
+  - `consent_intelligence_engine.py`
+  - `procedure_mapping_service.py`
+  - `consent_rules_engine.py`
+- `backend/modules/governance/signature/`
+  - `signature_proof_service.py`
+  - `evidence_bundle_builder.py`
+  - `providers/sms_otp_provider.py`
+  - `providers/nafath_provider.py`
+  - `providers/tablet_signature_provider.py`
+- `backend/modules/governance/archive/`
+  - `archive_service.py`
+  - `indexing_service.py`
+  - `retrieval_service.py`
+- `backend/modules/governance/patient/patient_service.py`
+- `backend/modules/governance/consent/consent_service.py`
+- `backend/modules/governance/roi/roi_service.py`
+
+#### Frontend governance routes
+
+- `/patients`, `/patients/[id]`
+- `/consents`, `/consents/new`, `/consents/[id]`
+- `/release-of-information`, `/release-of-information/new`, `/release-of-information/[id]`
+- `/archive`
+- `/cases/[id]/consents`
+- `/cases/[id]/documents`
+- `/templates`
+- `/procedures`
+
+#### API surface (additive)
+
+- `GET/POST /api/v1/patients`
+- `GET/PUT /api/v1/patients/{id}`
+- `GET/POST /api/v1/consents`
+- `GET /api/v1/consents/{id}`
+- `POST /api/v1/consents/{id}/review`
+- `POST /api/v1/consents/{id}/send-for-signature`
+- `POST /api/v1/consents/{id}/finalize`
+- `POST /api/v1/consents/{id}/revoke`
+- `GET/POST /api/v1/roi`
+- `GET/POST /api/v1/roi/{id}`
+- `GET /api/v1/archive`
+- `POST /api/v1/intelligence/consents`
+- `GET /api/v1/templates`
+
+#### Patient layer
+
+Governance introduces a reusable patient identity table for linking consents,
+ROI requests, signature evidence, and archive records across workflows.
+
+#### Consent intelligence
+
+Rules-based recommendation output includes:
+
+- Required Consents
+- Recommended Consents
+- Missing Consents
+- Expired Consents
+
+Decision factors include high-risk procedures, anesthesia/sedation,
+blood-product involvement, service model context, release requests, and
+capacity/guardian paths.
+
+#### Signature methods
+
+Supported signature methods:
+
+- SMS OTP (mock-safe fallback in non-configured environments)
+- Nafath (feature-ready placeholder; does not break when unconfigured)
+- Tablet signature capture
+
+#### ROI workflow
+
+ROI flow is modeled as:
+
+`Request -> Identity Verification -> Review/Approval -> Release -> Archive`
+
+#### Archive/indexing workflow
+
+Finalized documents can be indexed by patient/case/form metadata and retrieved
+through additive archive search filters with legal-document tagging.
+
+#### Audit/compliance events
+
+Governance logs additive events through the existing audit logger, including:
+
+- `patient_created`, `patient_updated`
+- `consent_created`, `consent_recommended`, `consent_sent_for_signature`
+- `sms_otp_sent`, `sms_otp_verified`
+- `nafath_started`, `nafath_completed`
+- `tablet_signature_captured`, `consent_signed`
+- `pdf_generated`, `archive_indexed`
+- `roi_request_created`, `roi_identity_verified`, `roi_released`, `roi_archived`
+
+---
+
 ## Data Flow
 
 ```
