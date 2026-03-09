@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ClipboardList, FileSignature, Plus, RefreshCw, Save, ShieldCheck, Users } from "lucide-react";
+import { AlertTriangle, Building2, CheckCircle2, ClipboardList, FileSignature, Plus, RefreshCw, Save, ShieldCheck, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -65,6 +65,33 @@ type InvoiceItem = {
   dueAt?: string | null;
 };
 
+type TenantListItem = {
+  id: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+  country?: string | null;
+  _count?: {
+    memberships?: number;
+    cases?: number;
+  };
+  subscriptions?: Array<{
+    status: string;
+    plan?: {
+      code: string;
+      name: string;
+    };
+  }>;
+};
+
+type IntegrationStatus = {
+  his?: { enabled: boolean; endpoint?: string };
+  fhir?: { enabled: boolean; resources?: string[] };
+  docuWare?: { enabled: boolean };
+  sharePoint?: { enabled: boolean };
+  erp?: { enabled: boolean };
+};
+
 const PLAN_OPTIONS = ["STARTER", "PROFESSIONAL", "ENTERPRISE"] as const;
 const BILLING_OPTIONS = ["MONTHLY", "YEARLY"] as const;
 const SUB_STATUS_OPTIONS = ["TRIALING", "ACTIVE", "PAST_DUE", "PAUSED", "CANCELED", "EXPIRED"] as const;
@@ -79,6 +106,8 @@ export default function AdminPage() {
   const [subscription, setSubscription] = useState<SubscriptionView | null>(null);
   const [usage, setUsage] = useState<UsageItem[]>([]);
   const [invoices, setInvoices] = useState<InvoiceItem[]>([]);
+  const [managedTenants, setManagedTenants] = useState<TenantListItem[]>([]);
+  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus | null>(null);
 
   const [tenantForm, setTenantForm] = useState({
     name: "",
@@ -100,10 +129,20 @@ export default function AdminPage() {
     role: "MEMBER",
   });
 
+  const [createTenantForm, setCreateTenantForm] = useState({
+    name: "",
+    code: "",
+    country: "SA",
+    timezone: "Asia/Riyadh",
+    billingEmail: "",
+  });
+
   const [loading, setLoading] = useState(true);
   const [savingTenant, setSavingTenant] = useState(false);
   const [savingSubscription, setSavingSubscription] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
+  const [creatingTenant, setCreatingTenant] = useState(false);
+  const [suspendingTenantId, setSuspendingTenantId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -180,9 +219,22 @@ export default function AdminPage() {
       { event: "ROI request approved", time: "منذ 22 دقيقة" },
       { event: "Refusal case escalated", time: "منذ ساعة" },
       { event: "Discharge refusal PDF generated", time: "منذ ساعتين" },
+      { event: "Document archived", time: "منذ 3 ساعات" },
     ],
     [],
   );
+
+  const userRoleCoverage = useMemo(() => {
+    const roleCount = (name: string) =>
+      members.filter((member) => (member.user.role || "").toLowerCase() === name.toLowerCase()).length;
+
+    return [
+      { label: "Doctor", value: roleCount("doctor") },
+      { label: "Nurse", value: roleCount("nurse") },
+      { label: "Legal Officer", value: roleCount("legal_officer") },
+      { label: "HIM", value: roleCount("him") },
+    ];
+  }, [members]);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -198,12 +250,14 @@ export default function AdminPage() {
 
       setTenantId(resolvedTenantId);
 
-      const [tenantData, memberData, subscriptionData, usageData, invoiceData] = await Promise.all([
+      const [tenantData, memberData, subscriptionData, usageData, invoiceData, tenantsData, integrationsData] = await Promise.all([
         apiFetch<TenantSummary>(`/api/tenants/${resolvedTenantId}`),
         apiFetch<MemberItem[]>(`/api/tenants/${resolvedTenantId}/members`),
         apiFetch<SubscriptionView>(`/api/tenants/${resolvedTenantId}/subscription`),
         apiFetch<UsageItem[]>(`/api/tenants/${resolvedTenantId}/usage?days=30&limit=100`),
         apiFetch<InvoiceItem[]>("/api/billing/invoices?limit=20"),
+        apiFetch<TenantListItem[]>('/api/tenants?limit=50'),
+        apiFetch<IntegrationStatus>('/api/integrations/status'),
       ]);
 
       setTenant(tenantData);
@@ -211,6 +265,8 @@ export default function AdminPage() {
       setSubscription(subscriptionData);
       setUsage(usageData);
       setInvoices(invoiceData);
+      setManagedTenants(Array.isArray(tenantsData) ? tenantsData : []);
+      setIntegrationStatus(integrationsData ?? null);
 
       setTenantForm({
         name: tenantData.name ?? "",
@@ -299,6 +355,65 @@ export default function AdminPage() {
       setError(err instanceof Error ? err.message : "فشل إضافة العضو");
     } finally {
       setAddingMember(false);
+    }
+  }
+
+  async function handleCreateTenant() {
+    if (!createTenantForm.name.trim()) {
+      setError("اسم المستشفى مطلوب");
+      return;
+    }
+
+    setCreatingTenant(true);
+    setError("");
+    setNotice("");
+
+    try {
+      await apiFetch('/api/tenants', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: createTenantForm.name,
+          code: createTenantForm.code || undefined,
+          country: createTenantForm.country || null,
+          timezone: createTenantForm.timezone || null,
+          billingEmail: createTenantForm.billingEmail || null,
+        }),
+      });
+
+      setNotice('تم إنشاء مستشفى جديدة بنجاح');
+      setCreateTenantForm({
+        name: '',
+        code: '',
+        country: 'SA',
+        timezone: 'Asia/Riyadh',
+        billingEmail: '',
+      });
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'فشل إنشاء المستشفى');
+    } finally {
+      setCreatingTenant(false);
+    }
+  }
+
+  async function handleSuspendTenant(targetTenantId: string, currentlyActive: boolean) {
+    setSuspendingTenantId(targetTenantId);
+    setError("");
+    setNotice("");
+
+    try {
+      await apiFetch(`/api/tenants/${targetTenantId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          isActive: !currentlyActive,
+        }),
+      });
+      setNotice(currentlyActive ? 'تم تعليق المستشفى' : 'تمت إعادة تفعيل المستشفى');
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'فشل تحديث حالة المستشفى');
+    } finally {
+      setSuspendingTenantId(null);
     }
   }
 
@@ -426,6 +541,111 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </section>
+
+            <section className="grid gap-5 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 p-4">
+                <div className="mb-3 flex items-center gap-2 text-slate-900">
+                  <Building2 className="h-4 w-4" />
+                  <h2 className="text-base font-semibold">إدارة المستشفيات</h2>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Hospital Name"
+                    value={createTenantForm.name}
+                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, name: e.target.value }))}
+                  />
+                  <input
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Tenant Code (Optional)"
+                    value={createTenantForm.code}
+                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, code: e.target.value }))}
+                  />
+                  <input
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Billing Email"
+                    value={createTenantForm.billingEmail}
+                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, billingEmail: e.target.value }))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleCreateTenant()}
+                    disabled={creatingTenant}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {creatingTenant ? 'جار الإنشاء...' : 'Create Tenant'}
+                  </button>
+                </div>
+
+                <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Hospital</th>
+                        <th className="px-3 py-2 text-left">Plan</th>
+                        <th className="px-3 py-2 text-left">Usage</th>
+                        <th className="px-3 py-2 text-left">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {managedTenants.map((item) => (
+                        <tr key={item.id} className="border-t border-slate-100">
+                          <td className="px-3 py-2">
+                            <p className="font-medium text-slate-900">{item.name}</p>
+                            <p className="text-xs text-slate-500">{item.code}</p>
+                          </td>
+                          <td className="px-3 py-2">{item.subscriptions?.[0]?.plan?.code || '-'}</td>
+                          <td className="px-3 py-2 text-slate-600">
+                            Users: {item._count?.memberships || 0} | Cases: {item._count?.cases || 0}
+                          </td>
+                          <td className="px-3 py-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleSuspendTenant(item.id, item.isActive)}
+                              disabled={suspendingTenantId === item.id}
+                              className={
+                                item.isActive
+                                  ? 'rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
+                                  : 'rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60'
+                              }
+                            >
+                              {suspendingTenantId === item.id
+                                ? '...' : item.isActive ? 'Suspend Tenant' : 'Activate Tenant'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 p-4">
+                <h2 className="text-base font-semibold text-slate-900">Hospital Integrations</h2>
+                <p className="mt-1 text-sm text-slate-600">HIS/FHIR and enterprise repositories connectivity status.</p>
+                <div className="mt-3 space-y-2 text-sm">
+                  {[
+                    { label: 'HIS Integration', enabled: integrationStatus?.his?.enabled, extra: integrationStatus?.his?.endpoint || '-' },
+                    { label: 'FHIR (Patient/Encounter/Procedure/Consent)', enabled: integrationStatus?.fhir?.enabled, extra: (integrationStatus?.fhir?.resources || []).join(', ') || '-' },
+                    { label: 'DocuWare', enabled: integrationStatus?.docuWare?.enabled, extra: '-' },
+                    { label: 'SharePoint', enabled: integrationStatus?.sharePoint?.enabled, extra: '-' },
+                    { label: 'ERP', enabled: integrationStatus?.erp?.enabled, extra: '-' },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-slate-900">{item.label}</span>
+                        <span className={item.enabled ? 'text-emerald-700' : 'text-amber-700'}>
+                          {item.enabled ? 'Connected' : 'Pending setup'}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-600">{item.extra}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
 
@@ -577,6 +797,15 @@ export default function AdminPage() {
               <div className="mb-3 flex items-center gap-2 text-slate-900">
                 <Users className="h-4 w-4" />
                 <h2 className="text-base font-semibold">الأعضاء ({members.length})</h2>
+              </div>
+
+              <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {userRoleCoverage.map((item) => (
+                  <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs text-slate-500">{item.label}</p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-900">{item.value}</p>
+                  </div>
+                ))}
               </div>
 
               <div className="grid gap-3 md:grid-cols-4">
