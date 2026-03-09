@@ -1,5 +1,12 @@
 const TOKEN_KEY = "wathiqcare_access_token";
 
+export type TokenClaims = {
+  sub?: string;
+  role?: string;
+  tenant_id?: string;
+  exp?: number;
+};
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
 
@@ -22,6 +29,39 @@ export function clearToken(): void {
     return;
   }
   localStorage.removeItem(TOKEN_KEY);
+}
+
+function decodeBase64Url(input: string): string {
+  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  try {
+    return atob(padded);
+  } catch {
+    return "";
+  }
+}
+
+export function getTokenClaims(): TokenClaims | null {
+  const token = getToken();
+  if (!token) {
+    return null;
+  }
+
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const payload = decodeBase64Url(parts[1]);
+  if (!payload) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(payload) as TokenClaims;
+  } catch {
+    return null;
+  }
 }
 
 function getErrorMessage(status: number, statusText: string, body: unknown): string {

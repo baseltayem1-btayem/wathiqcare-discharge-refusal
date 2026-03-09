@@ -6,6 +6,7 @@ import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
 import { isGovernanceModuleEnabledClient } from "@/lib/server/governance/feature-flag";
+import { getTokenClaims } from "@/utils/api";
 
 type ModuleCard = {
   key: string;
@@ -19,6 +20,11 @@ type ModuleCard = {
 export default function ModulesPage() {
   const { t } = useI18n();
   const governanceEnabled = isGovernanceModuleEnabledClient();
+  const role = (getTokenClaims()?.role ?? "").toUpperCase();
+
+  const roleCanUseGovernance = ["OWNER", "ADMIN", "MANAGER"].includes(role);
+  const roleCanUseDischarge = ["OWNER", "ADMIN", "MANAGER", "MEMBER", "VIEWER"].includes(role);
+  const roleCanUseDocuments = ["OWNER", "ADMIN", "MANAGER", "MEMBER", "VIEWER", "BILLING"].includes(role);
 
   const modules: ModuleCard[] = [
     {
@@ -34,7 +40,7 @@ export default function ModulesPage() {
       title: t("modules.governance.title"),
       description: t("modules.governance.description"),
       href: "/patients",
-      enabled: governanceEnabled,
+      enabled: governanceEnabled && roleCanUseGovernance,
       icon: <ShieldCheck className="h-5 w-5" />,
     },
     {
@@ -42,14 +48,24 @@ export default function ModulesPage() {
       title: t("modules.documents.title"),
       description: t("modules.documents.description"),
       href: "/bundles",
-      enabled: true,
+      enabled: roleCanUseDocuments,
       icon: <Archive className="h-5 w-5" />,
     },
   ];
 
+  modules[0].enabled = roleCanUseDischarge;
+
+  const hasEnabledModules = modules.some((item) => item.enabled);
+
   return (
     <AuthGuard>
       <AppShell title={t("modules.title")} subtitle={t("modules.subtitle")}>
+        {!hasEnabledModules ? (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {t("modules.noAccess")}
+          </div>
+        ) : null}
+
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {modules.map((item) => (
             <article key={item.key} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
