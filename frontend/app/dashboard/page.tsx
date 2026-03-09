@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// Backward-compatible route: old dashboard URL maps to home dashboard.
+// Route dashboard URL to the existing admin dashboard implementation.
 export default function DashboardRedirectPage() {
-  redirect("/");
+  redirect("/admin");
 }
