@@ -281,7 +281,7 @@ export default function HomePage() {
             </div>
           </div>
           <p className="mt-2 text-xs text-slate-500">{isRtl ? "واجهة عامة ثنائية اللغة، مع الحفاظ على وصول كامل للنظام الداخلي عبر /login." : "Public bilingual landing, while preserving full internal system access via /login."}</p>
-        </div>
+        </footer>
       </div>
     </main>
   );
