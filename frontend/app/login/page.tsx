@@ -10,6 +10,19 @@ import PasswordField from "@/components/login/PasswordField";
 import { useI18n } from "@/i18n/I18nProvider";
 import { setToken, apiFetch } from "@/utils/api";
 
+function resolveNextPath(rawNext: string | null): string {
+  if (!rawNext) {
+    return "/dashboard";
+  }
+
+  // Allow only in-app relative paths and prevent redirect loops back to login.
+  if (!rawNext.startsWith("/") || rawNext.startsWith("//") || rawNext.startsWith("/login")) {
+    return "/dashboard";
+  }
+
+  return rawNext;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { t, isRtl } = useI18n();
@@ -34,9 +47,9 @@ export default function LoginPage() {
       setToken(result.access_token);
       const nextPath =
         typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("next") || "/dashboard"
+          ? resolveNextPath(new URLSearchParams(window.location.search).get("next"))
           : "/dashboard";
-      router.push(nextPath);
+      router.replace(nextPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("login.failed"));
     } finally {
