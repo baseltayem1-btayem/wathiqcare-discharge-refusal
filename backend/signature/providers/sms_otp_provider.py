@@ -39,7 +39,8 @@ class SmsOtpProvider:
         stub_mode = self._is_stub_mode()
 
         # Real provider integration is intentionally guarded and non-breaking.
-        delivery_status = "sent_stub" if stub_mode else "sent"
+        # Until a concrete provider is wired, configured mode is marked as simulated.
+        delivery_status = "sent_stub" if stub_mode else "sent_simulated"
 
         return SmsOtpDispatchResult(
             challenge_id=challenge_id,
@@ -66,6 +67,10 @@ class SmsOtpProvider:
 
     @staticmethod
     def _is_stub_mode() -> bool:
+        forced_stub = (os.getenv("WATHIQ_SMS_STUB_MODE") or "").strip().lower()
+        if forced_stub in {"1", "true", "yes"}:
+            return True
+
         provider_url = (os.getenv("WATHIQ_SMS_PROVIDER_URL") or "").strip()
         provider_key = (os.getenv("WATHIQ_SMS_PROVIDER_API_KEY") or "").strip()
         return not provider_url or not provider_key

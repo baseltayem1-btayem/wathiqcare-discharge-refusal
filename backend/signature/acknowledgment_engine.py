@@ -10,6 +10,22 @@ class AcknowledgmentMethod(str, Enum):
     NAFATH = "NAFATH"
     TABLET_SIGNATURE = "TABLET_SIGNATURE"
 
+    @classmethod
+    def parse(cls, value: str) -> "AcknowledgmentMethod":
+        normalized = (value or "").strip()
+        aliases = {
+            "sms_otp": cls.SMS_OTP,
+            "SMS_OTP": cls.SMS_OTP,
+            "nafath": cls.NAFATH,
+            "NAFATH": cls.NAFATH,
+            "tablet_signature": cls.TABLET_SIGNATURE,
+            "TABLET_SIGNATURE": cls.TABLET_SIGNATURE,
+        }
+        method = aliases.get(normalized)
+        if not method:
+            raise ValueError(f"Unsupported acknowledgment method: {value}")
+        return method
+
 
 class SignatureMethodProvider(Protocol):
     method: AcknowledgmentMethod

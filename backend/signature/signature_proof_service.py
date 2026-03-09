@@ -36,6 +36,10 @@ def _iso_now() -> str:
     return _utc_now().isoformat()
 
 
+def _method_public_name(method: AcknowledgmentMethod) -> str:
+    return method.value.lower()
+
+
 def _session_path(session_id: str) -> Path:
     return SESSION_DIR / f"{session_id}.json"
 
@@ -232,7 +236,8 @@ class SignatureProofService:
     def list_methods(self) -> list[Dict[str, Any]]:
         return [
             {
-                "method": item.method.value,
+                "method": _method_public_name(item.method),
+                "legacy_method": item.method.value,
                 "available": item.available,
                 "label_ar": item.label_ar,
                 "reason": item.reason,
@@ -252,7 +257,7 @@ class SignatureProofService:
     ) -> Dict[str, Any]:
         template_key = _normalize_document_type(document_type)
         template = WORKFLOW_TEMPLATES[template_key]
-        selected_method = AcknowledgmentMethod(method)
+        selected_method = AcknowledgmentMethod.parse(method)
 
         db = SessionLocal()
         try:
@@ -481,7 +486,16 @@ class SignatureProofService:
         if session["tenant_id"] != tenant_id or session["case_id"] != case_id:
             raise ValueError("Acknowledgment session does not match case or tenant")
 
-        selected_method = AcknowledgmentMethod(session["acknowledgment_method"])
+        selected_method = AcknowledgmentMethod.parse(session["acknowledgment_method"])
+
+        verification_timestamp = _iso_now()
+        session.setdefault("proof_metadata", {}).update(
+            {
+                "timestamp": verification_timestamp,
+                "device": str(payload.get("device") or payload.get("device_source") or "unknown"),
+                "ip_address": str(payload.get("ip_address") or "unknown"),
+            }
+        )
 
         verified = False
         verification_result: Dict[str, Any] = {}
@@ -495,7 +509,7 @@ class SignatureProofService:
             verification_result = {
                 "verified": verified,
                 "verification_method": "SMS_OTP",
-                "otp_verified_at": _iso_now() if verified else None,
+                "otp_verified_at": verification_timestamp if verified else None,
             }
             session["proof_metadata"].update(
                 {
@@ -557,6 +571,19 @@ class SignatureProofService:
             )
 
         session["provider_result"] = {**session.get("provider_result", {}), **verification_result}
+        if not session["proof_metadata"].get("signature_hash"):
+            session["proof_metadata"]["signature_hash"] = stable_hash(
+                json.dumps(
+                    {
+                        "session_id": session_id,
+                        "verification_method": session["proof_metadata"].get("verification_method"),
+                        "timestamp": verification_timestamp,
+                        "provider_result": verification_result,
+                    },
+                    sort_keys=True,
+                    ensure_ascii=True,
+                )
+            )
         session["verification_status"] = "verified" if verified else "pending"
         session["updated_at"] = _iso_now()
 

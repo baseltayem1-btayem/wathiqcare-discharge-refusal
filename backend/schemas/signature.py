@@ -8,7 +8,7 @@ class StartAcknowledgmentRequest(BaseModel):
         ...,
         description="discharge_refusal_form | financial_responsibility_notice | home_healthcare_agreement",
     )
-    method: str = Field(..., description="SMS_OTP | NAFATH | TABLET_SIGNATURE")
+    method: str = Field(..., description="sms_otp | nafath | tablet_signature")
     payload: Dict[str, Any] = Field(default_factory=dict)
 
 
