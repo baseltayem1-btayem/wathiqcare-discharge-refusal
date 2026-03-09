@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   BookOpenCheck,
   Download,
+  FileCheck2,
   FileBadge2,
   FilePlus2,
   FileText,
@@ -64,6 +65,14 @@ type AuditItem = {
 
 type TabKey = "overview" | "consents" | "agreements" | "roi" | "archive" | "audit";
 
+type DocumentTemplateKey =
+  | "discharge_refusal_form"
+  | "informed_consent"
+  | "financial_responsibility_notice"
+  | "home_healthcare_agreement"
+  | "equipment_liability"
+  | "release_of_information";
+
 const WORKFLOW_STAGE_LABELS: Record<string, string> = {
   medical_discharge_decision: "قرار الخروج الطبي",
   initial_communication: "التواصل الأولي",
@@ -92,6 +101,47 @@ const MIN_REQUIRED_VALIDATION_FIELDS = [
   "attending_physician",
   "discharge_decision_at",
   "refusal_reason_or_summary",
+];
+
+const ISSUANCE_DOCUMENTS: Array<{
+  key: DocumentTemplateKey;
+  label: string;
+  supportedGeneration: boolean;
+  signaturePath?: string;
+}> = [
+  {
+    key: "discharge_refusal_form",
+    label: "Refusal of Discharge",
+    supportedGeneration: true,
+    signaturePath: "refusal-form",
+  },
+  {
+    key: "informed_consent",
+    label: "Informed Consent",
+    supportedGeneration: false,
+  },
+  {
+    key: "financial_responsibility_notice",
+    label: "Financial Responsibility",
+    supportedGeneration: true,
+    signaturePath: "financial-notice",
+  },
+  {
+    key: "home_healthcare_agreement",
+    label: "Home Care Agreement",
+    supportedGeneration: true,
+    signaturePath: "home-healthcare-agreement",
+  },
+  {
+    key: "equipment_liability",
+    label: "Equipment Liability",
+    supportedGeneration: false,
+  },
+  {
+    key: "release_of_information",
+    label: "Release of Information",
+    supportedGeneration: false,
+  },
 ];
 
 function toDateTimeLocal(raw: string | null | undefined): string {
@@ -617,6 +667,64 @@ export default function CaseDetailsPage() {
 
   const roiStatus = caseDetail?.status === "ESCALATED" ? "Pending Legal Review" : "No Open ROI Escalation";
 
+  const availableTemplateKeys = new Set((workflow?.documents || []).map((item) => item.template_key));
+
+  const isGenerated = (key: DocumentTemplateKey) => {
+    if (key === "home_healthcare_agreement") {
+      return availableTemplateKeys.has(key) || Boolean(caseDetail?.pdf_file);
+    }
+    return availableTemplateKeys.has(key);
+  };
+
+  const handleGenerateDocument = (key: DocumentTemplateKey) => {
+    if (key === "discharge_refusal_form") {
+      void openPreview("discharge_refusal_form");
+      return;
+    }
+
+    if (key === "financial_responsibility_notice") {
+      void openPreview("financial_responsibility_notice");
+      return;
+    }
+
+    if (key === "home_healthcare_agreement") {
+      router.push(`/cases/${caseId}/home-healthcare-agreement`);
+      return;
+    }
+
+    setInfoMessage(`Template for ${key} will be enabled through backend legal templates in the next release.`);
+  };
+
+  const handleSendForSignature = (path?: string) => {
+    if (!path) {
+      setInfoMessage("هذه الوثيقة لا تملك مسار توقيع إلكتروني مفعّل حالياً.");
+      return;
+    }
+    router.push(`/cases/${caseId}/${path}`);
+  };
+
+  const handleVerifySignature = () => {
+    if (caseDetail?.signed_at) {
+      setInfoMessage(`Signature verified at ${toReadable(caseDetail.signed_at, locale)}.`);
+      return;
+    }
+    setInfoMessage("لا يوجد توقيع موثق بعد لهذه الحالة.");
+  };
+
+  const handleIssueFinalPdf = async () => {
+    if (caseDetail?.pdf_file) {
+      await handleOpenRefusalPdf();
+      return;
+    }
+    setInfoMessage("بعد إكمال التوقيع الإلكتروني سيتم إصدار Final Signed PDF تلقائياً.");
+  };
+
+  const handleArchiveDocument = async () => {
+    await handleGenerateEvidenceBundle();
+    setInfoMessage("Archive Document completed via evidence bundle generation.");
+    setActiveTab("archive");
+  };
+
   return (
     <AuthGuard>
       <AppShell
@@ -1073,6 +1181,120 @@ export default function CaseDetailsPage() {
 
             {activeTab === "archive" ? (
               <section className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 p-5">
+                  <h2 className="text-base font-semibold text-slate-900">واجهة إصدار المستندات</h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    إصدار النماذج القانونية، إرسالها للتوقيع الإلكتروني، ثم إنشاء Final Signed PDF وأرشفة المستند.
+                  </p>
+
+                  <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left">Document</th>
+                          <th className="px-3 py-2 text-left">Generation</th>
+                          <th className="px-3 py-2 text-left">Signature</th>
+                          <th className="px-3 py-2 text-left">Final PDF</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ISSUANCE_DOCUMENTS.map((doc) => {
+                          const generated = isGenerated(doc.key);
+                          return (
+                            <tr key={doc.key} className="border-t border-slate-100">
+                              <td className="px-3 py-2 font-medium text-slate-900">{doc.label}</td>
+                              <td className="px-3 py-2">
+                                <span
+                                  className={
+                                    generated
+                                      ? "rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700"
+                                      : "rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700"
+                                  }
+                                >
+                                  {generated ? "Generated" : doc.supportedGeneration ? "Ready to Generate" : "Planned"}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2">
+                                <span
+                                  className={
+                                    doc.signaturePath
+                                      ? "rounded-full bg-sky-100 px-2 py-1 text-xs font-medium text-sky-700"
+                                      : "rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"
+                                  }
+                                >
+                                  {doc.signaturePath ? "Signature Flow Enabled" : "Not Wired"}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2">
+                                <span
+                                  className={
+                                    caseDetail?.pdf_file
+                                      ? "rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700"
+                                      : "rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"
+                                  }
+                                >
+                                  {caseDetail?.pdf_file ? "Issued" : "Pending Signature"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateDocument("discharge_refusal_form")}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                    >
+                      <FilePlus2 className="h-4 w-4" />
+                      Generate Document
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSendForSignature("refusal-form")}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <MessageSquareHeart className="h-4 w-4" />
+                      Send for Signature
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleVerifySignature}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <FileCheck2 className="h-4 w-4" />
+                      Verify Signature
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleIssueFinalPdf();
+                      }}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
+                    >
+                      <FileBadge2 className="h-4 w-4" />
+                      Issue Final PDF
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleArchiveDocument();
+                      }}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-800 hover:bg-indigo-100"
+                    >
+                      <Download className="h-4 w-4" />
+                      Archive Document
+                    </button>
+                  </div>
+                </div>
+
                 <WorkflowDocumentList documents={workflow?.documents || []} />
                 <div className="flex items-center justify-end">
                   <button

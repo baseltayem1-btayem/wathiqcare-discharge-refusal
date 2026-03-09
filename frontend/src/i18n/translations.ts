@@ -25,6 +25,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.cases": "Cases",
     "nav.newCase": "New Case",
     "nav.workflowDocs": "Workflow / Documents",
+    "nav.compliance": "Compliance",
     "nav.bundles": "Bundles",
     "nav.admin": "Admin",
 
@@ -244,6 +245,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.cases": "الحالات",
     "nav.newCase": "حالة جديدة",
     "nav.workflowDocs": "سير العمل / المستندات",
+    "nav.compliance": "الامتثال",
     "nav.bundles": "الحزم",
     "nav.admin": "الإدارة",
 
