@@ -6,6 +6,19 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, FilePenLine, Save } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import DischargeDecisionPanel from "@/components/discharge/DischargeDecisionPanel";
+import EquipmentRequestForm, {
+  type EquipmentRequestValue,
+} from "@/components/discharge/EquipmentRequestForm";
+import FinancialLiabilityForm, {
+  type FinancialLiabilityValue,
+} from "@/components/discharge/FinancialLiabilityForm";
+import HomeCarePlanForm, {
+  type HomeCarePlanValue,
+} from "@/components/discharge/HomeCarePlanForm";
+import TransferHospitalForm, {
+  type TransferHospitalValue,
+} from "@/components/discharge/TransferHospitalForm";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch, clearToken } from "@/utils/api";
 
@@ -74,11 +87,38 @@ export default function NewCasePage() {
   const [signerRole, setSignerRole] = useState("");
   const [signatureText, setSignatureText] = useState("");
 
+  const [dischargeStatus, setDischargeStatus] = useState<"accept_discharge" | "refuse_discharge">(
+    "accept_discharge"
+  );
+  const [dischargeAlternative, setDischargeAlternative] = useState<
+    "" | "home_care" | "transfer_hospital" | "financial_responsibility"
+  >("");
+  const [homeCarePlan, setHomeCarePlan] = useState<HomeCarePlanValue>({
+    careType: "",
+    equipmentRequired: [],
+    careProvider: "",
+  });
+  const [transferHospital, setTransferHospital] = useState<TransferHospitalValue>({
+    receivingHospital: "",
+    transferReason: "",
+    medicalStabilityConfirmation: false,
+  });
+  const [financialLiability, setFinancialLiability] = useState<FinancialLiabilityValue>({
+    acceptsFinancialResponsibility: false,
+    signatureMethod: "sms_otp",
+  });
+  const [equipmentRequest, setEquipmentRequest] = useState<EquipmentRequestValue>({
+    requestedEquipment: "",
+    department: "respiratory_therapy",
+    status: "pending",
+  });
+
   const [prefillLoading, setPrefillLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const pageTitle = useMemo(() => (fromCase ? t("newCase.titleEdit") : t("newCase.title")), [fromCase, t]);
+  const shcModuleEnabled = process.env.NEXT_PUBLIC_SHC_COMPLIANCE_MODULE === "true";
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -157,9 +197,30 @@ export default function NewCasePage() {
         signer_name: signerName,
         signer_role: signerRole,
         signature_text: signatureText,
+        shc_compliance: shcModuleEnabled
+          ? {
+              discharge_status: dischargeStatus,
+              discharge_alternative:
+                dischargeStatus === "refuse_discharge" ? dischargeAlternative || null : null,
+              home_care_plan:
+                dischargeStatus === "refuse_discharge" && dischargeAlternative === "home_care"
+                  ? homeCarePlan
+                  : null,
+              transfer_request:
+                dischargeStatus === "refuse_discharge" && dischargeAlternative === "transfer_hospital"
+                  ? transferHospital
+                  : null,
+              financial_liability:
+                dischargeStatus === "refuse_discharge" && dischargeAlternative === "financial_responsibility"
+                  ? financialLiability
+                  : null,
+              equipment_request:
+                dischargeStatus === "refuse_discharge" ? equipmentRequest : null,
+            }
+          : null,
       };
 
-      await apiFetch<CreateCaseResponse>("/api/cases", {
+      const createdCase = await apiFetch<CreateCaseResponse>("/api/cases", {
         method: "POST",
         body: JSON.stringify({
           caseType: "DISCHARGE_REFUSAL",
@@ -172,6 +233,38 @@ export default function NewCasePage() {
           metadata,
         }),
       });
+
+      if (shcModuleEnabled && dischargeStatus === "refuse_discharge") {
+        await apiFetch("/api/shc-compliance", {
+          method: "POST",
+          body: JSON.stringify({
+            caseId: createdCase.id,
+            patient: {
+              patient_name: patientName,
+              patient_id_number: patientIdNumber,
+              medical_record_number: patientMrn,
+              room_number: roomNumber,
+              attending_physician: attendingPhysician,
+            },
+            shc: {
+              discharge_status: dischargeStatus,
+              discharge_alternative: dischargeAlternative,
+              home_care_plan: dischargeAlternative === "home_care" ? homeCarePlan : null,
+              transfer_request: dischargeAlternative === "transfer_hospital" ? transferHospital : null,
+              financial_liability:
+                dischargeAlternative === "financial_responsibility" ? financialLiability : null,
+              equipment_request: equipmentRequest,
+            },
+            signature: {
+              signature_method:
+                dischargeAlternative === "financial_responsibility"
+                  ? financialLiability.signatureMethod
+                  : "tablet_signature",
+              device: "web",
+            },
+          }),
+        });
+      }
 
       router.push("/cases");
     } catch (err) {
@@ -358,6 +451,38 @@ export default function NewCasePage() {
               className="h-20 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
             />
           </label>
+
+          {shcModuleEnabled ? (
+            <>
+              <DischargeDecisionPanel
+                dischargeStatus={dischargeStatus}
+                dischargeAlternative={dischargeAlternative}
+                onDischargeStatusChange={(value) => {
+                  setDischargeStatus(value);
+                  if (value !== "refuse_discharge") {
+                    setDischargeAlternative("");
+                  }
+                }}
+                onAlternativeChange={setDischargeAlternative}
+              />
+
+              {dischargeStatus === "refuse_discharge" && dischargeAlternative === "home_care" ? (
+                <HomeCarePlanForm value={homeCarePlan} onChange={setHomeCarePlan} />
+              ) : null}
+
+              {dischargeStatus === "refuse_discharge" && dischargeAlternative === "transfer_hospital" ? (
+                <TransferHospitalForm value={transferHospital} onChange={setTransferHospital} />
+              ) : null}
+
+              {dischargeStatus === "refuse_discharge" && dischargeAlternative === "financial_responsibility" ? (
+                <FinancialLiabilityForm value={financialLiability} onChange={setFinancialLiability} />
+              ) : null}
+
+              {dischargeStatus === "refuse_discharge" ? (
+                <EquipmentRequestForm value={equipmentRequest} onChange={setEquipmentRequest} />
+              ) : null}
+            </>
+          ) : null}
 
           <div className="md:col-span-2 flex flex-wrap gap-2 pt-2">
             <button

@@ -122,6 +122,11 @@ model Tenant {
   invitations        Invitation[]
   subscriptions      Subscription[]
   cases              Case[]
+  dischargeRefusalCases DischargeRefusalCase[]
+  homeCarePlans      HomeCarePlan[]
+  equipmentRequests  EquipmentRequest[]
+  transferRequests   TransferRequest[]
+  patientFinancialLiabilities PatientFinancialLiability[]
   documents          Document[]
   auditLogs          AuditLog[]
   usageRecords       UsageRecord[]
@@ -273,10 +278,124 @@ model Case {
   updatedBy        User?       @relation("CaseUpdater", fields: [updatedByUserId], references: [id], onDelete: SetNull)
   documents        Document[]
   auditLogs        AuditLog[]
+  dischargeRefusalCases DischargeRefusalCase[]
+  homeCarePlans      HomeCarePlan[]
+  equipmentRequests  EquipmentRequest[]
+  transferRequests   TransferRequest[]
+  patientFinancialLiabilities PatientFinancialLiability[]
 
   @@unique([tenantId, caseNumber])
   @@index([tenantId, status])
   @@map("cases")
+}
+
+model DischargeRefusalCase {
+  id                  String      @id @default(uuid())
+  tenantId            String      @map("tenant_id")
+  caseId              String      @map("case_id")
+  dischargeStatus     String      @map("discharge_status")
+  dischargeAlternative String?    @map("discharge_alternative")
+  rightsAcknowledgmentDocPath String? @map("rights_acknowledgment_doc_path")
+  refusalFormDocPath  String?     @map("refusal_form_doc_path")
+  signatureMethod     String?     @map("signature_method")
+  signatureTimestamp  DateTime?   @map("signature_timestamp")
+  signatureDevice     String?     @map("signature_device")
+  signatureIpAddress  String?     @map("signature_ip_address")
+  signatureHash       String?     @map("signature_hash")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  tenant              Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  homeCarePlans       HomeCarePlan[]
+  equipmentRequests   EquipmentRequest[]
+  transferRequests    TransferRequest[]
+  financialLiabilities PatientFinancialLiability[]
+
+  @@index([tenantId, caseId])
+  @@map("discharge_refusal_cases")
+}
+
+model HomeCarePlan {
+  id                    String      @id @default(uuid())
+  tenantId              String      @map("tenant_id")
+  caseId                String      @map("case_id")
+  dischargeRefusalCaseId String     @map("discharge_refusal_case_id")
+  careType              String      @map("care_type")
+  equipmentRequired     Json        @map("equipment_required")
+  careProvider          String      @map("care_provider")
+  agreementDocPath      String?     @map("agreement_doc_path")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  tenant                Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                  Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  dischargeRefusalCase  DischargeRefusalCase @relation(fields: [dischargeRefusalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId])
+  @@map("home_care_plans")
+}
+
+model EquipmentRequest {
+  id                    String      @id @default(uuid())
+  tenantId              String      @map("tenant_id")
+  caseId                String      @map("case_id")
+  dischargeRefusalCaseId String     @map("discharge_refusal_case_id")
+  requestedEquipment    String      @map("requested_equipment")
+  department            String
+  status                String      @default("pending")
+  requestDocPath        String?     @map("request_doc_path")
+  temporaryApprovalDocPath String?  @map("temporary_approval_doc_path")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  tenant                Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                  Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  dischargeRefusalCase  DischargeRefusalCase @relation(fields: [dischargeRefusalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId])
+  @@map("equipment_requests")
+}
+
+model TransferRequest {
+  id                    String      @id @default(uuid())
+  tenantId              String      @map("tenant_id")
+  caseId                String      @map("case_id")
+  dischargeRefusalCaseId String     @map("discharge_refusal_case_id")
+  receivingHospital     String      @map("receiving_hospital")
+  transferReason        String      @map("transfer_reason")
+  medicalStabilityConfirmation Boolean @default(false) @map("medical_stability_confirmation")
+  authorizationDocPath  String?     @map("authorization_doc_path")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  tenant                Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                  Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  dischargeRefusalCase  DischargeRefusalCase @relation(fields: [dischargeRefusalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId])
+  @@map("transfer_requests")
+}
+
+model PatientFinancialLiability {
+  id                    String      @id @default(uuid())
+  tenantId              String      @map("tenant_id")
+  caseId                String      @map("case_id")
+  dischargeRefusalCaseId String     @map("discharge_refusal_case_id")
+  noticeDocPath         String?     @map("notice_doc_path")
+  accepted              Boolean     @default(false)
+  signedAt              DateTime?   @map("signed_at")
+  signatureMethod       String?     @map("signature_method")
+  signatureHash         String?     @map("signature_hash")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  tenant                Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                  Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  dischargeRefusalCase  DischargeRefusalCase @relation(fields: [dischargeRefusalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId])
+  @@map("patient_financial_liability")
 }
 
 model Document {

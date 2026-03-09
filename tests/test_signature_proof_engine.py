@@ -6,6 +6,7 @@ import pytest
 
 from backend.forms.workflow_templates import WORKFLOW_TEMPLATES
 from backend.signature.evidence.evidence_bundle_builder import EvidenceBundleBuilder
+from backend.signature.acknowledgment_engine import AcknowledgmentEngine, AcknowledgmentMethod
 from backend.signature.providers.nafath_provider import NafathProvider
 from backend.signature.providers.sms_otp_provider import SmsOtpProvider
 from backend.signature.providers.tablet_signature_provider import TabletSignatureProvider
@@ -42,12 +43,14 @@ def test_official_templates_keep_approved_wording_markers():
     assert "This is to formally notify you that despite completion of medical discharge criteria" in financial_html
 
 
-def test_sms_otp_stub_flow_verification_works():
+def test_sms_otp_stub_flow_verification_works(monkeypatch):
+    # Explicitly force fallback mode to ensure missing provider config never breaks flow.
+    monkeypatch.setenv("WATHIQ_SMS_STUB_MODE", "true")
     provider = SmsOtpProvider()
     result = provider.send_otp("+966500000000", case_id="case-1", document_type="discharge_refusal_form")
 
     assert result.challenge_id
-    assert result.delivery_status in {"sent", "sent_stub"}
+    assert result.delivery_status == "sent_stub"
 
     code = result.otp_debug_code
     assert code is not None
@@ -87,6 +90,27 @@ def test_nafath_placeholder_does_not_break_when_unconfigured(monkeypatch):
     assert verify["status"] == "unavailable"
 
 
+def test_method_availability_safe_when_providers_unconfigured(monkeypatch):
+    monkeypatch.setenv("WATHIQ_SMS_STUB_MODE", "true")
+    monkeypatch.delenv("WATHIQ_NAFATH_ENABLED", raising=False)
+    monkeypatch.delenv("WATHIQ_NAFATH_API_URL", raising=False)
+    monkeypatch.delenv("WATHIQ_NAFATH_CLIENT_ID", raising=False)
+
+    engine = AcknowledgmentEngine(
+        {
+            AcknowledgmentMethod.SMS_OTP: SmsOtpProvider(),
+            AcknowledgmentMethod.NAFATH: NafathProvider(),
+            AcknowledgmentMethod.TABLET_SIGNATURE: TabletSignatureProvider(),
+        }
+    )
+    methods = {item.method.value: item for item in engine.list_methods()}
+
+    assert methods["SMS_OTP"].available is True
+    assert methods["TABLET_SIGNATURE"].available is True
+    assert methods["NAFATH"].available is False
+    assert methods["NAFATH"].reason is not None
+
+
 def test_evidence_bundle_created(tmp_path: Path):
     builder = EvidenceBundleBuilder(base_dir=tmp_path)
     evidence = builder.build(
@@ -94,11 +118,22 @@ def test_evidence_bundle_created(tmp_path: Path):
             "case_id": "case-1",
             "document_type": "discharge_refusal_form",
             "acknowledgment_method": "SMS_OTP",
+            "proof_metadata": {
+                "verification_method": "SMS_OTP",
+                "otp_sent_at": "2026-03-08T10:00:00",
+                "otp_verified_at": "2026-03-08T10:01:00",
+            },
+            "event_log": [
+                {"action": "sms_otp_sent", "status": "success"},
+                {"action": "sms_otp_verified", "status": "success"},
+            ],
         }
     )
     path = builder.persist(case_id="case-1", session_id="session-1", evidence=evidence)
 
     assert evidence["bundle_hash"]
+    assert evidence["proof_metadata"]["verification_method"] == "SMS_OTP"
+    assert len(evidence["event_log"]) == 2
     assert Path(path).exists()
 
 
