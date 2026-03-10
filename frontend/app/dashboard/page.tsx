@@ -81,8 +81,8 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <AppShell
-        title={t("home.title")}
-        subtitle="Comprehensive legal-medical discharge refusal management dashboard with real-time metrics and compliance tracking."
+        title={t("dashboard.pageTitle")}
+        subtitle={t("dashboard.pageSubtitle")}
         actions={
           <>
             <Link
@@ -105,34 +105,34 @@ export default function DashboardPage() {
         {/* Primary KPI Cards */}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <KPICard
-            label="Total Cases"
+            label={t("dashboard.kpi.totalCases")}
             value={loading ? "-" : metrics.total}
-            subtitle="All discharge refusal cases"
+            subtitle={t("dashboard.kpi.totalCasesSubtitle")}
             icon={<FileText className="h-5 w-5" />}
             trend={metrics.total > 0 ? "up" : "neutral"}
             trendValue={metrics.totalTrend}
             variant="default"
           />
           <KPICard
-            label="Active Cases"
+            label={t("dashboard.kpi.activeCases")}
             value={loading ? "-" : metrics.inProgress}
-            subtitle="Currently in progress"
+            subtitle={t("dashboard.kpi.activeCasesSubtitle")}
             icon={<Activity className="h-5 w-5" />}
             trend={metrics.inProgress > 0 ? "up" : "neutral"}
             trendValue={metrics.openTrend}
             variant="primary"
           />
           <KPICard
-            label="Escalated Cases"
+            label={t("dashboard.kpi.escalatedCases")}
             value={loading ? "-" : metrics.escalated}
-            subtitle="Requiring legal review"
+            subtitle={t("dashboard.kpi.escalatedCasesSubtitle")}
             icon={<AlertTriangle className="h-5 w-5" />}
             variant="danger"
           />
           <KPICard
-            label="Closed Cases"
+            label={t("dashboard.kpi.closedCases")}
             value={loading ? "-" : metrics.closed}
-            subtitle="Successfully completed"
+            subtitle={t("dashboard.kpi.closedCasesSubtitle")}
             icon={<CheckCircle2 className="h-5 w-5" />}
             variant="success"
           />
@@ -141,25 +141,25 @@ export default function DashboardPage() {
         {/* Secondary KPI Cards */}
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <KPICard
-            label="Audit Entries"
+            label={t("dashboard.kpi.auditEntries")}
             value={loading ? "-" : metrics.audits}
-            subtitle="Compliance trail records"
+            subtitle={t("dashboard.kpi.auditEntriesSubtitle")}
             icon={<ClipboardList className="h-5 w-5" />}
             variant="default"
             size="sm"
           />
           <KPICard
-            label="Documents Generated"
+            label={t("dashboard.kpi.documentsGenerated")}
             value={loading ? "-" : metrics.documents}
-            subtitle="Forms and notices"
+            subtitle={t("dashboard.kpi.documentsSubtitle")}
             icon={<FileSignature className="h-5 w-5" />}
             variant="purple"
             size="sm"
           />
           <KPICard
-            label="Open Cases"
+            label={t("dashboard.kpi.openCases")}
             value={loading ? "-" : metrics.open}
-            subtitle="Awaiting action"
+            subtitle={t("dashboard.kpi.openCasesSubtitle")}
             icon={<Clock className="h-5 w-5" />}
             variant="warning"
             size="sm"
@@ -170,12 +170,12 @@ export default function DashboardPage() {
         {recentCases.length > 0 && (
           <div className="mt-6">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">Recent Discharge Cases</h2>
+                <h2 className="text-lg font-semibold text-slate-900">{t("dashboard.recentCases")}</h2>
               <Link
                 href="/cases"
                 className="text-sm font-medium text-slate-600 hover:text-slate-900"
               >
-                View all →
+                  {t("dashboard.viewAll")} →
               </Link>
             </div>
             <div className="space-y-2">
@@ -187,9 +187,9 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-900">Case {caseItem.id.slice(0, 8)}</p>
+                       <p className="text-sm font-medium text-slate-900">{t("dashboard.caseId", { id: caseItem.id.slice(0, 8) })}</p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {caseItem.createdAt ? new Date(caseItem.createdAt).toLocaleDateString() : "Unknown date"}
+                        {caseItem.createdAt ? new Date(caseItem.createdAt).toLocaleDateString() : t("workflow.unknownDate")}
                       </p>
                     </div>
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -211,99 +211,99 @@ export default function DashboardPage() {
           <Link href="/workflow" className="rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-5 hover:shadow-md transition-shadow">
             <div className="inline-flex items-center gap-2 text-slate-900">
               <Activity className="h-5 w-5 text-blue-600" />
-              <h2 className="font-semibold">Discharge Workflow</h2>
+                <h2 className="font-semibold">{t("dashboard.module.workflow.title")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">Track workflow stages and manage discharge refusal processes.</p>
+              <p className="mt-2 text-sm text-slate-600">{t("dashboard.module.workflow.description")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-700">
-              Open Module <ArrowRight className="h-3.5 w-3.5" />
+                {t("dashboard.module.workflow.action")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
 
           <Link href="/refusal-forms" className="rounded-2xl border border-slate-200 bg-gradient-to-br from-purple-50 to-white p-5 hover:shadow-md transition-shadow">
             <div className="inline-flex items-center gap-2 text-slate-900">
               <FileSignature className="h-5 w-5 text-purple-600" />
-              <h2 className="font-semibold">Refusal Forms</h2>
+                <h2 className="font-semibold">{t("dashboard.module.refusalForms.title")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">Manage refusal forms, signatures, and financial notices.</p>
+              <p className="mt-2 text-sm text-slate-600">{t("dashboard.module.refusalForms.description")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-purple-700">
-              Open Module <ArrowRight className="h-3.5 w-3.5" />
+                {t("dashboard.module.workflow.action")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
 
           <Link href="/legal-escalation" className="rounded-2xl border border-slate-200 bg-gradient-to-br from-rose-50 to-white p-5 hover:shadow-md transition-shadow">
             <div className="inline-flex items-center gap-2 text-slate-900">
               <AlertTriangle className="h-5 w-5 text-rose-600" />
-              <h2 className="font-semibold">Legal Escalation</h2>
+                <h2 className="font-semibold">{t("dashboard.module.legalEscalation.title")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">Review and manage cases escalated for legal intervention.</p>
+              <p className="mt-2 text-sm text-slate-600">{t("dashboard.module.legalEscalation.description")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-rose-700">
-              Open Module <ArrowRight className="h-3.5 w-3.5" />
+                {t("dashboard.module.workflow.action")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
 
           <Link href="/escalation-timeline" className="rounded-2xl border border-slate-200 bg-gradient-to-br from-amber-50 to-white p-5 hover:shadow-md transition-shadow">
             <div className="inline-flex items-center gap-2 text-slate-900">
               <Timer className="h-5 w-5 text-amber-600" />
-              <h2 className="font-semibold">Escalation Timeline</h2>
+              <h2 className="font-semibold">{t("nav.escalationTimeline")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">Monitor cases approaching legal escalation deadlines.</p>
+            <p className="mt-2 text-sm text-slate-600">Monitor cases approaching escalation deadlines.</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-amber-700">
-              Open Module <ArrowRight className="h-3.5 w-3.5" />
+              {t("dashboard.module.workflow.action")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
 
           <Link href="/legal-case-file" className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-5 hover:shadow-md transition-shadow">
             <div className="inline-flex items-center gap-2 text-slate-900">
               <Gavel className="h-5 w-5 text-slate-700" />
-              <h2 className="font-semibold">Legal Case File</h2>
+              <h2 className="font-semibold">{t("nav.legalCaseFile")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">Access legal documentation and evidence bundle generation.</p>
+            <p className="mt-2 text-sm text-slate-600">Access legal documentation and evidence bundles.</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-slate-700">
-              Open Module <ArrowRight className="h-3.5 w-3.5" />
+              {t("dashboard.module.workflow.action")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
 
           <Link href="/audit-log" className="rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-5 hover:shadow-md transition-shadow">
             <div className="inline-flex items-center gap-2 text-slate-900">
               <ClipboardList className="h-5 w-5 text-emerald-600" />
-              <h2 className="font-semibold">Audit Log Viewer</h2>
+                <h2 className="font-semibold">{t("dashboard.module.auditLog.title")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">Review immutable audit trails and compliance records.</p>
+              <p className="mt-2 text-sm text-slate-600">{t("dashboard.module.auditLog.description")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-emerald-700">
-              Open Module <ArrowRight className="h-3.5 w-3.5" />
+                {t("dashboard.module.workflow.action")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
 
           <Link href="/compliance" className="rounded-2xl border border-slate-200 bg-gradient-to-br from-indigo-50 to-white p-5 hover:shadow-md transition-shadow">
             <div className="inline-flex items-center gap-2 text-slate-900">
               <ShieldCheck className="h-5 w-5 text-indigo-600" />
-              <h2 className="font-semibold">Compliance Dashboard</h2>
+              <h2 className="font-semibold">{t("nav.compliance")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">Monitor CBAHI, JCI, and PDPL compliance indicators.</p>
+            <p className="mt-2 text-sm text-slate-600">Monitor compliance standards and governance metrics.</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-700">
-              Open Module <ArrowRight className="h-3.5 w-3.5" />
+              {t("dashboard.module.workflow.action")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
 
           <Link href="/icd11-validator" className="rounded-2xl border border-slate-200 bg-gradient-to-br from-cyan-50 to-white p-5 hover:shadow-md transition-shadow">
             <div className="inline-flex items-center gap-2 text-slate-900">
               <CheckCircle2 className="h-5 w-5 text-cyan-600" />
-              <h2 className="font-semibold">ICD-11 Validator</h2>
+                <h2 className="font-semibold">{t("dashboard.module.icd11.title")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">Validate medical diagnosis codes against ICD-11 standards.</p>
+              <p className="mt-2 text-sm text-slate-600">{t("dashboard.module.icd11.description")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-cyan-700">
-              Open Module <ArrowRight className="h-3.5 w-3.5" />
+                {t("dashboard.module.workflow.action")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
 
           <Link href="/emr-integration" className="rounded-2xl border border-slate-200 bg-gradient-to-br from-teal-50 to-white p-5 hover:shadow-md transition-shadow">
             <div className="inline-flex items-center gap-2 text-slate-900">
               <Database className="h-5 w-5 text-teal-600" />
-              <h2 className="font-semibold">EMR Integration</h2>
+                <h2 className="font-semibold">{t("dashboard.module.emr.title")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">Monitor EMR system connections and data synchronization.</p>
+              <p className="mt-2 text-sm text-slate-600">{t("dashboard.module.emr.description")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-teal-700">
-              Open Module <ArrowRight className="h-3.5 w-3.5" />
+                {t("dashboard.module.workflow.action")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
         </section>
@@ -315,9 +315,9 @@ export default function DashboardPage() {
               <TrendingUp className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-semibold text-emerald-900">System Health: Operational</h3>
+              <h3 className="text-sm font-semibold text-emerald-900">System Status: Operational</h3>
               <p className="mt-0.5 text-xs text-emerald-700">
-                All modules functioning normally • Last sync: {new Date().toLocaleTimeString()}
+                All modules functioning • Last sync: {new Date().toLocaleTimeString()}
               </p>
             </div>
           </div>

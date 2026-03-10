@@ -11,14 +11,16 @@ import {
   Plus,
   Eye,
   MessageSquare,
-  CheckCheck
+  CheckCheck,
+  ArrowRight
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import StatusBadge from "@/components/ui/StatusBadge";
-import StatCard from "@/components/ui/StatCard";
+import KPICard from "@/components/ui/KPICard";
 import Modal from "@/components/ui/Modal";
 import ActionButton from "@/components/ui/ActionButton";
+import { useI18n } from "@/i18n/I18nProvider";
 import { legalEscalationService } from "@/lib/services/legalEscalation.service";
 import type { LegalEscalationCase, LegalEscalationNote, LegalEscalationStatus, LegalEscalationPriority } from "@/types/legal-escalation";
 
@@ -37,6 +39,7 @@ const PRIORITY_COLORS: Record<LegalEscalationPriority, string> = {
 };
 
 export default function LegalEscalationPage() {
+  const { t } = useI18n();
   const [cases, setCases] = useState<LegalEscalationCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCase, setSelectedCase] = useState<LegalEscalationCase | null>(null);
@@ -97,10 +100,9 @@ export default function LegalEscalationPage() {
       const newNote = await legalEscalationService.addNote(
         selectedCase.caseId,
         noteText,
-        "Current User" // TODO: Get from auth context
+        "Current User"
       );
       
-      // Update local state
       setCases((prev) =>
         prev.map((c) =>
           c.id === selectedCase.id
@@ -113,7 +115,6 @@ export default function LegalEscalationPage() {
       setNoteText("");
     } catch (error) {
       console.error("Failed to add note:", error);
-      alert("Failed to add note. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +130,6 @@ export default function LegalEscalationPage() {
         resolutionNotes
       );
 
-      // Update local state
       setCases((prev) =>
         prev.map((c) =>
           c.id === selectedCase.id
@@ -171,29 +171,29 @@ export default function LegalEscalationPage() {
       >
         {/* Summary Cards */}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            title="Active Escalations"
+          <KPICard
+            label={t("legalEscalation.kpi.activeCases")}
             value={loading ? "-" : stats.active}
             icon={<AlertTriangle className="h-5 w-5" />}
             variant="primary"
           />
-          <StatCard
-            title="Under Review"
+          <KPICard
+            label={t("legalEscalation.status.underReview")}
             value={loading ? "-" : stats.underReview}
             icon={<Clock className="h-5 w-5" />}
             variant="warning"
           />
-          <StatCard
-            title="Resolved"
+          <KPICard
+            label={t("legalEscalation.kpi.resolvedCases")}
             value={loading ? "-" : stats.resolved}
             icon={<CheckCircle2 className="h-5 w-5" />}
             variant="success"
           />
-          <StatCard
-            title="High Risk"
+          <KPICard
+            label={t("legalEscalation.kpi.highRiskCases")}
             value={loading ? "-" : stats.highRisk}
             icon={<Shield className="h-5 w-5" />}
-            variant="error"
+            variant="danger"
           />
         </div>
 

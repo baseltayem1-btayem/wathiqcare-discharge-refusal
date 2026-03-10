@@ -1,41 +1,38 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Navbar() {
-  const { lang } = useI18n();
-  const isArabic = lang === "ar";
+  const { t, isRtl } = useI18n();
 
   return (
-    <nav className={`bg-white shadow-sm ${isArabic ? "rtl" : "ltr"}`}>
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg"></div>
-          <span className="font-bold text-lg">WathiqCare</span>
-        </div>
+    <nav className={`sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm ${isRtl ? "rtl" : "ltr"}`}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg shadow-md flex items-center justify-center">
+              <span className="text-xs font-bold text-white">WC</span>
+            </div>
+            <span className="font-bold text-lg text-slate-900">{t("app.name")}</span>
+          </div>
 
-        {/* Menu */}
-        <div className="hidden md:flex items-center gap-8">
-          <Link href="#features" className="text-gray-600 hover:text-gray-900">
-            {isArabic ? "المميزات" : "Features"}
-          </Link>
-          <Link href="#about" className="text-gray-600 hover:text-gray-900">
-            {isArabic ? "حول" : "About"}
-          </Link>
-          <Link href="#contact" className="text-gray-600 hover:text-gray-900">
-            {isArabic ? "اتصل" : "Contact"}
-          </Link>
-        </div>
+          {/* Spacer for large screens */}
+          <div className="hidden md:flex flex-1 justify-center" />
 
-        {/* CTA */}
-        <Link
-          href="/login"
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-        >
-          {isArabic ? "الدخول" : "Login"}
-          <ArrowUpRight size={16} />
-        </Link>
+          {/* CTA & Language */}
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition"
+            >
+              {t("homePage.enterSystem")}
+              <ArrowUpRight size={16} />
+            </Link>
+          </div>
+        </div>
       </div>
     </nav>
   );

@@ -1,0 +1,565 @@
+{
+  "language": {
+    "label": "اللغة",
+    "english": "الإنجليزية",
+    "arabic": "العربية"
+  },
+  "common": {
+    "na": "-",
+    "cancel": "إلغاء",
+    "refresh": "تحديث",
+    "preview": "معاينة",
+    "submitting": "جار الإرسال...",
+    "noPreview": "لا توجد معاينة متاحة.",
+    "backToCases": "العودة إلى الحالات",
+    "logout": "تسجيل الخروج"
+  },
+  "app": {
+    "name": "واثق كير",
+    "moduleName": "رفض الخروج",
+    "moduleTagline": "سير عمل قانوني طبي يركز على الامتثال.",
+    "activeWorkspace": "مساحة العمل النشطة",
+    "secureMode": "وضع آمن مفعّل بنطاق المستأجر."
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "cases": "الحالات",
+    "consents": "الموافقات",
+    "newCase": "حالة جديدة",
+    "workflowDocs": "سير العمل / المستندات",
+    "refusalForms": "نماذج الرفض",
+    "legalEscalation": "التصعيد القانوني",
+    "escalationTimeline": "الجدول الزمني للتصعيد",
+    "legalCaseFile": "الملف القانوني",
+    "auditViewer": "عارض سجل التدقيق",
+    "icd11Validator": "مدقق ICD-11",
+    "emrIntegration": "تكامل السجل الطبي",
+    "launchStatus": "حالة الإطلاق",
+    "compliance": "الامتثال",
+    "bundles": "الحزم",
+    "admin": "الإدارة"
+  },
+  "home": {
+    "title": "لوحة واثق كير",
+    "subtitle": "إدارة رفض الخروج الطبي القانوني مع سجل تدقيق وحزم أدلة.",
+    "login": "تسجيل الدخول",
+    "cases": "الحالات"
+  },
+  "login": {
+    "badge": "دخول آمن",
+    "title": "تسجيل دخول واثق كير",
+    "subtitle": "سجل الدخول للوصول إلى اللوحة القانونية الطبية.",
+    "brandTitle": "رفض الخروج",
+    "brandSubtitle": "سير العمل القانوني الطبي",
+    "brandDescription": "منصة لإدارة حالات رفض الخروج والتوثيق والتصعيد القانوني بشكل منظم وآمن",
+    "formTitle": "تسجيل الدخول",
+    "formSubtitle": "أدخل بيانات الدخول للوصول إلى النظام",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "showPassword": "إظهار",
+    "hidePassword": "إخفاء",
+    "rememberMe": "تذكرني",
+    "errorInline": "تعذر تسجيل الدخول. يرجى التحقق من البيانات والمحاولة مرة أخرى.",
+    "footer": "منصة واثق كير لسير العمل الطبي القانوني",
+    "submit": "تسجيل الدخول",
+    "submitting": "جار تسجيل الدخول...",
+    "failed": "فشل تسجيل الدخول"
+  },
+  "auth": {
+    "sessionRequired": "مطلوب تسجيل الدخول",
+    "sessionMissing": "الجلسة غير متاحة. المتابعة إلى صفحة تسجيل الدخول.",
+    "goToLogin": "الذهاب لتسجيل الدخول"
+  },
+  "field": {
+    "patientMrn": "الرقم الطبي للمريض",
+    "patientName": "اسم المريض",
+    "idIqama": "رقم الهوية / الإقامة",
+    "roomNumber": "رقم الغرفة",
+    "attendingPhysician": "الطبيب المعالج",
+    "dischargeDecisionDate": "تاريخ قرار الخروج",
+    "refusalReason": "سبب الرفض",
+    "discussionSummary": "ملخص النقاش",
+    "socialAdministrativeInterventions": "التدخلات الاجتماعية / الإدارية",
+    "formsIssued": "النماذج الصادرة",
+    "insuranceCoverageStatus": "حالة التغطية التأمينية",
+    "signerName": "اسم الموقّع",
+    "signerRole": "صفة الموقّع",
+    "signatureText": "نص التوقيع",
+    "dischargeCaseId": "معرّف حالة الخروج"
+  },
+  "cases": {
+    "title": "الحالات",
+    "subtitle": "متابعة حالات رفض الخروج وحالة سير العمل القانوني الطبي.",
+    "newCase": "حالة جديدة",
+    "loading": "جار تحميل الحالات...",
+    "failedLoad": "فشل تحميل الحالات",
+    "table": {
+      "mrn": "الرقم الطبي",
+      "patient": "المريض",
+      "status": "الحالة",
+      "signer": "الموقّع",
+      "created": "تاريخ الإنشاء",
+      "actions": "الإجراءات"
+    },
+    "open": "فتح",
+    "noCases": "لا توجد حالات."
+  },
+  "newCase": {
+    "title": "حالة جديدة",
+    "titleEdit": "تعديل الحالة",
+    "subtitle": "تسجيل البيانات المطلوبة حسب السياسة وبدء سير عمل رفض الخروج.",
+    "backToCaseDetails": "العودة لتفاصيل الحالة",
+    "loadingExisting": "جار تحميل بيانات الحالة الحالية...",
+    "failedLoad": "فشل تحميل الحالة",
+    "failedSave": "فشل حفظ الحالة",
+    "saveAsNew": "حفظ كحالة جديدة",
+    "create": "إنشاء الحالة",
+    "saving": "جار الحفظ..."
+  },
+  "workflow": {
+    "action": {
+      "recordDischargeDecision": "تسجيل قرار الخروج",
+      "startRefusalWorkflow": "بدء سير عمل الرفض",
+      "generateRefusalForm": "إنشاء نموذج الرفض",
+      "generateFinancialNotice": "إنشاء إشعار المسؤولية المالية",
+      "markPatientCounseled": "تحديد أنه تم إرشاد المريض",
+      "referSocialServices": "التحويل إلى الخدمات الاجتماعية",
+      "escalate": "التصعيد إلى الشؤون القانونية والامتثال",
+      "downloadGenerated": "تنزيل المستند المُنشأ",
+      "viewGenerated": "عرض المستند المُنشأ",
+      "openRefusalPdf": "فتح ملف الرفض بصيغة PDF",
+      "generateBundle": "إنشاء الحزمة",
+      "refreshDocuments": "تحديث المستندات"
+    },
+    "panel": {
+      "title": "سير عمل رفض الخروج",
+      "empty": "سيظهر سير العمل بعد تحميل بيانات الحالة.",
+      "escalationRequired": "التصعيد مطلوب",
+      "persisted24h": "استمر الرفض لأكثر من 24 ساعة بعد قرار الخروج.",
+      "escalationDue": "التصعيد مستحق منذ {date}.",
+      "responsibleDepartment": "القسم المسؤول",
+      "responsiblePerson": "الشخص المسؤول",
+      "nextAction": "الإجراء التالي",
+      "policyValidation": "التحقق من السياسة",
+      "policyReady": "كل توثيق السياسة المطلوب مكتمل.",
+      "policyMissing": "يوجد {count} عنصر مفقود من عناصر توثيق السياسة المطلوبة."
+    },
+    "stage": {
+      "medical_discharge_decision": "قرار الخروج الطبي",
+      "initial_communication": "التواصل الأولي",
+      "support_and_intervention": "الدعم والتدخل",
+      "refusal_form": "نموذج الرفض",
+      "official_notification": "الإشعار الرسمي",
+      "escalation": "التصعيد"
+    },
+    "pageTitle": "سير عمل الخروج",
+    "pageSubtitle": "تتبع مراحل سير عمل رفض الخروج وتقدم الحالات",
+    "badge": "إدارة سير العمل",
+    "kpi": {
+      "totalWorkflows": "إجمالي سير العمل",
+      "activeWorkflows": "سير عمل نشط",
+      "completedWorkflows": "مكتمل"
+    },
+    "filterAll": "جميع الحالات",
+    "sortByNewest": "الأحدث أولاً",
+    "sortByOldest": "الأقدم أولاً",
+    "noCases": "لا توجد حالات سير عمل.",
+    "loadingCases": "جار تحميل حالات سير العمل...",
+    "unknownDate": "تاريخ غير معروف",
+    "viewDetails": "عرض التفاصيل"
+  },
+  "caseDetails": {
+    "caseTitle": "تفاصيل الحالة",
+    "caseTitleWithName": "حالة {name}",
+    "subtitle": "سير عمل رفض قائم على السياسة ومتوافق مع متطلبات المركز الطبي الدولي.",
+    "failedLoad": "فشل تحميل تفاصيل الحالة",
+    "workflowActionFailed": "فشل إجراء سير العمل",
+    "failedBuildPreview": "فشل إنشاء المعاينة",
+    "failedGenerateDocument": "فشل إنشاء المستند",
+    "failedGenerateBundle": "فشل إنشاء حزمة الأدلة",
+    "failedOpenPdf": "فشل فتح ملف PDF",
+    "actionCompleted": "تم تنفيذ الإجراء: {action}",
+    "generatedSuccess": "تم إنشاء {title} بنجاح.",
+    "bundleGenerated": "تم إنشاء حزمة الأدلة: {file}",
+    "useCardsDownload": "استخدم بطاقات النماذج أدناه للعرض والتنزيل.",
+    "useCardsView": "استخدم بطاقات النماذج أدناه لفتح المعاينة.",
+    "loadingWorkflow": "جار تحميل سير عمل الحالة...",
+    "escalationRequired": "التصعيد مطلوب",
+    "escalationBody": "لا يزال الرفض قائمًا بعد 24 ساعة من قرار الخروج. يلزم التصعيد.",
+    "tab": {
+      "overview": "نظرة عامة",
+      "workflow": "سير العمل",
+      "documents": "المستندات",
+      "audit": "التدقيق"
+    },
+    "overview": {
+      "caseProfile": "ملف الحالة",
+      "mrn": "الرقم الطبي",
+      "patient": "المريض",
+      "status": "الحالة",
+      "created": "تاريخ الإنشاء",
+      "signer": "الموقّع",
+      "signedAt": "تاريخ التوقيع",
+      "refusalReason": "سبب الرفض",
+      "noRefusalReason": "لا يوجد سبب رفض مسجل"
+    },
+    "audit": {
+      "title": "سجل التدقيق",
+      "noRecords": "لا توجد سجلات تدقيق."
+    },
+    "previewBuilding": "جار إنشاء معاينة المستند...",
+    "validationBlocked": "لا يمكن المتابعة. الحقول المطلوبة الناقصة: {fields}",
+    "policyChecklist": {
+      "title": "قائمة التحقق من توثيق السياسة",
+      "ready": "التوثيق مكتمل",
+      "missing": "توثيق ناقص",
+      "completed": "موثق",
+      "pending": "بانتظار التوثيق"
+    }
+  },
+  "documents": {
+    "generatedForms": "النماذج المُنشأة",
+    "none": "لا توجد نماذج منشأة لهذه الحالة حتى الآن.",
+    "generatedAt": "تم الإنشاء في {date}",
+    "code": "الرمز: {code}",
+    "opening": "جار الفتح...",
+    "downloading": "جار التنزيل...",
+    "failedOpen": "فشل فتح معاينة المستند",
+    "failedDownload": "فشل تنزيل المستند"
+  },
+  "preview": {
+    "validation": "التحقق",
+    "allFieldsComplete": "كل الحقول المطلوبة مكتملة ويمكن إنشاء المستند.",
+    "missingFields": "حقول مطلوبة ناقصة",
+    "policyChecklist": "قائمة تحقق السياسة",
+    "policyCompleted": "مكتمل",
+    "policyPending": "قيد الاستكمال",
+    "close": "إغلاق",
+    "generateFinal": "إنشاء المستند النهائي",
+    "generating": "جار الإنشاء...",
+    "iframeTitle": "معاينة المستند",
+    "field": {
+      "patient_name": "اسم المريض",
+      "patient_id_number": "رقم الهوية",
+      "medical_record_number": "رقم السجل الطبي",
+      "room_number": "رقم الغرفة",
+      "discharge_decision_at": "تاريخ قرار الخروج",
+      "attending_physician": "الطبيب المعالج",
+      "discussion_summary": "ملخص النقاش",
+      "refusal_reason": "سبب الرفض",
+      "forms_issued": "النماذج الصادرة",
+      "social_administrative_interventions": "التدخلات الاجتماعية / الإدارية",
+      "refusal_reason_or_summary": "سبب الرفض أو ملخص النقاش"
+    }
+  },
+  "dataCapture": {
+    "title": "جمع بيانات السياسة",
+    "subtitle": "أكمل هذه الحقول لتمكين إنشاء نماذج متوافقة مع السياسة."
+  },
+  "bundles": {
+    "title": "حزم الأدلة",
+    "subtitle": "إنشاء وتنزيل حزم أدلة قانونية لحالات الخروج.",
+    "newBundle": "حزمة جديدة",
+    "failedLoad": "فشل تحميل الحزم",
+    "failedCreate": "فشل إنشاء الحزمة",
+    "failedDownload": "فشل تنزيل الحزمة",
+    "createTitle": "إنشاء حزمة جديدة",
+    "availableTitle": "الحزم المتاحة",
+    "loading": "جار تحميل الحزم...",
+    "none": "لا توجد حزم أدلة.",
+    "generate": "إنشاء",
+    "generating": "جار الإنشاء...",
+    "download": "تنزيل",
+    "downloading": "جار التنزيل...",
+    "placeholder": "مثال: cc1e6c8e-5402-45bd-9dd5-785171d81f8a",
+    "generated": "تم إنشاء الحزمة: {file}"
+  },
+  "homePage": {
+    "badge": "منصة الحوكمة الصحية",
+    "platformType": "منصة طبية قانونية مؤسسية",
+    "heroTitle": "مركز قيادة رقمي موحد لقرارات الخروج الطبي والإقرارات القانونية",
+    "heroSubtitle": "منصة مؤسسية متكاملة تربط الفرق السريرية والقانونية وشؤون المرضى في إطار حوكمة رقمية لتوثيق قرارات الخروج وإدارة حالات الرفض وتنفيذ التصعيد القانوني مع ضمان الامتثال الكامل.",
+    "enterSystem": "دخول النظام",
+    "requestDemo": "طلب عرض توضيحي",
+    "trustFactors": {
+      "dataSecurity": "أمان البيانات",
+      "dataSecurityValue": "ISO 27001",
+      "compliance": "الامتثال",
+      "complianceValue": "CBAHI / JCI",
+      "documentation": "التوثيق",
+      "documentationValue": "قانوني محكم",
+      "traceability": "قابلية التتبع",
+      "traceabilityValue": "100%"
+    },
+    "whatTitle": "واثق كير: الحوكمة الرقمية للمنشآت الصحية",
+    "whatBody": "نظام تشغيلي متكامل مصمم لإدارة دورة حياة قرارات الخروج الطبي - من الحكم السريري إلى التوثيق القانوني والتصعيد التنظيمي - مع توفير سجل تدقيق غير قابل للتعديل يحمي الحقوق ويدعم الامتثال المؤسسي.",
+    "coreModulesTitle": "الوحدات الأساسية",
+    "coreModulesSubtitle": "منصة متكاملة تغطي كافة جوانب الحوكمة الطبية القانونية",
+    "module": {
+      "consent": {
+        "title": "الموافقة المستنيرة الرقمية",
+        "description": "جلسات إقرار رقمية مع توقيعات إلكترونية موثقة وأدلة قانونية قابلة للمراجعة",
+        "badge": "موثق"
+      },
+      "refusal": {
+        "title": "سير عمل رفض الخروج",
+        "description": "مسار منظم لتوثيق قرار الطبيب والتدخلات الإدارية المطلوبة",
+        "badge": "منظم"
+      },
+      "legal": {
+        "title": "التصعيد والحماية القانونية",
+        "description": "بناء ملفات قانونية متكاملة مع خطوات تصعيد واضحة وأرشفة أدلة محكمة",
+        "badge": "محمي"
+      },
+      "icd11": {
+        "title": "التحقق من رموز ICD-11",
+        "description": "مرجع فوري ومدقق للتشخيصات الطبية وفق المعايير العالمية",
+        "badge": "دقيق"
+      },
+      "audit": {
+        "title": "الامتثال الشامل والتدقيق",
+        "description": "لوحات امتثال تشغيلية مع سجل تدقيق زمني كامل لكل حالة",
+        "badge": "مستمر"
+      },
+      "emr": {
+        "title": "التكامل مع أنظمة المستشفى",
+        "description": "موصلات جاهزة للربط مع أنظمة السجلات الطبية الإلكترونية",
+        "badge": "متصل"
+      }
+    },
+    "institutionalRolesTitle": "منصة موحدة لكافة الأدوار المؤسسية",
+    "role": {
+      "clinical": "الفرق السريرية",
+      "clinicalCount": "أطباء ومقدمو رعاية",
+      "legal": "الشؤون القانونية",
+      "legalCount": "مستشارون ومحامون",
+      "patient": "علاقات المرضى",
+      "patientCount": "خدمات اجتماعية",
+      "compliance": "الامتثال والجودة",
+      "complianceCount": "تدقيق داخلي"
+    },
+    "ctaTitle": "ابدأ في بناء إطار الحوكمة المؤسسية",
+    "ctaSubtitle": "انضم إلى المنشآت الصحية الرائدة في تبني معايير الحوكمة الرقمية",
+    "footer": {
+      "allRightsReserved": "جميع الحقوق محفوظة."
+    }
+  },
+  "dashboard": {
+    "pageTitle": "لوحة التحكم",
+    "pageSubtitle": "نظرة شاملة على حالات رفض الخروج وسير العمل ومؤشرات الامتثال",
+    "badge": "مركز القيادة",
+    "kpi": {
+      "totalCases": "إجمالي الحالات",
+      "totalCasesSubtitle": "جميع حالات رفض الخروج",
+      "totalCasesTrend": "+12% عن الشهر الماضي",
+      "activeCases": "الحالات النشطة",
+      "activeCasesSubtitle": "قيد العمل حاليًا",
+      "activeCasesTrend": "+5% عن الأسبوع الماضي",
+      "escalatedCases": "حالات مصعّدة",
+      "escalatedCasesSubtitle": "تتطلب مراجعة قانونية",
+      "closedCases": "حالات مغلقة",
+      "closedCasesSubtitle": "مكتملة بنجاح",
+      "auditEntries": "إدخالات التدقيق",
+      "auditEntriesSubtitle": "سجلات مسار الامتثال",
+      "documentsGenerated": "مستندات منشأة",
+      "documentsSubtitle": "نماذج وإشعارات",
+      "openCases": "حالات مفتوحة",
+      "openCasesSubtitle": "بانتظار إجراء"
+    },
+    "recentCases": "حالات الخروج الأخيرة",
+    "recentCasesSubtitle": "نشاط الحالات الأخير",
+    "viewAll": "عرض الكل",
+    "caseId": "حالة {id}",
+    "modulesTitle": "وحدات المنصة",
+    "modulesSubtitle": "الانتقال إلى وحدات سير العمل المتخصصة",
+    "module": {
+      "workflow": {
+        "title": "سير عمل الخروج",
+        "description": "تتبع مراحل سير العمل وإدارة عمليات رفض الخروج.",
+        "action": "فتح الوحدة"
+      },
+      "refusalForms": {
+        "title": "نماذج الرفض",
+        "description": "إدارة نماذج الرفض والتوقيعات والإشعارات المالية."
+      },
+      "legalEscalation": {
+        "title": "التصعيد القانوني",
+        "description": "مراجعة وإدارة الحالات المصعدة للتدخل القانوني."
+      },
+      "icd11": {
+        "title": "مدقق ICD-11",
+        "description": "التحقق من رموز التشخيص الطبي وفق معايير ICD-11."
+      },
+      "auditLog": {
+        "title": "سجل التدقيق",
+        "description": "مراجعة مسارات التدقيق غير القابلة للتغيير وسجلات الامتثال."
+      },
+      "emr": {
+        "title": "تكامل السجلات الطبية",
+        "description": "مراقبة اتصالات أنظمة السجلات الطبية ومزامنة البيانات."
+      }
+    }
+  },
+  "legalEscalation": {
+    "pageTitle": "التصعيد القانوني",
+    "pageSubtitle": "إدارة الحالات التي تتطلب تدخلًا قانونيًا ومراجعة امتثال",
+    "badge": "الشؤون القانونية",
+    "kpi": {
+      "activeCases": "قضايا قانونية نشطة",
+      "highRiskCases": "عالية المخاطر",
+      "underReview": "قيد المراجعة",
+      "resolvedCases": "محلولة"
+    },
+    "addNote": "إضافة ملاحظة",
+    "resolveCase": "حل القضية",
+    "viewDetails": "عرض التفاصيل",
+    "noCases": "لا توجد حالات تصعيد قانوني.",
+    "loadingCases": "جار تحميل القضايا القانونية...",
+    "priority": {
+      "low": "منخفضة",
+      "medium": "متوسطة",
+      "high": "عالية",
+      "critical": "حرجة"
+    },
+    "status": {
+      "active": "نشطة",
+      "underReview": "قيد المراجعة",
+      "resolved": "محلولة",
+      "highRisk": "عالية المخاطر"
+    },
+    "assignedCounsel": "المستشار المعيّن",
+    "escalatedOn": "تم التصعيد في",
+    "escalationReason": "سبب التصعيد",
+    "caseTimeline": "الجدول الزمني للقضية",
+    "notes": "ملاحظات",
+    "noNotes": "لا توجد ملاحظات حتى الآن",
+    "addNoteTitle": "إضافة ملاحظة قانونية",
+    "noteText": "نص الملاحظة",
+    "noteTextPlaceholder": "أدخل ملاحظتك القانونية...",
+    "resolveTitle": "حل القضية القانونية",
+    "resolutionNotes": "ملاحظات الحل",
+    "resolutionNotesPlaceholder": "أدخل تفاصيل الحل...",
+    "submit": "إرسال",
+    "submitting": "جار الإرسال...",
+    "close": "إغلاق"
+  },
+  "refusalForms": {
+    "pageTitle": "نماذج الرفض",
+    "pageSubtitle": "إدارة نماذج رفض الخروج والتوقيعات والإشعارات المالية",
+    "badge": "إدارة النماذج",
+    "kpi": {
+      "totalForms": "إجمالي النماذج",
+      "pendingSignature": "بانتظار التوقيع",
+      "completed": "مكتمل",
+      "requiresAction": "يتطلب إجراء"
+    },
+    "noCases": "لا توجد نماذج رفض.",
+    "loadingForms": "جار تحميل النماذج...",
+    "formType": "نوع النموذج",
+    "patient": "المريض",
+    "status": {
+      "draft": "مسودة",
+      "pending": "معلق",
+      "signed": "موقّع",
+      "completed": "مكتمل"
+    },
+    "createdDate": "تاريخ الإنشاء",
+    "actions": "الإجراءات",
+    "view": "عرض",
+    "sign": "توقيع",
+    "download": "تنزيل"
+  },
+  "icd11": {
+    "pageTitle": "مدقق ICD-11",
+    "pageSubtitle": "التحقق من رموز التشخيص الطبي وفق المعايير الدولية ICD-11",
+    "badge": "التحقق من الرموز",
+    "kpi": {
+      "totalValidations": "إجمالي التحققات",
+      "validCodes": "رموز صحيحة",
+      "invalidCodes": "رموز غير صحيحة",
+      "todayValidations": "اليوم"
+    },
+    "searchPlaceholder": "أدخل رمز ICD-11 (مثال: 1A00)",
+    "validate": "تحقق",
+    "validating": "جار التحقق...",
+    "codeReference": "مرجع الرموز",
+    "recentValidations": "التحققات الأخيرة",
+    "noValidations": "لا توجد تحققات حديثة",
+    "code": "الرمز",
+    "description": "الوصف",
+    "result": "النتيجة",
+    "timestamp": "الطابع الزمني",
+    "valid": "صحيح",
+    "invalid": "غير صحيح"
+  },
+  "auditLog": {
+    "pageTitle": "سجل التدقيق",
+    "pageSubtitle": "مسار تدقيق غير قابل للتعديل للامتثال والمراجعة التنظيمية",
+    "badge": "مسار التدقيق",
+    "kpi": {
+      "totalEntries": "إجمالي الإدخالات",
+      "todayEntries": "اليوم",
+      "criticalEvents": "أحداث حرجة",
+      "complianceScore": "نقاط الامتثال"
+    },
+    "filters": "الفلاتر",
+    "search": "بحث في السجلات...",
+    "dateRange": "النطاق الزمني",
+    "eventType": "نوع الحدث",
+    "user": "المستخدم",
+    "applyFilters": "تطبيق الفلاتر",
+    "exportLogs": "تصدير السجلات",
+    "noLogs": "لا توجد سجلات تدقيق",
+    "loadingLogs": "جار تحميل سجلات التدقيق...",
+    "timestamp": "الطابع الزمني",
+    "event": "الحدث",
+    "actor": "الفاعل",
+    "resource": "المورد",
+    "action": "الإجراء",
+    "status": "الحالة",
+    "details": "التفاصيل"
+  },
+  "emrIntegration": {
+    "pageTitle": "تكامل السجلات الطبية",
+    "pageSubtitle": "مراقبة اتصالات أنظمة السجلات الطبية الإلكترونية وحالة المزامنة",
+    "badge": "تكامل الأنظمة",
+    "kpi": {
+      "connectedSystems": "أنظمة متصلة",
+      "syncStatus": "حالة المزامنة",
+      "lastSync": "آخر مزامنة",
+      "syncErrors": "أخطاء المزامنة"
+    },
+    "connectors": "موصلات السجلات الطبية",
+    "systemName": "اسم النظام",
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "error": "خطأ",
+      "syncing": "جار المزامنة"
+    },
+    "lastSyncTime": "آخر مزامنة",
+    "recordsSynced": "سجلات مزامنة",
+    "actions": "الإجراءات",
+    "configure": "تكوين",
+    "testConnection": "اختبار الاتصال",
+    "viewLogs": "عرض السجلات",
+    "syncNow": "مزامنة الآن",
+    "standards": "معايير التكامل",
+    "standardsDescription": "متوافق مع معايير HL7 FHIR و DICOM و IHE",
+    "recentActivity": "نشاط المزامنة الأخير",
+    "noActivity": "لا يوجد نشاط مزامنة حديث"
+  },
+  "status": {
+    "open": "مفتوح",
+    "closed": "مغلق",
+    "pending": "معلق",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "completed": "مكتمل",
+    "inProgress": "قيد العمل",
+    "draft": "مسودة",
+    "escalated": "مصعّد",
+    "resolved": "محلول",
+    "underReview": "قيد المراجعة"
+  }
+}

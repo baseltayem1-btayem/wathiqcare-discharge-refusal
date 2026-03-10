@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Language, translations } from "@/i18n/translations";
+import { getTranslation, interpolate, isSupportedLanguage, type Language } from "@/lib/i18n";
 
 type TranslateVars = Record<string, string | number>;
 
@@ -16,23 +16,6 @@ type I18nContextValue = {
 const LANGUAGE_STORAGE_KEY = "wathiqcare_lang";
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined);
-
-function interpolate(template: string, vars?: TranslateVars): string {
-  if (!vars) {
-    return template;
-  }
-
-  return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, key: string) => {
-    if (!(key in vars)) {
-      return `{${key}}`;
-    }
-    return String(vars[key]);
-  });
-}
-
-function isSupportedLanguage(value: string | null): value is Language {
-  return value === "en" || value === "ar";
-}
 
 export function useI18n(): I18nContextValue {
   const context = useContext(I18nContext);
@@ -77,7 +60,7 @@ export default function I18nProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (key: string, vars?: TranslateVars) => {
-      const source = translations[lang][key] ?? translations.en[key] ?? key;
+      const source = getTranslation(lang, key);
       return interpolate(source, vars);
     },
     [lang]
