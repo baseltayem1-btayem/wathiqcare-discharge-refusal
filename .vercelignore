@@ -1,0 +1,12 @@
+backend/
+tests/
+*.pyc
+__pycache__/
+*.py
+requirements.txt
+docker-compose.yml
+.env
+.env.local
+node_modules/
+evidence_bundle_auth.zip
+test.pdf

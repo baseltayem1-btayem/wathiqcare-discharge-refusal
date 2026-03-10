@@ -213,3 +213,5 @@ npm-debug.log*
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+.vercel
+.env*.local
