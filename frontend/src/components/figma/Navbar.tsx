@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { useI18n } from "@/i18n/I18nProvider";
 
-interface NavbarProps {
-  isRtl?: boolean;
-}
+export default function Navbar() {
+  const { lang } = useI18n();
+  const isArabic = lang === "ar";
 
-export default function Navbar({ isRtl = true }: NavbarProps) {
   return (
-    <nav className={`bg-white shadow-sm ${isRtl ? 'rtl' : 'ltr'}`}>
+    <nav className={`bg-white shadow-sm ${isArabic ? "rtl" : "ltr"}`}>
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-2">
@@ -18,13 +18,13 @@ export default function Navbar({ isRtl = true }: NavbarProps) {
         {/* Menu */}
         <div className="hidden md:flex items-center gap-8">
           <Link href="#features" className="text-gray-600 hover:text-gray-900">
-            {isRtl ? "المميزات" : "Features"}
+            {isArabic ? "المميزات" : "Features"}
           </Link>
           <Link href="#about" className="text-gray-600 hover:text-gray-900">
-            {isRtl ? "حول" : "About"}
+            {isArabic ? "حول" : "About"}
           </Link>
           <Link href="#contact" className="text-gray-600 hover:text-gray-900">
-            {isRtl ? "اتصل" : "Contact"}
+            {isArabic ? "اتصل" : "Contact"}
           </Link>
         </div>
 
@@ -33,7 +33,7 @@ export default function Navbar({ isRtl = true }: NavbarProps) {
           href="/login"
           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
         >
-          {isRtl ? "الدخول" : "Login"}
+          {isArabic ? "الدخول" : "Login"}
           <ArrowUpRight size={16} />
         </Link>
       </div>

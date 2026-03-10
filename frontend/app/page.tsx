@@ -5,9 +5,6 @@ import { ArrowUpRight, CheckCircle2, FileCheck2, Gavel, Languages, ShieldCheck, 
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
 import Navbar from "@/components/figma/Navbar";
-import FeaturesSection from "@/components/figma/FeaturesSection";
-import CoverageArea from "@/components/figma/CoverageArea";
-import Footer from "@/components/figma/Footer";
 
 export default function HomePage() {
   const { lang, isRtl } = useI18n();
@@ -137,7 +134,7 @@ export default function HomePage() {
 
   return (
     <>
-      <Navbar isRtl={isRtl} />
+      <Navbar />
       
       <main className="relative min-h-screen overflow-hidden bg-[#f4f6f8] text-slate-900">
       <div className="pointer-events-none absolute inset-0">

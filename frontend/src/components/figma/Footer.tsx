@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { Facebook, Twitter, Linkedin, Mail } from "lucide-react";
+import { useI18n } from "@/i18n/I18nProvider";
 
-interface FooterProps {
-  isRtl?: boolean;
-}
+export default function Footer() {
+  const { lang } = useI18n();
+  const isArabic = lang === "ar";
 
-export default function Footer({ isRtl = true }: FooterProps) {
   return (
-    <footer className={`bg-gray-900 text-white ${isRtl ? 'rtl' : 'ltr'}`}>
+    <footer className={`bg-gray-900 text-white ${isArabic ? "rtl" : "ltr"}`}>
       <div className="container mx-auto px-4 py-16">
         {/* Main Content */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
@@ -18,7 +18,7 @@ export default function Footer({ isRtl = true }: FooterProps) {
               <span className="font-bold text-lg">WathiqCare</span>
             </div>
             <p className="text-gray-400 text-sm">
-              {isRtl
+              {isArabic
                 ? "منصة رقمية موثوقة لإدارة مسارات الموافقة والرفض الطبي"
                 : "Trusted digital platform for healthcare consent and refusal management"}
             </p>
@@ -27,27 +27,27 @@ export default function Footer({ isRtl = true }: FooterProps) {
           {/* Links */}
           <div>
             <h4 className="font-semibold mb-4">
-              {isRtl ? "الروابط" : "Links"}
+              {isArabic ? "الروابط" : "Links"}
             </h4>
             <ul className="space-y-2">
               <li>
                 <Link href="/" className="text-gray-400 hover:text-white text-sm">
-                  {isRtl ? "الرئيسية" : "Home"}
+                  {isArabic ? "الرئيسية" : "Home"}
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="text-gray-400 hover:text-white text-sm">
-                  {isRtl ? "حول" : "About"}
+                  {isArabic ? "حول" : "About"}
                 </Link>
               </li>
               <li>
                 <Link href="/features" className="text-gray-400 hover:text-white text-sm">
-                  {isRtl ? "المميزات" : "Features"}
+                  {isArabic ? "المميزات" : "Features"}
                 </Link>
               </li>
               <li>
                 <Link href="/pricing" className="text-gray-400 hover:text-white text-sm">
-                  {isRtl ? "الأسعار" : "Pricing"}
+                  {isArabic ? "الأسعار" : "Pricing"}
                 </Link>
               </li>
             </ul>
@@ -56,22 +56,22 @@ export default function Footer({ isRtl = true }: FooterProps) {
           {/* Legal */}
           <div>
             <h4 className="font-semibold mb-4">
-              {isRtl ? "قانوني" : "Legal"}
+              {isArabic ? "قانوني" : "Legal"}
             </h4>
             <ul className="space-y-2">
               <li>
                 <Link href="/privacy" className="text-gray-400 hover:text-white text-sm">
-                  {isRtl ? "الخصوصية" : "Privacy"}
+                  {isArabic ? "الخصوصية" : "Privacy"}
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className="text-gray-400 hover:text-white text-sm">
-                  {isRtl ? "الشروط" : "Terms"}
+                  {isArabic ? "الشروط" : "Terms"}
                 </Link>
               </li>
               <li>
                 <Link href="/compliance" className="text-gray-400 hover:text-white text-sm">
-                  {isRtl ? "الامتثال" : "Compliance"}
+                  {isArabic ? "الامتثال" : "Compliance"}
                 </Link>
               </li>
             </ul>
@@ -80,7 +80,7 @@ export default function Footer({ isRtl = true }: FooterProps) {
           {/* Social */}
           <div>
             <h4 className="font-semibold mb-4">
-              {isRtl ? "تابعنا" : "Follow"}
+              {isArabic ? "تابعنا" : "Follow"}
             </h4>
             <div className="flex gap-4">
               <a href="#" className="text-gray-400 hover:text-blue-400 transition">
@@ -102,7 +102,7 @@ export default function Footer({ isRtl = true }: FooterProps) {
         {/* Divider */}
         <div className="border-t border-gray-800 pt-8">
           <p className="text-center text-gray-400 text-sm">
-            {isRtl
+            {isArabic
               ? `© ${new Date().getFullYear()} WathiqCare جميع الحقوق محفوظة`
               : `© ${new Date().getFullYear()} WathiqCare. All rights reserved`}
           </p>

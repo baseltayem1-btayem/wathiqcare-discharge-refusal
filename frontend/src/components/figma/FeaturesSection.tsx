@@ -1,8 +1,5 @@
 import { CheckCircle2, FileCheck2, Gavel, ShieldCheck, Workflow } from "lucide-react";
-
-interface FeaturesProps {
-  isRtl?: boolean;
-}
+import { useI18n } from "@/i18n/I18nProvider";
 
 const featuresList = [
   {
@@ -39,17 +36,20 @@ const featuresList = [
   },
 ];
 
-export default function FeaturesSection({ isRtl = true }: FeaturesProps) {
+export default function FeaturesSection() {
+  const { lang } = useI18n();
+  const isArabic = lang === "ar";
+
   return (
-    <section className={`py-20 bg-gray-50 ${isRtl ? 'rtl' : 'ltr'}`}>
+    <section className={`py-20 bg-gray-50 ${isArabic ? "rtl" : "ltr"}`}>
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">
-            {isRtl ? "المميزات الرئيسية" : "Core Features"}
+            {isArabic ? "المميزات الرئيسية" : "Core Features"}
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            {isRtl 
+            {isArabic
               ? "منصة متكاملة لإدارة مسارات الموافقة والرفض والتصعيد القانوني"
               : "Integrated platform for managing consent, refusal, and legal workflows"}
           </p>
@@ -68,10 +68,10 @@ export default function FeaturesSection({ isRtl = true }: FeaturesProps) {
                   <Icon size={24} />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">
-                  {isRtl ? feature.title : feature.titleEn}
+                  {isArabic ? feature.title : feature.titleEn}
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  {isRtl ? feature.description : feature.descriptionEn}
+                  {isArabic ? feature.description : feature.descriptionEn}
                 </p>
               </div>
             );
