@@ -2,6 +2,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
+from fastapi.responses import Response
 
 from backend.schemas.discharge import DischargeRefusalRequest
 from backend.schemas.discharge_workflow import (
@@ -230,6 +231,14 @@ def download_case_document(
 
     path = Path(document.file_path)
     if not path.exists():
+        if document.html_content:
+            return Response(
+                content=document.html_content,
+                media_type="text/html",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{document.file_name}"',
+                },
+            )
         raise HTTPException(status_code=404, detail="ملف المستند غير موجود")
 
     return FileResponse(path=str(path), filename=document.file_name, media_type="text/html")

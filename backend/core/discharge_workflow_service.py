@@ -155,6 +155,35 @@ def _log_audit(
     db.add(log)
 
 
+def _log_generation_failure_audit(
+    *,
+    tenant_id: str,
+    user_id: str,
+    case_id: str,
+    action: str,
+    reason: str,
+) -> None:
+    db = SessionLocal()
+    try:
+        _log_audit(
+            db,
+            tenant_id=tenant_id,
+            user_id=user_id,
+            case_id=case_id,
+            action=f"{action}_failed",
+            details=(
+                "Document generation failed. "
+                "Please verify required data and retry. "
+                f"Reason: {reason}"
+            ),
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
+
+
 def _normalize_text(value: Any) -> Optional[str]:
     if value is None:
         return None
@@ -350,21 +379,46 @@ def _stage_timestamps(workflow: DischargeRefusalWorkflow) -> Dict[str, Optional[
 
 
 def _serialize_document(document: DischargeWorkflowDocument) -> Dict[str, Any]:
+    preview_route = f"/api/discharge/documents/{document.id}/view"
+    download_route = f"/api/discharge/documents/{document.id}/download"
+    generation_status = "generated"
+    signed_status = bool(document.signed_at)
+
     return {
+        "document_id": document.id,
         "id": document.id,
+        "case_id": document.case_id,
+        "caseId": document.case_id,
+        "form_type": document.template_key,
+        "formType": document.template_key,
         "template_key": document.template_key,
+        "templateKey": document.template_key,
         "document_code": document.document_code,
+        "documentCode": document.document_code,
         "title": document.title,
         "file_name": document.file_name,
+        "fileName": document.file_name,
+        "generation_status": generation_status,
+        "generationStatus": generation_status,
         "locale": document.locale,
+        "templateVersion": document.template_version,
         "template_version": document.template_version,
         "locked_template": document.locked_template,
+        "preview_route": preview_route,
+        "previewRoute": preview_route,
+        "download_route": download_route,
+        "downloadRoute": download_route,
         "attachment_group": document.attachment_group,
         "signed_at": _iso(document.signed_at),
+        "signedStatus": signed_status,
         "signed_by": document.signed_by,
+        "archivedStatus": False,
+        "filePath": document.file_path,
         "generated_at": _iso(document.generated_at),
-        "view_url": f"/api/discharge/documents/{document.id}/view",
-        "download_url": f"/api/discharge/documents/{document.id}/download",
+        "createdAt": _iso(document.generated_at),
+        "createdBy": document.generated_by,
+        "view_url": preview_route,
+        "download_url": download_route,
     }
 
 
@@ -827,7 +881,7 @@ def _generate_document(
         file_path=file_path,
         html_content=html_content,
         locale=str((payload or {}).get("locale") or "en"),
-        template_version=template.document_code or "1.0",
+        template_version="1.0",
         locked_template=True,
         attachment_group=bundle.discharge_case.id,
         generated_at=_utc_now(),
@@ -1168,8 +1222,82 @@ def run_workflow_action(
             "generated_document": generated_document,
         }
 
-    except Exception:
+    except Exception as exc:
         db.rollback()
+        if action in {"generate_refusal_form", "generate_financial_notice"}:
+            _log_generation_failure_audit(
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=case_id,
+                action=action,
+                reason=str(exc),
+            )
+        raise
+
+    finally:
+        db.close()
+
+
+def generate_document_record(
+    *,
+    tenant_id: str,
+    case_id: str,
+    template_key: str,
+    payload: Optional[Dict[str, Any]],
+    current_user: Dict[str, Any],
+) -> Dict[str, Any]:
+    payload = payload or {}
+    db = SessionLocal()
+
+    try:
+        bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
+        now = _utc_now()
+
+        generation_result = _generate_document(
+            db,
+            bundle=bundle,
+            template_key=template_key,
+            payload=payload,
+            current_user=current_user,
+        )
+        generated_document = generation_result["generated_document"]
+
+        if template_key == "discharge_refusal_form":
+            bundle.workflow.refusal_form_generated_at = now
+            bundle.workflow.current_stage = "official_notification"
+        elif template_key == "financial_responsibility_notice":
+            bundle.workflow.financial_notice_generated_at = now
+            bundle.workflow.current_stage = "escalation"
+
+        bundle.workflow.updated_at = now
+        _log_audit(
+            db,
+            tenant_id=tenant_id,
+            user_id=current_user["id"],
+            case_id=case_id,
+            action=f"generate_{template_key}",
+            details=f"Generated document for template: {template_key}",
+        )
+
+        db.flush()
+        db.refresh(bundle.workflow)
+        db.commit()
+
+        return {
+            "workflow": _serialize_workflow(bundle),
+            "generated_document": generated_document,
+            "policy_validation": generation_result.get("policy_validation"),
+        }
+
+    except Exception as exc:
+        db.rollback()
+        _log_generation_failure_audit(
+            tenant_id=tenant_id,
+            user_id=current_user["id"],
+            case_id=case_id,
+            action=f"generate_{template_key}",
+            reason=str(exc),
+        )
         raise
 
     finally:

@@ -8,20 +8,20 @@ class RefusalFormsService {
   async listForms(): Promise<RefusalForm[]> {
     try {
       const cases = await apiFetch<any[]>("/api/cases?limit=200");
-      
+
       const forms: RefusalForm[] = [];
-      
+
       for (const caseData of cases) {
         // Get workflow documents for each case
         try {
           const workflow = await apiFetch<any>(
-            `/api/cases/${encodeURIComponent(caseData.id)}/discharge-refusal-workflow`
+            `/api/discharge/cases/${encodeURIComponent(caseData.id)}/workflow`
           );
-          
+
           if (workflow && workflow.documents) {
             for (const doc of workflow.documents) {
-              if (doc.documentType === "discharge_refusal_form" || 
-                  doc.documentType === "financial_responsibility_notice") {
+              if (doc.documentType === "discharge_refusal_form" ||
+                doc.documentType === "financial_responsibility_notice") {
                 forms.push(this.transformToForm(doc, caseData, workflow));
               }
             }
@@ -31,7 +31,7 @@ class RefusalFormsService {
           continue;
         }
       }
-      
+
       return forms;
     } catch (error) {
       console.error("Failed to fetch refusal forms:", error);
@@ -59,8 +59,20 @@ class RefusalFormsService {
     formId: string,
     signatureData: SignatureData
   ): Promise<void> {
-    // TODO: Implement actual API call when backend endpoint is ready
-    console.log(`Signing form ${formId}:`, signatureData);
+    await apiFetch(`/api/documents/${encodeURIComponent(formId)}/sign`, {
+      method: "POST",
+      body: JSON.stringify({
+        payload: {
+          signerName: signatureData.signerName,
+          signerRelation: signatureData.signerRelation,
+          witnessName: signatureData.witnessName,
+          witnessTitle: signatureData.witnessTitle,
+          acknowledgedRisks: signatureData.acknowledgedRisks,
+          acknowledgedFinancial: signatureData.acknowledgedFinancial,
+          signatureData: "captured_from_ui",
+        },
+      }),
+    });
   }
 
   /**
@@ -75,7 +87,7 @@ class RefusalFormsService {
    */
   private transformToForm(doc: any, caseData: any, workflow: any): RefusalForm {
     const status = this.determineStatus(doc, workflow);
-    
+
     return {
       id: doc.id,
       caseId: caseData.id,
@@ -83,8 +95,8 @@ class RefusalFormsService {
       patientName: workflow.patientName || caseData.patientName || "Unknown",
       patientIdNumber: workflow.patientIdNumber || "",
       medicalRecordNumber: workflow.medicalRecordNumber || "",
-      formType: doc.documentType === "financial_responsibility_notice" 
-        ? "financial_responsibility" 
+      formType: doc.documentType === "financial_responsibility_notice"
+        ? "financial_responsibility"
         : "discharge_refusal",
       status,
       generatedAt: doc.generatedAt || doc.createdAt || new Date().toISOString(),

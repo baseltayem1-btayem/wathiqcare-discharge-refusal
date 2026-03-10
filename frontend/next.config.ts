@@ -33,14 +33,6 @@ const nextConfig: NextConfig = {
         source: "/api/cases/:path*",
         destination: `${backendBaseUrl}/api/cases/:path*`,
       },
-      {
-        source: "/api/documents/:path*",
-        destination: `${backendBaseUrl}/api/documents/:path*`,
-      },
-      {
-        source: "/api/discharge/:path*",
-        destination: `${backendBaseUrl}/api/discharge/:path*`,
-      },
     ];
   },
 };

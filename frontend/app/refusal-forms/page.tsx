@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { 
-  FileText, 
-  Clock, 
-  CheckCircle2, 
+import {
+  FileText,
+  Clock,
+  CheckCircle2,
   AlertTriangle,
   Eye,
   Download,
@@ -20,6 +20,7 @@ import Modal from "@/components/ui/Modal";
 import ActionButton from "@/components/ui/ActionButton";
 import { refusalFormsService } from "@/lib/services/refusalForms.service";
 import type { RefusalForm, SignatureData, RefusalFormType } from "@/types/refusal-forms";
+import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 
 const FORM_TYPE_LABELS: Record<RefusalFormType, string> = {
   discharge_refusal: "Discharge Refusal Form",
@@ -97,18 +98,18 @@ export default function RefusalFormsPage() {
     setSubmitting(true);
     try {
       await refusalFormsService.signForm(selectedForm.id, signatureData);
-      
+
       // Update local state
       setForms((prev) =>
         prev.map((f) =>
           f.id === selectedForm.id
-            ? { 
-                ...f, 
-                status: "signed", 
-                signedAt: new Date().toISOString(),
-                signerName: signatureData.signerName,
-                witnessName: signatureData.witnessName,
-              }
+            ? {
+              ...f,
+              status: "signed",
+              signedAt: new Date().toISOString(),
+              signerName: signatureData.signerName,
+              witnessName: signatureData.witnessName,
+            }
             : f
         )
       );
@@ -123,11 +124,15 @@ export default function RefusalFormsPage() {
     }
   }
 
-  function handleDownload(form: RefusalForm) {
+  async function handleDownload(form: RefusalForm) {
     if (!form.documentUrl) return;
-    
-    // Open download URL in new tab
-    window.open(form.documentUrl, "_blank");
+
+    try {
+      await downloadProtectedDocument(form.documentUrl, `${form.caseNumber || form.id}.html`);
+    } catch (error) {
+      console.error("Failed to download form:", error);
+      alert("Failed to download form. Please try again.");
+    }
   }
 
   return (
@@ -201,18 +206,18 @@ export default function RefusalFormsPage() {
                         <StatusBadge
                           variant={
                             form.status === "signed" ? "success" :
-                            form.status === "escalated" ? "escalated" :
-                            form.status === "completed" ? "completed" :
-                            "pending"
+                              form.status === "escalated" ? "escalated" :
+                                form.status === "completed" ? "completed" :
+                                  "pending"
                           }
                           label={form.status.toUpperCase()}
                         />
                       </div>
-                      
+
                       <p className="mt-1 text-sm text-slate-700">
                         <span className="font-medium">{FORM_TYPE_LABELS[form.formType]}</span>
                       </p>
-                      
+
                       <p className="mt-1 text-sm text-slate-600">
                         Patient: {form.patientName}
                       </p>
@@ -242,7 +247,7 @@ export default function RefusalFormsPage() {
                         <Eye className="h-3.5 w-3.5" />
                         View
                       </button>
-                      
+
                       {form.status === "pending" && (
                         <button
                           onClick={() => openSignModal(form)}
@@ -252,10 +257,12 @@ export default function RefusalFormsPage() {
                           Sign
                         </button>
                       )}
-                      
+
                       {form.documentUrl && (
                         <button
-                          onClick={() => handleDownload(form)}
+                          onClick={() => {
+                            void handleDownload(form);
+                          }}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                         >
                           <Download className="h-3.5 w-3.5" />
@@ -298,9 +305,9 @@ export default function RefusalFormsPage() {
                     <StatusBadge
                       variant={
                         selectedForm.status === "signed" ? "success" :
-                        selectedForm.status === "escalated" ? "escalated" :
-                        selectedForm.status === "completed" ? "completed" :
-                        "pending"
+                          selectedForm.status === "escalated" ? "escalated" :
+                            selectedForm.status === "completed" ? "completed" :
+                              "pending"
                       }
                       label={selectedForm.status.toUpperCase()}
                     />

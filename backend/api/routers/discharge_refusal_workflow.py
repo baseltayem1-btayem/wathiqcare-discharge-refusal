@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from pydantic import BaseModel, Field
 
 from backend.api.deps import require_roles
@@ -114,10 +114,15 @@ def _load_case_documents(*, tenant_id: str, case_id: str) -> List[Dict[str, Any]
         results: List[Dict[str, Any]] = []
         for row in rows:
             template_key = row.template_key
+            preview_route = f"/api/discharge/documents/{row.id}/view"
+            download_route = f"/api/discharge/documents/{row.id}/download"
+            signed_status = bool(row.signed_at)
             results.append(
                 {
+                    "documentId": row.id,
                     "id": row.id,
                     "caseId": row.case_id,
+                    "formType": _normalize_document_type(template_key),
                     "workflowId": row.workflow_id,
                     "documentType": _normalize_document_type(template_key),
                     "documentCode": _document_code_for_template(template_key, row.document_code),
@@ -125,14 +130,23 @@ def _load_case_documents(*, tenant_id: str, case_id: str) -> List[Dict[str, Any]
                     "titleAr": _title_ar_for_template(template_key),
                     "templateKey": template_key,
                     "version": "1.0",
+                    "templateVersion": row.template_version,
                     "fileName": row.file_name,
                     "mimeType": "text/html",
+                    "filePath": row.file_path,
                     "storagePath": row.file_path,
+                    "previewRoute": preview_route,
+                    "downloadRoute": download_route,
                     "previewHtml": row.html_content,
                     "payloadJson": {},
+                    "generationStatus": "generated",
                     "status": "generated",
                     "generatedBy": row.generated_by,
                     "generatedAt": _iso(row.generated_at),
+                    "createdAt": _iso(row.generated_at),
+                    "createdBy": row.generated_by,
+                    "signedStatus": signed_status,
+                    "archivedStatus": False,
                     "signedBy": None,
                     "signedAt": None,
                 }
@@ -551,6 +565,14 @@ def download_document_v2(
 
     path = Path(document.file_path)
     if not path.exists():
+        if document.html_content:
+            return Response(
+                content=document.html_content,
+                media_type="text/html",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{document.file_name}"',
+                },
+            )
         raise HTTPException(status_code=404, detail="ملف المستند غير موجود")
 
     return FileResponse(path=str(path), filename=document.file_name, media_type="text/html")

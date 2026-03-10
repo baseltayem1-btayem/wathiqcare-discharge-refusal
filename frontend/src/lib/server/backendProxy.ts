@@ -11,9 +11,16 @@ const PRIVATE_HOST_PATTERNS = [
     /^10\./,
     /^192\.168\./,
     /^172\.(1[6-9]|2\d|3[0-1])\./,
+    /^169\.254\./,
     /\.internal$/i,
     /\.local$/i,
+    /\.svc$/i,
+    /\.cluster\.local$/i,
 ];
+
+function isSingleLabelHostname(hostname: string): boolean {
+    return !hostname.includes(".") && hostname.toLowerCase() !== "localhost";
+}
 
 function isPrivateHost(hostname: string): boolean {
     return PRIVATE_HOST_PATTERNS.some((pattern) => pattern.test(hostname));
@@ -24,7 +31,7 @@ function shouldRejectHost(hostname: string): boolean {
         return false;
     }
 
-    return isPrivateHost(hostname);
+    return isPrivateHost(hostname) || isSingleLabelHostname(hostname);
 }
 
 export function buildBackendUrl(pathname: string): BackendUrlResult {

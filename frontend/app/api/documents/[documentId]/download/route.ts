@@ -20,7 +20,7 @@ export async function GET(
     const auth = requireAuth(request);
     const { documentId } = await params;
 
-    const backendResponse = await forwardToBackend(request, `/api/discharge/documents/${encodeURIComponent(documentId)}/download`);
+    const backendResponse = await forwardToBackend(request, `/api/documents/${encodeURIComponent(documentId)}/download`);
     if (backendResponse.ok) {
         return backendResponse;
     }
