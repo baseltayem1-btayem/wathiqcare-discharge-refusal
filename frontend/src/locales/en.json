@@ -549,6 +549,84 @@
     "recentActivity": "Recent Sync Activity",
     "noActivity": "No recent sync activity"
   },
+  "mdrw": {
+    "error": {
+      "loadFailed": "Failed to load Medical Discharge Refusal data",
+      "saveFailed": "Failed to save workflow update"
+    },
+    "dashboard": {
+      "title": "Medical Discharge Refusal Workflow",
+      "subtitle": "Operational dashboard for refusal management, legal documentation, and escalation controls.",
+      "caseList": "Refusal Cases",
+      "qualityLink": "Quality Monitoring",
+      "loading": "Loading refusal cases...",
+      "empty": "No refusal cases found.",
+      "escalationHint": "Escalation to Compliance and Legal must be triggered when refusal persists beyond 24 hours."
+    },
+    "metrics": {
+      "totalCases": "Total Refusal Cases",
+      "activeCases": "Active Refusal Cases",
+      "escalated24h": "Escalated After 24 Hours",
+      "formsLibrary": "Forms Library Templates",
+      "avgResolution": "Average Resolution Time (Hours)",
+      "escalated": "Escalated Cases"
+    },
+    "case": {
+      "title": "Case Detail Workflow Screen",
+      "subtitle": "Workflow case: {caseId}",
+      "backDashboard": "Back to Dashboard",
+      "backCase": "Back to Case",
+      "statusSection": "Case Workflow Status",
+      "currentStatus": "Current Status",
+      "currentStage": "Current Stage",
+      "openLegacyCase": "Open Case Detail",
+      "continueWorkflow": "Continue Workflow"
+    },
+    "screens": {
+      "initialCommunication": "Initial Communication Form",
+      "socialServices": "Social Services Intervention Form",
+      "signature": "Refusal Form Signature Screen",
+      "witness": "Witness Documentation Screen",
+      "financialNotice": "Financial Responsibility Notice Generator",
+      "escalation": "Escalation Review Screen"
+    },
+    "form": {
+      "saved": "Saved successfully.",
+      "saveContinue": "Save and Continue",
+      "initialCommunicationSubtitle": "Capture physician and nursing communication, risk explanation, and refusal details.",
+      "socialSubtitle": "Record Patient Affairs and Social Services intervention and outcomes.",
+      "witnessSubtitle": "Enable witness mode and capture two staff witnesses when patient refuses signature.",
+      "financialSubtitle": "Generate and acknowledge financial responsibility notice.",
+      "escalationSubtitle": "Record compliance/legal reviews and finalize disposition.",
+      "nursingNotes": "Nursing Notes",
+      "patientAffairsNotes": "Patient Affairs Notes",
+      "socialServicesNotes": "Social Services Notes",
+      "supportProvided": "Support Provided",
+      "witness1Name": "Witness 1 Name",
+      "witness1Role": "Witness 1 Role",
+      "witness2Name": "Witness 2 Name",
+      "witness2Role": "Witness 2 Role",
+      "representativeName": "Hospital Representative Name",
+      "representativeSignature": "Hospital Representative Signature",
+      "financialAcknowledged": "Financial responsibility acknowledged",
+      "generateNotice": "Generate Financial Notice",
+      "complianceNotes": "Compliance Notes",
+      "legalNotes": "Legal Notes",
+      "recordCompliance": "Record Compliance Review",
+      "recordLegal": "Record Legal Review",
+      "escalateNow": "Escalate to Compliance and Legal",
+      "closeAdmin": "Close - Administrative / Legal Action",
+      "closeDischarged": "Close - Patient Discharged"
+    },
+    "quality": {
+      "title": "Quality Monitoring Dashboard",
+      "subtitle": "Track refusal volume, escalations, resolution times, and distribution reports.",
+      "reasons": "Refusal Reasons Distribution",
+      "departments": "Cases by Department",
+      "monthly": "Monthly Review Reports",
+      "quarterly": "Quarterly Reports"
+    }
+  },
   "status": {
     "open": "Open",
     "closed": "Closed",

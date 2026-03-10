@@ -10,6 +10,7 @@ from backend.schemas.discharge_workflow import (
     WorkflowTemplatePreviewRequest,
     WorkflowValidationRequest,
 )
+from pydantic import BaseModel, Field
 from backend.core.discharge_service import create_discharge_refusal
 from backend.core.discharge_workflow_service import (
     get_document_record,
@@ -21,14 +22,51 @@ from backend.core.discharge_workflow_service import (
 )
 from backend.legal.evidence_bundle import generate_evidence_bundle
 from backend.api.deps import get_current_user, require_roles
+from backend.forms.medical_legal_forms_library import FORMS_LIBRARY, render_form_by_key
 from backend.core.discharge_query_service import (
     list_discharge_cases_for_tenant,
     get_discharge_case_detail,
     list_audit_logs_for_case,
     list_bundles,
+    get_refusal_quality_metrics,
 )
 
 router = APIRouter(prefix="/api/discharge", tags=["Discharge"])
+
+ROLE_PHYSICIAN = "doctor"
+ROLE_NURSING = "nursing"
+ROLE_PATIENT_AFFAIRS = "patient_affairs"
+ROLE_SOCIAL_SERVICES = "social_services"
+ROLE_QUALITY = "quality"
+ROLE_COMPLIANCE = "compliance"
+ROLE_LEGAL = "legal_admin"
+
+ROLE_WORKFLOW_VIEW = (
+    "tenant_admin",
+    ROLE_LEGAL,
+    ROLE_PHYSICIAN,
+    "viewer",
+    ROLE_NURSING,
+    ROLE_PATIENT_AFFAIRS,
+    ROLE_SOCIAL_SERVICES,
+    ROLE_QUALITY,
+    ROLE_COMPLIANCE,
+)
+
+ROLE_WORKFLOW_EDIT = (
+    "tenant_admin",
+    ROLE_LEGAL,
+    ROLE_PHYSICIAN,
+    ROLE_NURSING,
+    ROLE_PATIENT_AFFAIRS,
+    ROLE_SOCIAL_SERVICES,
+    ROLE_COMPLIANCE,
+)
+
+
+class MedicalLegalFormsRenderRequest(BaseModel):
+    template_key: str = Field(..., description="Template key from forms library")
+    payload: dict[str, str] = Field(default_factory=dict)
 
 @router.post("/refusal")
 def create_refusal(
@@ -52,11 +90,11 @@ def create_refusal(
         raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {str(e)}")
 
 @router.get("/cases")
-def get_cases(current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer"))):
+def get_cases(current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))):
     return list_discharge_cases_for_tenant(current_user["tenant_id"])
 
 @router.get("/cases/{case_id}")
-def get_case(case_id: str, current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer"))):
+def get_case(case_id: str, current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))):
     result = get_discharge_case_detail(current_user["tenant_id"], case_id)
     if not result:
         raise HTTPException(status_code=404, detail="الحالة غير موجودة")
@@ -66,7 +104,7 @@ def get_case(case_id: str, current_user=Depends(require_roles("tenant_admin", "l
 @router.get("/cases/{case_id}/workflow")
 def get_case_workflow(
     case_id: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
     try:
         return get_workflow_snapshot(tenant_id=current_user["tenant_id"], case_id=case_id)
@@ -78,7 +116,7 @@ def get_case_workflow(
 def run_case_workflow_action(
     case_id: str,
     payload: WorkflowActionRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
 ):
     try:
         return run_workflow_action(
@@ -98,7 +136,7 @@ def run_case_workflow_action(
 def preview_case_workflow_document(
     case_id: str,
     payload: WorkflowTemplatePreviewRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
     try:
         return preview_workflow_document(
@@ -115,7 +153,7 @@ def preview_case_workflow_document(
 def validate_case_workflow_document(
     case_id: str,
     payload: WorkflowValidationRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
     try:
         return validate_workflow_generation(
@@ -132,7 +170,7 @@ def validate_case_workflow_document(
 def generate_case_workflow_document(
     case_id: str,
     payload: WorkflowTemplateGenerateRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
 ):
     action = {
         "discharge_refusal_form": "generate_refusal_form",
@@ -159,7 +197,7 @@ def generate_case_workflow_document(
 @router.get("/cases/{case_id}/documents")
 def get_case_documents(
     case_id: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
     try:
         return list_case_documents(tenant_id=current_user["tenant_id"], case_id=case_id)
@@ -170,7 +208,7 @@ def get_case_documents(
 @router.get("/documents/{document_id}/view", response_class=HTMLResponse)
 def view_case_document(
     document_id: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
     try:
         document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
@@ -183,7 +221,7 @@ def view_case_document(
 @router.get("/documents/{document_id}/download")
 def download_case_document(
     document_id: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
     try:
         document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
@@ -206,6 +244,58 @@ def get_case_audit(case_id: str, current_user=Depends(require_roles("tenant_admi
 @router.get("/bundles")
 def get_bundles(current_user=Depends(require_roles("tenant_admin", "legal_admin"))):
     return list_bundles()
+
+
+@router.get("/reports/refusal-quality")
+def refusal_quality_dashboard(
+    current_user=Depends(require_roles("tenant_admin", ROLE_QUALITY, ROLE_COMPLIANCE, ROLE_LEGAL)),
+):
+    return get_refusal_quality_metrics(current_user["tenant_id"])
+
+
+@router.get("/forms-library/medical-legal/templates")
+def list_medical_legal_templates(
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
+):
+    return {
+        "library": "Forms Library - Medical Legal Forms",
+        "templates": [
+            {
+                "key": item.key,
+                "title": item.title,
+                "code": item.code,
+                "version": item.version,
+                "locked_template": item.locked_template,
+                "digitally_signable": True,
+                "pdf_exportable": True,
+                "case_attachable": True,
+                "bilingual": item.bilingual,
+            }
+            for item in FORMS_LIBRARY.values()
+        ],
+    }
+
+
+@router.post("/forms-library/medical-legal/render")
+def render_medical_legal_template(
+    request: MedicalLegalFormsRenderRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
+):
+    if request.template_key not in FORMS_LIBRARY:
+        raise HTTPException(status_code=400, detail="Template key is not registered in forms library")
+
+    template = FORMS_LIBRARY[request.template_key]
+    html_content = render_form_by_key(request.template_key, request.payload)
+    return {
+        "template": {
+            "key": template.key,
+            "title": template.title,
+            "code": template.code,
+            "version": template.version,
+            "locked_template": template.locked_template,
+        },
+        "html_content": html_content,
+    }
 
 @router.get("/pdf/{filename}")
 def get_pdf(filename: str, current_user=Depends(get_current_user)):

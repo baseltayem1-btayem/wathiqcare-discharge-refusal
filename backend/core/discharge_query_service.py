@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime
 
 from backend.core.database import SessionLocal
 from backend.models.discharge_case import DischargeCase
@@ -161,3 +162,59 @@ def list_bundles():
                 "path": str(path),
             })
     return items
+
+
+def get_refusal_quality_metrics(tenant_id: str):
+    db = SessionLocal()
+    try:
+        workflows = (
+            db.query(DischargeRefusalWorkflow)
+            .filter(DischargeRefusalWorkflow.tenant_id == tenant_id)
+            .all()
+        )
+
+        total_cases = len(workflows)
+        active_cases = len([item for item in workflows if (item.status or "").lower() in {"active", "refusal_active", "escalation_required"}])
+        escalated_after_24h = len([
+            item for item in workflows
+            if item.escalated_at and item.discharge_decision_at and (item.escalated_at - item.discharge_decision_at).total_seconds() >= 24 * 3600
+        ])
+
+        resolution_durations = [
+            (item.closed_at - item.refusal_started_at).total_seconds() / 3600.0
+            for item in workflows
+            if item.closed_at and item.refusal_started_at and item.closed_at >= item.refusal_started_at
+        ]
+        avg_resolution_hours = round(sum(resolution_durations) / len(resolution_durations), 2) if resolution_durations else 0.0
+
+        reasons: dict[str, int] = {}
+        departments: dict[str, int] = {}
+        monthly_reviews: dict[str, int] = {}
+        quarterly_reviews: dict[str, int] = {}
+
+        for item in workflows:
+            reason = (item.refusal_reason or "Unknown").strip() or "Unknown"
+            reasons[reason] = reasons.get(reason, 0) + 1
+
+            dept = (item.responsible_department or "Unassigned").strip() or "Unassigned"
+            departments[dept] = departments.get(dept, 0) + 1
+
+            marker = item.updated_at or item.created_at or datetime.utcnow()
+            month_key = marker.strftime("%Y-%m")
+            quarter = (marker.month - 1) // 3 + 1
+            quarter_key = f"{marker.year}-Q{quarter}"
+            monthly_reviews[month_key] = monthly_reviews.get(month_key, 0) + 1
+            quarterly_reviews[quarter_key] = quarterly_reviews.get(quarter_key, 0) + 1
+
+        return {
+            "total_refusal_cases": total_cases,
+            "active_refusal_cases": active_cases,
+            "cases_escalated_after_24_hours": escalated_after_24h,
+            "average_resolution_time_hours": avg_resolution_hours,
+            "refusal_reasons_distribution": reasons,
+            "cases_by_department": departments,
+            "monthly_review_reports": monthly_reviews,
+            "quarterly_reports": quarterly_reviews,
+        }
+    finally:
+        db.close()

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
+import textwrap
 from typing import Any, Dict, List, Optional, Tuple
 
 from backend.core.database import SessionLocal
@@ -23,6 +24,7 @@ WORKFLOW_STAGES = [
     "refusal_form",
     "official_notification",
     "escalation",
+    "closed",
 ]
 
 STAGE_LABELS = {
@@ -32,6 +34,25 @@ STAGE_LABELS = {
     "refusal_form": "Refusal Form",
     "official_notification": "Official Notification",
     "escalation": "Escalation",
+    "closed": "Closed",
+}
+
+POLICY_CASE_STATUSES = {
+    "draft": "Draft",
+    "decision_issued": "Discharge Decision Issued",
+    "accepted": "Patient Accepted Discharge",
+    "refusal_reported": "Refusal Reported",
+    "initial_communication_done": "Initial Communication Completed",
+    "social_intervention_ongoing": "Social Services Intervention Ongoing",
+    "form_pending_signature": "Refusal Form Pending Signature",
+    "form_signed": "Refusal Form Signed",
+    "witnessed_refusal_recorded": "Witnessed Refusal Recorded",
+    "financial_notice_issued": "Financial Liability Notice Issued",
+    "escalated_compliance": "Escalated to Compliance",
+    "escalated_legal": "Escalated to Legal",
+    "under_review": "Under Review",
+    "closed_discharged": "Closed - Patient Discharged",
+    "closed_admin_legal": "Closed - Administrative / Legal Action",
 }
 
 WORKFLOW_FIELD_NAMES = {
@@ -46,6 +67,26 @@ WORKFLOW_FIELD_NAMES = {
     "responsible_department",
     "responsible_person",
     "next_action",
+    "patient_id",
+    "mrn",
+    "nursing_notes",
+    "patient_affairs_notes",
+    "social_services_notes",
+    "quality_notes",
+    "compliance_notes",
+    "legal_notes",
+    "financial_notice_issued",
+    "financial_notice_acknowledged",
+    "refusal_form_signed",
+    "patient_signature",
+    "representative_signature",
+    "witness_mode",
+    "witness1_name",
+    "witness1_role",
+    "witness1_signature",
+    "witness2_name",
+    "witness2_role",
+    "witness2_signature",
 }
 
 CASE_DOCUMENTATION_FIELD_NAMES = {
@@ -126,7 +167,15 @@ def _normalize_text(value: Any) -> Optional[str]:
 def _apply_payload_to_workflow(workflow: DischargeRefusalWorkflow, payload: Dict[str, Any]) -> None:
     for key in WORKFLOW_FIELD_NAMES:
         if key in payload:
-            value = _normalize_text(payload.get(key))
+            if key in {
+                "financial_notice_issued",
+                "financial_notice_acknowledged",
+                "refusal_form_signed",
+                "witness_mode",
+            }:
+                value = bool(payload.get(key))
+            else:
+                value = _normalize_text(payload.get(key))
             setattr(workflow, key, value)
 
 
@@ -182,7 +231,8 @@ def _upsert_workflow(
             medical_record_number=patient.mrn,
             refusal_reason=discharge_case.refusal_reason,
             current_stage="medical_discharge_decision",
-            status="active",
+            status="draft",
+            case_status=POLICY_CASE_STATUSES["draft"],
             responsible_department="Attending Physician",
             next_action="Record discharge decision details.",
         )
@@ -306,6 +356,12 @@ def _serialize_document(document: DischargeWorkflowDocument) -> Dict[str, Any]:
         "document_code": document.document_code,
         "title": document.title,
         "file_name": document.file_name,
+        "locale": document.locale,
+        "template_version": document.template_version,
+        "locked_template": document.locked_template,
+        "attachment_group": document.attachment_group,
+        "signed_at": _iso(document.signed_at),
+        "signed_by": document.signed_by,
         "generated_at": _iso(document.generated_at),
         "view_url": f"/api/discharge/documents/{document.id}/view",
         "download_url": f"/api/discharge/documents/{document.id}/download",
@@ -449,13 +505,35 @@ def _serialize_workflow(bundle: CaseBundle) -> Dict[str, Any]:
         "financial_notice_generated_at": _iso(workflow.financial_notice_generated_at),
         "escalation_due_at": _iso(workflow.escalation_due_at),
         "escalated_at": _iso(workflow.escalated_at),
+        "closed_at": _iso(workflow.closed_at),
+        "case_status": workflow.case_status,
         "patient_name": workflow.patient_name,
+        "patient_id": workflow.patient_id,
+        "mrn": workflow.mrn,
         "patient_id_number": workflow.patient_id_number,
         "medical_record_number": workflow.medical_record_number,
         "room_number": workflow.room_number,
         "attending_physician": workflow.attending_physician,
         "refusal_reason": workflow.refusal_reason,
         "discussion_summary": workflow.discussion_summary,
+        "nursing_notes": workflow.nursing_notes,
+        "patient_affairs_notes": workflow.patient_affairs_notes,
+        "social_services_notes": workflow.social_services_notes,
+        "quality_notes": workflow.quality_notes,
+        "compliance_notes": workflow.compliance_notes,
+        "legal_notes": workflow.legal_notes,
+        "financial_notice_issued": workflow.financial_notice_issued,
+        "financial_notice_acknowledged": workflow.financial_notice_acknowledged,
+        "refusal_form_signed": workflow.refusal_form_signed,
+        "patient_signature": workflow.patient_signature,
+        "representative_signature": workflow.representative_signature,
+        "witness_mode": workflow.witness_mode,
+        "witness1_name": workflow.witness1_name,
+        "witness1_role": workflow.witness1_role,
+        "witness1_signature": workflow.witness1_signature,
+        "witness2_name": workflow.witness2_name,
+        "witness2_role": workflow.witness2_role,
+        "witness2_signature": workflow.witness2_signature,
         "social_administrative_interventions": case_documentation.social_administrative_interventions,
         "forms_issued": case_documentation.forms_issued,
         "insurance_coverage_status": workflow.insurance_coverage_status,
@@ -484,6 +562,7 @@ def _build_template_context(
     context = {
         "case_id": case.id,
         "patient_name": str(payload.get("patient_name") or workflow.patient_name or patient.full_name or ""),
+        "patient_name_or_guardian": str(payload.get("patient_name_or_guardian") or payload.get("patient_name") or workflow.patient_name or patient.full_name or ""),
         "patient_id_number": str(payload.get("patient_id_number") or workflow.patient_id_number or ""),
         "medical_record_number": str(
             payload.get("medical_record_number")
@@ -492,7 +571,25 @@ def _build_template_context(
             or ""
         ),
         "room_number": str(payload.get("room_number") or workflow.room_number or ""),
+        "department": str(payload.get("department") or payload.get("ward") or ""),
         "attending_physician": str(payload.get("attending_physician") or workflow.attending_physician or ""),
+        "nurse_name": str(payload.get("nurse_name") or ""),
+        "witness_1_name": str(payload.get("witness_1_name") or workflow.witness1_name or ""),
+        "witness_2_name": str(payload.get("witness_2_name") or workflow.witness2_name or ""),
+        "witness1_role": str(payload.get("witness1_role") or workflow.witness1_role or ""),
+        "witness2_role": str(payload.get("witness2_role") or workflow.witness2_role or ""),
+        "witness1_signature": str(payload.get("witness1_signature") or workflow.witness1_signature or ""),
+        "witness2_signature": str(payload.get("witness2_signature") or workflow.witness2_signature or ""),
+        "relationship": str(payload.get("relationship") or ""),
+        "time": str(payload.get("time") or _utc_now().strftime("%H:%M")),
+        "representative_name": str(payload.get("representative_name") or workflow.responsible_person or ""),
+        "patient_signature": str(payload.get("patient_signature") or workflow.patient_signature or ""),
+        "representative_signature": str(payload.get("representative_signature") or workflow.representative_signature or ""),
+        "attending_physician_signature": str(payload.get("attending_physician_signature") or ""),
+        "nurse_signature": str(payload.get("nurse_signature") or ""),
+        "staff_name": str(payload.get("staff_name") or workflow.responsible_person or ""),
+        "support_provided": str(payload.get("support_provided") or case_documentation.social_administrative_interventions or ""),
+        "official_stamp": str(payload.get("official_stamp") or ""),
         "refusal_reason": str(payload.get("refusal_reason") or workflow.refusal_reason or case.refusal_reason or ""),
         "discussion_summary": str(payload.get("discussion_summary") or workflow.discussion_summary or ""),
         "insurance_coverage_status": str(
@@ -521,6 +618,43 @@ def _write_document_file(case_id: str, template_key: str, html_content: str) -> 
     file_name = f"{template_key}_{timestamp}.html"
     file_path = case_dir / file_name
     file_path.write_text(html_content, encoding="utf-8")
+    return file_name, str(file_path)
+
+
+def _write_document_pdf(case_id: str, template_key: str, html_content: str) -> Optional[Tuple[str, str]]:
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfgen import canvas
+    except Exception:
+        return None
+
+    case_dir = GENERATED_DOCS_DIR / case_id
+    case_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = _utc_now().strftime("%Y%m%d%H%M%S")
+    file_name = f"{template_key}_{timestamp}.pdf"
+    file_path = case_dir / file_name
+
+    text_only = " ".join(part.strip() for part in html_content.replace("<", " <").split(">") if "<" not in part)
+    text_only = " ".join(text_only.split())
+
+    c = canvas.Canvas(str(file_path), pagesize=A4)
+    width, height = A4
+    x = 40
+    y = height - 40
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(x, y, "WathiqCare - Medical Legal Forms Library")
+    y -= 22
+    c.setFont("Helvetica", 9)
+    for line in textwrap.wrap(text_only, width=110):
+        if y < 40:
+            c.showPage()
+            c.setFont("Helvetica", 9)
+            y = height - 40
+        c.drawString(x, y, line)
+        y -= 12
+
+    c.save()
     return file_name, str(file_path)
 
 
@@ -676,8 +810,10 @@ def _generate_document(
 
     html_content = template.renderer(context)
 
-    # TODO: Add PDF conversion using a stable renderer once deployment environment supports it.
     file_name, file_path = _write_document_file(bundle.discharge_case.id, template_key, html_content)
+    pdf_result = _write_document_pdf(bundle.discharge_case.id, template_key, html_content)
+    if pdf_result:
+        file_name, file_path = pdf_result
 
     document = DischargeWorkflowDocument(
         workflow_id=bundle.workflow.id,
@@ -690,6 +826,10 @@ def _generate_document(
         file_name=file_name,
         file_path=file_path,
         html_content=html_content,
+        locale=str((payload or {}).get("locale") or "en"),
+        template_version=template.document_code or "1.0",
+        locked_template=True,
+        attachment_group=bundle.discharge_case.id,
         generated_at=_utc_now(),
     )
     db.add(document)
@@ -755,6 +895,7 @@ def run_workflow_action(
             workflow.escalation_due_at = decision_at + timedelta(hours=24)
             workflow.current_stage = "initial_communication"
             workflow.status = "active"
+            workflow.case_status = POLICY_CASE_STATUSES["decision_issued"]
             workflow.responsible_department = "Attending Physician"
             workflow.responsible_person = attending_physician
             workflow.next_action = "If discharge is refused, start refusal workflow."
@@ -777,6 +918,7 @@ def run_workflow_action(
             workflow.refusal_started_at = now
             workflow.current_stage = "initial_communication"
             workflow.status = "refusal_active"
+            workflow.case_status = POLICY_CASE_STATUSES["refusal_reported"]
             workflow.responsible_department = "Nursing"
             workflow.responsible_person = actor_name
             workflow.next_action = "Document communication and counseling details."
@@ -795,6 +937,7 @@ def run_workflow_action(
             workflow.initial_communication_at = now
             workflow.current_stage = "support_and_intervention"
             workflow.status = "refusal_active"
+            workflow.case_status = POLICY_CASE_STATUSES["initial_communication_done"]
             workflow.responsible_department = "Patient Affairs"
             workflow.responsible_person = actor_name
             workflow.next_action = "Coordinate support and social intervention."
@@ -817,6 +960,7 @@ def run_workflow_action(
             workflow.support_and_intervention_at = now
             workflow.current_stage = "refusal_form"
             workflow.status = "refusal_active"
+            workflow.case_status = POLICY_CASE_STATUSES["social_intervention_ongoing"]
             workflow.responsible_department = "Patient Affairs / Social Services"
             workflow.responsible_person = actor_name
             workflow.next_action = "Issue required policy forms and notices."
@@ -846,6 +990,22 @@ def run_workflow_action(
             workflow.refusal_form_generated_at = now
             workflow.current_stage = "official_notification"
             workflow.status = "refusal_active"
+            workflow.case_status = POLICY_CASE_STATUSES["form_pending_signature"]
+            workflow.witness_mode = bool(payload.get("witness_mode"))
+            workflow.witness1_name = _normalize_text(payload.get("witness1_name") or payload.get("witness_1_name"))
+            workflow.witness1_role = _normalize_text(payload.get("witness1_role") or payload.get("witness_1_role"))
+            workflow.witness1_signature = _normalize_text(payload.get("witness1_signature"))
+            workflow.witness2_name = _normalize_text(payload.get("witness2_name") or payload.get("witness_2_name"))
+            workflow.witness2_role = _normalize_text(payload.get("witness2_role") or payload.get("witness_2_role"))
+            workflow.witness2_signature = _normalize_text(payload.get("witness2_signature"))
+            workflow.refusal_form_signed = bool(payload.get("refusal_form_signed"))
+            workflow.patient_signature = _normalize_text(payload.get("patient_signature"))
+            workflow.representative_signature = _normalize_text(payload.get("representative_signature"))
+
+            if workflow.refusal_form_signed:
+                workflow.case_status = POLICY_CASE_STATUSES["form_signed"]
+            if workflow.witness_mode:
+                workflow.case_status = POLICY_CASE_STATUSES["witnessed_refusal_recorded"]
             workflow.responsible_department = "Nursing / Patient Affairs"
             workflow.responsible_person = actor_name
             workflow.next_action = "Generate and communicate financial responsibility notice."
@@ -875,6 +1035,9 @@ def run_workflow_action(
             workflow.financial_notice_generated_at = now
             workflow.current_stage = "escalation"
             workflow.status = "refusal_active"
+            workflow.financial_notice_issued = True
+            workflow.financial_notice_acknowledged = bool(payload.get("financial_notice_acknowledged"))
+            workflow.case_status = POLICY_CASE_STATUSES["financial_notice_issued"]
             workflow.responsible_department = "Patient Affairs"
             workflow.responsible_person = actor_name
             workflow.next_action = "Escalate to Legal / Compliance if refusal persists beyond 24h."
@@ -895,8 +1058,10 @@ def run_workflow_action(
                 raise ValueError("Escalation is available only when refusal persists beyond 24 hours")
 
             workflow.escalated_at = now
+            workflow.escalation_timestamp = now
             workflow.current_stage = "escalation"
             workflow.status = "escalated"
+            workflow.case_status = POLICY_CASE_STATUSES["escalated_legal"]
             workflow.responsible_department = "Legal / Compliance"
             workflow.responsible_person = actor_name
             workflow.next_action = "Legal and compliance follow-up is in progress."
@@ -908,6 +1073,84 @@ def run_workflow_action(
                 case_id=case_id,
                 action="escalate_legal_compliance",
                 details="Case escalated to Legal and Compliance.",
+            )
+
+        elif action == "record_compliance_review":
+            if not workflow.escalated_at:
+                raise ValueError("Compliance review requires escalation")
+
+            workflow.compliance_notes = _normalize_text(payload.get("compliance_notes")) or workflow.compliance_notes
+            workflow.case_status = POLICY_CASE_STATUSES["escalated_compliance"]
+            workflow.status = "escalated"
+            workflow.current_stage = "escalation"
+            workflow.responsible_department = "Compliance"
+            workflow.responsible_person = actor_name
+            workflow.next_action = "Legal department review and final disposition."
+
+            _log_audit(
+                db,
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=case_id,
+                action="record_compliance_review",
+                details="Compliance review recorded.",
+            )
+
+        elif action == "record_legal_review":
+            if not workflow.escalated_at:
+                raise ValueError("Legal review requires escalation")
+
+            workflow.legal_notes = _normalize_text(payload.get("legal_notes")) or workflow.legal_notes
+            workflow.case_status = POLICY_CASE_STATUSES["under_review"]
+            workflow.status = "escalated"
+            workflow.current_stage = "escalation"
+            workflow.responsible_department = "Legal"
+            workflow.responsible_person = actor_name
+            workflow.next_action = "Close case once legal disposition is complete."
+
+            _log_audit(
+                db,
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=case_id,
+                action="record_legal_review",
+                details="Legal review recorded.",
+            )
+
+        elif action == "mark_patient_accepted_discharge":
+            workflow.current_stage = "closed"
+            workflow.status = "closed"
+            workflow.case_status = POLICY_CASE_STATUSES["closed_discharged"]
+            workflow.closed_at = now
+            workflow.responsible_department = "Attending Physician"
+            workflow.responsible_person = actor_name
+            workflow.next_action = "Case closed as patient discharged."
+
+            _log_audit(
+                db,
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=case_id,
+                action="mark_patient_accepted_discharge",
+                details="Patient accepted discharge and case was closed.",
+            )
+
+        elif action == "close_under_review":
+            workflow.current_stage = "closed"
+            workflow.status = "closed"
+            workflow.case_status = POLICY_CASE_STATUSES["closed_admin_legal"]
+            workflow.closed_at = now
+            workflow.responsible_department = "Legal / Compliance"
+            workflow.responsible_person = actor_name
+            workflow.next_action = "Case closed after review."
+
+            _log_audit(
+                db,
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=case_id,
+                action="close_under_review",
+                details="Case closed with administrative/legal action.",
             )
 
         else:

@@ -23,6 +23,28 @@ from backend.models.workflow_document import DischargeWorkflowDocument
 
 router = APIRouter(prefix="/api", tags=["Discharge Refusal Workflow"])
 
+WORKFLOW_VIEW_ROLES = (
+    "tenant_admin",
+    "legal_admin",
+    "doctor",
+    "viewer",
+    "nursing",
+    "patient_affairs",
+    "social_services",
+    "quality",
+    "compliance",
+)
+
+WORKFLOW_EDIT_ROLES = (
+    "tenant_admin",
+    "legal_admin",
+    "doctor",
+    "nursing",
+    "patient_affairs",
+    "social_services",
+    "compliance",
+)
+
 
 class WorkflowMutationRequest(BaseModel):
     payload: Dict[str, Any] = Field(default_factory=dict)
@@ -43,6 +65,10 @@ def _titleize_action(action: str) -> str:
         "generate_refusal_form": "إنشاء نموذج الرفض",
         "generate_financial_notice": "إنشاء الإشعار المالي",
         "escalate_legal_compliance": "التصعيد إلى الشؤون القانونية والامتثال",
+        "mark_patient_accepted_discharge": "اعتماد خروج المريض وإغلاق الحالة",
+        "close_under_review": "إغلاق الحالة بعد المراجعة",
+        "record_compliance_review": "تسجيل مراجعة الامتثال",
+        "record_legal_review": "تسجيل مراجعة الشؤون القانونية",
     }
     return labels.get(action, action.replace("_", " ").strip().title())
 
@@ -334,7 +360,7 @@ def _run_action_and_build(
 @router.get("/cases/{case_id}/discharge-refusal-workflow")
 def get_discharge_refusal_workflow(
     case_id: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles(*WORKFLOW_VIEW_ROLES)),
 ):
     try:
         return _build_contract_workflow(tenant_id=current_user["tenant_id"], case_id=case_id)
@@ -346,7 +372,7 @@ def get_discharge_refusal_workflow(
 def start_discharge_refusal_workflow(
     case_id: str,
     request: WorkflowMutationRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
 ):
     try:
         return _run_action_and_build(
@@ -364,7 +390,7 @@ def start_discharge_refusal_workflow(
 def record_discharge_decision(
     case_id: str,
     request: WorkflowMutationRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
 ):
     try:
         return _run_action_and_build(
@@ -382,7 +408,7 @@ def record_discharge_decision(
 def mark_refusal(
     case_id: str,
     request: WorkflowMutationRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
 ):
     try:
         return _run_action_and_build(
@@ -400,7 +426,7 @@ def mark_refusal(
 def record_initial_communication(
     case_id: str,
     request: WorkflowMutationRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
 ):
     try:
         return _run_action_and_build(
@@ -418,7 +444,7 @@ def record_initial_communication(
 def refer_social_services(
     case_id: str,
     request: WorkflowMutationRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
 ):
     try:
         return _run_action_and_build(
@@ -436,7 +462,7 @@ def refer_social_services(
 def generate_refusal_form(
     case_id: str,
     request: WorkflowMutationRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
 ):
     try:
         return _run_action_and_build(
@@ -454,7 +480,7 @@ def generate_refusal_form(
 def generate_financial_notice(
     case_id: str,
     request: WorkflowMutationRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
 ):
     try:
         return _run_action_and_build(
@@ -472,7 +498,7 @@ def generate_financial_notice(
 def escalate_discharge_refusal_case(
     case_id: str,
     request: WorkflowMutationRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
 ):
     try:
         return _run_action_and_build(
@@ -489,7 +515,7 @@ def escalate_discharge_refusal_case(
 @router.get("/cases/{case_id}/documents")
 def get_case_documents_v2(
     case_id: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles(*WORKFLOW_VIEW_ROLES)),
 ):
     try:
         # Verifies the case exists in the same tenant scope.
@@ -503,7 +529,7 @@ def get_case_documents_v2(
 @router.get("/documents/{document_id}/preview", response_class=HTMLResponse)
 def preview_document_v2(
     document_id: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles(*WORKFLOW_VIEW_ROLES)),
 ):
     try:
         document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
@@ -516,7 +542,7 @@ def preview_document_v2(
 @router.get("/documents/{document_id}/download")
 def download_document_v2(
     document_id: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles(*WORKFLOW_VIEW_ROLES)),
 ):
     try:
         document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
@@ -531,15 +557,72 @@ def download_document_v2(
 
 
 @router.post("/cases/{case_id}/discharge-refusal-workflow/close")
-def close_workflow_todo(
+def close_workflow(
     case_id: str,
     request: WorkflowMutationRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
 ):
-    # Safe abstraction placeholder to avoid breaking clients before close-state server logic is finalized.
-    return {
-        "success": False,
-        "message": "واجهة إغلاق سير العمل غير مفعلة بعد.",
-        "todo": "ربط انتقال حالة الإغلاق في خدمة سير العمل الخلفية.",
-        "caseId": case_id,
-    }
+    try:
+        return _run_action_and_build(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            action="close_under_review",
+            payload=request.payload,
+            current_user=current_user,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/discharge-refusal-workflow/mark-accepted-discharge")
+def mark_accepted_discharge(
+    case_id: str,
+    request: WorkflowMutationRequest,
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
+):
+    try:
+        return _run_action_and_build(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            action="mark_patient_accepted_discharge",
+            payload=request.payload,
+            current_user=current_user,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/discharge-refusal-workflow/review/compliance")
+def record_compliance_review(
+    case_id: str,
+    request: WorkflowMutationRequest,
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
+):
+    try:
+        return _run_action_and_build(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            action="record_compliance_review",
+            payload=request.payload,
+            current_user=current_user,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/discharge-refusal-workflow/review/legal")
+def record_legal_review(
+    case_id: str,
+    request: WorkflowMutationRequest,
+    current_user=Depends(require_roles(*WORKFLOW_EDIT_ROLES)),
+):
+    try:
+        return _run_action_and_build(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            action="record_legal_review",
+            payload=request.payload,
+            current_user=current_user,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

@@ -549,6 +549,84 @@
     "recentActivity": "نشاط المزامنة الأخير",
     "noActivity": "لا يوجد نشاط مزامنة حديث"
   },
+  "mdrw": {
+    "error": {
+      "loadFailed": "تعذر تحميل بيانات سير عمل رفض الخروج الطبي",
+      "saveFailed": "تعذر حفظ تحديث سير العمل"
+    },
+    "dashboard": {
+      "title": "سير عمل رفض الخروج الطبي",
+      "subtitle": "لوحة تشغيلية لإدارة الرفض والتوثيق القانوني وضوابط التصعيد.",
+      "caseList": "حالات الرفض",
+      "qualityLink": "مراقبة الجودة",
+      "loading": "جار تحميل حالات الرفض...",
+      "empty": "لا توجد حالات رفض.",
+      "escalationHint": "يجب التصعيد إلى الامتثال والشؤون القانونية عند استمرار الرفض لأكثر من 24 ساعة."
+    },
+    "metrics": {
+      "totalCases": "إجمالي حالات الرفض",
+      "activeCases": "حالات الرفض النشطة",
+      "escalated24h": "حالات صعّدت بعد 24 ساعة",
+      "formsLibrary": "قوالب مكتبة النماذج",
+      "avgResolution": "متوسط زمن الإغلاق (ساعات)",
+      "escalated": "الحالات المصعّدة"
+    },
+    "case": {
+      "title": "شاشة تفاصيل سير عمل الحالة",
+      "subtitle": "حالة سير العمل: {caseId}",
+      "backDashboard": "العودة إلى اللوحة",
+      "backCase": "العودة إلى الحالة",
+      "statusSection": "حالة سير عمل الحالة",
+      "currentStatus": "الحالة الحالية",
+      "currentStage": "المرحلة الحالية",
+      "openLegacyCase": "فتح تفاصيل الحالة",
+      "continueWorkflow": "استكمال سير العمل"
+    },
+    "screens": {
+      "initialCommunication": "نموذج التواصل الأولي",
+      "socialServices": "نموذج تدخل الخدمات الاجتماعية",
+      "signature": "شاشة توقيع نموذج الرفض",
+      "witness": "شاشة توثيق الشهود",
+      "financialNotice": "مولد إشعار المسؤولية المالية",
+      "escalation": "شاشة مراجعة التصعيد"
+    },
+    "form": {
+      "saved": "تم الحفظ بنجاح.",
+      "saveContinue": "حفظ ومتابعة",
+      "initialCommunicationSubtitle": "توثيق شرح الطبيب والتمريض للمخاطر وتفاصيل الرفض.",
+      "socialSubtitle": "توثيق تدخل شؤون المرضى والخدمات الاجتماعية ونتائج التدخل.",
+      "witnessSubtitle": "تفعيل وضع الشهود وتسجيل شاهدين من الطاقم عند رفض المريض للتوقيع.",
+      "financialSubtitle": "إنشاء إشعار المسؤولية المالية وتأكيد الإقرار.",
+      "escalationSubtitle": "تسجيل مراجعات الامتثال والقانون وإنهاء الحالة.",
+      "nursingNotes": "ملاحظات التمريض",
+      "patientAffairsNotes": "ملاحظات شؤون المرضى",
+      "socialServicesNotes": "ملاحظات الخدمات الاجتماعية",
+      "supportProvided": "نوع الدعم المقدم",
+      "witness1Name": "اسم الشاهد الأول",
+      "witness1Role": "صفة الشاهد الأول",
+      "witness2Name": "اسم الشاهد الثاني",
+      "witness2Role": "صفة الشاهد الثاني",
+      "representativeName": "اسم ممثل المستشفى",
+      "representativeSignature": "توقيع ممثل المستشفى",
+      "financialAcknowledged": "تم الإقرار بالمسؤولية المالية",
+      "generateNotice": "إنشاء الإشعار المالي",
+      "complianceNotes": "ملاحظات الامتثال",
+      "legalNotes": "ملاحظات الشؤون القانونية",
+      "recordCompliance": "تسجيل مراجعة الامتثال",
+      "recordLegal": "تسجيل مراجعة الشؤون القانونية",
+      "escalateNow": "التصعيد إلى الامتثال والشؤون القانونية",
+      "closeAdmin": "إغلاق - إجراء إداري / قانوني",
+      "closeDischarged": "إغلاق - تم خروج المريض"
+    },
+    "quality": {
+      "title": "لوحة مراقبة الجودة",
+      "subtitle": "متابعة حجم حالات الرفض والتصعيدات وزمن الإغلاق والتوزيعات الدورية.",
+      "reasons": "توزيع أسباب الرفض",
+      "departments": "الحالات حسب الإدارة",
+      "monthly": "تقارير المراجعة الشهرية",
+      "quarterly": "التقارير الربعية"
+    }
+  },
   "status": {
     "open": "مفتوح",
     "closed": "مغلق",
