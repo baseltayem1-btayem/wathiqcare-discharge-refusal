@@ -312,35 +312,3 @@ export default function AuditLogPage() {
     </AuthGuard>
   );
 }
-              <tr>
-                <th className="px-3 py-2 text-left">Action</th>
-                <th className="px-3 py-2 text-left">Details</th>
-                <th className="px-3 py-2 text-left">Created At</th>
-              </tr>
-            </thead>
-            <tbody>
-              {auditItems.map((item) => (
-                <tr key={item.id} className="border-t border-slate-200">
-                  <td className="px-3 py-2 font-medium text-slate-900">{item.action}</td>
-                  <td className="px-3 py-2 text-slate-700">{item.details || "-"}</td>
-                  <td className="px-3 py-2 text-slate-700">{item.created_at || "-"}</td>
-                </tr>
-              ))}
-
-              {auditItems.length === 0 && !loading ? (
-                <tr>
-                  <td className="px-3 py-6 text-center text-slate-500" colSpan={3}>
-                    <span className="inline-flex items-center gap-1.5">
-                      <ClipboardList className="h-4 w-4" />
-                      No audit records found for the selected case.
-                    </span>
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </AppShell>
-    </AuthGuard>
-  );
-}
