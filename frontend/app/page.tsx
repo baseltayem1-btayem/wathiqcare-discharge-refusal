@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { 
-  ArrowRight, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Stethoscope, 
+import {
+  ArrowRight,
+  CheckCircle2,
+  ShieldCheck,
+  Stethoscope,
   Building2,
   Scale,
   FileText,
@@ -24,7 +24,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import Navbar from "@/components/figma/Navbar";
 
 export default function HomePage() {
-  const { t } = useI18n();
+  const { t, isRtl } = useI18n();
 
   const coreModules = [
     {
@@ -94,7 +94,7 @@ export default function HomePage() {
   return (
     <>
       <Navbar />
-      
+
       <main className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-slate-100">
         {/* Hero Section */}
         <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-white via-slate-50 to-emerald-50/40">
@@ -105,59 +105,72 @@ export default function HomePage() {
           </div>
 
           <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-            <div className="text-center">
-              {/* Platform Badge */}
-              <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-emerald-200 bg-white px-4 py-2.5 shadow-sm">
-                <Building2 className="h-4 w-4 text-emerald-700" />
-                <span className="text-sm font-semibold text-emerald-900">{t("homePage.platformType")}</span>
+            <div>
+              <div className={`mb-10 flex ${isRtl ? "justify-end" : "justify-start"}`}>
+                <img
+                  src="https://www.wathiqcare.online/_next/image?url=https%3A%2F%2Fcdn.phototourl.com%2Fuploads%2F2026-03-08-8e081936-6059-4849-a3de-b482e86049fd.png&w=1080&q=75"
+                  alt="WathiqCare"
+                  width={204}
+                  height={56}
+                  className="h-auto w-[132px] sm:w-[160px] lg:w-[176px]"
+                  loading="eager"
+                />
               </div>
 
-              {/* Hero Title */}
-              <h1 className="mx-auto max-w-4xl text-45 font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-                {t("homePage.heroTitle")}
-              </h1>
+              <div className="mx-auto max-w-4xl text-center">
+                {/* Hero Title */}
+                <h1 className="mx-auto max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.18]">
+                  Unified Digital Command Center for Medical Discharge and Legal Acknowledgment
+                </h1>
 
-              {/* Subtitle */}
-              <p className="mx-auto mt-7 max-w-3xl text-xl leading-relaxed text-slate-600">
-                {t("homePage.heroSubtitle")}
-              </p>
+                {/* Subtitle */}
+                <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
+                  An enterprise-grade platform that connects clinical, legal, and patient affairs teams in a governed digital framework to document discharge decisions, manage refusal cases, and execute legal escalation with full compliance assurance.
+                </p>
 
-              {/* CTA Buttons */}
-              <div className="mt-12 flex flex-wrap items-center justify-center gap-4">
-                <Link
-                  href="/login"
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 font-semibold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700"
-                >
-                  <Lock className="h-5 w-5" />
-                  {t("homePage.enterSystem")}
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-                <Link
-                  href="/request-demo"
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-4 font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
-                >
-                  {t("homePage.requestDemo")}
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-              </div>
+                {/* Platform Badge */}
+                <div className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-emerald-200 bg-white px-4 py-2.5 shadow-sm">
+                  <Building2 className="h-4 w-4 text-emerald-700" />
+                  <span className="text-sm font-semibold text-emerald-900">{t("homePage.platformType")}</span>
+                </div>
 
-              {/* Quick Overview Cards */}
-              <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                {trustFactors.map((factor) => {
-                  const Icon = factor.icon;
-                  return (
-                    <div
-                      key={factor.labelKey}
-                      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
-                    >
-                      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                        <Icon className="h-5 w-5" />
+                {/* CTA Buttons */}
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 font-semibold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700"
+                  >
+                    <Lock className="h-5 w-5" />
+                    {t("homePage.enterSystem")}
+                    <ArrowRight className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    href="/request-demo"
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-4 font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
+                  >
+                    {t("homePage.requestDemo")}
+                    <ArrowRight className="h-5 w-5" />
+                  </Link>
+                </div>
+
+                {/* Quick Overview Cards */}
+                <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  {trustFactors.map((factor) => {
+                    const Icon = factor.icon;
+                    return (
+                      <div
+                        key={factor.labelKey}
+                        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                      >
+                        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <p className="mt-3 text-xs font-medium text-slate-600">{t(factor.labelKey)}</p>
+                        <p className="mt-1 text-sm font-bold text-slate-900">{t(factor.valueKey)}</p>
                       </div>
-                      <p className="mt-3 text-xs font-medium text-slate-600">{t(factor.labelKey)}</p>
-                      <p className="mt-1 text-sm font-bold text-slate-900">{t(factor.valueKey)}</p>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
