@@ -15,11 +15,14 @@ import {
   CheckCircle2,
   TrendingUp,
   FileSignature,
-  Database
+  Database,
+  Clock
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
-import StatCard from "@/components/ui/StatCard";
+import KPICard from "@/components/ui/KPICard";
+import PageHeader from "@/components/ui/PageHeader";
+import SectionPanel from "@/components/ui/SectionPanel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
@@ -101,8 +104,8 @@ export default function DashboardPage() {
       >
         {/* Primary KPI Cards */}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            title="Total Cases"
+          <KPICard
+            label="Total Cases"
             value={loading ? "-" : metrics.total}
             subtitle="All discharge refusal cases"
             icon={<FileText className="h-5 w-5" />}
@@ -110,8 +113,8 @@ export default function DashboardPage() {
             trendValue={metrics.totalTrend}
             variant="default"
           />
-          <StatCard
-            title="Active Cases"
+          <KPICard
+            label="Active Cases"
             value={loading ? "-" : metrics.inProgress}
             subtitle="Currently in progress"
             icon={<Activity className="h-5 w-5" />}
@@ -119,15 +122,15 @@ export default function DashboardPage() {
             trendValue={metrics.openTrend}
             variant="primary"
           />
-          <StatCard
-            title="Escalated Cases"
+          <KPICard
+            label="Escalated Cases"
             value={loading ? "-" : metrics.escalated}
             subtitle="Requiring legal review"
             icon={<AlertTriangle className="h-5 w-5" />}
-            variant="error"
+            variant="danger"
           />
-          <StatCard
-            title="Closed Cases"
+          <KPICard
+            label="Closed Cases"
             value={loading ? "-" : metrics.closed}
             subtitle="Successfully completed"
             icon={<CheckCircle2 className="h-5 w-5" />}
@@ -137,26 +140,29 @@ export default function DashboardPage() {
 
         {/* Secondary KPI Cards */}
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <StatCard
-            title="Audit Entries"
+          <KPICard
+            label="Audit Entries"
             value={loading ? "-" : metrics.audits}
             subtitle="Compliance trail records"
             icon={<ClipboardList className="h-5 w-5" />}
             variant="default"
+            size="sm"
           />
-          <StatCard
-            title="Documents Generated"
+          <KPICard
+            label="Documents Generated"
             value={loading ? "-" : metrics.documents}
             subtitle="Forms and notices"
             icon={<FileSignature className="h-5 w-5" />}
-            variant="default"
+            variant="purple"
+            size="sm"
           />
-          <StatCard
-            title="Open Cases"
+          <KPICard
+            label="Open Cases"
             value={loading ? "-" : metrics.open}
             subtitle="Awaiting action"
-            icon={<Database className="h-5 w-5" />}
+            icon={<Clock className="h-5 w-5" />}
             variant="warning"
+            size="sm"
           />
         </div>
 

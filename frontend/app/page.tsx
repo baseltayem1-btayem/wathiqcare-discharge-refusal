@@ -1,8 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, CheckCircle2, FileCheck2, Gavel, Languages, ShieldCheck, Stethoscope, Workflow } from "lucide-react";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { 
+  ArrowRight, 
+  CheckCircle2, 
+  FileCheck2, 
+  Gavel, 
+  ShieldCheck, 
+  Stethoscope, 
+  Workflow,
+  Building2,
+  Scale,
+  FileText,
+  Users,
+  Lock,
+  Activity,
+  Database,
+  GitBranch,
+  AlertTriangle,
+  FileSignature,
+  ClipboardCheck
+} from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import Navbar from "@/components/figma/Navbar";
 
@@ -12,282 +30,351 @@ export default function HomePage() {
   const content =
     lang === "ar"
       ? {
-          badge: "منصة واثق كير",
-          heroTitle: "حوكمة رقمية موثوقة لمسارات الموافقة ورفض الخروج الطبي",
+          badge: "منصة الحوكمة الطبية القانونية",
+          heroTitle: "مركز رقمي موحد لحوكمة الخروج الطبي والإقرار القانوني",
           heroSubtitle:
-            "WathiqCare منصة تشغيلية مؤسسية توحد التوثيق الطبي والقانوني، وتدير مسارات الإقرار الرقمي، وتدعم المنشآت الصحية بالامتثال والتتبع الكامل.",
-          enterSystem: "الدخول إلى النظام",
+            "منصة مؤسسية متكاملة تربط الفرق السريرية والقانونية وشؤون المرضى في إطار رقمي محكم لتوثيق قرارات الخروج، إدارة حالات الرفض، والتصعيد القانوني مع ضمان الامتثال الكامل.",
+          enterSystem: "دخول النظام",
           requestDemo: "طلب عرض توضيحي",
-          highlights: [
-            "إقرار وموافقة مستنيرة قابلة للتدقيق",
-            "نماذج رفض خروج طبي مع توقيع إلكتروني",
-            "مسارات تصعيد قانوني وأرشفة أدلة",
-            "تتبع امتثال تشغيلي CBAHI / JCI / PDPL",
-          ],
-          whatTitle: "ما هي WathiqCare؟",
+          platformType: "منصة طبية قانونية مؤسسية",
+          whatTitle: "WathiqCare: منصة الحوكمة الرقمية للمنشآت الصحية",
           whatBody:
-            "منصة تشغيلية طبية قانونية مصممة للمستشفيات ومقدمي الرعاية الصحية، لرقمنة قرارات الخروج الطبي وتوثيق حالات الرفض، وتوحيد الدليل النظامي عبر رحلة الحالة كاملة.",
-          purposeTitle: "الهدف",
-          purposeBody:
-            "خفض المخاطر القانونية ورفع جودة التوثيق السريري والقانوني من خلال مسارات عمل واضحة، وقرارات موثقة، وسجلات تدقيق غير قابلة للإنكار.",
-          visionTitle: "الرؤية",
-          visionBody:
-            "تمكين المنشآت الصحية في المملكة من معيار موحد لإدارة الموافقات والرفض والتصعيد القانوني ضمن إطار امتثال رقمي متكامل.",
-          capabilityTitle: "القدرات الأساسية",
-          capabilities: [
+            "نظام تشغيلي متكامل مصمم لإدارة دورة حياة قرارات الخروج الطبي من القرار السريري إلى التوثيق القانوني والتصعيد التنظيمي، مع توفير سجل تدقيق غير قابل للتلاعب يحمي الحقوق وي Supporting institutional compliance.",
+          coreModules: [
             {
-              title: "الموافقة المستنيرة",
-              body: "إدارة جلسات الإقرار والتوقيع الرقمي مع توثيق الأدلة وحالة التحقق لكل حالة.",
-              icon: FileCheck2,
+              icon: FileSignature,
+              title: "الموافقة المستنيرة الرقمية",
+              description: "جلسات إقرار رقمية مع توقيع إلكتروني موثق وأدلة قانونية قابلة للمراجعة",
+              badge: "موثق",
             },
             {
-              title: "رفض الخروج الطبي",
-              body: "سير عمل منظم لتسجيل قرار الطبيب وسبب الرفض والتدخلات الاجتماعية والإدارية.",
-              icon: Stethoscope,
+              icon: AlertTriangle,
+              title: "سير عمل رفض الخروج",
+              description: "مسار منظم لتوثيق قرار الطبيب والتدخلات الإدارية والاجتماعية المطلوبة",
+              badge: "منظم",
             },
             {
-              title: "الحماية القانونية",
-              body: "تجميع ملف قانوني متكامل مع مستندات الحالة وخطوات التصعيد ضمن إطار حوكمة واضح.",
-              icon: Gavel,
+              icon: Scale,
+              title: "التصعيد والحماية القانونية",
+              description: "بناء ملف قانوني متكامل مع خطوات تصعيد واضحة وأرشفة أدلة محكمة",
+              badge: "محمي",
             },
             {
-              title: "الامتثال والتدقيق",
-              body: "لوحات تشغيلية لمؤشرات الامتثال ومسار تدقيق زمني يدعم الجاهزية للمراجعة الداخلية والخارجية.",
-              icon: ShieldCheck,
+              icon: ClipboardCheck,
+              title: "التحقق من صحة رموز ICD-11",
+              description: "مرجع فوري ومدقق للتشخيصات الطبية وفق المعايير العالمية",
+              badge: "دقيق",
             },
             {
-              title: "سير مؤسسي للمستشفى",
-              body: "ربط فرق الطب والشؤون القانونية وعلاقات المرضى في رحلة عمل موحدة قابلة للتوسع.",
-              icon: Workflow,
+              icon: Activity,
+              title: "الامتثال الشامل والتدقيق",
+              description: "لوحات امتثال تشغيلية مع سجل تدقيق زمني كامل لكل حالة",
+              badge: "مستمر",
+            },
+            {
+              icon: Database,
+              title: "التكامل مع أنظمة المستشفى",
+              description: "موصلات جاهزة للربط مع أنظمة السجلات الطبية الإلكترونية",
+              badge: "متصل",
             },
           ],
-          footerTitle: "منصة مؤسسية للتوثيق الطبي القانوني",
-          footerBody:
-            "تم بناء WathiqCare لتكون الواجهة الموثوقة لمسارات الإقرار، الرفض، والتصعيد القانوني داخل المنشآت الصحية.",
-          statOneLabel: "قابلية التتبع",
-          statOneValue: "100%",
-          statTwoLabel: "جاهزية الامتثال",
-          statTwoValue: "مؤسسية",
-          statThreeLabel: "ربط الفرق",
-          statThreeValue: "تشغيلي",
+          institutional: {
+            title: "منصة موحدة لكافة الأدوار المؤسسية",
+            roles: [
+              { icon: Stethoscope, label: "الفريق الطبي", count: "أطباء ومقدمي رعاية" },
+              { icon: Scale, label: "الشؤون القانونية", count: "مستشارون ومحامون" },
+              { icon: Users, label: "علاقات المرضى", count: "خدمة اجتماعية" },
+              { icon: ShieldCheck, label: "الامتثال والجودة", count: "تدقيق داخلي" },
+            ],
+          },
+          trustFactors: [
+            { icon: Lock, label: "أمان البيانات", value: "ISO 27001" },
+            { icon: ShieldCheck, label: "الامتثال", value: "CBAHI / JCI" },
+            { icon: FileText, label: "التوثيق", value: "قانوني محكم" },
+            { icon: CheckCircle2, label: "التتبع", value: "100%" },
+          ],
         }
       : {
-          badge: "WathiqCare Platform",
-          heroTitle: "Trusted Digital Governance for Consent and Discharge Refusal Workflows",
+          badge: "Healthcare Governance Platform",
+          heroTitle: "Unified Digital Command Center for Medical Discharge and Legal Acknowledgment",
           heroSubtitle:
-            "WathiqCare is an enterprise medico-legal operating platform that unifies clinical and legal documentation, orchestrates digital acknowledgment flows, and strengthens compliance readiness across hospitals.",
+            "An enterprise-grade platform that connects clinical, legal, and patient affairs teams in a governed digital framework to document discharge decisions, manage refusal cases, and execute legal escalation with full compliance assurance.",
           enterSystem: "Enter System",
           requestDemo: "Request Demo",
-          highlights: [
-            "Audit-ready informed consent workflows",
-            "Digitally signed discharge refusal forms",
-            "Structured legal escalation and evidence files",
-            "Operational CBAHI / JCI / PDPL compliance tracking",
-          ],
-          whatTitle: "What is WathiqCare?",
+          platformType: "Enterprise Medico-Legal Platform",
+          whatTitle: "WathiqCare: Digital Governance for Healthcare Institutions",
           whatBody:
-            "A healthcare-grade medico-legal platform built for hospitals to digitize discharge decisions, document refusal scenarios, and preserve defensible case evidence across the full care journey.",
-          purposeTitle: "Purpose",
-          purposeBody:
-            "Reduce legal risk and elevate documentation quality through standardized workflows, traceable decisions, and verifiable audit records.",
-          visionTitle: "Vision",
-          visionBody:
-            "Establish a national-class standard for consent, refusal, and legal escalation management under one secure digital compliance framework.",
-          capabilityTitle: "Core Capabilities",
-          capabilities: [
+            "An integrated operating system designed to manage the full lifecycle of medical discharge decisions—from clinical judgment to legal documentation and regulatory escalation—providing an immutable audit trail that protects rights and supports institutional compliance.",
+          coreModules: [
             {
-              title: "Informed Consent",
-              body: "Manage acknowledgment sessions with digital signature methods and evidence-backed verification per case.",
-              icon: FileCheck2,
+              icon: FileSignature,
+              title: "Digital Informed Consent",
+              description: "Digital acknowledgment sessions with documented e-signatures and auditable legal evidence",
+              badge: "Verified",
             },
             {
-              title: "Discharge Refusal",
-              body: "A structured workflow to document physician decision, refusal rationale, and social-administrative interventions.",
-              icon: Stethoscope,
+              icon: AlertTriangle,
+              title: "Discharge Refusal Workflow",
+              description: "Structured pathway to document physician decision and required administrative interventions",
+              badge: "Structured",
             },
             {
-              title: "Legal Protection",
-              body: "Build complete legal case files with document lineage and escalation checkpoints under governed policy controls.",
-              icon: Gavel,
+              icon: Scale,
+              title: "Legal Escalation & Protection",
+              description: "Build complete legal case files with clear escalation steps and defensible evidence archival",
+              badge: "Protected",
             },
             {
-              title: "Compliance and Auditability",
-              body: "Operational dashboards and immutable audit timelines to support internal and external review readiness.",
-              icon: ShieldCheck,
+              icon: ClipboardCheck,
+              title: "ICD-11 Code Validation",
+              description: "Instant reference and validator for medical diagnoses per global standards",
+              badge: "Precise",
             },
             {
-              title: "Institutional Hospital Workflow",
-              body: "Connect clinical, legal, and patient affairs teams through one coordinated enterprise workflow.",
-              icon: Workflow,
+              icon: Activity,
+              title: "Comprehensive Compliance & Audit",
+              description: "Operational compliance dashboards with complete temporal audit log per case",
+              badge: "Continuous",
+            },
+            {
+              icon: Database,
+              title: "Hospital System Integration",
+              description: "Ready-built connectors for electronic medical record systems",
+              badge: "Connected",
             },
           ],
-          footerTitle: "Enterprise Medico-Legal Workflow Platform",
-          footerBody:
-            "WathiqCare is designed as the trusted digital front door for consent, refusal, and legal escalation operations in healthcare institutions.",
-          statOneLabel: "Traceability",
-          statOneValue: "100%",
-          statTwoLabel: "Compliance Readiness",
-          statTwoValue: "Enterprise",
-          statThreeLabel: "Team Integration",
-          statThreeValue: "Operational",
+          institutional: {
+            title: "Unified Platform for All Institutional Roles",
+            roles: [
+              { icon: Stethoscope, label: "Clinical Teams", count: "Physicians & Caregivers" },
+              { icon: Scale, label: "Legal Affairs", count: "Counsels & Attorneys" },
+              { icon: Users, label: "Patient Relations", count: "Social Services" },
+              { icon: ShieldCheck, label: "Compliance & Quality", count: "Internal Audit" },
+            ],
+          },
+          trustFactors: [
+            { icon: Lock, label: "Data Security", value: "ISO 27001" },
+            { icon: ShieldCheck, label: "Compliance", value: "CBAHI / JCI" },
+            { icon: FileText, label: "Documentation", value: "Legally Defensible" },
+            { icon: CheckCircle2, label: "Traceability", value: "100%" },
+          ],
         };
 
   return (
     <>
       <Navbar />
       
-      <main className="relative min-h-screen overflow-hidden bg-[#f4f6f8] text-slate-900">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-0 top-0 h-72 w-72 rounded-full bg-cyan-200/45 blur-3xl" />
-        <div className="absolute right-0 top-24 h-80 w-80 rounded-full bg-emerald-100/65 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-amber-100/60 blur-3xl" />
-      </div>
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+        {/* Hero Section - Command Center Aesthetic */}
+        <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+          {/* Subtle grid overlay for technical aesthetic */}
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+          
+          {/* Ambient light effects */}
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
+            <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+          </div>
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-10 lg:py-8">
-        <header className="rounded-2xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.65)] backdrop-blur sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex items-center gap-3">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white">
-                WC
+          <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+            <div className="text-center">
+              {/* Platform Badge */}
+              <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-slate-700 bg-slate-800/80 px-4 py-2 backdrop-blur">
+                <Building2 className="h-4 w-4 text-cyan-400" />
+                <span className="text-sm font-semibold text-slate-200">{content.platformType}</span>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{content.badge}</p>
-                <p className="text-lg font-semibold leading-tight">WathiqCare</p>
-              </div>
-            </div>
 
-            <div className="inline-flex items-center gap-2">
-              <LanguageSwitcher className="bg-white" />
+              {/* Hero Title */}
+              <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+                {content.heroTitle}
+              </h1>
+
+              {/* Subtitle */}
+              <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-slate-300">
+                {content.heroSubtitle}
+              </p>
+
+              {/* CTA Buttons */}
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-slate-900 shadow-xl transition hover:bg-slate-50"
+                >
+                  <Lock className="h-5 w-5" />
+                  {content.enterSystem}
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+                <Link
+                  href="/request-demo"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-800/50 px-8 py-4 font-semibold text-white backdrop-blur transition hover:bg-slate-700/50"
+                >
+                  {content.requestDemo}
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </div>
+
+              {/* Trust Factors */}
+              <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                {content.trustFactors.map((factor) => {
+                  const Icon = factor.icon;
+                  return (
+                    <div
+                      key={factor.label}
+                      className="rounded-xl border border-slate-700 bg-slate-800/50 p-4 backdrop-blur"
+                    >
+                      <Icon className="mx-auto h-6 w-6 text-cyan-400" />
+                      <p className="mt-2 text-xs font-medium text-slate-400">{factor.label}</p>
+                      <p className="mt-1 text-sm font-bold text-white">{factor.value}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </header>
+        </section>
 
-        <section className="mt-4 grid gap-4 lg:grid-cols-12 lg:gap-6">
-          <div className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-[0_24px_80px_-45px_rgba(2,6,23,0.55)] lg:col-span-8 lg:p-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-900">
-              <Languages className="h-3.5 w-3.5" />
-              {lang === "ar" ? "منصة ثنائية اللغة" : "Bilingual Platform"}
+        {/* Platform Overview */}
+        <section className="border-b border-slate-200 bg-white py-16 lg:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5">
+                <FileText className="h-4 w-4 text-blue-700" />
+                <span className="text-sm font-semibold text-blue-900">{content.badge}</span>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900 lg:text-4xl">
+                {content.whatTitle}
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-slate-600">
+                {content.whatBody}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Core Modules Grid */}
+        <section className="bg-gradient-to-b from-slate-50 to-white py-16 lg:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-12 text-center">
+              <h2 className="text-3xl font-bold text-slate-900">
+                {lang === "ar" ? "الوحدات الأساسية" : "Core Modules"}
+              </h2>
+              <p className="mt-3 text-lg text-slate-600">
+                {lang === "ar" 
+                  ? "منصة متكاملة تغطي كافة جوانب الحوكمة الطبية القانونية"
+                  : "Integrated platform covering all aspects of medico-legal governance"}
+              </p>
             </div>
 
-            <h1 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl lg:text-[2.8rem] lg:leading-[1.1]">
-              {content.heroTitle}
-            </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-700 sm:text-lg">{content.heroSubtitle}</p>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {content.coreModules.map((module) => {
+                const Icon = module.icon;
+                return (
+                  <article
+                    key={module.title}
+                    className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-slate-300 hover:shadow-lg"
+                  >
+                    {/* Module Badge */}
+                    <div className="absolute right-4 top-4">
+                      <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-bold text-white">
+                        {module.badge}
+                      </span>
+                    </div>
 
-            <div className="mt-6 flex flex-wrap gap-2.5">
-              {content.highlights.map((point) => (
-                <span
-                  key={point}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700"
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
-                  {point}
-                </span>
-              ))}
+                    {/* Icon */}
+                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700">
+                      <Icon className="h-6 w-6" />
+                    </div>
+
+                    {/* Content */}
+                    <h3 className="text-lg font-bold text-slate-900">{module.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                      {module.description}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Institutional Roles */}
+        <section className="border-y border-slate-200 bg-white py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-12 text-center">
+              <h2 className="text-3xl font-bold text-slate-900">
+                {content.institutional.title}
+              </h2>
             </div>
 
-            <div className="mt-7 flex flex-wrap items-center gap-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {content.institutional.roles.map((role) => {
+                const Icon = role.icon;
+                return (
+                  <div
+                    key={role.label}
+                    className="text-center rounded-2xl border border-slate-200 bg-slate-50 p-6"
+                  >
+                    <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm">
+                      <Icon className="h-7 w-7" />
+                    </div>
+                    <h3 className="font-bold text-slate-900">{role.label}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{role.count}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-16">
+          <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-white">
+              {lang === "ar" 
+                ? "ابدأ في بناء إطار الحوكمة المؤسسية" 
+                : "Start Building Your Institutional Governance Framework"}
+            </h2>
+            <p className="mt-4 text-lg text-slate-300">
+              {lang === "ar"
+                ? "انضم إلى المنشآت الصحية الرائدة في تبني معايير الحوكمة الرقمية"
+                : "Join leading healthcare institutions adopting digital governance standards"}
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-slate-900 shadow-xl transition hover:bg-slate-50"
               >
                 {content.enterSystem}
-                <ArrowUpRight className="h-4 w-4" />
+                <ArrowRight className="h-5 w-5" />
               </Link>
               <Link
                 href="/request-demo"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
-              >
-                {content.requestDemo}
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-
-          <aside className="rounded-3xl border border-slate-200 bg-slate-900 p-6 text-white shadow-[0_20px_70px_-45px_rgba(2,6,23,0.8)] lg:col-span-4 lg:p-7">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-300">WathiqCare</p>
-            <h2 className="mt-3 text-xl font-semibold leading-tight">{content.footerTitle}</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-200">{content.footerBody}</p>
-
-            <div className="mt-6 grid grid-cols-3 gap-2">
-              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3">
-                <p className="text-xs text-slate-300">{content.statOneLabel}</p>
-                <p className="mt-1 text-base font-semibold">{content.statOneValue}</p>
-              </div>
-              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3">
-                <p className="text-xs text-slate-300">{content.statTwoLabel}</p>
-                <p className="mt-1 text-base font-semibold">{content.statTwoValue}</p>
-              </div>
-              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3">
-                <p className="text-xs text-slate-300">{content.statThreeLabel}</p>
-                <p className="mt-1 text-base font-semibold">{content.statThreeValue}</p>
-              </div>
-            </div>
-          </aside>
-        </section>
-
-        <section className="mt-4 grid gap-3 md:grid-cols-3">
-          <article className="rounded-2xl border border-slate-200 bg-white p-5">
-            <h3 className="text-sm font-semibold text-slate-900">{content.whatTitle}</h3>
-            <p className="mt-2 text-sm leading-7 text-slate-700">{content.whatBody}</p>
-          </article>
-          <article className="rounded-2xl border border-slate-200 bg-white p-5">
-            <h3 className="text-sm font-semibold text-slate-900">{content.purposeTitle}</h3>
-            <p className="mt-2 text-sm leading-7 text-slate-700">{content.purposeBody}</p>
-          </article>
-          <article className="rounded-2xl border border-slate-200 bg-white p-5">
-            <h3 className="text-sm font-semibold text-slate-900">{content.visionTitle}</h3>
-            <p className="mt-2 text-sm leading-7 text-slate-700">{content.visionBody}</p>
-          </article>
-        </section>
-
-        <section className="mt-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_15px_50px_-40px_rgba(2,6,23,0.55)] lg:p-8">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">WathiqCare</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-900">{content.capabilityTitle}</h2>
-            </div>
-            <Link href="/login" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
-              {content.enterSystem}
-            </Link>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {content.capabilities.map((item) => {
-              const Icon = item.icon;
-              return (
-                <article key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-900 shadow-sm">
-                    <Icon className="h-4.5 w-4.5" />
-                  </div>
-                  <h3 className="mt-3 text-sm font-semibold text-slate-900">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-slate-700">{item.body}</p>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
-        <footer className="mt-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-600">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p>© {new Date().getFullYear()} WathiqCare. {lang === "ar" ? "جميع الحقوق محفوظة." : "All rights reserved."}</p>
-            <div className="inline-flex items-center gap-2">
-              <Link href="/login" className="font-semibold text-slate-800 hover:text-slate-900">
-                {content.enterSystem}
-              </Link>
-              <span className="text-slate-300">|</span>
-              <Link
-                href="/request-demo"
-                className="font-semibold text-slate-800 hover:text-slate-900"
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 px-8 py-4 font-semibold text-white transition hover:bg-slate-800"
               >
                 {content.requestDemo}
               </Link>
             </div>
           </div>
-          <p className="mt-2 text-xs text-slate-500">{isRtl ? "واجهة عامة ثنائية اللغة، مع الحفاظ على وصول كامل للنظام الداخلي عبر /login." : "Public bilingual landing, while preserving full internal system access via /login."}</p>
+        </section>
+
+        {/* Footer */}
+        <footer className="border-t border-slate-200 bg-slate-50 py-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white">
+                  WC
+                </div>
+                <span className="font-semibold text-slate-900">WathiqCare</span>
+              </div>
+              <p>
+                © {new Date().getFullYear()} WathiqCare.{" "}
+                {lang === "ar" ? "جميع الحقوق محفوظة." : "All rights reserved."}
+              </p>
+            </div>
+          </div>
         </footer>
-      </div>
-    </main>
+      </main>
     </>
   );
 }
