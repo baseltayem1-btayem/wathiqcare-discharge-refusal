@@ -86,13 +86,13 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-cyan-50/60">
-      <div className="mx-auto flex max-w-[1400px] gap-6 p-4 md:p-6">
-        <aside className="hidden w-72 shrink-0 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-slate-200/40 backdrop-blur md:flex md:flex-col">
-          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{t("app.name")}</p>
-            <h2 className="mt-2 text-lg font-semibold text-slate-900">{t("app.moduleName")}</h2>
-            <p className="mt-2 text-xs text-slate-600">{t("app.moduleTagline")}</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="mx-auto flex max-w-7xl gap-4 px-4 py-4 md:py-6">
+        <aside className="hidden w-72 shrink-0 rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:flex md:flex-col">
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500">{t("app.name")}</p>
+            <h2 className="mt-2 text-lg font-semibold text-gray-900">{t("app.moduleName")}</h2>
+            <p className="mt-2 text-xs text-gray-500">{t("app.moduleTagline")}</p>
           </div>
 
           <nav className="mt-6 space-y-2">
@@ -107,12 +107,12 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
             ))}
           </nav>
 
-          <div className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50 p-3 text-xs text-cyan-900">
+          <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
             <div className="inline-flex items-center gap-1.5 font-semibold">
               <Stethoscope className="h-3.5 w-3.5" />
               {t("app.activeWorkspace")}
             </div>
-            <p className="mt-1 text-cyan-700">{t("app.secureMode")}</p>
+            <p className="mt-1 text-blue-700">{t("app.secureMode")}</p>
           </div>
 
           <LanguageSwitcher className="mt-4" />
@@ -130,12 +130,12 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-10 rounded-3xl border border-slate-200/80 bg-white/95 px-4 py-4 shadow-lg shadow-slate-200/40 backdrop-blur md:px-6">
+          <header className="sticky top-0 z-10 rounded-xl border border-gray-200 bg-white px-4 py-4 shadow-sm md:px-5">
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h1 className="text-xl font-semibold text-slate-900 md:text-2xl">{title}</h1>
-                  {subtitle ? <p className="mt-1 text-sm text-slate-600">{subtitle}</p> : null}
+                  <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
+                  {subtitle ? <p className="mt-1 text-sm text-gray-500">{subtitle}</p> : null}
                 </div>
                 <div className="inline-flex items-center gap-2">
                   <LanguageSwitcher className="md:hidden" />
@@ -152,7 +152,7 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 md:hidden">
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2 md:hidden">
                 {NAV_ITEMS.map((item) => (
                   <NavLink
                     key={`mobile-${item.href}`}
@@ -165,14 +165,14 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
               </div>
 
               {actions ? (
-                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2">
                   {actions}
                 </div>
               ) : null}
             </div>
           </header>
 
-          <main className="mt-4 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-lg shadow-slate-200/40 md:mt-6 md:p-6">
+          <main className="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:mt-4">
             {children}
           </main>
         </div>

@@ -11,8 +11,7 @@ import {
   Plus,
   Eye,
   MessageSquare,
-  CheckCheck,
-  ArrowRight
+  CheckCheck
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
@@ -20,16 +19,11 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import KPICard from "@/components/ui/KPICard";
 import Modal from "@/components/ui/Modal";
 import ActionButton from "@/components/ui/ActionButton";
+import CaseCard from "@/components/ui/case-card";
+import AlertBox from "@/components/ui/alert-box";
 import { useI18n } from "@/i18n/I18nProvider";
 import { legalEscalationService } from "@/lib/services/legalEscalation.service";
-import type { LegalEscalationCase, LegalEscalationNote, LegalEscalationStatus, LegalEscalationPriority } from "@/types/legal-escalation";
-
-const STATUS_COLORS: Record<LegalEscalationStatus, string> = {
-  active: "bg-blue-100 border-blue-200 text-blue-800",
-  "under-review": "bg-purple-100 border-purple-200 text-purple-800",
-  resolved: "bg-emerald-100 border-emerald-200 text-emerald-800",
-  "high-risk": "bg-rose-100 border-rose-200 text-rose-800",
-};
+import type { LegalEscalationCase, LegalEscalationNote, LegalEscalationPriority } from "@/types/legal-escalation";
 
 const PRIORITY_COLORS: Record<LegalEscalationPriority, string> = {
   low: "text-slate-600",
@@ -170,7 +164,7 @@ export default function LegalEscalationPage() {
         }
       >
         {/* Summary Cards */}
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KPICard
             label={t("legalEscalation.kpi.activeCases")}
             value={loading ? "-" : stats.active}
@@ -198,98 +192,90 @@ export default function LegalEscalationPage() {
         </div>
 
         {/* Escalation Cases List */}
-        <div className="mt-6 space-y-3">
-          <h2 className="text-lg font-semibold text-slate-900">Escalation Cases</h2>
+        <div className="mt-6 space-y-4">
+          <h2 className="text-2xl font-semibold text-gray-900">Escalation Cases</h2>
 
           {loading ? (
             <p className="text-sm text-slate-600">Loading escalation cases...</p>
           ) : cases.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center">
-              <Shield className="mx-auto h-12 w-12 text-slate-400" />
-              <p className="mt-3 text-sm font-medium text-slate-700">No escalation cases found</p>
-              <p className="mt-1 text-xs text-slate-500">Cases requiring legal escalation will appear here</p>
-            </div>
+            <AlertBox
+              variant="info"
+              icon={<Shield className="h-5 w-5" />}
+              title="No escalation cases found"
+              description="Cases requiring legal escalation will appear here"
+            />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {cases.map((escalationCase) => (
-                <article
+                <CaseCard
                   key={escalationCase.id}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 hover:shadow-sm transition-shadow"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-slate-900">
-                          {escalationCase.caseNumber}
-                        </h3>
-                        <StatusBadge
-                          variant={
-                            escalationCase.status === "resolved" ? "resolved" :
-                            escalationCase.status === "high-risk" ? "high-risk" :
-                            escalationCase.status === "under-review" ? "under-review" :
-                            "active"
-                          }
-                          label={escalationCase.status.replace("-", " ").toUpperCase()}
-                        />
-                      </div>
-                      
-                      <p className="mt-1 text-sm text-slate-700">
-                        Patient: <span className="font-medium">{escalationCase.patientName}</span>
-                      </p>
-                      
-                      <p className="mt-1 text-xs text-slate-500">
-                        Escalated: {new Date(escalationCase.escalatedAt).toLocaleDateString()}
-                      </p>
-
-                      {escalationCase.assignedCounsel ? (
-                        <p className="mt-1 text-xs text-slate-600">
-                          Assigned: {escalationCase.assignedCounsel}
-                        </p>
-                      ) : null}
-
-                      <p className="mt-2 text-sm text-slate-600">
-                        <span className="font-medium">Reason:</span> {escalationCase.reason}
-                      </p>
-
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="text-xs text-slate-500">Priority:</span>
+                  title={escalationCase.caseNumber}
+                  statusBadge={
+                    <StatusBadge
+                      variant={
+                        escalationCase.status === "resolved"
+                          ? "resolved"
+                          : escalationCase.status === "high-risk"
+                            ? "high-risk"
+                            : escalationCase.status === "under-review"
+                              ? "under-review"
+                              : "active"
+                      }
+                      label={escalationCase.status.replace("-", " ").toUpperCase()}
+                    />
+                  }
+                  reason={escalationCase.reason}
+                  metadata={[
+                    { label: "Patient", value: escalationCase.patientName },
+                    {
+                      label: "Escalated",
+                      value: new Date(escalationCase.escalatedAt).toLocaleDateString(),
+                    },
+                    {
+                      label: "Assigned",
+                      value: escalationCase.assignedCounsel || "-",
+                    },
+                    {
+                      label: "Priority",
+                      value: (
                         <span className={`text-xs font-semibold ${PRIORITY_COLORS[escalationCase.priority]}`}>
                           {escalationCase.priority.toUpperCase()}
                         </span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
+                      ),
+                    },
+                  ]}
+                  actions={
+                    <>
                       <button
                         onClick={() => openDetails(escalationCase)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                       >
                         <Eye className="h-3.5 w-3.5" />
                         View Details
                       </button>
-                      
+
                       {escalationCase.status !== "resolved" && (
                         <>
                           <button
                             onClick={() => openAddNote(escalationCase)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                           >
                             <MessageSquare className="h-3.5 w-3.5" />
                             Add Note
                           </button>
-                          
+
                           <button
                             onClick={() => openResolve(escalationCase)}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
                           >
                             <CheckCheck className="h-3.5 w-3.5" />
                             Resolve
                           </button>
                         </>
                       )}
-                    </div>
-                  </div>
-                </article>
+                    </>
+                  }
+                />
               ))}
             </div>
           )}
