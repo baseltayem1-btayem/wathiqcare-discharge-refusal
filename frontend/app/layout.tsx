@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Geist_Mono, Noto_Kufi_Arabic } from "next/font/google";
 import I18nProvider from "@/i18n/I18nProvider";
+import { Toaster } from "@/components/make-ui/sonner";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -31,7 +32,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${geistMono.variable} ${notoSansArabic.variable} antialiased`}>
-        <I18nProvider>{children}</I18nProvider>
+        <I18nProvider>
+          {children}
+          <Toaster />
+        </I18nProvider>
       </body>
     </html>
   );

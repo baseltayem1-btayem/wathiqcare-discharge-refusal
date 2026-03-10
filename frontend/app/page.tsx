@@ -4,11 +4,8 @@ import Link from "next/link";
 import { 
   ArrowRight, 
   CheckCircle2, 
-  FileCheck2, 
-  Gavel, 
   ShieldCheck, 
   Stethoscope, 
-  Workflow,
   Building2,
   Scale,
   FileText,
@@ -16,7 +13,6 @@ import {
   Lock,
   Activity,
   Database,
-  GitBranch,
   AlertTriangle,
   FileSignature,
   ClipboardCheck,
@@ -28,7 +24,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import Navbar from "@/components/figma/Navbar";
 
 export default function HomePage() {
-  const { isRtl, t } = useI18n();
+  const { t } = useI18n();
 
   const coreModules = [
     {
@@ -37,23 +33,23 @@ export default function HomePage() {
       descriptionKey: "homePage.module.consent.description",
       badgeKey: "homePage.module.consent.badge",
       color: "from-blue-500/10 to-blue-500/5 border-blue-200",
-      iconColor: "text-blue-600 bg-blue-50"
+      iconColor: "text-blue-700 bg-blue-100"
     },
     {
       icon: AlertTriangle,
       titleKey: "homePage.module.refusal.title",
       descriptionKey: "homePage.module.refusal.description",
       badgeKey: "homePage.module.refusal.badge",
-      color: "from-purple-500/10 to-purple-500/5 border-purple-200",
-      iconColor: "text-purple-600 bg-purple-50"
+      color: "from-orange-500/10 to-orange-500/5 border-orange-200",
+      iconColor: "text-orange-700 bg-orange-100"
     },
     {
       icon: Scale,
       titleKey: "homePage.module.legal.title",
       descriptionKey: "homePage.module.legal.description",
       badgeKey: "homePage.module.legal.badge",
-      color: "from-rose-500/10 to-rose-500/5 border-rose-200",
-      iconColor: "text-rose-600 bg-rose-50"
+      color: "from-red-500/10 to-red-500/5 border-red-200",
+      iconColor: "text-red-700 bg-red-100"
     },
     {
       icon: ClipboardCheck,
@@ -69,15 +65,15 @@ export default function HomePage() {
       descriptionKey: "homePage.module.audit.description",
       badgeKey: "homePage.module.audit.badge",
       color: "from-emerald-500/10 to-emerald-500/5 border-emerald-200",
-      iconColor: "text-emerald-600 bg-emerald-50"
+      iconColor: "text-emerald-700 bg-emerald-100"
     },
     {
       icon: Database,
       titleKey: "homePage.module.emr.title",
       descriptionKey: "homePage.module.emr.description",
       badgeKey: "homePage.module.emr.badge",
-      color: "from-teal-500/10 to-teal-500/5 border-teal-200",
-      iconColor: "text-teal-600 bg-teal-50"
+      color: "from-emerald-500/10 to-slate-200 border-emerald-200",
+      iconColor: "text-emerald-700 bg-emerald-100"
     },
   ];
 
@@ -99,33 +95,30 @@ export default function HomePage() {
     <>
       <Navbar />
       
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <main className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-slate-100">
         {/* Hero Section */}
-        <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-          {/* Grid overlay */}
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-          
+        <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-white via-slate-50 to-emerald-50/40">
           {/* Ambient effects */}
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
-            <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+            <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
           </div>
 
-          <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+          <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
             <div className="text-center">
               {/* Platform Badge */}
-              <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-slate-700 bg-slate-800/80 px-4 py-2.5 backdrop-blur">
-                <Building2 className="h-4 w-4 text-cyan-400" />
-                <span className="text-sm font-semibold text-slate-200">{t("homePage.platformType")}</span>
+              <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-emerald-200 bg-white px-4 py-2.5 shadow-sm">
+                <Building2 className="h-4 w-4 text-emerald-700" />
+                <span className="text-sm font-semibold text-emerald-900">{t("homePage.platformType")}</span>
               </div>
 
               {/* Hero Title */}
-              <h1 className="mx-auto max-w-4xl text-45 font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+              <h1 className="mx-auto max-w-4xl text-45 font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
                 {t("homePage.heroTitle")}
               </h1>
 
               {/* Subtitle */}
-              <p className="mx-auto mt-8 max-w-3xl text-xl leading-relaxed text-slate-300">
+              <p className="mx-auto mt-7 max-w-3xl text-xl leading-relaxed text-slate-600">
                 {t("homePage.heroSubtitle")}
               </p>
 
@@ -133,7 +126,7 @@ export default function HomePage() {
               <div className="mt-12 flex flex-wrap items-center justify-center gap-4">
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-slate-900 shadow-2xl transition hover:bg-slate-50 hover:shadow-lg"
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 font-semibold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700"
                 >
                   <Lock className="h-5 w-5" />
                   {t("homePage.enterSystem")}
@@ -141,25 +134,27 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/request-demo"
-                  className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 bg-slate-800/50 px-8 py-4 font-semibold text-white backdrop-blur transition hover:bg-slate-700/50 hover:border-slate-500"
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-4 font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50"
                 >
                   {t("homePage.requestDemo")}
                   <ArrowRight className="h-5 w-5" />
                 </Link>
               </div>
 
-              {/* Trust Factors Row */}
-              <div className="mt-20 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {/* Quick Overview Cards */}
+              <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
                 {trustFactors.map((factor) => {
                   const Icon = factor.icon;
                   return (
                     <div
                       key={factor.labelKey}
-                      className="rounded-xl border border-slate-700 bg-slate-800/50 p-5 backdrop-blur transition hover:border-slate-600 hover:bg-slate-800/70"
+                      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
                     >
-                      <Icon className="mx-auto h-6 w-6 text-cyan-400" />
-                      <p className="mt-3 text-xs font-medium text-slate-400">{t(factor.labelKey)}</p>
-                      <p className="mt-1 text-sm font-bold text-white">{t(factor.valueKey)}</p>
+                      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <p className="mt-3 text-xs font-medium text-slate-600">{t(factor.labelKey)}</p>
+                      <p className="mt-1 text-sm font-bold text-slate-900">{t(factor.valueKey)}</p>
                     </div>
                   );
                 })}
@@ -169,7 +164,7 @@ export default function HomePage() {
         </section>
 
         {/* Platform Overview */}
-        <section className="border-b border-slate-200 bg-white py-20 lg:py-28">
+        <section className="border-b border-slate-200 bg-white py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5">
@@ -187,7 +182,7 @@ export default function HomePage() {
         </section>
 
         {/* Core Modules Grid */}
-        <section className="bg-gradient-to-b from-slate-50 to-white py-20 lg:py-28">
+        <section className="bg-gradient-to-b from-slate-100/70 to-white py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-16 text-center">
               <h2 className="text-3xl font-bold text-slate-900 lg:text-4xl">
@@ -204,7 +199,7 @@ export default function HomePage() {
                 return (
                   <article
                     key={module.titleKey}
-                    className={`group relative overflow-hidden rounded-2xl border ${module.color} bg-gradient-to-br p-7 shadow-md transition-all hover:shadow-xl`}
+                    className={`group relative overflow-hidden rounded-2xl border ${module.color} bg-gradient-to-br p-7 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg`}
                   >
                     {/* Module Badge */}
                     <div className="absolute right-4 top-4">
@@ -230,8 +225,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Institutional Roles */}
-        <section className="border-y border-slate-200 bg-white py-20 lg:py-28">
+        {/* Key Roles / Highlights */}
+        <section className="border-y border-slate-200 bg-white py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-16 text-center">
               <h2 className="text-3xl font-bold text-slate-900 lg:text-4xl">
@@ -245,9 +240,9 @@ export default function HomePage() {
                 return (
                   <div
                     key={role.labelKey}
-                    className="text-center rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-7 shadow-sm transition hover:shadow-md hover:border-slate-300"
+                    className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-7 text-center shadow-sm transition hover:shadow-md"
                   >
-                    <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-white text-slate-700 shadow-md border border-slate-100">
+                    <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-100 text-emerald-700 shadow-sm">
                       <Icon className="h-7 w-7" />
                     </div>
                     <h3 className="font-bold text-slate-900 text-lg">{t(role.labelKey)}</h3>
@@ -259,8 +254,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Features Highlight */}
-        <section className="bg-slate-50 py-20 lg:py-28 border-b border-slate-200">
+        {/* Recent Highlights */}
+        <section className="border-b border-slate-200 bg-slate-50 py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-16 text-center">
               <h2 className="text-3xl font-bold text-slate-900 lg:text-4xl">
@@ -268,45 +263,51 @@ export default function HomePage() {
               </h2>
             </div>
             <div className="grid gap-8 md:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 bg-white p-8">
-                <Zap className="h-8 w-8 text-amber-500 mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Institutional Grade</h3>
-                <p className="text-slate-600">Built for healthcare systems, not startups. Enterprise-ready architecture with compliance at its core.</p>
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                  <TrendingUp className="h-6 w-6" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold text-slate-900">Institutional Grade</h3>
+                <p className="text-slate-600">Built for healthcare systems with enterprise-grade reliability and governance.</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-8">
-                <Shield className="h-8 w-8 text-emerald-500 mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Legally Defensible</h3>
-                <p className="text-slate-600">Immutable audit trails, cryptographic integrity, and compliance frameworks recognized by legal experts.</p>
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
+                  <Zap className="h-6 w-6" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold text-slate-900">Operational Alerts</h3>
+                <p className="text-slate-600">Track pending approvals and case escalations with clear visual status indicators.</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-8">
-                <TrendingUp className="h-8 w-8 text-blue-500 mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Compliance Driven</h3>
-                <p className="text-slate-600">CBAHI, JCI, and PDPL compliance indicators dashboards designed for institutional oversight.</p>
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 text-red-700">
+                  <Shield className="h-6 w-6" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold text-slate-900">Legal Readiness</h3>
+                <p className="text-slate-600">Evidence-ready records and complete timelines help reduce medico-legal risk.</p>
               </div>
             </div>
           </div>
         </section>
 
         {/* Final CTA */}
-        <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-20 lg:py-28">
+        <section className="bg-gradient-to-r from-emerald-700 to-emerald-600 py-16 lg:py-20">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <h2 className="text-4xl font-bold text-white lg:text-5xl">
               {t("homePage.ctaTitle")}
             </h2>
-            <p className="mt-6 text-lg text-slate-300">
+            <p className="mt-6 text-lg text-emerald-50">
               {t("homePage.ctaSubtitle")}
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-slate-900 shadow-2xl transition hover:bg-slate-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-emerald-800 shadow-lg transition hover:bg-emerald-50"
               >
                 {t("homePage.enterSystem")}
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <Link
                 href="/request-demo"
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-600 px-8 py-4 font-semibold text-white transition hover:bg-slate-800/50"
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 px-8 py-4 font-semibold text-white transition hover:bg-emerald-500"
               >
                 {t("homePage.requestDemo")}
               </Link>
@@ -315,11 +316,11 @@ export default function HomePage() {
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200 bg-slate-50 py-12">
+        <footer className="border-t border-slate-200 bg-white py-12">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-700 text-xs font-bold text-white">
                   WC
                 </div>
                 <span className="font-semibold text-slate-900">{t("app.name")}</span>
