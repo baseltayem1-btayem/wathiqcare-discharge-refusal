@@ -41,6 +41,10 @@ def render_financial_responsibility_notice(context: Dict[str, str]) -> str:
     return render_form_by_key("financial_responsibility_notice", context)
 
 
+def render_discharge_decision_record(context: Dict[str, str]) -> str:
+  return render_form_by_key("discharge_decision_record", context)
+
+
 def render_informed_consent(context: Dict[str, str]) -> str:
     return f"""
 <!DOCTYPE html>
@@ -157,9 +161,23 @@ WORKFLOW_TEMPLATES: Dict[str, WorkflowTemplate] = {
         ],
         renderer=render_informed_consent,
     ),
+      "discharge_decision_record": WorkflowTemplate(
+        key="discharge_decision_record",
+        title="Medical Discharge Decision Record",
+        document_code="IMC-PAT-DIS-DEC-01",
+        required_fields=[
+          "patient_name",
+          "patient_id_number",
+          "medical_record_number",
+          "room_number",
+          "attending_physician",
+          "discharge_decision_at",
+        ],
+        renderer=render_discharge_decision_record,
+      ),
     "home_healthcare_agreement": WorkflowTemplate(
         key="home_healthcare_agreement",
-        title="Acknowledgment & Informed Consent",
+        title="Home Healthcare Agreement",
         document_code="IMC-HHC-PDN-01",
         required_fields=[
             "patient_name",

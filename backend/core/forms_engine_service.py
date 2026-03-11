@@ -58,6 +58,13 @@ FORM_TEMPLATES: Dict[str, FormTemplateContract] = {
         template_version="1.0",
         owner_department="Clinical Governance",
     ),
+    "discharge_decision_record": FormTemplateContract(
+        form_type="discharge_decision_record",
+        title_ar="نموذج تسجيل قرار الخروج الطبي",
+        title_en="Medical Discharge Decision Record",
+        template_version="1.0",
+        owner_department="Attending Physician",
+    ),
     "home_healthcare_agreement": FormTemplateContract(
         form_type="home_healthcare_agreement",
         title_ar="اتفاقية الرعاية الصحية المنزلية",

@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict
 
+from backend.discharge.home_healthcare.homecare_agreement_engine import render_homecare_agreement_html
+
 
 @dataclass(frozen=True)
 class MedicalLegalFormTemplate:
@@ -203,6 +205,57 @@ def render_financial_responsibility_notice_ar(context: Dict[str, str]) -> str:
 """.strip()
 
 
+def render_discharge_decision_record(context: Dict[str, str]) -> str:
+        return f"""
+<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+    <meta charset=\"utf-8\" />
+    <title>Medical Discharge Decision Record</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.55; color: #0f172a; margin: 20px; }}
+        h1 {{ margin: 0; }}
+        .section {{ margin-top: 14px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; }}
+        .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }}
+        .label {{ font-size: 12px; color: #64748b; text-transform: uppercase; }}
+        .value {{ font-size: 14px; font-weight: 600; margin-top: 2px; }}
+    </style>
+</head>
+<body>
+    <p>Form Code: IMC-PAT-DIS-DEC-01</p>
+    <p>International Medical Center - Jeddah</p>
+    <h1>Medical Discharge Decision Record</h1>
+
+    <div class=\"section\">
+        <div class=\"grid\">
+            <div><div class=\"label\">Patient Name</div><div class=\"value\">{_safe(context.get("patient_name"))}</div></div>
+            <div><div class=\"label\">Patient ID Number</div><div class=\"value\">{_safe(context.get("patient_id_number"))}</div></div>
+            <div><div class=\"label\">Medical Record Number</div><div class=\"value\">{_safe(context.get("medical_record_number"))}</div></div>
+            <div><div class=\"label\">Room Number</div><div class=\"value\">{_safe(context.get("room_number"))}</div></div>
+            <div><div class=\"label\">Department</div><div class=\"value\">{_safe(context.get("department"))}</div></div>
+            <div><div class=\"label\">Attending Physician</div><div class=\"value\">{_safe(context.get("attending_physician"))}</div></div>
+            <div><div class=\"label\">Decision Date/Time</div><div class=\"value\">{_fmt_date(context.get("discharge_decision_at"))}</div></div>
+            <div><div class=\"label\">Generated At</div><div class=\"value\">{_fmt_date(context.get("generated_at"))}</div></div>
+        </div>
+    </div>
+
+    <div class=\"section\">
+        <p><strong>Clinical Summary</strong></p>
+        <p>{_safe(context.get("discussion_summary") or context.get("refusal_reason") or context.get("clinical_summary"))}</p>
+    </div>
+
+    <div class=\"section\">
+        <p><strong>Decision Statement</strong></p>
+        <p>
+            The attending physician confirms that the patient is medically fit for discharge according
+            to clinical assessment and hospital discharge policy.
+        </p>
+    </div>
+</body>
+</html>
+""".strip()
+
+
 FORMS_LIBRARY: Dict[str, MedicalLegalFormTemplate] = {
     "discharge_refusal_form": MedicalLegalFormTemplate(
         key="discharge_refusal_form",
@@ -228,6 +281,22 @@ FORMS_LIBRARY: Dict[str, MedicalLegalFormTemplate] = {
         locked_template=True,
         bilingual=True,
     ),
+    "home_healthcare_agreement": MedicalLegalFormTemplate(
+        key="home_healthcare_agreement",
+        title="Home Healthcare Agreement",
+        code="IMC-HHC-PDN-01",
+        version="1.0",
+        locked_template=True,
+        bilingual=True,
+    ),
+    "discharge_decision_record": MedicalLegalFormTemplate(
+        key="discharge_decision_record",
+        title="Medical Discharge Decision Record",
+        code="IMC-PAT-DIS-DEC-01",
+        version="1.0",
+        locked_template=True,
+        bilingual=True,
+    ),
 }
 
 
@@ -238,4 +307,8 @@ def render_form_by_key(template_key: str, context: Dict[str, str]) -> str:
         return render_financial_responsibility_notice_en(context)
     if template_key == "financial_responsibility_notice_ar":
         return render_financial_responsibility_notice_ar(context)
+    if template_key == "home_healthcare_agreement":
+        return render_homecare_agreement_html(context)
+    if template_key == "discharge_decision_record":
+        return render_discharge_decision_record(context)
     raise ValueError("Unsupported medical legal form template")
