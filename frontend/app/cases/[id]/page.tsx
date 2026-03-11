@@ -755,6 +755,10 @@ export default function CaseDetailsPage() {
     router.push(`/cases/${caseId}/${path}`);
   };
 
+  const handleOpenTabletMobileSignature = (path = "refusal-form") => {
+    router.push(`/cases/${caseId}/${path}?method=TABLET_SIGNATURE&mobile_link=1`);
+  };
+
   const handleVerifySignature = () => {
     if (caseDetail?.signed_at) {
       setInfoMessage(`Signature verified at ${toReadable(caseDetail.signed_at, locale)}.`);
@@ -1304,7 +1308,7 @@ export default function CaseDetailsPage() {
                     </table>
                   </div>
 
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
                     <button
                       type="button"
                       onClick={() => handleGenerateDocument("discharge_refusal_form")}
@@ -1321,6 +1325,15 @@ export default function CaseDetailsPage() {
                     >
                       <MessageSquareHeart className="h-4 w-4" />
                       Send for Signature
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenTabletMobileSignature("refusal-form")}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-800 hover:bg-sky-100"
+                    >
+                      <MessageSquareHeart className="h-4 w-4" />
+                      Tablet + Mobile Link
                     </button>
 
                     <button

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import TabletSignaturePad from "@/components/forms/TabletSignaturePad";
@@ -23,7 +23,10 @@ const METHOD_LABELS: Record<string, string> = {
 
 export default function RefusalFormSignaturePage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const caseId = params?.id || "";
+  const requestedMethod = searchParams.get("method");
+  const mobileLinked = searchParams.get("mobile_link") === "1";
 
   const [methods, setMethods] = useState<MethodItem[]>([]);
   const [method, setMethod] = useState<MethodItem["method"]>("SMS_OTP");
@@ -46,8 +49,17 @@ export default function RefusalFormSignaturePage() {
     void apiFetch<{ methods: MethodItem[] }>(`/api/discharge/cases/${caseId}/acknowledgment/methods`)
       .then((res) => {
         setMethods(res.methods || []);
-        const firstAvailable = (res.methods || []).find((item) => item.available);
-        if (firstAvailable) {
+        const availableMethods = res.methods || [];
+        const preferredTablet = requestedMethod === "TABLET_SIGNATURE"
+          ? availableMethods.find((item) => item.method === "TABLET_SIGNATURE" && item.available)
+          : null;
+        const firstAvailable = availableMethods.find((item) => item.available);
+        if (preferredTablet) {
+          setMethod("TABLET_SIGNATURE");
+          if (mobileLinked) {
+            setMessage("تم تفعيل وضع توقيع التابلت مع إمكانية ربط OTP بالجوال.");
+          }
+        } else if (firstAvailable) {
           setMethod(firstAvailable.method);
         }
       })
@@ -59,7 +71,7 @@ export default function RefusalFormSignaturePage() {
     })
       .then((res) => setPreviewHtml(res.html_content || ""))
       .catch((err: Error) => setMessage(err.message));
-  }, [caseId]);
+  }, [caseId, mobileLinked, requestedMethod]);
 
   const selectedMethod = useMemo(() => methods.find((item) => item.method === method), [methods, method]);
 

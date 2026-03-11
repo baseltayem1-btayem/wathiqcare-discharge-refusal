@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import TabletSignaturePad from "@/components/forms/TabletSignaturePad";
@@ -24,7 +24,10 @@ const HOME_HEALTHCARE_MODEL = "home_healthcare_agreement";
 
 export default function HomeHealthcareAgreementPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const caseId = params?.id || "";
+  const requestedMethod = searchParams.get("method");
+  const mobileLinked = searchParams.get("mobile_link") === "1";
 
   const [previewHtml, setPreviewHtml] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -101,13 +104,22 @@ export default function HomeHealthcareAgreementPage() {
     void apiFetch<{ methods: MethodItem[] }>(`/api/discharge/cases/${caseId}/acknowledgment/methods`)
       .then((res) => {
         setMethods(res.methods || []);
-        const firstAvailable = (res.methods || []).find((item) => item.available);
-        if (firstAvailable) {
+        const availableMethods = res.methods || [];
+        const preferredTablet = requestedMethod === "TABLET_SIGNATURE"
+          ? availableMethods.find((item) => item.method === "TABLET_SIGNATURE" && item.available)
+          : null;
+        const firstAvailable = availableMethods.find((item) => item.available);
+        if (preferredTablet) {
+          setSelectedMethod("TABLET_SIGNATURE");
+          if (mobileLinked) {
+            setMessage("تم تفعيل وضع توقيع التابلت مع إمكانية ربط OTP بالجوال.");
+          }
+        } else if (firstAvailable) {
           setSelectedMethod(firstAvailable.method);
         }
       })
       .catch((err: Error) => setMessage(err.message));
-  }, [caseId]);
+  }, [caseId, mobileLinked, requestedMethod]);
 
   useEffect(() => {
     if (!caseId || !isHomecareSelected) {
