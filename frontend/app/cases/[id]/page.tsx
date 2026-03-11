@@ -29,6 +29,7 @@ import WorkflowDocumentList from "@/components/workflow/WorkflowDocumentList";
 import WorkflowTimelinePanel from "@/components/workflow/WorkflowTimelinePanel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clearToken } from "@/utils/api";
+import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 import { dischargeRefusalWorkflowService } from "@/lib/services/dischargeRefusalWorkflow.service";
 import {
   dischargeCasesService,
@@ -109,41 +110,41 @@ const ISSUANCE_DOCUMENTS: Array<{
   supportedGeneration: boolean;
   signaturePath?: string;
 }> = [
-  {
-    key: "discharge_refusal_form",
-    label: "Refusal of Discharge",
-    supportedGeneration: true,
-    signaturePath: "refusal-form",
-  },
-  {
-    key: "informed_consent",
-    label: "Informed Consent",
-    supportedGeneration: true,
-    signaturePath: "informed-consent",
-  },
-  {
-    key: "financial_responsibility_notice",
-    label: "Financial Responsibility",
-    supportedGeneration: true,
-    signaturePath: "financial-notice",
-  },
-  {
-    key: "home_healthcare_agreement",
-    label: "Home Care Agreement",
-    supportedGeneration: true,
-    signaturePath: "home-healthcare-agreement",
-  },
-  {
-    key: "equipment_liability",
-    label: "Equipment Liability",
-    supportedGeneration: false,
-  },
-  {
-    key: "release_of_information",
-    label: "Release of Information",
-    supportedGeneration: false,
-  },
-];
+    {
+      key: "discharge_refusal_form",
+      label: "Refusal of Discharge",
+      supportedGeneration: true,
+      signaturePath: "refusal-form",
+    },
+    {
+      key: "informed_consent",
+      label: "Informed Consent",
+      supportedGeneration: true,
+      signaturePath: "informed-consent",
+    },
+    {
+      key: "financial_responsibility_notice",
+      label: "Financial Responsibility",
+      supportedGeneration: true,
+      signaturePath: "financial-notice",
+    },
+    {
+      key: "home_healthcare_agreement",
+      label: "Home Care Agreement",
+      supportedGeneration: true,
+      signaturePath: "home-healthcare-agreement",
+    },
+    {
+      key: "equipment_liability",
+      label: "Equipment Liability",
+      supportedGeneration: false,
+    },
+    {
+      key: "release_of_information",
+      label: "Release of Information",
+      supportedGeneration: false,
+    },
+  ];
 
 function toDateTimeLocal(raw: string | null | undefined): string {
   if (!raw) {
@@ -176,7 +177,7 @@ function buildDraft(caseDetail: CaseDetail | null, workflow: DischargeWorkflow |
     patient_id_number: workflow?.patient_id_number || "",
     medical_record_number: workflow?.medical_record_number || caseDetail?.patient_mrn || "",
     room_number: workflow?.room_number || "",
-    attending_physician: workflow?.attending_physician || "",
+    attending_physician: workflow?.attending_physician || caseDetail?.attending_physician || "",
     refusal_reason: workflow?.refusal_reason || caseDetail?.refusal_reason || "",
     discussion_summary: workflow?.discussion_summary || "",
     social_administrative_interventions: workflow?.social_administrative_interventions || "",
@@ -470,6 +471,14 @@ export default function CaseDetailsPage() {
 
     try {
       const payload = compactPayload(draft);
+      if (action === "record_discharge_decision") {
+        if (!payload.discharge_decision_at) {
+          payload.discharge_decision_at = new Date().toISOString();
+        }
+        if (!payload.attending_physician && caseDetail?.attending_physician) {
+          payload.attending_physician = caseDetail.attending_physician;
+        }
+      }
       const actor: Record<string, unknown> = {};
       let response: WorkflowMutationResponse;
 
@@ -533,25 +542,25 @@ export default function CaseDetailsPage() {
       const result: WorkflowPreviewResponse =
         templateKey === "discharge_refusal_form"
           ? {
-              template_key: "discharge_refusal_form",
-              title: dischargeRefusalFormTemplate.titleEn,
-              document_code: dischargeRefusalFormTemplate.documentCode,
-              missing_fields: missingFields,
-              can_generate: true,
-              policy_validation: policyValidation,
-              html_content: dischargeRefusalFormTemplate.renderHtml(toRefusalTemplatePayload(draft)),
-              context: compactPayload(draft),
-            }
+            template_key: "discharge_refusal_form",
+            title: dischargeRefusalFormTemplate.titleEn,
+            document_code: dischargeRefusalFormTemplate.documentCode,
+            missing_fields: missingFields,
+            can_generate: true,
+            policy_validation: policyValidation,
+            html_content: dischargeRefusalFormTemplate.renderHtml(toRefusalTemplatePayload(draft)),
+            context: compactPayload(draft),
+          }
           : {
-              template_key: "financial_responsibility_notice",
-              title: financialResponsibilityNoticeTemplate.titleEn,
-              document_code: financialResponsibilityNoticeTemplate.documentCode,
-              missing_fields: missingFields,
-              can_generate: true,
-              policy_validation: policyValidation,
-              html_content: financialResponsibilityNoticeTemplate.renderHtml(toFinancialNoticePayload(draft)),
-              context: compactPayload(draft),
-            };
+            template_key: "financial_responsibility_notice",
+            title: financialResponsibilityNoticeTemplate.titleEn,
+            document_code: financialResponsibilityNoticeTemplate.documentCode,
+            missing_fields: missingFields,
+            can_generate: true,
+            policy_validation: policyValidation,
+            html_content: financialResponsibilityNoticeTemplate.renderHtml(toFinancialNoticePayload(draft)),
+            context: compactPayload(draft),
+          };
 
       setPreview(result);
       setPreviewOpen(true);
@@ -631,6 +640,40 @@ export default function CaseDetailsPage() {
       await dischargeCasesService.openRefusalPdf(caseDetail.pdf_file);
     } catch (err) {
       const message = err instanceof Error ? err.message : t("caseDetails.failedOpenPdf");
+      setError(message);
+      if (message.includes("401") || message.includes("Invalid") || message.includes("Not authenticated")) {
+        clearToken();
+        router.push("/login");
+      }
+    }
+  }
+
+  async function handleDownloadGeneratedDocument() {
+    if (!workflow?.documents || workflow.documents.length === 0) {
+      setInfoMessage(t("documents.none"));
+      return;
+    }
+
+    setError("");
+    setInfoMessage("");
+
+    const latestDocument = [...workflow.documents].sort((left, right) => {
+      const leftTime = new Date(left.generated_at).getTime();
+      const rightTime = new Date(right.generated_at).getTime();
+      return rightTime - leftTime;
+    })[0];
+
+    try {
+      await downloadProtectedDocument(
+        latestDocument.download_url,
+        latestDocument.file_name || `${latestDocument.template_key}.html`
+      );
+      setInfoMessage(
+        t("caseDetails.actionCompleted", { action: t("workflow.action.downloadGenerated") })
+      );
+      setActiveTab("archive");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t("documents.failedDownload");
       setError(message);
       if (message.includes("401") || message.includes("Invalid") || message.includes("Not authenticated")) {
         clearToken();
@@ -842,8 +885,7 @@ export default function CaseDetailsPage() {
             <button
               type="button"
               onClick={() => {
-                setActiveTab("archive");
-                setInfoMessage(t("caseDetails.useCardsDownload"));
+                void handleDownloadGeneratedDocument();
               }}
               disabled={!hasGeneratedDocuments}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-60"

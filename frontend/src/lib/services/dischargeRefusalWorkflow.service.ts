@@ -14,6 +14,25 @@ type BackendWorkflowDocument = {
   generated_at?: string | null;
 };
 
+type BackendCaseDocumentResponse = {
+  id?: string;
+  documentId?: string;
+  case_id?: string;
+  caseId?: string;
+  workflow_id?: string | null;
+  workflowId?: string | null;
+  template_key?: string;
+  templateKey?: string;
+  document_code?: string | null;
+  documentCode?: string | null;
+  title?: string;
+  titleEn?: string;
+  file_name?: string;
+  fileName?: string;
+  generated_at?: string | null;
+  generatedAt?: string | null;
+};
+
 type BackendWorkflowResponse = {
   id: string;
   case_id: string;
@@ -109,9 +128,43 @@ function mapBackendDocument(document: BackendWorkflowDocument, caseId: string): 
   };
 }
 
+function mapCaseDocumentResponse(document: BackendCaseDocumentResponse, caseId: string): CaseDocument {
+  const id = document.id || document.documentId || "";
+  const templateKey = document.template_key || document.templateKey || "discharge_refusal_form";
+  const title = document.title || document.titleEn || templateKey;
+  const fileName = document.file_name || document.fileName || `${templateKey}.html`;
+  const generatedAt = document.generated_at || document.generatedAt || new Date().toISOString();
+
+  return {
+    id,
+    caseId: document.case_id || document.caseId || caseId,
+    workflowId: document.workflow_id || document.workflowId || null,
+    documentType:
+      templateKey === "financial_responsibility_notice"
+        ? "financial_responsibility_notice"
+        : "discharge_refusal_form",
+    documentCode: document.document_code ?? document.documentCode ?? null,
+    titleEn: title,
+    titleAr: null,
+    templateKey,
+    version: "1.0",
+    fileName,
+    mimeType: "text/html",
+    storagePath: null,
+    previewHtml: null,
+    payloadJson: {},
+    status: "generated",
+    generatedBy: "system",
+    generatedAt,
+    signedBy: null,
+    signedAt: null,
+  };
+}
+
 function mapToContract(
   workflow: BackendWorkflowResponse,
   auditLogs: BackendAuditLog[],
+  caseDocuments: BackendCaseDocumentResponse[],
 ): DischargeRefusalWorkflow {
   const caseId = workflow.case_id;
 
@@ -172,7 +225,12 @@ function mapToContract(
     socialServicesContacted: Boolean(workflow.social_services_referred_at),
     legalSensitiveCase: Boolean(workflow.escalated_at),
 
-    documents: (workflow.documents || []).map((document) => mapBackendDocument(document, caseId)),
+    documents:
+      caseDocuments.length > 0
+        ? caseDocuments
+          .filter((document) => Boolean(document.id || document.documentId))
+          .map((document) => mapCaseDocumentResponse(document, caseId))
+        : (workflow.documents || []).map((document) => mapBackendDocument(document, caseId)),
     auditTrail: auditLogs.map((item) => ({
       id: item.id,
       caseId,
@@ -197,12 +255,15 @@ function mapToContract(
 }
 
 async function fetchWorkflowContract(caseId: string): Promise<DischargeRefusalWorkflow> {
-  const [workflow, auditTrail] = await Promise.all([
+  const [workflow, auditTrail, caseDocuments] = await Promise.all([
     apiFetch<BackendWorkflowResponse>(`/api/discharge/cases/${encodeURIComponent(caseId)}/workflow`),
     apiFetch<BackendAuditLog[]>(`/api/discharge/audit/${encodeURIComponent(caseId)}`).catch(() => []),
+    apiFetch<BackendCaseDocumentResponse[]>(`/api/discharge/cases/${encodeURIComponent(caseId)}/documents`).catch(
+      () => []
+    ),
   ]);
 
-  return mapToContract(workflow, auditTrail);
+  return mapToContract(workflow, auditTrail, caseDocuments);
 }
 
 export interface DischargeRefusalWorkflowService {
