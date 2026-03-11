@@ -756,7 +756,24 @@ export default function CaseDetailsPage() {
   };
 
   const handleOpenTabletMobileSignature = (path = "refusal-form") => {
-    router.push(`/cases/${caseId}/${path}?method=TABLET_SIGNATURE&mobile_link=1`);
+    const signaturePathByTemplate: Record<string, string> = {
+      discharge_refusal_form: "refusal-form",
+      informed_consent: "informed-consent",
+      financial_responsibility_notice: "financial-notice",
+      home_healthcare_agreement: "home-healthcare-agreement",
+    };
+
+    const latestDoc = [...(workflow?.documents || [])].sort((left, right) => {
+      const leftTime = new Date(left.generated_at).getTime();
+      const rightTime = new Date(right.generated_at).getTime();
+      return rightTime - leftTime;
+    })[0];
+
+    const resolvedPath = latestDoc
+      ? signaturePathByTemplate[latestDoc.template_key] || path
+      : path;
+
+    router.push(`/cases/${caseId}/${resolvedPath}?method=TABLET_SIGNATURE&mobile_link=1`);
   };
 
   const handleVerifySignature = () => {
@@ -1329,7 +1346,7 @@ export default function CaseDetailsPage() {
 
                     <button
                       type="button"
-                      onClick={() => handleOpenTabletMobileSignature("refusal-form")}
+                      onClick={() => handleOpenTabletMobileSignature()}
                       className="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-800 hover:bg-sky-100"
                     >
                       <MessageSquareHeart className="h-4 w-4" />
