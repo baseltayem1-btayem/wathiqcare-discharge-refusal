@@ -111,6 +111,18 @@ export async function forwardToBackend(
         return built.response;
     }
 
+    const targetHost = built.url.host.toLowerCase();
+    const requestHost = (request.headers.get("host") || "").toLowerCase();
+    if (targetHost && requestHost && targetHost === requestHost) {
+        return NextResponse.json(
+            {
+                detail:
+                    "Backend API host resolves to the same frontend host, which causes a proxy loop. Set BACKEND_API_BASE_URL to the external backend URL.",
+            },
+            { status: 503 },
+        );
+    }
+
     const method = request.method.toUpperCase();
     const body = method === "GET" || method === "HEAD" ? undefined : await request.arrayBuffer();
 
