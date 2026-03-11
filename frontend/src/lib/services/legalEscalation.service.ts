@@ -11,16 +11,8 @@ class LegalEscalationService {
    */
   async listEscalations(): Promise<LegalEscalationCase[]> {
     try {
-      const cases = await apiFetch<any[]>("/api/cases?limit=200");
-      
-      // Filter and transform cases that have been escalated
-      return cases
-        .filter((c: any) => {
-          const status = (c.status || "").toLowerCase();
-          const metadata = c.metadata || {};
-          return status === "escalated" || metadata.escalated_at || metadata.escalation_required;
-        })
-        .map(this.transformCase);
+      const cases = await apiFetch<LegalEscalationCase[]>("/api/discharge/cases/legal-escalation");
+      return Array.isArray(cases) ? cases : [];
     } catch (error) {
       console.error("Failed to fetch escalation cases:", error);
       return [];
@@ -32,8 +24,7 @@ class LegalEscalationService {
    */
   async getEscalation(caseId: string): Promise<LegalEscalationCase | null> {
     try {
-      const caseData = await apiFetch<any>(`/api/cases/${encodeURIComponent(caseId)}`);
-      return this.transformCase(caseData);
+      return await apiFetch<LegalEscalationCase>(`/api/discharge/cases/${encodeURIComponent(caseId)}/legal-escalation`);
     } catch (error) {
       console.error("Failed to fetch escalation case:", error);
       return null;
@@ -48,18 +39,13 @@ class LegalEscalationService {
     note: string,
     author: string
   ): Promise<LegalEscalationNote> {
-    // For now, create a mock note since backend endpoint may not exist yet
-    // TODO: Implement actual API call when backend is ready
-    const newNote: LegalEscalationNote = {
-      id: `note-${Date.now()}`,
-      caseId,
-      note,
-      author,
-      authorRole: "Legal Counsel",
-      createdAt: new Date().toISOString(),
-    };
-
-    return newNote;
+    return apiFetch<LegalEscalationNote>(
+      `/api/discharge/cases/${encodeURIComponent(caseId)}/legal-escalation/notes`,
+      {
+        method: "POST",
+        body: JSON.stringify({ note, note_type: "legal", author }),
+      }
+    );
   }
 
   /**
@@ -69,12 +55,10 @@ class LegalEscalationService {
     caseId: string,
     resolutionNotes: string
   ): Promise<void> {
-    // TODO: Implement actual API call when backend endpoint is ready
-    // await apiFetch(`/api/legal-escalation/${caseId}/resolve`, {
-    //   method: "POST",
-    //   body: JSON.stringify({ resolutionNotes }),
-    // });
-    console.log(`Resolving case ${caseId} with notes:`, resolutionNotes);
+    await apiFetch(`/api/discharge/cases/${encodeURIComponent(caseId)}/legal-escalation/resolve`, {
+      method: "POST",
+      body: JSON.stringify({ resolution_notes: resolutionNotes, close_case: false }),
+    });
   }
 
   /**
@@ -84,53 +68,10 @@ class LegalEscalationService {
     caseId: string,
     priority: string
   ): Promise<void> {
-    // TODO: Implement actual API call when backend endpoint is ready
-    console.log(`Updating case ${caseId} priority to:`, priority);
-  }
-
-  /**
-   * Transform backend case data to legal escalation case
-   */
-  private transformCase(caseData: any): LegalEscalationCase {
-    const metadata = caseData.metadata || {};
-    const status = this.determineStatus(caseData.status, metadata);
-    const priority = this.determinePriority(metadata);
-
-    return {
-      id: caseData.id,
-      caseId: caseData.id,
-      caseNumber: caseData.caseNumber || caseData.id,
-      patientName: caseData.patientName || "Unknown Patient",
-      status,
-      priority,
-      escalatedAt: metadata.escalated_at || metadata.escalation_due_at || new Date().toISOString(),
-      assignedCounsel: metadata.assigned_counsel || null,
-      reason: metadata.refusal_reason || metadata.escalation_reason || "Patient discharge refusal",
-      riskLevel: metadata.risk_level || null,
-      followUpDate: metadata.follow_up_date || null,
-      resolvedAt: metadata.resolved_at || null,
-      resolutionNotes: metadata.resolution_notes || null,
-      notes: [],
-      auditTrail: [],
-    };
-  }
-
-  private determineStatus(status: string, metadata: any): LegalEscalationCase["status"] {
-    const statusLower = (status || "").toLowerCase();
-    
-    if (metadata.resolved_at) return "resolved";
-    if (metadata.high_risk || metadata.legal_sensitive_case) return "high-risk";
-    if (metadata.under_legal_review) return "under-review";
-    if (statusLower === "escalated") return "active";
-    
-    return "active";
-  }
-
-  private determinePriority(metadata: any): LegalEscalationCase["priority"] {
-    if (metadata.high_risk || metadata.legal_sensitive_case) return "critical";
-    if (metadata.priority === "high") return "high";
-    if (metadata.priority === "medium") return "medium";
-    return "low";
+    await apiFetch(`/api/discharge/cases/${encodeURIComponent(caseId)}/legal-escalation/priority`, {
+      method: "POST",
+      body: JSON.stringify({ priority }),
+    });
   }
 }
 

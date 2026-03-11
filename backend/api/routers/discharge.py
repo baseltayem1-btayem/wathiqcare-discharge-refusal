@@ -30,6 +30,15 @@ from backend.core.discharge_query_service import (
     list_audit_logs_for_case,
     list_bundles,
     get_refusal_quality_metrics,
+    get_compliance_dashboard_data,
+)
+from backend.legal.escalation_case_service import (
+    add_escalation_note,
+    assign_escalation_case,
+    get_escalation_case_detail,
+    list_escalation_cases,
+    resolve_escalation_case,
+    update_escalation_priority,
 )
 
 router = APIRouter(prefix="/api/discharge", tags=["Discharge"])
@@ -63,6 +72,40 @@ ROLE_WORKFLOW_EDIT = (
     ROLE_SOCIAL_SERVICES,
     ROLE_COMPLIANCE,
 )
+
+SENSITIVE_ACTION_ROLE_MAP = {
+    "escalate_legal_compliance": ("tenant_admin", ROLE_LEGAL, ROLE_COMPLIANCE),
+    "record_compliance_review": ("tenant_admin", ROLE_COMPLIANCE),
+    "record_legal_review": ("tenant_admin", ROLE_LEGAL),
+    "close_under_review": ("tenant_admin", ROLE_LEGAL),
+}
+
+
+class LegalEscalationAssignRequest(BaseModel):
+    assigned_counsel: str
+    follow_up_date: str | None = None
+
+
+class LegalEscalationNoteRequest(BaseModel):
+    note: str
+    note_type: str = "general"
+
+
+class LegalEscalationPriorityRequest(BaseModel):
+    priority: str
+
+
+class LegalEscalationResolveRequest(BaseModel):
+    resolution_notes: str
+    close_case: bool = False
+
+
+def _enforce_sensitive_action_roles(action: str, current_user: dict) -> None:
+    allowed_roles = SENSITIVE_ACTION_ROLE_MAP.get(action)
+    if not allowed_roles:
+        return
+    if current_user.get("role") not in allowed_roles:
+        raise HTTPException(status_code=403, detail="الصلاحيات غير كافية لهذا الإجراء")
 
 
 class MedicalLegalFormsRenderRequest(BaseModel):
@@ -120,6 +163,7 @@ def run_case_workflow_action(
     current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
 ):
     try:
+        _enforce_sensitive_action_roles(payload.action, current_user)
         return run_workflow_action(
             tenant_id=current_user["tenant_id"],
             case_id=case_id,
@@ -131,6 +175,95 @@ def run_case_workflow_action(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {str(e)}")
+
+
+@router.get("/cases/legal-escalation")
+def get_legal_escalation_cases(
+    current_user=Depends(require_roles("tenant_admin", ROLE_LEGAL, ROLE_COMPLIANCE, ROLE_QUALITY, "viewer")),
+):
+    return list_escalation_cases(tenant_id=current_user["tenant_id"])
+
+
+@router.get("/cases/{case_id}/legal-escalation")
+def get_legal_escalation_case(
+    case_id: str,
+    current_user=Depends(require_roles("tenant_admin", ROLE_LEGAL, ROLE_COMPLIANCE, ROLE_QUALITY, "viewer")),
+):
+    try:
+        return get_escalation_case_detail(tenant_id=current_user["tenant_id"], case_id=case_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal-escalation/assign")
+def assign_legal_escalation_case(
+    case_id: str,
+    payload: LegalEscalationAssignRequest,
+    current_user=Depends(require_roles("tenant_admin", ROLE_LEGAL)),
+):
+    try:
+        return assign_escalation_case(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            assigned_counsel=payload.assigned_counsel,
+            follow_up_date=payload.follow_up_date,
+            current_user=current_user,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal-escalation/notes")
+def add_legal_escalation_case_note(
+    case_id: str,
+    payload: LegalEscalationNoteRequest,
+    current_user=Depends(require_roles("tenant_admin", ROLE_LEGAL, ROLE_COMPLIANCE)),
+):
+    try:
+        return add_escalation_note(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            note=payload.note,
+            note_type=payload.note_type,
+            current_user=current_user,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal-escalation/priority")
+def update_legal_escalation_case_priority(
+    case_id: str,
+    payload: LegalEscalationPriorityRequest,
+    current_user=Depends(require_roles("tenant_admin", ROLE_LEGAL)),
+):
+    try:
+        return update_escalation_priority(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            priority=payload.priority,
+            current_user=current_user,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal-escalation/resolve")
+def resolve_legal_escalation_case(
+    case_id: str,
+    payload: LegalEscalationResolveRequest,
+    current_user=Depends(require_roles("tenant_admin", ROLE_LEGAL)),
+):
+    try:
+        return resolve_escalation_case(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            resolution_notes=payload.resolution_notes,
+            close_case=payload.close_case,
+            current_user=current_user,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/cases/{case_id}/workflow/preview")
@@ -262,6 +395,13 @@ def refusal_quality_dashboard(
     return get_refusal_quality_metrics(current_user["tenant_id"])
 
 
+@router.get("/reports/compliance-dashboard")
+def compliance_dashboard(
+    current_user=Depends(require_roles("tenant_admin", ROLE_QUALITY, ROLE_COMPLIANCE, ROLE_LEGAL, "viewer")),
+):
+    return get_compliance_dashboard_data(current_user["tenant_id"])
+
+
 @router.get("/forms-library/medical-legal/templates")
 def list_medical_legal_templates(
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
@@ -319,7 +459,7 @@ def build_evidence_bundle(
     current_user=Depends(require_roles("tenant_admin", "legal_admin"))
 ):
     try:
-        return generate_evidence_bundle(discharge_case_id)
+        return generate_evidence_bundle(discharge_case_id, actor_user_id=current_user["id"])
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

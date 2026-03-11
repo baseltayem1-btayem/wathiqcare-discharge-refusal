@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { 
-  ClipboardList, 
-  RefreshCw, 
-  Download, 
+import {
+  ClipboardList,
+  RefreshCw,
+  Download,
   Search,
   Filter,
   ShieldCheck,
@@ -76,7 +76,7 @@ export default function AuditLogPage() {
 
     // Apply action filter
     if (actionFilter !== "all") {
-      filtered = filtered.filter((item) => 
+      filtered = filtered.filter((item) =>
         item.action.toLowerCase().includes(actionFilter.toLowerCase())
       );
     }
@@ -142,7 +142,7 @@ export default function AuditLogPage() {
       header: "Timestamp",
       width: "20%",
       render: (item) => (
-        item.created_at 
+        item.created_at
           ? new Date(item.created_at).toLocaleString()
           : "-"
       ),
@@ -302,7 +302,7 @@ export default function AuditLogPage() {
             <div>
               <h3 className="text-sm font-semibold text-blue-900">PDPL Compliance</h3>
               <p className="mt-1 text-sm text-blue-700">
-                All audit logs are immutable and comply with Saudi Arabia's Personal Data Protection Law (PDPL). 
+                All audit logs are immutable and comply with Saudi Arabia&apos;s Personal Data Protection Law (PDPL).
                 Records are retained for 7 years and include complete actor attribution for legal compliance.
               </p>
             </div>

@@ -7,6 +7,7 @@ from typing import Dict, Any
 
 from backend.core.database import SessionLocal
 from backend.models.discharge_case import DischargeCase
+from backend.models.discharge_workflow import DischargeRefusalWorkflow
 from backend.models.patient import Patient
 from backend.models.user import User
 from backend.models.tenant import Tenant
@@ -14,7 +15,9 @@ from backend.models.audit_log import AuditLog
 
 BUNDLE_DIR = Path("backend/generated/bundles")
 PDF_DIR = Path("backend/generated")
+SIGNATURE_DIR = Path("backend/generated/document_signature")
 BUNDLE_DIR.mkdir(parents=True, exist_ok=True)
+SIGNATURE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def build_discharge_refusal_bundle(order: Any, refusal: Any, pdf_path: str) -> str:
@@ -66,7 +69,21 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def generate_evidence_bundle(discharge_case_id: str) -> Dict[str, Any]:
+def _signature_metadata_path(document_id: str) -> Path:
+    return SIGNATURE_DIR / f"{document_id}.json"
+
+
+def _load_json(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _write_json(path: Path, payload: Dict[str, Any]) -> None:
+    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+
+
+def generate_evidence_bundle(discharge_case_id: str, actor_user_id: str | None = None) -> Dict[str, Any]:
     db = SessionLocal()
 
     try:
@@ -189,6 +206,45 @@ def generate_evidence_bundle(discharge_case_id: str) -> Dict[str, Any]:
             zf.write(case_summary_file, arcname="case_summary.json")
             zf.write(audit_logs_file, arcname="audit_logs.json")
             zf.write(manifest_file, arcname="manifest.json")
+
+        workflow = (
+            db.query(DischargeRefusalWorkflow)
+            .filter(DischargeRefusalWorkflow.case_id == case.id)
+            .first()
+        )
+        archived_at = _utc_now_iso()
+        archived_document_ids: list[str] = []
+        if workflow:
+            for document in workflow.documents:
+                signature_payload = _load_json(_signature_metadata_path(document.id))
+                signature_payload.update(
+                    {
+                        "archivedStatus": True,
+                        "archivedAt": archived_at,
+                        "archivedBy": actor_user_id or case.created_by,
+                        "archiveBundleId": bundle_id,
+                    }
+                )
+                _write_json(_signature_metadata_path(document.id), signature_payload)
+                archived_document_ids.append(document.id)
+
+        archive_user_id = actor_user_id or case.created_by
+        if archive_user_id:
+            db.add(
+                AuditLog(
+                    tenant_id=case.tenant_id,
+                    user_id=archive_user_id,
+                    entity_type="discharge_case",
+                    entity_id=case.id,
+                    action="archive_case_documents",
+                    details=(
+                        f"Evidence bundle {bundle_id} generated and archived documents for case {case.id}: "
+                        f"{', '.join(archived_document_ids) if archived_document_ids else 'no workflow documents'}"
+                    ),
+                    created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                )
+            )
+        db.commit()
 
         return {
             "message": "Evidence bundle generated successfully",

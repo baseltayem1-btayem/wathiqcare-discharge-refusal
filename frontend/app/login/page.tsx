@@ -13,8 +13,11 @@ import { setToken, apiFetch } from "@/utils/api";
 export default function LoginPage() {
   const router = useRouter();
   const { t, isRtl } = useI18n();
-  const [email, setEmail] = useState("admin@wathiqcare.online");
-  const [password, setPassword] = useState("WCare@2026");
+  const allowDevPrefill =
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN_PREFILL === "true";
+  const [email, setEmail] = useState(allowDevPrefill ? "admin@wathiqcare.online" : "");
+  const [password, setPassword] = useState(allowDevPrefill ? "WCare@2026" : "");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");

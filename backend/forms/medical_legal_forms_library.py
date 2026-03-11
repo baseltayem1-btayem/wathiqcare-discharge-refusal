@@ -7,6 +7,9 @@ from typing import Dict
 from backend.discharge.home_healthcare.homecare_agreement_engine import render_homecare_agreement_html
 
 
+CANONICAL_TEMPLATE_SOURCE = "backend.forms.medical_legal_forms_library.FORMS_LIBRARY"
+
+
 @dataclass(frozen=True)
 class MedicalLegalFormTemplate:
     key: str
@@ -69,6 +72,7 @@ def render_medical_discharge_refusal_form(context: Dict[str, str]) -> str:
   <div>Attending Physician: {_safe(context.get("attending_physician"))}</div>
 
   <h2 class=\"mt\">Declaration of Medical Discharge Refusal</h2>
+    <p>I acknowledge that I have received and understood the medical discharge decision.</p>
   <p>I hereby acknowledge that the attending physician has informed me that I am medically fit for discharge and that continued hospitalization is no longer medically necessary.</p>
   <p>The attending physician and the healthcare team have explained to me the medical condition, the recommended discharge plan, and the potential risks associated with remaining in the hospital after the medical discharge decision.</p>
   <p>Despite this explanation, I voluntarily choose to remain in the hospital and refuse to proceed with the discharge process at this time.</p>
@@ -131,6 +135,7 @@ def render_financial_responsibility_notice_en(context: Dict[str, str]) -> str:
   <p>Room Number: {_safe(context.get("room_number"))}</p>
 
   <p>Dear Patient,</p>
+    <p>This is to formally notify you that despite completion of medical discharge criteria, you have chosen to remain in the hospital.</p>
   <p>We would like to inform you that on {_fmt_date(context.get("discharge_decision_at"))}, the attending physician has issued a medical discharge decision confirming that you are medically fit for discharge and that continued hospitalization is no longer medically required.</p>
   <p>As you have chosen to remain in the hospital beyond the medical discharge decision, please be advised that insurance providers or guarantor entities may not cover any hospitalization costs or services provided after the discharge decision has been issued.</p>
   <p>Accordingly, you may be personally responsible for all costs associated with your continued stay in the hospital, including but not limited to:</p>
@@ -298,6 +303,23 @@ FORMS_LIBRARY: Dict[str, MedicalLegalFormTemplate] = {
         bilingual=True,
     ),
 }
+
+
+def get_form_template_metadata(template_key: str) -> Dict[str, str | bool]:
+    template = FORMS_LIBRARY.get(template_key)
+    if not template:
+        raise ValueError("Unsupported medical legal form template")
+
+    return {
+        "key": template.key,
+        "title": template.title,
+        "code": template.code,
+        "version": template.version,
+        "locked_template": template.locked_template,
+        "bilingual": template.bilingual,
+        "source": CANONICAL_TEMPLATE_SOURCE,
+        "template_marker": f"{template.code}@v{template.version}",
+    }
 
 
 def render_form_by_key(template_key: str, context: Dict[str, str]) -> str:

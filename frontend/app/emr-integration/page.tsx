@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Activity, 
-  CheckCircle2, 
+import {
+  Activity,
+  CheckCircle2,
   XCircle,
   RefreshCw,
   Server,
@@ -37,79 +37,83 @@ type SyncActivity = {
   recordsProcessed?: number;
 };
 
-export default function EMRIntegrationPage() {
-  const [systems, setSystems] = useState<EMRSystem[]>([
-    {
-      id: "epic-1",
-      name: "Epic EMR - Main Hospital",
-      type: "Epic",
-      status: "connected",
-      lastSync: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-      recordsCount: 1247,
-      version: "2023.1",
-    },
-    {
-      id: "cerner-1",
-      name: "Cerner Millennium",
-      type: "Cerner",
-      status: "connected",
-      lastSync: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      recordsCount: 892,
-      version: "2022.03",
-    },
-    {
-      id: "fhir-1",
-      name: "FHIR Integration Layer",
-      type: "FHIR",
-      status: "syncing",
-      lastSync: new Date().toISOString(),
-      recordsCount: 3456,
-      version: "R4",
-    },
-    {
-      id: "legacy-1",
-      name: "Legacy System Bridge",
-      type: "Legacy",
-      status: "error",
-      lastSync: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-      recordsCount: 234,
-    },
-  ]);
+const INITIAL_SYSTEMS: EMRSystem[] = [
+  {
+    id: "epic-1",
+    name: "Epic EMR - Main Hospital",
+    type: "Epic",
+    status: "connected",
+    lastSync: "2026-03-11T00:15:00.000Z",
+    recordsCount: 1247,
+    version: "2023.1",
+  },
+  {
+    id: "cerner-1",
+    name: "Cerner Millennium",
+    type: "Cerner",
+    status: "connected",
+    lastSync: "2026-03-11T00:00:00.000Z",
+    recordsCount: 892,
+    version: "2022.03",
+  },
+  {
+    id: "fhir-1",
+    name: "FHIR Integration Layer",
+    type: "FHIR",
+    status: "syncing",
+    lastSync: "2026-03-11T00:30:00.000Z",
+    recordsCount: 3456,
+    version: "R4",
+  },
+  {
+    id: "legacy-1",
+    name: "Legacy System Bridge",
+    type: "Legacy",
+    status: "error",
+    lastSync: "2026-03-10T22:30:00.000Z",
+    recordsCount: 234,
+  },
+];
 
-  const [syncHistory, setSyncHistory] = useState<SyncActivity[]>([
-    {
-      id: "sync-1",
-      system: "Epic EMR",
-      action: "Patient data sync",
-      status: "success",
-      timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-      recordsProcessed: 45,
-    },
-    {
-      id: "sync-2",
-      system: "Cerner Millennium",
-      action: "Discharge records sync",
-      status: "success",
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      recordsProcessed: 23,
-    },
-    {
-      id: "sync-3",
-      system: "Legacy System",
-      action: "Historical data import",
-      status: "failed",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-      recordsProcessed: 0,
-    },
-    {
-      id: "sync-4",
-      system: "FHIR Integration",
-      action: "Real-time sync",
-      status: "in-progress",
-      timestamp: new Date().toISOString(),
-      recordsProcessed: 128,
-    },
-  ]);
+const INITIAL_SYNC_HISTORY: SyncActivity[] = [
+  {
+    id: "sync-1",
+    system: "Epic EMR",
+    action: "Patient data sync",
+    status: "success",
+    timestamp: "2026-03-11T00:15:00.000Z",
+    recordsProcessed: 45,
+  },
+  {
+    id: "sync-2",
+    system: "Cerner Millennium",
+    action: "Discharge records sync",
+    status: "success",
+    timestamp: "2026-03-11T00:00:00.000Z",
+    recordsProcessed: 23,
+  },
+  {
+    id: "sync-3",
+    system: "Legacy System",
+    action: "Historical data import",
+    status: "failed",
+    timestamp: "2026-03-10T22:30:00.000Z",
+    recordsProcessed: 0,
+  },
+  {
+    id: "sync-4",
+    system: "FHIR Integration",
+    action: "Real-time sync",
+    status: "in-progress",
+    timestamp: "2026-03-11T00:30:00.000Z",
+    recordsProcessed: 128,
+  },
+];
+
+export default function EMRIntegrationPage() {
+  const [systems, setSystems] = useState<EMRSystem[]>(INITIAL_SYSTEMS);
+
+  const [syncHistory, setSyncHistory] = useState<SyncActivity[]>(INITIAL_SYNC_HISTORY);
 
   const [syncing, setSyncing] = useState<Record<string, boolean>>({});
 
@@ -119,10 +123,10 @@ export default function EMRIntegrationPage() {
 
   async function handleSync(systemId: string) {
     setSyncing({ ...syncing, [systemId]: true });
-    
+
     // Simulate sync process
     await new Promise((resolve) => setTimeout(resolve, 2000));
-    
+
     setSystems((prev) =>
       prev.map((s) =>
         s.id === systemId
@@ -131,13 +135,16 @@ export default function EMRIntegrationPage() {
       )
     );
 
+    const nowIso = new Date().toISOString();
+    const nextSequence = syncHistory.length + 1;
+
     const newActivity: SyncActivity = {
-      id: `sync-${Date.now()}`,
+      id: `sync-${systemId}-${nextSequence}`,
       system: systems.find((s) => s.id === systemId)?.name || "Unknown",
       action: "Manual sync triggered",
       status: "success",
-      timestamp: new Date().toISOString(),
-      recordsProcessed: Math.floor(Math.random() * 50) + 10,
+      timestamp: nowIso,
+      recordsProcessed: ((nextSequence + systemId.length) % 50) + 10,
     };
 
     setSyncHistory([newActivity, ...syncHistory]);
@@ -181,7 +188,7 @@ export default function EMRIntegrationPage() {
         {/* EMR Systems Status */}
         <div className="mt-6">
           <h2 className="mb-3 text-lg font-semibold text-slate-900">EMR System Connections</h2>
-          
+
           <div className="space-y-3">
             {systems.map((system) => (
               <article
@@ -195,14 +202,14 @@ export default function EMRIntegrationPage() {
                       <StatusBadge
                         variant={
                           system.status === "connected" ? "success" :
-                          system.status === "syncing" ? "info" :
-                          system.status === "error" ? "error" :
-                          "warning"
+                            system.status === "syncing" ? "info" :
+                              system.status === "error" ? "error" :
+                                "warning"
                         }
                         label={system.status.toUpperCase()}
                       />
                     </div>
-                    
+
                     <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                       <div>
                         <p className="text-xs text-slate-500">Type</p>
@@ -223,7 +230,7 @@ export default function EMRIntegrationPage() {
                       <div>
                         <p className="text-xs text-slate-500">Last Sync</p>
                         <p className="mt-0.5 text-sm font-medium text-slate-700">
-                          {system.lastSync 
+                          {system.lastSync
                             ? new Date(system.lastSync).toLocaleTimeString()
                             : "Never"}
                         </p>
@@ -249,18 +256,17 @@ export default function EMRIntegrationPage() {
         {/* Recent Synchronization Activity */}
         <div className="mt-6">
           <h2 className="mb-3 text-lg font-semibold text-slate-900">Recent Synchronization Activity</h2>
-          
+
           <div className="space-y-2">
             {syncHistory.map((activity) => (
               <div
                 key={activity.id}
-                className={`rounded-xl border p-3 ${
-                  activity.status === "success" 
-                    ? "border-emerald-200 bg-emerald-50" 
+                className={`rounded-xl border p-3 ${activity.status === "success"
+                    ? "border-emerald-200 bg-emerald-50"
                     : activity.status === "failed"
-                    ? "border-rose-200 bg-rose-50"
-                    : "border-blue-200 bg-blue-50"
-                }`}
+                      ? "border-rose-200 bg-rose-50"
+                      : "border-blue-200 bg-blue-50"
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -269,8 +275,8 @@ export default function EMRIntegrationPage() {
                       <StatusBadge
                         variant={
                           activity.status === "success" ? "success" :
-                          activity.status === "failed" ? "error" :
-                          "info"
+                            activity.status === "failed" ? "error" :
+                              "info"
                         }
                         label={activity.status.toUpperCase()}
                       />
@@ -340,7 +346,7 @@ export default function EMRIntegrationPage() {
             <div>
               <h3 className="text-sm font-semibold text-amber-900">Integration Notes</h3>
               <p className="mt-1 text-sm text-amber-700">
-                EMR integrations run automatically every 15 minutes. Manual sync can be triggered for immediate data updates. 
+                EMR integrations run automatically every 15 minutes. Manual sync can be triggered for immediate data updates.
                 System errors are automatically logged and escalated to IT support.
               </p>
             </div>

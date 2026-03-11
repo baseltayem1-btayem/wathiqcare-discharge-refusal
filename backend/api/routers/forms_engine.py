@@ -37,6 +37,32 @@ EDIT_ROLES = (
     "compliance",
 )
 
+SIGN_ROLES = (
+    "tenant_admin",
+    "legal_admin",
+    "doctor",
+    "nursing",
+    "patient_affairs",
+    "compliance",
+)
+
+WITNESS_SIGN_ROLES = (
+    "tenant_admin",
+    "legal_admin",
+    "nursing",
+    "patient_affairs",
+    "compliance",
+)
+
+OTP_ROLES = (
+    "tenant_admin",
+    "legal_admin",
+    "doctor",
+    "nursing",
+    "patient_affairs",
+    "compliance",
+)
+
 
 class GenerateFormRequest(BaseModel):
     payload: Dict[str, Any] = Field(default_factory=dict)
@@ -153,7 +179,7 @@ def download_document(
 def sign_document(
     document_id: str,
     request: SignDocumentRequest,
-    current_user=Depends(require_roles(*EDIT_ROLES)),
+    current_user=Depends(require_roles(*SIGN_ROLES)),
 ):
     try:
         return service.sign_document(
@@ -172,7 +198,7 @@ def sign_document(
 def witness_sign_document(
     document_id: str,
     request: WitnessSignRequest,
-    current_user=Depends(require_roles(*EDIT_ROLES)),
+    current_user=Depends(require_roles(*WITNESS_SIGN_ROLES)),
 ):
     try:
         return service.witness_sign_document(
@@ -191,7 +217,7 @@ def witness_sign_document(
 def send_document_otp(
     document_id: str,
     request: SendOtpRequest,
-    current_user=Depends(require_roles(*EDIT_ROLES)),
+    current_user=Depends(require_roles(*OTP_ROLES)),
 ):
     try:
         return service.send_document_otp(
@@ -210,7 +236,7 @@ def send_document_otp(
 def verify_document_otp(
     document_id: str,
     request: VerifyOtpRequest,
-    current_user=Depends(require_roles(*EDIT_ROLES)),
+    current_user=Depends(require_roles(*OTP_ROLES)),
 ):
     try:
         return service.verify_document_otp(

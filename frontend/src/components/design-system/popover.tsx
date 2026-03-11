@@ -40,31 +40,34 @@ export function PopoverTrigger({ className, children, ...props }: React.Componen
   );
 }
 
-export function PopoverContent({ 
-  className, 
+export function PopoverContent({
+  className,
   align = "center",
   sideOffset = 8,
-  ...props 
-}: React.ComponentProps<"div"> & { 
+  ...props
+}: React.ComponentProps<"div"> & {
   align?: "start" | "center" | "end";
   sideOffset?: number;
 }) {
   const ctx = React.useContext(PopoverContext);
-  if (!ctx || !ctx.open) return null;
 
   React.useEffect(() => {
+    if (!ctx || !ctx.open) {
+      return;
+    }
+
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as HTMLElement;
       if (!target.closest("[data-popover]")) {
-        if (ctx) {
-          ctx.setOpen(false);
-        }
+        ctx?.setOpen(false);
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [ctx]);
+
+  if (!ctx || !ctx.open) return null;
 
   const alignClasses = {
     start: "left-0",

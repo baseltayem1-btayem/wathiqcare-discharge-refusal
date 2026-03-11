@@ -58,7 +58,7 @@ def create_discharge_refusal(
             tenant_id=tenant.id,
             patient_id=patient.id,
             created_by=user.id,
-            status="refused",
+            status="CASE_CREATED",
             refusal_reason=refusal_reason,
             signer_name=signer_name,
             signer_role=signer_role,
@@ -93,7 +93,10 @@ def create_discharge_refusal(
             entity_type="discharge_case",
             entity_id=discharge_case.id,
             action="create_discharge_refusal_with_signature",
-            details=f"Discharge refusal created for patient MRN {patient.mrn}; signed by {signer_name} ({signer_role}); PDF generated at {pdf_path}",
+            details=(
+                f"Case {discharge_case.id} created with lifecycle status CASE_CREATED for patient MRN {patient.mrn}; "
+                f"signed by {signer_name} ({signer_role}); PDF generated at {pdf_path}"
+            ),
             created_at=datetime.utcnow(),
         )
         db.add(audit_log)

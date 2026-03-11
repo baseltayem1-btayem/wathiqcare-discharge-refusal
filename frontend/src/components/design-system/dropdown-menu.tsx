@@ -41,27 +41,30 @@ export function DropdownMenuTrigger({ className, children, ...props }: React.Com
   );
 }
 
-export function DropdownMenuContent({ 
-  className, 
-  align = "end", 
-  ...props 
+export function DropdownMenuContent({
+  className,
+  align = "end",
+  ...props
 }: React.ComponentProps<"div"> & { align?: "start" | "end" }) {
   const ctx = React.useContext(DropdownMenuContext);
-  if (!ctx || !ctx.open) return null;
 
   React.useEffect(() => {
+    if (!ctx || !ctx.open) {
+      return;
+    }
+
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as HTMLElement;
       if (!target.closest("[data-dropdown-menu]")) {
-        if (ctx) {
-          ctx.setOpen(false);
-        }
+        ctx?.setOpen(false);
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [ctx]);
+
+  if (!ctx || !ctx.open) return null;
 
   return (
     <div
@@ -114,11 +117,11 @@ export function DropdownMenuLabel({ className, ...props }: React.ComponentProps<
   );
 }
 
-export function DropdownMenuCheckboxItem({ 
-  checked, 
-  className, 
-  children, 
-  ...props 
+export function DropdownMenuCheckboxItem({
+  checked,
+  className,
+  children,
+  ...props
 }: React.ComponentProps<"button"> & { checked?: boolean }) {
   return (
     <button

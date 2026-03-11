@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+import json
 from pathlib import Path
 import textwrap
 from typing import Any, Dict, List, Optional, Tuple
 
 from backend.core.database import SessionLocal
+from backend.forms.medical_legal_forms_library import get_form_template_metadata
 from backend.forms.workflow_templates import WORKFLOW_TEMPLATES
 from backend.models.audit_log import AuditLog
 from backend.models.discharge_case import DischargeCase
@@ -51,9 +53,24 @@ POLICY_CASE_STATUSES = {
     "escalated_compliance": "Escalated to Compliance",
     "escalated_legal": "Escalated to Legal",
     "under_review": "Under Review",
+    "signed_or_verified": "Signed or Verified",
+    "archived": "Archived",
     "closed_discharged": "Closed - Patient Discharged",
     "closed_admin_legal": "Closed - Administrative / Legal Action",
 }
+
+CANONICAL_CASE_LIFECYCLE = [
+    "CASE_CREATED",
+    "DISCHARGE_DECISION_RECORDED",
+    "REFUSAL_WORKFLOW_STARTED",
+    "COUNSELING_COMPLETED",
+    "SOCIAL_SERVICE_REFERRED",
+    "REFUSAL_FORM_GENERATED",
+    "FINANCIAL_NOTICE_GENERATED",
+    "SIGNED_OR_VERIFIED",
+    "LEGAL_ESCALATED",
+    "ARCHIVED",
+]
 
 WORKFLOW_FIELD_NAMES = {
     "patient_name",
@@ -103,6 +120,10 @@ POLICY_REQUIRED_CASE_DOCUMENTATION = [
 
 GENERATED_DOCS_DIR = Path("backend/generated/case_documents")
 GENERATED_DOCS_DIR.mkdir(parents=True, exist_ok=True)
+SIGNATURE_METADATA_DIR = Path("backend/generated/document_signature")
+SIGNATURE_METADATA_DIR.mkdir(parents=True, exist_ok=True)
+OTP_METADATA_DIR = Path("backend/generated/document_otp")
+OTP_METADATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @dataclass
@@ -193,6 +214,72 @@ def _normalize_text(value: Any) -> Optional[str]:
     return str(value)
 
 
+def _signature_metadata_path(document_id: str) -> Path:
+    return SIGNATURE_METADATA_DIR / f"{document_id}.json"
+
+
+def _otp_metadata_path(document_id: str) -> Path:
+    return OTP_METADATA_DIR / f"{document_id}.json"
+
+
+def _load_json(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        return {}
+
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _load_signature_metadata(document_id: str) -> Dict[str, Any]:
+    return _load_json(_signature_metadata_path(document_id))
+
+
+def _load_otp_metadata(document_id: str) -> Dict[str, Any]:
+    return _load_json(_otp_metadata_path(document_id))
+
+
+def _canonical_case_lifecycle_status(bundle: CaseBundle) -> str:
+    current = (bundle.discharge_case.status or "").strip().upper()
+    if current in CANONICAL_CASE_LIFECYCLE:
+        return current
+
+    workflow = bundle.workflow
+    documents = workflow.documents or []
+
+    if workflow.closed_at:
+        return "ARCHIVED"
+    if workflow.escalated_at:
+        return "LEGAL_ESCALATED"
+
+    for document in documents:
+        signature_meta = _load_signature_metadata(document.id)
+        otp_meta = _load_otp_metadata(document.id)
+        if signature_meta.get("archivedStatus"):
+            return "ARCHIVED"
+        if document.signed_at or signature_meta.get("otpVerified") or otp_meta.get("verified"):
+            return "SIGNED_OR_VERIFIED"
+
+    if workflow.financial_notice_generated_at:
+        return "FINANCIAL_NOTICE_GENERATED"
+    if workflow.refusal_form_generated_at:
+        return "REFUSAL_FORM_GENERATED"
+    if workflow.social_services_referred_at or workflow.support_and_intervention_at:
+        return "SOCIAL_SERVICE_REFERRED"
+    if workflow.initial_communication_at:
+        return "COUNSELING_COMPLETED"
+    if workflow.refusal_started_at:
+        return "REFUSAL_WORKFLOW_STARTED"
+    if workflow.discharge_decision_at:
+        return "DISCHARGE_DECISION_RECORDED"
+    return "CASE_CREATED"
+
+
+def _set_case_lifecycle_status(bundle: CaseBundle, lifecycle_status: str) -> None:
+    bundle.discharge_case.status = lifecycle_status
+
+
 def _apply_payload_to_workflow(workflow: DischargeRefusalWorkflow, payload: Dict[str, Any]) -> None:
     for key in WORKFLOW_FIELD_NAMES:
         if key in payload:
@@ -267,6 +354,10 @@ def _upsert_workflow(
         )
         db.add(workflow)
         db.flush()
+
+    normalized_case_status = (discharge_case.status or "").strip().upper()
+    if normalized_case_status not in CANONICAL_CASE_LIFECYCLE:
+        discharge_case.status = "CASE_CREATED"
 
     if payload:
         _apply_payload_to_workflow(workflow, payload)
@@ -380,9 +471,22 @@ def _stage_timestamps(workflow: DischargeRefusalWorkflow) -> Dict[str, Optional[
 
 def _serialize_document(document: DischargeWorkflowDocument) -> Dict[str, Any]:
     preview_route = f"/api/discharge/documents/{document.id}/view"
+    view_route = preview_route
     download_route = f"/api/discharge/documents/{document.id}/download"
-    generation_status = "generated"
+    signature_meta = _load_signature_metadata(document.id)
+    otp_meta = _load_otp_metadata(document.id)
+    template_meta = get_form_template_metadata(document.template_key)
+    archived_status = bool(signature_meta.get("archivedStatus", False))
     signed_status = bool(document.signed_at)
+    verified_status = bool(signature_meta.get("otpVerified") or otp_meta.get("verified"))
+
+    generation_status = "generated"
+    if archived_status:
+        generation_status = "archived"
+    elif signed_status:
+        generation_status = "signed"
+    elif verified_status:
+        generation_status = "verified"
 
     return {
         "document_id": document.id,
@@ -398,12 +502,19 @@ def _serialize_document(document: DischargeWorkflowDocument) -> Dict[str, Any]:
         "title": document.title,
         "file_name": document.file_name,
         "fileName": document.file_name,
+        "view_route": view_route,
+        "viewRoute": view_route,
         "generation_status": generation_status,
         "generationStatus": generation_status,
+        "status": generation_status,
+        "documentStatus": generation_status,
         "locale": document.locale,
         "templateVersion": document.template_version,
         "template_version": document.template_version,
         "locked_template": document.locked_template,
+        "templateMarker": str(template_meta["template_marker"]),
+        "templateSource": str(template_meta["source"]),
+        "canonicalTemplateKey": str(template_meta["key"]),
         "preview_route": preview_route,
         "previewRoute": preview_route,
         "download_route": download_route,
@@ -411,15 +522,24 @@ def _serialize_document(document: DischargeWorkflowDocument) -> Dict[str, Any]:
         "attachment_group": document.attachment_group,
         "signed_at": _iso(document.signed_at),
         "signedStatus": signed_status,
+        "verifiedStatus": verified_status,
         "signed_by": document.signed_by,
-        "archivedStatus": False,
+        "archivedStatus": archived_status,
+        "archivedAt": signature_meta.get("archivedAt"),
+        "archivedBy": signature_meta.get("archivedBy"),
         "filePath": document.file_path,
         "generated_at": _iso(document.generated_at),
         "createdAt": _iso(document.generated_at),
         "createdBy": document.generated_by,
         "view_url": preview_route,
         "download_url": download_route,
+        "signatureMetadata": signature_meta,
+        "otpMetadata": otp_meta,
     }
+
+
+def serialize_document_record(document: DischargeWorkflowDocument) -> Dict[str, Any]:
+    return _serialize_document(document)
 
 
 def _documentation_values(bundle: CaseBundle, context: Optional[Dict[str, str]] = None) -> Dict[str, str]:
@@ -541,12 +661,14 @@ def _serialize_workflow(bundle: CaseBundle) -> Dict[str, Any]:
 
     documents = [_serialize_document(item) for item in workflow.documents]
     policy_validation = _build_policy_validation(bundle)
+    lifecycle_status = _canonical_case_lifecycle_status(bundle)
 
     return {
         "id": workflow.id,
         "case_id": workflow.case_id,
         "workflow_type": workflow.workflow_type,
         "status": workflow.status,
+        "lifecycle_status": lifecycle_status,
         "current_stage": current_stage,
         "current_stage_label": STAGE_LABELS.get(current_stage, current_stage),
         "escalation_required": escalation_required,
@@ -561,6 +683,7 @@ def _serialize_workflow(bundle: CaseBundle) -> Dict[str, Any]:
         "escalated_at": _iso(workflow.escalated_at),
         "closed_at": _iso(workflow.closed_at),
         "case_status": workflow.case_status,
+        "case_record_status": bundle.discharge_case.status,
         "patient_name": workflow.patient_name,
         "patient_id": workflow.patient_id,
         "mrn": workflow.mrn,
@@ -863,6 +986,7 @@ def _generate_document(
         )
 
     html_content = template.renderer(context)
+    template_meta = get_form_template_metadata(template_key)
 
     file_name, file_path = _write_document_file(bundle.discharge_case.id, template_key, html_content)
     pdf_result = _write_document_pdf(bundle.discharge_case.id, template_key, html_content)
@@ -881,8 +1005,8 @@ def _generate_document(
         file_path=file_path,
         html_content=html_content,
         locale=str((payload or {}).get("locale") or "en"),
-        template_version="1.0",
-        locked_template=True,
+        template_version=str(template_meta["version"]),
+        locked_template=bool(template_meta["locked_template"]),
         attachment_group=bundle.discharge_case.id,
         generated_at=_utc_now(),
     )
@@ -928,9 +1052,37 @@ def run_workflow_action(
 
         generated_document: Optional[Dict[str, Any]] = None
 
+        def _latest_generated_document(template_key: str) -> Optional[Dict[str, Any]]:
+            matched = [
+                item
+                for item in (workflow.documents or [])
+                if item.template_key == template_key
+            ]
+            if not matched:
+                return None
+            latest = max(matched, key=lambda item: item.generated_at or datetime.min)
+            return _serialize_document(latest)
+
         def _require_started_refusal() -> None:
             if not workflow.refusal_started_at:
                 raise ValueError("Start refusal workflow before this action")
+
+        def _require_open_case() -> None:
+            if workflow.closed_at or workflow.status == "closed" or workflow.current_stage == "closed":
+                raise ValueError("Case is already closed")
+
+        if action not in {"record_compliance_review", "record_legal_review", "close_under_review", "mark_patient_accepted_discharge"}:
+            _require_open_case()
+
+        if action in {
+            "record_discharge_decision",
+            "start_refusal_workflow",
+            "mark_patient_counseled",
+            "refer_social_services",
+            "generate_refusal_form",
+            "generate_financial_notice",
+        } and workflow.escalated_at:
+            raise ValueError("Case is already escalated; continue with review or closure actions")
 
         if action == "record_discharge_decision":
             parsed_decision_at = _parse_datetime(payload.get("discharge_decision_at"))
@@ -953,6 +1105,7 @@ def run_workflow_action(
             workflow.responsible_department = "Attending Physician"
             workflow.responsible_person = attending_physician
             workflow.next_action = "If discharge is refused, start refusal workflow."
+            _set_case_lifecycle_status(bundle, "DISCHARGE_DECISION_RECORDED")
 
             case_documentation.decision_recorded_at = decision_at
 
@@ -976,6 +1129,7 @@ def run_workflow_action(
             workflow.responsible_department = "Nursing"
             workflow.responsible_person = actor_name
             workflow.next_action = "Document communication and counseling details."
+            _set_case_lifecycle_status(bundle, "REFUSAL_WORKFLOW_STARTED")
 
             _log_audit(
                 db,
@@ -995,6 +1149,7 @@ def run_workflow_action(
             workflow.responsible_department = "Patient Affairs"
             workflow.responsible_person = actor_name
             workflow.next_action = "Coordinate support and social intervention."
+            _set_case_lifecycle_status(bundle, "COUNSELING_COMPLETED")
 
             _log_audit(
                 db,
@@ -1018,6 +1173,7 @@ def run_workflow_action(
             workflow.responsible_department = "Patient Affairs / Social Services"
             workflow.responsible_person = actor_name
             workflow.next_action = "Issue required policy forms and notices."
+            _set_case_lifecycle_status(bundle, "SOCIAL_SERVICE_REFERRED")
 
             _log_audit(
                 db,
@@ -1032,6 +1188,21 @@ def run_workflow_action(
             _require_started_refusal()
             if not workflow.support_and_intervention_at:
                 raise ValueError("Complete support and intervention before generating refusal form")
+
+            existing_refusal = _latest_generated_document("discharge_refusal_form")
+            if existing_refusal:
+                generated_document = existing_refusal
+                _sync_case_documentation(bundle)
+                workflow.updated_at = now
+                _set_case_lifecycle_status(bundle, "REFUSAL_FORM_GENERATED")
+                db.flush()
+                db.refresh(workflow)
+                db.commit()
+                snapshot = _serialize_workflow(bundle)
+                return {
+                    "workflow": snapshot,
+                    "generated_document": generated_document,
+                }
 
             generation_result = _generate_document(
                 db,
@@ -1063,6 +1234,7 @@ def run_workflow_action(
             workflow.responsible_department = "Nursing / Patient Affairs"
             workflow.responsible_person = actor_name
             workflow.next_action = "Generate and communicate financial responsibility notice."
+            _set_case_lifecycle_status(bundle, "REFUSAL_FORM_GENERATED")
 
             _log_audit(
                 db,
@@ -1070,13 +1242,32 @@ def run_workflow_action(
                 user_id=current_user["id"],
                 case_id=case_id,
                 action="generate_refusal_form",
-                details="Medical Discharge Refusal Form generated (IMC-PAT-DIS-REF-01).",
+                details=(
+                    f"Medical Discharge Refusal Form generated (IMC-PAT-DIS-REF-01) "
+                    f"for case {case_id} using canonical template version {generated_document.get('templateVersion', '1.0')} "
+                    f"document {generated_document.get('id')}"
+                ),
             )
 
         elif action == "generate_financial_notice":
             _require_started_refusal()
             if not workflow.refusal_form_generated_at:
                 raise ValueError("Generate refusal form before issuing official financial notice")
+
+            existing_financial_notice = _latest_generated_document("financial_responsibility_notice")
+            if existing_financial_notice:
+                generated_document = existing_financial_notice
+                _sync_case_documentation(bundle)
+                workflow.updated_at = now
+                _set_case_lifecycle_status(bundle, "FINANCIAL_NOTICE_GENERATED")
+                db.flush()
+                db.refresh(workflow)
+                db.commit()
+                snapshot = _serialize_workflow(bundle)
+                return {
+                    "workflow": snapshot,
+                    "generated_document": generated_document,
+                }
 
             generation_result = _generate_document(
                 db,
@@ -1095,6 +1286,7 @@ def run_workflow_action(
             workflow.responsible_department = "Patient Affairs"
             workflow.responsible_person = actor_name
             workflow.next_action = "Escalate to Legal / Compliance if refusal persists beyond 24h."
+            _set_case_lifecycle_status(bundle, "FINANCIAL_NOTICE_GENERATED")
 
             _log_audit(
                 db,
@@ -1102,7 +1294,11 @@ def run_workflow_action(
                 user_id=current_user["id"],
                 case_id=case_id,
                 action="generate_financial_notice",
-                details="Financial responsibility notification generated.",
+                details=(
+                    f"Financial responsibility notification generated for case {case_id} "
+                    f"using canonical template version {generated_document.get('templateVersion', '1.0')} "
+                    f"document {generated_document.get('id')}"
+                ),
             )
 
         elif action == "escalate_legal_compliance":
@@ -1119,6 +1315,7 @@ def run_workflow_action(
             workflow.responsible_department = "Legal / Compliance"
             workflow.responsible_person = actor_name
             workflow.next_action = "Legal and compliance follow-up is in progress."
+            _set_case_lifecycle_status(bundle, "LEGAL_ESCALATED")
 
             _log_audit(
                 db,
@@ -1179,6 +1376,7 @@ def run_workflow_action(
             workflow.responsible_department = "Attending Physician"
             workflow.responsible_person = actor_name
             workflow.next_action = "Case closed as patient discharged."
+            _set_case_lifecycle_status(bundle, "ARCHIVED")
 
             _log_audit(
                 db,
@@ -1197,6 +1395,7 @@ def run_workflow_action(
             workflow.responsible_department = "Legal / Compliance"
             workflow.responsible_person = actor_name
             workflow.next_action = "Case closed after review."
+            _set_case_lifecycle_status(bundle, "ARCHIVED")
 
             _log_audit(
                 db,
@@ -1265,9 +1464,11 @@ def generate_document_record(
         if template_key == "discharge_refusal_form":
             bundle.workflow.refusal_form_generated_at = now
             bundle.workflow.current_stage = "official_notification"
+            _set_case_lifecycle_status(bundle, "REFUSAL_FORM_GENERATED")
         elif template_key == "financial_responsibility_notice":
             bundle.workflow.financial_notice_generated_at = now
             bundle.workflow.current_stage = "escalation"
+            _set_case_lifecycle_status(bundle, "FINANCIAL_NOTICE_GENERATED")
 
         bundle.workflow.updated_at = now
         _log_audit(

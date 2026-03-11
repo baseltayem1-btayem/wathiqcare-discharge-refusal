@@ -21,11 +21,22 @@ def list_discharge_cases_for_tenant(tenant_id: str):
 
         results = []
         for case, patient in rows:
+            workflow = (
+                db.query(DischargeRefusalWorkflow)
+                .filter(
+                    DischargeRefusalWorkflow.tenant_id == tenant_id,
+                    DischargeRefusalWorkflow.case_id == case.id,
+                )
+                .first()
+            )
             results.append({
                 "id": case.id,
                 "patient_mrn": patient.mrn,
                 "patient_name": patient.full_name,
                 "status": case.status,
+                "current_stage": workflow.current_stage if workflow else None,
+                "workflow_status": workflow.status if workflow else None,
+                "case_status": workflow.case_status if workflow else None,
                 "refusal_reason": case.refusal_reason,
                 "signer_name": case.signer_name,
                 "signer_role": case.signer_role,
@@ -98,6 +109,9 @@ def get_discharge_case_detail(tenant_id: str, case_id: str):
             "patient_mrn": patient.mrn,
             "patient_name": patient.full_name,
             "status": case.status,
+            "current_stage": workflow.current_stage if workflow else None,
+            "workflow_status": workflow.status if workflow else None,
+            "case_status": workflow.case_status if workflow else None,
             "refusal_reason": case.refusal_reason,
             "signer_name": case.signer_name,
             "signer_role": case.signer_role,
@@ -215,6 +229,113 @@ def get_refusal_quality_metrics(tenant_id: str):
             "cases_by_department": departments,
             "monthly_review_reports": monthly_reviews,
             "quarterly_reports": quarterly_reviews,
+        }
+    finally:
+        db.close()
+
+
+def get_compliance_dashboard_data(tenant_id: str):
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(DischargeCase, Patient, DischargeRefusalWorkflow)
+            .join(Patient, Patient.id == DischargeCase.patient_id)
+            .outerjoin(DischargeRefusalWorkflow, DischargeRefusalWorkflow.case_id == DischargeCase.id)
+            .filter(DischargeCase.tenant_id == tenant_id)
+            .order_by(DischargeCase.created_at.desc())
+            .all()
+        )
+
+        total = len(rows)
+        cbahi_rows = []
+        jci_rows = []
+        missing_consent_rows = []
+        pdpl_log_indicators = 0
+
+        for case, patient, workflow in rows:
+            has_attending = bool((workflow.attending_physician if workflow else None) or "")
+            has_cbahi = bool(patient.full_name and patient.mrn and has_attending)
+            if has_cbahi:
+                cbahi_rows.append(
+                    {
+                        "id": case.id,
+                        "caseNumber": case.id,
+                        "patientName": patient.full_name,
+                        "status": "Compliant",
+                    }
+                )
+
+            has_signed_consent = bool(
+                (workflow and workflow.refusal_form_signed)
+                or case.signed_at
+                or (workflow and any(item.signed_at for item in workflow.documents))
+            )
+            signer_name = case.signer_name or ""
+            if has_signed_consent and signer_name:
+                jci_rows.append(
+                    {
+                        "id": case.id,
+                        "caseNumber": case.id,
+                        "patientName": patient.full_name,
+                        "signer": signer_name,
+                        "status": "Compliant",
+                    }
+                )
+            else:
+                missing_consent_rows.append(
+                    {
+                        "id": case.id,
+                        "caseNumber": case.id,
+                        "patientName": patient.full_name,
+                        "status": "Missing Consent Signature",
+                    }
+                )
+
+            has_pdpl_log = (
+                db.query(AuditLog.id)
+                .filter(
+                    AuditLog.tenant_id == tenant_id,
+                    AuditLog.entity_type == "discharge_case",
+                    AuditLog.entity_id == case.id,
+                    AuditLog.action.in_(
+                        [
+                            "document_signed",
+                            "document_witness_signed",
+                            "document_otp_sent",
+                            "document_otp_verified",
+                            "record_discharge_decision",
+                            "escalate_legal_compliance",
+                            "record_legal_review",
+                            "record_compliance_review",
+                        ]
+                    ),
+                )
+                .first()
+                is not None
+            )
+            if has_pdpl_log:
+                pdpl_log_indicators += 1
+
+        cbahi_rate = round((len(cbahi_rows) / total) * 100) if total > 0 else 0
+        jci_rate = round((len(jci_rows) / total) * 100) if total > 0 else 0
+
+        return {
+            "totals": {
+                "cases": total,
+                "cbahiCompliant": len(cbahi_rows),
+                "jciCompliant": len(jci_rows),
+                "pdplLogIndicators": pdpl_log_indicators,
+                "missingConsents": len(missing_consent_rows),
+            },
+            "rates": {
+                "cbahi": cbahi_rate,
+                "jci": jci_rate,
+            },
+            "tables": {
+                "cbahi": cbahi_rows[:12],
+                "jci": jci_rows[:12],
+                "missingConsents": missing_consent_rows[:12],
+            },
         }
     finally:
         db.close()

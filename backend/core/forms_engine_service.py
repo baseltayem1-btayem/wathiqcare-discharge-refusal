@@ -12,9 +12,15 @@ from backend.core.discharge_workflow_service import (
     generate_document_record,
     get_document_record,
     list_case_documents,
+    POLICY_CASE_STATUSES,
+    run_workflow_action,
+    serialize_document_record,
 )
+from backend.forms.medical_legal_forms_library import FORMS_LIBRARY, get_form_template_metadata
 from backend.forms.workflow_templates import WORKFLOW_TEMPLATES
 from backend.models.audit_log import AuditLog
+from backend.models.discharge_case import DischargeCase
+from backend.models.discharge_workflow import DischargeRefusalWorkflow
 from backend.models.workflow_document import DischargeWorkflowDocument
 from backend.signature.providers.sms_otp_provider import SmsOtpProvider
 
@@ -110,6 +116,21 @@ def _normalize_form_type(form_type: str) -> str:
     return key
 
 
+def _template_contract(form_type: str) -> FormTemplateContract:
+    template = FORM_TEMPLATES[form_type]
+    if form_type in FORMS_LIBRARY:
+        canonical = get_form_template_metadata(form_type)
+        return FormTemplateContract(
+            form_type=form_type,
+            title_ar=template.title_ar,
+            title_en=str(canonical["title"]),
+            template_version=str(canonical["version"]),
+            owner_department=template.owner_department,
+            status=template.status,
+        )
+    return template
+
+
 def _render_locked_content(template_key: str) -> str:
     template = WORKFLOW_TEMPLATES.get(template_key)
     if not template:
@@ -143,27 +164,48 @@ def _write_audit(
 
 def _serialize_generated_document(document: DischargeWorkflowDocument) -> Dict[str, Any]:
     signature_meta = _load_json(_signature_path(document.id))
-    return {
-        "id": document.id,
-        "documentId": document.id,
-        "caseId": document.case_id,
-        "formTemplateId": document.template_key,
-        "formType": document.template_key,
-        "templateVersion": document.template_version or "1.0",
-        "generationStatus": "signed" if document.signed_at else "generated",
-        "previewHtml": document.html_content,
-        "pdfFilePath": document.file_path,
-        "previewRoute": f"/api/documents/{document.id}/preview",
-        "viewRoute": f"/api/documents/{document.id}/view",
-        "downloadRoute": f"/api/documents/{document.id}/download",
-        "signedStatus": bool(document.signed_at),
-        "archivedStatus": bool(signature_meta.get("archivedStatus", False)),
-        "createdBy": document.generated_by,
-        "createdAt": _iso(document.generated_at),
-        "signedAt": _iso(document.signed_at),
-        "signedBy": document.signed_by,
-        "signatureMetadata": signature_meta,
-    }
+    payload = serialize_document_record(document)
+    payload.update(
+        {
+            "formTemplateId": document.template_key,
+            "previewHtml": document.html_content,
+            "pdfFilePath": document.file_path,
+            "previewRoute": f"/api/documents/{document.id}/preview",
+            "viewRoute": f"/api/documents/{document.id}/view",
+            "downloadRoute": f"/api/documents/{document.id}/download",
+            "signatureMetadata": signature_meta,
+            "signedAt": _iso(document.signed_at),
+            "signedBy": document.signed_by,
+        }
+    )
+    return payload
+
+
+def _sync_case_lifecycle_after_document_event(
+    db,
+    *,
+    document: DischargeWorkflowDocument,
+    lifecycle_status: str,
+    workflow_case_status: str,
+) -> None:
+    workflow = (
+        db.query(DischargeRefusalWorkflow)
+        .filter(DischargeRefusalWorkflow.id == document.workflow_id)
+        .first()
+    )
+    if workflow:
+        workflow.case_status = workflow_case_status
+        workflow.updated_at = _now()
+        if document.template_key == "discharge_refusal_form" and lifecycle_status == "SIGNED_OR_VERIFIED":
+            workflow.refusal_form_signed = True
+
+    discharge_case = (
+        db.query(DischargeCase)
+        .filter(DischargeCase.id == document.case_id)
+        .first()
+    )
+    if discharge_case and discharge_case.status not in {"LEGAL_ESCALATED", "ARCHIVED"}:
+        discharge_case.status = lifecycle_status
 
 
 class FormsEngineService:
@@ -172,7 +214,8 @@ class FormsEngineService:
 
     def list_templates(self) -> Dict[str, Any]:
         templates: List[Dict[str, Any]] = []
-        for form_type, template in FORM_TEMPLATES.items():
+        for form_type in FORM_TEMPLATES:
+            template = _template_contract(form_type)
             templates.append(
                 {
                     "formType": form_type,
@@ -189,7 +232,7 @@ class FormsEngineService:
 
     def get_template(self, *, form_type: str) -> Dict[str, Any]:
         key = _normalize_form_type(form_type)
-        template = FORM_TEMPLATES[key]
+        template = _template_contract(key)
         return {
             "formType": key,
             "titleAr": template.title_ar,
@@ -210,13 +253,26 @@ class FormsEngineService:
         current_user: Dict[str, Any],
     ) -> Dict[str, Any]:
         key = _normalize_form_type(form_type)
-        result = generate_document_record(
-            tenant_id=tenant_id,
-            case_id=case_id,
-            template_key=key,
-            payload=payload,
-            current_user=current_user,
-        )
+        if key in {"discharge_refusal_form", "financial_responsibility_notice"}:
+            action = {
+                "discharge_refusal_form": "generate_refusal_form",
+                "financial_responsibility_notice": "generate_financial_notice",
+            }[key]
+            result = run_workflow_action(
+                tenant_id=tenant_id,
+                case_id=case_id,
+                action=action,
+                payload=payload,
+                current_user=current_user,
+            )
+        else:
+            result = generate_document_record(
+                tenant_id=tenant_id,
+                case_id=case_id,
+                template_key=key,
+                payload=payload,
+                current_user=current_user,
+            )
 
         document_payload = result.get("generated_document") or {}
         document_id = str(document_payload.get("id") or "")
@@ -224,22 +280,23 @@ class FormsEngineService:
             raise ValueError("Document generation did not return a document id")
 
         document = get_document_record(tenant_id=tenant_id, document_id=document_id)
-        db = SessionLocal()
-        try:
-            _write_audit(
-                db,
-                tenant_id=tenant_id,
-                user_id=current_user["id"],
-                case_id=case_id,
-                action="document_generated",
-                details=f"Generated {key} document {document_id}",
-            )
-            db.commit()
-        except Exception:
-            db.rollback()
-            raise
-        finally:
-            db.close()
+        if key not in {"discharge_refusal_form", "financial_responsibility_notice"}:
+            db = SessionLocal()
+            try:
+                _write_audit(
+                    db,
+                    tenant_id=tenant_id,
+                    user_id=current_user["id"],
+                    case_id=case_id,
+                    action="document_generated",
+                    details=f"Generated {key} document {document_id}",
+                )
+                db.commit()
+            except Exception:
+                db.rollback()
+                raise
+            finally:
+                db.close()
 
         return {"document": _serialize_generated_document(document)}
 
@@ -282,17 +339,29 @@ class FormsEngineService:
             signature_payload.update(
                 {
                     "documentId": document_id,
+                    "signatureMethod": str(payload.get("signatureMethod") or "tablet_signature"),
                     "patientSignature": {
                         "signerName": str(payload.get("signerName") or payload.get("patientName") or ""),
                         "signerRole": str(payload.get("signerRole") or payload.get("signerRelation") or "patient"),
                         "signature": str(payload.get("signature") or payload.get("signatureData") or "captured"),
                         "signedAt": _iso(signed_at),
                     },
+                    "capturedBy": {
+                        "userId": current_user["id"],
+                        "userRole": current_user.get("role"),
+                        "capturedAt": _iso(signed_at),
+                    },
                     "otpVerified": bool(payload.get("otpVerified", False)),
                     "updatedAt": _iso(_now()),
                 }
             )
             _write_json(_signature_path(document_id), signature_payload)
+            _sync_case_lifecycle_after_document_event(
+                db,
+                document=document,
+                lifecycle_status="SIGNED_OR_VERIFIED",
+                workflow_case_status=POLICY_CASE_STATUSES["signed_or_verified"],
+            )
 
             _write_audit(
                 db,
@@ -300,7 +369,7 @@ class FormsEngineService:
                 user_id=current_user["id"],
                 case_id=document.case_id,
                 action="document_signed",
-                details=f"Patient/legal signature captured for document {document_id}",
+                details=f"Patient/legal signature captured for document {document_id} ({document.template_key})",
             )
             db.commit()
             db.refresh(document)
@@ -340,6 +409,10 @@ class FormsEngineService:
                     "witnessRole": str(payload.get("witnessRole") or "staff"),
                     "signature": str(payload.get("signature") or payload.get("signatureData") or "captured"),
                     "signedAt": _iso(_now()),
+                    "capturedBy": {
+                        "userId": current_user["id"],
+                        "userRole": current_user.get("role"),
+                    },
                 }
             )
             signature_payload["witnessSignatures"] = witnesses
@@ -349,6 +422,12 @@ class FormsEngineService:
             if len(witnesses) >= 2 and not document.signed_at:
                 document.signed_at = _now()
                 document.signed_by = current_user["id"]
+                _sync_case_lifecycle_after_document_event(
+                    db,
+                    document=document,
+                    lifecycle_status="SIGNED_OR_VERIFIED",
+                    workflow_case_status=POLICY_CASE_STATUSES["signed_or_verified"],
+                )
 
             _write_audit(
                 db,
@@ -356,7 +435,7 @@ class FormsEngineService:
                 user_id=current_user["id"],
                 case_id=document.case_id,
                 action="document_witness_signed",
-                details=f"Witness signature captured for document {document_id}",
+                details=f"Witness signature captured for document {document_id} ({document.template_key})",
             )
             db.commit()
             db.refresh(document)
@@ -406,6 +485,10 @@ class FormsEngineService:
                 "stubMode": dispatch.stub_mode,
                 "maskedPhone": self.sms_provider.mask_phone_number(phone_number),
                 "sentAt": dispatch.otp_sent_at,
+                "sentBy": {
+                    "userId": current_user["id"],
+                    "userRole": current_user.get("role"),
+                },
                 "otpCodeHash": self.sms_provider.hash_code(dispatch.otp_debug_code or ""),
                 "otpDebugCode": dispatch.otp_debug_code,
                 "verified": False,
@@ -418,7 +501,7 @@ class FormsEngineService:
                 user_id=current_user["id"],
                 case_id=document.case_id,
                 action="document_otp_sent",
-                details=f"OTP sent for document {document_id} challenge {dispatch.challenge_id}",
+                details=f"OTP sent for document {document_id} ({document.template_key}) challenge {dispatch.challenge_id}",
             )
             db.commit()
             return {
@@ -476,9 +559,21 @@ class FormsEngineService:
             signature_payload["otpVerification"] = {
                 "challengeId": otp_state.get("challengeId"),
                 "verifiedAt": otp_state.get("verifiedAt"),
+                "verifiedBy": {
+                    "userId": current_user["id"],
+                    "userRole": current_user.get("role"),
+                },
             }
             signature_payload["updatedAt"] = _iso(_now())
             _write_json(_signature_path(document_id), signature_payload)
+
+            if verified:
+                _sync_case_lifecycle_after_document_event(
+                    db,
+                    document=document,
+                    lifecycle_status="SIGNED_OR_VERIFIED",
+                    workflow_case_status=POLICY_CASE_STATUSES["signed_or_verified"],
+                )
 
             _write_audit(
                 db,
@@ -486,7 +581,7 @@ class FormsEngineService:
                 user_id=current_user["id"],
                 case_id=document.case_id,
                 action="document_otp_verified" if verified else "document_otp_verification_failed",
-                details=f"OTP verification for document {document_id}: {verified}",
+                details=f"OTP verification for document {document_id} ({document.template_key}): {verified}",
             )
             db.commit()
             return {

@@ -1,20 +1,46 @@
 import { apiFetch } from "@/utils/api";
 import type { RefusalForm, SignatureData, RefusalFormStatus } from "@/types/refusal-forms";
 
+type CaseRow = {
+  id: string;
+  caseNumber?: string;
+  patientName?: string;
+};
+
+type WorkflowDocument = {
+  id?: string;
+  documentType?: string;
+  generatedAt?: string;
+  createdAt?: string;
+};
+
+type WorkflowSnapshot = {
+  documents?: WorkflowDocument[];
+  escalatedAt?: string;
+  status?: string;
+  patientSignedAt?: string;
+  patientName?: string;
+  patientIdNumber?: string;
+  medicalRecordNumber?: string;
+  witness1Name?: string;
+  attendingPhysicianName?: string;
+  refusalReason?: string;
+};
+
 class RefusalFormsService {
   /**
    * Get all refusal forms
    */
   async listForms(): Promise<RefusalForm[]> {
     try {
-      const cases = await apiFetch<any[]>("/api/cases?limit=200");
+      const cases = await apiFetch<CaseRow[]>("/api/cases?limit=200");
 
       const forms: RefusalForm[] = [];
 
       for (const caseData of cases) {
         // Get workflow documents for each case
         try {
-          const workflow = await apiFetch<any>(
+          const workflow = await apiFetch<WorkflowSnapshot>(
             `/api/discharge/cases/${encodeURIComponent(caseData.id)}/workflow`
           );
 
@@ -26,7 +52,7 @@ class RefusalFormsService {
               }
             }
           }
-        } catch (error) {
+        } catch {
           // Case might not have workflow yet, skip
           continue;
         }
@@ -43,13 +69,9 @@ class RefusalFormsService {
    * Get a single form by ID
    */
   async getForm(formId: string): Promise<RefusalForm | null> {
-    try {
-      // TODO: Implement when backend endpoint is available
-      return null;
-    } catch (error) {
-      console.error("Failed to fetch form:", error);
-      return null;
-    }
+    void formId;
+    // TODO: Implement when backend endpoint is available
+    return null;
   }
 
   /**
@@ -85,11 +107,11 @@ class RefusalFormsService {
   /**
    * Transform backend document to refusal form
    */
-  private transformToForm(doc: any, caseData: any, workflow: any): RefusalForm {
+  private transformToForm(doc: WorkflowDocument, caseData: CaseRow, workflow: WorkflowSnapshot): RefusalForm {
     const status = this.determineStatus(doc, workflow);
 
     return {
-      id: doc.id,
+      id: doc.id || `${caseData.id}-document`,
       caseId: caseData.id,
       caseNumber: caseData.caseNumber || caseData.id,
       patientName: workflow.patientName || caseData.patientName || "Unknown",
@@ -109,7 +131,8 @@ class RefusalFormsService {
     };
   }
 
-  private determineStatus(doc: any, workflow: any): RefusalFormStatus {
+  private determineStatus(doc: WorkflowDocument, workflow: WorkflowSnapshot): RefusalFormStatus {
+    void doc;
     if (workflow.escalatedAt || workflow.status === "escalated") {
       return "escalated";
     }

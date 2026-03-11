@@ -12,6 +12,13 @@ type BackendWorkflowDocument = {
   title: string;
   file_name: string;
   generated_at?: string | null;
+  templateVersion?: string | null;
+  generationStatus?: string | null;
+  signedStatus?: boolean;
+  archivedStatus?: boolean;
+  createdBy?: string | null;
+  signedBy?: string | null;
+  signedAt?: string | null;
 };
 
 type BackendCaseDocumentResponse = {
@@ -31,6 +38,14 @@ type BackendCaseDocumentResponse = {
   fileName?: string;
   generated_at?: string | null;
   generatedAt?: string | null;
+  templateVersion?: string | null;
+  generationStatus?: string | null;
+  status?: string | null;
+  signedStatus?: boolean;
+  archivedStatus?: boolean;
+  createdBy?: string | null;
+  signedBy?: string | null;
+  signedAt?: string | null;
 };
 
 type BackendWorkflowResponse = {
@@ -58,6 +73,8 @@ type BackendWorkflowResponse = {
   social_administrative_interventions?: string | null;
   insurance_coverage_status?: string | null;
   escalation_required?: boolean;
+  lifecycle_status?: string;
+  case_status?: string;
   documents?: BackendWorkflowDocument[];
 };
 
@@ -102,6 +119,12 @@ function normalizeStage(input: string | undefined): DischargeRefusalWorkflow["cu
 }
 
 function mapBackendDocument(document: BackendWorkflowDocument, caseId: string): CaseDocument {
+  const status = document.archivedStatus
+    ? "archived"
+    : document.signedStatus || document.generationStatus === "signed" || document.generationStatus === "verified"
+      ? "signed"
+      : "generated";
+
   return {
     id: document.id,
     caseId,
@@ -114,17 +137,17 @@ function mapBackendDocument(document: BackendWorkflowDocument, caseId: string): 
     titleEn: document.title,
     titleAr: null,
     templateKey: document.template_key,
-    version: "1.0",
+    version: document.templateVersion || "1.0",
     fileName: document.file_name,
     mimeType: "text/html",
     storagePath: null,
     previewHtml: null,
     payloadJson: {},
-    status: "generated",
-    generatedBy: "system",
+    status,
+    generatedBy: document.createdBy || "system",
     generatedAt: document.generated_at || new Date().toISOString(),
-    signedBy: null,
-    signedAt: null,
+    signedBy: document.signedBy || null,
+    signedAt: document.signedAt || null,
   };
 }
 
@@ -134,6 +157,11 @@ function mapCaseDocumentResponse(document: BackendCaseDocumentResponse, caseId: 
   const title = document.title || document.titleEn || templateKey;
   const fileName = document.file_name || document.fileName || `${templateKey}.html`;
   const generatedAt = document.generated_at || document.generatedAt || new Date().toISOString();
+  const status = document.archivedStatus
+    ? "archived"
+    : document.signedStatus || document.generationStatus === "signed" || document.generationStatus === "verified"
+      ? "signed"
+      : "generated";
 
   return {
     id,
@@ -147,17 +175,17 @@ function mapCaseDocumentResponse(document: BackendCaseDocumentResponse, caseId: 
     titleEn: title,
     titleAr: null,
     templateKey,
-    version: "1.0",
+    version: document.templateVersion || "1.0",
     fileName,
     mimeType: "text/html",
     storagePath: null,
     previewHtml: null,
     payloadJson: {},
-    status: "generated",
-    generatedBy: "system",
+    status,
+    generatedBy: document.createdBy || "system",
     generatedAt,
-    signedBy: null,
-    signedAt: null,
+    signedBy: document.signedBy || null,
+    signedAt: document.signedAt || null,
   };
 }
 

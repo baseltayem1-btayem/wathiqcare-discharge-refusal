@@ -17,7 +17,9 @@ export type WorkflowActionResult = {
 };
 
 export async function fetchRefusalCases(limit = 200) {
-  return apiFetch<any[]>(`/api/discharge/cases?limit=${encodeURIComponent(String(limit))}`);
+  return apiFetch<Array<Record<string, unknown>>>(
+    `/api/discharge/cases?limit=${encodeURIComponent(String(limit))}`,
+  );
 }
 
 export async function fetchRefusalCaseWorkflow(caseId: string) {
