@@ -445,6 +445,55 @@ class SignatureProofService:
                 session["verification_status"] = "awaiting_signature"
                 session["provider_result"] = {"device_source": "TABLET"}
                 session["proof_metadata"].update({"device_source": "TABLET"})
+                phone_number = str(payload.get("phone_number") or "").strip()
+                if phone_number:
+                    dispatch = self.sms_provider.send_otp(phone_number, case_id=case_id, document_type=template_key)
+                    if dispatch.otp_debug_code:
+                        session["otp_code_hash"] = self.sms_provider.hash_code(dispatch.otp_debug_code)
+                    session["phone_number_masked"] = self.sms_provider.mask_phone_number(phone_number)
+                    session["otp_sent_at"] = dispatch.otp_sent_at
+                    session["provider_result"].update(
+                        {
+                            "delivery_status": dispatch.delivery_status,
+                            "challenge_id": dispatch.challenge_id,
+                            "provider": dispatch.provider,
+                            "stub_mode": dispatch.stub_mode,
+                            "otp_debug_code": dispatch.otp_debug_code,
+                        }
+                    )
+                    session["proof_metadata"].update(
+                        {
+                            "phone_number_masked": session["phone_number_masked"],
+                            "otp_sent_at": dispatch.otp_sent_at,
+                            "delivery_status": dispatch.delivery_status,
+                            "challenge_id": dispatch.challenge_id,
+                        }
+                    )
+                    _append_session_event(
+                        session,
+                        action="sms_otp_sent",
+                        status="success",
+                        details={
+                            "challenge_id": dispatch.challenge_id,
+                            "delivery_status": dispatch.delivery_status,
+                            "linked_method": "TABLET_SIGNATURE",
+                        },
+                    )
+                    audit_ids.append(
+                        _write_audit(
+                            db,
+                            tenant_id=tenant_id,
+                            user_id=current_user["id"],
+                            case_id=case_id,
+                            action="sms_otp_sent",
+                            details={
+                                "session_id": session_id,
+                                "challenge_id": dispatch.challenge_id,
+                                "delivery_status": dispatch.delivery_status,
+                                "linked_method": "TABLET_SIGNATURE",
+                            },
+                        )
+                    )
                 _append_session_event(
                     session,
                     action="tablet_signature_started",
@@ -557,6 +606,22 @@ class SignatureProofService:
                 operator_id=current_user.get("id"),
             )
             verified = bool(verification_result.get("verified"))
+            expected_hash = str(session.get("otp_code_hash") or "")
+            otp_verified = True
+            if expected_hash:
+                submitted_otp = str(payload.get("otp_code") or "").strip()
+                if not submitted_otp:
+                    raise ValueError("otp_code is required when mobile linkage is enabled")
+                otp_verified = self.sms_provider.verify_otp(submitted_code=submitted_otp, expected_hash=expected_hash)
+                verification_result["otp_verified"] = otp_verified
+                verification_result["otp_verified_at"] = verification_timestamp if otp_verified else None
+                _append_session_event(
+                    session,
+                    action="sms_otp_verified" if otp_verified else "sms_otp_verification_failed",
+                    status="success" if otp_verified else "failed",
+                    details={"verification_method": "SMS_OTP", "linked_method": "TABLET_SIGNATURE"},
+                )
+            verified = verified and otp_verified
             session["proof_metadata"].update(
                 {
                     "verification_method": "TABLET_SIGNATURE",
@@ -564,6 +629,8 @@ class SignatureProofService:
                     "signed_at": verification_result.get("signed_at"),
                     "device_source": verification_result.get("device_source"),
                     "witness_name": verification_result.get("witness_name"),
+                    "otp_verified": verification_result.get("otp_verified"),
+                    "otp_verified_at": verification_result.get("otp_verified_at"),
                     "result_status": "verified" if verified else "failed",
                 }
             )

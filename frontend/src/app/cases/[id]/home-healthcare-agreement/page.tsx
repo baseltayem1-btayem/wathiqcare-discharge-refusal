@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import TabletSignaturePad from "@/components/forms/TabletSignaturePad";
 import { apiFetch } from "@/utils/api";
 
 type MethodItem = {
@@ -169,6 +170,9 @@ export default function HomeHealthcareAgreementPage() {
       if (method === "SMS_OTP") {
         requestPayload.phone_number = phoneNumber;
       }
+      if (method === "TABLET_SIGNATURE" && phoneNumber.trim()) {
+        requestPayload.phone_number = phoneNumber;
+      }
 
       const res = await apiFetch<{ session_id: string; verification_status: string; provider_result?: { otp_debug_code?: string } }>(
         `/api/discharge/cases/${caseId}/acknowledgment/start`,
@@ -206,6 +210,9 @@ export default function HomeHealthcareAgreementPage() {
       }
       if (selectedMethod === "TABLET_SIGNATURE") {
         verifyPayload.signature_payload = signaturePayload;
+        if (otpCode.trim()) {
+          verifyPayload.otp_code = otpCode;
+        }
       }
       if (selectedMethod === "NAFATH") {
         verifyPayload.nafath_status = nafathStatus;
@@ -320,12 +327,12 @@ export default function HomeHealthcareAgreementPage() {
               <input className="rounded-lg border px-3 py-2 text-sm" placeholder="رقم الجوال لاستقبال رمز التحقق" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
               <input className="rounded-lg border px-3 py-2 text-sm" placeholder="رمز التحقق" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
               <textarea
-                className="rounded-lg border px-3 py-2 text-sm"
-                rows={4}
-                placeholder="بيانات توقيع الجهاز اللوحي (Base64)"
+                className="hidden"
+                rows={1}
                 value={signaturePayload}
-                onChange={(e) => setSignaturePayload(e.target.value)}
+                readOnly
               />
+              <TabletSignaturePad value={signaturePayload} onChange={setSignaturePayload} />
               <select value={nafathStatus} onChange={(e) => setNafathStatus(e.target.value)} className="rounded-lg border px-3 py-2 text-sm">
                 <option value="pending">نفاذ - بانتظار التحقق</option>
                 <option value="approved">نفاذ - تم التحقق</option>

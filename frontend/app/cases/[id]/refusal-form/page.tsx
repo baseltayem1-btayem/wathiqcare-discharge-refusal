@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import TabletSignaturePad from "@/components/forms/TabletSignaturePad";
 import { apiFetch } from "@/utils/api";
 
 type MethodItem = {
@@ -71,6 +72,9 @@ export default function RefusalFormSignaturePage() {
       }
       if (method === "TABLET_SIGNATURE") {
         payload.witness_name = witnessName;
+        if (phoneNumber.trim()) {
+          payload.phone_number = phoneNumber;
+        }
       }
 
       const res = await apiFetch<{
@@ -114,6 +118,9 @@ export default function RefusalFormSignaturePage() {
       if (method === "TABLET_SIGNATURE") {
         payload.signature_payload = signaturePayload;
         payload.witness_name = witnessName;
+        if (otpCode.trim()) {
+          payload.otp_code = otpCode;
+        }
       }
 
       const res = await apiFetch<{ verification_status: string }>(
@@ -194,14 +201,13 @@ export default function RefusalFormSignaturePage() {
 
             {method === "TABLET_SIGNATURE" ? (
               <div className="mt-4 grid gap-2">
-                <label className="text-sm text-slate-700">توقيع المريض (Base64)</label>
-                <textarea
-                  value={signaturePayload}
-                  onChange={(e) => setSignaturePayload(e.target.value)}
-                  rows={5}
-                  className="rounded-lg border px-3 py-2 text-sm"
-                  placeholder="ألصق بيانات التوقيع"
-                />
+                <label className="text-sm text-slate-700">توقيع المريض على التابلت</label>
+                <TabletSignaturePad value={signaturePayload} onChange={setSignaturePayload} />
+                <label className="text-sm text-slate-700">رقم الجوال (اختياري للربط والتحقق OTP)</label>
+                <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
+                <label className="text-sm text-slate-700">رمز التحقق OTP (إذا تم الربط بالجوال)</label>
+                <input value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
+                {debugCode ? <p className="text-xs text-slate-500">رمز تحقق بيئة التطوير: {debugCode}</p> : null}
                 <label className="text-sm text-slate-700">اسم الشاهد</label>
                 <input value={witnessName} onChange={(e) => setWitnessName(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
               </div>
