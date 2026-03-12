@@ -18,6 +18,10 @@ class MedicalLegalFormTemplate:
     version: str
     locked_template: bool
     bilingual: bool
+    status: str = "approved"
+    source: str = CANONICAL_TEMPLATE_SOURCE
+    language_mode: str = "bilingual_ar_en"
+    modification_policy: str = "locked_no_rewrite"
 
 
 def _safe(value: str | None) -> str:
@@ -293,6 +297,10 @@ FORMS_LIBRARY: Dict[str, MedicalLegalFormTemplate] = {
         version="1.0",
         locked_template=True,
         bilingual=True,
+        status="approved_locked_template",
+        source="uploaded approved HHC Contract.pdf",
+        language_mode="bilingual_ar_en",
+        modification_policy="locked_no_rewrite",
     ),
     "discharge_decision_record": MedicalLegalFormTemplate(
         key="discharge_decision_record",
@@ -317,7 +325,10 @@ def get_form_template_metadata(template_key: str) -> Dict[str, str | bool]:
         "version": template.version,
         "locked_template": template.locked_template,
         "bilingual": template.bilingual,
-        "source": CANONICAL_TEMPLATE_SOURCE,
+        "status": template.status,
+        "source": template.source,
+        "language_mode": template.language_mode,
+        "modification_policy": template.modification_policy,
         "template_marker": f"{template.code}@v{template.version}",
     }
 

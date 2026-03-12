@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import json
+import html
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 
 HOMECARE_TEMPLATE_KEY = "home_healthcare_agreement"
 
-_TEMPLATE_PATH = Path(__file__).with_name("homecare_agreement_template.json")
+_LOCKED_CONTRACT_PATH = Path(__file__).with_name("HHC_Contract.locked.txt")
 
 
 def _safe(value: Any) -> str:
@@ -20,17 +21,40 @@ def _today() -> str:
     return datetime.utcnow().strftime("%Y-%m-%d")
 
 
-def _text_to_html(text: str) -> str:
-  parts = [chunk.strip() for chunk in text.split("\n\n") if chunk.strip()]
-  rendered: list[str] = []
-  for part in parts:
-    line_html = "<br/>".join(_safe(line) for line in part.split("\n"))
-    rendered.append(f"<p>{line_html}</p>")
-  return "".join(rendered)
+def _load_locked_contract_text() -> str:
+  return _LOCKED_CONTRACT_PATH.read_text(encoding="utf-8")
 
 
-def load_homecare_template() -> Dict[str, Any]:
-    return json.loads(_TEMPLATE_PATH.read_text(encoding="utf-8"))
+def _apply_line_value(text: str, label: str, value: str) -> str:
+  if not value:
+    return text
+  pattern = rf"(^\s*{re.escape(label)}\s*)(?:$|\t.*$)"
+  return re.sub(pattern, lambda m: f"{m.group(1)}{value}", text, count=1, flags=re.MULTILINE)
+
+
+def _apply_dynamic_fields(locked_text: str, context: Dict[str, str]) -> str:
+  mappings = [
+    ("Name of Patient:", _safe(context.get("patient_name"))),
+    ("Contact Numbers:", _safe(context.get("contact_numbers"))),
+    ("Date:", _safe(context.get("date"))),
+    ("Time:", _safe(context.get("time"))),
+    ("Name of Guardian / Representative (Print):", _safe(context.get("legal_guardian"))),
+    ("Relationship to Patient", _safe(context.get("relationship"))),
+    ("Interpreter Name (Print):", _safe(context.get("interpreter_name"))),
+    ("Name (Print):", _safe(context.get("hhc_representative_name"))),
+    ("Designation:", _safe(context.get("hhc_representative_designation"))),
+    ("Care Partner (if identified):", _safe(context.get("care_partner_name"))),
+    ("Relationship:", _safe(context.get("care_partner_relationship") or context.get("relationship"))),
+  ]
+
+  result = locked_text
+  for label, value in mappings:
+    result = _apply_line_value(result, label, value)
+  return result
+
+
+def _locked_text_to_html(text: str) -> str:
+  return f"<pre class=\"contract-text\">{html.escape(text)}</pre>"
 
 
 def build_homecare_context(*, case_id: str, payload: Dict[str, Any]) -> Dict[str, str]:
@@ -47,91 +71,52 @@ def build_homecare_context(*, case_id: str, payload: Dict[str, Any]) -> Dict[str
         "ack_homecare_provision": _safe(payload.get("ack_homecare_provision")),
         "ack_discharge_decision_notice": _safe(payload.get("ack_discharge_decision_notice")),
         "date": _safe(payload.get("date")) or _today(),
+        "time": _safe(payload.get("time")),
+        "contact_numbers": _safe(payload.get("contact_numbers")),
+        "interpreter_name": _safe(payload.get("interpreter_name")),
+        "hhc_representative_name": _safe(payload.get("hhc_representative_name")),
+        "hhc_representative_designation": _safe(payload.get("hhc_representative_designation")),
+        "care_partner_name": _safe(payload.get("care_partner_name")),
+        "care_partner_relationship": _safe(payload.get("care_partner_relationship")),
         "verification_method": _safe(payload.get("verification_method")),
         "timestamp": _safe(payload.get("timestamp")),
     }
 
 
 def render_homecare_agreement_html(context: Dict[str, str]) -> str:
-    template = load_homecare_template()
-    title_ar = _safe(template.get("title_ar"))
-    title_en = _safe(template.get("title_en"))
-    subtitle_ar = _safe(template.get("subtitle_ar"))
-    subtitle_en = _safe(template.get("subtitle_en"))
-    date_label_ar = _safe(template.get("date_label_ar") or "التاريخ")
-    date_label_en = _safe(template.get("date_label_en") or "Date")
-    sections = template.get("sections", [])
-
-    section_html = []
-    for section in sections:
-        heading_ar = _safe(section.get("heading_ar"))
-        heading_en = _safe(section.get("heading_en"))
-        body_ar = _safe(section.get("body_ar"))
-        body_en = _safe(section.get("body_en"))
-        section_body = f"{_text_to_html(body_ar)}{_text_to_html(body_en)}"
-        section_html.append(
-            "".join(
-                [
-                    "<section class=\"section\">",
-                    f"<h2 class=\"heading-ar\">{heading_ar}</h2>",
-                    f"<h3 class=\"heading-en\">{heading_en}</h3>",
-                    section_body,
-                    "</section>",
-                ]
-            )
-        )
-
-    rendered_sections = "\n".join(section_html)
+    locked_text = _load_locked_contract_text()
+    rendered_text = _apply_dynamic_fields(locked_text, context)
+    contract_html = _locked_text_to_html(rendered_text)
 
     return f"""
 <!DOCTYPE html>
-<html lang=\"en\">
+<html lang=\"ar\">
 <head>
   <meta charset=\"utf-8\" />
-  <title>{title_en}</title>
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <title>Home Healthcare Agreement</title>
   <style>
-    body {{ font-family: Arial, sans-serif; margin: 28px; color: #0f172a; line-height: 1.5; }}
-    h1 {{ margin: 0; font-size: 24px; }}
-    .title-ar {{ direction: rtl; text-align: right; font-weight: 700; }}
-    .title-en {{ text-transform: uppercase; }}
-    .subtitle {{ margin-top: 6px; font-size: 14px; color: #334155; }}
-    .subtitle-ar {{ direction: rtl; text-align: right; }}
-    .meta {{ margin-top: 18px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; background: #f8fafc; }}
-    .meta-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }}
-    .label {{ font-size: 11px; text-transform: uppercase; color: #64748b; }}
-    .value {{ font-size: 13px; font-weight: 600; }}
-    .section {{ border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 12px; }}
-    .heading-ar {{ margin: 0; font-size: 16px; direction: rtl; text-align: right; }}
-    .heading-en {{ margin: 4px 0 0 0; font-size: 14px; color: #334155; }}
-    p {{ margin: 10px 0; }}
+    body {{
+      font-family: "Noto Naskh Arabic", "Amiri", "Tahoma", "Arial", sans-serif;
+      margin: 20px;
+      color: #0f172a;
+      line-height: 1.55;
+      font-size: 13px;
+      direction: rtl;
+    }}
+    .contract-text {{
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0;
+      font-family: inherit;
+      font-size: 13px;
+      direction: rtl;
+      unicode-bidi: plaintext;
+    }}
   </style>
 </head>
 <body>
-  <h1 class=\"title-ar\">{title_ar}</h1>
-  <h1 class=\"title-en\">{title_en}</h1>
-  <div class=\"subtitle subtitle-ar\">{subtitle_ar}</div>
-  <div class=\"subtitle\">{subtitle_en}</div>
-  <div class=\"subtitle subtitle-ar\">{date_label_ar}: {_safe(context.get('date'))}</div>
-  <div class=\"subtitle\">{date_label_en}: {_safe(context.get('date'))}</div>
-
-  <div class=\"meta\">
-    <div class=\"meta-grid\">
-      <div><div class=\"label\">Patient Name</div><div class=\"value\">{_safe(context.get('patient_name'))}</div></div>
-      <div><div class=\"label\">URN / MRN</div><div class=\"value\">{_safe(context.get('urn') or context.get('medical_record_number'))}</div></div>
-      <div><div class=\"label\">Current Location</div><div class=\"value\">{_safe(context.get('current_location'))}</div></div>
-      <div><div class=\"label\">Room Number</div><div class=\"value\">{_safe(context.get('room_number'))}</div></div>
-      <div><div class=\"label\">Legal Guardian</div><div class=\"value\">{_safe(context.get('legal_guardian'))}</div></div>
-      <div><div class=\"label\">Relationship</div><div class=\"value\">{_safe(context.get('relationship'))}</div></div>
-      <div><div class=\"label\">Guardian ID</div><div class=\"value\">{_safe(context.get('guardian_id'))}</div></div>
-      <div><div class=\"label\">Case ID</div><div class=\"value\">{_safe(context.get('case_id'))}</div></div>
-      <div><div class=\"label\">Verification Method</div><div class=\"value\">{_safe(context.get('verification_method'))}</div></div>
-      <div><div class=\"label\">Timestamp</div><div class=\"value\">{_safe(context.get('timestamp'))}</div></div>
-      <div><div class=\"label\">Acknowledged Home Care Provision</div><div class=\"value\">{_safe(context.get('ack_homecare_provision'))}</div></div>
-      <div><div class=\"label\">Notified of Discharge Decision</div><div class=\"value\">{_safe(context.get('ack_discharge_decision_notice'))}</div></div>
-    </div>
-  </div>
-
-  {rendered_sections}
+  {contract_html}
 </body>
 </html>
 """.strip()

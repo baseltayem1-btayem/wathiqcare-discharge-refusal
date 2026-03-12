@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
 from pathlib import Path
-import textwrap
 from typing import Any, Dict, List, Optional, Tuple
 
 from backend.core.database import SessionLocal
+from backend.core.homecare_pdf_renderer import render_homecare_html_to_pdf
+from backend.core.pdf_renderer import PdfRenderError, render_html_to_pdf
 from backend.forms.medical_legal_forms_library import get_form_template_metadata
 from backend.forms.workflow_templates import WORKFLOW_TEMPLATES
 from backend.models.audit_log import AuditLog
@@ -757,7 +758,15 @@ def _build_template_context(
         "witness2_role": str(payload.get("witness2_role") or workflow.witness2_role or ""),
         "witness1_signature": str(payload.get("witness1_signature") or workflow.witness1_signature or ""),
         "witness2_signature": str(payload.get("witness2_signature") or workflow.witness2_signature or ""),
+        "legal_guardian": str(payload.get("legal_guardian") or ""),
         "relationship": str(payload.get("relationship") or ""),
+        "contact_numbers": str(payload.get("contact_numbers") or ""),
+        "interpreter_name": str(payload.get("interpreter_name") or ""),
+        "hhc_representative_name": str(payload.get("hhc_representative_name") or ""),
+        "hhc_representative_designation": str(payload.get("hhc_representative_designation") or ""),
+        "care_partner_name": str(payload.get("care_partner_name") or ""),
+        "care_partner_relationship": str(payload.get("care_partner_relationship") or ""),
+        "date": str(payload.get("date") or _utc_now().strftime("%Y-%m-%d")),
         "time": str(payload.get("time") or _utc_now().strftime("%H:%M")),
         "representative_name": str(payload.get("representative_name") or workflow.responsible_person or ""),
         "patient_signature": str(payload.get("patient_signature") or workflow.patient_signature or ""),
@@ -799,12 +808,6 @@ def _write_document_file(case_id: str, template_key: str, html_content: str) -> 
 
 
 def _write_document_pdf(case_id: str, template_key: str, html_content: str) -> Optional[Tuple[str, str]]:
-    try:
-        from reportlab.lib.pagesizes import A4
-        from reportlab.pdfgen import canvas
-    except Exception:
-        return None
-
     case_dir = GENERATED_DOCS_DIR / case_id
     case_dir.mkdir(parents=True, exist_ok=True)
 
@@ -812,26 +815,22 @@ def _write_document_pdf(case_id: str, template_key: str, html_content: str) -> O
     file_name = f"{template_key}_{timestamp}.pdf"
     file_path = case_dir / file_name
 
-    text_only = " ".join(part.strip() for part in html_content.replace("<", " <").split(">") if "<" not in part)
-    text_only = " ".join(text_only.split())
+    try:
+        if template_key == "home_healthcare_agreement":
+            # Home Healthcare must use a layout-faithful renderer path only.
+            render_homecare_html_to_pdf(
+                html_content=html_content,
+                output_path=file_path,
+            )
+        else:
+            render_html_to_pdf(
+                html_content=html_content,
+                output_path=file_path,
+                title="WathiqCare - Medical Legal Forms Library",
+            )
+    except PdfRenderError as exc:
+        raise ValueError("PDF rendering service is unavailable. Please retry after platform validation.") from exc
 
-    c = canvas.Canvas(str(file_path), pagesize=A4)
-    width, height = A4
-    x = 40
-    y = height - 40
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(x, y, "WathiqCare - Medical Legal Forms Library")
-    y -= 22
-    c.setFont("Helvetica", 9)
-    for line in textwrap.wrap(text_only, width=110):
-        if y < 40:
-            c.showPage()
-            c.setFont("Helvetica", 9)
-            y = height - 40
-        c.drawString(x, y, line)
-        y -= 12
-
-    c.save()
     return file_name, str(file_path)
 
 
@@ -988,10 +987,8 @@ def _generate_document(
     html_content = template.renderer(context)
     template_meta = get_form_template_metadata(template_key)
 
-    file_name, file_path = _write_document_file(bundle.discharge_case.id, template_key, html_content)
-    pdf_result = _write_document_pdf(bundle.discharge_case.id, template_key, html_content)
-    if pdf_result:
-        file_name, file_path = pdf_result
+    _write_document_file(bundle.discharge_case.id, template_key, html_content)
+    file_name, file_path = _write_document_pdf(bundle.discharge_case.id, template_key, html_content)
 
     document = DischargeWorkflowDocument(
         workflow_id=bundle.workflow.id,

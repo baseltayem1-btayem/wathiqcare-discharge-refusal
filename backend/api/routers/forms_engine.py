@@ -143,6 +143,11 @@ def view_document(
     current_user=Depends(require_roles(*VIEW_ROLES)),
 ):
     try:
+        document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
+        path = Path(document.file_path)
+        if path.exists() and path.suffix.lower() == ".pdf":
+            return FileResponse(path=str(path), filename=document.file_name, media_type="application/pdf")
+
         preview = service.get_document_preview(tenant_id=current_user["tenant_id"], document_id=document_id)
         return HTMLResponse(content=preview["previewHtml"])
     except ValueError as exc:

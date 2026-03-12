@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import json
-import textwrap
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from backend.discharge.home_healthcare.homecare_agreement_pdf import generate_homecare_agreement_pdf
+from backend.core.pdf_renderer import PdfRenderError, render_html_to_pdf
 from backend.discharge.home_healthcare.homecare_workflow import persist_homecare_case_record
 from backend.core.database import SessionLocal
 from backend.forms.workflow_templates import WORKFLOW_TEMPLATES
@@ -187,40 +187,22 @@ def _write_final_html(case_id: str, template_key: str, html_content: str) -> tup
     return file_name, str(path)
 
 
-def _try_write_pdf(case_id: str, template_key: str, html_content: str) -> Optional[tuple[str, str]]:
-    try:
-        from reportlab.lib.pagesizes import A4
-        from reportlab.pdfgen import canvas
-    except Exception:
-        return None
-
-    text_only = " ".join(part.strip() for part in html_content.replace("<", " <").split(">") if "<" not in part)
-    text_only = " ".join(text_only.split())
-
+def _try_write_pdf(case_id: str, template_key: str, html_content: str) -> tuple[str, str]:
     target_dir = FINAL_DOCS_DIR / case_id
     target_dir.mkdir(parents=True, exist_ok=True)
     stamp = _utc_now().strftime("%Y%m%d%H%M%S")
     file_name = f"{template_key}_signed_{stamp}.pdf"
     path = target_dir / file_name
 
-    c = canvas.Canvas(str(path), pagesize=A4)
-    width, height = A4
-    x = 40
-    y = height - 40
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(x, y, "WathiqCare Legal Acknowledgment")
-    y -= 24
-    c.setFont("Helvetica", 9)
-    for line in textwrap.wrap(text_only, width=110):
-        if y < 40:
-            c.showPage()
-            c.setFont("Helvetica", 9)
-            y = height - 40
-        c.drawString(x, y, line)
-        y -= 12
-
-    c.save()
-    return file_name, str(path)
+    try:
+        render_html_to_pdf(
+            html_content=html_content,
+            output_path=path,
+            title="WathiqCare Legal Acknowledgment",
+        )
+        return file_name, str(path)
+    except PdfRenderError as exc:
+        raise ValueError("PDF rendering service is unavailable. Please retry after platform validation.") from exc
 
 
 class SignatureProofService:
@@ -720,6 +702,8 @@ class SignatureProofService:
                 )
             else:
                 pdf_info = _try_write_pdf(case_id, document_type, html_content)
+            if not pdf_info:
+                raise ValueError("PDF rendering service is unavailable. Please retry after platform validation.")
             pdf_path = pdf_info[1] if pdf_info else None
 
             document = DischargeWorkflowDocument(

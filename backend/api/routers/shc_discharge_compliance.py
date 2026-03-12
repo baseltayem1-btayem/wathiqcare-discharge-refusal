@@ -125,5 +125,5 @@ def execute_shc_workflow(
         return result
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {exc}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")

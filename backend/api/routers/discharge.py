@@ -130,8 +130,8 @@ def create_refusal(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")
 
 @router.get("/cases")
 def get_cases(current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))):
@@ -173,8 +173,8 @@ def run_case_workflow_action(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")
 
 
 @router.get("/cases/legal-escalation")
@@ -324,8 +324,8 @@ def generate_case_workflow_document(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")
 
 
 @router.get("/cases/{case_id}/documents")
@@ -348,6 +348,10 @@ def view_case_document(
         document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+    path = Path(document.file_path)
+    if path.exists() and path.suffix.lower() == ".pdf":
+        return FileResponse(path=str(path), filename=document.file_name, media_type="application/pdf")
 
     return HTMLResponse(content=document.html_content)
 
@@ -374,7 +378,8 @@ def download_case_document(
             )
         raise HTTPException(status_code=404, detail="ملف المستند غير موجود")
 
-    return FileResponse(path=str(path), filename=document.file_name, media_type="text/html")
+    media_type = "application/pdf" if path.suffix.lower() == ".pdf" else "text/html"
+    return FileResponse(path=str(path), filename=document.file_name, media_type=media_type)
 
 @router.get("/audit/{case_id}")
 def get_case_audit(case_id: str, current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer"))):
@@ -462,8 +467,8 @@ def build_evidence_bundle(
         return generate_evidence_bundle(discharge_case_id, actor_user_id=current_user["id"])
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")
 
 @router.get("/evidence-bundle/download/{filename}")
 def download_evidence_bundle(

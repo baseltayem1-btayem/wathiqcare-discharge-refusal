@@ -35,8 +35,8 @@ def start_acknowledgment(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {exc}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")
 
 
 @router.post("/cases/{case_id}/acknowledgment/{session_id}/verify")
@@ -56,8 +56,8 @@ def verify_acknowledgment(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {exc}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")
 
 
 @router.get("/cases/{case_id}/acknowledgment/{session_id}")
@@ -73,5 +73,5 @@ def get_acknowledgment_session(
         return session
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {exc}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")

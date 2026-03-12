@@ -3,11 +3,47 @@ const TOKEN_KEY = "wathiqcare_access_token";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      return null;
+    }
+
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+    const raw = atob(padded);
+    return JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function isTokenExpired(token: string): boolean {
+  const payload = decodeJwtPayload(token);
+  const exp = payload?.exp;
+  if (typeof exp !== "number") {
+    return false;
+  }
+  const now = Math.floor(Date.now() / 1000);
+  return exp <= now;
+}
+
 export function getToken(): string | null {
   if (typeof window === "undefined") {
     return null;
   }
-  return localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) {
+    return null;
+  }
+
+  if (isTokenExpired(token)) {
+    localStorage.removeItem(TOKEN_KEY);
+    return null;
+  }
+
+  return token;
 }
 
 export function setToken(token: string): void {
@@ -70,6 +106,9 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const isJson = contentType.includes("application/json");
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearToken();
+    }
     const errorBody = isJson
       ? await response.json().catch(() => null)
       : await response.text().catch(() => "");

@@ -41,8 +41,7 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
             ok: false,
             response: NextResponse.json(
                 {
-                    detail:
-                        "Backend service endpoint is not configured. Set BACKEND_API_BASE_URL for production deployment.",
+                    detail: "خدمة الواجهة الخلفية غير متاحة حالياً.",
                 },
                 { status: 503 },
             ),
@@ -56,7 +55,7 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
         return {
             ok: false,
             response: NextResponse.json(
-                { detail: "BACKEND_API_BASE_URL is invalid." },
+                { detail: "تعذر الاتصال بخدمة الواجهة الخلفية." },
                 { status: 500 },
             ),
         };
@@ -67,8 +66,7 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
             ok: false,
             response: NextResponse.json(
                 {
-                    detail:
-                        "Backend service host is private/internal and unavailable to public clients. Configure a public API host.",
+                    detail: "خدمة الواجهة الخلفية غير متاحة حالياً.",
                 },
                 { status: 503 },
             ),
@@ -116,8 +114,7 @@ export async function forwardToBackend(
     if (targetHost && requestHost && targetHost === requestHost) {
         return NextResponse.json(
             {
-                detail:
-                    "Backend API host resolves to the same frontend host, which causes a proxy loop. Set BACKEND_API_BASE_URL to the external backend URL.",
+                detail: "خدمة الواجهة الخلفية غير متاحة حالياً.",
             },
             { status: 503 },
         );

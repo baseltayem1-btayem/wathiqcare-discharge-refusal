@@ -121,5 +121,5 @@ def preview_home_healthcare_agreement(
         }
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"خطأ داخلي في الخادم: {exc}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")

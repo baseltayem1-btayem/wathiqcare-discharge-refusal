@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import os
 
-from jose import jwt
+from jose import ExpiredSignatureError, JWTError, jwt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 
@@ -30,4 +30,20 @@ def create_access_token(data: dict) -> str:
 
 
 def decode_access_token(token: str) -> dict:
-    return jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+    if not token or not token.strip():
+        raise ValueError("missing_token")
+
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+    except ExpiredSignatureError as exc:
+        raise ValueError("token_expired") from exc
+    except JWTError as exc:
+        raise ValueError("invalid_token") from exc
+
+    if not isinstance(payload, dict):
+        raise ValueError("invalid_token_payload")
+
+    if not payload.get("sub") or not payload.get("tenant_id"):
+        raise ValueError("invalid_token_claims")
+
+    return payload

@@ -550,6 +550,10 @@ def preview_document_v2(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+    path = Path(document.file_path)
+    if path.exists() and path.suffix.lower() == ".pdf":
+        return FileResponse(path=str(path), filename=document.file_name, media_type="application/pdf")
+
     return HTMLResponse(content=document.html_content)
 
 
@@ -575,7 +579,8 @@ def download_document_v2(
             )
         raise HTTPException(status_code=404, detail="ملف المستند غير موجود")
 
-    return FileResponse(path=str(path), filename=document.file_name, media_type="text/html")
+    media_type = "application/pdf" if path.suffix.lower() == ".pdf" else "text/html"
+    return FileResponse(path=str(path), filename=document.file_name, media_type=media_type)
 
 
 @router.post("/cases/{case_id}/discharge-refusal-workflow/close")
