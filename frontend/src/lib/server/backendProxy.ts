@@ -41,7 +41,7 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
             ok: false,
             response: NextResponse.json(
                 {
-                    detail: "خدمة الواجهة الخلفية غير متاحة حالياً.",
+                    detail: "الخدمة الخلفية الخارجية غير متاحة حالياً. إذا استمرت المشكلة على هذا المسار، يرجى التحقق من إعداد BACKEND_API_BASE_URL.",
                 },
                 { status: 503 },
             ),
@@ -66,7 +66,7 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
             ok: false,
             response: NextResponse.json(
                 {
-                    detail: "خدمة الواجهة الخلفية غير متاحة حالياً.",
+                    detail: "الخدمة الخلفية الخارجية غير متاحة حالياً. تم رفض عنوان خاص في بيئة الإنتاج.",
                 },
                 { status: 503 },
             ),
