@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import html
 import re
 from datetime import datetime
@@ -9,6 +10,7 @@ from typing import Any, Dict
 HOMECARE_TEMPLATE_KEY = "home_healthcare_agreement"
 
 _LOCKED_CONTRACT_PATH = Path(__file__).with_name("HHC_Contract.locked.txt")
+_HOMECARE_TEMPLATE_PATH = Path(__file__).with_name("homecare_agreement_template.json")
 
 
 def _safe(value: Any) -> str:
@@ -19,6 +21,14 @@ def _safe(value: Any) -> str:
 
 def _today() -> str:
     return datetime.utcnow().strftime("%Y-%m-%d")
+
+
+def load_homecare_template() -> Dict[str, Any]:
+  if not _HOMECARE_TEMPLATE_PATH.exists():
+    raise FileNotFoundError(f"Homecare template file not found: {_HOMECARE_TEMPLATE_PATH}")
+
+  with _HOMECARE_TEMPLATE_PATH.open("r", encoding="utf-8") as f:
+    return json.load(f)
 
 
 def _load_locked_contract_text() -> str:
