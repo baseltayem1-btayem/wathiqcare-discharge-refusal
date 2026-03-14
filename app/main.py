@@ -5,9 +5,17 @@ from fastapi import FastAPI
 from app.db.database import Base, engine
 
 # These imports register SQLAlchemy models with Base.metadata before create_all is called.
-from app.models import audit, consent, notification, patient, refusal_form, user  # noqa: F401
+from app.models import (  # noqa: F401
+    audit,
+    consent,
+    discharge_form,
+    notification,
+    patient,
+    refusal_form,
+    user,
+)
 from app.routers import audit as audit_router
-from app.routers import auth, escalation, fhir, patients, refusal_forms
+from app.routers import auth, discharge_forms, escalation, fhir, patients, refusal_forms
 from app.routers import consent as consent_router
 
 
@@ -26,6 +34,7 @@ app.include_router(escalation.router)
 app.include_router(fhir.router)
 app.include_router(audit_router.router)
 app.include_router(refusal_forms.router)
+app.include_router(discharge_forms.router)
 
 
 @app.get("/health")

@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ar-SA" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<title>Inpatient Care Discharge Form — استمارة تسريح المريض الداخلي</title>
+<style>
+/* ── Page layout ─────────────────────────────────────────────────────────── */
+@page {
+    size: A4;
+    margin: 1.8cm 1.8cm 2.2cm 1.8cm;
+    @bottom-left {
+        content: "{{ form_version }} | {{ generated_date }}";
+        font-size: 7.5pt;
+        color: #777;
+    }
+    @bottom-center {
+        content: counter(page) " / " counter(pages);
+        font-size: 7.5pt;
+        color: #777;
+    }
+    @bottom-right {
+        content: "{{ form_number }}";
+        font-size: 7.5pt;
+        color: #777;
+    }
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+body {
+    font-family: "Arial", "Helvetica Neue", "Segoe UI", "Noto Sans Arabic",
+                 "Tahoma", "DejaVu Sans", sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.5;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.form-header {
+    border-bottom: 2.5px solid #1a3c6e;
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+}
+.header-inner {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+.header-logo {
+    display: table-cell;
+    width: 15%;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 26pt;
+    font-weight: bold;
+    color: #1a3c6e;
+    border-right: 2px solid #1a3c6e;
+    padding-right: 8px;
+}
+.header-titles {
+    display: table-cell;
+    width: 70%;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0 12px;
+}
+.hospital-name-ar {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #1a3c6e;
+    direction: rtl;
+    unicode-bidi: embed;
+}
+.hospital-name-en {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #1a3c6e;
+    direction: ltr;
+    unicode-bidi: embed;
+}
+.form-title-ar {
+    font-size: 11pt;
+    font-weight: bold;
+    direction: rtl;
+    color: #1a5276;
+    margin-top: 4px;
+}
+.form-title-en {
+    font-size: 9.5pt;
+    font-weight: bold;
+    direction: ltr;
+    color: #1a5276;
+}
+.header-meta {
+    display: table-cell;
+    width: 15%;
+    vertical-align: top;
+    text-align: left;
+    direction: ltr;
+    font-size: 7.5pt;
+    color: #444;
+    padding-left: 8px;
+    border-left: 1px solid #ccc;
+}
+.header-meta p { margin: 2px 0; }
+
+/* ── Sections ────────────────────────────────────────────────────────────── */
+.section {
+    margin-bottom: 10px;
+    page-break-inside: avoid;
+}
+.section-header {
+    background-color: #1a3c6e;
+    color: #fff;
+    padding: 4px 8px;
+    margin-bottom: 6px;
+}
+.section-header-inner {
+    display: table;
+    width: 100%;
+}
+.section-title-ar {
+    display: table-cell;
+    direction: rtl;
+    text-align: right;
+    font-weight: bold;
+    font-size: 9.5pt;
+}
+.section-title-en {
+    display: table-cell;
+    direction: ltr;
+    text-align: left;
+    font-weight: bold;
+    font-size: 9.5pt;
+}
+
+/* ── Fields table ────────────────────────────────────────────────────────── */
+.fields-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.fields-table td {
+    padding: 3px 5px;
+    vertical-align: bottom;
+}
+.en-label {
+    direction: ltr;
+    text-align: left;
+    font-weight: bold;
+    color: #333;
+    width: 25%;
+    white-space: nowrap;
+    font-size: 8.5pt;
+}
+.ar-label {
+    direction: rtl;
+    text-align: right;
+    font-weight: bold;
+    color: #333;
+    width: 25%;
+    white-space: nowrap;
+    font-size: 8.5pt;
+}
+.field-value {
+    border-bottom: 1px solid #555;
+    min-width: 120px;
+    padding: 0 4px 1px 4px;
+    color: #1a1a1a;
+    font-size: 9pt;
+    text-align: center;
+}
+.field-value-long {
+    border-bottom: 1px solid #555;
+    width: 100%;
+    padding: 2px 4px;
+    color: #1a1a1a;
+    font-size: 9pt;
+}
+.field-value-multiline {
+    border: 1px solid #888;
+    min-height: 36px;
+    padding: 3px 5px;
+    color: #1a1a1a;
+    font-size: 9pt;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.full-width { width: 100%; }
+.half-width { width: 50%; }
+
+/* ── Bilingual para ──────────────────────────────────────────────────────── */
+.bilingual-para {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 4px;
+}
+.para-ar {
+    display: table-cell;
+    direction: rtl;
+    text-align: right;
+    width: 50%;
+    padding: 3px 6px;
+    border-right: 1px solid #ccc;
+    font-size: 9pt;
+}
+.para-en {
+    display: table-cell;
+    direction: ltr;
+    text-align: left;
+    width: 50%;
+    padding: 3px 6px;
+    font-size: 9pt;
+}
+
+/* ── Instruction / declaration box ──────────────────────────────────────── */
+.instruction-box {
+    border: 1.5px solid #1a3c6e;
+    background: #f5f8ff;
+    padding: 7px 9px;
+    margin: 5px 0;
+    page-break-inside: avoid;
+}
+.declaration-box {
+    border: 1.5px solid #1a5276;
+    background: #f0f9ff;
+    padding: 7px 9px;
+    margin: 5px 0;
+    page-break-inside: avoid;
+}
+
+/* ── Checklist ───────────────────────────────────────────────────────────── */
+.check-item {
+    display: table;
+    width: 100%;
+    margin: 3px 0;
+}
+.check-box {
+    display: table-cell;
+    width: 16px;
+    text-align: center;
+    border: 1px solid #555;
+    font-size: 10pt;
+    vertical-align: top;
+    line-height: 1;
+    padding: 0 1px;
+}
+.check-text-ar {
+    display: table-cell;
+    direction: rtl;
+    text-align: right;
+    padding: 0 4px;
+    font-size: 9pt;
+}
+.check-text-en {
+    display: table-cell;
+    direction: ltr;
+    text-align: left;
+    padding: 0 4px;
+    font-size: 9pt;
+}
+
+/* ── Signature block ─────────────────────────────────────────────────────── */
+.signature-block {
+    display: table;
+    width: 100%;
+    margin-top: 14px;
+    border-collapse: collapse;
+    page-break-inside: avoid;
+}
+.sig-cell {
+    display: table-cell;
+    text-align: center;
+    padding: 4px 8px;
+    width: 33%;
+    border: 1px solid #ccc;
+    vertical-align: bottom;
+}
+.sig-line {
+    border-bottom: 1px solid #333;
+    min-height: 38px;
+    margin-bottom: 4px;
+}
+.sig-value {
+    border-bottom: 1px solid #333;
+    min-height: 38px;
+    margin-bottom: 4px;
+    font-size: 9pt;
+    padding: 4px 2px;
+    color: #1a1a1a;
+    word-break: break-word;
+}
+.sig-label-ar {
+    font-size: 8pt;
+    font-weight: bold;
+    direction: rtl;
+    color: #1a3c6e;
+}
+.sig-label-en {
+    font-size: 8pt;
+    font-weight: bold;
+    direction: ltr;
+    color: #1a3c6e;
+}
+.sig-date {
+    font-size: 7.5pt;
+    margin-top: 3px;
+    color: #555;
+}
+
+/* ── Refused-to-sign block ───────────────────────────────────────────────── */
+.refused-sign-box {
+    border: 1px dashed #e74c3c;
+    background: #fffbf0;
+    padding: 6px 8px;
+    margin-top: 8px;
+    page-break-inside: avoid;
+}
+
+/* ── Utilities ───────────────────────────────────────────────────────────── */
+.text-bold { font-weight: bold; }
+.mt-6 { margin-top: 6px; }
+.mt-10 { margin-top: 10px; }
+.divider { border: none; border-top: 1px solid #ccc; margin: 8px 0; }
+.status-badge {
+    display: inline-block;
+    background: #e8f0fe;
+    border: 1px solid #1a3c6e;
+    border-radius: 2px;
+    padding: 1px 6px;
+    font-size: 8pt;
+    font-weight: bold;
+    direction: ltr;
+    unicode-bidi: embed;
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════ HEADER ═════════════════════════════════ -->
+<div class="form-header">
+    <div class="header-inner">
+        <div class="header-logo">
+            {% if hospital_logo %}
+                <img src="{{ hospital_logo }}" style="max-height:50px; max-width:80px;" alt="Logo"/>
+            {% else %}
+                ⚕
+            {% endif %}
+        </div>
+        <div class="header-titles">
+            <div class="hospital-name-ar" lang="ar">{{ hospital_name }}</div>
+            <div class="hospital-name-en" lang="en">{{ hospital_name }}</div>
+            <div class="form-title-ar" lang="ar">استمارة تسريح مرضى الرعاية الداخلية</div>
+            <div class="form-title-en" lang="en">Inpatient Care Discharge Form</div>
+        </div>
+        <div class="header-meta">
+            <p><strong>No.:</strong> {{ form_number }}</p>
+            <p><strong>Date:</strong> {{ generated_date }}</p>
+            <p><strong>Time:</strong> {{ generated_time }}</p>
+            <p><strong>Ver:</strong> {{ form_version }}</p>
+            <p><strong>Status:</strong> <span class="status-badge">{{ form_status | upper }}</span></p>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════ SECTION 1: PATIENT INFORMATION ═════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <div class="section-title-ar" lang="ar">بيانات المريض</div>
+            <div class="section-title-en" lang="en">Patient Information</div>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">First Name</td>
+            <td class="field-value">{{ patient.first_name }}</td>
+            <td class="ar-label" lang="ar">الاسم الأول</td>
+            <td class="en-label" lang="en">Last Name</td>
+            <td class="field-value">{{ patient.last_name }}</td>
+            <td class="ar-label" lang="ar">اسم العائلة</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">National ID / Iqama</td>
+            <td class="field-value" colspan="3">{{ patient.national_id }}</td>
+            <td class="ar-label" lang="ar">رقم الهوية / الإقامة</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">MRN</td>
+            <td class="field-value">{{ patient.mrn }}</td>
+            <td class="ar-label" lang="ar">رقم السجل الطبي</td>
+            <td class="en-label" lang="en">&nbsp;</td>
+            <td class="field-value">&nbsp;</td>
+            <td class="ar-label" lang="ar">&nbsp;</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ════════════════════════ SECTION 2: ADMISSION & DISCHARGE DETAILS ═══════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <div class="section-title-ar" lang="ar">تفاصيل الدخول والخروج</div>
+            <div class="section-title-en" lang="en">Admission &amp; Discharge Details</div>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">Date of Admission</td>
+            <td class="field-value">{{ clinical.date_of_admission }}</td>
+            <td class="ar-label" lang="ar">تاريخ الدخول</td>
+            <td class="en-label" lang="en">Date of Discharge</td>
+            <td class="field-value">{{ clinical.date_of_discharge }}</td>
+            <td class="ar-label" lang="ar">تاريخ الخروج</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">Follow-up Appointment</td>
+            <td class="field-value" colspan="3">{{ clinical.follow_up_date if clinical.follow_up_date else "—" }}</td>
+            <td class="ar-label" lang="ar">موعد المتابعة</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ════════════════════════ SECTION 3: PHYSICIAN INFORMATION ═══════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <div class="section-title-ar" lang="ar">بيانات الطبيب المعالج</div>
+            <div class="section-title-en" lang="en">Treating Physician Information</div>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">Physician First Name</td>
+            <td class="field-value">{{ physician.first_name }}</td>
+            <td class="ar-label" lang="ar">اسم الطبيب الأول</td>
+            <td class="en-label" lang="en">Physician Last Name</td>
+            <td class="field-value">{{ physician.last_name }}</td>
+            <td class="ar-label" lang="ar">اسم عائلة الطبيب</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">Full Name</td>
+            <td class="field-value" colspan="4">{{ physician.full_name }}</td>
+            <td class="ar-label" lang="ar">الاسم الكامل</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ════════════════════════ SECTION 4: CLINICAL SUMMARY ════════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <div class="section-title-ar" lang="ar">الملخص السريري</div>
+            <div class="section-title-en" lang="en">Clinical Summary</div>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">Diagnosis / Condition</td>
+            <td class="ar-label" lang="ar">التشخيص / الحالة</td>
+        </tr>
+        <tr>
+            <td colspan="2" class="field-value-multiline full-width">{{ clinical.diagnosis }}</td>
+        </tr>
+        <tr><td colspan="2" style="height:4px;"></td></tr>
+        <tr>
+            <td class="en-label" lang="en">Treatment Summary</td>
+            <td class="ar-label" lang="ar">ملخص العلاج</td>
+        </tr>
+        <tr>
+            <td colspan="2" class="field-value-multiline full-width">{{ clinical.treatment_summary }}</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ════════════════════════ SECTION 5: DISCHARGE INSTRUCTIONS ══════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <div class="section-title-ar" lang="ar">تعليمات الخروج</div>
+            <div class="section-title-en" lang="en">Discharge Instructions</div>
+        </div>
+    </div>
+    <div class="instruction-box">
+        <div class="bilingual-para">
+            <div class="para-ar" lang="ar">
+                <strong>تعليمات:</strong><br/>
+                {{ clinical.discharge_instructions }}
+            </div>
+            <div class="para-en" lang="en">
+                <strong>Instructions:</strong><br/>
+                {{ clinical.discharge_instructions }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════ SECTION 6: FOLLOW-UP PLAN ══════════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <div class="section-title-ar" lang="ar">خطة المتابعة</div>
+            <div class="section-title-en" lang="en">Follow-up Plan</div>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">Follow-up Appointment Date</td>
+            <td class="field-value" colspan="2">
+                {{ clinical.follow_up_date if clinical.follow_up_date else "To be scheduled / سيتم تحديده" }}
+            </td>
+            <td class="ar-label" lang="ar">تاريخ موعد المتابعة</td>
+        </tr>
+    </table>
+    <div class="mt-6">
+        <div class="check-item">
+            <div class="check-box">&nbsp;</div>
+            <div class="check-text-ar" lang="ar">إحالة إلى عيادة خارجية</div>
+            <div class="check-text-en" lang="en">Referral to outpatient clinic</div>
+        </div>
+        <div class="check-item">
+            <div class="check-box">&nbsp;</div>
+            <div class="check-text-ar" lang="ar">رعاية منزلية / معدات</div>
+            <div class="check-text-en" lang="en">Home care / equipment required</div>
+        </div>
+        <div class="check-item">
+            <div class="check-box">&nbsp;</div>
+            <div class="check-text-ar" lang="ar">وصفة دوائية عند الخروج</div>
+            <div class="check-text-en" lang="en">Discharge medication prescription provided</div>
+        </div>
+        <div class="check-item">
+            <div class="check-box">&nbsp;</div>
+            <div class="check-text-ar" lang="ar">تعليمات مكتوبة مُسلَّمة للمريض</div>
+            <div class="check-text-en" lang="en">Written instructions given to patient</div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════ SECTION 7: PATIENT DECLARATION ═════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <div class="section-title-ar" lang="ar">إقرار المريض</div>
+            <div class="section-title-en" lang="en">Patient Declaration</div>
+        </div>
+    </div>
+    <div class="declaration-box">
+        <div class="bilingual-para">
+            <div class="para-ar" lang="ar">
+                أقر أنا المريض / وليّ الأمر بأنني استلمت تعليمات الخروج كاملةً
+                وفهمتها، وأنني أغادر المستشفى بمحض إرادتي واتخاذ قراري الواعي.
+                وأتعهد بالالتزام بتعليمات الطبيب المعالج ومواعيد المتابعة المحددة.
+            </div>
+            <div class="para-en" lang="en">
+                I, the patient / guardian, acknowledge that I have received and
+                understood all discharge instructions in full, and that I am
+                leaving the hospital of my own free and informed will.  I commit
+                to following the attending physician's instructions and all
+                scheduled follow-up appointments.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════ SECTION 8: SIGNATURE BLOCK ════════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <div class="section-title-ar" lang="ar">التوقيعات</div>
+            <div class="section-title-en" lang="en">Signatures</div>
+        </div>
+    </div>
+    <div class="signature-block">
+        <!-- Patient / Guardian -->
+        <div class="sig-cell">
+            {% if patient_guardian_signature %}
+                <div class="sig-value">{{ patient_guardian_signature }}</div>
+            {% else %}
+                <div class="sig-line"></div>
+            {% endif %}
+            <div class="sig-label-ar" lang="ar">المريض / وليّ الأمر</div>
+            <div class="sig-label-en" lang="en">Patient / Guardian</div>
+            <div class="sig-date">Date / التاريخ: {{ clinical.date_of_discharge }}</div>
+        </div>
+        <!-- Attending Physician -->
+        <div class="sig-cell">
+            <div class="sig-line"></div>
+            <div class="sig-label-ar" lang="ar">الطبيب المعالج</div>
+            <div class="sig-label-en" lang="en">Attending Physician</div>
+            <div class="sig-date">{{ physician.full_name }}</div>
+            <div class="sig-date">Date / التاريخ: {{ generated_date }}</div>
+        </div>
+        <!-- Witness -->
+        <div class="sig-cell">
+            <div class="sig-line"></div>
+            <div class="sig-label-ar" lang="ar">الشاهد</div>
+            <div class="sig-label-en" lang="en">Witness</div>
+            <div class="sig-date">Date / التاريخ: ___________</div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════ SECTION 9: REFUSED-TO-SIGN BLOCK ══════════════ -->
+<div class="section">
+    <div class="refused-sign-box">
+        <div class="bilingual-para">
+            <div class="para-ar" lang="ar">
+                <strong>رفض التوقيع:</strong><br/>
+                في حال رفض المريض / وليّ الأمر التوقيع، يُرجى توثيق ذلك أدناه
+                مع ذكر اسم الشاهد وتوقيعه.
+            </div>
+            <div class="para-en" lang="en">
+                <strong>Patient Refused to Sign:</strong><br/>
+                If the patient / guardian declined to sign, document below
+                including witness name and signature.
+            </div>
+        </div>
+        <div class="check-item mt-6">
+            <div class="check-box">&nbsp;</div>
+            <div class="check-text-ar" lang="ar">رفض المريض / وليّ الأمر التوقيع</div>
+            <div class="check-text-en" lang="en">Patient / guardian refused to sign</div>
+        </div>
+        <table class="fields-table" style="margin-top:6px;">
+            <tr>
+                <td class="en-label" lang="en">Witness Name</td>
+                <td class="field-value-long" colspan="2">&nbsp;</td>
+                <td class="ar-label" lang="ar">اسم الشاهد</td>
+            </tr>
+            <tr>
+                <td class="en-label" lang="en">Witness Signature</td>
+                <td class="field-value-long" colspan="2">&nbsp;</td>
+                <td class="ar-label" lang="ar">توقيع الشاهد</td>
+            </tr>
+            <tr>
+                <td class="en-label" lang="en">Date</td>
+                <td class="field-value-long" colspan="2">&nbsp;</td>
+                <td class="ar-label" lang="ar">التاريخ</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>
