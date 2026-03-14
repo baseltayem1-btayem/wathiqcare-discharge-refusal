@@ -145,12 +145,28 @@
       "policyMissing": "Missing {count} required policy documentation item(s)."
     },
     "stage": {
+      "medical_assessment": "Medical Assessment",
+      "legal_capacity_check": "Legal Capacity Check",
+      "authorized_signatory_identification": "Authorized Signatory Identification",
+      "discharge_plan_preparation": "Discharge Plan Preparation",
+      "forms_and_consent_presentation": "Forms and Consent Presentation",
+      "approval_or_refusal_path": "Approval or Refusal Path",
+      "legal_escalation_if_needed": "Legal Escalation if Needed",
+      "final_verification": "Final Verification",
+      "execute_discharge_or_hold": "Execute Discharge or Hold",
       "medical_discharge_decision": "Medical Discharge Decision",
       "initial_communication": "Initial Communication",
       "support_and_intervention": "Support and Intervention",
       "refusal_form": "Refusal Form",
       "official_notification": "Official Notification",
-      "escalation": "Escalation"
+      "escalation": "Escalation",
+      "closed": "Closed"
+    },
+    "progressState": {
+      "completed": "Completed",
+      "current": "Current",
+      "upcoming": "Upcoming",
+      "escalationRequired": "Escalation required"
     },
     "pageTitle": "Discharge Workflow",
     "pageSubtitle": "Track discharge refusal workflow stages and case progress",

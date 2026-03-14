@@ -57,6 +57,7 @@ import {
   WorkflowPolicyValidation,
   WorkflowPolicyRequirement,
 } from "@/types/dischargeWorkflow";
+import { buildMetadataWorkflowProgress } from "@/lib/workflowProgress";
 
 type AuditItem = {
   id: string;
@@ -498,6 +499,33 @@ export default function CaseDetailsPage() {
     () => toWorkflowProgressSteps(workflow, locale, caseId),
     [workflow, locale, caseId]
   );
+
+  const metadataWorkflowProgress = useMemo(
+    () =>
+      buildMetadataWorkflowProgress({
+        caseId,
+        status: caseDetail?.status,
+        patient_name: caseDetail?.patient_name,
+        signer_name: caseDetail?.signer_name,
+        signer_role: caseDetail?.signer_role,
+        signed_at: caseDetail?.signed_at,
+        pdf_file: caseDetail?.pdf_file,
+        refusal_reason: caseDetail?.refusal_reason,
+        workflow_stages: caseDetail?.workflow_stages,
+        metadata: caseDetail?.metadata,
+        workflow,
+        clickable: true,
+      }),
+    [caseDetail, workflow, caseId]
+  );
+
+  const visibleWorkflowProgressSteps =
+    workflowProgressSteps.length > 0 ? workflowProgressSteps : metadataWorkflowProgress.steps;
+
+  const visibleWorkflowCurrentStepId =
+    workflowProgressSteps.length > 0
+      ? workflow?.current_stage
+      : metadataWorkflowProgress.currentStepId;
 
   const handleWorkflowProgressStepClick = useCallback(
     (step: WorkflowProgressStep & { href?: string }) => {
@@ -1138,18 +1166,20 @@ export default function CaseDetailsPage() {
                   <h2 className="text-base font-semibold text-slate-900">Patient Workspace | مساحة المريض</h2>
                   <p className="mt-1 text-sm text-slate-600">البيانات الأساسية وملخص الحالة الحالية.</p>
 
-                  {workflowProgressSteps.length > 0 ? (
+                  {visibleWorkflowProgressSteps.length > 0 ? (
                     <div className="mt-5">
                       <h3 className="text-sm font-semibold text-slate-900">Workflow Progress | تقدم الإجراءات</h3>
                       <p className="mt-1 text-sm text-slate-600">
-                        تتبّع مراحل الإجراء الحالي والتنقل إلى الخطوات المتاحة مباشرة من مسار الحالة.
+                        {workflowProgressSteps.length > 0
+                          ? "تتبّع مراحل الإجراء الحالي والتنقل إلى الخطوات المتاحة مباشرة من مسار الحالة."
+                          : "مراحل الخطة المحفوظة عند إنشاء الحالة، مع تحديثات الحالة الحالية المتاحة."}
                       </p>
                       <WorkflowProgress
                         className="mt-3"
-                        steps={workflowProgressSteps}
+                        steps={visibleWorkflowProgressSteps}
                         language={lang}
                         direction={isRtl ? "rtl" : "ltr"}
-                        currentStepId={workflow?.current_stage}
+                        currentStepId={visibleWorkflowCurrentStepId}
                         onStepClick={handleWorkflowProgressStepClick}
                       />
                     </div>

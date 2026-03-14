@@ -21,6 +21,8 @@ export type DischargeCaseDetail = {
   signed_at?: string;
   created_at?: string;
   pdf_file?: string;
+  workflow_stages?: string[];
+  metadata?: Record<string, unknown>;
 };
 
 type CaseApiResponse = {
@@ -54,6 +56,10 @@ function metadataString(
 
 function mapCaseApiResponseToDetail(input: CaseApiResponse): DischargeCaseDetail {
   const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata : null;
+  const workflowStagesRaw = metadata?.workflow_stages;
+  const workflowStages = Array.isArray(workflowStagesRaw)
+    ? workflowStagesRaw.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : undefined;
 
   return {
     id: input.id,
@@ -80,6 +86,8 @@ function mapCaseApiResponseToDetail(input: CaseApiResponse): DischargeCaseDetail
     signed_at: metadataString(metadata, "signed_at"),
     created_at: input.createdAt || undefined,
     pdf_file: metadataString(metadata, "pdf_file"),
+    workflow_stages: workflowStages,
+    metadata: metadata || undefined,
   };
 }
 

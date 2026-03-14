@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, Search } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import WorkflowProgress from "@/components/ui/WorkflowProgress";
+import { buildMetadataWorkflowProgress } from "@/lib/workflowProgress";
 import { apiFetch } from "@/utils/api";
 
 type CaseItem = {
@@ -18,6 +20,11 @@ type CaseItem = {
     status?: string | null;
     createdAt?: string | null;
     created_at?: string;
+    signer_name?: string | null;
+    signer_role?: string | null;
+    signed_at?: string | null;
+    pdf_file?: string | null;
+    metadata?: Record<string, unknown> | null;
 };
 
 export default function ArchivePage() {
@@ -49,6 +56,24 @@ export default function ArchivePage() {
             return text.includes(q);
         });
     }, [items, query]);
+
+    const rows = useMemo(
+        () =>
+            filtered.map((item) => ({
+                item,
+                workflow: buildMetadataWorkflowProgress({
+                    status: item.status,
+                    patientName: item.patientName,
+                    patient_name: item.patient_name,
+                    signer_name: item.signer_name,
+                    signer_role: item.signer_role,
+                    signed_at: item.signed_at,
+                    pdf_file: item.pdf_file,
+                    metadata: item.metadata,
+                }),
+            })),
+        [filtered]
+    );
 
     async function handleSearch() {
         setLoading(true);
@@ -102,16 +127,30 @@ export default function ArchivePage() {
                                     <tr>
                                         <th className="px-3 py-2 text-start">رقم الملف</th>
                                         <th className="px-3 py-2 text-start">اسم المريض</th>
+                                        <th className="px-3 py-2 text-start">تقدم المراحل</th>
                                         <th className="px-3 py-2 text-start">الحالة</th>
                                         <th className="px-3 py-2 text-start">التاريخ</th>
                                         <th className="px-3 py-2 text-start">إجراء</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filtered.map((item) => (
+                                    {rows.map(({ item, workflow }) => (
                                         <tr key={item.id} className="border-t">
                                             <td className="px-3 py-2">{item.medicalRecordNo || item.patient_mrn || "-"}</td>
                                             <td className="px-3 py-2">{item.patientName || item.patient_name || "-"}</td>
+                                            <td className="px-3 py-2">
+                                                {workflow.steps.length > 0 ? (
+                                                    <WorkflowProgress
+                                                        steps={workflow.steps}
+                                                        language="ar"
+                                                        direction="rtl"
+                                                        currentStepId={workflow.currentStepId}
+                                                        className="max-w-[34rem] border-0 bg-transparent p-0"
+                                                    />
+                                                ) : (
+                                                    <span className="text-xs text-slate-500">لا توجد مراحل محفوظة</span>
+                                                )}
+                                            </td>
                                             <td className="px-3 py-2">{item.status || "-"}</td>
                                             <td className="px-3 py-2">{item.createdAt || item.created_at || "-"}</td>
                                             <td className="px-3 py-2">
@@ -124,7 +163,7 @@ export default function ArchivePage() {
 
                                     {filtered.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="px-3 py-6 text-center text-slate-500">
+                                            <td colSpan={6} className="px-3 py-6 text-center text-slate-500">
                                                 لا توجد نتائج مطابقة.
                                             </td>
                                         </tr>
