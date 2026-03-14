@@ -1,9 +1,10 @@
 """
-Tests for the Inpatient Care Discharge Forms module
-====================================================
+Tests for the Hospital Discharge Form module
+=============================================
 Covers:
 - Form creation (happy path + all required fields)
-- Date validation (discharge before admission, follow-up before discharge)
+- Date validation (date_services_should_end before admission_date)
+- Conditional validation (other_text required when other_checkbox is True)
 - Patient not found → 422
 - List all forms (with pagination)
 - List forms for patient
@@ -29,25 +30,44 @@ import pytest
 
 @pytest.fixture()
 def discharge_payload(sample_patient):
-    """Valid payload for creating a discharge form."""
+    """Valid payload for creating a Hospital Discharge Form."""
     today = date.today()
     return {
         "patient_id": sample_patient.id,
-        "first_name": "Mohammed",
-        "last_name": "Al-Harbi",
-        "patient_identifier": sample_patient.national_id,
-        "date_of_admission": str(today - timedelta(days=5)),
-        "date_of_discharge": str(today),
+        # Section 1
+        "patient_first_name": "Mohammed",
+        "patient_last_name": "Al-Harbi",
+        "patient_phone_number": "+966501234567",
+        "attending_physician_first_name": "Khalid",
+        "attending_physician_last_name": "Al-Rashidi",
+        "facility_name": "WathiqCare Hospital",
+        "date_services_should_end": str(today),
+        # Section 2
+        "physician_note_reflecting_readiness_for_discharge": True,
+        "discharge_plan_discussed_with_member_family": True,
+        "discharge_plan_discussed_with_attending_provider": False,
+        "description_of_discharge_plan_in_place": True,
+        "therapy_notes_if_applicable": False,
+        "other_checkbox": False,
+        # Section 3
+        "admission_date": str(today - timedelta(days=5)),
+        "admission_symptoms": "Headache and elevated blood pressure",
         "diagnosis": "Hypertension — controlled",
-        "treatment_summary": "IV antihypertensives for 3 days, then oral transition",
-        "discharge_instructions": (
-            "Continue oral medication as prescribed. Avoid strenuous activity for 2 weeks. "
-            "Low-sodium diet required."
+        "treatment": "IV antihypertensives for 3 days, then oral transition",
+        "tests_and_results": "BP monitoring: 180/110 → 130/85 after treatment",
+        "evaluated_by": "Dr. Khalid Al-Rashidi, Internal Medicine",
+        "current_status": "Stable, ready for discharge with outpatient follow-up",
+        "safe_care_setting": "Home with outpatient clinic follow-up",
+        "discharge_plan_follow_up": (
+            "Return for follow-up appointment in 14 days. "
+            "Continue prescribed oral medication. Low-sodium diet required."
         ),
-        "follow_up_appointment_date": str(today + timedelta(days=14)),
-        "physician_first_name": "Khalid",
-        "physician_last_name": "Al-Rashidi",
-        "patient_guardian_signature": "Mohammed Al-Harbi",
+        # Section 4
+        "completed_by_first_name": "Khalid",
+        "completed_by_last_name": "Al-Rashidi",
+        "completed_by_phone_number": "+966501234567",
+        "completion_date": str(today),
+        "completed_by_signature": "Dr. Khalid Al-Rashidi",
     }
 
 
@@ -98,13 +118,16 @@ class TestCreateDischargeForm:
         )
         data = resp.json()
         assert data["patient_id"] == sample_patient.id
-        assert data["first_name"] == "Mohammed"
-        assert data["last_name"] == "Al-Harbi"
-        assert data["patient_identifier"] == sample_patient.national_id
+        assert data["patient_first_name"] == "Mohammed"
+        assert data["patient_last_name"] == "Al-Harbi"
+        assert data["patient_phone_number"] == "+966501234567"
+        assert data["attending_physician_first_name"] == "Khalid"
+        assert data["attending_physician_last_name"] == "Al-Rashidi"
+        assert data["facility_name"] == "WathiqCare Hospital"
         assert data["diagnosis"] == "Hypertension — controlled"
-        assert data["physician_first_name"] == "Khalid"
-        assert data["physician_last_name"] == "Al-Rashidi"
-        assert data["patient_guardian_signature"] == "Mohammed Al-Harbi"
+        assert data["physician_note_reflecting_readiness_for_discharge"] is True
+        assert data["other_checkbox"] is False
+        assert data["completed_by_signature"] == "Dr. Khalid Al-Rashidi"
 
     def test_created_form_status_is_draft(self, client, discharge_payload, doctor_token):
         resp = client.post(
@@ -148,48 +171,40 @@ class TestCreateDischargeForm:
 
 class TestDateValidation:
     def _detail_str(self, resp) -> str:
-        """Return a lowercase string representation of the error detail regardless of shape."""
+        """Extract error detail from API response as a lowercase string for assertion matching.
+
+        Handles both Pydantic v2 schema validation errors (list of dicts) and
+        plain string detail messages returned by FastAPI.
+        """
         detail = resp.json().get("detail", "")
         if isinstance(detail, list):
-            # Pydantic v2 schema-level validation errors come as a list of dicts
             return " ".join(str(e.get("msg", "")) for e in detail).lower()
         return str(detail).lower()
 
-    def test_discharge_before_admission_rejected(self, client, discharge_payload, doctor_token):
-        """Discharge date cannot precede admission date."""
+    def test_end_before_admission_rejected(self, client, discharge_payload, doctor_token):
+        """date_services_should_end cannot precede admission_date."""
         today = date.today()
-        payload = {**discharge_payload,
-                   "date_of_admission": str(today),
-                   "date_of_discharge": str(today - timedelta(days=1))}
+        payload = {
+            **discharge_payload,
+            "admission_date": str(today),
+            "date_services_should_end": str(today - timedelta(days=1)),
+        }
         resp = client.post(
             "/discharge-forms",
             json=payload,
             headers={"Authorization": f"Bearer {doctor_token}"},
         )
         assert resp.status_code == 422
-        assert "discharge date" in self._detail_str(resp)
+        assert "date_services_should_end" in self._detail_str(resp)
 
-    def test_followup_before_discharge_rejected(self, client, discharge_payload, doctor_token):
-        """Follow-up date cannot precede discharge date."""
+    def test_same_day_admission_end_allowed(self, client, discharge_payload, doctor_token):
+        """Same admission and end date is valid (day procedure)."""
         today = date.today()
-        payload = {**discharge_payload,
-                   "date_of_discharge": str(today),
-                   "follow_up_appointment_date": str(today - timedelta(days=1))}
-        resp = client.post(
-            "/discharge-forms",
-            json=payload,
-            headers={"Authorization": f"Bearer {doctor_token}"},
-        )
-        assert resp.status_code == 422
-        assert "follow-up" in self._detail_str(resp)
-
-    def test_same_day_admission_discharge_allowed(self, client, discharge_payload, doctor_token):
-        """Same admission and discharge date is valid (day surgery / short stay)."""
-        today = date.today()
-        payload = {**discharge_payload,
-                   "date_of_admission": str(today),
-                   "date_of_discharge": str(today),
-                   "follow_up_appointment_date": str(today + timedelta(days=7))}
+        payload = {
+            **discharge_payload,
+            "admission_date": str(today),
+            "date_services_should_end": str(today),
+        }
         resp = client.post(
             "/discharge-forms",
             json=payload,
@@ -197,17 +212,43 @@ class TestDateValidation:
         )
         assert resp.status_code == 201
 
-    def test_no_followup_date_is_valid(self, client, discharge_payload, doctor_token):
-        """Follow-up date is optional."""
+    def test_other_text_required_when_other_checked(self, client, discharge_payload, doctor_token):
+        """other_text must be provided when other_checkbox is True."""
+        payload = {**discharge_payload, "other_checkbox": True, "other_text": None}
+        resp = client.post(
+            "/discharge-forms",
+            json=payload,
+            headers={"Authorization": f"Bearer {doctor_token}"},
+        )
+        assert resp.status_code == 422
+        assert "other_text" in self._detail_str(resp)
+
+    def test_other_text_present_when_other_checked(self, client, discharge_payload, doctor_token):
+        """other_checkbox=True with other_text provided is valid."""
+        payload = {**discharge_payload, "other_checkbox": True, "other_text": "Follow-up imaging required"}
+        resp = client.post(
+            "/discharge-forms",
+            json=payload,
+            headers={"Authorization": f"Bearer {doctor_token}"},
+        )
+        assert resp.status_code == 201
+        assert resp.json()["other_text"] == "Follow-up imaging required"
+
+    def test_optional_narrative_fields_can_be_omitted(self, client, discharge_payload, doctor_token):
+        """Narrative section 3 fields (except diagnosis) are optional."""
         payload = {k: v for k, v in discharge_payload.items()
-                   if k != "follow_up_appointment_date"}
+                   if k not in {"admission_symptoms", "treatment", "tests_and_results",
+                                "evaluated_by", "current_status", "safe_care_setting",
+                                "discharge_plan_follow_up"}}
         resp = client.post(
             "/discharge-forms",
             json=payload,
             headers={"Authorization": f"Bearer {doctor_token}"},
         )
         assert resp.status_code == 201
-        assert resp.json()["follow_up_appointment_date"] is None
+        data = resp.json()
+        assert data["admission_symptoms"] is None
+        assert data["treatment"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -307,11 +348,20 @@ class TestUpdateForm:
     def test_update_signature(self, client, created_form, doctor_token):
         resp = client.patch(
             f"/discharge-forms/{created_form['id']}",
-            json={"patient_guardian_signature": "New Signature"},
+            json={"completed_by_signature": "New Signature"},
             headers={"Authorization": f"Bearer {doctor_token}"},
         )
         assert resp.status_code == 200
-        assert resp.json()["patient_guardian_signature"] == "New Signature"
+        assert resp.json()["completed_by_signature"] == "New Signature"
+
+    def test_update_checklist_item(self, client, created_form, doctor_token):
+        resp = client.patch(
+            f"/discharge-forms/{created_form['id']}",
+            json={"therapy_notes_if_applicable": True},
+            headers={"Authorization": f"Bearer {doctor_token}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["therapy_notes_if_applicable"] is True
 
     def test_update_unknown_form_returns_404(self, client, doctor_token):
         resp = client.patch(
@@ -499,86 +549,51 @@ class TestPDFEndpoint:
 
 
 class TestDischargePDFService:
-    def test_validate_passes_with_complete_data(self):
-        from app.services.discharge_pdf_service import validate_discharge_form_data
-
-        data = {
-            "first_name": "Ahmed",
-            "last_name": "Al-Said",
-            "patient_identifier": "1234567890",
-            "date_of_admission": "2026-01-01",
-            "date_of_discharge": "2026-01-05",
+    def _complete_data(self):
+        return {
+            "patient_first_name": "Ahmed",
+            "patient_last_name": "Al-Said",
+            "patient_phone_number": "+966501234567",
+            "attending_physician_first_name": "Dr. Nasser",
+            "attending_physician_last_name": "Al-Ghamdi",
+            "facility_name": "WathiqCare Hospital",
+            "date_services_should_end": "2026-01-05",
+            "admission_date": "2026-01-01",
             "diagnosis": "Hypertension",
-            "treatment_summary": "IV medication",
-            "discharge_instructions": "Rest and follow up",
-            "physician_first_name": "Dr. Nasser",
-            "physician_last_name": "Al-Ghamdi",
-        }
-        # Should not raise
-        validate_discharge_form_data(data)
-
-    def test_validate_raises_on_missing_patient_field(self):
-        from app.services.discharge_pdf_service import validate_discharge_form_data
-
-        data = {
-            "last_name": "Al-Said",
-            "patient_identifier": "1234567890",
-            "date_of_admission": "2026-01-01",
-            "date_of_discharge": "2026-01-05",
-            "diagnosis": "Hypertension",
-            "treatment_summary": "IV medication",
-            "discharge_instructions": "Rest",
-            "physician_first_name": "Dr. N",
-            "physician_last_name": "Al-G",
-        }
-        import pytest as _pytest
-        with _pytest.raises(ValueError, match="first_name"):
-            validate_discharge_form_data(data)
-
-    def test_validate_raises_on_missing_physician(self):
-        from app.services.discharge_pdf_service import validate_discharge_form_data
-
-        data = {
-            "first_name": "Ahmed",
-            "last_name": "Al-Said",
-            "patient_identifier": "1234567890",
-            "date_of_admission": "2026-01-01",
-            "date_of_discharge": "2026-01-05",
-            "diagnosis": "Hypertension",
-            "treatment_summary": "IV medication",
-            "discharge_instructions": "Rest",
-        }
-        import pytest as _pytest
-        with _pytest.raises(ValueError, match="physician_first_name"):
-            validate_discharge_form_data(data)
-
-    def test_render_html_produces_html_string(self):
-        from app.services.discharge_pdf_service import render_html
-
-        data = {
-            "first_name": "Ahmed",
-            "last_name": "Al-Said",
-            "patient_identifier": "1234567890",
-            "date_of_admission": "2026-01-01",
-            "date_of_discharge": "2026-01-05",
-            "diagnosis": "Hypertension",
-            "treatment_summary": "IV medication",
-            "discharge_instructions": "Rest",
-            "physician_first_name": "Dr. Nasser",
-            "physician_last_name": "Al-Ghamdi",
-            "patient_guardian_signature": "Ahmed Al-Said",
+            "treatment": "IV medication",
+            "checklist": {
+                "physician_note": True,
+                "discussed_with_family": True,
+                "discussed_with_provider": False,
+                "discharge_plan_in_place": True,
+                "therapy_notes": False,
+                "other": False,
+                "other_text": "",
+            },
+            "admission_symptoms": "High BP",
+            "tests_and_results": "BP 180/110",
+            "evaluated_by": "Dr. Nasser",
+            "current_status": "Stable",
+            "safe_care_setting": "Home",
+            "discharge_plan_follow_up": "Return in 14 days",
+            "completed_by_first_name": "Nasser",
+            "completed_by_last_name": "Al-Ghamdi",
+            "completed_by_phone_number": "+966501234568",
+            "completion_date": "2026-01-05",
+            "completed_by_signature": "Dr. Nasser Al-Ghamdi",
             "hospital_name": "WathiqCare Hospital",
             "hospital_logo": "",
             "form_number": "WQ-DF-12345678",
             "form_version": "v1.0",
             "generated_date": "2026-01-05",
             "generated_time": "10:00 UTC",
-            "form_status": "DRAFT",
+            "form_status": "draft",
+            "submitted_at": "",
             "patient": {
                 "full_name": "Ahmed Al-Said",
                 "first_name": "Ahmed",
                 "last_name": "Al-Said",
-                "national_id": "1234567890",
+                "phone": "+966501234567",
                 "mrn": "ABCDEFGH",
             },
             "physician": {
@@ -586,66 +601,43 @@ class TestDischargePDFService:
                 "first_name": "Dr. Nasser",
                 "last_name": "Al-Ghamdi",
             },
-            "clinical": {
-                "diagnosis": "Hypertension",
-                "treatment_summary": "IV medication",
-                "discharge_instructions": "Rest",
-                "date_of_admission": "2026-01-01",
-                "date_of_discharge": "2026-01-05",
-                "follow_up_date": "2026-01-19",
-            },
         }
-        html = render_html(data)
-        assert "Inpatient Care Discharge Form" in html
-        assert "Ahmed Al-Said" in html
+
+    def test_validate_passes_with_complete_data(self):
+        from app.services.discharge_pdf_service import validate_discharge_form_data
+
+        validate_discharge_form_data(self._complete_data())
+
+    def test_validate_raises_on_missing_patient_field(self):
+        from app.services.discharge_pdf_service import validate_discharge_form_data
+
+        data = {k: v for k, v in self._complete_data().items() if k != "patient_first_name"}
+        import pytest as _pytest
+        with _pytest.raises(ValueError, match="patient_first_name"):
+            validate_discharge_form_data(data)
+
+    def test_validate_raises_on_missing_physician(self):
+        from app.services.discharge_pdf_service import validate_discharge_form_data
+
+        data = {k: v for k, v in self._complete_data().items()
+                if k != "attending_physician_first_name"}
+        import pytest as _pytest
+        with _pytest.raises(ValueError, match="attending_physician_first_name"):
+            validate_discharge_form_data(data)
+
+    def test_render_html_produces_html_string(self):
+        from app.services.discharge_pdf_service import render_html
+
+        html = render_html(self._complete_data())
+        assert "Hospital Discharge Form" in html
+        assert "Ahmed" in html
         assert "Hypertension" in html
         assert "Dr. Nasser Al-Ghamdi" in html
 
     def test_render_pdf_calls_weasyprint(self):
         from app.services.discharge_pdf_service import render_pdf
 
-        data = {
-            "first_name": "Ahmed",
-            "last_name": "Al-Said",
-            "patient_identifier": "1234567890",
-            "date_of_admission": "2026-01-01",
-            "date_of_discharge": "2026-01-05",
-            "diagnosis": "Hypertension",
-            "treatment_summary": "IV medication",
-            "discharge_instructions": "Rest",
-            "physician_first_name": "Dr. Nasser",
-            "physician_last_name": "Al-Ghamdi",
-            "patient_guardian_signature": "Ahmed Al-Said",
-            "hospital_name": "WathiqCare Hospital",
-            "hospital_logo": "",
-            "form_number": "WQ-DF-12345678",
-            "form_version": "v1.0",
-            "generated_date": "2026-01-05",
-            "generated_time": "10:00 UTC",
-            "form_status": "DRAFT",
-            "patient": {
-                "full_name": "Ahmed Al-Said",
-                "first_name": "Ahmed",
-                "last_name": "Al-Said",
-                "national_id": "1234567890",
-                "mrn": "ABCDEFGH",
-            },
-            "physician": {
-                "full_name": "Dr. Nasser Al-Ghamdi",
-                "first_name": "Dr. Nasser",
-                "last_name": "Al-Ghamdi",
-            },
-            "clinical": {
-                "diagnosis": "Hypertension",
-                "treatment_summary": "IV medication",
-                "discharge_instructions": "Rest",
-                "date_of_admission": "2026-01-01",
-                "date_of_discharge": "2026-01-05",
-                "follow_up_date": "",
-            },
-        }
         with patch("app.services.discharge_pdf_service.render_pdf") as mock_render:
             mock_render.return_value = b"%PDF test"
-            result = render_pdf(data)
-        # The mock was called or bypassed; just verify bytes are returned
+            result = render_pdf(self._complete_data())
         assert isinstance(result, bytes)

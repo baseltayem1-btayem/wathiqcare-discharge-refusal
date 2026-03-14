@@ -1,16 +1,16 @@
 """
 Discharge Form PDF Service
 ===========================
-Renders the Inpatient Care Discharge Form as a printable A4 PDF using
+Renders the Hospital Discharge Form as a printable A4 PDF using
 Jinja2 templates and WeasyPrint.
 
 Validation rules
 ----------------
 Before generating a PDF the following fields must be present:
-- Patient identity: first_name, last_name, patient_identifier
-- Clinical dates:   date_of_admission, date_of_discharge
-- Clinical content: diagnosis, treatment_summary, discharge_instructions
-- Physician:        physician_first_name, physician_last_name
+- Patient identity:  patient_first_name, patient_last_name
+- Clinical dates:    admission_date, date_services_should_end
+- Clinical content:  diagnosis
+- Physician:         attending_physician_first_name, attending_physician_last_name
 """
 
 from pathlib import Path
@@ -22,10 +22,13 @@ TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "discharge_forms"
 
 TEMPLATE_FILE = "inpatient_care_discharge.html"
 
-REQUIRED_PATIENT_FIELDS: List[str] = ["first_name", "last_name", "patient_identifier"]
-REQUIRED_DATE_FIELDS: List[str] = ["date_of_admission", "date_of_discharge"]
-REQUIRED_CLINICAL_FIELDS: List[str] = ["diagnosis", "treatment_summary", "discharge_instructions"]
-REQUIRED_PHYSICIAN_FIELDS: List[str] = ["physician_first_name", "physician_last_name"]
+REQUIRED_PATIENT_FIELDS: List[str] = ["patient_first_name", "patient_last_name"]
+REQUIRED_DATE_FIELDS: List[str] = ["admission_date", "date_services_should_end"]
+REQUIRED_CLINICAL_FIELDS: List[str] = ["diagnosis"]
+REQUIRED_PHYSICIAN_FIELDS: List[str] = [
+    "attending_physician_first_name",
+    "attending_physician_last_name",
+]
 
 _jinja_env: "Environment | None" = None
 

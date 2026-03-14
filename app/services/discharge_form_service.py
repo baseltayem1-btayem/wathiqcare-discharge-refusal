@@ -2,7 +2,7 @@
 Discharge Form Service
 ======================
 Handles create, read, update, submit, and list operations for the
-Inpatient Care Discharge Form.  Every mutating action is audit-logged.
+Hospital Discharge Form.  Every mutating action is audit-logged.
 
 Status lifecycle
 ----------------
@@ -12,8 +12,8 @@ Business rules
 --------------
 - Only draft forms may be updated.
 - Submitted and signed forms are immutable.
-- Discharge date must not precede admission date (enforced at schema level too).
-- Follow-up date, if provided, must not precede discharge date.
+- date_services_should_end must not precede admission_date.
+- other_text is required when other_checkbox is True.
 """
 
 from datetime import datetime, timezone
@@ -31,17 +31,14 @@ from app.services import audit_service
 # ---------------------------------------------------------------------------
 
 
-def _validate_dates(
-    date_of_admission,
-    date_of_discharge,
-    follow_up_appointment_date=None,
-) -> None:
-    if date_of_discharge < date_of_admission:
-        raise ValueError("discharge date cannot be earlier than admission date")
-    if follow_up_appointment_date is not None and follow_up_appointment_date < date_of_discharge:
+def _validate_business_rules(form: DischargeForm) -> None:
+    """Re-validate business rules on the current state of the form object."""
+    if form.date_services_should_end < form.admission_date:
         raise ValueError(
-            "follow-up appointment date should not be earlier than discharge date"
+            "date_services_should_end cannot be earlier than admission_date"
         )
+    if form.other_checkbox and not form.other_text:
+        raise ValueError("other_text is required when other_checkbox is selected")
 
 
 # ---------------------------------------------------------------------------
@@ -55,12 +52,12 @@ def create_discharge_form(
     created_by: str,
 ) -> DischargeForm:
     """
-    Persist a new discharge form in 'draft' status.
+    Persist a new Hospital Discharge Form in 'draft' status.
 
     Raises
     ------
     ValueError
-        If the referenced patient does not exist, or if date constraints are violated.
+        If the referenced patient does not exist, or if business rules are violated.
     """
     patient: Optional[Patient] = (
         db.query(Patient).filter(Patient.id == data.patient_id).first()
@@ -68,22 +65,40 @@ def create_discharge_form(
     if not patient:
         raise ValueError(f"Patient '{data.patient_id}' not found.")
 
-    _validate_dates(data.date_of_admission, data.date_of_discharge, data.follow_up_appointment_date)
-
     form = DischargeForm(
         patient_id=data.patient_id,
-        first_name=data.first_name,
-        last_name=data.last_name,
-        patient_identifier=data.patient_identifier,
-        date_of_admission=data.date_of_admission,
-        date_of_discharge=data.date_of_discharge,
+        # Section 1
+        patient_first_name=data.patient_first_name,
+        patient_last_name=data.patient_last_name,
+        patient_phone_number=data.patient_phone_number,
+        attending_physician_first_name=data.attending_physician_first_name,
+        attending_physician_last_name=data.attending_physician_last_name,
+        facility_name=data.facility_name,
+        date_services_should_end=data.date_services_should_end,
+        # Section 2
+        physician_note_reflecting_readiness_for_discharge=data.physician_note_reflecting_readiness_for_discharge,
+        discharge_plan_discussed_with_member_family=data.discharge_plan_discussed_with_member_family,
+        discharge_plan_discussed_with_attending_provider=data.discharge_plan_discussed_with_attending_provider,
+        description_of_discharge_plan_in_place=data.description_of_discharge_plan_in_place,
+        therapy_notes_if_applicable=data.therapy_notes_if_applicable,
+        other_checkbox=data.other_checkbox,
+        other_text=data.other_text,
+        # Section 3
+        admission_date=data.admission_date,
+        admission_symptoms=data.admission_symptoms,
         diagnosis=data.diagnosis,
-        treatment_summary=data.treatment_summary,
-        discharge_instructions=data.discharge_instructions,
-        follow_up_appointment_date=data.follow_up_appointment_date,
-        physician_first_name=data.physician_first_name,
-        physician_last_name=data.physician_last_name,
-        patient_guardian_signature=data.patient_guardian_signature,
+        treatment=data.treatment,
+        tests_and_results=data.tests_and_results,
+        evaluated_by=data.evaluated_by,
+        current_status=data.current_status,
+        safe_care_setting=data.safe_care_setting,
+        discharge_plan_follow_up=data.discharge_plan_follow_up,
+        # Section 4
+        completed_by_first_name=data.completed_by_first_name,
+        completed_by_last_name=data.completed_by_last_name,
+        completed_by_phone_number=data.completed_by_phone_number,
+        completion_date=data.completion_date,
+        completed_by_signature=data.completed_by_signature,
         status="draft",
         created_by=created_by,
     )
@@ -100,7 +115,7 @@ def create_discharge_form(
         payload={
             "patient_id": form.patient_id,
             "status": form.status,
-            "date_of_discharge": str(form.date_of_discharge),
+            "date_services_should_end": str(form.date_services_should_end),
         },
     )
     return form
@@ -148,7 +163,7 @@ def update_discharge_form(
     Raises
     ------
     ValueError
-        If the form is not in 'draft' status, or if updated dates are invalid.
+        If the form is not in 'draft' status, or if business rules are violated.
     """
     form: Optional[DischargeForm] = get_discharge_form(db, form_id)
     if not form:
@@ -164,12 +179,8 @@ def update_discharge_form(
     for field, value in update_dict.items():
         setattr(form, field, value)
 
-    # Re-validate dates after update
-    _validate_dates(
-        form.date_of_admission,
-        form.date_of_discharge,
-        form.follow_up_appointment_date,
-    )
+    # Re-validate business rules after applying changes
+    _validate_business_rules(form)
 
     db.commit()
     db.refresh(form)
@@ -229,35 +240,58 @@ def submit_discharge_form(
 def build_pdf_context(form: DischargeForm, hospital_name: str = "WathiqCare Hospital") -> dict:
     """
     Build the flat + nested template context dict used by discharge_pdf_service.
-
-    Returns a dict that supports both flat keys (``{{ first_name }}``) and
-    nested keys (``{{ patient.full_name }}``) consistent with the base template
-    contract.
     """
     from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc)
+
+    checklist = {
+        "physician_note": form.physician_note_reflecting_readiness_for_discharge,
+        "discussed_with_family": form.discharge_plan_discussed_with_member_family,
+        "discussed_with_provider": form.discharge_plan_discussed_with_attending_provider,
+        "discharge_plan_in_place": form.description_of_discharge_plan_in_place,
+        "therapy_notes": form.therapy_notes_if_applicable,
+        "other": form.other_checkbox,
+        "other_text": form.other_text or "",
+    }
+
     return {
-        # ── flat / legacy keys ────────────────────────────────────────────────
-        "first_name": form.first_name,
-        "last_name": form.last_name,
-        "patient_full_name": f"{form.first_name} {form.last_name}",
-        "patient_identifier": form.patient_identifier,
-        "date_of_admission": str(form.date_of_admission),
-        "date_of_discharge": str(form.date_of_discharge),
-        "diagnosis": form.diagnosis,
-        "treatment_summary": form.treatment_summary,
-        "discharge_instructions": form.discharge_instructions,
-        "follow_up_appointment_date": (
-            str(form.follow_up_appointment_date) if form.follow_up_appointment_date else ""
+        # Section 1
+        "patient_first_name": form.patient_first_name,
+        "patient_last_name": form.patient_last_name,
+        "patient_full_name": f"{form.patient_first_name} {form.patient_last_name}",
+        "patient_phone_number": form.patient_phone_number or "",
+        "attending_physician_first_name": form.attending_physician_first_name,
+        "attending_physician_last_name": form.attending_physician_last_name,
+        "attending_physician_full_name": (
+            f"{form.attending_physician_first_name} {form.attending_physician_last_name}"
         ),
-        "physician_first_name": form.physician_first_name,
-        "physician_last_name": form.physician_last_name,
-        "physician_full_name": f"{form.physician_first_name} {form.physician_last_name}",
-        "patient_guardian_signature": form.patient_guardian_signature or "",
+        "facility_name": form.facility_name or hospital_name,
+        "date_services_should_end": str(form.date_services_should_end),
+        # Section 2
+        "checklist": checklist,
+        # Section 3
+        "admission_date": str(form.admission_date),
+        "admission_symptoms": form.admission_symptoms or "",
+        "diagnosis": form.diagnosis,
+        "treatment": form.treatment or "",
+        "tests_and_results": form.tests_and_results or "",
+        "evaluated_by": form.evaluated_by or "",
+        "current_status": form.current_status or "",
+        "safe_care_setting": form.safe_care_setting or "",
+        "discharge_plan_follow_up": form.discharge_plan_follow_up or "",
+        # Section 4
+        "completed_by_first_name": form.completed_by_first_name or "",
+        "completed_by_last_name": form.completed_by_last_name or "",
+        "completed_by_full_name": (
+            f"{form.completed_by_first_name or ''} {form.completed_by_last_name or ''}".strip()
+        ),
+        "completed_by_phone_number": form.completed_by_phone_number or "",
+        "completion_date": str(form.completion_date) if form.completion_date else "",
+        "completed_by_signature": form.completed_by_signature or "",
+        # Lifecycle & metadata
         "form_status": form.status,
         "submitted_at": form.submitted_at.isoformat() if form.submitted_at else "",
-        # ── institutional metadata ────────────────────────────────────────────
         "hospital_name": hospital_name,
         "hospital_logo": "",
         "form_number": f"WQ-DF-{form.id[:8].upper()}",
@@ -265,31 +299,20 @@ def build_pdf_context(form: DischargeForm, hospital_name: str = "WathiqCare Hosp
         "generated_date": now.strftime("%Y-%m-%d"),
         "generated_time": now.strftime("%H:%M UTC"),
         "generated_at": now.isoformat(),
-        # ── nested: patient ──────────────────────────────────────────────────
+        # Nested: patient (template compatibility)
         "patient": {
-            "full_name": f"{form.first_name} {form.last_name}",
-            "first_name": form.first_name,
-            "last_name": form.last_name,
-            "national_id": form.patient_identifier,
+            "full_name": f"{form.patient_first_name} {form.patient_last_name}",
+            "first_name": form.patient_first_name,
+            "last_name": form.patient_last_name,
+            "phone": form.patient_phone_number or "",
             "mrn": form.patient_id[:8].upper(),
         },
-        # ── nested: physician ────────────────────────────────────────────────
+        # Nested: physician
         "physician": {
-            "full_name": f"{form.physician_first_name} {form.physician_last_name}",
-            "first_name": form.physician_first_name,
-            "last_name": form.physician_last_name,
-        },
-        # ── nested: clinical ─────────────────────────────────────────────────
-        "clinical": {
-            "diagnosis": form.diagnosis,
-            "treatment_summary": form.treatment_summary,
-            "discharge_instructions": form.discharge_instructions,
-            "date_of_admission": str(form.date_of_admission),
-            "date_of_discharge": str(form.date_of_discharge),
-            "follow_up_date": (
-                str(form.follow_up_appointment_date)
-                if form.follow_up_appointment_date
-                else ""
+            "full_name": (
+                f"{form.attending_physician_first_name} {form.attending_physician_last_name}"
             ),
+            "first_name": form.attending_physician_first_name,
+            "last_name": form.attending_physician_last_name,
         },
     }
