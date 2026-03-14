@@ -473,6 +473,27 @@ export default function CaseDetailsPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [workflowBackendUnavailable, setWorkflowBackendUnavailable] = useState(false);
 
+  const isBackendUnavailableError = useMemo(() => {
+    if (!error) {
+      return false;
+    }
+
+    const normalized = error.toLowerCase();
+    const has503 = normalized.includes("503");
+    const hasKnownMessage =
+      normalized.includes("خدمة الواجهة الخلفية غير متاحة حالياً") ||
+      normalized.includes("temporarily unavailable") ||
+      normalized.includes("backend workflow service is temporarily unavailable");
+
+    return has503 && hasKnownMessage;
+  }, [error]);
+
+  useEffect(() => {
+    if (isBackendUnavailableError) {
+      setWorkflowBackendUnavailable(true);
+    }
+  }, [isBackendUnavailableError]);
+
   const workflowProgressSteps = useMemo(
     () => toWorkflowProgressSteps(workflow, locale, caseId),
     [workflow, locale, caseId]
@@ -1010,7 +1031,7 @@ export default function CaseDetailsPage() {
           </>
         }
       >
-        {error ? (
+        {error && !isBackendUnavailableError ? (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : null}
 
@@ -1032,9 +1053,11 @@ export default function CaseDetailsPage() {
           </div>
         ) : null}
 
-        {workflowBackendUnavailable ? (
+        {workflowBackendUnavailable || isBackendUnavailableError ? (
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Workflow actions are temporarily unavailable in this environment. Core case details are still accessible.
+            {lang === "ar"
+              ? "خدمة مسار الإجراءات غير متاحة مؤقتاً. يمكنك متابعة عرض بيانات الحالة الأساسية، وسيتم تعطيل إجراءات المسار لحين عودة الخدمة."
+              : "Workflow service is temporarily unavailable. Core case details remain accessible while workflow actions are disabled."}
           </div>
         ) : null}
 
