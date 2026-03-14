@@ -125,15 +125,22 @@ def _render_form_data(
     template: RefusalFormTemplate,
     consent: Consent,
     patient: Patient,
+    request: "RefusalFormGenerate",
 ) -> dict:
-    """Populate form fields from live consent + patient data."""
+    """Populate form fields from live consent + patient data plus request overrides."""
+    now = datetime.now(timezone.utc)
     base = {
         "form_type": template.form_type,
         "title": template.title,
+        # ── patient identity ─────────────────────────────────────────────────
         "patient_name": patient.full_name,
         "national_id": patient.national_id,
         "date_of_birth": str(patient.date_of_birth),
         "gender": patient.gender,
+        "patient_phone": patient.contact_phone or "",
+        # MRN: first 8 hex chars of patient UUID (provisional — no dedicated MRN column yet)
+        "mrn": patient.id[:8].upper(),
+        # ── consent / clinical ────────────────────────────────────────────────
         "consent_id": consent.id,
         "consent_type": consent.consent_type,
         "refusal_reason": consent.refusal_reason or "",
@@ -144,7 +151,21 @@ def _render_form_data(
         ).isoformat(),
         "escalation_status": consent.status,
         "is_escalated": consent.is_escalated,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        # ── physician (from request) ──────────────────────────────────────────
+        "physician_name": request.physician_name or "",
+        "physician_specialty": request.physician_specialty or "",
+        "physician_license_number": request.physician_license_number or "",
+        "department": request.department or "",
+        # ── clinical supplements (from request) ──────────────────────────────
+        "risk_summary": request.risk_summary or "",
+        "alternatives_offered": request.alternatives_offered or "",
+        # ── institutional metadata ────────────────────────────────────────────
+        "hospital_name": request.hospital_name or "WathiqCare Hospital",
+        "form_number": f"WQ-RF-{consent.id[:8].upper()}",
+        "form_version": "v1.0",
+        "generated_date": now.strftime("%Y-%m-%d"),
+        "generated_time": now.strftime("%H:%M UTC"),
+        "generated_at": now.isoformat(),
     }
 
     if template.form_type == "medical_discharge_refusal":
@@ -163,7 +184,7 @@ def _render_form_data(
             "extended care arising from this refusal, in accordance with Saudi healthcare "
             "billing regulations."
         )
-        base["acknowledgment_date"] = datetime.now(timezone.utc).isoformat()
+        base["acknowledgment_date"] = now.isoformat()
 
     if template.form_type == "procedure_refusal":
         from app.services.icd11_service import is_refusal_high_risk
@@ -221,7 +242,7 @@ def generate_form(
     if not patient:
         raise ValueError(f"Patient '{consent.patient_id}' not found.")
 
-    form_data = _render_form_data(template, consent, patient)
+    form_data = _render_form_data(template, consent, patient, request)
     if request.notes:
         form_data["notes"] = request.notes
 

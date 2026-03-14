@@ -21,6 +21,19 @@ class RefusalFormGenerate(BaseModel):
     form_type: str
     notes: Optional[str] = None
 
+    # Physician information (not stored in the User model; provided at generation time)
+    physician_name: Optional[str] = None
+    physician_specialty: Optional[str] = None
+    physician_license_number: Optional[str] = None
+    department: Optional[str] = None
+
+    # Clinical context supplements
+    risk_summary: Optional[str] = None
+    alternatives_offered: Optional[str] = None
+
+    # Institutional
+    hospital_name: Optional[str] = None
+
 
 class RefusalFormOut(BaseModel):
     """Response schema for a persisted refusal form instance."""

@@ -2,9 +2,11 @@ from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response as PDFResponse
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
+from app.models.refusal_form import RefusalForm
 from app.models.user import User
 from app.routers.auth import get_current_user, require_role
 from app.schemas.refusal_form import (
@@ -13,7 +15,7 @@ from app.schemas.refusal_form import (
     RefusalFormOut,
     RefusalFormTemplate,
 )
-from app.services import refusal_form_service
+from app.services import pdf_service, refusal_form_service
 
 router = APIRouter(prefix="/refusal-forms", tags=["refusal-forms"])
 
@@ -113,4 +115,49 @@ def download_form(
         title=title,
         downloaded_at=form.downloaded_at or datetime.now(timezone.utc),
         form_data=form.form_data,
+    )
+
+
+@router.get("/{form_id}/pdf")
+def download_form_pdf(
+    form_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Generate and download a refusal form as a bilingual (Arabic/English) A4 PDF.
+
+    The PDF is rendered on-the-fly from the stored form_data using Jinja2
+    templates and WeasyPrint.
+
+    Prerequisites
+    -------------
+    - The form must have been generated (via POST /refusal-forms).
+    - ``physician_name`` must be present in form_data (provide it during
+      form generation via the ``physician_name`` field).
+
+    Returns
+    -------
+    application/pdf
+        A4-sized PDF suitable for printing, legal review, and patient
+        signature workflows.
+    """
+    form: RefusalForm | None = db.query(RefusalForm).filter(RefusalForm.id == form_id).first()
+    if not form:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Refusal form not found")
+
+    try:
+        pdf_bytes = pdf_service.render_pdf(form.form_type, form.form_data)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        )
+
+    form_number = form.form_data.get("form_number", form_id[:8])
+    filename = f"refusal_form_{form_number}.pdf"
+
+    return PDFResponse(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

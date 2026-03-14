@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}إشعار المسؤولية المالية | Financial Responsibility Notice{% endblock %}
+{% block form_title_ar %}إشعار المسؤولية المالية / إقرار تحمل التكاليف{% endblock %}
+{% block form_title_en %}Financial Responsibility Notice / Patient Cost Acknowledgment{% endblock %}
+{% block form_version %}{{ form_version }}{% endblock %}
+
+{% block body %}
+
+<!-- ══════════════════════ SECTION 1: PATIENT INFORMATION ══════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Patient Information</span>
+            <span class="section-title-ar" lang="ar">معلومات المريض</span>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">Full Name<span class="required-star">*</span>:</td>
+            <td class="field-value" style="width:20%">{{ patient.full_name }}</td>
+            <td class="ar-label" lang="ar">:الاسم الكامل</td>
+            <td style="width:4%"></td>
+            <td class="en-label" lang="en">MRN:</td>
+            <td class="field-value" style="width:12%">{{ patient.mrn }}</td>
+            <td class="ar-label" lang="ar">:رقم الملف</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">National ID / Iqama<span class="required-star">*</span>:</td>
+            <td class="field-value">{{ patient.national_id }}</td>
+            <td class="ar-label" lang="ar">:الهوية / الإقامة</td>
+            <td></td>
+            <td class="en-label" lang="en">Contact Phone:</td>
+            <td class="field-value">{{ patient.phone }}</td>
+            <td class="ar-label" lang="ar">:رقم الهاتف</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">Department / Ward / Room:</td>
+            <td class="field-value" colspan="5">{{ physician.department }}</td>
+            <td class="ar-label" lang="ar">:القسم / الجناح / الغرفة</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ══════════════════ SECTION 2: PHYSICIAN INFORMATION ═══════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Treating Physician Information</span>
+            <span class="section-title-ar" lang="ar">معلومات الطبيب المعالج</span>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">Physician Name<span class="required-star">*</span>:</td>
+            <td class="field-value" style="width:22%">{{ physician.full_name }}</td>
+            <td class="ar-label" lang="ar">:اسم الطبيب</td>
+            <td style="width:4%"></td>
+            <td class="en-label" lang="en">Specialty:</td>
+            <td class="field-value" style="width:18%">{{ physician.specialty }}</td>
+            <td class="ar-label" lang="ar">:التخصص</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">License Number:</td>
+            <td class="field-value">{{ physician.license_number }}</td>
+            <td class="ar-label" lang="ar">:رقم الترخيص</td>
+            <td></td>
+            <td class="en-label" lang="en">Date &amp; Time:</td>
+            <td class="field-value">{{ generated_date }} {{ generated_time }}</td>
+            <td class="ar-label" lang="ar">:التاريخ والوقت</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ══════════════════ SECTION 3: REFUSAL SUMMARY ════════════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Refusal of Treatment / Discharge Plan</span>
+            <span class="section-title-ar" lang="ar">ملخص رفض العلاج / خطة الخروج</span>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">Diagnosis / Condition:</td>
+            <td class="field-value-long" colspan="5">{{ consent.diagnosis }}</td>
+            <td class="ar-label" lang="ar">:التشخيص</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">Recommended Plan / Procedure:</td>
+            <td class="field-value-multiline" colspan="5">{{ consent.recommended_plan }}</td>
+            <td class="ar-label" lang="ar">:الخطة / الإجراء الموصى به</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">ICD-11 Code(s):</td>
+            <td colspan="5" style="padding:3px 5px;">
+                {% for code in consent.icd11_codes %}
+                    <span class="icd-badge">{{ code }}</span>
+                {% else %}
+                    <span style="color:#999; font-size:8pt;">N/A</span>
+                {% endfor %}
+            </td>
+            <td class="ar-label" lang="ar">:رمز ICD-11</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">Patient's Refusal Reason:</td>
+            <td class="field-value-multiline" colspan="5">{{ refusal.reason }}</td>
+            <td class="ar-label" lang="ar">:سبب الرفض</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ══════════════════ SECTION 4: FINANCIAL LIABILITY STATEMENT ══════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Financial Liability Statement</span>
+            <span class="section-title-ar" lang="ar">بيان المسؤولية المالية</span>
+        </div>
+    </div>
+    <div class="declaration-box">
+        <div class="bilingual-para">
+            <div class="para-ar" lang="ar">
+                بموجب رفض المريض للعلاج الموصى به أو خطة الخروج من المستشفى، يُقر المريض بتحمله المسؤولية المالية الكاملة عن جميع التكاليف والرسوم والمضاعفات والرعاية الإضافية الناجمة مباشرة أو غير مباشرة عن هذا الرفض، وذلك وفقاً للوائح الفوترة الصحية في المملكة العربية السعودية. لن تتحمل المؤسسة الصحية أي مسؤولية مالية أو قانونية تترتب على قرار المريض.
+            </div>
+            <div class="para-en" lang="en">
+                By refusing the recommended treatment or discharge plan, the patient acknowledges full financial responsibility for all costs, fees, complications, and additional care arising directly or indirectly from this refusal, in accordance with Saudi healthcare billing regulations. The healthcare institution shall bear no financial or legal liability resulting from the patient's decision.
+            </div>
+        </div>
+        {% if financial_liability_statement %}
+        <hr class="divider"/>
+        <div style="direction:ltr; text-align:left; font-size:8.5pt; color:#444; margin-top:4px;">
+            <strong>Additional Statement:</strong> {{ financial_liability_statement }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ══════════════════ SECTION 5: COST ACKNOWLEDGMENT ════════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Cost Acknowledgment Checklist</span>
+            <span class="section-title-ar" lang="ar">قائمة الإقرار بالتكاليف</span>
+        </div>
+    </div>
+    <div class="check-item">
+        <div class="check-box">&nbsp;</div>
+        <div class="check-text-en" lang="en">I acknowledge that I may incur additional medical expenses due to my refusal.</div>
+        <div class="check-text-ar" lang="ar">أُقر بأنني قد أتحمل نفقات طبية إضافية بسبب رفضي.</div>
+    </div>
+    <div class="check-item">
+        <div class="check-box">&nbsp;</div>
+        <div class="check-text-en" lang="en">I have been informed that my insurance may not cover costs arising from my refusal.</div>
+        <div class="check-text-ar" lang="ar">أُبلغت بأن التأمين قد لا يغطي التكاليف الناجمة عن رفضي.</div>
+    </div>
+    <div class="check-item">
+        <div class="check-box">&nbsp;</div>
+        <div class="check-text-en" lang="en">I accept personal financial liability for any related re-admission or emergency care.</div>
+        <div class="check-text-ar" lang="ar">أتحمل المسؤولية المالية الشخصية عن أي إعادة دخول أو رعاية طارئة ذات صلة.</div>
+    </div>
+    <div class="check-item">
+        <div class="check-box">&nbsp;</div>
+        <div class="check-text-en" lang="en">I understand and accept all stated financial obligations.</div>
+        <div class="check-text-ar" lang="ar">أفهم وأقبل جميع الالتزامات المالية المذكورة.</div>
+    </div>
+</div>
+
+<!-- ══════════════════ SECTION 6: PATIENT DECLARATION ════════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Patient Declaration</span>
+            <span class="section-title-ar" lang="ar">إقرار المريض</span>
+        </div>
+    </div>
+    <div class="declaration-box">
+        <div class="bilingual-para">
+            <div class="para-ar" lang="ar">
+                أنا الموقع أدناه أُقر بأنني اطلعت على بيان المسؤولية المالية المذكور أعلاه وفهمته كاملاً، وأنني أتحمل بموجب ذلك المسؤولية المالية الكاملة عن قراري برفض الخطة الطبية الموصى بها.
+            </div>
+            <div class="para-en" lang="en">
+                I, the undersigned, declare that I have read and fully understood the financial liability statement above, and hereby accept full financial responsibility for my decision to refuse the recommended medical plan.
+            </div>
+        </div>
+    </div>
+    <table class="fields-table mt-6">
+        <tr>
+            <td class="en-label" lang="en">Acknowledgment Date:</td>
+            <td class="field-value">{{ acknowledgment_date[:10] if acknowledgment_date else generated_date }}</td>
+            <td class="ar-label" lang="ar">:تاريخ الإقرار</td>
+            <td style="width:4%"></td>
+            <td class="en-label" lang="en">Consent Case ID:</td>
+            <td class="field-value">{{ consent_id[:12] if consent_id else "" }}</td>
+            <td class="ar-label" lang="ar">:رمز الموافقة</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ══════════════════ SECTION 7: SIGNATURE BLOCK ════════════════════════ -->
+<div class="section mt-10">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Signatures</span>
+            <span class="section-title-ar" lang="ar">التوقيعات</span>
+        </div>
+    </div>
+    <div class="signature-block">
+        <div class="sig-cell">
+            <div class="sig-line"></div>
+            <div class="sig-label-ar" lang="ar">توقيع المريض / ولي الأمر</div>
+            <div class="sig-label-en" lang="en">Patient / Guardian Signature</div>
+            <div class="sig-date">Date / التاريخ: ____________________</div>
+        </div>
+        <div class="sig-cell">
+            <div class="sig-line"></div>
+            <div class="sig-label-ar" lang="ar">توقيع الطبيب المعالج</div>
+            <div class="sig-label-en" lang="en">Attending Physician Signature</div>
+            <div class="sig-date">Date / التاريخ: ____________________</div>
+        </div>
+        <div class="sig-cell">
+            <div class="sig-line"></div>
+            <div class="sig-label-ar" lang="ar">توقيع الشاهد</div>
+            <div class="sig-label-en" lang="en">Witness Signature</div>
+            <div class="sig-date">Date / التاريخ: ____________________</div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ SECTION 8: REFUSED TO SIGN ════════════════════════ -->
+<div class="refused-sign-box mt-6">
+    <div class="bilingual-para">
+        <div class="para-ar" style="font-weight:bold; color:#c0392b;">رفض التوقيع:</div>
+        <div class="para-en" style="font-weight:bold; color:#c0392b;">Patient / Guardian Refused to Sign:</div>
+    </div>
+    <div class="check-item">
+        <div class="check-box">&nbsp;</div>
+        <div class="check-text-en" lang="en">Patient was offered the opportunity to sign and refused.</div>
+        <div class="check-text-ar" lang="ar">أُتيحت للمريض فرصة التوقيع فرفض.</div>
+    </div>
+    <table class="fields-table mt-6">
+        <tr>
+            <td class="en-label" lang="en">Witness Name:</td>
+            <td class="field-value" style="width:30%">&nbsp;</td>
+            <td class="ar-label" lang="ar">:اسم الشاهد</td>
+            <td style="width:4%"></td>
+            <td class="en-label" lang="en">Witness Signature:</td>
+            <td class="field-value" style="width:25%">&nbsp;</td>
+            <td class="ar-label" lang="ar">:توقيع الشاهد</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">Witness Statement:</td>
+            <td colspan="6" class="field-value-multiline">{{ witness.statement }}</td>
+        </tr>
+    </table>
+</div>
+
+{% endblock %}

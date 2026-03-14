@@ -20,6 +20,13 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install system dependencies for WeasyPrint
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
+            libgdk-pixbuf2.0-0 libffi-dev fonts-noto fonts-noto-core
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

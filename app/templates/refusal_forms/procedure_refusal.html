@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}نموذج رفض الإجراء الطبي | Procedure Consent Refusal Form{% endblock %}
+{% block form_title_ar %}نموذج رفض إجراء طبي / علاج{% endblock %}
+{% block form_title_en %}Procedure / Treatment Consent Refusal Form{% endblock %}
+{% block form_version %}{{ form_version }}{% endblock %}
+
+{% block body %}
+
+<!-- ══════════════════════ SECTION 1: PATIENT INFORMATION ══════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Patient Information</span>
+            <span class="section-title-ar" lang="ar">معلومات المريض</span>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">Full Name<span class="required-star">*</span>:</td>
+            <td class="field-value" style="width:20%">{{ patient.full_name }}</td>
+            <td class="ar-label" lang="ar">:الاسم الكامل</td>
+            <td style="width:4%"></td>
+            <td class="en-label" lang="en">MRN:</td>
+            <td class="field-value" style="width:12%">{{ patient.mrn }}</td>
+            <td class="ar-label" lang="ar">:رقم الملف</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">National ID / Iqama<span class="required-star">*</span>:</td>
+            <td class="field-value">{{ patient.national_id }}</td>
+            <td class="ar-label" lang="ar">:الهوية / الإقامة</td>
+            <td></td>
+            <td class="en-label" lang="en">Date of Birth:</td>
+            <td class="field-value">{{ patient.date_of_birth }}</td>
+            <td class="ar-label" lang="ar">:تاريخ الميلاد</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">Gender:</td>
+            <td class="field-value">{{ patient.gender | capitalize }}</td>
+            <td class="ar-label" lang="ar">:الجنس</td>
+            <td></td>
+            <td class="en-label" lang="en">Contact Phone:</td>
+            <td class="field-value">{{ patient.phone }}</td>
+            <td class="ar-label" lang="ar">:رقم الهاتف</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">Department / Ward / Room:</td>
+            <td class="field-value" colspan="5">{{ physician.department }}</td>
+            <td class="ar-label" lang="ar">:القسم / الجناح / الغرفة</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ══════════════════ SECTION 2: PHYSICIAN INFORMATION ═══════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Treating Physician Information</span>
+            <span class="section-title-ar" lang="ar">معلومات الطبيب المعالج</span>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">Physician Name<span class="required-star">*</span>:</td>
+            <td class="field-value" style="width:22%">{{ physician.full_name }}</td>
+            <td class="ar-label" lang="ar">:اسم الطبيب</td>
+            <td style="width:4%"></td>
+            <td class="en-label" lang="en">Specialty:</td>
+            <td class="field-value" style="width:18%">{{ physician.specialty }}</td>
+            <td class="ar-label" lang="ar">:التخصص</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">License Number:</td>
+            <td class="field-value">{{ physician.license_number }}</td>
+            <td class="ar-label" lang="ar">:رقم الترخيص</td>
+            <td></td>
+            <td class="en-label" lang="en">Date &amp; Time:</td>
+            <td class="field-value">{{ generated_date }} {{ generated_time }}</td>
+            <td class="ar-label" lang="ar">:التاريخ والوقت</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ═══════════════ SECTION 3: PROCEDURE / TREATMENT SUMMARY ══════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Proposed Procedure / Treatment</span>
+            <span class="section-title-ar" lang="ar">الإجراء / العلاج المقترح</span>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td class="en-label" lang="en">Diagnosis / Condition:</td>
+            <td class="field-value-long" colspan="5">{{ consent.diagnosis }}</td>
+            <td class="ar-label" lang="ar">:التشخيص</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">ICD-11 Code(s):</td>
+            <td colspan="5" style="padding:3px 5px;">
+                {% for code in consent.icd11_codes %}
+                    <span class="icd-badge">{{ code }}</span>
+                {% else %}
+                    <span style="color:#999; font-size:8pt;">N/A</span>
+                {% endfor %}
+            </td>
+            <td class="ar-label" lang="ar">:رمز ICD-11</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">Procedure Description:</td>
+            <td class="field-value-multiline" colspan="5">{{ consent.recommended_plan }}</td>
+            <td class="ar-label" lang="ar">:وصف الإجراء</td>
+        </tr>
+        {% if high_risk_flag %}
+        <tr>
+            <td colspan="7">
+                <div class="risk-box" style="background:#fff0f0;">
+                    <span class="text-danger text-bold">⚠ HIGH-RISK PROCEDURE / إجراء عالي الخطورة:</span>
+                    <span style="direction:ltr;"> This procedure involves ICD-11 high-risk diagnosis codes.</span>
+                    <span style="direction:rtl;"> يشمل هذا الإجراء رموز تشخيصية عالية الخطورة وفق ICD-11.</span>
+                </div>
+            </td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+
+<!-- ══════════════════ SECTION 4: EXPLANATION PROVIDED ═══════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Explanation Provided to Patient</span>
+            <span class="section-title-ar" lang="ar">الشرح المقدم للمريض</span>
+        </div>
+    </div>
+    <div class="bilingual-para">
+        <div class="para-ar" lang="ar">
+            تم إبلاغ المريض بطبيعة الإجراء الطبي المقترح ومخاطره وفوائده، والبدائل المتاحة، وعواقب الرفض المحتملة.
+        </div>
+        <div class="para-en" lang="en">
+            The patient has been informed of the nature, risks, and benefits of the proposed procedure, available alternatives, and potential consequences of refusal.
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ SECTION 5: RISKS OF REFUSAL ════════════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Risks of Refusal</span>
+            <span class="section-title-ar" lang="ar">مخاطر الرفض</span>
+        </div>
+    </div>
+    <div class="risk-box">
+        {% if refusal.risk_summary %}
+        <div class="bilingual-para">
+            <div class="para-ar" lang="ar">{{ refusal.risk_summary }}</div>
+            <div class="para-en" lang="en">{{ refusal.risk_summary }}</div>
+        </div>
+        {% else %}
+        <div class="bilingual-para">
+            <div class="para-ar" lang="ar">
+                رفض الإجراء الطبي قد يؤدي إلى: تدهور الحالة الصحية، وتطور المرض، وزيادة خطر المضاعفات الجسيمة.
+            </div>
+            <div class="para-en" lang="en">
+                Refusal of the proposed procedure may lead to: deterioration of health status, disease progression, and increased risk of serious complications.
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <table class="fields-table mt-6">
+        <tr>
+            <td class="en-label" lang="en">Patient's Stated Refusal Reason:</td>
+            <td colspan="6" class="field-value-multiline">{{ refusal.reason }}</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ══════════════════ SECTION 6: ALTERNATIVES OFFERED ═══════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Alternatives Offered</span>
+            <span class="section-title-ar" lang="ar">البدائل المقترحة</span>
+        </div>
+    </div>
+    <table class="fields-table">
+        <tr>
+            <td colspan="7" class="field-value-multiline">
+                {% if refusal.alternatives_offered %}{{ refusal.alternatives_offered }}{% else %}
+                    Conservative management / Modified treatment protocol / Close monitoring
+                    &nbsp;|&nbsp;
+                    العلاج المحافظ / بروتوكول علاجي معدّل / متابعة دقيقة
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>
+
+<!-- ══════════════════ SECTION 7: PATIENT DECLARATION ════════════════════ -->
+<div class="section">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Patient Declaration</span>
+            <span class="section-title-ar" lang="ar">إقرار المريض</span>
+        </div>
+    </div>
+    <div class="declaration-box">
+        <div class="bilingual-para">
+            <div class="para-ar" lang="ar">
+                أنا الموقع أدناه أُقر بأنني رفضت طواعيةً الإجراء الطبي المقترح بعد الاطلاع الكامل على مخاطره وبدائله. أتحمل كامل المسؤولية عن هذا القرار وأُبرئ المستشفى والطاقم الطبي من أي تبعات طبية أو قانونية.
+            </div>
+            <div class="para-en" lang="en">
+                I, the undersigned, declare that I have voluntarily refused the proposed medical procedure after being fully informed of its risks and alternatives. I assume full responsibility for this decision and release the hospital and medical team from any resulting medical or legal liability.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ SECTION 8: SIGNATURE BLOCK ════════════════════════ -->
+<div class="section mt-10">
+    <div class="section-header">
+        <div class="section-header-inner">
+            <span class="section-title-en" lang="en">Signatures</span>
+            <span class="section-title-ar" lang="ar">التوقيعات</span>
+        </div>
+    </div>
+    <div class="signature-block">
+        <div class="sig-cell">
+            <div class="sig-line"></div>
+            <div class="sig-label-ar" lang="ar">توقيع المريض / ولي الأمر</div>
+            <div class="sig-label-en" lang="en">Patient / Guardian Signature</div>
+            <div class="sig-date">Date / التاريخ: ____________________</div>
+        </div>
+        <div class="sig-cell">
+            <div class="sig-line"></div>
+            <div class="sig-label-ar" lang="ar">توقيع الطبيب المعالج</div>
+            <div class="sig-label-en" lang="en">Attending Physician Signature</div>
+            <div class="sig-date">Date / التاريخ: ____________________</div>
+        </div>
+        <div class="sig-cell">
+            <div class="sig-line"></div>
+            <div class="sig-label-ar" lang="ar">توقيع الشاهد</div>
+            <div class="sig-label-en" lang="en">Witness Signature</div>
+            <div class="sig-date">Date / التاريخ: ____________________</div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════ SECTION 9: REFUSED TO SIGN ════════════════════════ -->
+<div class="refused-sign-box mt-6">
+    <div class="bilingual-para">
+        <div class="para-ar" style="font-weight:bold; color:#c0392b;">رفض التوقيع:</div>
+        <div class="para-en" style="font-weight:bold; color:#c0392b;">Patient / Guardian Refused to Sign:</div>
+    </div>
+    <div class="check-item">
+        <div class="check-box">&nbsp;</div>
+        <div class="check-text-en" lang="en">Patient was offered the opportunity to sign and refused.</div>
+        <div class="check-text-ar" lang="ar">أُتيحت للمريض فرصة التوقيع فرفض.</div>
+    </div>
+    <table class="fields-table mt-6">
+        <tr>
+            <td class="en-label" lang="en">Witness Name:</td>
+            <td class="field-value" style="width:30%">&nbsp;</td>
+            <td class="ar-label" lang="ar">:اسم الشاهد</td>
+            <td style="width:4%"></td>
+            <td class="en-label" lang="en">Witness Signature:</td>
+            <td class="field-value" style="width:25%">&nbsp;</td>
+            <td class="ar-label" lang="ar">:توقيع الشاهد</td>
+        </tr>
+        <tr>
+            <td class="en-label" lang="en">Witness Statement:</td>
+            <td colspan="6" class="field-value-multiline">{{ witness.statement }}</td>
+        </tr>
+    </table>
+</div>
+
+{% endblock %}
