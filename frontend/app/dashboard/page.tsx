@@ -9,6 +9,7 @@ import {
   FileText, 
   Gavel, 
   PlusCircle, 
+  Rocket,
   ShieldCheck, 
   Timer,
   AlertTriangle,
@@ -21,8 +22,6 @@ import {
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import KPICard from "@/components/ui/KPICard";
-import PageHeader from "@/components/ui/PageHeader";
-import SectionPanel from "@/components/ui/SectionPanel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
@@ -37,16 +36,38 @@ type CaseItem = {
   createdAt?: string | null;
 };
 
+type SystemModule = {
+  name: string;
+  description: string;
+  enabled: boolean;
+};
+
+type SystemInspectData = {
+  status: "healthy" | "degraded";
+  api: { title: string; version: string; inspected_at: string };
+  database: { reachable: boolean; error: string | null };
+  modules: SystemModule[];
+  integrations: Record<string, { enabled: boolean; description: string }>;
+};
+
 export default function DashboardPage() {
   const { t } = useI18n();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [launch, setLaunch] = useState<SystemInspectData | null>(null);
+  const [launchLoading, setLaunchLoading] = useState(true);
+  const [launchError, setLaunchError] = useState(false);
 
   useEffect(() => {
     apiFetch<CaseItem[]>("/api/cases?limit=200")
       .then((data) => setCases(Array.isArray(data) ? data : []))
       .catch(() => setCases([]))
       .finally(() => setLoading(false));
+
+    apiFetch<SystemInspectData>("/api/system/inspect")
+      .then((data) => { setLaunch(data); setLaunchError(false); })
+      .catch(() => setLaunchError(true))
+      .finally(() => setLaunchLoading(false));
   }, []);
 
   const metrics = useMemo(() => {
@@ -308,20 +329,84 @@ export default function DashboardPage() {
           </Link>
         </section>
 
-        {/* System Health Indicator */}
-        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-emerald-600 p-2">
-              <TrendingUp className="h-5 w-5 text-white" />
+        {/* System Health — live data from /api/system/inspect */}
+        {launchLoading ? (
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+            Loading system health…
+          </div>
+        ) : launchError ? (
+          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            System health check unavailable. <Link href="/launch-status" className="underline">View Launch Status</Link>
+          </div>
+        ) : launch ? (
+          <div
+            className={`mt-6 rounded-2xl border p-4 ${
+              launch.status === "healthy"
+                ? "border-emerald-200 bg-emerald-50"
+                : "border-amber-200 bg-amber-50"
+            }`}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`rounded-lg p-2 ${
+                    launch.status === "healthy" ? "bg-emerald-600" : "bg-amber-500"
+                  }`}
+                >
+                  <TrendingUp className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3
+                    className={`text-sm font-semibold ${
+                      launch.status === "healthy" ? "text-emerald-900" : "text-amber-900"
+                    }`}
+                  >
+                    {launch.api.title} v{launch.api.version} —{" "}
+                    {launch.status === "healthy" ? "Healthy" : "Degraded"}
+                  </h3>
+                  <p
+                    className={`mt-0.5 text-xs ${
+                      launch.status === "healthy" ? "text-emerald-700" : "text-amber-700"
+                    }`}
+                  >
+                    DB {launch.database.reachable ? "reachable" : "unreachable"} •{" "}
+                    {launch.modules.filter((m) => m.enabled).length}/{launch.modules.length} modules active •{" "}
+                    Inspected at {new Date(launch.api.inspected_at).toLocaleTimeString()}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/launch-status"
+                className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium ${
+                  launch.status === "healthy"
+                    ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                    : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                }`}
+              >
+                <Rocket className="h-3.5 w-3.5" />
+                {t("nav.launchStatus")}
+              </Link>
             </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-emerald-900">System Status: Operational</h3>
-              <p className="mt-0.5 text-xs text-emerald-700">
-                All modules functioning • Last sync: {new Date().toLocaleTimeString()}
-              </p>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {launch.modules.map((mod) => (
+                <div
+                  key={mod.name}
+                  className="flex items-center justify-between rounded-xl border border-white/60 bg-white/60 px-3 py-2 text-xs"
+                >
+                  <span className="text-slate-700">{mod.description}</span>
+                  <span
+                    className={
+                      mod.enabled ? "font-medium text-emerald-700" : "font-medium text-slate-400"
+                    }
+                  >
+                    {mod.enabled ? "Active" : "Off"}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        ) : null}
       </AppShell>
     </AuthGuard>
   );
