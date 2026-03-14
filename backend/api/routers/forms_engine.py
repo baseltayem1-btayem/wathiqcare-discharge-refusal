@@ -19,7 +19,6 @@ VIEW_ROLES = (
     "tenant_admin",
     "legal_admin",
     "doctor",
-    "viewer",
     "nursing",
     "patient_affairs",
     "social_services",

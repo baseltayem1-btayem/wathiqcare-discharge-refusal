@@ -55,7 +55,6 @@ ROLE_WORKFLOW_VIEW = (
     "tenant_admin",
     ROLE_LEGAL,
     ROLE_PHYSICIAN,
-    "viewer",
     ROLE_NURSING,
     ROLE_PATIENT_AFFAIRS,
     ROLE_SOCIAL_SERVICES,
@@ -179,7 +178,7 @@ def run_case_workflow_action(
 
 @router.get("/cases/legal-escalation")
 def get_legal_escalation_cases(
-    current_user=Depends(require_roles("tenant_admin", ROLE_LEGAL, ROLE_COMPLIANCE, ROLE_QUALITY, "viewer")),
+    current_user=Depends(require_roles("tenant_admin", ROLE_LEGAL, ROLE_COMPLIANCE, ROLE_QUALITY)),
 ):
     return list_escalation_cases(tenant_id=current_user["tenant_id"])
 
@@ -187,7 +186,7 @@ def get_legal_escalation_cases(
 @router.get("/cases/{case_id}/legal-escalation")
 def get_legal_escalation_case(
     case_id: str,
-    current_user=Depends(require_roles("tenant_admin", ROLE_LEGAL, ROLE_COMPLIANCE, ROLE_QUALITY, "viewer")),
+    current_user=Depends(require_roles("tenant_admin", ROLE_LEGAL, ROLE_COMPLIANCE, ROLE_QUALITY)),
 ):
     try:
         return get_escalation_case_detail(tenant_id=current_user["tenant_id"], case_id=case_id)

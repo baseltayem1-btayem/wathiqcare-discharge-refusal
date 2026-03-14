@@ -4,12 +4,24 @@ import os
 from datetime import datetime, timezone
 from typing import Dict
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from backend.api.deps import require_roles
 from backend.integration.emr_connector import FHIRBuilder, InMemoryEMRConnector
 
 router = APIRouter(tags=["Integration"])
 _connector = InMemoryEMRConnector()
+
+INTEGRATION_VIEW_ROLES = (
+    "tenant_admin",
+    "legal_admin",
+    "doctor",
+    "nursing",
+    "patient_affairs",
+    "social_services",
+    "quality",
+    "compliance",
+)
 
 
 def _seed_if_missing(mrn: str) -> Dict[str, str]:
@@ -29,7 +41,11 @@ def _seed_if_missing(mrn: str) -> Dict[str, str]:
 
 
 @router.get("/his/patient/{mrn}")
-def get_his_patient(mrn: str):
+def get_his_patient(
+    mrn: str,
+    current_user=Depends(require_roles(*INTEGRATION_VIEW_ROLES)),
+):
+    _ = current_user
     patient = _seed_if_missing(mrn)
     return {
         "source": "his",
@@ -38,7 +54,11 @@ def get_his_patient(mrn: str):
 
 
 @router.get("/fhir/patient/{patient_id}")
-def get_fhir_patient(patient_id: str):
+def get_fhir_patient(
+    patient_id: str,
+    current_user=Depends(require_roles(*INTEGRATION_VIEW_ROLES)),
+):
+    _ = current_user
     patient = _seed_if_missing(patient_id)
     return FHIRBuilder.build_patient(
         patient_id=patient["id"],
@@ -48,7 +68,11 @@ def get_fhir_patient(patient_id: str):
 
 
 @router.get("/fhir/encounter/{encounter_id}")
-def get_fhir_encounter(encounter_id: str):
+def get_fhir_encounter(
+    encounter_id: str,
+    current_user=Depends(require_roles(*INTEGRATION_VIEW_ROLES)),
+):
+    _ = current_user
     now = datetime.now(timezone.utc).isoformat()
     return {
         "resourceType": "Encounter",
@@ -66,7 +90,11 @@ def get_fhir_encounter(encounter_id: str):
 
 
 @router.get("/fhir/procedure/{procedure_id}")
-def get_fhir_procedure(procedure_id: str):
+def get_fhir_procedure(
+    procedure_id: str,
+    current_user=Depends(require_roles(*INTEGRATION_VIEW_ROLES)),
+):
+    _ = current_user
     return {
         "resourceType": "Procedure",
         "id": procedure_id,
@@ -78,7 +106,11 @@ def get_fhir_procedure(procedure_id: str):
 
 
 @router.get("/fhir/consent/{consent_id}")
-def get_fhir_consent(consent_id: str):
+def get_fhir_consent(
+    consent_id: str,
+    current_user=Depends(require_roles(*INTEGRATION_VIEW_ROLES)),
+):
+    _ = current_user
     return FHIRBuilder.build_consent(
         form_id=consent_id,
         patient_id="unknown",
@@ -87,7 +119,11 @@ def get_fhir_consent(consent_id: str):
 
 
 @router.get("/integrations/systems")
-def get_integration_systems_status():
+def get_integration_systems_status(
+    current_user=Depends(require_roles(*INTEGRATION_VIEW_ROLES)),
+):
+    _ = current_user
+
     def flag(name: str, default: str = "false") -> bool:
         return os.getenv(name, default).lower() == "true"
 

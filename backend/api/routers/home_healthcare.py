@@ -73,7 +73,7 @@ def _build_case_defaults(*, case_id: str, tenant_id: str) -> Dict[str, str]:
 @router.get("/cases/{case_id}/post-discharge-care-models")
 def list_post_discharge_care_models(
     case_id: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
 ):
     _ = case_id
     return {
@@ -106,7 +106,7 @@ def select_post_discharge_care_model(
 def preview_home_healthcare_agreement(
     case_id: str,
     request: HomecarePreviewRequest,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer")),
+    current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor")),
 ):
     try:
         defaults = _build_case_defaults(case_id=case_id, tenant_id=current_user["tenant_id"])
