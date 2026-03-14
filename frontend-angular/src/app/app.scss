@@ -1,0 +1,31 @@
+:host {
+    display: block;
+}
+
+.app-shell {
+    min-height: 100vh;
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.app-header {
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 1.25rem clamp(1rem, 3vw, 2rem);
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.app-header p {
+    margin: 0.4rem 0 0;
+    color: #475569;
+    font-size: 0.875rem;
+}
+
+.app-content {
+    padding: 1rem clamp(1rem, 3vw, 2rem);
+}

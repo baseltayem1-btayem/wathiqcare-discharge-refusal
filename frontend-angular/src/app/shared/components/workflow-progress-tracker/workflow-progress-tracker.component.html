@@ -1,0 +1,23 @@
+<section class="workflow-progress-tracker" [attr.dir]="resolvedDirection">
+    <ol class="tracker-list" role="list" aria-label="Workflow progress tracker">
+        <li class="tracker-item" *ngFor="let step of stepViewModels; let isLast = last">
+            <button type="button" class="step-button" [class.is-clickable]="step.clickable"
+                [class.is-current-title]="step.state === 'current'" [disabled]="!step.clickable"
+                [attr.aria-current]="step.state === 'current' ? 'step' : null" (click)="onStepClick(step)">
+                <span class="step-marker" [ngClass]="stateClass(step.state)">
+                    <svg *ngIf="step.state === 'completed'" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                        <path d="M6.4 11.4 3.2 8.2l1.1-1.1 2.1 2.1 5.2-5.2 1.1 1.1Z"></path>
+                    </svg>
+                    <span *ngIf="step.state !== 'completed'" class="marker-index">{{ step.index + 1 }}</span>
+                </span>
+
+                <span class="step-text">
+                    <span class="step-title">{{ step.title }}</span>
+                    <span class="step-subtitle" *ngIf="step.subtitle">{{ step.subtitle }}</span>
+                </span>
+            </button>
+
+            <span class="step-connector" *ngIf="!isLast" [ngClass]="stateClass(step.state)"></span>
+        </li>
+    </ol>
+</section>
