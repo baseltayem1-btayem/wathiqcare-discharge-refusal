@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import WorkflowProgress, { type WorkflowProgressStep } from "@/components/ui/WorkflowProgress";
 import DocumentPreviewModal from "@/components/workflow/DocumentPreviewModal";
 import CaseWorkflowTree from "@/components/cases/CaseWorkflowTree";
 import { WorkflowDraft } from "@/components/workflow/WorkflowDataForm";
@@ -82,6 +83,24 @@ const WORKFLOW_STAGE_LABELS: Record<string, string> = {
   official_notification: "الإشعار الرسمي",
   escalation: "التصعيد",
   closed: "مغلقة",
+};
+
+const WORKFLOW_STAGE_LABELS_EN: Record<string, string> = {
+  medical_discharge_decision: "Medical Discharge Decision",
+  initial_communication: "Initial Communication",
+  support_and_intervention: "Support and Intervention",
+  refusal_form: "Refusal Form",
+  official_notification: "Official Notification",
+  escalation: "Escalation Review",
+  closed: "Archive",
+};
+
+const WORKFLOW_STAGE_ROUTES: Partial<Record<string, (caseId: string) => string>> = {
+  initial_communication: (caseId) => `/workflow/medical-discharge-refusal/case/${caseId}/initial-communication`,
+  support_and_intervention: (caseId) => `/workflow/medical-discharge-refusal/case/${caseId}/social-services`,
+  refusal_form: (caseId) => `/cases/${caseId}/refusal-form`,
+  official_notification: (caseId) => `/cases/${caseId}/financial-notice`,
+  escalation: (caseId) => `/workflow/medical-discharge-refusal/case/${caseId}/escalation-review`,
 };
 
 const VALIDATION_FIELD_MAP: Record<string, string> = {
@@ -279,6 +298,53 @@ function toTimeline(workflow: DischargeRefusalWorkflowContract) {
   });
 }
 
+function toWorkflowProgressSteps(workflow: DischargeWorkflow | null, locale: string, caseId: string): WorkflowProgressStep[] {
+  if (!workflow) {
+    return [];
+  }
+
+  const stageTimestamps: Partial<Record<string, string | null>> = {
+    medical_discharge_decision: workflow.discharge_decision_at,
+    initial_communication: workflow.initial_communication_at || workflow.refusal_started_at,
+    support_and_intervention: workflow.support_and_intervention_at || workflow.social_services_referred_at,
+    refusal_form: workflow.refusal_form_generated_at,
+    official_notification: workflow.financial_notice_generated_at,
+    escalation: workflow.escalated_at || workflow.escalation_due_at,
+    closed: workflow.status === "closed" ? workflow.escalated_at || workflow.financial_notice_generated_at : null,
+  };
+
+  return workflow.timeline.map((item) => {
+    const hrefFactory = WORKFLOW_STAGE_ROUTES[item.key];
+    const timestamp = stageTimestamps[item.key] || item.timestamp;
+    const isWarning = item.key === "escalation" && workflow.escalation_required && item.status !== "completed";
+
+    return {
+      id: item.key,
+      titleAr: WORKFLOW_STAGE_LABELS[item.key] || item.label,
+      titleEn: WORKFLOW_STAGE_LABELS_EN[item.key] || item.key,
+      subtitleAr:
+        item.status === "completed" && timestamp
+          ? new Date(timestamp).toLocaleString("ar-SA")
+          : isWarning
+            ? "يتطلب تصعيداً"
+            : item.status === "current"
+              ? "قيد التنفيذ"
+              : undefined,
+      subtitleEn:
+        item.status === "completed" && timestamp
+          ? new Date(timestamp).toLocaleString(locale)
+          : isWarning
+            ? "Escalation required"
+            : item.status === "current"
+              ? "In progress"
+              : undefined,
+      state: isWarning ? "warning" : item.status,
+      clickable: Boolean(hrefFactory),
+      href: hrefFactory?.(caseId),
+    };
+  });
+}
+
 function mapContractDocumentToUi(document: DischargeRefusalWorkflowContract["documents"][number]): WorkflowDocumentItem {
   return {
     id: document.id,
@@ -386,7 +452,7 @@ export default function CaseDetailsPage() {
   const params = useParams<{ id: string }>();
   const caseId = params.id;
   const router = useRouter();
-  const { t, locale } = useI18n();
+  const { t, locale, lang, isRtl } = useI18n();
 
   const [caseDetail, setCaseDetail] = useState<CaseDetail | null>(null);
   const [auditItems, setAuditItems] = useState<AuditItem[]>([]);
@@ -406,6 +472,20 @@ export default function CaseDetailsPage() {
   const [preview, setPreview] = useState<WorkflowPreviewResponse | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [workflowBackendUnavailable, setWorkflowBackendUnavailable] = useState(false);
+
+  const workflowProgressSteps = useMemo(
+    () => toWorkflowProgressSteps(workflow, locale, caseId),
+    [workflow, locale, caseId]
+  );
+
+  const handleWorkflowProgressStepClick = useCallback(
+    (step: WorkflowProgressStep & { href?: string }) => {
+      if (step.href) {
+        router.push(step.href);
+      }
+    },
+    [router]
+  );
 
   const loadCaseData = useCallback(async () => {
     setLoading(true);
@@ -1034,6 +1114,23 @@ export default function CaseDetailsPage() {
                 <div className="rounded-2xl border border-slate-200 p-5">
                   <h2 className="text-base font-semibold text-slate-900">Patient Workspace | مساحة المريض</h2>
                   <p className="mt-1 text-sm text-slate-600">البيانات الأساسية وملخص الحالة الحالية.</p>
+
+                  {workflowProgressSteps.length > 0 ? (
+                    <div className="mt-5">
+                      <h3 className="text-sm font-semibold text-slate-900">Workflow Progress | تقدم الإجراءات</h3>
+                      <p className="mt-1 text-sm text-slate-600">
+                        تتبّع مراحل الإجراء الحالي والتنقل إلى الخطوات المتاحة مباشرة من مسار الحالة.
+                      </p>
+                      <WorkflowProgress
+                        className="mt-3"
+                        steps={workflowProgressSteps}
+                        language={lang}
+                        direction={isRtl ? "rtl" : "ltr"}
+                        currentStepId={workflow?.current_stage}
+                        onStepClick={handleWorkflowProgressStepClick}
+                      />
+                    </div>
+                  ) : null}
 
                   <h3 className="mt-5 text-sm font-semibold text-slate-900">بيانات المريض</h3>
                   <dl className="mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
