@@ -20,7 +20,7 @@ def create_discharge_form(
     current_user: User = Depends(require_role("doctor", "nurse", "admin")),
 ):
     """
-    Create a new Inpatient Care Discharge Form in 'draft' status.
+    Create a new Hospital Discharge Form in 'draft' status.
 
     The form is linked to the specified patient record.  Required fields are
     validated at schema level (dates, non-empty clinical text).
@@ -128,7 +128,7 @@ def download_discharge_form_pdf(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Generate and download the Inpatient Care Discharge Form as a bilingual
+    Generate and download the Hospital Discharge Form as a bilingual
     (Arabic/English) A4 PDF.
 
     The PDF is rendered on-the-fly from the stored form data using Jinja2 +
