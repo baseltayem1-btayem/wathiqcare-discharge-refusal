@@ -215,3 +215,8 @@ marimo/_lsp/
 __marimo__/
 .vercel
 .env*.local
+
+# Generated backend artifacts (PDFs, ZIPs, etc.)
+backend/generated/**/*.pdf
+backend/generated/**/*.zip
+backend/generated/signed_documents/
