@@ -5,6 +5,14 @@ import type {
   WorkflowStepStatus,
 } from "@/components/cases/workflowTreeTypes";
 
+export type SequentialStepMeta = {
+  stepId: string;
+  index: number;
+  status: WorkflowStepStatus;
+  locked: boolean;
+  current: boolean;
+};
+
 export function createDefaultWorkflowSelectionState(): WorkflowSelectionState {
   const state: WorkflowSelectionState = {};
 
@@ -74,4 +82,21 @@ export function getStepStatus(step: WorkflowStep, state: WorkflowSelectionState)
   }
 
   return "in_progress";
+}
+
+export function getSequentialStepMeta(state: WorkflowSelectionState): SequentialStepMeta[] {
+  const stepStatuses = CASE_WORKFLOW_STEPS.map((step, index) => ({
+    stepId: step.id,
+    index,
+    status: getStepStatus(step, state),
+  }));
+
+  const firstIncompleteIndex = stepStatuses.findIndex((step) => step.status !== "completed");
+  const currentIndex = firstIncompleteIndex >= 0 ? firstIncompleteIndex : CASE_WORKFLOW_STEPS.length - 1;
+
+  return stepStatuses.map((item) => ({
+    ...item,
+    current: item.index === currentIndex,
+    locked: firstIncompleteIndex >= 0 ? item.index > firstIncompleteIndex : false,
+  }));
 }
