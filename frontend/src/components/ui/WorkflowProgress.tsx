@@ -122,7 +122,7 @@ export default function WorkflowProgress({
       dir={resolvedDirection}
       aria-label={ariaLabel}
       className={cn(
-        "overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 scrollbar-thin",
+        "w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 scrollbar-thin",
         className
       )}
     >

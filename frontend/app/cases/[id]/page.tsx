@@ -1162,7 +1162,7 @@ export default function CaseDetailsPage() {
 
             {activeTab === "overview" ? (
               <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-                <div className="rounded-2xl border border-slate-200 p-5">
+                <div className="min-w-0 rounded-2xl border border-slate-200 p-5">
                   <h2 className="text-base font-semibold text-slate-900">Patient Workspace | مساحة المريض</h2>
                   <p className="mt-1 text-sm text-slate-600">البيانات الأساسية وملخص الحالة الحالية.</p>
 
