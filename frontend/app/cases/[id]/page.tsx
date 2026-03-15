@@ -932,6 +932,11 @@ export default function CaseDetailsPage() {
       <AppShell
         title={caseTitle}
         subtitle={t("caseDetails.subtitle")}
+        workflowCaseNav={{
+          caseId,
+          currentStage: workflow?.current_stage || null,
+          escalationRequired: workflow?.escalation_required || false,
+        }}
         actions={
           <>
             <Link

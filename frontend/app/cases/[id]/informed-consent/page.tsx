@@ -174,6 +174,11 @@ export default function InformedConsentPage() {
       <AppShell
         title="Informed Consent"
         subtitle="الموافقة المستنيرة - التوقيع الإلكتروني"
+        workflowCaseNav={{
+          caseId,
+          currentStage: "support_and_intervention",
+          escalationRequired: false,
+        }}
         actions={
           <Link href={`/cases/${caseId}`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
             العودة إلى الحالة

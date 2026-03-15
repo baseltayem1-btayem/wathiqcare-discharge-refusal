@@ -157,6 +157,11 @@ export default function FinancialNoticeSignaturePage() {
       <AppShell
         title="إشعار المسؤولية المالية"
         subtitle="طريقة الإقرار / التوقيع"
+        workflowCaseNav={{
+          caseId,
+          currentStage: "official_notification",
+          escalationRequired: false,
+        }}
         actions={
           <Link href={`/cases/${caseId}`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
             العودة إلى الحالة

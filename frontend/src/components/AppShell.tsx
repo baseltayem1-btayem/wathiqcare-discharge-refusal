@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Archive, FileCheck2, FileCog, FilePlus2, FolderKanban, Gavel, LayoutGrid, LogOut, Rocket, ShieldCheck, Stethoscope, Timer, ClipboardList, AlertTriangle, FileSignature, CheckCircle2, Database } from "lucide-react";
+import { Archive, FileCheck2, FileCog, FilePlus2, FolderKanban, Gavel, LayoutGrid, LogOut, Rocket, ShieldCheck, Stethoscope, Timer, ClipboardList, AlertTriangle, FileSignature, CheckCircle2, Database, MessageSquareHeart, HandHelping, FileText } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clearToken } from "@/utils/api";
@@ -13,12 +13,19 @@ type AppShellProps = {
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
+  workflowCaseNav?: {
+    caseId: string;
+    currentStage?: string | null;
+    escalationRequired?: boolean;
+  };
 };
 
 type NavItem = {
   href: string;
-  labelKey: string;
+  labelKey?: string;
+  label?: string;
   icon: ReactNode;
+  disabled?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -40,6 +47,65 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin", labelKey: "nav.admin", icon: <ShieldCheck className="h-4 w-4" /> },
 ];
 
+const CASE_STAGE_NAV = [
+  {
+    key: "medical_discharge_decision",
+    href: (caseId: string) => `/cases/${caseId}`,
+    labelKey: "workflow.stage.medical_discharge_decision",
+    icon: <Stethoscope className="h-4 w-4" />,
+  },
+  {
+    key: "initial_communication",
+    href: (caseId: string) => `/workflow/medical-discharge-refusal/case/${caseId}/initial-communication`,
+    labelKey: "workflow.stage.initial_communication",
+    icon: <MessageSquareHeart className="h-4 w-4" />,
+  },
+  {
+    key: "support_and_intervention",
+    href: (caseId: string) => `/workflow/medical-discharge-refusal/case/${caseId}/social-services`,
+    labelKey: "workflow.stage.support_and_intervention",
+    icon: <HandHelping className="h-4 w-4" />,
+  },
+  {
+    key: "refusal_form",
+    href: (caseId: string) => `/cases/${caseId}/refusal-form`,
+    labelKey: "workflow.stage.refusal_form",
+    icon: <FileSignature className="h-4 w-4" />,
+  },
+  {
+    key: "official_notification",
+    href: (caseId: string) => `/cases/${caseId}/financial-notice`,
+    labelKey: "workflow.stage.official_notification",
+    icon: <FileText className="h-4 w-4" />,
+  },
+  {
+    key: "escalation",
+    href: (caseId: string) => `/workflow/medical-discharge-refusal/case/${caseId}/escalation-review`,
+    labelKey: "workflow.stage.escalation",
+    icon: <AlertTriangle className="h-4 w-4" />,
+  },
+  {
+    key: "closed",
+    href: (caseId: string) => `/cases/${caseId}`,
+    labelKey: "workflow.stage.closed",
+    icon: <Archive className="h-4 w-4" />,
+  },
+] as const;
+
+function buildCaseWorkflowNav(caseNav: NonNullable<AppShellProps["workflowCaseNav"]>): NavItem[] {
+  const orderedKeys = CASE_STAGE_NAV.map((item) => item.key);
+  const activeIndex = orderedKeys.indexOf((caseNav.currentStage || "") as (typeof orderedKeys)[number]);
+
+  return CASE_STAGE_NAV
+    .filter((item) => item.key !== "escalation" || Boolean(caseNav.escalationRequired) || item.key === caseNav.currentStage)
+    .map((item, index) => ({
+      href: item.href(caseNav.caseId),
+      labelKey: item.labelKey,
+      icon: item.icon,
+      disabled: activeIndex >= 0 ? index > activeIndex + 1 : false,
+    }));
+}
+
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") {
     return pathname === href;
@@ -52,9 +118,19 @@ type NavLinkProps = {
   label: string;
   icon: ReactNode;
   active: boolean;
+  disabled?: boolean;
 };
 
-function NavLink({ href, label, icon, active }: NavLinkProps) {
+function NavLink({ href, label, icon, active, disabled = false }: NavLinkProps) {
+  if (disabled) {
+    return (
+      <span className="inline-flex w-full cursor-not-allowed items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-400">
+        {icon}
+        {label}
+      </span>
+    );
+  }
+
   return (
     <Link
       href={href}
@@ -70,10 +146,11 @@ function NavLink({ href, label, icon, active }: NavLinkProps) {
   );
 }
 
-export default function AppShell({ title, subtitle, actions, children }: AppShellProps) {
+export default function AppShell({ title, subtitle, actions, children, workflowCaseNav }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useI18n();
+  const navItems = workflowCaseNav ? buildCaseWorkflowNav(workflowCaseNav) : NAV_ITEMS;
 
   async function handleLogout() {
     try {
@@ -96,13 +173,14 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
           </div>
 
           <nav className="mt-6 space-y-2">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <NavLink
                 key={item.href}
                 href={item.href}
-                label={t(item.labelKey)}
+                label={item.label ?? t(item.labelKey || "")}
                 icon={item.icon}
                 active={isActive(pathname, item.href)}
+                disabled={item.disabled}
               />
             ))}
           </nav>
@@ -153,13 +231,14 @@ export default function AppShell({ title, subtitle, actions, children }: AppShel
               </div>
 
               <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2 md:hidden">
-                {NAV_ITEMS.map((item) => (
+                {navItems.map((item) => (
                   <NavLink
                     key={`mobile-${item.href}`}
                     href={item.href}
-                    label={t(item.labelKey)}
+                    label={item.label ?? t(item.labelKey || "")}
                     icon={item.icon}
                     active={isActive(pathname, item.href)}
+                    disabled={item.disabled}
                   />
                 ))}
               </div>
