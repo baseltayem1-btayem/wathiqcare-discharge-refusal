@@ -149,7 +149,7 @@ export default function LoginPage() {
 
                   {error ? (
                     <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                      {t("login.errorInline")}
+                      {error}
                     </div>
                   ) : null}
 
@@ -157,7 +157,7 @@ export default function LoginPage() {
                     type="submit"
                     disabled={loading}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg, #0891b2, #06b6d4)", boxShadow: "0 4px 14px rgba(8,145,178,0.28)", focusRingColor: "#0891b2" } as React.CSSProperties}
+                    style={{ background: "linear-gradient(135deg, #0891b2, #06b6d4)", boxShadow: "0 4px 14px rgba(8,145,178,0.28)" }}
                   >
                     <LogIn className="h-4 w-4" />
                     {loading ? t("login.submitting") : t("login.submit")}

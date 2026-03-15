@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Archive, FileCheck2, FileCog, FilePlus2, FolderKanban, Gavel, LayoutGrid, LogOut, Rocket, ShieldCheck, Stethoscope, Timer, ClipboardList, AlertTriangle, FileSignature, CheckCircle2, Database, MessageSquareHeart, HandHelping, FileText } from "lucide-react";
@@ -137,8 +138,8 @@ function NavLink({ href, label, icon, active, disabled = false }: NavLinkProps) 
       className="inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all"
       style={
         active
-          ? { background: "#ecfeff", color: "#0e7490", fontWeight: 600, borderLeft: "3px solid #0891b2" }
-          : { color: "#374151" }
+          ? { background: "#ecfeff", color: "#0e7490", fontWeight: 600, borderInlineStart: "3px solid #0891b2", paddingInlineStart: "calc(0.75rem - 3px)" }
+          : { color: "#374151", borderInlineStart: "3px solid transparent", paddingInlineStart: "calc(0.75rem - 3px)" }
       }
       onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "#f0f9ff"; }}
       onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = ""; }}
@@ -185,11 +186,20 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
             className="rounded-xl p-3"
             style={{ background: "#f0fdff", border: "1px solid #e0f2fe" }}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#0891b2" }}>
+            <div className="flex justify-center">
+              <Image
+                src="https://cdn.phototourl.com/uploads/2026-03-08-8e081936-6059-4849-a3de-b482e86049fd.png"
+                alt="WathiqCare"
+                width={200}
+                height={60}
+                className="h-auto w-[120px] object-contain"
+                priority
+              />
+            </div>
+            <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#0891b2" }}>
               {t("app.name")}
             </p>
-            <h2 className="mt-1 text-sm font-bold text-gray-900">{t("app.moduleName")}</h2>
-            <p className="mt-0.5 text-[11px] text-gray-500">{t("app.moduleTagline")}</p>
+            <p className="mt-0.5 text-center text-[11px] text-gray-500">{t("app.moduleTagline")}</p>
           </div>
 
           {/* Nav */}
