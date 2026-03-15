@@ -30,6 +30,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         if (!doc) throw new ApiError(404, "جلسة الإقرار غير موجودة");
         if (doc.tenantId !== auth.tenant_id) throw new ApiError(403, "Tenant access denied");
 
+        if (!doc.payloadJson || typeof doc.payloadJson !== "object" || Array.isArray(doc.payloadJson)) {
+            throw new ApiError(500, "بيانات الجلسة تالفة");
+        }
         const session = doc.payloadJson as Record<string, unknown>;
         if (session.case_id !== caseId) {
             throw new ApiError(400, "جلسة الإقرار لا تطابق الحالة");
@@ -89,54 +92,66 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             },
         });
 
-        // If verified, upsert a DischargeRefusalCase record to capture the signature
+        // If verified, upsert a DischargeRefusalCase record and write audit log.
+        // These are secondary operations; wrap in try-catch so a missing table or
+        // transient DB error does NOT roll back the document update already done above.
         if (verified) {
             const templateKey = String(session.document_type ?? "");
             const signatureHash = crypto
                 .createHash("sha256")
                 .update(`${sessionId}:${caseId}:${verificationTimestamp}`)
                 .digest("hex");
+            const signatureDevice = safe(payload.device ?? payload.device_source);
+            const signatureIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
-            const existing = await prisma.dischargeRefusalCase.findFirst({
-                where: { caseId, tenantId: auth.tenant_id },
-            });
+            try {
+                const existing = await prisma.dischargeRefusalCase.findFirst({
+                    where: { caseId, tenantId: auth.tenant_id },
+                });
 
-            if (existing) {
-                await prisma.dischargeRefusalCase.update({
-                    where: { id: existing.id },
-                    data: {
-                        signatureMethod: method,
-                        signatureTimestamp: new Date(),
-                        signatureHash,
-                        signatureDevice: safe(payload.device ?? payload.device_source),
-                        signatureIpAddress: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
-                    },
-                });
-            } else {
-                await prisma.dischargeRefusalCase.create({
-                    data: {
-                        tenantId: auth.tenant_id,
-                        caseId,
-                        dischargeStatus: "acknowledged",
-                        signatureMethod: method,
-                        signatureTimestamp: new Date(),
-                        signatureHash,
-                        signatureDevice: safe(payload.device ?? payload.device_source),
-                        signatureIpAddress: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
-                    },
-                });
+                if (existing) {
+                    await prisma.dischargeRefusalCase.update({
+                        where: { id: existing.id },
+                        data: {
+                            signatureMethod: method,
+                            signatureTimestamp: new Date(),
+                            signatureHash,
+                            signatureDevice,
+                            signatureIpAddress: signatureIp,
+                        },
+                    });
+                } else {
+                    await prisma.dischargeRefusalCase.create({
+                        data: {
+                            tenantId: auth.tenant_id,
+                            caseId,
+                            dischargeStatus: "acknowledged",
+                            signatureMethod: method,
+                            signatureTimestamp: new Date(),
+                            signatureHash,
+                            signatureDevice,
+                            signatureIpAddress: signatureIp,
+                        },
+                    });
+                }
+            } catch (dbErr) {
+                console.error("verify-ack: dischargeRefusalCase upsert failed (non-fatal)", dbErr);
             }
 
-            await writeAuditLog({
-                tenantId: auth.tenant_id,
-                userId: auth.sub,
-                caseId,
-                action: "acknowledgment_verified",
-                entityType: "document",
-                entityId: sessionId,
-                documentId: sessionId,
-                metadataJson: { document_type: templateKey, method, session_id: sessionId },
-            });
+            try {
+                await writeAuditLog({
+                    tenantId: auth.tenant_id,
+                    userId: auth.sub,
+                    caseId,
+                    action: "acknowledgment_verified",
+                    entityType: "document",
+                    entityId: sessionId,
+                    documentId: sessionId,
+                    metadataJson: { document_type: templateKey, method, session_id: sessionId },
+                });
+            } catch (auditErr) {
+                console.error("verify-ack: audit log write failed (non-fatal)", auditErr);
+            }
         }
 
         return NextResponse.json({
