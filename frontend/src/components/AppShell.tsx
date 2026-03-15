@@ -124,7 +124,7 @@ type NavLinkProps = {
 function NavLink({ href, label, icon, active, disabled = false }: NavLinkProps) {
   if (disabled) {
     return (
-      <span className="inline-flex w-full cursor-not-allowed items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-400">
+      <span className="inline-flex w-full cursor-not-allowed items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-300">
         {icon}
         {label}
       </span>
@@ -134,11 +134,14 @@ function NavLink({ href, label, icon, active, disabled = false }: NavLinkProps) 
   return (
     <Link
       href={href}
-      className={
+      className="inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all"
+      style={
         active
-          ? "inline-flex w-full items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm"
-          : "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          ? { background: "#ecfeff", color: "#0e7490", fontWeight: 600, borderLeft: "3px solid #0891b2" }
+          : { color: "#374151" }
       }
+      onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "#f0f9ff"; }}
+      onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = ""; }}
     >
       {icon}
       {label}
@@ -163,16 +166,34 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: "#f5f7fa" }}>
+      {/* Top accent stripe */}
+      <div style={{ height: "3px", background: "linear-gradient(90deg, #0891b2, #06b6d4, #0891b2)" }} />
       <div className="mx-auto flex max-w-7xl gap-4 px-4 py-4 md:py-6">
-        <aside className="hidden w-72 shrink-0 rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:flex md:flex-col">
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500">{t("app.name")}</p>
-            <h2 className="mt-2 text-lg font-semibold text-gray-900">{t("app.moduleName")}</h2>
-            <p className="mt-2 text-xs text-gray-500">{t("app.moduleTagline")}</p>
+        <aside
+          className="hidden w-64 shrink-0 md:flex md:flex-col"
+          style={{
+            background: "#ffffff",
+            border: "1px solid #e2e8f0",
+            borderRadius: "16px",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+            padding: "20px 16px",
+          }}
+        >
+          {/* Brand block */}
+          <div
+            className="rounded-xl p-3"
+            style={{ background: "#f0fdff", border: "1px solid #e0f2fe" }}
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#0891b2" }}>
+              {t("app.name")}
+            </p>
+            <h2 className="mt-1 text-sm font-bold text-gray-900">{t("app.moduleName")}</h2>
+            <p className="mt-0.5 text-[11px] text-gray-500">{t("app.moduleTagline")}</p>
           </div>
 
-          <nav className="mt-6 space-y-2">
+          {/* Nav */}
+          <nav className="mt-4 flex-1 space-y-0.5">
             {navItems.map((item) => (
               <NavLink
                 key={item.href}
@@ -185,22 +206,25 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
             ))}
           </nav>
 
-          <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+          {/* Status badge */}
+          <div
+            className="mt-4 rounded-xl p-3 text-xs"
+            style={{ background: "#ecfeff", border: "1px solid #a5f3fc", color: "#0e7490" }}
+          >
             <div className="inline-flex items-center gap-1.5 font-semibold">
               <Stethoscope className="h-3.5 w-3.5" />
               {t("app.activeWorkspace")}
             </div>
-            <p className="mt-1 text-blue-700">{t("app.secureMode")}</p>
+            <p className="mt-0.5" style={{ color: "#0891b2" }}>{t("app.secureMode")}</p>
           </div>
 
-          <LanguageSwitcher className="mt-4" />
+          <LanguageSwitcher className="mt-3" />
 
           <button
             type="button"
-            onClick={() => {
-              void handleLogout();
-            }}
-            className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            onClick={() => { void handleLogout(); }}
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            style={{ borderColor: "#e2e8f0" }}
           >
             <LogOut className="h-4 w-4" />
             {t("common.logout")}
@@ -208,21 +232,28 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-10 rounded-xl border border-gray-200 bg-white px-4 py-4 shadow-sm md:px-5">
-            <div className="flex flex-col gap-4">
+          <header
+            className="sticky top-0 z-10 rounded-xl px-4 py-4 md:px-5"
+            style={{
+              background: "rgba(255,255,255,0.90)",
+              backdropFilter: "blur(14px)",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+            }}
+          >
+            <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-                  {subtitle ? <p className="mt-1 text-sm text-gray-500">{subtitle}</p> : null}
+                  <h1 className="text-xl font-bold text-gray-900">{title}</h1>
+                  {subtitle ? <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p> : null}
                 </div>
                 <div className="inline-flex items-center gap-2">
                   <LanguageSwitcher className="md:hidden" />
                   <button
                     type="button"
-                    onClick={() => {
-                      void handleLogout();
-                    }}
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 md:hidden"
+                    onClick={() => { void handleLogout(); }}
+                    className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 md:hidden"
+                    style={{ borderColor: "#e2e8f0" }}
                   >
                     <LogOut className="h-4 w-4" />
                     {t("common.logout")}
@@ -230,7 +261,11 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2 md:hidden">
+              {/* Mobile nav */}
+              <div
+                className="flex flex-wrap items-center gap-1.5 rounded-xl p-2 md:hidden"
+                style={{ background: "#f5f7fa", border: "1px solid #e2e8f0" }}
+              >
                 {navItems.map((item) => (
                   <NavLink
                     key={`mobile-${item.href}`}
@@ -244,14 +279,20 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
               </div>
 
               {actions ? (
-                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2">
+                <div
+                  className="flex flex-wrap items-center gap-2 rounded-xl p-2"
+                  style={{ background: "#f5f7fa", border: "1px solid #e2e8f0" }}
+                >
                   {actions}
                 </div>
               ) : null}
             </div>
           </header>
 
-          <main className="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:mt-4">
+          <main
+            className="mt-4 rounded-xl p-5"
+            style={{ background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+          >
             {children}
           </main>
         </div>
