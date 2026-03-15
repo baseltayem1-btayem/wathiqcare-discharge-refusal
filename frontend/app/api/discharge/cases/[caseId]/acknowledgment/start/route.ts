@@ -100,23 +100,28 @@ async function sendEmailNotice(
     }
 
     const endpoint = new URL("/api/emails/send", `${backendBase}/`);
-    const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            "accept": "application/json",
-            "authorization": authHeader,
-        },
-        body: JSON.stringify({
-            case_id: caseId,
-            to: [recipientEmail],
-            template_name: "discharge_refusal_follow_up",
-            template_vars: {
-                case_id: caseId,
-                patient_name: patientName,
+    let response: Response;
+    try {
+        response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                "accept": "application/json",
+                "authorization": authHeader,
             },
-        }),
-    });
+            body: JSON.stringify({
+                case_id: caseId,
+                to: [recipientEmail],
+                template_name: "discharge_refusal_follow_up",
+                template_vars: {
+                    case_id: caseId,
+                    patient_name: patientName,
+                },
+            }),
+        });
+    } catch {
+        throw new ApiError(503, "تعذر الاتصال بخدمة البريد في الواجهة الخلفية.");
+    }
 
     const isJson = (response.headers.get("content-type") || "").includes("application/json");
     const responseBody = isJson

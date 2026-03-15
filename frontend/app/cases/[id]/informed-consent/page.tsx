@@ -85,6 +85,20 @@ export default function InformedConsentPage() {
 
   const selectedMethod = useMemo(() => methods.find((item) => item.method === method), [methods, method]);
 
+  const resolveStatusLabel = (verificationStatus: string, deliveryStatus?: string | null) => {
+    if (verificationStatus === "verified") {
+      return "تم التحقق";
+    }
+
+    if (verificationStatus === "notification_sent") {
+      return deliveryStatus === "sent"
+        ? "تم إرسال إشعار البريد الإلكتروني"
+        : "تم تسجيل إشعار البريد (قيد التحقق من التسليم)";
+    }
+
+    return "بانتظار التحقق";
+  };
+
   const startFlow = async () => {
     setMessage("");
 
@@ -100,6 +114,7 @@ export default function InformedConsentPage() {
       const res = await apiFetch<{
         session_id: string;
         verification_status: string;
+        delivery_status?: string | null;
         provider_result?: { otp_debug_code?: string };
       }>(`/api/discharge/cases/${caseId}/acknowledgment/start`, {
         method: "POST",
@@ -111,13 +126,15 @@ export default function InformedConsentPage() {
       });
 
       setSessionId(res.session_id);
-      setStatus(
-        res.verification_status === "verified"
-          ? "تم التحقق"
-          : res.verification_status === "notification_sent"
-            ? "تم إرسال إشعار البريد الإلكتروني"
-            : "بانتظار التحقق"
-      );
+      setStatus(resolveStatusLabel(res.verification_status, res.delivery_status));
+
+      if (res.verification_status === "notification_sent") {
+        if (res.delivery_status === "sent") {
+          setMessage("تم إرسال إشعار للمريض عبر البريد الإلكتروني.");
+        } else {
+          setMessage("تم تسجيل إشعار البريد، وجار التحقق من حالة التسليم.");
+        }
+      }
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "تعذر بدء جلسة التوقيع.");
     }
@@ -145,13 +162,7 @@ export default function InformedConsentPage() {
         },
       );
 
-      setStatus(
-        res.verification_status === "verified"
-          ? "تم التحقق"
-          : res.verification_status === "notification_sent"
-            ? "تم إرسال إشعار البريد الإلكتروني"
-            : "بانتظار التحقق"
-      );
+      setStatus(resolveStatusLabel(res.verification_status, res.delivery_status));
       if (res.verification_status === "verified") {
         setMessage("تم إكمال الموافقة المستنيرة بنجاح.");
       } else if (res.verification_status === "notification_sent" && res.delivery_status === "sent") {
