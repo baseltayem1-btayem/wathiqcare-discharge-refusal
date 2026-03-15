@@ -8,8 +8,6 @@ import { writeAuditLog } from "@/lib/server/saas-services";
 
 type RouteContext = { params: Promise<{ caseId: string; sessionId: string }> };
 
-// ── helpers ────────────────────────────────────────────────────────────────
-
 function safe(v: unknown): string {
     return (v == null ? "" : String(v)).trim();
 }
@@ -18,14 +16,11 @@ function nowIso(): string {
     return new Date().toISOString();
 }
 
-// ── route ──────────────────────────────────────────────────────────────────
-
 export async function POST(request: NextRequest, { params }: RouteContext) {
     try {
         const auth = requireAuth(request);
         const { caseId, sessionId } = await params;
 
-        // Load session from Document record
         const doc = await prisma.document.findUnique({ where: { id: sessionId } });
         if (!doc) throw new ApiError(404, "جلسة الإقرار غير موجودة");
         if (doc.tenantId !== auth.tenant_id) throw new ApiError(403, "Tenant access denied");
@@ -53,12 +48,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             const expectedHash = safe(session.otp_code_hash);
             if (!expectedHash) throw new ApiError(400, "لا يوجد رمز OTP مرتبط بهذه الجلسة");
             verified = crypto.createHash("sha256").update(submitted).digest("hex") === expectedHash;
-
         } else if (method === "TABLET_SIGNATURE") {
             const signaturePayload = safe(payload.signature_payload);
             verified = signaturePayload.length > 0;
 
-            // If OTP was also linked, verify it too
             const expectedHash = safe(session.otp_code_hash);
             if (expectedHash) {
                 const submittedOtp = safe(payload.otp_code);
@@ -72,7 +65,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
         const newStatus = verified ? "verified" : (method === "EMAIL_NOTICE" ? "notification_sent" : "failed");
 
-        // Update session state in Document
         const updatedSession: Record<string, unknown> = {
             ...session,
             verification_status: newStatus,
@@ -103,9 +95,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             },
         });
 
-        // If verified, upsert a DischargeRefusalCase record and write audit log.
-        // These are secondary operations; wrap in try-catch so a missing table or
-        // transient DB error does NOT roll back the document update already done above.
         if (verified) {
             const templateKey = String(session.document_type ?? "");
             const signatureHash = crypto
@@ -193,7 +182,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             verification_status: newStatus,
             verified,
             session_id: sessionId,
-            pdf_path: null, // PDF generation not available in serverless; use document record
+            pdf_path: null,
             delivery_status: providerResult ? safe(providerResult.delivery_status) : null,
             provider: providerResult ? safe(providerResult.provider) : null,
             recipient_email: providerResult ? safe(providerResult.recipient_email) : null,

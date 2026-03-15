@@ -155,7 +155,7 @@ export default function InformedConsentPage() {
       }
 
       const res = await apiFetch<{ verification_status: string; delivery_status?: string | null }>(
-        `/api/discharge/cases/${caseId}/acknowledgment/${sessionId}/verify`,
+        `/api/acknowledgment/cases/${caseId}/${sessionId}/verify`,
         {
           method: "POST",
           body: JSON.stringify({ payload }),
