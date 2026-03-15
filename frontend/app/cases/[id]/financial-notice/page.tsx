@@ -120,7 +120,7 @@ export default function FinancialNoticeSignaturePage() {
         payload.witness_name = witnessName;
       }
 
-      const res = await apiFetch<{ verification_status: string }>(
+      const res = await apiFetch<{ verification_status: string; delivery_status?: string | null }>(
         `/api/discharge/cases/${caseId}/acknowledgment/${sessionId}/verify`,
         {
           method: "POST",
@@ -137,8 +137,10 @@ export default function FinancialNoticeSignaturePage() {
       );
       if (res.verification_status === "verified") {
         setMessage("تم إنشاء النسخة النهائية");
-      } else if (res.verification_status === "notification_sent") {
+      } else if (res.verification_status === "notification_sent" && res.delivery_status === "sent") {
         setMessage("تم إرسال إشعار للمريض عبر البريد الإلكتروني.");
+      } else if (res.verification_status === "notification_sent") {
+        setMessage("تم تسجيل إشعار البريد، وجار التحقق من حالة التسليم.");
       }
     } catch (err) {
       setMessage((err as Error).message);

@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
+import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -56,6 +57,86 @@ function safe(v: unknown): string {
 
 function nowIso(): string {
     return new Date().toISOString();
+}
+
+type EmailSendResponse = {
+    log_id: string;
+    status: string;
+    provider: string;
+    subject: string;
+    recipients: string[];
+    cc: string[];
+    sent_at?: string | null;
+};
+
+function extractBearerToken(request: NextRequest): string | null {
+    const authHeader = request.headers.get("authorization");
+    if (authHeader?.trim()) {
+        return authHeader.trim();
+    }
+
+    const cookieToken = request.cookies.get("wathiqcare_access_token")?.value?.trim();
+    if (cookieToken) {
+        return `Bearer ${cookieToken}`;
+    }
+
+    return null;
+}
+
+async function sendEmailNotice(
+    request: NextRequest,
+    caseId: string,
+    patientName: string,
+    recipientEmail: string,
+): Promise<EmailSendResponse> {
+    const backendBase = getConfiguredBackendApiBaseUrl();
+    if (!backendBase) {
+        throw new ApiError(503, "تعذر إرسال إشعار البريد: خدمة الواجهة الخلفية غير متاحة حالياً.");
+    }
+
+    const authHeader = extractBearerToken(request);
+    if (!authHeader) {
+        throw new ApiError(401, "Not authenticated");
+    }
+
+    const endpoint = new URL("/api/emails/send", `${backendBase}/`);
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            "accept": "application/json",
+            "authorization": authHeader,
+        },
+        body: JSON.stringify({
+            case_id: caseId,
+            to: [recipientEmail],
+            template_name: "discharge_refusal_follow_up",
+            template_vars: {
+                case_id: caseId,
+                patient_name: patientName,
+            },
+        }),
+    });
+
+    const isJson = (response.headers.get("content-type") || "").includes("application/json");
+    const responseBody = isJson
+        ? await response.json().catch(() => null)
+        : await response.text().catch(() => "");
+
+    if (!response.ok) {
+        const detail =
+            responseBody && typeof responseBody === "object" && "detail" in responseBody
+                ? String((responseBody as { detail?: unknown }).detail ?? "")
+                : typeof responseBody === "string"
+                    ? responseBody
+                    : "";
+        throw new ApiError(
+            response.status,
+            detail || `تعذر إرسال إشعار البريد الإلكتروني (${response.status})`,
+        );
+    }
+
+    return responseBody as EmailSendResponse;
 }
 
 // ── route ──────────────────────────────────────────────────────────────────
@@ -124,14 +205,20 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         } else if (method === "EMAIL_NOTICE") {
             const email = safe(inputPayload.email ?? inputPayload.patient_email);
             if (!email) throw new ApiError(400, "email is required for EMAIL_NOTICE");
+
+            const emailResult = await sendEmailNotice(request, caseId, patientName, email);
+            if (emailResult.status !== "sent") {
+                throw new ApiError(502, "فشل إرسال إشعار البريد الإلكتروني. يرجى المحاولة مرة أخرى.");
+            }
+
             sessionState.verification_status = "notification_sent";
             sessionState.provider_result = {
                 channel: "email",
                 recipient_email: email,
-                delivery_status: "stub_delivered",
-                provider: "email_stub",
-                sent_at: nowIso(),
-                message_id: crypto.randomUUID(),
+                delivery_status: emailResult.status,
+                provider: emailResult.provider,
+                sent_at: emailResult.sent_at ?? nowIso(),
+                message_id: emailResult.log_id,
             };
         }
 

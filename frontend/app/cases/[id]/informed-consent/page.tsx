@@ -137,7 +137,7 @@ export default function InformedConsentPage() {
         payload.witness_name = witnessName;
       }
 
-      const res = await apiFetch<{ verification_status: string }>(
+      const res = await apiFetch<{ verification_status: string; delivery_status?: string | null }>(
         `/api/discharge/cases/${caseId}/acknowledgment/${sessionId}/verify`,
         {
           method: "POST",
@@ -154,8 +154,10 @@ export default function InformedConsentPage() {
       );
       if (res.verification_status === "verified") {
         setMessage("تم إكمال الموافقة المستنيرة بنجاح.");
-      } else if (res.verification_status === "notification_sent") {
+      } else if (res.verification_status === "notification_sent" && res.delivery_status === "sent") {
         setMessage("تم إرسال إشعار للمريض عبر البريد الإلكتروني.");
+      } else if (res.verification_status === "notification_sent") {
+        setMessage("تم تسجيل إشعار البريد، وجار التحقق من حالة التسليم.");
       }
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "تعذر التحقق من التوقيع.");

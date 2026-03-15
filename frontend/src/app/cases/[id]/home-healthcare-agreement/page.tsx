@@ -178,7 +178,11 @@ export default function HomeHealthcareAgreementPage() {
         requestPayload.email = patientEmail;
       }
 
-      const res = await apiFetch<{ session_id: string; verification_status: string; provider_result?: { otp_debug_code?: string } }>(
+      const res = await apiFetch<{
+        session_id: string;
+        verification_status: string;
+        provider_result?: { otp_debug_code?: string; delivery_status?: string | null };
+      }>(
         `/api/discharge/cases/${caseId}/acknowledgment/start`,
         {
           method: "POST",
@@ -192,8 +196,10 @@ export default function HomeHealthcareAgreementPage() {
 
       setSessionId(res.session_id);
       setStatus(res.verification_status || "pending");
-      if (res.verification_status === "notification_sent") {
+      if (res.verification_status === "notification_sent" && res.provider_result?.delivery_status === "sent") {
         setMessage("تم إرسال إشعار للمريض عبر البريد الإلكتروني.");
+      } else if (res.verification_status === "notification_sent") {
+        setMessage("تم تسجيل إشعار البريد، وجار التحقق من حالة التسليم.");
       }
     } catch (err) {
       setMessage((err as Error).message);
@@ -213,7 +219,7 @@ export default function HomeHealthcareAgreementPage() {
         verifyPayload.signature_payload = signaturePayload;
       }
 
-      const res = await apiFetch<{ verification_status: string; pdf_path?: string }>(
+      const res = await apiFetch<{ verification_status: string; pdf_path?: string; delivery_status?: string | null }>(
         `/api/discharge/cases/${caseId}/acknowledgment/${sessionId}/verify`,
         {
           method: "POST",
@@ -224,8 +230,10 @@ export default function HomeHealthcareAgreementPage() {
       setStatus(res.verification_status || "pending");
       if (res.verification_status === "verified") {
         setMessage(`تم إنشاء ملف PDF وإرفاقه بالحالة. ${res.pdf_path || ""}`.trim());
-      } else if (res.verification_status === "notification_sent") {
+      } else if (res.verification_status === "notification_sent" && res.delivery_status === "sent") {
         setMessage("تم إرسال إشعار للمريض عبر البريد الإلكتروني.");
+      } else if (res.verification_status === "notification_sent") {
+        setMessage("تم تسجيل إشعار البريد، وجار التحقق من حالة التسليم.");
       }
     } catch (err) {
       setMessage((err as Error).message);

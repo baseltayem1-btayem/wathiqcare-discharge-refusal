@@ -80,6 +80,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             updated_at: verificationTimestamp,
         };
 
+        const providerResult =
+            updatedSession.provider_result &&
+                typeof updatedSession.provider_result === "object" &&
+                !Array.isArray(updatedSession.provider_result)
+                ? (updatedSession.provider_result as Record<string, unknown>)
+                : null;
+
         await prisma.document.update({
             where: { id: sessionId },
             data: {
@@ -157,6 +164,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             verified,
             session_id: sessionId,
             pdf_path: null, // PDF generation not available in serverless; use document record
+            delivery_status: providerResult ? safe(providerResult.delivery_status) : null,
+            provider: providerResult ? safe(providerResult.provider) : null,
+            recipient_email: providerResult ? safe(providerResult.recipient_email) : null,
         });
     } catch (error) {
         return handleApiError(error);
