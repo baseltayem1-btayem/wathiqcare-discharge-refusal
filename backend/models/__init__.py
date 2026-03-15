@@ -1,4 +1,5 @@
 from backend.models.audit_log import AuditLog
+from backend.models.email_log import EmailLog
 from backend.models.discharge_case import DischargeCase
 from backend.models.discharge_workflow import DischargeRefusalWorkflow
 from backend.models.patient import Patient
@@ -9,6 +10,7 @@ from backend.models.workflow_case_documentation import DischargeWorkflowCaseDocu
 
 __all__ = [
 	"AuditLog",
+	"EmailLog",
 	"DischargeCase",
 	"DischargeRefusalWorkflow",
 	"DischargeWorkflowDocument",

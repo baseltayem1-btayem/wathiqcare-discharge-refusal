@@ -9,7 +9,7 @@ import TabletSignaturePad from "@/components/forms/TabletSignaturePad";
 import { apiFetch } from "@/utils/api";
 
 type MethodItem = {
-  method: "SMS_OTP" | "NAFATH" | "TABLET_SIGNATURE";
+  method: "TABLET_SIGNATURE" | "EMAIL_NOTICE";
   available: boolean;
   label_ar: string;
   reason?: string | null;
@@ -39,7 +39,7 @@ export default function HomeHealthcareAgreementPage() {
   const [careModel, setCareModel] = useState(HOME_HEALTHCARE_MODEL);
 
   const [methods, setMethods] = useState<MethodItem[]>([]);
-  const [selectedMethod, setSelectedMethod] = useState<MethodItem["method"]>("SMS_OTP");
+  const [selectedMethod, setSelectedMethod] = useState<MethodItem["method"]>("TABLET_SIGNATURE");
 
   const [patientName, setPatientName] = useState("");
   const [urn, setUrn] = useState("");
@@ -51,13 +51,9 @@ export default function HomeHealthcareAgreementPage() {
   const [ackHomecareProvision, setAckHomecareProvision] = useState("");
   const [ackDischargeDecisionNotice, setAckDischargeDecisionNotice] = useState("");
 
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [otpCode, setOtpCode] = useState("");
-  const [debugOtp, setDebugOtp] = useState("");
+  const [patientEmail, setPatientEmail] = useState("");
 
   const [signaturePayload, setSignaturePayload] = useState("");
-  const [nafathStatus, setNafathStatus] = useState("pending");
-
   const payload = useMemo(
     () => ({
       patient_name: patientName,
@@ -90,7 +86,7 @@ export default function HomeHealthcareAgreementPage() {
   );
 
   const isHomecareSelected = careModel === HOME_HEALTHCARE_MODEL;
-  const fallbackMode = methods.some((item) => item.method === "SMS_OTP" && item.available);
+  const fallbackMode = methods.some((item) => item.method === "EMAIL_NOTICE" && item.available);
 
   useEffect(() => {
     if (!caseId) {
@@ -112,7 +108,7 @@ export default function HomeHealthcareAgreementPage() {
         if (preferredTablet) {
           setSelectedMethod("TABLET_SIGNATURE");
           if (mobileLinked) {
-            setMessage("تم تفعيل وضع توقيع التابلت مع إمكانية ربط OTP بالجوال.");
+            setMessage("تم تفعيل وضع توقيع التابلت.");
           }
         } else if (firstAvailable) {
           setSelectedMethod(firstAvailable.method);
@@ -176,14 +172,10 @@ export default function HomeHealthcareAgreementPage() {
 
   const startAgreement = async (method: MethodItem["method"]) => {
     setMessage("");
-    setDebugOtp("");
     try {
       const requestPayload: Record<string, unknown> = { ...payload };
-      if (method === "SMS_OTP") {
-        requestPayload.phone_number = phoneNumber;
-      }
-      if (method === "TABLET_SIGNATURE" && phoneNumber.trim()) {
-        requestPayload.phone_number = phoneNumber;
+      if (method === "EMAIL_NOTICE") {
+        requestPayload.email = patientEmail;
       }
 
       const res = await apiFetch<{ session_id: string; verification_status: string; provider_result?: { otp_debug_code?: string } }>(
@@ -200,8 +192,8 @@ export default function HomeHealthcareAgreementPage() {
 
       setSessionId(res.session_id);
       setStatus(res.verification_status || "pending");
-      if (res.provider_result?.otp_debug_code) {
-        setDebugOtp(res.provider_result.otp_debug_code);
+      if (res.verification_status === "notification_sent") {
+        setMessage("تم إرسال إشعار للمريض عبر البريد الإلكتروني.");
       }
     } catch (err) {
       setMessage((err as Error).message);
@@ -217,17 +209,8 @@ export default function HomeHealthcareAgreementPage() {
     setMessage("");
     try {
       const verifyPayload: Record<string, unknown> = {};
-      if (selectedMethod === "SMS_OTP") {
-        verifyPayload.otp_code = otpCode;
-      }
       if (selectedMethod === "TABLET_SIGNATURE") {
         verifyPayload.signature_payload = signaturePayload;
-        if (otpCode.trim()) {
-          verifyPayload.otp_code = otpCode;
-        }
-      }
-      if (selectedMethod === "NAFATH") {
-        verifyPayload.nafath_status = nafathStatus;
       }
 
       const res = await apiFetch<{ verification_status: string; pdf_path?: string }>(
@@ -241,6 +224,8 @@ export default function HomeHealthcareAgreementPage() {
       setStatus(res.verification_status || "pending");
       if (res.verification_status === "verified") {
         setMessage(`تم إنشاء ملف PDF وإرفاقه بالحالة. ${res.pdf_path || ""}`.trim());
+      } else if (res.verification_status === "notification_sent") {
+        setMessage("تم إرسال إشعار للمريض عبر البريد الإلكتروني.");
       }
     } catch (err) {
       setMessage((err as Error).message);
@@ -336,8 +321,7 @@ export default function HomeHealthcareAgreementPage() {
             </div>
 
             <div className="mt-3 grid gap-2">
-              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="رقم الجوال لاستقبال رمز التحقق" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
-              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="رمز التحقق" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
+              <input className="rounded-lg border px-3 py-2 text-sm" placeholder="البريد الإلكتروني للمريض" value={patientEmail} onChange={(e) => setPatientEmail(e.target.value)} />
               <textarea
                 className="hidden"
                 rows={1}
@@ -345,23 +329,19 @@ export default function HomeHealthcareAgreementPage() {
                 readOnly
               />
               <TabletSignaturePad value={signaturePayload} onChange={setSignaturePayload} />
-              <select value={nafathStatus} onChange={(e) => setNafathStatus(e.target.value)} className="rounded-lg border px-3 py-2 text-sm">
-                <option value="pending">نفاذ - بانتظار التحقق</option>
-                <option value="approved">نفاذ - تم التحقق</option>
-              </select>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedMethod("SMS_OTP");
-                  void startAgreement("SMS_OTP");
+                  setSelectedMethod("EMAIL_NOTICE");
+                  void startAgreement("EMAIL_NOTICE");
                 }}
                 disabled={!isHomecareSelected}
                 className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-50"
               >
-                إرسال رمز التحقق
+                إرسال إشعار البريد
               </button>
               <button
                 type="button"
@@ -381,8 +361,7 @@ export default function HomeHealthcareAgreementPage() {
               </button>
             </div>
 
-            {fallbackMode ? <p className="mt-2 text-xs text-amber-700">وضع بديل: يتوفر رمز تحقق تجريبي عند عدم تهيئة خدمات الرسائل النصية أو نفاذ.</p> : null}
-            {debugOtp ? <p className="mt-1 text-xs text-slate-500">رمز تحقق بيئة التطوير: {debugOtp}</p> : null}
+            {fallbackMode ? <p className="mt-2 text-xs text-amber-700">يمكن إرسال إشعار للمريض عبر البريد الإلكتروني كبديل عن التوقيع الفوري.</p> : null}
             <p className="mt-2 text-sm text-slate-700">الحالة: {status}</p>
             {sessionId ? <p className="text-xs text-slate-500">معرّف الجلسة: {sessionId}</p> : null}
             {message ? <p className="mt-2 text-sm text-slate-700">{message}</p> : null}

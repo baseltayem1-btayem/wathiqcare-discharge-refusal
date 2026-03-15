@@ -29,7 +29,7 @@ import { WorkflowDraft } from "@/components/workflow/WorkflowDataForm";
 import WorkflowDocumentList from "@/components/workflow/WorkflowDocumentList";
 import WorkflowTimelinePanel from "@/components/workflow/WorkflowTimelinePanel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { clearToken } from "@/utils/api";
+import { apiFetch, clearToken } from "@/utils/api";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 import { dischargeRefusalWorkflowService } from "@/lib/services/dischargeRefusalWorkflow.service";
 import {
@@ -927,6 +927,37 @@ export default function CaseDetailsPage() {
     setActiveTab("archive");
   };
 
+  const handleSendWorkflowEmailNotification = async () => {
+    const recipient = window.prompt("أدخل بريد المستلم لإرسال الإشعار", "");
+    if (!recipient || !recipient.trim()) {
+      return;
+    }
+
+    const templateName = workflow?.escalation_required
+      ? "legal_escalation_notice"
+      : "discharge_refusal_follow_up";
+
+    try {
+      const response = await apiFetch<{ status: string }>("/api/emails/send-workflow-notification", {
+        method: "POST",
+        body: JSON.stringify({
+          case_id: caseId,
+          to: [recipient.trim()],
+          template_name: templateName,
+          include_latest_case_documents: true,
+          template_vars: {
+            case_id: caseId,
+            patient_name: caseDetail?.patient_name || workflow?.patient_name || "",
+          },
+        }),
+      });
+
+      setInfoMessage(response.status === "sent" ? "تم إرسال الإشعار بالبريد الإلكتروني بنجاح." : "تم تسجيل الإشعار.");
+    } catch (error) {
+      setInfoMessage(error instanceof Error ? error.message : "فشل إرسال الإشعار بالبريد الإلكتروني.");
+    }
+  };
+
   return (
     <AuthGuard>
       <AppShell
@@ -976,6 +1007,17 @@ export default function CaseDetailsPage() {
                 {t("workflow.action.startRefusalWorkflow")}
               </button>
             ) : null}
+
+            <button
+              type="button"
+              onClick={() => {
+                void handleSendWorkflowEmailNotification();
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-2 text-sm font-medium text-cyan-800 hover:bg-cyan-100"
+            >
+              <FileText className="h-4 w-4" />
+              إرسال إشعار بريد
+            </button>
 
             {hasSupportIntervention && !hasRefusalForm ? (
               <button
@@ -1173,7 +1215,7 @@ export default function CaseDetailsPage() {
 
                   {visibleWorkflowProgressSteps.length > 0 ? (
                     <div className="mt-5">
-                      <h3 className="text-sm font-semibold text-slate-900">Workflow Progress | تقدم الإجراءات</h3>
+                      <h3 className="text-sm font-semibold text-slate-900">إجراءات عمل خطة الخروج للمريض</h3>
                       <p className="mt-1 text-sm text-slate-600">
                         {workflowProgressSteps.length > 0
                           ? "تتبّع مراحل الإجراء الحالي والتنقل إلى الخطوات المتاحة مباشرة من مسار الحالة."
@@ -1181,6 +1223,7 @@ export default function CaseDetailsPage() {
                       </p>
                       <WorkflowProgress
                         className="mt-3"
+                        layout="wrapped"
                         steps={visibleWorkflowProgressSteps}
                         language={lang}
                         direction={isRtl ? "rtl" : "ltr"}

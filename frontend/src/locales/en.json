@@ -132,7 +132,7 @@
       "refreshDocuments": "Refresh Documents"
     },
     "panel": {
-      "title": "Discharge Refusal Workflow",
+      "title": "Patient Discharge Plan Workflow",
       "empty": "Workflow will appear after case data is loaded.",
       "escalationRequired": "Escalation Required",
       "persisted24h": "Refusal has persisted more than 24 hours after discharge decision.",
@@ -168,7 +168,7 @@
       "upcoming": "Upcoming",
       "escalationRequired": "Escalation required"
     },
-    "pageTitle": "Discharge Workflow",
+    "pageTitle": "Patient Discharge Plan Workflow",
     "pageSubtitle": "Track discharge refusal workflow stages and case progress",
     "badge": "Workflow Management",
     "kpi": {
@@ -390,7 +390,7 @@
     "modulesSubtitle": "Navigate to specialized workflow modules",
     "module": {
       "workflow": {
-        "title": "Discharge Workflow",
+        "title": "Patient Discharge Plan Workflow",
         "description": "Track workflow stages and manage discharge refusal processes.",
         "action": "Open Module"
       },

@@ -29,6 +29,7 @@ type WorkflowProgressProps = {
   steps: WorkflowProgressStep[];
   language?: "ar" | "en";
   direction?: WorkflowProgressDirection;
+  layout?: "wrapped" | "scroll";
   currentStepId?: string;
   currentStepIndex?: number;
   onStepClick?: (step: WorkflowProgressResolvedStep) => void;
@@ -97,6 +98,7 @@ export default function WorkflowProgress({
   steps,
   language = "ar",
   direction,
+  layout = "scroll",
   currentStepId,
   currentStepIndex,
   onStepClick,
@@ -122,16 +124,31 @@ export default function WorkflowProgress({
       dir={resolvedDirection}
       aria-label={ariaLabel}
       className={cn(
-        "w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 scrollbar-thin",
+        "w-full rounded-2xl border border-slate-200 bg-white p-4",
+        layout === "scroll" && "overflow-x-auto scrollbar-thin",
         className
       )}
     >
-      <ol className="flex min-w-max items-start gap-0" role="list">
+      <ol
+        className={cn(
+          layout === "wrapped"
+            ? "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+            : "flex min-w-max items-start gap-0"
+        )}
+        role="list"
+      >
         {resolvedSteps.map((step, index) => {
           const clickable = Boolean(step.clickable && onStepClick);
 
           return (
-            <li key={step.id} className="flex min-w-40 items-start sm:min-w-44 lg:min-w-48">
+            <li
+              key={step.id}
+              className={cn(
+                layout === "wrapped"
+                  ? "rounded-xl border border-slate-200 bg-slate-50 p-3"
+                  : "flex min-w-40 items-start sm:min-w-44 lg:min-w-48"
+              )}
+            >
               <button
                 type="button"
                 disabled={!clickable}
@@ -142,7 +159,7 @@ export default function WorkflowProgress({
                   }
                 }}
                 className={cn(
-                  "inline-flex items-start gap-3 bg-transparent text-start",
+                  "inline-flex w-full items-start gap-3 bg-transparent text-start",
                   clickable ? "cursor-pointer" : "cursor-default",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                 )}
@@ -164,7 +181,7 @@ export default function WorkflowProgress({
                   )}
                 </span>
 
-                <span className="max-w-32 pt-0.5 sm:max-w-36 lg:max-w-40">
+                <span className={cn(layout === "wrapped" ? "min-w-0 flex-1 pt-0.5" : "max-w-32 pt-0.5 sm:max-w-36 lg:max-w-40")}>
                   <span
                     className={cn(
                       "block text-sm leading-5",
@@ -184,7 +201,7 @@ export default function WorkflowProgress({
                 </span>
               </button>
 
-              {index < resolvedSteps.length - 1 ? (
+              {layout === "scroll" && index < resolvedSteps.length - 1 ? (
                 <span
                   aria-hidden="true"
                   className={cn(

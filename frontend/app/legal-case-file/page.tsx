@@ -83,6 +83,7 @@ export default function LegalCaseFilePage() {
                   {workflow.steps.length > 0 ? (
                     <WorkflowProgress
                       className="mt-3 border-0 bg-transparent p-0"
+                      layout="scroll"
                       steps={workflow.steps}
                       language="en"
                       direction="ltr"

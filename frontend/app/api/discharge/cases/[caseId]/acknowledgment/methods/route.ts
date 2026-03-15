@@ -12,13 +12,6 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         return NextResponse.json({
             methods: [
                 {
-                    method: "SMS_OTP",
-                    legacy_method: "sms_otp",
-                    available: true,
-                    label_ar: "رمز التحقق برسالة نصية",
-                    reason: null,
-                },
-                {
                     method: "TABLET_SIGNATURE",
                     legacy_method: "tablet_signature",
                     available: true,
@@ -26,11 +19,11 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
                     reason: null,
                 },
                 {
-                    method: "NAFATH",
-                    legacy_method: "nafath",
-                    available: false,
-                    label_ar: "نفاذ",
-                    reason: "خدمة نفاذ غير مفعّلة في البيئة الحالية",
+                    method: "EMAIL_NOTICE",
+                    legacy_method: "email_notice",
+                    available: true,
+                    label_ar: "إرسال إشعار عبر البريد الإلكتروني",
+                    reason: null,
                 },
             ],
         });

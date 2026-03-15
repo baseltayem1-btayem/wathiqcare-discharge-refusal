@@ -9,7 +9,7 @@ type RouteContext = { params: Promise<{ caseId: string }> };
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
-const SUPPORTED_METHODS = new Set(["SMS_OTP", "TABLET_SIGNATURE", "NAFATH"]);
+const SUPPORTED_METHODS = new Set(["TABLET_SIGNATURE", "EMAIL_NOTICE"]);
 
 const SUPPORTED_DOCUMENT_TYPES: Record<string, string> = {
     discharge_refusal_form: "discharge_refusal_form",
@@ -105,33 +105,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         };
 
         // Method-specific setup
-        if (method === "SMS_OTP") {
-            const phone = safe(inputPayload.phone_number);
-            if (!phone) throw new ApiError(400, "phone_number is required for SMS OTP");
-            const otpCode = generateOtp();
-            const otpHash = hashOtp(otpCode);
-            sessionState.otp_code_hash = otpHash;
-            sessionState.phone_number_masked = maskPhone(phone);
-            sessionState.otp_sent_at = nowIso();
-            sessionState.provider_result = {
-                delivery_status: "stub_delivered",
-                challenge_id: crypto.randomUUID(),
-                provider: "stub",
-                stub_mode: true,
-                otp_debug_code: otpCode, // returned to frontend for dev/demo use
-            };
-        } else if (method === "NAFATH") {
-            sessionState.verification_status = "unavailable";
-            sessionState.provider_result = {
-                request_id: crypto.randomUUID(),
-                status: "unavailable",
-                provider: "nafath_stub",
-            };
-        } else if (method === "TABLET_SIGNATURE") {
+        if (method === "TABLET_SIGNATURE") {
             sessionState.verification_status = "awaiting_signature";
             sessionState.provider_result = { device_source: "TABLET" } as Record<string, unknown>;
 
-            // Optional mobile OTP linkage
+            // Optional mobile OTP linkage (kept for backward compatibility)
             const phone = safe(inputPayload.phone_number);
             if (phone) {
                 const otpCode = generateOtp();
@@ -143,6 +121,18 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 (sessionState.provider_result as Record<string, unknown>).stub_mode = true;
                 (sessionState.provider_result as Record<string, unknown>).challenge_id = crypto.randomUUID();
             }
+        } else if (method === "EMAIL_NOTICE") {
+            const email = safe(inputPayload.email ?? inputPayload.patient_email);
+            if (!email) throw new ApiError(400, "email is required for EMAIL_NOTICE");
+            sessionState.verification_status = "notification_sent";
+            sessionState.provider_result = {
+                channel: "email",
+                recipient_email: email,
+                delivery_status: "stub_delivered",
+                provider: "email_stub",
+                sent_at: nowIso(),
+                message_id: crypto.randomUUID(),
+            };
         }
 
         // Persist session as a Document record; id becomes the session_id
@@ -179,9 +169,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             verification_status: sessionState.verification_status,
             provider_result: sessionState.provider_result,
             available_methods: [
-                { method: "SMS_OTP", legacy_method: "sms_otp", available: true, label_ar: "رمز التحقق برسالة نصية", reason: null },
                 { method: "TABLET_SIGNATURE", legacy_method: "tablet_signature", available: true, label_ar: "توقيع الجهاز اللوحي", reason: null },
-                { method: "NAFATH", legacy_method: "nafath", available: false, label_ar: "نفاذ", reason: "غير مفعّل" },
+                { method: "EMAIL_NOTICE", legacy_method: "email_notice", available: true, label_ar: "إرسال إشعار عبر البريد الإلكتروني", reason: null },
             ],
         });
     } catch (error) {

@@ -114,6 +114,7 @@ export default function EscalationTimelinePage() {
                           </p>
                           <WorkflowProgress
                             className="border-0 bg-transparent p-0"
+                            layout="scroll"
                             steps={item.workflow.steps}
                             language="en"
                             direction="ltr"

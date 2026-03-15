@@ -54,10 +54,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             if (!expectedHash) throw new ApiError(400, "لا يوجد رمز OTP مرتبط بهذه الجلسة");
             verified = crypto.createHash("sha256").update(submitted).digest("hex") === expectedHash;
 
-        } else if (method === "NAFATH") {
-            // Nafath is unavailable in stub mode — treat as pending
-            verified = false;
-
         } else if (method === "TABLET_SIGNATURE") {
             const signaturePayload = safe(payload.signature_payload);
             verified = signaturePayload.length > 0;
@@ -70,9 +66,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 const otpOk = crypto.createHash("sha256").update(submittedOtp).digest("hex") === expectedHash;
                 verified = verified && otpOk;
             }
+        } else if (method === "EMAIL_NOTICE") {
+            verified = false;
         }
 
-        const newStatus = verified ? "verified" : (method === "NAFATH" ? "unavailable" : "failed");
+        const newStatus = verified ? "verified" : (method === "EMAIL_NOTICE" ? "notification_sent" : "failed");
 
         // Update session state in Document
         const updatedSession: Record<string, unknown> = {

@@ -141,6 +141,7 @@ export default function ArchivePage() {
                                             <td className="px-3 py-2">
                                                 {workflow.steps.length > 0 ? (
                                                     <WorkflowProgress
+                                                        layout="scroll"
                                                         steps={workflow.steps}
                                                         language="ar"
                                                         direction="rtl"
