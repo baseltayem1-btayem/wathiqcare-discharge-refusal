@@ -121,8 +121,8 @@ export default function ArchivePage() {
                     </div>
 
                     {searched ? (
-                        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
-                            <table className="w-full text-sm">
+                        <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full min-w-[600px] text-sm">
                                 <thead className="bg-slate-100 text-slate-700">
                                     <tr>
                                         <th className="px-3 py-2 text-start">رقم الملف</th>
