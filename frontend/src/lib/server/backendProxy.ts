@@ -73,7 +73,14 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
         };
     }
 
-    return { ok: true, url: new URL(pathname, `${base.origin}/`) };
+    const baseWithPath = new URL(base.toString());
+    const normalizedBasePath = baseWithPath.pathname.endsWith("/")
+        ? baseWithPath.pathname
+        : `${baseWithPath.pathname}/`;
+    baseWithPath.pathname = normalizedBasePath;
+
+    const normalizedPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+    return { ok: true, url: new URL(normalizedPath, baseWithPath) };
 }
 
 function buildForwardHeaders(request: NextRequest): Headers {
@@ -111,10 +118,14 @@ export async function forwardToBackend(
 
     const targetHost = built.url.host.toLowerCase();
     const requestHost = (request.headers.get("host") || "").toLowerCase();
-    if (targetHost && requestHost && targetHost === requestHost) {
+    const targetPath = built.url.pathname;
+    const sourcePath = request.nextUrl.pathname;
+
+    // Prevent recursive self-calls when backend base URL points to the same host+path.
+    if (targetHost && requestHost && targetHost === requestHost && targetPath === sourcePath) {
         return NextResponse.json(
             {
-                detail: "خدمة الواجهة الخلفية غير متاحة حالياً.",
+                detail: "خدمة الواجهة الخلفية غير متاحة حالياً. يرجى ضبط BACKEND_API_BASE_URL على خدمة backend الحقيقية.",
             },
             { status: 503 },
         );
