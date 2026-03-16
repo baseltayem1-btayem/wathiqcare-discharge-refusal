@@ -35,6 +35,19 @@ function buildBackendErrorResponse(code: string, detail = BACKEND_UNAVAILABLE_DE
     return NextResponse.json({ code, detail }, { status });
 }
 
+function isHtmlContentType(contentType: string | null): boolean {
+    return (contentType || "").toLowerCase().includes("text/html");
+}
+
+function isInfrastructureHtmlError(payload: string): boolean {
+    const normalized = payload.toLowerCase();
+    return (
+        normalized.includes("web app is stopped") ||
+        normalized.includes("site disabled") ||
+        normalized.includes("application error")
+    );
+}
+
 function shouldRejectHost(hostname: string, source: BackendApiBaseUrlSource): boolean {
     if (process.env.NODE_ENV !== "production") {
         return false;
@@ -152,6 +165,25 @@ export async function forwardToBackend(
         }
         if (contentDisposition) {
             proxyHeaders.set("content-disposition", contentDisposition);
+        }
+
+        if (backendResponse.status >= 400 && isHtmlContentType(contentType)) {
+            const htmlBody = await backendResponse.text().catch(() => "");
+
+            // Infrastructure error pages (e.g., stopped Azure app) should not leak raw HTML to UI.
+            if (backendResponse.status >= 500 || backendResponse.status === 403 || isInfrastructureHtmlError(htmlBody)) {
+                console.error("[backendProxy] Backend returned infrastructure HTML error page", {
+                    backendPath,
+                    status: backendResponse.status,
+                    targetOrigin: built.url.origin,
+                });
+                return buildBackendErrorResponse("backend_unreachable");
+            }
+
+            return new NextResponse(htmlBody, {
+                status: backendResponse.status,
+                headers: proxyHeaders,
+            });
         }
 
         return new NextResponse(backendResponse.body, {

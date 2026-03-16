@@ -33,12 +33,39 @@ type RefreshResult = {
 };
 
 let refreshPromise: Promise<string | null> | null = null;
+const BACKEND_UNAVAILABLE_DETAIL = "الخدمة الخلفية غير متاحة حالياً. يرجى المحاولة لاحقاً.";
 const BACKEND_UNAVAILABLE_CODES = new Set([
     "backend_unavailable",
     "backend_target_rejected",
     "backend_loop",
     "backend_unreachable",
 ]);
+
+function isLikelyHtmlPayload(value: string): boolean {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+        return false;
+    }
+
+    return (
+        normalized.startsWith("<!doctype html") ||
+        normalized.startsWith("<html") ||
+        (normalized.includes("<html") && normalized.includes("</html>"))
+    );
+}
+
+function isInfrastructureErrorPayload(value: string): boolean {
+    const normalized = value.toLowerCase();
+    return (
+        normalized.includes("web app is stopped") ||
+        normalized.includes("site disabled") ||
+        normalized.includes("application error")
+    );
+}
+
+function shouldHideRawServerPayload(value: string): boolean {
+    return isLikelyHtmlPayload(value) || isInfrastructureErrorPayload(value);
+}
 
 function emitApiError(message: string, status: number) {
     if (typeof window === "undefined") {
@@ -160,7 +187,7 @@ function messageFromBody(status: number, body: unknown): string {
         const code = typeof record.code === "string" ? record.code : null;
         const detail = typeof record.detail === "string" ? record.detail.trim() : "";
         if (code && BACKEND_UNAVAILABLE_CODES.has(code)) {
-            return detail || "الخدمة الخلفية غير متاحة حالياً. يرجى المحاولة لاحقاً.";
+            return detail || BACKEND_UNAVAILABLE_DETAIL;
         }
 
         const errorValue = record.error;
@@ -171,24 +198,36 @@ function messageFromBody(status: number, body: unknown): string {
             if (nestedCode && BACKEND_UNAVAILABLE_CODES.has(nestedCode)) {
                 return typeof nestedMessage === "string" && nestedMessage.trim()
                     ? nestedMessage.trim()
-                    : detail || "الخدمة الخلفية غير متاحة حالياً. يرجى المحاولة لاحقاً.";
+                    : detail || BACKEND_UNAVAILABLE_DETAIL;
             }
             if (typeof nestedMessage === "string" && nestedMessage.trim()) {
+                if (shouldHideRawServerPayload(nestedMessage)) {
+                    return BACKEND_UNAVAILABLE_DETAIL;
+                }
                 return `${status}: ${nestedMessage}`;
             }
         }
 
         if (detail) {
+            if (shouldHideRawServerPayload(detail)) {
+                return BACKEND_UNAVAILABLE_DETAIL;
+            }
             return `${status}: ${detail}`;
         }
 
         const message = record.message;
         if (typeof message === "string" && message.trim()) {
+            if (shouldHideRawServerPayload(message)) {
+                return BACKEND_UNAVAILABLE_DETAIL;
+            }
             return `${status}: ${message}`;
         }
     }
 
     if (typeof body === "string" && body.trim()) {
+        if (shouldHideRawServerPayload(body)) {
+            return BACKEND_UNAVAILABLE_DETAIL;
+        }
         return `${status}: ${body}`;
     }
 
