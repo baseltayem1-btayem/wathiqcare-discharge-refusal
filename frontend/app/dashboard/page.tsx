@@ -59,15 +59,34 @@ export default function DashboardPage() {
   const [launchError, setLaunchError] = useState(false);
 
   useEffect(() => {
-    apiFetch<CaseItem[]>("/api/cases?limit=200")
-      .then((data) => setCases(Array.isArray(data) ? data : []))
-      .catch(() => setCases([]))
-      .finally(() => setLoading(false));
+    // Use an AbortController so both fetches are cancelled if the component
+    // unmounts (e.g. the user navigates away) before they complete.
+    // Without this, React strict-mode double-invocation and navigation events
+    // produce "signal is aborted without reason" console errors.
+    const controller = new AbortController();
+    const { signal } = controller;
 
-    apiFetch<SystemInspectData>("/api/system/inspect")
+    apiFetch<CaseItem[]>("/api/cases?limit=200", { signal })
+      .then((data) => setCases(Array.isArray(data) ? data : []))
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") return;
+        setCases([]);
+      })
+      .finally(() => {
+        if (!signal.aborted) setLoading(false);
+      });
+
+    apiFetch<SystemInspectData>("/api/system/inspect", { signal })
       .then((data) => { setLaunch(data); setLaunchError(false); })
-      .catch(() => setLaunchError(true))
-      .finally(() => setLaunchLoading(false));
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") return;
+        setLaunchError(true);
+      })
+      .finally(() => {
+        if (!signal.aborted) setLaunchLoading(false);
+      });
+
+    return () => controller.abort();
   }, []);
 
   const metrics = useMemo(() => {
