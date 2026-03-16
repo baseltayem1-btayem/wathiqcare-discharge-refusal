@@ -46,6 +46,12 @@ export class DischargeController {
         return this.service.updateDischargeDecision(user, id, dto);
     }
 
+    @Get(":id/discharge-plan")
+    @RequirePermissions("discharge.plan.read")
+    async getDischargePlan(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+        return this.service.getDischargePlan(user, id);
+    }
+
     @Post(":id/discharge-plan")
     @RequirePermissions("discharge.plan.create")
     async createDischargePlan(

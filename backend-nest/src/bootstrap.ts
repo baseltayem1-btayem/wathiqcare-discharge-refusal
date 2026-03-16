@@ -1,4 +1,4 @@
-import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { INestApplication, Logger, ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import helmet from "helmet";
@@ -19,6 +19,33 @@ export async function configureApp(
 ) {
     app.use(helmet());
     app.use(compression());
+    const configService = app.get(ConfigService);
+    const env = configService.get<string>("env") || "development";
+    const logger = new Logger("Bootstrap");
+
+    const corsAllowedOrigins = configService.get<string[]>("corsAllowedOrigins") || [];
+    if (env !== "production") {
+        // Development: allow all origins to enable local tooling, Swagger UI, etc.
+        app.enableCors({
+            origin: true,
+            methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allowedHeaders: ["Content-Type", "Authorization"],
+            credentials: true,
+        });
+        logger.warn("CORS policy: open (all origins) — development mode only");
+    } else if (corsAllowedOrigins.length > 0) {
+        app.enableCors({
+            origin: corsAllowedOrigins,
+            methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allowedHeaders: ["Content-Type", "Authorization"],
+            credentials: true,
+        });
+        logger.log(`CORS policy: restricted to ${corsAllowedOrigins.join(", ")}`);
+    } else {
+        // Production without explicit origins: disable CORS (backend behind proxy only).
+        logger.log("CORS policy: disabled (backend is accessed only via internal proxy)");
+    }
+
 
     app.useGlobalPipes(
         new ValidationPipe({
@@ -34,7 +61,6 @@ export async function configureApp(
     app.useGlobalFilters(new GlobalHttpExceptionFilter());
     app.useGlobalInterceptors(new LoggingInterceptor(), new ResponseEnvelopeInterceptor());
 
-    const configService = app.get(ConfigService);
     const apiPrefix = configService.get<string>("apiPrefix") || "api";
     app.setGlobalPrefix(apiPrefix);
 

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
+import {
+    type BackendApiBaseUrlSource,
+    getConfiguredBackendApiBaseUrlConfig,
+} from "@/lib/server/backend";
 
 type BackendUrlResult =
     | { ok: true; url: URL }
@@ -26,8 +29,13 @@ function isPrivateHost(hostname: string): boolean {
     return PRIVATE_HOST_PATTERNS.some((pattern) => pattern.test(hostname));
 }
 
-function shouldRejectHost(hostname: string): boolean {
+function shouldRejectHost(hostname: string, source: BackendApiBaseUrlSource): boolean {
     if (process.env.NODE_ENV !== "production") {
+        return false;
+    }
+
+    // Allow internal Docker service DNS only when using the dedicated server-side internal variable.
+    if (source === "BACKEND_NEST_API_BASE_URL") {
         return false;
     }
 
@@ -35,13 +43,13 @@ function shouldRejectHost(hostname: string): boolean {
 }
 
 export function buildBackendUrl(pathname: string): BackendUrlResult {
-    const baseUrl = getConfiguredBackendApiBaseUrl();
-    if (!baseUrl) {
+    const baseUrlConfig = getConfiguredBackendApiBaseUrlConfig();
+    if (!baseUrlConfig) {
         return {
             ok: false,
             response: NextResponse.json(
                 {
-                    detail: "الخدمة الخلفية الخارجية غير متاحة حالياً. إذا استمرت المشكلة على هذا المسار، يرجى التحقق من إعداد BACKEND_API_BASE_URL.",
+                    detail: "الخدمة الخلفية الخارجية غير متاحة حالياً. يرجى التحقق من إعداد BACKEND_NEST_API_BASE_URL أو BACKEND_API_BASE_URL.",
                 },
                 { status: 503 },
             ),
@@ -50,7 +58,7 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
 
     let base: URL;
     try {
-        base = new URL(baseUrl);
+        base = new URL(baseUrlConfig.url);
     } catch {
         return {
             ok: false,
@@ -61,7 +69,7 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
         };
     }
 
-    if (shouldRejectHost(base.hostname)) {
+    if (shouldRejectHost(base.hostname, baseUrlConfig.source)) {
         return {
             ok: false,
             response: NextResponse.json(

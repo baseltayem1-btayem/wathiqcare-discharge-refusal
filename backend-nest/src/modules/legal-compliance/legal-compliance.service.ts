@@ -1,5 +1,6 @@
 import {
     BadRequestException,
+    ForbiddenException,
     Injectable,
     NotFoundException,
 } from "@nestjs/common";
@@ -18,6 +19,27 @@ export class LegalComplianceService {
         private readonly auditService: AuditService,
     ) { }
 
+    private hasPermission(user: AuthUser, permission: string): boolean {
+        return user.isSuperAdmin || user.permissions.includes(permission);
+    }
+
+    private canViewLegalNote(user: AuthUser, visibilityScope: string): boolean {
+        if (user.isSuperAdmin) {
+            return true;
+        }
+
+        switch (visibilityScope) {
+            case "LEGAL_ONLY":
+                return this.hasPermission(user, "legal.notes.read");
+            case "COMPLIANCE_ONLY":
+                return this.hasPermission(user, "audit.read");
+            case "LEGAL_AND_COMPLIANCE":
+                return this.hasPermission(user, "legal.notes.read") || this.hasPermission(user, "audit.read");
+            default:
+                return false;
+        }
+    }
+
     private async ensureCase(tenantId: string, caseId: string) {
         const row = await this.prisma.refusalCase.findFirst({
             where: { tenantId, id: caseId },
@@ -31,13 +53,15 @@ export class LegalComplianceService {
     async listLegalNotes(user: AuthUser, caseId: string) {
         await this.ensureCase(user.tenantId, caseId);
 
-        return this.prisma.privilegedNote.findMany({
+        const notes = await this.prisma.privilegedNote.findMany({
             where: {
                 tenantId: user.tenantId,
                 refusalCaseId: caseId,
             },
             orderBy: { createdAt: "desc" },
         });
+
+        return notes.filter((note) => this.canViewLegalNote(user, String(note.visibilityScope)));
     }
 
     async createLegalNote(
@@ -46,6 +70,18 @@ export class LegalComplianceService {
         dto: CreatePrivilegedNoteDto,
     ) {
         await this.ensureCase(user.tenantId, caseId);
+
+        if (dto.visibilityScope === "COMPLIANCE_ONLY" && !this.hasPermission(user, "audit.read")) {
+            throw new ForbiddenException("Creating compliance-only notes requires audit access");
+        }
+
+        if (
+            dto.visibilityScope === "LEGAL_AND_COMPLIANCE" &&
+            !this.hasPermission(user, "audit.read") &&
+            !this.hasPermission(user, "legal.hold.create")
+        ) {
+            throw new ForbiddenException("Insufficient permissions for cross-scope legal note visibility");
+        }
 
         const created = await this.prisma.privilegedNote.create({
             data: {

@@ -134,6 +134,38 @@ export class DischargeService {
         return updated;
     }
 
+    async getDischargePlan(user: AuthUser, caseId: string) {
+        await this.getCaseOrThrow(user.tenantId, caseId);
+
+        const plan = await this.prisma.dischargePlan.findFirst({
+            where: {
+                tenantId: user.tenantId,
+                refusalCaseId: caseId,
+            },
+            orderBy: { createdAt: "desc" },
+        });
+
+        if (!plan) {
+            return {
+                plan: null,
+                items: [],
+            };
+        }
+
+        const items = await this.prisma.dischargePlanItem.findMany({
+            where: {
+                tenantId: user.tenantId,
+                dischargePlanId: plan.id,
+            },
+            orderBy: { createdAt: "asc" },
+        });
+
+        return {
+            plan,
+            items,
+        };
+    }
+
     async createDischargePlan(user: AuthUser, caseId: string, dto: CreateDischargePlanDto) {
         const caseRow = await this.getCaseOrThrow(user.tenantId, caseId);
 

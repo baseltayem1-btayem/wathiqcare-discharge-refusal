@@ -4,10 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Archive, FileCheck2, FileCog, FilePlus2, FolderKanban, Gavel, LayoutGrid, LogOut, Rocket, ShieldCheck, Stethoscope, Timer, ClipboardList, AlertTriangle, FileSignature, CheckCircle2, Database, MessageSquareHeart, HandHelping, FileText } from "lucide-react";
+import { Archive, FileCheck2, FilePlus2, FolderKanban, Gavel, LayoutGrid, LogOut, Stethoscope, Timer, ClipboardList, AlertTriangle, FileSignature, MessageSquareHeart, HandHelping, FileText } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
-import { clearToken } from "@/utils/api";
+import { useAuthSession, useLogoutMutation } from "@/lib/hooks/use-auth";
 
 type AppShellProps = {
   title: string;
@@ -26,26 +26,71 @@ type NavItem = {
   labelKey?: string;
   label?: string;
   icon: ReactNode;
+  requiredAnyPermission?: string[];
   disabled?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutGrid className="h-4 w-4" /> },
-  { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
-  { href: "/cases/new", labelKey: "nav.newCase", icon: <FilePlus2 className="h-4 w-4" /> },
-  { href: "/workflow", labelKey: "nav.workflowDocs", icon: <FileCog className="h-4 w-4" /> },
-  { href: "/refusal-forms", labelKey: "nav.refusalForms", icon: <FileSignature className="h-4 w-4" /> },
-  { href: "/legal-escalation", labelKey: "nav.legalEscalation", icon: <AlertTriangle className="h-4 w-4" /> },
-  { href: "/escalation-timeline", labelKey: "nav.escalationTimeline", icon: <Timer className="h-4 w-4" /> },
-  { href: "/legal-case-file", labelKey: "nav.legalCaseFile", icon: <Gavel className="h-4 w-4" /> },
-  { href: "/audit-log", labelKey: "nav.auditViewer", icon: <ClipboardList className="h-4 w-4" /> },
-  { href: "/icd11-validator", labelKey: "nav.icd11Validator", icon: <CheckCircle2 className="h-4 w-4" /> },
-  { href: "/emr-integration", labelKey: "nav.emrIntegration", icon: <Database className="h-4 w-4" /> },
-  { href: "/consents", labelKey: "nav.consents", icon: <FileCheck2 className="h-4 w-4" /> },
-  { href: "/compliance", labelKey: "nav.compliance", icon: <ShieldCheck className="h-4 w-4" /> },
-  { href: "/bundles", labelKey: "nav.bundles", icon: <Archive className="h-4 w-4" /> },
-  { href: "/launch-status", labelKey: "nav.launchStatus", icon: <Rocket className="h-4 w-4" /> },
-  { href: "/admin", labelKey: "nav.admin", icon: <ShieldCheck className="h-4 w-4" /> },
+  {
+    href: "/dashboard",
+    labelKey: "nav.dashboard",
+    icon: <LayoutGrid className="h-4 w-4" />,
+    requiredAnyPermission: ["reports.dashboard", "cases.read"],
+  },
+  {
+    href: "/cases",
+    labelKey: "nav.cases",
+    icon: <FolderKanban className="h-4 w-4" />,
+    requiredAnyPermission: ["cases.read"],
+  },
+  {
+    href: "/cases/new",
+    labelKey: "nav.newCase",
+    icon: <FilePlus2 className="h-4 w-4" />,
+    requiredAnyPermission: ["cases.create"],
+  },
+  {
+    href: "/audit-log",
+    labelKey: "nav.auditViewer",
+    icon: <ClipboardList className="h-4 w-4" />,
+    requiredAnyPermission: ["audit.read"],
+  },
+  {
+    href: "/legal-case-file",
+    labelKey: "nav.legalCaseFile",
+    icon: <Gavel className="h-4 w-4" />,
+    requiredAnyPermission: ["legal.notes.read", "legal.hold.create"],
+  },
+  {
+    href: "/refusal-forms",
+    labelKey: "nav.refusalForms",
+    icon: <FileSignature className="h-4 w-4" />,
+    requiredAnyPermission: ["refusal_events.read", "refusal_events.create"],
+  },
+  {
+    href: "/consents",
+    labelKey: "nav.consents",
+    icon: <FileCheck2 className="h-4 w-4" />,
+    requiredAnyPermission: ["acknowledgments.read", "acknowledgments.send"],
+  },
+  {
+    href: "/bundles",
+    labelKey: "nav.bundles",
+    icon: <Archive className="h-4 w-4" />,
+    requiredAnyPermission: ["documents.read", "documents.download"],
+  },
+  {
+    href: "/escalation-timeline",
+    labelKey: "nav.escalationTimeline",
+    icon: <Timer className="h-4 w-4" />,
+    requiredAnyPermission: ["reports.legal_escalations", "workflows.read"],
+  },
+  {
+    href: "/legal-escalation",
+    labelKey: "nav.legalEscalation",
+    icon: <AlertTriangle className="h-4 w-4" />,
+    requiredAnyPermission: ["legal.notes.create", "legal.hold.create"],
+  },
 ];
 
 const CASE_STAGE_NAV = [
@@ -154,15 +199,20 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useI18n();
-  const navItems = workflowCaseNav ? buildCaseWorkflowNav(workflowCaseNav) : NAV_ITEMS;
+  const { user, hasAnyPermission } = useAuthSession();
+  const logoutMutation = useLogoutMutation();
+
+  const navItems = workflowCaseNav
+    ? buildCaseWorkflowNav(workflowCaseNav)
+    : NAV_ITEMS.filter((item) => {
+      if (!item.requiredAnyPermission || item.requiredAnyPermission.length === 0) {
+        return true;
+      }
+      return hasAnyPermission(item.requiredAnyPermission);
+    });
 
   async function handleLogout() {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch {
-      // Cookie clearing is best-effort; local token is still removed below.
-    }
-    clearToken();
+    await logoutMutation.mutateAsync();
     router.push("/login");
   }
 
@@ -200,6 +250,11 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
               {t("app.name")}
             </p>
             <p className="mt-0.5 text-center text-[11px] text-gray-500">{t("app.moduleTagline")}</p>
+            {user?.fullName ? (
+              <p className="mt-1 text-center text-[11px] text-slate-700">
+                {user.fullName}
+              </p>
+            ) : null}
           </div>
 
           {/* Nav */}
@@ -235,9 +290,10 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
             onClick={() => { void handleLogout(); }}
             className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             style={{ borderColor: "#e2e8f0" }}
+            disabled={logoutMutation.isPending}
           >
             <LogOut className="h-4 w-4" />
-            {t("common.logout")}
+            {logoutMutation.isPending ? "Signing out..." : t("common.logout")}
           </button>
         </aside>
 
@@ -264,9 +320,10 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
                     onClick={() => { void handleLogout(); }}
                     className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 md:hidden"
                     style={{ borderColor: "#e2e8f0" }}
+                    disabled={logoutMutation.isPending}
                   >
                     <LogOut className="h-4 w-4" />
-                    {t("common.logout")}
+                    {logoutMutation.isPending ? "Signing out..." : t("common.logout")}
                   </button>
                 </div>
               </div>

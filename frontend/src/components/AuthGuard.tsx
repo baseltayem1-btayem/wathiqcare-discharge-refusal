@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getToken } from "@/utils/api";
+import { useAuthSession } from "@/lib/hooks/use-auth";
 
 type AuthGuardProps = {
   children: ReactNode;
@@ -15,15 +15,25 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useI18n();
-  const token = getToken();
-  const authenticated = typeof token === "string" && token.length > 0;
+  const { status } = useAuthSession();
+  const authenticated = status === "authenticated";
 
   useEffect(() => {
-    if (!authenticated) {
+    if (status === "unauthenticated") {
       const nextPath = pathname || "/cases";
       router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
     }
-  }, [authenticated, pathname, router]);
+  }, [status, pathname, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100 p-6">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-sm text-slate-600">Loading secure session...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!authenticated) {
     return (

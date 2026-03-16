@@ -8,6 +8,7 @@ import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcryptjs";
 
 import { PrismaService } from "../../prisma/prisma.service";
+import { AuditService } from "../audit/audit.service";
 import { RolesPermissionsService } from "../roles-permissions/roles-permissions.service";
 import { TenantsService } from "../tenants/tenants.service";
 import { LoginDto } from "./dto/login.dto";
@@ -20,9 +21,33 @@ export class AuthService {
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
+        private readonly auditService: AuditService,
         private readonly rolesPermissionsService: RolesPermissionsService,
         private readonly tenantsService: TenantsService,
     ) { }
+
+    private async logAuthEvent(input: {
+        tenantId: string;
+        action: string;
+        entityId: string;
+        actorUserId?: string | null;
+        actorEmail?: string | null;
+        metadataJson?: Record<string, unknown>;
+    }) {
+        try {
+            await this.auditService.log({
+                tenantId: input.tenantId,
+                entityType: "auth_session",
+                entityId: input.entityId,
+                action: input.action,
+                actorUserId: input.actorUserId,
+                actorEmail: input.actorEmail,
+                metadataJson: input.metadataJson,
+            });
+        } catch {
+            // Never block authentication flow because audit logging failed.
+        }
+    }
 
     private async resolveTenantId(tenantCode?: string): Promise<string> {
         const resolvedCode =
@@ -54,23 +79,47 @@ export class AuthService {
 
     async login(dto: LoginDto) {
         const tenantId = await this.resolveTenantId(dto.tenantCode);
+        const normalizedEmail = dto.email.trim().toLowerCase();
         const user = await this.prisma.user.findFirst({
             where: {
                 tenantId,
-                email: dto.email.trim().toLowerCase(),
+                email: normalizedEmail,
             },
         });
 
         if (!user || !user.passwordHash) {
+            await this.logAuthEvent({
+                tenantId,
+                entityId: normalizedEmail,
+                action: "auth_login_failed",
+                actorEmail: normalizedEmail,
+                metadataJson: { reason: "user_not_found_or_no_password" },
+            });
             throw new UnauthorizedException("Invalid credentials");
         }
 
         if (user.status !== "ACTIVE") {
+            await this.logAuthEvent({
+                tenantId,
+                entityId: user.id,
+                action: "auth_login_failed",
+                actorUserId: user.id,
+                actorEmail: user.email,
+                metadataJson: { reason: "inactive_user" },
+            });
             throw new UnauthorizedException("User account is not active");
         }
 
         const validPassword = await bcrypt.compare(dto.password, user.passwordHash);
         if (!validPassword) {
+            await this.logAuthEvent({
+                tenantId,
+                entityId: user.id,
+                action: "auth_login_failed",
+                actorUserId: user.id,
+                actorEmail: user.email,
+                metadataJson: { reason: "invalid_password" },
+            });
             throw new UnauthorizedException("Invalid credentials");
         }
 
@@ -91,6 +140,14 @@ export class AuthService {
             user.id,
             user.tenantId,
         );
+
+        await this.logAuthEvent({
+            tenantId: user.tenantId,
+            entityId: user.id,
+            action: "auth_login_success",
+            actorUserId: user.id,
+            actorEmail: user.email,
+        });
 
         return {
             user: {
@@ -124,6 +181,14 @@ export class AuthService {
                 throw new UnauthorizedException("User not found or inactive");
             }
 
+            await this.logAuthEvent({
+                tenantId: user.tenantId,
+                entityId: user.id,
+                action: "auth_token_refreshed",
+                actorUserId: user.id,
+                actorEmail: user.email,
+            });
+
             return this.buildTokens({
                 sub: user.id,
                 tenantId: user.tenantId,
@@ -131,6 +196,16 @@ export class AuthService {
                 isSuperAdmin: user.isSuperAdmin,
             });
         } catch (error) {
+            const defaultTenantCode = this.configService.get<string>("defaultTenantCode") || "wathiq-hospital";
+            const tenant = await this.tenantsService.getByCode(defaultTenantCode).catch(() => null);
+            if (tenant) {
+                await this.logAuthEvent({
+                    tenantId: tenant.id,
+                    entityId: "refresh_token",
+                    action: "auth_refresh_failed",
+                    metadataJson: { reason: "invalid_or_expired_refresh_token" },
+                });
+            }
             throw new UnauthorizedException("Invalid refresh token");
         }
     }
@@ -167,6 +242,23 @@ export class AuthService {
     async logout(accessToken?: string) {
         if (!accessToken) {
             throw new BadRequestException("Missing access token");
+        }
+
+        try {
+            const payload = await this.jwtService.verifyAsync<JwtPayload>(accessToken, {
+                secret: this.configService.get<string>("jwt.accessSecret"),
+                ignoreExpiration: true,
+            });
+
+            await this.logAuthEvent({
+                tenantId: payload.tenantId,
+                entityId: payload.sub,
+                action: "auth_logout",
+                actorUserId: payload.sub,
+                actorEmail: payload.email,
+            });
+        } catch {
+            // Ignore malformed token details; logout remains best-effort.
         }
 
         return {

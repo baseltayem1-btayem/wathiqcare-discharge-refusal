@@ -11,6 +11,7 @@ export interface CaseDocument {
   titleEn: string;
   titleAr?: string | null;
   templateKey: string;
+  languageCode?: string;
   version: string;
   fileName: string;
   mimeType: string;

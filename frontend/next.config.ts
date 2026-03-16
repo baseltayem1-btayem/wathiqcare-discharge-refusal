@@ -4,6 +4,7 @@ import path from "node:path";
 const monorepoRoot = path.resolve(process.cwd(), "..");
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   outputFileTracingRoot: monorepoRoot,
   // Include contract files in serverless function bundles (Vercel)
   outputFileTracingIncludes: {

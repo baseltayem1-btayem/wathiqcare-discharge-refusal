@@ -8,6 +8,7 @@ import type {
 type BackendWorkflowDocument = {
   id: string;
   template_key: string;
+  locale?: string | null;
   document_code?: string | null;
   title: string;
   file_name: string;
@@ -30,6 +31,8 @@ type BackendCaseDocumentResponse = {
   workflowId?: string | null;
   template_key?: string;
   templateKey?: string;
+  locale?: string | null;
+  resolved_language?: string | null;
   document_code?: string | null;
   documentCode?: string | null;
   title?: string;
@@ -137,12 +140,13 @@ function mapBackendDocument(document: BackendWorkflowDocument, caseId: string): 
     titleEn: document.title,
     titleAr: null,
     templateKey: document.template_key,
+    languageCode: document.locale || "en",
     version: document.templateVersion || "1.0",
     fileName: document.file_name,
     mimeType: "text/html",
     storagePath: null,
     previewHtml: null,
-    payloadJson: {},
+    payloadJson: { languageCode: document.locale || "en" },
     status,
     generatedBy: document.createdBy || "system",
     generatedAt: document.generated_at || new Date().toISOString(),
@@ -175,12 +179,13 @@ function mapCaseDocumentResponse(document: BackendCaseDocumentResponse, caseId: 
     titleEn: title,
     titleAr: null,
     templateKey,
+    languageCode: document.locale || document.resolved_language || "en",
     version: document.templateVersion || "1.0",
     fileName,
     mimeType: "text/html",
     storagePath: null,
     previewHtml: null,
-    payloadJson: {},
+    payloadJson: { languageCode: document.locale || document.resolved_language || "en" },
     status,
     generatedBy: document.createdBy || "system",
     generatedAt,

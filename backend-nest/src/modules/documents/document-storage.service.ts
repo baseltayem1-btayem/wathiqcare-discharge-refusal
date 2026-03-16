@@ -25,7 +25,6 @@ export class DocumentStorageService {
 
     async getDownloadDescriptor(storageKey: string) {
         return {
-            storageKey,
             downloadUrl: `/api/documents/download/${encodeURIComponent(storageKey)}`,
         };
     }

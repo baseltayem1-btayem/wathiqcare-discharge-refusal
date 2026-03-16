@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CheckCircle2, CircleDashed, Lock, PlayCircle } from "lucide-react";
 import WorkflowDropdownField from "@/components/cases/WorkflowDropdownField";
 import { CASE_WORKFLOW_STEPS } from "@/components/cases/workflowTreeConfig";
 import WorkflowStepCard from "@/components/cases/WorkflowStepCard";
@@ -10,7 +11,10 @@ import {
   getSequentialStepMeta,
   mergeWorkflowSelectionState,
 } from "@/components/cases/workflowTreeState";
-import type { WorkflowSelectionState } from "@/components/cases/workflowTreeTypes";
+import type {
+  WorkflowSelectionState,
+  WorkflowStepStatus,
+} from "@/components/cases/workflowTreeTypes";
 
 type CaseWorkflowTreeProps = {
   caseId: string;
@@ -38,6 +42,22 @@ function loadSelectionState(caseId: string): WorkflowSelectionState {
   } catch {
     return fallback;
   }
+}
+
+function StepIndicator({ status, locked, current }: { status: WorkflowStepStatus; locked: boolean; current: boolean }) {
+  if (locked) {
+    return <Lock className="h-4 w-4" />;
+  }
+
+  if (status === "completed") {
+    return <CheckCircle2 className="h-4 w-4" />;
+  }
+
+  if (current || status === "in_progress") {
+    return <PlayCircle className="h-4 w-4" />;
+  }
+
+  return <CircleDashed className="h-4 w-4" />;
 }
 
 export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
@@ -129,7 +149,7 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
   const remainingSteps = sequentialMeta.filter((step) => step.status !== "completed");
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-slate-900">شجرة سير عمل الحالة</h2>
@@ -145,40 +165,122 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="space-y-3">
-          {CASE_WORKFLOW_STEPS.map((step, index) => {
-            const stepMeta = sequentialMeta.find((item) => item.stepId === step.id);
-            if (!stepMeta) {
-              return null;
-            }
+      <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Patient Discharge Plan Workflow</h3>
+            <p className="text-xs text-slate-500">شريط تقدم مرن ومحتوى بالكامل داخل النافذة.</p>
+          </div>
+          <div className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 sm:block">
+            {progressSummary.remaining} خطوات متبقية
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {sequentialMeta.map((stepMeta, index) => {
+            const step = CASE_WORKFLOW_STEPS[index];
 
             return (
-              <div key={step.id} className="relative">
-                {index < CASE_WORKFLOW_STEPS.length - 1 ? (
-                  <span className="pointer-events-none absolute left-4 top-[4.1rem] h-[calc(100%-1.2rem)] w-px bg-slate-300 md:left-5" />
-                ) : null}
-                <WorkflowStepCard
-                  step={step}
-                  index={index}
-                  status={stepMeta.status}
-                  locked={stepMeta.locked}
-                  current={stepMeta.current}
-                  values={selectionState}
-                  onOpenStep={handleOpenStep}
-                />
-              </div>
+              <button
+                key={step.id}
+                type="button"
+                disabled={stepMeta.locked}
+                onClick={() => handleOpenStep(step.id)}
+                className="group min-w-0 rounded-2xl border px-3 py-3 text-right transition disabled:cursor-not-allowed disabled:opacity-60"
+                style={{
+                  borderColor: stepMeta.current ? "#67e8f9" : stepMeta.status === "completed" ? "#86efac" : "#cbd5e1",
+                  background: stepMeta.current ? "#ecfeff" : stepMeta.status === "completed" ? "#f0fdf4" : "#ffffff",
+                }}
+              >
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/70 bg-white text-slate-700 shadow-sm">
+                    <StepIndicator status={stepMeta.status} locked={stepMeta.locked} current={stepMeta.current} />
+                  </span>
+                  <span className="shrink-0 text-[11px] font-semibold text-slate-500">الخطوة {index + 1}</span>
+                </div>
+
+                <p className="line-clamp-2 min-h-11 text-sm font-semibold leading-5 text-slate-900">
+                  {step.title}
+                </p>
+
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/80">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: stepMeta.status === "completed" ? "100%" : stepMeta.current || stepMeta.status === "in_progress" ? "60%" : "16%",
+                      background: stepMeta.status === "completed" ? "#22c55e" : stepMeta.current || stepMeta.status === "in_progress" ? "#06b6d4" : "#cbd5e1",
+                    }}
+                  />
+                </div>
+              </button>
             );
           })}
         </div>
+      </div>
 
-        <aside className="rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.9fr)]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 md:p-4">
+          <div className="space-y-3">
+            {CASE_WORKFLOW_STEPS.map((step, index) => {
+              const stepMeta = sequentialMeta.find((item) => item.stepId === step.id);
+              if (!stepMeta) {
+                return null;
+              }
+
+              return (
+                <div key={step.id} className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
+                  <div className="flex flex-col items-center">
+                    <span
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border bg-white text-slate-700 shadow-sm"
+                      style={{
+                        borderColor: stepMeta.current ? "#67e8f9" : stepMeta.status === "completed" ? "#86efac" : "#cbd5e1",
+                        background: stepMeta.current ? "#ecfeff" : stepMeta.status === "completed" ? "#f0fdf4" : "#ffffff",
+                      }}
+                    >
+                      <StepIndicator status={stepMeta.status} locked={stepMeta.locked} current={stepMeta.current} />
+                    </span>
+                    {index < CASE_WORKFLOW_STEPS.length - 1 ? (
+                      <span className="mt-2 h-full min-h-8 w-px bg-slate-200" />
+                    ) : null}
+                  </div>
+
+                  <WorkflowStepCard
+                    step={step}
+                    index={index}
+                    status={stepMeta.status}
+                    locked={stepMeta.locked}
+                    current={stepMeta.current}
+                    values={selectionState}
+                    onOpenStep={handleOpenStep}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <aside className="rounded-2xl border border-slate-200 bg-white p-4 xl:sticky xl:top-24 xl:self-start">
           <h3 className="text-sm font-semibold text-slate-900">حالة خطة الخروج</h3>
           <p className="mt-1 text-xs text-slate-600">المكتملة مقابل المتبقية بالتسلسل الإجباري.</p>
 
-          <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
-            <p className="text-xs text-indigo-700">الخطوة الحالية</p>
-            <p className="mt-1 text-sm font-semibold text-indigo-900">
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
+              <p className="text-[11px] text-slate-500">إجمالي</p>
+              <p className="text-sm font-bold text-slate-900">{progressSummary.total}</p>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-center">
+              <p className="text-[11px] text-emerald-700">منجز</p>
+              <p className="text-sm font-bold text-emerald-900">{progressSummary.completed}</p>
+            </div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center">
+              <p className="text-[11px] text-amber-700">متبقٍ</p>
+              <p className="text-sm font-bold text-amber-900">{progressSummary.remaining}</p>
+            </div>
+          </div>
+
+          <div className="mt-3 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-3">
+            <p className="text-xs text-cyan-700">الخطوة الحالية</p>
+            <p className="mt-1 text-sm font-semibold leading-6 text-cyan-950">
               {progressSummary.current
                 ? CASE_WORKFLOW_STEPS[progressSummary.current.index]?.title
                 : "تم إكمال جميع الخطوات"}

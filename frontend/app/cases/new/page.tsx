@@ -1,388 +1,244 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Save, Send } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
-import { apiFetch, clearToken } from "@/utils/api";
+import { useCreateCaseMutation } from "@/lib/hooks/use-cases";
+import {
+    useDepartmentsQuery,
+    useEncountersQuery,
+    useFacilitiesQuery,
+    usePatientsQuery,
+} from "@/lib/hooks/use-reference";
 
-type CreateCaseResponse = {
-    id: string;
-};
+const createCaseSchema = z.object({
+    facilityId: z.string().min(1, "Facility is required"),
+    departmentId: z.string().min(1, "Department is required"),
+    patientId: z.string().min(1, "Patient is required"),
+    encounterId: z.string().min(1, "Encounter is required"),
+    priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]),
+    summary: z.string().max(1000, "Summary is too long").optional(),
+});
 
-type MedicalCondition =
-    | "Diabetes"
-    | "Hypertension"
-    | "Heart Disease"
-    | "Lung Disease"
-    | "Cancer"
-    | "Kidney Disease"
-    | "Other";
+type CreateCaseFormValues = z.infer<typeof createCaseSchema>;
 
-const MEDICAL_CONDITIONS: Array<{ value: MedicalCondition; ar: string; en: string }> = [
-    { value: "Diabetes", ar: "السكري", en: "Diabetes" },
-    { value: "Hypertension", ar: "ارتفاع ضغط الدم", en: "Hypertension" },
-    { value: "Heart Disease", ar: "أمراض القلب", en: "Heart Disease" },
-    { value: "Lung Disease", ar: "أمراض الرئة", en: "Lung Disease" },
-    { value: "Cancer", ar: "السرطان", en: "Cancer" },
-    { value: "Kidney Disease", ar: "أمراض الكلى", en: "Kidney Disease" },
-    { value: "Other", ar: "أخرى", en: "Other" },
-];
+function displayName(value?: string | null, fallback = "-") {
+    if (!value || !value.trim()) {
+        return fallback;
+    }
+    return value;
+}
 
 export default function NewCasePage() {
     const router = useRouter();
+    const [patientSearch, setPatientSearch] = useState("");
 
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
-    const [successMessage, setSuccessMessage] = useState("");
+    const form = useForm<CreateCaseFormValues>({
+        resolver: zodResolver(createCaseSchema),
+        defaultValues: {
+            facilityId: "",
+            departmentId: "",
+            patientId: "",
+            encounterId: "",
+            priority: "MEDIUM",
+            summary: "",
+        },
+    });
 
-    const [patientName, setPatientName] = useState("");
-    const [patientIdNumber, setPatientIdNumber] = useState("");
-    const [medicalRecordNo, setMedicalRecordNo] = useState("");
-    const [attendingPhysician, setAttendingPhysician] = useState("");
-    const [roomNumber, setRoomNumber] = useState("");
-    const [admissionDate, setAdmissionDate] = useState("");
-    const [admissionDepartment, setAdmissionDepartment] = useState("");
+    const selectedFacilityId = form.watch("facilityId");
+    const selectedPatientId = form.watch("patientId");
 
-    const [sendDischargeOrderRequest, setSendDischargeOrderRequest] = useState(true);
+    const facilitiesQuery = useFacilitiesQuery(true);
+    const departmentsQuery = useDepartmentsQuery(selectedFacilityId, Boolean(selectedFacilityId));
+    const patientsQuery = usePatientsQuery(patientSearch, true);
+    const encountersQuery = useEncountersQuery(true);
 
-    const [dateOfBirth, setDateOfBirth] = useState("");
-    const [primaryMobile, setPrimaryMobile] = useState("");
-    const [email, setEmail] = useState("");
-    const [gender, setGender] = useState("");
-    const [homeAddress, setHomeAddress] = useState("");
-    const [streetName, setStreetName] = useState("");
-    const [cityName, setCityName] = useState("");
-    const [districtName, setDistrictName] = useState("");
-    const [postalCode, setPostalCode] = useState("");
-    const [poBox, setPoBox] = useState("");
-    const [admissionReason, setAdmissionReason] = useState("");
-    const [medicalCondition, setMedicalCondition] = useState<MedicalCondition | "">("");
+    const createCaseMutation = useCreateCaseMutation();
 
-    const [preferredLanguage, setPreferredLanguage] = useState("");
-    const [livingAlone, setLivingAlone] = useState("");
-    const [hasCaregiver, setHasCaregiver] = useState("");
-    const [dischargeDate, setDischargeDate] = useState("");
-    const [preferredDestination, setPreferredDestination] = useState("");
-    const [additionalInstructions, setAdditionalInstructions] = useState("");
-
-    const [medicationInstructions, setMedicationInstructions] = useState("");
-    const [followupAppointment, setFollowupAppointment] = useState("");
-    const [contactInfoAfterDischarge, setContactInfoAfterDischarge] = useState("");
-
-    const [dischargePlanType, setDischargePlanType] = useState<"outpatient_followup" | "homecare_risk">("outpatient_followup");
-
-    const [notifySectionsByEmail, setNotifySectionsByEmail] = useState(true);
-    const [signatureMethod, setSignatureMethod] = useState<"email" | "nafez" | "tablet">("email");
-
-    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        setSaving(true);
-        setError("");
-        setSuccessMessage("");
-
-        try {
-            const metadata = {
-                patient_name: patientName,
-                patient_id_number: patientIdNumber,
-                medical_record_number: medicalRecordNo,
-                attending_physician: attendingPhysician,
-                room_number: roomNumber,
-                admission_date: admissionDate,
-                admission_department: admissionDepartment,
-
-                discharge_order_request: {
-                    requested: sendDischargeOrderRequest,
-                    status: sendDischargeOrderRequest ? "pending_physician" : "not_requested",
-                },
-
-                discharge_plan: {
-                    patient_name: patientName,
-                    date_of_birth: dateOfBirth,
-                    primary_mobile: primaryMobile,
-                    email,
-                    gender,
-                    home_address: homeAddress,
-                    street_name: streetName,
-                    city_name: cityName,
-                    district_name: districtName,
-                    postal_code: postalCode,
-                    po_box: poBox,
-                    hospital_admission_reason: admissionReason,
-                    current_medical_condition: medicalCondition,
-                    preferred_language: preferredLanguage,
-                    is_living_alone: livingAlone,
-                    has_caregiver: hasCaregiver,
-                    date_of_discharge: dischargeDate,
-                    preferred_discharge_destination: preferredDestination,
-                    additional_comments_or_instructions: additionalInstructions,
-                    discharge_instructions: {
-                        medication_usage: medicationInstructions,
-                        followup_appointment: followupAppointment,
-                        contact_information: contactInfoAfterDischarge,
-                    },
-                    discharge_route: dischargePlanType,
-                },
-
-                workflow_stages: [
-                    "medical_assessment",
-                    "legal_capacity_check",
-                    "authorized_signatory_identification",
-                    "discharge_plan_preparation",
-                    "forms_and_consent_presentation",
-                    "approval_or_refusal_path",
-                    "legal_escalation_if_needed",
-                    "final_verification",
-                    "execute_discharge_or_hold",
-                ],
-
-                forms_catalog: [
-                    "discharge_plan",
-                    "discharge_instructions",
-                    "patient_pickup_acknowledgment",
-                    "discharge_approval",
-                    "discharge_refusal",
-                    "refusal_to_receive_patient",
-                    "no_caregiver_acknowledgment",
-                    "treatment_or_transfer_refusal",
-                    "risk_acknowledgment",
-                    "medical_education_acknowledgment",
-                    "minor_guardian_form",
-                ],
-
-                notifications: {
-                    enabled: notifySectionsByEmail,
-                    channels: {
-                        email: notifySectionsByEmail,
-                        nafez_signature_optional: signatureMethod === "nafez",
-                        tablet_signature_optional: signatureMethod === "tablet",
-                    },
-                    note: "Email is primary. Signature channels are optional and non-blocking.",
-                },
-            };
-
-            const created = await apiFetch<CreateCaseResponse>("/api/cases", {
-                method: "POST",
-                body: JSON.stringify({
-                    caseType: "DISCHARGE_REFUSAL",
-                    workflowType: "discharge_planning",
-                    title: `Discharge plan - ${patientName}`,
-                    patientName,
-                    patientIdNumber,
-                    medicalRecordNo,
-                    roomNumber,
-                    metadata,
-                }),
-            });
-
-            setSuccessMessage("تم تسجيل الحالة وإرسالها بنجاح.");
-            router.push(`/cases/${created.id}`);
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "تعذر إنشاء الحالة حالياً.";
-            setError(message);
-            if (message.includes("401") || message.includes("Invalid")) {
-                clearToken();
-                router.push("/login");
-            }
-        } finally {
-            setSaving(false);
+    const availableEncounters = useMemo(() => {
+        const list = encountersQuery.data?.items || [];
+        if (!selectedPatientId) {
+            return list;
         }
+        return list.filter((item) => item.patientId === selectedPatientId);
+    }, [encountersQuery.data?.items, selectedPatientId]);
+
+    async function onSubmit(values: CreateCaseFormValues) {
+        const created = await createCaseMutation.mutateAsync({
+            caseType: "DISCHARGE_REFUSAL",
+            facilityId: values.facilityId,
+            departmentId: values.departmentId,
+            patientId: values.patientId,
+            encounterId: values.encounterId,
+            priority: values.priority,
+            summary: values.summary?.trim() || undefined,
+        });
+
+        router.push(`/cases/${created.id}`);
     }
 
     return (
         <AuthGuard>
             <AppShell
-                title="تسجيل الحالة وخطة الخروج"
-                subtitle="نموذج مبسط: بيانات الحالة الأساسية ثم خطة الخروج والتواصل"
+                title="Create Refusal Case | إنشاء حالة رفض خروج"
+                subtitle="Linked to real facility/department/patient/encounter records from backend-nest"
                 actions={
                     <Link
-                        href="/dashboard"
+                        href="/cases"
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
                     >
                         <ArrowLeft className="h-4 w-4" />
-                        العودة للوحة التحكم
+                        Back to case list
                     </Link>
                 }
             >
-                {error ? (
-                    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-                ) : null}
-
-                {successMessage ? (
-                    <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                        {successMessage}
-                    </div>
-                ) : null}
-
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                     <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                        <h2 className="text-sm font-semibold text-slate-900">1) بيانات تسجيل الحالة</h2>
+                        <h2 className="text-sm font-semibold text-slate-900">Case linking</h2>
+                        <p className="mt-1 text-xs text-slate-500">
+                            A refusal case must link to valid facility, department, patient, and encounter entities.
+                        </p>
+
                         <div className="mt-3 grid gap-3 md:grid-cols-2">
-                            <input required value={patientName} onChange={(e) => setPatientName(e.target.value)} placeholder="اسم المريض" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={patientIdNumber} onChange={(e) => setPatientIdNumber(e.target.value)} placeholder="رقم الهوية" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={medicalRecordNo} onChange={(e) => setMedicalRecordNo(e.target.value)} placeholder="رقم الملف الطبي" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={attendingPhysician} onChange={(e) => setAttendingPhysician(e.target.value)} placeholder="اسم الطبيب المعالج" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} placeholder="رقم الغرفة" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required type="date" value={admissionDate} onChange={(e) => setAdmissionDate(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={admissionDepartment} onChange={(e) => setAdmissionDepartment(e.target.value)} placeholder="القسم الذي تم التنويم بناءً على طلبه" className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
-                        </div>
+                            <div>
+                                <label className="mb-1 block text-xs font-medium text-slate-600">Facility</label>
+                                <select
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    {...form.register("facilityId")}
+                                >
+                                    <option value="">Select facility</option>
+                                    {(facilitiesQuery.data || []).map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                            {displayName(item.nameAr || item.nameEn)}
+                                        </option>
+                                    ))}
+                                </select>
+                                {form.formState.errors.facilityId ? (
+                                    <p className="mt-1 text-xs text-red-700">{form.formState.errors.facilityId.message}</p>
+                                ) : null}
+                            </div>
 
-                        <label className="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
-                            <input
-                                type="checkbox"
-                                checked={sendDischargeOrderRequest}
-                                onChange={(e) => setSendDischargeOrderRequest(e.target.checked)}
-                            />
-                            إرسال طلب للطبيب لإصدار أمر الخروج
-                        </label>
-                    </section>
+                            <div>
+                                <label className="mb-1 block text-xs font-medium text-slate-600">Department</label>
+                                <select
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    {...form.register("departmentId")}
+                                    disabled={!selectedFacilityId}
+                                >
+                                    <option value="">Select department</option>
+                                    {(departmentsQuery.data || []).map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                            {displayName(item.nameAr || item.nameEn)}
+                                        </option>
+                                    ))}
+                                </select>
+                                {form.formState.errors.departmentId ? (
+                                    <p className="mt-1 text-xs text-red-700">{form.formState.errors.departmentId.message}</p>
+                                ) : null}
+                            </div>
 
-                    <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                        <h2 className="text-sm font-semibold text-slate-900">2) إنشاء خطة الخروج</h2>
-                        <div className="mt-3 grid gap-3 md:grid-cols-2">
-                            <input required value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} placeholder="تاريخ الميلاد" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={primaryMobile} onChange={(e) => setPrimaryMobile(e.target.value)} placeholder="رقم الجوال الرئيسي" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="البريد الإلكتروني" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={gender} onChange={(e) => setGender(e.target.value)} placeholder="الجنس" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} placeholder="عنوان المنزل" className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
-                            <input value={streetName} onChange={(e) => setStreetName(e.target.value)} placeholder="اسم الشارع" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={cityName} onChange={(e) => setCityName(e.target.value)} placeholder="اسم المدينة" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={districtName} onChange={(e) => setDistrictName(e.target.value)} placeholder="الحي" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="الرمز البريدي" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={poBox} onChange={(e) => setPoBox(e.target.value)} placeholder="صندوق البريد" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={admissionReason} onChange={(e) => setAdmissionReason(e.target.value)} placeholder="سبب الدخول للمستشفى" className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
-
-                            <label className="text-xs text-slate-600">الحالة الطبية الحالية</label>
-                            <select required value={medicalCondition} onChange={(e) => setMedicalCondition(e.target.value as MedicalCondition)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
-                                <option value="">Please Select | يرجى الاختيار</option>
-                                {MEDICAL_CONDITIONS.map((option) => (
-                                    <option key={option.value} value={option.value}>{option.en} = {option.ar}</option>
-                                ))}
-                            </select>
-
-                            <label className="text-xs text-slate-600">Preferred Language = اللغة المفضلة</label>
-                            <select value={preferredLanguage} onChange={(e) => setPreferredLanguage(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
-                                <option value="">Please Select = يرجى الاختيار</option>
-                                <option value="ar">Arabic</option>
-                                <option value="en">English</option>
-                            </select>
-
-                            <label className="text-xs text-slate-600">Is the patient living alone? = هل يعيش المريض بمفرده؟</label>
-                            <select value={livingAlone} onChange={(e) => setLivingAlone(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
-                                <option value="">Please Select = يرجى الاختيار</option>
-                                <option value="yes">Yes</option>
-                                <option value="no">No</option>
-                            </select>
-
-                            <label className="text-xs text-slate-600">Do you have a caregiver or family member available to assist with post-discharge care? = هل يوجد مقدم رعاية أو أحد أفراد الأسرة متاح للمساعدة في الرعاية بعد الخروج؟</label>
-                            <select value={hasCaregiver} onChange={(e) => setHasCaregiver(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
-                                <option value="">Please Select = يرجى الاختيار</option>
-                                <option value="yes">Yes</option>
-                                <option value="no">No</option>
-                            </select>
-
-                            <label className="text-xs text-slate-600">Date of Discharge = تاريخ الخروج (MM-DD-YYYY)</label>
-                            <input value={dischargeDate} onChange={(e) => setDischargeDate(e.target.value)} placeholder="MM-DD-YYYY" className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
-
-                            <input value={preferredDestination} onChange={(e) => setPreferredDestination(e.target.value)} placeholder="Preferred Discharge Destination = الوجهة المفضلة بعد الخروج" className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
-                            <textarea value={additionalInstructions} onChange={(e) => setAdditionalInstructions(e.target.value)} placeholder="Additional Comments or Instructions = ملاحظات أو تعليمات إضافية" className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
-                        </div>
-                    </section>
-
-                    <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                        <h2 className="text-sm font-semibold text-slate-900">3) تعليمات الخروج</h2>
-                        <div className="mt-3 grid gap-3 md:grid-cols-2">
-                            <textarea value={medicationInstructions} onChange={(e) => setMedicationInstructions(e.target.value)} placeholder="تعليمات استخدام الأدوية" className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={followupAppointment} onChange={(e) => setFollowupAppointment(e.target.value)} placeholder="موعد المراجعة" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <textarea value={contactInfoAfterDischarge} onChange={(e) => setContactInfoAfterDischarge(e.target.value)} placeholder="بيانات التواصل" className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
-                        </div>
-                    </section>
-
-                    <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                        <h2 className="text-sm font-semibold text-slate-900">4) اختيار خطة الخروج</h2>
-                        <div className="mt-3 grid gap-2 md:grid-cols-2">
-                            <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                            <div className="md:col-span-2">
+                                <label className="mb-1 block text-xs font-medium text-slate-600">Patient search</label>
                                 <input
-                                    type="radio"
-                                    name="discharge_plan_type"
-                                    checked={dischargePlanType === "outpatient_followup"}
-                                    onChange={() => setDischargePlanType("outpatient_followup")}
+                                    value={patientSearch}
+                                    onChange={(event) => setPatientSearch(event.target.value)}
+                                    placeholder="Search by name, MRN, or national ID"
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                                 />
-                                خروج مع المراجعة
-                            </label>
-                            <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                                <input
-                                    type="radio"
-                                    name="discharge_plan_type"
-                                    checked={dischargePlanType === "homecare_risk"}
-                                    onChange={() => setDischargePlanType("homecare_risk")}
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-xs font-medium text-slate-600">Patient</label>
+                                <select
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    {...form.register("patientId")}
+                                >
+                                    <option value="">Select patient</option>
+                                    {(patientsQuery.data?.items || []).map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                            {item.fullName} - {item.mrn}
+                                        </option>
+                                    ))}
+                                </select>
+                                {form.formState.errors.patientId ? (
+                                    <p className="mt-1 text-xs text-red-700">{form.formState.errors.patientId.message}</p>
+                                ) : null}
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-xs font-medium text-slate-600">Encounter</label>
+                                <select
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    {...form.register("encounterId")}
+                                >
+                                    <option value="">Select encounter</option>
+                                    {availableEncounters.map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                            {item.encounterNumber} ({item.status})
+                                        </option>
+                                    ))}
+                                </select>
+                                {form.formState.errors.encounterId ? (
+                                    <p className="mt-1 text-xs text-red-700">{form.formState.errors.encounterId.message}</p>
+                                ) : null}
+                            </div>
+
+                            <div>
+                                <label className="mb-1 block text-xs font-medium text-slate-600">Priority</label>
+                                <select
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    {...form.register("priority")}
+                                >
+                                    <option value="LOW">LOW</option>
+                                    <option value="MEDIUM">MEDIUM</option>
+                                    <option value="HIGH">HIGH</option>
+                                    <option value="CRITICAL">CRITICAL</option>
+                                </select>
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <label className="mb-1 block text-xs font-medium text-slate-600">Clinical summary</label>
+                                <textarea
+                                    className="h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    placeholder="Brief reason/context for refusal-case initiation"
+                                    {...form.register("summary")}
                                 />
-                                خروج مع خطة رعاية منزلية
-                            </label>
+                                {form.formState.errors.summary ? (
+                                    <p className="mt-1 text-xs text-red-700">{form.formState.errors.summary.message}</p>
+                                ) : null}
+                            </div>
                         </div>
                     </section>
 
-                    <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                        <h2 className="text-sm font-semibold text-slate-900">5) الإشعار والتوقيع</h2>
-                        <div className="mt-3 space-y-3">
-                            <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                                <input
-                                    type="checkbox"
-                                    checked={notifySectionsByEmail}
-                                    onChange={(e) => setNotifySectionsByEmail(e.target.checked)}
-                                />
-                                الإرسال بالبريد الإلكتروني (الخيار الأساسي)
-                            </label>
-
-                            <label className="block text-xs font-medium text-slate-600">التوقيع (اختياري ولا يعرقل الإجراء)</label>
-                            <select
-                                value={signatureMethod}
-                                onChange={(e) => setSignatureMethod(e.target.value as "email" | "nafez" | "tablet")}
-                                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                            >
-                                <option value="email">Email Acknowledgment</option>
-                                <option value="nafez">نفاذ</option>
-                                <option value="tablet">Tablet Signature</option>
-                            </select>
+                    {createCaseMutation.error ? (
+                        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            {createCaseMutation.error.message}
                         </div>
-                    </section>
+                    ) : null}
 
                     <div className="flex flex-wrap gap-2">
                         <button
                             type="submit"
-                            disabled={saving}
+                            disabled={createCaseMutation.isPending}
                             className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
                         >
                             <Save className="h-4 w-4" />
-                            {saving ? "جارٍ الحفظ..." : "Submit = إرسال"}
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => setSendDischargeOrderRequest(true)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
-                        >
-                            <Send className="h-4 w-4" />
-                            إعادة إرسال طلب أمر الخروج للطبيب
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => setNotifySectionsByEmail(true)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
-                        >
-                            <Mail className="h-4 w-4" />
-                            اعتماد الإرسال بالبريد
+                            {createCaseMutation.isPending ? "Creating..." : "Create Case"}
                         </button>
 
                         <Link
-                            href="/dashboard"
+                            href="/cases"
                             className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
                         >
                             <ArrowLeft className="h-4 w-4" />
-                            إلغاء
+                            Cancel
                         </Link>
                     </div>
                 </form>

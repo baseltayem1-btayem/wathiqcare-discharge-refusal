@@ -7,6 +7,7 @@ import { AuthService } from "./auth.service";
 import { JwtStrategy } from "./jwt.strategy";
 import { RolesPermissionsModule } from "../roles-permissions/roles-permissions.module";
 import { TenantsModule } from "../tenants/tenants.module";
+import { AuditModule } from "../audit/audit.module";
 
 @Module({
     imports: [
@@ -14,6 +15,7 @@ import { TenantsModule } from "../tenants/tenants.module";
         PassportModule,
         RolesPermissionsModule,
         TenantsModule,
+        AuditModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],

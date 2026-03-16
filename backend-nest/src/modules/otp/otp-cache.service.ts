@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import Redis from "ioredis";
 
 @Injectable()
@@ -6,16 +7,26 @@ export class OtpCacheService implements OnModuleDestroy {
     private readonly logger = new Logger(OtpCacheService.name);
     private readonly redis?: Redis;
     private readonly fallback = new Map<string, string>();
+    private readonly allowInMemoryFallback: boolean;
 
-    constructor() {
-        const url = process.env.REDIS_URL;
+    constructor(private readonly configService: ConfigService) {
+        this.allowInMemoryFallback =
+            this.configService.get<boolean>("otp.allowInMemoryFallback") ??
+            this.configService.get<string>("env") !== "production";
+
+        const url = this.configService.get<string>("redisUrl") || process.env.REDIS_URL;
         if (url) {
             this.redis = new Redis(url, {
                 lazyConnect: true,
                 maxRetriesPerRequest: 1,
             });
             this.redis.connect().catch((error) => {
-                this.logger.warn(`Redis unavailable, falling back to memory: ${String(error)}`);
+                if (this.allowInMemoryFallback) {
+                    this.logger.warn(`Redis unavailable, falling back to memory: ${String(error)}`);
+                    return;
+                }
+
+                this.logger.error(`Redis unavailable and fallback disabled: ${String(error)}`);
             });
         }
     }
@@ -30,6 +41,11 @@ export class OtpCacheService implements OnModuleDestroy {
         if (this.redis && this.redis.status === "ready") {
             return this.redis.get(key);
         }
+
+        if (!this.allowInMemoryFallback) {
+            throw new Error("OTP cache unavailable: Redis is not ready and in-memory fallback is disabled");
+        }
+
         return this.fallback.get(key) || null;
     }
 
@@ -38,6 +54,11 @@ export class OtpCacheService implements OnModuleDestroy {
             await this.redis.set(key, value, "EX", ttlSeconds);
             return;
         }
+
+        if (!this.allowInMemoryFallback) {
+            throw new Error("OTP cache unavailable: Redis is not ready and in-memory fallback is disabled");
+        }
+
         this.fallback.set(key, value);
         setTimeout(() => this.fallback.delete(key), ttlSeconds * 1000).unref();
     }
@@ -58,8 +79,8 @@ export class OtpCacheService implements OnModuleDestroy {
                 };
             } catch (error) {
                 return {
-                    ok: false,
-                    mode: "memory",
+                    ok: this.allowInMemoryFallback,
+                    mode: this.allowInMemoryFallback ? "memory" : "redis",
                     status: this.redis.status,
                     error: error instanceof Error ? error.message : String(error),
                 };
@@ -67,9 +88,12 @@ export class OtpCacheService implements OnModuleDestroy {
         }
 
         return {
-            ok: true,
+            ok: this.allowInMemoryFallback,
             mode: "memory",
-            status: "fallback",
+            status: this.allowInMemoryFallback ? "fallback" : "disabled",
+            error: this.allowInMemoryFallback
+                ? undefined
+                : "Redis is not configured and in-memory OTP fallback is disabled",
         };
     }
 }

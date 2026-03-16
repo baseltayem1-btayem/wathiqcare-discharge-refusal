@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Geist_Mono, Noto_Kufi_Arabic } from "next/font/google";
 import I18nProvider from "@/i18n/I18nProvider";
+import AppProviders from "@/providers/AppProviders";
 import { Toaster } from "@/components/make-ui/sonner";
 import "./globals.css";
 
@@ -33,8 +34,10 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`${manrope.variable} ${geistMono.variable} ${notoSansArabic.variable} antialiased`}>
         <I18nProvider>
-          {children}
-          <Toaster />
+          <AppProviders>
+            {children}
+            <Toaster />
+          </AppProviders>
         </I18nProvider>
       </body>
     </html>
