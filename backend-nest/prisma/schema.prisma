@@ -1,0 +1,1008 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum FacilityStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DepartmentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  INACTIVE
+}
+
+enum CaseStatus {
+  OPEN
+  IN_PROGRESS
+  ESCALATED
+  CLOSED
+}
+
+enum CaseType {
+  DISCHARGE_REFUSAL
+  OTHER
+}
+
+enum CasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum WorkflowVersionStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+}
+
+enum WorkflowEntityType {
+  REFUSAL_CASE
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+  OVERDUE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AcknowledgmentRecipientType {
+  PATIENT
+  REPRESENTATIVE
+}
+
+enum DeliveryMethod {
+  SMS
+  EMAIL
+  WHATSAPP
+  IN_PERSON
+}
+
+enum AcknowledgmentRequestStatus {
+  PENDING
+  SENT
+  RESPONDED
+  EXPIRED
+  FAILED
+}
+
+enum AcknowledgmentOutcome {
+  ACCEPTED
+  REFUSED
+  PENDING
+  NO_RESPONSE
+  REPRESENTATIVE_UNAVAILABLE
+  AUTHORITY_DISPUTED
+  SIGNATURE_DECLINED
+  TECHNICAL_FAILURE
+}
+
+enum NotificationChannel {
+  SMS
+  EMAIL
+  WHATSAPP
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  RETRYING
+}
+
+enum OtpStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  LOCKED
+  FAILED
+}
+
+enum OtpAttemptResult {
+  SUCCESS
+  FAILURE
+  EXPIRED
+  LOCKED
+}
+
+enum VisibilityScope {
+  LEGAL_ONLY
+  COMPLIANCE_ONLY
+  LEGAL_AND_COMPLIANCE
+}
+
+enum DeleteBehavior {
+  SOFT_DELETE
+  HARD_DELETE
+}
+
+enum ArchiveBehavior {
+  NONE
+  ARCHIVE
+  COLD_ARCHIVE
+}
+
+enum ReportExportStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum DocumentApprovalStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+enum DocumentVisibilityLevel {
+  INTERNAL
+  LEGAL
+  COMPLIANCE
+  EXECUTIVE
+}
+
+enum AttachmentConfidentialityLevel {
+  NORMAL
+  SENSITIVE
+  RESTRICTED
+}
+
+model Tenant {
+  id              String       @id @default(uuid())
+  code            String       @unique
+  nameEn          String       @map("name_en")
+  nameAr          String       @map("name_ar")
+  status          TenantStatus @default(ACTIVE)
+  timezone        String       @default("Asia/Riyadh")
+  defaultLanguage String       @default("ar") @map("default_language")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("tenants")
+}
+
+model TenantSetting {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  configKey   String   @map("config_key")
+  configValue Json     @map("config_value_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, configKey])
+  @@index([tenantId])
+  @@map("tenant_settings")
+}
+
+model Facility {
+  id        String         @id @default(uuid())
+  tenantId  String         @map("tenant_id")
+  code      String
+  nameEn    String         @map("name_en")
+  nameAr    String         @map("name_ar")
+  status    FacilityStatus @default(ACTIVE)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@map("facilities")
+}
+
+model Department {
+  id         String           @id @default(uuid())
+  tenantId   String           @map("tenant_id")
+  facilityId String           @map("facility_id")
+  code       String
+  nameEn     String           @map("name_en")
+  nameAr     String           @map("name_ar")
+  type       String
+  status     DepartmentStatus @default(ACTIVE)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  @@unique([tenantId, facilityId, code])
+  @@index([tenantId, status])
+  @@index([facilityId])
+  @@map("departments")
+}
+
+model User {
+  id                    String     @id @default(uuid())
+  tenantId              String     @map("tenant_id")
+  employeeCode          String?    @map("employee_code")
+  firstName             String     @map("first_name")
+  lastName              String     @map("last_name")
+  fullName              String?    @map("full_name")
+  email                 String
+  phone                 String?
+  passwordHash          String?    @map("password_hash")
+  externalAuthReference String?    @map("external_auth_reference")
+  status                UserStatus @default(ACTIVE)
+  isSuperAdmin          Boolean    @default(false) @map("is_super_admin")
+  lastLoginAt           DateTime?  @map("last_login_at")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  @@unique([tenantId, email])
+  @@index([tenantId, status])
+  @@index([employeeCode])
+  @@map("users")
+}
+
+model Role {
+  id           String   @id @default(uuid())
+  tenantId     String?  @map("tenant_id")
+  code         String
+  name         String
+  description  String?
+  isSystemRole Boolean  @default(false) @map("is_system_role")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, code])
+  @@index([code])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  module      String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([module])
+  @@map("permissions")
+}
+
+model UserRole {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  userId       String   @map("user_id")
+  roleId       String   @map("role_id")
+  facilityId   String?  @map("facility_id")
+  departmentId String?  @map("department_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([tenantId, userId, roleId, facilityId, departmentId])
+  @@index([tenantId, userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  id           String   @id @default(uuid())
+  roleId       String   @map("role_id")
+  permissionId String   @map("permission_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model Patient {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  mrn               String
+  firstName         String   @map("first_name")
+  lastName          String   @map("last_name")
+  fullName          String   @map("full_name")
+  nationalId        String?  @map("national_id")
+  dateOfBirth       DateTime? @map("date_of_birth") @db.Date
+  gender            String?
+  nationality       String?
+  preferredLanguage String?  @map("preferred_language")
+  primaryPhone      String?  @map("primary_phone")
+  secondaryPhone    String?  @map("secondary_phone")
+  email             String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, mrn])
+  @@index([tenantId, fullName])
+  @@index([tenantId, nationalId])
+  @@map("patients")
+}
+
+model PatientContact {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  patientId   String   @map("patient_id")
+  contactType String   @map("contact_type")
+  name        String
+  relationship String
+  phone       String
+  email       String?
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, patientId])
+  @@map("patient_contacts")
+}
+
+model PatientRepresentative {
+  id                    String   @id @default(uuid())
+  tenantId              String   @map("tenant_id")
+  patientId             String   @map("patient_id")
+  representativeType    String   @map("representative_type")
+  fullName              String   @map("full_name")
+  relationshipToPatient String   @map("relationship_to_patient")
+  idType                String?  @map("id_type")
+  idNumber              String?  @map("id_number")
+  authorityBasis        String?  @map("authority_basis")
+  phone                 String?
+  email                 String?
+  isPrimary             Boolean  @default(false) @map("is_primary")
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId, patientId])
+  @@index([tenantId, active])
+  @@map("patient_representatives")
+}
+
+model Encounter {
+  id                      String   @id @default(uuid())
+  tenantId                String   @map("tenant_id")
+  patientId               String   @map("patient_id")
+  encounterNumber         String   @map("encounter_number")
+  facilityId              String   @map("facility_id")
+  departmentId            String?  @map("department_id")
+  admissionType           String?  @map("admission_type")
+  admissionDate           DateTime? @map("admission_date")
+  dischargeExpectedDate   DateTime? @map("discharge_expected_date")
+  attendingPhysicianName  String?  @map("attending_physician_name")
+  attendingPhysicianUserId String? @map("attending_physician_user_id")
+  room                    String?
+  bed                     String?
+  status                  String
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, encounterNumber])
+  @@index([tenantId, patientId])
+  @@index([tenantId, status])
+  @@map("encounters")
+}
+
+model DischargeDecision {
+  id                            String   @id @default(uuid())
+  tenantId                      String   @map("tenant_id")
+  encounterId                   String   @map("encounter_id")
+  refusalCaseId                 String?  @map("refusal_case_id")
+  decisionStatus                String   @map("decision_status")
+  dischargeMedicallyAppropriate Boolean  @map("discharge_medically_appropriate")
+  decisionDate                  DateTime @map("decision_date") @db.Date
+  decisionTime                  String   @map("decision_time")
+  issuedByUserId                String   @map("issued_by_user_id")
+  clinicalRemarks               String?  @map("clinical_remarks")
+  reversalIndicator             Boolean  @default(false) @map("reversal_indicator")
+  reversalReason                String?  @map("reversal_reason")
+  createdAt                     DateTime @default(now()) @map("created_at")
+  updatedAt                     DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId, encounterId])
+  @@index([tenantId, refusalCaseId])
+  @@map("discharge_decisions")
+}
+
+model DischargePlan {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  encounterId     String   @map("encounter_id")
+  refusalCaseId   String?  @map("refusal_case_id")
+  destination     String
+  instructionsProvided Boolean @default(false) @map("instructions_provided")
+  notes           String?
+  createdByUserId String   @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId, encounterId])
+  @@map("discharge_plans")
+}
+
+model DischargePlanItem {
+  id             String    @id @default(uuid())
+  tenantId       String    @map("tenant_id")
+  dischargePlanId String   @map("discharge_plan_id")
+  itemType       String    @map("item_type")
+  status         String
+  required       Boolean   @default(true)
+  notes          String?
+  dueAt          DateTime? @map("due_at")
+  completedAt    DateTime? @map("completed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([tenantId, dischargePlanId])
+  @@index([tenantId, itemType])
+  @@map("discharge_plan_items")
+}
+
+model RefusalCase {
+  id                       String       @id @default(uuid())
+  tenantId                 String       @map("tenant_id")
+  caseNumber               String       @map("case_number")
+  caseType                 CaseType     @default(DISCHARGE_REFUSAL) @map("case_type")
+  status                   CaseStatus   @default(OPEN)
+  priority                 CasePriority? 
+  facilityId               String       @map("facility_id")
+  departmentId             String       @map("department_id")
+  patientId                String       @map("patient_id")
+  encounterId              String       @map("encounter_id")
+  currentOwnerUserId       String?      @map("current_owner_user_id")
+  currentOwnerDepartmentId String?      @map("current_owner_department_id")
+  initiatedByUserId        String       @map("initiated_by_user_id")
+  closedAt                 DateTime?    @map("closed_at")
+  closureReason            String?      @map("closure_reason")
+  summary                  String?
+  workflowVersionId        String?      @map("workflow_version_id")
+  currentStageId           String?      @map("current_stage_id")
+  currentStageCode         String?      @map("current_stage_code")
+  escalatedToLegal         Boolean      @default(false) @map("escalated_to_legal")
+  createdAt                DateTime     @default(now()) @map("created_at")
+  updatedAt                DateTime     @updatedAt @map("updated_at")
+
+  @@unique([tenantId, caseNumber])
+  @@index([tenantId, status])
+  @@index([tenantId, facilityId])
+  @@index([tenantId, departmentId])
+  @@index([tenantId, patientId])
+  @@index([tenantId, encounterId])
+  @@index([tenantId, createdAt])
+  @@map("refusal_cases")
+}
+
+model RefusalReasonCategory {
+  id        String   @id @default(uuid())
+  tenantId  String?  @map("tenant_id")
+  code      String
+  nameEn    String   @map("name_en")
+  nameAr    String   @map("name_ar")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, code])
+  @@index([tenantId, active])
+  @@map("refusal_reason_categories")
+}
+
+model RefusalEvent {
+  id                           String   @id @default(uuid())
+  tenantId                     String   @map("tenant_id")
+  refusalCaseId                String   @map("refusal_case_id")
+  refusalRecorded              Boolean  @default(true) @map("refusal_recorded")
+  refusalDate                  DateTime @map("refusal_date") @db.Date
+  refusalTime                  String   @map("refusal_time")
+  refusingPersonName           String   @map("refusing_person_name")
+  refusingPersonRelationship   String   @map("refusing_person_relationship")
+  representativeId             String?  @map("representative_id")
+  reasonCategoryId             String   @map("reason_category_id")
+  detailedReason               String?  @map("detailed_reason")
+  consequencesExplained        Boolean  @default(false) @map("consequences_explained")
+  explanationProvidedByUserId  String?  @map("explanation_provided_by_user_id")
+  immediateEscalationRequired  Boolean  @default(false) @map("immediate_escalation_required")
+  riskIndicator                String?  @map("risk_indicator")
+  notes                        String?
+  createdByUserId              String   @map("created_by_user_id")
+  createdAt                    DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, refusalCaseId])
+  @@index([tenantId, reasonCategoryId])
+  @@map("refusal_events")
+}
+
+model AcknowledgmentRequest {
+  id                     String                     @id @default(uuid())
+  tenantId               String                     @map("tenant_id")
+  refusalCaseId          String                     @map("refusal_case_id")
+  recipientType          AcknowledgmentRecipientType @map("recipient_type")
+  patientId              String?                    @map("patient_id")
+  representativeId       String?                    @map("representative_id")
+  recipientName          String                     @map("recipient_name")
+  relationshipToPatient  String?                    @map("relationship_to_patient")
+  deliveryMethod         DeliveryMethod             @map("delivery_method")
+  status                 AcknowledgmentRequestStatus @default(PENDING)
+  sentAt                 DateTime?                  @map("sent_at")
+  expiresAt              DateTime?                  @map("expires_at")
+  createdByUserId        String                     @map("created_by_user_id")
+  createdAt              DateTime                   @default(now()) @map("created_at")
+  updatedAt              DateTime                   @updatedAt @map("updated_at")
+
+  @@index([tenantId, refusalCaseId])
+  @@index([tenantId, status])
+  @@map("acknowledgment_requests")
+}
+
+model AcknowledgmentResponse {
+  id                       String               @id @default(uuid())
+  tenantId                 String               @map("tenant_id")
+  acknowledgmentRequestId  String               @map("acknowledgment_request_id")
+  outcome                  AcknowledgmentOutcome
+  responseDate             DateTime             @map("response_date") @db.Date
+  responseTime             String               @map("response_time")
+  method                   String
+  signatureCaptured        Boolean              @default(false) @map("signature_captured")
+  otpVerified              Boolean              @default(false) @map("otp_verified")
+  witnessName              String?              @map("witness_name")
+  witnessRole              String?              @map("witness_role")
+  notes                    String?
+  capturedByUserId         String?              @map("captured_by_user_id")
+  createdAt                DateTime             @default(now()) @map("created_at")
+
+  @@index([tenantId, acknowledgmentRequestId])
+  @@index([tenantId, outcome])
+  @@map("acknowledgment_responses")
+}
+
+model Workflow {
+  id         String             @id @default(uuid())
+  tenantId   String?            @map("tenant_id")
+  code       String
+  name       String
+  entityType WorkflowEntityType @default(REFUSAL_CASE) @map("entity_type")
+  active     Boolean            @default(true)
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  @@unique([tenantId, code])
+  @@index([tenantId, active])
+  @@map("workflows")
+}
+
+model WorkflowVersion {
+  id            String                @id @default(uuid())
+  workflowId    String                @map("workflow_id")
+  versionNumber Int                   @map("version_number")
+  status        WorkflowVersionStatus @default(DRAFT)
+  publishedAt   DateTime?             @map("published_at")
+  createdAt     DateTime              @default(now()) @map("created_at")
+
+  @@unique([workflowId, versionNumber])
+  @@index([workflowId, status])
+  @@map("workflow_versions")
+}
+
+model WorkflowStage {
+  id                String   @id @default(uuid())
+  workflowVersionId String   @map("workflow_version_id")
+  code              String
+  name              String
+  sequence          Int
+  isInitial         Boolean  @default(false) @map("is_initial")
+  isTerminal        Boolean  @default(false) @map("is_terminal")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([workflowVersionId, code])
+  @@index([workflowVersionId, sequence])
+  @@map("workflow_stages")
+}
+
+model WorkflowTransition {
+  id               String   @id @default(uuid())
+  workflowVersionId String  @map("workflow_version_id")
+  fromStageId      String   @map("from_stage_id")
+  toStageId        String   @map("to_stage_id")
+  code             String
+  name             String
+  requiresComment  Boolean  @default(false) @map("requires_comment")
+  requiresDocument Boolean  @default(false) @map("requires_document")
+  requiresReason   Boolean  @default(false) @map("requires_reason")
+  autoCreateTask   Boolean  @default(false) @map("auto_create_task")
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@unique([workflowVersionId, code])
+  @@index([workflowVersionId, fromStageId])
+  @@index([toStageId])
+  @@map("workflow_transitions")
+}
+
+model WorkflowTransitionRole {
+  id           String   @id @default(uuid())
+  transitionId String   @map("transition_id")
+  roleId       String   @map("role_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([transitionId, roleId])
+  @@map("workflow_transition_roles")
+}
+
+model CaseStageHistory {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  refusalCaseId   String   @map("refusal_case_id")
+  fromStageId     String?  @map("from_stage_id")
+  toStageId       String   @map("to_stage_id")
+  transitionId    String?  @map("transition_id")
+  changedByUserId String   @map("changed_by_user_id")
+  comment         String?
+  changedAt       DateTime @default(now()) @map("changed_at")
+
+  @@index([tenantId, refusalCaseId, changedAt])
+  @@map("case_stage_history")
+}
+
+model Task {
+  id                     String      @id @default(uuid())
+  tenantId               String      @map("tenant_id")
+  refusalCaseId          String      @map("refusal_case_id")
+  taskType               String      @map("task_type")
+  title                  String
+  description            String?
+  assignedToUserId       String?     @map("assigned_to_user_id")
+  assignedToRoleId       String?     @map("assigned_to_role_id")
+  assignedToDepartmentId String?     @map("assigned_to_department_id")
+  status                 TaskStatus  @default(PENDING)
+  priority               TaskPriority @default(MEDIUM)
+  dueAt                  DateTime?   @map("due_at")
+  completedAt            DateTime?   @map("completed_at")
+  completedByUserId      String?     @map("completed_by_user_id")
+  sourceTransitionId     String?     @map("source_transition_id")
+  createdByUserId        String      @map("created_by_user_id")
+  createdAt              DateTime    @default(now()) @map("created_at")
+  updatedAt              DateTime    @updatedAt @map("updated_at")
+
+  @@index([tenantId, refusalCaseId])
+  @@index([tenantId, status, dueAt])
+  @@index([tenantId, assignedToUserId])
+  @@index([tenantId, assignedToDepartmentId])
+  @@map("tasks")
+}
+
+model TaskComment {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  taskId          String   @map("task_id")
+  comment         String
+  createdByUserId String   @map("created_by_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, taskId])
+  @@map("task_comments")
+}
+
+model EscalationEvent {
+  id                      String   @id @default(uuid())
+  tenantId                String   @map("tenant_id")
+  refusalCaseId           String   @map("refusal_case_id")
+  escalationStage         String   @map("escalation_stage")
+  escalatedToDepartmentId String   @map("escalated_to_department_id")
+  escalatedByUserId       String   @map("escalated_by_user_id")
+  escalationReason        String   @map("escalation_reason")
+  escalationOutcome       String?  @map("escalation_outcome")
+  notes                   String?
+  escalatedAt             DateTime @default(now()) @map("escalated_at")
+
+  @@index([tenantId, refusalCaseId, escalatedAt])
+  @@map("escalation_events")
+}
+
+model DocumentTemplate {
+  id                    String               @id @default(uuid())
+  tenantId              String?              @map("tenant_id")
+  code                  String
+  nameEn                String               @map("name_en")
+  nameAr                String               @map("name_ar")
+  category              String
+  version               String
+  active                Boolean              @default(true)
+  templateSourcePath    String               @map("template_source_path")
+  approvalStatus        DocumentApprovalStatus @default(DRAFT) @map("approval_status")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+
+  @@unique([tenantId, code, version])
+  @@index([tenantId, active])
+  @@map("document_templates")
+}
+
+model GeneratedDocument {
+  id                String                @id @default(uuid())
+  tenantId          String                @map("tenant_id")
+  refusalCaseId     String                @map("refusal_case_id")
+  templateId        String                @map("template_id")
+  documentType      String                @map("document_type")
+  fileName          String                @map("file_name")
+  storageKey        String                @map("storage_key")
+  mimeType          String                @map("mime_type")
+  fileSize          BigInt                @map("file_size")
+  generatedByUserId String                @map("generated_by_user_id")
+  generatedAt       DateTime              @default(now()) @map("generated_at")
+  visibilityLevel   DocumentVisibilityLevel @default(INTERNAL) @map("visibility_level")
+  metadataJson      Json?                 @map("metadata_json")
+
+  @@index([tenantId, refusalCaseId])
+  @@index([tenantId, generatedAt])
+  @@map("generated_documents")
+}
+
+model CaseAttachment {
+  id                    String                        @id @default(uuid())
+  tenantId              String                        @map("tenant_id")
+  refusalCaseId         String                        @map("refusal_case_id")
+  category              String
+  originalFileName      String                        @map("original_file_name")
+  storageKey            String                        @map("storage_key")
+  mimeType              String                        @map("mime_type")
+  fileSize              BigInt                        @map("file_size")
+  confidentialityLevel  AttachmentConfidentialityLevel @default(NORMAL) @map("confidentiality_level")
+  uploadedByUserId      String                        @map("uploaded_by_user_id")
+  uploadedAt            DateTime                      @default(now()) @map("uploaded_at")
+  deletedAt             DateTime?                     @map("deleted_at")
+  deletedByUserId       String?                       @map("deleted_by_user_id")
+
+  @@index([tenantId, refusalCaseId])
+  @@index([tenantId, uploadedAt])
+  @@map("case_attachments")
+}
+
+model AttachmentVersion {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  caseAttachmentId String   @map("case_attachment_id")
+  versionNumber    Int      @map("version_number")
+  storageKey       String   @map("storage_key")
+  uploadedByUserId String   @map("uploaded_by_user_id")
+  uploadedAt       DateTime @default(now()) @map("uploaded_at")
+
+  @@unique([caseAttachmentId, versionNumber])
+  @@index([tenantId, caseAttachmentId])
+  @@map("attachment_versions")
+}
+
+model SignatureEvent {
+  id                        String   @id @default(uuid())
+  tenantId                  String   @map("tenant_id")
+  refusalCaseId             String   @map("refusal_case_id")
+  acknowledgmentRequestId   String?  @map("acknowledgment_request_id")
+  acknowledgmentResponseId  String?  @map("acknowledgment_response_id")
+  signerName                String   @map("signer_name")
+  signerType                String   @map("signer_type")
+  method                    String
+  otpRequestId              String?  @map("otp_request_id")
+  signatureMetadataJson     Json?    @map("signature_metadata_json")
+  occurredAt                DateTime @default(now()) @map("occurred_at")
+
+  @@index([tenantId, refusalCaseId, occurredAt])
+  @@map("signature_events")
+}
+
+model NotificationTemplate {
+  id         String             @id @default(uuid())
+  tenantId   String?            @map("tenant_id")
+  code       String
+  channel    NotificationChannel
+  language   String
+  subject    String?
+  bodyTemplate String           @map("body_template")
+  active     Boolean            @default(true)
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  @@unique([tenantId, code, channel, language])
+  @@index([tenantId, active])
+  @@map("notification_templates")
+}
+
+model Notification {
+  id                 String              @id @default(uuid())
+  tenantId           String              @map("tenant_id")
+  refusalCaseId      String?             @map("refusal_case_id")
+  taskId             String?             @map("task_id")
+  recipientUserId    String?             @map("recipient_user_id")
+  recipientPhone     String?             @map("recipient_phone")
+  recipientEmail     String?             @map("recipient_email")
+  channel            NotificationChannel
+  templateId         String?             @map("template_id")
+  status             NotificationStatus  @default(PENDING)
+  providerReference  String?             @map("provider_reference")
+  errorMessage       String?             @map("error_message")
+  sentAt             DateTime?           @map("sent_at")
+  createdAt          DateTime            @default(now()) @map("created_at")
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, refusalCaseId])
+  @@map("notifications")
+}
+
+model OtpRequest {
+  id                      String    @id @default(uuid())
+  tenantId                String    @map("tenant_id")
+  refusalCaseId           String?   @map("refusal_case_id")
+  acknowledgmentRequestId String?   @map("acknowledgment_request_id")
+  recipientPhone          String    @map("recipient_phone")
+  purpose                 String
+  otpHash                 String    @map("otp_hash")
+  status                  OtpStatus @default(PENDING)
+  expiresAt               DateTime  @map("expires_at")
+  attemptsCount           Int       @default(0) @map("attempts_count")
+  maxAttempts             Int       @default(5) @map("max_attempts")
+  lockedAt                DateTime? @map("locked_at")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  verifiedAt              DateTime? @map("verified_at")
+
+  @@index([tenantId, recipientPhone, status])
+  @@index([tenantId, acknowledgmentRequestId])
+  @@map("otp_requests")
+}
+
+model OtpAttempt {
+  id          String           @id @default(uuid())
+  tenantId    String           @map("tenant_id")
+  otpRequestId String          @map("otp_request_id")
+  attemptResult OtpAttemptResult @map("attempt_result")
+  attemptedAt  DateTime        @default(now()) @map("attempted_at")
+  ipAddress   String?          @map("ip_address")
+  deviceInfo  String?          @map("device_info")
+
+  @@index([tenantId, otpRequestId, attemptedAt])
+  @@map("otp_attempts")
+}
+
+model CommunicationLog {
+  id                String             @id @default(uuid())
+  tenantId          String             @map("tenant_id")
+  refusalCaseId     String?            @map("refusal_case_id")
+  channel           NotificationChannel
+  direction         String
+  recipient         String
+  subject           String?
+  contentSummary    String?            @map("content_summary")
+  providerReference String?            @map("provider_reference")
+  status            String
+  loggedAt          DateTime           @default(now()) @map("logged_at")
+
+  @@index([tenantId, loggedAt])
+  @@index([tenantId, refusalCaseId])
+  @@map("communication_logs")
+}
+
+model PrivilegedNote {
+  id              String          @id @default(uuid())
+  tenantId        String          @map("tenant_id")
+  refusalCaseId   String          @map("refusal_case_id")
+  title           String?
+  content         String
+  visibilityScope VisibilityScope @map("visibility_scope")
+  createdByUserId String          @map("created_by_user_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@index([tenantId, refusalCaseId, createdAt])
+  @@map("privileged_notes")
+}
+
+model LegalHold {
+  id               String    @id @default(uuid())
+  tenantId         String    @map("tenant_id")
+  refusalCaseId    String    @map("refusal_case_id")
+  reason           String
+  active           Boolean   @default(true)
+  createdByUserId  String    @map("created_by_user_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  releasedAt       DateTime? @map("released_at")
+  releasedByUserId String?   @map("released_by_user_id")
+
+  @@index([tenantId, refusalCaseId, active])
+  @@map("legal_holds")
+}
+
+model RetentionPolicy {
+  id              String          @id @default(uuid())
+  tenantId        String?         @map("tenant_id")
+  entityType      String          @map("entity_type")
+  retentionDays   Int             @map("retention_days")
+  deleteBehavior  DeleteBehavior  @map("delete_behavior")
+  archiveBehavior ArchiveBehavior @map("archive_behavior")
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@unique([tenantId, entityType])
+  @@index([tenantId, active])
+  @@map("retention_policies")
+}
+
+model AuditLog {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  entityType        String   @map("entity_type")
+  entityId          String   @map("entity_id")
+  action            String
+  actorUserId       String?  @map("actor_user_id")
+  actorEmail        String?  @map("actor_email")
+  actorRoleSnapshot String?  @map("actor_role_snapshot")
+  ipAddress         String?  @map("ip_address")
+  userAgent         String?  @map("user_agent")
+  beforeJson        Json?    @map("before_json")
+  afterJson         Json?    @map("after_json")
+  metadataJson      Json?    @map("metadata_json")
+  occurredAt        DateTime @default(now()) @map("occurred_at")
+
+  @@index([tenantId, occurredAt])
+  @@index([tenantId, entityType, entityId])
+  @@index([tenantId, action])
+  @@map("audit_logs")
+}
+
+model AccessLog {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  userId           String   @map("user_id")
+  action           String
+  targetEntityType String?  @map("target_entity_type")
+  targetEntityId   String?  @map("target_entity_id")
+  ipAddress        String?  @map("ip_address")
+  userAgent        String?  @map("user_agent")
+  occurredAt       DateTime @default(now()) @map("occurred_at")
+
+  @@index([tenantId, userId, occurredAt])
+  @@map("access_logs")
+}
+
+model ReportExport {
+  id                String             @id @default(uuid())
+  tenantId          String             @map("tenant_id")
+  requestedByUserId String             @map("requested_by_user_id")
+  reportType        String             @map("report_type")
+  filtersJson       Json?              @map("filters_json")
+  fileKey           String?            @map("file_key")
+  status            ReportExportStatus @default(PENDING)
+  createdAt         DateTime           @default(now()) @map("created_at")
+  completedAt       DateTime?          @map("completed_at")
+
+  @@index([tenantId, status, createdAt])
+  @@map("report_exports")
+}
+
+model MetricsEvent {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  eventType   String   @map("event_type")
+  eventDate   DateTime @map("event_date") @db.Date
+  referenceId String?  @map("reference_id")
+  payloadJson Json?    @map("payload_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, eventDate])
+  @@index([tenantId, eventType])
+  @@map("metrics_events")
+}
