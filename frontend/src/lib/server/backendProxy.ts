@@ -140,6 +140,10 @@ export async function forwardToBackend(
             headers: buildForwardHeaders(request),
             body,
             redirect: "manual",
+            // Propagate the incoming request's abort signal so that when the
+            // client navigates away (Next.js fires request.signal), the outgoing
+            // backend fetch is cancelled immediately instead of hanging.
+            signal: request.signal,
         });
 
         const proxyHeaders = new Headers();
@@ -157,7 +161,13 @@ export async function forwardToBackend(
             status: backendResponse.status,
             headers: proxyHeaders,
         });
-    } catch {
+    } catch (err) {
+        // Re-throw abort errors: the client already disconnected, so there is
+        // nothing to respond to.  Letting Next.js handle these prevents the
+        // "signal is aborted without reason" noise in server logs.
+        if (err instanceof Error && err.name === "AbortError") {
+            throw err;
+        }
         return NextResponse.json(
             {
                 detail:
