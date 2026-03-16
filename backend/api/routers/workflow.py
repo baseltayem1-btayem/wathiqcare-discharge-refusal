@@ -76,7 +76,9 @@ def _as_task_response(row: WorkflowTask) -> WorkflowTaskResponse:
         description=row.description,
         assigned_user_id=row.assigned_user_id,
         assigned_team_code=row.assigned_team_code,
+        assigned_department_code=row.assigned_department_code,
         assigned_role_code=row.assigned_role_code,
+        escalation_department_code=row.escalation_department_code,
         status=row.status,
         priority=row.priority,
         due_at=row.due_at,
@@ -96,6 +98,7 @@ def _as_notification_response(row: WorkflowNotification) -> NotificationResponse
         recipient_user_id=row.recipient_user_id,
         recipient_email=row.recipient_email,
         recipient_team_code=row.recipient_team_code,
+        recipient_department_code=row.recipient_department_code,
         channel=row.channel,
         notification_type=row.notification_type,
         title=row.title,
@@ -115,9 +118,17 @@ def _as_audit_response(row: WorkflowAuditLog) -> AuditLogResponse:
         case_id=row.case_id,
         task_id=row.task_id,
         actor_user_id=row.actor_user_id,
+        actor_role=row.actor_role,
+        actor_department_code=row.actor_department_code,
+        actor_ip=row.actor_ip,
+        entity_type=row.entity_type,
+        entity_id=row.entity_id,
         event_type=row.event_type,
         event_title=row.event_title,
         event_details=row.event_details,
+        payload_summary=row.payload_summary,
+        previous_hash=row.previous_hash,
+        immutable_hash=row.immutable_hash,
         metadata_json=row.metadata_json,
         created_at=row.created_at,
     )
@@ -248,6 +259,8 @@ def request_patient_signature(
             actor_user_id=current_user["id"],
             email=payload.email,
             language=payload.language,
+            actor_role=current_user.get("role"),
+            actor_department_code=current_user.get("department_code"),
         )
         db.refresh(case)
         return _as_case_response(case)
@@ -368,6 +381,13 @@ def team_tasks(team_code: str, current_user=Depends(get_current_user), db=Depend
     return [_as_task_response(row) for row in rows]
 
 
+@router.get("/tasks/department/{department_code}", response_model=list[WorkflowTaskResponse])
+def department_tasks(department_code: str, current_user=Depends(get_current_user), db=Depends(_db_session)):
+    _ = current_user
+    rows = TaskService(db).get_open_tasks_for_department(department_code)
+    return [_as_task_response(row) for row in rows]
+
+
 @router.post("/tasks/{task_id}/complete", response_model=WorkflowTaskResponse)
 def complete_task(task_id: str, payload: CompleteTaskRequest, current_user=Depends(get_current_user), db=Depends(_db_session)):
     try:
@@ -381,9 +401,14 @@ def complete_task(task_id: str, payload: CompleteTaskRequest, current_user=Depen
                 case_id=row.case_id,
                 task_id=row.id,
                 actor_user_id=current_user["id"],
+                actor_role=current_user.get("role"),
+                actor_department_code=row.assigned_department_code,
+                entity_type="workflow_task",
+                entity_id=row.id,
                 event_type="task_completed",
                 event_title="Task Completed",
                 event_details=payload.comment,
+                payload_summary=(payload.comment or "task completed")[:500],
             )
         db.refresh(row)
         return _as_task_response(row)
@@ -403,6 +428,7 @@ def process_overdue(current_user=Depends(get_current_user), db=Depends(_db_sessi
                 task_id=row.id,
                 recipient_user_id=row.assigned_user_id,
                 recipient_team_code=row.assigned_team_code,
+                recipient_department_code=row.assigned_department_code,
                 notification_type="task_overdue",
                 title="Task overdue",
                 body=f"Task {row.title} is overdue.",
@@ -412,15 +438,21 @@ def process_overdue(current_user=Depends(get_current_user), db=Depends(_db_sessi
                 notif.notify_case_escalated(
                     case_id=row.case_id,
                     recipient_team_code=row.assigned_role_code,
+                    recipient_department_code=row.escalation_department_code,
                     body=f"Overdue task escalated: {row.title}",
                 )
             audit.log(
                 case_id=row.case_id,
                 task_id=row.id,
                 actor_user_id=current_user["id"],
+                actor_role=current_user.get("role"),
+                actor_department_code=row.assigned_department_code,
+                entity_type="workflow_task",
+                entity_id=row.id,
                 event_type="task_overdue",
                 event_title="Task Overdue",
                 event_details=f"Task {row.id} marked overdue",
+                payload_summary=f"task={row.id};escalation_level={row.escalation_level}",
                 metadata_json={"escalation_level": row.escalation_level},
             )
     return {"processed": len(overdue_rows)}
@@ -432,6 +464,7 @@ def my_notifications(current_user=Depends(get_current_user), db=Depends(_db_sess
     rows = NotificationService(db).list_notifications_for_user(
         user_id=current_user["id"],
         team_code=role,
+        department_code=current_user.get("department_code"),
     )
     return [_as_notification_response(row) for row in rows]
 

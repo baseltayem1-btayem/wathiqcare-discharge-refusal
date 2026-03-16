@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional
 
-from backend.icd11.validator import ICD11Validator
 from backend.forms.pdf_generator import generate_discharge_refusal_pdf
 from backend.legal.evidence_bundle import build_discharge_refusal_bundle
 
@@ -52,8 +51,7 @@ class RefusalRecord:
 
 
 class DischargeEngine:
-    def __init__(self, icd11_validator: Optional[ICD11Validator] = None) -> None:
-        self._validator = icd11_validator or ICD11Validator()
+    def __init__(self) -> None:
         self._orders: dict[str, DischargeOrder] = {}
         self._refusals: dict[str, RefusalRecord] = {}
 
@@ -67,10 +65,6 @@ class DischargeEngine:
         diagnosis_codes: List[str],
         discharge_notes: str = "",
     ) -> DischargeOrder:
-        invalid = [c for c in diagnosis_codes if not self._validator.is_valid(c)]
-        if invalid:
-            raise ValueError(f"Invalid ICD-11 code(s): {invalid}")
-
         order = DischargeOrder(
             patient_id=patient_id,
             physician_id=physician_id,

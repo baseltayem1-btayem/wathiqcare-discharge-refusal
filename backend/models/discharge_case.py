@@ -11,6 +11,7 @@ class DischargeCase(Base):
 
     tenant_id = Column(String, ForeignKey("tenants.id"), nullable=False)
     patient_id = Column(String, ForeignKey("patients.id"), nullable=False)
+    admission_id = Column(String, ForeignKey("admissions.id"), nullable=True)
     created_by = Column(String, ForeignKey("users.id"), nullable=False)
 
     case_number = Column(String, nullable=True, unique=True)
@@ -43,6 +44,7 @@ class DischargeCase(Base):
     user = relationship("User", foreign_keys=[created_by])
     attending_physician = relationship("User", foreign_keys=[attending_physician_user_id])
     tenant = relationship("Tenant")
+    admission = relationship("Admission")
     workflow = relationship(
         "DischargeRefusalWorkflow",
         back_populates="case",

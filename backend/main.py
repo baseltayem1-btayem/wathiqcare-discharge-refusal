@@ -11,6 +11,7 @@ from backend.api.routers.shc_discharge_compliance import router as shc_discharge
 from backend.api.routers.integration import router as integration_router
 from backend.api.routers.emails import router as emails_router
 from backend.api.routers.workflow import router as workflow_router
+from backend.api.routers.enterprise import router as enterprise_router
 
 app = FastAPI(
     title="WathiqCare Core API",
@@ -30,6 +31,7 @@ app.include_router(home_healthcare_router)
 app.include_router(integration_router)
 app.include_router(emails_router)
 app.include_router(workflow_router)
+app.include_router(enterprise_router)
 
 if os.getenv("SHC_COMPLIANCE_MODULE", "false").lower() == "true":
     app.include_router(shc_discharge_compliance_router)

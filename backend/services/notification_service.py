@@ -21,6 +21,7 @@ class NotificationService:
         task_id: Optional[str],
         recipient_user_id: Optional[str],
         recipient_team_code: Optional[str],
+        recipient_department_code: Optional[str],
         notification_type: str,
         title: str,
         body: str,
@@ -31,6 +32,7 @@ class NotificationService:
             task_id=task_id,
             recipient_user_id=recipient_user_id,
             recipient_team_code=recipient_team_code,
+            recipient_department_code=recipient_department_code,
             channel=NotificationChannel.IN_APP,
             notification_type=notification_type,
             title=title,
@@ -100,6 +102,7 @@ class NotificationService:
         task_id: str,
         recipient_user_id: Optional[str],
         recipient_team_code: Optional[str],
+        recipient_department_code: Optional[str],
         title: str,
         body: str,
         recipient_email: Optional[str] = None,
@@ -112,6 +115,7 @@ class NotificationService:
                 task_id=task_id,
                 recipient_user_id=recipient_user_id,
                 recipient_team_code=recipient_team_code,
+                recipient_department_code=recipient_department_code,
                 notification_type="task_assigned",
                 title=title,
                 body=body,
@@ -135,6 +139,7 @@ class NotificationService:
         *,
         case_id: str,
         recipient_team_code: Optional[str],
+        recipient_department_code: Optional[str],
         title: str,
         body: str,
     ) -> WorkflowNotification:
@@ -143,17 +148,26 @@ class NotificationService:
             task_id=None,
             recipient_user_id=None,
             recipient_team_code=recipient_team_code,
+            recipient_department_code=recipient_department_code,
             notification_type="stage_changed",
             title=title,
             body=body,
         )
 
-    def notify_case_escalated(self, *, case_id: str, recipient_team_code: str, body: str) -> WorkflowNotification:
+    def notify_case_escalated(
+        self,
+        *,
+        case_id: str,
+        recipient_team_code: Optional[str],
+        recipient_department_code: Optional[str],
+        body: str,
+    ) -> WorkflowNotification:
         return self.create_in_app_notification(
             case_id=case_id,
             task_id=None,
             recipient_user_id=None,
             recipient_team_code=recipient_team_code,
+            recipient_department_code=recipient_department_code,
             notification_type="case_escalated",
             title="Case Escalated",
             body=body,
@@ -168,7 +182,13 @@ class NotificationService:
         self.db.flush()
         return notification
 
-    def list_notifications_for_user(self, *, user_id: str, team_code: Optional[str] = None) -> list[WorkflowNotification]:
+    def list_notifications_for_user(
+        self,
+        *,
+        user_id: str,
+        team_code: Optional[str] = None,
+        department_code: Optional[str] = None,
+    ) -> list[WorkflowNotification]:
         query = self.db.query(WorkflowNotification).filter(
             WorkflowNotification.recipient_user_id == user_id,
         )
@@ -176,6 +196,12 @@ class NotificationService:
             query = query.union(
                 self.db.query(WorkflowNotification).filter(
                     WorkflowNotification.recipient_team_code == team_code,
+                )
+            )
+        if department_code:
+            query = query.union(
+                self.db.query(WorkflowNotification).filter(
+                    WorkflowNotification.recipient_department_code == department_code,
                 )
             )
         return query.order_by(WorkflowNotification.created_at.desc()).all()

@@ -33,6 +33,12 @@ type RefreshResult = {
 };
 
 let refreshPromise: Promise<string | null> | null = null;
+const BACKEND_UNAVAILABLE_CODES = new Set([
+    "backend_unavailable",
+    "backend_target_rejected",
+    "backend_loop",
+    "backend_unreachable",
+]);
 
 function emitApiError(message: string, status: number) {
     if (typeof window === "undefined") {
@@ -151,16 +157,28 @@ function messageFromBody(status: number, body: unknown): string {
     if (body && typeof body === "object") {
         const record = body as Record<string, unknown>;
 
+        const code = typeof record.code === "string" ? record.code : null;
+        const detail = typeof record.detail === "string" ? record.detail.trim() : "";
+        if (code && BACKEND_UNAVAILABLE_CODES.has(code)) {
+            return detail || "الخدمة الخلفية غير متاحة حالياً. يرجى المحاولة لاحقاً.";
+        }
+
         const errorValue = record.error;
         if (errorValue && typeof errorValue === "object") {
-            const nestedMessage = (errorValue as Record<string, unknown>).message;
+            const nestedRecord = errorValue as Record<string, unknown>;
+            const nestedCode = typeof nestedRecord.code === "string" ? nestedRecord.code : null;
+            const nestedMessage = nestedRecord.message;
+            if (nestedCode && BACKEND_UNAVAILABLE_CODES.has(nestedCode)) {
+                return typeof nestedMessage === "string" && nestedMessage.trim()
+                    ? nestedMessage.trim()
+                    : detail || "الخدمة الخلفية غير متاحة حالياً. يرجى المحاولة لاحقاً.";
+            }
             if (typeof nestedMessage === "string" && nestedMessage.trim()) {
                 return `${status}: ${nestedMessage}`;
             }
         }
 
-        const detail = record.detail;
-        if (typeof detail === "string" && detail.trim()) {
+        if (detail) {
             return `${status}: ${detail}`;
         }
 

@@ -7,6 +7,10 @@ cases where a patient refuses discharge after a physician's medical decision.  I
 covers the full lifecycle from clinical order capture through legal escalation,
 digital consent collection, audit logging, and hospital-system integration.
 
+For the enterprise governance extension (multilingual templates, department routing,
+integration abstraction, financial guarantees, and immutable compliance audit), see:
+`docs/enterprise-governance-upgrade.md`.
+
 ---
 
 ## Project Structure

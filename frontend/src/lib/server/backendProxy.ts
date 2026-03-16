@@ -8,6 +8,8 @@ type BackendUrlResult =
     | { ok: true; url: URL }
     | { ok: false; response: NextResponse };
 
+const BACKEND_UNAVAILABLE_DETAIL = "الخدمة الخلفية غير متاحة حالياً. يرجى المحاولة لاحقاً.";
+
 const PRIVATE_HOST_PATTERNS = [
     /^localhost$/i,
     /^127\./,
@@ -29,30 +31,38 @@ function isPrivateHost(hostname: string): boolean {
     return PRIVATE_HOST_PATTERNS.some((pattern) => pattern.test(hostname));
 }
 
+function buildBackendErrorResponse(code: string, detail = BACKEND_UNAVAILABLE_DETAIL, status = 503) {
+    return NextResponse.json({ code, detail }, { status });
+}
+
 function shouldRejectHost(hostname: string, source: BackendApiBaseUrlSource): boolean {
     if (process.env.NODE_ENV !== "production") {
         return false;
     }
 
-    // Allow internal Docker service DNS only when using the dedicated server-side internal variable.
-    if (source === "BACKEND_NEST_API_BASE_URL") {
+    // Allow internal Docker service DNS and localhost preview fallback only for server-side calls.
+    if (source === "BACKEND_NEST_API_BASE_URL" || source === "localhost-preview-fallback") {
         return false;
     }
 
     return isPrivateHost(hostname) || isSingleLabelHostname(hostname);
 }
 
-export function buildBackendUrl(pathname: string): BackendUrlResult {
-    const baseUrlConfig = getConfiguredBackendApiBaseUrlConfig();
+export function buildBackendUrl(pathname: string, requestHost?: string): BackendUrlResult {
+    const baseUrlConfig = getConfiguredBackendApiBaseUrlConfig(requestHost);
     if (!baseUrlConfig) {
+        console.error("[backendProxy] Missing backend base URL configuration", {
+            pathname,
+            requestHost: requestHost || null,
+            nodeEnv: process.env.NODE_ENV,
+            hasBackendNestApiBaseUrl: Boolean(process.env.BACKEND_NEST_API_BASE_URL),
+            hasBackendApiBaseUrl: Boolean(process.env.BACKEND_API_BASE_URL),
+            hasBackendUrl: Boolean(process.env.BACKEND_URL),
+            hasNextPublicApiBaseUrl: Boolean(process.env.NEXT_PUBLIC_API_BASE_URL),
+        });
         return {
             ok: false,
-            response: NextResponse.json(
-                {
-                    detail: "الخدمة الخلفية الخارجية غير متاحة حالياً. يرجى التحقق من إعداد BACKEND_NEST_API_BASE_URL أو BACKEND_API_BASE_URL.",
-                },
-                { status: 503 },
-            ),
+            response: buildBackendErrorResponse("backend_unavailable"),
         };
     }
 
@@ -62,22 +72,20 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
     } catch {
         return {
             ok: false,
-            response: NextResponse.json(
-                { detail: "تعذر الاتصال بخدمة الواجهة الخلفية." },
-                { status: 500 },
-            ),
+            response: buildBackendErrorResponse("backend_invalid_target", "تعذر الاتصال بخدمة الواجهة الخلفية.", 500),
         };
     }
 
     if (shouldRejectHost(base.hostname, baseUrlConfig.source)) {
+        console.error("[backendProxy] Rejected backend target host", {
+            pathname,
+            requestHost: requestHost || null,
+            targetHost: base.hostname,
+            source: baseUrlConfig.source,
+        });
         return {
             ok: false,
-            response: NextResponse.json(
-                {
-                    detail: "الخدمة الخلفية الخارجية غير متاحة حالياً. تم رفض عنوان خاص في بيئة الإنتاج.",
-                },
-                { status: 503 },
-            ),
+            response: buildBackendErrorResponse("backend_target_rejected"),
         };
     }
 
@@ -112,20 +120,16 @@ export async function forwardToBackend(
     request: NextRequest,
     backendPath: string,
 ): Promise<NextResponse> {
-    const built = buildBackendUrl(backendPath);
+    const requestHost = request.headers.get("host") || undefined;
+    const built = buildBackendUrl(backendPath, requestHost);
     if (!built.ok) {
         return built.response;
     }
 
     const targetHost = built.url.host.toLowerCase();
-    const requestHost = (request.headers.get("host") || "").toLowerCase();
-    if (targetHost && requestHost && targetHost === requestHost) {
-        return NextResponse.json(
-            {
-                detail: "خدمة الواجهة الخلفية غير متاحة حالياً.",
-            },
-            { status: 503 },
-        );
+    const normalizedRequestHost = (requestHost || "").toLowerCase();
+    if (targetHost && normalizedRequestHost && targetHost === normalizedRequestHost) {
+        return buildBackendErrorResponse("backend_loop");
     }
 
     const method = request.method.toUpperCase();
@@ -155,12 +159,6 @@ export async function forwardToBackend(
             headers: proxyHeaders,
         });
     } catch {
-        return NextResponse.json(
-            {
-                detail:
-                    "Backend workflow service is temporarily unavailable. Please retry shortly or contact support.",
-            },
-            { status: 503 },
-        );
+        return buildBackendErrorResponse("backend_unreachable");
     }
 }

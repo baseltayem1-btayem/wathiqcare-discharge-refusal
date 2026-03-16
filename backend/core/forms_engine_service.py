@@ -21,7 +21,10 @@ from backend.forms.workflow_templates import WORKFLOW_TEMPLATES
 from backend.models.audit_log import AuditLog
 from backend.models.discharge_case import DischargeCase
 from backend.models.discharge_workflow import DischargeRefusalWorkflow
+from backend.models.user import User
 from backend.models.workflow_document import DischargeWorkflowDocument
+from backend.services.audit_service import AuditService
+from backend.services.template_localization_service import TemplateLocalizationService
 from backend.signature.providers.sms_otp_provider import SmsOtpProvider
 
 
@@ -131,13 +134,18 @@ def _template_contract(form_type: str) -> FormTemplateContract:
     return template
 
 
-def _render_locked_content(template_key: str) -> str:
+def _render_locked_content(template_key: str, language_code: str) -> str:
     template = WORKFLOW_TEMPLATES.get(template_key)
     if not template:
         raise ValueError("Template is not registered")
 
     context = {field: "" for field in template.required_fields}
     context.update({"generated_at": _iso(_now()) or ""})
+    if template_key == "financial_responsibility_notice" and language_code == "ar":
+        from backend.forms.medical_legal_forms_library import render_form_by_key
+
+        return render_form_by_key("financial_responsibility_notice_ar", context)
+
     return template.renderer(context)
 
 
@@ -160,6 +168,22 @@ def _write_audit(
         created_at=_now(),
     )
     db.add(event)
+
+    actor = db.query(User).filter(User.id == user_id).first()
+    AuditService(db).log(
+        case_id=case_id,
+        task_id=None,
+        actor_user_id=user_id,
+        actor_role=actor.role if actor else None,
+        actor_department_code=None,
+        entity_type="discharge_case",
+        entity_id=case_id,
+        event_type=action,
+        event_title=action.replace("_", " ").title(),
+        event_details=details,
+        payload_summary=details[:500],
+        metadata_json=None,
+    )
 
 
 def _serialize_generated_document(document: DischargeWorkflowDocument) -> Dict[str, Any]:
@@ -212,36 +236,95 @@ class FormsEngineService:
     def __init__(self):
         self.sms_provider = SmsOtpProvider()
 
-    def list_templates(self) -> Dict[str, Any]:
+    def list_templates(self, *, tenant_id: str, requested_language: Optional[str] = None) -> Dict[str, Any]:
+        db = SessionLocal()
+        localization = TemplateLocalizationService(db)
+        localization.ensure_default_templates(tenant_id=tenant_id)
+
         templates: List[Dict[str, Any]] = []
-        for form_type in FORM_TEMPLATES:
-            template = _template_contract(form_type)
-            templates.append(
-                {
-                    "formType": form_type,
-                    "titleAr": template.title_ar,
-                    "titleEn": template.title_en,
-                    "templateVersion": template.template_version,
-                    "lockedContent": _render_locked_content(form_type),
-                    "status": template.status,
-                    "ownerDepartment": template.owner_department,
-                }
-            )
+        try:
+            for form_type in FORM_TEMPLATES:
+                template = _template_contract(form_type)
+                resolved = localization.resolve_template(
+                    tenant_id=tenant_id,
+                    template_key=form_type,
+                    requested_language=requested_language,
+                )
+                templates.append(
+                    {
+                        "formType": form_type,
+                        "titleAr": template.title_ar,
+                        "titleEn": template.title_en,
+                        "templateVersion": resolved.version,
+                        "languageCode": resolved.resolved_language,
+                        "requestedLanguage": resolved.requested_language,
+                        "fallbackChain": resolved.fallback_chain,
+                        "lockedContent": _render_locked_content(form_type, resolved.resolved_language),
+                        "status": template.status,
+                        "ownerDepartment": template.owner_department,
+                        "templateType": resolved.template.template_type,
+                        "isActive": resolved.template.is_active,
+                    }
+                )
+            db.commit()
+        finally:
+            db.close()
 
         return {"templates": templates}
 
-    def get_template(self, *, form_type: str) -> Dict[str, Any]:
+    def get_template(self, *, tenant_id: str, form_type: str, requested_language: Optional[str] = None) -> Dict[str, Any]:
         key = _normalize_form_type(form_type)
         template = _template_contract(key)
+        db = SessionLocal()
+        localization = TemplateLocalizationService(db)
+        localization.ensure_default_templates(tenant_id=tenant_id)
+
+        try:
+            resolved = localization.resolve_template(
+                tenant_id=tenant_id,
+                template_key=key,
+                requested_language=requested_language,
+            )
+            db.commit()
+        finally:
+            db.close()
+
         return {
             "formType": key,
             "titleAr": template.title_ar,
             "titleEn": template.title_en,
-            "templateVersion": template.template_version,
-            "lockedContent": _render_locked_content(key),
+            "templateVersion": resolved.version,
+            "languageCode": resolved.resolved_language,
+            "requestedLanguage": resolved.requested_language,
+            "fallbackChain": resolved.fallback_chain,
+            "lockedContent": _render_locked_content(key, resolved.resolved_language),
             "status": template.status,
             "ownerDepartment": template.owner_department,
+            "templateType": resolved.template.template_type,
+            "isActive": resolved.template.is_active,
         }
+
+    def validate_template_availability(
+        self,
+        *,
+        tenant_id: str,
+        form_type: str,
+        requested_language: Optional[str],
+    ) -> Dict[str, Any]:
+        key = _normalize_form_type(form_type)
+        db = SessionLocal()
+        localization = TemplateLocalizationService(db)
+        localization.ensure_default_templates(tenant_id=tenant_id)
+        try:
+            result = localization.validate_template_availability(
+                tenant_id=tenant_id,
+                template_key=key,
+                requested_language=requested_language,
+            )
+            db.commit()
+            return result
+        finally:
+            db.close()
 
     def generate_form(
         self,
@@ -253,6 +336,14 @@ class FormsEngineService:
         current_user: Dict[str, Any],
     ) -> Dict[str, Any]:
         key = _normalize_form_type(form_type)
+        language_code = str(payload.get("language_code") or payload.get("locale") or "").strip().lower() or None
+        if language_code:
+            payload = {
+                **payload,
+                "language_code": language_code,
+                "locale": language_code,
+            }
+
         if key in {"discharge_refusal_form", "financial_responsibility_notice"}:
             action = {
                 "discharge_refusal_form": "generate_refusal_form",

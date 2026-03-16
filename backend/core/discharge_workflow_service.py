@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -18,6 +19,10 @@ from backend.models.patient import Patient
 from backend.models.user import User
 from backend.models.workflow_document import DischargeWorkflowDocument
 from backend.models.workflow_case_documentation import DischargeWorkflowCaseDocumentation
+from backend.services.audit_service import AuditService
+from backend.services.financial_guarantee_service import FinancialGuaranteeService
+from backend.services.system_settings_service import SystemSettingsService
+from backend.services.template_localization_service import TemplateLocalizationService
 
 
 WORKFLOW_STAGES = [
@@ -164,7 +169,11 @@ def _log_audit(
     case_id: str,
     action: str,
     details: str,
+    payload_summary: Optional[str] = None,
+    metadata_json: Optional[Dict[str, Any]] = None,
 ) -> None:
+    actor = db.query(User).filter(User.id == user_id).first()
+
     log = AuditLog(
         tenant_id=tenant_id,
         user_id=user_id,
@@ -175,6 +184,22 @@ def _log_audit(
         created_at=_utc_now(),
     )
     db.add(log)
+
+    AuditService(db).log(
+        case_id=case_id,
+        task_id=None,
+        actor_user_id=user_id,
+        actor_role=actor.role if actor else None,
+        actor_department_code=None,
+        actor_ip=None,
+        entity_type="discharge_case",
+        entity_id=case_id,
+        event_type=action,
+        event_title=action.replace("_", " ").title(),
+        event_details=details,
+        payload_summary=payload_summary,
+        metadata_json=metadata_json,
+    )
 
 
 def _log_generation_failure_audit(
@@ -476,7 +501,14 @@ def _serialize_document(document: DischargeWorkflowDocument) -> Dict[str, Any]:
     download_route = f"/api/discharge/documents/{document.id}/download"
     signature_meta = _load_signature_metadata(document.id)
     otp_meta = _load_otp_metadata(document.id)
-    template_meta = get_form_template_metadata(document.template_key)
+    try:
+        template_meta = get_form_template_metadata(document.template_key)
+    except ValueError:
+        template_meta = {
+            "template_marker": f"{document.template_key}@v{document.template_version}",
+            "source": "localized_registry",
+            "key": document.template_key,
+        }
     archived_status = bool(signature_meta.get("archivedStatus", False))
     signed_status = bool(document.signed_at)
     verified_status = bool(signature_meta.get("otpVerified") or otp_meta.get("verified"))
@@ -866,8 +898,17 @@ def validate_workflow_generation(
     payload = payload or {}
 
     try:
-        if template_key and template_key not in WORKFLOW_TEMPLATES:
-            raise ValueError("Unknown template key")
+        localization = TemplateLocalizationService(db)
+        localization.ensure_default_templates(tenant_id=tenant_id)
+
+        requested_language = str(payload.get("language_code") or payload.get("locale") or "").strip().lower() or None
+        resolved = None
+        if template_key:
+            resolved = localization.resolve_template(
+                tenant_id=tenant_id,
+                template_key=template_key,
+                requested_language=requested_language,
+            )
 
         bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
         _apply_payload_to_workflow(bundle.workflow, payload)
@@ -875,11 +916,11 @@ def validate_workflow_generation(
         _sync_case_documentation(bundle)
 
         context = _build_template_context(bundle, payload)
-        required_fields = (
-            WORKFLOW_TEMPLATES[template_key].required_fields
-            if template_key
-            else [key for key, _ in POLICY_REQUIRED_CASE_DOCUMENTATION]
-        )
+        required_fields = [key for key, _ in POLICY_REQUIRED_CASE_DOCUMENTATION]
+        if template_key:
+            workflow_template = WORKFLOW_TEMPLATES.get(template_key)
+            if workflow_template:
+                required_fields = workflow_template.required_fields
 
         missing_fields = _validate_required_fields(context, required_fields)
         policy_validation = _build_policy_validation(
@@ -895,6 +936,10 @@ def validate_workflow_generation(
 
         return {
             "template_key": template_key,
+            "requested_language": requested_language,
+            "resolved_language": resolved.resolved_language if resolved else None,
+            "template_version": resolved.version if resolved else None,
+            "fallback_chain": resolved.fallback_chain if resolved else [],
             "missing_fields": missing_fields,
             "can_generate": len(missing_fields) == 0,
             "policy_validation": policy_validation,
@@ -915,22 +960,32 @@ def preview_workflow_document(
 ) -> Dict[str, Any]:
     db = SessionLocal()
     try:
-        if template_key not in WORKFLOW_TEMPLATES:
+        localization = TemplateLocalizationService(db)
+        localization.ensure_default_templates(tenant_id=tenant_id)
+        payload = payload or {}
+        requested_language = str(payload.get("language_code") or payload.get("locale") or "").strip().lower() or None
+        resolved = localization.resolve_template(
+            tenant_id=tenant_id,
+            template_key=template_key,
+            requested_language=requested_language,
+        )
+
+        workflow_template = WORKFLOW_TEMPLATES.get(template_key)
+        if not workflow_template:
             raise ValueError("Unknown template key")
 
         bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
-        _apply_payload_to_workflow(bundle.workflow, payload or {})
-        _apply_payload_to_case_documentation(bundle.case_documentation, payload or {})
+        _apply_payload_to_workflow(bundle.workflow, payload)
+        _apply_payload_to_case_documentation(bundle.case_documentation, payload)
         _sync_case_documentation(bundle)
-        template = WORKFLOW_TEMPLATES[template_key]
         context = _build_template_context(bundle, payload)
-        missing_fields = _validate_required_fields(context, template.required_fields)
+        missing_fields = _validate_required_fields(context, workflow_template.required_fields)
         policy_validation = _build_policy_validation(
             bundle,
-            required_fields=template.required_fields,
+            required_fields=workflow_template.required_fields,
             context=context,
         )
-        html_content = template.renderer(context)
+        html_content = localization.render_template(resolved=resolved, context=context)
 
         bundle.case_documentation.last_validated_at = _utc_now()
         bundle.case_documentation.last_validation_status = "ready" if len(missing_fields) == 0 else "missing_fields"
@@ -938,9 +993,13 @@ def preview_workflow_document(
         db.commit()
 
         return {
-            "template_key": template.key,
-            "title": template.title,
-            "document_code": template.document_code,
+            "template_key": resolved.template_key,
+            "title": resolved.title,
+            "document_code": resolved.document_code,
+            "requested_language": resolved.requested_language,
+            "resolved_language": resolved.resolved_language,
+            "template_version": resolved.version,
+            "fallback_chain": resolved.fallback_chain,
             "missing_fields": missing_fields,
             "can_generate": len(missing_fields) == 0,
             "policy_validation": policy_validation,
@@ -959,24 +1018,49 @@ def _generate_document(
     payload: Optional[Dict[str, Any]],
     current_user: Dict[str, Any],
 ) -> Dict[str, Any]:
-    if template_key not in WORKFLOW_TEMPLATES:
+    payload = payload or {}
+    localization = TemplateLocalizationService(db)
+    localization.ensure_default_templates(tenant_id=bundle.discharge_case.tenant_id, created_by=current_user.get("id"))
+    requested_language = str(payload.get("language_code") or payload.get("locale") or "").strip().lower() or None
+    resolved_template = localization.resolve_template(
+        tenant_id=bundle.discharge_case.tenant_id,
+        template_key=template_key,
+        requested_language=requested_language,
+    )
+
+    workflow_template = WORKFLOW_TEMPLATES.get(template_key)
+    if not workflow_template:
         raise ValueError("Unknown template key")
 
-    template = WORKFLOW_TEMPLATES[template_key]
-    _apply_payload_to_workflow(bundle.workflow, payload or {})
-    _apply_payload_to_case_documentation(bundle.case_documentation, payload or {})
+    _apply_payload_to_workflow(bundle.workflow, payload)
+    _apply_payload_to_case_documentation(bundle.case_documentation, payload)
 
-    discharge_decision_raw = (payload or {}).get("discharge_decision_at")
+    escalation_thresholds = SystemSettingsService(db).get(
+        "escalation_thresholds",
+        tenant_id=bundle.discharge_case.tenant_id,
+        default={"legal_hours": 24},
+    )
+    legal_hours_raw = (
+        escalation_thresholds.get("legal_hours")
+        if isinstance(escalation_thresholds, dict)
+        else 24
+    )
+    try:
+        legal_hours = int(legal_hours_raw)
+    except Exception:
+        legal_hours = 24
+
+    discharge_decision_raw = payload.get("discharge_decision_at")
     parsed_discharge_decision = _parse_datetime(discharge_decision_raw)
     if parsed_discharge_decision:
         bundle.workflow.discharge_decision_at = parsed_discharge_decision
-        bundle.workflow.escalation_due_at = parsed_discharge_decision + timedelta(hours=24)
+        bundle.workflow.escalation_due_at = parsed_discharge_decision + timedelta(hours=legal_hours)
 
     context = _build_template_context(bundle, payload)
-    missing_fields = _validate_required_fields(context, template.required_fields)
+    missing_fields = _validate_required_fields(context, workflow_template.required_fields)
     policy_validation = _build_policy_validation(
         bundle,
-        required_fields=template.required_fields,
+        required_fields=workflow_template.required_fields,
         context=context,
     )
     if missing_fields:
@@ -984,8 +1068,14 @@ def _generate_document(
             "Cannot generate document. Missing required fields: " + ", ".join(missing_fields)
         )
 
-    html_content = template.renderer(context)
-    template_meta = get_form_template_metadata(template_key)
+    html_content = localization.render_template(resolved=resolved_template, context=context)
+    try:
+        template_meta = get_form_template_metadata(template_key)
+    except ValueError:
+        template_meta = {
+            "version": resolved_template.version,
+            "locked_template": True,
+        }
 
     _write_document_file(bundle.discharge_case.id, template_key, html_content)
     file_name, file_path = _write_document_pdf(bundle.discharge_case.id, template_key, html_content)
@@ -995,14 +1085,14 @@ def _generate_document(
         case_id=bundle.discharge_case.id,
         tenant_id=bundle.discharge_case.tenant_id,
         generated_by=current_user["id"],
-        template_key=template_key,
-        document_code=template.document_code,
-        title=template.title,
+        template_key=resolved_template.template_key,
+        document_code=resolved_template.document_code or workflow_template.document_code,
+        title=resolved_template.title,
         file_name=file_name,
         file_path=file_path,
         html_content=html_content,
-        locale=str((payload or {}).get("locale") or "en"),
-        template_version=str(template_meta["version"]),
+        locale=resolved_template.resolved_language,
+        template_version=str(template_meta.get("version") or resolved_template.version),
         locked_template=bool(template_meta["locked_template"]),
         attachment_group=bundle.discharge_case.id,
         generated_at=_utc_now(),
@@ -1036,6 +1126,8 @@ def run_workflow_action(
         workflow = bundle.workflow
         case_documentation = bundle.case_documentation
         now = _utc_now()
+        settings_service = SystemSettingsService(db)
+        settings_service.ensure_defaults(tenant_id=tenant_id)
 
         actor = (
             db.query(User)
@@ -1048,13 +1140,30 @@ def run_workflow_action(
         _apply_payload_to_case_documentation(case_documentation, payload)
 
         generated_document: Optional[Dict[str, Any]] = None
+        requested_locale = str(payload.get("language_code") or payload.get("locale") or "").strip().lower() or None
+        escalation_thresholds = settings_service.get(
+            "escalation_thresholds",
+            tenant_id=tenant_id,
+            default={"legal_hours": 24},
+        )
+        legal_hours_raw = (
+            escalation_thresholds.get("legal_hours")
+            if isinstance(escalation_thresholds, dict)
+            else 24
+        )
+        try:
+            legal_hours = int(legal_hours_raw)
+        except Exception:
+            legal_hours = 24
 
-        def _latest_generated_document(template_key: str) -> Optional[Dict[str, Any]]:
+        def _latest_generated_document(template_key: str, locale: Optional[str] = None) -> Optional[Dict[str, Any]]:
             matched = [
                 item
                 for item in (workflow.documents or [])
                 if item.template_key == template_key
             ]
+            if locale:
+                matched = [item for item in matched if (item.locale or "").lower() == locale]
             if not matched:
                 return None
             latest = max(matched, key=lambda item: item.generated_at or datetime.min)
@@ -1095,7 +1204,7 @@ def run_workflow_action(
                 raise ValueError("Attending physician is required before recording medical discharge decision.")
 
             workflow.discharge_decision_at = decision_at
-            workflow.escalation_due_at = decision_at + timedelta(hours=24)
+            workflow.escalation_due_at = decision_at + timedelta(hours=legal_hours)
             workflow.current_stage = "initial_communication"
             workflow.status = "active"
             workflow.case_status = POLICY_CASE_STATUSES["decision_issued"]
@@ -1186,7 +1295,7 @@ def run_workflow_action(
             if not workflow.support_and_intervention_at:
                 raise ValueError("Complete support and intervention before generating refusal form")
 
-            existing_refusal = _latest_generated_document("discharge_refusal_form")
+            existing_refusal = _latest_generated_document("discharge_refusal_form", requested_locale)
             if existing_refusal:
                 generated_document = existing_refusal
                 _sync_case_documentation(bundle)
@@ -1251,7 +1360,7 @@ def run_workflow_action(
             if not workflow.refusal_form_generated_at:
                 raise ValueError("Generate refusal form before issuing official financial notice")
 
-            existing_financial_notice = _latest_generated_document("financial_responsibility_notice")
+            existing_financial_notice = _latest_generated_document("financial_responsibility_notice", requested_locale)
             if existing_financial_notice:
                 generated_document = existing_financial_notice
                 _sync_case_documentation(bundle)
@@ -1284,6 +1393,80 @@ def run_workflow_action(
             workflow.responsible_person = actor_name
             workflow.next_action = "Escalate to Legal / Compliance if refusal persists beyond 24h."
             _set_case_lifecycle_status(bundle, "FINANCIAL_NOTICE_GENERATED")
+
+            requested_guarantee_type = str(
+                payload.get("guarantee_type")
+                or payload.get("financial_guarantee_type")
+                or ("promissory_note" if payload.get("promissory_note") else "")
+            ).strip().lower()
+
+            if requested_guarantee_type:
+                raw_amount = payload.get("guarantee_amount") or payload.get("liability_amount") or payload.get("amount")
+                if raw_amount is None:
+                    raise ValueError("Guarantee amount is required when guarantee_type is provided")
+
+                try:
+                    guarantee_amount = Decimal(str(raw_amount))
+                except (InvalidOperation, ValueError):
+                    raise ValueError("Invalid guarantee amount")
+
+                guarantee_currency = str(payload.get("currency") or "SAR")
+                guarantee_service = FinancialGuaranteeService(db)
+
+                liability_record_id = _normalize_text(payload.get("financial_liability_record_id"))
+                if not liability_record_id:
+                    liability = guarantee_service.create_liability_record(
+                        tenant_id=tenant_id,
+                        patient_id=bundle.patient.id,
+                        admission_id=bundle.discharge_case.admission_id,
+                        case_id=case_id,
+                        amount=guarantee_amount,
+                        currency=guarantee_currency,
+                        reason=_normalize_text(payload.get("refusal_reason") or workflow.refusal_reason),
+                        metadata_json={
+                            "source_action": "generate_financial_notice",
+                            "document_id": generated_document.get("id") if generated_document else None,
+                        },
+                    )
+                    liability_record_id = liability.id
+
+                guarantee = guarantee_service.create_guarantee(
+                    tenant_id=tenant_id,
+                    patient_id=bundle.patient.id,
+                    admission_id=bundle.discharge_case.admission_id,
+                    refusal_case_id=case_id,
+                    financial_liability_record_id=liability_record_id,
+                    guarantee_type=requested_guarantee_type,
+                    amount=guarantee_amount,
+                    currency=guarantee_currency,
+                    issue_date=_parse_datetime(payload.get("issue_date")) or now,
+                    expiry_date=_parse_datetime(payload.get("expiry_date")),
+                    issuing_authority=_normalize_text(payload.get("issuing_authority")),
+                    obligor=_normalize_text(payload.get("obligor") or payload.get("obligor_name")),
+                    status=_normalize_text(payload.get("guarantee_status")) or "active",
+                    reference_number=_normalize_text(payload.get("reference_number")),
+                    metadata_json={
+                        "created_from": "discharge_refusal_workflow",
+                        "financial_notice_document_id": generated_document.get("id") if generated_document else None,
+                    },
+                )
+
+                _log_audit(
+                    db,
+                    tenant_id=tenant_id,
+                    user_id=current_user["id"],
+                    case_id=case_id,
+                    action="financial_guarantee_created",
+                    details=(
+                        f"Financial guarantee created ({guarantee.guarantee_type}) "
+                        f"amount={guarantee.amount} {guarantee.currency} id={guarantee.id}"
+                    ),
+                    payload_summary=f"type={guarantee.guarantee_type};amount={guarantee.amount};currency={guarantee.currency}",
+                    metadata_json={
+                        "financial_guarantee_id": guarantee.id,
+                        "financial_liability_record_id": guarantee.financial_liability_record_id,
+                    },
+                )
 
             _log_audit(
                 db,

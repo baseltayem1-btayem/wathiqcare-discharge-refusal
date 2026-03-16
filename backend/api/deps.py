@@ -36,6 +36,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             "id": user.id,
             "email": user.email,
             "role": user.role,
+            "department_code": user.department_code,
             "tenant_id": user.tenant_id,
             "tenant_code": payload.get("tenant_code"),
         }

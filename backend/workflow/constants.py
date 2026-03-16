@@ -96,6 +96,18 @@ DEFAULT_TEAM_BY_STAGE = {
 }
 
 
+DEFAULT_DEPARTMENT_BY_STAGE = {
+    StageCode.NURSE_DRAFT: "nursing",
+    StageCode.PENDING_PHYSICIAN_ORDER: "medical",
+    StageCode.PENDING_PATIENT_SIGNATURE: "nursing",
+    StageCode.ACCEPTED_DISCHARGE_EXECUTION: "case_management",
+    StageCode.PATIENT_RELATIONS_REVIEW: "patient_relations",
+    StageCode.SOCIAL_WORK_REVIEW: "social_services",
+    StageCode.FINANCE_REVIEW: "finance",
+    StageCode.LEGAL_ESCALATION: "legal_affairs",
+}
+
+
 DEFAULT_ROLE_BY_STAGE = {
     StageCode.PENDING_PHYSICIAN_ORDER: "doctor",
     StageCode.PENDING_PATIENT_SIGNATURE: "nursing",

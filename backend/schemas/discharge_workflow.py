@@ -10,14 +10,17 @@ class WorkflowActionRequest(BaseModel):
 
 class WorkflowTemplatePreviewRequest(BaseModel):
     template_key: str = Field(..., description="Template key from workflow template mapping")
+    language_code: Optional[str] = Field(default=None, description="Requested language code (ar/en)")
     payload: Dict[str, Any] = Field(default_factory=dict)
 
 
 class WorkflowTemplateGenerateRequest(BaseModel):
     template_key: str = Field(..., description="Template key from workflow template mapping")
+    language_code: Optional[str] = Field(default=None, description="Requested language code (ar/en)")
     payload: Dict[str, Any] = Field(default_factory=dict)
 
 
 class WorkflowValidationRequest(BaseModel):
     template_key: Optional[str] = Field(default=None, description="Optional template key for template-specific checks")
+    language_code: Optional[str] = Field(default=None, description="Requested language code (ar/en)")
     payload: Dict[str, Any] = Field(default_factory=dict)

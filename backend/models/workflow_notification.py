@@ -18,6 +18,7 @@ class WorkflowNotification(Base):
     recipient_user_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)
     recipient_email = Column(String, nullable=True)
     recipient_team_code = Column(String, nullable=True, index=True)
+    recipient_department_code = Column(String, ForeignKey("departments.code"), nullable=True, index=True)
     channel = Column(String, nullable=False)
     notification_type = Column(String, nullable=False)
     title = Column(String, nullable=False)

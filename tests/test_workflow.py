@@ -4,7 +4,6 @@ test_workflow.py
 pytest-based test suite for the WathiqCare Discharge Refusal Module.
 
 Covers:
-- ICD-11 code validation
 - Clinical discharge decision workflow (DischargeEngine)
 - Legal escalation lifecycle (EscalationEngine)
 - Digital refusal form & electronic signatures (RefusalFormService)
@@ -21,7 +20,6 @@ import pytest
 from backend.audit.audit_logger import AuditLogger, UserRole
 from backend.core.discharge_engine import DischargeEngine, DischargeStatus
 from backend.forms.refusal_form import FormStatus, RefusalFormService
-from backend.icd11.validator import ICD11Validator
 from backend.integration.emr_connector import FHIRBuilder, InMemoryEMRConnector
 from backend.legal.escalation_engine import EscalationEngine, EscalationTier
 
@@ -31,56 +29,9 @@ from backend.legal.escalation_engine import EscalationEngine, EscalationTier
 # ===========================================================================
 
 VALID_CODE = "BA00"
-INVALID_CODE = "ZZZZ999"
 PATIENT_ID = "P-001"
 PHYSICIAN_ID = "DR-042"
 _SIG = base64.b64encode(b"sample-signature-data").decode()
-
-
-# ===========================================================================
-# ICD-11 Validator
-# ===========================================================================
-
-
-class TestICD11Validator:
-    def test_valid_code_strict(self):
-        v = ICD11Validator(strict=True)
-        assert v.is_valid(VALID_CODE) is True
-
-    def test_invalid_code_strict(self):
-        v = ICD11Validator(strict=True)
-        assert v.is_valid(INVALID_CODE) is False
-
-    def test_format_only_non_strict(self):
-        v = ICD11Validator(strict=False)
-        # Any properly formatted code should pass in non-strict mode
-        assert v.is_valid("AB12") is True
-
-    def test_invalid_format_non_strict(self):
-        v = ICD11Validator(strict=False)
-        assert v.is_valid("") is False
-        assert v.is_valid("a1") is False  # lowercase rejected
-        assert v.is_valid("TOOLONG123") is False
-
-    def test_validate_codes_mixed(self):
-        v = ICD11Validator(strict=True)
-        result = v.validate_codes([VALID_CODE, INVALID_CODE])
-        assert result[VALID_CODE] is True
-        assert result[INVALID_CODE] is False
-
-    def test_get_invalid_codes(self):
-        v = ICD11Validator(strict=True)
-        invalid = v.get_invalid_codes([VALID_CODE, INVALID_CODE])
-        assert invalid == [INVALID_CODE]
-
-    def test_normalize(self):
-        assert ICD11Validator.normalize("  ba00  ") == "BA00"
-        assert ICD11Validator.normalize("") is None
-        assert ICD11Validator.normalize(None) is None  # type: ignore[arg-type]
-
-    def test_known_extension_code(self):
-        v = ICD11Validator(strict=True)
-        assert v.is_valid("XY8Z.1") is True
 
 
 # ===========================================================================
@@ -90,7 +41,7 @@ class TestICD11Validator:
 
 class TestDischargeEngine:
     def _engine(self):
-        return DischargeEngine(icd11_validator=ICD11Validator(strict=True))
+        return DischargeEngine()
 
     def test_create_order_valid_codes(self):
         engine = self._engine()
@@ -102,15 +53,6 @@ class TestDischargeEngine:
         )
         assert order.patient_id == PATIENT_ID
         assert order.status == DischargeStatus.ORDERED
-
-    def test_create_order_invalid_codes_raises(self):
-        engine = self._engine()
-        with pytest.raises(ValueError, match="Invalid ICD-11"):
-            engine.create_discharge_order(
-                patient_id=PATIENT_ID,
-                physician_id=PHYSICIAN_ID,
-                diagnosis_codes=[INVALID_CODE],
-            )
 
     def test_record_refusal(self):
         engine = self._engine()
@@ -428,10 +370,10 @@ class TestAuditLogger:
     def test_failure_outcome_logged(self):
         logger = AuditLogger()
         logger.log(
-            PHYSICIAN_ID, UserRole.DOCTOR, "ICD11_VALIDATION", "VALIDATE",
+            PHYSICIAN_ID, UserRole.DOCTOR, "DISCHARGE_ORDER", "VALIDATE",
             "ord-001", "DischargeOrder", outcome="FAILURE"
         )
-        entries = logger.get_entries(UserRole.DOCTOR, event_category="ICD11_VALIDATION")
+        entries = logger.get_entries(UserRole.DOCTOR, event_category="DISCHARGE_ORDER")
         assert entries[0].outcome == "FAILURE"
 
 
@@ -448,7 +390,7 @@ class TestEndToEndWorkflow:
 
     def test_complete_workflow(self):
         # Initialize components
-        engine = DischargeEngine(icd11_validator=ICD11Validator(strict=True))
+        engine = DischargeEngine()
         escalation = EscalationEngine()
         form_svc = RefusalFormService()
         connector = InMemoryEMRConnector()

@@ -73,7 +73,9 @@ class WorkflowTaskResponse(BaseModel):
     description: Optional[str]
     assigned_user_id: Optional[str]
     assigned_team_code: Optional[str]
+    assigned_department_code: Optional[str]
     assigned_role_code: Optional[str]
+    escalation_department_code: Optional[str]
     status: str
     priority: str
     due_at: Optional[datetime]
@@ -91,6 +93,7 @@ class NotificationResponse(BaseModel):
     recipient_user_id: Optional[str]
     recipient_email: Optional[str]
     recipient_team_code: Optional[str]
+    recipient_department_code: Optional[str]
     channel: str
     notification_type: str
     title: str
@@ -108,9 +111,17 @@ class AuditLogResponse(BaseModel):
     case_id: Optional[str]
     task_id: Optional[str]
     actor_user_id: Optional[str]
+    actor_role: Optional[str]
+    actor_department_code: Optional[str]
+    actor_ip: Optional[str]
+    entity_type: str
+    entity_id: Optional[str]
     event_type: str
     event_title: str
     event_details: Optional[str]
+    payload_summary: Optional[str]
+    previous_hash: Optional[str]
+    immutable_hash: Optional[str]
     metadata_json: Optional[Dict[str, Any]]
     created_at: datetime
 

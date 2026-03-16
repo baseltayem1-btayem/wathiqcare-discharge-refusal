@@ -21,6 +21,7 @@ from backend.core.discharge_workflow_service import (
     run_workflow_action,
     validate_workflow_generation,
 )
+from backend.core.database import SessionLocal
 from backend.legal.evidence_bundle import generate_evidence_bundle
 from backend.api.deps import get_current_user, require_roles
 from backend.forms.medical_legal_forms_library import FORMS_LIBRARY, render_form_by_key
@@ -40,6 +41,7 @@ from backend.legal.escalation_case_service import (
     resolve_escalation_case,
     update_escalation_priority,
 )
+from backend.services.audit_service import AuditService
 
 router = APIRouter(prefix="/api/discharge", tags=["Discharge"])
 
@@ -78,6 +80,33 @@ SENSITIVE_ACTION_ROLE_MAP = {
     "record_legal_review": ("tenant_admin", ROLE_LEGAL),
     "close_under_review": ("tenant_admin", ROLE_LEGAL),
 }
+
+
+def _audit_document_access(*, current_user: dict, document, event_type: str, event_title: str, event_details: str) -> None:
+    db = SessionLocal()
+    try:
+        AuditService(db).log(
+            case_id=document.case_id,
+            task_id=None,
+            actor_user_id=current_user["id"],
+            actor_role=current_user.get("role"),
+            actor_department_code=current_user.get("department_code"),
+            entity_type="workflow_document",
+            entity_id=document.id,
+            event_type=event_type,
+            event_title=event_title,
+            event_details=event_details,
+            payload_summary=event_details[:500],
+            metadata_json={
+                "template_key": document.template_key,
+                "locale": document.locale,
+            },
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
 
 
 class LegalEscalationAssignRequest(BaseModel):
@@ -272,11 +301,15 @@ def preview_case_workflow_document(
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
     try:
+        request_payload = dict(payload.payload or {})
+        if request_payload.get("language_code") is None and payload.language_code:
+            request_payload["language_code"] = payload.language_code
+
         return preview_workflow_document(
             tenant_id=current_user["tenant_id"],
             case_id=case_id,
             template_key=payload.template_key,
-            payload=payload.payload,
+            payload=request_payload,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -289,11 +322,15 @@ def validate_case_workflow_document(
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
     try:
+        validation_payload = dict(payload.payload or {})
+        if validation_payload.get("language_code") is None and payload.language_code:
+            validation_payload["language_code"] = payload.language_code
+
         return validate_workflow_generation(
             tenant_id=current_user["tenant_id"],
             case_id=case_id,
             template_key=payload.template_key,
-            payload=payload.payload,
+            payload=validation_payload,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -314,11 +351,15 @@ def generate_case_workflow_document(
         raise HTTPException(status_code=400, detail="مفتاح النموذج غير مدعوم")
 
     try:
+        generation_payload = dict(payload.payload or {})
+        if generation_payload.get("language_code") is None and payload.language_code:
+            generation_payload["language_code"] = payload.language_code
+
         return run_workflow_action(
             tenant_id=current_user["tenant_id"],
             case_id=case_id,
             action=action,
-            payload=payload.payload,
+            payload=generation_payload,
             current_user=current_user,
         )
     except ValueError as e:
@@ -345,6 +386,13 @@ def view_case_document(
 ):
     try:
         document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
+        _audit_document_access(
+            current_user=current_user,
+            document=document,
+            event_type="document_viewed",
+            event_title="Document Viewed",
+            event_details=f"Document {document.id} viewed",
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -362,6 +410,13 @@ def download_case_document(
 ):
     try:
         document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
+        _audit_document_access(
+            current_user=current_user,
+            document=document,
+            event_type="document_downloaded",
+            event_title="Document Downloaded",
+            event_details=f"Document {document.id} downloaded/exported",
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

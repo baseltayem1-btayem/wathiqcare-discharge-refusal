@@ -12,6 +12,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     full_name = Column(String, nullable=False)
     role = Column(String, nullable=False)
+    department_code = Column(String, ForeignKey("departments.code"), nullable=True)
     is_active = Column(Boolean, default=True)
     hashed_password = Column(String, nullable=True)
 

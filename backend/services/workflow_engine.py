@@ -14,11 +14,13 @@ from backend.models.workflow_stage import WorkflowStage
 from backend.models.workflow_task import WorkflowTask
 from backend.models.workflow_transition import WorkflowTransition
 from backend.services.audit_service import AuditService
+from backend.services.department_service import DepartmentService
 from backend.services.notification_service import NotificationService
 from backend.services.task_service import TaskService
 from backend.workflow.constants import (
     ActionCode,
     CaseStatus,
+    DEFAULT_DEPARTMENT_BY_STAGE,
     DEFAULT_ROLE_BY_STAGE,
     DEFAULT_SLA_BY_STAGE,
     DEFAULT_TEAM_BY_STAGE,
@@ -31,7 +33,10 @@ from backend.workflow.constants import (
 class AssignmentTarget:
     assigned_user_id: Optional[str] = None
     assigned_team_code: Optional[str] = None
+    assigned_department_code: Optional[str] = None
     assigned_role_code: Optional[str] = None
+    escalation_department_code: Optional[str] = None
+    escalation_role_code: Optional[str] = None
 
 
 class WorkflowEngineService:
@@ -40,6 +45,8 @@ class WorkflowEngineService:
         self.audit = AuditService(db)
         self.tasks = TaskService(db)
         self.notifications = NotificationService(db)
+        self.departments = DepartmentService(db)
+        self.departments.ensure_defaults()
 
     def _now(self) -> datetime:
         return datetime.utcnow()
@@ -96,6 +103,11 @@ class WorkflowEngineService:
             raise ValueError(f"Workflow stage not seeded: {code}")
 
     def _resolve_assignment(self, *, event_code: str, stage_code: str, case: DischargeCase) -> AssignmentTarget:
+        default_department = self.departments.resolve_stage_department(
+            stage_code=stage_code,
+            tenant_id=case.tenant_id,
+        ) or DEFAULT_DEPARTMENT_BY_STAGE.get(stage_code)
+
         rules = (
             self.db.query(AssignmentRule)
             .filter(
@@ -108,15 +120,24 @@ class WorkflowEngineService:
             if rule.target_stage_code and rule.target_stage_code != stage_code:
                 continue
             return AssignmentTarget(
-                assigned_user_id=case.attending_physician_user_id if stage_code == StageCode.PENDING_PHYSICIAN_ORDER else None,
+                assigned_user_id=(
+                    rule.target_user_id
+                    or (case.attending_physician_user_id if stage_code == StageCode.PENDING_PHYSICIAN_ORDER else None)
+                ),
                 assigned_team_code=rule.target_team_code or DEFAULT_TEAM_BY_STAGE.get(stage_code),
+                assigned_department_code=rule.target_department_code or default_department,
                 assigned_role_code=rule.target_role_code or DEFAULT_ROLE_BY_STAGE.get(stage_code),
+                escalation_department_code=rule.escalation_department_code,
+                escalation_role_code=rule.escalation_role_code,
             )
 
         return AssignmentTarget(
             assigned_user_id=case.attending_physician_user_id if stage_code == StageCode.PENDING_PHYSICIAN_ORDER else None,
             assigned_team_code=DEFAULT_TEAM_BY_STAGE.get(stage_code),
+            assigned_department_code=default_department,
             assigned_role_code=DEFAULT_ROLE_BY_STAGE.get(stage_code),
+            escalation_department_code=default_department,
+            escalation_role_code=DEFAULT_ROLE_BY_STAGE.get(stage_code),
         )
 
     def _make_case_number(self) -> str:
@@ -153,7 +174,13 @@ class WorkflowEngineService:
         case.current_stage_code = transition.to_stage_code
         case.updated_at = self._now()
 
+        stage_department = self.departments.resolve_stage_department(
+            stage_code=transition.to_stage_code,
+            tenant_id=case.tenant_id,
+        ) or DEFAULT_DEPARTMENT_BY_STAGE.get(transition.to_stage_code)
+
         task: Optional[WorkflowTask] = None
+        assignment: Optional[AssignmentTarget] = None
         if next_task_code and next_task_title:
             assignment = self._resolve_assignment(
                 event_code=event_type,
@@ -170,7 +197,9 @@ class WorkflowEngineService:
                 description=next_task_description,
                 assigned_user_id=assignment.assigned_user_id,
                 assigned_team_code=assignment.assigned_team_code,
+                assigned_department_code=assignment.assigned_department_code,
                 assigned_role_code=assignment.assigned_role_code,
+                escalation_department_code=assignment.escalation_department_code,
                 due_at=due_at,
                 metadata_json=self._json_safe(metadata_json),
             )
@@ -180,6 +209,7 @@ class WorkflowEngineService:
                 task_id=task.id,
                 recipient_user_id=task.assigned_user_id,
                 recipient_team_code=task.assigned_team_code,
+                recipient_department_code=task.assigned_department_code,
                 title=next_task_title,
                 body=next_task_description or next_task_title,
             )
@@ -187,6 +217,7 @@ class WorkflowEngineService:
         self.notifications.notify_stage_changed(
             case_id=case.id,
             recipient_team_code=DEFAULT_TEAM_BY_STAGE.get(transition.to_stage_code),
+            recipient_department_code=assignment.assigned_department_code if assignment else stage_department,
             title="Workflow Stage Updated",
             body=f"Case moved from {previous_stage} to {transition.to_stage_code}",
         )
@@ -195,9 +226,14 @@ class WorkflowEngineService:
             case_id=case.id,
             task_id=task.id if task else None,
             actor_user_id=actor_user_id,
+            actor_role=actor_role,
+            actor_department_code=(assignment.assigned_department_code if assignment else stage_department),
+            entity_type="discharge_case",
+            entity_id=case.id,
             event_type=event_type,
             event_title=event_title,
             event_details=event_details,
+            payload_summary=(event_details or event_title)[:500],
             metadata_json=self._json_safe(
                 {
                     "from_stage": previous_stage,
@@ -261,6 +297,7 @@ class WorkflowEngineService:
                     task_id=task.id,
                     recipient_user_id=case.attending_physician_user_id,
                     recipient_team_code=None,
+                    recipient_department_code="medical",
                     notification_type="physician_task_created",
                     title="Discharge case assigned",
                     body=f"Case {case.case_number} assigned for discharge order.",
@@ -303,6 +340,8 @@ class WorkflowEngineService:
         actor_user_id: str,
         email: str,
         language: str,
+        actor_role: Optional[str] = None,
+        actor_department_code: Optional[str] = None,
     ) -> DischargeCase:
         with self._tx():
             case = self._ensure_case(case_id, tenant_id)
@@ -310,9 +349,14 @@ class WorkflowEngineService:
                 case_id=case.id,
                 task_id=None,
                 actor_user_id=actor_user_id,
+                actor_role=actor_role,
+                actor_department_code=actor_department_code or case.department,
+                entity_type="discharge_case",
+                entity_id=case.id,
                 event_type=EventCode.PATIENT_SIGNATURE_REQUESTED,
                 event_title="Patient Signature Requested",
                 event_details=f"Patient signature requested via {email}",
+                payload_summary=f"email={email};language={language}",
                 metadata_json={"email": email, "language": language},
             )
             self.notifications.send_email_notification(
@@ -380,7 +424,9 @@ class WorkflowEngineService:
                     title=f"Discharge execution: {item_type}",
                     description=description,
                     assigned_team_code=team_code,
+                    assigned_department_code=team_code,
                     assigned_role_code=team_code,
+                    escalation_department_code=team_code,
                     due_at=self._now() + DEFAULT_SLA_BY_STAGE.get(StageCode.ACCEPTED_DISCHARGE_EXECUTION, timedelta(hours=24)),
                     metadata_json={"execution_item_id": execution_item.id},
                 )
@@ -390,6 +436,7 @@ class WorkflowEngineService:
                     task_id=task.id,
                     recipient_user_id=None,
                     recipient_team_code=team_code,
+                    recipient_department_code=team_code,
                     title=task.title,
                     body=description,
                 )

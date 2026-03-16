@@ -120,6 +120,15 @@ export default function LoginPage() {
                                 <h2 className="text-xl font-bold text-gray-900">{t("login.formTitle")}</h2>
                                 <p className="mt-1.5 text-sm text-gray-500">{t("login.formSubtitle")}</p>
 
+                                {loginMutation.error ? (
+                                    <div
+                                        className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                                        role="alert"
+                                    >
+                                        {loginMutation.error.message}
+                                    </div>
+                                ) : null}
+
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
                                     <div>
                                         <label htmlFor="login-email" className="mb-1 block text-sm font-medium text-gray-700">
@@ -166,12 +175,6 @@ export default function LoginPage() {
                                             {...form.register("tenantCode")}
                                         />
                                     </div>
-
-                                    {loginMutation.error ? (
-                                        <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                                            {loginMutation.error.message}
-                                        </div>
-                                    ) : null}
 
                                     <button
                                         type="submit"

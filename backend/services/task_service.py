@@ -23,7 +23,9 @@ class TaskService:
         description: Optional[str] = None,
         assigned_user_id: Optional[str] = None,
         assigned_team_code: Optional[str] = None,
+        assigned_department_code: Optional[str] = None,
         assigned_role_code: Optional[str] = None,
+        escalation_department_code: Optional[str] = None,
         priority: str = "medium",
         due_at: Optional[datetime] = None,
         parent_task_id: Optional[str] = None,
@@ -37,7 +39,9 @@ class TaskService:
             description=description,
             assigned_user_id=assigned_user_id,
             assigned_team_code=assigned_team_code,
+            assigned_department_code=assigned_department_code,
             assigned_role_code=assigned_role_code,
+            escalation_department_code=escalation_department_code,
             status=TaskStatus.PENDING,
             priority=priority,
             due_at=due_at,
@@ -82,6 +86,17 @@ class TaskService:
             self.db.query(WorkflowTask)
             .filter(
                 WorkflowTask.assigned_team_code == team_code,
+                WorkflowTask.status.in_([TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.OVERDUE]),
+            )
+            .order_by(WorkflowTask.created_at.desc())
+            .all()
+        )
+
+    def get_open_tasks_for_department(self, department_code: str) -> list[WorkflowTask]:
+        return (
+            self.db.query(WorkflowTask)
+            .filter(
+                WorkflowTask.assigned_department_code == department_code,
                 WorkflowTask.status.in_([TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.OVERDUE]),
             )
             .order_by(WorkflowTask.created_at.desc())

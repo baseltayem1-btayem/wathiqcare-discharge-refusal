@@ -172,11 +172,10 @@ class AuditLogger:
                 "REFUSAL_DOCUMENTATION",
                 "LEGAL_CASE",
                 "ESCALATION",
-                "ICD11_VALIDATION",
             }
 
         if role == UserRole.DOCTOR.value:
-            return {"DISCHARGE_ORDER", "REFUSAL_RECORD", "ICD11_VALIDATION"}
+            return {"DISCHARGE_ORDER", "REFUSAL_RECORD"}
 
         if role == UserRole.NURSE.value:
             return {"REFUSAL_RECORD", "REFUSAL_FORM"}

@@ -38,11 +38,61 @@ TRANSITIONS = [
 
 
 ASSIGNMENT_RULES = [
-    ("assign_physician_order_to_attending_physician", "case_created", StageCode.PENDING_PHYSICIAN_ORDER, "physician", "doctor"),
-    ("assign_patient_relations_stage_to_patient_relations_team", "patient_refused", StageCode.PATIENT_RELATIONS_REVIEW, "patient_relations", "patient_affairs"),
-    ("assign_social_work_stage_to_social_work_team", "stage_task_completed", StageCode.SOCIAL_WORK_REVIEW, "social_work", "social_services"),
-    ("assign_finance_stage_to_finance_team", "stage_task_completed", StageCode.FINANCE_REVIEW, "finance", "finance"),
-    ("assign_legal_stage_to_legal_team", "case_escalated", StageCode.LEGAL_ESCALATION, "legal", "legal_admin"),
+    (
+        "assign_physician_order_to_attending_physician",
+        "case_created",
+        StageCode.PENDING_PHYSICIAN_ORDER,
+        "physician",
+        "medical",
+        "doctor",
+        None,
+        "medical",
+        "doctor",
+    ),
+    (
+        "assign_patient_relations_stage_to_patient_relations_team",
+        "patient_refused",
+        StageCode.PATIENT_RELATIONS_REVIEW,
+        "patient_relations",
+        "patient_relations",
+        "patient_affairs",
+        None,
+        "patient_relations",
+        "patient_affairs",
+    ),
+    (
+        "assign_social_work_stage_to_social_work_team",
+        "stage_task_completed",
+        StageCode.SOCIAL_WORK_REVIEW,
+        "social_work",
+        "social_services",
+        "social_services",
+        None,
+        "social_services",
+        "social_services",
+    ),
+    (
+        "assign_finance_stage_to_finance_team",
+        "stage_task_completed",
+        StageCode.FINANCE_REVIEW,
+        "finance",
+        "finance",
+        "finance",
+        None,
+        "finance",
+        "finance",
+    ),
+    (
+        "assign_legal_stage_to_legal_team",
+        "case_escalated",
+        StageCode.LEGAL_ESCALATION,
+        "legal",
+        "legal_affairs",
+        "legal_admin",
+        None,
+        "compliance",
+        "compliance",
+    ),
 ]
 
 
@@ -95,13 +145,27 @@ def seed() -> None:
                     )
                 )
 
-        for rule_code, event_code, stage_code, team_code, role_code in ASSIGNMENT_RULES:
+        for (
+            rule_code,
+            event_code,
+            stage_code,
+            team_code,
+            department_code,
+            role_code,
+            target_user_id,
+            escalation_department_code,
+            escalation_role_code,
+        ) in ASSIGNMENT_RULES:
             existing = db.query(AssignmentRule).filter(AssignmentRule.rule_code == rule_code).first()
             if existing:
                 existing.event_code = event_code
                 existing.target_stage_code = stage_code
                 existing.target_team_code = team_code
+                existing.target_department_code = department_code
                 existing.target_role_code = role_code
+                existing.target_user_id = target_user_id
+                existing.escalation_department_code = escalation_department_code
+                existing.escalation_role_code = escalation_role_code
                 existing.active = True
             else:
                 db.add(
@@ -111,7 +175,11 @@ def seed() -> None:
                         event_code=event_code,
                         target_stage_code=stage_code,
                         target_team_code=team_code,
+                        target_department_code=department_code,
                         target_role_code=role_code,
+                        target_user_id=target_user_id,
+                        escalation_department_code=escalation_department_code,
+                        escalation_role_code=escalation_role_code,
                         active=True,
                     )
                 )
