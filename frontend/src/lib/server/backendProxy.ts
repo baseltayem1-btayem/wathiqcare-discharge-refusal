@@ -73,7 +73,14 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
         };
     }
 
-    return { ok: true, url: new URL(pathname, `${base.origin}/`) };
+    const baseWithPath = new URL(base.toString());
+    const normalizedBasePath = baseWithPath.pathname.endsWith("/")
+        ? baseWithPath.pathname
+        : `${baseWithPath.pathname}/`;
+    baseWithPath.pathname = normalizedBasePath;
+
+    const normalizedPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+    return { ok: true, url: new URL(normalizedPath, baseWithPath) };
 }
 
 function buildForwardHeaders(request: NextRequest): Headers {
@@ -111,10 +118,14 @@ export async function forwardToBackend(
 
     const targetHost = built.url.host.toLowerCase();
     const requestHost = (request.headers.get("host") || "").toLowerCase();
-    if (targetHost && requestHost && targetHost === requestHost) {
+    const targetPath = built.url.pathname;
+    const sourcePath = request.nextUrl.pathname;
+
+    // Prevent recursive self-calls when backend base URL points to the same host+path.
+    if (targetHost && requestHost && targetHost === requestHost && targetPath === sourcePath) {
         return NextResponse.json(
             {
-                detail: "خدمة الواجهة الخلفية غير متاحة حالياً.",
+                detail: "خدمة الواجهة الخلفية غير متاحة حالياً. يرجى ضبط BACKEND_API_BASE_URL على خدمة backend الحقيقية.",
             },
             { status: 503 },
         );
@@ -129,6 +140,10 @@ export async function forwardToBackend(
             headers: buildForwardHeaders(request),
             body,
             redirect: "manual",
+            // Propagate the incoming request's abort signal so that when the
+            // client navigates away (Next.js fires request.signal), the outgoing
+            // backend fetch is cancelled immediately instead of hanging.
+            signal: request.signal,
         });
 
         const proxyHeaders = new Headers();
@@ -146,7 +161,13 @@ export async function forwardToBackend(
             status: backendResponse.status,
             headers: proxyHeaders,
         });
-    } catch {
+    } catch (err) {
+        // Re-throw abort errors: the client already disconnected, so there is
+        // nothing to respond to.  Letting Next.js handle these prevents the
+        // "signal is aborted without reason" noise in server logs.
+        if (err instanceof Error && err.name === "AbortError") {
+            throw err;
+        }
         return NextResponse.json(
             {
                 detail:

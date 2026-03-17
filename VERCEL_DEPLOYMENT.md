@@ -34,6 +34,9 @@ npm install -g vercel
    DATABASE_URL=your_database_connection_string
    ```
 
+   ملاحظة مهمة: لا تضع رابط الواجهة الأمامية في `BACKEND_API_BASE_URL`.
+   يجب أن يشير هذا المتغير إلى خدمة Backend الفعلية فقط.
+
 6. **اضغط "Deploy"** ✅
 
 ---
