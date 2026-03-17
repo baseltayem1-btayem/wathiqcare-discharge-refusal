@@ -9,16 +9,15 @@ import TabletSignaturePad from "@/components/forms/TabletSignaturePad";
 import { apiFetch } from "@/utils/api";
 
 type MethodItem = {
-  method: "SMS_OTP" | "NAFATH" | "TABLET_SIGNATURE";
+  method: "TABLET_SIGNATURE" | "EMAIL_NOTICE";
   available: boolean;
   label_ar: string;
   reason?: string | null;
 };
 
 const METHOD_LABELS: Record<string, string> = {
-  SMS_OTP: "رسالة نصية",
-  NAFATH: "نفاذ",
   TABLET_SIGNATURE: "توقيع على الجهاز اللوحي",
+  EMAIL_NOTICE: "إرسال إشعار عبر البريد الإلكتروني",
 };
 
 export default function FinancialNoticeSignaturePage() {
@@ -29,15 +28,12 @@ export default function FinancialNoticeSignaturePage() {
   const mobileLinked = searchParams.get("mobile_link") === "1";
 
   const [methods, setMethods] = useState<MethodItem[]>([]);
-  const [method, setMethod] = useState<MethodItem["method"]>("SMS_OTP");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [otpCode, setOtpCode] = useState("");
+  const [method, setMethod] = useState<MethodItem["method"]>("TABLET_SIGNATURE");
+  const [email, setEmail] = useState("");
   const [signaturePayload, setSignaturePayload] = useState("");
   const [witnessName, setWitnessName] = useState("");
-  const [nafathStatus, setNafathStatus] = useState("pending");
   const [sessionId, setSessionId] = useState("");
   const [status, setStatus] = useState("بانتظار التحقق");
-  const [debugCode, setDebugCode] = useState("");
   const [previewHtml, setPreviewHtml] = useState("");
   const [message, setMessage] = useState("");
 
@@ -56,9 +52,7 @@ export default function FinancialNoticeSignaturePage() {
         const firstAvailable = availableMethods.find((item) => item.available);
         if (preferredTablet) {
           setMethod("TABLET_SIGNATURE");
-          if (mobileLinked) {
-            setMessage("تم تفعيل وضع توقيع التابلت مع إمكانية ربط OTP بالجوال.");
-          }
+          if (mobileLinked) setMessage("تم تفعيل وضع توقيع التابلت.");
         } else if (firstAvailable) {
           setMethod(firstAvailable.method);
         }
@@ -75,23 +69,35 @@ export default function FinancialNoticeSignaturePage() {
 
   const selectedMethod = useMemo(() => methods.find((item) => item.method === method), [methods, method]);
 
+  const resolveStatusLabel = (verificationStatus: string, deliveryStatus?: string | null) => {
+    if (verificationStatus === "verified") {
+      return "تم التحقق";
+    }
+
+    if (verificationStatus === "notification_sent") {
+      return deliveryStatus === "sent"
+        ? "تم إرسال إشعار البريد الإلكتروني"
+        : "تم تسجيل إشعار البريد (قيد التحقق من التسليم)";
+    }
+
+    return "بانتظار التحقق";
+  };
+
   const startFlow = async () => {
     setMessage("");
     try {
       const payload: Record<string, unknown> = {};
-      if (method === "SMS_OTP") {
-        payload.phone_number = phoneNumber;
-      }
       if (method === "TABLET_SIGNATURE") {
         payload.witness_name = witnessName;
-        if (phoneNumber.trim()) {
-          payload.phone_number = phoneNumber;
-        }
+      }
+      if (method === "EMAIL_NOTICE") {
+        payload.email = email;
       }
 
       const res = await apiFetch<{
         session_id: string;
         verification_status: string;
+        delivery_status?: string | null;
         provider_result?: { otp_debug_code?: string };
       }>(`/api/discharge/cases/${caseId}/acknowledgment/start`, {
         method: "POST",
@@ -103,9 +109,14 @@ export default function FinancialNoticeSignaturePage() {
       });
 
       setSessionId(res.session_id);
-      setStatus(res.verification_status === "verified" ? "تم التحقق" : "بانتظار التحقق");
-      if (res.provider_result?.otp_debug_code) {
-        setDebugCode(res.provider_result.otp_debug_code);
+      setStatus(resolveStatusLabel(res.verification_status, res.delivery_status));
+
+      if (res.verification_status === "notification_sent") {
+        if (res.delivery_status === "sent") {
+          setMessage("تم إرسال إشعار للمريض عبر البريد الإلكتروني.");
+        } else {
+          setMessage("تم تسجيل إشعار البريد، وجار التحقق من حالة التسليم.");
+        }
       }
     } catch (err) {
       setMessage((err as Error).message);
@@ -121,31 +132,26 @@ export default function FinancialNoticeSignaturePage() {
     setMessage("");
     try {
       const payload: Record<string, unknown> = {};
-      if (method === "SMS_OTP") {
-        payload.otp_code = otpCode;
-      }
-      if (method === "NAFATH") {
-        payload.nafath_status = nafathStatus;
-      }
       if (method === "TABLET_SIGNATURE") {
         payload.signature_payload = signaturePayload;
         payload.witness_name = witnessName;
-        if (otpCode.trim()) {
-          payload.otp_code = otpCode;
-        }
       }
 
-      const res = await apiFetch<{ verification_status: string }>(
-        `/api/discharge/cases/${caseId}/acknowledgment/${sessionId}/verify`,
+      const res = await apiFetch<{ verification_status: string; delivery_status?: string | null }>(
+        `/api/acknowledgment/cases/${caseId}/${sessionId}/verify`,
         {
           method: "POST",
           body: JSON.stringify({ payload }),
         }
       );
 
-      setStatus(res.verification_status === "verified" ? "تم التحقق" : "بانتظار التحقق");
+      setStatus(resolveStatusLabel(res.verification_status, res.delivery_status));
       if (res.verification_status === "verified") {
         setMessage("تم إنشاء النسخة النهائية");
+      } else if (res.verification_status === "notification_sent" && res.delivery_status === "sent") {
+        setMessage("تم إرسال إشعار للمريض عبر البريد الإلكتروني.");
+      } else if (res.verification_status === "notification_sent") {
+        setMessage("تم تسجيل إشعار البريد، وجار التحقق من حالة التسليم.");
       }
     } catch (err) {
       setMessage((err as Error).message);
@@ -157,6 +163,11 @@ export default function FinancialNoticeSignaturePage() {
       <AppShell
         title="إشعار المسؤولية المالية"
         subtitle="طريقة الإقرار / التوقيع"
+        workflowCaseNav={{
+          caseId,
+          currentStage: "official_notification",
+          escalationRequired: false,
+        }}
         actions={
           <Link href={`/cases/${caseId}`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
             العودة إلى الحالة
@@ -191,23 +202,10 @@ export default function FinancialNoticeSignaturePage() {
               ) : null}
             </div>
 
-            {method === "SMS_OTP" ? (
+            {method === "EMAIL_NOTICE" ? (
               <div className="mt-4 grid gap-2">
-                <label className="text-sm text-slate-700">رقم الجوال</label>
-                <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
-                <label className="text-sm text-slate-700">رمز التحقق</label>
-                <input value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
-                {debugCode ? <p className="text-xs text-slate-500">رمز تحقق بيئة التطوير: {debugCode}</p> : null}
-              </div>
-            ) : null}
-
-            {method === "NAFATH" ? (
-              <div className="mt-4 grid gap-2">
-                <label className="text-sm text-slate-700">حالة نفاذ (بيئة الاختبار)</label>
-                <select value={nafathStatus} onChange={(e) => setNafathStatus(e.target.value)} className="rounded-lg border px-3 py-2 text-sm">
-                  <option value="pending">بانتظار التحقق</option>
-                  <option value="approved">تم التحقق</option>
-                </select>
+                <label className="text-sm text-slate-700">البريد الإلكتروني للمريض</label>
+                <input value={email} onChange={(e) => setEmail(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
               </div>
             ) : null}
 
@@ -215,11 +213,6 @@ export default function FinancialNoticeSignaturePage() {
               <div className="mt-4 grid gap-2">
                 <label className="text-sm text-slate-700">توقيع المريض على التابلت</label>
                 <TabletSignaturePad value={signaturePayload} onChange={setSignaturePayload} />
-                <label className="text-sm text-slate-700">رقم الجوال (اختياري للربط والتحقق OTP)</label>
-                <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
-                <label className="text-sm text-slate-700">رمز التحقق OTP (إذا تم الربط بالجوال)</label>
-                <input value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
-                {debugCode ? <p className="text-xs text-slate-500">رمز تحقق بيئة التطوير: {debugCode}</p> : null}
                 <label className="text-sm text-slate-700">اسم الشاهد</label>
                 <input value={witnessName} onChange={(e) => setWitnessName(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
               </div>

@@ -95,8 +95,8 @@ export default function CasesPage() {
         ) : null}
 
         {!loading && !error ? (
-          <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-slate-100 text-slate-700">
                 <tr>
                   <th className="px-4 py-3 text-left">{t("cases.table.mrn")}</th>

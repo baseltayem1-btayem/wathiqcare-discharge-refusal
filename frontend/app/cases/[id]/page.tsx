@@ -22,13 +22,14 @@ import {
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import WorkflowProgress, { type WorkflowProgressStep } from "@/components/ui/WorkflowProgress";
 import DocumentPreviewModal from "@/components/workflow/DocumentPreviewModal";
 import CaseWorkflowTree from "@/components/cases/CaseWorkflowTree";
 import { WorkflowDraft } from "@/components/workflow/WorkflowDataForm";
 import WorkflowDocumentList from "@/components/workflow/WorkflowDocumentList";
 import WorkflowTimelinePanel from "@/components/workflow/WorkflowTimelinePanel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { clearToken } from "@/utils/api";
+import { apiFetch, clearToken } from "@/utils/api";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 import { dischargeRefusalWorkflowService } from "@/lib/services/dischargeRefusalWorkflow.service";
 import {
@@ -56,6 +57,7 @@ import {
   WorkflowPolicyValidation,
   WorkflowPolicyRequirement,
 } from "@/types/dischargeWorkflow";
+import { buildMetadataWorkflowProgress } from "@/lib/workflowProgress";
 
 type AuditItem = {
   id: string;
@@ -82,6 +84,24 @@ const WORKFLOW_STAGE_LABELS: Record<string, string> = {
   official_notification: "الإشعار الرسمي",
   escalation: "التصعيد",
   closed: "مغلقة",
+};
+
+const WORKFLOW_STAGE_LABELS_EN: Record<string, string> = {
+  medical_discharge_decision: "Medical Discharge Decision",
+  initial_communication: "Initial Communication",
+  support_and_intervention: "Support and Intervention",
+  refusal_form: "Refusal Form",
+  official_notification: "Official Notification",
+  escalation: "Escalation Review",
+  closed: "Archive",
+};
+
+const WORKFLOW_STAGE_ROUTES: Partial<Record<string, (caseId: string) => string>> = {
+  initial_communication: (caseId) => `/workflow/medical-discharge-refusal/case/${caseId}/initial-communication`,
+  support_and_intervention: (caseId) => `/workflow/medical-discharge-refusal/case/${caseId}/social-services`,
+  refusal_form: (caseId) => `/cases/${caseId}/refusal-form`,
+  official_notification: (caseId) => `/cases/${caseId}/financial-notice`,
+  escalation: (caseId) => `/workflow/medical-discharge-refusal/case/${caseId}/escalation-review`,
 };
 
 const VALIDATION_FIELD_MAP: Record<string, string> = {
@@ -279,6 +299,53 @@ function toTimeline(workflow: DischargeRefusalWorkflowContract) {
   });
 }
 
+function toWorkflowProgressSteps(workflow: DischargeWorkflow | null, locale: string, caseId: string): WorkflowProgressStep[] {
+  if (!workflow) {
+    return [];
+  }
+
+  const stageTimestamps: Partial<Record<string, string | null>> = {
+    medical_discharge_decision: workflow.discharge_decision_at,
+    initial_communication: workflow.initial_communication_at || workflow.refusal_started_at,
+    support_and_intervention: workflow.support_and_intervention_at || workflow.social_services_referred_at,
+    refusal_form: workflow.refusal_form_generated_at,
+    official_notification: workflow.financial_notice_generated_at,
+    escalation: workflow.escalated_at || workflow.escalation_due_at,
+    closed: workflow.status === "closed" ? workflow.escalated_at || workflow.financial_notice_generated_at : null,
+  };
+
+  return workflow.timeline.map((item) => {
+    const hrefFactory = WORKFLOW_STAGE_ROUTES[item.key];
+    const timestamp = stageTimestamps[item.key] || item.timestamp;
+    const isWarning = item.key === "escalation" && workflow.escalation_required && item.status !== "completed";
+
+    return {
+      id: item.key,
+      titleAr: WORKFLOW_STAGE_LABELS[item.key] || item.label,
+      titleEn: WORKFLOW_STAGE_LABELS_EN[item.key] || item.key,
+      subtitleAr:
+        item.status === "completed" && timestamp
+          ? new Date(timestamp).toLocaleString("ar-SA")
+          : isWarning
+            ? "يتطلب تصعيداً"
+            : item.status === "current"
+              ? "قيد التنفيذ"
+              : undefined,
+      subtitleEn:
+        item.status === "completed" && timestamp
+          ? new Date(timestamp).toLocaleString(locale)
+          : isWarning
+            ? "Escalation required"
+            : item.status === "current"
+              ? "In progress"
+              : undefined,
+      state: isWarning ? "warning" : item.status,
+      clickable: Boolean(hrefFactory),
+      href: hrefFactory?.(caseId),
+    };
+  });
+}
+
 function mapContractDocumentToUi(document: DischargeRefusalWorkflowContract["documents"][number]): WorkflowDocumentItem {
   return {
     id: document.id,
@@ -386,7 +453,7 @@ export default function CaseDetailsPage() {
   const params = useParams<{ id: string }>();
   const caseId = params.id;
   const router = useRouter();
-  const { t, locale } = useI18n();
+  const { t, locale, lang, isRtl } = useI18n();
 
   const [caseDetail, setCaseDetail] = useState<CaseDetail | null>(null);
   const [auditItems, setAuditItems] = useState<AuditItem[]>([]);
@@ -406,6 +473,68 @@ export default function CaseDetailsPage() {
   const [preview, setPreview] = useState<WorkflowPreviewResponse | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [workflowBackendUnavailable, setWorkflowBackendUnavailable] = useState(false);
+
+  const isBackendUnavailableError = useMemo(() => {
+    if (!error) {
+      return false;
+    }
+
+    const normalized = error.toLowerCase();
+    const has503 = normalized.includes("503");
+    const hasKnownMessage =
+      normalized.includes("خدمة الواجهة الخلفية غير متاحة حالياً") ||
+      normalized.includes("temporarily unavailable") ||
+      normalized.includes("backend workflow service is temporarily unavailable");
+
+    return has503 && hasKnownMessage;
+  }, [error]);
+
+  useEffect(() => {
+    if (isBackendUnavailableError) {
+      setWorkflowBackendUnavailable(true);
+    }
+  }, [isBackendUnavailableError]);
+
+  const workflowProgressSteps = useMemo(
+    () => toWorkflowProgressSteps(workflow, locale, caseId),
+    [workflow, locale, caseId]
+  );
+
+  const metadataWorkflowProgress = useMemo(
+    () =>
+      buildMetadataWorkflowProgress({
+        caseId,
+        status: caseDetail?.status,
+        patient_name: caseDetail?.patient_name,
+        signer_name: caseDetail?.signer_name,
+        signer_role: caseDetail?.signer_role,
+        signed_at: caseDetail?.signed_at,
+        pdf_file: caseDetail?.pdf_file,
+        refusal_reason: caseDetail?.refusal_reason,
+        workflow_stages: caseDetail?.workflow_stages,
+        metadata: caseDetail?.metadata,
+        workflow,
+        clickable: true,
+      }),
+    [caseDetail, workflow, caseId]
+  );
+
+  const visibleWorkflowProgressSteps =
+    workflowProgressSteps.length > 0 ? workflowProgressSteps : metadataWorkflowProgress.steps;
+
+  const visibleWorkflowCurrentStepId =
+    workflowProgressSteps.length > 0
+      ? workflow?.current_stage
+      : metadataWorkflowProgress.currentStepId;
+
+  const handleWorkflowProgressStepClick = useCallback(
+    (step: WorkflowProgressStep & { href?: string }) => {
+      if (step.href) {
+        router.push(step.href);
+      }
+    },
+    [router]
+  );
 
   const loadCaseData = useCallback(async () => {
     setLoading(true);
@@ -798,11 +927,47 @@ export default function CaseDetailsPage() {
     setActiveTab("archive");
   };
 
+  const handleSendWorkflowEmailNotification = async () => {
+    const recipient = window.prompt("أدخل بريد المستلم لإرسال الإشعار", "");
+    if (!recipient || !recipient.trim()) {
+      return;
+    }
+
+    const templateName = workflow?.escalation_required
+      ? "legal_escalation_notice"
+      : "discharge_refusal_follow_up";
+
+    try {
+      const response = await apiFetch<{ status: string }>("/api/emails/send-workflow-notification", {
+        method: "POST",
+        body: JSON.stringify({
+          case_id: caseId,
+          to: [recipient.trim()],
+          template_name: templateName,
+          include_latest_case_documents: true,
+          template_vars: {
+            case_id: caseId,
+            patient_name: caseDetail?.patient_name || workflow?.patient_name || "",
+          },
+        }),
+      });
+
+      setInfoMessage(response.status === "sent" ? "تم إرسال الإشعار بالبريد الإلكتروني بنجاح." : "تم تسجيل الإشعار.");
+    } catch (error) {
+      setInfoMessage(error instanceof Error ? error.message : "فشل إرسال الإشعار بالبريد الإلكتروني.");
+    }
+  };
+
   return (
     <AuthGuard>
       <AppShell
         title={caseTitle}
         subtitle={t("caseDetails.subtitle")}
+        workflowCaseNav={{
+          caseId,
+          currentStage: workflow?.current_stage || null,
+          escalationRequired: workflow?.escalation_required || false,
+        }}
         actions={
           <>
             <Link
@@ -842,6 +1007,17 @@ export default function CaseDetailsPage() {
                 {t("workflow.action.startRefusalWorkflow")}
               </button>
             ) : null}
+
+            <button
+              type="button"
+              onClick={() => {
+                void handleSendWorkflowEmailNotification();
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-2 text-sm font-medium text-cyan-800 hover:bg-cyan-100"
+            >
+              <FileText className="h-4 w-4" />
+              إرسال إشعار بريد
+            </button>
 
             {hasSupportIntervention && !hasRefusalForm ? (
               <button
@@ -930,7 +1106,7 @@ export default function CaseDetailsPage() {
           </>
         }
       >
-        {error ? (
+        {error && !isBackendUnavailableError ? (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         ) : null}
 
@@ -952,9 +1128,11 @@ export default function CaseDetailsPage() {
           </div>
         ) : null}
 
-        {workflowBackendUnavailable ? (
+        {workflowBackendUnavailable || isBackendUnavailableError ? (
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Workflow actions are temporarily unavailable in this environment. Core case details are still accessible.
+            {lang === "ar"
+              ? "خدمة مسار الإجراءات غير متاحة مؤقتاً. يمكنك متابعة عرض بيانات الحالة الأساسية، وسيتم تعطيل إجراءات المسار لحين عودة الخدمة."
+              : "Workflow service is temporarily unavailable. Core case details remain accessible while workflow actions are disabled."}
           </div>
         ) : null}
 
@@ -1031,9 +1209,29 @@ export default function CaseDetailsPage() {
 
             {activeTab === "overview" ? (
               <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-                <div className="rounded-2xl border border-slate-200 p-5">
+                <div className="min-w-0 rounded-2xl border border-slate-200 p-5">
                   <h2 className="text-base font-semibold text-slate-900">Patient Workspace | مساحة المريض</h2>
                   <p className="mt-1 text-sm text-slate-600">البيانات الأساسية وملخص الحالة الحالية.</p>
+
+                  {visibleWorkflowProgressSteps.length > 0 ? (
+                    <div className="mt-5">
+                      <h3 className="text-sm font-semibold text-slate-900">إجراءات عمل خطة الخروج للمريض</h3>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {workflowProgressSteps.length > 0
+                          ? "تتبّع مراحل الإجراء الحالي والتنقل إلى الخطوات المتاحة مباشرة من مسار الحالة."
+                          : "مراحل الخطة المحفوظة عند إنشاء الحالة، مع تحديثات الحالة الحالية المتاحة."}
+                      </p>
+                      <WorkflowProgress
+                        className="mt-3"
+                        layout="wrapped"
+                        steps={visibleWorkflowProgressSteps}
+                        language={lang}
+                        direction={isRtl ? "rtl" : "ltr"}
+                        currentStepId={visibleWorkflowCurrentStepId}
+                        onStepClick={handleWorkflowProgressStepClick}
+                      />
+                    </div>
+                  ) : null}
 
                   <h3 className="mt-5 text-sm font-semibold text-slate-900">بيانات المريض</h3>
                   <dl className="mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">

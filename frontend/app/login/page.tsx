@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckSquare, LogIn, Square } from "lucide-react";
@@ -48,20 +49,38 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100/80 px-4 py-8 md:px-8 md:py-12">
-      <div className="mx-auto w-full max-w-6xl">
+    <main
+      className="min-h-screen"
+      style={{ background: "linear-gradient(160deg, #f0fdff 0%, #f5f7fa 60%, #e0f2fe 100%)" }}
+    >
+      {/* Top accent bar */}
+      <div style={{ height: "3px", background: "linear-gradient(90deg, #0891b2, #06b6d4, #0891b2)" }} />
+
+      <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-8 md:py-12">
         <div className="mb-4 flex items-center justify-end">
           <LanguageSwitcher className="bg-white/95" />
         </div>
 
-        <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/50">
+        <section
+          className="overflow-hidden rounded-2xl"
+          style={{ background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 8px 32px rgba(8,145,178,0.10), 0 2px 8px rgba(0,0,0,0.06)" }}
+        >
           <div className="grid gap-0 lg:grid-cols-[1fr_1.1fr]">
-            <div className="border-b border-slate-200 bg-slate-50/60 p-5 md:p-7 lg:border-b-0 lg:border-e">
+            {/* Brand panel */}
+            <div
+              className="border-b p-5 md:p-7 lg:border-b-0 lg:border-e"
+              style={{ background: "#f0fdff", borderColor: "#e0f2fe" }}
+            >
               <LoginBrandPanel />
             </div>
 
+            {/* Form panel */}
             <div className="p-5 md:p-7 lg:p-9" dir={isRtl ? "rtl" : "ltr"}>
-              <div className="mx-auto w-full max-w-xl rounded-2xl border border-slate-200 bg-slate-50/70 p-5 md:p-6">
+              <div
+                className="mx-auto w-full max-w-xl rounded-2xl p-5 md:p-6"
+                style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
+              >
+                {/* Logo */}
                 <div className="mb-5 flex justify-center">
                   <div className="relative w-[160px] sm:w-[190px] md:w-[210px]">
                     <Image
@@ -75,17 +94,20 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <h2 className="text-2xl font-semibold text-slate-900">{t("login.formTitle")}</h2>
-                <p className="mt-2 text-sm text-slate-600">{t("login.formSubtitle")}</p>
+                <h2 className="text-xl font-bold text-gray-900">{t("login.formTitle")}</h2>
+                <p className="mt-1.5 text-sm text-gray-500">{t("login.formSubtitle")}</p>
 
                 <form onSubmit={handleLogin} className="mt-6 space-y-4">
                   <div>
-                    <label htmlFor="login-email" className="mb-1 block text-sm font-medium text-slate-700">
+                    <label htmlFor="login-email" className="mb-1 block text-sm font-medium text-gray-700">
                       {t("login.email")}
                     </label>
                     <input
                       id="login-email"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-300/60 disabled:bg-slate-100"
+                      className="w-full rounded-xl border bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:ring-2 disabled:bg-gray-100"
+                      style={{ borderColor: "#cbd5e1" }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = "#0891b2"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(8,145,178,0.12)"; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.boxShadow = ""; }}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       type="email"
@@ -108,7 +130,7 @@ export default function LoginPage() {
                     onToggleVisibility={() => setShowPassword((previous) => !previous)}
                   />
 
-                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
                     <input
                       type="checkbox"
                       checked={rememberMe}
@@ -116,24 +138,26 @@ export default function LoginPage() {
                       className="sr-only"
                     />
                     <span
-                      className="inline-flex h-4 w-4 items-center justify-center rounded border border-slate-300 bg-white text-slate-800"
+                      className="inline-flex h-4 w-4 items-center justify-center rounded border bg-white text-gray-800 transition"
+                      style={{ borderColor: rememberMe ? "#0891b2" : "#cbd5e1", background: rememberMe ? "#ecfeff" : "#ffffff" }}
                       aria-hidden
                     >
-                      {rememberMe ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+                      {rememberMe ? <CheckSquare className="h-3.5 w-3.5" style={{ color: "#0891b2" }} /> : <Square className="h-3.5 w-3.5" />}
                     </span>
                     {t("login.rememberMe")}
                   </label>
 
                   {error ? (
                     <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                      {t("login.errorInline")}
+                      {error}
                     </div>
                   ) : null}
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 font-medium text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/60 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    style={{ background: "linear-gradient(135deg, #0891b2, #06b6d4)", boxShadow: "0 4px 14px rgba(8,145,178,0.28)" }}
                   >
                     <LogIn className="h-4 w-4" />
                     {loading ? t("login.submitting") : t("login.submit")}

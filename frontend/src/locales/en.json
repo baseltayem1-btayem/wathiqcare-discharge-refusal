@@ -132,7 +132,7 @@
       "refreshDocuments": "Refresh Documents"
     },
     "panel": {
-      "title": "Discharge Refusal Workflow",
+      "title": "Patient Discharge Plan Workflow",
       "empty": "Workflow will appear after case data is loaded.",
       "escalationRequired": "Escalation Required",
       "persisted24h": "Refusal has persisted more than 24 hours after discharge decision.",
@@ -145,14 +145,30 @@
       "policyMissing": "Missing {count} required policy documentation item(s)."
     },
     "stage": {
+      "medical_assessment": "Medical Assessment",
+      "legal_capacity_check": "Legal Capacity Check",
+      "authorized_signatory_identification": "Authorized Signatory Identification",
+      "discharge_plan_preparation": "Discharge Plan Preparation",
+      "forms_and_consent_presentation": "Forms and Consent Presentation",
+      "approval_or_refusal_path": "Approval or Refusal Path",
+      "legal_escalation_if_needed": "Legal Escalation if Needed",
+      "final_verification": "Final Verification",
+      "execute_discharge_or_hold": "Execute Discharge or Hold",
       "medical_discharge_decision": "Medical Discharge Decision",
       "initial_communication": "Initial Communication",
       "support_and_intervention": "Support and Intervention",
       "refusal_form": "Refusal Form",
       "official_notification": "Official Notification",
-      "escalation": "Escalation"
+      "escalation": "Escalation",
+      "closed": "Closed"
     },
-    "pageTitle": "Discharge Workflow",
+    "progressState": {
+      "completed": "Completed",
+      "current": "Current",
+      "upcoming": "Upcoming",
+      "escalationRequired": "Escalation required"
+    },
+    "pageTitle": "Patient Discharge Plan Workflow",
     "pageSubtitle": "Track discharge refusal workflow stages and case progress",
     "badge": "Workflow Management",
     "kpi": {
@@ -374,7 +390,7 @@
     "modulesSubtitle": "Navigate to specialized workflow modules",
     "module": {
       "workflow": {
-        "title": "Discharge Workflow",
+        "title": "Patient Discharge Plan Workflow",
         "description": "Track workflow stages and manage discharge refusal processes.",
         "action": "Open Module"
       },

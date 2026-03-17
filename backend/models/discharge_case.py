@@ -13,6 +13,20 @@ class DischargeCase(Base):
     patient_id = Column(String, ForeignKey("patients.id"), nullable=False)
     created_by = Column(String, ForeignKey("users.id"), nullable=False)
 
+    case_number = Column(String, nullable=True, unique=True)
+    patient_name = Column(String, nullable=True)
+    mrn = Column(String, nullable=True)
+    room_number = Column(String, nullable=True)
+    department = Column(String, nullable=True)
+    attending_physician_user_id = Column(String, ForeignKey("users.id"), nullable=True)
+    attending_physician_name = Column(String, nullable=True)
+    current_stage_code = Column(String, nullable=True, default="nurse_draft")
+    discharge_decision_date = Column(DateTime, nullable=True)
+    discharge_plan_summary = Column(Text, nullable=True)
+    accepted_at = Column(DateTime, nullable=True)
+    refused_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     status = Column(String, default="pending")
     refusal_reason = Column(Text)
 
@@ -26,7 +40,8 @@ class DischargeCase(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     patient = relationship("Patient")
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[created_by])
+    attending_physician = relationship("User", foreign_keys=[attending_physician_user_id])
     tenant = relationship("Tenant")
     workflow = relationship(
         "DischargeRefusalWorkflow",
@@ -44,5 +59,25 @@ class DischargeCase(Base):
         "DischargeWorkflowCaseDocumentation",
         back_populates="case",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+    workflow_tasks = relationship(
+        "WorkflowTask",
+        primaryjoin="DischargeCase.id == WorkflowTask.case_id",
+        cascade="all, delete-orphan",
+    )
+    workflow_notifications = relationship(
+        "WorkflowNotification",
+        primaryjoin="DischargeCase.id == WorkflowNotification.case_id",
+        cascade="all, delete-orphan",
+    )
+    discharge_execution_items = relationship(
+        "DischargeExecutionItem",
+        primaryjoin="DischargeCase.id == DischargeExecutionItem.case_id",
+        cascade="all, delete-orphan",
+    )
+    workflow_audit_logs = relationship(
+        "WorkflowAuditLog",
+        primaryjoin="DischargeCase.id == WorkflowAuditLog.case_id",
         cascade="all, delete-orphan",
     )

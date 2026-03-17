@@ -132,7 +132,7 @@
       "refreshDocuments": "تحديث المستندات"
     },
     "panel": {
-      "title": "سير عمل رفض الخروج",
+      "title": "إجراءات عمل خطة الخروج للمريض",
       "empty": "سيظهر سير العمل بعد تحميل بيانات الحالة.",
       "escalationRequired": "التصعيد مطلوب",
       "persisted24h": "استمر الرفض لأكثر من 24 ساعة بعد قرار الخروج.",
@@ -145,14 +145,30 @@
       "policyMissing": "يوجد {count} عنصر مفقود من عناصر توثيق السياسة المطلوبة."
     },
     "stage": {
+      "medical_assessment": "التقييم الطبي",
+      "legal_capacity_check": "التحقق من الأهلية القانونية",
+      "authorized_signatory_identification": "تحديد المفوض بالتوقيع",
+      "discharge_plan_preparation": "إعداد خطة الخروج",
+      "forms_and_consent_presentation": "عرض النماذج والموافقات",
+      "approval_or_refusal_path": "مسار الموافقة أو الرفض",
+      "legal_escalation_if_needed": "التصعيد القانوني عند الحاجة",
+      "final_verification": "التحقق النهائي",
+      "execute_discharge_or_hold": "تنفيذ الخروج أو الإيقاف",
       "medical_discharge_decision": "قرار الخروج الطبي",
       "initial_communication": "التواصل الأولي",
       "support_and_intervention": "الدعم والتدخل",
       "refusal_form": "نموذج الرفض",
       "official_notification": "الإشعار الرسمي",
-      "escalation": "التصعيد"
+      "escalation": "التصعيد",
+      "closed": "مغلقة"
     },
-    "pageTitle": "سير عمل الخروج",
+    "progressState": {
+      "completed": "مكتملة",
+      "current": "المرحلة الحالية",
+      "upcoming": "قادمة",
+      "escalationRequired": "مطلوب تصعيد"
+    },
+    "pageTitle": "إجراءات عمل خطة الخروج للمريض",
     "pageSubtitle": "تتبع مراحل سير عمل رفض الخروج وتقدم الحالات",
     "badge": "إدارة سير العمل",
     "kpi": {
@@ -374,7 +390,7 @@
     "modulesSubtitle": "الانتقال إلى وحدات سير العمل المتخصصة",
     "module": {
       "workflow": {
-        "title": "سير عمل الخروج",
+        "title": "إجراءات عمل خطة الخروج للمريض",
         "description": "تتبع مراحل سير العمل وإدارة عمليات رفض الخروج.",
         "action": "فتح الوحدة"
       },
