@@ -410,13 +410,13 @@ class ApiDischargeRefusalWorkflowService implements DischargeRefusalWorkflowServ
 
   async closeWorkflow(caseId: string, input: Record<string, unknown>): Promise<{ success: boolean; message: string; todo?: string }> {
     try {
-      await postWorkflowAction(caseId, "escalate_legal_compliance", input);
-      return { success: true, message: "Workflow progressed to escalation stage." };
+      await postWorkflowAction(caseId, "close_workflow", input);
+      return { success: true, message: "Workflow closed successfully." };
     } catch {
       return {
         success: false,
-        message: "Close workflow endpoint is not yet connected.",
-        todo: "Wire backend close workflow transition.",
+        message: "Close workflow request failed.",
+        todo: "Verify workflow metadata and retry close transition.",
       };
     }
   }

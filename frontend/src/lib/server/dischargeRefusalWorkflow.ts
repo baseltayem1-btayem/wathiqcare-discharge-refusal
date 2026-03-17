@@ -103,7 +103,8 @@ type WorkflowActionName =
     | "refer_social_services"
     | "generate_refusal_form"
     | "generate_financial_notice"
-    | "escalate_legal_compliance";
+    | "escalate_legal_compliance"
+    | "close_workflow";
 
 async function findCaseWithWorkflow(caseId: string) {
     return prisma.case.findUnique({
@@ -158,6 +159,17 @@ function toIsoString(value: Date | string | null | undefined): string | null {
     return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
+function firstIsoString(...values: Array<Date | string | null | undefined>): string | null {
+    for (const value of values) {
+        const normalized = toIsoString(value);
+        if (normalized) {
+            return normalized;
+        }
+    }
+
+    return null;
+}
+
 function nowIso(): string {
     return new Date().toISOString();
 }
@@ -178,6 +190,10 @@ function asStage(value: string | null): WorkflowStage | null {
 }
 
 function inferCurrentStage(workflow: Omit<WorkflowSnapshot, "documents">): WorkflowStage {
+    if (workflow.lifecycle_status === "closed" || workflow.case_status.toLowerCase() === "closed") {
+        return "closed";
+    }
+
     return (
         (workflow.escalated_at ? "escalation" : null) ||
         (workflow.financial_notice_generated_at ? "escalation" : null) ||
@@ -190,6 +206,10 @@ function inferCurrentStage(workflow: Omit<WorkflowSnapshot, "documents">): Workf
 }
 
 function inferStatus(workflow: Omit<WorkflowSnapshot, "documents">): WorkflowStatus {
+    if (workflow.lifecycle_status === "closed" || workflow.case_status.toLowerCase() === "closed") {
+        return "closed";
+    }
+
     if (workflow.escalated_at) {
         return "escalated";
     }
@@ -461,6 +481,28 @@ function buildWorkflowState(caseRecord: AuthorizedCaseRecord): Omit<WorkflowSnap
         baseWorkflow.escalation_required = true;
     }
 
+    if (!baseWorkflow.discharge_decision_at) {
+        const progressedBeyondDecision = Boolean(
+            baseWorkflow.refusal_started_at ||
+            baseWorkflow.initial_communication_at ||
+            baseWorkflow.support_and_intervention_at ||
+            baseWorkflow.refusal_form_generated_at ||
+            baseWorkflow.financial_notice_generated_at ||
+            baseWorkflow.escalated_at,
+        );
+
+        if (progressedBeyondDecision) {
+            baseWorkflow.discharge_decision_at = firstIsoString(
+                baseWorkflow.refusal_started_at,
+                baseWorkflow.initial_communication_at,
+                baseWorkflow.support_and_intervention_at,
+                baseWorkflow.refusal_form_generated_at,
+                baseWorkflow.financial_notice_generated_at,
+                baseWorkflow.escalated_at,
+            );
+        }
+    }
+
     return baseWorkflow;
 }
 
@@ -642,6 +684,14 @@ export async function applyWorkflowAction(args: {
         (typeof payload.generated_at === "string" && toIsoString(payload.generated_at)) ||
         nowIso();
 
+    const explicitDischargeDecisionAt =
+        typeof payload.discharge_decision_at === "string"
+            ? toIsoString(payload.discharge_decision_at)
+            : null;
+    if (explicitDischargeDecisionAt) {
+        workflow.discharge_decision_at = explicitDischargeDecisionAt;
+    }
+
     workflow.patient_name = workflow.patient_name || caseRecord.patientName;
     workflow.patient_id_number = workflow.patient_id_number || caseRecord.patientIdNumber;
     workflow.medical_record_number = workflow.medical_record_number || caseRecord.medicalRecordNo;
@@ -703,6 +753,7 @@ export async function applyWorkflowAction(args: {
             workflow.case_status = "social_services_referred";
             break;
         case "generate_refusal_form":
+            workflow.discharge_decision_at = workflow.discharge_decision_at || timestamp;
             workflow.support_and_intervention_at = workflow.support_and_intervention_at || timestamp;
             workflow.social_services_referred_at = workflow.social_services_referred_at || workflow.support_and_intervention_at;
             workflow.refusal_form_generated_at = timestamp;
@@ -713,6 +764,7 @@ export async function applyWorkflowAction(args: {
             generatedDocument = await createGeneratedDocument(auth, workflow, payload, "discharge_refusal_form");
             break;
         case "generate_financial_notice":
+            workflow.discharge_decision_at = workflow.discharge_decision_at || timestamp;
             workflow.refusal_form_generated_at = workflow.refusal_form_generated_at || timestamp;
             workflow.financial_notice_generated_at = timestamp;
             workflow.escalation_due_at = workflow.escalation_due_at || timestamp;
@@ -725,6 +777,7 @@ export async function applyWorkflowAction(args: {
             generatedDocument = await createGeneratedDocument(auth, workflow, payload, "financial_responsibility_notice");
             break;
         case "escalate_legal_compliance":
+            workflow.discharge_decision_at = workflow.discharge_decision_at || timestamp;
             workflow.financial_notice_generated_at = workflow.financial_notice_generated_at || timestamp;
             workflow.escalation_due_at = workflow.escalation_due_at || timestamp;
             workflow.escalation_required = true;
@@ -733,6 +786,13 @@ export async function applyWorkflowAction(args: {
             workflow.status = "escalated";
             workflow.lifecycle_status = "escalated";
             workflow.case_status = "escalated";
+            break;
+        case "close_workflow":
+            workflow.discharge_decision_at = workflow.discharge_decision_at || timestamp;
+            workflow.current_stage = "closed";
+            workflow.status = "closed";
+            workflow.lifecycle_status = "closed";
+            workflow.case_status = "closed";
             break;
         default:
             throw new ApiError(400, "Unsupported workflow action");
