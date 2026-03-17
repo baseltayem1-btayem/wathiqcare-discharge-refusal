@@ -10,6 +10,8 @@
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-gutter: stable;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .tracker-list {
@@ -86,6 +88,9 @@
     gap: 0.2rem;
     padding-top: 0.15rem;
     max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
 }
 
 .step-title {
@@ -93,12 +98,18 @@
     font-weight: 600;
     line-height: 1.25rem;
     color: #334155;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
 }
 
 .step-subtitle {
     font-size: 0.75rem;
     line-height: 1rem;
     color: #64748b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
 }
 
 .step-button.is-current-title .step-title {

@@ -12,6 +12,9 @@
     border-bottom: 1px solid #e2e8f0;
     background: #ffffff;
     padding: 1.25rem clamp(1rem, 3vw, 2rem);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .app-header h1 {

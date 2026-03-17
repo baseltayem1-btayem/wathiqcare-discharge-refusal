@@ -5,6 +5,7 @@ import json
 import mimetypes
 import os
 import re
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -25,6 +26,19 @@ EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 EXPECTED_MICROSOFT_TENANT_ID = "08b4493f-d1e2-4c61-b46f-d652ad477fa6"
 EXPECTED_MICROSOFT_CLIENT_ID = "d25f4d4d-51bf-4be8-b4fd-ce8744434eef"
 EXPECTED_MICROSOFT_SENDER_EMAIL = "admin@wathiqcare.med.sa"
+RETRYABLE_HTTP_STATUS_CODES = {429, 500, 502, 503, 504}
+MAX_GRAPH_REQUEST_ATTEMPTS = 3
+GRAPH_REQUEST_TIMEOUT_SECONDS = 30
+GRAPH_TOKEN_REFRESH_BUFFER_SECONDS = 60
+GRAPH_MIN_TOKEN_TTL_SECONDS = 60
+
+
+class EmailConfigurationError(RuntimeError):
+    """Raised when Microsoft Graph runtime configuration is invalid."""
+
+
+class EmailDeliveryError(RuntimeError):
+    """Raised when message delivery fails at the provider/network layer."""
 
 
 @dataclass(frozen=True)
@@ -52,16 +66,16 @@ class EmailServiceConfig:
             if not value
         ]
         if missing:
-            raise ValueError(f"Missing Microsoft Graph email configuration: {', '.join(missing)}")
+            raise EmailConfigurationError(f"Missing Microsoft Graph email configuration: {', '.join(missing)}")
 
         if tenant_id != EXPECTED_MICROSOFT_TENANT_ID:
-            raise ValueError("MICROSOFT_TENANT_ID is not authorized for this deployment")
+            raise EmailConfigurationError("MICROSOFT_TENANT_ID is not authorized for this deployment")
 
         if client_id != EXPECTED_MICROSOFT_CLIENT_ID:
-            raise ValueError("MICROSOFT_CLIENT_ID is not authorized for this deployment")
+            raise EmailConfigurationError("MICROSOFT_CLIENT_ID is not authorized for this deployment")
 
         if sender_email != EXPECTED_MICROSOFT_SENDER_EMAIL:
-            raise ValueError("MICROSOFT_SENDER_EMAIL must be admin@wathiqcare.med.sa")
+            raise EmailConfigurationError("MICROSOFT_SENDER_EMAIL must be admin@wathiqcare.med.sa")
 
         return EmailServiceConfig(
             tenant_id=tenant_id,
@@ -74,40 +88,53 @@ class EmailServiceConfig:
 class MicrosoftGraphClient:
     def __init__(self, config: EmailServiceConfig):
         self.config = config
+        self._cached_access_token: Optional[str] = None
+        self._access_token_expires_at_epoch = 0.0
 
-    @staticmethod
-    def _post_form(url: str, form_data: Dict[str, str]) -> Dict[str, Any]:
+    def _request_with_retry(self, req: urllib_request.Request) -> str:
+        for attempt in range(1, MAX_GRAPH_REQUEST_ATTEMPTS + 1):
+            try:
+                with urllib_request.urlopen(req, timeout=GRAPH_REQUEST_TIMEOUT_SECONDS) as response:
+                    return response.read().decode("utf-8")
+            except HTTPError as exc:
+                detail = exc.read().decode("utf-8", errors="ignore") if hasattr(exc, "read") else str(exc)
+                is_retryable = exc.code in RETRYABLE_HTTP_STATUS_CODES and attempt < MAX_GRAPH_REQUEST_ATTEMPTS
+                if is_retryable:
+                    time.sleep(2 ** (attempt - 1))
+                    continue
+                raise EmailDeliveryError(f"HTTP {exc.code}: {detail}") from exc
+            except URLError as exc:
+                if attempt < MAX_GRAPH_REQUEST_ATTEMPTS:
+                    time.sleep(2 ** (attempt - 1))
+                    continue
+                raise EmailDeliveryError(f"Network error: {exc}") from exc
+
+        raise EmailDeliveryError("Microsoft Graph request failed after retries")
+
+    def _post_form(self, url: str, form_data: Dict[str, str]) -> Dict[str, Any]:
         encoded = urllib_parse.urlencode(form_data).encode("utf-8")
         req = urllib_request.Request(url, data=encoded, method="POST")
         req.add_header("Content-Type", "application/x-www-form-urlencoded")
 
+        body = self._request_with_retry(req)
         try:
-            with urllib_request.urlopen(req, timeout=30) as response:
-                body = response.read().decode("utf-8")
-                return json.loads(body or "{}")
-        except HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="ignore") if hasattr(exc, "read") else str(exc)
-            raise ValueError(f"HTTP {exc.code}: {detail}") from exc
-        except URLError as exc:
-            raise ValueError(f"Network error: {exc}") from exc
+            return json.loads(body or "{}")
+        except json.JSONDecodeError as exc:
+            raise EmailDeliveryError("Invalid JSON response from Microsoft Graph token endpoint") from exc
 
-    @staticmethod
-    def _post_json(url: str, payload: Dict[str, Any], headers: Dict[str, str]) -> None:
+    def _post_json(self, url: str, payload: Dict[str, Any], headers: Dict[str, str]) -> None:
         raw = json.dumps(payload).encode("utf-8")
         req = urllib_request.Request(url, data=raw, method="POST")
         for key, value in headers.items():
             req.add_header(key, value)
 
-        try:
-            with urllib_request.urlopen(req, timeout=30):
-                return
-        except HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="ignore") if hasattr(exc, "read") else str(exc)
-            raise ValueError(f"HTTP {exc.code}: {detail}") from exc
-        except URLError as exc:
-            raise ValueError(f"Network error: {exc}") from exc
+        self._request_with_retry(req)
 
-    def acquire_access_token(self) -> str:
+    def acquire_access_token(self, *, force_refresh: bool = False) -> str:
+        now = time.time()
+        if not force_refresh and self._cached_access_token and now < self._access_token_expires_at_epoch:
+            return self._cached_access_token
+
         token_url = f"https://login.microsoftonline.com/{self.config.tenant_id}/oauth2/v2.0/token"
         payload = self._post_form(
             token_url,
@@ -118,10 +145,23 @@ class MicrosoftGraphClient:
                 "grant_type": "client_credentials",
             },
         )
-        access_token = payload.get("access_token")
+        access_token = str(payload.get("access_token") or "").strip()
         if not access_token:
-            raise ValueError("Microsoft Graph token response missing access_token")
-        return str(access_token)
+            raise EmailDeliveryError("Microsoft Graph token response missing access_token")
+
+        expires_in_raw = payload.get("expires_in")
+        try:
+            expires_in = int(expires_in_raw)
+        except (TypeError, ValueError):
+            expires_in = 0
+
+        ttl = GRAPH_MIN_TOKEN_TTL_SECONDS
+        if expires_in > 0:
+            ttl = max(GRAPH_MIN_TOKEN_TTL_SECONDS, expires_in - GRAPH_TOKEN_REFRESH_BUFFER_SECONDS)
+
+        self._cached_access_token = access_token
+        self._access_token_expires_at_epoch = now + ttl
+        return access_token
 
     def send_mail(
         self,
@@ -133,7 +173,6 @@ class MicrosoftGraphClient:
         cc: Sequence[str],
         attachments: Sequence[Dict[str, Any]],
     ) -> None:
-        token = self.acquire_access_token()
         graph_url = f"https://graph.microsoft.com/v1.0/users/{self.config.sender_email}/sendMail"
 
         message_payload: Dict[str, Any] = {
@@ -153,14 +192,32 @@ class MicrosoftGraphClient:
         if attachments:
             message_payload["attachments"] = attachments
 
-        self._post_json(
-            graph_url,
-            {"message": message_payload, "saveToSentItems": True},
-            {
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json",
-            },
-        )
+        request_payload = {"message": message_payload, "saveToSentItems": True}
+        token = self.acquire_access_token()
+
+        try:
+            self._post_json(
+                graph_url,
+                request_payload,
+                {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                },
+            )
+        except EmailDeliveryError as exc:
+            if "HTTP 401" not in str(exc):
+                raise
+
+            # Refresh expired/invalid token once, then retry the send call.
+            refreshed_token = self.acquire_access_token(force_refresh=True)
+            self._post_json(
+                graph_url,
+                request_payload,
+                {
+                    "Authorization": f"Bearer {refreshed_token}",
+                    "Content-Type": "application/json",
+                },
+            )
 
 
 class EmailService:
@@ -229,18 +286,28 @@ class EmailService:
             graph_attachments: List[Dict[str, Any]] = []
             metadata: List[Dict[str, Any]] = []
 
-            all_document_ids = [item.get("document_id") for item in attachments if item.get("document_id")]
-            all_document_ids.extend([doc_id for doc_id in attachment_document_ids if doc_id])
+            all_document_ids = [str(item.get("document_id")) for item in attachments if item.get("document_id")]
+            all_document_ids.extend([str(doc_id) for doc_id in attachment_document_ids if doc_id])
 
-            for document_id in all_document_ids:
-                document = (
+            unique_document_ids: List[str] = []
+            for doc_id in all_document_ids:
+                if doc_id not in unique_document_ids:
+                    unique_document_ids.append(doc_id)
+
+            document_by_id: Dict[str, DischargeWorkflowDocument] = {}
+            if unique_document_ids:
+                rows = (
                     db.query(DischargeWorkflowDocument)
                     .filter(
-                        DischargeWorkflowDocument.id == str(document_id),
                         DischargeWorkflowDocument.tenant_id == tenant_id,
+                        DischargeWorkflowDocument.id.in_(unique_document_ids),
                     )
-                    .first()
+                    .all()
                 )
+                document_by_id = {row.id: row for row in rows}
+
+            for document_id in unique_document_ids:
+                document = document_by_id.get(document_id)
                 if not document:
                     raise ValueError(f"Attachment document not found: {document_id}")
                 if case_id and document.case_id != case_id:
@@ -431,7 +498,7 @@ class EmailService:
                 "cc": cc_list,
                 "sent_at": sent_at.isoformat(),
             }
-        except Exception as exc:
+        except EmailDeliveryError as exc:
             log = self._create_log(
                 tenant_id=tenant_id,
                 case_id=case_id,
@@ -446,7 +513,7 @@ class EmailService:
                 attachments_meta=attachment_meta,
                 sent_at=None,
             )
-            raise ValueError(f"Email sending failed (log_id={log.id}): {exc}") from exc
+            raise EmailDeliveryError(f"Email sending failed (log_id={log.id}): {exc}") from exc
 
     def list_logs(self, *, tenant_id: str, case_id: str) -> List[EmailLog]:
         db = SessionLocal()

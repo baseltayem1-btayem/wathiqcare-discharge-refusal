@@ -108,13 +108,97 @@
     "title": "New Case",
     "titleEdit": "Edit Case",
     "subtitle": "Capture policy-required details and initialize discharge-refusal workflow.",
+    "pageTitle": "Case Registration and Discharge Plan",
+    "pageSubtitle": "Simplified form: basic case details, then discharge planning and communication",
+    "backDashboard": "Back to Dashboard",
     "backToCaseDetails": "Back to Case Details",
     "loadingExisting": "Loading existing case data...",
     "failedLoad": "Failed to load case",
     "failedSave": "Failed to save case",
+    "failedCreate": "Unable to create the case at the moment.",
+    "successCreated": "Case registered and submitted successfully.",
     "saveAsNew": "Save as New Case",
     "create": "Create Case",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "sections": {
+      "registrationTitle": "1) Case Registration Data",
+      "planTitle": "2) Create Discharge Plan",
+      "instructionsTitle": "3) Discharge Instructions",
+      "routeTitle": "4) Select Discharge Route",
+      "notificationTitle": "5) Notification and Signature"
+    },
+    "labels": {
+      "sendDischargeOrderRequest": "Send a request to physician to issue discharge order",
+      "medicalCondition": "Current Medical Condition",
+      "preferredLanguage": "Preferred Language",
+      "livingAlone": "Is the patient living alone?",
+      "hasCaregiver": "Do you have a caregiver or family member available to assist with post-discharge care?",
+      "dischargeDate": "Date of Discharge (MM-DD-YYYY)",
+      "signatureOptional": "Signature (optional and non-blocking)"
+    },
+    "placeholders": {
+      "admissionDepartment": "Admitting department",
+      "dateOfBirth": "Date of Birth",
+      "primaryMobile": "Primary Mobile Number",
+      "email": "Email",
+      "gender": "Gender",
+      "homeAddress": "Home Address",
+      "streetName": "Street Name",
+      "cityName": "City",
+      "districtName": "District",
+      "postalCode": "Postal Code",
+      "poBox": "PO Box",
+      "admissionReason": "Reason for hospital admission",
+      "dischargeDateFormat": "MM-DD-YYYY",
+      "preferredDestination": "Preferred Discharge Destination",
+      "additionalInstructions": "Additional Comments or Instructions",
+      "medicationInstructions": "Medication usage instructions",
+      "followupAppointment": "Follow-up appointment",
+      "contactInfoAfterDischarge": "Contact information"
+    },
+    "select": {
+      "pleaseSelect": "Please Select",
+      "arabic": "Arabic",
+      "english": "English",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "dischargePlanType": {
+      "outpatientFollowup": "Discharge with follow-up",
+      "homecareRisk": "Discharge with home care plan"
+    },
+    "notification": {
+      "emailPrimary": "Send by email (primary option)"
+    },
+    "signatureMethod": {
+      "email": "Email Acknowledgment",
+      "nafez": "Nafath",
+      "tablet": "Tablet Signature"
+    },
+    "actions": {
+      "submit": "Submit",
+      "resendOrder": "Resend discharge order request to physician",
+      "enableEmailDelivery": "Enable email delivery"
+    }
+  },
+  "archive": {
+    "title": "Archive",
+    "subtitle": "Search previous cases by name, identity number, or case file number",
+    "backDashboard": "Back to Dashboard",
+    "searchPlaceholder": "Search by name / ID / MRN / case number",
+    "search": "Search",
+    "searching": "Searching...",
+    "table": {
+      "recordNumber": "Record Number",
+      "patientName": "Patient Name",
+      "workflowProgress": "Workflow Progress",
+      "status": "Status",
+      "date": "Date",
+      "action": "Action"
+    },
+    "noSavedStages": "No saved stages",
+    "open": "Open",
+    "noMatchingResults": "No matching results."
   },
   "workflow": {
     "action": {
@@ -363,7 +447,37 @@
   "dashboard": {
     "pageTitle": "Dashboard",
     "pageSubtitle": "Comprehensive overview of discharge refusal cases, workflows, and compliance metrics",
+    "quickStartSubtitle": "Get started quickly: register a new case, manage an existing case, or search the archive",
     "badge": "Command Center",
+    "actions": {
+      "newCase": {
+        "title": "Register New Case",
+        "description": "Create the case file and start the discharge planning workflow.",
+        "cta": "Open Form"
+      },
+      "existingCase": {
+        "title": "Take Action on Existing Case",
+        "description": "Review open cases and complete pending actions.",
+        "cta": "View Cases"
+      },
+      "archive": {
+        "title": "Search Archive",
+        "description": "Quick access to previous cases using patient name or case number.",
+        "cta": "Open Archive"
+      }
+    },
+    "health": {
+      "loading": "Loading system health...",
+      "unavailable": "System health check unavailable.",
+      "viewLaunchStatus": "View Launch Status",
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "dbReachable": "reachable",
+      "dbUnreachable": "unreachable",
+      "statusLine": "DB {dbStatus} · {active}/{total} modules active · Inspected at {inspectedAt}",
+      "moduleActive": "Active",
+      "moduleOff": "Off"
+    },
     "kpi": {
       "totalCases": "Total Cases",
       "totalCasesSubtitle": "All discharge refusal cases",

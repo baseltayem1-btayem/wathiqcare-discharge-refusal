@@ -62,6 +62,12 @@ class EmailSendResponse(BaseModel):
     sent_at: Optional[str] = None
 
 
+class EmailCapabilitiesResponse(BaseModel):
+    available: bool
+    provider: str
+    reason: Optional[str] = None
+
+
 class EmailLogResponse(BaseModel):
     id: str
     case_id: Optional[str]

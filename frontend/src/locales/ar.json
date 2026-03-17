@@ -108,13 +108,97 @@
     "title": "حالة جديدة",
     "titleEdit": "تعديل الحالة",
     "subtitle": "تسجيل البيانات المطلوبة حسب السياسة وبدء سير عمل رفض الخروج.",
+    "pageTitle": "تسجيل الحالة وخطة الخروج",
+    "pageSubtitle": "نموذج مبسط: بيانات الحالة الأساسية ثم خطة الخروج والتواصل",
+    "backDashboard": "العودة للوحة التحكم",
     "backToCaseDetails": "العودة لتفاصيل الحالة",
     "loadingExisting": "جار تحميل بيانات الحالة الحالية...",
     "failedLoad": "فشل تحميل الحالة",
     "failedSave": "فشل حفظ الحالة",
+    "failedCreate": "تعذر إنشاء الحالة حالياً.",
+    "successCreated": "تم تسجيل الحالة وإرسالها بنجاح.",
     "saveAsNew": "حفظ كحالة جديدة",
     "create": "إنشاء الحالة",
-    "saving": "جار الحفظ..."
+    "saving": "جار الحفظ...",
+    "sections": {
+      "registrationTitle": "1) بيانات تسجيل الحالة",
+      "planTitle": "2) إنشاء خطة الخروج",
+      "instructionsTitle": "3) تعليمات الخروج",
+      "routeTitle": "4) اختيار خطة الخروج",
+      "notificationTitle": "5) الإشعار والتوقيع"
+    },
+    "labels": {
+      "sendDischargeOrderRequest": "إرسال طلب للطبيب لإصدار أمر الخروج",
+      "medicalCondition": "الحالة الطبية الحالية",
+      "preferredLanguage": "اللغة المفضلة",
+      "livingAlone": "هل يعيش المريض بمفرده؟",
+      "hasCaregiver": "هل يوجد مقدم رعاية أو أحد أفراد الأسرة متاح للمساعدة في الرعاية بعد الخروج؟",
+      "dischargeDate": "تاريخ الخروج (MM-DD-YYYY)",
+      "signatureOptional": "التوقيع (اختياري ولا يعرقل الإجراء)"
+    },
+    "placeholders": {
+      "admissionDepartment": "القسم الذي تم التنويم بناءً على طلبه",
+      "dateOfBirth": "تاريخ الميلاد",
+      "primaryMobile": "رقم الجوال الرئيسي",
+      "email": "البريد الإلكتروني",
+      "gender": "الجنس",
+      "homeAddress": "عنوان المنزل",
+      "streetName": "اسم الشارع",
+      "cityName": "اسم المدينة",
+      "districtName": "الحي",
+      "postalCode": "الرمز البريدي",
+      "poBox": "صندوق البريد",
+      "admissionReason": "سبب الدخول للمستشفى",
+      "dischargeDateFormat": "MM-DD-YYYY",
+      "preferredDestination": "الوجهة المفضلة بعد الخروج",
+      "additionalInstructions": "ملاحظات أو تعليمات إضافية",
+      "medicationInstructions": "تعليمات استخدام الأدوية",
+      "followupAppointment": "موعد المراجعة",
+      "contactInfoAfterDischarge": "بيانات التواصل"
+    },
+    "select": {
+      "pleaseSelect": "يرجى الاختيار",
+      "arabic": "العربية",
+      "english": "الإنجليزية",
+      "yes": "نعم",
+      "no": "لا"
+    },
+    "dischargePlanType": {
+      "outpatientFollowup": "خروج مع المراجعة",
+      "homecareRisk": "خروج مع خطة رعاية منزلية"
+    },
+    "notification": {
+      "emailPrimary": "الإرسال بالبريد الإلكتروني (الخيار الأساسي)"
+    },
+    "signatureMethod": {
+      "email": "إقرار عبر البريد الإلكتروني",
+      "nafez": "نفاذ",
+      "tablet": "توقيع الجهاز اللوحي"
+    },
+    "actions": {
+      "submit": "إرسال",
+      "resendOrder": "إعادة إرسال طلب أمر الخروج للطبيب",
+      "enableEmailDelivery": "اعتماد الإرسال بالبريد"
+    }
+  },
+  "archive": {
+    "title": "الأرشيف",
+    "subtitle": "البحث في الحالات السابقة بالاسم أو رقم الهوية أو رقم الملف",
+    "backDashboard": "العودة للوحة التحكم",
+    "searchPlaceholder": "ابحث بالاسم / الهوية / الملف الطبي / رقم القضية",
+    "search": "بحث",
+    "searching": "جارٍ البحث...",
+    "table": {
+      "recordNumber": "رقم الملف",
+      "patientName": "اسم المريض",
+      "workflowProgress": "تقدم المراحل",
+      "status": "الحالة",
+      "date": "التاريخ",
+      "action": "إجراء"
+    },
+    "noSavedStages": "لا توجد مراحل محفوظة",
+    "open": "فتح",
+    "noMatchingResults": "لا توجد نتائج مطابقة."
   },
   "workflow": {
     "action": {
@@ -363,7 +447,37 @@
   "dashboard": {
     "pageTitle": "لوحة التحكم",
     "pageSubtitle": "نظرة شاملة على حالات رفض الخروج وسير العمل ومؤشرات الامتثال",
+    "quickStartSubtitle": "ابدأ بسرعة: تسجيل قضية جديدة، إدارة قضية مسجلة، أو البحث في الأرشيف",
     "badge": "مركز القيادة",
+    "actions": {
+      "newCase": {
+        "title": "تسجيل قضية جديدة",
+        "description": "إنشاء ملف الحالة وبدء مسار التخطيط للخروج.",
+        "cta": "فتح النموذج"
+      },
+      "existingCase": {
+        "title": "اتخاذ إجراء على قضية مسجلة",
+        "description": "استعراض القضايا المفتوحة واستكمال الإجراءات.",
+        "cta": "عرض القضايا"
+      },
+      "archive": {
+        "title": "البحث في الأرشيف",
+        "description": "الوصول السريع للحالات السابقة مع البحث بالاسم أو رقم الملف.",
+        "cta": "فتح الأرشيف"
+      }
+    },
+    "health": {
+      "loading": "جار تحميل حالة النظام...",
+      "unavailable": "فحص حالة النظام غير متاح.",
+      "viewLaunchStatus": "عرض حالة الإطلاق",
+      "healthy": "سليم",
+      "degraded": "متدهور",
+      "dbReachable": "متاحة",
+      "dbUnreachable": "غير متاحة",
+      "statusLine": "قاعدة البيانات {dbStatus} · {active}/{total} وحدات نشطة · وقت الفحص {inspectedAt}",
+      "moduleActive": "نشط",
+      "moduleOff": "متوقف"
+    },
     "kpi": {
       "totalCases": "إجمالي الحالات",
       "totalCasesSubtitle": "جميع حالات رفض الخروج",

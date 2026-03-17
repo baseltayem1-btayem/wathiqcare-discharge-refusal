@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Archive, ArrowRight, ClipboardCheck, PlusCircle, Rocket, Search, TrendingUp } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
 type CaseItem = {
@@ -28,6 +29,7 @@ type SystemInspectData = {
 };
 
 export default function DashboardPage() {
+  const { t, locale } = useI18n();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [launch, setLaunch] = useState<SystemInspectData | null>(null);
   const [launchLoading, setLaunchLoading] = useState(true);
@@ -72,8 +74,8 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <AppShell
-        title="لوحة التحكم | Dashboard"
-        subtitle="ابدأ بسرعة: تسجيل قضية جديدة، إدارة قضية مسجلة، أو البحث في الأرشيف"
+        title={t("dashboard.pageTitle")}
+        subtitle={t("dashboard.quickStartSubtitle")}
       >
         <section className="grid gap-4 md:grid-cols-3">
           <Link
@@ -82,11 +84,11 @@ export default function DashboardPage() {
           >
             <div className="inline-flex items-center gap-2 text-slate-900">
               <PlusCircle className="h-5 w-5 text-emerald-600" />
-              <h2 className="text-base font-semibold">تسجيل قضية جديدة</h2>
+              <h2 className="text-base font-semibold">{t("dashboard.actions.newCase.title")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">إنشاء ملف الحالة وبدء مسار التخطيط للخروج.</p>
+            <p className="mt-2 text-sm text-slate-600">{t("dashboard.actions.newCase.description")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-emerald-700">
-              فتح النموذج <ArrowRight className="h-3.5 w-3.5" />
+              {t("dashboard.actions.newCase.cta")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
 
@@ -96,11 +98,11 @@ export default function DashboardPage() {
           >
             <div className="inline-flex items-center gap-2 text-slate-900">
               <ClipboardCheck className="h-5 w-5 text-blue-600" />
-              <h2 className="text-base font-semibold">اتخاذ إجراء على قضية مسجلة</h2>
+              <h2 className="text-base font-semibold">{t("dashboard.actions.existingCase.title")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">استعراض القضايا المفتوحة واستكمال الإجراءات.</p>
+            <p className="mt-2 text-sm text-slate-600">{t("dashboard.actions.existingCase.description")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-700">
-              عرض القضايا <ArrowRight className="h-3.5 w-3.5" />
+              {t("dashboard.actions.existingCase.cta")} <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </Link>
 
@@ -110,43 +112,43 @@ export default function DashboardPage() {
           >
             <div className="inline-flex items-center gap-2 text-slate-900">
               <Archive className="h-5 w-5 text-amber-600" />
-              <h2 className="text-base font-semibold">البحث في الأرشيف</h2>
+              <h2 className="text-base font-semibold">{t("dashboard.actions.archive.title")}</h2>
             </div>
-            <p className="mt-2 text-sm text-slate-600">الوصول السريع للحالات السابقة مع البحث بالاسم أو رقم الملف.</p>
+            <p className="mt-2 text-sm text-slate-600">{t("dashboard.actions.archive.description")}</p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-amber-700">
-              فتح الأرشيف <Search className="h-3.5 w-3.5" />
+              {t("dashboard.actions.archive.cta")} <Search className="h-3.5 w-3.5" />
             </span>
           </Link>
         </section>
 
         <section className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs text-slate-500">إجمالي القضايا</p>
+            <p className="text-xs text-slate-500">{t("dashboard.kpi.totalCases")}</p>
             <p className="mt-1 text-xl font-bold text-slate-900">{stats.total}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs text-slate-500">القضايا المفتوحة</p>
+            <p className="text-xs text-slate-500">{t("dashboard.kpi.openCases")}</p>
             <p className="mt-1 text-xl font-bold text-blue-700">{stats.open}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs text-slate-500">الحالات المؤرشفة/المغلقة</p>
+            <p className="text-xs text-slate-500">{t("dashboard.kpi.closedCases")}</p>
             <p className="mt-1 text-xl font-bold text-emerald-700">{stats.closed}</p>
           </div>
         </section>
 
         {launchLoading ? (
           <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-            Loading system health...
+            {t("dashboard.health.loading")}
           </div>
         ) : launchError ? (
           <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            System health check unavailable. <Link href="/launch-status" className="underline">View Launch Status</Link>
+            {t("dashboard.health.unavailable")} <Link href="/launch-status" className="underline">{t("dashboard.health.viewLaunchStatus")}</Link>
           </div>
         ) : launch ? (
           <div
             className={`mt-6 rounded-2xl border p-4 ${launch.status === "healthy"
-                ? "border-emerald-200 bg-emerald-50"
-                : "border-amber-200 bg-amber-50"
+              ? "border-emerald-200 bg-emerald-50"
+              : "border-amber-200 bg-amber-50"
               }`}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -162,25 +164,30 @@ export default function DashboardPage() {
                     className={`text-sm font-semibold ${launch.status === "healthy" ? "text-emerald-900" : "text-amber-900"
                       }`}
                   >
-                    {launch.api.title} v{launch.api.version} - {launch.status === "healthy" ? "Healthy" : "Degraded"}
+                    {launch.api.title} v{launch.api.version} - {launch.status === "healthy" ? t("dashboard.health.healthy") : t("dashboard.health.degraded")}
                   </h3>
                   <p
                     className={`mt-0.5 text-xs ${launch.status === "healthy" ? "text-emerald-700" : "text-amber-700"
                       }`}
                   >
-                    DB {launch.database.reachable ? "reachable" : "unreachable"} · {launch.modules.filter((m) => m.enabled).length}/{launch.modules.length} modules active · Inspected at {new Date(launch.api.inspected_at).toLocaleTimeString()}
+                    {t("dashboard.health.statusLine", {
+                      dbStatus: launch.database.reachable ? t("dashboard.health.dbReachable") : t("dashboard.health.dbUnreachable"),
+                      active: launch.modules.filter((m) => m.enabled).length,
+                      total: launch.modules.length,
+                      inspectedAt: new Date(launch.api.inspected_at).toLocaleTimeString(locale),
+                    })}
                   </p>
                 </div>
               </div>
               <Link
                 href="/launch-status"
                 className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium ${launch.status === "healthy"
-                    ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                    : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                  ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                  : "bg-amber-100 text-amber-800 hover:bg-amber-200"
                   }`}
               >
                 <Rocket className="h-3.5 w-3.5" />
-                Launch Status
+                {t("dashboard.health.viewLaunchStatus")}
               </Link>
             </div>
 
@@ -192,7 +199,7 @@ export default function DashboardPage() {
                 >
                   <span className="text-slate-700">{mod.description}</span>
                   <span className={mod.enabled ? "font-medium text-emerald-700" : "font-medium text-slate-400"}>
-                    {mod.enabled ? "Active" : "Off"}
+                    {mod.enabled ? t("dashboard.health.moduleActive") : t("dashboard.health.moduleOff")}
                   </span>
                 </div>
               ))}

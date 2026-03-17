@@ -6,6 +6,7 @@ import { ArrowLeft, Search } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import WorkflowProgress from "@/components/ui/WorkflowProgress";
+import { useI18n } from "@/i18n/I18nProvider";
 import { buildMetadataWorkflowProgress } from "@/lib/workflowProgress";
 import { apiFetch } from "@/utils/api";
 
@@ -28,6 +29,7 @@ type CaseItem = {
 };
 
 export default function ArchivePage() {
+    const { t, lang, isRtl } = useI18n();
     const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState<CaseItem[]>([]);
@@ -89,15 +91,15 @@ export default function ArchivePage() {
     return (
         <AuthGuard>
             <AppShell
-                title="الأرشيف"
-                subtitle="البحث في الحالات السابقة بالاسم أو رقم الهوية أو رقم الملف"
+                title={t("archive.title")}
+                subtitle={t("archive.subtitle")}
                 actions={
                     <Link
                         href="/dashboard"
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
                     >
                         <ArrowLeft className="h-4 w-4" />
-                        العودة للوحة التحكم
+                        {t("archive.backDashboard")}
                     </Link>
                 }
             >
@@ -106,7 +108,7 @@ export default function ArchivePage() {
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="ابحث بالاسم / الهوية / الملف الطبي / رقم القضية"
+                            placeholder={t("archive.searchPlaceholder")}
                             className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
                         />
                         <button
@@ -116,7 +118,7 @@ export default function ArchivePage() {
                             className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
                         >
                             <Search className="h-4 w-4" />
-                            {loading ? "جارٍ البحث..." : "بحث"}
+                            {loading ? t("archive.searching") : t("archive.search")}
                         </button>
                     </div>
 
@@ -125,12 +127,12 @@ export default function ArchivePage() {
                             <table className="w-full min-w-[600px] text-sm">
                                 <thead className="bg-slate-100 text-slate-700">
                                     <tr>
-                                        <th className="px-3 py-2 text-start">رقم الملف</th>
-                                        <th className="px-3 py-2 text-start">اسم المريض</th>
-                                        <th className="px-3 py-2 text-start">تقدم المراحل</th>
-                                        <th className="px-3 py-2 text-start">الحالة</th>
-                                        <th className="px-3 py-2 text-start">التاريخ</th>
-                                        <th className="px-3 py-2 text-start">إجراء</th>
+                                        <th className="px-3 py-2 text-start">{t("archive.table.recordNumber")}</th>
+                                        <th className="px-3 py-2 text-start">{t("archive.table.patientName")}</th>
+                                        <th className="px-3 py-2 text-start">{t("archive.table.workflowProgress")}</th>
+                                        <th className="px-3 py-2 text-start">{t("archive.table.status")}</th>
+                                        <th className="px-3 py-2 text-start">{t("archive.table.date")}</th>
+                                        <th className="px-3 py-2 text-start">{t("archive.table.action")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -143,20 +145,20 @@ export default function ArchivePage() {
                                                     <WorkflowProgress
                                                         layout="scroll"
                                                         steps={workflow.steps}
-                                                        language="ar"
-                                                        direction="rtl"
+                                                        language={lang}
+                                                        direction={isRtl ? "rtl" : "ltr"}
                                                         currentStepId={workflow.currentStepId}
                                                         className="max-w-[34rem] border-0 bg-transparent p-0"
                                                     />
                                                 ) : (
-                                                    <span className="text-xs text-slate-500">لا توجد مراحل محفوظة</span>
+                                                    <span className="text-xs text-slate-500">{t("archive.noSavedStages")}</span>
                                                 )}
                                             </td>
                                             <td className="px-3 py-2">{item.status || "-"}</td>
                                             <td className="px-3 py-2">{item.createdAt || item.created_at || "-"}</td>
                                             <td className="px-3 py-2">
                                                 <Link href={`/cases/${item.id}`} className="text-sm font-medium text-blue-700 hover:text-blue-900">
-                                                    فتح
+                                                    {t("archive.open")}
                                                 </Link>
                                             </td>
                                         </tr>
@@ -165,7 +167,7 @@ export default function ArchivePage() {
                                     {filtered.length === 0 ? (
                                         <tr>
                                             <td colSpan={6} className="px-3 py-6 text-center text-slate-500">
-                                                لا توجد نتائج مطابقة.
+                                                {t("archive.noMatchingResults")}
                                             </td>
                                         </tr>
                                     ) : null}

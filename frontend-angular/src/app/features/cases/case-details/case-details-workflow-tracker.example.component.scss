@@ -7,6 +7,9 @@
     border-radius: 16px;
     background: #ffffff;
     padding: 1.25rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .card-header {
@@ -31,6 +34,9 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     margin-bottom: 1rem;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .toolbar label {
@@ -39,6 +45,8 @@
     gap: 0.5rem;
     font-size: 0.8125rem;
     color: #334155;
+    flex-shrink: 0;
+    min-width: fit-content;
 }
 
 .toolbar select {
@@ -48,6 +56,8 @@
     font-size: 0.8125rem;
     color: #0f172a;
     background: #ffffff;
+    max-width: 200px;
+    flex-shrink: 1;
 }
 
 .integration-note {

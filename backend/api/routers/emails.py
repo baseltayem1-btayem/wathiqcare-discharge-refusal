@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.deps import require_roles
 from backend.core.database import SessionLocal
-from backend.core.email_service import EmailService
+from backend.core.email_service import EmailConfigurationError, EmailDeliveryError, EmailService, EmailServiceConfig
 from backend.models.workflow_document import DischargeWorkflowDocument
 from backend.schemas.email import (
+    EmailCapabilitiesResponse,
     EmailLogResponse,
     EmailSendResponse,
     SendEmailRequest,
@@ -34,6 +35,26 @@ EMAIL_VIEW_ROLES = (
 )
 
 
+@router.get("/capabilities", response_model=EmailCapabilitiesResponse)
+def get_email_capabilities(
+    current_user=Depends(require_roles(*EMAIL_VIEW_ROLES)),
+):
+    del current_user
+    try:
+        EmailServiceConfig.from_env()
+        return EmailCapabilitiesResponse(
+            available=True,
+            provider="microsoft_graph",
+            reason=None,
+        )
+    except EmailConfigurationError:
+        return EmailCapabilitiesResponse(
+            available=False,
+            provider="microsoft_graph",
+            reason="إشعارات البريد الإلكتروني غير مهيأة حالياً.",
+        )
+
+
 @router.post("/send", response_model=EmailSendResponse)
 def send_email(
     payload: SendEmailRequest,
@@ -58,6 +79,10 @@ def send_email(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except EmailConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except EmailDeliveryError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
     except Exception:
         raise HTTPException(status_code=500, detail="حدث خطأ داخلي أثناء إرسال البريد")
 
@@ -107,6 +132,10 @@ def send_workflow_notification(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except EmailConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except EmailDeliveryError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
     except Exception:
         raise HTTPException(status_code=500, detail="حدث خطأ داخلي أثناء إرسال إشعار سير العمل")
 

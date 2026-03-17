@@ -6,6 +6,7 @@ import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { buildAcknowledgmentMethods, getMicrosoftGraphConfig, MicrosoftGraphConfig } from "../method-availability";
 type RouteContext = { params: Promise<{ caseId: string }> };
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -69,13 +70,6 @@ type EmailSendResponse = {
     sent_at?: string | null;
 };
 
-type MicrosoftGraphConfig = {
-    tenantId: string;
-    clientId: string;
-    clientSecret: string;
-    senderEmail: string;
-};
-
 function extractBearerToken(request: NextRequest): string | null {
     const authHeader = request.headers.get("authorization");
     if (authHeader?.trim()) {
@@ -89,20 +83,6 @@ function extractBearerToken(request: NextRequest): string | null {
 
     return null;
 }
-
-function getMicrosoftGraphConfig(): MicrosoftGraphConfig | null {
-    const tenantId = safe(process.env.MICROSOFT_TENANT_ID);
-    const clientId = safe(process.env.MICROSOFT_CLIENT_ID);
-    const clientSecret = safe(process.env.MICROSOFT_CLIENT_SECRET);
-    const senderEmail = safe(process.env.MICROSOFT_SENDER_EMAIL).toLowerCase();
-
-    if (!tenantId || !clientId || !clientSecret || !senderEmail) {
-        return null;
-    }
-
-    return { tenantId, clientId, clientSecret, senderEmail };
-}
-
 function resolvePublicAppBaseUrl(request: NextRequest): string {
     const fromEnv = safe(process.env.NEXT_PUBLIC_APP_URL);
     if (fromEnv && /^https?:\/\//i.test(fromEnv)) {
@@ -137,12 +117,8 @@ async function sendViaMicrosoftGraphDirect(
     patientName: string,
     recipientEmail: string,
     templateKey: string,
+    graphConfig: MicrosoftGraphConfig,
 ): Promise<EmailSendResponse> {
-    const graphConfig = getMicrosoftGraphConfig();
-    if (!graphConfig) {
-        throw new ApiError(503, "تعذر إرسال إشعار البريد: إعدادات Microsoft Graph غير مكتملة.");
-    }
-
     const tokenEndpoint = `https://login.microsoftonline.com/${graphConfig.tenantId}/oauth2/v2.0/token`;
     const tokenParams = new URLSearchParams({
         client_id: graphConfig.clientId,
@@ -288,7 +264,12 @@ async function sendEmailNotice(
         return await sendEmailNoticeViaBackend(request, caseId, patientName, recipientEmail);
     } catch (error) {
         if (error instanceof ApiError && error.status >= 500) {
-            return sendViaMicrosoftGraphDirect(request, caseId, patientName, recipientEmail, templateKey);
+            // Only attempt direct Graph fallback when Graph is actually configured.
+            const graphConfig = getMicrosoftGraphConfig();
+            if (!graphConfig) {
+                throw error;
+            }
+            return sendViaMicrosoftGraphDirect(request, caseId, patientName, recipientEmail, templateKey, graphConfig);
         }
         throw error;
     }
@@ -339,6 +320,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             reference_number: refNum,
             provider_result: {} as Record<string, unknown>,
         };
+
+        const availableMethods = await buildAcknowledgmentMethods(request);
 
         // Method-specific setup
         if (method === "TABLET_SIGNATURE") {
@@ -410,10 +393,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             session_id: doc.id,
             verification_status: sessionState.verification_status,
             provider_result: sessionState.provider_result,
-            available_methods: [
-                { method: "TABLET_SIGNATURE", legacy_method: "tablet_signature", available: true, label_ar: "توقيع الجهاز اللوحي", reason: null },
-                { method: "EMAIL_NOTICE", legacy_method: "email_notice", available: true, label_ar: "إرسال إشعار عبر البريد الإلكتروني", reason: null },
-            ],
+            available_methods: availableMethods,
         });
     } catch (error) {
         return handleApiError(error);

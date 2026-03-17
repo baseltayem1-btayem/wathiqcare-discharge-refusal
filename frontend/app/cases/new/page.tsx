@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Mail, Save, Send } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch, clearToken } from "@/utils/api";
 
 type CreateCaseResponse = {
@@ -33,6 +34,7 @@ const MEDICAL_CONDITIONS: Array<{ value: MedicalCondition; ar: string; en: strin
 
 export default function NewCasePage() {
     const router = useRouter();
+    const { t, lang } = useI18n();
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
@@ -177,10 +179,10 @@ export default function NewCasePage() {
                 }),
             });
 
-            setSuccessMessage("تم تسجيل الحالة وإرسالها بنجاح.");
+            setSuccessMessage(t("newCase.successCreated"));
             router.push(`/cases/${created.id}`);
         } catch (err) {
-            const message = err instanceof Error ? err.message : "تعذر إنشاء الحالة حالياً.";
+            const message = err instanceof Error ? err.message : t("newCase.failedCreate");
             setError(message);
             if (message.includes("401") || message.includes("Invalid")) {
                 clearToken();
@@ -194,15 +196,15 @@ export default function NewCasePage() {
     return (
         <AuthGuard>
             <AppShell
-                title="تسجيل الحالة وخطة الخروج"
-                subtitle="نموذج مبسط: بيانات الحالة الأساسية ثم خطة الخروج والتواصل"
+                title={t("newCase.pageTitle")}
+                subtitle={t("newCase.pageSubtitle")}
                 actions={
                     <Link
                         href="/dashboard"
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
                     >
                         <ArrowLeft className="h-4 w-4" />
-                        العودة للوحة التحكم
+                        {t("newCase.backDashboard")}
                     </Link>
                 }
             >
@@ -218,15 +220,15 @@ export default function NewCasePage() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                        <h2 className="text-sm font-semibold text-slate-900">1) بيانات تسجيل الحالة</h2>
+                        <h2 className="text-sm font-semibold text-slate-900">{t("newCase.sections.registrationTitle")}</h2>
                         <div className="mt-3 grid gap-3 md:grid-cols-2">
-                            <input required value={patientName} onChange={(e) => setPatientName(e.target.value)} placeholder="اسم المريض" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={patientIdNumber} onChange={(e) => setPatientIdNumber(e.target.value)} placeholder="رقم الهوية" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={medicalRecordNo} onChange={(e) => setMedicalRecordNo(e.target.value)} placeholder="رقم الملف الطبي" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={attendingPhysician} onChange={(e) => setAttendingPhysician(e.target.value)} placeholder="اسم الطبيب المعالج" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} placeholder="رقم الغرفة" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={patientName} onChange={(e) => setPatientName(e.target.value)} placeholder={t("field.patientName")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={patientIdNumber} onChange={(e) => setPatientIdNumber(e.target.value)} placeholder={t("field.idIqama")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={medicalRecordNo} onChange={(e) => setMedicalRecordNo(e.target.value)} placeholder={t("field.patientMrn")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={attendingPhysician} onChange={(e) => setAttendingPhysician(e.target.value)} placeholder={t("field.attendingPhysician")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} placeholder={t("field.roomNumber")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                             <input required type="date" value={admissionDate} onChange={(e) => setAdmissionDate(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={admissionDepartment} onChange={(e) => setAdmissionDepartment(e.target.value)} placeholder="القسم الذي تم التنويم بناءً على طلبه" className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                            <input required value={admissionDepartment} onChange={(e) => setAdmissionDepartment(e.target.value)} placeholder={t("newCase.placeholders.admissionDepartment")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
                         </div>
 
                         <label className="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
@@ -235,73 +237,73 @@ export default function NewCasePage() {
                                 checked={sendDischargeOrderRequest}
                                 onChange={(e) => setSendDischargeOrderRequest(e.target.checked)}
                             />
-                            إرسال طلب للطبيب لإصدار أمر الخروج
+                            {t("newCase.labels.sendDischargeOrderRequest")}
                         </label>
                     </section>
 
                     <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                        <h2 className="text-sm font-semibold text-slate-900">2) إنشاء خطة الخروج</h2>
+                        <h2 className="text-sm font-semibold text-slate-900">{t("newCase.sections.planTitle")}</h2>
                         <div className="mt-3 grid gap-3 md:grid-cols-2">
-                            <input required value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} placeholder="تاريخ الميلاد" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={primaryMobile} onChange={(e) => setPrimaryMobile(e.target.value)} placeholder="رقم الجوال الرئيسي" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="البريد الإلكتروني" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={gender} onChange={(e) => setGender(e.target.value)} placeholder="الجنس" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} placeholder="عنوان المنزل" className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
-                            <input value={streetName} onChange={(e) => setStreetName(e.target.value)} placeholder="اسم الشارع" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={cityName} onChange={(e) => setCityName(e.target.value)} placeholder="اسم المدينة" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={districtName} onChange={(e) => setDistrictName(e.target.value)} placeholder="الحي" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="الرمز البريدي" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={poBox} onChange={(e) => setPoBox(e.target.value)} placeholder="صندوق البريد" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required value={admissionReason} onChange={(e) => setAdmissionReason(e.target.value)} placeholder="سبب الدخول للمستشفى" className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                            <input required value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} placeholder={t("newCase.placeholders.dateOfBirth")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={primaryMobile} onChange={(e) => setPrimaryMobile(e.target.value)} placeholder={t("newCase.placeholders.primaryMobile")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("newCase.placeholders.email")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={gender} onChange={(e) => setGender(e.target.value)} placeholder={t("newCase.placeholders.gender")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} placeholder={t("newCase.placeholders.homeAddress")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                            <input value={streetName} onChange={(e) => setStreetName(e.target.value)} placeholder={t("newCase.placeholders.streetName")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={cityName} onChange={(e) => setCityName(e.target.value)} placeholder={t("newCase.placeholders.cityName")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={districtName} onChange={(e) => setDistrictName(e.target.value)} placeholder={t("newCase.placeholders.districtName")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder={t("newCase.placeholders.postalCode")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={poBox} onChange={(e) => setPoBox(e.target.value)} placeholder={t("newCase.placeholders.poBox")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={admissionReason} onChange={(e) => setAdmissionReason(e.target.value)} placeholder={t("newCase.placeholders.admissionReason")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
 
-                            <label className="text-xs text-slate-600">الحالة الطبية الحالية</label>
+                            <label className="text-xs text-slate-600">{t("newCase.labels.medicalCondition")}</label>
                             <select required value={medicalCondition} onChange={(e) => setMedicalCondition(e.target.value as MedicalCondition)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
-                                <option value="">Please Select | يرجى الاختيار</option>
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
                                 {MEDICAL_CONDITIONS.map((option) => (
-                                    <option key={option.value} value={option.value}>{option.en} = {option.ar}</option>
+                                    <option key={option.value} value={option.value}>{lang === "ar" ? option.ar : option.en}</option>
                                 ))}
                             </select>
 
-                            <label className="text-xs text-slate-600">Preferred Language = اللغة المفضلة</label>
+                            <label className="text-xs text-slate-600">{t("newCase.labels.preferredLanguage")}</label>
                             <select value={preferredLanguage} onChange={(e) => setPreferredLanguage(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
-                                <option value="">Please Select = يرجى الاختيار</option>
-                                <option value="ar">Arabic</option>
-                                <option value="en">English</option>
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="ar">{t("newCase.select.arabic")}</option>
+                                <option value="en">{t("newCase.select.english")}</option>
                             </select>
 
-                            <label className="text-xs text-slate-600">Is the patient living alone? = هل يعيش المريض بمفرده؟</label>
+                            <label className="text-xs text-slate-600">{t("newCase.labels.livingAlone")}</label>
                             <select value={livingAlone} onChange={(e) => setLivingAlone(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
-                                <option value="">Please Select = يرجى الاختيار</option>
-                                <option value="yes">Yes</option>
-                                <option value="no">No</option>
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="yes">{t("newCase.select.yes")}</option>
+                                <option value="no">{t("newCase.select.no")}</option>
                             </select>
 
-                            <label className="text-xs text-slate-600">Do you have a caregiver or family member available to assist with post-discharge care? = هل يوجد مقدم رعاية أو أحد أفراد الأسرة متاح للمساعدة في الرعاية بعد الخروج؟</label>
+                            <label className="text-xs text-slate-600">{t("newCase.labels.hasCaregiver")}</label>
                             <select value={hasCaregiver} onChange={(e) => setHasCaregiver(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
-                                <option value="">Please Select = يرجى الاختيار</option>
-                                <option value="yes">Yes</option>
-                                <option value="no">No</option>
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="yes">{t("newCase.select.yes")}</option>
+                                <option value="no">{t("newCase.select.no")}</option>
                             </select>
 
-                            <label className="text-xs text-slate-600">Date of Discharge = تاريخ الخروج (MM-DD-YYYY)</label>
-                            <input value={dischargeDate} onChange={(e) => setDischargeDate(e.target.value)} placeholder="MM-DD-YYYY" className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                            <label className="text-xs text-slate-600">{t("newCase.labels.dischargeDate")}</label>
+                            <input value={dischargeDate} onChange={(e) => setDischargeDate(e.target.value)} placeholder={t("newCase.placeholders.dischargeDateFormat")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
 
-                            <input value={preferredDestination} onChange={(e) => setPreferredDestination(e.target.value)} placeholder="Preferred Discharge Destination = الوجهة المفضلة بعد الخروج" className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
-                            <textarea value={additionalInstructions} onChange={(e) => setAdditionalInstructions(e.target.value)} placeholder="Additional Comments or Instructions = ملاحظات أو تعليمات إضافية" className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                            <input value={preferredDestination} onChange={(e) => setPreferredDestination(e.target.value)} placeholder={t("newCase.placeholders.preferredDestination")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                            <textarea value={additionalInstructions} onChange={(e) => setAdditionalInstructions(e.target.value)} placeholder={t("newCase.placeholders.additionalInstructions")} className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
                         </div>
                     </section>
 
                     <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                        <h2 className="text-sm font-semibold text-slate-900">3) تعليمات الخروج</h2>
+                        <h2 className="text-sm font-semibold text-slate-900">{t("newCase.sections.instructionsTitle")}</h2>
                         <div className="mt-3 grid gap-3 md:grid-cols-2">
-                            <textarea value={medicationInstructions} onChange={(e) => setMedicationInstructions(e.target.value)} placeholder="تعليمات استخدام الأدوية" className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input value={followupAppointment} onChange={(e) => setFollowupAppointment(e.target.value)} placeholder="موعد المراجعة" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <textarea value={contactInfoAfterDischarge} onChange={(e) => setContactInfoAfterDischarge(e.target.value)} placeholder="بيانات التواصل" className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                            <textarea value={medicationInstructions} onChange={(e) => setMedicationInstructions(e.target.value)} placeholder={t("newCase.placeholders.medicationInstructions")} className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={followupAppointment} onChange={(e) => setFollowupAppointment(e.target.value)} placeholder={t("newCase.placeholders.followupAppointment")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <textarea value={contactInfoAfterDischarge} onChange={(e) => setContactInfoAfterDischarge(e.target.value)} placeholder={t("newCase.placeholders.contactInfoAfterDischarge")} className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
                         </div>
                     </section>
 
                     <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                        <h2 className="text-sm font-semibold text-slate-900">4) اختيار خطة الخروج</h2>
+                        <h2 className="text-sm font-semibold text-slate-900">{t("newCase.sections.routeTitle")}</h2>
                         <div className="mt-3 grid gap-2 md:grid-cols-2">
                             <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
                                 <input
@@ -310,7 +312,7 @@ export default function NewCasePage() {
                                     checked={dischargePlanType === "outpatient_followup"}
                                     onChange={() => setDischargePlanType("outpatient_followup")}
                                 />
-                                خروج مع المراجعة
+                                {t("newCase.dischargePlanType.outpatientFollowup")}
                             </label>
                             <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
                                 <input
@@ -319,13 +321,13 @@ export default function NewCasePage() {
                                     checked={dischargePlanType === "homecare_risk"}
                                     onChange={() => setDischargePlanType("homecare_risk")}
                                 />
-                                خروج مع خطة رعاية منزلية
+                                {t("newCase.dischargePlanType.homecareRisk")}
                             </label>
                         </div>
                     </section>
 
                     <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                        <h2 className="text-sm font-semibold text-slate-900">5) الإشعار والتوقيع</h2>
+                        <h2 className="text-sm font-semibold text-slate-900">{t("newCase.sections.notificationTitle")}</h2>
                         <div className="mt-3 space-y-3">
                             <label className="inline-flex items-center gap-2 text-sm text-slate-700">
                                 <input
@@ -333,18 +335,18 @@ export default function NewCasePage() {
                                     checked={notifySectionsByEmail}
                                     onChange={(e) => setNotifySectionsByEmail(e.target.checked)}
                                 />
-                                الإرسال بالبريد الإلكتروني (الخيار الأساسي)
+                                {t("newCase.notification.emailPrimary")}
                             </label>
 
-                            <label className="block text-xs font-medium text-slate-600">التوقيع (اختياري ولا يعرقل الإجراء)</label>
+                            <label className="block text-xs font-medium text-slate-600">{t("newCase.labels.signatureOptional")}</label>
                             <select
                                 value={signatureMethod}
                                 onChange={(e) => setSignatureMethod(e.target.value as "email" | "nafez" | "tablet")}
                                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                             >
-                                <option value="email">Email Acknowledgment</option>
-                                <option value="nafez">نفاذ</option>
-                                <option value="tablet">Tablet Signature</option>
+                                <option value="email">{t("newCase.signatureMethod.email")}</option>
+                                <option value="nafez">{t("newCase.signatureMethod.nafez")}</option>
+                                <option value="tablet">{t("newCase.signatureMethod.tablet")}</option>
                             </select>
                         </div>
                     </section>
@@ -356,7 +358,7 @@ export default function NewCasePage() {
                             className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
                         >
                             <Save className="h-4 w-4" />
-                            {saving ? "جارٍ الحفظ..." : "Submit = إرسال"}
+                            {saving ? t("newCase.saving") : t("newCase.actions.submit")}
                         </button>
 
                         <button
@@ -365,7 +367,7 @@ export default function NewCasePage() {
                             className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
                         >
                             <Send className="h-4 w-4" />
-                            إعادة إرسال طلب أمر الخروج للطبيب
+                            {t("newCase.actions.resendOrder")}
                         </button>
 
                         <button
@@ -374,7 +376,7 @@ export default function NewCasePage() {
                             className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
                         >
                             <Mail className="h-4 w-4" />
-                            اعتماد الإرسال بالبريد
+                            {t("newCase.actions.enableEmailDelivery")}
                         </button>
 
                         <Link
@@ -382,7 +384,7 @@ export default function NewCasePage() {
                             className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
                         >
                             <ArrowLeft className="h-4 w-4" />
-                            إلغاء
+                            {t("common.cancel")}
                         </Link>
                     </div>
                 </form>
