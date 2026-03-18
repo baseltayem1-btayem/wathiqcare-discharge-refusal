@@ -215,6 +215,7 @@ export default function WorkflowPage() {
                         {workflow.steps.length > 0 ? (
                           <WorkflowProgress
                             className="mt-3 border-0 bg-transparent p-0"
+                            layout="wrapped"
                             steps={workflow.steps}
                             language={lang}
                             direction={isRtl ? "rtl" : "ltr"}
