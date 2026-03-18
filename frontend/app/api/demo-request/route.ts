@@ -24,6 +24,7 @@ type MicrosoftGraphConfig = {
 };
 
 const ADMIN_EMAIL = "admin@wathiqcare.med.sa";
+const RESERVED_EMAIL_DOMAINS = new Set(["example.com", "example.org", "example.net", "invalid", "localhost"]);
 
 function normalizeText(value: unknown, field: string, maxLength: number): string {
   if (typeof value !== "string") {
@@ -56,6 +57,12 @@ function normalizeEmail(value: unknown): string {
   if (!emailRegex.test(email)) {
     throw new ApiError(400, "contactEmail is invalid");
   }
+
+  const domain = email.split("@")[1] ?? "";
+  if (RESERVED_EMAIL_DOMAINS.has(domain)) {
+    throw new ApiError(400, "Please provide a valid work email address.");
+  }
+
   return email;
 }
 

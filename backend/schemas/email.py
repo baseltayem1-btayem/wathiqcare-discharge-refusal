@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+
+RESERVED_EMAIL_DOMAINS = {"example.com", "example.org", "example.net", "invalid", "localhost"}
 
 
 class EmailAttachmentInput(BaseModel):
@@ -60,6 +62,14 @@ class SendDemoRequestEmailRequest(BaseModel):
     contact_address: str = Field(min_length=1, max_length=300)
     employee_count: int = Field(ge=1, le=1_000_000)
     preferred_language: Literal["ar", "en"] = "en"
+
+    @field_validator("contact_email")
+    @classmethod
+    def validate_contact_email_domain(cls, value: EmailStr) -> EmailStr:
+        domain = str(value).rsplit("@", 1)[-1].lower()
+        if domain in RESERVED_EMAIL_DOMAINS:
+            raise ValueError("Please provide a valid work email address")
+        return value
 
 
 class EmailSendResponse(BaseModel):
