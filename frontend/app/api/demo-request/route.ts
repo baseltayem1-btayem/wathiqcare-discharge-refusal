@@ -12,7 +12,14 @@ type DemoRequestPayload = {
   website?: string;
 };
 
-const ADMIN_EMAIL = "Admin@wathiqcare.med.sa";
+type MicrosoftGraphConfig = {
+  tenantId: string;
+  clientId: string;
+  clientSecret: string;
+  senderEmail: string;
+};
+
+const ADMIN_EMAIL = "admin@wathiqcare.med.sa";
 
 function normalizeText(value: unknown, field: string, maxLength: number): string {
   if (typeof value !== "string") {
@@ -48,6 +55,23 @@ function normalizeEmail(value: unknown): string {
   return email;
 }
 
+function safe(value: unknown): string {
+  return (value == null ? "" : String(value)).trim();
+}
+
+function getMicrosoftGraphConfig(): MicrosoftGraphConfig | null {
+  const tenantId = safe(process.env.MICROSOFT_TENANT_ID);
+  const clientId = safe(process.env.MICROSOFT_CLIENT_ID);
+  const clientSecret = safe(process.env.MICROSOFT_CLIENT_SECRET);
+  const senderEmail = safe(process.env.MICROSOFT_SENDER_EMAIL).toLowerCase();
+
+  if (!tenantId || !clientId || !clientSecret || !senderEmail) {
+    return null;
+  }
+
+  return { tenantId, clientId, clientSecret, senderEmail };
+}
+
 function createTransporter() {
   const host = process.env.SMTP_HOST;
   const portRaw = process.env.SMTP_PORT;
@@ -56,7 +80,7 @@ function createTransporter() {
   const secure = process.env.SMTP_SECURE === "true";
 
   if (!host || !portRaw || !user || !pass) {
-    throw new ApiError(503, "Mail service is not configured. Please contact support.");
+    return null;
   }
 
   const port = Number(portRaw);
@@ -73,6 +97,121 @@ function createTransporter() {
       pass,
     },
   });
+}
+
+type DemoRequestEmailArgs = {
+  facilityName: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  contactAddress: string;
+  employeeCount: number;
+};
+
+function buildDemoRequestTextBody(args: DemoRequestEmailArgs): string {
+  return [
+    "New WathiqCare demo request",
+    "",
+    `Organization: ${args.facilityName}`,
+    `Contact person: ${args.contactName}`,
+    `Contact email: ${args.contactEmail}`,
+    `Contact phone: ${args.contactPhone}`,
+    `Contact address: ${args.contactAddress}`,
+    `Employee count: ${args.employeeCount}`,
+    "",
+    "Thank you for the request. A company representative should contact this organization promptly.",
+  ].join("\n");
+}
+
+async function sendViaMicrosoftGraph(args: DemoRequestEmailArgs): Promise<boolean> {
+  const graph = getMicrosoftGraphConfig();
+  if (!graph) {
+    return false;
+  }
+
+  const tokenEndpoint = `https://login.microsoftonline.com/${graph.tenantId}/oauth2/v2.0/token`;
+  const tokenBody = new URLSearchParams({
+    client_id: graph.clientId,
+    client_secret: graph.clientSecret,
+    scope: "https://graph.microsoft.com/.default",
+    grant_type: "client_credentials",
+  });
+
+  const tokenResponse = await fetch(tokenEndpoint, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: tokenBody.toString(),
+  });
+
+  if (!tokenResponse.ok) {
+    throw new ApiError(502, "Unable to get Microsoft Graph token for demo request email.");
+  }
+
+  const tokenJson = (await tokenResponse.json().catch(() => null)) as { access_token?: string } | null;
+  const accessToken = safe(tokenJson?.access_token);
+  if (!accessToken) {
+    throw new ApiError(502, "Microsoft Graph token response is invalid.");
+  }
+
+  const subject = `Demo Request - ${args.facilityName}`;
+  const textBody = buildDemoRequestTextBody(args);
+  const graphEndpoint = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(graph.senderEmail)}/sendMail`;
+
+  const sendResponse = await fetch(graphEndpoint, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      message: {
+        subject,
+        body: {
+          contentType: "Text",
+          content: textBody,
+        },
+        toRecipients: [{ emailAddress: { address: ADMIN_EMAIL } }],
+        replyTo: [{ emailAddress: { address: args.contactEmail } }],
+      },
+      saveToSentItems: true,
+    }),
+  });
+
+  if (!sendResponse.ok) {
+    const detail = await sendResponse.text().catch(() => "");
+    throw new ApiError(502, `Microsoft Graph email send failed. ${detail}`.trim());
+  }
+
+  return true;
+}
+
+async function sendDemoRequestEmail(args: DemoRequestEmailArgs): Promise<void> {
+  const subject = `Demo Request - ${args.facilityName}`;
+  const textBody = buildDemoRequestTextBody(args);
+  const from = process.env.SMTP_FROM ?? "WathiqCare Demo Requests <no-reply@wathiqcare.med.sa>";
+
+  const transporter = createTransporter();
+  if (transporter) {
+    try {
+      await transporter.sendMail({
+        from,
+        to: ADMIN_EMAIL,
+        replyTo: args.contactEmail,
+        subject,
+        text: textBody,
+      });
+      return;
+    } catch {
+      // Fall back to Microsoft Graph if SMTP delivery fails.
+    }
+  }
+
+  const graphSent = await sendViaMicrosoftGraph(args);
+  if (graphSent) {
+    return;
+  }
+
+  throw new ApiError(503, "Mail service is not configured. Please contact support.");
 }
 
 export async function POST(request: Request) {
@@ -96,28 +235,13 @@ export async function POST(request: Request) {
     const contactAddress = normalizeText(payload.contactAddress, "contactAddress", 300);
     const employeeCount = normalizeEmployeeCount(payload.employeeCount);
 
-    const transporter = createTransporter();
-    const from = process.env.SMTP_FROM ?? "WathiqCare Demo Requests <no-reply@wathiqcare.med.sa>";
-
-    const textBody = [
-      "New WathiqCare demo request",
-      "",
-      `Organization: ${facilityName}`,
-      `Contact person: ${contactName}`,
-      `Contact email: ${contactEmail}`,
-      `Contact phone: ${contactPhone}`,
-      `Contact address: ${contactAddress}`,
-      `Employee count: ${employeeCount}`,
-      "",
-      "Thank you for the request. A company representative should contact this organization promptly.",
-    ].join("\n");
-
-    await transporter.sendMail({
-      from,
-      to: ADMIN_EMAIL,
-      replyTo: contactEmail,
-      subject: `Demo Request - ${facilityName}`,
-      text: textBody,
+    await sendDemoRequestEmail({
+      facilityName,
+      contactName,
+      contactEmail,
+      contactPhone,
+      contactAddress,
+      employeeCount,
     });
 
     return NextResponse.json({
