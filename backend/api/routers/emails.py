@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import html
+from datetime import datetime
+from uuid import uuid4
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.deps import require_roles
@@ -10,11 +14,13 @@ from backend.schemas.email import (
     EmailCapabilitiesResponse,
     EmailLogResponse,
     EmailSendResponse,
+    SendDemoRequestEmailRequest,
     SendEmailRequest,
     SendWorkflowNotificationRequest,
 )
 
 router = APIRouter(prefix="/api/emails", tags=["Email"])
+DEMO_REQUEST_RECIPIENT = "admin@wathiqcare.med.sa"
 
 EMAIL_ALLOWED_ROLES = (
     "tenant_admin",
@@ -85,6 +91,61 @@ def send_email(
         raise HTTPException(status_code=502, detail=str(exc))
     except Exception:
         raise HTTPException(status_code=500, detail="حدث خطأ داخلي أثناء إرسال البريد")
+
+
+@router.post("/send-demo-request", response_model=EmailSendResponse)
+def send_demo_request_email(payload: SendDemoRequestEmailRequest):
+    subject = f"Demo Request - {payload.facility_name}"
+    text_body = "\n".join(
+        [
+            "New WathiqCare demo request",
+            "",
+            f"Organization: {payload.facility_name}",
+            f"Contact person: {payload.contact_name}",
+            f"Contact email: {payload.contact_email}",
+            f"Contact phone: {payload.contact_phone}",
+            f"Contact address: {payload.contact_address}",
+            f"Employee count: {payload.employee_count}",
+        ]
+    )
+
+    html_body = (
+        "<div style='font-family: Arial, sans-serif; line-height: 1.6;'>"
+        "<h3>New WathiqCare demo request</h3>"
+        f"<p><strong>Organization:</strong> {html.escape(payload.facility_name)}</p>"
+        f"<p><strong>Contact person:</strong> {html.escape(payload.contact_name)}</p>"
+        f"<p><strong>Contact email:</strong> {html.escape(str(payload.contact_email))}</p>"
+        f"<p><strong>Contact phone:</strong> {html.escape(payload.contact_phone)}</p>"
+        f"<p><strong>Contact address:</strong> {html.escape(payload.contact_address)}</p>"
+        f"<p><strong>Employee count:</strong> {payload.employee_count}</p>"
+        "</div>"
+    )
+
+    try:
+        service = EmailService()
+        service.client.send_mail(
+            subject=subject,
+            html_body=html_body,
+            text_body=text_body,
+            recipients=[DEMO_REQUEST_RECIPIENT],
+            cc=[],
+            attachments=[],
+        )
+        return EmailSendResponse(
+            log_id=f"demo-request-{uuid4()}",
+            status="sent",
+            provider="microsoft_graph",
+            subject=subject,
+            recipients=[DEMO_REQUEST_RECIPIENT],
+            cc=[],
+            sent_at=datetime.utcnow().isoformat(),
+        )
+    except EmailConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except EmailDeliveryError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    except Exception:
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي أثناء إرسال طلب الديمو")
 
 
 @router.post("/send-workflow-notification", response_model=EmailSendResponse)

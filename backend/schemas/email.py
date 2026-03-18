@@ -52,6 +52,15 @@ class SendWorkflowNotificationRequest(BaseModel):
     attachment_document_ids: List[str] = Field(default_factory=list)
 
 
+class SendDemoRequestEmailRequest(BaseModel):
+    facility_name: str = Field(min_length=1, max_length=200)
+    contact_name: str = Field(min_length=1, max_length=150)
+    contact_email: EmailStr
+    contact_phone: str = Field(min_length=1, max_length=50)
+    contact_address: str = Field(min_length=1, max_length=300)
+    employee_count: int = Field(ge=1, le=1_000_000)
+
+
 class EmailSendResponse(BaseModel):
     log_id: str
     status: str

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { ApiError, handleApiError } from "@/lib/server/http";
+import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 
 type DemoRequestPayload = {
   facilityName?: string;
@@ -185,7 +186,47 @@ async function sendViaMicrosoftGraph(args: DemoRequestEmailArgs): Promise<boolea
   return true;
 }
 
+async function sendViaInternalBackend(args: DemoRequestEmailArgs): Promise<boolean> {
+  const backendBase = getConfiguredBackendApiBaseUrl();
+  if (!backendBase) {
+    return false;
+  }
+
+  const endpoint = new URL("/api/emails/send-demo-request", `${backendBase}/`);
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      body: JSON.stringify({
+        facility_name: args.facilityName,
+        contact_name: args.contactName,
+        contact_email: args.contactEmail,
+        contact_phone: args.contactPhone,
+        contact_address: args.contactAddress,
+        employee_count: args.employeeCount,
+      }),
+    });
+  } catch {
+    return false;
+  }
+
+  if (!response.ok) {
+    return false;
+  }
+
+  return true;
+}
+
 async function sendDemoRequestEmail(args: DemoRequestEmailArgs): Promise<void> {
+  const internalSent = await sendViaInternalBackend(args);
+  if (internalSent) {
+    return;
+  }
+
   const subject = `Demo Request - ${args.facilityName}`;
   const textBody = buildDemoRequestTextBody(args);
   const from = process.env.SMTP_FROM ?? "WathiqCare Demo Requests <no-reply@wathiqcare.med.sa>";
