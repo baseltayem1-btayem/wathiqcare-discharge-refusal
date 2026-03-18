@@ -124,8 +124,8 @@ export default function WorkflowProgress({
       dir={resolvedDirection}
       aria-label={ariaLabel}
       className={cn(
-        "w-full rounded-2xl border border-slate-200 bg-white p-4",
-        layout === "scroll" && "overflow-x-auto scrollbar-thin",
+        "min-w-0 w-full max-w-full rounded-2xl border border-slate-200 bg-white p-4",
+        layout === "scroll" && "overflow-x-auto overflow-y-hidden overscroll-x-contain scrollbar-thin",
         className
       )}
     >
@@ -133,7 +133,7 @@ export default function WorkflowProgress({
         className={cn(
           layout === "wrapped"
             ? "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
-            : "flex min-w-max items-start gap-0"
+            : "flex w-max min-w-full items-start gap-0"
         )}
         role="list"
       >
@@ -146,7 +146,7 @@ export default function WorkflowProgress({
               className={cn(
                 layout === "wrapped"
                   ? "rounded-xl border border-slate-200 bg-slate-50 p-3"
-                  : "flex min-w-40 items-start sm:min-w-44 lg:min-w-48"
+                  : "flex min-w-[11rem] items-start sm:min-w-[12rem] lg:min-w-[13rem]"
               )}
             >
               <button
@@ -181,10 +181,16 @@ export default function WorkflowProgress({
                   )}
                 </span>
 
-                <span className={cn(layout === "wrapped" ? "min-w-0 flex-1 pt-0.5" : "max-w-32 pt-0.5 sm:max-w-36 lg:max-w-40")}>
+                <span
+                  className={cn(
+                    layout === "wrapped"
+                      ? "min-w-0 flex-1 pt-0.5"
+                      : "min-w-0 max-w-32 pt-0.5 sm:max-w-36 lg:max-w-40"
+                  )}
+                >
                   <span
                     className={cn(
-                      "block text-sm leading-5",
+                      "block break-words text-sm leading-5",
                       step.state === "current" || step.state === "warning"
                         ? "font-bold text-slate-950"
                         : step.state === "completed"

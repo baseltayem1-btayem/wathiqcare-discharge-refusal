@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Scale, ShieldCheck, Stethoscope } from "lucide-react";
+import { ActivitySquare, Scale, ShieldCheck, Stethoscope } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function LoginBrandPanel() {
@@ -7,64 +7,60 @@ export default function LoginBrandPanel() {
 
   return (
     <section className="flex h-full flex-col">
-      {/* Logo */}
-      <div className="mb-6 flex justify-center">
+      <div className="mb-5 flex justify-center">
         <Image
           src="https://cdn.phototourl.com/uploads/2026-03-08-8e081936-6059-4849-a3de-b482e86049fd.png"
           alt="WathiqCare"
           width={260}
           height={80}
-          className="h-auto w-[180px] object-contain sm:w-[220px]"
+          className="h-auto w-[180px] object-contain sm:w-[210px]"
           priority
         />
       </div>
 
-      {/* Headline card */}
       <div
-        className="rounded-2xl p-5"
-        style={{ background: "#ffffff", border: "1px solid #e0f2fe", boxShadow: "0 2px 12px rgba(8,145,178,0.08)" }}
+        className="rounded-3xl border border-cyan-100 bg-white/85 p-5"
+        style={{ boxShadow: "0 12px 30px rgba(8,145,178,0.12)" }}
       >
-        <p
-          className="text-[10px] font-semibold uppercase tracking-widest"
-          style={{ color: "#0891b2" }}
-        >
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
           {t("app.name")}
         </p>
-        <h1 className="mt-2 text-xl font-bold text-gray-900 md:text-2xl">{t("login.brandTitle")}</h1>
-        <p className="mt-1.5 text-sm font-medium text-gray-700">{t("login.brandSubtitle")}</p>
-        <p className="mt-2 text-sm leading-7 text-gray-500">{t("login.brandDescription")}</p>
+        <h1 className="mt-2 text-xl font-bold text-slate-900 md:text-2xl">{t("login.brandTitle")}</h1>
+        <p className="mt-1.5 text-sm font-semibold text-slate-700">{t("login.brandSubtitle")}</p>
+        <p className="mt-2 text-sm leading-7 text-slate-600">{t("login.brandDescription")}</p>
+
+        <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-700">
+          <ActivitySquare className="h-4 w-4" />
+          {t("login.badge")}
+        </div>
       </div>
 
-      {/* Feature badges */}
-      <div className="mt-4 grid gap-2">
+      <div className="mt-4 grid gap-2.5">
         <div
-          className="inline-flex items-start gap-2.5 rounded-xl px-3 py-2"
-          style={{ background: "#ecfeff", border: "1px solid #a5f3fc" }}
+          className="inline-flex items-start gap-2.5 rounded-2xl border border-cyan-200 bg-cyan-50 px-3.5 py-3"
         >
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#0891b2" }} />
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-cyan-700" />
           <div>
-            <p className="text-sm font-semibold text-gray-900">{t("app.activeWorkspace")}</p>
-            <p className="text-xs" style={{ color: "#0891b2" }}>{t("app.secureMode")}</p>
+            <p className="text-sm font-semibold text-slate-900">{t("app.activeWorkspace")}</p>
+            <p className="text-xs text-cyan-700">{t("app.secureMode")}</p>
           </div>
         </div>
 
         <div
-          className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700"
-          style={{ background: "#ffffff", border: "1px solid #e2e8f0" }}
+          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700"
         >
-          <Stethoscope className="h-4 w-4" style={{ color: "#0891b2" }} />
+          <Stethoscope className="h-4 w-4 text-cyan-700" />
           {t("app.moduleName")}
         </div>
         <div
-          className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700"
-          style={{ background: "#ffffff", border: "1px solid #e2e8f0" }}
+          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700"
         >
-          <Scale className="h-4 w-4" style={{ color: "#0891b2" }} />
+          <Scale className="h-4 w-4 text-cyan-700" />
           {t("app.moduleTagline")}
         </div>
       </div>
 
-      <p className="mt-5 text-xs text-gray-400">{t("login.footer")}</p>
+      <p className="mt-5 text-xs text-slate-400">{t("login.footer")}</p>
     </section>
   );
 }

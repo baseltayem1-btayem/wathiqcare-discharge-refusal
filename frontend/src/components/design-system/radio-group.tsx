@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Circle } from "lucide-react";
 import { cn } from "./utils";
 
 type RadioGroupContextValue = {

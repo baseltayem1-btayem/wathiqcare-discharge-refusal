@@ -141,14 +141,6 @@ function readString(value: Record<string, unknown> | null, ...keys: string[]): s
     return null;
 }
 
-function readBoolean(value: Record<string, unknown> | null, key: string): boolean | null {
-    if (!value) {
-        return null;
-    }
-
-    return typeof value[key] === "boolean" ? (value[key] as boolean) : null;
-}
-
 function toIsoString(value: Date | string | null | undefined): string | null {
     if (!value) {
         return null;

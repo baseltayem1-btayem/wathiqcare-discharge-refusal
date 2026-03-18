@@ -6,6 +6,7 @@ import { cn } from "./utils";
 type TooltipContextValue = {
   open: boolean;
   setOpen: (open: boolean) => void;
+  delayDuration: number;
 };
 
 const TooltipContext = React.createContext<TooltipContextValue | null>(null);
@@ -19,7 +20,7 @@ export function Tooltip({ children, delayDuration = 300 }: TooltipProps) {
   const [open, setOpen] = React.useState(false);
 
   return (
-    <TooltipContext.Provider value={{ open, setOpen }}>
+    <TooltipContext.Provider value={{ open, setOpen, delayDuration }}>
       <div className="relative inline-block">{children}</div>
     </TooltipContext.Provider>
   );
@@ -27,13 +28,51 @@ export function Tooltip({ children, delayDuration = 300 }: TooltipProps) {
 
 export function TooltipTrigger({ className, children, ...props }: React.ComponentProps<"button">) {
   const ctx = React.useContext(TooltipContext);
+  const openTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearOpenTimeout() {
+    if (openTimeoutRef.current) {
+      clearTimeout(openTimeoutRef.current);
+      openTimeoutRef.current = null;
+    }
+  }
+
+  function scheduleOpen() {
+    if (!ctx) {
+      return;
+    }
+
+    clearOpenTimeout();
+    openTimeoutRef.current = setTimeout(() => {
+      ctx.setOpen(true);
+      openTimeoutRef.current = null;
+    }, ctx.delayDuration);
+  }
+
+  function closeImmediately() {
+    if (!ctx) {
+      return;
+    }
+
+    clearOpenTimeout();
+    ctx.setOpen(false);
+  }
+
+  React.useEffect(() => {
+    return () => {
+      clearOpenTimeout();
+    };
+  }, []);
+
   if (!ctx) return null;
 
   return (
     <button
       type="button"
-      onMouseEnter={() => ctx.setOpen(true)}
-      onMouseLeave={() => ctx.setOpen(false)}
+      onMouseEnter={scheduleOpen}
+      onMouseLeave={closeImmediately}
+      onFocus={scheduleOpen}
+      onBlur={closeImmediately}
       className={cn("inline-flex", className)}
       {...props}
     >
@@ -42,10 +81,10 @@ export function TooltipTrigger({ className, children, ...props }: React.Componen
   );
 }
 
-export function TooltipContent({ 
-  className, 
-  side = "top", 
-  ...props 
+export function TooltipContent({
+  className,
+  side = "top",
+  ...props
 }: React.ComponentProps<"div"> & { side?: "top" | "bottom" | "left" | "right" }) {
   const ctx = React.useContext(TooltipContext);
   if (!ctx || !ctx.open) return null;

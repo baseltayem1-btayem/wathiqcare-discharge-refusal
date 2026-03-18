@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Manrope, Geist_Mono, Noto_Kufi_Arabic } from "next/font/google";
+import { Plus_Jakarta_Sans, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google";
 import I18nProvider from "@/i18n/I18nProvider";
 import { Toaster } from "@/components/make-ui/sonner";
 import "./globals.css";
 
-const manrope = Manrope({
+const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
@@ -14,9 +15,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const notoSansArabic = Noto_Kufi_Arabic({
+const ibmPlexArabic = IBM_Plex_Sans_Arabic({
   variable: "--font-arabic",
   subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -31,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${geistMono.variable} ${notoSansArabic.variable} antialiased`}>
+      <body className={`${plusJakarta.variable} ${geistMono.variable} ${ibmPlexArabic.variable} antialiased`}>
         <I18nProvider>
           {children}
           <Toaster />

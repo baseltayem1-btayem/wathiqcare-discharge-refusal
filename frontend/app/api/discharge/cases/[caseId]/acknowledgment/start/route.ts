@@ -154,7 +154,6 @@ async function sendViaMicrosoftGraphDirect(
             <p>فريق واثق كير</p>
         </div>
     `;
-    const textBody = `عزيزي/عزيزتي ${patientName || "المريض"},\n\nيرجى إكمال الإقرار عبر الرابط التالي:\n${actionUrl}\n\nرقم الحالة: ${caseId}\nفريق واثق كير`;
 
     const graphEndpoint = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(graphConfig.senderEmail)}/sendMail`;
     const sendResponse = await fetch(graphEndpoint, {
