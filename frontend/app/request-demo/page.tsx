@@ -53,7 +53,7 @@ export default function RequestDemoPage() {
           submitting: "جارٍ الإرسال...",
           requiredHint: "جميع الحقول مطلوبة",
           success:
-            "شكرًا على طلبكم. سيقوم مندوب شركة واثق كير بالتواصل معكم قريبًا.",
+            "شكرًا على طلبكم. تم إرسال رسالة تأكيد إلى بريدكم الإلكتروني، وسيقوم مندوب شركة واثق كير بالتواصل معكم قريبًا.",
           errorFallback: "تعذر إرسال الطلب حاليًا. يرجى المحاولة مرة أخرى.",
         }
         : {
@@ -73,7 +73,7 @@ export default function RequestDemoPage() {
           submitting: "Submitting...",
           requiredHint: "All fields are required",
           success:
-            "Thank you for your request. A WathiqCare representative will contact you shortly.",
+            "Thank you for your request. A confirmation email has been sent to your inbox, and a WathiqCare representative will contact you shortly.",
           errorFallback: "Unable to submit your request right now. Please try again.",
         },
     [lang],
@@ -91,7 +91,7 @@ export default function RequestDemoPage() {
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, locale: lang }),
       });
 
       const payload = (await response.json().catch(() => null)) as

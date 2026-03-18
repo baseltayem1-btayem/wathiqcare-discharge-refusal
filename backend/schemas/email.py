@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
@@ -59,6 +59,7 @@ class SendDemoRequestEmailRequest(BaseModel):
     contact_phone: str = Field(min_length=1, max_length=50)
     contact_address: str = Field(min_length=1, max_length=300)
     employee_count: int = Field(ge=1, le=1_000_000)
+    preferred_language: Literal["ar", "en"] = "en"
 
 
 class EmailSendResponse(BaseModel):
