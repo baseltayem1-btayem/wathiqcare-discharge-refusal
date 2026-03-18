@@ -508,10 +508,12 @@ async function sendDemoRequestEmail(args: DemoRequestEmailArgs): Promise<void> {
     return;
   }
 
-  throw new ApiError(503, "Mail service is not configured. Please contact support.");
+  throw new ApiError(503, "Demo request delivery channels are unavailable.");
 }
 
 export async function POST(request: Request) {
+  let requestLocale: Locale = "en";
+
   try {
     const payload = (await request.json().catch(() => null)) as DemoRequestPayload | null;
     if (!payload) {
@@ -519,6 +521,7 @@ export async function POST(request: Request) {
     }
 
     const locale = normalizeLocale(payload.locale);
+    requestLocale = locale;
 
     if (typeof payload.website === "string" && payload.website.trim()) {
       return NextResponse.json({
@@ -534,21 +537,47 @@ export async function POST(request: Request) {
     const contactAddress = normalizeText(payload.contactAddress, "contactAddress", 300);
     const employeeCount = normalizeEmployeeCount(payload.employeeCount);
 
-    await sendDemoRequestEmail({
-      facilityName,
-      contactName,
-      contactEmail,
-      contactPhone,
-      contactAddress,
-      employeeCount,
-      locale,
-    });
+    let deliveryStatus: "sent" | "pending" = "sent";
+
+    try {
+      await sendDemoRequestEmail({
+        facilityName,
+        contactName,
+        contactEmail,
+        contactPhone,
+        contactAddress,
+        employeeCount,
+        locale,
+      });
+    } catch (deliveryError) {
+      if (!(deliveryError instanceof ApiError) || deliveryError.status < 500) {
+        throw deliveryError;
+      }
+
+      deliveryStatus = "pending";
+      console.error("[demo-request] Email delivery unavailable; request accepted for follow-up", {
+        reason: deliveryError.message,
+        facilityName,
+        contactName,
+        contactEmail,
+      });
+    }
 
     return NextResponse.json({
       ok: true,
       message: buildSuccessMessage(locale),
+      delivery_status: deliveryStatus,
     });
   } catch (error) {
+    if (error instanceof ApiError && error.status >= 500) {
+      console.error("[demo-request] API fallback accepted request after 5xx", { detail: error.message });
+      return NextResponse.json({
+        ok: true,
+        message: buildSuccessMessage(requestLocale),
+        delivery_status: "pending",
+      });
+    }
+
     return handleApiError(error);
   }
 }
