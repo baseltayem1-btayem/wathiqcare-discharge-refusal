@@ -9,7 +9,7 @@ export default function LoginBrandPanel() {
     <section className="flex h-full flex-col">
       <div className="mb-5 flex justify-center">
         <Image
-          src="https://cdn.phototourl.com/uploads/2026-03-08-8e081936-6059-4849-a3de-b482e86049fd.png"
+          src="/images/wathiqcare-logo.png"
           alt="WathiqCare"
           width={260}
           height={80}

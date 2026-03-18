@@ -94,7 +94,7 @@ export default function LoginPage() {
                 <div className="mb-5 flex justify-center">
                   <div className="relative w-[160px] sm:w-[190px] md:w-[210px]">
                     <Image
-                      src="https://cdn.phototourl.com/uploads/2026-03-08-8e081936-6059-4849-a3de-b482e86049fd.png"
+                      src="/images/wathiqcare-logo.png"
                       alt="WathiqCare"
                       width={420}
                       height={120}

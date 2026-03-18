@@ -189,7 +189,7 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
           >
             <div className="flex justify-center">
               <Image
-                src="https://www.imc.med.sa/images/logo.jpg"
+                src="/images/imc-logo.png"
                 alt={tenantLogoAlt}
                 width={220}
                 height={88}
@@ -200,7 +200,7 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
             <div className="mt-3 rounded-lg border border-cyan-100 bg-white/80 px-3 py-2">
               <div className="flex justify-center">
                 <Image
-                  src="https://cdn.phototourl.com/uploads/2026-03-08-8e081936-6059-4849-a3de-b482e86049fd.png"
+                  src="/images/wathiqcare-logo.png"
                   alt={t("app.name")}
                   width={180}
                   height={54}
@@ -276,7 +276,7 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
                     title={tenantLogoAlt}
                   >
                     <Image
-                      src="https://www.imc.med.sa/images/logo.jpg"
+                      src="/images/imc-logo.png"
                       alt={tenantLogoAlt}
                       width={96}
                       height={38}

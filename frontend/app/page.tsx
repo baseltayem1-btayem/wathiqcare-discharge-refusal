@@ -231,7 +231,7 @@ export default function HomePage() {
       <header className="sticky top-0 z-30 border-b border-white/60 bg-white/70 px-4 py-3 backdrop-blur-xl md:px-8">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
           <Image
-            src="https://cdn.phototourl.com/uploads/2026-03-08-8e081936-6059-4849-a3de-b482e86049fd.png"
+            src="/images/wathiqcare-logo.png"
             alt="WathiqCare"
             width={180}
             height={56}
