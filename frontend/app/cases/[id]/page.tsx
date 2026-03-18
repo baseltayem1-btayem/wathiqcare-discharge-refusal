@@ -1566,7 +1566,7 @@ export default function CaseDetailsPage() {
                       <dd className="font-medium text-slate-900">{caseDetail?.department || t("common.na")}</dd>
                     </div>
                     <div>
-                      <dt className="text-slate-500">رقم الغرفة</dt>
+                      <dt className="text-slate-500">{t("field.roomNumber")}</dt>
                       <dd className="font-medium text-slate-900">
                         {workflow?.room_number || caseDetail?.room_number || t("common.na")}
                       </dd>
