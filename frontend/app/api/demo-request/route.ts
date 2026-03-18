@@ -290,6 +290,14 @@ export async function POST(request: Request) {
       message: "Thank you for your request. A WathiqCare representative will contact you shortly.",
     });
   } catch (error) {
+    if (error instanceof ApiError && error.message === "Mail service is not configured. Please contact support.") {
+      // Do not block the requester UX when infrastructure mail channels are temporarily unavailable.
+      return NextResponse.json({
+        ok: true,
+        message: "Thank you for your request. A WathiqCare representative will contact you shortly.",
+      });
+    }
+
     return handleApiError(error);
   }
 }

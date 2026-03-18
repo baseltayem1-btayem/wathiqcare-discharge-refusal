@@ -37,45 +37,45 @@ export default function RequestDemoPage() {
     () =>
       lang === "ar"
         ? {
-            title: "طلب نسخة تجريبية",
-            subtitle:
-              "يرجى تعبئة بيانات المنشأة ووسائل التواصل ليقوم فريق واثق كير بالتواصل معكم وتقديم عرض توضيحي مناسب.",
-            backHome: "العودة للرئيسية",
-            enterSystem: "الدخول للنظام",
-            formTitle: "بيانات طلب النسخة التجريبية",
-            facilityName: "اسم المنشأة",
-            contactName: "اسم مسؤول التواصل",
-            contactEmail: "البريد الإلكتروني للتواصل",
-            contactPhone: "رقم الهاتف",
-            contactAddress: "عنوان التواصل",
-            employeeCount: "عدد الموظفين في المنشأة",
-            submit: "إرسال الطلب",
-            submitting: "جارٍ الإرسال...",
-            requiredHint: "جميع الحقول مطلوبة",
-            success:
-              "شكرًا على طلبكم. سيقوم مندوب شركة واثق كير بالتواصل معكم قريبًا.",
-            errorFallback: "تعذر إرسال الطلب حاليًا. يرجى المحاولة مرة أخرى.",
-          }
+          title: "طلب نسخة تجريبية",
+          subtitle:
+            "يرجى تعبئة بيانات المنشأة ووسائل التواصل ليقوم فريق واثق كير بالتواصل معكم وتقديم عرض توضيحي مناسب.",
+          backHome: "العودة للرئيسية",
+          enterSystem: "الدخول للنظام",
+          formTitle: "بيانات طلب النسخة التجريبية",
+          facilityName: "اسم المنشأة",
+          contactName: "اسم مسؤول التواصل",
+          contactEmail: "البريد الإلكتروني للتواصل",
+          contactPhone: "رقم الهاتف",
+          contactAddress: "عنوان التواصل",
+          employeeCount: "عدد الموظفين في المنشأة",
+          submit: "إرسال الطلب",
+          submitting: "جارٍ الإرسال...",
+          requiredHint: "جميع الحقول مطلوبة",
+          success:
+            "شكرًا على طلبكم. سيقوم مندوب شركة واثق كير بالتواصل معكم قريبًا.",
+          errorFallback: "تعذر إرسال الطلب حاليًا. يرجى المحاولة مرة أخرى.",
+        }
         : {
-            title: "Request a Demo",
-            subtitle:
-              "Please provide your organization details and contact information so the WathiqCare team can schedule a tailored demo.",
-            backHome: "Back to Home",
-            enterSystem: "Enter System",
-            formTitle: "Demo Request Details",
-            facilityName: "Organization Name",
-            contactName: "Contact Person Name",
-            contactEmail: "Contact Email",
-            contactPhone: "Contact Phone",
-            contactAddress: "Contact Address",
-            employeeCount: "Number of Employees",
-            submit: "Submit Request",
-            submitting: "Submitting...",
-            requiredHint: "All fields are required",
-            success:
-              "Thank you for your request. A WathiqCare representative will contact you shortly.",
-            errorFallback: "Unable to submit your request right now. Please try again.",
-          },
+          title: "Request a Demo",
+          subtitle:
+            "Please provide your organization details and contact information so the WathiqCare team can schedule a tailored demo.",
+          backHome: "Back to Home",
+          enterSystem: "Enter System",
+          formTitle: "Demo Request Details",
+          facilityName: "Organization Name",
+          contactName: "Contact Person Name",
+          contactEmail: "Contact Email",
+          contactPhone: "Contact Phone",
+          contactAddress: "Contact Address",
+          employeeCount: "Number of Employees",
+          submit: "Submit Request",
+          submitting: "Submitting...",
+          requiredHint: "All fields are required",
+          success:
+            "Thank you for your request. A WathiqCare representative will contact you shortly.",
+          errorFallback: "Unable to submit your request right now. Please try again.",
+        },
     [lang],
   );
 
@@ -98,12 +98,13 @@ export default function RequestDemoPage() {
         | { ok?: boolean; message?: string; detail?: string }
         | null;
 
-      if (!response.ok || !payload?.ok) {
+      const requestSucceeded = response.ok && (payload?.ok ?? true);
+      if (!requestSucceeded) {
         setErrorMessage(payload?.detail ?? content.errorFallback);
         return;
       }
 
-      setSuccessMessage(content.success);
+      setSuccessMessage(payload?.message?.trim() || content.success);
       setForm(initialForm);
     } catch {
       setErrorMessage(content.errorFallback);
