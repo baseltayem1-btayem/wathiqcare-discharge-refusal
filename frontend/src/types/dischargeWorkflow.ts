@@ -19,6 +19,8 @@ export type WorkflowDocumentItem = {
   template_key: "discharge_refusal_form" | "financial_responsibility_notice" | string;
   document_code: string | null;
   title: string;
+  title_en?: string | null;
+  title_ar?: string | null;
   file_name: string;
   generated_at: string;
   view_url: string;

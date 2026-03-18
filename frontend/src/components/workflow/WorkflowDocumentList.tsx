@@ -19,7 +19,7 @@ function formatDate(raw: string, locale: string): string {
 }
 
 export default function WorkflowDocumentList({ documents }: Props) {
-  const { t, locale } = useI18n();
+  const { t, locale, lang } = useI18n();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -71,7 +71,7 @@ export default function WorkflowDocumentList({ documents }: Props) {
               <div className="min-w-0">
                 <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-900">
                   <FileText className="h-4 w-4" />
-                  {doc.title}
+                  {lang === "ar" ? doc.title_ar || doc.title : doc.title_en || doc.title}
                 </p>
                 <p className="text-xs text-slate-600">{t("documents.generatedAt", { date: formatDate(doc.generated_at, locale) })}</p>
                 {doc.document_code ? (

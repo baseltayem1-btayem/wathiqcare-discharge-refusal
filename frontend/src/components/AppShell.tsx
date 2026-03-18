@@ -155,6 +155,7 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
   const router = useRouter();
   const { t } = useI18n();
   const navItems = workflowCaseNav ? buildCaseWorkflowNav(workflowCaseNav) : NAV_ITEMS;
+  const tenantLogoAlt = t("app.tenantName");
 
   async function handleLogout() {
     try {
@@ -188,16 +189,28 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
           >
             <div className="flex justify-center">
               <Image
-                src="https://cdn.phototourl.com/uploads/2026-03-08-8e081936-6059-4849-a3de-b482e86049fd.png"
-                alt="WathiqCare"
-                width={200}
-                height={60}
-                className="h-auto w-[120px] object-contain"
+                src="https://www.imc.med.sa/images/logo.jpg"
+                alt={tenantLogoAlt}
+                width={220}
+                height={88}
+                className="h-auto w-[150px] object-contain"
                 priority
               />
             </div>
+            <div className="mt-3 rounded-lg border border-cyan-100 bg-white/80 px-3 py-2">
+              <div className="flex justify-center">
+                <Image
+                  src="https://cdn.phototourl.com/uploads/2026-03-08-8e081936-6059-4849-a3de-b482e86049fd.png"
+                  alt={t("app.name")}
+                  width={180}
+                  height={54}
+                  className="h-auto w-[110px] object-contain"
+                  priority
+                />
+              </div>
+            </div>
             <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#0891b2" }}>
-              {t("app.name")}
+              {tenantLogoAlt}
             </p>
             <p className="mt-0.5 text-center text-[11px] text-gray-500">{t("app.moduleTagline")}</p>
           </div>
@@ -258,6 +271,18 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
                   {subtitle ? <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p> : null}
                 </div>
                 <div className="inline-flex items-center gap-2">
+                  <div
+                    className="hidden items-center gap-2 rounded-xl border border-cyan-100 bg-cyan-50/80 px-2.5 py-2 sm:inline-flex"
+                    title={tenantLogoAlt}
+                  >
+                    <Image
+                      src="https://www.imc.med.sa/images/logo.jpg"
+                      alt={tenantLogoAlt}
+                      width={96}
+                      height={38}
+                      className="h-auto w-[78px] object-contain"
+                    />
+                  </div>
                   <LanguageSwitcher className="md:hidden" />
                   <button
                     type="button"

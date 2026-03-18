@@ -21,8 +21,18 @@ export type DischargeCaseDetail = {
   signed_at?: string;
   created_at?: string;
   pdf_file?: string;
+  discharge_route?: string;
   workflow_stages?: string[];
   metadata?: Record<string, unknown>;
+};
+
+type CaseApiDocument = {
+  id: string;
+  templateKey?: string | null;
+  fileName?: string | null;
+  signedAt?: string | null;
+  generatedAt?: string | null;
+  payloadJson?: Record<string, unknown> | null;
 };
 
 type CaseApiResponse = {
@@ -34,19 +44,50 @@ type CaseApiResponse = {
   roomNumber?: string | null;
   createdAt?: string | null;
   metadata?: Record<string, unknown> | null;
+  documents?: CaseApiDocument[] | null;
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function readPathString(
+  source: Record<string, unknown> | null | undefined,
+  path: string[]
+): string | undefined {
+  if (!source) {
+    return undefined;
+  }
+
+  let current: unknown = source;
+  for (const segment of path) {
+    const record = asRecord(current);
+    if (!record) {
+      return undefined;
+    }
+
+    current = record[segment];
+  }
+
+  return typeof current === "string" && current.trim() ? current : undefined;
+}
 
 function metadataString(
   metadata: Record<string, unknown> | null | undefined,
-  ...keys: string[]
+  ...keys: Array<string | string[]>
 ): string | undefined {
   if (!metadata) {
     return undefined;
   }
 
   for (const key of keys) {
-    const value = metadata[key];
-    if (typeof value === "string" && value.trim()) {
+    const path = Array.isArray(key) ? key : [key];
+    const value = readPathString(metadata, path);
+    if (value) {
       return value;
     }
   }
@@ -54,38 +95,117 @@ function metadataString(
   return undefined;
 }
 
+function latestSignedDocument(documents: CaseApiDocument[] | null | undefined): CaseApiDocument | undefined {
+  if (!documents || documents.length === 0) {
+    return undefined;
+  }
+
+  return [...documents]
+    .filter((document) => typeof document.signedAt === "string" && document.signedAt.trim().length > 0)
+    .sort((left, right) => {
+      const leftTime = new Date(left.signedAt || left.generatedAt || 0).getTime();
+      const rightTime = new Date(right.signedAt || right.generatedAt || 0).getTime();
+      return rightTime - leftTime;
+    })[0];
+}
+
+function documentPayloadString(
+  document: CaseApiDocument | undefined,
+  ...keys: Array<string | string[]>
+): string | undefined {
+  const payload = asRecord(document?.payloadJson);
+  if (!payload) {
+    return undefined;
+  }
+
+  return metadataString(payload, ...keys);
+}
+
 function mapCaseApiResponseToDetail(input: CaseApiResponse): DischargeCaseDetail {
-  const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata : null;
+  const metadata = asRecord(input.metadata);
   const workflowStagesRaw = metadata?.workflow_stages;
   const workflowStages = Array.isArray(workflowStagesRaw)
     ? workflowStagesRaw.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
     : undefined;
+  const signedDocument = latestSignedDocument(input.documents);
 
   return {
     id: input.id,
     patient_mrn:
       input.medicalRecordNo ||
-      metadataString(metadata, "medical_record_number", "patient_mrn") ||
+      metadataString(metadata, ["workflow", "medical_record_number"], "medical_record_number", "patient_mrn") ||
       "-",
-    patient_name: input.patientName || metadataString(metadata, "patient_name") || "-",
+    patient_name:
+      input.patientName ||
+      metadataString(metadata, ["workflow", "patient_name"], "patient_name") ||
+      "-",
     patient_id_number:
       input.patientIdNumber ||
-      metadataString(metadata, "patient_id_number", "id_number", "national_id"),
-    date_of_birth: metadataString(metadata, "date_of_birth", "dob"),
-    gender: metadataString(metadata, "gender", "sex"),
-    mobile_number: metadataString(metadata, "mobile_number", "phone", "phone_number"),
-    guardian_name: metadataString(metadata, "guardian_name", "guardian", "next_of_kin"),
-    attending_physician: metadataString(metadata, "attending_physician", "doctor_name"),
-    department: metadataString(metadata, "department", "ward"),
-    room_number: input.roomNumber || metadataString(metadata, "room_number", "room"),
+      metadataString(metadata, ["workflow", "patient_id_number"], "patient_id_number", "id_number", "national_id"),
+    date_of_birth: metadataString(metadata, ["discharge_plan", "date_of_birth"], "date_of_birth", "dob"),
+    gender: metadataString(metadata, ["discharge_plan", "gender"], "gender", "sex"),
+    mobile_number: metadataString(
+      metadata,
+      ["discharge_plan", "primary_mobile"],
+      "primary_mobile",
+      "mobile_number",
+      "phone",
+      "phone_number"
+    ),
+    guardian_name: metadataString(
+      metadata,
+      ["discharge_plan", "legal_guardian"],
+      "guardian_name",
+      "guardian",
+      "next_of_kin",
+      "legal_guardian"
+    ),
+    attending_physician: metadataString(
+      metadata,
+      ["workflow", "attending_physician"],
+      "attending_physician",
+      "doctor_name"
+    ),
+    department: metadataString(
+      metadata,
+      "admission_department",
+      "department",
+      "ward",
+      ["workflow", "responsible_department"]
+    ),
+    room_number:
+      input.roomNumber ||
+      metadataString(metadata, ["workflow", "room_number"], "room_number", "room"),
     status: input.status || "OPEN",
-    refusal_reason: metadataString(metadata, "refusal_reason"),
-    signer_name: metadataString(metadata, "signer_name"),
-    signer_role: metadataString(metadata, "signer_role"),
+    refusal_reason: metadataString(metadata, ["workflow", "refusal_reason"], "refusal_reason"),
+    signer_name:
+      metadataString(metadata, "signer_name") ||
+      documentPayloadString(
+        signedDocument,
+        "signer_name",
+        "signerName",
+        "patient_name_or_guardian",
+        "patient_name",
+        "patientName",
+        "legal_guardian",
+        "guardian_name"
+      ),
+    signer_role:
+      metadataString(metadata, "signer_role") ||
+      documentPayloadString(
+        signedDocument,
+        "signer_role",
+        "signerRole",
+        "signer_relation",
+        "signerRelation",
+        "relationship",
+        "representative_relation"
+      ),
     signature_text: metadataString(metadata, "signature_text"),
-    signed_at: metadataString(metadata, "signed_at"),
+    signed_at: metadataString(metadata, "signed_at") || signedDocument?.signedAt || undefined,
     created_at: input.createdAt || undefined,
     pdf_file: metadataString(metadata, "pdf_file"),
+    discharge_route: metadataString(metadata, ["discharge_plan", "discharge_route"], "discharge_route"),
     workflow_stages: workflowStages,
     metadata: metadata || undefined,
   };

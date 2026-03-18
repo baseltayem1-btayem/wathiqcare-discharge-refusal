@@ -4,6 +4,10 @@ import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { dischargeRefusalFormTemplate } from "@/lib/templates/dischargeRefusalForm.template";
+import { financialResponsibilityNoticeTemplate } from "@/lib/templates/financialResponsibilityNotice.template";
+
+type DocumentLocale = "ar" | "en";
 
 const WORKFLOW_TEMPLATE_KEYS = [
     "discharge_refusal_form",
@@ -234,16 +238,6 @@ function inferStatus(workflow: Omit<WorkflowSnapshot, "documents">): WorkflowSta
     return "draft";
 }
 
-function escapeHtml(value: string | null | undefined): string {
-    const input = value ?? "";
-    return input
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
-
 function formatDateOnly(value: string | null | undefined): string {
     if (!value) {
         return "";
@@ -253,84 +247,60 @@ function formatDateOnly(value: string | null | undefined): string {
     return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString().slice(0, 10);
 }
 
-function formatTimeOnly(value: string | null | undefined): string {
-    if (!value) {
-        return "";
-    }
-
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString().slice(11, 16);
+function normalizeDocumentLocale(value: unknown): DocumentLocale {
+    return value === "ar" ? "ar" : "en";
 }
 
-function buildRefusalFormHtml(workflow: WorkflowSnapshot, payload: Record<string, unknown>, generatedAt: string): string {
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Medical Discharge Refusal Form</title>
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.5; color: #0f172a; margin: 20px; }
-    h1, h2, h3 { margin: 0; }
-    .mt { margin-top: 14px; }
-  </style>
-</head>
-<body>
-  <p>Form Code: IMC-PAT-DIS-REF-01</p>
-  <p>International Medical Center - Jeddah</p>
-  <h1>Medical Discharge Refusal Form</h1>
-
-  <div class="mt">Patient Name: ${escapeHtml(workflow.patient_name)}</div>
-  <div>Medical Record Number (MRN): ${escapeHtml(workflow.medical_record_number)}</div>
-  <div>National ID / Iqama Number: ${escapeHtml(workflow.patient_id_number)}</div>
-  <div>Room Number: ${escapeHtml(workflow.room_number)}</div>
-  <div>Date of Medical Discharge Decision: ${escapeHtml(formatDateOnly(workflow.discharge_decision_at))}</div>
-  <div>Attending Physician: ${escapeHtml(workflow.attending_physician)}</div>
-
-  <h2 class="mt">Declaration of Medical Discharge Refusal</h2>
-  <p>I acknowledge that I have received and understood the medical discharge decision.</p>
-  <p>${escapeHtml(workflow.discussion_summary || workflow.refusal_reason || "Patient elected to remain admitted after medical discharge decision.")}</p>
-
-  <div class="mt">Patient / Legal Representative Name: ${escapeHtml(workflow.patient_name)}</div>
-  <div>Relationship to Patient (if applicable): ${escapeHtml(typeof payload.relationship === "string" ? payload.relationship : "")}</div>
-  <div>Signature: ${escapeHtml(typeof payload.patient_signature === "string" ? payload.patient_signature : "")}</div>
-  <div>Date: ${escapeHtml(formatDateOnly(generatedAt))}</div>
-  <div>Time: ${escapeHtml(formatTimeOnly(generatedAt))}</div>
-
-  <h3 class="mt">Witnesses</h3>
-  <div>Witness 1 Name: ${escapeHtml(typeof payload.witness_1_name === "string" ? payload.witness_1_name : "")}</div>
-  <div>Witness 2 Name: ${escapeHtml(typeof payload.witness_2_name === "string" ? payload.witness_2_name : "")}</div>
-</body>
-</html>`;
+function buildRefusalFormHtml(
+    workflow: WorkflowSnapshot,
+    payload: Record<string, unknown>,
+    generatedAt: string,
+    locale: DocumentLocale,
+): string {
+    return dischargeRefusalFormTemplate.renderHtml(
+        {
+            patientName: workflow.patient_name ?? undefined,
+            patientIdNumber: workflow.patient_id_number ?? undefined,
+            medicalRecordNumber: workflow.medical_record_number ?? undefined,
+            roomNumber: workflow.room_number ?? undefined,
+            attendingPhysicianName: workflow.attending_physician ?? undefined,
+            dischargeDecisionAt: formatDateOnly(workflow.discharge_decision_at),
+            discussionSummary: workflow.discussion_summary || workflow.refusal_reason || undefined,
+            refusalReason: workflow.refusal_reason ?? undefined,
+            socialServicesSummary:
+                typeof payload.social_administrative_interventions === "string"
+                    ? payload.social_administrative_interventions
+                    : workflow.social_administrative_interventions ?? undefined,
+        },
+        { locale },
+    );
 }
 
-function buildFinancialNoticeHtml(workflow: WorkflowSnapshot, payload: Record<string, unknown>, generatedAt: string): string {
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Financial Responsibility Notice</title>
-  <style>
-    body { font-family: Arial, sans-serif; line-height: 1.5; color: #0f172a; margin: 20px; }
-    h1 { margin: 0; }
-  </style>
-</head>
-<body>
-  <p>International Medical Center - Jeddah</p>
-  <h1>Notification and Acknowledgment of Financial Responsibility</h1>
-
-  <p>Date: ${escapeHtml(formatDateOnly(generatedAt))}</p>
-  <p>To: ${escapeHtml(workflow.patient_name)}</p>
-  <p>National ID Number: ${escapeHtml(workflow.patient_id_number)}</p>
-  <p>Medical Record Number: ${escapeHtml(workflow.medical_record_number)}</p>
-  <p>Room Number: ${escapeHtml(workflow.room_number)}</p>
-  <p>Discharge decision date: ${escapeHtml(formatDateOnly(workflow.discharge_decision_at))}</p>
-  <p>Insurance coverage status: ${escapeHtml(workflow.insurance_coverage_status || "unknown")}</p>
-  <p>${escapeHtml(workflow.discussion_summary || workflow.refusal_reason || "Patient remained admitted after clearance for discharge.")}</p>
-
-  <p>Representative Name: ${escapeHtml(typeof payload.representative_name === "string" ? payload.representative_name : "")}</p>
-  <p>Representative Signature: ${escapeHtml(typeof payload.representative_signature === "string" ? payload.representative_signature : "")}</p>
-</body>
-</html>`;
+function buildFinancialNoticeHtml(
+    workflow: WorkflowSnapshot,
+    payload: Record<string, unknown>,
+    generatedAt: string,
+    locale: DocumentLocale,
+): string {
+    return financialResponsibilityNoticeTemplate.renderHtml(
+        {
+            documentDate: formatDateOnly(generatedAt),
+            referenceNumber: `IMC-REF-${workflow.case_id.slice(0, 8).toUpperCase()}`,
+            patientOrGuardianName:
+                typeof payload.patient_name_or_guardian === "string"
+                    ? payload.patient_name_or_guardian
+                    : workflow.patient_name ?? undefined,
+            patientName: workflow.patient_name ?? undefined,
+            patientIdNumber: workflow.patient_id_number ?? undefined,
+            medicalRecordNumber: workflow.medical_record_number ?? undefined,
+            roomNumber: workflow.room_number ?? undefined,
+            dischargeDecisionAt: formatDateOnly(workflow.discharge_decision_at),
+            attendingPhysicianName: workflow.attending_physician ?? undefined,
+            refusalReason: workflow.refusal_reason ?? undefined,
+            discussionSummary: workflow.discussion_summary || workflow.refusal_reason || undefined,
+        },
+        { locale },
+    );
 }
 
 function mapWorkflowDocument(document: {
@@ -592,10 +562,11 @@ async function createGeneratedDocument(
     templateKey: "discharge_refusal_form" | "financial_responsibility_notice",
 ): Promise<WorkflowDocumentSummary> {
     const generatedAt = nowIso();
+    const locale = normalizeDocumentLocale(payload.locale);
     const html =
         templateKey === "discharge_refusal_form"
-            ? buildRefusalFormHtml(workflow as WorkflowSnapshot, payload, generatedAt)
-            : buildFinancialNoticeHtml(workflow as WorkflowSnapshot, payload, generatedAt);
+            ? buildRefusalFormHtml(workflow as WorkflowSnapshot, payload, generatedAt, locale)
+            : buildFinancialNoticeHtml(workflow as WorkflowSnapshot, payload, generatedAt, locale);
 
     const document = await prisma.document.create({
         data: {
@@ -626,6 +597,7 @@ async function createGeneratedDocument(
             generatedByUserId: auth.sub,
             metadata: {
                 source: "frontend-local-workflow-fallback",
+                locale,
             } as Prisma.InputJsonObject,
         },
         include: {

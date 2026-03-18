@@ -19,7 +19,8 @@
     "moduleName": "رفض الخروج",
     "moduleTagline": "سير عمل قانوني طبي يركز على الامتثال.",
     "activeWorkspace": "مساحة العمل النشطة",
-    "secureMode": "وضع آمن مفعّل بنطاق المستأجر."
+    "secureMode": "وضع آمن مفعّل بنطاق المستأجر.",
+    "tenantName": "المركز الطبي الدولي"
   },
   "nav": {
     "dashboard": "لوحة التحكم",
@@ -76,6 +77,10 @@
     "idIqama": "رقم الهوية / الإقامة",
     "roomNumber": "رقم الغرفة",
     "attendingPhysician": "الطبيب المعالج",
+    "dateOfBirth": "تاريخ الميلاد",
+    "mobileNumber": "رقم الجوال",
+    "guardianName": "ولي الأمر / الممثل النظامي",
+    "department": "القسم",
     "dischargeDecisionDate": "تاريخ قرار الخروج",
     "refusalReason": "سبب الرفض",
     "discussionSummary": "ملخص النقاش",
@@ -204,16 +209,38 @@
     "action": {
       "recordDischargeDecision": "تسجيل قرار الخروج",
       "startRefusalWorkflow": "بدء سير عمل الرفض",
+      "homeHealthcareAgreement": "اتفاقية الرعاية المنزلية",
       "generateRefusalForm": "إنشاء نموذج الرفض",
       "generateFinancialNotice": "إنشاء إشعار المسؤولية المالية",
       "markPatientCounseled": "تحديد أنه تم إرشاد المريض",
       "referSocialServices": "التحويل إلى الخدمات الاجتماعية",
       "escalate": "التصعيد إلى الشؤون القانونية والامتثال",
+      "sendEmailNotice": "إرسال إشعار بريد",
       "downloadGenerated": "تنزيل المستند المُنشأ",
       "viewGenerated": "عرض المستند المُنشأ",
       "openRefusalPdf": "فتح ملف الرفض بصيغة PDF",
       "generateBundle": "إنشاء الحزمة",
       "refreshDocuments": "تحديث المستندات"
+    },
+    "department": {
+      "attendingPhysician": "الطبيب المعالج",
+      "nursing": "التمريض",
+      "patientAffairs": "شؤون المرضى",
+      "patientAffairsSocialServices": "شؤون المرضى / الخدمات الاجتماعية",
+      "nursingPatientAffairs": "التمريض / شؤون المرضى",
+      "legalCompliance": "الشؤون القانونية / الامتثال",
+      "compliance": "الامتثال",
+      "legal": "الشؤون القانونية"
+    },
+    "next": {
+      "recordRefusalIfNeeded": "إذا تم رفض الخروج فابدأ سير عمل الرفض.",
+      "documentCommunication": "وثّق تفاصيل التواصل والإرشاد.",
+      "coordinateSupport": "نسّق الدعم والتدخل الاجتماعي.",
+      "issueForms": "أصدر النماذج والإشعارات المطلوبة حسب السياسة.",
+      "generateFinancialNotice": "أنشئ إشعار المسؤولية المالية وبلّغه.",
+      "escalateIfPersists": "صعّد إلى الشؤون القانونية / الامتثال إذا استمر الرفض بعد 24 ساعة.",
+      "legalReview": "مراجعة الشؤون القانونية واتخاذ القرار النهائي.",
+      "escalateNow": "التصعيد إلى الشؤون القانونية والامتثال"
     },
     "panel": {
       "title": "إجراءات عمل خطة الخروج للمريض",
@@ -288,20 +315,116 @@
     "escalationBody": "لا يزال الرفض قائمًا بعد 24 ساعة من قرار الخروج. يلزم التصعيد.",
     "tab": {
       "overview": "نظرة عامة",
-      "workflow": "سير العمل",
-      "documents": "المستندات",
+      "consents": "الموافقات",
+      "agreements": "الاتفاقيات",
+      "roi": "الإفصاح عن المعلومات",
+      "archive": "الأرشيف",
       "audit": "التدقيق"
     },
     "overview": {
       "caseProfile": "ملف الحالة",
       "mrn": "الرقم الطبي",
       "patient": "المريض",
+      "workspaceTitle": "مساحة المريض",
+      "workspaceSubtitle": "البيانات الأساسية للمريض وملخص الحالة الحالية.",
+      "progressTitle": "إجراءات عمل خطة الخروج للمريض",
+      "progressCurrentDescription": "تابع المرحلة الحالية حسب السياسة وانتقل مباشرة إلى الخطوات المتاحة من مسار الحالة.",
+      "progressPlannedDescription": "استعرض مراحل المسار المحفوظة عند إنشاء الحالة مع تحديثات التقدم المتاحة.",
+      "patientInfoTitle": "بيانات المريض",
+      "additionalInfoTitle": "معلومات إضافية",
+      "caseSummaryTitle": "ملخص الحالة",
       "status": "الحالة",
       "created": "تاريخ الإنشاء",
       "signer": "الموقّع",
       "signedAt": "تاريخ التوقيع",
       "refusalReason": "سبب الرفض",
-      "noRefusalReason": "لا يوجد سبب رفض مسجل"
+      "selectRefusalReason": "اختر سبب الرفض",
+      "saveRefusalReason": "حفظ السبب",
+      "refusalReasonSaved": "تم تحديث سبب الرفض بنجاح.",
+      "refusalReasonSaveFailed": "فشل تحديث سبب الرفض.",
+      "refusalReasonHelpDecision": "سجّل قرار الخروج أولاً ثم اختر سبب الرفض بحسب المرحلة الإجرائية في السياسة.",
+      "refusalReasonHelpCommunication": "اختر السبب الذي تم توثيقه أثناء مرحلة التواصل الأولي والإرشاد.",
+      "refusalReasonHelpSupport": "اختر السبب التشغيلي الذي تم توثيقه أثناء دعم شؤون المرضى أو الخدمات الاجتماعية.",
+      "refusalReasonHelpRefusalForm": "اختر السبب الذي يدعم إصدار نموذج الرفض وتوثيق الإقرار.",
+      "refusalReasonHelpOfficialNotification": "اختر السبب الذي يبرر إصدار إشعار المسؤولية المالية.",
+      "refusalReasonHelpEscalation": "اختر السبب الذي ما زال قائمًا بعد إصدار الإشعار ويدعم مرحلة التصعيد."
+    },
+    "documentTitles": {
+      "dischargeRefusalForm": "نموذج رفض الخروج الطبي",
+      "informedConsent": "الموافقة المستنيرة",
+      "financialResponsibilityNotice": "إشعار المسؤولية المالية",
+      "homeHealthcareAgreement": "اتفاقية الرعاية المنزلية",
+      "equipmentLiability": "إقرار مسؤولية الأجهزة",
+      "releaseOfInformation": "الإفصاح عن المعلومات"
+    },
+    "refusalReasons": {
+      "needsAdditionalClinicalExplanation": "يحتاج إلى شرح سريري إضافي",
+      "familyOrGuardianNeedsTime": "الأسرة أو ولي الأمر يحتاج إلى مزيد من الوقت",
+      "requestsExtendedStay": "يطلب تمديد البقاء في المستشفى",
+      "caregiverOrHomeSupportUnavailable": "مقدم الرعاية أو الدعم المنزلي غير متوفر",
+      "homecareOrEquipmentNotReady": "الرعاية المنزلية أو التجهيزات غير جاهزة",
+      "transportOrDestinationNotReady": "وسيلة النقل أو وجهة الخروج غير جاهزة",
+      "refusesToSignAcknowledgment": "يرفض توقيع الإقرار",
+      "financialResponsibilityConcern": "لديه ملاحظة على المسؤولية المالية",
+      "continuedRefusalAfterNotice": "استمرار الرفض بعد إصدار الإشعار",
+      "otherDocumentedPolicyReason": "سبب آخر موثق وفق السياسة"
+    },
+    "consents": {
+      "title": "الموافقات",
+      "subtitle": "عرض حالة الموافقات المستنيرة والتواقيع المرتبطة بهذه الحالة.",
+      "openInformedConsent": "فتح الموافقة المستنيرة",
+      "signerName": "اسم الموقّع",
+      "signedAt": "وقت التوقيع",
+      "noDocuments": "لا توجد مستندات موافقات لهذه الحالة حتى الآن."
+    },
+    "agreements": {
+      "title": "الاتفاقيات",
+      "subtitle": "اتفاقيات الحالة مثل اتفاقية الرعاية المنزلية.",
+      "noDocuments": "لا توجد وثائق اتفاقيات منشورة بعد."
+    },
+    "roi": {
+      "title": "الإفصاح عن المعلومات",
+      "subtitle": "متابعة طلبات الإفصاح عن المعلومات والمتطلبات القانونية المرتبطة بها.",
+      "statusLabel": "حالة الإفصاح عن المعلومات",
+      "pendingLegalReview": "بانتظار المراجعة القانونية",
+      "noOpenEscalation": "لا يوجد تصعيد مفتوح للإفصاح عن المعلومات",
+      "responsibleDepartmentLabel": "القسم المسؤول",
+      "responsibleDepartmentValue": "السجلات الطبية / الشؤون القانونية",
+      "noDocuments": "لا توجد مستندات إفصاح عن المعلومات مرفقة بعد."
+    },
+    "archive": {
+      "title": "مساحة إصدار المستندات",
+      "subtitle": "أنشئ النماذج القانونية وأرسلها للتوقيع ثم أصدر النسخة النهائية وأرشِف السجل.",
+      "document": "المستند",
+      "generation": "الإنشاء",
+      "signature": "التوقيع",
+      "finalPdf": "النسخة النهائية",
+      "generated": "تم الإنشاء",
+      "readyToGenerate": "جاهز للإنشاء",
+      "planned": "مخطط له",
+      "signatureEnabled": "مسار التوقيع مفعّل",
+      "notWired": "غير مربوط بعد",
+      "issued": "تم الإصدار",
+      "pendingSignature": "بانتظار التوقيع",
+      "generateDocument": "إنشاء المستند",
+      "sendForSignature": "إرسال للتوقيع",
+      "tabletMobileLink": "رابط الجهاز اللوحي والجوال",
+      "verifySignature": "التحقق من التوقيع",
+      "issueFinalPdf": "إصدار النسخة النهائية",
+      "archiveDocument": "أرشفة المستند"
+    },
+    "messages": {
+      "templateComingSoon": "سيتم تفعيل {template} عبر قوالب الشؤون القانونية في الإصدار القادم.",
+      "noSignaturePath": "لا يوجد لهذا المستند مسار توقيع إلكتروني مفعّل حتى الآن.",
+      "signatureVerifiedAt": "تم التحقق من التوقيع في {date}.",
+      "noVerifiedSignature": "لا يوجد توقيع موثق لهذه الحالة حتى الآن.",
+      "finalPdfAfterSignature": "سيتم إصدار النسخة النهائية الموقعة تلقائيًا بعد اكتمال التوقيع الإلكتروني.",
+      "archiveCompleted": "اكتملت عملية الأرشفة عبر إنشاء حزمة الأدلة.",
+      "emailPrompt": "أدخل بريد المستلم لإرسال إشعار سير العمل",
+      "emailSent": "تم إرسال إشعار سير العمل بالبريد الإلكتروني بنجاح.",
+      "emailRecorded": "تم تسجيل إشعار سير العمل بنجاح.",
+      "emailFailed": "فشل إرسال إشعار سير العمل بالبريد الإلكتروني.",
+      "workflowServiceUnavailable": "خدمة مسار الإجراءات غير متاحة مؤقتًا. ما زالت بيانات الحالة الأساسية متاحة بينما تبقى إجراءات المسار معطلة."
     },
     "audit": {
       "title": "سجل التدقيق",
@@ -769,5 +892,50 @@
     "escalated": "مصعّد",
     "resolved": "محلول",
     "underReview": "قيد المراجعة"
+  },
+  "signaturePage": {
+    "officialText": "النص الرسمي المعتمد",
+    "methodSection": "طريقة الإقرار / التوقيع",
+    "emailLabel": "البريد الإلكتروني للمريض",
+    "tabletLabel": "توقيع المريض على التابلت",
+    "witnessLabel": "اسم الشاهد",
+    "startBtn": "بدء التحقق",
+    "confirmBtn": "تأكيد",
+    "statusLabel": "الحالة:",
+    "sessionIdLabel": "معرّف الجلسة:",
+    "backToCase": "العودة إلى الحالة",
+    "loading": "جار التحميل...",
+    "method": {
+      "TABLET_SIGNATURE": "توقيع على الجهاز اللوحي",
+      "EMAIL_NOTICE": "إرسال إشعار عبر البريد الإلكتروني"
+    },
+    "status": {
+      "waiting": "بانتظار التحقق",
+      "verified": "تم التحقق",
+      "notificationSent": "تم إرسال إشعار البريد الإلكتروني",
+      "notificationRegistered": "تم تسجيل إشعار البريد (قيد التحقق من التسليم)"
+    },
+    "message": {
+      "finalCreated": "تم إنشاء النسخة النهائية.",
+      "emailSent": "تم إرسال إشعار للمريض عبر البريد الإلكتروني.",
+      "emailRegistered": "تم تسجيل إشعار البريد، وجار التحقق من حالة التسليم.",
+      "tabletActivated": "تم تفعيل وضع توقيع التابلت.",
+      "startFirst": "ابدأ العملية أولاً",
+      "verifyFailed": "تعذر التحقق من التوقيع.",
+      "startFailed": "تعذر بدء جلسة التوقيع."
+    },
+    "refusalForm": {
+      "title": "نموذج رفض الخروج الطبي",
+      "subtitle": "طريقة الإقرار / التوقيع"
+    },
+    "financialNotice": {
+      "title": "إشعار المسؤولية المالية",
+      "subtitle": "طريقة الإقرار / التوقيع"
+    },
+    "informedConsent": {
+      "title": "الموافقة المستنيرة",
+      "subtitle": "الموافقة المستنيرة — التوقيع الإلكتروني",
+      "completedMessage": "تم إكمال الموافقة المستنيرة بنجاح."
+    }
   }
 }

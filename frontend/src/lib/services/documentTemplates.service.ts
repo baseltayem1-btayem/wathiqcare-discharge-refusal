@@ -10,13 +10,15 @@ export const DOCUMENT_CODES = {
   financialResponsibilityNotice: "IMC-PAT-DIS-NOT-01",
 } as const;
 
+export type DocumentTemplateLocale = "ar" | "en";
+
 export interface DocumentTemplate<TPayload> {
   key: "discharge_refusal_form" | "financial_responsibility_notice";
   documentCode: string;
   titleEn: string;
   titleAr: string;
   validate(payload: TPayload): ValidationResult;
-  renderHtml(payload: TPayload): string;
+  renderHtml(payload: TPayload, options?: { locale?: DocumentTemplateLocale }): string;
   buildFileName(payload: TPayload): string;
 }
 

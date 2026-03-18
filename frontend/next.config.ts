@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
         hostname: "cdn.phototourl.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "www.imc.med.sa",
+        pathname: "/**",
+      },
     ],
   },
 
