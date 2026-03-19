@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
@@ -18,36 +17,15 @@ type EmailSendResponse = {
 type WorkflowNotificationBody = {
     case_id?: string;
     to?: string[];
+    cc?: string[];
     template_name?: string;
     template_vars?: Record<string, unknown>;
-};
-
-type MicrosoftGraphConfig = {
-    tenantId: string;
-    clientId: string;
-    clientSecret: string;
-    senderEmail: string;
+    include_latest_case_documents?: boolean;
+    attachment_document_ids?: string[];
 };
 
 function safe(value: unknown): string {
     return (value == null ? "" : String(value)).trim();
-}
-
-function nowIso(): string {
-    return new Date().toISOString();
-}
-
-function getMicrosoftGraphConfig(): MicrosoftGraphConfig | null {
-    const tenantId = safe(process.env.MICROSOFT_TENANT_ID);
-    const clientId = safe(process.env.MICROSOFT_CLIENT_ID);
-    const clientSecret = safe(process.env.MICROSOFT_CLIENT_SECRET);
-    const senderEmail = safe(process.env.MICROSOFT_SENDER_EMAIL).toLowerCase();
-
-    if (!tenantId || !clientId || !clientSecret || !senderEmail) {
-        return null;
-    }
-
-    return { tenantId, clientId, clientSecret, senderEmail };
 }
 
 function extractBearerToken(request: NextRequest): string | null {
@@ -64,45 +42,6 @@ function extractBearerToken(request: NextRequest): string | null {
     return null;
 }
 
-function resolvePublicAppBaseUrl(request: NextRequest): string {
-    const fromEnv = safe(process.env.NEXT_PUBLIC_APP_URL);
-    if (fromEnv && /^https?:\/\//i.test(fromEnv)) {
-        return fromEnv.replace(/\/$/, "");
-    }
-
-    const host = request.headers.get("host") || "";
-    if (!host) {
-        return "http://localhost:3000";
-    }
-
-    const proto = safe(request.headers.get("x-forwarded-proto")) || (host.includes("localhost") ? "http" : "https");
-    return `${proto}://${host}`;
-}
-
-function buildGraphTemplatePayload(args: {
-    templateName: string;
-    caseId: string;
-    patientName: string;
-    appBaseUrl: string;
-    extra?: Record<string, unknown>;
-}): { subject: string; htmlBody: string } {
-    const { templateName, caseId, patientName, appBaseUrl, extra } = args;
-    const caseUrl = `${appBaseUrl}/cases/${encodeURIComponent(caseId)}`;
-    const reason = safe(extra?.reason || extra?.refusal_reason || extra?.discussion_summary);
-
-    if (templateName === "legal_escalation_notice") {
-        return {
-            subject: `Legal Escalation Notice - Case ${caseId}`,
-            htmlBody: `<div style="font-family: Arial, sans-serif; line-height: 1.7; color: #0f172a;"><p>Legal escalation is required for case <strong>${caseId}</strong>.</p><p>Patient: <strong>${patientName || "-"}</strong></p><p>${reason || "This case requires legal/compliance review."}</p><p><a href="${caseUrl}">Open case workspace</a></p></div>`,
-        };
-    }
-
-    return {
-        subject: `Discharge Refusal Follow-up - Case ${caseId}`,
-        htmlBody: `<div style="font-family: Arial, sans-serif; line-height: 1.7; color: #0f172a;"><p>Discharge refusal follow-up for case <strong>${caseId}</strong>.</p><p>Patient: <strong>${patientName || "-"}</strong></p><p>${reason || "Please complete pending discharge-refusal workflow steps."}</p><p><a href="${caseUrl}">Open case workspace</a></p></div>`,
-    };
-}
-
 async function sendViaBackend(args: {
     request: NextRequest;
     body: WorkflowNotificationBody;
@@ -117,7 +56,7 @@ async function sendViaBackend(args: {
         throw new ApiError(401, "Not authenticated");
     }
 
-    const endpoint = new URL("/api/emails/send", `${backendBase}/`);
+    const endpoint = new URL("/api/emails/send-workflow-notification", `${backendBase}/`);
 
     let response: Response;
     try {
@@ -150,88 +89,6 @@ async function sendViaBackend(args: {
 
     return (payload || { status: "sent", provider: "backend" }) as EmailSendResponse;
 }
-
-async function sendViaMicrosoftGraphFallback(args: {
-    request: NextRequest;
-    caseId: string;
-    patientName: string;
-    to: string[];
-    templateName: string;
-    templateVars?: Record<string, unknown>;
-}): Promise<EmailSendResponse> {
-    const graph = getMicrosoftGraphConfig();
-    if (!graph) {
-        throw new ApiError(503, "إشعار البريد غير متاح: إعداد Microsoft Graph غير مكتمل.");
-    }
-
-    const tokenEndpoint = `https://login.microsoftonline.com/${graph.tenantId}/oauth2/v2.0/token`;
-    const tokenBody = new URLSearchParams({
-        client_id: graph.clientId,
-        client_secret: graph.clientSecret,
-        scope: "https://graph.microsoft.com/.default",
-        grant_type: "client_credentials",
-    });
-
-    const tokenResponse = await fetch(tokenEndpoint, {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: tokenBody.toString(),
-    });
-
-    if (!tokenResponse.ok) {
-        throw new ApiError(502, "تعذر الحصول على صلاحية إرسال البريد من Microsoft Graph.");
-    }
-
-    const tokenJson = (await tokenResponse.json().catch(() => null)) as { access_token?: string } | null;
-    const accessToken = safe(tokenJson?.access_token);
-    if (!accessToken) {
-        throw new ApiError(502, "استجابة Microsoft Graph لا تحتوي access_token.");
-    }
-
-    const appBaseUrl = resolvePublicAppBaseUrl(args.request);
-    const template = buildGraphTemplatePayload({
-        templateName: args.templateName,
-        caseId: args.caseId,
-        patientName: args.patientName,
-        appBaseUrl,
-        extra: args.templateVars,
-    });
-
-    const graphEndpoint = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(graph.senderEmail)}/sendMail`;
-    const sendResponse = await fetch(graphEndpoint, {
-        method: "POST",
-        headers: {
-            authorization: `Bearer ${accessToken}`,
-            "content-type": "application/json",
-        },
-        body: JSON.stringify({
-            message: {
-                subject: template.subject,
-                body: {
-                    contentType: "HTML",
-                    content: template.htmlBody,
-                },
-                toRecipients: args.to.map((email) => ({ emailAddress: { address: email } })),
-            },
-            saveToSentItems: true,
-        }),
-    });
-
-    if (!sendResponse.ok) {
-        const detail = await sendResponse.text().catch(() => "");
-        throw new ApiError(502, `تعذر إرسال البريد عبر Microsoft Graph. ${detail || ""}`.trim());
-    }
-
-    return {
-        status: "sent",
-        provider: "microsoft_graph_direct",
-        recipients: args.to,
-        subject: template.subject,
-        log_id: `graph-fallback-${crypto.randomUUID()}`,
-        sent_at: nowIso(),
-    };
-}
-
 export async function POST(request: NextRequest) {
     try {
         const auth = requireAuth(request);
@@ -264,31 +121,20 @@ export async function POST(request: NextRequest) {
             patient_name: safe(body?.template_vars?.patient_name || caseRecord.patientName),
         } as Record<string, unknown>;
 
-        let result: EmailSendResponse;
-        try {
-            result = await sendViaBackend({
-                request,
-                body: {
-                    case_id: caseId,
-                    to: recipients,
-                    template_name: templateName,
-                    template_vars: templateVars,
-                },
-            });
-        } catch (error) {
-            if (!(error instanceof ApiError) || error.status < 500) {
-                throw error;
-            }
-
-            result = await sendViaMicrosoftGraphFallback({
-                request,
-                caseId,
-                patientName: safe(templateVars.patient_name),
+        const result = await sendViaBackend({
+            request,
+            body: {
+                case_id: caseId,
                 to: recipients,
-                templateName,
-                templateVars,
-            });
-        }
+                cc: Array.isArray(body?.cc) ? body.cc.map((item) => safe(item).toLowerCase()).filter(Boolean) : [],
+                template_name: templateName,
+                template_vars: templateVars,
+                include_latest_case_documents: Boolean(body?.include_latest_case_documents),
+                attachment_document_ids: Array.isArray(body?.attachment_document_ids)
+                    ? body.attachment_document_ids.map((item) => safe(item)).filter(Boolean)
+                    : [],
+            },
+        });
 
         await writeAuditLog({
             tenantId: auth.tenant_id,
@@ -311,7 +157,7 @@ export async function POST(request: NextRequest) {
             provider: result.provider || "backend",
             recipients,
             subject: result.subject || null,
-            sent_at: result.sent_at || nowIso(),
+            sent_at: result.sent_at || null,
         });
     } catch (error) {
         return handleApiError(error);

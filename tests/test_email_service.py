@@ -73,6 +73,59 @@ def test_acquire_access_token_retries_on_transient_http_error(monkeypatch):
     assert sleeps == [1]
 
 
+def test_email_diagnostics_reports_missing_configuration(monkeypatch):
+    for name in [
+        "MICROSOFT_TENANT_ID",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "MICROSOFT_SENDER_EMAIL",
+    ]:
+        monkeypatch.delenv(name, raising=False)
+
+    diagnostics = EmailServiceConfig.diagnostics()
+
+    assert diagnostics.available is False
+    assert diagnostics.provider == "microsoft_graph"
+    assert diagnostics.preferred_channel is None
+    assert diagnostics.configured_channels == []
+
+    graph = diagnostics.diagnostics[0]
+    assert graph.name == "microsoft_graph"
+    assert graph.available is False
+    assert graph.configured is False
+    assert graph.missing == [
+        "MICROSOFT_TENANT_ID",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "MICROSOFT_SENDER_EMAIL",
+    ]
+    assert graph.invalid == []
+    assert "Missing Microsoft Graph email configuration" in (graph.reason or "")
+
+
+def test_email_diagnostics_reports_invalid_authorized_values(monkeypatch):
+    monkeypatch.setenv("MICROSOFT_TENANT_ID", "wrong-tenant")
+    monkeypatch.setenv("MICROSOFT_CLIENT_ID", "wrong-client")
+    monkeypatch.setenv("MICROSOFT_CLIENT_SECRET", "secret")
+    monkeypatch.setenv("MICROSOFT_SENDER_EMAIL", "wrong@wathiqcare.med.sa")
+
+    diagnostics = EmailServiceConfig.diagnostics()
+
+    assert diagnostics.available is False
+    assert diagnostics.configured_channels == ["microsoft_graph"]
+
+    graph = diagnostics.diagnostics[0]
+    assert graph.configured is True
+    assert graph.missing == []
+    assert graph.invalid == [
+        "MICROSOFT_TENANT_ID",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_SENDER_EMAIL",
+    ]
+    assert graph.sender_email == "wrong@wathiqcare.med.sa"
+    assert "not authorized" in (graph.reason or "")
+
+
 def test_send_mail_refreshes_token_once_on_401(monkeypatch):
     client = MicrosoftGraphClient(_config())
     acquire_calls: list[bool] = []

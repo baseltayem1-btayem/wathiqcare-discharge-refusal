@@ -16,6 +16,7 @@ from urllib.error import HTTPError, URLError
 
 from backend.core.database import SessionLocal
 from backend.core.email_templates import render_template
+from backend.core.logging_config import get_logger
 from backend.models.discharge_case import DischargeCase
 from backend.models.email_log import EmailLog
 from backend.models.workflow_document import DischargeWorkflowDocument
@@ -32,6 +33,8 @@ GRAPH_REQUEST_TIMEOUT_SECONDS = 30
 GRAPH_TOKEN_REFRESH_BUFFER_SECONDS = 60
 GRAPH_MIN_TOKEN_TTL_SECONDS = 60
 
+logger = get_logger(__name__)
+
 
 class EmailConfigurationError(RuntimeError):
     """Raised when Microsoft Graph runtime configuration is invalid."""
@@ -42,6 +45,27 @@ class EmailDeliveryError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class EmailChannelDiagnostic:
+    name: str
+    available: bool
+    configured: bool
+    reason: Optional[str]
+    missing: List[str]
+    invalid: List[str]
+    sender_email: Optional[str]
+
+
+@dataclass(frozen=True)
+class EmailServiceDiagnostics:
+    available: bool
+    provider: str
+    preferred_channel: Optional[str]
+    configured_channels: List[str]
+    reason: Optional[str]
+    diagnostics: List[EmailChannelDiagnostic]
+
+
+@dataclass(frozen=True)
 class EmailServiceConfig:
     tenant_id: str
     client_id: str
@@ -49,39 +73,80 @@ class EmailServiceConfig:
     sender_email: str
 
     @staticmethod
-    def from_env() -> "EmailServiceConfig":
-        tenant_id = os.getenv("MICROSOFT_TENANT_ID", "").strip()
-        client_id = os.getenv("MICROSOFT_CLIENT_ID", "").strip()
-        client_secret = os.getenv("MICROSOFT_CLIENT_SECRET", "").strip()
-        sender_email = os.getenv("MICROSOFT_SENDER_EMAIL", "").strip().lower()
+    def _read_env_values() -> Dict[str, str]:
+        return {
+            "MICROSOFT_TENANT_ID": os.getenv("MICROSOFT_TENANT_ID", "").strip(),
+            "MICROSOFT_CLIENT_ID": os.getenv("MICROSOFT_CLIENT_ID", "").strip(),
+            "MICROSOFT_CLIENT_SECRET": os.getenv("MICROSOFT_CLIENT_SECRET", "").strip(),
+            "MICROSOFT_SENDER_EMAIL": os.getenv("MICROSOFT_SENDER_EMAIL", "").strip().lower(),
+        }
 
-        missing = [
-            key
-            for key, value in [
-                ("MICROSOFT_TENANT_ID", tenant_id),
-                ("MICROSOFT_CLIENT_ID", client_id),
-                ("MICROSOFT_CLIENT_SECRET", client_secret),
-                ("MICROSOFT_SENDER_EMAIL", sender_email),
-            ]
-            if not value
-        ]
+    @staticmethod
+    def _build_microsoft_graph_diagnostic(values: Dict[str, str]) -> EmailChannelDiagnostic:
+        missing = [key for key, value in values.items() if not value]
+        invalid: List[str] = []
+        reason_parts: List[str] = []
+
+        tenant_id = values["MICROSOFT_TENANT_ID"]
+        client_id = values["MICROSOFT_CLIENT_ID"]
+        sender_email = values["MICROSOFT_SENDER_EMAIL"]
+
         if missing:
-            raise EmailConfigurationError(f"Missing Microsoft Graph email configuration: {', '.join(missing)}")
+            reason_parts.append(f"Missing Microsoft Graph email configuration: {', '.join(missing)}")
 
-        if tenant_id != EXPECTED_MICROSOFT_TENANT_ID:
-            raise EmailConfigurationError("MICROSOFT_TENANT_ID is not authorized for this deployment")
+        if tenant_id and tenant_id != EXPECTED_MICROSOFT_TENANT_ID:
+            invalid.append("MICROSOFT_TENANT_ID")
+            reason_parts.append("MICROSOFT_TENANT_ID is not authorized for this deployment")
 
-        if client_id != EXPECTED_MICROSOFT_CLIENT_ID:
-            raise EmailConfigurationError("MICROSOFT_CLIENT_ID is not authorized for this deployment")
+        if client_id and client_id != EXPECTED_MICROSOFT_CLIENT_ID:
+            invalid.append("MICROSOFT_CLIENT_ID")
+            reason_parts.append("MICROSOFT_CLIENT_ID is not authorized for this deployment")
 
-        if sender_email != EXPECTED_MICROSOFT_SENDER_EMAIL:
-            raise EmailConfigurationError("MICROSOFT_SENDER_EMAIL must be admin@wathiqcare.med.sa")
+        if sender_email and sender_email != EXPECTED_MICROSOFT_SENDER_EMAIL:
+            invalid.append("MICROSOFT_SENDER_EMAIL")
+            reason_parts.append("MICROSOFT_SENDER_EMAIL must be admin@wathiqcare.med.sa")
 
+        configured = not missing
+        available = not missing and not invalid
+
+        return EmailChannelDiagnostic(
+            name="microsoft_graph",
+            available=available,
+            configured=configured,
+            reason="; ".join(reason_parts) if reason_parts else None,
+            missing=missing,
+            invalid=invalid,
+            sender_email=sender_email or None,
+        )
+
+    @staticmethod
+    def diagnostics() -> EmailServiceDiagnostics:
+        values = EmailServiceConfig._read_env_values()
+        graph = EmailServiceConfig._build_microsoft_graph_diagnostic(values)
+        configured_channels = [graph.name] if graph.configured else []
+
+        return EmailServiceDiagnostics(
+            available=graph.available,
+            provider=graph.name,
+            preferred_channel=graph.name if graph.available else None,
+            configured_channels=configured_channels,
+            reason=graph.reason,
+            diagnostics=[graph],
+        )
+
+    @staticmethod
+    def from_env() -> "EmailServiceConfig":
+        diagnostics = EmailServiceConfig.diagnostics()
+        graph = diagnostics.diagnostics[0]
+        if not graph.available:
+            raise EmailConfigurationError(graph.reason or "Microsoft Graph email configuration is invalid")
+
+        values = EmailServiceConfig._read_env_values()
         return EmailServiceConfig(
-            tenant_id=tenant_id,
-            client_id=client_id,
-            client_secret=client_secret,
-            sender_email=sender_email,
+            tenant_id=values["MICROSOFT_TENANT_ID"],
+            client_id=values["MICROSOFT_CLIENT_ID"],
+            client_secret=values["MICROSOFT_CLIENT_SECRET"],
+            sender_email=values["MICROSOFT_SENDER_EMAIL"],
         )
 
 
@@ -91,13 +156,49 @@ class MicrosoftGraphClient:
         self._cached_access_token: Optional[str] = None
         self._access_token_expires_at_epoch = 0.0
 
-    def _request_with_retry(self, req: urllib_request.Request) -> str:
+    def _request_with_retry(self, req: urllib_request.Request, *, request_name: str) -> tuple[int, str]:
         for attempt in range(1, MAX_GRAPH_REQUEST_ATTEMPTS + 1):
             try:
                 with urllib_request.urlopen(req, timeout=GRAPH_REQUEST_TIMEOUT_SECONDS) as response:
-                    return response.read().decode("utf-8")
+                    status = int(getattr(response, "status", 200))
+                    body = response.read().decode("utf-8")
+                    if request_name == "send_mail":
+                        logger.info(
+                            "RESPONSE STATUS",
+                            extra={
+                                "request_name": request_name,
+                                "attempt": attempt,
+                                "status": status,
+                            },
+                        )
+                        logger.info(
+                            "RESPONSE BODY",
+                            extra={
+                                "request_name": request_name,
+                                "attempt": attempt,
+                                "body": body,
+                            },
+                        )
+                    return status, body
             except HTTPError as exc:
                 detail = exc.read().decode("utf-8", errors="ignore") if hasattr(exc, "read") else str(exc)
+                if request_name == "send_mail":
+                    logger.error(
+                        "RESPONSE STATUS",
+                        extra={
+                            "request_name": request_name,
+                            "attempt": attempt,
+                            "status": exc.code,
+                        },
+                    )
+                    logger.error(
+                        "RESPONSE BODY",
+                        extra={
+                            "request_name": request_name,
+                            "attempt": attempt,
+                            "body": detail,
+                        },
+                    )
                 is_retryable = exc.code in RETRYABLE_HTTP_STATUS_CODES and attempt < MAX_GRAPH_REQUEST_ATTEMPTS
                 if is_retryable:
                     time.sleep(2 ** (attempt - 1))
@@ -116,19 +217,19 @@ class MicrosoftGraphClient:
         req = urllib_request.Request(url, data=encoded, method="POST")
         req.add_header("Content-Type", "application/x-www-form-urlencoded")
 
-        body = self._request_with_retry(req)
+        _, body = self._request_with_retry(req, request_name="token")
         try:
             return json.loads(body or "{}")
         except json.JSONDecodeError as exc:
             raise EmailDeliveryError("Invalid JSON response from Microsoft Graph token endpoint") from exc
 
-    def _post_json(self, url: str, payload: Dict[str, Any], headers: Dict[str, str]) -> None:
+    def _post_json(self, url: str, payload: Dict[str, Any], headers: Dict[str, str]) -> tuple[int, str]:
         raw = json.dumps(payload).encode("utf-8")
         req = urllib_request.Request(url, data=raw, method="POST")
         for key, value in headers.items():
             req.add_header(key, value)
 
-        self._request_with_retry(req)
+        return self._request_with_retry(req, request_name="send_mail")
 
     def acquire_access_token(self, *, force_refresh: bool = False) -> str:
         now = time.time()
@@ -136,17 +237,47 @@ class MicrosoftGraphClient:
             return self._cached_access_token
 
         token_url = f"https://login.microsoftonline.com/{self.config.tenant_id}/oauth2/v2.0/token"
-        payload = self._post_form(
-            token_url,
-            {
+        logger.info(
+            "TOKEN ACQUIRE START",
+            extra={
+                "tenant_id": self.config.tenant_id,
                 "client_id": self.config.client_id,
-                "client_secret": self.config.client_secret,
                 "scope": "https://graph.microsoft.com/.default",
                 "grant_type": "client_credentials",
+                "force_refresh": force_refresh,
             },
         )
+        try:
+            payload = self._post_form(
+                token_url,
+                {
+                    "client_id": self.config.client_id,
+                    "client_secret": self.config.client_secret,
+                    "scope": "https://graph.microsoft.com/.default",
+                    "grant_type": "client_credentials",
+                },
+            )
+        except Exception:
+            logger.exception(
+                "TOKEN ACQUIRE FAILED",
+                extra={
+                    "tenant_id": self.config.tenant_id,
+                    "client_id": self.config.client_id,
+                    "scope": "https://graph.microsoft.com/.default",
+                },
+            )
+            raise
+
         access_token = str(payload.get("access_token") or "").strip()
         if not access_token:
+            logger.error(
+                "TOKEN ACQUIRE FAILED",
+                extra={
+                    "tenant_id": self.config.tenant_id,
+                    "client_id": self.config.client_id,
+                    "reason": "missing_access_token",
+                },
+            )
             raise EmailDeliveryError("Microsoft Graph token response missing access_token")
 
         expires_in_raw = payload.get("expires_in")
@@ -161,6 +292,15 @@ class MicrosoftGraphClient:
 
         self._cached_access_token = access_token
         self._access_token_expires_at_epoch = now + ttl
+        logger.info(
+            "TOKEN ACQUIRE SUCCESS",
+            extra={
+                "tenant_id": self.config.tenant_id,
+                "client_id": self.config.client_id,
+                "expires_in": expires_in,
+                "cache_ttl": ttl,
+            },
+        )
         return access_token
 
     def send_mail(
@@ -174,6 +314,20 @@ class MicrosoftGraphClient:
         attachments: Sequence[Dict[str, Any]],
     ) -> None:
         graph_url = f"https://graph.microsoft.com/v1.0/users/{self.config.sender_email}/sendMail"
+        logger.info(
+            "START EMAIL SEND",
+            extra={
+                "sender_email": self.config.sender_email,
+                "recipient_count": len(recipients),
+                "cc_count": len(cc),
+                "attachment_count": len(attachments),
+                "subject": subject,
+            },
+        )
+        logger.info(
+            "GRAPH API URL",
+            extra={"graph_api_url": graph_url},
+        )
 
         message_payload: Dict[str, Any] = {
             "subject": subject,
@@ -205,19 +359,45 @@ class MicrosoftGraphClient:
                 },
             )
         except EmailDeliveryError as exc:
+            logger.exception(
+                "EMAIL SEND FAILED",
+                extra={
+                    "graph_api_url": graph_url,
+                    "subject": subject,
+                    "recipient_count": len(recipients),
+                },
+            )
             if "HTTP 401" not in str(exc):
                 raise
 
             # Refresh expired/invalid token once, then retry the send call.
-            refreshed_token = self.acquire_access_token(force_refresh=True)
-            self._post_json(
-                graph_url,
-                request_payload,
-                {
-                    "Authorization": f"Bearer {refreshed_token}",
-                    "Content-Type": "application/json",
+            logger.warning(
+                "EMAIL SEND RETRY AFTER TOKEN REFRESH",
+                extra={
+                    "graph_api_url": graph_url,
+                    "subject": subject,
                 },
             )
+            refreshed_token = self.acquire_access_token(force_refresh=True)
+            try:
+                self._post_json(
+                    graph_url,
+                    request_payload,
+                    {
+                        "Authorization": f"Bearer {refreshed_token}",
+                        "Content-Type": "application/json",
+                    },
+                )
+            except Exception:
+                logger.exception(
+                    "EMAIL SEND FAILED AFTER TOKEN REFRESH",
+                    extra={
+                        "graph_api_url": graph_url,
+                        "subject": subject,
+                        "recipient_count": len(recipients),
+                    },
+                )
+                raise
 
 
 class EmailService:

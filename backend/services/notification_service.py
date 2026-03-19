@@ -6,8 +6,11 @@ from typing import Any, Dict, Optional
 from sqlalchemy.orm import Session
 
 from backend.core.email_service import EmailService
+from backend.core.logging_config import get_logger
 from backend.models.workflow_notification import WorkflowNotification
 from backend.workflow.constants import NotificationChannel, NotificationStatus
+
+logger = get_logger(__name__)
 
 
 class NotificationService:
@@ -53,7 +56,17 @@ class NotificationService:
         title: str,
         body: str,
         metadata_json: Optional[Dict[str, Any]] = None,
+        raise_on_failure: bool = True,
     ) -> WorkflowNotification:
+        logger.info(
+            "WORKFLOW EMAIL NOTIFICATION CALLED",
+            extra={
+                "tenant_id": tenant_id,
+                "case_id": case_id,
+                "recipient_email": recipient_email,
+                "title": title,
+            },
+        )
         notification = WorkflowNotification(
             case_id=case_id,
             recipient_email=recipient_email,
@@ -86,9 +99,29 @@ class NotificationService:
             )
             notification.status = NotificationStatus.SENT
             notification.sent_at = datetime.utcnow()
+            logger.info(
+                "WORKFLOW EMAIL NOTIFICATION SENT",
+                extra={
+                    "notification_id": notification.id,
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "recipient_email": recipient_email,
+                },
+            )
         except Exception as exc:
             notification.status = NotificationStatus.FAILED
             notification.error_message = str(exc)
+            logger.exception(
+                "WORKFLOW EMAIL NOTIFICATION FAILED",
+                extra={
+                    "notification_id": notification.id,
+                    "tenant_id": tenant_id,
+                    "case_id": case_id,
+                    "recipient_email": recipient_email,
+                },
+            )
+            if raise_on_failure:
+                raise
 
         self.db.flush()
         return notification

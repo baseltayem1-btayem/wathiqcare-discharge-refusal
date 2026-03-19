@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 
 from sqlalchemy.orm import Session
 
+from backend.core.logging_config import get_logger
 from backend.models.assignment_rule import AssignmentRule
 from backend.models.discharge_case import DischargeCase
 from backend.models.discharge_execution_item import DischargeExecutionItem
@@ -25,6 +26,8 @@ from backend.workflow.constants import (
     EventCode,
     StageCode,
 )
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -315,6 +318,15 @@ class WorkflowEngineService:
                 event_details=f"Patient signature requested via {email}",
                 metadata_json={"email": email, "language": language},
             )
+            logger.info(
+                "REQUEST PATIENT SIGNATURE NOTIFICATION CALL",
+                extra={
+                    "case_id": case.id,
+                    "tenant_id": case.tenant_id,
+                    "recipient_email": email,
+                    "language": language,
+                },
+            )
             self.notifications.send_email_notification(
                 tenant_id=case.tenant_id,
                 created_by=actor_user_id,
@@ -323,6 +335,14 @@ class WorkflowEngineService:
                 title="Discharge acknowledgment request",
                 body="Please review and acknowledge your discharge order.",
                 metadata_json={"language": language},
+            )
+            logger.info(
+                "REQUEST PATIENT SIGNATURE NOTIFICATION SENT",
+                extra={
+                    "case_id": case.id,
+                    "tenant_id": case.tenant_id,
+                    "recipient_email": email,
+                },
             )
             return case
 

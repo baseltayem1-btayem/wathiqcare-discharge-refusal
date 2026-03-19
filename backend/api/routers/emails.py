@@ -10,8 +10,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.api.deps import require_roles
 from backend.core.database import SessionLocal
 from backend.core.email_service import EmailConfigurationError, EmailDeliveryError, EmailService, EmailServiceConfig
+from backend.core.logging_config import get_logger
 from backend.models.workflow_document import DischargeWorkflowDocument
 from backend.schemas.email import (
+    EmailChannelDiagnosticResponse,
     EmailCapabilitiesResponse,
     EmailLogResponse,
     EmailSendResponse,
@@ -22,6 +24,7 @@ from backend.schemas.email import (
 
 router = APIRouter(prefix="/api/emails", tags=["Email"])
 DEMO_REQUEST_RECIPIENT = "admin@wathiqcare.med.sa"
+logger = get_logger(__name__)
 
 
 def _get_demo_internal_copy_recipients() -> list[str]:
@@ -36,6 +39,40 @@ def _get_demo_internal_copy_recipients() -> list[str]:
         if candidate not in recipients:
             recipients.append(candidate)
     return recipients
+
+
+def _get_test_email_recipient() -> str:
+    raw = os.getenv("TEST_EMAIL_RECIPIENT", DEMO_REQUEST_RECIPIENT).strip().lower()
+    if not raw or "@" not in raw or "." not in raw.rsplit("@", 1)[-1]:
+        return DEMO_REQUEST_RECIPIENT
+    return raw
+
+
+def _send_demo_notification(
+    *,
+    service: EmailService,
+    recipient_email: str,
+    subject: str,
+    html_body: str,
+    text_body: str,
+    notification_kind: str,
+) -> None:
+    logger.info(
+        "DEMO REQUEST NOTIFICATION FUNCTION CALLED",
+        extra={
+            "notification_kind": notification_kind,
+            "recipient_email": recipient_email,
+            "subject": subject,
+        },
+    )
+    service.client.send_mail(
+        subject=subject,
+        html_body=html_body,
+        text_body=text_body,
+        recipients=[recipient_email],
+        cc=[],
+        attachments=[],
+    )
 
 
 def _build_requester_confirmation_content(payload: SendDemoRequestEmailRequest, requester_email: str) -> tuple[str, str, str]:
@@ -169,24 +206,43 @@ EMAIL_VIEW_ROLES = (
 )
 
 
+def _email_capabilities_response() -> EmailCapabilitiesResponse:
+    diagnostics = EmailServiceConfig.diagnostics()
+    return EmailCapabilitiesResponse(
+        available=diagnostics.available,
+        provider=diagnostics.provider,
+        reason=diagnostics.reason,
+        preferred_channel=diagnostics.preferred_channel,
+        configured_channels=diagnostics.configured_channels,
+        diagnostics=[
+            EmailChannelDiagnosticResponse(
+                name=item.name,
+                available=item.available,
+                configured=item.configured,
+                reason=item.reason,
+                missing=item.missing,
+                invalid=item.invalid,
+                sender_email=item.sender_email,
+            )
+            for item in diagnostics.diagnostics
+        ],
+    )
+
+
 @router.get("/capabilities", response_model=EmailCapabilitiesResponse)
 def get_email_capabilities(
     current_user=Depends(require_roles(*EMAIL_VIEW_ROLES)),
 ):
     del current_user
-    try:
-        EmailServiceConfig.from_env()
-        return EmailCapabilitiesResponse(
-            available=True,
-            provider="microsoft_graph",
-            reason=None,
-        )
-    except EmailConfigurationError:
-        return EmailCapabilitiesResponse(
-            available=False,
-            provider="microsoft_graph",
-            reason="إشعارات البريد الإلكتروني غير مهيأة حالياً.",
-        )
+    return _email_capabilities_response()
+
+
+@router.get("/diagnostics", response_model=EmailCapabilitiesResponse)
+def get_email_diagnostics(
+    current_user=Depends(require_roles(*EMAIL_VIEW_ROLES)),
+):
+    del current_user
+    return _email_capabilities_response()
 
 
 @router.post("/send", response_model=EmailSendResponse)
@@ -195,6 +251,14 @@ def send_email(
     current_user=Depends(require_roles(*EMAIL_ALLOWED_ROLES)),
 ):
     try:
+        logger.info(
+            "INCOMING POST send-email",
+            extra={
+                "tenant_id": current_user.get("tenant_id"),
+                "actor_user_id": current_user.get("id"),
+                "payload": payload.model_dump(),
+            },
+        )
         service = EmailService()
         return service.send_email(
             tenant_id=current_user["tenant_id"],
@@ -214,15 +278,24 @@ def send_email(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except EmailConfigurationError as exc:
+        logger.exception("SEND EMAIL CONFIGURATION ERROR")
         raise HTTPException(status_code=503, detail=str(exc))
     except EmailDeliveryError as exc:
+        logger.exception("SEND EMAIL DELIVERY ERROR")
         raise HTTPException(status_code=502, detail=str(exc))
     except Exception:
+        logger.exception("SEND EMAIL INTERNAL ERROR")
         raise HTTPException(status_code=500, detail="حدث خطأ داخلي أثناء إرسال البريد")
 
 
 @router.post("/send-demo-request", response_model=EmailSendResponse)
 def send_demo_request_email(payload: SendDemoRequestEmailRequest):
+    logger.info(
+        "INCOMING POST send-demo-request",
+        extra={
+            "payload": payload.model_dump(),
+        },
+    )
     requester_email = str(payload.contact_email).strip().lower()
     submitted_at = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
     internal_copy_recipients = _get_demo_internal_copy_recipients()
@@ -260,30 +333,30 @@ def send_demo_request_email(payload: SendDemoRequestEmailRequest):
 
     try:
         service = EmailService()
-        service.client.send_mail(
+        _send_demo_notification(
+            service=service,
+            recipient_email=DEMO_REQUEST_RECIPIENT,
             subject=admin_subject,
             html_body=admin_html_body,
             text_body=admin_text_body,
-            recipients=[DEMO_REQUEST_RECIPIENT],
-            cc=[],
-            attachments=[],
+            notification_kind="admin_primary",
         )
         for internal_recipient in internal_copy_recipients:
-            service.client.send_mail(
+            _send_demo_notification(
+                service=service,
+                recipient_email=internal_recipient,
                 subject=admin_subject,
                 html_body=admin_html_body,
                 text_body=admin_text_body,
-                recipients=[internal_recipient],
-                cc=[],
-                attachments=[],
+                notification_kind="admin_internal_copy",
             )
-        service.client.send_mail(
+        _send_demo_notification(
+            service=service,
+            recipient_email=requester_email,
             subject=requester_subject,
             html_body=requester_html_body,
             text_body=requester_text_body,
-            recipients=[requester_email],
-            cc=[],
-            attachments=[],
+            notification_kind="requester_confirmation",
         )
         return EmailSendResponse(
             log_id=f"demo-request-{uuid4()}",
@@ -295,10 +368,13 @@ def send_demo_request_email(payload: SendDemoRequestEmailRequest):
             sent_at=datetime.utcnow().isoformat(),
         )
     except EmailConfigurationError as exc:
+        logger.exception("SEND DEMO REQUEST CONFIGURATION ERROR")
         raise HTTPException(status_code=503, detail=str(exc))
     except EmailDeliveryError as exc:
+        logger.exception("SEND DEMO REQUEST DELIVERY ERROR")
         raise HTTPException(status_code=502, detail=str(exc))
     except Exception:
+        logger.exception("SEND DEMO REQUEST INTERNAL ERROR")
         raise HTTPException(status_code=500, detail="حدث خطأ داخلي أثناء إرسال طلب الديمو")
 
 
@@ -308,6 +384,14 @@ def send_workflow_notification(
     current_user=Depends(require_roles(*EMAIL_ALLOWED_ROLES)),
 ):
     try:
+        logger.info(
+            "INCOMING POST send-workflow-notification",
+            extra={
+                "tenant_id": current_user.get("tenant_id"),
+                "actor_user_id": current_user.get("id"),
+                "payload": payload.model_dump(),
+            },
+        )
         service = EmailService()
         attachment_document_ids = list(payload.attachment_document_ids)
 
@@ -330,6 +414,15 @@ def send_workflow_notification(
             finally:
                 db.close()
 
+        logger.info(
+            "WORKFLOW NOTIFICATION FUNCTION CALLED",
+            extra={
+                "tenant_id": current_user.get("tenant_id"),
+                "actor_user_id": current_user.get("id"),
+                "case_id": payload.case_id,
+                "recipient_count": len(payload.to),
+            },
+        )
         return service.send_email(
             tenant_id=current_user["tenant_id"],
             created_by=current_user["id"],
@@ -348,11 +441,69 @@ def send_workflow_notification(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except EmailConfigurationError as exc:
+        logger.exception("SEND WORKFLOW NOTIFICATION CONFIGURATION ERROR")
         raise HTTPException(status_code=503, detail=str(exc))
     except EmailDeliveryError as exc:
+        logger.exception("SEND WORKFLOW NOTIFICATION DELIVERY ERROR")
         raise HTTPException(status_code=502, detail=str(exc))
     except Exception:
+        logger.exception("SEND WORKFLOW NOTIFICATION INTERNAL ERROR")
         raise HTTPException(status_code=500, detail="حدث خطأ داخلي أثناء إرسال إشعار سير العمل")
+
+
+@router.post("/test-email", response_model=EmailSendResponse)
+def send_test_email(
+    current_user=Depends(require_roles(*EMAIL_ALLOWED_ROLES)),
+):
+    recipient = _get_test_email_recipient()
+    sent_at = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    try:
+        logger.info(
+            "INCOMING POST test-email",
+            extra={
+                "tenant_id": current_user.get("tenant_id"),
+                "actor_user_id": current_user.get("id"),
+                "recipient": recipient,
+            },
+        )
+        logger.info(
+            "TEST EMAIL FUNCTION CALLED",
+            extra={
+                "tenant_id": current_user.get("tenant_id"),
+                "actor_user_id": current_user.get("id"),
+                "recipient": recipient,
+            },
+        )
+        service = EmailService()
+        return service.send_email(
+            tenant_id=current_user["tenant_id"],
+            created_by=current_user["id"],
+            recipients=[recipient],
+            cc=[],
+            case_id=None,
+            patient_id=None,
+            subject=f"WathiqCare test email - {sent_at}",
+            html_body=(
+                "<div style='font-family:Arial,sans-serif;'>"
+                "<h3>WathiqCare Graph Email Test</h3>"
+                f"<p>This is a test delivery generated at {html.escape(sent_at)}.</p>"
+                "</div>"
+            ),
+            text_body=f"WathiqCare Graph Email Test generated at {sent_at}.",
+            template_name=None,
+            template_vars=None,
+            attachments=[],
+            attachment_document_ids=[],
+        )
+    except EmailConfigurationError as exc:
+        logger.exception("TEST EMAIL CONFIGURATION ERROR")
+        raise HTTPException(status_code=503, detail=str(exc))
+    except EmailDeliveryError as exc:
+        logger.exception("TEST EMAIL DELIVERY ERROR")
+        raise HTTPException(status_code=502, detail=str(exc))
+    except Exception:
+        logger.exception("TEST EMAIL INTERNAL ERROR")
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي أثناء إرسال البريد التجريبي")
 
 
 @router.get("/logs/{case_id}", response_model=list[EmailLogResponse])

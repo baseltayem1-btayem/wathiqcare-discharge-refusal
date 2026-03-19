@@ -82,10 +82,23 @@ class EmailSendResponse(BaseModel):
     sent_at: Optional[str] = None
 
 
+class EmailChannelDiagnosticResponse(BaseModel):
+    name: str
+    available: bool
+    configured: bool
+    reason: Optional[str] = None
+    missing: List[str] = Field(default_factory=list)
+    invalid: List[str] = Field(default_factory=list)
+    sender_email: Optional[str] = None
+
+
 class EmailCapabilitiesResponse(BaseModel):
     available: bool
     provider: str
     reason: Optional[str] = None
+    preferred_channel: Optional[str] = None
+    configured_channels: List[str] = Field(default_factory=list)
+    diagnostics: List[EmailChannelDiagnosticResponse] = Field(default_factory=list)
 
 
 class EmailLogResponse(BaseModel):

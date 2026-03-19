@@ -6,7 +6,7 @@ import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
-import { buildAcknowledgmentMethods, getMicrosoftGraphConfig, MicrosoftGraphConfig } from "../method-availability";
+import { buildAcknowledgmentMethods } from "../method-availability";
 type RouteContext = { params: Promise<{ caseId: string }> };
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -83,113 +83,6 @@ function extractBearerToken(request: NextRequest): string | null {
 
     return null;
 }
-function resolvePublicAppBaseUrl(request: NextRequest): string {
-    const fromEnv = safe(process.env.NEXT_PUBLIC_APP_URL);
-    if (fromEnv && /^https?:\/\//i.test(fromEnv)) {
-        return fromEnv.replace(/\/$/, "");
-    }
-
-    const host = request.headers.get("host") || "";
-    if (!host) {
-        return "http://localhost:3000";
-    }
-
-    const proto = safe(request.headers.get("x-forwarded-proto")) || (host.includes("localhost") ? "http" : "https");
-    return `${proto}://${host}`;
-}
-
-function resolvePatientActionUrl(request: NextRequest, caseId: string, templateKey: string): string {
-    const baseUrl = resolvePublicAppBaseUrl(request);
-    const pathByTemplate: Record<string, string> = {
-        informed_consent: "informed-consent",
-        financial_responsibility_notice: "financial-notice",
-        discharge_refusal_form: "refusal-form",
-        home_healthcare_agreement: "home-healthcare-agreement",
-    };
-
-    const routePath = pathByTemplate[templateKey] || "informed-consent";
-    return `${baseUrl}/cases/${encodeURIComponent(caseId)}/${routePath}?method=EMAIL_NOTICE`;
-}
-
-async function sendViaMicrosoftGraphDirect(
-    request: NextRequest,
-    caseId: string,
-    patientName: string,
-    recipientEmail: string,
-    templateKey: string,
-    graphConfig: MicrosoftGraphConfig,
-): Promise<EmailSendResponse> {
-    const tokenEndpoint = `https://login.microsoftonline.com/${graphConfig.tenantId}/oauth2/v2.0/token`;
-    const tokenParams = new URLSearchParams({
-        client_id: graphConfig.clientId,
-        client_secret: graphConfig.clientSecret,
-        scope: "https://graph.microsoft.com/.default",
-        grant_type: "client_credentials",
-    });
-
-    const tokenResponse = await fetch(tokenEndpoint, {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: tokenParams.toString(),
-    });
-
-    if (!tokenResponse.ok) {
-        throw new ApiError(502, "تعذر الحصول على صلاحية إرسال البريد من Microsoft Graph.");
-    }
-
-    const tokenJson = (await tokenResponse.json().catch(() => null)) as { access_token?: string } | null;
-    const accessToken = safe(tokenJson?.access_token);
-    if (!accessToken) {
-        throw new ApiError(502, "استجابة Microsoft Graph لا تحتوي access_token.");
-    }
-
-    const actionUrl = resolvePatientActionUrl(request, caseId, templateKey);
-    const subject = `إشعار إقرار طبي - الحالة ${caseId}`;
-    const htmlBody = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.7; color: #0f172a;">
-            <p>عزيزي/عزيزتي ${patientName || "المريض"}،</p>
-            <p>تم إنشاء جلسة إقرار مرتبطة بحالتك الطبية. يرجى فتح الرابط التالي لإكمال الإقرار/التوقيع:</p>
-            <p><a href="${actionUrl}">${actionUrl}</a></p>
-            <p>رقم الحالة: <strong>${caseId}</strong></p>
-            <p>فريق واثق كير</p>
-        </div>
-    `;
-
-    const graphEndpoint = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(graphConfig.senderEmail)}/sendMail`;
-    const sendResponse = await fetch(graphEndpoint, {
-        method: "POST",
-        headers: {
-            authorization: `Bearer ${accessToken}`,
-            "content-type": "application/json",
-        },
-        body: JSON.stringify({
-            message: {
-                subject,
-                body: {
-                    contentType: "HTML",
-                    content: htmlBody,
-                },
-                toRecipients: [{ emailAddress: { address: recipientEmail } }],
-            },
-            saveToSentItems: true,
-        }),
-    });
-
-    if (!sendResponse.ok) {
-        const detail = await sendResponse.text().catch(() => "");
-        throw new ApiError(502, `تعذر إرسال البريد عبر Microsoft Graph. ${detail || ""}`.trim());
-    }
-
-    return {
-        log_id: `graph-direct-${crypto.randomUUID()}`,
-        status: "sent",
-        provider: "microsoft_graph_direct",
-        subject,
-        recipients: [recipientEmail],
-        cc: [],
-        sent_at: nowIso(),
-    };
-}
 
 async function sendEmailNoticeViaBackend(
     request: NextRequest,
@@ -257,21 +150,8 @@ async function sendEmailNotice(
     caseId: string,
     patientName: string,
     recipientEmail: string,
-    templateKey: string,
 ): Promise<EmailSendResponse> {
-    try {
-        return await sendEmailNoticeViaBackend(request, caseId, patientName, recipientEmail);
-    } catch (error) {
-        if (error instanceof ApiError && error.status >= 500) {
-            // Only attempt direct Graph fallback when Graph is actually configured.
-            const graphConfig = getMicrosoftGraphConfig();
-            if (!graphConfig) {
-                throw error;
-            }
-            return sendViaMicrosoftGraphDirect(request, caseId, patientName, recipientEmail, templateKey, graphConfig);
-        }
-        throw error;
-    }
+    return sendEmailNoticeViaBackend(request, caseId, patientName, recipientEmail);
 }
 
 // ── route ──────────────────────────────────────────────────────────────────
@@ -343,7 +223,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             const email = safe(inputPayload.email ?? inputPayload.patient_email);
             if (!email) throw new ApiError(400, "email is required for EMAIL_NOTICE");
 
-            const emailResult = await sendEmailNotice(request, caseId, patientName, email, templateKey);
+            const emailResult = await sendEmailNotice(request, caseId, patientName, email);
             if (emailResult.status !== "sent") {
                 throw new ApiError(502, "فشل إرسال إشعار البريد الإلكتروني. يرجى المحاولة مرة أخرى.");
             }

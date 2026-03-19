@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.deps import get_current_user
 from backend.core.database import SessionLocal
+from backend.core.email_service import EmailConfigurationError, EmailDeliveryError
+from backend.core.logging_config import get_logger
 from backend.models.discharge_case import DischargeCase
 from backend.models.workflow_audit_log import WorkflowAuditLog
 from backend.models.workflow_notification import WorkflowNotification
@@ -32,6 +34,7 @@ from backend.services.workflow_engine import WorkflowEngineService
 from backend.workflow.constants import StageCode
 
 router = APIRouter(prefix="/api/workflow", tags=["Workflow Engine"])
+logger = get_logger(__name__)
 
 
 def _db_session():
@@ -241,6 +244,18 @@ def request_patient_signature(
     db=Depends(_db_session),
 ):
     try:
+        logger.info(
+            "INCOMING POST request-patient-signature",
+            extra={
+                "case_id": case_id,
+                "tenant_id": current_user.get("tenant_id"),
+                "actor_user_id": current_user.get("id"),
+                "payload": {
+                    "email": payload.email,
+                    "language": payload.language,
+                },
+            },
+        )
         engine = WorkflowEngineService(db)
         case = engine.send_to_patient_for_signature(
             case_id=case_id,
@@ -253,6 +268,10 @@ def request_patient_signature(
         return _as_case_response(case)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except EmailConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except EmailDeliveryError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
 
 
 @router.post("/cases/{case_id}/patient-accepted", response_model=WorkflowCaseResponse)

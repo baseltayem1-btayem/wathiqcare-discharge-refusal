@@ -1,13 +1,6 @@
 import { NextRequest } from "next/server";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 
-export type MicrosoftGraphConfig = {
-    tenantId: string;
-    clientId: string;
-    clientSecret: string;
-    senderEmail: string;
-};
-
 export type AcknowledgmentMethodDescriptor = {
     method: "TABLET_SIGNATURE" | "EMAIL_NOTICE";
     legacy_method: "tablet_signature" | "email_notice";
@@ -40,19 +33,6 @@ function extractBearerToken(request: NextRequest): string | null {
     }
 
     return null;
-}
-
-export function getMicrosoftGraphConfig(): MicrosoftGraphConfig | null {
-    const tenantId = safe(process.env.MICROSOFT_TENANT_ID);
-    const clientId = safe(process.env.MICROSOFT_CLIENT_ID);
-    const clientSecret = safe(process.env.MICROSOFT_CLIENT_SECRET);
-    const senderEmail = safe(process.env.MICROSOFT_SENDER_EMAIL).toLowerCase();
-
-    if (!tenantId || !clientId || !clientSecret || !senderEmail) {
-        return null;
-    }
-
-    return { tenantId, clientId, clientSecret, senderEmail };
 }
 
 async function getBackendEmailAvailability(
@@ -93,17 +73,11 @@ async function getBackendEmailAvailability(
 export async function buildAcknowledgmentMethods(
     request: NextRequest,
 ): Promise<AcknowledgmentMethodDescriptor[]> {
-    const directGraphConfigured = Boolean(getMicrosoftGraphConfig());
-    let emailAvailable = directGraphConfigured;
-    let emailReason: string | null = null;
-
-    if (!emailAvailable) {
-        const backendAvailability = await getBackendEmailAvailability(request);
-        emailAvailable = backendAvailability.available;
-        emailReason = emailAvailable
-            ? null
-            : backendAvailability.reason || EMAIL_UNAVAILABLE_REASON_AR;
-    }
+    const backendAvailability = await getBackendEmailAvailability(request);
+    const emailAvailable = backendAvailability.available;
+    const emailReason = emailAvailable
+        ? null
+        : backendAvailability.reason || EMAIL_UNAVAILABLE_REASON_AR;
 
     return [
         {
