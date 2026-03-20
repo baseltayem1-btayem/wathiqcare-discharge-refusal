@@ -1,10 +1,10 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
-    "buildCommand": "npm --prefix apps/web run build",
-    "devCommand": "npm --prefix apps/web run dev",
-    "installCommand": "npm --prefix apps/web install",
+    "buildCommand": "npm --prefix frontend run build",
+    "devCommand": "npm --prefix frontend run dev",
+    "installCommand": "npm --prefix frontend ci",
     "framework": "nextjs",
-    "outputDirectory": "apps/web/.next",
+    "outputDirectory": "frontend/.next",
     "regions": [
         "iad1"
     ]
