@@ -59,6 +59,13 @@ Critical variables:
 
 ## Deployment
 
+> ⚠️ **Non-Production Environments Only**
+> Current deployments to Railway (API) and Vercel (web) are **non-production validation
+> environments** used for system integration testing and smoke checks.
+> They **do not** constitute a production release and **do not** override the
+> "NO-GO for production cutover" decision.
+> See [`docs/deployment-status.md`](../deployment-status.md) for the full production release gate.
+
 ### Web (Vercel)
 The root `vercel.json` is pre-configured:
 ```
