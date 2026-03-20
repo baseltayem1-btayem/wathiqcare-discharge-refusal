@@ -1,0 +1,19 @@
+{
+  "bundle_id": "evidence_bundle_f9db793d-f95c-44fb-8fab-5669a51bcae8",
+  "generated_at": "2026-03-06T19:23:02.601893+00:00",
+  "discharge_case_id": "f9db793d-f95c-44fb-8fab-5669a51bcae8",
+  "files": [
+    {
+      "name": "refusal_f9db793d-f95c-44fb-8fab-5669a51bcae8.pdf",
+      "sha256": "11cb9409dcd2adc3ce7fe0aaf70529f6d176420f357d48df203f33f8ea2eb159"
+    },
+    {
+      "name": "case_summary.json",
+      "sha256": "1933c29acb96d1eb7d342a1b1328001c9a914131d68a526606d4d6efd314b2de"
+    },
+    {
+      "name": "audit_logs.json",
+      "sha256": "f19e3d473a683b1ecd8278f09f92217ea1f4f15de0ed56b1de283aa6ebd50af0"
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "title_ar": "إقرار وموافقة مستنيرة",
+  "title_en": "ACKNOWLEDGMENT & INFORMED CONSENT",
+  "subtitle_ar": "خدمات الرعاية الصحية المنزلية – التمريض الخاص – تدريب مقدم الرعاية",
+  "subtitle_en": "Home Health Care (HHC) – Private Duty Nursing (PDN) – Caregiver Training",
+  "date_label_ar": "التاريخ",
+  "date_label_en": "Date",
+  "sections": [
+    {
+      "number": 1,
+      "heading_ar": "أولاً: بيانات المريض",
+      "heading_en": "Patient Information",
+      "body_ar": "اسم المريض: ______________________________\n\nرقم الملف الطبي (MRN / URN): ______________________________\n\nالموقع الحالي: ______________________________\n\nولي الأمر / الممثل النظامي: ______________________________\n\nصلة القرابة: ______________________________",
+      "body_en": ""
+    },
+    {
+      "number": 2,
+      "heading_ar": "ثانياً: الإقرار العام",
+      "heading_en": "First: General Acknowledgment",
+      "body_ar": "أقر أنا الموقع أدناه بأنه قد تم إبلاغي بشكل كامل بالحالة الصحية للمريض وخطة الخروج الطبي وخطة الانتقال إلى خدمات الرعاية الصحية المنزلية، بما في ذلك خدمات التمريض الخاص وتدريب مقدم الرعاية.\n\nكما أقر بأنه تم شرح جميع الخدمات والمخاطر والمسؤوليات والنتائج المتوقعة لي بشكل واضح، وقد أتيحت لي الفرصة لطرح الأسئلة والحصول على إجابات وافية.",
+      "body_en": "I confirm that I have been fully informed of the patient’s medical condition, the discharge plan, and the transition to Home Health Care services including Private Duty Nursing and caregiver training.\n\nAll services, risks, responsibilities, and expected outcomes have been explained clearly to me. I have had the opportunity to ask questions and received satisfactory answers."
+    },
+    {
+      "number": 3,
+      "heading_ar": "ثالثاً: نطاق خدمات الرعاية الصحية المنزلية",
+      "heading_en": "Second: Scope of Home Health Care Services",
+      "body_ar": "سيتم تقديم خدمات الرعاية الصحية المنزلية وفقاً لأوامر الطبيب المعالج وخطة الرعاية المعتمدة وسياسات المركز الطبي.\n\nوتقتصر هذه الخدمات على الرعاية الطبية والتمريضية المتفق عليها خلال مدة العقد المحددة.\n\nكما أقر بأن خدمات الرعاية الصحية المنزلية ليست خدمة طوارئ ولا تعتبر بديلاً عن خدمات الطوارئ أو التنويم في المستشفى.",
+      "body_en": "Home Health Care services will be provided in accordance with the physician’s orders, the approved care plan, and hospital policies.\n\nServices are limited to the agreed medical and nursing care during the specified contractual period.\n\nHome Health Care is not an emergency service and does not replace hospital emergency or inpatient care."
+    },
+    {
+      "number": 4,
+      "heading_ar": "رابعاً: التمريض الخاص (Private Duty Nursing)",
+      "heading_en": "Third: Private Duty Nursing (PDN)",
+      "body_ar": "أوافق على ترتيبات التمريض الخاص من حيث مدة الخدمة ونطاقها.\n\nكما أقر بأن مسؤوليات طاقم التمريض الخاص تقتصر على تقديم الرعاية السريرية للمريض فقط، ولا تشمل المهام المنزلية أو أي خدمات غير طبية.",
+      "body_en": "I approve the Private Duty Nursing arrangement including duration and scope.\n\nPDN staff responsibilities are limited to clinical patient care only and do not include household or non-medical services."
+    },
+    {
+      "number": 5,
+      "heading_ar": "خامساً: التزام ولي الأمر بتوفير التمريض الخاص وحدود دور المركز",
+      "heading_en": "Fourth: Legal Guardian's Obligation to Provide Private Duty Nursing",
+      "body_ar": "يقر ولي الأمر أو الممثل النظامي بما يلي:\n\nيلتزم ولي الأمر بتوفير ممرض خاص للمريض على نفقته الخاصة من خلال التعاقد المباشر مع مزود خدمة رعاية صحية منزلية مرخص.\n\nيقتصر دور المركز الطبي على تقديم التدريب والإرشاد والإشراف السريري على مقدم الرعاية الذي تعينه الأسرة وفقاً لأوامر الطبيب المعالج وخطة الرعاية.\n\nلا يلتزم المركز الطبي بتوفير طاقم تمريضي منزلي للمريض.\n\nمدة التدريب التي يقدمها المركز الطبي لمقدم الرعاية تكون لمدة تسعين (90) يوماً تبدأ من تاريخ بدء برنامج الرعاية المنزلية أو من تاريخ مباشرة مقدم الرعاية، أيهما أسبق.",
+      "body_en": "The Legal Guardian acknowledges and agrees that:\n\nThe guardian shall provide a Private Duty Nurse at the family’s own expense through direct contracting with a duly licensed home health care provider.\n\nIMC’s role shall be limited to training, guidance, and clinical supervision of the family-designated caregiver in accordance with the physician’s orders and approved care plan.\n\nIMC shall have no obligation to provide home nursing services or nursing staff.\n\nThe training period provided by IMC shall be ninety (90) days commencing from the start date of the Home Health Care program or the date the caregiver begins providing services, whichever occurs first."
+    },
+    {
+      "number": 6,
+      "heading_ar": "سادساً: تدريب مقدم الرعاية",
+      "heading_en": "Fifth: Caregiver Training",
+      "body_ar": "يقوم المركز الطبي بتدريب مقدم الرعاية المعين من قبل الأسرة لمدة محددة.\n\nويقتصر التدريب على مهام الرعاية الأساسية الداعمة فقط.\n\nولا يجوز لمقدم الرعاية إجراء أي تدخلات طبية تخصصية أو إجراءات علاجية متقدمة.\n\nكما أن مقدم الرعاية لا يحل محل الفريق الطبي أو التمريضي في المستشفى.",
+      "body_en": "IMC will train the designated caregiver for a defined training period.\n\nTraining covers basic supportive care only.\n\nThe caregiver cannot perform specialized or invasive medical procedures.\n\nThe caregiver does not replace IMC medical staff."
+    },
+    {
+      "number": 7,
+      "heading_ar": "سابعاً: حدود المسؤولية",
+      "heading_en": "Sixth: Limitation of Responsibility",
+      "body_ar": "تقتصر مسؤولية المركز الطبي على مدة ونطاق اتفاقية الرعاية الصحية المنزلية وفترة التدريب.\n\nوبعد انتهاء الخدمة أو التدريب تنتقل المسؤولية كاملة إلى الأسرة أو مقدم الرعاية.\n\nولا يتحمل المركز أي مسؤولية عن أي نتائج أو مضاعفات تحدث خارج نطاق الخدمة المتفق عليها.",
+      "body_en": "Responsibility is strictly limited to the duration and scope of the signed Home Health Care agreement and training period.\n\nAfter completion or expiry of the service, responsibility transfers to the family/caregiver.\n\nNo liability applies for outcomes outside the agreed service period."
+    },
+    {
+      "number": 8,
+      "heading_ar": "ثامناً: التعويض وتحمل المخاطر",
+      "heading_en": "Seventh: Indemnity & Risk Allocation",
+      "body_ar": "أقر بأن الرعاية المنزلية قد تنطوي على مخاطر طبية محتملة، بما في ذلك تدهور الحالة الصحية أو حدوث حالات طارئة.\n\nكما أوافق على إعفاء المركز الطبي من أي مسؤولية قانونية عن أي مطالبات تنشأ خارج نطاق الخدمات المتفق عليها.",
+      "body_en": "Home care involves inherent medical risks including deterioration or emergency events.\n\nThe Legal Guardian agrees to indemnify IMC against claims arising outside the agreed scope of services."
+    },
+    {
+      "number": 9,
+      "heading_ar": "تاسعاً: الالتزامات المالية",
+      "heading_en": "Eighth: Financial Undertaking",
+      "body_ar": "تدفع جميع الرسوم وفقاً للأسعار المعتمدة لدى المركز.\n\nوأي مبالغ غير مغطاة من قبل شركة التأمين يتحملها المريض أو ذويه.",
+      "body_en": "All charges shall be paid according to approved rates.\n\nAny non-insurance covered amounts shall be paid by the patient or family."
+    },
+    {
+      "number": 10,
+      "heading_ar": "عاشراً: الإقرار النهائي",
+      "heading_en": "Ninth: Final Consent",
+      "body_ar": "أقر بأنني قرأت هذا المستند بالكامل وفهمت مضمونه وأوافق عليه وأوقع عليه بإرادتي الكاملة.",
+      "body_en": "I confirm that I have read, understood, and voluntarily signed this document."
+    },
+    {
+      "number": 11,
+      "heading_ar": "التوقيعات",
+      "heading_en": "Signatures",
+      "body_ar": "اسم ولي الأمر / الممثل النظامي: __________________________\n\nالتوقيع: __________________________\n\nرقم الهوية: __________________________\n\nالتاريخ: __________________________\n\nممثل المركز الطبي الدولي\n\nالاسم: __________________________\n\nالتوقيع: __________________________\n\nالتاريخ: __________________________",
+      "body_en": ""
+    }
+  ]
+}
