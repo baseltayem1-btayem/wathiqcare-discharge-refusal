@@ -1,16 +1,9 @@
 import type { NextConfig } from "next";
-import path from "node:path";
-
-const monorepoRoot = path.resolve(process.cwd(), "../..");
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: monorepoRoot,
   // Include contract files in serverless function bundles (Vercel)
   outputFileTracingIncludes: {
     "/api/discharge/**": ["./contracts/**"],
-  },
-  turbopack: {
-    root: monorepoRoot,
   },
   images: {
     remotePatterns: [
