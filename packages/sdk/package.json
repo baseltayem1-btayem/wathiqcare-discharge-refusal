@@ -1,0 +1,17 @@
+{
+    "name": "@wathiqcare/sdk",
+    "version": "0.1.0",
+    "private": true,
+    "description": "TypeScript client SDK for WathiqCare public and internal APIs",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "scripts": {
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@wathiqcare/types": "*"
+    },
+    "devDependencies": {
+        "typescript": "^5"
+    }
+}

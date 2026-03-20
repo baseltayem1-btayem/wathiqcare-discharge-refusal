@@ -27,7 +27,7 @@
 3. حدد الإطارات (Frames) التي تريد تحويلها
 4. اختر "Export to React" أو "Export to Next.js"
 5. حمّل الكود المُصدّر
-6. انقل الملفات إلى مجلد `frontend/components/` أو `frontend/app/`
+6. انقل الملفات إلى مجلد `apps/web/components/` أو `apps/web/app/`
 
 #### الخيار ب: التنفيذ اليدوي
 
@@ -41,8 +41,8 @@
 # - حمّل الملفات
 
 # ضع الملفات في:
-frontend/public/images/      # للصور
-frontend/public/icons/       # للأيقونات
+apps/web/public/images/      # للصور
+apps/web/public/icons/       # للأيقونات
 ```
 
 **2. استخراج الألوان والخطوط:**
@@ -50,7 +50,7 @@ frontend/public/icons/       # للأيقونات
 قم بإنشاء ملف تكوين Tailwind مخصص:
 
 ```typescript
-// frontend/tailwind.config.ts
+// apps/web/tailwind.config.ts
 export default {
   theme: {
     extend: {
@@ -83,7 +83,7 @@ export default {
 مثال على مكون بسيط من تصميم Figma:
 
 ```tsx
-// frontend/components/FigmaHeroSection.tsx
+// apps/web/components/FigmaHeroSection.tsx
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -136,7 +136,7 @@ export default function FigmaHeroSection() {
 **4. استخدام المكون في الصفحة:**
 
 ```tsx
-// frontend/app/page.tsx
+// apps/web/app/page.tsx
 import FigmaHeroSection from '@/components/FigmaHeroSection';
 
 export default function HomePage() {
@@ -257,7 +257,7 @@ vercel logs [deployment-url]
 
 ```
 wathiqcare-discharge-refusal/
-├── frontend/
+├── apps/web/
 │   ├── app/
 │   │   ├── page.tsx                 # الصفحة الرئيسية (محدّثة من Figma)
 │   │   ├── login/
@@ -319,11 +319,11 @@ npm run build
 ```
 
 **2. الصور لا تظهر:**
-- تأكد من وضع الصور في `frontend/public/`
+- تأكد من وضع الصور في `apps/web/public/`
 - استخدم `/images/file.png` وليس `./images/file.png`
 
 **3. الخطوط العربية لا تعمل:**
-- أضف الخطوط في `frontend/app/layout.tsx`
+- أضف الخطوط في `apps/web/app/layout.tsx`
 - استخدم Google Fonts أو خطوط محلية
 
 ### الموارد:

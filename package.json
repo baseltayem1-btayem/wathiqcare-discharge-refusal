@@ -1,14 +1,26 @@
 {
-  "name": "wathiqcare-discharge-refusal-prisma",
+  "name": "wathiqcare",
   "private": true,
+  "workspaces": [
+    "apps/web",
+    "packages/*"
+  ],
   "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "lint": "npm run lint --workspace=apps/web",
+    "web:dev": "npm run dev --workspace=apps/web",
+    "web:build": "npm run build --workspace=apps/web",
+    "web:lint": "npm run lint --workspace=apps/web",
+    "api:dev": "cd apps/api && uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000",
+    "api:test": "cd apps/api && pytest -q",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "prisma:seed": "node prisma/seed.js",
     "angular:install": "npm --prefix frontend-angular install",
     "angular:dev": "npm --prefix frontend-angular run start",
     "angular:build": "npm --prefix frontend-angular run build",
-    "angular:test": "npm --prefix frontend-angular run test",
-    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
-    "prisma:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
-    "prisma:seed": "node prisma/seed.js"
+    "angular:test": "npm --prefix frontend-angular run test"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2"

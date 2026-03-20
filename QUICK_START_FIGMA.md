@@ -54,16 +54,16 @@ unzip locofy-export.zip -d figma-output
 
 ```bash
 # انسخ المكونات
-cp -r ~/Downloads/figma-output/components/* /workspaces/wathiqcare-discharge-refusal/frontend/components/figma/
+cp -r ~/Downloads/figma-output/components/* /workspaces/wathiqcare-discharge-refusal/apps/web/components/figma/
 
 # أو إذا كان المجلد اسمه src:
-cp -r ~/Downloads/figma-output/src/components/* /workspaces/wathiqcare-discharge-refusal/frontend/components/figma/
+cp -r ~/Downloads/figma-output/src/components/* /workspaces/wathiqcare-discharge-refusal/apps/web/components/figma/
 
 # انسخ الصور والأيقونات
-cp -r ~/Downloads/figma-output/assets/* /workspaces/wathiqcare-discharge-refusal/frontend/public/figma-assets/
+cp -r ~/Downloads/figma-output/assets/* /workspaces/wathiqcare-discharge-refusal/apps/web/public/figma-assets/
 
 # أو:
-cp -r ~/Downloads/figma-output/public/* /workspaces/wathiqcare-discharge-refusal/frontend/public/figma-assets/
+cp -r ~/Downloads/figma-output/public/* /workspaces/wathiqcare-discharge-refusal/apps/web/public/figma-assets/
 ```
 
 ### 5️⃣ استخدم المكونات في الصفحات
@@ -71,7 +71,7 @@ cp -r ~/Downloads/figma-output/public/* /workspaces/wathiqcare-discharge-refusal
 عدّل الصفحة الرئيسية لاستخدام مكونات Figma:
 
 ```tsx
-// frontend/app/page.tsx
+// apps/web/app/page.tsx
 import HeroSection from '@/components/figma/HeroSection';
 import FeaturesSection from '@/components/figma/FeaturesSection';
 import Footer from '@/components/figma/Footer';
@@ -116,7 +116,7 @@ cd /workspaces/wathiqcare-discharge-refusal
 
 ```
 wathiqcare-discharge-refusal/
-├── frontend/
+├── apps/web/
 │   ├── components/
 │   │   └── figma/              # ✅ مكونات Figma هنا
 │   │       ├── HeroSection.tsx
@@ -138,7 +138,7 @@ wathiqcare-discharge-refusal/
 ### المكونات لا تعمل؟
 ```bash
 # تأكد من الأسماء صحيحة
-ls /workspaces/wathiqcare-discharge-refusal/frontend/components/figma/
+ls /workspaces/wathiqcare-discharge-refusal/apps/web/components/figma/
 
 # تأكد من imports صحيحة في page.tsx
 ```

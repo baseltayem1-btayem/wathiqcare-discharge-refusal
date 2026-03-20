@@ -193,8 +193,8 @@ node_modules/
 npm-debug.log*
 
 # Keep Next.js frontend source libraries tracked.
-!frontend/src/lib/
-!frontend/src/lib/**
+!apps/web/src/lib/
+!apps/web/src/lib/**
 
 # Ruff stuff:
 .ruff_cache/

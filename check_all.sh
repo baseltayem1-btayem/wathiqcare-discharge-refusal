@@ -24,11 +24,11 @@ if ! command -v npm >/dev/null 2>&1; then
 fi
 
 echo "==> Running backend tests (pytest)"
-cd "$ROOT_DIR"
+cd "$ROOT_DIR/apps/api"
 pytest -q
 
 echo "==> Running frontend lint"
-cd "$ROOT_DIR/frontend"
+cd "$ROOT_DIR/apps/web"
 npm run lint
 
 if [[ "$MODE" == "full" ]]; then

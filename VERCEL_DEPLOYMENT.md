@@ -132,7 +132,7 @@ vercel open
 2. **صدّر المكونات:**
    - افتح التصميم في Figma
    - استخدم الإضافة لتصدير المكونات كـ React
-   - انسخ الكود إلى `frontend/components/`
+   - انسخ الكود إلى `apps/web/components/`
 
 ### الخيار 2: التنفيذ اليدوي
 
@@ -146,7 +146,7 @@ vercel open
 2. **أنشئ المكونات:**
 ```bash
 # مثال: إنشاء مكون جديد
-touch frontend/components/FigmaHeroSection.tsx
+touch apps/web/components/FigmaHeroSection.tsx
 ```
 
 3. **استخدم Tailwind CSS:**

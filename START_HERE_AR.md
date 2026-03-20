@@ -55,13 +55,13 @@ vercel --prod
 4. **انقل الملفات إلى المشروع:**
    ```bash
    # ضع المكونات في:
-   frontend/components/
+   apps/web/components/
    
    # ضع الصفحات في:
-   frontend/app/
+   apps/web/app/
    
    # ضع الصور في:
-   frontend/public/images/
+   apps/web/public/images/
    ```
 
 5. **انشر على Vercel:**

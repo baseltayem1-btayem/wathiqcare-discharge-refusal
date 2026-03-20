@@ -23,14 +23,14 @@ cd "$(dirname "$0")"
 echo "📁 المجلد الحالي: $(pwd)"
 echo ""
 
-# Check if frontend exists
-if [ ! -d "frontend" ]; then
-    echo "❌ خطأ: مجلد frontend غير موجود"
+# Check if apps/web exists
+if [ ! -d "apps/web" ]; then
+    echo "❌ خطأ: مجلد apps/web غير موجود"
     exit 1
 fi
 
 echo "📦 جاري تثبيت المتطلبات..."
-cd frontend
+cd apps/web
 npm install
 
 if [ $? -ne 0 ]; then
@@ -55,7 +55,7 @@ echo "✅ تم بناء المشروع بنجاح"
 echo ""
 
 # Go back to root
-cd ..
+cd ../..
 
 # Deploy
 echo "🚀 جاري النشر على Vercel..."

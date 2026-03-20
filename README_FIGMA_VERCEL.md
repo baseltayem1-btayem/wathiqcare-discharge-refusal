@@ -17,8 +17,8 @@
 # في Terminal:
 cd ~/Downloads
 unzip export.zip -d figma-output
-cp -r figma-output/components/* /workspaces/wathiqcare-discharge-refusal/frontend/components/figma/
-cp -r figma-output/assets/* /workspaces/wathiqcare-discharge-refusal/frontend/public/figma-assets/
+cp -r figma-output/components/* /workspaces/wathiqcare-discharge-refusal/apps/web/components/figma/
+cp -r figma-output/assets/* /workspaces/wathiqcare-discharge-refusal/apps/web/public/figma-assets/
 ```
 
 ### 2. النشر على Vercel (5 دقائق)
@@ -44,8 +44,8 @@ cd /workspaces/wathiqcare-discharge-refusal
 ## 🗂️ المجلدات الجاهزة:
 
 ```
-✅ frontend/components/figma/        # ضع مكونات Figma هنا
-✅ frontend/public/figma-assets/     # ضع صور/أيقونات Figma هنا
+✅ apps/web/components/figma/        # ضع مكونات Figma هنا
+✅ apps/web/public/figma-assets/     # ضع صور/أيقونات Figma هنا
 ```
 
 ---

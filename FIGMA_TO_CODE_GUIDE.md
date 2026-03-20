@@ -26,13 +26,13 @@
 unzip anima-export.zip -d ~/Downloads/anima-output
 
 # 2. انسخ المكونات إلى مشروع WathiqCare
-cp -r ~/Downloads/anima-output/components/* /workspaces/wathiqcare-discharge-refusal/frontend/components/figma/
+cp -r ~/Downloads/anima-output/components/* /workspaces/wathiqcare-discharge-refusal/apps/web/components/figma/
 
 # 3. انسخ الصور
-cp -r ~/Downloads/anima-output/assets/* /workspaces/wathiqcare-discharge-refusal/frontend/public/figma-assets/
+cp -r ~/Downloads/anima-output/assets/* /workspaces/wathiqcare-discharge-refusal/apps/web/public/figma-assets/
 
 # 4. انسخ الأنماط (إذا وجدت)
-cp -r ~/Downloads/anima-output/styles/* /workspaces/wathiqcare-discharge-refusal/frontend/app/figma-styles/
+cp -r ~/Downloads/anima-output/styles/* /workspaces/wathiqcare-discharge-refusal/apps/web/app/figma-styles/
 ```
 
 ---
@@ -65,8 +65,8 @@ cp -r ~/Downloads/anima-output/styles/* /workspaces/wathiqcare-discharge-refusal
 unzip quest-export.zip -d ~/Downloads/quest-output
 
 # انسخ إلى المشروع
-cp -r ~/Downloads/quest-output/src/components/* /workspaces/wathiqcare-discharge-refusal/frontend/components/figma/
-cp -r ~/Downloads/quest-output/public/* /workspaces/wathiqcare-discharge-refusal/frontend/public/figma-assets/
+cp -r ~/Downloads/quest-output/src/components/* /workspaces/wathiqcare-discharge-refusal/apps/web/components/figma/
+cp -r ~/Downloads/quest-output/public/* /workspaces/wathiqcare-discharge-refusal/apps/web/public/figma-assets/
 ```
 
 ---
@@ -86,7 +86,7 @@ cp -r ~/Downloads/quest-output/public/* /workspaces/wathiqcare-discharge-refusal
 
 ```bash
 unzip locofy-export.zip -d ~/Downloads/locofy-output
-cp -r ~/Downloads/locofy-output/* /workspaces/wathiqcare-discharge-refusal/frontend/components/figma/
+cp -r ~/Downloads/locofy-output/* /workspaces/wathiqcare-discharge-refusal/apps/web/components/figma/
 ```
 
 ---
@@ -96,7 +96,7 @@ cp -r ~/Downloads/locofy-output/* /workspaces/wathiqcare-discharge-refusal/front
 بعد دمج الملفات من Anima/Quest/Locofy، سيكون لديك:
 
 ```
-frontend/
+apps/web/
 ├── components/
 │   ├── figma/                    # 🆕 المكونات من Figma
 │   │   ├── HeroSection.tsx
@@ -126,7 +126,7 @@ frontend/
 ### مثال: استبدال الصفحة الرئيسية بتصميم Figma
 
 ```tsx
-// frontend/app/page.tsx
+// apps/web/app/page.tsx
 import HeroSection from '@/components/figma/HeroSection';
 import FeaturesSection from '@/components/figma/FeaturesSection';
 import Footer from '@/components/figma/Footer';
@@ -225,8 +225,8 @@ cd /workspaces/wathiqcare-discharge-refusal
 
 ### الدمج:
 - [ ] فك ضغط الملفات
-- [ ] نسخ المكونات إلى `frontend/components/figma/`
-- [ ] نسخ الأصول إلى `frontend/public/figma-assets/`
+- [ ] نسخ المكونات إلى `apps/web/components/figma/`
+- [ ] نسخ الأصول إلى `apps/web/public/figma-assets/`
 - [ ] تحديث imports في الصفحات
 - [ ] اختبار محلياً
 
@@ -248,7 +248,7 @@ Error: Cannot find module '@/components/figma/HeroSection'
 **الحل:**
 ```bash
 # تأكد من وجود الملف
-ls /workspaces/wathiqcare-discharge-refusal/frontend/components/figma/
+ls /workspaces/wathiqcare-discharge-refusal/apps/web/components/figma/
 
 # وتأكد من اسم الملف صحيح (case-sensitive)
 ```
@@ -274,7 +274,7 @@ import Image from 'next/image';
 **الحل:**
 ```bash
 # تأكد من أن Tailwind يتعرف على المكونات الجديدة
-# في frontend/tailwind.config.ts تأكد من:
+# في apps/web/tailwind.config.ts تأكد من:
 content: [
   './app/**/*.{js,ts,jsx,tsx,mdx}',
   './components/**/*.{js,ts,jsx,tsx,mdx}',
