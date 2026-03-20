@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const appRoot = path.resolve(process.cwd());
+const monorepoRoot = path.resolve(process.cwd(), "..");
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: appRoot,
@@ -10,7 +11,7 @@ const nextConfig: NextConfig = {
     "/api/discharge/**": ["./contracts/**"],
   },
   turbopack: {
-    root: appRoot,
+    root: monorepoRoot,
   },
   images: {
     remotePatterns: [
