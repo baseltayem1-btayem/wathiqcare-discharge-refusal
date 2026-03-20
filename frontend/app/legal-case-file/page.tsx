@@ -1,17 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, FolderArchive } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import WorkflowProgress from "@/components/ui/WorkflowProgress";
+import { buildMetadataWorkflowProgress } from "@/lib/workflowProgress";
 import { apiFetch } from "@/utils/api";
 
 type CaseItem = {
   id: string;
   caseNumber?: string | null;
   patientName?: string | null;
+  patient_name?: string | null;
   status?: string | null;
+  metadata?: Record<string, unknown> | null;
+  signer_name?: string | null;
+  signer_role?: string | null;
+  signed_at?: string | null;
+  pdf_file?: string | null;
   _count?: {
     documents?: number;
     auditLogs?: number;
@@ -26,6 +34,26 @@ export default function LegalCaseFilePage() {
       .then((data) => setCases(Array.isArray(data) ? data : []))
       .catch(() => setCases([]));
   }, []);
+
+  const rows = useMemo(
+    () =>
+      cases.map((item) => ({
+        item,
+        workflow: buildMetadataWorkflowProgress({
+          caseId: item.id,
+          status: item.status,
+          patientName: item.patientName,
+          patient_name: item.patient_name,
+          signer_name: item.signer_name,
+          signer_role: item.signer_role,
+          signed_at: item.signed_at,
+          pdf_file: item.pdf_file,
+          metadata: item.metadata,
+          clickable: true,
+        }),
+      })),
+    [cases]
+  );
 
   return (
     <AuthGuard>
@@ -43,15 +71,25 @@ export default function LegalCaseFilePage() {
         }
       >
         <div className="space-y-3">
-          {cases.map((item) => (
+          {rows.map(({ item, workflow }) => (
             <article key={item.id} className="rounded-2xl border border-slate-200 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <h2 className="text-sm font-semibold text-slate-900">{item.caseNumber || item.id}</h2>
                   <p className="mt-1 text-sm text-slate-600">Patient: {item.patientName || "-"}</p>
                   <p className="mt-1 text-xs text-slate-500">
                     Status: {item.status || "-"} | Documents: {item._count?.documents || 0} | Audit logs: {item._count?.auditLogs || 0}
                   </p>
+                  {workflow.steps.length > 0 ? (
+                    <WorkflowProgress
+                      className="mt-3 border-0 bg-transparent p-0"
+                      layout="scroll"
+                      steps={workflow.steps}
+                      language="en"
+                      direction="ltr"
+                      currentStepId={workflow.currentStepId}
+                    />
+                  ) : null}
                 </div>
 
                 <div className="flex flex-wrap gap-2">

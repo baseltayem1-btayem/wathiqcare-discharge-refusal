@@ -26,6 +26,58 @@ function stageLabel(key: string, fallback: string, t: (key: string) => string): 
   return translated.startsWith("workflow.stage.") ? fallback : translated;
 }
 
+function translateDepartment(value: string | null, t: (key: string) => string): string {
+  if (!value) {
+    return t("common.na");
+  }
+
+  const normalized = value.trim().toLowerCase();
+  const keyMap: Record<string, string> = {
+    "attending physician": "workflow.department.attendingPhysician",
+    nursing: "workflow.department.nursing",
+    "patient affairs": "workflow.department.patientAffairs",
+    "patient affairs / social services": "workflow.department.patientAffairsSocialServices",
+    "nursing / patient affairs": "workflow.department.nursingPatientAffairs",
+    "legal / compliance": "workflow.department.legalCompliance",
+    compliance: "workflow.department.compliance",
+    legal: "workflow.department.legal",
+  };
+
+  const translationKey = keyMap[normalized];
+  if (!translationKey) {
+    return value;
+  }
+
+  const translated = t(translationKey);
+  return translated.startsWith("workflow.department.") ? value : translated;
+}
+
+function translateNextAction(value: string | null, t: (key: string) => string): string {
+  if (!value) {
+    return t("common.na");
+  }
+
+  const normalized = value.trim().toLowerCase();
+  const keyMap: Record<string, string> = {
+    "if discharge is refused, start refusal workflow.": "workflow.next.recordRefusalIfNeeded",
+    "document communication and counseling details.": "workflow.next.documentCommunication",
+    "coordinate support and social intervention.": "workflow.next.coordinateSupport",
+    "issue required policy forms and notices.": "workflow.next.issueForms",
+    "generate and communicate financial responsibility notice.": "workflow.next.generateFinancialNotice",
+    "escalate to legal / compliance if refusal persists beyond 24h.": "workflow.next.escalateIfPersists",
+    "legal department review and final disposition.": "workflow.next.legalReview",
+    "escalate to legal & compliance": "workflow.next.escalateNow",
+  };
+
+  const translationKey = keyMap[normalized];
+  if (!translationKey) {
+    return value;
+  }
+
+  const translated = t(translationKey);
+  return translated.startsWith("workflow.next.") ? value : translated;
+}
+
 export default function WorkflowTimelinePanel({ workflow }: Props) {
   const { t, locale } = useI18n();
 
@@ -71,7 +123,7 @@ export default function WorkflowTimelinePanel({ workflow }: Props) {
       <div className="mt-4 grid gap-4 md:grid-cols-3">
         <div>
           <p className="text-xs uppercase tracking-[0.08em] text-slate-500">{t("workflow.panel.responsibleDepartment")}</p>
-          <p className="mt-1 text-sm font-medium text-slate-800">{workflow.responsible_department || t("common.na")}</p>
+          <p className="mt-1 text-sm font-medium text-slate-800">{translateDepartment(workflow.responsible_department, t)}</p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-[0.08em] text-slate-500">{t("workflow.panel.responsiblePerson")}</p>
@@ -79,7 +131,7 @@ export default function WorkflowTimelinePanel({ workflow }: Props) {
         </div>
         <div>
           <p className="text-xs uppercase tracking-[0.08em] text-slate-500">{t("workflow.panel.nextAction")}</p>
-          <p className="mt-1 text-sm font-medium text-slate-800">{workflow.next_action || t("common.na")}</p>
+          <p className="mt-1 text-sm font-medium text-slate-800">{translateNextAction(workflow.next_action, t)}</p>
         </div>
       </div>
 

@@ -6,19 +6,14 @@ import { useParams, useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import TabletSignaturePad from "@/components/forms/TabletSignaturePad";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
 type MethodItem = {
-  method: "SMS_OTP" | "NAFATH" | "TABLET_SIGNATURE";
+  method: "TABLET_SIGNATURE" | "EMAIL_NOTICE";
   available: boolean;
   label_ar: string;
   reason?: string | null;
-};
-
-const METHOD_LABELS: Record<string, string> = {
-  SMS_OTP: "رسالة نصية",
-  NAFATH: "نفاذ",
-  TABLET_SIGNATURE: "توقيع على الجهاز اللوحي",
 };
 
 export default function FinancialNoticeSignaturePage() {
@@ -27,17 +22,15 @@ export default function FinancialNoticeSignaturePage() {
   const caseId = params?.id || "";
   const requestedMethod = searchParams.get("method");
   const mobileLinked = searchParams.get("mobile_link") === "1";
+  const { lang, t } = useI18n();
 
   const [methods, setMethods] = useState<MethodItem[]>([]);
-  const [method, setMethod] = useState<MethodItem["method"]>("SMS_OTP");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [otpCode, setOtpCode] = useState("");
+  const [method, setMethod] = useState<MethodItem["method"]>("TABLET_SIGNATURE");
+  const [email, setEmail] = useState("");
   const [signaturePayload, setSignaturePayload] = useState("");
   const [witnessName, setWitnessName] = useState("");
-  const [nafathStatus, setNafathStatus] = useState("pending");
   const [sessionId, setSessionId] = useState("");
-  const [status, setStatus] = useState("بانتظار التحقق");
-  const [debugCode, setDebugCode] = useState("");
+  const [status, setStatus] = useState(() => t("signaturePage.status.waiting"));
   const [previewHtml, setPreviewHtml] = useState("");
   const [message, setMessage] = useState("");
 
@@ -56,9 +49,7 @@ export default function FinancialNoticeSignaturePage() {
         const firstAvailable = availableMethods.find((item) => item.available);
         if (preferredTablet) {
           setMethod("TABLET_SIGNATURE");
-          if (mobileLinked) {
-            setMessage("تم تفعيل وضع توقيع التابلت مع إمكانية ربط OTP بالجوال.");
-          }
+          if (mobileLinked) setMessage(t("signaturePage.message.tabletActivated"));
         } else if (firstAvailable) {
           setMethod(firstAvailable.method);
         }
@@ -67,31 +58,43 @@ export default function FinancialNoticeSignaturePage() {
 
     void apiFetch<{ html_content: string }>(`/api/discharge/cases/${caseId}/workflow/preview`, {
       method: "POST",
-      body: JSON.stringify({ template_key: "financial_responsibility_notice", payload: {} }),
+      body: JSON.stringify({ template_key: "financial_responsibility_notice", payload: {}, locale: lang === "ar" ? "ar" : "en" }),
     })
       .then((res) => setPreviewHtml(res.html_content || ""))
       .catch((err: Error) => setMessage(err.message));
-  }, [caseId, mobileLinked, requestedMethod]);
+  }, [caseId, lang, mobileLinked, requestedMethod, t]);
 
   const selectedMethod = useMemo(() => methods.find((item) => item.method === method), [methods, method]);
+
+  const resolveStatusLabel = (verificationStatus: string, deliveryStatus?: string | null) => {
+    if (verificationStatus === "verified") {
+      return t("signaturePage.status.verified");
+    }
+
+    if (verificationStatus === "notification_sent") {
+      return deliveryStatus === "sent"
+        ? t("signaturePage.status.notificationSent")
+        : t("signaturePage.status.notificationRegistered");
+    }
+
+    return t("signaturePage.status.waiting");
+  };
 
   const startFlow = async () => {
     setMessage("");
     try {
       const payload: Record<string, unknown> = {};
-      if (method === "SMS_OTP") {
-        payload.phone_number = phoneNumber;
-      }
       if (method === "TABLET_SIGNATURE") {
         payload.witness_name = witnessName;
-        if (phoneNumber.trim()) {
-          payload.phone_number = phoneNumber;
-        }
+      }
+      if (method === "EMAIL_NOTICE") {
+        payload.email = email;
       }
 
       const res = await apiFetch<{
         session_id: string;
         verification_status: string;
+        delivery_status?: string | null;
         provider_result?: { otp_debug_code?: string };
       }>(`/api/discharge/cases/${caseId}/acknowledgment/start`, {
         method: "POST",
@@ -103,9 +106,14 @@ export default function FinancialNoticeSignaturePage() {
       });
 
       setSessionId(res.session_id);
-      setStatus(res.verification_status === "verified" ? "تم التحقق" : "بانتظار التحقق");
-      if (res.provider_result?.otp_debug_code) {
-        setDebugCode(res.provider_result.otp_debug_code);
+      setStatus(resolveStatusLabel(res.verification_status, res.delivery_status));
+
+      if (res.verification_status === "notification_sent") {
+        if (res.delivery_status === "sent") {
+          setMessage(t("signaturePage.message.emailSent"));
+        } else {
+          setMessage(t("signaturePage.message.emailRegistered"));
+        }
       }
     } catch (err) {
       setMessage((err as Error).message);
@@ -114,38 +122,33 @@ export default function FinancialNoticeSignaturePage() {
 
   const verifyFlow = async () => {
     if (!sessionId) {
-      setMessage("ابدأ العملية أولاً");
+      setMessage(t("signaturePage.message.startFirst"));
       return;
     }
 
     setMessage("");
     try {
       const payload: Record<string, unknown> = {};
-      if (method === "SMS_OTP") {
-        payload.otp_code = otpCode;
-      }
-      if (method === "NAFATH") {
-        payload.nafath_status = nafathStatus;
-      }
       if (method === "TABLET_SIGNATURE") {
         payload.signature_payload = signaturePayload;
         payload.witness_name = witnessName;
-        if (otpCode.trim()) {
-          payload.otp_code = otpCode;
-        }
       }
 
-      const res = await apiFetch<{ verification_status: string }>(
-        `/api/discharge/cases/${caseId}/acknowledgment/${sessionId}/verify`,
+      const res = await apiFetch<{ verification_status: string; delivery_status?: string | null }>(
+        `/api/acknowledgment/cases/${caseId}/${sessionId}/verify`,
         {
           method: "POST",
           body: JSON.stringify({ payload }),
         }
       );
 
-      setStatus(res.verification_status === "verified" ? "تم التحقق" : "بانتظار التحقق");
+      setStatus(resolveStatusLabel(res.verification_status, res.delivery_status));
       if (res.verification_status === "verified") {
-        setMessage("تم إنشاء النسخة النهائية");
+        setMessage(t("signaturePage.message.finalCreated"));
+      } else if (res.verification_status === "notification_sent" && res.delivery_status === "sent") {
+        setMessage(t("signaturePage.message.emailSent"));
+      } else if (res.verification_status === "notification_sent") {
+        setMessage(t("signaturePage.message.emailRegistered"));
       }
     } catch (err) {
       setMessage((err as Error).message);
@@ -155,28 +158,33 @@ export default function FinancialNoticeSignaturePage() {
   return (
     <AuthGuard>
       <AppShell
-        title="إشعار المسؤولية المالية"
-        subtitle="طريقة الإقرار / التوقيع"
+        title={t("signaturePage.financialNotice.title")}
+        subtitle={t("signaturePage.financialNotice.subtitle")}
+        workflowCaseNav={{
+          caseId,
+          currentStage: "official_notification",
+          escalationRequired: false,
+        }}
         actions={
           <Link href={`/cases/${caseId}`} className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700">
-            العودة إلى الحالة
+            {t("signaturePage.backToCase")}
           </Link>
         }
       >
         <div className="grid gap-4 lg:grid-cols-2">
           <section className="rounded-2xl border bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-800">النص الرسمي المعتمد</h2>
+            <h2 className="text-sm font-semibold text-slate-800">{t("signaturePage.officialText")}</h2>
             <div className="mt-3 max-h-[520px] overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
-              {previewHtml ? <div dangerouslySetInnerHTML={{ __html: previewHtml }} /> : <p className="text-sm text-slate-500">جار التحميل...</p>}
+              {previewHtml ? <div dangerouslySetInnerHTML={{ __html: previewHtml }} /> : <p className="text-sm text-slate-500">{t("signaturePage.loading")}</p>}
             </div>
           </section>
 
           <section className="rounded-2xl border bg-white p-4">
-            <h2 className="text-sm font-semibold text-slate-800">طريقة الإقرار / التوقيع</h2>
+            <h2 className="text-sm font-semibold text-slate-800">{t("signaturePage.methodSection")}</h2>
             <div className="mt-3 grid gap-2">
               {methods.map((item) => (
                 <label key={item.method} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
-                  <span>{METHOD_LABELS[item.method] || item.label_ar}</span>
+                  <span>{t(`signaturePage.method.${item.method}`)}</span>
                   <input
                     type="radio"
                     name="method"
@@ -191,48 +199,30 @@ export default function FinancialNoticeSignaturePage() {
               ) : null}
             </div>
 
-            {method === "SMS_OTP" ? (
+            {method === "EMAIL_NOTICE" ? (
               <div className="mt-4 grid gap-2">
-                <label className="text-sm text-slate-700">رقم الجوال</label>
-                <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
-                <label className="text-sm text-slate-700">رمز التحقق</label>
-                <input value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
-                {debugCode ? <p className="text-xs text-slate-500">رمز تحقق بيئة التطوير: {debugCode}</p> : null}
-              </div>
-            ) : null}
-
-            {method === "NAFATH" ? (
-              <div className="mt-4 grid gap-2">
-                <label className="text-sm text-slate-700">حالة نفاذ (بيئة الاختبار)</label>
-                <select value={nafathStatus} onChange={(e) => setNafathStatus(e.target.value)} className="rounded-lg border px-3 py-2 text-sm">
-                  <option value="pending">بانتظار التحقق</option>
-                  <option value="approved">تم التحقق</option>
-                </select>
+                <label className="text-sm text-slate-700">{t("signaturePage.emailLabel")}</label>
+                <input value={email} onChange={(e) => setEmail(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
               </div>
             ) : null}
 
             {method === "TABLET_SIGNATURE" ? (
               <div className="mt-4 grid gap-2">
-                <label className="text-sm text-slate-700">توقيع المريض على التابلت</label>
+                <label className="text-sm text-slate-700">{t("signaturePage.tabletLabel")}</label>
                 <TabletSignaturePad value={signaturePayload} onChange={setSignaturePayload} />
-                <label className="text-sm text-slate-700">رقم الجوال (اختياري للربط والتحقق OTP)</label>
-                <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
-                <label className="text-sm text-slate-700">رمز التحقق OTP (إذا تم الربط بالجوال)</label>
-                <input value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
-                {debugCode ? <p className="text-xs text-slate-500">رمز تحقق بيئة التطوير: {debugCode}</p> : null}
-                <label className="text-sm text-slate-700">اسم الشاهد</label>
+                <label className="text-sm text-slate-700">{t("signaturePage.witnessLabel")}</label>
                 <input value={witnessName} onChange={(e) => setWitnessName(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
               </div>
             ) : null}
 
             <div className="mt-4 flex gap-2">
-              <button onClick={startFlow} className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white">بدء التحقق</button>
-              <button onClick={verifyFlow} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">تأكيد</button>
+              <button onClick={startFlow} className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white">{t("signaturePage.startBtn")}</button>
+              <button onClick={verifyFlow} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">{t("signaturePage.confirmBtn")}</button>
             </div>
 
             <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-              <p>الحالة: {status}</p>
-              {sessionId ? <p className="text-xs text-slate-500">معرّف الجلسة: {sessionId}</p> : null}
+              <p>{t("signaturePage.statusLabel")} {status}</p>
+              {sessionId ? <p className="text-xs text-slate-500">{t("signaturePage.sessionIdLabel")} {sessionId}</p> : null}
             </div>
 
             {message ? <p className="mt-2 text-sm text-slate-700">{message}</p> : null}

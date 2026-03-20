@@ -1,508 +1,394 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FilePenLine, Save } from "lucide-react";
+import { ArrowLeft, Mail, Save, Send } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
-import DischargeDecisionPanel from "@/components/discharge/DischargeDecisionPanel";
-import EquipmentRequestForm, {
-  type EquipmentRequestValue,
-} from "@/components/discharge/EquipmentRequestForm";
-import FinancialLiabilityForm, {
-  type FinancialLiabilityValue,
-} from "@/components/discharge/FinancialLiabilityForm";
-import HomeCarePlanForm, {
-  type HomeCarePlanValue,
-} from "@/components/discharge/HomeCarePlanForm";
-import TransferHospitalForm, {
-  type TransferHospitalValue,
-} from "@/components/discharge/TransferHospitalForm";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch, clearToken } from "@/utils/api";
 
-type DischargeCaseDetail = {
-  id: string;
-  patientName?: string | null;
-  patientIdNumber?: string | null;
-  medicalRecordNo?: string | null;
-  roomNumber?: string | null;
-  metadata?: Record<string, unknown> | null;
-};
-
 type CreateCaseResponse = {
-  id: string;
+    id: string;
 };
 
-function readMetadataField(
-  metadata: Record<string, unknown> | null | undefined,
-  ...keys: string[]
-): string {
-  if (!metadata) {
-    return "";
-  }
+type MedicalCondition =
+    | "Diabetes"
+    | "Hypertension"
+    | "Heart Disease"
+    | "Lung Disease"
+    | "Cancer"
+    | "Kidney Disease"
+    | "Other";
 
-  for (const key of keys) {
-    const value = metadata[key];
-    if (typeof value === "string") {
-      return value;
-    }
-  }
-
-  return "";
-}
-
-function toDateTimeLocal(raw: string): string {
-  if (!raw) {
-    return "";
-  }
-
-  const date = new Date(raw);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  const pad = (value: number) => `${value}`.padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
+const MEDICAL_CONDITIONS: Array<{ value: MedicalCondition; ar: string; en: string }> = [
+    { value: "Diabetes", ar: "السكري", en: "Diabetes" },
+    { value: "Hypertension", ar: "ارتفاع ضغط الدم", en: "Hypertension" },
+    { value: "Heart Disease", ar: "أمراض القلب", en: "Heart Disease" },
+    { value: "Lung Disease", ar: "أمراض الرئة", en: "Lung Disease" },
+    { value: "Cancer", ar: "السرطان", en: "Cancer" },
+    { value: "Kidney Disease", ar: "أمراض الكلى", en: "Kidney Disease" },
+    { value: "Other", ar: "أخرى", en: "Other" },
+];
 
 export default function NewCasePage() {
-  const router = useRouter();
-  const { t } = useI18n();
-  const [fromCase, setFromCase] = useState<string | null>(null);
+    const router = useRouter();
+    const { t, lang } = useI18n();
 
-  const [patientMrn, setPatientMrn] = useState("");
-  const [patientName, setPatientName] = useState("");
-  const [patientIdNumber, setPatientIdNumber] = useState("");
-  const [roomNumber, setRoomNumber] = useState("");
-  const [attendingPhysician, setAttendingPhysician] = useState("");
-  const [dischargeDecisionAt, setDischargeDecisionAt] = useState("");
-  const [discussionSummary, setDiscussionSummary] = useState("");
-  const [socialAdministrativeInterventions, setSocialAdministrativeInterventions] = useState("");
-  const [insuranceCoverageStatus, setInsuranceCoverageStatus] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
 
-  const [refusalReason, setRefusalReason] = useState("");
-  const [signerName, setSignerName] = useState("");
-  const [signerRole, setSignerRole] = useState("");
-  const [signatureText, setSignatureText] = useState("");
+    const [patientName, setPatientName] = useState("");
+    const [patientIdNumber, setPatientIdNumber] = useState("");
+    const [medicalRecordNo, setMedicalRecordNo] = useState("");
+    const [attendingPhysician, setAttendingPhysician] = useState("");
+    const [roomNumber, setRoomNumber] = useState("");
+    const [admissionDate, setAdmissionDate] = useState("");
+    const [admissionDepartment, setAdmissionDepartment] = useState("");
 
-  const [dischargeStatus, setDischargeStatus] = useState<"accept_discharge" | "refuse_discharge">(
-    "accept_discharge"
-  );
-  const [dischargeAlternative, setDischargeAlternative] = useState<
-    "" | "home_care" | "transfer_hospital" | "financial_responsibility"
-  >("");
-  const [homeCarePlan, setHomeCarePlan] = useState<HomeCarePlanValue>({
-    careType: "",
-    equipmentRequired: [],
-    careProvider: "",
-  });
-  const [transferHospital, setTransferHospital] = useState<TransferHospitalValue>({
-    receivingHospital: "",
-    transferReason: "",
-    medicalStabilityConfirmation: false,
-  });
-  const [financialLiability, setFinancialLiability] = useState<FinancialLiabilityValue>({
-    acceptsFinancialResponsibility: false,
-    signatureMethod: "sms_otp",
-  });
-  const [equipmentRequest, setEquipmentRequest] = useState<EquipmentRequestValue>({
-    requestedEquipment: "",
-    department: "respiratory_therapy",
-    status: "pending",
-  });
+    const [sendDischargeOrderRequest, setSendDischargeOrderRequest] = useState(true);
 
-  const [prefillLoading, setPrefillLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+    const [dateOfBirth, setDateOfBirth] = useState("");
+    const [primaryMobile, setPrimaryMobile] = useState("");
+    const [email, setEmail] = useState("");
+    const [gender, setGender] = useState("");
+    const [homeAddress, setHomeAddress] = useState("");
+    const [streetName, setStreetName] = useState("");
+    const [cityName, setCityName] = useState("");
+    const [districtName, setDistrictName] = useState("");
+    const [postalCode, setPostalCode] = useState("");
+    const [poBox, setPoBox] = useState("");
+    const [admissionReason, setAdmissionReason] = useState("");
+    const [medicalCondition, setMedicalCondition] = useState<MedicalCondition | "">("");
 
-  const pageTitle = useMemo(() => (fromCase ? t("newCase.titleEdit") : t("newCase.title")), [fromCase, t]);
-  const shcModuleEnabled = process.env.NEXT_PUBLIC_SHC_COMPLIANCE_MODULE === "true";
+    const [preferredLanguage, setPreferredLanguage] = useState("");
+    const [livingAlone, setLivingAlone] = useState("");
+    const [hasCaregiver, setHasCaregiver] = useState("");
+    const [dischargeDate, setDischargeDate] = useState("");
+    const [preferredDestination, setPreferredDestination] = useState("");
+    const [additionalInstructions, setAdditionalInstructions] = useState("");
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const fromCaseParam = new URLSearchParams(window.location.search).get("fromCase");
-    setFromCase(fromCaseParam);
-  }, []);
+    const [medicationInstructions, setMedicationInstructions] = useState("");
+    const [followupAppointment, setFollowupAppointment] = useState("");
+    const [contactInfoAfterDischarge, setContactInfoAfterDischarge] = useState("");
 
-  useEffect(() => {
-    if (!fromCase) {
-      return;
-    }
+    const [dischargePlanType, setDischargePlanType] = useState<"outpatient_followup" | "homecare_risk">("outpatient_followup");
 
-    setPrefillLoading(true);
-    setError("");
+    const [notifySectionsByEmail, setNotifySectionsByEmail] = useState(true);
+    const [signatureMethod, setSignatureMethod] = useState<"email" | "nafez" | "tablet">("email");
 
-    apiFetch<DischargeCaseDetail>(`/api/cases/${fromCase}`)
-      .then((existingCase) => {
-        const metadata =
-          existingCase.metadata && typeof existingCase.metadata === "object"
-            ? existingCase.metadata
-            : null;
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setSaving(true);
+        setError("");
+        setSuccessMessage("");
 
-        setPatientMrn(
-          existingCase.medicalRecordNo ||
-            readMetadataField(metadata, "medical_record_number", "patient_mrn")
-        );
-        setPatientName(existingCase.patientName || readMetadataField(metadata, "patient_name"));
-        setPatientIdNumber(
-          existingCase.patientIdNumber || readMetadataField(metadata, "patient_id_number")
-        );
-        setRoomNumber(existingCase.roomNumber || readMetadataField(metadata, "room_number"));
-        setAttendingPhysician(readMetadataField(metadata, "attending_physician"));
-        setDischargeDecisionAt(toDateTimeLocal(readMetadataField(metadata, "discharge_decision_at")));
-        setDiscussionSummary(readMetadataField(metadata, "discussion_summary"));
-        setSocialAdministrativeInterventions(
-          readMetadataField(metadata, "social_administrative_interventions")
-        );
-        setInsuranceCoverageStatus(readMetadataField(metadata, "insurance_coverage_status"));
+        try {
+            const metadata = {
+                patient_name: patientName,
+                patient_id_number: patientIdNumber,
+                medical_record_number: medicalRecordNo,
+                attending_physician: attendingPhysician,
+                room_number: roomNumber,
+                admission_date: admissionDate,
+                admission_department: admissionDepartment,
 
-        setRefusalReason(readMetadataField(metadata, "refusal_reason"));
-        setSignerName(readMetadataField(metadata, "signer_name"));
-        setSignerRole(readMetadataField(metadata, "signer_role"));
-        setSignatureText(readMetadataField(metadata, "signature_text"));
-      })
-      .catch((err) => {
-        const message = err instanceof Error ? err.message : t("newCase.failedLoad");
-        setError(message);
+                discharge_order_request: {
+                    requested: sendDischargeOrderRequest,
+                    status: sendDischargeOrderRequest ? "pending_physician" : "not_requested",
+                },
 
-        if (message.includes("401") || message.includes("Invalid")) {
-          clearToken();
-          router.push("/login");
-        }
-      })
-      .finally(() => setPrefillLoading(false));
-  }, [fromCase, router, t]);
+                discharge_plan: {
+                    patient_name: patientName,
+                    date_of_birth: dateOfBirth,
+                    primary_mobile: primaryMobile,
+                    email,
+                    gender,
+                    home_address: homeAddress,
+                    street_name: streetName,
+                    city_name: cityName,
+                    district_name: districtName,
+                    postal_code: postalCode,
+                    po_box: poBox,
+                    hospital_admission_reason: admissionReason,
+                    current_medical_condition: medicalCondition,
+                    preferred_language: preferredLanguage,
+                    is_living_alone: livingAlone,
+                    has_caregiver: hasCaregiver,
+                    date_of_discharge: dischargeDate,
+                    preferred_discharge_destination: preferredDestination,
+                    additional_comments_or_instructions: additionalInstructions,
+                    discharge_instructions: {
+                        medication_usage: medicationInstructions,
+                        followup_appointment: followupAppointment,
+                        contact_information: contactInfoAfterDischarge,
+                    },
+                    discharge_route: dischargePlanType,
+                },
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setSaving(true);
+                workflow_stages: [
+                    "medical_assessment",
+                    "legal_capacity_check",
+                    "authorized_signatory_identification",
+                    "discharge_plan_preparation",
+                    "forms_and_consent_presentation",
+                    "approval_or_refusal_path",
+                    "legal_escalation_if_needed",
+                    "final_verification",
+                    "execute_discharge_or_hold",
+                ],
 
-    try {
-      const metadata = {
-        patient_name: patientName,
-        patient_id_number: patientIdNumber,
-        medical_record_number: patientMrn,
-        room_number: roomNumber,
-        attending_physician: attendingPhysician,
-        discharge_decision_at: dischargeDecisionAt,
-        refusal_reason: refusalReason,
-        discussion_summary: discussionSummary,
-        social_administrative_interventions: socialAdministrativeInterventions,
-        insurance_coverage_status: insuranceCoverageStatus,
-        signer_name: signerName,
-        signer_role: signerRole,
-        signature_text: signatureText,
-        shc_compliance: shcModuleEnabled
-          ? {
-              discharge_status: dischargeStatus,
-              discharge_alternative:
-                dischargeStatus === "refuse_discharge" ? dischargeAlternative || null : null,
-              home_care_plan:
-                dischargeStatus === "refuse_discharge" && dischargeAlternative === "home_care"
-                  ? homeCarePlan
-                  : null,
-              transfer_request:
-                dischargeStatus === "refuse_discharge" && dischargeAlternative === "transfer_hospital"
-                  ? transferHospital
-                  : null,
-              financial_liability:
-                dischargeStatus === "refuse_discharge" && dischargeAlternative === "financial_responsibility"
-                  ? financialLiability
-                  : null,
-              equipment_request:
-                dischargeStatus === "refuse_discharge" ? equipmentRequest : null,
+                forms_catalog: [
+                    "discharge_plan",
+                    "discharge_instructions",
+                    "patient_pickup_acknowledgment",
+                    "discharge_approval",
+                    "discharge_refusal",
+                    "refusal_to_receive_patient",
+                    "no_caregiver_acknowledgment",
+                    "treatment_or_transfer_refusal",
+                    "risk_acknowledgment",
+                    "medical_education_acknowledgment",
+                    "minor_guardian_form",
+                ],
+
+                notifications: {
+                    enabled: notifySectionsByEmail,
+                    channels: {
+                        email: notifySectionsByEmail,
+                        nafez_signature_optional: signatureMethod === "nafez",
+                        tablet_signature_optional: signatureMethod === "tablet",
+                    },
+                    note: "Email is primary. Signature channels are optional and non-blocking.",
+                },
+            };
+
+            const created = await apiFetch<CreateCaseResponse>("/api/cases", {
+                method: "POST",
+                body: JSON.stringify({
+                    caseType: "DISCHARGE_REFUSAL",
+                    workflowType: "discharge_planning",
+                    title: `Discharge plan - ${patientName}`,
+                    patientName,
+                    patientIdNumber,
+                    medicalRecordNo,
+                    roomNumber,
+                    metadata,
+                }),
+            });
+
+            setSuccessMessage(t("newCase.successCreated"));
+            router.push(`/cases/${created.id}`);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : t("newCase.failedCreate");
+            setError(message);
+            if (message.includes("401") || message.includes("Invalid")) {
+                clearToken();
+                router.push("/login");
             }
-          : null,
-      };
-
-      const createdCase = await apiFetch<CreateCaseResponse>("/api/cases", {
-        method: "POST",
-        body: JSON.stringify({
-          caseType: "DISCHARGE_REFUSAL",
-          workflowType: "discharge_refusal",
-          title: `Discharge refusal - ${patientName}`,
-          patientName,
-          patientIdNumber,
-          medicalRecordNo: patientMrn,
-          roomNumber,
-          metadata,
-        }),
-      });
-
-      if (shcModuleEnabled && dischargeStatus === "refuse_discharge") {
-        await apiFetch("/api/shc-compliance", {
-          method: "POST",
-          body: JSON.stringify({
-            caseId: createdCase.id,
-            patient: {
-              patient_name: patientName,
-              patient_id_number: patientIdNumber,
-              medical_record_number: patientMrn,
-              room_number: roomNumber,
-              attending_physician: attendingPhysician,
-            },
-            shc: {
-              discharge_status: dischargeStatus,
-              discharge_alternative: dischargeAlternative,
-              home_care_plan: dischargeAlternative === "home_care" ? homeCarePlan : null,
-              transfer_request: dischargeAlternative === "transfer_hospital" ? transferHospital : null,
-              financial_liability:
-                dischargeAlternative === "financial_responsibility" ? financialLiability : null,
-              equipment_request: equipmentRequest,
-            },
-            signature: {
-              signature_method:
-                dischargeAlternative === "financial_responsibility"
-                  ? financialLiability.signatureMethod
-                  : "tablet_signature",
-              device: "web",
-            },
-          }),
-        });
-      }
-
-      router.push("/cases");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t("newCase.failedSave");
-      setError(message);
-
-      if (message.includes("401") || message.includes("Invalid")) {
-        clearToken();
-        router.push("/login");
-      }
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <AuthGuard>
-      <AppShell
-        title={pageTitle}
-        subtitle={t("newCase.subtitle")}
-        actions={
-          <>
-            <Link
-              href="/cases"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {t("common.backToCases")}
-            </Link>
-            {fromCase ? (
-              <Link
-                href={`/cases/${fromCase}`}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
-              >
-                <FilePenLine className="h-4 w-4" />
-                {t("newCase.backToCaseDetails")}
-              </Link>
-            ) : null}
-          </>
+        } finally {
+            setSaving(false);
         }
-      >
-        {prefillLoading ? (
-          <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            {t("newCase.loadingExisting")}
-          </div>
-        ) : null}
+    }
 
-        {error ? (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        ) : null}
-
-        <form
-          onSubmit={handleSubmit}
-          className="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 md:grid-cols-2 md:p-5"
-        >
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.patientMrn")}</span>
-            <input
-              required
-              value={patientMrn}
-              onChange={(event) => setPatientMrn(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.patientName")}</span>
-            <input
-              required
-              value={patientName}
-              onChange={(event) => setPatientName(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.idIqama")}</span>
-            <input
-              required
-              value={patientIdNumber}
-              onChange={(event) => setPatientIdNumber(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.roomNumber")}</span>
-            <input
-              required
-              value={roomNumber}
-              onChange={(event) => setRoomNumber(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.attendingPhysician")}</span>
-            <input
-              required
-              value={attendingPhysician}
-              onChange={(event) => setAttendingPhysician(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.dischargeDecisionDate")}</span>
-            <input
-              required
-              type="datetime-local"
-              value={dischargeDecisionAt}
-              onChange={(event) => setDischargeDecisionAt(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.refusalReason")}</span>
-            <textarea
-              required
-              value={refusalReason}
-              onChange={(event) => setRefusalReason(event.target.value)}
-              className="h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.discussionSummary")}</span>
-            <textarea
-              required
-              value={discussionSummary}
-              onChange={(event) => setDiscussionSummary(event.target.value)}
-              className="h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.socialAdministrativeInterventions")}</span>
-            <textarea
-              required
-              value={socialAdministrativeInterventions}
-              onChange={(event) => setSocialAdministrativeInterventions(event.target.value)}
-              className="h-24 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.insuranceCoverageStatus")}</span>
-            <input
-              value={insuranceCoverageStatus}
-              onChange={(event) => setInsuranceCoverageStatus(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.signerName")}</span>
-            <input
-              required
-              value={signerName}
-              onChange={(event) => setSignerName(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.signerRole")}</span>
-            <input
-              required
-              value={signerRole}
-              onChange={(event) => setSignerRole(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.signatureText")}</span>
-            <textarea
-              required
-              value={signatureText}
-              onChange={(event) => setSignatureText(event.target.value)}
-              className="h-20 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            />
-          </label>
-
-          {shcModuleEnabled ? (
-            <>
-              <DischargeDecisionPanel
-                dischargeStatus={dischargeStatus}
-                dischargeAlternative={dischargeAlternative}
-                onDischargeStatusChange={(value) => {
-                  setDischargeStatus(value);
-                  if (value !== "refuse_discharge") {
-                    setDischargeAlternative("");
-                  }
-                }}
-                onAlternativeChange={setDischargeAlternative}
-              />
-
-              {dischargeStatus === "refuse_discharge" && dischargeAlternative === "home_care" ? (
-                <HomeCarePlanForm value={homeCarePlan} onChange={setHomeCarePlan} />
-              ) : null}
-
-              {dischargeStatus === "refuse_discharge" && dischargeAlternative === "transfer_hospital" ? (
-                <TransferHospitalForm value={transferHospital} onChange={setTransferHospital} />
-              ) : null}
-
-              {dischargeStatus === "refuse_discharge" && dischargeAlternative === "financial_responsibility" ? (
-                <FinancialLiabilityForm value={financialLiability} onChange={setFinancialLiability} />
-              ) : null}
-
-              {dischargeStatus === "refuse_discharge" ? (
-                <EquipmentRequestForm value={equipmentRequest} onChange={setEquipmentRequest} />
-              ) : null}
-            </>
-          ) : null}
-
-          <div className="md:col-span-2 flex flex-wrap gap-2 pt-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+    return (
+        <AuthGuard>
+            <AppShell
+                title={t("newCase.pageTitle")}
+                subtitle={t("newCase.pageSubtitle")}
+                actions={
+                    <Link
+                        href="/dashboard"
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        {t("newCase.backDashboard")}
+                    </Link>
+                }
             >
-              <Save className="h-4 w-4" />
-              {saving ? t("newCase.saving") : fromCase ? t("newCase.saveAsNew") : t("newCase.create")}
-            </button>
-            <Link
-              href="/cases"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {t("common.cancel")}
-            </Link>
-          </div>
-        </form>
-      </AppShell>
-    </AuthGuard>
-  );
+                {error ? (
+                    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+                ) : null}
+
+                {successMessage ? (
+                    <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        {successMessage}
+                    </div>
+                ) : null}
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                        <h2 className="text-sm font-semibold text-slate-900">{t("newCase.sections.registrationTitle")}</h2>
+                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                            <input required value={patientName} onChange={(e) => setPatientName(e.target.value)} placeholder={t("field.patientName")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={patientIdNumber} onChange={(e) => setPatientIdNumber(e.target.value)} placeholder={t("field.idIqama")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={medicalRecordNo} onChange={(e) => setMedicalRecordNo(e.target.value)} placeholder={t("field.patientMrn")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={attendingPhysician} onChange={(e) => setAttendingPhysician(e.target.value)} placeholder={t("field.attendingPhysician")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} placeholder={t("field.roomNumber")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required type="date" value={admissionDate} onChange={(e) => setAdmissionDate(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={admissionDepartment} onChange={(e) => setAdmissionDepartment(e.target.value)} placeholder={t("newCase.placeholders.admissionDepartment")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                        </div>
+
+                        <label className="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
+                            <input
+                                type="checkbox"
+                                checked={sendDischargeOrderRequest}
+                                onChange={(e) => setSendDischargeOrderRequest(e.target.checked)}
+                            />
+                            {t("newCase.labels.sendDischargeOrderRequest")}
+                        </label>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                        <h2 className="text-sm font-semibold text-slate-900">{t("newCase.sections.planTitle")}</h2>
+                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                            <input required value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} placeholder={t("newCase.placeholders.dateOfBirth")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={primaryMobile} onChange={(e) => setPrimaryMobile(e.target.value)} placeholder={t("newCase.placeholders.primaryMobile")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("newCase.placeholders.email")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={gender} onChange={(e) => setGender(e.target.value)} placeholder={t("newCase.placeholders.gender")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)} placeholder={t("newCase.placeholders.homeAddress")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                            <input value={streetName} onChange={(e) => setStreetName(e.target.value)} placeholder={t("newCase.placeholders.streetName")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={cityName} onChange={(e) => setCityName(e.target.value)} placeholder={t("newCase.placeholders.cityName")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={districtName} onChange={(e) => setDistrictName(e.target.value)} placeholder={t("newCase.placeholders.districtName")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder={t("newCase.placeholders.postalCode")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={poBox} onChange={(e) => setPoBox(e.target.value)} placeholder={t("newCase.placeholders.poBox")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input required value={admissionReason} onChange={(e) => setAdmissionReason(e.target.value)} placeholder={t("newCase.placeholders.admissionReason")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.medicalCondition")}</label>
+                            <select required value={medicalCondition} onChange={(e) => setMedicalCondition(e.target.value as MedicalCondition)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                {MEDICAL_CONDITIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>{lang === "ar" ? option.ar : option.en}</option>
+                                ))}
+                            </select>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.preferredLanguage")}</label>
+                            <select value={preferredLanguage} onChange={(e) => setPreferredLanguage(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="ar">{t("newCase.select.arabic")}</option>
+                                <option value="en">{t("newCase.select.english")}</option>
+                            </select>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.livingAlone")}</label>
+                            <select value={livingAlone} onChange={(e) => setLivingAlone(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="yes">{t("newCase.select.yes")}</option>
+                                <option value="no">{t("newCase.select.no")}</option>
+                            </select>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.hasCaregiver")}</label>
+                            <select value={hasCaregiver} onChange={(e) => setHasCaregiver(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="yes">{t("newCase.select.yes")}</option>
+                                <option value="no">{t("newCase.select.no")}</option>
+                            </select>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.dischargeDate")}</label>
+                            <input value={dischargeDate} onChange={(e) => setDischargeDate(e.target.value)} placeholder={t("newCase.placeholders.dischargeDateFormat")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+
+                            <input value={preferredDestination} onChange={(e) => setPreferredDestination(e.target.value)} placeholder={t("newCase.placeholders.preferredDestination")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                            <textarea value={additionalInstructions} onChange={(e) => setAdditionalInstructions(e.target.value)} placeholder={t("newCase.placeholders.additionalInstructions")} className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                        </div>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                        <h2 className="text-sm font-semibold text-slate-900">{t("newCase.sections.instructionsTitle")}</h2>
+                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                            <textarea value={medicationInstructions} onChange={(e) => setMedicationInstructions(e.target.value)} placeholder={t("newCase.placeholders.medicationInstructions")} className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input value={followupAppointment} onChange={(e) => setFollowupAppointment(e.target.value)} placeholder={t("newCase.placeholders.followupAppointment")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <textarea value={contactInfoAfterDischarge} onChange={(e) => setContactInfoAfterDischarge(e.target.value)} placeholder={t("newCase.placeholders.contactInfoAfterDischarge")} className="h-20 rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+                        </div>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                        <h2 className="text-sm font-semibold text-slate-900">{t("newCase.sections.routeTitle")}</h2>
+                        <div className="mt-3 grid gap-2 md:grid-cols-2">
+                            <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                                <input
+                                    type="radio"
+                                    name="discharge_plan_type"
+                                    checked={dischargePlanType === "outpatient_followup"}
+                                    onChange={() => setDischargePlanType("outpatient_followup")}
+                                />
+                                {t("newCase.dischargePlanType.outpatientFollowup")}
+                            </label>
+                            <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                                <input
+                                    type="radio"
+                                    name="discharge_plan_type"
+                                    checked={dischargePlanType === "homecare_risk"}
+                                    onChange={() => setDischargePlanType("homecare_risk")}
+                                />
+                                {t("newCase.dischargePlanType.homecareRisk")}
+                            </label>
+                        </div>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                        <h2 className="text-sm font-semibold text-slate-900">{t("newCase.sections.notificationTitle")}</h2>
+                        <div className="mt-3 space-y-3">
+                            <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input
+                                    type="checkbox"
+                                    checked={notifySectionsByEmail}
+                                    onChange={(e) => setNotifySectionsByEmail(e.target.checked)}
+                                />
+                                {t("newCase.notification.emailPrimary")}
+                            </label>
+
+                            <label className="block text-xs font-medium text-slate-600">{t("newCase.labels.signatureOptional")}</label>
+                            <select
+                                value={signatureMethod}
+                                onChange={(e) => setSignatureMethod(e.target.value as "email" | "nafez" | "tablet")}
+                                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            >
+                                <option value="email">{t("newCase.signatureMethod.email")}</option>
+                                <option value="nafez">{t("newCase.signatureMethod.nafez")}</option>
+                                <option value="tablet">{t("newCase.signatureMethod.tablet")}</option>
+                            </select>
+                        </div>
+                    </section>
+
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                        >
+                            <Save className="h-4 w-4" />
+                            {saving ? t("newCase.saving") : t("newCase.actions.submit")}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setSendDischargeOrderRequest(true)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
+                        >
+                            <Send className="h-4 w-4" />
+                            {t("newCase.actions.resendOrder")}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setNotifySectionsByEmail(true)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+                        >
+                            <Mail className="h-4 w-4" />
+                            {t("newCase.actions.enableEmailDelivery")}
+                        </button>
+
+                        <Link
+                            href="/dashboard"
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            {t("common.cancel")}
+                        </Link>
+                    </div>
+                </form>
+            </AppShell>
+        </AuthGuard>
+    );
 }

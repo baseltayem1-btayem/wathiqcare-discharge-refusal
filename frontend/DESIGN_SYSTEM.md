@@ -7,7 +7,7 @@ A comprehensive, production-ready design system built for the WathiqCare Dischar
 ## Architecture
 
 ```
-frontend/
+apps/web/
 ├── src/
 │   ├── components/
 │   │   ├── design-system/      # Core UI primitives

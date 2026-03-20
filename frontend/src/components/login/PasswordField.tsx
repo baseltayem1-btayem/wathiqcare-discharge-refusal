@@ -29,7 +29,7 @@ export default function PasswordField({
       <div className="relative">
         <input
           id={id}
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-300/60 disabled:bg-slate-100"
+          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
           value={value}
           onChange={(event) => onChange(event.target.value)}
           type={showPassword ? "text" : "password"}
@@ -40,7 +40,7 @@ export default function PasswordField({
         <button
           type="button"
           onClick={onToggleVisibility}
-          className="absolute inset-y-1 end-1 rounded-lg px-3 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          className="absolute inset-y-1 end-1 rounded-lg px-3 text-xs font-semibold text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-300"
           aria-label={showPassword ? hideLabel : showLabel}
         >
           {showPassword ? hideLabel : showLabel}

@@ -27,6 +27,11 @@ export default function MedicalDischargeRefusalCaseWorkflowPage() {
       <AppShell
         title={t("mdrw.case.title")}
         subtitle={t("mdrw.case.subtitle", { caseId })}
+        workflowCaseNav={{
+          caseId,
+          currentStage: String(workflow?.current_stage || "medical_discharge_decision"),
+          escalationRequired: Boolean(workflow?.escalation_required),
+        }}
         actions={
           <Link
             href="/workflow/medical-discharge-refusal"
@@ -58,17 +63,14 @@ export default function MedicalDischargeRefusalCaseWorkflowPage() {
           <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/social-services`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
             <p className="text-sm font-semibold text-slate-900">{t("mdrw.screens.socialServices")}</p>
           </Link>
-          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/signature`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
-            <p className="text-sm font-semibold text-slate-900">{t("mdrw.screens.signature")}</p>
+          <Link href={`/cases/${caseId}/refusal-form`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
+            <p className="text-sm font-semibold text-slate-900">{t("workflow.stage.refusal_form")}</p>
           </Link>
-          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/witness`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
-            <p className="text-sm font-semibold text-slate-900">{t("mdrw.screens.witness")}</p>
-          </Link>
-          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/financial-notice`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
-            <p className="text-sm font-semibold text-slate-900">{t("mdrw.screens.financialNotice")}</p>
+          <Link href={`/cases/${caseId}/financial-notice`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
+            <p className="text-sm font-semibold text-slate-900">{t("workflow.stage.official_notification")}</p>
           </Link>
           <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/escalation-review`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
-            <p className="text-sm font-semibold text-slate-900">{t("mdrw.screens.escalation")}</p>
+            <p className="text-sm font-semibold text-slate-900">{t("workflow.stage.escalation")}</p>
           </Link>
         </section>
 

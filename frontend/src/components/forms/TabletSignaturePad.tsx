@@ -12,6 +12,9 @@ type Props = {
 export default function TabletSignaturePad({ value, onChange, disabled = false }: Props) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const drawingRef = useRef(false);
+    const strokeStartedRef = useRef(false);
+    const strokeMovedRef = useRef(false);
+    const hasStrokeRef = useRef(Boolean(value));
     const [hasStroke, setHasStroke] = useState(Boolean(value));
 
     useEffect(() => {
@@ -45,6 +48,10 @@ export default function TabletSignaturePad({ value, onChange, disabled = false }
             };
             image.src = value;
         }
+
+        const valueHasStroke = Boolean(value);
+        hasStrokeRef.current = valueHasStroke;
+        setHasStroke(valueHasStroke);
     }, [value]);
 
     function getPoint(event: ReactPointerEvent<HTMLCanvasElement>) {
@@ -70,6 +77,8 @@ export default function TabletSignaturePad({ value, onChange, disabled = false }
         }
         canvas.setPointerCapture(event.pointerId);
         drawingRef.current = true;
+        strokeStartedRef.current = true;
+        strokeMovedRef.current = false;
         const { x, y } = getPoint(event);
         ctx.beginPath();
         ctx.moveTo(x, y);
@@ -87,20 +96,38 @@ export default function TabletSignaturePad({ value, onChange, disabled = false }
         const { x, y } = getPoint(event);
         ctx.lineTo(x, y);
         ctx.stroke();
+        strokeMovedRef.current = true;
+        hasStrokeRef.current = true;
         setHasStroke(true);
     }
 
     function endDraw(event: ReactPointerEvent<HTMLCanvasElement>) {
-        if (disabled) {
+        if (disabled || !drawingRef.current) {
             return;
         }
         const canvas = canvasRef.current;
         if (!canvas) {
             return;
         }
+
         drawingRef.current = false;
-        canvas.releasePointerCapture(event.pointerId);
-        onChange(canvas.toDataURL("image/png"));
+        if (canvas.hasPointerCapture(event.pointerId)) {
+            canvas.releasePointerCapture(event.pointerId);
+        }
+
+        if (!strokeStartedRef.current) {
+            return;
+        }
+
+        strokeStartedRef.current = false;
+        if (!strokeMovedRef.current && !hasStrokeRef.current) {
+            return;
+        }
+
+        const signature = canvas.toDataURL("image/png");
+        hasStrokeRef.current = true;
+        setHasStroke(true);
+        onChange(signature);
     }
 
     function clearCanvas() {
@@ -111,6 +138,9 @@ export default function TabletSignaturePad({ value, onChange, disabled = false }
         }
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        hasStrokeRef.current = false;
+        strokeStartedRef.current = false;
+        strokeMovedRef.current = false;
         setHasStroke(false);
         onChange("");
     }
@@ -119,6 +149,7 @@ export default function TabletSignaturePad({ value, onChange, disabled = false }
         <div className="rounded-xl border border-slate-300 bg-white p-2">
             <canvas
                 ref={canvasRef}
+                data-testid="signature-pad-canvas"
                 className="w-full touch-none rounded-lg border border-slate-200 bg-white"
                 onPointerDown={beginDraw}
                 onPointerMove={draw}

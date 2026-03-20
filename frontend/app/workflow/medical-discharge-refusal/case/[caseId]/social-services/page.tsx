@@ -35,6 +35,11 @@ export default function SocialServicesInterventionFormPage() {
       <AppShell
         title={t("mdrw.screens.socialServices")}
         subtitle={t("mdrw.form.socialSubtitle")}
+        workflowCaseNav={{
+          caseId,
+          currentStage: "support_and_intervention",
+          escalationRequired: false,
+        }}
         actions={
           <Link href={`/workflow/medical-discharge-refusal/case/${caseId}`} className="rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-white">
             {t("mdrw.case.backCase")}

@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, FileText, Shield } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
-import { 
-  Button, 
-  Badge, 
-  Card, 
-  CardContent, 
+import {
+  Button,
+  Badge,
+  Card,
+  CardContent,
   CardDescription,
-  CardHeader, 
+  CardHeader,
   CardTitle,
   Dialog,
   DialogContent,

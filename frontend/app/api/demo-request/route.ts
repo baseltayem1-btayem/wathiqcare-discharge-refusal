@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
 import { ApiError, handleApiError } from "@/lib/server/http";
+import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 
 type DemoRequestPayload = {
   facilityName?: string;
@@ -9,10 +9,27 @@ type DemoRequestPayload = {
   contactPhone?: string;
   contactAddress?: string;
   employeeCount?: string | number;
+  locale?: string;
   website?: string;
 };
 
-const ADMIN_EMAIL = "Admin@wathiqcare.med.sa";
+type Locale = "ar" | "en";
+
+type DemoRequestEmailArgs = {
+  facilityName: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  contactAddress: string;
+  employeeCount: number;
+  locale: Locale;
+};
+
+const RESERVED_EMAIL_DOMAINS = new Set(["example.com", "example.org", "example.net", "invalid", "localhost"]);
+
+function safe(value: unknown): string {
+  return (value == null ? "" : String(value)).trim();
+}
 
 function normalizeText(value: unknown, field: string, maxLength: number): string {
   if (typeof value !== "string") {
@@ -45,34 +62,69 @@ function normalizeEmail(value: unknown): string {
   if (!emailRegex.test(email)) {
     throw new ApiError(400, "contactEmail is invalid");
   }
+
+  const domain = email.split("@")[1] ?? "";
+  if (RESERVED_EMAIL_DOMAINS.has(domain)) {
+    throw new ApiError(400, "Please provide a valid work email address.");
+  }
+
   return email;
 }
 
-function createTransporter() {
-  const host = process.env.SMTP_HOST;
-  const portRaw = process.env.SMTP_PORT;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const secure = process.env.SMTP_SECURE === "true";
+function normalizeLocale(value: unknown): Locale {
+  return safe(value).toLowerCase() === "ar" ? "ar" : "en";
+}
 
-  if (!host || !portRaw || !user || !pass) {
-    throw new ApiError(503, "Mail service is not configured. Please contact support.");
+function buildSuccessMessage(locale: Locale): string {
+  if (locale === "ar") {
+    return "شكرًا على طلبكم. تم إرسال رسالة تأكيد إلى بريدكم الإلكتروني، وسيقوم مندوب شركة واثق كير بالتواصل معكم قريبًا.";
+  }
+  return "Thank you for your request. A confirmation email has been sent to your inbox, and a WathiqCare representative will contact you shortly.";
+}
+
+async function sendDemoRequestEmail(args: DemoRequestEmailArgs): Promise<void> {
+  const backendBase = getConfiguredBackendApiBaseUrl();
+  if (!backendBase) {
+    throw new ApiError(503, "Demo request delivery is unavailable because the backend API base URL is not configured.");
   }
 
-  const port = Number(portRaw);
-  if (!Number.isFinite(port) || port <= 0) {
-    throw new ApiError(500, "SMTP_PORT is invalid");
+  const endpoint = new URL("/api/emails/send-demo-request", `${backendBase}/`);
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      body: JSON.stringify({
+        facility_name: args.facilityName,
+        contact_name: args.contactName,
+        contact_email: args.contactEmail,
+        contact_phone: args.contactPhone,
+        contact_address: args.contactAddress,
+        employee_count: args.employeeCount,
+        preferred_language: args.locale,
+      }),
+    });
+  } catch {
+    throw new ApiError(503, "Demo request delivery is unavailable because the backend email service could not be reached.");
   }
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: {
-      user,
-      pass,
-    },
-  });
+  const isJson = (response.headers.get("content-type") || "").includes("application/json");
+  const payload = isJson ? await response.json().catch(() => null) : await response.text().catch(() => "");
+
+  if (!response.ok) {
+    const detail =
+      payload && typeof payload === "object" && "detail" in payload
+        ? String((payload as { detail?: unknown }).detail ?? "")
+        : typeof payload === "string"
+          ? payload
+          : "";
+
+    throw new ApiError(response.status, detail || `Demo request delivery failed (${response.status})`);
+  }
 }
 
 export async function POST(request: Request) {
@@ -82,10 +134,13 @@ export async function POST(request: Request) {
       throw new ApiError(400, "Invalid request body");
     }
 
+    const locale = normalizeLocale(payload.locale);
+
     if (typeof payload.website === "string" && payload.website.trim()) {
       return NextResponse.json({
         ok: true,
-        message: "Thank you for your request. A WathiqCare representative will contact you shortly.",
+        message: buildSuccessMessage(locale),
+        delivery_status: "sent",
       });
     }
 
@@ -96,33 +151,20 @@ export async function POST(request: Request) {
     const contactAddress = normalizeText(payload.contactAddress, "contactAddress", 300);
     const employeeCount = normalizeEmployeeCount(payload.employeeCount);
 
-    const transporter = createTransporter();
-    const from = process.env.SMTP_FROM ?? "WathiqCare Demo Requests <no-reply@wathiqcare.med.sa>";
-
-    const textBody = [
-      "New WathiqCare demo request",
-      "",
-      `Organization: ${facilityName}`,
-      `Contact person: ${contactName}`,
-      `Contact email: ${contactEmail}`,
-      `Contact phone: ${contactPhone}`,
-      `Contact address: ${contactAddress}`,
-      `Employee count: ${employeeCount}`,
-      "",
-      "Thank you for the request. A company representative should contact this organization promptly.",
-    ].join("\n");
-
-    await transporter.sendMail({
-      from,
-      to: ADMIN_EMAIL,
-      replyTo: contactEmail,
-      subject: `Demo Request - ${facilityName}`,
-      text: textBody,
+    await sendDemoRequestEmail({
+      facilityName,
+      contactName,
+      contactEmail,
+      contactPhone,
+      contactAddress,
+      employeeCount,
+      locale,
     });
 
     return NextResponse.json({
       ok: true,
-      message: "Thank you for your request. A WathiqCare representative will contact you shortly.",
+      message: buildSuccessMessage(locale),
+      delivery_status: "sent",
     });
   } catch (error) {
     return handleApiError(error);

@@ -44,10 +44,10 @@ figma-assets/
 
 ```bash
 # نسخ الصور المُصدّرة
-cp ~/Downloads/figma-exports/* /workspaces/wathiqcare-discharge-refusal/frontend/public/figma-assets/images/
+cp ~/Downloads/figma-exports/* /workspaces/wathiqcare-discharge-refusal/apps/web/public/figma-assets/images/
 
 # نسخ الأيقونات
-cp ~/Downloads/icons/* /workspaces/wathiqcare-discharge-refusal/frontend/public/figma-assets/icons/
+cp ~/Downloads/icons/* /workspaces/wathiqcare-discharge-refusal/apps/web/public/figma-assets/icons/
 ```
 
 ## استخدام الصور في الكود

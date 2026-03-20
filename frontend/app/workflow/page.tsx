@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { 
-  FileText, 
+import {
+  FileText,
   Activity,
   CheckCircle2,
-  Clock,
   AlertCircle,
   ArrowRight,
   GitBranch,
@@ -15,8 +14,9 @@ import {
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import StatusBadge from "@/components/ui/StatusBadge";
-import StatCard from "@/components/ui/StatCard";
 import KPICard from "@/components/ui/KPICard";
+import WorkflowProgress from "@/components/ui/WorkflowProgress";
+import { buildMetadataWorkflowProgress } from "@/lib/workflowProgress";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
@@ -30,16 +30,19 @@ type WorkflowCase = {
 };
 
 const STAGE_KEYS = [
-  "workflow.stage.medical_discharge_decision",
-  "workflow.stage.initial_communication",
-  "workflow.stage.support_and_intervention",
-  "workflow.stage.refusal_form",
-  "workflow.stage.official_notification",
-  "workflow.stage.escalation",
+  "medical_assessment",
+  "legal_capacity_check",
+  "authorized_signatory_identification",
+  "discharge_plan_preparation",
+  "forms_and_consent_presentation",
+  "approval_or_refusal_path",
+  "legal_escalation_if_needed",
+  "final_verification",
+  "execute_discharge_or_hold",
 ];
 
 export default function WorkflowPage() {
-  const { t } = useI18n();
+  const { t, lang, isRtl } = useI18n();
   const [cases, setCases] = useState<WorkflowCase[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,47 +65,43 @@ export default function WorkflowPage() {
 
   const stats = useMemo(() => {
     const active = cases.filter(
-      (c) => (c.status || "").toUpperCase() === "IN_PROGRESS" || 
-             (c.status || "").toLowerCase() === "active"
+      (c) => (c.status || "").toUpperCase() === "IN_PROGRESS" ||
+        (c.status || "").toLowerCase() === "active"
     ).length;
-    
+
     const completed = cases.filter(
       (c) => (c.status || "").toUpperCase() === "CLOSED"
     ).length;
-    
+
     const escalated = cases.filter(
       (c) => (c.status || "").toLowerCase() === "escalated" ||
-             c.metadata?.escalated_at
+        c.metadata?.escalated_at
     ).length;
 
     return { active, completed, escalated, total: cases.length };
   }, [cases]);
 
-  function getWorkflowStage(caseItem: WorkflowCase): string {
-    const metadata = caseItem.metadata || {};
-    
-    if (metadata.escalated_at) return "escalation";
-    if (metadata.financial_notice_generated_at) return "official_notification";
-    if (metadata.refusal_form_generated_at) return "refusal_form";
-    if (metadata.support_intervention_at) return "support_and_intervention";
-    if (metadata.initial_communication_at) return "initial_communication";
-    if (metadata.discharge_decision_at) return "medical_discharge_decision";
-    
-    return "medical_discharge_decision";
-  }
+  const workflowCases = useMemo(
+    () =>
+      cases.map((caseItem) => ({
+        caseItem,
+        workflow: buildMetadataWorkflowProgress({
+          caseId: caseItem.id,
+          status: caseItem.status,
+          patientName: caseItem.patientName,
+          metadata: caseItem.metadata,
+          clickable: true,
+        }),
+      })),
+    [cases]
+  );
 
-  function getStageLabelKey(stageId: string): string {
-    const stageMap: Record<string, string> = {
-      medical_discharge_decision: "workflow.stage.medical_discharge_decision",
-      initial_communication: "workflow.stage.initial_communication",
-      support_and_intervention: "workflow.stage.support_and_intervention",
-      refusal_form: "workflow.stage.refusal_form",
-      official_notification: "workflow.stage.official_notification",
-      escalation: "workflow.stage.escalation",
-      closed: "workflow.stage.closed",
-    };
-    return stageMap[stageId] || stageId;
-  }
+  const stageCounts = useMemo(() => {
+    return STAGE_KEYS.reduce<Record<string, number>>((accumulator, stageKey) => {
+      accumulator[stageKey] = workflowCases.filter(({ workflow }) => workflow.currentStepId === stageKey).length;
+      return accumulator;
+    }, {});
+  }, [workflowCases]);
 
   return (
     <AuthGuard>
@@ -176,10 +175,9 @@ export default function WorkflowPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {cases.map((caseItem) => {
-                const stage = getWorkflowStage(caseItem);
-                const stageKey = getStageLabelKey(stage);
-                
+              {workflowCases.map(({ caseItem, workflow }) => {
+                const currentStep = workflow.steps.find((step) => step.id === workflow.currentStepId);
+
                 return (
                   <article
                     key={caseItem.id}
@@ -194,23 +192,36 @@ export default function WorkflowPage() {
                           <StatusBadge
                             variant={
                               (caseItem.status || "").toLowerCase() === "escalated" ? "escalated" :
-                              (caseItem.status || "").toUpperCase() === "CLOSED" ? "completed" :
-                              "active"
+                                (caseItem.status || "").toUpperCase() === "CLOSED" ? "completed" :
+                                  "active"
                             }
                             label={(caseItem.status || "draft").toUpperCase()}
                           />
                         </div>
-                        
+
                         <p className="mt-1.5 text-sm text-slate-700">
                           Patient: <span className="font-medium">{caseItem.patientName || "—"}</span>
                         </p>
-                        
-                        <div className="mt-2 flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-slate-400" />
-                          <p className="text-xs text-slate-600">
-                            {t("workflow.panel.nextAction")}: <span className="font-medium">{t(stageKey)}</span>
+
+                        {currentStep ? (
+                          <p className="mt-2 text-xs text-slate-600">
+                            {t("workflow.panel.nextAction")}:{" "}
+                            <span className="font-medium">
+                              {lang === "ar" ? currentStep.titleAr : currentStep.titleEn}
+                            </span>
                           </p>
-                        </div>
+                        ) : null}
+
+                        {workflow.steps.length > 0 ? (
+                          <WorkflowProgress
+                            className="mt-3 border-0 bg-transparent p-0"
+                            layout="wrapped"
+                            steps={workflow.steps}
+                            language={lang}
+                            direction={isRtl ? "rtl" : "ltr"}
+                            currentStepId={workflow.currentStepId}
+                          />
+                        ) : null}
 
                         {caseItem.createdAt && (
                           <p className="mt-1 text-xs text-slate-500">
@@ -239,12 +250,13 @@ export default function WorkflowPage() {
           <h3 className="text-sm font-semibold text-slate-900 mb-4">{t("workflow.panel.title")}</h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {STAGE_KEYS.map((stageKey) => {
-              const stageId = stageKey.replace("workflow.stage.", "");
               return (
                 <div key={stageKey} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-medium text-slate-700">{t(stageKey)}</p>
+                  <p className="text-xs font-medium text-slate-700">
+                    {t(`workflow.stage.${stageKey}`)}
+                  </p>
                   <p className="mt-2 text-sm font-bold text-slate-900">
-                    {cases.filter((c) => getWorkflowStage(c) === stageId).length}
+                    {stageCounts[stageKey] || 0}
                   </p>
                 </div>
               );

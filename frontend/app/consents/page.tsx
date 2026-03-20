@@ -43,8 +43,8 @@ export default function ConsentsPage() {
         {loading ? <p className="text-sm text-slate-600">Loading consent queue...</p> : null}
 
         {!loading ? (
-          <div className="overflow-hidden rounded-2xl border border-slate-200">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-slate-50 text-slate-700">
                 <tr>
                   <th className="px-3 py-2 text-left">Case</th>

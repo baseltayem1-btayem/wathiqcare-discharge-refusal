@@ -1,10 +1,15 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
+const appRoot = path.resolve(process.cwd());
 const monorepoRoot = path.resolve(process.cwd(), "..");
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: monorepoRoot,
+  outputFileTracingRoot: appRoot,
+  // Include contract files in serverless function bundles (Vercel)
+  outputFileTracingIncludes: {
+    "/api/discharge/**": ["./contracts/**"],
+  },
   turbopack: {
     root: monorepoRoot,
   },
@@ -13,6 +18,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "cdn.phototourl.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.imc.med.sa",
         pathname: "/**",
       },
     ],
