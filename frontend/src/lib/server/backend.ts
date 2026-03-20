@@ -17,6 +17,7 @@ export function getConfiguredBackendApiBaseUrl(): string | null {
   const configured =
     normalizeAbsoluteHttpUrl(process.env.BACKEND_API_BASE_URL) ??
     normalizeAbsoluteHttpUrl(process.env.BACKEND_URL) ??
+    normalizeAbsoluteHttpUrl(process.env.NEXT_PUBLIC_API_URL) ??
     normalizeAbsoluteHttpUrl(process.env.NEXT_PUBLIC_API_BASE_URL);
 
   if (configured) {

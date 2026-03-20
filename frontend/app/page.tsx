@@ -376,6 +376,7 @@ export default function HomePage() {
 
       <footer className="border-t border-white/70 bg-white/80 px-4 py-6 text-center text-xs text-slate-500 md:px-8">
         © {new Date().getFullYear()} WathiqCare | {copy.footerText}
+        <span className="ml-2 font-semibold text-slate-700">Build: production refresh</span>
       </footer>
 
       <style jsx>{`

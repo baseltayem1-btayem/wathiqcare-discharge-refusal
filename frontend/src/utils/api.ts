@@ -1,6 +1,7 @@
 const TOKEN_KEY = "wathiqcare_access_token";
 
 const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
