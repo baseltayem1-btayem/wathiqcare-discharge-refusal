@@ -1,8 +1,0 @@
-[
-  {
-    "id": "b18fe888-817e-46a8-b2fd-70228bc2232b",
-    "action": "create_discharge_refusal_with_signature",
-    "details": "Discharge refusal created for patient MRN MRN-7002; signed by Basel Bundle Patient 2 (Patient); PDF generated at backend/generated/refusal_f9db793d-f95c-44fb-8fab-5669a51bcae8.pdf",
-    "created_at": "2026-03-06T19:16:19.633822"
-  }
-]

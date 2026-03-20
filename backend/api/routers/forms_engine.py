@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
 from backend.api.deps import require_roles
@@ -125,8 +125,8 @@ def generate_case_form(
         raise HTTPException(status_code=500, detail="Document generation failed. Please retry.")
 
 
-@router.get("/documents/{document_id}/preview", response_class=HTMLResponse)
-def preview_document(
+@router.get("/forms/documents/{document_id}/preview-html", response_class=HTMLResponse)
+def preview_document_html(
     document_id: str,
     current_user=Depends(require_roles(*VIEW_ROLES)),
 ):
@@ -152,32 +152,6 @@ def view_document(
         return HTMLResponse(content=preview["previewHtml"])
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
-
-
-@router.get("/documents/{document_id}/download")
-def download_document(
-    document_id: str,
-    current_user=Depends(require_roles(*VIEW_ROLES)),
-):
-    try:
-        document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
-
-    path = Path(document.file_path)
-    if not path.exists():
-        if document.html_content:
-            return Response(
-                content=document.html_content,
-                media_type="text/html",
-                headers={
-                    "Content-Disposition": f'attachment; filename="{document.file_name}"',
-                },
-            )
-        raise HTTPException(status_code=404, detail="Document file not found")
-
-    media_type = "application/pdf" if path.suffix.lower() == ".pdf" else "text/html"
-    return FileResponse(path=str(path), filename=document.file_name, media_type=media_type)
 
 
 @router.post("/documents/{document_id}/sign")
@@ -256,8 +230,8 @@ def verify_document_otp(
         raise HTTPException(status_code=500, detail="OTP verification failed. Please retry.")
 
 
-@router.get("/cases/{case_id}/documents")
-def get_case_documents(
+@router.get("/forms/cases/{case_id}/documents")
+def get_case_documents_forms(
     case_id: str,
     current_user=Depends(require_roles(*VIEW_ROLES)),
 ):
