@@ -56,6 +56,15 @@ function safe(v: unknown): string {
     return (v == null ? "" : String(v)).trim();
 }
 
+const AUTH_DEBUG = process.env.AUTH_DEBUG === "true";
+
+function authDebugLog(event: string, details: Record<string, unknown> = {}): void {
+    if (!AUTH_DEBUG) {
+        return;
+    }
+    console.info("[auth-debug]", event, details);
+}
+
 function nowIso(): string {
     return new Date().toISOString();
 }
@@ -101,6 +110,13 @@ async function sendEmailNoticeViaBackend(
     }
 
     const endpoint = new URL("/api/emails/send", `${backendBase}/`);
+    authDebugLog("email_notice_backend_request_start", {
+        endpoint: endpoint.toString(),
+        caseId,
+        recipientEmail,
+        hasAuthorizationHeader: Boolean(authHeader),
+    });
+
     let response: Response;
     try {
         response = await fetch(endpoint, {
@@ -129,13 +145,28 @@ async function sendEmailNoticeViaBackend(
         ? await response.json().catch(() => null)
         : await response.text().catch(() => "");
 
+    authDebugLog("email_notice_backend_response", {
+        endpoint: endpoint.toString(),
+        status: response.status,
+        ok: response.ok,
+        isJson,
+        payloadPreview:
+            typeof responseBody === "string"
+                ? responseBody.slice(0, 300)
+                : responseBody && typeof responseBody === "object"
+                    ? JSON.stringify(responseBody).slice(0, 300)
+                    : null,
+    });
+
     if (!response.ok) {
         const detail =
             responseBody && typeof responseBody === "object" && "detail" in responseBody
                 ? String((responseBody as { detail?: unknown }).detail ?? "")
-                : typeof responseBody === "string"
-                    ? responseBody
-                    : "";
+                : responseBody && typeof responseBody === "object" && "message" in responseBody
+                    ? String((responseBody as { message?: unknown }).message ?? "")
+                    : typeof responseBody === "string"
+                        ? responseBody
+                        : "";
         throw new ApiError(
             response.status,
             detail || `تعذر إرسال إشعار البريد الإلكتروني (${response.status})`,
