@@ -17,6 +17,7 @@ import AuthGuard from "@/components/AuthGuard";
 import StatCard from "@/components/ui/StatCard";
 import StatusBadge from "@/components/ui/StatusBadge";
 import ActionButton from "@/components/ui/ActionButton";
+import { apiFetch } from "@/utils/api";
 
 type IntegrationStatus = "queued" | "running" | "success" | "failed" | "partial_success" | "disabled";
 
@@ -139,25 +140,11 @@ export default function EMRIntegrationPage() {
 
     async function loadDashboardData() {
         try {
-            const [statusRes, runsRes, alertsRes] = await Promise.all([
-                fetch("/api/integrations/status", { cache: "no-store" }),
-                fetch("/api/integrations/runs?limit=20", { cache: "no-store" }),
-                fetch("/api/integrations/alerts?limit=20&offset=0", { cache: "no-store" }),
+            const [statusJson, runsJson, alertsJson] = await Promise.all([
+                apiFetch<StatusResponse>("/api/integrations/status", { cache: "no-store" }),
+                apiFetch<RunsResponse>("/api/integrations/runs?limit=20", { cache: "no-store" }),
+                apiFetch<AlertsResponse>("/api/integrations/alerts?limit=20&offset=0", { cache: "no-store" }),
             ]);
-
-            if (!statusRes.ok) {
-                throw new Error(`Status API failed (${statusRes.status})`);
-            }
-            if (!runsRes.ok) {
-                throw new Error(`Runs API failed (${runsRes.status})`);
-            }
-            if (!alertsRes.ok) {
-                throw new Error(`Alerts API failed (${alertsRes.status})`);
-            }
-
-            const statusJson = (await statusRes.json()) as StatusResponse;
-            const runsJson = (await runsRes.json()) as RunsResponse;
-            const alertsJson = (await alertsRes.json()) as AlertsResponse;
 
             setSummary(statusJson.summary);
             setConnectors(statusJson.connectors || []);
@@ -175,14 +162,9 @@ export default function EMRIntegrationPage() {
         setSyncingKeys((prev) => ({ ...prev, [connectorKey]: true }));
 
         try {
-            const response = await fetch(`/api/integrations/${encodeURIComponent(connectorKey)}/sync`, {
+            await apiFetch(`/api/integrations/${encodeURIComponent(connectorKey)}/sync`, {
                 method: "POST",
             });
-
-            if (!response.ok) {
-                const payload = await response.json().catch(() => ({ detail: "Sync trigger failed" }));
-                throw new Error(payload.detail || `Sync trigger failed (${response.status})`);
-            }
 
             await loadDashboardData();
         } catch (err) {

@@ -3,6 +3,20 @@ const TOKEN_KEY = "wathiqcare_access_token";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
 
+function isProtectedIntegrationRoute(path: string): boolean {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return normalized.startsWith("/api/integrations/");
+}
+
+function redirectToLogin(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const current = `${window.location.pathname}${window.location.search}`;
+  const next = encodeURIComponent(current || "/");
+  window.location.assign(`/login?next=${next}`);
+}
+
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split(".");
@@ -78,6 +92,7 @@ function getErrorMessage(status: number, statusText: string, body: unknown): str
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const isAbsoluteUrl = /^https?:\/\//i.test(path);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const requiresAuth = isProtectedIntegrationRoute(normalizedPath);
   const isNextApiRoute = normalizedPath.startsWith("/api/");
   const url = isAbsoluteUrl
     ? path
@@ -93,6 +108,10 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   }
 
   const token = getToken();
+  if (requiresAuth && !token) {
+    redirectToLogin();
+    throw new Error("401: Missing access token");
+  }
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
@@ -108,6 +127,9 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (!response.ok) {
     if (response.status === 401) {
       clearToken();
+      if (requiresAuth) {
+        redirectToLogin();
+      }
     }
     const errorBody = isJson
       ? await response.json().catch(() => null)
