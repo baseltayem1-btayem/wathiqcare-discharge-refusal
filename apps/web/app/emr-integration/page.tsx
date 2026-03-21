@@ -14,10 +14,11 @@ import {
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import AccessDenied from "@/components/AccessDenied";
 import StatCard from "@/components/ui/StatCard";
 import StatusBadge from "@/components/ui/StatusBadge";
 import ActionButton from "@/components/ui/ActionButton";
-import { apiFetch } from "@/utils/api";
+import { apiFetch, isForbiddenError } from "@/utils/api";
 
 type IntegrationStatus = "queued" | "running" | "success" | "failed" | "partial_success" | "disabled";
 
@@ -116,6 +117,7 @@ export default function EMRIntegrationPage() {
     const [alerts, setAlerts] = useState<IntegrationAlert[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [forbidden, setForbidden] = useState(false);
     const [syncingKeys, setSyncingKeys] = useState<Record<string, boolean>>({});
 
     const hasActiveRuns = useMemo(
@@ -151,8 +153,14 @@ export default function EMRIntegrationPage() {
             setRuns(runsJson.runs || []);
             setAlerts(alertsJson.alerts || []);
             setError(null);
+            setForbidden(false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load integration data");
+            if (isForbiddenError(err)) {
+                setForbidden(true);
+                setError(null);
+            } else {
+                setError(err instanceof Error ? err.message : "Failed to load integration data");
+            }
         } finally {
             setLoading(false);
         }
@@ -192,291 +200,297 @@ export default function EMRIntegrationPage() {
                 title="EMR Integration"
                 subtitle="Monitor and manage Electronic Medical Record system connections and data synchronization."
             >
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <StatCard
-                        title="Total Integrations"
-                        value={connectors.length}
-                        icon={<Server className="h-5 w-5" />}
-                        variant="default"
-                    />
-                    <StatCard
-                        title="Connected Systems"
-                        value={connectedCount}
-                        icon={<CheckCircle2 className="h-5 w-5" />}
-                        variant="success"
-                    />
-                    <StatCard
-                        title="System Errors"
-                        value={errorCount}
-                        icon={<XCircle className="h-5 w-5" />}
-                        variant="error"
-                    />
-                    <StatCard
-                        title="Total Records"
-                        value={totalRecords.toLocaleString()}
-                        icon={<Database className="h-5 w-5" />}
-                        variant="primary"
-                    />
-                </div>
+                {forbidden ? (
+                    <AccessDenied resource="EMR Integration" backHref="/dashboard" backLabel="Back to Dashboard" />
+                ) : (
+                    <>
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <StatCard
+                                title="Total Integrations"
+                                value={connectors.length}
+                                icon={<Server className="h-5 w-5" />}
+                                variant="default"
+                            />
+                            <StatCard
+                                title="Connected Systems"
+                                value={connectedCount}
+                                icon={<CheckCircle2 className="h-5 w-5" />}
+                                variant="success"
+                            />
+                            <StatCard
+                                title="System Errors"
+                                value={errorCount}
+                                icon={<XCircle className="h-5 w-5" />}
+                                variant="error"
+                            />
+                            <StatCard
+                                title="Total Records"
+                                value={totalRecords.toLocaleString()}
+                                icon={<Database className="h-5 w-5" />}
+                                variant="primary"
+                            />
+                        </div>
 
-                {summary && (
-                    <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">
-                        <span className="font-medium text-slate-800">Live monitoring:</span>{" "}
-                        {summary.live} live connector(s), {summary.running} running/queued, {summary.failed} failed, {summary.disabled} disabled.
-                    </div>
-                )}
+                        {summary && (
+                            <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">
+                                <span className="font-medium text-slate-800">Live monitoring:</span>{" "}
+                                {summary.live} live connector(s), {summary.running} running/queued, {summary.failed} failed, {summary.disabled} disabled.
+                            </div>
+                        )}
 
-                {error && (
-                    <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-                        {error}
-                    </div>
-                )}
+                        {error && (
+                            <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                                {error}
+                            </div>
+                        )}
 
-                {loading && (
-                    <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
-                        Loading live integration telemetry...
-                    </div>
-                )}
+                        {loading && (
+                            <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+                                Loading live integration telemetry...
+                            </div>
+                        )}
 
-                <div className="mt-6">
-                    <h2 className="mb-3 text-lg font-semibold text-slate-900">EMR System Connections</h2>
+                        <div className="mt-6">
+                            <h2 className="mb-3 text-lg font-semibold text-slate-900">EMR System Connections</h2>
 
-                    <div className="space-y-3">
-                        {connectors.map((connector) => (
-                            <article
-                                key={connector.connector_key}
-                                className="rounded-2xl border border-slate-200 bg-white p-4"
-                            >
-                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="text-sm font-semibold text-slate-900">{connector.connector_name}</h3>
-                                            <StatusBadge
-                                                variant={mapBadgeVariant(connector.status)}
-                                                label={toDisplayStatus(connector.status)}
-                                            />
-                                            {!connector.live_mode && (
-                                                <StatusBadge variant="warning" label="MOCK ADAPTER" />
+                            <div className="space-y-3">
+                                {connectors.map((connector) => (
+                                    <article
+                                        key={connector.connector_key}
+                                        className="rounded-2xl border border-slate-200 bg-white p-4"
+                                    >
+                                        <div className="flex flex-wrap items-start justify-between gap-3">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="text-sm font-semibold text-slate-900">{connector.connector_name}</h3>
+                                                    <StatusBadge
+                                                        variant={mapBadgeVariant(connector.status)}
+                                                        label={toDisplayStatus(connector.status)}
+                                                    />
+                                                    {!connector.live_mode && (
+                                                        <StatusBadge variant="warning" label="MOCK ADAPTER" />
+                                                    )}
+                                                </div>
+
+                                                <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                                                    <div>
+                                                        <p className="text-xs text-slate-500">Connector Key</p>
+                                                        <p className="mt-0.5 text-sm font-medium text-slate-700">{connector.connector_key}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-slate-500">Last Run Records</p>
+                                                        <p className="mt-0.5 text-sm font-medium text-slate-700">
+                                                            {(connector.latest_run?.records_processed || 0).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-slate-500">Last Sync</p>
+                                                        <p className="mt-0.5 text-sm font-medium text-slate-700">
+                                                            {formatDateTime(connector.latest_run?.completed_at || connector.last_success_at)}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-slate-500">Config</p>
+                                                        <p className="mt-0.5 text-sm font-medium text-slate-700">
+                                                            Every {connector.sync_interval_minutes}m, timeout {connector.timeout_seconds}s, retry {connector.retry_count}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {connector.latest_run?.error_summary && (
+                                                    <p className="mt-2 text-xs text-rose-700">
+                                                        Failure reason: {connector.latest_run.error_summary}
+                                                    </p>
+                                                )}
+
+                                                {connector.last_error && !connector.latest_run?.error_summary && (
+                                                    <p className="mt-2 text-xs text-rose-700">
+                                                        Last error: {connector.last_error}
+                                                    </p>
+                                                )}
+
+                                                {connector.active_run?.triggered_by && (
+                                                    <p className="mt-2 text-xs text-slate-500">
+                                                        Triggered by: {connector.active_run.triggered_by}
+                                                    </p>
+                                                )}
+
+                                                {!!connector.resource_set?.length && (
+                                                    <p className="mt-2 text-xs text-slate-500">
+                                                        Resource set: {connector.resource_set.join(", ")}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <ActionButton
+                                                onClick={() => handleSync(connector.connector_key)}
+                                                disabled={
+                                                    syncingKeys[connector.connector_key] ||
+                                                    connector.status === "queued" ||
+                                                    connector.status === "running"
+                                                }
+                                                size="sm"
+                                                variant="outline"
+                                                icon={<RefreshCw className={`h-3.5 w-3.5 ${syncingKeys[connector.connector_key] ? "animate-spin" : ""}`} />}
+                                            >
+                                                {syncingKeys[connector.connector_key]
+                                                    ? "Queueing..."
+                                                    : connector.status === "queued" || connector.status === "running"
+                                                        ? "In Progress"
+                                                        : "Sync Now"}
+                                            </ActionButton>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="mt-6">
+                            <h2 className="mb-3 text-lg font-semibold text-slate-900">Recent Synchronization Activity</h2>
+
+                            <div className="space-y-2">
+                                {runs.map((run) => (
+                                    <div
+                                        key={run.id}
+                                        className={`rounded-xl border p-3 ${run.status === "success"
+                                            ? "border-emerald-200 bg-emerald-50"
+                                            : run.status === "failed"
+                                                ? "border-rose-200 bg-rose-50"
+                                                : run.status === "partial_success"
+                                                    ? "border-amber-200 bg-amber-50"
+                                                    : "border-blue-200 bg-blue-50"
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-sm font-medium text-slate-900">{run.connector_name}</p>
+                                                    <StatusBadge
+                                                        variant={mapBadgeVariant(run.status)}
+                                                        label={toDisplayStatus(run.status)}
+                                                    />
+                                                </div>
+                                                <p className="mt-1 text-xs text-slate-600">
+                                                    {run.run_type.toUpperCase()} sync {run.triggered_by ? `by ${run.triggered_by}` : ""}
+                                                </p>
+                                                <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
+                                                    <span className="flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        {formatDateTime(run.completed_at || run.started_at)}
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Database className="h-3 w-3" />
+                                                        {run.records_processed} processed ({run.records_failed} failed)
+                                                    </span>
+                                                </div>
+                                                {run.error_summary && (
+                                                    <p className="mt-2 text-xs text-rose-700">{run.error_summary}</p>
+                                                )}
+                                            </div>
+                                            {run.status === "success" ? (
+                                                <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-emerald-600" />
+                                            ) : run.status === "failed" ? (
+                                                <XCircle className="h-5 w-5 flex-shrink-0 text-rose-600" />
+                                            ) : (
+                                                <Activity className="h-5 w-5 flex-shrink-0 animate-pulse text-blue-600" />
                                             )}
                                         </div>
-
-                                        <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                                            <div>
-                                                <p className="text-xs text-slate-500">Connector Key</p>
-                                                <p className="mt-0.5 text-sm font-medium text-slate-700">{connector.connector_key}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-slate-500">Last Run Records</p>
-                                                <p className="mt-0.5 text-sm font-medium text-slate-700">
-                                                    {(connector.latest_run?.records_processed || 0).toLocaleString()}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-slate-500">Last Sync</p>
-                                                <p className="mt-0.5 text-sm font-medium text-slate-700">
-                                                    {formatDateTime(connector.latest_run?.completed_at || connector.last_success_at)}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-slate-500">Config</p>
-                                                <p className="mt-0.5 text-sm font-medium text-slate-700">
-                                                    Every {connector.sync_interval_minutes}m, timeout {connector.timeout_seconds}s, retry {connector.retry_count}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {connector.latest_run?.error_summary && (
-                                            <p className="mt-2 text-xs text-rose-700">
-                                                Failure reason: {connector.latest_run.error_summary}
-                                            </p>
-                                        )}
-
-                                        {connector.last_error && !connector.latest_run?.error_summary && (
-                                            <p className="mt-2 text-xs text-rose-700">
-                                                Last error: {connector.last_error}
-                                            </p>
-                                        )}
-
-                                        {connector.active_run?.triggered_by && (
-                                            <p className="mt-2 text-xs text-slate-500">
-                                                Triggered by: {connector.active_run.triggered_by}
-                                            </p>
-                                        )}
-
-                                        {!!connector.resource_set?.length && (
-                                            <p className="mt-2 text-xs text-slate-500">
-                                                Resource set: {connector.resource_set.join(", ")}
-                                            </p>
-                                        )}
                                     </div>
+                                ))}
 
-                                    <ActionButton
-                                        onClick={() => handleSync(connector.connector_key)}
-                                        disabled={
-                                            syncingKeys[connector.connector_key] ||
-                                            connector.status === "queued" ||
-                                            connector.status === "running"
-                                        }
-                                        size="sm"
-                                        variant="outline"
-                                        icon={<RefreshCw className={`h-3.5 w-3.5 ${syncingKeys[connector.connector_key] ? "animate-spin" : ""}`} />}
+                                {!runs.length && !loading && (
+                                    <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                                        No synchronization runs recorded yet.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mt-6">
+                            <h2 className="mb-3 text-lg font-semibold text-slate-900">Operations Alerts</h2>
+
+                            <div className="space-y-2">
+                                {alerts.map((alert, index) => (
+                                    <div
+                                        key={`${alert.alert_type}-${alert.triggered_at || index}`}
+                                        className={`rounded-xl border p-3 ${alert.status === "sent"
+                                            ? "border-emerald-200 bg-emerald-50"
+                                            : alert.status === "failed"
+                                                ? "border-rose-200 bg-rose-50"
+                                                : alert.status === "suppressed"
+                                                    ? "border-amber-200 bg-amber-50"
+                                                    : "border-slate-200 bg-slate-50"
+                                            }`}
                                     >
-                                        {syncingKeys[connector.connector_key]
-                                            ? "Queueing..."
-                                            : connector.status === "queued" || connector.status === "running"
-                                                ? "In Progress"
-                                                : "Sync Now"}
-                                    </ActionButton>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="mt-6">
-                    <h2 className="mb-3 text-lg font-semibold text-slate-900">Recent Synchronization Activity</h2>
-
-                    <div className="space-y-2">
-                        {runs.map((run) => (
-                            <div
-                                key={run.id}
-                                className={`rounded-xl border p-3 ${run.status === "success"
-                                    ? "border-emerald-200 bg-emerald-50"
-                                    : run.status === "failed"
-                                        ? "border-rose-200 bg-rose-50"
-                                        : run.status === "partial_success"
-                                            ? "border-amber-200 bg-amber-50"
-                                            : "border-blue-200 bg-blue-50"
-                                    }`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-sm font-medium text-slate-900">{run.connector_name}</p>
-                                            <StatusBadge
-                                                variant={mapBadgeVariant(run.status)}
-                                                label={toDisplayStatus(run.status)}
-                                            />
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div>
+                                                <p className="text-sm font-medium text-slate-900">{alert.alert_type}</p>
+                                                <p className="mt-1 text-xs text-slate-600">
+                                                    {alert.connector_key ? `connector=${alert.connector_key} ` : ""}
+                                                    severity={alert.severity} status={alert.status}
+                                                </p>
+                                                <p className="mt-1 text-xs text-slate-700">{alert.message}</p>
+                                            </div>
+                                            <div className="text-right text-xs text-slate-500">
+                                                <p>Triggered: {formatDateTime(alert.triggered_at)}</p>
+                                                <p>Notified: {formatDateTime(alert.notified_at)}</p>
+                                            </div>
                                         </div>
-                                        <p className="mt-1 text-xs text-slate-600">
-                                            {run.run_type.toUpperCase()} sync {run.triggered_by ? `by ${run.triggered_by}` : ""}
-                                        </p>
-                                        <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                {formatDateTime(run.completed_at || run.started_at)}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Database className="h-3 w-3" />
-                                                {run.records_processed} processed ({run.records_failed} failed)
-                                            </span>
-                                        </div>
-                                        {run.error_summary && (
-                                            <p className="mt-2 text-xs text-rose-700">{run.error_summary}</p>
-                                        )}
                                     </div>
-                                    {run.status === "success" ? (
-                                        <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-emerald-600" />
-                                    ) : run.status === "failed" ? (
-                                        <XCircle className="h-5 w-5 flex-shrink-0 text-rose-600" />
-                                    ) : (
-                                        <Activity className="h-5 w-5 flex-shrink-0 animate-pulse text-blue-600" />
-                                    )}
-                                </div>
+                                ))}
+
+                                {!alerts.length && !loading && (
+                                    <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                                        No operations alerts recorded.
+                                    </div>
+                                )}
                             </div>
-                        ))}
+                        </div>
 
-                        {!runs.length && !loading && (
-                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-                                No synchronization runs recorded yet.
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="mt-6">
-                    <h2 className="mb-3 text-lg font-semibold text-slate-900">Operations Alerts</h2>
-
-                    <div className="space-y-2">
-                        {alerts.map((alert, index) => (
-                            <div
-                                key={`${alert.alert_type}-${alert.triggered_at || index}`}
-                                className={`rounded-xl border p-3 ${alert.status === "sent"
-                                    ? "border-emerald-200 bg-emerald-50"
-                                    : alert.status === "failed"
-                                        ? "border-rose-200 bg-rose-50"
-                                        : alert.status === "suppressed"
-                                            ? "border-amber-200 bg-amber-50"
-                                            : "border-slate-200 bg-slate-50"
-                                    }`}
-                            >
-                                <div className="flex items-center justify-between gap-2">
+                        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                            <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-5">
+                                <div className="flex items-start gap-3">
+                                    <div className="rounded-lg bg-blue-600 p-2">
+                                        <Zap className="h-5 w-5 text-white" />
+                                    </div>
                                     <div>
-                                        <p className="text-sm font-medium text-slate-900">{alert.alert_type}</p>
-                                        <p className="mt-1 text-xs text-slate-600">
-                                            {alert.connector_key ? `connector=${alert.connector_key} ` : ""}
-                                            severity={alert.severity} status={alert.status}
+                                        <h3 className="text-sm font-semibold text-slate-900">FHIR R4 Compliance</h3>
+                                        <p className="mt-1 text-sm text-slate-600">
+                                            FHIR connector sync payloads and health checks are now backed by live operational telemetry.
                                         </p>
-                                        <p className="mt-1 text-xs text-slate-700">{alert.message}</p>
-                                    </div>
-                                    <div className="text-right text-xs text-slate-500">
-                                        <p>Triggered: {formatDateTime(alert.triggered_at)}</p>
-                                        <p>Notified: {formatDateTime(alert.notified_at)}</p>
                                     </div>
                                 </div>
                             </div>
-                        ))}
 
-                        {!alerts.length && !loading && (
-                            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-                                No operations alerts recorded.
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-5">
-                        <div className="flex items-start gap-3">
-                            <div className="rounded-lg bg-blue-600 p-2">
-                                <Zap className="h-5 w-5 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-semibold text-slate-900">FHIR R4 Compliance</h3>
-                                <p className="mt-1 text-sm text-slate-600">
-                                    FHIR connector sync payloads and health checks are now backed by live operational telemetry.
-                                </p>
+                            <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-5">
+                                <div className="flex items-start gap-3">
+                                    <div className="rounded-lg bg-emerald-600 p-2">
+                                        <CheckCircle2 className="h-5 w-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-slate-900">Data Security</h3>
+                                        <p className="mt-1 text-sm text-slate-600">
+                                            Connector credentials and endpoints are loaded from environment configuration per connector.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-5">
-                        <div className="flex items-start gap-3">
-                            <div className="rounded-lg bg-emerald-600 p-2">
-                                <CheckCircle2 className="h-5 w-5 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-semibold text-slate-900">Data Security</h3>
-                                <p className="mt-1 text-sm text-slate-600">
-                                    Connector credentials and endpoints are loaded from environment configuration per connector.
-                                </p>
+                        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                            <div className="flex gap-3">
+                                <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-600" />
+                                <div>
+                                    <h3 className="text-sm font-semibold text-amber-900">Integration Notes</h3>
+                                    <p className="mt-1 text-sm text-amber-700">
+                                        Live connector status, run telemetry, and failures are now sourced from backend operational data.
+                                        Use Sync Now to queue manual runs and track progress in real time.
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <div className="flex gap-3">
-                        <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-600" />
-                        <div>
-                            <h3 className="text-sm font-semibold text-amber-900">Integration Notes</h3>
-                            <p className="mt-1 text-sm text-amber-700">
-                                Live connector status, run telemetry, and failures are now sourced from backend operational data.
-                                Use Sync Now to queue manual runs and track progress in real time.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                    </>
+                )}
             </AppShell>
         </AuthGuard>
     );

@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Building2, CheckCircle2, ClipboardList, FileSignature, Plus, RefreshCw, Save, ShieldCheck, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import AccessDenied from "@/components/AccessDenied";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch } from "@/utils/api";
+import { apiFetch, isForbiddenError } from "@/utils/api";
 
 type AuthMeResponse = {
   claims?: {
@@ -144,6 +145,7 @@ export default function AdminPage() {
   const [creatingTenant, setCreatingTenant] = useState(false);
   const [suspendingTenantId, setSuspendingTenantId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [forbidden, setForbidden] = useState(false);
   const [notice, setNotice] = useState("");
 
   const currencyFormatter = useMemo(
@@ -239,6 +241,7 @@ export default function AdminPage() {
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     setError("");
+    setForbidden(false);
     setNotice("");
 
     try {
@@ -282,7 +285,11 @@ export default function AdminPage() {
         seatLimit: subscriptionData.seatLimit ?? 10,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل تحميل لوحة إدارة المنصة.");
+      if (isForbiddenError(err)) {
+        setForbidden(true);
+      } else {
+        setError(err instanceof Error ? err.message : "فشل تحميل لوحة إدارة المنصة.");
+      }
     } finally {
       setLoading(false);
     }
@@ -417,6 +424,16 @@ export default function AdminPage() {
     }
   }
 
+  if (forbidden) {
+    return (
+      <AuthGuard>
+        <AppShell title="إدارة المنصة" subtitle="إدارة المستأجر والاشتراك والأعضاء والاستخدام والفوترة">
+          <AccessDenied resource="لوحة إدارة المنصة" />
+        </AppShell>
+      </AuthGuard>
+    );
+  }
+
   return (
     <AuthGuard>
       <AppShell
@@ -486,11 +503,10 @@ export default function AdminPage() {
                           <td className="px-3 py-2 font-medium text-slate-900">{row.caseId}</td>
                           <td className="px-3 py-2">
                             <span
-                              className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                                row.level === "high"
+                              className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${row.level === "high"
                                   ? "bg-red-100 text-red-700"
                                   : "bg-amber-100 text-amber-700"
-                              }`}
+                                }`}
                             >
                               {row.risk}
                             </span>

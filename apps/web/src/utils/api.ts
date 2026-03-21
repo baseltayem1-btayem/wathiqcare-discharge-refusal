@@ -46,6 +46,10 @@ export function isAuthenticationError(error: unknown): boolean {
   return error instanceof ApiHttpError && error.status === 401;
 }
 
+export function isForbiddenError(error: unknown): boolean {
+  return error instanceof ApiHttpError && error.status === 403;
+}
+
 type SessionValidationResult = {
   valid: boolean | null;
   status: number | null;

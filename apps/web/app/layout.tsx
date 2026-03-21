@@ -1,29 +1,19 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google";
+// GeistMono is loaded from the self-hosted `geist` npm package — no Google Fonts runtime dependency.
+import { GeistMono } from "geist/font/mono";
 import I18nProvider from "@/i18n/I18nProvider";
 import { Toaster } from "@/components/make-ui/sonner";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const ibmPlexArabic = IBM_Plex_Sans_Arabic({
-  variable: "--font-arabic",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
-});
+const CANONICAL_ORIGIN = "https://wathiqcare.online";
 
 export const metadata: Metadata = {
   title: "WathiqCare",
   description: "WathiqCare discharge refusal workflow",
+  metadataBase: new URL(CANONICAL_ORIGIN),
+  alternates: {
+    canonical: "/",
+  },
 };
 
 export default function RootLayout({
@@ -33,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className={`${plusJakarta.variable} ${geistMono.variable} ${ibmPlexArabic.variable} antialiased`}>
+      <body className={`${GeistMono.variable} antialiased`}>
         <I18nProvider>
           {children}
           <Toaster />

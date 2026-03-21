@@ -103,7 +103,7 @@ export async function POST(request: Request) {
     response.cookies.set(
       getSessionCookieName(),
       accessToken,
-      buildSessionCookieOptions(getTokenTtlSeconds()),
+      buildSessionCookieOptions(getTokenTtlSeconds(), request),
     );
 
     return response;
