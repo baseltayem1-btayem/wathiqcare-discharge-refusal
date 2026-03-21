@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Archive, FileCheck2, FileCog, FilePlus2, FolderKanban, Gavel, LayoutGrid, LogOut, Rocket, ShieldCheck, Stethoscope, Timer, ClipboardList, AlertTriangle, FileSignature, CheckCircle2, Database, MessageSquareHeart, HandHelping, FileText } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
-import { clearToken } from "@/utils/api";
+import { clearToken, getToken } from "@/utils/api";
 
 type AppShellProps = {
   title: string;
@@ -123,6 +123,8 @@ type NavLinkProps = {
 };
 
 function NavLink({ href, label, icon, active, disabled = false }: NavLinkProps) {
+  const authDebug = process.env.NEXT_PUBLIC_AUTH_DEBUG === "true";
+
   if (disabled) {
     return (
       <span className="inline-flex w-full cursor-not-allowed items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-300">
@@ -143,6 +145,17 @@ function NavLink({ href, label, icon, active, disabled = false }: NavLinkProps) 
       }
       onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "#f0f9ff"; }}
       onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = ""; }}
+      onClick={() => {
+        if (!authDebug) {
+          return;
+        }
+        const token = getToken();
+        console.info("[auth-debug] nav_click", {
+          target: href,
+          active,
+          hasToken: Boolean(token),
+        });
+      }}
     >
       {icon}
       {label}

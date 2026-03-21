@@ -28,7 +28,7 @@ import CaseWorkflowTree from "@/components/cases/CaseWorkflowTree";
 import WorkflowDocumentList from "@/components/workflow/WorkflowDocumentList";
 import WorkflowTimelinePanel from "@/components/workflow/WorkflowTimelinePanel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, clearToken, isAuthenticationError } from "@/utils/api";
+import { apiFetch, clearToken, isAuthenticationError, logAuthRedirect } from "@/utils/api";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 import { dischargeRefusalWorkflowService } from "@/lib/services/dischargeRefusalWorkflow.service";
 import {
@@ -701,6 +701,10 @@ export default function CaseDetailsPage() {
       setError(message);
 
       if (isAuthenticationError(err)) {
+        logAuthRedirect("case_details_load_auth_error", {
+          error: err instanceof Error ? err.message : String(err),
+          caseId,
+        });
         clearToken();
         router.push("/login");
       }
@@ -773,6 +777,10 @@ export default function CaseDetailsPage() {
       const message = err instanceof Error ? err.message : t("caseDetails.workflowActionFailed");
       setError(message);
       if (isAuthenticationError(err)) {
+        logAuthRedirect("case_details_workflow_action_auth_error", {
+          error: err instanceof Error ? err.message : String(err),
+          caseId,
+        });
         clearToken();
         router.push("/login");
       }
@@ -963,6 +971,10 @@ export default function CaseDetailsPage() {
       const message = err instanceof Error ? err.message : t("caseDetails.failedOpenPdf");
       setError(message);
       if (isAuthenticationError(err)) {
+        logAuthRedirect("case_details_open_pdf_auth_error", {
+          error: err instanceof Error ? err.message : String(err),
+          caseId,
+        });
         clearToken();
         router.push("/login");
       }
@@ -997,6 +1009,10 @@ export default function CaseDetailsPage() {
       const message = err instanceof Error ? err.message : t("documents.failedDownload");
       setError(message);
       if (isAuthenticationError(err)) {
+        logAuthRedirect("case_details_download_auth_error", {
+          error: err instanceof Error ? err.message : String(err),
+          caseId,
+        });
         clearToken();
         router.push("/login");
       }

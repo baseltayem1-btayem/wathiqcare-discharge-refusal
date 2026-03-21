@@ -7,7 +7,7 @@ import { ArrowLeft, Download, FolderArchive, PackagePlus, RefreshCw } from "luci
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, clearToken, isAuthenticationError } from "@/utils/api";
+import { apiFetch, clearToken, isAuthenticationError, logAuthRedirect } from "@/utils/api";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 
 type BundleItem = {
@@ -44,6 +44,9 @@ export default function BundlesPage() {
       setError(message);
 
       if (isAuthenticationError(err)) {
+        logAuthRedirect("bundles_load_auth_error", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         clearToken();
         router.push("/login");
       }
@@ -83,6 +86,9 @@ export default function BundlesPage() {
       setError(message);
 
       if (isAuthenticationError(err)) {
+        logAuthRedirect("bundles_create_auth_error", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         clearToken();
         router.push("/login");
       }
@@ -105,6 +111,9 @@ export default function BundlesPage() {
       setError(message);
 
       if (isAuthenticationError(err)) {
+        logAuthRedirect("bundles_download_auth_error", {
+          error: err instanceof Error ? err.message : String(err),
+        });
         clearToken();
         router.push("/login");
       }

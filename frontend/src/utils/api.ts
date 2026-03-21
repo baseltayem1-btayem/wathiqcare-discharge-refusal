@@ -13,6 +13,10 @@ function authDebugLog(event: string, details: Record<string, unknown> = {}): voi
   console.info("[auth-debug]", event, details);
 }
 
+export function logAuthRedirect(reason: string, details: Record<string, unknown> = {}): void {
+  authDebugLog("redirect_to_login", { reason, ...details });
+}
+
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split(".");
@@ -156,6 +160,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const response = await fetch(url, {
     ...init,
     headers,
+    credentials: init.credentials ?? "include",
   });
 
   const contentType = response.headers.get("content-type") ?? "";
