@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -30,6 +32,9 @@ SIGNATURE_DIR.mkdir(parents=True, exist_ok=True)
 
 OTP_DIR = Path("backend/generated/document_otp")
 OTP_DIR.mkdir(parents=True, exist_ok=True)
+
+OTP_MAX_RETRIES = max(1, int(os.getenv("DOCUMENT_OTP_MAX_RETRIES", "3")))
+EXPOSE_DEBUG_OTP = (os.getenv("EXPOSE_DEBUG_OTP") or "false").strip().lower() == "true"
 
 
 @dataclass(frozen=True)
@@ -344,6 +349,9 @@ class FormsEngineService:
                         "signerName": str(payload.get("signerName") or payload.get("patientName") or ""),
                         "signerRole": str(payload.get("signerRole") or payload.get("signerRelation") or "patient"),
                         "signature": str(payload.get("signature") or payload.get("signatureData") or "captured"),
+                        "signatureHash": hashlib.sha256(
+                            str(payload.get("signature") or payload.get("signatureData") or "captured").encode("utf-8")
+                        ).hexdigest(),
                         "signedAt": _iso(signed_at),
                     },
                     "capturedBy": {
@@ -408,6 +416,9 @@ class FormsEngineService:
                     "witnessName": str(payload.get("witnessName") or ""),
                     "witnessRole": str(payload.get("witnessRole") or "staff"),
                     "signature": str(payload.get("signature") or payload.get("signatureData") or "captured"),
+                    "signatureHash": hashlib.sha256(
+                        str(payload.get("signature") or payload.get("signatureData") or "captured").encode("utf-8")
+                    ).hexdigest(),
                     "signedAt": _iso(_now()),
                     "capturedBy": {
                         "userId": current_user["id"],
@@ -490,8 +501,11 @@ class FormsEngineService:
                     "userRole": current_user.get("role"),
                 },
                 "otpCodeHash": self.sms_provider.hash_code(dispatch.otp_debug_code or ""),
-                "otpDebugCode": dispatch.otp_debug_code,
                 "verified": False,
+                "attemptCount": 0,
+                "maxRetries": OTP_MAX_RETRIES,
+                "locked": False,
+                "lockedAt": None,
             }
             _write_json(_otp_path(document_id), otp_payload)
 
@@ -504,14 +518,16 @@ class FormsEngineService:
                 details=f"OTP sent for document {document_id} ({document.template_key}) challenge {dispatch.challenge_id}",
             )
             db.commit()
-            return {
+            result = {
                 "documentId": document_id,
                 "challengeId": dispatch.challenge_id,
                 "deliveryStatus": dispatch.delivery_status,
                 "maskedPhone": otp_payload["maskedPhone"],
                 "fallbackMode": bool(dispatch.stub_mode),
-                "otpDebugCode": dispatch.otp_debug_code,
             }
+            if EXPOSE_DEBUG_OTP and dispatch.stub_mode:
+                result["otpDebugCode"] = dispatch.otp_debug_code
+            return result
         except Exception:
             db.rollback()
             raise
@@ -544,11 +560,28 @@ class FormsEngineService:
             if not submitted:
                 raise ValueError("otpCode is required")
 
+            max_retries = int(otp_state.get("maxRetries") or OTP_MAX_RETRIES)
+            attempt_count = int(otp_state.get("attemptCount") or 0)
+            if bool(otp_state.get("locked")) or attempt_count >= max_retries:
+                otp_state["locked"] = True
+                otp_state["lockedAt"] = otp_state.get("lockedAt") or _iso(_now())
+                _write_json(_otp_path(document_id), otp_state)
+                raise ValueError("OTP attempts exceeded. Please request a new OTP.")
+
             expected_hash = str(otp_state.get("otpCodeHash") or "")
             verified = bool(expected_hash) and self.sms_provider.verify_otp(
                 submitted_code=submitted,
                 expected_hash=expected_hash,
             )
+
+            if not verified:
+                attempt_count += 1
+                otp_state["attemptCount"] = attempt_count
+                if attempt_count >= max_retries:
+                    otp_state["locked"] = True
+                    otp_state["lockedAt"] = _iso(_now())
+            else:
+                otp_state["attemptCount"] = attempt_count
 
             otp_state["verified"] = verified
             otp_state["verifiedAt"] = _iso(_now()) if verified else None

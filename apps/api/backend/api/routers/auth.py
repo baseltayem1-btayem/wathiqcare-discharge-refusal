@@ -1,14 +1,17 @@
+import logging
 from datetime import datetime, timedelta
 from threading import Lock
 
 from fastapi import APIRouter, HTTPException
-from backend.schemas.auth import LoginRequest, TokenResponse
+
 from backend.core.database import SessionLocal
-from backend.models.user import User
+from backend.core.security import create_access_token, verify_password
 from backend.models.tenant import Tenant
-from backend.core.security import verify_password, create_access_token
+from backend.models.user import User
+from backend.schemas.auth import LoginRequest, TokenResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
+logger = logging.getLogger(__name__)
 
 _FAILED_LOGIN_ATTEMPTS: dict[str, list[datetime]] = {}
 _FAILED_LOGIN_LOCK = Lock()
@@ -37,23 +40,38 @@ def _clear_failed_attempts(email: str) -> None:
     with _FAILED_LOGIN_LOCK:
         _FAILED_LOGIN_ATTEMPTS.pop(email, None)
 
+
+def _masked_email(email: str) -> str:
+    if "@" not in email:
+        return "***"
+    local, domain = email.split("@", 1)
+    visible = local[:2] if len(local) > 2 else local[:1]
+    return f"{visible}***@{domain}"
+
+
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest):
     db = SessionLocal()
     try:
         email = (payload.email or "").strip().lower()
+        logger.info("login_attempt email=%s", _masked_email(email))
+
         if _is_rate_limited(email):
+            logger.warning("login_rate_limited email=%s", _masked_email(email))
             raise HTTPException(status_code=429, detail="عدد محاولات الدخول كبير. يرجى المحاولة لاحقاً")
 
         user = db.query(User).filter(User.email == email).first()
         if not user or not user.hashed_password:
             _register_failed_attempt(email)
+            logger.warning("login_failed_invalid_credentials email=%s", _masked_email(email))
             raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
         if not user.is_active:
+            logger.warning("login_failed_inactive_user email=%s", _masked_email(email))
             raise HTTPException(status_code=401, detail="تم تعطيل حساب المستخدم")
 
         if not verify_password(payload.password, user.hashed_password):
             _register_failed_attempt(email)
+            logger.warning("login_failed_invalid_credentials email=%s", _masked_email(email))
             raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
 
         _clear_failed_attempts(email)
@@ -67,6 +85,13 @@ def login(payload: LoginRequest):
             "tenant_id": user.tenant_id,
             "tenant_code": tenant.code if tenant else None,
         })
+
+        logger.info(
+            "login_success user_id=%s tenant_id=%s role=%s",
+            user.id,
+            user.tenant_id,
+            user.role,
+        )
 
         return TokenResponse(access_token=token)
 

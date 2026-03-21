@@ -89,7 +89,7 @@ export function isAuthenticationError(error: unknown): boolean {
     return true;
   }
 
-  if (/\bnot authenticated\b/i.test(message)) {
+  if (/\bnot authenticated\b/i.test(message) || /\bunauthorized\b/i.test(message)) {
     return true;
   }
 
@@ -106,6 +106,11 @@ export function isAuthenticationError(error: unknown): boolean {
 
 function getErrorMessage(status: number, statusText: string, body: unknown): string {
   if (body && typeof body === "object") {
+    const maybeMessage = (body as { message?: unknown }).message;
+    if (typeof maybeMessage === "string" && maybeMessage.trim()) {
+      return `${status}: ${maybeMessage}`;
+    }
+
     const maybeDetail = (body as { detail?: unknown }).detail;
     if (typeof maybeDetail === "string" && maybeDetail.trim()) {
       return `${status}: ${maybeDetail}`;

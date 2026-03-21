@@ -34,7 +34,7 @@ from backend.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_EXPIRY_HOURS = 72
+_DEFAULT_EXPIRY_MINUTES = 10
 _PUBLIC_LEGAL_NOTICE = (
     "هذا الرابط مخصص لإقرار قرار الخروج فقط. تم عرض القرار وشرح آثاره والمخاطر "
     "والبدائل العلاجية المتاحة. يرجى اختيار الموافقة أو الرفض بعد قراءة هذا "
@@ -52,11 +52,17 @@ def _pepper() -> str:
     return value
 
 
-def _expiry_hours() -> int:
+def _expiry_minutes() -> int:
+    raw = os.getenv("SECURE_LINK_EXPIRY_MINUTES", "")
+    fallback_from_hours = os.getenv("SECURE_LINK_EXPIRY_HOURS", "")
     try:
-        return max(1, int(os.getenv("SECURE_LINK_EXPIRY_HOURS", str(_DEFAULT_EXPIRY_HOURS))))
+        if raw.strip():
+            return max(1, min(10, int(raw)))
+        if fallback_from_hours.strip():
+            return max(1, min(10, int(fallback_from_hours) * 60))
     except (ValueError, TypeError):
-        return _DEFAULT_EXPIRY_HOURS
+        pass
+    return _DEFAULT_EXPIRY_MINUTES
 
 
 def _hash_token(raw_token: str) -> str:
@@ -202,7 +208,7 @@ def generate_link(
 
         raw_token = secrets.token_urlsafe(32)
         token_hash = _hash_token(raw_token)
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=_expiry_hours())
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=_expiry_minutes())
         base_url = os.getenv("APP_BASE_URL", "http://localhost:3000").rstrip("/")
         url = f"{base_url}/secure/{raw_token}"
 
@@ -390,7 +396,9 @@ def submit_decision(
         case.signer_name = normalized_name
         case.signer_role = "patient_representative"
         # Prefer canvas signature data; fall back to typed name as plain-text proof
-        case.signature_text = signature_data.strip() if signature_data and signature_data.strip() else normalized_name
+        normalized_signature = signature_data.strip() if signature_data and signature_data.strip() else normalized_name
+        signature_hash = hashlib.sha256(normalized_signature.encode("utf-8")).hexdigest()
+        case.signature_text = normalized_signature
         case.signed_at = now
         if normalized_decision == "accept":
             case.accepted_at = now
@@ -403,6 +411,7 @@ def submit_decision(
             case_id=link.case_id,
             decision_type=normalized_decision,
             typed_name=normalized_name,
+            signature_hash=signature_hash,
             ip_address=ip_address,
             user_agent=normalized_user_agent,
         )
@@ -424,6 +433,18 @@ def submit_decision(
             action="decision_submitted",
             details=audit_details,
         )
+
+        # One-time use: invalidate token after successful decision submission.
+        link.revoked_at = now
+        _write_audit(
+            db,
+            tenant_id=link.tenant_id,
+            user_id=link.created_by,
+            entity_id=link.id,
+            action="secure_link_consumed",
+            details=f"consumed_at={now.isoformat()}",
+        )
+
         db.commit()
 
         payload = _get_public_payload(db, link)

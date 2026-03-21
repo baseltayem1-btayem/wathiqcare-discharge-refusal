@@ -18,12 +18,13 @@ function getJwtSecret(): string {
 }
 
 function getTokenTtlSeconds(): number {
-  const raw = process.env.ACCESS_TOKEN_EXPIRE_MINUTES ?? "60";
+  const raw = process.env.ACCESS_TOKEN_EXPIRE_MINUTES ?? "30";
   const minutes = Number(raw);
   if (!Number.isFinite(minutes) || minutes <= 0) {
     throw new ApiError(500, "ACCESS_TOKEN_EXPIRE_MINUTES is invalid");
   }
-  return Math.floor(minutes * 60);
+  const bounded = Math.max(15, Math.min(30, Math.floor(minutes)));
+  return Math.floor(bounded * 60);
 }
 
 function base64UrlEncode(value: string): string {
@@ -86,6 +87,7 @@ export async function POST(request: Request) {
     const now = Math.floor(Date.now() / 1000);
     const exp = now + getTokenTtlSeconds();
 
+    const issuer = process.env.JWT_ISSUER?.trim() || null;
     const accessToken = createAccessToken(
       {
         sub: user.id,
@@ -94,15 +96,18 @@ export async function POST(request: Request) {
         tenant_id: user.tenantId,
         tenant_code: user.primaryTenant?.code ?? null,
         exp,
+        ...(issuer ? { iss: issuer } : {}),
       },
       secret,
     );
 
     const response = NextResponse.json({ access_token: accessToken });
+    const isProd = process.env.NODE_ENV === "production";
     response.cookies.set("wathiqcare_access_token", accessToken, {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: isProd,
+      domain: isProd ? ".wathiqcare.online" : undefined,
       path: "/",
       maxAge: getTokenTtlSeconds(),
     });
