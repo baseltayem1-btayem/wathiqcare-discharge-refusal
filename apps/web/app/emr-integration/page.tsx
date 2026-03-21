@@ -18,7 +18,10 @@ import AccessDenied from "@/components/AccessDenied";
 import StatCard from "@/components/ui/StatCard";
 import StatusBadge from "@/components/ui/StatusBadge";
 import ActionButton from "@/components/ui/ActionButton";
-import { apiFetch, isForbiddenError } from "@/utils/api";
+import { apiFetch, isAuthenticationError, isForbiddenError } from "@/utils/api";
+
+const INLINE_AUTH_REQUEST = { authFailureMode: "inline" as const };
+const INLINE_NO_STORE_AUTH_REQUEST = { cache: "no-store" as const, authFailureMode: "inline" as const };
 
 type IntegrationStatus = "queued" | "running" | "success" | "failed" | "partial_success" | "disabled";
 
@@ -143,9 +146,9 @@ export default function EMRIntegrationPage() {
     async function loadDashboardData() {
         try {
             const [statusJson, runsJson, alertsJson] = await Promise.all([
-                apiFetch<StatusResponse>("/api/integrations/status", { cache: "no-store" }),
-                apiFetch<RunsResponse>("/api/integrations/runs?limit=20", { cache: "no-store" }),
-                apiFetch<AlertsResponse>("/api/integrations/alerts?limit=20&offset=0", { cache: "no-store" }),
+                apiFetch<StatusResponse>("/api/integrations/status", INLINE_NO_STORE_AUTH_REQUEST),
+                apiFetch<RunsResponse>("/api/integrations/runs?limit=20", INLINE_NO_STORE_AUTH_REQUEST),
+                apiFetch<AlertsResponse>("/api/integrations/alerts?limit=20&offset=0", INLINE_NO_STORE_AUTH_REQUEST),
             ]);
 
             setSummary(statusJson.summary);
@@ -158,6 +161,9 @@ export default function EMRIntegrationPage() {
             if (isForbiddenError(err)) {
                 setForbidden(true);
                 setError(null);
+            } else if (isAuthenticationError(err)) {
+                setForbidden(false);
+                setError("Your current session could not be validated. The page stayed open so you can review the issue without being redirected to login.");
             } else {
                 setError(err instanceof Error ? err.message : "Failed to load integration data");
             }
@@ -172,11 +178,16 @@ export default function EMRIntegrationPage() {
         try {
             await apiFetch(`/api/integrations/${encodeURIComponent(connectorKey)}/sync`, {
                 method: "POST",
+                ...INLINE_AUTH_REQUEST,
             });
 
             await loadDashboardData();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Manual sync failed");
+            if (isAuthenticationError(err)) {
+                setError("Manual sync could not start because the current session is no longer valid.");
+            } else {
+                setError(err instanceof Error ? err.message : "Manual sync failed");
+            }
         } finally {
             setSyncingKeys((prev) => ({ ...prev, [connectorKey]: false }));
         }
@@ -195,7 +206,7 @@ export default function EMRIntegrationPage() {
     }, [hasActiveRuns]);
 
     return (
-        <AuthGuard>
+        <AuthGuard authFailureMode="inline">
             <AppShell
                 title="EMR Integration"
                 subtitle="Monitor and manage Electronic Medical Record system connections and data synchronization."

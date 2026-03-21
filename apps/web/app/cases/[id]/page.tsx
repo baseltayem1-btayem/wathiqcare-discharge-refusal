@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -25,6 +25,7 @@ import AuthGuard from "@/components/AuthGuard";
 import WorkflowProgress, { type WorkflowProgressStep } from "@/components/ui/WorkflowProgress";
 import DocumentPreviewModal from "@/components/workflow/DocumentPreviewModal";
 import CaseWorkflowTree from "@/components/cases/CaseWorkflowTree";
+import PatientCommunicationPanel from "@/components/cases/PatientCommunicationPanel";
 import WorkflowDocumentList from "@/components/workflow/WorkflowDocumentList";
 import WorkflowTimelinePanel from "@/components/workflow/WorkflowTimelinePanel";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -1183,24 +1184,6 @@ export default function CaseDetailsPage() {
       ),
     },
     {
-      key: "send-email",
-      order: 70,
-      visible: hasRefusalForm || hasOfficialNotice || Boolean(workflow?.escalation_required),
-      element: (
-        <button
-          key="send-email"
-          type="button"
-          onClick={() => {
-            void handleSendWorkflowEmailNotification();
-          }}
-          className="inline-flex items-center gap-2 rounded-xl border border-cyan-300 bg-cyan-50 px-3 py-2 text-sm font-medium text-cyan-800 hover:bg-cyan-100"
-        >
-          <FileText className="h-4 w-4" />
-          {t("workflow.action.sendEmailNotice")}
-        </button>
-      ),
-    },
-    {
       key: "escalate",
       order: 80,
       visible: hasOfficialNotice,
@@ -1334,37 +1317,6 @@ export default function CaseDetailsPage() {
     await handleGenerateEvidenceBundle();
     setInfoMessage(t("caseDetails.messages.archiveCompleted"));
     setActiveTab("archive");
-  };
-
-  const handleSendWorkflowEmailNotification = async () => {
-    const recipient = window.prompt(t("caseDetails.messages.emailPrompt"), "");
-    if (!recipient || !recipient.trim()) {
-      return;
-    }
-
-    const templateName = workflow?.escalation_required
-      ? "legal_escalation_notice"
-      : "discharge_refusal_follow_up";
-
-    try {
-      const response = await apiFetch<{ status: string }>("/api/emails/send-workflow-notification", {
-        method: "POST",
-        body: JSON.stringify({
-          case_id: caseId,
-          to: [recipient.trim()],
-          template_name: templateName,
-          include_latest_case_documents: true,
-          template_vars: {
-            case_id: caseId,
-            patient_name: caseDetail?.patient_name || workflow?.patient_name || "",
-          },
-        }),
-      });
-
-      setInfoMessage(response.status === "sent" ? t("caseDetails.messages.emailSent") : t("caseDetails.messages.emailRecorded"));
-    } catch (error) {
-      setInfoMessage(error instanceof Error ? error.message : t("caseDetails.messages.emailFailed"));
-    }
   };
 
   return (
@@ -1651,6 +1603,12 @@ export default function CaseDetailsPage() {
                       {t("workflow.action.generateBundle")}
                     </button>
                   </div>
+
+                  <PatientCommunicationPanel
+                    caseId={caseId}
+                    patientName={caseDetail?.patient_name || workflow?.patient_name || null}
+                    disabledReason={workflowBackendUnavailable ? t("caseDetails.messages.workflowServiceUnavailable") : null}
+                  />
                 </div>
 
                 <WorkflowTimelinePanel workflow={workflow} />

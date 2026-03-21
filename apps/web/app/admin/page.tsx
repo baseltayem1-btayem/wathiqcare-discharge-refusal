@@ -6,7 +6,10 @@ import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import AccessDenied from "@/components/AccessDenied";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, isForbiddenError } from "@/utils/api";
+import { apiFetch, isAuthenticationError, isForbiddenError } from "@/utils/api";
+
+const INLINE_AUTH_REQUEST = { authFailureMode: "inline" as const };
+const INLINE_NO_STORE_AUTH_REQUEST = { cache: "no-store" as const, authFailureMode: "inline" as const };
 
 type AuthMeResponse = {
   claims?: {
@@ -245,7 +248,7 @@ export default function AdminPage() {
     setNotice("");
 
     try {
-      const me = await apiFetch<AuthMeResponse>("/api/auth/me");
+      const me = await apiFetch<AuthMeResponse>("/api/auth/me", INLINE_NO_STORE_AUTH_REQUEST);
       const resolvedTenantId = me?.claims?.tenant_id;
       if (!resolvedTenantId) {
         throw new Error("تعذر تحديد المستأجر من الجلسة الحالية.");
@@ -254,13 +257,13 @@ export default function AdminPage() {
       setTenantId(resolvedTenantId);
 
       const [tenantData, memberData, subscriptionData, usageData, invoiceData, tenantsData, integrationsData] = await Promise.all([
-        apiFetch<TenantSummary>(`/api/tenants/${resolvedTenantId}`),
-        apiFetch<MemberItem[]>(`/api/tenants/${resolvedTenantId}/members`),
-        apiFetch<SubscriptionView>(`/api/tenants/${resolvedTenantId}/subscription`),
-        apiFetch<UsageItem[]>(`/api/tenants/${resolvedTenantId}/usage?days=30&limit=100`),
-        apiFetch<InvoiceItem[]>("/api/billing/invoices?limit=20"),
-        apiFetch<TenantListItem[]>('/api/tenants?limit=50'),
-        apiFetch<IntegrationStatus>('/api/integrations/status'),
+        apiFetch<TenantSummary>(`/api/tenants/${resolvedTenantId}`, INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<MemberItem[]>(`/api/tenants/${resolvedTenantId}/members`, INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<SubscriptionView>(`/api/tenants/${resolvedTenantId}/subscription`, INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<UsageItem[]>(`/api/tenants/${resolvedTenantId}/usage?days=30&limit=100`, INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<InvoiceItem[]>("/api/billing/invoices?limit=20", INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<TenantListItem[]>('/api/tenants?limit=50', INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<IntegrationStatus>('/api/integrations/status', INLINE_NO_STORE_AUTH_REQUEST),
       ]);
 
       setTenant(tenantData);
@@ -287,6 +290,8 @@ export default function AdminPage() {
     } catch (err) {
       if (isForbiddenError(err)) {
         setForbidden(true);
+      } else if (isAuthenticationError(err)) {
+        setError("تعذر التحقق من الجلسة الحالية. أبقينا الصفحة مفتوحة لعرض الخطأ داخل الصفحة بدلاً من إعادتك إلى تسجيل الدخول.");
       } else {
         setError(err instanceof Error ? err.message : "فشل تحميل لوحة إدارة المنصة.");
       }
@@ -314,6 +319,7 @@ export default function AdminPage() {
           timezone: tenantForm.timezone || null,
           country: tenantForm.country || null,
         }),
+        ...INLINE_AUTH_REQUEST,
       });
       setNotice("تم تحديث ملف المستأجر");
       await loadDashboard();
@@ -334,6 +340,7 @@ export default function AdminPage() {
       await apiFetch<SubscriptionView>(`/api/tenants/${tenantId}/subscription`, {
         method: "PATCH",
         body: JSON.stringify(subscriptionForm),
+        ...INLINE_AUTH_REQUEST,
       });
       setNotice("تم تحديث الاشتراك");
       await loadDashboard();
@@ -354,6 +361,7 @@ export default function AdminPage() {
       await apiFetch(`/api/tenants/${tenantId}/members`, {
         method: "POST",
         body: JSON.stringify(memberForm),
+        ...INLINE_AUTH_REQUEST,
       });
       setNotice("تمت إضافة العضو");
       setMemberForm({ email: "", fullName: "", role: "MEMBER" });
@@ -385,6 +393,7 @@ export default function AdminPage() {
           timezone: createTenantForm.timezone || null,
           billingEmail: createTenantForm.billingEmail || null,
         }),
+        ...INLINE_AUTH_REQUEST,
       });
 
       setNotice('تم إنشاء مستشفى جديدة بنجاح');
@@ -414,6 +423,7 @@ export default function AdminPage() {
         body: JSON.stringify({
           isActive: !currentlyActive,
         }),
+        ...INLINE_AUTH_REQUEST,
       });
       setNotice(currentlyActive ? 'تم تعليق المستشفى' : 'تمت إعادة تفعيل المستشفى');
       await loadDashboard();
@@ -426,7 +436,7 @@ export default function AdminPage() {
 
   if (forbidden) {
     return (
-      <AuthGuard>
+      <AuthGuard authFailureMode="inline">
         <AppShell title="إدارة المنصة" subtitle="إدارة المستأجر والاشتراك والأعضاء والاستخدام والفوترة">
           <AccessDenied resource="لوحة إدارة المنصة" />
         </AppShell>
@@ -435,7 +445,7 @@ export default function AdminPage() {
   }
 
   return (
-    <AuthGuard>
+    <AuthGuard authFailureMode="inline">
       <AppShell
         title="إدارة المنصة"
         subtitle="إدارة المستأجر والاشتراك والأعضاء والاستخدام والفوترة"
@@ -504,8 +514,8 @@ export default function AdminPage() {
                           <td className="px-3 py-2">
                             <span
                               className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${row.level === "high"
-                                  ? "bg-red-100 text-red-700"
-                                  : "bg-amber-100 text-amber-700"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-amber-100 text-amber-700"
                                 }`}
                             >
                               {row.risk}

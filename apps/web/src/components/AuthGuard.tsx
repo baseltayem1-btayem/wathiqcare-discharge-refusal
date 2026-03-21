@@ -5,13 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
-import { validateSessionAndRedirectIfInvalid } from "@/utils/api";
+import { type AuthFailureMode, validateSessionForRoute } from "@/utils/api";
 
 type AuthGuardProps = {
   children: ReactNode;
+  authFailureMode?: AuthFailureMode;
 };
 
-export default function AuthGuard({ children }: AuthGuardProps) {
+export default function AuthGuard({ children, authFailureMode = "redirect" }: AuthGuardProps) {
   const pathname = usePathname();
   const { t } = useI18n();
   const [checking, setChecking] = useState(true);
@@ -24,16 +25,19 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       setChecking(true);
 
       try {
-        const isSessionValid = await validateSessionAndRedirectIfInvalid(
+        const session = await validateSessionForRoute(
           `AuthGuard route check (${pathname || "/dashboard"})`,
-          pathname || "/dashboard",
+          {
+            nextPath: pathname || "/dashboard",
+            authFailureMode,
+          },
         );
 
         if (cancelled) {
           return;
         }
 
-        if (isSessionValid !== false) {
+        if (session.valid !== false || authFailureMode === "inline") {
           setAuthenticated(true);
           return;
         }
@@ -56,7 +60,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+  }, [authFailureMode, pathname]);
 
   if (checking) {
     return (

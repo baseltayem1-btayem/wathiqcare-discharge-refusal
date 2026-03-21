@@ -6,13 +6,24 @@ const AUTH_ME_PATH = "/api/auth/me";
 
 let sessionValidationPromise: Promise<void> | null = null;
 
+export type AuthFailureMode = "redirect" | "inline";
+
+export type AuthFailureOptions = {
+  authFailureMode?: AuthFailureMode;
+  nextPath?: string;
+};
+
 export class ApiHttpError extends Error {
   status: number;
+  code: string;
+  details?: unknown;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code = "HTTP_ERROR", details?: unknown) {
     super(message);
     this.name = "ApiHttpError";
     this.status = status;
+    this.code = code;
+    this.details = details;
   }
 }
 
@@ -55,6 +66,11 @@ type SessionValidationResult = {
   status: number | null;
 };
 
+export type SessionValidationOutcome = SessionValidationResult & {
+  redirected: boolean;
+  error?: ApiHttpError;
+};
+
 async function checkSessionWithAuthMe(reason: string): Promise<SessionValidationResult> {
   try {
     const response = await fetch(AUTH_ME_PATH, {
@@ -79,19 +95,52 @@ async function checkSessionWithAuthMe(reason: string): Promise<SessionValidation
 export async function validateSessionAndRedirectIfInvalid(
   reason: string,
   nextPath?: string,
+  options: Omit<AuthFailureOptions, "nextPath"> = {},
 ): Promise<boolean | null> {
-  const result = await checkSessionWithAuthMe(reason);
-
-  if (result.valid === false) {
-    clearToken();
-    redirectToLogin(nextPath, `auth/me failed (status=${result.status ?? "unknown"}) after ${reason}`);
-    return false;
-  }
-
+  const result = await validateSessionForRoute(reason, { ...options, nextPath });
   return result.valid;
 }
 
-export function triggerSessionValidation(reason: string, nextPath?: string): void {
+export async function validateSessionForRoute(
+  reason: string,
+  options: AuthFailureOptions = {},
+): Promise<SessionValidationOutcome> {
+  const result = await checkSessionWithAuthMe(reason);
+  const authFailureMode = options.authFailureMode ?? "redirect";
+
+  if (result.valid === false) {
+    const authError = new ApiHttpError(
+      result.status ?? 401,
+      `401: Session validation required`,
+      "AUTH_REQUIRED",
+      {
+        reason,
+        sessionStatus: result.status,
+        authFailureMode,
+      },
+    );
+
+    if (authFailureMode === "redirect") {
+      clearToken();
+      redirectToLogin(
+        options.nextPath,
+        `auth/me failed (status=${result.status ?? "unknown"}) after ${reason}`,
+      );
+      return { ...result, redirected: true, error: authError };
+    }
+
+    console.warn(`[auth] Preserving current route after ${reason}; inline auth handling enabled.`);
+    return { ...result, redirected: false, error: authError };
+  }
+
+  return { ...result, redirected: false };
+}
+
+export function triggerSessionValidation(
+  reason: string,
+  nextPath?: string,
+  options: Omit<AuthFailureOptions, "nextPath"> = {},
+): void {
   if (typeof window === "undefined") {
     return;
   }
@@ -101,7 +150,8 @@ export function triggerSessionValidation(reason: string, nextPath?: string): voi
     return;
   }
 
-  sessionValidationPromise = validateSessionAndRedirectIfInvalid(reason, nextPath)
+  sessionValidationPromise = validateSessionForRoute(reason, { ...options, nextPath })
+    .then(() => undefined)
     .catch((error) => {
       console.error("[auth] Unexpected session validation failure.", error);
     })
@@ -125,7 +175,21 @@ function getErrorMessage(status: number, statusText: string, body: unknown): str
   return `${status} ${statusText}`.trim();
 }
 
-export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+function getErrorCode(status: number): string {
+  if (status === 401) {
+    return "AUTH_REQUIRED";
+  }
+
+  if (status === 403) {
+    return "ACCESS_DENIED";
+  }
+
+  return "HTTP_ERROR";
+}
+
+export type ApiFetchOptions = RequestInit & AuthFailureOptions;
+
+export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Promise<T> {
   const isAbsoluteUrl = /^https?:\/\//i.test(path);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const isNextApiRoute = normalizedPath.startsWith("/api/");
@@ -135,17 +199,23 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
       ? normalizedPath
       : `${API_BASE_URL}${normalizedPath}`;
 
-  const headers = new Headers(init.headers ?? {});
-  const hasBody = init.body !== undefined && init.body !== null;
+  const {
+    authFailureMode = "redirect",
+    nextPath,
+    ...requestInit
+  } = init;
 
-  if (hasBody && !(init.body instanceof FormData) && !headers.has("Content-Type")) {
+  const headers = new Headers(requestInit.headers ?? {});
+  const hasBody = requestInit.body !== undefined && requestInit.body !== null;
+
+  if (hasBody && !(requestInit.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
   const response = await fetch(url, {
-    ...init,
+    ...requestInit,
     headers,
-    credentials: init.credentials ?? "include",
+    credentials: requestInit.credentials ?? "include",
   });
 
   const contentType = response.headers.get("content-type") ?? "";
@@ -153,9 +223,9 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
   if (!response.ok) {
     if (response.status === 401) {
-      const method = (init.method || "GET").toUpperCase();
+      const method = (requestInit.method || "GET").toUpperCase();
       console.warn(`[auth] ${method} ${normalizedPath} returned 401; validating session via /api/auth/me.`);
-      triggerSessionValidation(`apiFetch ${method} ${normalizedPath}`);
+      triggerSessionValidation(`apiFetch ${method} ${normalizedPath}`, nextPath, { authFailureMode });
     }
 
     const errorBody = isJson
@@ -165,6 +235,8 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     throw new ApiHttpError(
       response.status,
       getErrorMessage(response.status, response.statusText, errorBody),
+      getErrorCode(response.status),
+      errorBody,
     );
   }
 
