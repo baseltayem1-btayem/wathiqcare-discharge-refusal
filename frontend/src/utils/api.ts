@@ -169,6 +169,9 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
+  if (token && requiresAuth && !headers.has("x-wathiqcare-auth")) {
+    headers.set("x-wathiqcare-auth", `Bearer ${token}`);
+  }
 
   authDebugLog("request_start", {
     path,

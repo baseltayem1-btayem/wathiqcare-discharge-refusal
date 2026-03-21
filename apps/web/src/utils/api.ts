@@ -115,10 +115,14 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
+  if (token && requiresAuth && !headers.has("x-wathiqcare-auth")) {
+    headers.set("x-wathiqcare-auth", `Bearer ${token}`);
+  }
 
   const response = await fetch(url, {
     ...init,
     headers,
+    credentials: init.credentials ?? "include",
   });
 
   const contentType = response.headers.get("content-type") ?? "";

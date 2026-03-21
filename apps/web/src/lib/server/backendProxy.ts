@@ -86,6 +86,7 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
 function buildForwardHeaders(request: NextRequest): Headers {
     const headers = new Headers();
     const authHeader = request.headers.get("authorization");
+    const fallbackAuthHeader = request.headers.get("x-wathiqcare-auth");
     const token = request.cookies.get("wathiqcare_access_token")?.value;
     const userAgent = request.headers.get("user-agent");
     const forwardedFor = request.headers.get("x-forwarded-for");
@@ -93,6 +94,8 @@ function buildForwardHeaders(request: NextRequest): Headers {
 
     if (authHeader) {
         headers.set("authorization", authHeader);
+    } else if (fallbackAuthHeader) {
+        headers.set("authorization", fallbackAuthHeader);
     } else if (token) {
         headers.set("authorization", `Bearer ${token}`);
     }
