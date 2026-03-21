@@ -18,10 +18,14 @@ RUN python -m pip install --upgrade pip && \
 COPY . .
 
 # Make the entrypoint script executable.
-RUN chmod +x /app/start.sh
+# Railway may build this Dockerfile with context set to repo root,
+# in which case start.sh ends up at /app/apps/api/start.sh.
+RUN if [ -f /app/start.sh ]; then chmod +x /app/start.sh; \
+    elif [ -f /app/apps/api/start.sh ]; then chmod +x /app/apps/api/start.sh; \
+    else echo "start.sh not found" && exit 1; fi
 
 EXPOSE 8000
 
 # Use a shell script so $PORT is always expanded by /bin/sh,
 # regardless of how Railway invokes the container CMD.
-CMD ["/app/start.sh"]
+CMD ["sh", "-c", "if [ -f /app/start.sh ]; then exec /app/start.sh; else exec /app/apps/api/start.sh; fi"]
