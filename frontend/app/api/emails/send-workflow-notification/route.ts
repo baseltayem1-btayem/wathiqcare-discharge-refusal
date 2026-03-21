@@ -24,6 +24,15 @@ type WorkflowNotificationBody = {
     attachment_document_ids?: string[];
 };
 
+const AUTH_DEBUG = process.env.AUTH_DEBUG === "true";
+
+function authDebugLog(event: string, details: Record<string, unknown> = {}): void {
+    if (!AUTH_DEBUG) {
+        return;
+    }
+    console.info("[auth-debug]", event, details);
+}
+
 function safe(value: unknown): string {
     return (value == null ? "" : String(value)).trim();
 }
@@ -57,6 +66,13 @@ async function sendViaBackend(args: {
     }
 
     const endpoint = new URL("/api/emails/send-workflow-notification", `${backendBase}/`);
+    authDebugLog("email_notification_backend_request_start", {
+        endpoint: endpoint.toString(),
+        hasAuthorizationHeader: Boolean(authHeader),
+        caseId: safe(args.body.case_id),
+        recipientCount: Array.isArray(args.body.to) ? args.body.to.length : 0,
+        templateName: safe(args.body.template_name),
+    });
 
     let response: Response;
     try {
@@ -76,13 +92,28 @@ async function sendViaBackend(args: {
     const isJson = (response.headers.get("content-type") || "").includes("application/json");
     const payload = isJson ? await response.json().catch(() => null) : await response.text().catch(() => "");
 
+    authDebugLog("email_notification_backend_response", {
+        endpoint: endpoint.toString(),
+        status: response.status,
+        ok: response.ok,
+        isJson,
+        payloadPreview:
+            typeof payload === "string"
+                ? payload.slice(0, 300)
+                : payload && typeof payload === "object"
+                    ? JSON.stringify(payload).slice(0, 300)
+                    : null,
+    });
+
     if (!response.ok) {
         const detail =
             payload && typeof payload === "object" && "detail" in payload
                 ? String((payload as { detail?: unknown }).detail ?? "")
-                : typeof payload === "string"
-                    ? payload
-                    : "";
+                : payload && typeof payload === "object" && "message" in payload
+                    ? String((payload as { message?: unknown }).message ?? "")
+                    : typeof payload === "string"
+                        ? payload
+                        : "";
 
         throw new ApiError(response.status, detail || `تعذر إرسال إشعار البريد الإلكتروني (${response.status})`);
     }
@@ -99,6 +130,15 @@ export async function POST(request: NextRequest) {
             ? body!.to.map((item) => safe(item).toLowerCase()).filter((item) => item.length > 0)
             : [];
         const templateName = safe(body?.template_name) || "discharge_refusal_follow_up";
+
+        authDebugLog("email_notification_request_received", {
+            actorUserId: auth.sub,
+            tenantId: auth.tenant_id,
+            caseId,
+            recipientCount: recipients.length,
+            templateName,
+            includeLatestCaseDocuments: Boolean(body?.include_latest_case_documents),
+        });
 
         if (!caseId) {
             throw new ApiError(400, "case_id is required");
@@ -160,6 +200,9 @@ export async function POST(request: NextRequest) {
             sent_at: result.sent_at || null,
         });
     } catch (error) {
+        authDebugLog("email_notification_request_failed", {
+            error: error instanceof Error ? error.message : String(error),
+        });
         return handleApiError(error);
     }
 }

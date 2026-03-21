@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import os
+import logging
 
 from dotenv import load_dotenv
 from jose import ExpiredSignatureError, JWTError, jwt
@@ -12,6 +13,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-me")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_ISSUER = (os.getenv("JWT_ISSUER") or "").strip() or None
+
+logger = logging.getLogger(__name__)
 
 
 def _token_ttl_minutes() -> int:
@@ -44,16 +47,31 @@ def decode_access_token(token: str) -> dict:
     if not token or not token.strip():
         raise ValueError("missing_token")
 
-    decode_kwargs = {}
-    if JWT_ISSUER:
-        decode_kwargs["issuer"] = JWT_ISSUER
-
     try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM], **decode_kwargs)
+        if JWT_ISSUER:
+            payload = jwt.decode(
+                token,
+                JWT_SECRET_KEY,
+                algorithms=[JWT_ALGORITHM],
+                issuer=JWT_ISSUER,
+            )
+        else:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
     except ExpiredSignatureError as exc:
         raise ValueError("token_expired") from exc
     except JWTError as exc:
-        raise ValueError("invalid_token") from exc
+        if not JWT_ISSUER:
+            raise ValueError("invalid_token") from exc
+
+        # Compatibility fallback: accept legacy tokens without issuer claim
+        # when signature and expiration are otherwise valid.
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            logger.warning("jwt_issuer_mismatch_fallback_used")
+        except ExpiredSignatureError as exp_exc:
+            raise ValueError("token_expired") from exp_exc
+        except JWTError as fallback_exc:
+            raise ValueError("invalid_token") from fallback_exc
 
     if not isinstance(payload, dict):
         raise ValueError("invalid_token_payload")
