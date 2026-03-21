@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -28,7 +28,7 @@ import CaseWorkflowTree from "@/components/cases/CaseWorkflowTree";
 import WorkflowDocumentList from "@/components/workflow/WorkflowDocumentList";
 import WorkflowTimelinePanel from "@/components/workflow/WorkflowTimelinePanel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, clearToken } from "@/utils/api";
+import { apiFetch } from "@/utils/api";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 import { dischargeRefusalWorkflowService } from "@/lib/services/dischargeRefusalWorkflow.service";
 import {
@@ -699,15 +699,10 @@ export default function CaseDetailsPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t("caseDetails.failedLoad");
       setError(message);
-
-      if (message.includes("401") || message.includes("Invalid")) {
-        clearToken();
-        router.push("/login");
-      }
     } finally {
       setLoading(false);
     }
-  }, [caseId, router, t]);
+  }, [caseId, t]);
 
   useEffect(() => {
     if (!caseId) {
@@ -772,10 +767,6 @@ export default function CaseDetailsPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t("caseDetails.workflowActionFailed");
       setError(message);
-      if (message.includes("401") || message.includes("Invalid")) {
-        clearToken();
-        router.push("/login");
-      }
     } finally {
       setProcessingAction(null);
     }
@@ -962,10 +953,6 @@ export default function CaseDetailsPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t("caseDetails.failedOpenPdf");
       setError(message);
-      if (message.includes("401") || message.includes("Invalid") || message.includes("Not authenticated")) {
-        clearToken();
-        router.push("/login");
-      }
     }
   }
 
@@ -996,10 +983,6 @@ export default function CaseDetailsPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t("documents.failedDownload");
       setError(message);
-      if (message.includes("401") || message.includes("Invalid") || message.includes("Not authenticated")) {
-        clearToken();
-        router.push("/login");
-      }
     }
   }
 

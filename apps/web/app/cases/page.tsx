@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowRight, FileText, PlusCircle, RefreshCw } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, clearToken } from "@/utils/api";
+import { apiFetch } from "@/utils/api";
 
 type CaseItem = {
   id: string;
@@ -25,7 +24,6 @@ type CaseItem = {
 };
 
 export default function CasesPage() {
-  const router = useRouter();
   const { t } = useI18n();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [error, setError] = useState("");
@@ -36,13 +34,9 @@ export default function CasesPage() {
       .then((data) => setCases(data as CaseItem[]))
       .catch((err) => {
         setError(err.message);
-        if (err.message.includes("401") || err.message.includes("Invalid")) {
-          clearToken();
-          router.push("/login");
-        }
       })
       .finally(() => setLoading(false));
-  }, [router]);
+  }, []);
 
   return (
     <AuthGuard>
@@ -73,10 +67,6 @@ export default function CasesPage() {
                 .then((data) => setCases(data as CaseItem[]))
                 .catch((err) => {
                   setError(err.message);
-                  if (err.message.includes("401") || err.message.includes("Invalid")) {
-                    clearToken();
-                    router.push("/login");
-                  }
                 })}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
             >

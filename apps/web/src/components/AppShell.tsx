@@ -159,12 +159,12 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
 
   async function handleLogout() {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     } catch {
-      // Cookie clearing is best-effort; local token is still removed below.
+      // Server-side cookie clearing is best-effort; legacy local token cleanup still runs.
     }
     clearToken();
-    router.push("/login");
+    router.replace("/login");
   }
 
   return (

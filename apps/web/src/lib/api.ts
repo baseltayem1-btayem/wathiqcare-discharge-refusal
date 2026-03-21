@@ -1,19 +1,13 @@
 export async function apiFetch(url: string, options: RequestInit = {}) {
-	const token =
-		typeof window !== "undefined"
-			? localStorage.getItem("token")
-			: null;
-
 	const headers = new Headers(options.headers);
-	headers.set("Content-Type", "application/json");
-
-	if (token) {
-		headers.set("Authorization", `Bearer ${token}`);
+	if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
+		headers.set("Content-Type", "application/json");
 	}
 
 	const res = await fetch(url, {
 		...options,
 		headers,
+		credentials: options.credentials ?? "include",
 	});
 
 	if (!res.ok) {
@@ -25,6 +19,7 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
 
 export function clearToken() {
 	if (typeof window !== "undefined") {
+		localStorage.removeItem("wathiqcare_access_token");
 		localStorage.removeItem("token");
 	}
 }

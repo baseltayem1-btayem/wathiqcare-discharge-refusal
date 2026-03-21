@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, Download, FolderArchive, PackagePlus, RefreshCw } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, clearToken } from "@/utils/api";
+import { apiFetch } from "@/utils/api";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 
 type BundleItem = {
@@ -20,7 +19,6 @@ type GenerateBundleResponse = {
 };
 
 export default function BundlesPage() {
-  const router = useRouter();
   const { t } = useI18n();
 
   const [bundles, setBundles] = useState<BundleItem[]>([]);
@@ -42,15 +40,10 @@ export default function BundlesPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t("bundles.failedLoad");
       setError(message);
-
-      if (message.includes("401") || message.includes("Invalid")) {
-        clearToken();
-        router.push("/login");
-      }
     } finally {
       setLoading(false);
     }
-  }, [router, t]);
+  }, [t]);
 
   useEffect(() => {
     void loadBundles();
@@ -81,11 +74,6 @@ export default function BundlesPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t("bundles.failedCreate");
       setError(message);
-
-      if (message.includes("401") || message.includes("Invalid")) {
-        clearToken();
-        router.push("/login");
-      }
     } finally {
       setCreatingBundle(false);
     }
@@ -103,11 +91,6 @@ export default function BundlesPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t("bundles.failedDownload");
       setError(message);
-
-      if (message.includes("401") || message.includes("Invalid") || message.includes("Not authenticated")) {
-        clearToken();
-        router.push("/login");
-      }
     } finally {
       setDownloadingName(null);
     }

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/server/prisma";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import bcrypt from "bcryptjs";
+import { buildSessionCookieOptions, getSessionCookieName } from "@/lib/server/sessionCookie";
 
 type LoginPayload = {
   email?: string;
@@ -98,14 +99,12 @@ export async function POST(request: Request) {
       secret,
     );
 
-    const response = NextResponse.json({ access_token: accessToken });
-    response.cookies.set("wathiqcare_access_token", accessToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: getTokenTtlSeconds(),
-    });
+    const response = NextResponse.json({ authenticated: true });
+    response.cookies.set(
+      getSessionCookieName(),
+      accessToken,
+      buildSessionCookieOptions(getTokenTtlSeconds()),
+    );
 
     return response;
   } catch (error) {

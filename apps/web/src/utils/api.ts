@@ -1,77 +1,109 @@
-const TOKEN_KEY = "wathiqcare_access_token";
-
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
 
-function isProtectedIntegrationRoute(path: string): boolean {
-  const normalized = path.startsWith("/") ? path : `/${path}`;
-  return normalized.startsWith("/api/integrations/");
+const LEGACY_TOKEN_KEYS = ["wathiqcare_access_token", "token"];
+const AUTH_ME_PATH = "/api/auth/me";
+
+let sessionValidationPromise: Promise<void> | null = null;
+
+export class ApiHttpError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiHttpError";
+    this.status = status;
+  }
 }
 
-function redirectToLogin(): void {
+export function redirectToLogin(nextPath?: string, source = "unknown"): void {
   if (typeof window === "undefined") {
     return;
   }
-  const current = `${window.location.pathname}${window.location.search}`;
+
+  if (window.location.pathname === "/login") {
+    console.info(`[auth] Skip redirect to /login (already there). source=${source}`);
+    return;
+  }
+
+  const current = nextPath || `${window.location.pathname}${window.location.search}`;
   const next = encodeURIComponent(current || "/");
+  console.warn(`[auth] Redirecting to /login. source=${source} next=${current || "/"}`);
   window.location.assign(`/login?next=${next}`);
-}
-
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) {
-      return null;
-    }
-
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
-    const raw = atob(padded);
-    return JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
-function isTokenExpired(token: string): boolean {
-  const payload = decodeJwtPayload(token);
-  const exp = payload?.exp;
-  if (typeof exp !== "number") {
-    return false;
-  }
-  const now = Math.floor(Date.now() / 1000);
-  return exp <= now;
-}
-
-export function getToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) {
-    return null;
-  }
-
-  if (isTokenExpired(token)) {
-    localStorage.removeItem(TOKEN_KEY);
-    return null;
-  }
-
-  return token;
-}
-
-export function setToken(token: string): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  localStorage.setItem(TOKEN_KEY, token);
 }
 
 export function clearToken(): void {
   if (typeof window === "undefined") {
     return;
   }
-  localStorage.removeItem(TOKEN_KEY);
+
+  for (const key of LEGACY_TOKEN_KEYS) {
+    localStorage.removeItem(key);
+  }
+}
+
+export function isAuthenticationError(error: unknown): boolean {
+  return error instanceof ApiHttpError && error.status === 401;
+}
+
+type SessionValidationResult = {
+  valid: boolean | null;
+  status: number | null;
+};
+
+async function checkSessionWithAuthMe(reason: string): Promise<SessionValidationResult> {
+  try {
+    const response = await fetch(AUTH_ME_PATH, {
+      method: "GET",
+      cache: "no-store",
+      credentials: "include",
+    });
+
+    if (response.ok) {
+      console.info(`[auth] auth/me passed after ${reason}; no redirect.`);
+      return { valid: true, status: response.status };
+    }
+
+    console.warn(`[auth] auth/me failed after ${reason}; status=${response.status}`);
+    return { valid: false, status: response.status };
+  } catch (error) {
+    console.error(`[auth] auth/me check errored after ${reason}; preserving current route.`, error);
+    return { valid: null, status: null };
+  }
+}
+
+export async function validateSessionAndRedirectIfInvalid(
+  reason: string,
+  nextPath?: string,
+): Promise<boolean | null> {
+  const result = await checkSessionWithAuthMe(reason);
+
+  if (result.valid === false) {
+    clearToken();
+    redirectToLogin(nextPath, `auth/me failed (status=${result.status ?? "unknown"}) after ${reason}`);
+    return false;
+  }
+
+  return result.valid;
+}
+
+export function triggerSessionValidation(reason: string, nextPath?: string): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (sessionValidationPromise) {
+    console.info(`[auth] Session validation already in flight; skip duplicate. source=${reason}`);
+    return;
+  }
+
+  sessionValidationPromise = validateSessionAndRedirectIfInvalid(reason, nextPath)
+    .catch((error) => {
+      console.error("[auth] Unexpected session validation failure.", error);
+    })
+    .finally(() => {
+      sessionValidationPromise = null;
+    });
 }
 
 function getErrorMessage(status: number, statusText: string, body: unknown): string {
@@ -92,7 +124,6 @@ function getErrorMessage(status: number, statusText: string, body: unknown): str
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const isAbsoluteUrl = /^https?:\/\//i.test(path);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const requiresAuth = isProtectedIntegrationRoute(normalizedPath);
   const isNextApiRoute = normalizedPath.startsWith("/api/");
   const url = isAbsoluteUrl
     ? path
@@ -107,18 +138,6 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     headers.set("Content-Type", "application/json");
   }
 
-  const token = getToken();
-  if (requiresAuth && !token) {
-    redirectToLogin();
-    throw new Error("401: Missing access token");
-  }
-  if (token && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-  if (token && requiresAuth && !headers.has("x-wathiqcare-auth")) {
-    headers.set("x-wathiqcare-auth", `Bearer ${token}`);
-  }
-
   const response = await fetch(url, {
     ...init,
     headers,
@@ -130,15 +149,19 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
   if (!response.ok) {
     if (response.status === 401) {
-      clearToken();
-      if (requiresAuth) {
-        redirectToLogin();
-      }
+      const method = (init.method || "GET").toUpperCase();
+      console.warn(`[auth] ${method} ${normalizedPath} returned 401; validating session via /api/auth/me.`);
+      triggerSessionValidation(`apiFetch ${method} ${normalizedPath}`);
     }
+
     const errorBody = isJson
       ? await response.json().catch(() => null)
       : await response.text().catch(() => "");
-    throw new Error(getErrorMessage(response.status, response.statusText, errorBody));
+
+    throw new ApiHttpError(
+      response.status,
+      getErrorMessage(response.status, response.statusText, errorBody),
+    );
   }
 
   if (response.status === 204) {

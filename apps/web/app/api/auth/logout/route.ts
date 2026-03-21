@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
+import { buildSessionCookieClearOptions, getSessionCookieName } from "@/lib/server/sessionCookie";
 
 export async function POST() {
   const response = NextResponse.json({ success: true });
-  response.cookies.set("wathiqcare_access_token", "", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 0,
-  });
+  response.cookies.set(getSessionCookieName(), "", buildSessionCookieClearOptions());
 
   return response;
 }

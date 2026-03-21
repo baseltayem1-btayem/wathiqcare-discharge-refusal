@@ -5,6 +5,7 @@ import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
+import { getSessionCookieName } from "@/lib/server/sessionCookie";
 
 function isEnabled(): boolean {
   return process.env.SHC_COMPLIANCE_MODULE === "true";
@@ -92,9 +93,8 @@ export async function POST(request: NextRequest) {
       throw new ApiError(503, "BACKEND_API_BASE_URL is not configured for SHC module");
     }
 
-    const authHeader = request.headers.get("authorization") ?? "";
-    const accessTokenCookie = request.cookies.get("wathiqcare_access_token")?.value ?? "";
-    const upstreamAuthorization = authHeader || (accessTokenCookie ? `Bearer ${accessTokenCookie}` : "");
+    const accessTokenCookie = request.cookies.get(getSessionCookieName())?.value ?? "";
+    const upstreamAuthorization = accessTokenCookie ? `Bearer ${accessTokenCookie}` : "";
 
     const response = await fetch(`${backendApiBase}/api/shc-compliance/workflow`, {
       method: "POST",

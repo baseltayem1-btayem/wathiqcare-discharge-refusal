@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
+import { getSessionCookieName } from "@/lib/server/sessionCookie";
 
 type BackendUrlResult =
     | { ok: true; url: URL }
@@ -85,18 +86,12 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
 
 function buildForwardHeaders(request: NextRequest): Headers {
     const headers = new Headers();
-    const authHeader = request.headers.get("authorization");
-    const fallbackAuthHeader = request.headers.get("x-wathiqcare-auth");
-    const token = request.cookies.get("wathiqcare_access_token")?.value;
+    const token = request.cookies.get(getSessionCookieName())?.value;
     const userAgent = request.headers.get("user-agent");
     const forwardedFor = request.headers.get("x-forwarded-for");
     const realIp = request.headers.get("x-real-ip");
 
-    if (authHeader) {
-        headers.set("authorization", authHeader);
-    } else if (fallbackAuthHeader) {
-        headers.set("authorization", fallbackAuthHeader);
-    } else if (token) {
+    if (token) {
         headers.set("authorization", `Bearer ${token}`);
     }
 

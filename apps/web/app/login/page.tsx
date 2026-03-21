@@ -10,7 +10,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LoginBrandPanel from "@/components/login/LoginBrandPanel";
 import PasswordField from "@/components/login/PasswordField";
 import { useI18n } from "@/i18n/I18nProvider";
-import { setToken, apiFetch } from "@/utils/api";
+import { apiFetch, clearToken } from "@/utils/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,12 +31,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const result = await apiFetch<{ access_token: string }>("/api/auth/login", {
+      await apiFetch<{ authenticated: boolean }>("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
-      setToken(result.access_token);
+      clearToken();
       const nextPath =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("next") || "/dashboard"

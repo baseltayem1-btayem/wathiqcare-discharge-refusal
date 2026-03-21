@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
+import { getSessionCookieName } from "@/lib/server/sessionCookie";
 
 export type AuthContext = {
   sub: string;
@@ -43,12 +44,7 @@ function decodeBase64Url(input: string): string {
 }
 
 function readToken(request: NextRequest): string | null {
-  const authorization = request.headers.get("authorization");
-  if (authorization?.toLowerCase().startsWith("bearer ")) {
-    return authorization.slice(7).trim();
-  }
-
-  return request.cookies.get("wathiqcare_access_token")?.value ?? null;
+  return request.cookies.get(getSessionCookieName())?.value ?? null;
 }
 
 function verifyHs256(token: string, secret: string): boolean {

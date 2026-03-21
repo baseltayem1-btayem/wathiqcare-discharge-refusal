@@ -1,17 +1,4 @@
-import { clearToken, getToken } from "@/utils/api";
-
-function redirectToLogin(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const nextPath = `${window.location.pathname}${window.location.search}` || "/cases";
-  const loginPath = `/login?next=${encodeURIComponent(nextPath)}`;
-
-  if (window.location.pathname !== "/login") {
-    window.location.assign(loginPath);
-  }
-}
+import { ApiHttpError, triggerSessionValidation } from "@/utils/api";
 
 function extractErrorMessage(status: number, statusText: string, body: unknown): string {
   if (body && typeof body === "object") {
@@ -29,23 +16,14 @@ function extractErrorMessage(status: number, statusText: string, body: unknown):
 }
 
 async function fetchProtectedDocument(path: string): Promise<Response> {
-  const token = getToken();
-  if (!token) {
-    clearToken();
-    redirectToLogin();
-    throw new Error("Not authenticated. Please login again.");
-  }
-
   const response = await fetch(path, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    credentials: "include",
   });
 
   if (response.status === 401) {
-    clearToken();
-    redirectToLogin();
-    throw new Error("Not authenticated. Please login again.");
+    console.warn(`[auth] Protected document request returned 401: ${path}`);
+    triggerSessionValidation(`protected document GET ${path}`);
+    throw new ApiHttpError(401, "401: Session validation required");
   }
 
   if (!response.ok) {

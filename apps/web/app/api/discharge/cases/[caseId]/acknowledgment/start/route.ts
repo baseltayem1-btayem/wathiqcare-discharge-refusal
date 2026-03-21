@@ -6,6 +6,7 @@ import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { buildAcknowledgmentMethods } from "../method-availability";
 type RouteContext = { params: Promise<{ caseId: string }> };
 
@@ -71,12 +72,7 @@ type EmailSendResponse = {
 };
 
 function extractBearerToken(request: NextRequest): string | null {
-    const authHeader = request.headers.get("authorization");
-    if (authHeader?.trim()) {
-        return authHeader.trim();
-    }
-
-    const cookieToken = request.cookies.get("wathiqcare_access_token")?.value?.trim();
+    const cookieToken = request.cookies.get(getSessionCookieName())?.value?.trim();
     if (cookieToken) {
         return `Bearer ${cookieToken}`;
     }
