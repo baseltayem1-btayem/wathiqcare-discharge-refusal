@@ -27,6 +27,18 @@ DEMO_REQUEST_RECIPIENT = "admin@wathiqcare.med.sa"
 logger = get_logger(__name__)
 
 
+def _log_email_route_hit(route_name: str, current_user: dict | None = None) -> None:
+    logger.info(
+        "EMAIL ROUTE HIT",
+        extra={
+            "route": route_name,
+            "user_id": (current_user or {}).get("id"),
+            "role": (current_user or {}).get("role"),
+            "tenant_id": (current_user or {}).get("tenant_id"),
+        },
+    )
+
+
 def _get_demo_internal_copy_recipients() -> list[str]:
     raw = os.getenv("DEMO_REQUEST_INTERNAL_COPY_EMAILS", "")
     recipients: list[str] = []
@@ -251,6 +263,7 @@ def send_email(
     current_user=Depends(require_roles(*EMAIL_ALLOWED_ROLES)),
 ):
     try:
+        _log_email_route_hit("send_email", current_user)
         logger.info(
             "INCOMING POST send-email",
             extra={
@@ -384,6 +397,7 @@ def send_workflow_notification(
     current_user=Depends(require_roles(*EMAIL_ALLOWED_ROLES)),
 ):
     try:
+        _log_email_route_hit("send_workflow_notification", current_user)
         logger.info(
             "INCOMING POST send-workflow-notification",
             extra={
@@ -458,6 +472,7 @@ def send_test_email(
     recipient = _get_test_email_recipient()
     sent_at = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
     try:
+        _log_email_route_hit("send_test_email", current_user)
         logger.info(
             "INCOMING POST test-email",
             extra={
@@ -504,6 +519,11 @@ def send_test_email(
     except Exception:
         logger.exception("TEST EMAIL INTERNAL ERROR")
         raise HTTPException(status_code=500, detail="حدث خطأ داخلي أثناء إرسال البريد التجريبي")
+
+
+@router.get("/test-email")
+def get_test_email_method_hint():
+    raise HTTPException(status_code=405, detail="Use POST for this endpoint")
 
 
 @router.get("/logs/{case_id}", response_model=list[EmailLogResponse])

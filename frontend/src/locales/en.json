@@ -128,13 +128,24 @@
     "sections": {
       "registrationTitle": "1) Case Registration Data",
       "planTitle": "2) Create Discharge Plan",
+      "clinicalDischargeAssessmentTitle": "Clinical Status at Discharge",
+      "comorbiditiesTitle": "Past Medical History / Comorbidities",
       "instructionsTitle": "3) Discharge Instructions",
       "routeTitle": "4) Select Discharge Route",
       "notificationTitle": "5) Notification and Signature"
     },
     "labels": {
       "sendDischargeOrderRequest": "Send a request to physician to issue discharge order",
-      "medicalCondition": "Current Medical Condition",
+      "dischargeClinicalStatus": "General status at discharge",
+      "dischargeVitalStatus": "Vital signs",
+      "dischargeMentalStatus": "Mental status / capacity",
+      "dischargeMobilityStatus": "Mobility status",
+      "dischargePainLevel": "Pain level",
+      "currentDiagnosis": "Current diagnosis or admission reason",
+      "dischargeClinicalSummary": "Clinical summary at discharge",
+      "dischargeDecision": "Discharge decision",
+      "explainedRisks": "Risks explained to patient/guardian",
+      "comorbidityOther": "Other comorbidity (specify)",
       "preferredLanguage": "Preferred Language",
       "livingAlone": "Is the patient living alone?",
       "hasCaregiver": "Do you have a caregiver or family member available to assist with post-discharge care?",
@@ -154,6 +165,10 @@
       "postalCode": "Postal Code",
       "poBox": "PO Box",
       "admissionReason": "Reason for hospital admission",
+      "currentDiagnosis": "Enter current diagnosis or reason for admission",
+      "dischargeClinicalSummary": "Enter clinical summary at discharge",
+      "explainedRisks": "Document risks explained to patient/guardian",
+      "comorbidityOther": "Specify other comorbidity",
       "dischargeDateFormat": "MM-DD-YYYY",
       "preferredDestination": "Preferred Discharge Destination",
       "additionalInstructions": "Additional Comments or Instructions",
@@ -167,6 +182,47 @@
       "english": "English",
       "yes": "Yes",
       "no": "No"
+    },
+    "clinicalOptions": {
+      "dischargeClinicalStatus": {
+        "stable": "Stable",
+        "stableFollowup": "Stable with follow-up needed",
+        "unstable": "Unstable",
+        "critical": "Critical"
+      },
+      "dischargeVitalStatus": {
+        "stable": "Stable",
+        "unstable": "Unstable",
+        "incomplete": "Assessment incomplete"
+      },
+      "dischargeMentalStatus": {
+        "alertOriented": "Alert and oriented",
+        "partiallyOriented": "Partially oriented",
+        "confused": "Confused",
+        "noDecisionCapacity": "Unable to make decisions"
+      },
+      "dischargeMobilityStatus": {
+        "independent": "Ambulates independently",
+        "assisted": "Needs assistance",
+        "wheelchair": "Wheelchair",
+        "bedbound": "Bedbound"
+      },
+      "dischargePainLevel": {
+        "none": "None",
+        "mild": "Mild",
+        "moderate": "Moderate",
+        "severe": "Severe"
+      },
+      "dischargeDecision": {
+        "medicallyFit": "Medically fit for discharge",
+        "patientRequested": "Discharge at patient request",
+        "againstPlan": "Discharge despite incomplete treatment plan",
+        "withRiskExplained": "Discharge with risk explanation"
+      }
+    },
+    "validation": {
+      "clinicalAssessmentRequired": "Please complete the clinical discharge assessment before continuing.",
+      "comorbidityOtherRequired": "Please specify the comorbidity when Other is selected."
     },
     "dischargePlanType": {
       "outpatientFollowup": "Discharge with follow-up",

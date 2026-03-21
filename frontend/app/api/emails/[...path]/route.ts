@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { forwardToBackend } from "@/lib/server/backendProxy";
 
 function toBackendPath(pathParts: string[]): string {
@@ -16,6 +16,19 @@ async function handle(request: NextRequest, context: RouteContext) {
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
+    const { path } = await context.params;
+    const head = (path?.[0] || "").toLowerCase();
+
+    if (head === "test-email") {
+        return NextResponse.json(
+            {
+                message: "Use POST for this endpoint",
+                endpoint: "/api/emails/test-email",
+            },
+            { status: 405 },
+        );
+    }
+
     return handle(request, context);
 }
 

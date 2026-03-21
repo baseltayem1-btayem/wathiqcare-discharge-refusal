@@ -128,13 +128,24 @@
     "sections": {
       "registrationTitle": "1) بيانات تسجيل الحالة",
       "planTitle": "2) إنشاء خطة الخروج",
+      "clinicalDischargeAssessmentTitle": "التقييم السريري عند الخروج",
+      "comorbiditiesTitle": "التاريخ المرضي السابق / الأمراض المصاحبة",
       "instructionsTitle": "3) تعليمات الخروج",
       "routeTitle": "4) اختيار خطة الخروج",
       "notificationTitle": "5) الإشعار والتوقيع"
     },
     "labels": {
       "sendDischargeOrderRequest": "إرسال طلب للطبيب لإصدار أمر الخروج",
-      "medicalCondition": "الحالة الطبية الحالية",
+      "dischargeClinicalStatus": "الحالة العامة عند الخروج",
+      "dischargeVitalStatus": "العلامات الحيوية",
+      "dischargeMentalStatus": "الحالة الذهنية / الأهلية",
+      "dischargeMobilityStatus": "القدرة على الحركة",
+      "dischargePainLevel": "مستوى الألم",
+      "currentDiagnosis": "التشخيص الحالي أو سبب التنويم",
+      "dischargeClinicalSummary": "ملخص الحالة السريرية عند الخروج",
+      "dischargeDecision": "قرار الخروج",
+      "explainedRisks": "المخاطر التي تم شرحها للمريض أو المرافق",
+      "comorbidityOther": "أخرى (يرجى التحديد)",
       "preferredLanguage": "اللغة المفضلة",
       "livingAlone": "هل يعيش المريض بمفرده؟",
       "hasCaregiver": "هل يوجد مقدم رعاية أو أحد أفراد الأسرة متاح للمساعدة في الرعاية بعد الخروج؟",
@@ -154,6 +165,10 @@
       "postalCode": "الرمز البريدي",
       "poBox": "صندوق البريد",
       "admissionReason": "سبب الدخول للمستشفى",
+      "currentDiagnosis": "اكتب التشخيص الحالي أو سبب التنويم",
+      "dischargeClinicalSummary": "اكتب الملخص السريري عند الخروج",
+      "explainedRisks": "اكتب المخاطر التي تم شرحها للمريض أو المرافق",
+      "comorbidityOther": "حدد المرض المصاحب الآخر",
       "dischargeDateFormat": "MM-DD-YYYY",
       "preferredDestination": "الوجهة المفضلة بعد الخروج",
       "additionalInstructions": "ملاحظات أو تعليمات إضافية",
@@ -167,6 +182,47 @@
       "english": "الإنجليزية",
       "yes": "نعم",
       "no": "لا"
+    },
+    "clinicalOptions": {
+      "dischargeClinicalStatus": {
+        "stable": "مستقرة",
+        "stableFollowup": "مستقرة مع الحاجة للمتابعة",
+        "unstable": "غير مستقرة",
+        "critical": "حرجة"
+      },
+      "dischargeVitalStatus": {
+        "stable": "مستقرة",
+        "unstable": "غير مستقرة",
+        "incomplete": "غير مكتملة التقييم"
+      },
+      "dischargeMentalStatus": {
+        "alertOriented": "واعي ومدرك",
+        "partiallyOriented": "واعي جزئيًا",
+        "confused": "مشوش",
+        "noDecisionCapacity": "غير قادر على اتخاذ القرار"
+      },
+      "dischargeMobilityStatus": {
+        "independent": "يمشي بشكل مستقل",
+        "assisted": "يحتاج مساعدة",
+        "wheelchair": "على كرسي متحرك",
+        "bedbound": "ملازم للسرير"
+      },
+      "dischargePainLevel": {
+        "none": "لا يوجد",
+        "mild": "خفيف",
+        "moderate": "متوسط",
+        "severe": "شديد"
+      },
+      "dischargeDecision": {
+        "medicallyFit": "لائق للخروج طبيًا",
+        "patientRequested": "خروج بناءً على طلب المريض",
+        "againstPlan": "خروج رغم عدم اكتمال الخطة العلاجية",
+        "withRiskExplained": "خروج مع شرح المخاطر"
+      }
+    },
+    "validation": {
+      "clinicalAssessmentRequired": "يرجى استكمال التقييم السريري عند الخروج قبل المتابعة.",
+      "comorbidityOtherRequired": "يرجى كتابة المرض المصاحب عند اختيار أخرى."
     },
     "dischargePlanType": {
       "outpatientFollowup": "خروج مع المراجعة",

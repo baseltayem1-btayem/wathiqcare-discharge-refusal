@@ -8,28 +8,28 @@ import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch, clearToken, isAuthenticationError, logAuthRedirect } from "@/utils/api";
+import type {
+    Comorbidity,
+    DischargeClinicalStatus,
+    DischargeDecision,
+    DischargeMentalStatus,
+    DischargeMobilityStatus,
+    DischargePainLevel,
+    DischargeVitalStatus,
+} from "@/lib/types/dischargeClinicalAssessment";
 
 type CreateCaseResponse = {
     id: string;
 };
 
-type MedicalCondition =
-    | "Diabetes"
-    | "Hypertension"
-    | "Heart Disease"
-    | "Lung Disease"
-    | "Cancer"
-    | "Kidney Disease"
-    | "Other";
-
-const MEDICAL_CONDITIONS: Array<{ value: MedicalCondition; ar: string; en: string }> = [
-    { value: "Diabetes", ar: "السكري", en: "Diabetes" },
-    { value: "Hypertension", ar: "ارتفاع ضغط الدم", en: "Hypertension" },
-    { value: "Heart Disease", ar: "أمراض القلب", en: "Heart Disease" },
-    { value: "Lung Disease", ar: "أمراض الرئة", en: "Lung Disease" },
-    { value: "Cancer", ar: "السرطان", en: "Cancer" },
-    { value: "Kidney Disease", ar: "أمراض الكلى", en: "Kidney Disease" },
-    { value: "Other", ar: "أخرى", en: "Other" },
+const COMORBIDITIES: Array<{ value: Comorbidity; ar: string; en: string }> = [
+    { value: "diabetes", ar: "السكري", en: "Diabetes" },
+    { value: "hypertension", ar: "ارتفاع ضغط الدم", en: "Hypertension" },
+    { value: "heart_disease", ar: "أمراض القلب", en: "Heart Disease" },
+    { value: "lung_disease", ar: "أمراض الرئة", en: "Lung Disease" },
+    { value: "kidney_disease", ar: "أمراض الكلى", en: "Kidney Disease" },
+    { value: "cancer", ar: "السرطان", en: "Cancer" },
+    { value: "other", ar: "أخرى", en: "Other" },
 ];
 
 export default function NewCasePage() {
@@ -61,7 +61,17 @@ export default function NewCasePage() {
     const [postalCode, setPostalCode] = useState("");
     const [poBox, setPoBox] = useState("");
     const [admissionReason, setAdmissionReason] = useState("");
-    const [medicalCondition, setMedicalCondition] = useState<MedicalCondition | "">("");
+    const [dischargeClinicalStatus, setDischargeClinicalStatus] = useState<DischargeClinicalStatus | "">("");
+    const [dischargeVitalStatus, setDischargeVitalStatus] = useState<DischargeVitalStatus | "">("");
+    const [dischargeMentalStatus, setDischargeMentalStatus] = useState<DischargeMentalStatus | "">("");
+    const [dischargeMobilityStatus, setDischargeMobilityStatus] = useState<DischargeMobilityStatus | "">("");
+    const [dischargePainLevel, setDischargePainLevel] = useState<DischargePainLevel | "">("");
+    const [currentDiagnosis, setCurrentDiagnosis] = useState("");
+    const [dischargeClinicalSummary, setDischargeClinicalSummary] = useState("");
+    const [dischargeDecision, setDischargeDecision] = useState<DischargeDecision | "">("");
+    const [explainedRisks, setExplainedRisks] = useState("");
+    const [comorbidities, setComorbidities] = useState<Comorbidity[]>([]);
+    const [comorbidityOther, setComorbidityOther] = useState("");
 
     const [preferredLanguage, setPreferredLanguage] = useState("");
     const [livingAlone, setLivingAlone] = useState("");
@@ -79,11 +89,44 @@ export default function NewCasePage() {
     const [notifySectionsByEmail, setNotifySectionsByEmail] = useState(true);
     const [signatureMethod, setSignatureMethod] = useState<"email" | "nafez" | "tablet">("email");
 
+    const hasOtherComorbidity = comorbidities.includes("other");
+
+    function toggleComorbidity(value: Comorbidity) {
+        setComorbidities((previous) => {
+            if (previous.includes(value)) {
+                return previous.filter((item) => item !== value);
+            }
+            return [...previous, value];
+        });
+    }
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setSaving(true);
         setError("");
         setSuccessMessage("");
+
+        if (
+            !dischargeClinicalStatus ||
+            !dischargeVitalStatus ||
+            !dischargeMentalStatus ||
+            !dischargeMobilityStatus ||
+            !dischargePainLevel ||
+            !currentDiagnosis.trim() ||
+            !dischargeClinicalSummary.trim() ||
+            !dischargeDecision ||
+            !explainedRisks.trim()
+        ) {
+            setError(t("newCase.validation.clinicalAssessmentRequired"));
+            setSaving(false);
+            return;
+        }
+
+        if (hasOtherComorbidity && !comorbidityOther.trim()) {
+            setError(t("newCase.validation.comorbidityOtherRequired"));
+            setSaving(false);
+            return;
+        }
 
         try {
             const metadata = {
@@ -113,7 +156,20 @@ export default function NewCasePage() {
                     postal_code: postalCode,
                     po_box: poBox,
                     hospital_admission_reason: admissionReason,
-                    current_medical_condition: medicalCondition,
+                    dischargeClinicalStatus,
+                    dischargeVitalStatus,
+                    dischargeMentalStatus,
+                    dischargeMobilityStatus,
+                    dischargePainLevel,
+                    currentDiagnosis: currentDiagnosis.trim(),
+                    dischargeClinicalSummary: dischargeClinicalSummary.trim(),
+                    dischargeDecision,
+                    explainedRisks: explainedRisks.trim(),
+                    comorbidities,
+                    comorbidityOther: hasOtherComorbidity ? comorbidityOther.trim() : "",
+
+                    // Backward compatibility for older consumers expecting legacy keys.
+                    current_medical_condition: currentDiagnosis.trim(),
                     preferred_language: preferredLanguage,
                     is_living_alone: livingAlone,
                     has_caregiver: hasCaregiver,
@@ -259,13 +315,102 @@ export default function NewCasePage() {
                             <input value={poBox} onChange={(e) => setPoBox(e.target.value)} placeholder={t("newCase.placeholders.poBox")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                             <input required value={admissionReason} onChange={(e) => setAdmissionReason(e.target.value)} placeholder={t("newCase.placeholders.admissionReason")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
 
-                            <label className="text-xs text-slate-600">{t("newCase.labels.medicalCondition")}</label>
-                            <select required value={medicalCondition} onChange={(e) => setMedicalCondition(e.target.value as MedicalCondition)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                            <h3 className="text-sm font-semibold text-slate-900 md:col-span-2">{t("newCase.sections.clinicalDischargeAssessmentTitle")}</h3>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.dischargeClinicalStatus")}</label>
+                            <select required value={dischargeClinicalStatus} onChange={(e) => setDischargeClinicalStatus(e.target.value as DischargeClinicalStatus)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
                                 <option value="">{t("newCase.select.pleaseSelect")}</option>
-                                {MEDICAL_CONDITIONS.map((option) => (
-                                    <option key={option.value} value={option.value}>{lang === "ar" ? option.ar : option.en}</option>
-                                ))}
+                                <option value="stable">{t("newCase.clinicalOptions.dischargeClinicalStatus.stable")}</option>
+                                <option value="stable_followup">{t("newCase.clinicalOptions.dischargeClinicalStatus.stableFollowup")}</option>
+                                <option value="unstable">{t("newCase.clinicalOptions.dischargeClinicalStatus.unstable")}</option>
+                                <option value="critical">{t("newCase.clinicalOptions.dischargeClinicalStatus.critical")}</option>
                             </select>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.dischargeVitalStatus")}</label>
+                            <select required value={dischargeVitalStatus} onChange={(e) => setDischargeVitalStatus(e.target.value as DischargeVitalStatus)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="stable">{t("newCase.clinicalOptions.dischargeVitalStatus.stable")}</option>
+                                <option value="unstable">{t("newCase.clinicalOptions.dischargeVitalStatus.unstable")}</option>
+                                <option value="incomplete">{t("newCase.clinicalOptions.dischargeVitalStatus.incomplete")}</option>
+                            </select>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.dischargeMentalStatus")}</label>
+                            <select required value={dischargeMentalStatus} onChange={(e) => setDischargeMentalStatus(e.target.value as DischargeMentalStatus)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="alert_oriented">{t("newCase.clinicalOptions.dischargeMentalStatus.alertOriented")}</option>
+                                <option value="partially_oriented">{t("newCase.clinicalOptions.dischargeMentalStatus.partiallyOriented")}</option>
+                                <option value="confused">{t("newCase.clinicalOptions.dischargeMentalStatus.confused")}</option>
+                                <option value="no_decision_capacity">{t("newCase.clinicalOptions.dischargeMentalStatus.noDecisionCapacity")}</option>
+                            </select>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.dischargeMobilityStatus")}</label>
+                            <select required value={dischargeMobilityStatus} onChange={(e) => setDischargeMobilityStatus(e.target.value as DischargeMobilityStatus)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="independent">{t("newCase.clinicalOptions.dischargeMobilityStatus.independent")}</option>
+                                <option value="assisted">{t("newCase.clinicalOptions.dischargeMobilityStatus.assisted")}</option>
+                                <option value="wheelchair">{t("newCase.clinicalOptions.dischargeMobilityStatus.wheelchair")}</option>
+                                <option value="bedbound">{t("newCase.clinicalOptions.dischargeMobilityStatus.bedbound")}</option>
+                            </select>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.dischargePainLevel")}</label>
+                            <select required value={dischargePainLevel} onChange={(e) => setDischargePainLevel(e.target.value as DischargePainLevel)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="none">{t("newCase.clinicalOptions.dischargePainLevel.none")}</option>
+                                <option value="mild">{t("newCase.clinicalOptions.dischargePainLevel.mild")}</option>
+                                <option value="moderate">{t("newCase.clinicalOptions.dischargePainLevel.moderate")}</option>
+                                <option value="severe">{t("newCase.clinicalOptions.dischargePainLevel.severe")}</option>
+                            </select>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.currentDiagnosis")}</label>
+                            <input required value={currentDiagnosis} onChange={(e) => setCurrentDiagnosis(e.target.value)} placeholder={t("newCase.placeholders.currentDiagnosis")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.dischargeClinicalSummary")}</label>
+                            <textarea required value={dischargeClinicalSummary} onChange={(e) => setDischargeClinicalSummary(e.target.value)} placeholder={t("newCase.placeholders.dischargeClinicalSummary")} className="h-24 rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.dischargeDecision")}</label>
+                            <select required value={dischargeDecision} onChange={(e) => setDischargeDecision(e.target.value as DischargeDecision)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                                <option value="">{t("newCase.select.pleaseSelect")}</option>
+                                <option value="medically_fit">{t("newCase.clinicalOptions.dischargeDecision.medicallyFit")}</option>
+                                <option value="patient_requested">{t("newCase.clinicalOptions.dischargeDecision.patientRequested")}</option>
+                                <option value="against_plan">{t("newCase.clinicalOptions.dischargeDecision.againstPlan")}</option>
+                                <option value="with_risk_explained">{t("newCase.clinicalOptions.dischargeDecision.withRiskExplained")}</option>
+                            </select>
+
+                            <label className="text-xs text-slate-600">{t("newCase.labels.explainedRisks")}</label>
+                            <textarea required value={explainedRisks} onChange={(e) => setExplainedRisks(e.target.value)} placeholder={t("newCase.placeholders.explainedRisks")} className="h-24 rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
+
+                            <h3 className="text-sm font-semibold text-slate-900 md:col-span-2">{t("newCase.sections.comorbiditiesTitle")}</h3>
+                            <div className="grid gap-2 md:col-span-2 sm:grid-cols-2">
+                                {COMORBIDITIES.map((option) => {
+                                    const selected = comorbidities.includes(option.value);
+                                    return (
+                                        <label
+                                            key={option.value}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selected}
+                                                onChange={() => toggleComorbidity(option.value)}
+                                            />
+                                            {lang === "ar" ? option.ar : option.en}
+                                        </label>
+                                    );
+                                })}
+                            </div>
+
+                            {hasOtherComorbidity ? (
+                                <>
+                                    <label className="text-xs text-slate-600">{t("newCase.labels.comorbidityOther")}</label>
+                                    <input
+                                        required
+                                        value={comorbidityOther}
+                                        onChange={(e) => setComorbidityOther(e.target.value)}
+                                        placeholder={t("newCase.placeholders.comorbidityOther")}
+                                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2"
+                                    />
+                                </>
+                            ) : null}
 
                             <label className="text-xs text-slate-600">{t("newCase.labels.preferredLanguage")}</label>
                             <select value={preferredLanguage} onChange={(e) => setPreferredLanguage(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
