@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 
+const LEGACY_SESSION_COOKIE_NAMES = ["wathiqcare_access_token", "token"] as const;
+
 type BackendUrlResult =
     | { ok: true; url: URL }
     | { ok: false; response: NextResponse };
@@ -86,13 +88,32 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
 
 function buildForwardHeaders(request: NextRequest): Headers {
     const headers = new Headers();
-    const token = request.cookies.get(getSessionCookieName())?.value;
+    const incomingAuthorization = request.headers.get("authorization")?.trim();
+    const token = request.cookies.get(getSessionCookieName())?.value
+        ?? LEGACY_SESSION_COOKIE_NAMES.map((name) => request.cookies.get(name)?.value).find(Boolean);
     const userAgent = request.headers.get("user-agent");
     const forwardedFor = request.headers.get("x-forwarded-for");
     const realIp = request.headers.get("x-real-ip");
+    const cookieHeader = request.headers.get("cookie");
+    const forwardedHost = request.headers.get("x-forwarded-host") || request.headers.get("host");
+    const forwardedProto = request.headers.get("x-forwarded-proto") || request.nextUrl.protocol.replace(":", "");
 
-    if (token) {
+    if (incomingAuthorization) {
+        headers.set("authorization", incomingAuthorization);
+    } else if (token) {
         headers.set("authorization", `Bearer ${token}`);
+    }
+
+    // Some backend stacks also inspect cookies directly even when Bearer auth is present.
+    if (cookieHeader) {
+        headers.set("cookie", cookieHeader);
+    }
+
+    if (forwardedHost) {
+        headers.set("x-forwarded-host", forwardedHost);
+    }
+    if (forwardedProto) {
+        headers.set("x-forwarded-proto", forwardedProto);
     }
 
     const contentType = request.headers.get("content-type");
@@ -153,6 +174,7 @@ export async function forwardToBackend(
             method,
             headers: buildForwardHeaders(request),
             body,
+            credentials: "include",
             redirect: "manual",
             // Propagate the incoming request's abort signal so that when the
             // client navigates away (Next.js fires request.signal), the outgoing
