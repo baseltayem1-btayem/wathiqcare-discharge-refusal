@@ -17,6 +17,11 @@ RUN python -m pip install --upgrade pip && \
 # No Node.js / Next.js artefacts exist in this context.
 COPY . .
 
+# Make the entrypoint script executable.
+RUN chmod +x /app/start.sh
+
 EXPOSE 8000
 
-CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Use a shell script so $PORT is always expanded by /bin/sh,
+# regardless of how Railway invokes the container CMD.
+CMD ["/app/start.sh"]
