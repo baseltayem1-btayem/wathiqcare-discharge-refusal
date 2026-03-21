@@ -5,9 +5,8 @@ builder = "dockerfile"
 dockerfilePath = "apps/api/Dockerfile"
 
 [deploy]
-# WORKDIR in the Dockerfile is /app and apps/api/ is copied there,
-# so uvicorn can resolve backend.main directly without a cd.
-startCommand = "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+# startCommand is omitted — the Dockerfile CMD handles PORT expansion:
+#   CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
