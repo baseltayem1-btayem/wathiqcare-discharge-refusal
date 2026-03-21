@@ -2,6 +2,16 @@ import crypto from "node:crypto";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 
+const AUTH_DEBUG = process.env.AUTH_DEBUG === "true";
+
+function authDebugLog(event: string, details: Record<string, unknown> = {}): void {
+  if (!AUTH_DEBUG) {
+    return;
+  }
+
+  console.info("[auth-debug]", event, details);
+}
+
 export type AuthContext = {
   sub: string;
   email?: string;
@@ -45,10 +55,16 @@ function decodeBase64Url(input: string): string {
 function readToken(request: NextRequest): string | null {
   const authorization = request.headers.get("authorization");
   if (authorization?.toLowerCase().startsWith("bearer ")) {
+    authDebugLog("token_source", { source: "authorization_header" });
     return authorization.slice(7).trim();
   }
 
-  return request.cookies.get("wathiqcare_access_token")?.value ?? null;
+  const cookieToken = request.cookies.get("wathiqcare_access_token")?.value ?? null;
+  authDebugLog("token_source", {
+    source: cookieToken ? "cookie" : "none",
+    hasCookie: Boolean(cookieToken),
+  });
+  return cookieToken;
 }
 
 function verifyHs256(token: string, secret: string): boolean {
@@ -81,11 +97,13 @@ function getJwtSecret(): string {
 export function requireAuth(request: NextRequest): AuthContext {
   const token = readToken(request);
   if (!token) {
+    authDebugLog("auth_failure", { reason: "missing_access_token" });
     throw new ApiError(401, "Missing access token");
   }
 
   const secret = getJwtSecret();
   if (!verifyHs256(token, secret)) {
+    authDebugLog("auth_failure", { reason: "invalid_signature" });
     throw new ApiError(401, "Invalid access token signature");
   }
 
@@ -95,17 +113,26 @@ export function requireAuth(request: NextRequest): AuthContext {
   try {
     parsedPayload = JSON.parse(decodeBase64Url(payload)) as AuthContext;
   } catch {
+    authDebugLog("auth_failure", { reason: "malformed_token" });
     throw new ApiError(401, "Malformed access token");
   }
 
   if (!parsedPayload.sub || !parsedPayload.tenant_id) {
+    authDebugLog("auth_failure", { reason: "invalid_claims" });
     throw new ApiError(401, "Invalid access token claims");
   }
 
   const now = Math.floor(Date.now() / 1000);
   if (typeof parsedPayload.exp === "number" && parsedPayload.exp < now) {
+    authDebugLog("auth_failure", { reason: "token_expired", exp: parsedPayload.exp, now });
     throw new ApiError(401, "Access token expired");
   }
+
+  authDebugLog("auth_success", {
+    userId: parsedPayload.sub,
+    tenantId: parsedPayload.tenant_id,
+    role: parsedPayload.role || null,
+  });
 
   return parsedPayload;
 }

@@ -7,7 +7,7 @@ import { ArrowLeft, Mail, Save, Send } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, clearToken } from "@/utils/api";
+import { apiFetch, clearToken, isAuthenticationError } from "@/utils/api";
 
 type CreateCaseResponse = {
     id: string;
@@ -184,7 +184,7 @@ export default function NewCasePage() {
         } catch (err) {
             const message = err instanceof Error ? err.message : t("newCase.failedCreate");
             setError(message);
-            if (message.includes("401") || message.includes("Invalid")) {
+            if (isAuthenticationError(err)) {
                 clearToken();
                 router.push("/login");
             }

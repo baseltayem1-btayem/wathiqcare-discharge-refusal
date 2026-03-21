@@ -13,6 +13,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { setToken, apiFetch } from "@/utils/api";
 
 export default function LoginPage() {
+  const authDebug = process.env.NEXT_PUBLIC_AUTH_DEBUG === "true";
   const router = useRouter();
   const { t, isRtl } = useI18n();
   const allowDevPrefill =
@@ -41,6 +42,23 @@ export default function LoginPage() {
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("next") || "/dashboard"
           : "/dashboard";
+      if (authDebug) {
+        console.info("[auth-debug] login_success", {
+          nextPath,
+          tokenLength: result.access_token.length,
+          expiresAt: (() => {
+            try {
+              const base64 = result.access_token.split(".")[1] || "";
+              const normalized = base64.replace(/-/g, "+").replace(/_/g, "/");
+              const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+              const payload = JSON.parse(atob(padded)) as { exp?: number };
+              return payload.exp ?? null;
+            } catch {
+              return null;
+            }
+          })(),
+        });
+      }
       router.push(nextPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("login.failed"));

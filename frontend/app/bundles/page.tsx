@@ -7,7 +7,7 @@ import { ArrowLeft, Download, FolderArchive, PackagePlus, RefreshCw } from "luci
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, clearToken } from "@/utils/api";
+import { apiFetch, clearToken, isAuthenticationError } from "@/utils/api";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 
 type BundleItem = {
@@ -43,7 +43,7 @@ export default function BundlesPage() {
       const message = err instanceof Error ? err.message : t("bundles.failedLoad");
       setError(message);
 
-      if (message.includes("401") || message.includes("Invalid")) {
+      if (isAuthenticationError(err)) {
         clearToken();
         router.push("/login");
       }
@@ -82,7 +82,7 @@ export default function BundlesPage() {
       const message = err instanceof Error ? err.message : t("bundles.failedCreate");
       setError(message);
 
-      if (message.includes("401") || message.includes("Invalid")) {
+      if (isAuthenticationError(err)) {
         clearToken();
         router.push("/login");
       }
@@ -104,7 +104,7 @@ export default function BundlesPage() {
       const message = err instanceof Error ? err.message : t("bundles.failedDownload");
       setError(message);
 
-      if (message.includes("401") || message.includes("Invalid") || message.includes("Not authenticated")) {
+      if (isAuthenticationError(err)) {
         clearToken();
         router.push("/login");
       }

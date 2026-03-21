@@ -28,7 +28,7 @@ import CaseWorkflowTree from "@/components/cases/CaseWorkflowTree";
 import WorkflowDocumentList from "@/components/workflow/WorkflowDocumentList";
 import WorkflowTimelinePanel from "@/components/workflow/WorkflowTimelinePanel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, clearToken } from "@/utils/api";
+import { apiFetch, clearToken, isAuthenticationError } from "@/utils/api";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 import { dischargeRefusalWorkflowService } from "@/lib/services/dischargeRefusalWorkflow.service";
 import {
@@ -700,7 +700,7 @@ export default function CaseDetailsPage() {
       const message = err instanceof Error ? err.message : t("caseDetails.failedLoad");
       setError(message);
 
-      if (message.includes("401") || message.includes("Invalid")) {
+      if (isAuthenticationError(err)) {
         clearToken();
         router.push("/login");
       }
@@ -772,7 +772,7 @@ export default function CaseDetailsPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t("caseDetails.workflowActionFailed");
       setError(message);
-      if (message.includes("401") || message.includes("Invalid")) {
+      if (isAuthenticationError(err)) {
         clearToken();
         router.push("/login");
       }
@@ -962,7 +962,7 @@ export default function CaseDetailsPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t("caseDetails.failedOpenPdf");
       setError(message);
-      if (message.includes("401") || message.includes("Invalid") || message.includes("Not authenticated")) {
+      if (isAuthenticationError(err)) {
         clearToken();
         router.push("/login");
       }
@@ -996,7 +996,7 @@ export default function CaseDetailsPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : t("documents.failedDownload");
       setError(message);
-      if (message.includes("401") || message.includes("Invalid") || message.includes("Not authenticated")) {
+      if (isAuthenticationError(err)) {
         clearToken();
         router.push("/login");
       }

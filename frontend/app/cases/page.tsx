@@ -7,7 +7,7 @@ import { ArrowRight, FileText, PlusCircle, RefreshCw } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, clearToken } from "@/utils/api";
+import { apiFetch, clearToken, isAuthenticationError } from "@/utils/api";
 
 type CaseItem = {
   id: string;
@@ -36,7 +36,7 @@ export default function CasesPage() {
       .then((data) => setCases(data as CaseItem[]))
       .catch((err) => {
         setError(err.message);
-        if (err.message.includes("401") || err.message.includes("Invalid")) {
+        if (isAuthenticationError(err)) {
           clearToken();
           router.push("/login");
         }
@@ -73,7 +73,7 @@ export default function CasesPage() {
                 .then((data) => setCases(data as CaseItem[]))
                 .catch((err) => {
                   setError(err.message);
-                  if (err.message.includes("401") || err.message.includes("Invalid")) {
+                  if (isAuthenticationError(err)) {
                     clearToken();
                     router.push("/login");
                   }

@@ -12,6 +12,7 @@ type AuthGuardProps = {
 };
 
 export default function AuthGuard({ children }: AuthGuardProps) {
+  const authDebug = process.env.NEXT_PUBLIC_AUTH_DEBUG === "true";
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useI18n();
@@ -19,11 +20,19 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const authenticated = typeof token === "string" && token.length > 0;
 
   useEffect(() => {
+    if (authDebug) {
+      console.info("[auth-debug] route_guard_evaluation", {
+        pathname,
+        authenticated,
+        hasToken: Boolean(token),
+      });
+    }
+
     if (!authenticated) {
       const nextPath = pathname || "/cases";
       router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
     }
-  }, [authenticated, pathname, router]);
+  }, [authDebug, authenticated, pathname, router, token]);
 
   if (!authenticated) {
     return (
