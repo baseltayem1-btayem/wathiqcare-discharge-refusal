@@ -58,7 +58,7 @@ def create_discharge_refusal(
             tenant_id=tenant.id,
             patient_id=patient.id,
             created_by=user.id,
-            status="CASE_CREATED",
+            status="pending",
             refusal_reason=refusal_reason,
             signer_name=signer_name,
             signer_role=signer_role,
@@ -69,22 +69,27 @@ def create_discharge_refusal(
         db.add(discharge_case)
         db.flush()
 
-        pdf_path = generate_discharge_refusal_pdf({
-            "tenant_code": tenant.code,
-            "user_email": user.email,
-            "patient_mrn": patient.mrn,
-            "patient_name": patient.full_name,
-            "discharge_case_id": discharge_case.id,
-            "status": discharge_case.status,
-            "refusal_reason": discharge_case.refusal_reason,
-            "signer_name": discharge_case.signer_name,
-            "signer_role": discharge_case.signer_role,
-            "signature_text": discharge_case.signature_text,
-            "signed_at": signed_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
-        })
+        pdf_path = None
+        try:
+            pdf_path = generate_discharge_refusal_pdf({
+                "tenant_code": tenant.code,
+                "user_email": user.email,
+                "patient_mrn": patient.mrn,
+                "patient_name": patient.full_name,
+                "discharge_case_id": discharge_case.id,
+                "status": discharge_case.status,
+                "refusal_reason": discharge_case.refusal_reason,
+                "signer_name": discharge_case.signer_name,
+                "signer_role": discharge_case.signer_role,
+                "signature_text": discharge_case.signature_text,
+                "signed_at": signed_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
+            })
 
-        discharge_case.pdf_file = Path(pdf_path).name
-        db.flush()
+            discharge_case.pdf_file = Path(pdf_path).name
+            db.flush()
+        except Exception:
+            # Case creation should not fail when PDF storage/rendering is unavailable.
+            pdf_path = None
 
         audit_log = AuditLog(
             id=str(uuid.uuid4()),
@@ -94,8 +99,9 @@ def create_discharge_refusal(
             entity_id=discharge_case.id,
             action="create_discharge_refusal_with_signature",
             details=(
-                f"Case {discharge_case.id} created with lifecycle status CASE_CREATED for patient MRN {patient.mrn}; "
-                f"signed by {signer_name} ({signer_role}); PDF generated at {pdf_path}"
+                f"Case {discharge_case.id} created with status {discharge_case.status} for patient MRN {patient.mrn}; "
+                f"signed by {signer_name} ({signer_role}); "
+                f"PDF generated at {pdf_path if pdf_path else 'unavailable'}"
             ),
             created_at=datetime.utcnow(),
         )
