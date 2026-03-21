@@ -1,4 +1,4 @@
-import { Prisma, SubscriptionStatus, UsageMetric } from "@prisma/client";
+import { BillingInterval, PlanCode, Prisma, SubscriptionStatus, UsageMetric } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
@@ -47,16 +47,58 @@ function usageMetricToPlanKey(metric: UsageMetric): string | null {
   }
 }
 
+async function createDefaultTrialSubscription(tenantId: string): Promise<SubscriptionWithPlan> {
+  const starterPlan = await prisma.plan.findFirst({
+    where: {
+      isActive: true,
+      code: PlanCode.STARTER,
+    },
+  });
+
+  const fallbackPlan = starterPlan
+    ? starterPlan
+    : await prisma.plan.findFirst({
+      where: {
+        isActive: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+  if (!fallbackPlan) {
+    throw new ApiError(503, "No active billing plans configured");
+  }
+
+  const now = new Date();
+  const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const currentPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  return prisma.subscription.create({
+    data: {
+      tenantId,
+      planId: fallbackPlan.id,
+      status: SubscriptionStatus.TRIALING,
+      billingInterval: BillingInterval.MONTHLY,
+      seatLimit: fallbackPlan.seatLimit,
+      trialEndsAt,
+      currentPeriodStart: now,
+      currentPeriodEnd,
+    },
+    include: {
+      plan: true,
+    },
+  });
+}
+
 export async function getTenantSubscription(tenantId: string): Promise<SubscriptionWithPlan> {
-  const subscription = await prisma.subscription.findFirst({
+  const existingSubscription = await prisma.subscription.findFirst({
     where: { tenantId },
     include: { plan: true },
     orderBy: { createdAt: "desc" },
   });
 
-  if (!subscription) {
-    throw new ApiError(402, "No active subscription for tenant");
-  }
+  const subscription = existingSubscription ?? (await createDefaultTrialSubscription(tenantId));
 
   if (!SUBSCRIPTION_ALLOWED_STATUSES.includes(subscription.status)) {
     throw new ApiError(402, `Subscription status ${subscription.status} does not allow this action`);
