@@ -7,7 +7,7 @@ dockerfilePath = "apps/api/Dockerfile"
 [deploy]
 # Explicitly set startCommand to override any persisted dashboard value.
 # sh -c guarantees $PORT is shell-expanded before passing to uvicorn.
-startCommand = "sh -c 'uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}'"
+startCommand = "sh -c 'if [ -d /app/apps/api ]; then cd /app/apps/api; fi; uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}'"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
