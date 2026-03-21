@@ -25,6 +25,10 @@ from backend.core.http_hardening import (
     unauthorized_exception_handler,
     unhandled_exception_handler,
 )
+from backend.services.integration_monitoring_service import (
+    start_integration_scheduler,
+    stop_integration_scheduler,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +88,16 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.on_event("startup")
+def _startup_integration_scheduler() -> None:
+    start_integration_scheduler()
+
+
+@app.on_event("shutdown")
+def _shutdown_integration_scheduler() -> None:
+    stop_integration_scheduler()
 
 
 app.include_router(auth_router)

@@ -655,7 +655,10 @@
       "dbUnreachable": "غير متاحة",
       "statusLine": "قاعدة البيانات {dbStatus} · {active}/{total} وحدات نشطة · وقت الفحص {inspectedAt}",
       "moduleActive": "نشط",
-      "moduleOff": "متوقف"
+      "moduleOff": "غير مفعل",
+      "moduleDisabled": "غير مفعل",
+      "moduleStopped": "متوقف",
+      "moduleReason": "السبب: {reason}"
     },
     "kpi": {
       "totalCases": "إجمالي الحالات",

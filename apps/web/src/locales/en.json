@@ -599,7 +599,10 @@
       "dbUnreachable": "unreachable",
       "statusLine": "DB {dbStatus} · {active}/{total} modules active · Inspected at {inspectedAt}",
       "moduleActive": "Active",
-      "moduleOff": "Off"
+      "moduleOff": "Disabled",
+      "moduleDisabled": "Disabled",
+      "moduleStopped": "Stopped",
+      "moduleReason": "Reason: {reason}"
     },
     "kpi": {
       "totalCases": "Total Cases",

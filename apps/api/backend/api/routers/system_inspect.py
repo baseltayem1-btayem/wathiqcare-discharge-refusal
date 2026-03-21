@@ -41,8 +41,42 @@ def _check_db() -> Dict[str, Any]:
         return {"reachable": False, "error": str(exc)}
 
 
+def _shc_status() -> Dict[str, Any]:
+    """Return structured SHC module status and readiness reason."""
+    module_enabled = _flag("SHC_COMPLIANCE_MODULE")
+    if not module_enabled:
+        return {
+            "module_enabled": False,
+            "engine_status": "disabled",
+            "reason": "SHC_COMPLIANCE_MODULE=false",
+        }
+
+    jwt_secret = (os.getenv("JWT_SECRET_KEY") or "").strip()
+    if not jwt_secret or jwt_secret == "change-me":
+        return {
+            "module_enabled": True,
+            "engine_status": "stopped",
+            "reason": "JWT_SECRET_KEY is missing or using default placeholder",
+        }
+
+    jwt_algorithm = (os.getenv("JWT_ALGORITHM") or "HS256").strip().upper()
+    if jwt_algorithm != "HS256":
+        return {
+            "module_enabled": True,
+            "engine_status": "stopped",
+            "reason": f"JWT_ALGORITHM must be HS256 (got: {jwt_algorithm})",
+        }
+
+    return {
+        "module_enabled": True,
+        "engine_status": "active",
+        "reason": None,
+    }
+
+
 def _modules() -> List[Dict[str, Any]]:
     """Report which optional feature modules are active."""
+    shc_status = _shc_status()
     return [
         {
             "name": "discharge_refusal",
@@ -52,7 +86,8 @@ def _modules() -> List[Dict[str, Any]]:
         {
             "name": "shc_discharge_compliance",
             "description": "SHC Discharge Compliance Engine",
-            "enabled": _flag("SHC_COMPLIANCE_MODULE"),
+            "enabled": shc_status["module_enabled"],
+            "status": shc_status,
         },
         {
             "name": "home_healthcare",
@@ -116,6 +151,7 @@ def system_inspect() -> Dict[str, Any]:
     db_status = _check_db()
     modules = _modules()
     integrations = _integrations()
+    shc_status = _shc_status()
 
     # "healthy" means: DB is reachable AND the two mandatory integration
     # flags are switched on.  Integration flags reflect *configuration*
@@ -125,7 +161,9 @@ def system_inspect() -> Dict[str, Any]:
     )
     overall_status = (
         "healthy"
-        if db_status["reachable"] and core_integrations_configured
+        if db_status["reachable"]
+        and core_integrations_configured
+        and not (shc_status["module_enabled"] and shc_status["engine_status"] != "active")
         else "degraded"
     )
 
@@ -138,5 +176,6 @@ def system_inspect() -> Dict[str, Any]:
         },
         "database": db_status,
         "modules": modules,
+        "shc": shc_status,
         "integrations": integrations,
     }

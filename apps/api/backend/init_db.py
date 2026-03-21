@@ -7,6 +7,10 @@ from backend.models.audit_log import AuditLog
 from backend.models.discharge_workflow import DischargeRefusalWorkflow
 from backend.models.workflow_document import DischargeWorkflowDocument
 from backend.models.workflow_case_documentation import DischargeWorkflowCaseDocumentation
+from backend.models.integration_connector import IntegrationConnector
+from backend.models.integration_alert_log import IntegrationAlertLog
+from backend.models.integration_run import IntegrationRun, IntegrationRunItem, IntegrationError
+from backend.models.integration_sla_breach import IntegrationSLABreach
 
 Base.metadata.create_all(bind=engine)
 

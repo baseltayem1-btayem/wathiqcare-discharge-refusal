@@ -18,6 +18,11 @@ type SystemModule = {
   name: string;
   description: string;
   enabled: boolean;
+  status?: {
+    module_enabled: boolean;
+    engine_status: "active" | "disabled" | "stopped";
+    reason: string | null;
+  };
 };
 
 type SystemInspectData = {
@@ -27,6 +32,41 @@ type SystemInspectData = {
   modules: SystemModule[];
   integrations: Record<string, { enabled: boolean; description: string }>;
 };
+
+function getModuleHealth(
+  mod: SystemModule,
+): { labelKey: "moduleActive" | "moduleDisabled" | "moduleStopped"; textClass: string; reason: string | null } {
+  if (mod.name === "shc_discharge_compliance" && mod.status) {
+    if (mod.status.engine_status === "active") {
+      return { labelKey: "moduleActive", textClass: "font-medium text-emerald-700", reason: null };
+    }
+    if (mod.status.engine_status === "disabled") {
+      return {
+        labelKey: "moduleDisabled",
+        textClass: "font-medium text-slate-500",
+        reason: mod.status.reason,
+      };
+    }
+    return {
+      labelKey: "moduleStopped",
+      textClass: "font-medium text-rose-700",
+      reason: mod.status.reason,
+    };
+  }
+
+  return {
+    labelKey: mod.enabled ? "moduleActive" : "moduleDisabled",
+    textClass: mod.enabled ? "font-medium text-emerald-700" : "font-medium text-slate-500",
+    reason: null,
+  };
+}
+
+function isOperational(mod: SystemModule): boolean {
+  if (mod.name === "shc_discharge_compliance" && mod.status) {
+    return mod.status.engine_status === "active";
+  }
+  return mod.enabled;
+}
 
 export default function DashboardPage() {
   const { t, locale } = useI18n();
@@ -172,7 +212,7 @@ export default function DashboardPage() {
                   >
                     {t("dashboard.health.statusLine", {
                       dbStatus: launch.database.reachable ? t("dashboard.health.dbReachable") : t("dashboard.health.dbUnreachable"),
-                      active: launch.modules.filter((m) => m.enabled).length,
+                      active: launch.modules.filter((m) => isOperational(m)).length,
                       total: launch.modules.length,
                       inspectedAt: new Date(launch.api.inspected_at).toLocaleTimeString(locale),
                     })}
@@ -192,17 +232,25 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {launch.modules.map((mod) => (
-                <div
-                  key={mod.name}
-                  className="flex items-center justify-between rounded-xl border border-white/60 bg-white/60 px-3 py-2 text-xs"
-                >
-                  <span className="text-slate-700">{mod.description}</span>
-                  <span className={mod.enabled ? "font-medium text-emerald-700" : "font-medium text-slate-400"}>
-                    {mod.enabled ? t("dashboard.health.moduleActive") : t("dashboard.health.moduleOff")}
-                  </span>
-                </div>
-              ))}
+              {launch.modules.map((mod) => {
+                const health = getModuleHealth(mod);
+                return (
+                  <div
+                    key={mod.name}
+                    className="rounded-xl border border-white/60 bg-white/60 px-3 py-2 text-xs"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-slate-700">{mod.description}</span>
+                      <span className={health.textClass}>{t(`dashboard.health.${health.labelKey}`)}</span>
+                    </div>
+                    {health.reason ? (
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        {t("dashboard.health.moduleReason", { reason: health.reason })}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : null}

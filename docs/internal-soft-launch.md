@@ -122,7 +122,9 @@ Manual browser validation (required):
 ### Pre-Launch (T-24h)
 - Confirm production environment variables are set:
   - `DATABASE_URL`
+  - `SHC_COMPLIANCE_MODULE` (set to `true` to activate SHC module)
   - `JWT_SECRET_KEY`
+  - `JWT_ALGORITHM` (must be `HS256`)
   - `ACCESS_TOKEN_EXPIRE_MINUTES`
   - Optional integration flags:
     - `HIS_INTEGRATION_ENABLED`
@@ -132,6 +134,9 @@ Manual browser validation (required):
     - `ERP_ENABLED`
 - Run full quality gate:
   - `./check_all.sh`
+- Verify JWT consistency across platforms:
+  - Vercel `JWT_SECRET_KEY` must match Railway `JWT_SECRET_KEY`
+  - Backend SHC routes will reject signed tokens if key or algorithm differs
 - Confirm database migrations are applied
 - Seed at least one pilot tenant and pilot users (Doctor, Nurse, Legal Officer, HIM)
 

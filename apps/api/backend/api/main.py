@@ -5,6 +5,10 @@ from backend.api.routers.home_healthcare import router as home_healthcare_router
 from backend.api.routers.integration import router as integration_router
 from backend.api.routers.emails import router as emails_router
 from backend.api.routers.secure_links import router as secure_links_router
+from backend.services.integration_monitoring_service import (
+	start_integration_scheduler,
+	stop_integration_scheduler,
+)
 
 app = FastAPI()
 
@@ -14,3 +18,13 @@ app.include_router(home_healthcare_router)
 app.include_router(integration_router)
 app.include_router(emails_router)
 app.include_router(secure_links_router)
+
+
+@app.on_event("startup")
+def _startup_integration_scheduler() -> None:
+	start_integration_scheduler()
+
+
+@app.on_event("shutdown")
+def _shutdown_integration_scheduler() -> None:
+	stop_integration_scheduler()

@@ -45,13 +45,39 @@ class TestSystemInspectHelpers:
 
         shc = next(m for m in _modules() if m["name"] == "shc_discharge_compliance")
         assert shc["enabled"] is False
+        assert shc["status"]["engine_status"] == "disabled"
 
     def test_shc_module_enabled_via_env(self, monkeypatch):
         monkeypatch.setenv("SHC_COMPLIANCE_MODULE", "true")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret")
+        monkeypatch.setenv("JWT_ALGORITHM", "HS256")
         from backend.api.routers.system_inspect import _modules
 
         shc = next(m for m in _modules() if m["name"] == "shc_discharge_compliance")
         assert shc["enabled"] is True
+        assert shc["status"]["engine_status"] == "active"
+
+    def test_shc_enabled_but_missing_jwt_secret_reports_stopped(self, monkeypatch):
+        monkeypatch.setenv("SHC_COMPLIANCE_MODULE", "true")
+        monkeypatch.delenv("JWT_SECRET_KEY", raising=False)
+        monkeypatch.setenv("JWT_ALGORITHM", "HS256")
+        from backend.api.routers.system_inspect import _shc_status
+
+        status = _shc_status()
+        assert status["module_enabled"] is True
+        assert status["engine_status"] == "stopped"
+        assert "JWT_SECRET_KEY" in status["reason"]
+
+    def test_shc_enabled_with_wrong_algorithm_reports_stopped(self, monkeypatch):
+        monkeypatch.setenv("SHC_COMPLIANCE_MODULE", "true")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret")
+        monkeypatch.setenv("JWT_ALGORITHM", "RS256")
+        from backend.api.routers.system_inspect import _shc_status
+
+        status = _shc_status()
+        assert status["module_enabled"] is True
+        assert status["engine_status"] == "stopped"
+        assert "JWT_ALGORITHM" in status["reason"]
 
     def test_integrations_has_required_keys(self):
         from backend.api.routers.system_inspect import _integrations
@@ -109,11 +135,30 @@ class TestSystemInspectEndpoint:
         assert "api" in data
         assert "database" in data
         assert "modules" in data
+        assert "shc" in data
         assert "integrations" in data
 
     def test_status_is_healthy_when_db_reachable(self, client):
         data = client.get("/api/system/inspect").json()
         assert data["status"] == "healthy"
+
+    def test_status_is_degraded_when_shc_enabled_but_invalid(self, monkeypatch):
+        from fastapi.testclient import TestClient
+        from backend.main import app
+
+        monkeypatch.setattr(
+            "backend.api.routers.system_inspect._check_db",
+            lambda: {"reachable": True, "error": None},
+        )
+        monkeypatch.setenv("SHC_COMPLIANCE_MODULE", "true")
+        monkeypatch.delenv("JWT_SECRET_KEY", raising=False)
+        monkeypatch.setenv("JWT_ALGORITHM", "HS256")
+
+        response = TestClient(app).get("/api/system/inspect")
+        data = response.json()
+        assert response.status_code == 200
+        assert data["status"] == "degraded"
+        assert data["shc"]["engine_status"] == "stopped"
 
     def test_status_is_degraded_when_db_unreachable(self, monkeypatch):
         from fastapi.testclient import TestClient

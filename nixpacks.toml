@@ -1,0 +1,16 @@
+[phases.setup]
+nixPkgs = ["python312", "gcc"]
+
+[phases.install]
+cmds = [
+  "python -m venv /opt/venv",
+  ". /opt/venv/bin/activate && pip install --upgrade pip",
+  ". /opt/venv/bin/activate && pip install -r requirements.txt",
+  ". /opt/venv/bin/activate && pip install -r apps/api/requirements.txt"
+]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = ". /opt/venv/bin/activate && cd apps/api && uvicorn backend.main:app --host 0.0.0.0 --port $PORT"

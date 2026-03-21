@@ -15,6 +15,10 @@ from backend.models.workflow_notification import WorkflowNotification
 from backend.models.workflow_audit_log import WorkflowAuditLog
 from backend.models.assignment_rule import AssignmentRule
 from backend.models.secure_discharge_link import SecureDischargeLink
+from backend.models.integration_connector import IntegrationConnector
+from backend.models.integration_alert_log import IntegrationAlertLog
+from backend.models.integration_run import IntegrationError, IntegrationRun, IntegrationRunItem
+from backend.models.integration_sla_breach import IntegrationSLABreach
 from backend.models.discharge_legal_workflow import (
 	DischargeDocument,
 	DischargeEncounter,
@@ -44,6 +48,11 @@ __all__ = [
 	"WorkflowAuditLog",
 	"AssignmentRule",
 	"SecureDischargeLink",
+	"IntegrationConnector",
+	"IntegrationAlertLog",
+	"IntegrationRun",
+	"IntegrationRunItem",
+	"IntegrationError",
 	"Patient",
 	"Tenant",
 	"User",
