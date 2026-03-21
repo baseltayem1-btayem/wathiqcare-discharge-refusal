@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 from threading import Lock
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from backend.schemas.auth import LoginRequest, TokenResponse
 from backend.core.database import SessionLocal
 from backend.models.user import User
 from backend.models.tenant import Tenant
 from backend.core.security import verify_password, create_access_token
+from backend.api.deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -72,3 +73,17 @@ def login(payload: LoginRequest):
 
     finally:
         db.close()
+
+
+@router.get("/validate")
+def validate(current_user=Depends(get_current_user)):
+    return {
+        "authenticated": True,
+        "claims": {
+            "sub": current_user["id"],
+            "email": current_user.get("email"),
+            "role": current_user.get("role"),
+            "tenant_id": current_user.get("tenant_id"),
+            "tenant_code": current_user.get("tenant_code"),
+        },
+    }

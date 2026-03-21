@@ -1,12 +1,14 @@
-import crypto from "node:crypto";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/server/prisma";
 import { ApiError, handleApiError } from "@/lib/server/http";
-import bcrypt from "bcryptjs";
+import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 
 type LoginPayload = {
   email?: string;
   password?: string;
+};
+
+type BackendLoginResponse = {
+  access_token?: string;
 };
 
 const AUTH_DEBUG = process.env.AUTH_DEBUG === "true";
@@ -18,52 +20,61 @@ function authDebugLog(event: string, details: Record<string, unknown> = {}): voi
   console.info("[auth-debug]", event, details);
 }
 
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET_KEY;
-  if (!secret || secret === "change-me") {
-    throw new ApiError(500, "JWT_SECRET_KEY is not configured");
+function normalizeAbsoluteHttpUrl(raw: string | undefined): string | null {
+  const normalized = (raw || "").trim().replace(/\/$/, "");
+  if (!normalized) {
+    return null;
   }
-  return secret;
-}
 
-function getTokenTtlSeconds(): number {
-  const raw = process.env.ACCESS_TOKEN_EXPIRE_MINUTES ?? "30";
-  const minutes = Number(raw);
-  if (!Number.isFinite(minutes) || minutes <= 0) {
-    throw new ApiError(500, "ACCESS_TOKEN_EXPIRE_MINUTES is invalid");
+  if (!/^https?:\/\//i.test(normalized)) {
+    return null;
   }
-  const bounded = Math.max(15, Math.min(30, Math.floor(minutes)));
-  return Math.floor(bounded * 60);
+
+  return normalized;
 }
 
-function base64UrlEncode(value: string): string {
-  return Buffer.from(value, "utf8").toString("base64url");
+function buildBackendUrl(pathname: string): URL {
+  const baseUrl = normalizeAbsoluteHttpUrl(getConfiguredBackendApiBaseUrl() || undefined);
+  if (!baseUrl) {
+    throw new ApiError(503, "Backend authentication service is unavailable.");
+  }
+
+  const base = new URL(baseUrl);
+  const baseWithPath = new URL(base.toString());
+  baseWithPath.pathname = baseWithPath.pathname.endsWith("/")
+    ? baseWithPath.pathname
+    : `${baseWithPath.pathname}/`;
+  const normalizedPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+  return new URL(normalizedPath, baseWithPath);
 }
 
-function createAccessToken(payload: Record<string, unknown>, secret: string): string {
-  const header = {
-    alg: "HS256",
-    typ: "JWT",
-  };
+function getTokenTtlSecondsFromJwt(accessToken: string): number {
+  try {
+    const [, payload] = accessToken.split(".");
+    if (!payload) {
+      return 30 * 60;
+    }
 
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-  const data = `${encodedHeader}.${encodedPayload}`;
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
+      exp?: number;
+    };
+    if (typeof decoded.exp !== "number") {
+      return 30 * 60;
+    }
 
-  const signature = crypto
-    .createHmac("sha256", secret)
-    .update(data)
-    .digest("base64url");
-
-  return `${data}.${signature}`;
+    const now = Math.floor(Date.now() / 1000);
+    const ttl = decoded.exp - now;
+    if (!Number.isFinite(ttl) || ttl <= 0) {
+      return 5 * 60;
+    }
+    return Math.max(5 * 60, Math.min(24 * 60 * 60, Math.floor(ttl)));
+  } catch {
+    return 30 * 60;
+  }
 }
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.DATABASE_URL) {
-      throw new ApiError(500, "DATABASE_URL is not configured");
-    }
-
     const payload = (await request.json().catch(() => null)) as LoginPayload | null;
     const email = payload?.email?.trim().toLowerCase();
     const password = payload?.password;
@@ -72,43 +83,36 @@ export async function POST(request: Request) {
       throw new ApiError(400, "Email and password are required");
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: {
-        primaryTenant: {
-          select: {
-            code: true,
-          },
-        },
+    const endpoint = buildBackendUrl("/auth/login");
+    const backendResponse = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
       },
+      body: JSON.stringify({ email, password }),
     });
 
-    if (!user || !user.hashedPassword || !user.isActive) {
-      throw new ApiError(401, "Invalid credentials");
+    const isJson = (backendResponse.headers.get("content-type") || "").includes("application/json");
+    const backendPayload = isJson
+      ? (await backendResponse.json().catch(() => null) as BackendLoginResponse | { detail?: unknown } | null)
+      : null;
+
+    if (!backendResponse.ok) {
+      const detail = backendPayload && typeof backendPayload === "object" && "detail" in backendPayload
+        ? String(backendPayload.detail ?? "")
+        : "Invalid credentials";
+      throw new ApiError(backendResponse.status, detail || "Invalid credentials");
     }
 
-    const validPassword = await bcrypt.compare(password, user.hashedPassword);
-    if (!validPassword) {
-      throw new ApiError(401, "Invalid credentials");
+    const accessToken = (
+      backendPayload && typeof backendPayload === "object" && "access_token" in backendPayload
+        ? String((backendPayload as BackendLoginResponse).access_token || "")
+        : ""
+    ).trim();
+    if (!accessToken) {
+      throw new ApiError(502, "Backend authentication did not return an access token.");
     }
-
-    const secret = getJwtSecret();
-    const now = Math.floor(Date.now() / 1000);
-    const exp = now + getTokenTtlSeconds();
-
-    const issuer = process.env.JWT_ISSUER?.trim() || null;
-    const accessToken = createAccessToken(
-      {
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        tenant_id: user.tenantId,
-        tenant_code: user.primaryTenant?.code ?? null,
-        exp,
-        ...(issuer ? { iss: issuer } : {}),
-      },
-      secret,
-    );
 
     const response = NextResponse.json({ access_token: accessToken });
     const isProd = process.env.NODE_ENV === "production";
@@ -123,7 +127,7 @@ export async function POST(request: Request) {
       secure: isProd,
       domain: cookieDomain,
       path: "/",
-      maxAge: getTokenTtlSeconds(),
+      maxAge: getTokenTtlSecondsFromJwt(accessToken),
     });
 
     authDebugLog("login_cookie_set", {
@@ -132,7 +136,7 @@ export async function POST(request: Request) {
       sameSite: "lax",
       path: "/",
       domain: cookieDomain ?? "host-only",
-      maxAgeSeconds: getTokenTtlSeconds(),
+      maxAgeSeconds: getTokenTtlSecondsFromJwt(accessToken),
     });
 
     return response;
