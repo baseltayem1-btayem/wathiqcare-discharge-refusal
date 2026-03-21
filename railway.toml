@@ -1,6 +1,6 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "apps/api/Dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 # WORKDIR in the Dockerfile is /app and apps/api/ is copied there,
