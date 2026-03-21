@@ -1,6 +1,8 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "Dockerfile"
+# Railway service rootDirectory=apps/api/ is the build context;
+# this Dockerfile uses paths relative to that directory.
+dockerfilePath = "apps/api/Dockerfile"
 
 [deploy]
 # WORKDIR in the Dockerfile is /app and apps/api/ is copied there,

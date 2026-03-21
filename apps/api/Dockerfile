@@ -6,18 +6,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install dependencies from both root and apps/api requirements files.
-# Build context is the repo root when deployed via railway.toml dockerfilePath.
-COPY requirements.txt /tmp/root-requirements.txt
-COPY apps/api/requirements.txt /tmp/api-requirements.txt
+# Railway service rootDirectory = apps/api/, so the build context IS apps/api/.
+# requirements.txt here == apps/api/requirements.txt (satisfies both installs).
+COPY requirements.txt /tmp/requirements.txt
 
 RUN python -m pip install --upgrade pip && \
-    pip install -r /tmp/root-requirements.txt && \
-    pip install -r /tmp/api-requirements.txt
+    pip install -r /tmp/requirements.txt
 
-# Copy only the backend source (apps/api/) into the container root.
-# No Node.js / Next.js artefacts are included.
-COPY apps/api/ .
+# Copy the entire apps/api/ tree (backend/, tests/, etc.).
+# No Node.js / Next.js artefacts exist in this context.
+COPY . .
 
 EXPOSE 8000
 
