@@ -168,8 +168,8 @@ async function sendViaMicrosoftGraph(args: SendEmailArgs): Promise<EmailDiagnost
 }
 
 export async function sendEmailWithDiagnostics(args: SendEmailArgs): Promise<EmailDiagnostics> {
-    if (smtpConfigured()) {
-        return sendViaSmtp(args);
+    if (!smtpConfigured()) {
+        throw new Error("SMTP email configuration is missing: SMTP_PASS or RESEND_API_KEY must be set");
     }
-    return sendViaMicrosoftGraph(args);
+    return sendViaSmtp(args);
 }
