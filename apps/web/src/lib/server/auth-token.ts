@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { ApiError } from "@/lib/server/http";
+import { getJwtIssuer } from "@/lib/server/jwt";
 
 export function getJwtSecret(): string {
     const secret = process.env.JWT_SECRET_KEY;
@@ -28,8 +29,13 @@ export function createAccessToken(payload: Record<string, unknown>, secret: stri
         typ: "JWT",
     };
 
+    const normalizedPayload = {
+        ...payload,
+        iss: typeof payload.iss === "string" && payload.iss.trim() ? payload.iss : getJwtIssuer(),
+    };
+
     const encodedHeader = base64UrlEncode(JSON.stringify(header));
-    const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+    const encodedPayload = base64UrlEncode(JSON.stringify(normalizedPayload));
     const data = `${encodedHeader}.${encodedPayload}`;
 
     const signature = crypto.createHmac("sha256", secret).update(data).digest("base64url");
