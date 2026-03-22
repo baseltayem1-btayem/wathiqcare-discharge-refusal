@@ -260,7 +260,7 @@ export default function PlatformPage() {
 
     if (forbidden) {
         return (
-            <AuthGuard authFailureMode="inline">
+            <AuthGuard authFailureMode="inline" blocking={false}>
                 <AppShell title="WathiqCare Platform Management" subtitle="Centralized platform administration">
                     <AccessDenied resource="Platform Admin Portal" />
                 </AppShell>
@@ -269,7 +269,7 @@ export default function PlatformPage() {
     }
 
     return (
-        <AuthGuard>
+        <AuthGuard blocking={false}>
             <AppShell
                 title="WathiqCare Platform Management"
                 subtitle="Platform Admin Console for tenants, subscriptions, licensing seats, and billing"

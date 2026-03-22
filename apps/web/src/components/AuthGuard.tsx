@@ -10,9 +10,10 @@ import { type AuthFailureMode, validateSessionForRoute } from "@/utils/api";
 type AuthGuardProps = {
   children: ReactNode;
   authFailureMode?: AuthFailureMode;
+  blocking?: boolean;
 };
 
-export default function AuthGuard({ children, authFailureMode = "redirect" }: AuthGuardProps) {
+export default function AuthGuard({ children, authFailureMode = "redirect", blocking = true }: AuthGuardProps) {
   const pathname = usePathname();
   const { t } = useI18n();
   const [checking, setChecking] = useState(true);
@@ -62,7 +63,7 @@ export default function AuthGuard({ children, authFailureMode = "redirect" }: Au
     };
   }, [authFailureMode, pathname]);
 
-  if (checking) {
+  if (checking && blocking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100 p-6">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

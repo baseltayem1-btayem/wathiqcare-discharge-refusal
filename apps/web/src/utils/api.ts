@@ -72,11 +72,15 @@ export type SessionValidationOutcome = SessionValidationResult & {
 };
 
 async function checkSessionWithAuthMe(reason: string): Promise<SessionValidationResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
   try {
     const response = await fetch(AUTH_ME_PATH, {
       method: "GET",
       cache: "no-store",
       credentials: "include",
+      signal: controller.signal,
     });
 
     if (response.ok) {
@@ -89,6 +93,8 @@ async function checkSessionWithAuthMe(reason: string): Promise<SessionValidation
   } catch (error) {
     console.error(`[auth] auth/me check errored after ${reason}; preserving current route.`, error);
     return { valid: null, status: null };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
