@@ -1,7 +1,7 @@
 import { InvoiceStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
-import { handleApiError } from "@/lib/server/http";
+import { hasPlatformAccess, requireAuth } from "@/lib/server/auth";
+import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
 
@@ -16,16 +16,28 @@ function parseInvoiceStatus(value: string | null): InvoiceStatus | null {
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireAuth(request);
+    const platformAccess = hasPlatformAccess(auth);
     const url = new URL(request.url);
     const status = parseInvoiceStatus(url.searchParams.get("status"));
     const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? "50"), 1), 200);
 
+    if (!platformAccess && !auth.tenant_id) {
+      throw new ApiError(403, "Tenant context is required for invoice access");
+    }
+
     const invoices = await prisma.invoice.findMany({
       where: {
-        tenantId: auth.tenant_id,
+        ...(platformAccess ? {} : { tenantId: auth.tenant_id }),
         ...(status ? { status } : {}),
       },
       include: {
+        tenant: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
+        },
         subscription: {
           include: {
             plan: true,

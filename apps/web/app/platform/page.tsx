@@ -12,6 +12,23 @@ type AuthMeResponse = {
     userType?: "platform_admin" | "tenant_admin" | "tenant_user";
 };
 
+type SetupStatus = {
+    initialized: boolean;
+    tenantCount: number;
+    userCount: number;
+    platformAdminCount: number;
+    subscriptionCount: number;
+};
+
+type SubscriptionSummary = {
+    total: number;
+    active: number;
+    trialing: number;
+    pastDue: number;
+    canceled: number;
+    totalLicensedSeats: number;
+};
+
 type TenantListItem = {
     id: string;
     code: string;
@@ -48,10 +65,13 @@ const BILLING_OPTIONS = ["MONTHLY", "YEARLY"] as const;
 const SUB_STATUS_OPTIONS = ["TRIALING", "ACTIVE", "PAST_DUE", "PAUSED", "CANCELED", "EXPIRED"] as const;
 
 export default function PlatformPage() {
-    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [forbidden, setForbidden] = useState(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
+    const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
+    const [subscriptionSummary, setSubscriptionSummary] = useState<SubscriptionSummary | null>(null);
+    const [widgetErrors, setWidgetErrors] = useState<{ setup?: string; tenants?: string; billing?: string; subscriptions?: string }>({});
 
     const [tenants, setTenants] = useState<TenantListItem[]>([]);
     const [invoices, setInvoices] = useState<InvoiceItem[]>([]);
@@ -77,8 +97,9 @@ export default function PlatformPage() {
     const [savingSubscription, setSavingSubscription] = useState(false);
 
     const loadPlatformData = useCallback(async () => {
-        setLoading(true);
+        setRefreshing(true);
         setError("");
+        setWidgetErrors({});
 
         try {
             const me = await apiFetch<AuthMeResponse>("/api/auth/me", { cache: "no-store" });
@@ -88,29 +109,62 @@ export default function PlatformPage() {
                 return;
             }
 
-            const [tenantData, invoiceData] = await Promise.all([
+            setForbidden(false);
+
+            const [setupResult, tenantResult, invoiceResult, subscriptionResult] = await Promise.allSettled([
+                apiFetch<SetupStatus>("/api/admin/setup/status", { cache: "no-store" }),
                 apiFetch<TenantListItem[]>("/api/tenants?limit=100", { cache: "no-store" }),
                 apiFetch<InvoiceItem[]>("/api/billing/invoices?limit=30", { cache: "no-store" }),
+                apiFetch<SubscriptionSummary>("/api/subscription/summary", { cache: "no-store" }),
             ]);
 
-            const list = Array.isArray(tenantData) ? tenantData : [];
-            setTenants(list);
-            setInvoices(Array.isArray(invoiceData) ? invoiceData : []);
+            const nextWidgetErrors: { setup?: string; tenants?: string; billing?: string; subscriptions?: string } = {};
 
-            const defaultTenant = selectedTenantId || list[0]?.id || "";
-            setSelectedTenantId(defaultTenant);
+            if (setupResult.status === "fulfilled") {
+                setSetupStatus(setupResult.value);
+            } else {
+                nextWidgetErrors.setup = setupResult.reason instanceof Error ? setupResult.reason.message : "Failed to load setup status";
+            }
 
-            const selectedTenant = list.find((item) => item.id === defaultTenant);
-            setSubscriptionForm((prev) => ({
-                ...prev,
-                planCode: selectedTenant?.subscriptions?.[0]?.plan?.code || prev.planCode,
-                status: selectedTenant?.subscriptions?.[0]?.status || prev.status,
-                seatLimit: selectedTenant?.subscriptions?.[0]?.seatLimit || prev.seatLimit,
-            }));
+            if (tenantResult.status === "fulfilled") {
+                const list = Array.isArray(tenantResult.value) ? tenantResult.value : [];
+                setTenants(list);
+
+                const defaultTenant = selectedTenantId || list[0]?.id || "";
+                setSelectedTenantId(defaultTenant);
+
+                const selectedTenant = list.find((item) => item.id === defaultTenant);
+                setSubscriptionForm((prev) => ({
+                    ...prev,
+                    planCode: selectedTenant?.subscriptions?.[0]?.plan?.code || prev.planCode,
+                    status: selectedTenant?.subscriptions?.[0]?.status || prev.status,
+                    seatLimit: selectedTenant?.subscriptions?.[0]?.seatLimit || prev.seatLimit,
+                }));
+            } else {
+                nextWidgetErrors.tenants = tenantResult.reason instanceof Error ? tenantResult.reason.message : "Failed to load tenants";
+            }
+
+            if (invoiceResult.status === "fulfilled") {
+                setInvoices(Array.isArray(invoiceResult.value) ? invoiceResult.value : []);
+            } else {
+                nextWidgetErrors.billing = invoiceResult.reason instanceof Error ? invoiceResult.reason.message : "Failed to load billing";
+            }
+
+            if (subscriptionResult.status === "fulfilled") {
+                setSubscriptionSummary(subscriptionResult.value);
+            } else {
+                nextWidgetErrors.subscriptions = subscriptionResult.reason instanceof Error ? subscriptionResult.reason.message : "Failed to load subscription summary";
+            }
+
+            setWidgetErrors(nextWidgetErrors);
+
+            if (Object.keys(nextWidgetErrors).length > 0 && Object.keys(nextWidgetErrors).length === 4) {
+                setError("Platform widgets failed to load. Try refresh.");
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load platform data");
         } finally {
-            setLoading(false);
+            setRefreshing(false);
         }
     }, [selectedTenantId]);
 
@@ -226,21 +280,33 @@ export default function PlatformPage() {
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
                         <RefreshCw className="h-4 w-4" />
-                        Refresh
+                        {refreshing ? "Refreshing..." : "Refresh"}
                     </button>
                 }
             >
-                {loading ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">Loading platform portal...</div> : null}
                 {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
                 {notice ? <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
+                {refreshing ? <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Refreshing platform data...</div> : null}
 
-                <section className="grid gap-4 md:grid-cols-3">
+                <section className="grid gap-4 md:grid-cols-4">
                     <div className="rounded-2xl border border-slate-200 bg-white p-4">
                         <div className="flex items-center justify-between">
                             <p className="text-sm text-slate-500">Tenants</p>
                             <Building2 className="h-4 w-4 text-slate-600" />
                         </div>
                         <p className="mt-2 text-2xl font-bold text-slate-900">{tenants.length}</p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm text-slate-500">Setup Status</p>
+                            <ShieldCheck className="h-4 w-4 text-slate-600" />
+                        </div>
+                        <p className={`mt-2 text-xl font-bold ${setupStatus?.initialized ? "text-emerald-700" : "text-amber-700"}`}>
+                            {setupStatus?.initialized ? "Initialized" : "Pending"}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                            Admins: {setupStatus?.platformAdminCount ?? 0} | Users: {setupStatus?.userCount ?? 0}
+                        </p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-white p-4">
                         <div className="flex items-center justify-between">
@@ -251,12 +317,23 @@ export default function PlatformPage() {
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-white p-4">
                         <div className="flex items-center justify-between">
-                            <p className="text-sm text-slate-500">Outstanding Due</p>
-                            <ShieldCheck className="h-4 w-4 text-slate-600" />
+                            <p className="text-sm text-slate-500">Licensed Seats</p>
+                            <Users className="h-4 w-4 text-slate-600" />
                         </div>
-                        <p className="mt-2 text-2xl font-bold text-slate-900">${(billingTotals.totalDue / 100).toFixed(2)}</p>
+                        <p className="mt-2 text-2xl font-bold text-slate-900">{subscriptionSummary?.totalLicensedSeats ?? 0}</p>
+                        <p className="mt-1 text-xs text-slate-500">Active subscriptions: {subscriptionSummary?.active ?? 0}</p>
                     </div>
                 </section>
+
+                {(widgetErrors.setup || widgetErrors.tenants || widgetErrors.billing || widgetErrors.subscriptions) ? (
+                    <section className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                        <p className="font-semibold">Some widgets could not load, but the page remains usable.</p>
+                        {widgetErrors.setup ? <p className="mt-1">Setup status: {widgetErrors.setup}</p> : null}
+                        {widgetErrors.tenants ? <p className="mt-1">Tenants: {widgetErrors.tenants}</p> : null}
+                        {widgetErrors.billing ? <p className="mt-1">Billing: {widgetErrors.billing}</p> : null}
+                        {widgetErrors.subscriptions ? <p className="mt-1">Subscriptions: {widgetErrors.subscriptions}</p> : null}
+                    </section>
+                ) : null}
 
                 <section className="mt-5 grid gap-5 lg:grid-cols-2">
                     <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -346,6 +423,7 @@ export default function PlatformPage() {
                             Billing Summary
                         </div>
                         <p className="mt-1">Invoices: {billingTotals.invoiceCount} | Total invoiced: ${(billingTotals.totalInvoiced / 100).toFixed(2)} | Outstanding due: ${(billingTotals.totalDue / 100).toFixed(2)}</p>
+                        <p className="mt-1">Subscription summary: total {subscriptionSummary?.total ?? 0}, active {subscriptionSummary?.active ?? 0}, past due {subscriptionSummary?.pastDue ?? 0}</p>
                     </div>
                 </section>
             </AppShell>
