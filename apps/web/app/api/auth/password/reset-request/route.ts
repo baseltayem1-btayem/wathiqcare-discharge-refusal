@@ -34,7 +34,8 @@ async function sendPasswordResetEmail(args: { to: string; resetLink: string; exp
     });
 
     if (!tokenResponse.ok) {
-        throw new Error(`Failed to get Microsoft Graph token (${tokenResponse.status})`);
+        const detail = await tokenResponse.text().catch(() => "");
+        throw new Error(`Failed to get Microsoft Graph token (${tokenResponse.status}): ${detail}`);
     }
 
     const tokenJson = (await tokenResponse.json()) as { access_token?: string };
@@ -92,6 +93,8 @@ function readResetBaseUrl(): string {
 
 export async function POST(request: NextRequest) {
     try {
+        console.info("RESET_REQUEST_RECEIVED");
+
         const payload = (await request.json().catch(() => null)) as PasswordResetRequestPayload | null;
         if (!payload) {
             throw new ApiError(400, "Invalid JSON body");
@@ -111,11 +114,12 @@ export async function POST(request: NextRequest) {
         });
 
         // Non-specific response to prevent email enumeration
-        if (!user || !user.hashedPassword) {
+        if (!user) {
             return NextResponse.json({ message: "If an account exists with this email, a password reset link has been sent." });
         }
 
         // Generate reset token
+        console.info("RESET_TOKEN_CREATED", { userId: user.id, email: user.email });
         const rawToken = generateResetToken();
         const tokenHash = hashResetToken(rawToken);
         const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
@@ -126,6 +130,7 @@ export async function POST(request: NextRequest) {
       INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, used)
       VALUES (${tokenId}, ${user.id}, ${tokenHash}, ${expiresAt}, FALSE)
     `;
+        console.info("RESET_TOKEN_STORED", { tokenId, userId: user.id, expiresAt: expiresAt.toISOString() });
 
         // Mark old tokens as used
         await prisma.$executeRaw`
@@ -139,13 +144,20 @@ export async function POST(request: NextRequest) {
 
         // Send email
         try {
+            console.info("RESET_EMAIL_SEND_STARTED", { tokenId, userId: user.id, to: user.email, resetLinkHost: readResetBaseUrl() });
             await sendPasswordResetEmail({
                 to: user.email,
                 resetLink,
                 expiresMinutes: PASSWORD_RESET_TTL_MINUTES,
             });
+            console.info("RESET_EMAIL_SEND_SUCCESS", { tokenId, userId: user.id, to: user.email });
         } catch (error) {
-            console.error("Failed to send password reset email:", error);
+            console.error("RESET_EMAIL_SEND_FAILURE", {
+                tokenId,
+                userId: user.id,
+                to: user.email,
+                error: error instanceof Error ? error.message : String(error),
+            });
             // Still return success to prevent information leakage
         }
 
