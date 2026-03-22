@@ -4,6 +4,7 @@ import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { normalizeEmail } from "@/lib/server/auth-domain-policy";
 import { generateResetToken, hashResetToken } from "@/lib/server/password";
+import { sendEmailWithDiagnostics } from "@/lib/server/email-provider";
 
 const PASSWORD_RESET_TTL_MINUTES = 30;
 
@@ -11,37 +12,7 @@ type PasswordResetRequestPayload = {
     email?: string;
 };
 
-async function sendPasswordResetEmail(args: { to: string; resetLink: string; expiresMinutes: number }): Promise<void> {
-    const tenantId = process.env.MICROSOFT_TENANT_ID?.trim();
-    const clientId = process.env.MICROSOFT_CLIENT_ID?.trim();
-    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET?.trim();
-    const senderEmail = process.env.MICROSOFT_SENDER_EMAIL?.trim().toLowerCase();
-
-    if (!tenantId || !clientId || !clientSecret || !senderEmail) {
-        throw new Error("Microsoft Graph email configuration is missing");
-    }
-
-    const tokenResponse = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            client_id: clientId,
-            client_secret: clientSecret,
-            scope: "https://graph.microsoft.com/.default",
-            grant_type: "client_credentials",
-        }),
-        cache: "no-store",
-    });
-
-    if (!tokenResponse.ok) {
-        const detail = await tokenResponse.text().catch(() => "");
-        throw new Error(`Failed to get Microsoft Graph token (${tokenResponse.status}): ${detail}`);
-    }
-
-    const tokenJson = (await tokenResponse.json()) as { access_token?: string };
-    if (!tokenJson.access_token) {
-        throw new Error("Microsoft Graph token response did not include access_token");
-    }
+async function sendPasswordResetEmail(args: { to: string; resetLink: string; expiresMinutes: number }) {
 
     const html = `
     <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
@@ -57,30 +28,20 @@ async function sendPasswordResetEmail(args: { to: string; resetLink: string; exp
     </div>
   `;
 
-    const sendResponse = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(senderEmail)}/sendMail`, {
-        method: "POST",
-        headers: {
-            authorization: `Bearer ${tokenJson.access_token}`,
-            "content-type": "application/json",
-        },
-        body: JSON.stringify({
-            message: {
-                subject: "WathiqCare Password Reset Request",
-                body: {
-                    contentType: "HTML",
-                    content: html,
-                },
-                toRecipients: [{ emailAddress: { address: args.to } }],
-            },
-            saveToSentItems: true,
-        }),
-        cache: "no-store",
-    });
+    const text = [
+        "WathiqCare Password Reset",
+        "",
+        `Reset your password using this link: ${args.resetLink}`,
+        `This link expires in ${args.expiresMinutes} minutes and can only be used once.`,
+        "If you did not request this password reset, you can ignore this email.",
+    ].join("\n");
 
-    if (!sendResponse.ok) {
-        const detail = await sendResponse.text().catch(() => "");
-        throw new Error(`Failed to send password reset email (${sendResponse.status}): ${detail}`);
-    }
+    return sendEmailWithDiagnostics({
+        to: args.to,
+        subject: "WathiqCare Password Reset Request",
+        html,
+        text,
+    });
 }
 
 function readResetBaseUrl(): string {
@@ -145,12 +106,27 @@ export async function POST(request: NextRequest) {
         // Send email
         try {
             console.info("RESET_EMAIL_SEND_STARTED", { tokenId, userId: user.id, to: user.email, resetLinkHost: readResetBaseUrl() });
-            await sendPasswordResetEmail({
+            const diagnostics = await sendPasswordResetEmail({
                 to: user.email,
                 resetLink,
                 expiresMinutes: PASSWORD_RESET_TTL_MINUTES,
             });
-            console.info("RESET_EMAIL_SEND_SUCCESS", { tokenId, userId: user.id, to: user.email });
+            console.info("RESET_EMAIL_SEND_SUCCESS", {
+                tokenId,
+                userId: user.id,
+                to: user.email,
+                provider: diagnostics.provider,
+                tokenStatus: diagnostics.tokenStatus,
+                tokenBody: diagnostics.tokenBody,
+                sendStatus: diagnostics.sendStatus,
+                sendBody: diagnostics.sendBody,
+                smtpVerifyOk: diagnostics.smtpVerifyOk,
+                smtpVerifyError: diagnostics.smtpVerifyError,
+                smtpSendResponse: diagnostics.smtpSendResponse,
+                smtpAccepted: diagnostics.smtpAccepted,
+                smtpRejected: diagnostics.smtpRejected,
+                messageId: diagnostics.messageId,
+            });
         } catch (error) {
             console.error("RESET_EMAIL_SEND_FAILURE", {
                 tokenId,
