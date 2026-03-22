@@ -15,7 +15,7 @@ function parseInvoiceStatus(value: string | null): InvoiceStatus | null {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const url = new URL(request.url);
     const status = parseInvoiceStatus(url.searchParams.get("status"));
     const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? "50"), 1), 200);

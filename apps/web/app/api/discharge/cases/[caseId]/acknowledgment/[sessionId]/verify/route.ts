@@ -22,7 +22,7 @@ function nowIso(): string {
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
     try {
-        const auth = requireAuth(request);
+        const auth = await requireAuth(request);
         const { caseId, sessionId } = await params;
 
         // Load session from Document record

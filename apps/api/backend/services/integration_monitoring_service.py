@@ -18,6 +18,7 @@ from backend.models.integration_sla_breach import IntegrationSLABreach
 from backend.models.audit_log import AuditLog
 from backend.models.integration_connector import IntegrationConnector
 from backend.models.integration_run import IntegrationError, IntegrationRun, IntegrationRunItem
+from backend.services.workflow_automation_service import run_due_escalation_sweep
 
 logger = logging.getLogger(__name__)
 
@@ -997,7 +998,7 @@ def run_scheduler_tick(*, now: Optional[datetime] = None) -> Dict[str, int]:
     global _scheduler_last_tick_at, _scheduler_last_tick_status
     db = SessionLocal()
     current = now or utcnow()
-    results = {"scheduled": 0, "skipped": 0, "disabled": 0}
+    results = {"scheduled": 0, "skipped": 0, "disabled": 0, "automated_escalations": 0}
     try:
         ensure_connectors_seeded(db)
         recover_stale_active_runs(
@@ -1026,6 +1027,9 @@ def run_scheduler_tick(*, now: Optional[datetime] = None) -> Dict[str, int]:
                 results["skipped"] += 1
                 continue
             results["scheduled"] += 1
+
+        automation_results = run_due_escalation_sweep(now=current)
+        results["automated_escalations"] = automation_results.get("escalated", 0)
 
         _scheduler_last_tick_at = utcnow()
         _scheduler_last_tick_status = {

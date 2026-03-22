@@ -201,7 +201,7 @@ const TEMPLATES: Record<string, TemplateInfo> = {
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
     try {
-        const auth = requireAuth(request);
+        const auth = await requireAuth(request);
         const { caseId } = await params;
 
         const body = (await request.json().catch(() => ({}))) as {

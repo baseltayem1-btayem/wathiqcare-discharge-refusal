@@ -1,10 +1,19 @@
+import uuid
+import os
+
 from backend.core.database import SessionLocal
 from backend.models.tenant import Tenant
 from backend.models.user import User
 from backend.core.security import get_password_hash
-import uuid
 
 db = SessionLocal()
+
+
+def _required_password(env_name: str) -> str:
+    value = (os.getenv(env_name) or "").strip()
+    if not value:
+        raise RuntimeError(f"Missing required environment variable: {env_name}")
+    return value
 
 
 def ensure_tenant(code: str, name: str, domain: str) -> Tenant:
@@ -66,7 +75,7 @@ try:
         email="admin@imc.local",
         full_name="IMC Admin",
         role="tenant_admin",
-        password="Admin@123",
+        password=_required_password("IMC_ADMIN_PASSWORD"),
     )
 
     wathiqcare_tenant = ensure_tenant(
@@ -79,7 +88,7 @@ try:
         email="admin@wathiqcare.online",
         full_name="WathiqCare Admin",
         role="tenant_admin",
-        password="WCare@2026",
+        password=_required_password("WATHIQCARE_ADMIN_PASSWORD"),
     )
 
     db.commit()

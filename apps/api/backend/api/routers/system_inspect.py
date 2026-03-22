@@ -3,7 +3,7 @@ system_inspect.py
 -----------------
 System inspection endpoint for WathiqCare.
 
-Provides a lightweight, unauthenticated ``GET /api/system/inspect`` endpoint
+Provides an authenticated ``GET /api/system/inspect`` endpoint
 that returns the operational status of all system modules, third-party
 integrations, and database connectivity.  The response is deliberately
 schema-stable so that external health-check probes and the frontend
@@ -16,8 +16,10 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sqlalchemy import text
+
+from backend.api.deps import require_roles
 
 router = APIRouter(prefix="/api/system", tags=["System"])
 
@@ -138,7 +140,9 @@ def _integrations() -> Dict[str, Any]:
 
 
 @router.get("/inspect")
-def system_inspect() -> Dict[str, Any]:
+def system_inspect(
+    _: Dict[str, Any] = Depends(require_roles("platform_superadmin", "platform_admin")),
+) -> Dict[str, Any]:
     """
     Return a comprehensive snapshot of the system's operational health:
 

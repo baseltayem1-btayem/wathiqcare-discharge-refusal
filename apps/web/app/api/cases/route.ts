@@ -1,9 +1,11 @@
 import { CaseStatus, CaseType, Prisma, UsageMetric } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
+import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
+import { CASE_CREATOR_ROLES, userRoleAllows } from "@/lib/server/roles";
+import { ensureOperationStateForCase } from "@/lib/server/operations";
 import {
   enforcePlanUsage,
   recordUsage,
@@ -33,7 +35,8 @@ function defaultCaseNumber(): string {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
+    const tenantId = requireTenantId(auth);
     const url = new URL(request.url);
 
     const status = parseCaseStatus(url.searchParams.get("status"));
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     const cases = await prisma.case.findMany({
       where: {
-        tenantId: auth.tenant_id,
+        tenantId,
         ...(status ? { status } : {}),
       },
       include: {
@@ -64,34 +67,48 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
+    const tenantId = requireTenantId(auth);
+
+    if (!userRoleAllows(auth.role, CASE_CREATOR_ROLES)) {
+      throw new ApiError(403, "Only authorized clinical and tenant-admin roles can create cases");
+    }
+
     const payload = (await request.json().catch(() => null)) as
       | {
-          caseNumber?: string;
-          caseType?: string;
-          title?: string;
-          status?: string;
-          workflowType?: string;
-          patientName?: string;
-          patientIdNumber?: string;
-          medicalRecordNo?: string;
-          roomNumber?: string;
-          metadata?: Prisma.InputJsonValue;
-        }
+        caseNumber?: string;
+        caseType?: string;
+        title?: string;
+        status?: string;
+        workflowType?: string;
+        patientName?: string;
+        patientIdNumber?: string;
+        medicalRecordNo?: string;
+        roomNumber?: string;
+        metadata?: Prisma.InputJsonValue;
+      }
       | null;
 
     if (!payload) {
       throw new ApiError(400, "Invalid JSON body");
     }
 
+    if (payload.caseType != null && parseCaseType(payload.caseType) === null) {
+      throw new ApiError(400, "Invalid caseType");
+    }
+
+    if (payload.status != null && parseCaseStatus(payload.status) === null) {
+      throw new ApiError(400, "Invalid status");
+    }
+
     const caseType = parseCaseType(payload.caseType) ?? CaseType.GENERAL;
     const status = parseCaseStatus(payload.status) ?? CaseStatus.OPEN;
 
-    await enforcePlanUsage(auth.tenant_id, UsageMetric.CASES, BigInt(1));
+    await enforcePlanUsage(tenantId, UsageMetric.CASES, BigInt(1));
 
     const created = await prisma.case.create({
       data: {
-        tenantId: auth.tenant_id,
+        tenantId,
         caseNumber: payload.caseNumber?.trim() || defaultCaseNumber(),
         caseType,
         title: payload.title?.trim() || null,
@@ -107,13 +124,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    await recordUsage(auth.tenant_id, UsageMetric.CASES, BigInt(1), {
+    await recordUsage(tenantId, UsageMetric.CASES, BigInt(1), {
       source: "api/cases",
       caseId: created.id,
     });
 
     await writeAuditLog({
-      tenantId: auth.tenant_id,
+      tenantId,
       userId: auth.sub,
       entityType: "case",
       entityId: created.id,
@@ -125,6 +142,13 @@ export async function POST(request: NextRequest) {
         status: created.status,
       },
       request,
+    });
+
+    await ensureOperationStateForCase({
+      tenantId,
+      caseId: created.id,
+      actorUserId: auth.sub,
+      actorRole: auth.role,
     });
 
     return NextResponse.json(toJsonSafe(created), { status: 201 });

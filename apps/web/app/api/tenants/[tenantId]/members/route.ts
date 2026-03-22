@@ -1,6 +1,6 @@
 import { MembershipRole, MembershipStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, requireTenantAccess } from "@/lib/server/auth";
+import { hasPlatformAccess, requireAuth, requireRole, requireTenantAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
@@ -9,6 +9,10 @@ import {
   syncActiveUserUsage,
   writeAuditLog,
 } from "@/lib/server/saas-services";
+import {
+  canonicalizeUserRole,
+  membershipRoleForUserRole,
+} from "@/lib/server/roles";
 
 function parseMembershipRole(input: unknown): MembershipRole {
   if (typeof input !== "string") {
@@ -23,13 +27,20 @@ function parseMembershipRole(input: unknown): MembershipRole {
   return MembershipRole.MEMBER;
 }
 
+function parseBoolean(value: unknown): boolean {
+  return value === true;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tenantId: string }> },
 ) {
   try {
     const { tenantId } = await params;
-    requireTenantAccess(request, tenantId);
+    const auth = await requireAuth(request);
+    if (!hasPlatformAccess(auth)) {
+      await requireTenantAccess(request, tenantId);
+    }
 
     const members = await prisma.tenantMembership.findMany({
       where: { tenantId },
@@ -61,15 +72,22 @@ export async function POST(
 ) {
   try {
     const { tenantId } = await params;
-    const auth = requireTenantAccess(request, tenantId);
-    requireRole(auth, ["OWNER", "ADMIN"]);
+    const auth = await requireAuth(request);
+    const platformAccess = hasPlatformAccess(auth);
+
+    if (!platformAccess) {
+      const tenantAuth = await requireTenantAccess(request, tenantId);
+      requireRole(tenantAuth, ["OWNER", "ADMIN"]);
+    }
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          email?: string;
-          fullName?: string;
-          role?: string;
-        }
+        email?: string;
+        fullName?: string;
+        role?: string;
+        membershipRole?: string;
+        allowCrossTenantReassignment?: boolean;
+      }
       | null;
 
     const email = payload?.email?.trim().toLowerCase();
@@ -79,21 +97,46 @@ export async function POST(
       throw new ApiError(400, "email and fullName are required");
     }
 
-    const role = parseMembershipRole(payload?.role);
+    const canonicalUserRole = canonicalizeUserRole(payload?.role);
+    const membershipRole = payload?.membershipRole
+      ? parseMembershipRole(payload.membershipRole)
+      : membershipRoleForUserRole(canonicalUserRole);
+
+    if (
+      (canonicalUserRole === "platform_admin" || canonicalUserRole === "platform_superadmin") &&
+      !platformAccess
+    ) {
+      throw new ApiError(403, "Only platform admins can grant platform roles");
+    }
+
+    const allowCrossTenantReassignment = parseBoolean(payload?.allowCrossTenantReassignment);
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (
+      existingUser &&
+      existingUser.tenantId !== tenantId &&
+      !platformAccess &&
+      !allowCrossTenantReassignment
+    ) {
+      throw new ApiError(
+        409,
+        "User belongs to a different primary tenant. Use platform admin reassignment flow.",
+      );
+    }
 
     const user = await prisma.user.upsert({
       where: { email },
       update: {
-        tenantId,
         fullName,
-        role,
+        role: canonicalUserRole,
         isActive: true,
+        ...(platformAccess && allowCrossTenantReassignment ? { tenantId } : {}),
       },
       create: {
         tenantId,
         email,
         fullName,
-        role,
+        role: canonicalUserRole,
         isActive: true,
         hashedPassword: null,
       },
@@ -120,13 +163,13 @@ export async function POST(
         },
       },
       update: {
-        role,
+        role: membershipRole,
         status: MembershipStatus.ACTIVE,
       },
       create: {
         tenantId,
         userId: user.id,
-        role,
+        role: membershipRole,
         status: MembershipStatus.ACTIVE,
       },
       include: {
@@ -153,7 +196,8 @@ export async function POST(
       metadataJson: {
         memberUserId: membership.userId,
         memberEmail: email,
-        role,
+        membershipRole,
+        canonicalUserRole,
       },
       request,
     });

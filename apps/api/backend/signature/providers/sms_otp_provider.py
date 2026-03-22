@@ -6,6 +6,7 @@ import random
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import requests
 
 from backend.signature.acknowledgment_engine import AcknowledgmentMethod
 
@@ -38,17 +39,26 @@ class SmsOtpProvider:
         sent_at = datetime.now(timezone.utc).isoformat()
         stub_mode = self._is_stub_mode()
 
-        # Real provider integration is intentionally guarded and non-breaking.
-        # Until a concrete provider is wired, configured mode is marked as simulated.
-        delivery_status = "sent_stub" if stub_mode else "sent_simulated"
+        if stub_mode:
+            delivery_status = "sent_stub"
+            provider = "stub"
+        else:
+            self._dispatch_live_sms(
+                phone_number=phone_number,
+                otp_code=otp_code,
+                case_id=case_id,
+                document_type=document_type,
+            )
+            delivery_status = "sent"
+            provider = self._provider_name()
 
         return SmsOtpDispatchResult(
             challenge_id=challenge_id,
             delivery_status=delivery_status,
             otp_sent_at=sent_at,
-            provider="stub" if stub_mode else "configured_provider",
+            provider=provider,
             stub_mode=stub_mode,
-            otp_debug_code=otp_code if stub_mode else None,
+            otp_debug_code=otp_code,
         )
 
     @staticmethod
@@ -74,3 +84,57 @@ class SmsOtpProvider:
         provider_url = (os.getenv("WATHIQ_SMS_PROVIDER_URL") or "").strip()
         provider_key = (os.getenv("WATHIQ_SMS_PROVIDER_API_KEY") or "").strip()
         return not provider_url or not provider_key
+
+    @staticmethod
+    def _provider_name() -> str:
+        return (os.getenv("WATHIQ_SMS_PROVIDER_NAME") or "configured_provider").strip() or "configured_provider"
+
+    @staticmethod
+    def _provider_sender_id() -> str | None:
+        value = (os.getenv("WATHIQ_SMS_SENDER_ID") or "").strip()
+        return value or None
+
+    @staticmethod
+    def _provider_timeout_seconds() -> int:
+        raw = (os.getenv("WATHIQ_SMS_PROVIDER_TIMEOUT_SECONDS") or "15").strip()
+        try:
+            return max(3, min(60, int(raw)))
+        except ValueError:
+            return 15
+
+    @staticmethod
+    def _render_message(*, otp_code: str, case_id: str, document_type: str) -> str:
+        return (
+            f"WathiqCare verification code: {otp_code}. "
+            f"Case {case_id}, document {document_type}. "
+            "If you did not request this code, ignore this message."
+        )
+
+    def _dispatch_live_sms(self, *, phone_number: str, otp_code: str, case_id: str, document_type: str) -> None:
+        provider_url = (os.getenv("WATHIQ_SMS_PROVIDER_URL") or "").strip()
+        provider_key = (os.getenv("WATHIQ_SMS_PROVIDER_API_KEY") or "").strip()
+        if not provider_url or not provider_key:
+            raise RuntimeError("SMS provider is not configured")
+
+        response = requests.post(
+            provider_url,
+            json={
+                "to": phone_number,
+                "message": self._render_message(
+                    otp_code=otp_code,
+                    case_id=case_id,
+                    document_type=document_type,
+                ),
+                "sender_id": self._provider_sender_id(),
+                "otp_code": otp_code,
+                "case_id": case_id,
+                "document_type": document_type,
+            },
+            headers={
+                "Content-Type": "application/json",
+                "X-API-Key": provider_key,
+                "Authorization": f"Bearer {provider_key}",
+            },
+            timeout=self._provider_timeout_seconds(),
+        )
+        response.raise_for_status()

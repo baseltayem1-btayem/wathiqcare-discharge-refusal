@@ -1,6 +1,6 @@
 import { CaseStatus, DocumentStatus, DocumentType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
-import type { AuthContext } from "@/lib/server/auth";
+import { requireTenantId, type AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -334,13 +334,14 @@ function mapWorkflowDocument(document: {
 }
 
 async function getAuthorizedCase(auth: AuthContext, caseId: string): Promise<AuthorizedCaseRecord> {
+    const tenantId = requireTenantId(auth);
     const caseRecord = await findCaseWithWorkflow(caseId);
 
     if (!caseRecord) {
         throw new ApiError(404, "Case not found");
     }
 
-    if (caseRecord.tenantId !== auth.tenant_id) {
+    if (caseRecord.tenantId !== tenantId) {
         throw new ApiError(403, "Tenant access denied");
     }
 
@@ -561,6 +562,7 @@ async function createGeneratedDocument(
     payload: Record<string, unknown>,
     templateKey: "discharge_refusal_form" | "financial_responsibility_notice",
 ): Promise<WorkflowDocumentSummary> {
+    const tenantId = requireTenantId(auth);
     const generatedAt = nowIso();
     const locale = normalizeDocumentLocale(payload.locale);
     const html =
@@ -570,7 +572,7 @@ async function createGeneratedDocument(
 
     const document = await prisma.document.create({
         data: {
-            tenantId: auth.tenant_id,
+            tenantId,
             caseId: workflow.case_id,
             documentType:
                 templateKey === "financial_responsibility_notice"
@@ -610,23 +612,26 @@ async function createGeneratedDocument(
 }
 
 export async function getWorkflowSnapshot(auth: AuthContext, caseId: string): Promise<WorkflowSnapshot> {
+    const tenantId = requireTenantId(auth);
     const caseRecord = await getAuthorizedCase(auth, caseId);
     const workflow = buildWorkflowState(caseRecord);
-    const documents = await listWorkflowDocumentsInternal(auth.tenant_id, caseId);
+    const documents = await listWorkflowDocumentsInternal(tenantId, caseId);
     return { ...workflow, documents };
 }
 
 export async function listWorkflowDocuments(auth: AuthContext, caseId: string): Promise<WorkflowDocumentSummary[]> {
+    const tenantId = requireTenantId(auth);
     await getAuthorizedCase(auth, caseId);
-    return listWorkflowDocumentsInternal(auth.tenant_id, caseId);
+    return listWorkflowDocumentsInternal(tenantId, caseId);
 }
 
 export async function listWorkflowAudit(auth: AuthContext, caseId: string): Promise<WorkflowAuditSummary[]> {
+    const tenantId = requireTenantId(auth);
     await getAuthorizedCase(auth, caseId);
 
     const logs = await prisma.auditLog.findMany({
         where: {
-            tenantId: auth.tenant_id,
+            tenantId,
             caseId,
         },
         orderBy: { createdAt: "desc" },
@@ -775,7 +780,7 @@ export async function applyWorkflowAction(args: {
     await persistWorkflowState(auth, caseRecord, workflow);
 
     await writeAuditLog({
-        tenantId: auth.tenant_id,
+        tenantId: requireTenantId(auth),
         userId: auth.sub,
         entityType: generatedDocument ? "document" : "case",
         entityId: generatedDocument?.id ?? caseId,

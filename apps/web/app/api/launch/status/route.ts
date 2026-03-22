@@ -15,7 +15,7 @@ function envFlag(name: string, fallback = "false"): boolean {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
 
     const tenantId = auth.tenant_id;
     const now = Date.now();

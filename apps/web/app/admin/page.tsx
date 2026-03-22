@@ -14,6 +14,11 @@ const INLINE_NO_STORE_AUTH_REQUEST = { cache: "no-store" as const, authFailureMo
 type AuthMeResponse = {
   claims?: {
     tenant_id?: string;
+    platform_role?: string | null;
+  };
+  platformRole?: string | null;
+  user?: {
+    role?: string;
   };
 };
 
@@ -99,12 +104,22 @@ type IntegrationStatus = {
 const PLAN_OPTIONS = ["STARTER", "PROFESSIONAL", "ENTERPRISE"] as const;
 const BILLING_OPTIONS = ["MONTHLY", "YEARLY"] as const;
 const SUB_STATUS_OPTIONS = ["TRIALING", "ACTIVE", "PAST_DUE", "PAUSED", "CANCELED", "EXPIRED"] as const;
-const MEMBER_ROLE_OPTIONS = ["OWNER", "ADMIN", "MANAGER", "BILLING", "MEMBER", "VIEWER"] as const;
+const MEMBER_ROLE_OPTIONS = [
+  "tenant_owner",
+  "tenant_admin",
+  "doctor",
+  "nursing",
+  "reception",
+  "legal_admin",
+  "viewer",
+] as const;
 
 export default function AdminPage() {
   const { t } = useI18n();
 
   const [tenantId, setTenantId] = useState("");
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  const [selectedTenantId, setSelectedTenantId] = useState("");
   const [tenant, setTenant] = useState<TenantSummary | null>(null);
   const [members, setMembers] = useState<MemberItem[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionView | null>(null);
@@ -130,7 +145,7 @@ export default function AdminPage() {
   const [memberForm, setMemberForm] = useState({
     email: "",
     fullName: "",
-    role: "MEMBER",
+    role: "doctor",
   });
 
   const [createTenantForm, setCreateTenantForm] = useState({
@@ -139,6 +154,9 @@ export default function AdminPage() {
     country: "SA",
     timezone: "Asia/Riyadh",
     billingEmail: "",
+    ownerEmail: "",
+    ownerFullName: "",
+    ownerRole: "tenant_owner",
   });
 
   const [loading, setLoading] = useState(true);
@@ -235,9 +253,9 @@ export default function AdminPage() {
 
     return [
       { label: "Doctor", value: roleCount("doctor") },
-      { label: "Nurse", value: roleCount("nurse") },
-      { label: "Legal Officer", value: roleCount("legal_officer") },
-      { label: "HIM", value: roleCount("him") },
+      { label: "Nursing", value: roleCount("nursing") },
+      { label: "Reception", value: roleCount("reception") },
+      { label: "Legal Admin", value: roleCount("legal_admin") },
     ];
   }, [members]);
 
@@ -250,19 +268,33 @@ export default function AdminPage() {
     try {
       const me = await apiFetch<AuthMeResponse>("/api/auth/me", INLINE_NO_STORE_AUTH_REQUEST);
       const resolvedTenantId = me?.claims?.tenant_id;
-      if (!resolvedTenantId) {
+      const platformRole = me?.platformRole ?? me?.claims?.platform_role ?? null;
+      const platformAdmin = Boolean(platformRole);
+      setIsPlatformAdmin(platformAdmin);
+
+      const tenantsData = await apiFetch<TenantListItem[]>('/api/tenants?limit=50', INLINE_NO_STORE_AUTH_REQUEST);
+      const tenantList = Array.isArray(tenantsData) ? tenantsData : [];
+      setManagedTenants(tenantList);
+
+      const selected =
+        selectedTenantId ||
+        resolvedTenantId ||
+        tenantList[0]?.id ||
+        "";
+
+      if (!selected) {
         throw new Error("تعذر تحديد المستأجر من الجلسة الحالية.");
       }
 
-      setTenantId(resolvedTenantId);
+      setTenantId(selected);
+      setSelectedTenantId(selected);
 
-      const [tenantData, memberData, subscriptionData, usageData, invoiceData, tenantsData, integrationsData] = await Promise.all([
-        apiFetch<TenantSummary>(`/api/tenants/${resolvedTenantId}`, INLINE_NO_STORE_AUTH_REQUEST),
-        apiFetch<MemberItem[]>(`/api/tenants/${resolvedTenantId}/members`, INLINE_NO_STORE_AUTH_REQUEST),
-        apiFetch<SubscriptionView>(`/api/tenants/${resolvedTenantId}/subscription`, INLINE_NO_STORE_AUTH_REQUEST),
-        apiFetch<UsageItem[]>(`/api/tenants/${resolvedTenantId}/usage?days=30&limit=100`, INLINE_NO_STORE_AUTH_REQUEST),
+      const [tenantData, memberData, subscriptionData, usageData, invoiceData, integrationsData] = await Promise.all([
+        apiFetch<TenantSummary>(`/api/tenants/${selected}`, INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<MemberItem[]>(`/api/tenants/${selected}/members`, INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<SubscriptionView>(`/api/tenants/${selected}/subscription`, INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<UsageItem[]>(`/api/tenants/${selected}/usage?days=30&limit=100`, INLINE_NO_STORE_AUTH_REQUEST),
         apiFetch<InvoiceItem[]>("/api/billing/invoices?limit=20", INLINE_NO_STORE_AUTH_REQUEST),
-        apiFetch<TenantListItem[]>('/api/tenants?limit=50', INLINE_NO_STORE_AUTH_REQUEST),
         apiFetch<IntegrationStatus>('/api/integrations/status', INLINE_NO_STORE_AUTH_REQUEST),
       ]);
 
@@ -271,7 +303,6 @@ export default function AdminPage() {
       setSubscription(subscriptionData);
       setUsage(usageData);
       setInvoices(invoiceData);
-      setManagedTenants(Array.isArray(tenantsData) ? tenantsData : []);
       setIntegrationStatus(integrationsData ?? null);
 
       setTenantForm({
@@ -298,7 +329,7 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedTenantId]);
 
   useEffect(() => {
     void loadDashboard();
@@ -364,7 +395,7 @@ export default function AdminPage() {
         ...INLINE_AUTH_REQUEST,
       });
       setNotice("تمت إضافة العضو");
-      setMemberForm({ email: "", fullName: "", role: "MEMBER" });
+      setMemberForm({ email: "", fullName: "", role: "doctor" });
       await loadDashboard();
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل إضافة العضو");
@@ -392,6 +423,11 @@ export default function AdminPage() {
           country: createTenantForm.country || null,
           timezone: createTenantForm.timezone || null,
           billingEmail: createTenantForm.billingEmail || null,
+          initialOwner: {
+            email: createTenantForm.ownerEmail || undefined,
+            fullName: createTenantForm.ownerFullName || undefined,
+            role: createTenantForm.ownerRole || "tenant_owner",
+          },
         }),
         ...INLINE_AUTH_REQUEST,
       });
@@ -403,6 +439,9 @@ export default function AdminPage() {
         country: 'SA',
         timezone: 'Asia/Riyadh',
         billingEmail: '',
+        ownerEmail: '',
+        ownerFullName: '',
+        ownerRole: 'tenant_owner',
       });
       await loadDashboard();
     } catch (err) {
@@ -578,6 +617,19 @@ export default function AdminPage() {
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
+                  {isPlatformAdmin ? (
+                    <select
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      value={selectedTenantId}
+                      onChange={(e) => setSelectedTenantId(e.target.value)}
+                    >
+                      {managedTenants.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name} ({item.code})
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
                   <input
                     className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                     placeholder="Hospital Name"
@@ -596,6 +648,26 @@ export default function AdminPage() {
                     value={createTenantForm.billingEmail}
                     onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, billingEmail: e.target.value }))}
                   />
+                  <input
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Initial Owner Email"
+                    value={createTenantForm.ownerEmail}
+                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, ownerEmail: e.target.value }))}
+                  />
+                  <input
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Initial Owner Name"
+                    value={createTenantForm.ownerFullName}
+                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, ownerFullName: e.target.value }))}
+                  />
+                  <select
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={createTenantForm.ownerRole}
+                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, ownerRole: e.target.value }))}
+                  >
+                    <option value="tenant_owner">tenant_owner</option>
+                    <option value="tenant_admin">tenant_admin</option>
+                  </select>
                   <button
                     type="button"
                     onClick={() => void handleCreateTenant()}

@@ -35,6 +35,8 @@ from backend.models.tenant import Tenant
 logger = logging.getLogger(__name__)
 
 _DEFAULT_EXPIRY_MINUTES = 10
+_DEFAULT_MAX_ACTIVE_LINKS_PER_CASE = 10
+_DEFAULT_ISSUE_COOLDOWN_SECONDS = 60
 _PUBLIC_LEGAL_NOTICE = (
     "هذا الرابط مخصص لإقرار قرار الخروج فقط. تم عرض القرار وشرح آثاره والمخاطر "
     "والبدائل العلاجية المتاحة. يرجى اختيار الموافقة أو الرفض بعد قراءة هذا "
@@ -65,12 +67,36 @@ def _expiry_minutes() -> int:
     return _DEFAULT_EXPIRY_MINUTES
 
 
+def _max_active_links_per_case() -> int:
+    raw = os.getenv("SECURE_LINK_MAX_ACTIVE_PER_CASE", "")
+    try:
+        if raw.strip():
+            return max(1, int(raw))
+    except (ValueError, TypeError):
+        pass
+    return _DEFAULT_MAX_ACTIVE_LINKS_PER_CASE
+
+
+def _issue_cooldown_seconds() -> int:
+    raw = os.getenv("SECURE_LINK_ISSUE_COOLDOWN_SECONDS", "")
+    try:
+        if raw.strip():
+            return max(0, int(raw))
+    except (ValueError, TypeError):
+        pass
+    return _DEFAULT_ISSUE_COOLDOWN_SECONDS
+
+
 def _hash_token(raw_token: str) -> str:
     return hmac.new(
         _pepper().encode("utf-8"),
         raw_token.encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()
+
+
+class SecureLinkRateLimitError(ValueError):
+    """Raised when secure-link generation exceeds issuance limits."""
 
 
 def _write_audit(
@@ -197,6 +223,8 @@ def generate_link(
     """
     db = SessionLocal()
     try:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+
         # Validate case ownership
         case = (
             db.query(DischargeCase)
@@ -205,6 +233,42 @@ def generate_link(
         )
         if not case:
             raise ValueError("حالة التصريح غير موجودة أو لا تنتمي لهذه المؤسسة")
+
+        active_link_count = (
+            db.query(SecureDischargeLink)
+            .filter(
+                SecureDischargeLink.tenant_id == tenant_id,
+                SecureDischargeLink.case_id == case_id,
+                SecureDischargeLink.revoked_at.is_(None),
+                SecureDischargeLink.expires_at > now,
+            )
+            .count()
+        )
+        if active_link_count >= _max_active_links_per_case():
+            raise SecureLinkRateLimitError(
+                "Maximum active secure links reached for this case. Revoke an existing link or wait for expiry."
+            )
+
+        cooldown_seconds = _issue_cooldown_seconds()
+        if cooldown_seconds > 0:
+            recent_cutoff = now - timedelta(seconds=cooldown_seconds)
+            recent_link = (
+                db.query(SecureDischargeLink)
+                .filter(
+                    SecureDischargeLink.tenant_id == tenant_id,
+                    SecureDischargeLink.case_id == case_id,
+                    SecureDischargeLink.recipient_email == recipient_email,
+                    SecureDischargeLink.revoked_at.is_(None),
+                    SecureDischargeLink.created_at >= recent_cutoff,
+                    SecureDischargeLink.expires_at > now,
+                )
+                .order_by(SecureDischargeLink.created_at.desc())
+                .first()
+            )
+            if recent_link:
+                raise SecureLinkRateLimitError(
+                    "A secure link was already issued recently for this recipient. Please wait before sending another link."
+                )
 
         raw_token = secrets.token_urlsafe(32)
         token_hash = _hash_token(raw_token)

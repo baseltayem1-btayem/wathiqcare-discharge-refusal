@@ -9,7 +9,7 @@ type RouteContext = {
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const { caseId } = await params;
     const body = (await request.json().catch(() => null)) as
       | { action?: string; payload?: Record<string, unknown> }

@@ -23,7 +23,7 @@ export async function GET(
   { params }: { params: Promise<{ documentId: string }> },
 ) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const { documentId } = await params;
 
     const document = await prisma.document.findUnique({
@@ -59,7 +59,7 @@ export async function PATCH(
   { params }: { params: Promise<{ documentId: string }> },
 ) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const { documentId } = await params;
 
     const existing = await prisma.document.findUnique({ where: { id: documentId } });
@@ -73,15 +73,15 @@ export async function PATCH(
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          status?: string;
-          titleEn?: string;
-          titleAr?: string | null;
-          storagePath?: string | null;
-          previewHtml?: string | null;
-          payloadJson?: Prisma.InputJsonValue;
-          metadata?: Prisma.InputJsonValue | null;
-          signedAt?: string | null;
-        }
+        status?: string;
+        titleEn?: string;
+        titleAr?: string | null;
+        storagePath?: string | null;
+        previewHtml?: string | null;
+        payloadJson?: Prisma.InputJsonValue;
+        metadata?: Prisma.InputJsonValue | null;
+        signedAt?: string | null;
+      }
       | null;
 
     if (!payload) {
@@ -112,9 +112,9 @@ export async function PATCH(
           : {}),
         ...(payload.signedAt !== undefined
           ? {
-              signedAt: payload.signedAt ? new Date(payload.signedAt) : null,
-              signedByUserId: payload.signedAt ? auth.sub : null,
-            }
+            signedAt: payload.signedAt ? new Date(payload.signedAt) : null,
+            signedByUserId: payload.signedAt ? auth.sub : null,
+          }
           : {}),
       },
     });

@@ -58,6 +58,7 @@ def test_scheduler_triggers_enabled_connector(monkeypatch):
     monkeypatch.setattr(svc, "SessionLocal", local_session)
     monkeypatch.setattr(svc.threading, "Thread", _ImmediateThread)
     monkeypatch.setattr(svc, "ensure_connectors_seeded", lambda db: None)
+    monkeypatch.setattr(svc, "run_due_escalation_sweep", lambda now=None: {"escalated": 0})
 
     def _fake_fhir(db, connector, run):
         run.status = "success"
@@ -89,6 +90,7 @@ def test_scheduler_skips_disabled_connector(monkeypatch):
     monkeypatch.setattr(svc, "SessionLocal", local_session)
     monkeypatch.setattr(svc.threading, "Thread", _ImmediateThread)
     monkeypatch.setattr(svc, "ensure_connectors_seeded", lambda db: None)
+    monkeypatch.setattr(svc, "run_due_escalation_sweep", lambda now=None: {"escalated": 0})
 
     db = local_session()
     _seed_connector(db, enabled=False)
@@ -108,6 +110,7 @@ def test_scheduler_no_overlap_with_active_run(monkeypatch):
     monkeypatch.setattr(svc, "SessionLocal", local_session)
     monkeypatch.setattr(svc.threading, "Thread", _ImmediateThread)
     monkeypatch.setattr(svc, "ensure_connectors_seeded", lambda db: None)
+    monkeypatch.setattr(svc, "run_due_escalation_sweep", lambda now=None: {"escalated": 0})
 
     db = local_session()
     connector = _seed_connector(db, enabled=True)
@@ -140,6 +143,7 @@ def test_run_status_persistence_for_scheduled_run(monkeypatch):
     local_session = _make_session()
     monkeypatch.setattr(svc, "SessionLocal", local_session)
     monkeypatch.setattr(svc.threading, "Thread", _ImmediateThread)
+    monkeypatch.setattr(svc, "run_due_escalation_sweep", lambda now=None: {"escalated": 0})
 
     def _fake_fhir(db, connector, run):
         run.status = "partial_success"
@@ -170,3 +174,18 @@ def test_run_status_persistence_for_scheduled_run(monkeypatch):
     assert persisted.records_failed == 1
     assert persisted.error_summary == "One resource failed"
     db.close()
+
+
+def test_scheduler_reports_automated_escalations(monkeypatch):
+    local_session = _make_session()
+    monkeypatch.setattr(svc, "SessionLocal", local_session)
+    monkeypatch.setattr(svc.threading, "Thread", _ImmediateThread)
+    monkeypatch.setattr(svc, "ensure_connectors_seeded", lambda db: None)
+    monkeypatch.setattr(svc, "run_due_escalation_sweep", lambda now=None: {"escalated": 2})
+
+    db = local_session()
+    _seed_connector(db, enabled=False)
+    db.close()
+
+    stats = svc.run_scheduler_tick()
+    assert stats["automated_escalations"] == 2

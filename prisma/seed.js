@@ -16,8 +16,8 @@ const {
 
 const prisma = new PrismaClient();
 
-const DEMO_PASSWORD_HASH = "$2b$12$UDpU/m7nylRxuya184DaUO0nR/W/axLZf0yYR2cIJlElFRerSiGZq";
-const PRODUCTION_ADMIN_PASSWORD_HASH = "$2b$12$qLNuStRuC7vGTJMn7L4WyuVuLSj/UnTceQQkS8uOCQ5RjgObOOEgG";
+const DEMO_OWNER_PASSWORD_HASH = process.env.DEMO_OWNER_PASSWORD_HASH ?? null;
+const PLATFORM_ADMIN_PASSWORD_HASH = process.env.PLATFORM_ADMIN_PASSWORD_HASH ?? null;
 
 async function seedPlans() {
   const plans = [
@@ -128,7 +128,7 @@ async function seedDemoTenant() {
       fullName: "Demo Owner",
       role: "ADMIN",
       isActive: true,
-      hashedPassword: DEMO_PASSWORD_HASH,
+      hashedPassword: DEMO_OWNER_PASSWORD_HASH,
     },
     create: {
       tenantId: tenant.id,
@@ -136,7 +136,7 @@ async function seedDemoTenant() {
       fullName: "Demo Owner",
       role: "ADMIN",
       isActive: true,
-      hashedPassword: DEMO_PASSWORD_HASH,
+      hashedPassword: DEMO_OWNER_PASSWORD_HASH,
     },
   });
 
@@ -313,7 +313,7 @@ async function seedProductionAdmin() {
       fullName: "WathiqCare Admin",
       role: "tenant_admin",
       isActive: true,
-      hashedPassword: PRODUCTION_ADMIN_PASSWORD_HASH,
+      hashedPassword: PLATFORM_ADMIN_PASSWORD_HASH,
     },
     create: {
       tenantId: tenant.id,
@@ -321,7 +321,7 @@ async function seedProductionAdmin() {
       fullName: "WathiqCare Admin",
       role: "tenant_admin",
       isActive: true,
-      hashedPassword: PRODUCTION_ADMIN_PASSWORD_HASH,
+      hashedPassword: PLATFORM_ADMIN_PASSWORD_HASH,
     },
   });
 
@@ -590,11 +590,9 @@ async function main() {
   console.log("Seed complete");
   console.log(`tenant_code=${tenant.code}`);
   console.log(`owner_email=${owner.email}`);
-  console.log("owner_password=DemoOwner@123");
   console.log(`production_tenant_code=${productionTenant.code}`);
   console.log(`production_admin_email=${productionAdmin.email}`);
   console.log(`production_subscription_status=${productionSubscription.status}`);
-  console.log("production_admin_password=WCare@2026");
 }
 
 main()

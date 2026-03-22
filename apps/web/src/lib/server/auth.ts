@@ -1,25 +1,34 @@
-import crypto from "node:crypto";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
+import { prisma } from "@/lib/server/prisma";
+import { isPlatformRole, platformRoleForUserRole } from "@/lib/server/roles";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
+import { verifyAndDecodeJwt } from "@/lib/server/jwt";
 
 export type AuthContext = {
   sub: string;
   email?: string;
   role?: string;
-  tenant_id: string;
+  tenant_id?: string;
   tenant_code?: string;
+  platform_role?: "platform_superadmin" | "platform_admin" | null;
   exp?: number;
 };
 
 const ROLE_ALIASES: Record<string, string> = {
+  tenant_owner: "OWNER",
+  owner: "OWNER",
   tenant_admin: "ADMIN",
   legal_admin: "ADMIN",
   admin: "ADMIN",
-  owner: "OWNER",
   doctor: "MANAGER",
+  nursing: "MEMBER",
   nurse: "MEMBER",
-  legal_officer: "MANAGER",
+  reception: "MEMBER",
+  patient_affairs: "VIEWER",
+  quality: "VIEWER",
+  compliance: "VIEWER",
+  legal_officer: "ADMIN",
   viewer: "VIEWER",
 };
 
@@ -37,83 +46,114 @@ function normalizeRole(role: string): string {
   return cleaned.toUpperCase();
 }
 
-function decodeBase64Url(input: string): string {
-  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-  return Buffer.from(padded, "base64").toString("utf8");
-}
-
 function readToken(request: NextRequest): string | null {
   return request.cookies.get(getSessionCookieName())?.value ?? null;
 }
 
-function verifyHs256(token: string, secret: string): boolean {
-  const parts = token.split(".");
-  if (parts.length !== 3) {
-    return false;
-  }
-
-  const [header, payload, signature] = parts;
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(`${header}.${payload}`)
-    .digest("base64url");
-
-  const provided = Buffer.from(signature);
-  const expected = Buffer.from(expectedSignature);
-
-  return provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
-}
-
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET_KEY;
-  if (!secret || secret === "change-me") {
-    throw new ApiError(500, "Server auth is not configured");
-  }
-
-  return secret;
-}
-
-export function requireAuth(request: NextRequest): AuthContext {
+export async function requireAuth(request: NextRequest): Promise<AuthContext> {
   const token = readToken(request);
   if (!token) {
     throw new ApiError(401, "Missing access token");
   }
 
-  const secret = getJwtSecret();
-  if (!verifyHs256(token, secret)) {
-    throw new ApiError(401, "Invalid access token signature");
-  }
-
-  const [, payload] = token.split(".");
   let parsedPayload: AuthContext;
-
   try {
-    parsedPayload = JSON.parse(decodeBase64Url(payload)) as AuthContext;
-  } catch {
-    throw new ApiError(401, "Malformed access token");
+    parsedPayload = verifyAndDecodeJwt(token) as AuthContext;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new ApiError(401, error.message);
+    }
+    throw new ApiError(401, "Invalid access token");
   }
 
-  if (!parsedPayload.sub || !parsedPayload.tenant_id) {
-    throw new ApiError(401, "Invalid access token claims");
+  const user = await prisma.user.findUnique({
+    where: { id: parsedPayload.sub },
+    include: {
+      primaryTenant: {
+        select: {
+          id: true,
+          code: true,
+          isActive: true,
+        },
+      },
+      memberships: {
+        where: { status: "ACTIVE" },
+        select: {
+          tenantId: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    throw new ApiError(401, "Authenticated user no longer exists");
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  if (typeof parsedPayload.exp === "number" && parsedPayload.exp < now) {
-    throw new ApiError(401, "Access token expired");
+  if (!user.isActive) {
+    throw new ApiError(401, "Authenticated user is inactive");
   }
 
-  return parsedPayload;
+  if (parsedPayload.tenant_id && user.tenantId !== parsedPayload.tenant_id) {
+    throw new ApiError(401, "Tenant claims are no longer valid");
+  }
+
+  const platformRole = platformRoleForUserRole(user.role);
+  if (!platformRole && !user.primaryTenant?.isActive) {
+    throw new ApiError(403, "Tenant is inactive");
+  }
+
+  if (!platformRole) {
+    const accessibleTenantIds = new Set([user.tenantId, ...user.memberships.map((item) => item.tenantId)]);
+    if (!accessibleTenantIds.has(user.tenantId)) {
+      throw new ApiError(403, "Tenant membership is inactive");
+    }
+  }
+
+  return {
+    sub: user.id,
+    email: user.email,
+    role: user.role,
+    tenant_id: user.tenantId,
+    tenant_code: user.primaryTenant?.code,
+    platform_role: platformRole,
+    exp: parsedPayload.exp,
+  };
 }
 
-export function requireTenantAccess(request: NextRequest, tenantId: string): AuthContext {
-  const auth = requireAuth(request);
+export function hasPlatformAccess(auth: AuthContext): boolean {
+  if (auth.platform_role) {
+    return true;
+  }
+  return isPlatformRole(auth.role);
+}
+
+export async function requirePlatformAccess(request: NextRequest): Promise<AuthContext> {
+  const auth = await requireAuth(request);
+  if (!hasPlatformAccess(auth)) {
+    throw new ApiError(403, "Platform admin permissions required");
+  }
+  return auth;
+}
+
+export async function requireTenantAccess(request: NextRequest, tenantId: string): Promise<AuthContext> {
+  const auth = await requireAuth(request);
+
+  if (hasPlatformAccess(auth)) {
+    return auth;
+  }
 
   if (auth.tenant_id !== tenantId) {
     throw new ApiError(403, "Tenant access denied");
   }
 
   return auth;
+}
+
+export function requireTenantId(auth: AuthContext): string {
+  if (!auth.tenant_id) {
+    throw new ApiError(403, "Tenant context is required for this action");
+  }
+  return auth.tenant_id;
 }
 
 export function requireRole(auth: AuthContext, allowedRoles: string[]): void {

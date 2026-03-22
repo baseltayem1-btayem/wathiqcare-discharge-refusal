@@ -17,7 +17,7 @@ export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ documentId: string }> },
 ) {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const { documentId } = await params;
 
     const backendResponse = await forwardToBackend(request, `/api/documents/${encodeURIComponent(documentId)}/download`);

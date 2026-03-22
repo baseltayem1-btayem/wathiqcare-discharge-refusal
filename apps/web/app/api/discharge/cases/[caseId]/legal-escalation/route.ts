@@ -9,7 +9,7 @@ type RouteContext = {
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const { caseId } = await params;
     const escalation = await getLegalEscalation(auth, caseId);
     return NextResponse.json(escalation);

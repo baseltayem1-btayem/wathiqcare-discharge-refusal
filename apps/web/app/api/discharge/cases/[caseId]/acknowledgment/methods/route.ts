@@ -7,7 +7,7 @@ type RouteContext = { params: Promise<{ caseId: string }> };
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
     try {
-        requireAuth(request);
+        await requireAuth(request);
         await params; // caseId not needed – methods are tenant-wide config
         const methods = await buildAcknowledgmentMethods(request);
 

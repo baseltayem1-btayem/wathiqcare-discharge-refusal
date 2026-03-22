@@ -60,6 +60,39 @@ def test_sms_otp_stub_flow_verification_works(monkeypatch):
     assert provider.verify_otp(submitted_code="000000", expected_hash=expected_hash) is False
 
 
+def test_sms_otp_live_provider_dispatches_http(monkeypatch):
+    monkeypatch.delenv("WATHIQ_SMS_STUB_MODE", raising=False)
+    monkeypatch.setenv("WATHIQ_SMS_PROVIDER_URL", "https://sms.example.test/send")
+    monkeypatch.setenv("WATHIQ_SMS_PROVIDER_API_KEY", "provider-key")
+    monkeypatch.setenv("WATHIQ_SMS_PROVIDER_NAME", "test-gateway")
+
+    captured: dict[str, object] = {}
+
+    class _Response:
+        def raise_for_status(self) -> None:
+            return None
+
+    def _fake_post(url, json, headers, timeout):
+        captured["url"] = url
+        captured["json"] = json
+        captured["headers"] = headers
+        captured["timeout"] = timeout
+        return _Response()
+
+    monkeypatch.setattr("backend.signature.providers.sms_otp_provider.requests.post", _fake_post)
+
+    provider = SmsOtpProvider()
+    result = provider.send_otp("+966500000000", case_id="case-1", document_type="discharge_refusal_form")
+
+    assert result.delivery_status == "sent"
+    assert result.provider == "test-gateway"
+    assert result.stub_mode is False
+    assert result.otp_debug_code is not None
+    assert captured["url"] == "https://sms.example.test/send"
+    assert captured["json"]["otp_code"] == result.otp_debug_code
+    assert captured["headers"]["X-API-Key"] == "provider-key"
+
+
 def test_tablet_signature_capture_returns_proof_metadata():
     provider = TabletSignatureProvider()
     payload = "dGVzdC1zaWduYXR1cmU="

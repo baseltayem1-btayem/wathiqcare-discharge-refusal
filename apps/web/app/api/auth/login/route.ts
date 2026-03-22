@@ -4,6 +4,7 @@ import { prisma } from "@/lib/server/prisma";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import bcrypt from "bcryptjs";
 import { buildSessionCookieOptions, getSessionCookieName } from "@/lib/server/sessionCookie";
+import { platformRoleForUserRole } from "@/lib/server/roles";
 
 type LoginPayload = {
   email?: string;
@@ -86,12 +87,14 @@ export async function POST(request: Request) {
     const secret = getJwtSecret();
     const now = Math.floor(Date.now() / 1000);
     const exp = now + getTokenTtlSeconds();
+    const platformRole = platformRoleForUserRole(user.role);
 
     const accessToken = createAccessToken(
       {
         sub: user.id,
         email: user.email,
         role: user.role,
+        platform_role: platformRole,
         tenant_id: user.tenantId,
         tenant_code: user.primaryTenant?.code ?? null,
         exp,

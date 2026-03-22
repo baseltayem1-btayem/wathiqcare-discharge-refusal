@@ -19,7 +19,7 @@ export async function GET(
   { params }: { params: Promise<{ caseId: string }> },
 ) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const { caseId } = await params;
 
     const item = await prisma.case.findUnique({
@@ -52,7 +52,7 @@ export async function PATCH(
   { params }: { params: Promise<{ caseId: string }> },
 ) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const { caseId } = await params;
 
     const existing = await prisma.case.findUnique({ where: { id: caseId } });
@@ -66,16 +66,16 @@ export async function PATCH(
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          title?: string | null;
-          status?: string;
-          workflowType?: string | null;
-          patientName?: string | null;
-          patientIdNumber?: string | null;
-          medicalRecordNo?: string | null;
-          roomNumber?: string | null;
-          closedAt?: string | null;
-          metadata?: Prisma.InputJsonValue | null;
-        }
+        title?: string | null;
+        status?: string;
+        workflowType?: string | null;
+        patientName?: string | null;
+        patientIdNumber?: string | null;
+        medicalRecordNo?: string | null;
+        roomNumber?: string | null;
+        closedAt?: string | null;
+        metadata?: Prisma.InputJsonValue | null;
+      }
       | null;
 
     if (!payload) {

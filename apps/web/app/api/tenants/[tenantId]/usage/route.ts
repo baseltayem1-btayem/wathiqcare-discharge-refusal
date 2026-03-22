@@ -19,7 +19,7 @@ export async function GET(
 ) {
   try {
     const { tenantId } = await params;
-    requireTenantAccess(request, tenantId);
+    await requireTenantAccess(request, tenantId);
 
     const url = new URL(request.url);
     const metric = parseUsageMetric(url.searchParams.get("metric"));

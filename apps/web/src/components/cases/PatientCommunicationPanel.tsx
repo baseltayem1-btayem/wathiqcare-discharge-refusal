@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Ban, Copy, ExternalLink, Link2, Mail, RefreshCw } from "lucide-react";
 import { apiFetch } from "@/utils/api";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -153,7 +153,7 @@ export default function PatientCommunicationPanel({
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    async function loadLinks(showSpinner = false) {
+    const loadLinks = useCallback(async (showSpinner = false) => {
         if (disabledReason) {
             setLoading(false);
             return;
@@ -176,12 +176,12 @@ export default function PatientCommunicationPanel({
             setLoading(false);
             setRefreshing(false);
         }
-    }
+    }, [caseId, disabledReason, text.sendFailed]);
 
     useEffect(() => {
         setLoading(true);
         void loadLinks();
-    }, [caseId, disabledReason]);
+    }, [loadLinks]);
 
     async function handleSend() {
         const normalizedEmail = recipientEmail.trim();

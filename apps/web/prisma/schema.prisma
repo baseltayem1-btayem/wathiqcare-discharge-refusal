@@ -104,6 +104,49 @@ enum SubscriptionEventType {
   PAYMENT_SUCCEEDED
 }
 
+enum OperationDepartment {
+  PHARMACY
+  NURSING
+  LEGAL
+  LABORATORY
+  RADIOLOGY
+  CASE_MANAGEMENT
+  PATIENT_RELATIONS
+  BILLING_INSURANCE
+  ADMIN_MEDICAL_DIRECTOR
+}
+
+enum OperationPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum SlaState {
+  ON_TRACK
+  AT_RISK
+  BREACHED
+}
+
+enum EscalationLevel {
+  NONE
+  SUPERVISOR
+  MANAGER
+  DIRECTOR
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 model Tenant {
   id                 String              @id @default(uuid())
   name               String
@@ -132,6 +175,11 @@ model Tenant {
   usageRecords       UsageRecord[]
   invoices           Invoice[]
   subscriptionEvents SubscriptionEvent[]
+  caseOperationStates CaseOperationState[]
+  caseAssignmentHistory CaseAssignmentHistory[]
+  caseStepEvents      CaseStepEvent[]
+  operationNotifications OperationNotification[]
+  departmentSlaConfigs DepartmentSlaConfig[]
 
   @@map("tenants")
 }
@@ -204,6 +252,11 @@ model User {
   generatedDocuments  Document[]         @relation("DocumentGenerator")
   signedDocuments     Document[]         @relation("DocumentSigner")
   auditLogs           AuditLog[]
+  ownedCaseOperationStates CaseOperationState[] @relation("CaseAssignedUser")
+  caseAssignmentsByActor CaseAssignmentHistory[] @relation("AssignmentActor")
+  caseStepEventsByActor CaseStepEvent[] @relation("StepEventActor")
+  operationNotifications OperationNotification[] @relation("NotificationRecipient")
+  operationNotificationsTriggered OperationNotification[] @relation("NotificationTrigger")
 
   @@index([tenantId])
   @@map("users")
@@ -283,6 +336,10 @@ model Case {
   equipmentRequests  EquipmentRequest[]
   transferRequests   TransferRequest[]
   patientFinancialLiabilities PatientFinancialLiability[]
+  operationState   CaseOperationState?
+  assignmentHistory CaseAssignmentHistory[]
+  stepEvents       CaseStepEvent[]
+  notifications    OperationNotification[]
 
   @@unique([tenantId, caseNumber])
   @@index([tenantId, status])
@@ -520,4 +577,126 @@ model SubscriptionEvent {
   @@index([tenantId, occurredAt])
   @@index([subscriptionId])
   @@map("subscription_events")
+}
+
+model CaseOperationState {
+  id                  String              @id @default(uuid())
+  tenantId            String              @map("tenant_id")
+  caseId              String              @unique @map("case_id")
+  currentStage        String              @default("CASE_CREATED") @map("current_stage")
+  currentStep         String              @default("case_created") @map("current_step")
+  assignedToUserId    String?             @map("assigned_to_user_id")
+  assignedDepartment  OperationDepartment @default(CASE_MANAGEMENT) @map("assigned_department")
+  assignmentTimestamp DateTime?           @map("assignment_timestamp")
+  waitingTimeMinutes  Int                 @default(0) @map("waiting_time_minutes")
+  priority            OperationPriority   @default(NORMAL)
+  slaDeadline         DateTime?           @map("sla_deadline")
+  slaState            SlaState            @default(ON_TRACK) @map("sla_state")
+  escalationLevel     EscalationLevel     @default(NONE) @map("escalation_level")
+  lastActionAt        DateTime?           @map("last_action_at")
+  lastActionByUserId  String?             @map("last_action_by_user_id")
+  completedStepsCount Int                 @default(0) @map("completed_steps_count")
+  totalStepsCount     Int                 @default(0) @map("total_steps_count")
+  status              String              @default("OPEN")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                Case                @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  assignedTo          User?               @relation("CaseAssignedUser", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, assignedDepartment, slaState])
+  @@index([tenantId, assignedToUserId])
+  @@index([tenantId, priority, status])
+  @@map("case_operation_states")
+}
+
+model CaseAssignmentHistory {
+  id                   String              @id @default(uuid())
+  tenantId             String              @map("tenant_id")
+  caseId               String              @map("case_id")
+  fromUserId           String?             @map("from_user_id")
+  toUserId             String?             @map("to_user_id")
+  fromDepartment       OperationDepartment? @map("from_department")
+  toDepartment         OperationDepartment @map("to_department")
+  reason               String?
+  reassignedByUserId   String              @map("reassigned_by_user_id")
+  reassignedAt         DateTime            @default(now()) @map("reassigned_at")
+
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                 Case                @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  reassignedBy         User                @relation("AssignmentActor", fields: [reassignedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId, reassignedAt])
+  @@index([tenantId, toDepartment, reassignedAt])
+  @@map("case_assignment_history")
+}
+
+model CaseStepEvent {
+  id                   String              @id @default(uuid())
+  tenantId             String              @map("tenant_id")
+  caseId               String              @map("case_id")
+  stepCode             String              @map("step_code")
+  stageCode            String              @map("stage_code")
+  action               String
+  oldValue             Json?               @map("old_value")
+  newValue             Json?               @map("new_value")
+  actorUserId          String              @map("actor_user_id")
+  actorDepartment      OperationDepartment? @map("actor_department")
+  createdAt            DateTime            @default(now()) @map("created_at")
+
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                 Case                @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  actor                User                @relation("StepEventActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId, createdAt])
+  @@index([tenantId, stageCode, createdAt])
+  @@map("case_step_events")
+}
+
+model OperationNotification {
+  id                   String              @id @default(uuid())
+  tenantId             String              @map("tenant_id")
+  caseId               String?             @map("case_id")
+  recipientUserId      String              @map("recipient_user_id")
+  triggeredByUserId    String?             @map("triggered_by_user_id")
+  channel              NotificationChannel @default(IN_APP)
+  eventType            String              @map("event_type")
+  title                String
+  message              String
+  status               NotificationStatus  @default(PENDING)
+  readAt               DateTime?           @map("read_at")
+  sentAt               DateTime?           @map("sent_at")
+  metadata             Json?
+  createdAt            DateTime            @default(now()) @map("created_at")
+
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                 Case?               @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  recipient            User                @relation("NotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  triggeredBy          User?               @relation("NotificationTrigger", fields: [triggeredByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, recipientUserId, readAt])
+  @@index([tenantId, caseId, createdAt])
+  @@index([tenantId, eventType, createdAt])
+  @@map("operation_notifications")
+}
+
+model DepartmentSlaConfig {
+  id                    String              @id @default(uuid())
+  tenantId              String              @map("tenant_id")
+  department            OperationDepartment
+  stepCode              String              @map("step_code")
+  targetMinutes         Int                 @default(240) @map("target_minutes")
+  warnBeforeMinutes     Int                 @default(60) @map("warn_before_minutes")
+  escalateAfterMinutes  Int                 @default(0) @map("escalate_after_minutes")
+  escalationDepartment  OperationDepartment? @map("escalation_department")
+  isActive              Boolean             @default(true) @map("is_active")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, department, stepCode])
+  @@index([tenantId, department, isActive])
+  @@map("department_sla_configs")
 }

@@ -13,7 +13,7 @@ const ALLOWED_MODELS = new Set([
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
     try {
-        requireAuth(request);
+        await requireAuth(request);
         await params;
 
         const body = (await request.json().catch(() => null)) as { care_model?: string } | null;

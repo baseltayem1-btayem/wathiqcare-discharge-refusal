@@ -5,7 +5,7 @@ import { listLegalEscalations } from "@/lib/server/dischargeMedicoLegal";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const cases = await listLegalEscalations(auth);
     return NextResponse.json(cases);
   } catch (error) {

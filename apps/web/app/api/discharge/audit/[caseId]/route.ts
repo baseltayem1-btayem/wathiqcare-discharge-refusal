@@ -9,7 +9,7 @@ type RouteContext = {
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const { caseId } = await params;
     const audit = await listWorkflowAudit(auth, caseId);
     return NextResponse.json(audit);

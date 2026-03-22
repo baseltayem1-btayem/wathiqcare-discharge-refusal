@@ -1,10 +1,14 @@
-import { BillingInterval, MembershipRole, MembershipStatus, PlanCode, SubscriptionStatus } from "@prisma/client";
+import { BillingInterval, MembershipStatus, PlanCode, SubscriptionStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, requireRole } from "@/lib/server/auth";
+import { hasPlatformAccess, requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import {
+  canonicalizeUserRole,
+  membershipRoleForUserRole,
+} from "@/lib/server/roles";
 
 function slugifyTenantCode(input: string): string {
   return input
@@ -30,28 +34,36 @@ async function generateTenantCode(name: string): Promise<string> {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request);
-    requireRole(auth, ["OWNER", "ADMIN"]);
+    const auth = await requireAuth(request);
+    const platformAccess = hasPlatformAccess(auth);
 
     const limit = Math.min(Math.max(Number(new URL(request.url).searchParams.get("limit") ?? "50"), 1), 200);
 
-    const memberships = await prisma.tenantMembership.findMany({
-      where: {
-        userId: auth.sub,
-        status: MembershipStatus.ACTIVE,
-      },
-      select: { tenantId: true },
-      take: limit,
-    });
+    let tenantIds: string[] = [];
+    if (!platformAccess) {
+      const memberships = await prisma.tenantMembership.findMany({
+        where: {
+          userId: auth.sub,
+          status: MembershipStatus.ACTIVE,
+        },
+        select: { tenantId: true },
+        take: limit,
+      });
 
-    const tenantIds = [...new Set([auth.tenant_id, ...memberships.map((item) => item.tenantId)])];
+      tenantIds = [...new Set([...(auth.tenant_id ? [auth.tenant_id] : []), ...memberships.map((item) => item.tenantId)])];
+      if (tenantIds.length === 0) {
+        throw new ApiError(403, "No tenant access available");
+      }
+    }
 
     const tenants = await prisma.tenant.findMany({
-      where: {
-        id: {
-          in: tenantIds,
+      where: platformAccess
+        ? undefined
+        : {
+          id: {
+            in: tenantIds,
+          },
         },
-      },
       include: {
         _count: {
           select: {
@@ -78,17 +90,32 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireAuth(request);
-    requireRole(auth, ["OWNER", "ADMIN"]);
+    const auth = await requireAuth(request);
+    if (!hasPlatformAccess(auth)) {
+      throw new ApiError(403, "Platform admin permissions required");
+    }
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          name?: string;
-          code?: string;
-          country?: string | null;
-          timezone?: string | null;
-          billingEmail?: string | null;
-        }
+        name?: string;
+        code?: string;
+        isActive?: boolean;
+        country?: string | null;
+        timezone?: string | null;
+        billingEmail?: string | null;
+        subscription?: {
+          planCode?: string;
+          billingInterval?: string;
+          status?: string;
+          seatLimit?: number;
+          trialDays?: number;
+        };
+        initialOwner?: {
+          email?: string;
+          fullName?: string;
+          role?: string;
+        };
+      }
       | null;
 
     if (!payload) {
@@ -100,6 +127,11 @@ export async function POST(request: NextRequest) {
       throw new ApiError(400, "Tenant name is required");
     }
 
+    const normalizedBillingEmail = payload.billingEmail?.trim().toLowerCase() ?? null;
+    if (normalizedBillingEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedBillingEmail)) {
+      throw new ApiError(400, "billingEmail is invalid");
+    }
+
     const code = payload.code?.trim()
       ? slugifyTenantCode(payload.code)
       : await generateTenantCode(tenantName);
@@ -108,8 +140,14 @@ export async function POST(request: NextRequest) {
       throw new ApiError(400, "Tenant code is invalid");
     }
 
+    const planCodeRaw = payload.subscription?.planCode?.toUpperCase();
+    const resolvedPlanCode =
+      planCodeRaw && Object.values(PlanCode).includes(planCodeRaw as PlanCode)
+        ? (planCodeRaw as PlanCode)
+        : PlanCode.STARTER;
+
     const plan =
-      (await prisma.plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
+      (await prisma.plan.findUnique({ where: { code: resolvedPlanCode } })) ||
       (await prisma.plan.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
 
     if (!plan) {
@@ -117,7 +155,32 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date();
+    const requestedTrialDays = Number(payload.subscription?.trialDays ?? 14);
+    const trialDays = Number.isFinite(requestedTrialDays) && requestedTrialDays >= 0 && requestedTrialDays <= 60
+      ? Math.floor(requestedTrialDays)
+      : 14;
     const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const trialEndsAt = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+
+    const billingIntervalRaw = payload.subscription?.billingInterval?.toUpperCase();
+    const billingInterval =
+      billingIntervalRaw && Object.values(BillingInterval).includes(billingIntervalRaw as BillingInterval)
+        ? (billingIntervalRaw as BillingInterval)
+        : BillingInterval.MONTHLY;
+
+    const statusRaw = payload.subscription?.status?.toUpperCase();
+    const subscriptionStatus =
+      statusRaw && Object.values(SubscriptionStatus).includes(statusRaw as SubscriptionStatus)
+        ? (statusRaw as SubscriptionStatus)
+        : SubscriptionStatus.TRIALING;
+
+    const ownerEmail = payload.initialOwner?.email?.trim().toLowerCase();
+    const ownerFullName = payload.initialOwner?.fullName?.trim() || "Tenant Owner";
+    const ownerRole = canonicalizeUserRole(payload.initialOwner?.role ?? "tenant_owner");
+
+    if (ownerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)) {
+      throw new ApiError(400, "initialOwner.email is invalid");
+    }
 
     const created = await prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
@@ -126,35 +189,70 @@ export async function POST(request: NextRequest) {
           code,
           country: payload.country ?? null,
           timezone: payload.timezone ?? "UTC",
-          billingEmail: payload.billingEmail ?? null,
-          isActive: true,
+          billingEmail: normalizedBillingEmail,
+          isActive: payload.isActive ?? true,
         },
       });
+
+      const activeMembershipCount = ownerEmail ? 1 : 0;
+      const requestedSeatLimit = Number(payload.subscription?.seatLimit ?? plan.seatLimit);
+      const seatLimit = Number.isFinite(requestedSeatLimit) && requestedSeatLimit > 0
+        ? Math.max(Math.floor(requestedSeatLimit), activeMembershipCount)
+        : Math.max(plan.seatLimit, activeMembershipCount);
 
       await tx.subscription.create({
         data: {
           tenantId: tenant.id,
           planId: plan.id,
-          status: SubscriptionStatus.TRIALING,
-          billingInterval: BillingInterval.MONTHLY,
-          seatLimit: plan.seatLimit,
+          status: subscriptionStatus,
+          billingInterval,
+          seatLimit,
           currentPeriodStart: now,
           currentPeriodEnd: periodEnd,
-          trialEndsAt: periodEnd,
+          trialEndsAt: subscriptionStatus === SubscriptionStatus.ACTIVE ? null : trialEndsAt,
           metadata: {
             source: "tenant_create_api",
           },
         },
       });
 
-      await tx.tenantMembership.create({
-        data: {
-          tenantId: tenant.id,
-          userId: auth.sub,
-          role: MembershipRole.OWNER,
-          status: MembershipStatus.ACTIVE,
-        },
-      });
+      if (ownerEmail) {
+        const ownerUser = await tx.user.upsert({
+          where: { email: ownerEmail },
+          update: {
+            fullName: ownerFullName,
+            isActive: true,
+            role: ownerRole,
+          },
+          create: {
+            tenantId: tenant.id,
+            email: ownerEmail,
+            fullName: ownerFullName,
+            role: ownerRole,
+            isActive: true,
+            hashedPassword: null,
+          },
+        });
+
+        await tx.tenantMembership.upsert({
+          where: {
+            tenantId_userId: {
+              tenantId: tenant.id,
+              userId: ownerUser.id,
+            },
+          },
+          update: {
+            role: membershipRoleForUserRole(ownerRole),
+            status: MembershipStatus.ACTIVE,
+          },
+          create: {
+            tenantId: tenant.id,
+            userId: ownerUser.id,
+            role: membershipRoleForUserRole(ownerRole),
+            status: MembershipStatus.ACTIVE,
+          },
+        });
+      }
 
       return tenant;
     });
@@ -168,6 +266,9 @@ export async function POST(request: NextRequest) {
       details: "Tenant created from admin panel",
       metadataJson: {
         code: created.code,
+        ownerEmail,
+        planCode: plan.code,
+        status: subscriptionStatus,
       },
       request,
     });

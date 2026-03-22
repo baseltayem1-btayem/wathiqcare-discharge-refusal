@@ -6,6 +6,7 @@ import { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Archive, FileCheck2, FileCog, FilePlus2, FolderKanban, Gavel, LayoutGrid, LogOut, Rocket, ShieldCheck, Stethoscope, Timer, ClipboardList, AlertTriangle, FileSignature, CheckCircle2, Database, MessageSquareHeart, HandHelping, FileText } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import NotificationBell from "@/components/operations/NotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clearToken } from "@/utils/api";
 
@@ -32,6 +33,8 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutGrid className="h-4 w-4" /> },
   { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
+  { href: "/operations", label: "Operations", icon: <LayoutGrid className="h-4 w-4" /> },
+  { href: "/operations/inboxes", label: "Department Inboxes", icon: <ClipboardList className="h-4 w-4" /> },
   { href: "/cases/new", labelKey: "nav.newCase", icon: <FilePlus2 className="h-4 w-4" /> },
   { href: "/workflow", labelKey: "nav.workflowDocs", icon: <FileCog className="h-4 w-4" /> },
   { href: "/refusal-forms", labelKey: "nav.refusalForms", icon: <FileSignature className="h-4 w-4" /> },
@@ -271,6 +274,7 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
                   {subtitle ? <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p> : null}
                 </div>
                 <div className="inline-flex items-center gap-2">
+                  <NotificationBell />
                   <div
                     className="hidden items-center gap-2 rounded-xl border border-cyan-100 bg-cyan-50/80 px-2.5 py-2 sm:inline-flex"
                     title={tenantLogoAlt}

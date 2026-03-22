@@ -24,7 +24,7 @@ function fallbackViewHtml(documentId: string): string {
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const { documentId } = await context.params;
 
     const backendResponse = await forwardToBackend(request, `/api/documents/${encodeURIComponent(documentId)}/view`);

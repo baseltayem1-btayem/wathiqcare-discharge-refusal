@@ -3,7 +3,9 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import logging
 
 from backend.core.database import SessionLocal
+from backend.core.roles import canonicalize_role, role_allows
 from backend.core.security import decode_access_token
+from backend.models.tenant import Tenant
 from backend.models.user import User
 
 security = HTTPBearer(auto_error=False)
@@ -40,10 +42,15 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             logger.warning("auth_tenant_mismatch user_id=%s token_tenant=%s db_tenant=%s", user_id, payload.get("tenant_id"), user.tenant_id)
             raise HTTPException(status_code=401, detail="بيانات رمز الدخول غير متطابقة")
 
+        tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+        if tenant and not tenant.is_active and not canonicalize_role(user.role).startswith("platform_"):
+            logger.warning("auth_tenant_inactive user_id=%s tenant_id=%s", user_id, user.tenant_id)
+            raise HTTPException(status_code=403, detail="المؤسسة غير مفعلة حالياً")
+
         return {
             "id": user.id,
             "email": user.email,
-            "role": user.role,
+            "role": canonicalize_role(user.role),
             "tenant_id": user.tenant_id,
             "tenant_code": payload.get("tenant_code"),
         }
@@ -52,7 +59,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 def require_roles(*allowed_roles):
     def role_checker(current_user=Depends(get_current_user)):
-        if current_user["role"] not in allowed_roles:
+        if not role_allows(current_user["role"], allowed_roles):
             raise HTTPException(status_code=403, detail="الصلاحيات غير كافية")
         return current_user
     return role_checker

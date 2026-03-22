@@ -10,11 +10,27 @@ load_dotenv()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-me")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_ISSUER = (os.getenv("JWT_ISSUER") or "").strip() or None
+DEFAULT_JWT_ISSUER = "wathiqcare"
 
 logger = logging.getLogger(__name__)
+
+
+def get_jwt_secret_key() -> str:
+    secret = (os.getenv("JWT_SECRET_KEY") or "").strip()
+    if not secret or secret == "change-me":
+        raise ValueError("jwt_secret_not_configured")
+    return secret
+
+
+def get_jwt_algorithm() -> str:
+    algorithm = (os.getenv("JWT_ALGORITHM") or "HS256").strip().upper()
+    if algorithm != "HS256":
+        raise ValueError("jwt_algorithm_not_supported")
+    return algorithm
+
+
+def get_jwt_issuer() -> str:
+    return (os.getenv("JWT_ISSUER") or DEFAULT_JWT_ISSUER).strip() or DEFAULT_JWT_ISSUER
 
 
 def _token_ttl_minutes() -> int:
@@ -38,9 +54,8 @@ def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=_token_ttl_minutes())
     to_encode.update({"exp": expire})
-    if JWT_ISSUER:
-        to_encode.update({"iss": JWT_ISSUER})
-    return jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    to_encode.update({"iss": get_jwt_issuer()})
+    return jwt.encode(to_encode, get_jwt_secret_key(), algorithm=get_jwt_algorithm())
 
 
 def decode_access_token(token: str) -> dict:
@@ -48,35 +63,21 @@ def decode_access_token(token: str) -> dict:
         raise ValueError("missing_token")
 
     try:
-        if JWT_ISSUER:
-            payload = jwt.decode(
-                token,
-                JWT_SECRET_KEY,
-                algorithms=[JWT_ALGORITHM],
-                issuer=JWT_ISSUER,
-            )
-        else:
-            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(
+            token,
+            get_jwt_secret_key(),
+            algorithms=[get_jwt_algorithm()],
+            issuer=get_jwt_issuer(),
+        )
     except ExpiredSignatureError as exc:
         raise ValueError("token_expired") from exc
     except JWTError as exc:
-        if not JWT_ISSUER:
-            raise ValueError("invalid_token") from exc
-
-        # Compatibility fallback: accept legacy tokens without issuer claim
-        # when signature and expiration are otherwise valid.
-        try:
-            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            logger.warning("jwt_issuer_mismatch_fallback_used")
-        except ExpiredSignatureError as exp_exc:
-            raise ValueError("token_expired") from exp_exc
-        except JWTError as fallback_exc:
-            raise ValueError("invalid_token") from fallback_exc
+        raise ValueError("invalid_token") from exc
 
     if not isinstance(payload, dict):
         raise ValueError("invalid_token_payload")
 
-    if not payload.get("sub") or not payload.get("tenant_id"):
+    if not payload.get("sub"):
         raise ValueError("invalid_token_claims")
 
     return payload

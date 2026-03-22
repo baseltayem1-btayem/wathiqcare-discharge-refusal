@@ -1,7 +1,7 @@
 """
 test_system_inspect.py
 ----------------------
-Tests for the ``GET /api/system/inspect`` endpoint.
+Tests for the authenticated ``GET /api/system/inspect`` endpoint.
 """
 
 from __future__ import annotations
@@ -112,19 +112,42 @@ class TestSystemInspectHelpers:
 
 @pytest.fixture()
 def client(monkeypatch):
-    """Create a TestClient with a patched DB check so no real DB is required."""
+    """Create an authenticated TestClient with a patched DB check."""
     from fastapi.testclient import TestClient
+    from backend.api.deps import get_current_user
     from backend.main import app
 
-    # Patch the DB reachability probe to avoid needing a real Postgres instance
     monkeypatch.setattr(
         "backend.api.routers.system_inspect._check_db",
         lambda: {"reachable": True, "error": None},
     )
-    return TestClient(app, raise_server_exceptions=True)
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": "test-platform-admin",
+        "email": "admin@test.local",
+        "role": "platform_superadmin",
+        "tenant_id": "test-tenant",
+        "tenant_code": "TEST",
+        "is_active": True,
+    }
+    try:
+        yield TestClient(app, raise_server_exceptions=True)
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
 
 
 class TestSystemInspectEndpoint:
+    def test_endpoint_requires_authentication(self, monkeypatch):
+        from fastapi.testclient import TestClient
+        from backend.main import app
+
+        monkeypatch.setattr(
+            "backend.api.routers.system_inspect._check_db",
+            lambda: {"reachable": True, "error": None},
+        )
+
+        response = TestClient(app, raise_server_exceptions=True).get("/api/system/inspect")
+        assert response.status_code == 401
+
     def test_endpoint_returns_200(self, client):
         response = client.get("/api/system/inspect")
         assert response.status_code == 200
@@ -144,6 +167,7 @@ class TestSystemInspectEndpoint:
 
     def test_status_is_degraded_when_shc_enabled_but_invalid(self, monkeypatch):
         from fastapi.testclient import TestClient
+        from backend.api.deps import get_current_user
         from backend.main import app
 
         monkeypatch.setattr(
@@ -154,7 +178,16 @@ class TestSystemInspectEndpoint:
         monkeypatch.delenv("JWT_SECRET_KEY", raising=False)
         monkeypatch.setenv("JWT_ALGORITHM", "HS256")
 
+        app.dependency_overrides[get_current_user] = lambda: {
+            "id": "test-platform-admin",
+            "email": "admin@test.local",
+            "role": "platform_superadmin",
+            "tenant_id": "test-tenant",
+            "tenant_code": "TEST",
+            "is_active": True,
+        }
         response = TestClient(app).get("/api/system/inspect")
+        app.dependency_overrides.pop(get_current_user, None)
         data = response.json()
         assert response.status_code == 200
         assert data["status"] == "degraded"
@@ -162,13 +195,23 @@ class TestSystemInspectEndpoint:
 
     def test_status_is_degraded_when_db_unreachable(self, monkeypatch):
         from fastapi.testclient import TestClient
+        from backend.api.deps import get_current_user
         from backend.main import app
 
         monkeypatch.setattr(
             "backend.api.routers.system_inspect._check_db",
             lambda: {"reachable": False, "error": "Connection refused"},
         )
+        app.dependency_overrides[get_current_user] = lambda: {
+            "id": "test-platform-admin",
+            "email": "admin@test.local",
+            "role": "platform_superadmin",
+            "tenant_id": "test-tenant",
+            "tenant_code": "TEST",
+            "is_active": True,
+        }
         response = TestClient(app).get("/api/system/inspect")
+        app.dependency_overrides.pop(get_current_user, None)
         assert response.status_code == 200
         assert response.json()["status"] == "degraded"
 

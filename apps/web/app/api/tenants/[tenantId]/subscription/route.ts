@@ -5,7 +5,7 @@ import {
   SubscriptionStatus,
 } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, requireTenantAccess } from "@/lib/server/auth";
+import { hasPlatformAccess, requireAuth, requireRole, requireTenantAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
@@ -41,7 +41,10 @@ export async function GET(
 ) {
   try {
     const { tenantId } = await params;
-    requireTenantAccess(request, tenantId);
+    const auth = await requireAuth(request);
+    if (!hasPlatformAccess(auth)) {
+      await requireTenantAccess(request, tenantId);
+    }
 
     const subscription = await prisma.subscription.findFirst({
       where: { tenantId },
@@ -65,16 +68,20 @@ export async function PATCH(
 ) {
   try {
     const { tenantId } = await params;
-    const auth = requireTenantAccess(request, tenantId);
-    requireRole(auth, ["OWNER", "ADMIN", "BILLING"]);
+    const auth = await requireAuth(request);
+    const platformAccess = hasPlatformAccess(auth);
+    if (!platformAccess) {
+      const tenantAuth = await requireTenantAccess(request, tenantId);
+      requireRole(tenantAuth, ["OWNER", "ADMIN", "BILLING"]);
+    }
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          planCode?: string;
-          billingInterval?: string;
-          status?: string;
-          seatLimit?: number;
-        }
+        planCode?: string;
+        billingInterval?: string;
+        status?: string;
+        seatLimit?: number;
+      }
       | null;
 
     if (!payload) {
@@ -119,6 +126,9 @@ export async function PATCH(
     const now = new Date();
     const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+    const shouldActivateTenant = status === SubscriptionStatus.ACTIVE;
+    const shouldEndSubscription = status === SubscriptionStatus.CANCELED || status === SubscriptionStatus.EXPIRED;
+
     const baseData = {
       ...(selectedPlan ? { planId: selectedPlan.id, seatLimit: selectedPlan.seatLimit } : {}),
       ...(billingInterval ? { billingInterval } : {}),
@@ -138,6 +148,8 @@ export async function PATCH(
         where: { id: existing.id },
         data: {
           ...baseData,
+          ...(status === SubscriptionStatus.ACTIVE ? { trialEndsAt: null } : {}),
+          ...(shouldEndSubscription ? { canceledAt: now } : {}),
           version: { increment: 1 },
         },
         include: { plan: true },
@@ -162,6 +174,7 @@ export async function PATCH(
               ? Math.floor(payload.seatLimit)
               : fallbackPlan.seatLimit,
           trialEndsAt: status === SubscriptionStatus.ACTIVE ? null : periodEnd,
+          canceledAt: shouldEndSubscription ? now : null,
           currentPeriodStart: now,
           currentPeriodEnd: periodEnd,
           metadata: {
@@ -176,7 +189,7 @@ export async function PATCH(
       data: {
         tenantId,
         subscriptionId: subscription.id,
-        eventType: SubscriptionEventType.UPDATED,
+        eventType: existing ? SubscriptionEventType.UPDATED : SubscriptionEventType.CREATED,
         status: "success",
         actorUserId: auth.sub,
         metadata: {
@@ -188,6 +201,13 @@ export async function PATCH(
         },
       },
     });
+
+    if (shouldActivateTenant) {
+      await prisma.tenant.update({
+        where: { id: tenantId },
+        data: { isActive: true },
+      });
+    }
 
     await writeAuditLog({
       tenantId,

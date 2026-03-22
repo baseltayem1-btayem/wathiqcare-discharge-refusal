@@ -103,11 +103,11 @@ def test_email_diagnostics_reports_missing_configuration(monkeypatch):
     assert "Missing Microsoft Graph email configuration" in (graph.reason or "")
 
 
-def test_email_diagnostics_reports_invalid_authorized_values(monkeypatch):
+def test_email_diagnostics_reports_invalid_sender_email(monkeypatch):
     monkeypatch.setenv("MICROSOFT_TENANT_ID", "wrong-tenant")
     monkeypatch.setenv("MICROSOFT_CLIENT_ID", "wrong-client")
     monkeypatch.setenv("MICROSOFT_CLIENT_SECRET", "secret")
-    monkeypatch.setenv("MICROSOFT_SENDER_EMAIL", "wrong@wathiqcare.med.sa")
+    monkeypatch.setenv("MICROSOFT_SENDER_EMAIL", "not-an-email")
 
     diagnostics = EmailServiceConfig.diagnostics()
 
@@ -117,13 +117,9 @@ def test_email_diagnostics_reports_invalid_authorized_values(monkeypatch):
     graph = diagnostics.diagnostics[0]
     assert graph.configured is True
     assert graph.missing == []
-    assert graph.invalid == [
-        "MICROSOFT_TENANT_ID",
-        "MICROSOFT_CLIENT_ID",
-        "MICROSOFT_SENDER_EMAIL",
-    ]
-    assert graph.sender_email == "wrong@wathiqcare.med.sa"
-    assert "not authorized" in (graph.reason or "")
+    assert graph.invalid == ["MICROSOFT_SENDER_EMAIL"]
+    assert graph.sender_email == "not-an-email"
+    assert "valid email address" in (graph.reason or "")
 
 
 def test_send_mail_refreshes_token_once_on_401(monkeypatch):

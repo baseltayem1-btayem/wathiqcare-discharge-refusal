@@ -13,7 +13,7 @@ const CARE_MODELS = [
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
     try {
-        requireAuth(request);
+        await requireAuth(request);
         await params; // caseId retained for route consistency
 
         return NextResponse.json({

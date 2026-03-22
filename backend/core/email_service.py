@@ -24,9 +24,6 @@ from backend.models.workflow_document import DischargeWorkflowDocument
 MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024
 ALLOWED_ATTACHMENT_EXTENSIONS = {".pdf", ".txt", ".html", ".csv", ".json", ".docx"}
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-EXPECTED_MICROSOFT_TENANT_ID = "08b4493f-d1e2-4c61-b46f-d652ad477fa6"
-EXPECTED_MICROSOFT_CLIENT_ID = "d25f4d4d-51bf-4be8-b4fd-ce8744434eef"
-EXPECTED_MICROSOFT_SENDER_EMAIL = "admin@wathiqcare.med.sa"
 RETRYABLE_HTTP_STATUS_CODES = {429, 500, 502, 503, 504}
 MAX_GRAPH_REQUEST_ATTEMPTS = 3
 GRAPH_REQUEST_TIMEOUT_SECONDS = 30
@@ -87,24 +84,14 @@ class EmailServiceConfig:
         invalid: List[str] = []
         reason_parts: List[str] = []
 
-        tenant_id = values["MICROSOFT_TENANT_ID"]
-        client_id = values["MICROSOFT_CLIENT_ID"]
         sender_email = values["MICROSOFT_SENDER_EMAIL"]
 
         if missing:
             reason_parts.append(f"Missing Microsoft Graph email configuration: {', '.join(missing)}")
 
-        if tenant_id and tenant_id != EXPECTED_MICROSOFT_TENANT_ID:
-            invalid.append("MICROSOFT_TENANT_ID")
-            reason_parts.append("MICROSOFT_TENANT_ID is not authorized for this deployment")
-
-        if client_id and client_id != EXPECTED_MICROSOFT_CLIENT_ID:
-            invalid.append("MICROSOFT_CLIENT_ID")
-            reason_parts.append("MICROSOFT_CLIENT_ID is not authorized for this deployment")
-
-        if sender_email and sender_email != EXPECTED_MICROSOFT_SENDER_EMAIL:
+        if sender_email and not EMAIL_RE.fullmatch(sender_email):
             invalid.append("MICROSOFT_SENDER_EMAIL")
-            reason_parts.append("MICROSOFT_SENDER_EMAIL must be admin@wathiqcare.med.sa")
+            reason_parts.append("MICROSOFT_SENDER_EMAIL must be a valid email address")
 
         configured = not missing
         available = not missing and not invalid

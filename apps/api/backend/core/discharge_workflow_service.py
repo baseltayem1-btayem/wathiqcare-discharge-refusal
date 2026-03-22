@@ -18,6 +18,7 @@ from backend.models.patient import Patient
 from backend.models.user import User
 from backend.models.workflow_document import DischargeWorkflowDocument
 from backend.models.workflow_case_documentation import DischargeWorkflowCaseDocumentation
+from backend.services.audit_service import AuditService
 
 
 WORKFLOW_STAGES = [
@@ -175,6 +176,32 @@ def _log_audit(
         created_at=_utc_now(),
     )
     db.add(log)
+
+
+def _log_structured_workflow_audit(
+    db,
+    *,
+    case_id: str,
+    actor_user_id: str,
+    action: str,
+    before_snapshot: Dict[str, Any],
+    after_snapshot: Dict[str, Any],
+    generated_document_id: Optional[str] = None,
+) -> None:
+    AuditService(db).log(
+        case_id=case_id,
+        task_id=None,
+        actor_user_id=actor_user_id,
+        event_type=f"workflow.{action}",
+        event_title=action.replace("_", " ").title(),
+        event_details=f"Workflow action executed: {action}",
+        metadata_json={
+            "action": action,
+            "generated_document_id": generated_document_id,
+            "before": before_snapshot,
+            "after": after_snapshot,
+        },
+    )
 
 
 def _log_generation_failure_audit(
@@ -1036,6 +1063,7 @@ def run_workflow_action(
         workflow = bundle.workflow
         case_documentation = bundle.case_documentation
         now = _utc_now()
+        before_snapshot = _serialize_workflow(bundle)
 
         actor = (
             db.query(User)
@@ -1192,6 +1220,15 @@ def run_workflow_action(
                 _sync_case_documentation(bundle)
                 workflow.updated_at = now
                 _set_case_lifecycle_status(bundle, "REFUSAL_FORM_GENERATED")
+                _log_structured_workflow_audit(
+                    db,
+                    case_id=case_id,
+                    actor_user_id=current_user["id"],
+                    action=action,
+                    before_snapshot=before_snapshot,
+                    after_snapshot=_serialize_workflow(bundle),
+                    generated_document_id=str(generated_document.get("id") or ""),
+                )
                 db.flush()
                 db.refresh(workflow)
                 db.commit()
@@ -1257,6 +1294,15 @@ def run_workflow_action(
                 _sync_case_documentation(bundle)
                 workflow.updated_at = now
                 _set_case_lifecycle_status(bundle, "FINANCIAL_NOTICE_GENERATED")
+                _log_structured_workflow_audit(
+                    db,
+                    case_id=case_id,
+                    actor_user_id=current_user["id"],
+                    action=action,
+                    before_snapshot=before_snapshot,
+                    after_snapshot=_serialize_workflow(bundle),
+                    generated_document_id=str(generated_document.get("id") or ""),
+                )
                 db.flush()
                 db.refresh(workflow)
                 db.commit()
@@ -1408,6 +1454,15 @@ def run_workflow_action(
 
         _sync_case_documentation(bundle)
         workflow.updated_at = now
+        _log_structured_workflow_audit(
+            db,
+            case_id=case_id,
+            actor_user_id=current_user["id"],
+            action=action,
+            before_snapshot=before_snapshot,
+            after_snapshot=_serialize_workflow(bundle),
+            generated_document_id=(str(generated_document.get("id")) if generated_document and generated_document.get("id") else None),
+        )
         db.flush()
         db.refresh(workflow)
         db.commit()

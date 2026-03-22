@@ -32,6 +32,7 @@ from pydantic import BaseModel, EmailStr
 
 from backend.api.deps import require_roles
 from backend.services.secure_link_service import (
+    SecureLinkRateLimitError,
     generate_link,
     list_links_for_case,
     revoke_link,
@@ -245,6 +246,8 @@ def create_secure_link(
             created_by=current_user["id"],
             recipient_email=str(payload.recipient_email),
         )
+    except SecureLinkRateLimitError as exc:
+        raise HTTPException(status_code=429, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except RuntimeError as exc:

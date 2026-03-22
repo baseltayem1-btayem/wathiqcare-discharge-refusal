@@ -5,7 +5,7 @@ import { listMedicalLegalTemplates } from "@/lib/server/dischargeMedicoLegal";
 
 export async function GET(request: NextRequest) {
   try {
-    requireAuth(request);
+    await requireAuth(request);
     return NextResponse.json(listMedicalLegalTemplates());
   } catch (error) {
     return handleApiError(error);

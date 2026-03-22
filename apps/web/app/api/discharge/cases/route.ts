@@ -5,7 +5,7 @@ import { listRefusalCases } from "@/lib/server/dischargeMedicoLegal";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const url = new URL(request.url);
     const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? "200"), 1), 500);
     const cases = await listRefusalCases(auth, limit);

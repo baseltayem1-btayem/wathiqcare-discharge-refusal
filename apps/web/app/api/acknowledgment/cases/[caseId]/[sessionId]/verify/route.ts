@@ -8,6 +8,8 @@ import { writeAuditLog } from "@/lib/server/saas-services";
 
 type RouteContext = { params: Promise<{ caseId: string; sessionId: string }> };
 
+const DEFAULT_MAX_OTP_RETRIES = 3;
+
 function safe(v: unknown): string {
     return (v == null ? "" : String(v)).trim();
 }
@@ -16,14 +18,39 @@ function nowIso(): string {
     return new Date().toISOString();
 }
 
+function decodeSignaturePayload(payload: string): Buffer {
+    const normalized = payload.replace(/^data:[^,]+,/u, "").trim();
+    if (!normalized) {
+        throw new ApiError(400, "signature_payload is required");
+    }
+
+    if (!/^[A-Za-z0-9+/]+={0,2}$/u.test(normalized)) {
+        throw new ApiError(400, "signature_payload must be base64 encoded");
+    }
+
+    const buffer = Buffer.from(normalized, "base64");
+    if (!buffer.length) {
+        throw new ApiError(400, "signature_payload must not be empty");
+    }
+
+    if (buffer.length < 32) {
+        throw new ApiError(400, "signature_payload is too small to be a valid tablet signature");
+    }
+
+    return buffer;
+}
+
 export async function POST(request: NextRequest, { params }: RouteContext) {
     try {
-        const auth = requireAuth(request);
+        const auth = await requireAuth(request);
         const { caseId, sessionId } = await params;
 
         const doc = await prisma.document.findUnique({ where: { id: sessionId } });
         if (!doc) throw new ApiError(404, "جلسة الإقرار غير موجودة");
         if (doc.tenantId !== auth.tenant_id) throw new ApiError(403, "Tenant access denied");
+        if (doc.status === "SIGNED" || doc.signedAt) {
+            throw new ApiError(409, "جلسة الإقرار تم التحقق منها بالفعل");
+        }
 
         if (!doc.payloadJson || typeof doc.payloadJson !== "object" || Array.isArray(doc.payloadJson)) {
             throw new ApiError(500, "بيانات الجلسة تالفة");
@@ -41,23 +68,52 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const method = String(session.acknowledgment_method ?? "").toUpperCase();
         const verificationTimestamp = nowIso();
         let verified = false;
+        let signatureHash: string | null = null;
+
+        const expectedHash = safe(session.otp_code_hash ?? session.otpCodeHash);
+        const parsedAttemptCount = Number(session.attempt_count ?? session.attemptCount ?? 0);
+        let attemptCount = Number.isFinite(parsedAttemptCount) ? Math.max(0, parsedAttemptCount) : 0;
+        const parsedMaxRetries = Number(session.max_retries ?? session.maxRetries ?? DEFAULT_MAX_OTP_RETRIES);
+        const maxRetries = Number.isFinite(parsedMaxRetries)
+            ? Math.min(Math.max(parsedMaxRetries, 1), 10)
+            : DEFAULT_MAX_OTP_RETRIES;
+        let locked = Boolean(session.locked) || attemptCount >= maxRetries;
+        let lockedAt = safe(session.locked_at ?? session.lockedAt) || null;
+
+        const verifyOtp = (): boolean => {
+            if (!expectedHash) {
+                throw new ApiError(400, "لا يوجد رمز OTP مرتبط بهذه الجلسة");
+            }
+            if (locked) {
+                throw new ApiError(429, "OTP attempts exceeded. Please request a new verification session.");
+            }
+
+            const submitted = safe(payload.otp_code);
+            if (!submitted) {
+                throw new ApiError(400, "otp_code is required");
+            }
+
+            const isValid = crypto.createHash("sha256").update(submitted).digest("hex") === expectedHash;
+            if (!isValid) {
+                attemptCount += 1;
+                if (attemptCount >= maxRetries) {
+                    locked = true;
+                    lockedAt = verificationTimestamp;
+                }
+            }
+            return isValid;
+        };
 
         if (method === "SMS_OTP") {
-            const submitted = safe(payload.otp_code);
-            if (!submitted) throw new ApiError(400, "otp_code is required");
-            const expectedHash = safe(session.otp_code_hash);
-            if (!expectedHash) throw new ApiError(400, "لا يوجد رمز OTP مرتبط بهذه الجلسة");
-            verified = crypto.createHash("sha256").update(submitted).digest("hex") === expectedHash;
+            verified = verifyOtp();
         } else if (method === "TABLET_SIGNATURE") {
             const signaturePayload = safe(payload.signature_payload);
-            verified = signaturePayload.length > 0;
+            const signatureBytes = decodeSignaturePayload(signaturePayload);
+            signatureHash = crypto.createHash("sha256").update(signatureBytes).digest("hex");
+            verified = true;
 
-            const expectedHash = safe(session.otp_code_hash);
             if (expectedHash) {
-                const submittedOtp = safe(payload.otp_code);
-                if (!submittedOtp) throw new ApiError(400, "otp_code is required when mobile linkage is enabled");
-                const otpOk = crypto.createHash("sha256").update(submittedOtp).digest("hex") === expectedHash;
-                verified = verified && otpOk;
+                verified = verified && verifyOtp();
             }
         } else if (method === "EMAIL_NOTICE") {
             verified = false;
@@ -70,7 +126,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             verification_status: newStatus,
             verified_at: verified ? verificationTimestamp : null,
             updated_at: verificationTimestamp,
+            attempt_count: attemptCount,
+            max_retries: maxRetries,
+            locked,
+            locked_at: locked ? (lockedAt ?? verificationTimestamp) : null,
         };
+
+        if (signatureHash) {
+            updatedSession.signature_hash = signatureHash;
+        }
 
         const providerResult =
             updatedSession.provider_result &&
@@ -90,17 +154,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             data: {
                 status: verified ? "SIGNED" : "DRAFT",
                 payloadJson: updatedSession as Prisma.InputJsonValue,
-                signedAt: verified ? new Date() : null,
-                signedByUserId: verified ? auth.sub : null,
+                signedAt: verified ? new Date() : doc.signedAt,
+                signedByUserId: verified ? auth.sub : doc.signedByUserId,
             },
         });
 
         if (verified) {
             const templateKey = String(session.document_type ?? "");
-            const signatureHash = crypto
-                .createHash("sha256")
-                .update(`${sessionId}:${caseId}:${verificationTimestamp}`)
-                .digest("hex");
+            const persistedSignatureHash = signatureHash
+                ?? crypto.createHash("sha256").update(`${sessionId}:${caseId}:${verificationTimestamp}`).digest("hex");
             const signatureDevice = safe(payload.device ?? payload.device_source);
             const signatureIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
@@ -115,7 +177,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                         data: {
                             signatureMethod: method,
                             signatureTimestamp: new Date(),
-                            signatureHash,
+                            signatureHash: persistedSignatureHash,
                             signatureDevice,
                             signatureIpAddress: signatureIp,
                         },
@@ -128,7 +190,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                             dischargeStatus: "acknowledged",
                             signatureMethod: method,
                             signatureTimestamp: new Date(),
-                            signatureHash,
+                            signatureHash: persistedSignatureHash,
                             signatureDevice,
                             signatureIpAddress: signatureIp,
                         },
@@ -151,6 +213,27 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 });
             } catch (auditErr) {
                 console.error("verify-ack: audit log write failed (non-fatal)", auditErr);
+            }
+        } else if (method !== "EMAIL_NOTICE") {
+            try {
+                await writeAuditLog({
+                    tenantId: auth.tenant_id,
+                    userId: auth.sub,
+                    caseId,
+                    action: locked ? "acknowledgment_locked" : "acknowledgment_verification_failed",
+                    entityType: "document",
+                    entityId: sessionId,
+                    documentId: sessionId,
+                    metadataJson: {
+                        method,
+                        session_id: sessionId,
+                        attempt_count: attemptCount,
+                        max_retries: maxRetries,
+                        locked,
+                    },
+                });
+            } catch (auditErr) {
+                console.error("verify-ack: verification failure audit log write failed (non-fatal)", auditErr);
             }
         }
 

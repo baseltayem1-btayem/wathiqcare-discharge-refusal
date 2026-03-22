@@ -51,7 +51,6 @@ export default function TabletSignaturePad({ value, onChange, disabled = false }
 
         const valueHasStroke = Boolean(value);
         hasStrokeRef.current = valueHasStroke;
-        setHasStroke(valueHasStroke);
     }, [value]);
 
     function getPoint(event: ReactPointerEvent<HTMLCanvasElement>) {

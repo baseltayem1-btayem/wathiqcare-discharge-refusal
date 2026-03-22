@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       throw new ApiError(404, "SHC compliance module is disabled");
     }
 
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     const payload = (await request.json().catch(() => null)) as
       | {
         caseId?: string;

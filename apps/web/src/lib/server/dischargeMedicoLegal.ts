@@ -1,6 +1,6 @@
 import { CaseStatus, CaseType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
-import type { AuthContext } from "@/lib/server/auth";
+import { requireTenantId, type AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -237,12 +237,14 @@ function mapRefusalCase(caseRecord: RefusalCaseRecord): RefusalCaseListItem {
 }
 
 export async function listRefusalCases(auth: AuthContext, limit = 200): Promise<RefusalCaseListItem[]> {
-    const cases = await findRefusalCases(auth.tenant_id, limit);
+    const tenantId = requireTenantId(auth);
+    const cases = await findRefusalCases(tenantId, limit);
     return cases.map((caseRecord) => mapRefusalCase(caseRecord));
 }
 
 export async function getRefusalQualityMetrics(auth: AuthContext): Promise<RefusalQualityMetrics> {
-    const cases = await findRefusalCases(auth.tenant_id, 500);
+    const tenantId = requireTenantId(auth);
+    const cases = await findRefusalCases(tenantId, 500);
 
     const reasons: Record<string, number> = {};
     const departments: Record<string, number> = {};
@@ -429,7 +431,8 @@ function buildLegalMetadata(
 }
 
 export async function listLegalEscalations(auth: AuthContext): Promise<LegalEscalationCase[]> {
-    const cases = await findRefusalCases(auth.tenant_id, 500);
+    const tenantId = requireTenantId(auth);
+    const cases = await findRefusalCases(tenantId, 500);
     return cases
         .map((caseRecord) => mapLegalEscalationCase(caseRecord))
         .filter((item): item is LegalEscalationCase => Boolean(item));
@@ -469,7 +472,7 @@ export async function addLegalEscalationNote(args: {
     });
 
     await writeAuditLog({
-        tenantId: args.auth.tenant_id,
+        tenantId: requireTenantId(args.auth),
         userId: args.auth.sub,
         entityType: "case",
         entityId: caseRecord.id,
@@ -520,7 +523,7 @@ export async function updateLegalEscalationPriority(args: {
     });
 
     await writeAuditLog({
-        tenantId: args.auth.tenant_id,
+        tenantId: requireTenantId(args.auth),
         userId: args.auth.sub,
         entityType: "case",
         entityId: caseRecord.id,
@@ -565,7 +568,7 @@ export async function resolveLegalEscalation(args: {
     });
 
     await writeAuditLog({
-        tenantId: args.auth.tenant_id,
+        tenantId: requireTenantId(args.auth),
         userId: args.auth.sub,
         entityType: "case",
         entityId: caseRecord.id,

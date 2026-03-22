@@ -29,33 +29,51 @@ import hmac
 import os
 import uuid
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
 # ── env must be set before importing any backend module ──────────────────────
 os.environ.setdefault("PUBLIC_LINK_TOKEN_PEPPER", "test-pepper-hardening")
-os.environ["DB_USER"] = "postgres"
-os.environ["DB_PASSWORD"] = "wCare@2026"
-os.environ["DB_HOST"] = "localhost"
-os.environ["DB_PORT"] = "5432"
-os.environ["DB_NAME"] = "wathiqcare"
+os.environ["DATABASE_URL"] = f"sqlite:///{Path(__file__).with_suffix('.sqlite3')}"
 os.environ["APP_BASE_URL"] = "http://localhost:3000"
 os.environ["SECURE_LINK_EXPIRY_HOURS"] = "72"
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret")
 os.environ.setdefault("JWT_ALGORITHM", "HS256")
 
 from fastapi.testclient import TestClient
-from sqlalchemy import text
 
-from backend.core.database import SessionLocal, engine
+from backend.api import deps as deps_module
+from backend.core import database as database_module
+from backend.core.database import Base
 from backend.main import app
 from backend.models.audit_log import AuditLog
 from backend.models.discharge_case import DischargeCase
 from backend.models.discharge_execution_item import DischargeExecutionItem
 from backend.models.secure_discharge_link import SecureDischargeLink
+from backend.services import secure_link_service as secure_link_service_module
 from backend.services.secure_link_service import _hash_token
+
+SQLITE_PATH = Path(__file__).with_suffix(".sqlite3")
+TEST_ENGINE = create_engine(
+    f"sqlite:///{SQLITE_PATH}",
+    connect_args={"check_same_thread": False},
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=TEST_ENGINE)
+
+database_module.engine = TEST_ENGINE
+database_module.SessionLocal = TestingSessionLocal
+deps_module.SessionLocal = TestingSessionLocal
+secure_link_service_module.SessionLocal = TestingSessionLocal
+app.router.on_startup.clear()
+app.router.on_shutdown.clear()
+
+# Alias so test methods that reference SessionLocal directly still work
+SessionLocal = TestingSessionLocal
 
 client = TestClient(app, raise_server_exceptions=True)
 
@@ -92,11 +110,13 @@ def _auth_headers(user_id: str = USER_ID) -> dict:
 @pytest.fixture(scope="module", autouse=True)
 def seed_db() -> Generator:
     """Insert minimal required records and clean up after all tests."""
-    db = SessionLocal()
+    Base.metadata.create_all(bind=TEST_ENGINE)
+
+    db = TestingSessionLocal()
     try:
         # Use raw SQL to avoid ORM-model/DB-schema column mismatches
         db.execute(
-            text("INSERT INTO tenants (id, name, code) VALUES (:id, :name, :code)"),
+            text("INSERT INTO tenants (id, name, code, is_active) VALUES (:id, :name, :code, 1)"),
             {"id": TENANT_ID, "name": "Test Tenant SDL", "code": "TEST"},
         )
         db.execute(
@@ -139,7 +159,7 @@ def seed_db() -> Generator:
     yield  # ── run all tests ───────────────────────────────────────────────
 
     # cleanup
-    db = SessionLocal()
+    db = TestingSessionLocal()
     try:
         db.execute(
             text("DELETE FROM secure_discharge_links WHERE tenant_id = :tid"),
@@ -165,6 +185,10 @@ def seed_db() -> Generator:
         db.rollback()
     finally:
         db.close()
+
+    Base.metadata.drop_all(bind=TEST_ENGINE)
+    if SQLITE_PATH.exists():
+        SQLITE_PATH.unlink()
 
 
 # We store generated link_id + raw_token across tests in module-level state
@@ -214,6 +238,40 @@ class TestCreateSecureLink:
             json={"recipient_email": RECIPIENT},
         )
         assert resp.status_code in (401, 403)
+
+    def test_same_recipient_recent_issue_returns_429(self, monkeypatch):
+        monkeypatch.setenv("SECURE_LINK_ISSUE_COOLDOWN_SECONDS", "3600")
+        monkeypatch.setenv("SECURE_LINK_MAX_ACTIVE_PER_CASE", "10")
+
+        with patch(
+            "backend.api.routers.secure_links._try_send_email",
+            return_value="not_configured",
+        ):
+            resp = client.post(
+                f"/api/discharge/cases/{CASE_ID}/secure-link",
+                json={"recipient_email": RECIPIENT},
+                headers=_auth_headers(),
+            )
+
+        assert resp.status_code == 429, resp.text
+        assert "recently" in resp.json()["detail"]
+
+    def test_active_link_limit_returns_429(self, monkeypatch):
+        monkeypatch.setenv("SECURE_LINK_ISSUE_COOLDOWN_SECONDS", "0")
+        monkeypatch.setenv("SECURE_LINK_MAX_ACTIVE_PER_CASE", "1")
+
+        with patch(
+            "backend.api.routers.secure_links._try_send_email",
+            return_value="not_configured",
+        ):
+            resp = client.post(
+                f"/api/discharge/cases/{CASE_ID}/secure-link",
+                json={"recipient_email": "another-recipient@example.com"},
+                headers=_auth_headers(),
+            )
+
+        assert resp.status_code == 429, resp.text
+        assert "Maximum active secure links" in resp.json()["detail"]
 
 
 # ── scenario 2: valid token resolves ─────────────────────────────────────────
@@ -414,13 +472,12 @@ class TestTokenSecurity:
     def test_no_raw_token_column_in_table(self):
         db = SessionLocal()
         try:
+            # PRAGMA table_info works on both SQLite (tests) and Postgres via
+            # the SQLite test engine; column name is at index 1.
             cols = {
-                row[0]
+                row[1]
                 for row in db.execute(
-                    text(
-                        "SELECT column_name FROM information_schema.columns "
-                        "WHERE table_name = 'secure_discharge_links'"
-                    )
+                    text("PRAGMA table_info('secure_discharge_links')")
                 ).fetchall()
             }
             assert "raw_token" not in cols

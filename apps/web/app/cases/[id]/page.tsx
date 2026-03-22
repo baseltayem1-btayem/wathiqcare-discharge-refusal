@@ -22,6 +22,11 @@ import {
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import {
+  hasOperationsAssignmentPermission,
+  hasOperationsEscalationPermission,
+  hasOperationsStepPermission,
+} from "@/lib/operations/permissions";
 import WorkflowProgress, { type WorkflowProgressStep } from "@/components/ui/WorkflowProgress";
 import DocumentPreviewModal from "@/components/workflow/DocumentPreviewModal";
 import CaseWorkflowTree from "@/components/cases/CaseWorkflowTree";
@@ -64,6 +69,54 @@ type AuditItem = {
   action: string;
   details?: string;
   created_at?: string;
+};
+
+type OperationTrackerPayload = {
+  state: {
+    currentStage: string;
+    currentStep: string;
+    assignedDepartment: string;
+    assignedDepartmentLabel?: string;
+    priority: string;
+    slaState: string;
+    escalationLevel: string;
+    status: string;
+    waitingTimeMinutes: number;
+    completedStepsCount: number;
+    totalStepsCount: number;
+    assignedToUserId?: string | null;
+    assignmentTimestamp?: string | null;
+    lastActionAt?: string | null;
+  } | null;
+  assignments: Array<{
+    id: string;
+    fromDepartment?: string | null;
+    toDepartment: string;
+    fromDepartmentLabel?: string | null;
+    toDepartmentLabel?: string | null;
+    reason?: string | null;
+    reassignedAt: string;
+  }>;
+  steps: Array<{
+    id: string;
+    stageCode: string;
+    stepCode: string;
+    action: string;
+    createdAt: string;
+    actorDepartment?: string | null;
+    actorDepartmentLabel?: string | null;
+  }>;
+};
+
+type AuthMeResponse = {
+  platformRole?: string | null;
+  claims?: {
+    role?: string;
+    platform_role?: string | null;
+  };
+  user?: {
+    role?: string | null;
+  } | null;
 };
 
 type TabKey = "overview" | "consents" | "agreements" | "roi" | "archive" | "audit";
@@ -184,6 +237,27 @@ const WORKFLOW_STAGE_ROUTES: Partial<Record<string, (caseId: string) => string>>
   official_notification: (caseId) => `/cases/${caseId}/financial-notice`,
   escalation: (caseId) => `/workflow/medical-discharge-refusal/case/${caseId}/escalation-review`,
 };
+
+const OPERATION_DEPARTMENTS = [
+  "PHARMACY",
+  "NURSING",
+  "LEGAL",
+  "LABORATORY",
+  "RADIOLOGY",
+  "CASE_MANAGEMENT",
+  "PATIENT_RELATIONS",
+  "BILLING_INSURANCE",
+  "ADMIN_MEDICAL_DIRECTOR",
+] as const;
+
+const STEP_ACTIONS = [
+  "step_completed",
+  "step_returned",
+  "delay_detected",
+  "sla_breached",
+  "escalation_triggered",
+  "case_closed",
+] as const;
 
 const VALIDATION_FIELD_MAP: Record<string, string> = {
   patientName: "patient_name",
@@ -596,6 +670,7 @@ export default function CaseDetailsPage() {
   const [caseDetail, setCaseDetail] = useState<CaseDetail | null>(null);
   const [auditItems, setAuditItems] = useState<AuditItem[]>([]);
   const [workflow, setWorkflow] = useState<DischargeWorkflow | null>(null);
+  const [operationTracker, setOperationTracker] = useState<OperationTrackerPayload | null>(null);
 
   const [draft, setDraft] = useState<WorkflowDraft>(buildDraft(null, null));
 
@@ -605,6 +680,8 @@ export default function CaseDetailsPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [generatingDocument, setGeneratingDocument] = useState(false);
   const [savingRefusalReason, setSavingRefusalReason] = useState(false);
+  const [assigningOperation, setAssigningOperation] = useState(false);
+  const [recordingStepAction, setRecordingStepAction] = useState(false);
 
   const [error, setError] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
@@ -612,6 +689,15 @@ export default function CaseDetailsPage() {
   const [preview, setPreview] = useState<WorkflowPreviewResponse | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [workflowBackendUnavailable, setWorkflowBackendUnavailable] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [platformRole, setPlatformRole] = useState<string | null>(null);
+  const [assignDepartment, setAssignDepartment] = useState<(typeof OPERATION_DEPARTMENTS)[number]>("CASE_MANAGEMENT");
+  const [assignPriority, setAssignPriority] = useState<"LOW" | "NORMAL" | "HIGH" | "CRITICAL">("NORMAL");
+  const [assignReason, setAssignReason] = useState("");
+  const [stepAction, setStepAction] = useState<(typeof STEP_ACTIONS)[number]>("step_completed");
+  const [operationStageCode, setOperationStageCode] = useState("CASE_CREATED");
+  const [operationStepCode, setOperationStepCode] = useState("case_created");
+  const [nextDepartment, setNextDepartment] = useState<(typeof OPERATION_DEPARTMENTS)[number]>("CASE_MANAGEMENT");
 
   const isBackendUnavailableError = useMemo(() => {
     if (!error) {
@@ -666,6 +752,21 @@ export default function CaseDetailsPage() {
       ? workflow?.current_stage
       : metadataWorkflowProgress.currentStepId;
 
+  const canAssignOperations = useMemo(
+    () => hasOperationsAssignmentPermission(userRole, platformRole),
+    [platformRole, userRole],
+  );
+
+  const canRunOperationSteps = useMemo(
+    () => hasOperationsStepPermission(userRole, platformRole),
+    [platformRole, userRole],
+  );
+
+  const canEscalateOperations = useMemo(
+    () => hasOperationsEscalationPermission(userRole, platformRole),
+    [platformRole, userRole],
+  );
+
   const handleWorkflowProgressStepClick = useCallback(
     (step: WorkflowProgressStep & { href?: string }) => {
       if (step.href) {
@@ -680,8 +781,27 @@ export default function CaseDetailsPage() {
     setError("");
 
     try {
-      const detail = await dischargeCasesService.getCaseDetail(caseId);
+      const [detail, me] = await Promise.all([
+        dischargeCasesService.getCaseDetail(caseId),
+        apiFetch<AuthMeResponse>("/api/auth/me", { cache: "no-store" }),
+      ]);
       setCaseDetail(detail);
+      setUserRole(me.user?.role ?? me.claims?.role ?? null);
+      setPlatformRole(me.platformRole ?? me.claims?.platform_role ?? null);
+
+      try {
+        const tracker = await apiFetch<OperationTrackerPayload>(`/api/operations/cases/${encodeURIComponent(caseId)}/tracker`);
+        setOperationTracker(tracker);
+        if (tracker.state) {
+          setAssignDepartment((tracker.state.assignedDepartment as (typeof OPERATION_DEPARTMENTS)[number]) || "CASE_MANAGEMENT");
+          setAssignPriority((tracker.state.priority as "LOW" | "NORMAL" | "HIGH" | "CRITICAL") || "NORMAL");
+          setOperationStageCode(tracker.state.currentStage || "CASE_CREATED");
+          setOperationStepCode(tracker.state.currentStep || "case_created");
+          setNextDepartment((tracker.state.assignedDepartment as (typeof OPERATION_DEPARTMENTS)[number]) || "CASE_MANAGEMENT");
+        }
+      } catch {
+        setOperationTracker(null);
+      }
 
       try {
         const workflowContract = await dischargeRefusalWorkflowService.getByCaseId(caseId);
@@ -704,6 +824,57 @@ export default function CaseDetailsPage() {
       setLoading(false);
     }
   }, [caseId, t]);
+
+  async function handleAssignOperationCase() {
+    setAssigningOperation(true);
+    setError("");
+    setInfoMessage("");
+
+    try {
+      await apiFetch(`/api/operations/cases/${encodeURIComponent(caseId)}/assign`, {
+        method: "POST",
+        body: JSON.stringify({
+          toDepartment: assignDepartment,
+          priority: assignPriority,
+          reason: assignReason.trim() || undefined,
+        }),
+      });
+
+      setInfoMessage("Case assignment updated in operations control.");
+      await loadCaseData();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to reassign case";
+      setError(message);
+    } finally {
+      setAssigningOperation(false);
+    }
+  }
+
+  async function handleRecordOperationStep() {
+    setRecordingStepAction(true);
+    setError("");
+    setInfoMessage("");
+
+    try {
+      await apiFetch(`/api/operations/cases/${encodeURIComponent(caseId)}/step`, {
+        method: "POST",
+        body: JSON.stringify({
+          action: stepAction,
+          stageCode: operationStageCode,
+          stepCode: operationStepCode,
+          nextDepartment,
+        }),
+      });
+
+      setInfoMessage("Operation step event recorded.");
+      await loadCaseData();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to record operation step";
+      setError(message);
+    } finally {
+      setRecordingStepAction(false);
+    }
+  }
 
   useEffect(() => {
     if (!caseId) {
@@ -1357,6 +1528,187 @@ export default function CaseDetailsPage() {
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             {t("caseDetails.messages.workflowServiceUnavailable")}
           </div>
+        ) : null}
+
+        {operationTracker?.state ? (
+          <section className="mb-4 rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Operations Control</h2>
+                <p className="text-xs text-slate-500">Assignment, SLA state, and workflow tracker for this case</p>
+              </div>
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${operationTracker.state.slaState === "BREACHED"
+                  ? "bg-rose-100 text-rose-700"
+                  : operationTracker.state.slaState === "AT_RISK"
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-emerald-100 text-emerald-700"
+                  }`}
+              >
+                SLA: {operationTracker.state.slaState}
+              </span>
+            </div>
+
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <article className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
+                <p className="text-slate-500">Current owner</p>
+                <p className="mt-1 font-semibold text-slate-900">{operationTracker.state.assignedDepartmentLabel || operationTracker.state.assignedDepartment}</p>
+                <p className="text-slate-600">Priority: {operationTracker.state.priority}</p>
+              </article>
+              <article className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
+                <p className="text-slate-500">Current position</p>
+                <p className="mt-1 font-semibold text-slate-900">{operationTracker.state.currentStage}</p>
+                <p className="text-slate-600">Step: {operationTracker.state.currentStep}</p>
+              </article>
+              <article className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
+                <p className="text-slate-500">Progress and escalation</p>
+                <p className="mt-1 font-semibold text-slate-900">
+                  {operationTracker.state.completedStepsCount}/{operationTracker.state.totalStepsCount} steps
+                </p>
+                <p className="text-slate-600">Escalation: {operationTracker.state.escalationLevel}</p>
+              </article>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <div className="rounded-lg border border-slate-200 p-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">Reassignment</h3>
+                {canAssignOperations ? (
+                  <>
+                    <div className="mt-2 grid gap-2 md:grid-cols-2">
+                      <select
+                        value={assignDepartment}
+                        onChange={(event) => setAssignDepartment(event.target.value as (typeof OPERATION_DEPARTMENTS)[number])}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      >
+                        {OPERATION_DEPARTMENTS.map((department) => (
+                          <option key={department} value={department}>
+                            {department.replaceAll("_", " ")}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={assignPriority}
+                        onChange={(event) => setAssignPriority(event.target.value as "LOW" | "NORMAL" | "HIGH" | "CRITICAL")}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      >
+                        <option value="LOW">LOW</option>
+                        <option value="NORMAL">NORMAL</option>
+                        <option value="HIGH">HIGH</option>
+                        <option value="CRITICAL">CRITICAL</option>
+                      </select>
+                    </div>
+                    <input
+                      value={assignReason}
+                      onChange={(event) => setAssignReason(event.target.value)}
+                      placeholder="Reason for reassignment"
+                      className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleAssignOperationCase();
+                      }}
+                      disabled={assigningOperation}
+                      className="mt-2 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                    >
+                      {assigningOperation ? "Reassigning..." : "Reassign case"}
+                    </button>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-500">Your role can view operational ownership but cannot reassign cases.</p>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-slate-200 p-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">Step actions</h3>
+                {canRunOperationSteps ? (
+                  <>
+                    <div className="mt-2 grid gap-2 md:grid-cols-2">
+                      <input
+                        value={operationStageCode}
+                        onChange={(event) => setOperationStageCode(event.target.value)}
+                        placeholder="Stage code"
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      />
+                      <input
+                        value={operationStepCode}
+                        onChange={(event) => setOperationStepCode(event.target.value)}
+                        placeholder="Step code"
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      />
+                      <select
+                        value={stepAction}
+                        onChange={(event) => setStepAction(event.target.value as (typeof STEP_ACTIONS)[number])}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      >
+                        {STEP_ACTIONS.map((action) => (
+                          <option key={action} value={action}>
+                            {action}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={nextDepartment}
+                        onChange={(event) => setNextDepartment(event.target.value as (typeof OPERATION_DEPARTMENTS)[number])}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      >
+                        {OPERATION_DEPARTMENTS.map((department) => (
+                          <option key={department} value={department}>
+                            {department.replaceAll("_", " ")}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleRecordOperationStep();
+                      }}
+                      disabled={recordingStepAction || (stepAction === "escalation_triggered" && !canEscalateOperations)}
+                      className="mt-2 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                    >
+                      {recordingStepAction ? "Recording..." : "Record step action"}
+                    </button>
+                    {stepAction === "escalation_triggered" && !canEscalateOperations ? (
+                      <p className="mt-2 text-xs text-rose-600">Your role can record operational steps but cannot trigger escalations.</p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-500">Your role can view workflow tracker history but cannot record operational step actions.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <div className="rounded-lg border border-slate-200 p-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">Recent assignments</h3>
+                <ul className="mt-2 space-y-2 text-xs text-slate-700">
+                  {operationTracker.assignments.slice(-5).reverse().map((item) => (
+                    <li key={item.id} className="rounded border border-slate-100 bg-slate-50 px-2 py-1.5">
+                      <p>
+                        {(item.fromDepartmentLabel || item.fromDepartment || "Unassigned")}{" -> "}{item.toDepartmentLabel || item.toDepartment}
+                      </p>
+                      <p className="text-slate-500">{toReadable(item.reassignedAt, locale)}</p>
+                    </li>
+                  ))}
+                  {operationTracker.assignments.length === 0 ? <li className="text-slate-500">No assignment history yet.</li> : null}
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 p-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">Recent step events</h3>
+                <ul className="mt-2 space-y-2 text-xs text-slate-700">
+                  {operationTracker.steps.slice(-5).reverse().map((item) => (
+                    <li key={item.id} className="rounded border border-slate-100 bg-slate-50 px-2 py-1.5">
+                      <p>{item.action} at {item.stageCode}/{item.stepCode}</p>
+                      <p className="text-slate-500">{toReadable(item.createdAt, locale)}</p>
+                    </li>
+                  ))}
+                  {operationTracker.steps.length === 0 ? <li className="text-slate-500">No step events yet.</li> : null}
+                </ul>
+              </div>
+            </div>
+          </section>
         ) : null}
 
         {workflow?.policy_validation ? (

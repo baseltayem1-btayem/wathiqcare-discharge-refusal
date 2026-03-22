@@ -87,7 +87,7 @@ async function sendViaBackend(args: {
 }
 export async function POST(request: NextRequest) {
     try {
-        const auth = requireAuth(request);
+        const auth = await requireAuth(request);
 
         const body = (await request.json().catch(() => null)) as WorkflowNotificationBody | null;
         const caseId = safe(body?.case_id);
