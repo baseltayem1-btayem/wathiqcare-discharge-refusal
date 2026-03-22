@@ -9,6 +9,7 @@ import { ensureTenantDepartments, ensureTenantRoleTemplates } from "@/lib/server
 import {
   canonicalizeUserRole,
   membershipRoleForUserRole,
+  userTypeForUserRole,
 } from "@/lib/server/roles";
 
 function slugifyTenantCode(input: string): string {
@@ -230,12 +231,14 @@ export async function POST(request: NextRequest) {
           fullName: ownerFullName,
           isActive: true,
           role: ownerRole,
+          userType: userTypeForUserRole(ownerRole, ownerEmail),
         },
         create: {
           tenantId: tenant.id,
           email: ownerEmail,
           fullName: ownerFullName,
           role: ownerRole,
+          userType: userTypeForUserRole(ownerRole, ownerEmail),
           isActive: true,
           hashedPassword: null,
         },

@@ -373,6 +373,12 @@ export default function AdminPage() {
       const platformAdmin = Boolean(platformRole);
       setIsPlatformAdmin(platformAdmin);
 
+      if (platformAdmin) {
+        setForbidden(true);
+        setError("Platform admins must use the WathiqCare Platform Management portal at /platform.");
+        return;
+      }
+
       const tenantsData = await apiFetch<TenantListItem[]>('/api/tenants?limit=50', INLINE_NO_STORE_AUTH_REQUEST);
       const tenantList = Array.isArray(tenantsData) ? tenantsData : [];
       setManagedTenants(tenantList);

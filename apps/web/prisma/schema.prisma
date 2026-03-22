@@ -55,6 +55,12 @@ enum TenantRoleStatus {
   INACTIVE
 }
 
+enum UserType {
+  PLATFORM_ADMIN
+  TENANT_ADMIN
+  TENANT_USER
+}
+
 enum CaseStatus {
   OPEN
   IN_PROGRESS
@@ -244,6 +250,7 @@ model User {
   tenantId            String             @map("tenant_id")
   email               String             @unique
   fullName            String             @map("full_name")
+  userType            UserType           @default(TENANT_USER) @map("user_type")
   role                String
   isActive            Boolean            @default(true) @map("is_active")
   hashedPassword      String?            @map("hashed_password")

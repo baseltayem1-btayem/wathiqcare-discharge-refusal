@@ -1,6 +1,6 @@
 import { CaseStatus, CaseType, Prisma, UsageMetric } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, requireTenantId } from "@/lib/server/auth";
+import { requireAuth, requireTenantId, requireTenantOperationalAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
@@ -36,6 +36,7 @@ function defaultCaseNumber(): string {
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireAuth(request);
+    requireTenantOperationalAccess(auth);
     const tenantId = requireTenantId(auth);
     const url = new URL(request.url);
 
@@ -68,6 +69,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireAuth(request);
+    requireTenantOperationalAccess(auth);
     const tenantId = requireTenantId(auth);
 
     if (!userRoleAllows(auth.role, CASE_CREATOR_ROLES)) {

@@ -49,13 +49,24 @@ export async function GET(request: NextRequest) {
       })
       : null;
 
-    const platformRole = auth.platform_role ?? platformRoleForUserRole(user.role);
+    const platformRole =
+      auth.platform_role ??
+      (user.userType === "PLATFORM_ADMIN" ? platformRoleForUserRole(user.role) ?? "platform_admin" : platformRoleForUserRole(user.role));
+    const userType =
+      user.userType === "PLATFORM_ADMIN"
+        ? "platform_admin"
+        : user.userType === "TENANT_ADMIN"
+          ? "tenant_admin"
+          : "tenant_user";
+    const homePath = userType === "platform_admin" ? "/platform" : "/dashboard";
 
     return NextResponse.json(
       toJsonSafe({
         authenticated: true,
         claims: auth,
         platformRole,
+        userType,
+        homePath,
         user,
         subscription,
       }),

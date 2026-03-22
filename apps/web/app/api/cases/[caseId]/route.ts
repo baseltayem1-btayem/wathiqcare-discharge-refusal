@@ -1,6 +1,6 @@
 import { CaseStatus, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
+import { requireAuth, requireTenantOperationalAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
@@ -20,6 +20,7 @@ export async function GET(
 ) {
   try {
     const auth = await requireAuth(request);
+    requireTenantOperationalAccess(auth);
     const { caseId } = await params;
 
     const item = await prisma.case.findUnique({
@@ -53,6 +54,7 @@ export async function PATCH(
 ) {
   try {
     const auth = await requireAuth(request);
+    requireTenantOperationalAccess(auth);
     const { caseId } = await params;
 
     const existing = await prisma.case.findUnique({ where: { id: caseId } });

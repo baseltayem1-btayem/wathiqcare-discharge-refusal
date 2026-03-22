@@ -20,6 +20,7 @@ import {
 import {
   canonicalizeUserRole,
   membershipRoleForUserRole,
+  userTypeForUserRole,
 } from "@/lib/server/roles";
 import { slugRoleCode } from "@/lib/server/tenant-admin";
 
@@ -179,6 +180,7 @@ export async function POST(
       update: {
         fullName,
         role: canonicalUserRole,
+        userType: userTypeForUserRole(canonicalUserRole, email),
         isActive: activateNow,
         ...(platformAccess && allowCrossTenantReassignment ? { tenantId } : {}),
       },
@@ -187,6 +189,7 @@ export async function POST(
         email,
         fullName,
         role: canonicalUserRole,
+        userType: userTypeForUserRole(canonicalUserRole, email),
         isActive: activateNow,
         hashedPassword: null,
       },

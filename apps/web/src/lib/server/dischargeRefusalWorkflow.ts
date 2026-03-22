@@ -2,6 +2,7 @@ import { CaseStatus, DocumentStatus, DocumentType, Prisma } from "@prisma/client
 import type { NextRequest } from "next/server";
 import {
     requireTenantId,
+    requireTenantOperationalAccess,
     requireTenantPermissionForAuth,
     type AuthContext,
 } from "@/lib/server/auth";
@@ -622,6 +623,7 @@ async function createGeneratedDocument(
 }
 
 export async function getWorkflowSnapshot(auth: AuthContext, caseId: string): Promise<WorkflowSnapshot> {
+    requireTenantOperationalAccess(auth);
     const tenantId = requireTenantId(auth);
     const caseRecord = await getAuthorizedCase(auth, caseId);
     const workflow = buildWorkflowState(caseRecord);
@@ -630,12 +632,14 @@ export async function getWorkflowSnapshot(auth: AuthContext, caseId: string): Pr
 }
 
 export async function listWorkflowDocuments(auth: AuthContext, caseId: string): Promise<WorkflowDocumentSummary[]> {
+    requireTenantOperationalAccess(auth);
     const tenantId = requireTenantId(auth);
     await getAuthorizedCase(auth, caseId);
     return listWorkflowDocumentsInternal(tenantId, caseId);
 }
 
 export async function listWorkflowAudit(auth: AuthContext, caseId: string): Promise<WorkflowAuditSummary[]> {
+    requireTenantOperationalAccess(auth);
     const tenantId = requireTenantId(auth);
     await getAuthorizedCase(auth, caseId);
 
@@ -664,6 +668,7 @@ export async function applyWorkflowAction(args: {
     request: NextRequest;
 }): Promise<{ workflow: WorkflowSnapshot; generatedDocument: WorkflowDocumentSummary | null }> {
     const { auth, caseId, action, payload, request } = args;
+    requireTenantOperationalAccess(auth);
     const tenantId = requireTenantId(auth);
     const caseRecord = await getAuthorizedCase(auth, caseId);
     const workflow = buildWorkflowState(caseRecord);
@@ -693,7 +698,9 @@ export async function applyWorkflowAction(args: {
 
     const actionRequiresAttendingAuthority = action === "record_discharge_decision" || action === "close_workflow";
     if (actionRequiresAttendingAuthority) {
-        const permissionContext = await requireTenantPermissionForAuth(auth, tenantId, "discharge.approve");
+        const permissionContext = await requireTenantPermissionForAuth(auth, tenantId, "discharge.approve", {
+            allowPlatform: false,
+        });
         const hasApprovePermission =
             permissionContext.permissionKeys.has("*") ||
             permissionContext.permissionKeys.has("discharge.approve");

@@ -33,16 +33,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await apiFetch<{ authenticated: boolean }>("/api/auth/login", {
+      const loginResponse = await apiFetch<{ authenticated: boolean; redirectTo?: string }>("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
       clearToken();
-      const nextPath =
+      const nextPathFromQuery =
         typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("next") || "/dashboard"
-          : "/dashboard";
+          ? new URLSearchParams(window.location.search).get("next")
+          : null;
+      const nextPath = loginResponse.redirectTo || nextPathFromQuery || "/dashboard";
       router.push(nextPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("login.failed"));

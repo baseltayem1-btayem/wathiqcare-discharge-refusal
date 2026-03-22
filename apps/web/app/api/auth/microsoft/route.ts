@@ -4,7 +4,7 @@ import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { buildSessionCookieOptions, getSessionCookieName } from "@/lib/server/sessionCookie";
 import { createAccessToken, getJwtSecret, getTokenTtlSeconds } from "@/lib/server/auth-token";
-import { canonicalizeUserRole, membershipRoleForUserRole, platformRoleForUserRole } from "@/lib/server/roles";
+import { canonicalizeUserRole, membershipRoleForUserRole, platformRoleForUserRole, userTypeForUserRole } from "@/lib/server/roles";
 import { enforceSeatLimit, syncActiveUserUsage } from "@/lib/server/saas-services";
 
 type MicrosoftLoginPayload = {
@@ -216,6 +216,7 @@ export async function POST(request: NextRequest) {
         const tenantPolicy = resolveTenantPolicy(tenant.metadata);
         const shouldActivate = preRegistration?.activate ?? !tenantPolicy.requireApprovalForMicrosoftLogin;
         const defaultRole = canonicalizeUserRole(preRegistration?.role ?? "viewer");
+        const defaultUserType = userTypeForUserRole(defaultRole, profile.email);
 
         let user = await prisma.user.findUnique({ where: { email: profile.email } });
 
@@ -229,6 +230,7 @@ export async function POST(request: NextRequest) {
                     email: profile.email,
                     fullName: profile.fullName,
                     role: defaultRole,
+                    userType: defaultUserType,
                     isActive: shouldActivate,
                     hashedPassword: null,
                 },
@@ -244,7 +246,17 @@ export async function POST(request: NextRequest) {
             if (!user.fullName || user.fullName === user.email) {
                 user = await prisma.user.update({
                     where: { id: user.id },
-                    data: { fullName: profile.fullName },
+                    data: {
+                        fullName: profile.fullName,
+                        userType: userTypeForUserRole(user.role, user.email),
+                    },
+                });
+            } else if (user.userType !== userTypeForUserRole(user.role, user.email)) {
+                user = await prisma.user.update({
+                    where: { id: user.id },
+                    data: {
+                        userType: userTypeForUserRole(user.role, user.email),
+                    },
                 });
             }
         }
@@ -297,12 +309,19 @@ export async function POST(request: NextRequest) {
         const now = Math.floor(Date.now() / 1000);
         const exp = now + getTokenTtlSeconds();
         const platformRole = platformRoleForUserRole(user.role);
+        const userType = userTypeForUserRole(user.role, user.email);
 
         const accessToken = createAccessToken(
             {
                 sub: user.id,
                 email: user.email,
                 role: user.role,
+                user_type:
+                    userType === "PLATFORM_ADMIN"
+                        ? "platform_admin"
+                        : userType === "TENANT_ADMIN"
+                            ? "tenant_admin"
+                            : "tenant_user",
                 platform_role: platformRole,
                 tenant_id: user.tenantId,
                 tenant_code: tenant.code,
@@ -311,7 +330,18 @@ export async function POST(request: NextRequest) {
             secret,
         );
 
-        const response = NextResponse.json({ authenticated: true, provider: "microsoft", autoProvisioned: true });
+        const response = NextResponse.json({
+            authenticated: true,
+            provider: "microsoft",
+            autoProvisioned: true,
+            redirectTo: userType === "PLATFORM_ADMIN" ? "/platform" : "/dashboard",
+            userType:
+                userType === "PLATFORM_ADMIN"
+                    ? "platform_admin"
+                    : userType === "TENANT_ADMIN"
+                        ? "tenant_admin"
+                        : "tenant_user",
+        });
         response.cookies.set(
             getSessionCookieName(),
             accessToken,

@@ -21,7 +21,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const tenantId = requireTenantId(auth);
         const { caseId } = await params;
 
-        await requireTenantPermissionForAuth(auth, tenantId, "clinical.case.assign");
+        await requireTenantPermissionForAuth(auth, tenantId, "clinical.case.assign", {
+            allowPlatform: false,
+        });
 
         const body = (await request.json().catch(() => null)) as
             | {

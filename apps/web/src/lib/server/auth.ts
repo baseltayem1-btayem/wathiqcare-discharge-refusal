@@ -9,6 +9,7 @@ export type AuthContext = {
   sub: string;
   email?: string;
   role?: string;
+  user_type?: "platform_admin" | "tenant_admin" | "tenant_user";
   tenant_id?: string;
   tenant_code?: string;
   platform_role?: "platform_superadmin" | "platform_admin" | null;
@@ -102,7 +103,10 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     throw new ApiError(401, "Tenant claims are no longer valid");
   }
 
-  const platformRole = platformRoleForUserRole(user.role);
+  const platformRole =
+    user.userType === "PLATFORM_ADMIN"
+      ? platformRoleForUserRole(user.role) ?? "platform_admin"
+      : platformRoleForUserRole(user.role);
   if (!platformRole && !user.primaryTenant?.isActive) {
     throw new ApiError(403, "Tenant is inactive");
   }
@@ -118,6 +122,12 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     sub: user.id,
     email: user.email,
     role: user.role,
+    user_type:
+      user.userType === "PLATFORM_ADMIN"
+        ? "platform_admin"
+        : user.userType === "TENANT_ADMIN"
+          ? "tenant_admin"
+          : "tenant_user",
     tenant_id: user.tenantId,
     tenant_code: user.primaryTenant?.code,
     platform_role: platformRole,
@@ -126,6 +136,9 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
 }
 
 export function hasPlatformAccess(auth: AuthContext): boolean {
+  if (auth.user_type === "platform_admin") {
+    return true;
+  }
   if (auth.platform_role) {
     return true;
   }
@@ -159,6 +172,12 @@ export function requireTenantId(auth: AuthContext): string {
     throw new ApiError(403, "Tenant context is required for this action");
   }
   return auth.tenant_id;
+}
+
+export function requireTenantOperationalAccess(auth: AuthContext): void {
+  if (auth.user_type === "platform_admin") {
+    throw new ApiError(403, "Platform admins cannot operate tenant clinical workflows");
+  }
 }
 
 export function requireRole(auth: AuthContext, allowedRoles: string[]): void {
@@ -225,12 +244,18 @@ export async function requireTenantPermissionForAuth(
   auth: AuthContext,
   tenantId: string,
   requiredPermissions: string | string[],
+  options: { allowPlatform?: boolean } = {},
 ): Promise<TenantPermissionContext> {
-  if (hasPlatformAccess(auth)) {
+  const allowPlatform = options.allowPlatform !== false;
+  if (hasPlatformAccess(auth) && allowPlatform) {
     return {
       auth,
       permissionKeys: new Set(["*"]),
     };
+  }
+
+  if (hasPlatformAccess(auth) && !allowPlatform) {
+    throw new ApiError(403, "Platform admins cannot perform tenant operational actions");
   }
 
   if (auth.tenant_id !== tenantId) {

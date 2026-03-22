@@ -76,9 +76,7 @@ export async function getSetupStatus() {
     prisma.user.count(),
     prisma.user.count({
       where: {
-        role: {
-          in: ["platform_superadmin", "platform_admin"],
-        },
+        userType: "PLATFORM_ADMIN",
         isActive: true,
       },
     }),
@@ -201,6 +199,7 @@ export async function ensureImcBootstrap(input: {
     update: {
       fullName: input.adminFullName,
       role: "platform_superadmin",
+      userType: "PLATFORM_ADMIN",
       isActive: true,
       tenantId: tenant.id,
       hashedPassword: input.passwordHash,
@@ -210,6 +209,27 @@ export async function ensureImcBootstrap(input: {
       email: input.adminEmail.toLowerCase(),
       fullName: input.adminFullName,
       role: "platform_superadmin",
+      userType: "PLATFORM_ADMIN",
+      isActive: true,
+      hashedPassword: input.passwordHash,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "admin@wathiqcare.online" },
+    update: {
+      tenantId: tenant.id,
+      fullName: "WathiqCare Platform Admin",
+      role: "platform_admin",
+      userType: "PLATFORM_ADMIN",
+      isActive: true,
+    },
+    create: {
+      tenantId: tenant.id,
+      email: "admin@wathiqcare.online",
+      fullName: "WathiqCare Platform Admin",
+      role: "platform_admin",
+      userType: "PLATFORM_ADMIN",
       isActive: true,
       hashedPassword: input.passwordHash,
     },

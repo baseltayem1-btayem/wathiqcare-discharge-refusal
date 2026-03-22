@@ -49,6 +49,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             auth,
             tenantId,
             body.action === "escalation_triggered" ? "legal.escalate" : "clinical.step.execute",
+            { allowPlatform: false },
         );
 
         await recordCaseStepAction({

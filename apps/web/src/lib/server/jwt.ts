@@ -9,6 +9,7 @@ export type JwtClaims = {
     sub: string;
     email?: string;
     role?: string;
+    user_type?: "platform_admin" | "tenant_admin" | "tenant_user";
     tenant_id?: string;
     tenant_code?: string | null;
     platform_role?: "platform_superadmin" | "platform_admin" | null;

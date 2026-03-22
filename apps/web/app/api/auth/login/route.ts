@@ -3,7 +3,7 @@ import { prisma } from "@/lib/server/prisma";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import bcrypt from "bcryptjs";
 import { buildSessionCookieOptions, getSessionCookieName } from "@/lib/server/sessionCookie";
-import { platformRoleForUserRole } from "@/lib/server/roles";
+import { platformRoleForUserRole, userTypeForUserRole } from "@/lib/server/roles";
 import { createAccessToken, getJwtSecret, getTokenTtlSeconds } from "@/lib/server/auth-token";
 
 type LoginPayload = {
@@ -45,10 +45,18 @@ export async function POST(request: Request) {
       throw new ApiError(401, "Invalid credentials");
     }
 
-    const platformRole = platformRoleForUserRole(user.role);
+    const effectiveUserType = userTypeForUserRole(user.role, user.email);
+    const platformRole = effectiveUserType === "PLATFORM_ADMIN" ? platformRoleForUserRole(user.role) ?? "platform_admin" : null;
     const allowTenantPasswordLogin = process.env.ALLOW_TENANT_PASSWORD_LOGIN === "true";
     if (!platformRole && !allowTenantPasswordLogin) {
       throw new ApiError(403, "Password login is disabled for tenant users. Use Microsoft sign-in.");
+    }
+
+    if (user.userType !== effectiveUserType) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { userType: effectiveUserType },
+      });
     }
 
     const secret = getJwtSecret();
@@ -60,6 +68,12 @@ export async function POST(request: Request) {
         sub: user.id,
         email: user.email,
         role: user.role,
+        user_type:
+          effectiveUserType === "PLATFORM_ADMIN"
+            ? "platform_admin"
+            : effectiveUserType === "TENANT_ADMIN"
+              ? "tenant_admin"
+              : "tenant_user",
         platform_role: platformRole,
         tenant_id: user.tenantId,
         tenant_code: user.primaryTenant?.code ?? null,
@@ -68,7 +82,16 @@ export async function POST(request: Request) {
       secret,
     );
 
-    const response = NextResponse.json({ authenticated: true });
+    const response = NextResponse.json({
+      authenticated: true,
+      redirectTo: effectiveUserType === "PLATFORM_ADMIN" ? "/platform" : "/dashboard",
+      userType:
+        effectiveUserType === "PLATFORM_ADMIN"
+          ? "platform_admin"
+          : effectiveUserType === "TENANT_ADMIN"
+            ? "tenant_admin"
+            : "tenant_user",
+    });
     response.cookies.set(
       getSessionCookieName(),
       accessToken,
