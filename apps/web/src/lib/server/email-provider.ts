@@ -43,19 +43,20 @@ function redactTokenBody(body: string): string {
 }
 
 function smtpConfigured(): boolean {
-    return !!(process.env.SMTP_HOST?.trim() && process.env.SMTP_USER?.trim() && process.env.SMTP_PASS?.trim());
+    const pass = process.env.SMTP_PASS?.trim() || process.env.RESEND_API_KEY?.trim();
+    return !!pass;
 }
 
 async function sendViaSmtp(args: SendEmailArgs): Promise<EmailDiagnostics> {
-    const host = process.env.SMTP_HOST?.trim();
+    const host = process.env.SMTP_HOST?.trim() || "smtp.resend.com";
     const port = Number(process.env.SMTP_PORT || "587");
     const secure = String(process.env.SMTP_SECURE || "false").toLowerCase() === "true";
-    const user = process.env.SMTP_USER?.trim();
-    const pass = process.env.SMTP_PASS?.trim();
-    const from = process.env.SMTP_FROM?.trim() || user;
+    const user = process.env.SMTP_USER?.trim() || "resend";
+    const pass = process.env.SMTP_PASS?.trim() || process.env.RESEND_API_KEY?.trim();
+    const from = process.env.EMAIL_FROM?.trim() || process.env.SMTP_FROM?.trim() || process.env.MICROSOFT_SENDER_EMAIL?.trim() || "noreply@wathiqcare.online";
 
-    if (!host || !user || !pass || !from) {
-        throw new Error("SMTP email configuration is missing");
+    if (!pass) {
+        throw new Error("SMTP email configuration is missing: SMTP_PASS or RESEND_API_KEY must be set");
     }
 
     const transport = nodemailer.createTransport({
