@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { isPlatformRole, platformRoleForUserRole } from "@/lib/server/roles";
+import { writeAuditLog } from "@/lib/server/saas-services";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
 
@@ -147,9 +148,36 @@ export function hasPlatformAccess(auth: AuthContext): boolean {
 
 export async function requirePlatformAccess(request: NextRequest): Promise<AuthContext> {
   const auth = await requireAuth(request);
+
+  // Platform APIs must be restricted to platform-admin identity only.
+  if (auth.user_type !== "platform_admin") {
+    throw new ApiError(403, "Platform admin permissions required");
+  }
+
   if (!hasPlatformAccess(auth)) {
     throw new ApiError(403, "Platform admin permissions required");
   }
+
+  if (auth.tenant_id) {
+    try {
+      await writeAuditLog({
+        tenantId: auth.tenant_id,
+        userId: auth.sub,
+        entityType: "PLATFORM_API",
+        entityId: request.nextUrl.pathname,
+        action: "PLATFORM_ENDPOINT_ACCESS",
+        details: `${request.method} ${request.nextUrl.pathname}`,
+        metadataJson: {
+          method: request.method,
+          path: request.nextUrl.pathname,
+        },
+        request,
+      });
+    } catch (auditError) {
+      console.error("platform access audit log write failed (non-fatal)", auditError);
+    }
+  }
+
   return auth;
 }
 

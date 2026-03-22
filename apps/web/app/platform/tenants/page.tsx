@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Building2, Plus, RefreshCw } from "lucide-react";
-import { apiFetch } from "@/utils/api";
+import { apiFetchJson } from "@/utils/api";
 
 type TenantListItem = {
     id: string;
@@ -48,7 +48,7 @@ export default function TenantsPage() {
         setError("");
 
         try {
-            const result = await apiFetch<TenantListItem[]>("/api/tenants?limit=100", { cache: "no-store" });
+            const result = await apiFetchJson<TenantListItem[]>("/api/tenants?limit=100", { cache: "no-store" });
             const list = Array.isArray(result) ? result : [];
             setTenants(list);
         } catch (err) {
@@ -73,7 +73,7 @@ export default function TenantsPage() {
         setNotice("");
 
         try {
-            await apiFetch("/api/tenants", {
+            await apiFetchJson("/api/tenants", {
                 method: "POST",
                 body: JSON.stringify({
                     name: tenantForm.name,

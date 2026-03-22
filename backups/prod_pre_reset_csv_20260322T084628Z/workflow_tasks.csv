@@ -1,0 +1,1 @@
+id,case_id,stage_code,task_code,title,description,assigned_user_id,assigned_team_code,assigned_role_code,status,priority,due_at,completed_at,completed_by,escalation_level,parent_task_id,metadata_json,created_at,updated_at

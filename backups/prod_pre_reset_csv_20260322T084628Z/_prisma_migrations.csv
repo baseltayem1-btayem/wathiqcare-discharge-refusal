@@ -1,0 +1,2 @@
+id,checksum,finished_at,migration_name,logs,rolled_back_at,started_at,applied_steps_count
+6250d355-6230-41ec-9a2e-fc25fb09132d,c8ec1701f6ed591c260a26f814a40a1ff6765d7cf7afb9f8a1eec633f2f69d0d,2026-03-07 20:54:38.94911+00,20260307201000_saas_foundation,,,2026-03-07 20:54:38.03781+00,1

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ClipboardList, RefreshCw } from "lucide-react";
-import { apiFetch } from "@/utils/api";
+import { RefreshCw } from "lucide-react";
+import { apiFetchJson } from "@/utils/api";
 
 type AuditLogEntry = {
     id: string;
@@ -27,7 +27,7 @@ export default function AuditPage() {
 
         try {
             const query = filter ? `?search=${encodeURIComponent(filter)}` : "?limit=100";
-            const result = await apiFetch<AuditLogEntry[]>(`/api/audit-log${query}`, { cache: "no-store" });
+            const result = await apiFetchJson<AuditLogEntry[]>(`/api/audit-log${query}`, { cache: "no-store" });
             const list = Array.isArray(result) ? result : [];
             setLogs(list);
         } catch (err) {
@@ -58,7 +58,19 @@ export default function AuditPage() {
                 </button>
             </div>
 
-            {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+            {error ? (
+                <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                    <p className="text-sm font-semibold text-rose-800">Unable to load audit logs</p>
+                    <p className="mt-1 text-sm text-rose-700">The audit service response is unavailable or invalid. Please retry.</p>
+                    <button
+                        type="button"
+                        onClick={() => void loadLogs()}
+                        className="mt-2 inline-flex items-center rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
+                    >
+                        Retry
+                    </button>
+                </div>
+            ) : null}
 
             {/* Filter */}
             <div className="mb-4 flex gap-2">
@@ -107,7 +119,7 @@ export default function AuditPage() {
                                         <td className="px-3 py-3">{log.resource} {log.resourceId && `(${log.resourceId})`}</td>
                                         <td className="px-3 py-3">
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${log.status === "success" ? "bg-emerald-100 text-emerald-700" :
-                                                    "bg-rose-100 text-rose-700"
+                                                "bg-rose-100 text-rose-700"
                                                 }`}>
                                                 {log.status}
                                             </span>

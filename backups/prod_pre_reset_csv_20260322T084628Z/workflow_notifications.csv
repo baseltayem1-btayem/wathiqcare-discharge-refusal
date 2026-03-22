@@ -1,0 +1,1 @@
+id,case_id,task_id,recipient_user_id,recipient_email,recipient_team_code,channel,notification_type,title,body,status,sent_at,read_at,error_message,metadata_json,created_at

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Bell } from "lucide-react";
 
 type PlatformNotification = {
@@ -13,16 +13,9 @@ type PlatformNotification = {
 
 export default function PlatformNotificationBell() {
     const [open, setOpen] = useState(false);
-    const [items, setItems] = useState<PlatformNotification[]>([]);
-    const [unread, setUnread] = useState(0);
-
-    useEffect(() => {
-        // Platform notifications would come from a platform-level events system
-        // For now, this is a stub ready for future implementation
-        // No API calls are made - only platform-level events are shown
-        setItems([]);
-        setUnread(0);
-    }, []);
+    // Stub until platform event feed is connected.
+    const items: PlatformNotification[] = [];
+    const unread = 0;
 
     return (
         <div className="relative">

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { checkAttendingPhysicianAuthority } from "./clinical-authority.ts";
+import { checkAttendingPhysicianAuthority } from "./clinical-authority";
 
 test("allows discharge approval when permission exists and user is attending physician", () => {
     const result = checkAttendingPhysicianAuthority({

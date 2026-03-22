@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MembershipStatus, Prisma } from "@prisma/client";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { buildSessionCookieOptions, getSessionCookieName } from "@/lib/server/sessionCookie";
 import { createAccessToken, getJwtSecret, getTokenTtlSeconds } from "@/lib/server/auth-token";
-import { canonicalizeUserRole, membershipRoleForUserRole, platformRoleForUserRole, userTypeForUserRole } from "@/lib/server/roles";
-import { enforceSeatLimit, syncActiveUserUsage } from "@/lib/server/saas-services";
+import { platformRoleForUserRole, userTypeForUserRole } from "@/lib/server/roles";
+import {
+    enforceSharedPostAuthAccess,
+    extractDomain,
+    isTenantDomainAllowed,
+    normalizeEmail,
+} from "@/lib/server/auth-domain-policy";
 
 type MicrosoftLoginPayload = {
     accessToken?: string;
@@ -16,10 +20,6 @@ type MicrosoftLoginPayload = {
 type MicrosoftProfile = {
     email: string;
     fullName: string;
-};
-
-type TenantPolicy = {
-    requireApprovalForMicrosoftLogin: boolean;
 };
 
 function parseEmailFromIdToken(idToken: string | undefined): string | null {
@@ -34,7 +34,7 @@ function parseEmailFromIdToken(idToken: string | undefined): string | null {
             (typeof decoded.upn === "string" && decoded.upn) ||
             (typeof decoded.email === "string" && decoded.email) ||
             null;
-        return email ? email.trim().toLowerCase() : null;
+        return normalizeEmail(email);
     } catch {
         return null;
     }
@@ -59,7 +59,7 @@ async function resolveMicrosoftProfile(payload: MicrosoftLoginPayload): Promise<
             userPrincipalName?: string;
         };
 
-        const email = (json.mail || json.userPrincipalName || "").trim().toLowerCase();
+        const email = normalizeEmail(json.mail || json.userPrincipalName || "");
         if (!email) {
             throw new ApiError(401, "Microsoft profile did not include an email address");
         }
@@ -79,7 +79,7 @@ async function resolveMicrosoftProfile(payload: MicrosoftLoginPayload): Promise<
     }
 
     const allowUnsafeAssertion = process.env.MICROSOFT_TRUST_EMAIL_ASSERTION === "true";
-    const assertedEmail = payload.emailHint?.trim().toLowerCase();
+    const assertedEmail = normalizeEmail(payload.emailHint);
     if (allowUnsafeAssertion && assertedEmail) {
         return {
             email: assertedEmail,
@@ -90,110 +90,6 @@ async function resolveMicrosoftProfile(payload: MicrosoftLoginPayload): Promise<
     throw new ApiError(401, "Microsoft login payload is missing a verifiable token");
 }
 
-function getAllowedDomains(tenant: { domain: string | null; metadata: unknown }): string[] {
-    const domains = new Set<string>();
-    if (tenant.domain) {
-        domains.add(tenant.domain.toLowerCase());
-    }
-
-    if (tenant.metadata && typeof tenant.metadata === "object" && !Array.isArray(tenant.metadata)) {
-        const metadata = tenant.metadata as Record<string, unknown>;
-        const sso = metadata.sso;
-        if (sso && typeof sso === "object" && !Array.isArray(sso)) {
-            const allowedDomains = (sso as Record<string, unknown>).allowedDomains;
-            if (Array.isArray(allowedDomains)) {
-                for (const value of allowedDomains) {
-                    if (typeof value === "string" && value.trim()) {
-                        domains.add(value.trim().toLowerCase());
-                    }
-                }
-            }
-        }
-    }
-
-    return Array.from(domains);
-}
-
-async function resolveTenantForDomain(domain: string) {
-    const tenants = await prisma.tenant.findMany({
-        where: { isActive: true },
-        select: {
-            id: true,
-            code: true,
-            name: true,
-            domain: true,
-            metadata: true,
-        },
-    });
-
-    const normalizedDomain = domain.toLowerCase();
-    const matched = tenants.find((tenant) => {
-        const domains = getAllowedDomains({ domain: tenant.domain, metadata: tenant.metadata });
-        return domains.includes(normalizedDomain);
-    });
-
-    if (matched) return matched;
-
-    if (normalizedDomain === "imc.med.sa") {
-        const imc = tenants.find((tenant) => tenant.code.toUpperCase() === "IMC");
-        if (imc) return imc;
-    }
-
-    return null;
-}
-
-async function resolvePreRegistration(tenantId: string, email: string): Promise<{ role?: string; departmentCode?: string; activate?: boolean } | null> {
-    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { metadata: true } });
-    if (!tenant?.metadata || typeof tenant.metadata !== "object" || Array.isArray(tenant.metadata)) {
-        return null;
-    }
-
-    const metadata = tenant.metadata as Record<string, unknown>;
-    const adminConfig = metadata.adminConfig;
-    if (!adminConfig || typeof adminConfig !== "object" || Array.isArray(adminConfig)) {
-        return null;
-    }
-
-    const preRegistered = (adminConfig as Record<string, unknown>).preRegisteredUsers;
-    if (!Array.isArray(preRegistered)) {
-        return null;
-    }
-
-    const hit = preRegistered.find((entry) => {
-        if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
-        const candidateEmail = String((entry as Record<string, unknown>).email || "").trim().toLowerCase();
-        return candidateEmail === email;
-    });
-
-    if (!hit || typeof hit !== "object" || Array.isArray(hit)) {
-        return null;
-    }
-
-    const record = hit as Record<string, unknown>;
-    return {
-        role: typeof record.role === "string" ? record.role : undefined,
-        departmentCode: typeof record.departmentCode === "string" ? record.departmentCode : undefined,
-        activate: typeof record.activate === "boolean" ? record.activate : undefined,
-    };
-}
-
-function resolveTenantPolicy(metadata: unknown): TenantPolicy {
-    if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-        return { requireApprovalForMicrosoftLogin: false };
-    }
-
-    const root = metadata as Record<string, unknown>;
-    const adminConfig = root.adminConfig;
-    if (!adminConfig || typeof adminConfig !== "object" || Array.isArray(adminConfig)) {
-        return { requireApprovalForMicrosoftLogin: false };
-    }
-
-    const requireApproval = (adminConfig as Record<string, unknown>).requireApprovalForMicrosoftLogin;
-    return {
-        requireApprovalForMicrosoftLogin: requireApproval === true,
-    };
-}
-
 export async function POST(request: NextRequest) {
     try {
         const payload = (await request.json().catch(() => null)) as MicrosoftLoginPayload | null;
@@ -202,108 +98,64 @@ export async function POST(request: NextRequest) {
         }
 
         const profile = await resolveMicrosoftProfile(payload);
-        const domain = profile.email.split("@")[1]?.toLowerCase();
+        const domain = extractDomain(profile.email);
         if (!domain) {
             throw new ApiError(403, "Unauthorized email domain");
         }
 
-        const tenant = await resolveTenantForDomain(domain);
-        if (!tenant) {
+        const user = await prisma.user.findUnique({
+            where: { email: profile.email },
+            include: {
+                primaryTenant: {
+                    select: {
+                        code: true,
+                    },
+                },
+            },
+        });
+
+        if (!user) {
+            throw new ApiError(403, "Account is not eligible for Microsoft sign-in");
+        }
+
+        const domainAllowed = await isTenantDomainAllowed(user.tenantId, domain);
+        if (!domainAllowed) {
             throw new ApiError(403, "Unauthorized Microsoft domain");
         }
 
-        const preRegistration = await resolvePreRegistration(tenant.id, profile.email);
-        const tenantPolicy = resolveTenantPolicy(tenant.metadata);
-        const shouldActivate = preRegistration?.activate ?? !tenantPolicy.requireApprovalForMicrosoftLogin;
-        const defaultRole = canonicalizeUserRole(preRegistration?.role ?? "viewer");
-        const defaultUserType = userTypeForUserRole(defaultRole, profile.email);
-
-        let user = await prisma.user.findUnique({ where: { email: profile.email } });
-
-        if (!user) {
-            if (shouldActivate) {
-                await enforceSeatLimit(tenant.id, 1);
-            }
-            user = await prisma.user.create({
+        if (!user.fullName || user.fullName === user.email) {
+            await prisma.user.update({
+                where: { id: user.id },
                 data: {
-                    tenantId: tenant.id,
-                    email: profile.email,
                     fullName: profile.fullName,
-                    role: defaultRole,
-                    userType: defaultUserType,
-                    isActive: shouldActivate,
-                    hashedPassword: null,
+                    userType: userTypeForUserRole(user.role, user.email),
                 },
             });
-        } else {
-            if (user.tenantId !== tenant.id) {
-                throw new ApiError(403, "User is linked to a different tenant");
-            }
-            if (!user.isActive && shouldActivate) {
-                throw new ApiError(403, "User account is inactive");
-            }
-
-            if (!user.fullName || user.fullName === user.email) {
-                user = await prisma.user.update({
-                    where: { id: user.id },
-                    data: {
-                        fullName: profile.fullName,
-                        userType: userTypeForUserRole(user.role, user.email),
-                    },
-                });
-            } else if (user.userType !== userTypeForUserRole(user.role, user.email)) {
-                user = await prisma.user.update({
-                    where: { id: user.id },
-                    data: {
-                        userType: userTypeForUserRole(user.role, user.email),
-                    },
-                });
-            }
+        } else if (user.userType !== userTypeForUserRole(user.role, user.email)) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    userType: userTypeForUserRole(user.role, user.email),
+                },
+            });
         }
 
-        const existingMembership = await prisma.tenantMembership.findUnique({
-            where: {
-                tenantId_userId: {
-                    tenantId: tenant.id,
-                    userId: user.id,
-                },
-            },
+        await enforceSharedPostAuthAccess({
+            id: user.id,
+            tenantId: user.tenantId,
+            email: user.email,
+            role: user.role,
+            isActive: user.isActive,
+            status: null,
         });
 
-        if (shouldActivate && (!existingMembership || existingMembership.status !== MembershipStatus.ACTIVE)) {
-            await enforceSeatLimit(tenant.id, 1);
-        }
-
-        const membershipMetadata: Prisma.JsonObject | undefined = preRegistration?.departmentCode
-            ? ({ departmentCode: preRegistration.departmentCode } as Prisma.JsonObject)
-            : undefined;
-
-        await prisma.tenantMembership.upsert({
-            where: {
-                tenantId_userId: {
-                    tenantId: tenant.id,
-                    userId: user.id,
-                },
-            },
-            update: {
-                status: shouldActivate ? MembershipStatus.ACTIVE : MembershipStatus.INVITED,
-                role: membershipRoleForUserRole(canonicalizeUserRole(user.role)),
-                metadata: membershipMetadata,
-            },
-            create: {
-                tenantId: tenant.id,
-                userId: user.id,
-                status: shouldActivate ? MembershipStatus.ACTIVE : MembershipStatus.INVITED,
-                role: membershipRoleForUserRole(canonicalizeUserRole(user.role)),
-                metadata: membershipMetadata,
-            },
-        });
-
-        await syncActiveUserUsage(tenant.id);
-
-        if (!shouldActivate) {
-            throw new ApiError(403, "Account is pending tenant admin approval");
-        }
+        await prisma.$executeRaw`
+          UPDATE users
+          SET auth_provider = 'microsoft',
+              status = 'active',
+              last_login_at = NOW()
+          WHERE id = ${user.id}
+        `;
 
         const secret = getJwtSecret();
         const now = Math.floor(Date.now() / 1000);
@@ -324,7 +176,7 @@ export async function POST(request: NextRequest) {
                             : "tenant_user",
                 platform_role: platformRole,
                 tenant_id: user.tenantId,
-                tenant_code: tenant.code,
+                tenant_code: user.primaryTenant?.code || null,
                 exp,
             },
             secret,
@@ -333,7 +185,7 @@ export async function POST(request: NextRequest) {
         const response = NextResponse.json({
             authenticated: true,
             provider: "microsoft",
-            autoProvisioned: true,
+            autoProvisioned: false,
             redirectTo: userType === "PLATFORM_ADMIN" ? "/platform" : "/dashboard",
             userType:
                 userType === "PLATFORM_ADMIN"

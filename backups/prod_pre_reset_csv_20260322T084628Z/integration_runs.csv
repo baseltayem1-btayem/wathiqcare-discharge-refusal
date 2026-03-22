@@ -1,0 +1,1 @@
+id,connector_id,connector_key,connector_name,run_type,status,started_at,completed_at,records_processed,records_created,records_updated,records_failed,error_summary,triggered_by,details_json,created_at

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CreditCard, RefreshCw } from "lucide-react";
-import { apiFetch } from "@/utils/api";
+import { apiFetchJson } from "@/utils/api";
 
 type SubscriptionItem = {
     id: string;
@@ -25,7 +25,7 @@ export default function SubscriptionsPage() {
         setError("");
 
         try {
-            const result = await apiFetch<SubscriptionItem[]>("/api/subscriptions", { cache: "no-store" });
+            const result = await apiFetchJson<SubscriptionItem[]>("/api/subscriptions", { cache: "no-store" });
             const list = Array.isArray(result) ? result : [];
             setSubscriptions(list);
         } catch (err) {
@@ -56,7 +56,19 @@ export default function SubscriptionsPage() {
                 </button>
             </div>
 
-            {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+            {error ? (
+                <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                    <p className="text-sm font-semibold text-rose-800">Unable to load subscriptions</p>
+                    <p className="mt-1 text-sm text-rose-700">Please try again. If the issue persists, check platform API availability.</p>
+                    <button
+                        type="button"
+                        onClick={() => void loadSubscriptions()}
+                        className="mt-2 inline-flex items-center rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
+                    >
+                        Retry
+                    </button>
+                </div>
+            ) : null}
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <div className="flex items-center gap-2 mb-3">
@@ -87,9 +99,9 @@ export default function SubscriptionsPage() {
                                         <td className="px-3 py-3 font-medium">{sub.planCode}</td>
                                         <td className="px-3 py-3">
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${sub.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" :
-                                                    sub.status === "TRIALING" ? "bg-blue-100 text-blue-700" :
-                                                        sub.status === "PAST_DUE" ? "bg-amber-100 text-amber-700" :
-                                                            "bg-slate-100 text-slate-700"
+                                                sub.status === "TRIALING" ? "bg-blue-100 text-blue-700" :
+                                                    sub.status === "PAST_DUE" ? "bg-amber-100 text-amber-700" :
+                                                        "bg-slate-100 text-slate-700"
                                                 }`}>
                                                 {sub.status}
                                             </span>

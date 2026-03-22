@@ -47,9 +47,8 @@ export async function POST(request: Request) {
 
     const effectiveUserType = userTypeForUserRole(user.role, user.email);
     const platformRole = effectiveUserType === "PLATFORM_ADMIN" ? platformRoleForUserRole(user.role) ?? "platform_admin" : null;
-    const allowTenantPasswordLogin = process.env.ALLOW_TENANT_PASSWORD_LOGIN === "true";
-    if (!platformRole && !allowTenantPasswordLogin) {
-      throw new ApiError(403, "Password login is disabled for tenant users. Use Microsoft sign-in.");
+    if (!platformRole) {
+      throw new ApiError(403, "Password login is disabled for tenant users. Use secure email link sign-in.");
     }
 
     if (user.userType !== effectiveUserType) {

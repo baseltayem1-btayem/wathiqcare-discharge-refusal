@@ -1,0 +1,2 @@
+id,tenant_id,subscription_id,invoice_number,status,currency,subtotal_cents,tax_cents,total_cents,amount_due_cents,amount_paid_cents,due_at,paid_at,external_invoice_id,metadata,created_at,updated_at
+8345dcac-130d-4cbf-9c00-b11953f35237,86f33ca1-9c02-421c-a3bd-5a1d06cf3521,51687462-17b4-433e-a11a-b68169f29e17,INV-DEMO-0001,OPEN,USD,9900,0,9900,9900,0,2026-04-09 02:05:03.064+00,,,"{""source"": ""seed""}",2026-03-08 04:31:15.043+00,2026-03-10 02:05:04.097+00

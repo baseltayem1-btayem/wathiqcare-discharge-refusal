@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { LifeBuoy, Search, AlertCircle } from "lucide-react";
-import { apiFetch } from "@/utils/api";
+import { useState } from "react";
+import { Search, AlertCircle } from "lucide-react";
+import { apiFetchJson } from "@/utils/api";
 
 type TenantInspection = {
     id: string;
@@ -36,7 +36,7 @@ export default function SupportPage() {
         setTenantInfo(null);
 
         try {
-            const result = await apiFetch<TenantInspection>(
+            const result = await apiFetchJson<TenantInspection>(
                 `/api/tenants/${searchTenantId}`,
                 { cache: "no-store", authFailureMode: "inline" }
             );
@@ -137,8 +137,8 @@ export default function SupportPage() {
                                             <p className="text-xs text-slate-500">Seats: {sub.seatLimit}</p>
                                         </div>
                                         <span className={`px-2 py-1 rounded text-xs font-medium ${sub.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" :
-                                                sub.status === "TRIALING" ? "bg-blue-100 text-blue-700" :
-                                                    "bg-slate-100 text-slate-700"
+                                            sub.status === "TRIALING" ? "bg-blue-100 text-blue-700" :
+                                                "bg-slate-100 text-slate-700"
                                             }`}>
                                             {sub.status}
                                         </span>

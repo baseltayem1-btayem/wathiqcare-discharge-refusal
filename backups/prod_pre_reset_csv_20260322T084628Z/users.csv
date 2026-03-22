@@ -1,0 +1,9 @@
+id,tenant_id,email,full_name,role,is_active,hashed_password,created_at,updated_at,last_login_at,user_type
+8c56fcf3-3f34-460f-9eac-19fd5fb7e23b,86f33ca1-9c02-421c-a3bd-5a1d06cf3521,owner@demo.wathiqcare.local,Demo Owner,ADMIN,t,$2b$12$UDpU/m7nylRxuya184DaUO0nR/W/axLZf0yYR2cIJlElFRerSiGZq,2026-03-08 04:31:13.024+00,2026-03-10 02:05:02.306+00,,TENANT_USER
+66c9e807-9d2e-437c-b984-376f2ba0fd5f,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,fahad@qlinagroups.com,Lawyer Fahad,OWNER,t,,2026-03-11 17:50:45.959+00,2026-03-11 17:50:45.959+00,,TENANT_USER
+0cac6fb8-9e3e-4875-a30a-6e4bbf4d1572,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,fahad@linagroups.com,Lawyer Fahad,OWNER,t,,2026-03-11 17:51:47.203+00,2026-03-11 17:51:47.203+00,,TENANT_USER
+4cf772ee-64dc-42ff-8d66-470edf9dcf18,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,faisal@linagroups.com,Lawyer Faisal,ADMIN,t,,2026-03-14 22:44:55.752+00,2026-03-14 22:44:55.752+00,,TENANT_USER
+7e506dda-3c5d-47a1-a96e-519b3ae348cc,3c71b7f0-e99c-48f9-a94d-9d061f5c3fd8,temp.viewer@imc.local,Temp Viewer,viewer,t,$2b$12$esO.6H5l5gJuGwwfaEtLvOdWrX46m1EfzWQvAS8g.2UE6LJOQKU1u,2026-03-21 09:12:52.565+00,2026-03-21 09:12:52.565+00,,TENANT_USER
+c14541cc-ef4e-4c96-8749-7a286afb070c,3c71b7f0-e99c-48f9-a94d-9d061f5c3fd8,admin@imc.local,Smoke Admin,tenant_admin,t,,2026-03-15 06:55:14.741+00,2026-03-15 06:57:26.308+00,,TENANT_ADMIN
+2fd8ec97-ea56-4a4a-9d6b-5a9d57907764,3c71b7f0-e99c-48f9-a94d-9d061f5c3fd8,temp.superadmin@imc.local,Temp Super Admin,tenant_admin,t,$2b$12$QuJYm8Oo6A2g/4mIQQRkC.aPHEABFtLkFoZlmHYi97AfjSe7X1ZU.,2026-03-21 09:08:27.121+00,2026-03-21 09:08:27.121+00,,TENANT_ADMIN
+70264cc8-1086-45fb-bffe-7f5b383d3404,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,admin@wathiqcare.online,WathiqCare Admin,platform_admin,t,$2b$12$dcH9vnntJUJDXrQpZCFt/uxzyybEFgoCUO/hEMG5maRT25iDr7S.y,2026-03-08 04:31:15.54+00,2026-03-10 02:05:04.591+00,,PLATFORM_ADMIN

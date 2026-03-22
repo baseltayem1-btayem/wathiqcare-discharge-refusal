@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CreditCard, RefreshCw } from "lucide-react";
-import { apiFetch } from "@/utils/api";
+import { RefreshCw } from "lucide-react";
+import { apiFetchJson } from "@/utils/api";
 
 type InvoiceItem = {
     id: string;
@@ -24,7 +24,7 @@ export default function BillingPage() {
         setError("");
 
         try {
-            const result = await apiFetch<InvoiceItem[]>("/api/billing/invoices?limit=50", { cache: "no-store" });
+            const result = await apiFetchJson<InvoiceItem[]>("/api/billing/invoices?limit=50", { cache: "no-store" });
             const list = Array.isArray(result) ? result : [];
             setInvoices(list);
         } catch (err) {
@@ -108,8 +108,8 @@ export default function BillingPage() {
                                         <td className="px-3 py-3">${(inv.amountDueCents / 100).toFixed(2)}</td>
                                         <td className="px-3 py-3">
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${inv.status === "paid" ? "bg-emerald-100 text-emerald-700" :
-                                                    inv.status === "open" ? "bg-amber-100 text-amber-700" :
-                                                        "bg-slate-100 text-slate-700"
+                                                inv.status === "open" ? "bg-amber-100 text-amber-700" :
+                                                    "bg-slate-100 text-slate-700"
                                                 }`}>
                                                 {inv.status}
                                             </span>

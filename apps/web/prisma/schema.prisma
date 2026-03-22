@@ -194,8 +194,24 @@ model Tenant {
   departments        Department[]
   tenantRoles        TenantRole[]
   roleAssignments    UserRoleAssignment[]
+  allowedDomains     TenantAllowedDomain[]
 
   @@map("tenants")
+}
+
+model TenantAllowedDomain {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  domain    String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, domain])
+  @@index([domain])
+  @@map("tenant_allowed_domains")
 }
 
 model Plan {

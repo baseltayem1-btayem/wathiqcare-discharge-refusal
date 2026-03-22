@@ -181,6 +181,24 @@ function getErrorMessage(status: number, statusText: string, body: unknown): str
   return `${status} ${statusText}`.trim();
 }
 
+function stripHtmlTags(value: string): string {
+  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function sanitizeNonJsonErrorText(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "Request failed";
+  }
+
+  const plain = stripHtmlTags(trimmed);
+  if (!plain) {
+    return "Request failed";
+  }
+
+  return plain.slice(0, 180);
+}
+
 function getErrorCode(status: number): string {
   if (status === 401) {
     return "AUTH_REQUIRED";
@@ -236,7 +254,7 @@ export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Pro
 
     const errorBody = isJson
       ? await response.json().catch(() => null)
-      : await response.text().catch(() => "");
+      : sanitizeNonJsonErrorText(await response.text().catch(() => ""));
 
     throw new ApiHttpError(
       response.status,
@@ -255,4 +273,79 @@ export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Pro
   }
 
   return (await response.text()) as unknown as T;
+}
+
+export async function apiFetchJson<T>(path: string, init: ApiFetchOptions = {}): Promise<T> {
+  const isAbsoluteUrl = /^https?:\/\//i.test(path);
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const isNextApiRoute = normalizedPath.startsWith("/api/");
+  const url = isAbsoluteUrl
+    ? path
+    : isNextApiRoute
+      ? normalizedPath
+      : `${API_BASE_URL}${normalizedPath}`;
+
+  const {
+    authFailureMode = "redirect",
+    nextPath,
+    ...requestInit
+  } = init;
+
+  const headers = new Headers(requestInit.headers ?? {});
+  const hasBody = requestInit.body !== undefined && requestInit.body !== null;
+
+  if (hasBody && !(requestInit.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(url, {
+    ...requestInit,
+    headers,
+    credentials: requestInit.credentials ?? "include",
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const isJson = contentType.includes("application/json");
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      const method = (requestInit.method || "GET").toUpperCase();
+      console.warn(`[auth] ${method} ${normalizedPath} returned 401; validating session via /api/auth/me.`);
+      triggerSessionValidation(`apiFetchJson ${method} ${normalizedPath}`, nextPath, { authFailureMode });
+    }
+
+    if (!isJson) {
+      throw new ApiHttpError(
+        response.status,
+        `${response.status}: Request failed`,
+        getErrorCode(response.status),
+      );
+    }
+
+    const errorBody = await response.json().catch(() => null);
+    throw new ApiHttpError(
+      response.status,
+      getErrorMessage(response.status, response.statusText, errorBody),
+      getErrorCode(response.status),
+      errorBody,
+    );
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  if (!isJson) {
+    throw new ApiHttpError(
+      502,
+      "502: Invalid response format",
+      "INVALID_RESPONSE_FORMAT",
+      {
+        path: normalizedPath,
+        contentType,
+      },
+    );
+  }
+
+  return (await response.json()) as T;
 }

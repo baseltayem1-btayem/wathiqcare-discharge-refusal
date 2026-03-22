@@ -9,7 +9,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import PlatformNotificationBell from "@/components/PlatformNotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clearToken } from "@/utils/api";
-import { PLATFORM_NAV_ITEMS, type PlatformNavItem } from "@/config/platformSidebar";
+import { PLATFORM_NAV_ITEMS } from "@/config/platformSidebar";
 
 type PlatformAdminShellProps = {
     title: string;
@@ -17,9 +17,6 @@ type PlatformAdminShellProps = {
     actions?: ReactNode;
     children: ReactNode;
 };
-
-// NavItem type alias — shape sourced from platformSidebar config
-type NavItem = PlatformNavItem;
 
 function isActive(pathname: string, href: string): boolean {
     if (href === "/") {
@@ -91,25 +88,13 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                     >
                         <div className="flex justify-center">
                             <Image
-                                src="/images/imc-logo.png"
+                                src="/images/wathiqcare-logo.png"
                                 alt="WathiqCare"
-                                width={220}
-                                height={88}
-                                className="h-auto w-[150px] object-contain"
+                                width={180}
+                                height={54}
+                                className="h-auto w-[120px] object-contain"
                                 priority
                             />
-                        </div>
-                        <div className="mt-3 rounded-lg border border-purple-100 bg-white/80 px-3 py-2">
-                            <div className="flex justify-center">
-                                <Image
-                                    src="/images/wathiqcare-logo.png"
-                                    alt="WathiqCare"
-                                    width={180}
-                                    height={54}
-                                    className="h-auto w-[110px] object-contain"
-                                    priority
-                                />
-                            </div>
                         </div>
                         <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#7c3aed" }}>
                             Platform Admin
@@ -178,11 +163,11 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                                         title="WathiqCare"
                                     >
                                         <Image
-                                            src="/images/imc-logo.png"
+                                            src="/images/wathiqcare-logo.png"
                                             alt="WathiqCare"
-                                            width={96}
-                                            height={38}
-                                            className="h-auto w-[78px] object-contain"
+                                            width={104}
+                                            height={32}
+                                            className="h-auto w-[84px] object-contain"
                                         />
                                     </div>
                                     <LanguageSwitcher className="md:hidden" />

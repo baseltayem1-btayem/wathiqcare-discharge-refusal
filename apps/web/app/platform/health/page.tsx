@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Activity, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
-import { apiFetch } from "@/utils/api";
+import { RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
+import { apiFetchJson } from "@/utils/api";
 
 type HealthStatus = {
     status: "healthy" | "degraded" | "down";
@@ -26,7 +26,7 @@ export default function HealthPage() {
         setError("");
 
         try {
-            const result = await apiFetch<HealthStatus>("/api/health", { cache: "no-store" });
+            const result = await apiFetchJson<HealthStatus>("/api/health", { cache: "no-store" });
             setHealth(result || null);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load system health");
@@ -59,7 +59,19 @@ export default function HealthPage() {
                 </button>
             </div>
 
-            {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+            {error ? (
+                <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                    <p className="text-sm font-semibold text-rose-800">Unable to load system health</p>
+                    <p className="mt-1 text-sm text-rose-700">The health feed did not return valid JSON. Please retry.</p>
+                    <button
+                        type="button"
+                        onClick={() => void loadHealth()}
+                        className="mt-2 inline-flex items-center rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
+                    >
+                        Retry
+                    </button>
+                </div>
+            ) : null}
 
             {/* Status Overview */}
             {health && (
@@ -68,8 +80,8 @@ export default function HealthPage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className={`h-3 w-3 rounded-full ${health.status === "healthy" ? "bg-emerald-500" :
-                                        health.status === "degraded" ? "bg-amber-500" :
-                                            "bg-rose-500"
+                                    health.status === "degraded" ? "bg-amber-500" :
+                                        "bg-rose-500"
                                     }`} />
                                 <div>
                                     <p className="font-semibold text-slate-900 capitalize">{health.status} Status</p>
@@ -101,8 +113,8 @@ export default function HealthPage() {
                                         <p className="font-medium text-slate-900">{service.name}</p>
                                     </div>
                                     <span className={`text-xs px-2 py-1 rounded font-medium ${service.status === "up" ? "bg-emerald-100 text-emerald-700" :
-                                            service.status === "degraded" ? "bg-amber-100 text-amber-700" :
-                                                "bg-rose-100 text-rose-700"
+                                        service.status === "degraded" ? "bg-amber-100 text-amber-700" :
+                                            "bg-rose-100 text-rose-700"
                                         }`}>
                                         {service.status.toUpperCase()}
                                     </span>

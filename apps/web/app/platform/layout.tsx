@@ -5,7 +5,7 @@ import AuthGuard from "@/components/AuthGuard";
 import AccessDenied from "@/components/AccessDenied";
 import PlatformAdminShell from "@/components/PlatformAdminShell";
 import { useCallback, useEffect, useState } from "react";
-import { apiFetch } from "@/utils/api";
+import { apiFetchJson } from "@/utils/api";
 
 type AuthMeResponse = {
     userType?: "platform_admin" | "tenant_admin" | "tenant_user";
@@ -17,7 +17,7 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
 
     const validatePlatformAccess = useCallback(async () => {
         try {
-            const me = await apiFetch<AuthMeResponse>("/api/auth/me", { cache: "no-store" });
+            const me = await apiFetchJson<AuthMeResponse>("/api/auth/me", { cache: "no-store" });
             const isPlatformAdmin = me?.userType === "platform_admin";
             if (!isPlatformAdmin) {
                 setForbidden(true);
