@@ -5,6 +5,7 @@ import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { ensureTenantDepartments, ensureTenantRoleTemplates } from "@/lib/server/tenant-admin";
 import {
   canonicalizeUserRole,
   membershipRoleForUserRole,
@@ -176,7 +177,11 @@ export async function POST(request: NextRequest) {
 
     const ownerEmail = payload.initialOwner?.email?.trim().toLowerCase();
     const ownerFullName = payload.initialOwner?.fullName?.trim() || "Tenant Owner";
-    const ownerRole = canonicalizeUserRole(payload.initialOwner?.role ?? "tenant_owner");
+    const ownerRole = canonicalizeUserRole(payload.initialOwner?.role ?? "tenant_admin");
+
+    if (!ownerEmail) {
+      throw new ApiError(400, "initialOwner.email is required");
+    }
 
     if (ownerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)) {
       throw new ApiError(400, "initialOwner.email is invalid");
@@ -194,7 +199,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      const activeMembershipCount = ownerEmail ? 1 : 0;
+      const activeMembershipCount = 1;
       const requestedSeatLimit = Number(payload.subscription?.seatLimit ?? plan.seatLimit);
       const seatLimit = Number.isFinite(requestedSeatLimit) && requestedSeatLimit > 0
         ? Math.max(Math.floor(requestedSeatLimit), activeMembershipCount)
@@ -216,56 +221,57 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      if (ownerEmail) {
-        const ownerUser = await tx.user.upsert({
-          where: { email: ownerEmail },
-          update: {
-            fullName: ownerFullName,
-            isActive: true,
-            role: ownerRole,
-          },
-          create: {
-            tenantId: tenant.id,
-            email: ownerEmail,
-            fullName: ownerFullName,
-            role: ownerRole,
-            isActive: true,
-            hashedPassword: null,
-          },
-        });
+      await ensureTenantDepartments(tx, tenant.id);
+      await ensureTenantRoleTemplates(tx, tenant.id);
 
-        await tx.tenantMembership.upsert({
-          where: {
-            tenantId_userId: {
-              tenantId: tenant.id,
-              userId: ownerUser.id,
-            },
-          },
-          update: {
-            role: membershipRoleForUserRole(ownerRole),
-            status: MembershipStatus.ACTIVE,
-          },
-          create: {
+      const ownerUser = await tx.user.upsert({
+        where: { email: ownerEmail },
+        update: {
+          fullName: ownerFullName,
+          isActive: true,
+          role: ownerRole,
+        },
+        create: {
+          tenantId: tenant.id,
+          email: ownerEmail,
+          fullName: ownerFullName,
+          role: ownerRole,
+          isActive: true,
+          hashedPassword: null,
+        },
+      });
+
+      await tx.tenantMembership.upsert({
+        where: {
+          tenantId_userId: {
             tenantId: tenant.id,
             userId: ownerUser.id,
-            role: membershipRoleForUserRole(ownerRole),
-            status: MembershipStatus.ACTIVE,
           },
-        });
-      }
+        },
+        update: {
+          role: membershipRoleForUserRole(ownerRole),
+          status: MembershipStatus.ACTIVE,
+        },
+        create: {
+          tenantId: tenant.id,
+          userId: ownerUser.id,
+          role: membershipRoleForUserRole(ownerRole),
+          status: MembershipStatus.ACTIVE,
+        },
+      });
 
-      return tenant;
+      return { tenant, ownerUserId: ownerUser.id };
     });
 
     await writeAuditLog({
-      tenantId: created.id,
+      tenantId: created.tenant.id,
       userId: auth.sub,
       entityType: "tenant",
-      entityId: created.id,
+      entityId: created.tenant.id,
       action: "tenant_created",
       details: "Tenant created from admin panel",
       metadataJson: {
-        code: created.code,
+        code: created.tenant.code,
         ownerEmail,
         planCode: plan.code,
         status: subscriptionStatus,
@@ -273,7 +279,23 @@ export async function POST(request: NextRequest) {
       request,
     });
 
-    return NextResponse.json(toJsonSafe(created), { status: 201 });
+    if (created.ownerUserId) {
+      await writeAuditLog({
+        tenantId: created.tenant.id,
+        userId: auth.sub,
+        entityType: "user",
+        entityId: created.ownerUserId,
+        action: "tenant_admin_created",
+        details: "Initial tenant admin account created",
+        metadataJson: {
+          ownerEmail,
+          ownerRole,
+        },
+        request,
+      });
+    }
+
+    return NextResponse.json(toJsonSafe(created.tenant), { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }

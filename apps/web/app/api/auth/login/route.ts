@@ -1,54 +1,15 @@
-import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/server/prisma";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import bcrypt from "bcryptjs";
 import { buildSessionCookieOptions, getSessionCookieName } from "@/lib/server/sessionCookie";
 import { platformRoleForUserRole } from "@/lib/server/roles";
+import { createAccessToken, getJwtSecret, getTokenTtlSeconds } from "@/lib/server/auth-token";
 
 type LoginPayload = {
   email?: string;
   password?: string;
 };
-
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET_KEY;
-  if (!secret || secret === "change-me") {
-    throw new ApiError(500, "JWT_SECRET_KEY is not configured");
-  }
-  return secret;
-}
-
-function getTokenTtlSeconds(): number {
-  const raw = process.env.ACCESS_TOKEN_EXPIRE_MINUTES ?? "60";
-  const minutes = Number(raw);
-  if (!Number.isFinite(minutes) || minutes <= 0) {
-    throw new ApiError(500, "ACCESS_TOKEN_EXPIRE_MINUTES is invalid");
-  }
-  return Math.floor(minutes * 60);
-}
-
-function base64UrlEncode(value: string): string {
-  return Buffer.from(value, "utf8").toString("base64url");
-}
-
-function createAccessToken(payload: Record<string, unknown>, secret: string): string {
-  const header = {
-    alg: "HS256",
-    typ: "JWT",
-  };
-
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-  const data = `${encodedHeader}.${encodedPayload}`;
-
-  const signature = crypto
-    .createHmac("sha256", secret)
-    .update(data)
-    .digest("base64url");
-
-  return `${data}.${signature}`;
-}
 
 export async function POST(request: Request) {
   try {
@@ -84,10 +45,15 @@ export async function POST(request: Request) {
       throw new ApiError(401, "Invalid credentials");
     }
 
+    const platformRole = platformRoleForUserRole(user.role);
+    const allowTenantPasswordLogin = process.env.ALLOW_TENANT_PASSWORD_LOGIN === "true";
+    if (!platformRole && !allowTenantPasswordLogin) {
+      throw new ApiError(403, "Password login is disabled for tenant users. Use Microsoft sign-in.");
+    }
+
     const secret = getJwtSecret();
     const now = Math.floor(Date.now() / 1000);
     const exp = now + getTokenTtlSeconds();
-    const platformRole = platformRoleForUserRole(user.role);
 
     const accessToken = createAccessToken(
       {

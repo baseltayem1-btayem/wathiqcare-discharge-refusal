@@ -1,7 +1,6 @@
 import { OperationPriority } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { hasOperationsAssignmentPermission } from "@/lib/operations/permissions";
-import { requireAuth, requireTenantId } from "@/lib/server/auth";
+import { requireAuth, requireTenantId, requireTenantPermissionForAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { assignCaseOperation, parseOperationDepartment } from "@/lib/server/operations";
 
@@ -22,9 +21,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const tenantId = requireTenantId(auth);
         const { caseId } = await params;
 
-        if (!hasOperationsAssignmentPermission(auth.role, auth.platform_role)) {
-            throw new ApiError(403, "Insufficient role permissions for assignment changes");
-        }
+        await requireTenantPermissionForAuth(auth, tenantId, "clinical.case.assign");
 
         const body = (await request.json().catch(() => null)) as
             | {

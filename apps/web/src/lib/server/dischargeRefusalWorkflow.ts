@@ -1,6 +1,11 @@
 import { CaseStatus, DocumentStatus, DocumentType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
-import { requireTenantId, type AuthContext } from "@/lib/server/auth";
+import {
+    requireTenantId,
+    requireTenantPermissionForAuth,
+    type AuthContext,
+} from "@/lib/server/auth";
+import { checkAttendingPhysicianAuthority } from "@/lib/server/clinical-authority";
 import { ApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -88,6 +93,7 @@ export type WorkflowSnapshot = {
     medical_record_number: string | null;
     room_number: string | null;
     attending_physician: string | null;
+    attending_physician_id: string | null;
     discussion_summary: string | null;
     refusal_reason: string | null;
     social_administrative_interventions: string | null;
@@ -410,6 +416,8 @@ function buildWorkflowState(caseRecord: AuthorizedCaseRecord): Omit<WorkflowSnap
             readString(storedWorkflow, "room_number") || readString(metadata, "room_number") || caseRecord.roomNumber,
         attending_physician:
             readString(storedWorkflow, "attending_physician") || readString(metadata, "attending_physician"),
+        attending_physician_id:
+            readString(storedWorkflow, "attending_physician_id") || readString(metadata, "attending_physician_id"),
         discussion_summary:
             readString(storedWorkflow, "discussion_summary") || readString(metadata, "discussion_summary"),
         refusal_reason:
@@ -503,6 +511,7 @@ function buildMetadata(baseMetadata: Record<string, unknown> | null, workflow: O
             medical_record_number: workflow.medical_record_number,
             room_number: workflow.room_number,
             attending_physician: workflow.attending_physician,
+            attending_physician_id: workflow.attending_physician_id,
             discussion_summary: workflow.discussion_summary,
             refusal_reason: workflow.refusal_reason,
             social_administrative_interventions: workflow.social_administrative_interventions,
@@ -529,6 +538,7 @@ function buildMetadata(baseMetadata: Record<string, unknown> | null, workflow: O
         medical_record_number: workflow.medical_record_number,
         room_number: workflow.room_number,
         attending_physician: workflow.attending_physician,
+        attending_physician_id: workflow.attending_physician_id,
         discussion_summary: workflow.discussion_summary,
         refusal_reason: workflow.refusal_reason,
         social_administrative_interventions: workflow.social_administrative_interventions,
@@ -654,6 +664,7 @@ export async function applyWorkflowAction(args: {
     request: NextRequest;
 }): Promise<{ workflow: WorkflowSnapshot; generatedDocument: WorkflowDocumentSummary | null }> {
     const { auth, caseId, action, payload, request } = args;
+    const tenantId = requireTenantId(auth);
     const caseRecord = await getAuthorizedCase(auth, caseId);
     const workflow = buildWorkflowState(caseRecord);
     const timestamp =
@@ -676,6 +687,32 @@ export async function applyWorkflowAction(args: {
     workflow.attending_physician =
         (typeof payload.attending_physician === "string" && payload.attending_physician.trim()) ||
         workflow.attending_physician;
+    workflow.attending_physician_id =
+        (typeof payload.attending_physician_id === "string" && payload.attending_physician_id.trim()) ||
+        workflow.attending_physician_id;
+
+    const actionRequiresAttendingAuthority = action === "record_discharge_decision" || action === "close_workflow";
+    if (actionRequiresAttendingAuthority) {
+        const permissionContext = await requireTenantPermissionForAuth(auth, tenantId, "discharge.approve");
+        const hasApprovePermission =
+            permissionContext.permissionKeys.has("*") ||
+            permissionContext.permissionKeys.has("discharge.approve");
+        const authority = checkAttendingPhysicianAuthority({
+            userId: auth.sub,
+            attendingPhysicianId: workflow.attending_physician_id,
+            hasDischargeApprovePermission: hasApprovePermission,
+        });
+
+        if (!authority.allowed) {
+            if (authority.reason === "missing_attending_physician") {
+                throw new ApiError(403, "Case attending physician is not assigned");
+            }
+            if (authority.reason === "not_attending_physician") {
+                throw new ApiError(403, "Only the attending physician can approve this decision");
+            }
+            throw new ApiError(403, "Missing discharge approval permission");
+        }
+    }
 
     if (typeof payload.discussion_summary === "string" && payload.discussion_summary.trim()) {
         workflow.discussion_summary = payload.discussion_summary.trim();

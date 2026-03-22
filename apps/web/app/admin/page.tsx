@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Building2, CheckCircle2, ClipboardList, FileSignature, Plus, RefreshCw, Save, ShieldCheck, Users } from "lucide-react";
+import { AlertTriangle, Building2, CheckCircle2, ClipboardList, FileSignature, Plus, RefreshCw, Save, Settings, ShieldCheck, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import AccessDenied from "@/components/AccessDenied";
@@ -46,6 +46,16 @@ type MemberItem = {
   };
 };
 
+type MembersResponse = {
+  members: MemberItem[];
+  seatMetrics?: {
+    seatLimit: number;
+    activeUserCount: number;
+    pendingUsersCount: number;
+    availableSeats: number;
+  };
+};
+
 type SubscriptionView = {
   id: string;
   status: string;
@@ -56,6 +66,54 @@ type SubscriptionView = {
     code: "STARTER" | "PROFESSIONAL" | "ENTERPRISE";
     name: string;
   };
+  summary?: {
+    subscriptionStatus: string;
+    planName: string;
+    seatLimit: number;
+    activeUserCount: number;
+    pendingUsersCount: number;
+    availableSeats: number;
+    startDate: string;
+    endDate: string;
+    gracePeriodDays: number;
+  };
+};
+
+type DepartmentItem = {
+  id: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+};
+
+type PermissionItem = {
+  id: string;
+  key: string;
+  name: string;
+  module: string;
+};
+
+type TenantRoleItem = {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  permissions: Array<{
+    permissionId: string;
+    permission: PermissionItem;
+  }>;
+};
+
+type RoleEditItem = {
+  name: string;
+  description: string;
+  status: "ACTIVE" | "INACTIVE";
+};
+
+type RolesResponse = {
+  roles: TenantRoleItem[];
+  permissions: PermissionItem[];
 };
 
 type UsageItem = {
@@ -109,8 +167,14 @@ const MEMBER_ROLE_OPTIONS = [
   "tenant_admin",
   "doctor",
   "nursing",
+  "lab_tech",
+  "pharmacist",
+  "finance_officer",
   "reception",
   "legal_admin",
+  "it_admin",
+  "medical_director",
+  "bed_manager",
   "viewer",
 ] as const;
 
@@ -122,7 +186,13 @@ export default function AdminPage() {
   const [selectedTenantId, setSelectedTenantId] = useState("");
   const [tenant, setTenant] = useState<TenantSummary | null>(null);
   const [members, setMembers] = useState<MemberItem[]>([]);
+  const [seatMetrics, setSeatMetrics] = useState<MembersResponse["seatMetrics"] | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionView | null>(null);
+  const [departments, setDepartments] = useState<DepartmentItem[]>([]);
+  const [tenantRoles, setTenantRoles] = useState<TenantRoleItem[]>([]);
+  const [permissions, setPermissions] = useState<PermissionItem[]>([]);
+  const [rolePermissionSelections, setRolePermissionSelections] = useState<Record<string, string[]>>({});
+  const [roleEdits, setRoleEdits] = useState<Record<string, RoleEditItem>>({});
   const [usage, setUsage] = useState<UsageItem[]>([]);
   const [invoices, setInvoices] = useState<InvoiceItem[]>([]);
   const [managedTenants, setManagedTenants] = useState<TenantListItem[]>([]);
@@ -146,6 +216,21 @@ export default function AdminPage() {
     email: "",
     fullName: "",
     role: "doctor",
+    activateNow: false,
+    departmentCode: "",
+    tenantRoleCodes: [] as string[],
+  });
+
+  const [departmentForm, setDepartmentForm] = useState({
+    code: "",
+    name: "",
+  });
+
+  const [roleForm, setRoleForm] = useState({
+    name: "",
+    code: "",
+    description: "",
+    cloneFromRoleId: "",
   });
 
   const [createTenantForm, setCreateTenantForm] = useState({
@@ -163,11 +248,27 @@ export default function AdminPage() {
   const [savingTenant, setSavingTenant] = useState(false);
   const [savingSubscription, setSavingSubscription] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
+  const [savingRoleMatrixByRoleId, setSavingRoleMatrixByRoleId] = useState<Record<string, boolean>>({});
+  const [savingDepartment, setSavingDepartment] = useState(false);
+  const [savingRole, setSavingRole] = useState(false);
+  const [savingRoleEditsByRoleId, setSavingRoleEditsByRoleId] = useState<Record<string, boolean>>({});
+  const [deletingRoleByRoleId, setDeletingRoleByRoleId] = useState<Record<string, boolean>>({});
   const [creatingTenant, setCreatingTenant] = useState(false);
   const [suspendingTenantId, setSuspendingTenantId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [forbidden, setForbidden] = useState(false);
   const [notice, setNotice] = useState("");
+
+  const [isSetupWizardMode, setIsSetupWizardMode] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState("");
+  const [bootstrapDone, setBootstrapDone] = useState(false);
+  const [bootstrapForm, setBootstrapForm] = useState({
+    adminEmail: "",
+    adminFullName: "",
+    password: "",
+    setupSecret: "",
+  });
 
   const currencyFormatter = useMemo(
     () =>
@@ -283,27 +384,54 @@ export default function AdminPage() {
         "";
 
       if (!selected) {
-        throw new Error("تعذر تحديد المستأجر من الجلسة الحالية.");
+        setIsSetupWizardMode(true);
+        return;
       }
 
       setTenantId(selected);
       setSelectedTenantId(selected);
 
-      const [tenantData, memberData, subscriptionData, usageData, invoiceData, integrationsData] = await Promise.all([
+      const [tenantData, memberData, subscriptionData, usageData, invoiceData, integrationsData, departmentsData, rolesData] = await Promise.all([
         apiFetch<TenantSummary>(`/api/tenants/${selected}`, INLINE_NO_STORE_AUTH_REQUEST),
-        apiFetch<MemberItem[]>(`/api/tenants/${selected}/members`, INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<MembersResponse>(`/api/tenants/${selected}/members`, INLINE_NO_STORE_AUTH_REQUEST),
         apiFetch<SubscriptionView>(`/api/tenants/${selected}/subscription`, INLINE_NO_STORE_AUTH_REQUEST),
         apiFetch<UsageItem[]>(`/api/tenants/${selected}/usage?days=30&limit=100`, INLINE_NO_STORE_AUTH_REQUEST),
         apiFetch<InvoiceItem[]>("/api/billing/invoices?limit=20", INLINE_NO_STORE_AUTH_REQUEST),
         apiFetch<IntegrationStatus>('/api/integrations/status', INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<DepartmentItem[]>(`/api/tenants/${selected}/departments`, INLINE_NO_STORE_AUTH_REQUEST),
+        apiFetch<RolesResponse>(`/api/tenants/${selected}/roles`, INLINE_NO_STORE_AUTH_REQUEST),
       ]);
 
       setTenant(tenantData);
-      setMembers(memberData);
+      setMembers(Array.isArray(memberData?.members) ? memberData.members : []);
+      setSeatMetrics(memberData?.seatMetrics ?? null);
       setSubscription(subscriptionData);
       setUsage(usageData);
       setInvoices(invoiceData);
       setIntegrationStatus(integrationsData ?? null);
+      setDepartments(Array.isArray(departmentsData) ? departmentsData : []);
+      setTenantRoles(Array.isArray(rolesData?.roles) ? rolesData.roles : []);
+      setPermissions(Array.isArray(rolesData?.permissions) ? rolesData.permissions : []);
+
+      const nextRoleSelections = Object.fromEntries(
+        (Array.isArray(rolesData?.roles) ? rolesData.roles : []).map((role) => [
+          role.id,
+          role.permissions.map((item) => item.permissionId),
+        ]),
+      );
+      setRolePermissionSelections(nextRoleSelections);
+
+      const nextRoleEdits = Object.fromEntries(
+        (Array.isArray(rolesData?.roles) ? rolesData.roles : []).map((role) => [
+          role.id,
+          {
+            name: role.name,
+            description: role.description ?? "",
+            status: role.status,
+          },
+        ]),
+      );
+      setRoleEdits(nextRoleEdits);
 
       setTenantForm({
         name: tenantData.name ?? "",
@@ -330,6 +458,34 @@ export default function AdminPage() {
       setLoading(false);
     }
   }, [selectedTenantId]);
+
+  async function handleBootstrap() {
+    setBootstrapError("");
+    if (!bootstrapForm.adminEmail || !bootstrapForm.adminFullName || !bootstrapForm.password) {
+      setBootstrapError("جميع الحقول مطلوبة");
+      return;
+    }
+    setBootstrapping(true);
+    try {
+      await apiFetch("/api/admin/setup/bootstrap", {
+        method: "POST",
+        body: JSON.stringify({
+          adminEmail: bootstrapForm.adminEmail,
+          adminFullName: bootstrapForm.adminFullName,
+          password: bootstrapForm.password,
+          setupSecret: bootstrapForm.setupSecret || undefined,
+        }),
+        authFailureMode: "inline" as const,
+      });
+      setBootstrapDone(true);
+      setIsSetupWizardMode(false);
+      await loadDashboard();
+    } catch (err) {
+      setBootstrapError(err instanceof Error ? err.message : "فشل إعداد المنصة");
+    } finally {
+      setBootstrapping(false);
+    }
+  }
 
   useEffect(() => {
     void loadDashboard();
@@ -395,7 +551,7 @@ export default function AdminPage() {
         ...INLINE_AUTH_REQUEST,
       });
       setNotice("تمت إضافة العضو");
-      setMemberForm({ email: "", fullName: "", role: "doctor" });
+      setMemberForm({ email: "", fullName: "", role: "doctor", activateNow: false, departmentCode: "", tenantRoleCodes: [] });
       await loadDashboard();
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل إضافة العضو");
@@ -473,6 +629,195 @@ export default function AdminPage() {
     }
   }
 
+  async function handleSaveDepartment() {
+    if (!tenantId) return;
+    if (!departmentForm.code.trim() || !departmentForm.name.trim()) {
+      setError("Department code and name are required");
+      return;
+    }
+
+    setSavingDepartment(true);
+    setError("");
+    setNotice("");
+    try {
+      await apiFetch(`/api/tenants/${tenantId}/departments`, {
+        method: "POST",
+        body: JSON.stringify(departmentForm),
+        ...INLINE_AUTH_REQUEST,
+      });
+      setDepartmentForm({ code: "", name: "" });
+      setNotice("Department updated");
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save department");
+    } finally {
+      setSavingDepartment(false);
+    }
+  }
+
+  async function handleCreateRole() {
+    if (!tenantId) return;
+    if (!roleForm.name.trim()) {
+      setError("Role name is required");
+      return;
+    }
+
+    setSavingRole(true);
+    setError("");
+    setNotice("");
+    try {
+      await apiFetch(`/api/tenants/${tenantId}/roles`, {
+        method: "POST",
+        body: JSON.stringify({
+          ...roleForm,
+          cloneFromRoleId: roleForm.cloneFromRoleId || undefined,
+        }),
+        ...INLINE_AUTH_REQUEST,
+      });
+      setRoleForm({ name: "", code: "", description: "", cloneFromRoleId: "" });
+      setNotice("Role created");
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create role");
+    } finally {
+      setSavingRole(false);
+    }
+  }
+
+  async function handleSaveRoleMatrixRow(roleId: string) {
+    if (!tenantId || !roleId) return;
+    setError("");
+    setNotice("");
+    setSavingRoleMatrixByRoleId((prev) => ({ ...prev, [roleId]: true }));
+
+    try {
+      await apiFetch(`/api/tenants/${tenantId}/roles/${roleId}/permissions`, {
+        method: "PUT",
+        body: JSON.stringify({ permissionIds: rolePermissionSelections[roleId] || [] }),
+        ...INLINE_AUTH_REQUEST,
+      });
+      setNotice("Permission matrix row saved");
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save role permissions");
+    } finally {
+      setSavingRoleMatrixByRoleId((prev) => ({ ...prev, [roleId]: false }));
+    }
+  }
+
+  async function handleSaveRoleDetails(roleId: string) {
+    if (!tenantId || !roleId) return;
+    const draft = roleEdits[roleId];
+    if (!draft?.name?.trim()) {
+      setError("Role name is required");
+      return;
+    }
+
+    setError("");
+    setNotice("");
+    setSavingRoleEditsByRoleId((prev) => ({ ...prev, [roleId]: true }));
+
+    try {
+      await apiFetch(`/api/tenants/${tenantId}/roles/${roleId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: draft.name,
+          description: draft.description,
+          status: draft.status,
+        }),
+        ...INLINE_AUTH_REQUEST,
+      });
+      setNotice("Role updated");
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update role");
+    } finally {
+      setSavingRoleEditsByRoleId((prev) => ({ ...prev, [roleId]: false }));
+    }
+  }
+
+  async function handleDuplicateRole(roleId: string) {
+    if (!tenantId) return;
+    const sourceRole = tenantRoles.find((role) => role.id === roleId);
+    if (!sourceRole) return;
+
+    setSavingRole(true);
+    setError("");
+    setNotice("");
+    try {
+      await apiFetch(`/api/tenants/${tenantId}/roles`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: `${sourceRole.name} Copy`,
+          cloneFromRoleId: roleId,
+          description: sourceRole.description || undefined,
+          status: sourceRole.status,
+        }),
+        ...INLINE_AUTH_REQUEST,
+      });
+      setNotice("Role duplicated");
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to duplicate role");
+    } finally {
+      setSavingRole(false);
+    }
+  }
+
+  async function handleDeleteRole(roleId: string) {
+    if (!tenantId) return;
+
+    setDeletingRoleByRoleId((prev) => ({ ...prev, [roleId]: true }));
+    setError("");
+    setNotice("");
+    try {
+      await apiFetch(`/api/tenants/${tenantId}/roles/${roleId}`, {
+        method: "DELETE",
+        ...INLINE_AUTH_REQUEST,
+      });
+      setNotice("Role deleted");
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete role");
+    } finally {
+      setDeletingRoleByRoleId((prev) => ({ ...prev, [roleId]: false }));
+    }
+  }
+
+  function toggleRolePermission(roleId: string, permissionId: string, checked: boolean) {
+    setRolePermissionSelections((prev) => {
+      const current = prev[roleId] || [];
+      const next = checked
+        ? (current.includes(permissionId) ? current : [...current, permissionId])
+        : current.filter((item) => item !== permissionId);
+      return {
+        ...prev,
+        [roleId]: next,
+      };
+    });
+  }
+
+  async function handleToggleMember(member: MemberItem, activate: boolean) {
+    if (!tenantId) return;
+    setError("");
+    setNotice("");
+
+    try {
+      await apiFetch(`/api/tenants/${tenantId}/members`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          memberId: member.id,
+          activate,
+        }),
+        ...INLINE_AUTH_REQUEST,
+      });
+      setNotice(activate ? "User activated" : "User deactivated");
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update member");
+    }
+  }
+
   if (forbidden) {
     return (
       <AuthGuard authFailureMode="inline">
@@ -515,6 +860,75 @@ export default function AdminPage() {
           </div>
         ) : null}
 
+        {!loading && isSetupWizardMode && !bootstrapDone ? (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-blue-600" />
+              <h2 className="text-base font-semibold text-blue-900">إعداد المنصة لأول مرة</h2>
+            </div>
+            <p className="text-sm text-blue-800">
+              لم يتم اكتشاف أي مستشفى أو حساب إداري. أدخل بيانات المسؤول الأول لتهيئة المنصة.
+            </p>
+            {bootstrapError ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{bootstrapError}</div>
+            ) : null}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">البريد الإلكتروني للمسؤول *</label>
+                <input
+                  type="email"
+                  value={bootstrapForm.adminEmail}
+                  onChange={(e) => setBootstrapForm((f) => ({ ...f, adminEmail: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  placeholder="admin@hospital.org"
+                  autoComplete="email"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">الاسم الكامل *</label>
+                <input
+                  type="text"
+                  value={bootstrapForm.adminFullName}
+                  onChange={(e) => setBootstrapForm((f) => ({ ...f, adminFullName: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  placeholder="Dr. Mohammed Al-Anazi"
+                  autoComplete="name"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">كلمة المرور (12 حرفًا على الأقل) *</label>
+                <input
+                  type="password"
+                  value={bootstrapForm.password}
+                  onChange={(e) => setBootstrapForm((f) => ({ ...f, password: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  placeholder="••••••••••••"
+                  autoComplete="new-password"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">رمز الإعداد (اختياري إذا تم تهيئته)</label>
+                <input
+                  type="password"
+                  value={bootstrapForm.setupSecret}
+                  onChange={(e) => setBootstrapForm((f) => ({ ...f, setupSecret: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  placeholder="ADMIN_SETUP_SECRET"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleBootstrap()}
+              disabled={bootstrapping}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+            >
+              {bootstrapping ? "جار الإعداد..." : "بدء إعداد المنصة"}
+            </button>
+          </div>
+        ) : null}
+
         {!loading && tenant ? (
           <div className="space-y-5">
             <section className="rounded-2xl border border-slate-200 p-4">
@@ -532,6 +946,252 @@ export default function AdminPage() {
                     </div>
                   );
                 })}
+              </div>
+            </section>
+
+            <section className="grid gap-5 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 p-4">
+                <h2 className="text-base font-semibold text-slate-900">Departments</h2>
+                <p className="mt-1 text-sm text-slate-600">Tenant admins can manage internal departments only.</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <input
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Code"
+                    value={departmentForm.code}
+                    onChange={(e) => setDepartmentForm((prev) => ({ ...prev, code: e.target.value }))}
+                  />
+                  <input
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Name"
+                    value={departmentForm.name}
+                    onChange={(e) => setDepartmentForm((prev) => ({ ...prev, name: e.target.value }))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveDepartment()}
+                    disabled={savingDepartment}
+                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    {savingDepartment ? "Saving..." : "Save Department"}
+                  </button>
+                </div>
+                <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Code</th>
+                        <th className="px-3 py-2 text-left">Name</th>
+                        <th className="px-3 py-2 text-left">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {departments.map((department) => (
+                        <tr key={department.id} className="border-t border-slate-100">
+                          <td className="px-3 py-2 font-medium text-slate-900">{department.code}</td>
+                          <td className="px-3 py-2 text-slate-700">{department.name}</td>
+                          <td className="px-3 py-2 text-slate-600">{department.isActive ? "ACTIVE" : "INACTIVE"}</td>
+                        </tr>
+                      ))}
+                      {departments.length === 0 ? (
+                        <tr>
+                          <td className="px-3 py-6 text-center text-slate-500" colSpan={3}>
+                            No departments defined yet.
+                          </td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 p-4">
+                <h2 className="text-base font-semibold text-slate-900">Role & Permission Matrix</h2>
+                <p className="mt-1 text-sm text-slate-600">Database-driven tenant role templates and permission checkboxes.</p>
+
+                <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                  <input
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Role name"
+                    value={roleForm.name}
+                    onChange={(e) => setRoleForm((prev) => ({ ...prev, name: e.target.value }))}
+                  />
+                  <input
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Role code (optional)"
+                    value={roleForm.code}
+                    onChange={(e) => setRoleForm((prev) => ({ ...prev, code: e.target.value }))}
+                  />
+                  <select
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={roleForm.cloneFromRoleId}
+                    onChange={(e) => setRoleForm((prev) => ({ ...prev, cloneFromRoleId: e.target.value }))}
+                  >
+                    <option value="">Clone from (optional)</option>
+                    {tenantRoles.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => void handleCreateRole()}
+                    disabled={savingRole}
+                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    {savingRole ? "Saving..." : "Create Role"}
+                  </button>
+                </div>
+
+                <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Role</th>
+                        <th className="px-3 py-2 text-left">Status</th>
+                        <th className="px-3 py-2 text-left">Permission Matrix</th>
+                        <th className="px-3 py-2 text-left">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tenantRoles.map((role) => {
+                        const draft = roleEdits[role.id] ?? {
+                          name: role.name,
+                          description: role.description ?? "",
+                          status: role.status,
+                        };
+                        const selectedForRole = rolePermissionSelections[role.id] || [];
+                        const groupedPermissions = permissions.reduce<Record<string, PermissionItem[]>>((acc, permission) => {
+                          const moduleName = permission.module || "system";
+                          if (!acc[moduleName]) {
+                            acc[moduleName] = [];
+                          }
+                          acc[moduleName].push(permission);
+                          return acc;
+                        }, {});
+
+                        return (
+                          <tr key={role.id} className="border-t border-slate-100 align-top">
+                            <td className="px-3 py-3">
+                              <div className="space-y-2">
+                                <input
+                                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                  value={draft.name}
+                                  onChange={(e) =>
+                                    setRoleEdits((prev) => ({
+                                      ...prev,
+                                      [role.id]: {
+                                        ...draft,
+                                        name: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                  placeholder="Role name"
+                                />
+                                <input
+                                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                  value={draft.description}
+                                  onChange={(e) =>
+                                    setRoleEdits((prev) => ({
+                                      ...prev,
+                                      [role.id]: {
+                                        ...draft,
+                                        description: e.target.value,
+                                      },
+                                    }))
+                                  }
+                                  placeholder="Role description"
+                                />
+                                <p className="text-xs text-slate-500">Code: {role.code}</p>
+                              </div>
+                            </td>
+                            <td className="px-3 py-3">
+                              <select
+                                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                value={draft.status}
+                                onChange={(e) =>
+                                  setRoleEdits((prev) => ({
+                                    ...prev,
+                                    [role.id]: {
+                                      ...draft,
+                                      status: e.target.value as "ACTIVE" | "INACTIVE",
+                                    },
+                                  }))
+                                }
+                              >
+                                <option value="ACTIVE">ACTIVE</option>
+                                <option value="INACTIVE">INACTIVE</option>
+                              </select>
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="max-h-56 overflow-y-auto rounded-lg border border-slate-200 p-2">
+                                {Object.entries(groupedPermissions).map(([module, modulePermissions]) => (
+                                  <div key={module} className="mb-2 last:mb-0">
+                                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{module}</p>
+                                    <div className="grid gap-1 sm:grid-cols-2">
+                                      {modulePermissions.map((permission) => (
+                                        <label key={`${role.id}-${permission.id}`} className="inline-flex items-center gap-2 rounded border border-slate-200 px-2 py-1 text-xs">
+                                          <input
+                                            type="checkbox"
+                                            checked={selectedForRole.includes(permission.id)}
+                                            onChange={(e) => toggleRolePermission(role.id, permission.id, e.target.checked)}
+                                          />
+                                          <span>{permission.name}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => void handleSaveRoleDetails(role.id)}
+                                  disabled={savingRoleEditsByRoleId[role.id] === true}
+                                  className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                                >
+                                  {savingRoleEditsByRoleId[role.id] ? "Saving..." : "Save Role"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleSaveRoleMatrixRow(role.id)}
+                                  disabled={savingRoleMatrixByRoleId[role.id] === true}
+                                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                                >
+                                  {savingRoleMatrixByRoleId[role.id] ? "Saving..." : "Save Permissions"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDuplicateRole(role.id)}
+                                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                                >
+                                  Duplicate
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteRole(role.id)}
+                                  disabled={deletingRoleByRoleId[role.id] === true}
+                                  className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 disabled:opacity-60"
+                                >
+                                  {deletingRoleByRoleId[role.id] ? "Deleting..." : "Delete"}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {tenantRoles.length === 0 ? (
+                        <tr>
+                          <td className="px-3 py-6 text-center text-slate-500" colSpan={4}>
+                            No roles defined yet. Create your first role to start building the permission matrix.
+                          </td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </section>
 
@@ -618,65 +1278,71 @@ export default function AdminPage() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   {isPlatformAdmin ? (
-                    <select
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                      value={selectedTenantId}
-                      onChange={(e) => setSelectedTenantId(e.target.value)}
-                    >
-                      {managedTenants.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name} ({item.code})
-                        </option>
-                      ))}
-                    </select>
-                  ) : null}
-                  <input
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    placeholder="Hospital Name"
-                    value={createTenantForm.name}
-                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, name: e.target.value }))}
-                  />
-                  <input
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    placeholder="Tenant Code (Optional)"
-                    value={createTenantForm.code}
-                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, code: e.target.value }))}
-                  />
-                  <input
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    placeholder="Billing Email"
-                    value={createTenantForm.billingEmail}
-                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, billingEmail: e.target.value }))}
-                  />
-                  <input
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    placeholder="Initial Owner Email"
-                    value={createTenantForm.ownerEmail}
-                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, ownerEmail: e.target.value }))}
-                  />
-                  <input
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    placeholder="Initial Owner Name"
-                    value={createTenantForm.ownerFullName}
-                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, ownerFullName: e.target.value }))}
-                  />
-                  <select
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    value={createTenantForm.ownerRole}
-                    onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, ownerRole: e.target.value }))}
-                  >
-                    <option value="tenant_owner">tenant_owner</option>
-                    <option value="tenant_admin">tenant_admin</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => void handleCreateTenant()}
-                    disabled={creatingTenant}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {creatingTenant ? 'جار الإنشاء...' : 'Create Tenant'}
-                  </button>
+                    <>
+                      <select
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        value={selectedTenantId}
+                        onChange={(e) => setSelectedTenantId(e.target.value)}
+                      >
+                        {managedTenants.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.name} ({item.code})
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        placeholder="Hospital Name"
+                        value={createTenantForm.name}
+                        onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, name: e.target.value }))}
+                      />
+                      <input
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        placeholder="Tenant Code (Optional)"
+                        value={createTenantForm.code}
+                        onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, code: e.target.value }))}
+                      />
+                      <input
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        placeholder="Billing Email"
+                        value={createTenantForm.billingEmail}
+                        onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, billingEmail: e.target.value }))}
+                      />
+                      <input
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        placeholder="Initial Owner Email"
+                        value={createTenantForm.ownerEmail}
+                        onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, ownerEmail: e.target.value }))}
+                      />
+                      <input
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        placeholder="Initial Owner Name"
+                        value={createTenantForm.ownerFullName}
+                        onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, ownerFullName: e.target.value }))}
+                      />
+                      <select
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        value={createTenantForm.ownerRole}
+                        onChange={(e) => setCreateTenantForm((prev) => ({ ...prev, ownerRole: e.target.value }))}
+                      >
+                        <option value="tenant_owner">tenant_owner</option>
+                        <option value="tenant_admin">tenant_admin</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => void handleCreateTenant()}
+                        disabled={creatingTenant}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                      >
+                        <Plus className="h-4 w-4" />
+                        {creatingTenant ? 'جار الإنشاء...' : 'Create Tenant'}
+                      </button>
+                    </>
+                  ) : (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 md:col-span-2">
+                      You can manage only your tenant users, departments, roles, and permissions.
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
@@ -701,19 +1367,23 @@ export default function AdminPage() {
                             Users: {item._count?.memberships || 0} | Cases: {item._count?.cases || 0}
                           </td>
                           <td className="px-3 py-2">
-                            <button
-                              type="button"
-                              onClick={() => void handleSuspendTenant(item.id, item.isActive)}
-                              disabled={suspendingTenantId === item.id}
-                              className={
-                                item.isActive
-                                  ? 'rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
-                                  : 'rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60'
-                              }
-                            >
-                              {suspendingTenantId === item.id
-                                ? '...' : item.isActive ? 'Suspend Tenant' : 'Activate Tenant'}
-                            </button>
+                            {isPlatformAdmin ? (
+                              <button
+                                type="button"
+                                onClick={() => void handleSuspendTenant(item.id, item.isActive)}
+                                disabled={suspendingTenantId === item.id}
+                                className={
+                                  item.isActive
+                                    ? 'rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60'
+                                    : 'rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60'
+                                }
+                              >
+                                {suspendingTenantId === item.id
+                                  ? '...' : item.isActive ? 'Suspend Tenant' : 'Activate Tenant'}
+                              </button>
+                            ) : (
+                              <span className="text-xs text-slate-500">Tenant scope only</span>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -814,12 +1484,31 @@ export default function AdminPage() {
                     : ""}
                 </p>
               ) : null}
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs text-slate-500">Licensed Seats</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-900">{subscription?.summary?.seatLimit ?? seatMetrics?.seatLimit ?? 0}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs text-slate-500">Used Seats</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-900">{subscription?.summary?.activeUserCount ?? seatMetrics?.activeUserCount ?? 0}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs text-slate-500">Available Seats</p>
+                  <p className="mt-1 text-2xl font-semibold text-emerald-700">{subscription?.summary?.availableSeats ?? seatMetrics?.availableSeats ?? 0}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs text-slate-500">Pending Users</p>
+                  <p className="mt-1 text-2xl font-semibold text-amber-700">{subscription?.summary?.pendingUsersCount ?? seatMetrics?.pendingUsersCount ?? 0}</p>
+                </div>
+              </div>
               <div className="mt-3 grid gap-3 md:grid-cols-4">
                 <label className="text-sm text-slate-700">
                   الخطة
                   <select
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={subscriptionForm.planCode}
+                    disabled={!isPlatformAdmin}
                     onChange={(e) =>
                       setSubscriptionForm((prev) => ({ ...prev, planCode: e.target.value }))
                     }
@@ -836,6 +1525,7 @@ export default function AdminPage() {
                   <select
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={subscriptionForm.billingInterval}
+                    disabled={!isPlatformAdmin}
                     onChange={(e) =>
                       setSubscriptionForm((prev) => ({ ...prev, billingInterval: e.target.value }))
                     }
@@ -852,6 +1542,7 @@ export default function AdminPage() {
                   <select
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={subscriptionForm.status}
+                    disabled={!isPlatformAdmin}
                     onChange={(e) =>
                       setSubscriptionForm((prev) => ({ ...prev, status: e.target.value }))
                     }
@@ -870,6 +1561,7 @@ export default function AdminPage() {
                     min={1}
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                     value={subscriptionForm.seatLimit}
+                    disabled={!isPlatformAdmin}
                     onChange={(e) =>
                       setSubscriptionForm((prev) => ({
                         ...prev,
@@ -880,15 +1572,19 @@ export default function AdminPage() {
                 </label>
               </div>
 
-              <button
-                type="button"
-                onClick={() => void handleSaveSubscription()}
-                disabled={savingSubscription}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
-              >
-                <Save className="h-4 w-4" />
-                {savingSubscription ? "جار الحفظ..." : "حفظ الاشتراك"}
-              </button>
+              {isPlatformAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => void handleSaveSubscription()}
+                  disabled={savingSubscription}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                >
+                  <Save className="h-4 w-4" />
+                  {savingSubscription ? "جار الحفظ..." : "حفظ الاشتراك"}
+                </button>
+              ) : (
+                <p className="mt-4 text-sm text-slate-600">Subscription settings are managed by WathiqCare platform admin.</p>
+              )}
             </section>
 
             <section className="rounded-2xl border border-slate-200 p-4">
@@ -906,7 +1602,7 @@ export default function AdminPage() {
                 ))}
               </div>
 
-              <div className="grid gap-3 md:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-6">
                 <input
                   className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   placeholder="email@domain.com"
@@ -930,6 +1626,38 @@ export default function AdminPage() {
                     </option>
                   ))}
                 </select>
+                <select
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  value={memberForm.departmentCode}
+                  onChange={(e) => setMemberForm((prev) => ({ ...prev, departmentCode: e.target.value }))}
+                >
+                  <option value="">Department</option>
+                  {departments.filter((item) => item.isActive).map((department) => (
+                    <option key={department.id} value={department.code}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  value={memberForm.tenantRoleCodes[0] ?? ""}
+                  onChange={(e) => setMemberForm((prev) => ({ ...prev, tenantRoleCodes: e.target.value ? [e.target.value] : [] }))}
+                >
+                  <option value="">Tenant role</option>
+                  {tenantRoles.filter((role) => role.status === "ACTIVE").map((role) => (
+                    <option key={role.id} value={role.code}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
+                <label className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={memberForm.activateNow}
+                    onChange={(e) => setMemberForm((prev) => ({ ...prev, activateNow: e.target.checked }))}
+                  />
+                  Activate now
+                </label>
                 <button
                   type="button"
                   onClick={() => void handleAddMember()}
@@ -949,6 +1677,7 @@ export default function AdminPage() {
                       <th className="px-3 py-2 text-left">البريد الإلكتروني</th>
                       <th className="px-3 py-2 text-left">الدور</th>
                       <th className="px-3 py-2 text-left">الحالة</th>
+                      <th className="px-3 py-2 text-left">الإجراء</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -958,11 +1687,22 @@ export default function AdminPage() {
                         <td className="px-3 py-2 text-slate-600">{member.user.email}</td>
                         <td className="px-3 py-2">{member.role}</td>
                         <td className="px-3 py-2">{member.status}</td>
+                        <td className="px-3 py-2">
+                          <button
+                            type="button"
+                            onClick={() => void handleToggleMember(member, !(member.status === "ACTIVE" && member.user.isActive))}
+                            className={member.status === "ACTIVE" && member.user.isActive
+                              ? "rounded-lg border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700"
+                              : "rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"}
+                          >
+                            {member.status === "ACTIVE" && member.user.isActive ? "Deactivate" : "Activate"}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                     {members.length === 0 ? (
                       <tr>
-                        <td className="px-3 py-6 text-center text-slate-500" colSpan={4}>
+                        <td className="px-3 py-6 text-center text-slate-500" colSpan={5}>
                           لا يوجد أعضاء.
                         </td>
                       </tr>

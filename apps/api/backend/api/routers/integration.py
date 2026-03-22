@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import logging
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
@@ -27,6 +28,7 @@ from backend.services.integration_monitoring_service import (
 
 router = APIRouter(tags=["Integration"])
 _connector = InMemoryEMRConnector()
+logger = logging.getLogger(__name__)
 
 INTEGRATION_VIEW_ROLES = (
     "tenant_admin",
@@ -38,6 +40,26 @@ INTEGRATION_VIEW_ROLES = (
     "quality",
     "compliance",
 )
+
+
+def _default_integrations_payload() -> Dict[str, object]:
+    # Keep legacy keys for existing UI callers while exposing explicit EMR dashboard metrics.
+    return {
+        "total_integrations": 0,
+        "connected_systems": 0,
+        "system_errors": 0,
+        "total_records": 0,
+        "recent_runs": [],
+        "summary": {
+            "total": 0,
+            "enabled": 0,
+            "running": 0,
+            "failed": 0,
+            "disabled": 0,
+            "live": 0,
+        },
+        "connectors": [],
+    }
 
 
 def _seed_if_missing(mrn: str) -> Dict[str, str]:
@@ -165,31 +187,71 @@ def get_integration_systems_status(
 
 
 @router.get("/api/integrations/status")
+@router.get("/api/emr/status")
 def get_integrations_status(
     current_user=Depends(require_roles(*INTEGRATION_VIEW_ROLES)),
 ):
     _ = current_user
     db = SessionLocal()
     try:
-        ensure_connectors_seeded(db)
-        connectors = (
-            db.query(IntegrationConnector)
-            .order_by(IntegrationConnector.connector_name.asc())
-            .all()
+        defaults = _default_integrations_payload()
+        try:
+            ensure_connectors_seeded(db)
+            connectors = (
+                db.query(IntegrationConnector)
+                .order_by(IntegrationConnector.connector_name.asc())
+                .all()
+            )
+        except Exception:  # noqa: BLE001
+            logger.exception("integration_status_seed_or_query_failed")
+            return defaults
+
+        connector_items: list[Dict[str, object]] = []
+        for connector in connectors or []:
+            try:
+                item = serialize_connector_status(db, connector)
+                if isinstance(item, dict):
+                    connector_items.append(item)
+            except Exception:  # noqa: BLE001
+                logger.exception("integration_status_serialize_failed connector_key=%s", getattr(connector, "connector_key", "unknown"))
+
+        recent_runs_serialized: list[Dict[str, object]] = []
+        try:
+            recent_runs = list_runs(db, connector_key=None, limit=10) or []
+            for run in recent_runs:
+                serialized = serialize_run(run)
+                if isinstance(serialized, dict):
+                    recent_runs_serialized.append(serialized)
+        except Exception:  # noqa: BLE001
+            logger.exception("integration_status_recent_runs_query_failed")
+            recent_runs_serialized = []
+
+        summary = {
+            "total": len(connector_items),
+            "enabled": sum(1 for item in connector_items if bool(item.get("enabled"))),
+            "running": sum(1 for item in connector_items if item.get("status") in {"queued", "running"}),
+            "failed": sum(1 for item in connector_items if item.get("status") == "failed"),
+            "disabled": sum(1 for item in connector_items if item.get("status") == "disabled"),
+            "live": sum(1 for item in connector_items if bool(item.get("live_mode"))),
+        }
+        total_records = sum(
+            int(((item.get("latest_run") or {}).get("records_processed") or 0))
+            for item in connector_items
+            if isinstance(item, dict)
         )
 
-        payload = [serialize_connector_status(db, connector) for connector in connectors]
-        summary = {
-            "total": len(payload),
-            "enabled": sum(1 for item in payload if item["enabled"]),
-            "running": sum(1 for item in payload if item["status"] in {"queued", "running"}),
-            "failed": sum(1 for item in payload if item["status"] == "failed"),
-            "disabled": sum(1 for item in payload if item["status"] == "disabled"),
-            "live": sum(1 for item in payload if item["live_mode"]),
-        }
         return {
+            "total_integrations": len(connector_items),
+            "connected_systems": sum(
+                1
+                for item in connector_items
+                if bool(item.get("enabled")) and item.get("status") not in {"failed", "disabled"}
+            ),
+            "system_errors": sum(1 for item in connector_items if item.get("status") == "failed"),
+            "total_records": total_records,
+            "recent_runs": recent_runs_serialized,
             "summary": summary,
-            "connectors": payload,
+            "connectors": connector_items,
         }
     finally:
         db.close()
@@ -204,11 +266,20 @@ def get_integration_runs(
     _ = current_user
     db = SessionLocal()
     try:
-        ensure_connectors_seeded(db)
-        runs = list_runs(db, connector_key=connector, limit=limit)
-        return {
-            "runs": [serialize_run(run) for run in runs],
-        }
+        try:
+            ensure_connectors_seeded(db)
+            runs = list_runs(db, connector_key=connector, limit=limit) or []
+            serialized_runs = []
+            for run in runs:
+                serialized = serialize_run(run)
+                if serialized is not None:
+                    serialized_runs.append(serialized)
+            return {
+                "runs": serialized_runs,
+            }
+        except Exception:  # noqa: BLE001
+            logger.exception("integration_runs_query_failed connector=%s", connector)
+            return {"runs": []}
     finally:
         db.close()
 

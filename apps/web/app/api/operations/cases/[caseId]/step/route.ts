@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-    hasOperationsEscalationPermission,
-    hasOperationsStepPermission,
-} from "@/lib/operations/permissions";
-import { requireAuth, requireTenantId } from "@/lib/server/auth";
+import { requireAuth, requireTenantId, requireTenantPermissionForAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { parseOperationDepartment, recordCaseStepAction } from "@/lib/server/operations";
 
@@ -49,13 +45,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             throw new ApiError(400, "stageCode and stepCode are required");
         }
 
-        const canRunAction = body.action === "escalation_triggered"
-            ? hasOperationsEscalationPermission(auth.role, auth.platform_role)
-            : hasOperationsStepPermission(auth.role, auth.platform_role);
-
-        if (!canRunAction) {
-            throw new ApiError(403, "Insufficient role permissions for this operation step action");
-        }
+        await requireTenantPermissionForAuth(
+            auth,
+            tenantId,
+            body.action === "escalation_triggered" ? "legal.escalate" : "clinical.step.execute",
+        );
 
         await recordCaseStepAction({
             tenantId,

@@ -26,11 +26,16 @@ export default function NotificationBell() {
     }
 
     useEffect(() => {
-        void loadNotifications();
+        const initial = setTimeout(() => {
+            void loadNotifications();
+        }, 0);
         const timer = setInterval(() => {
             void loadNotifications();
         }, 30000);
-        return () => clearInterval(timer);
+        return () => {
+            clearTimeout(initial);
+            clearInterval(timer);
+        };
     }, []);
 
     const unreadIds = useMemo(() => items.filter((item) => !item.readAt).map((item) => item.id), [items]);

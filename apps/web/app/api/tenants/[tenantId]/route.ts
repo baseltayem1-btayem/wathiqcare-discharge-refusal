@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { hasPlatformAccess, requireAuth, requireRole, requireTenantAccess } from "@/lib/server/auth";
+import { hasPlatformAccess, requireAuth, requireTenantAccess, requireTenantPermission } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
@@ -14,6 +14,8 @@ export async function GET(
     const { tenantId } = await params;
     const auth = await requireAuth(request);
     if (!hasPlatformAccess(auth)) {
+      await requireTenantPermission(request, tenantId, ["users.read", "subscription.read"]);
+    } else {
       await requireTenantAccess(request, tenantId);
     }
 
@@ -57,8 +59,9 @@ export async function PATCH(
     const platformAccess = hasPlatformAccess(auth);
 
     if (!platformAccess) {
-      const tenantAuth = await requireTenantAccess(request, tenantId);
-      requireRole(tenantAuth, ["OWNER", "ADMIN"]);
+      await requireTenantPermission(request, tenantId, "roles.manage");
+    } else {
+      await requireTenantAccess(request, tenantId);
     }
 
     const payload = (await request.json().catch(() => null)) as

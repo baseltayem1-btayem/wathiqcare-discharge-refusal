@@ -48,8 +48,6 @@ const WORKFLOW_STEPS = [
     "closure",
 ] as const;
 
-type StepCode = (typeof WORKFLOW_STEPS)[number];
-
 export function departmentForRole(role: string | null | undefined): OperationDepartment {
     const normalized = (role || "").toLowerCase();
     if (normalized.includes("pharmacy")) return OperationDepartment.PHARMACY;

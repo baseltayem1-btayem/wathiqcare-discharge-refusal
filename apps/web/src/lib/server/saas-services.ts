@@ -7,6 +7,20 @@ type SubscriptionWithPlan = Prisma.SubscriptionGetPayload<{
   include: { plan: true };
 }>;
 
+export type TenantSubscriptionSummary = {
+  subscriptionId: string;
+  subscriptionStatus: SubscriptionStatus;
+  planName: string;
+  planCode: PlanCode;
+  startDate: Date;
+  endDate: Date;
+  gracePeriodDays: number;
+  seatLimit: number;
+  activeUserCount: number;
+  pendingUsersCount: number;
+  availableSeats: number;
+};
+
 const SUBSCRIPTION_ALLOWED_STATUSES: SubscriptionStatus[] = [
   SubscriptionStatus.TRIALING,
   SubscriptionStatus.ACTIVE,
@@ -112,18 +126,13 @@ export async function enforceSeatLimit(
   seatsToAdd: number,
 ): Promise<{ activeSeats: number; seatLimit: number }> {
   const subscription = await getTenantSubscription(tenantId);
-  const activeSeats = await prisma.tenantMembership.count({
-    where: {
-      tenantId,
-      status: "ACTIVE",
-    },
-  });
+  const activeSeats = await countActiveSeatUsers(tenantId);
 
   const seatLimit = subscription.seatLimit;
   if (activeSeats + seatsToAdd > seatLimit) {
     throw new ApiError(
       403,
-      `Seat limit exceeded (${activeSeats}/${seatLimit} active). Upgrade plan or increase seat limit.`,
+      `No available seats (${activeSeats}/${seatLimit} active). Ask your platform admin to increase seat_limit.`,
     );
   }
 
@@ -203,12 +212,7 @@ export async function recordUsage(
 
 export async function syncActiveUserUsage(tenantId: string): Promise<void> {
   const periodDate = startOfUtcDay();
-  const activeUsers = await prisma.tenantMembership.count({
-    where: {
-      tenantId,
-      status: "ACTIVE",
-    },
-  });
+  const activeUsers = await countActiveSeatUsers(tenantId);
 
   await prisma.usageRecord.upsert({
     where: {
@@ -230,6 +234,60 @@ export async function syncActiveUserUsage(tenantId: string): Promise<void> {
       periodDate,
     },
   });
+}
+
+export async function countActiveSeatUsers(tenantId: string): Promise<number> {
+  return prisma.tenantMembership.count({
+    where: {
+      tenantId,
+      status: "ACTIVE",
+      user: {
+        isActive: true,
+      },
+    },
+  });
+}
+
+export async function countPendingSeatUsers(tenantId: string): Promise<number> {
+  return prisma.tenantMembership.count({
+    where: {
+      tenantId,
+      OR: [
+        { status: "INVITED" },
+        {
+          status: "ACTIVE",
+          user: {
+            isActive: false,
+          },
+        },
+      ],
+    },
+  });
+}
+
+export async function getTenantSubscriptionSummary(tenantId: string): Promise<TenantSubscriptionSummary> {
+  const subscription = await getTenantSubscription(tenantId);
+  const activeUserCount = await countActiveSeatUsers(tenantId);
+  const pendingUsersCount = await countPendingSeatUsers(tenantId);
+  const seatLimit = subscription.seatLimit;
+  const availableSeats = Math.max(0, seatLimit - activeUserCount);
+  const gracePeriodDays = Number(
+    (subscription.metadata as Record<string, unknown> | null)?.gracePeriodDays ?? 7,
+  );
+
+  return {
+    subscriptionId: subscription.id,
+    subscriptionStatus: subscription.status,
+    planName: subscription.plan.name,
+    planCode: subscription.plan.code,
+    startDate: subscription.currentPeriodStart,
+    endDate: subscription.currentPeriodEnd,
+    gracePeriodDays: Number.isFinite(gracePeriodDays) && gracePeriodDays >= 0 ? Math.floor(gracePeriodDays) : 7,
+    seatLimit,
+    activeUserCount,
+    pendingUsersCount,
+    availableSeats,
+  };
 }
 
 type AuditArgs = {

@@ -50,6 +50,11 @@ enum InvitationStatus {
   REVOKED
 }
 
+enum TenantRoleStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum CaseStatus {
   OPEN
   IN_PROGRESS
@@ -180,6 +185,9 @@ model Tenant {
   caseStepEvents      CaseStepEvent[]
   operationNotifications OperationNotification[]
   departmentSlaConfigs DepartmentSlaConfig[]
+  departments        Department[]
+  tenantRoles        TenantRole[]
+  roleAssignments    UserRoleAssignment[]
 
   @@map("tenants")
 }
@@ -257,9 +265,98 @@ model User {
   caseStepEventsByActor CaseStepEvent[] @relation("StepEventActor")
   operationNotifications OperationNotification[] @relation("NotificationRecipient")
   operationNotificationsTriggered OperationNotification[] @relation("NotificationTrigger")
+  roleAssignments     UserRoleAssignment[]
 
   @@index([tenantId])
   @@map("users")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  code        String
+  name        String
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive])
+  @@map("departments")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String?
+  module      String
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  rolePermissions TenantRolePermission[]
+
+  @@index([module, isActive])
+  @@map("permissions")
+}
+
+model TenantRole {
+  id              String           @id @default(uuid())
+  tenantId        String           @map("tenant_id")
+  code            String
+  name            String
+  description     String?
+  status          TenantRoleStatus @default(ACTIVE)
+  isTemplate      Boolean          @default(false) @map("is_template")
+  clonedFromRoleId String?         @map("cloned_from_role_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  permissions     TenantRolePermission[]
+  users           UserRoleAssignment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@map("tenant_roles")
+}
+
+model TenantRolePermission {
+  id            String    @id @default(uuid())
+  tenantRoleId  String    @map("tenant_role_id")
+  permissionId  String    @map("permission_id")
+  allowed       Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenantRole    TenantRole  @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+  permission    Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantRoleId, permissionId])
+  @@index([permissionId])
+  @@map("tenant_role_permissions")
+}
+
+model UserRoleAssignment {
+  id            String    @id @default(uuid())
+  tenantId      String    @map("tenant_id")
+  userId        String    @map("user_id")
+  tenantRoleId  String    @map("tenant_role_id")
+  isPrimary     Boolean   @default(false) @map("is_primary")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantRole    TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, tenantRoleId])
+  @@index([tenantId, userId])
+  @@index([tenantId, tenantRoleId])
+  @@map("user_role_assignments")
 }
 
 model TenantMembership {

@@ -5,11 +5,11 @@ import {
   SubscriptionStatus,
 } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { hasPlatformAccess, requireAuth, requireRole, requireTenantAccess } from "@/lib/server/auth";
+import { hasPlatformAccess, requireAuth, requireTenantAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
-import { writeAuditLog } from "@/lib/server/saas-services";
+import { countActiveSeatUsers, countPendingSeatUsers, getTenantSubscriptionSummary, writeAuditLog } from "@/lib/server/saas-services";
 
 function parsePlanCode(value: unknown): PlanCode | null {
   if (typeof value !== "string") return null;
@@ -56,7 +56,14 @@ export async function GET(
       throw new ApiError(404, "Subscription not found");
     }
 
-    return NextResponse.json(toJsonSafe(subscription));
+    const summary = await getTenantSubscriptionSummary(tenantId);
+
+    return NextResponse.json(
+      toJsonSafe({
+        ...subscription,
+        summary,
+      }),
+    );
   } catch (error) {
     return handleApiError(error);
   }
@@ -69,10 +76,8 @@ export async function PATCH(
   try {
     const { tenantId } = await params;
     const auth = await requireAuth(request);
-    const platformAccess = hasPlatformAccess(auth);
-    if (!platformAccess) {
-      const tenantAuth = await requireTenantAccess(request, tenantId);
-      requireRole(tenantAuth, ["OWNER", "ADMIN", "BILLING"]);
+    if (!hasPlatformAccess(auth)) {
+      throw new ApiError(403, "Only platform admins can update subscriptions");
     }
 
     const payload = (await request.json().catch(() => null)) as
@@ -105,12 +110,8 @@ export async function PATCH(
       orderBy: { createdAt: "desc" },
     });
 
-    const activeSeats = await prisma.tenantMembership.count({
-      where: {
-        tenantId,
-        status: "ACTIVE",
-      },
-    });
+    const activeSeats = await countActiveSeatUsers(tenantId);
+    const pendingSeats = await countPendingSeatUsers(tenantId);
 
     if (
       typeof payload.seatLimit === "number" &&
@@ -215,7 +216,7 @@ export async function PATCH(
       entityType: "subscription",
       entityId: subscription.id,
       action: existing ? "subscription_updated" : "subscription_created",
-      details: "Subscription updated from tenant API",
+      details: "Subscription updated from platform API",
       metadataJson: {
         planCode: selectedPlan?.code,
         billingInterval,
@@ -225,9 +226,26 @@ export async function PATCH(
             ? Math.floor(payload.seatLimit)
             : undefined,
         activeSeats,
+        pendingSeats,
       },
       request,
     });
+
+    if (typeof payload.seatLimit === "number" && payload.seatLimit > 0) {
+      await writeAuditLog({
+        tenantId,
+        userId: auth.sub,
+        entityType: "subscription",
+        entityId: subscription.id,
+        action: "seat_limit_changed",
+        details: `Seat limit changed to ${Math.floor(payload.seatLimit)}`,
+        metadataJson: {
+          seatLimit: Math.floor(payload.seatLimit),
+          activeSeats,
+        },
+        request,
+      });
+    }
 
     return NextResponse.json(toJsonSafe(subscription));
   } catch (error) {

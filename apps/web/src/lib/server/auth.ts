@@ -15,6 +15,11 @@ export type AuthContext = {
   exp?: number;
 };
 
+export type TenantPermissionContext = {
+  auth: AuthContext;
+  permissionKeys: Set<string>;
+};
+
 const ROLE_ALIASES: Record<string, string> = {
   tenant_owner: "OWNER",
   owner: "OWNER",
@@ -163,4 +168,90 @@ export function requireRole(auth: AuthContext, allowedRoles: string[]): void {
   if (!normalizedAllowedRoles.includes(role)) {
     throw new ApiError(403, "Insufficient role permissions");
   }
+}
+
+export async function getUserTenantPermissionKeys(userId: string, tenantId: string): Promise<Set<string>> {
+  const assignments = await prisma.userRoleAssignment.findMany({
+    where: {
+      tenantId,
+      userId,
+      tenantRole: {
+        status: "ACTIVE",
+      },
+    },
+    select: {
+      tenantRole: {
+        select: {
+          permissions: {
+            where: {
+              allowed: true,
+              permission: {
+                isActive: true,
+              },
+            },
+            select: {
+              permission: {
+                select: {
+                  key: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const keys = new Set<string>();
+  for (const assignment of assignments) {
+    for (const mapping of assignment.tenantRole.permissions) {
+      keys.add(mapping.permission.key);
+    }
+  }
+
+  return keys;
+}
+
+export async function requireTenantPermission(
+  request: NextRequest,
+  tenantId: string,
+  requiredPermissions: string | string[],
+): Promise<TenantPermissionContext> {
+  const auth = await requireTenantAccess(request, tenantId);
+  return requireTenantPermissionForAuth(auth, tenantId, requiredPermissions);
+}
+
+export async function requireTenantPermissionForAuth(
+  auth: AuthContext,
+  tenantId: string,
+  requiredPermissions: string | string[],
+): Promise<TenantPermissionContext> {
+  if (hasPlatformAccess(auth)) {
+    return {
+      auth,
+      permissionKeys: new Set(["*"]),
+    };
+  }
+
+  if (auth.tenant_id !== tenantId) {
+    throw new ApiError(403, "Tenant access denied");
+  }
+
+  const required = Array.isArray(requiredPermissions)
+    ? requiredPermissions.filter(Boolean)
+    : [requiredPermissions].filter(Boolean);
+
+  const permissionKeys = await getUserTenantPermissionKeys(auth.sub, tenantId);
+  if (permissionKeys.size === 0) {
+    throw new ApiError(403, "No permissions assigned to this user");
+  }
+
+  if (required.length > 0 && !required.some((permission) => permissionKeys.has(permission))) {
+    throw new ApiError(403, "Insufficient permissions");
+  }
+
+  return {
+    auth,
+    permissionKeys,
+  };
 }

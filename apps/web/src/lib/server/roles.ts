@@ -7,11 +7,17 @@ export const TENANT_ADMIN_ROLES = ["tenant_owner", "tenant_admin"] as const;
 export const OPERATIONAL_ROLES = [
     "doctor",
     "nursing",
+    "lab_tech",
+    "pharmacist",
+    "finance_officer",
     "reception",
     "patient_affairs",
     "quality",
     "compliance",
     "legal_admin",
+    "it_admin",
+    "medical_director",
+    "bed_manager",
     "viewer",
 ] as const;
 
@@ -42,6 +48,12 @@ const USER_ROLE_ALIASES: Record<string, CanonicalUserRole> = {
     doctor: "doctor",
     nursing: "nursing",
     nurse: "nursing",
+    lab_tech: "lab_tech",
+    laboratory: "lab_tech",
+    pharmacist: "pharmacist",
+    pharmacy: "pharmacist",
+    finance_officer: "finance_officer",
+    finance: "finance_officer",
     reception: "reception",
     front_desk: "reception",
     patient_affairs: "patient_affairs",
@@ -51,6 +63,9 @@ const USER_ROLE_ALIASES: Record<string, CanonicalUserRole> = {
     compliance: "compliance",
     legal_admin: "legal_admin",
     legal_officer: "legal_admin",
+    it_admin: "it_admin",
+    medical_director: "medical_director",
+    bed_manager: "bed_manager",
     viewer: "viewer",
     member: "viewer",
 };
@@ -88,6 +103,14 @@ export function membershipRoleForUserRole(role: CanonicalUserRole): MembershipRo
             return MembershipRole.ADMIN;
         case "doctor":
             return MembershipRole.MANAGER;
+        case "medical_director":
+            return MembershipRole.OWNER;
+        case "it_admin":
+        case "finance_officer":
+        case "bed_manager":
+        case "pharmacist":
+        case "lab_tech":
+            return MembershipRole.ADMIN;
         case "patient_affairs":
         case "quality":
         case "compliance":
