@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Archive, FileCheck2, FileCog, FilePlus2, FolderKanban, Gavel, LayoutGrid, LogOut, Rocket, ShieldCheck, Stethoscope, Timer, ClipboardList, AlertTriangle, FileSignature, CheckCircle2, Database, MessageSquareHeart, HandHelping, FileText } from "lucide-react";
+import { LogOut, Stethoscope } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationBell from "@/components/operations/NotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
-import { clearToken } from "@/utils/api";
+import { apiFetch, clearToken } from "@/utils/api";
+import { TENANT_NAV_ITEMS, CASE_STAGE_NAV_DEF, type TenantNavItem } from "@/config/tenantSidebar";
 
 type AppShellProps = {
   title: string;
@@ -22,85 +23,14 @@ type AppShellProps = {
   };
 };
 
-type NavItem = {
-  href: string;
-  labelKey?: string;
-  label?: string;
-  icon: ReactNode;
-  disabled?: boolean;
-};
-
-const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutGrid className="h-4 w-4" /> },
-  { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
-  { href: "/operations", label: "Operations", icon: <LayoutGrid className="h-4 w-4" /> },
-  { href: "/operations/inboxes", label: "Department Inboxes", icon: <ClipboardList className="h-4 w-4" /> },
-  { href: "/cases/new", labelKey: "nav.newCase", icon: <FilePlus2 className="h-4 w-4" /> },
-  { href: "/workflow", labelKey: "nav.workflowDocs", icon: <FileCog className="h-4 w-4" /> },
-  { href: "/refusal-forms", labelKey: "nav.refusalForms", icon: <FileSignature className="h-4 w-4" /> },
-  { href: "/legal-escalation", labelKey: "nav.legalEscalation", icon: <AlertTriangle className="h-4 w-4" /> },
-  { href: "/escalation-timeline", labelKey: "nav.escalationTimeline", icon: <Timer className="h-4 w-4" /> },
-  { href: "/legal-case-file", labelKey: "nav.legalCaseFile", icon: <Gavel className="h-4 w-4" /> },
-  { href: "/audit-log", labelKey: "nav.auditViewer", icon: <ClipboardList className="h-4 w-4" /> },
-  { href: "/icd11-validator", labelKey: "nav.icd11Validator", icon: <CheckCircle2 className="h-4 w-4" /> },
-  { href: "/emr-integration", labelKey: "nav.emrIntegration", icon: <Database className="h-4 w-4" /> },
-  { href: "/consents", labelKey: "nav.consents", icon: <FileCheck2 className="h-4 w-4" /> },
-  { href: "/compliance", labelKey: "nav.compliance", icon: <ShieldCheck className="h-4 w-4" /> },
-  { href: "/bundles", labelKey: "nav.bundles", icon: <Archive className="h-4 w-4" /> },
-  { href: "/launch-status", labelKey: "nav.launchStatus", icon: <Rocket className="h-4 w-4" /> },
-  { href: "/admin", labelKey: "nav.admin", icon: <ShieldCheck className="h-4 w-4" /> },
-];
-
-const CASE_STAGE_NAV = [
-  {
-    key: "medical_discharge_decision",
-    href: (caseId: string) => `/cases/${caseId}`,
-    labelKey: "workflow.stage.medical_discharge_decision",
-    icon: <Stethoscope className="h-4 w-4" />,
-  },
-  {
-    key: "initial_communication",
-    href: (caseId: string) => `/workflow/medical-discharge-refusal/case/${caseId}/initial-communication`,
-    labelKey: "workflow.stage.initial_communication",
-    icon: <MessageSquareHeart className="h-4 w-4" />,
-  },
-  {
-    key: "support_and_intervention",
-    href: (caseId: string) => `/workflow/medical-discharge-refusal/case/${caseId}/social-services`,
-    labelKey: "workflow.stage.support_and_intervention",
-    icon: <HandHelping className="h-4 w-4" />,
-  },
-  {
-    key: "refusal_form",
-    href: (caseId: string) => `/cases/${caseId}/refusal-form`,
-    labelKey: "workflow.stage.refusal_form",
-    icon: <FileSignature className="h-4 w-4" />,
-  },
-  {
-    key: "official_notification",
-    href: (caseId: string) => `/cases/${caseId}/financial-notice`,
-    labelKey: "workflow.stage.official_notification",
-    icon: <FileText className="h-4 w-4" />,
-  },
-  {
-    key: "escalation",
-    href: (caseId: string) => `/workflow/medical-discharge-refusal/case/${caseId}/escalation-review`,
-    labelKey: "workflow.stage.escalation",
-    icon: <AlertTriangle className="h-4 w-4" />,
-  },
-  {
-    key: "closed",
-    href: (caseId: string) => `/cases/${caseId}`,
-    labelKey: "workflow.stage.closed",
-    icon: <Archive className="h-4 w-4" />,
-  },
-] as const;
+// NavItem type re-exported for local use (same shape as TenantNavItem)
+type NavItem = TenantNavItem;
 
 function buildCaseWorkflowNav(caseNav: NonNullable<AppShellProps["workflowCaseNav"]>): NavItem[] {
-  const orderedKeys = CASE_STAGE_NAV.map((item) => item.key);
+  const orderedKeys = CASE_STAGE_NAV_DEF.map((item) => item.key);
   const activeIndex = orderedKeys.indexOf((caseNav.currentStage || "") as (typeof orderedKeys)[number]);
 
-  return CASE_STAGE_NAV
+  return CASE_STAGE_NAV_DEF
     .filter((item) => item.key !== "escalation" || Boolean(caseNav.escalationRequired) || item.key === caseNav.currentStage)
     .map((item, index) => ({
       href: item.href(caseNav.caseId),
@@ -157,7 +87,27 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useI18n();
-  const navItems = workflowCaseNav ? buildCaseWorkflowNav(workflowCaseNav) : NAV_ITEMS;
+
+  // ── HARD ISOLATION GUARD ────────────────────────────────────────────────────
+  // Platform admins must NEVER see the tenant shell.
+  // Middleware enforces this at the edge; this is defense-in-depth at component level.
+  // If a platform_admin somehow reaches AppShell, redirect immediately.
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  useEffect(() => {
+    apiFetch<{ userType?: string }>("/api/auth/me", { cache: "no-store" })
+      .then((me) => {
+        if (me?.userType === "platform_admin") {
+          setIsPlatformAdmin(true);
+          router.replace("/platform");
+        }
+      })
+      .catch(() => { /* ignore — primary enforcement is middleware */ });
+  }, [router]);
+
+  if (isPlatformAdmin) return null;
+  // ────────────────────────────────────────────────────────────────────────────
+
+  const navItems = workflowCaseNav ? buildCaseWorkflowNav(workflowCaseNav) : TENANT_NAV_ITEMS;
   const tenantLogoAlt = t("app.tenantName");
 
   async function handleLogout() {

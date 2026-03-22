@@ -2,15 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, CreditCard, Plus, RefreshCw, ShieldCheck, Users } from "lucide-react";
-import AppShell from "@/components/AppShell";
-import AuthGuard from "@/components/AuthGuard";
-import AccessDenied from "@/components/AccessDenied";
 import { apiFetch } from "@/utils/api";
-
-type AuthMeResponse = {
-    platformRole?: string | null;
-    userType?: "platform_admin" | "tenant_admin" | "tenant_user";
-};
 
 type SetupStatus = {
     initialized: boolean;
@@ -66,7 +58,6 @@ const SUB_STATUS_OPTIONS = ["TRIALING", "ACTIVE", "PAST_DUE", "PAUSED", "CANCELE
 
 export default function PlatformPage() {
     const [refreshing, setRefreshing] = useState(false);
-    const [forbidden, setForbidden] = useState(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
     const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
@@ -102,15 +93,6 @@ export default function PlatformPage() {
         setWidgetErrors({});
 
         try {
-            const me = await apiFetch<AuthMeResponse>("/api/auth/me", { cache: "no-store" });
-            const isPlatform = Boolean(me?.platformRole) || me?.userType === "platform_admin";
-            if (!isPlatform) {
-                setForbidden(true);
-                return;
-            }
-
-            setForbidden(false);
-
             const [setupResult, tenantResult, invoiceResult, subscriptionResult] = await Promise.allSettled([
                 apiFetch<SetupStatus>("/api/admin/setup/status", { cache: "no-store" }),
                 apiFetch<TenantListItem[]>("/api/tenants?limit=100", { cache: "no-store" }),
@@ -258,37 +240,28 @@ export default function PlatformPage() {
         }
     }
 
-    if (forbidden) {
-        return (
-            <AuthGuard authFailureMode="inline" blocking={false}>
-                <AppShell title="WathiqCare Platform Management" subtitle="Centralized platform administration">
-                    <AccessDenied resource="Platform Admin Portal" />
-                </AppShell>
-            </AuthGuard>
-        );
-    }
-
     return (
-        <AuthGuard blocking={false}>
-            <AppShell
-                title="WathiqCare Platform Management"
-                subtitle="Platform Admin Console for tenants, subscriptions, licensing seats, and billing"
-                actions={
-                    <button
-                        type="button"
-                        onClick={() => void loadPlatformData()}
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                        <RefreshCw className="h-4 w-4" />
-                        {refreshing ? "Refreshing..." : "Refresh"}
-                    </button>
-                }
-            >
-                {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-                {notice ? <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
-                {refreshing ? <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Refreshing platform data...</div> : null}
+        <>
+            <div className="mb-4 flex items-center justify-between">
+                <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Platform Overview</h2>
+                    <p className="mt-1 text-sm text-gray-500">System metrics and status dashboard</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => void loadPlatformData()}
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                    <RefreshCw className="h-4 w-4" />
+                    {refreshing ? "Refreshing..." : "Refresh"}
+                </button>
+            </div>
 
-                <section className="grid gap-4 md:grid-cols-4">
+            {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+            {notice ? <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
+            {refreshing ? <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Refreshing platform data...</div> : null}
+
+            <section className="grid gap-4 md:grid-cols-4">
                     <div className="rounded-2xl border border-slate-200 bg-white p-4">
                         <div className="flex items-center justify-between">
                             <p className="text-sm text-slate-500">Tenants</p>
@@ -426,7 +399,6 @@ export default function PlatformPage() {
                         <p className="mt-1">Subscription summary: total {subscriptionSummary?.total ?? 0}, active {subscriptionSummary?.active ?? 0}, past due {subscriptionSummary?.pastDue ?? 0}</p>
                     </div>
                 </section>
-            </AppShell>
-        </AuthGuard>
+        </>
     );
 }

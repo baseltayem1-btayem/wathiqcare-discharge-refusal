@@ -18,14 +18,43 @@ export default function NotificationBell() {
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<NotificationItem[]>([]);
     const [unread, setUnread] = useState(0);
+    const [canLoad, setCanLoad] = useState(true);
 
     async function loadNotifications() {
-        const data = await apiFetch<{ notifications: NotificationItem[]; unread: number }>("/api/operations/notifications?limit=20");
-        setItems(data.notifications || []);
-        setUnread(data.unread || 0);
+        if (!canLoad) return;
+        try {
+            const data = await apiFetch<{ notifications: NotificationItem[]; unread: number }>(
+                "/api/operations/notifications?limit=20",
+                { authFailureMode: "inline" }
+            );
+            if (data && typeof data === "object") {
+                setItems(data.notifications || []);
+                setUnread(data.unread || 0);
+            }
+        } catch (error) {
+            // If user is platform admin, tenant notifications won't work
+            // This is expected and we silently skip
+            if (error instanceof Error && error.message.includes("403")) {
+                setCanLoad(false);
+            }
+        }
     }
 
     useEffect(() => {
+        // Check if user can even access tenant operations
+        const checkAccess = async () => {
+            try {
+                const me = await apiFetch<{ userType?: string }>("/api/auth/me", { cache: "no-store", authFailureMode: "inline" });
+                if (me?.userType === "platform_admin") {
+                    setCanLoad(false);
+                    return;
+                }
+            } catch {
+                // Continue anyway
+            }
+        };
+        
+        void checkAccess();
         const initial = setTimeout(() => {
             void loadNotifications();
         }, 0);

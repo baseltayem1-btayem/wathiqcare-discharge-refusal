@@ -6,6 +6,7 @@ const PLATFORM_ONLY_HOME = "/platform";
 const TENANT_HOME = "/dashboard";
 
 const PLATFORM_BLOCKED_PREFIXES = [
+    // Core tenant operational routes
     "/dashboard",
     "/cases",
     "/emr",
@@ -13,6 +14,17 @@ const PLATFORM_BLOCKED_PREFIXES = [
     "/workflow",
     "/operations",
     "/admin",
+    // Additional tenant modules — must also be blocked for platform_admin
+    "/refusal-forms",
+    "/legal-escalation",
+    "/escalation-timeline",
+    "/legal-case-file",
+    "/audit-log",
+    "/icd11-validator",
+    "/consents",
+    "/compliance",
+    "/bundles",
+    "/launch-status",
 ];
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
