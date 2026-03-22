@@ -180,6 +180,26 @@ async function rotateMagicLinkToken(userId: string, tokenHash: string): Promise<
     return { id, expiresAt };
 }
 
+export async function issueMagicLinkForUser(userId: string): Promise<{
+    tokenId: string;
+    rawToken: string;
+    magicUrl: string;
+    expiresAt: Date;
+    expiresMinutes: number;
+}> {
+    const rawToken = generateRawToken();
+    const tokenHash = hashToken(rawToken);
+    const tokenRecord = await rotateMagicLinkToken(userId, tokenHash);
+    const magicUrl = `${readMagicLinkBaseUrl()}/auth/magic?token=${encodeURIComponent(rawToken)}`;
+    return {
+        tokenId: tokenRecord.id,
+        rawToken,
+        magicUrl,
+        expiresAt: tokenRecord.expiresAt,
+        expiresMinutes: MAGIC_LINK_TTL_MINUTES,
+    };
+}
+
 async function deleteMagicLinkToken(tokenId: string): Promise<void> {
     await prisma.$executeRaw`
     DELETE FROM magic_link_tokens

@@ -25,6 +25,7 @@ const PLATFORM_BLOCKED_PREFIXES = [
     "/compliance",
     "/bundles",
     "/launch-status",
+    "/tenant",
 ];
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {

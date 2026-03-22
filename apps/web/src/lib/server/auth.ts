@@ -22,6 +22,25 @@ export type TenantPermissionContext = {
   permissionKeys: Set<string>;
 };
 
+const TENANT_ADMIN_FALLBACK_PERMISSIONS = new Set([
+  "users.read",
+  "users.create",
+  "users.activate",
+  "users.deactivate",
+  "roles.assign",
+  "subscription.read",
+  "usage.read",
+  "departments.read",
+]);
+
+function fallbackPermissionKeysForRole(role: string | undefined): Set<string> {
+  const normalized = (role || "").trim().toLowerCase();
+  if (normalized === "tenant_admin" || normalized === "tenant_owner") {
+    return new Set(TENANT_ADMIN_FALLBACK_PERMISSIONS);
+  }
+  return new Set<string>();
+}
+
 const ROLE_ALIASES: Record<string, string> = {
   tenant_owner: "OWNER",
   owner: "OWNER",
@@ -366,7 +385,17 @@ export async function requireTenantPermissionForAuth(
 
   const permissionKeys = await getUserTenantPermissionKeys(auth.sub, tenantId);
   if (permissionKeys.size === 0) {
-    throw new ApiError(403, "No permissions assigned to this user");
+    const fallbackKeys = fallbackPermissionKeysForRole(auth.role);
+    if (fallbackKeys.size === 0) {
+      throw new ApiError(403, "No permissions assigned to this user");
+    }
+    if (required.length > 0 && !required.some((permission) => fallbackKeys.has(permission))) {
+      throw new ApiError(403, "Insufficient permissions");
+    }
+    return {
+      auth,
+      permissionKeys: fallbackKeys,
+    };
   }
 
   if (required.length > 0 && !required.some((permission) => permissionKeys.has(permission))) {

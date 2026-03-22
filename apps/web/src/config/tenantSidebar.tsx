@@ -26,6 +26,7 @@ import {
     ShieldCheck,
     Stethoscope,
     Timer,
+    Users,
 } from "lucide-react";
 
 export type TenantNavItem = {
@@ -39,6 +40,7 @@ export type TenantNavItem = {
 /** Full tenant operational menu. No /platform routes here. */
 export const TENANT_NAV_ITEMS: TenantNavItem[] = [
     { href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutGrid className="h-4 w-4" /> },
+    { href: "/tenant/users", label: "Tenant Users", icon: <Users className="h-4 w-4" /> },
     { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
     { href: "/operations", label: "Operations", icon: <LayoutGrid className="h-4 w-4" /> },
     { href: "/operations/inboxes", label: "Department Inboxes", icon: <ClipboardList className="h-4 w-4" /> },
