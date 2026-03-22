@@ -1,17 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { useRouter } from 'next/navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/design-system/tabs';
+import { Button } from '@/components/design-system/button';
+import { Input, Select } from '@/components/design-system/input';
 import {
     Table,
     TableBody,
@@ -19,11 +12,11 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Mail, RotateCcw, Plus, Search, Filter, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+} from '@/components/design-system/table';
+import { Badge } from '@/components/design-system/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/design-system/card';
+import { toast } from 'sonner';
+import { Mail, RotateCcw, Plus, Search, AlertCircle, Clock } from 'lucide-react';
 
 interface User {
     id: string;
@@ -76,7 +69,6 @@ const OPERATIONS = {
 
 export default function TenantSecurityPage() {
     const router = useRouter();
-    const { toast } = useToast();
     const [activeTab, setActiveTab] = useState('users');
     const [users, setUsers] = useState<User[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
@@ -96,11 +88,7 @@ export default function TenantSecurityPage() {
             setUsers(data.users || []);
         } catch (error) {
             console.error('Error fetching users:', error);
-            toast({
-                title: 'Error',
-                description: 'Failed to load users',
-                variant: 'destructive',
-            });
+            toast.error('Failed to load users');
         } finally {
             setLoading(false);
         }
@@ -175,10 +163,7 @@ export default function TenantSecurityPage() {
                 'enable-user': 'User enabled',
             };
 
-            toast({
-                title: 'Success',
-                description: actionLabels[action] || 'Action completed',
-            });
+            toast.success(actionLabels[action] || 'Action completed');
 
             // Refresh users list
             setTimeout(() => {
@@ -187,11 +172,7 @@ export default function TenantSecurityPage() {
         } catch (error) {
             setOperationInProgress((prev) => ({ ...prev, [operationKey]: 'error' }));
             console.error('Error:', error);
-            toast({
-                title: 'Error',
-                description: error instanceof Error ? error.message : 'Action failed',
-                variant: 'destructive',
-            });
+            toast.error(error instanceof Error ? error.message : 'Action failed');
         } finally {
             setTimeout(() => {
                 setOperationInProgress((prev) => {
@@ -260,18 +241,17 @@ export default function TenantSecurityPage() {
                                             className="pl-10"
                                         />
                                     </div>
-                                    <Select value={selectedDepartmentFilter} onValueChange={setSelectedDepartmentFilter}>
-                                        <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder="Filter by department" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="">All Departments</SelectItem>
-                                            {DEPARTMENTS.map((dept) => (
-                                                <SelectItem key={dept.code} value={dept.code}>
-                                                    {dept.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
+                                    <Select
+                                        className="w-[220px]"
+                                        value={selectedDepartmentFilter}
+                                        onChange={(e) => setSelectedDepartmentFilter(e.target.value)}
+                                    >
+                                        <option value="">All Departments</option>
+                                        {DEPARTMENTS.map((dept) => (
+                                            <option key={dept.code} value={dept.code}>
+                                                {dept.name}
+                                            </option>
+                                        ))}
                                     </Select>
                                     <Button onClick={() => router.push('/tenant/users')}>
                                         <Plus className="w-4 h-4 mr-2" />

@@ -13,12 +13,12 @@ export const runtime = "nodejs";
  */
 export async function POST(
     request: NextRequest,
-    { params }: { params: { userId: string } }
+    context: { params: Promise<{ userId: string }> }
 ) {
     try {
+        const { userId } = await context.params;
         const auth = await requireAuth(request);
         const tenantId = auth.tenant_id;
-        const userId = params.userId;
 
         if (!tenantId || !userId) {
             throw new ApiError(400, "tenantId and userId are required");
@@ -64,44 +64,49 @@ export async function POST(
         }
 
         // Resend the email
-        const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/accept-invite?token=${encodeURIComponent(invitation.token)}`;
+        const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://wathiqcare.online").replace(/\/$/, "");
+        const inviteLink = `${appUrl}/auth/accept-invite?token=${encodeURIComponent(invitation.token)}`;
 
-        const emailText = buildWathiqCareEmailText(
-            `Hi ${user.fullName},`,
-            `You have been invited to join our WathiqCare tenant. Click the link below to accept the invitation.`,
-            `Invitation Link:\n${inviteLink}`,
-            "This invitation will expire in 7 days."
-        );
+        const emailText = buildWathiqCareEmailText({
+            title: "WathiqCare Invitation",
+            bodyLines: [
+                `Hi ${user.fullName},`,
+                "",
+                "You have been invited to join our WathiqCare tenant.",
+                "Use the secure link below to accept the invitation.",
+            ],
+            ctaUrl: inviteLink,
+            ctaLabel: "Accept invitation",
+            expiresNote: "This invitation link expires in 7 days.",
+            securityNote: "Invitation links are single-use and protected by expiry.",
+        });
 
-        const emailHtml = buildWathiqCareEmailHtml(
-            `Hi ${user.fullName},`,
-            `<p>You have been invited to join our WathiqCare tenant. Click the button below to accept the invitation.</p>`,
-            `<a href="${inviteLink}" style="display:inline-block;padding:10px 20px;background-color:#0066cc;color:white;text-decoration:none;border-radius:4px;">Accept Invitation</a>`,
-            "This invitation will expire in 7 days."
-        );
+        const emailHtml = buildWathiqCareEmailHtml({
+            title: `You're invited to WathiqCare`,
+            preheader: "Accept your tenant invitation",
+            bodyHtml: `<p style="margin:0 0 12px;font-size:15px;color:#334155;line-height:1.7;">Hi ${user.fullName},</p><p style="margin:0;font-size:15px;color:#334155;line-height:1.7;">You have been invited to join our WathiqCare tenant. Click the button below to continue.</p>`,
+            ctaUrl: inviteLink,
+            ctaText: "Accept Invitation",
+            expiresNote: "This invitation link expires in 7 days.",
+            securityNote: "If you did not expect this invitation, ignore this message.",
+        });
 
-        await sendEmailWithDiagnostics(
-            {
-                recipients: [user.email],
-                subject: "WathiqCare Invitation - Please Join Our Tenant",
-                htmlBody: emailHtml,
-                textBody: emailText,
-                cc: [],
-                attachments: []
-            }
-        );
+        await sendEmailWithDiagnostics({
+            to: user.email,
+            subject: "WathiqCare Invitation - Please Join Our Tenant",
+            html: emailHtml,
+            text: emailText,
+        });
 
         // Log audit event
         await writeAuditLog({
             tenantId,
             userId: auth.sub,
+            entityType: "USER",
+            entityId: userId,
             action: "INVITE_RESENT",
-            targetUserId: userId,
-            details: {
-                targetEmail: user.email,
-                invitationId: invitation.id
-            },
-            status: "success"
+            details: `Invitation resent to ${user.email} (invitationId=${invitation.id})`,
+            request,
         });
 
         return NextResponse.json({

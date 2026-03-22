@@ -15,12 +15,12 @@ export const runtime = "nodejs";
  */
 export async function POST(
     request: NextRequest,
-    { params }: { params: { userId: string } }
+    context: { params: Promise<{ userId: string }> }
 ) {
     try {
+        const { userId } = await context.params;
         const auth = await requireAuth(request);
         const tenantId = auth.tenant_id;
-        const userId = params.userId;
 
         if (!tenantId || !userId) {
             throw new ApiError(400, "tenantId and userId are required");
@@ -64,42 +64,48 @@ export async function POST(
         });
 
         // Build password reset email
-        const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/password-reset?token=${encodeURIComponent(rawToken)}`;
+        const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://wathiqcare.online").replace(/\/$/, "");
+        const resetLink = `${appUrl}/auth/password-reset?token=${encodeURIComponent(rawToken)}`;
 
-        const emailText = buildWathiqCareEmailText(
-            `Hi ${user.fullName},`,
-            `Your WathiqCare account password reset has been requested by your tenant administrator.`,
-            `Click the link below to reset your password:\n${resetLink}`,
-            `This link will expire in 24 hours.\nIf you did not request this, contact your administrator.`
-        );
+        const emailText = buildWathiqCareEmailText({
+            title: "WathiqCare Password Reset",
+            bodyLines: [
+                `Hi ${user.fullName},`,
+                "",
+                "Your password reset has been requested by your tenant administrator.",
+            ],
+            ctaUrl: resetLink,
+            ctaLabel: "Reset password",
+            expiresNote: "This reset link expires in 24 hours.",
+            securityNote: "If this wasn't expected, contact your administrator immediately.",
+        });
 
-        const emailHtml = buildWathiqCareEmailHtml(
-            `Hi ${user.fullName},`,
-            `<p>Your WathiqCare account password reset has been requested by your tenant administrator.</p>`,
-            `<a href="${resetLink}" style="display:inline-block;padding:10px 20px;background-color:#0066cc;color:white;text-decoration:none;border-radius:4px;">Reset Password</a>`,
-            `<p style="color:#666;font-size:12px;">This link will expire in 24 hours.<br/>If you did not request this, contact your administrator.</p>`
-        );
+        const emailHtml = buildWathiqCareEmailHtml({
+            title: "Reset your WathiqCare password",
+            preheader: "Tenant administrator requested a password reset",
+            bodyHtml: `<p style="margin:0 0 12px;font-size:15px;color:#334155;line-height:1.7;">Hi ${user.fullName},</p><p style="margin:0;font-size:15px;color:#334155;line-height:1.7;">A tenant administrator requested a password reset for your account.</p>`,
+            ctaUrl: resetLink,
+            ctaText: "Reset Password",
+            expiresNote: "This reset link expires in 24 hours.",
+            securityNote: "If you did not expect this request, ignore this message and contact support.",
+        });
 
         await sendEmailWithDiagnostics({
-            recipients: [user.email],
+            to: user.email,
             subject: "WathiqCare Password Reset Request",
-            htmlBody: emailHtml,
-            textBody: emailText,
-            cc: [],
-            attachments: []
+            html: emailHtml,
+            text: emailText,
         });
 
         // Log audit event
         await writeAuditLog({
             tenantId,
             userId: auth.sub,
+            entityType: "USER",
+            entityId: userId,
             action: "PASSWORD_RESET_TRIGGERED",
-            targetUserId: userId,
-            details: {
-                targetEmail: user.email,
-                triggeredBy: "admin"
-            },
-            status: "success"
+            details: `Password reset triggered for ${user.email}`,
+            request,
         });
 
         return NextResponse.json({
