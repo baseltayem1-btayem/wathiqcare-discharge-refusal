@@ -384,6 +384,10 @@ function cleanupOldRateEntries(state: Map<string, RateEntry>, windowMs: number):
 
 export async function requestMagicLink(emailInput: string, request: Request): Promise<MagicLinkRequestResult> {
     const email = normalizeEmail(emailInput || "");
+    console.info("[auth.magic-link.request] received", {
+        emailNormalized: !!email,
+        host: request.headers.get("host") || request.headers.get("x-forwarded-host") || null,
+    });
     if (!email) {
         const rejectionReason = evaluateMagicLinkRequestDecision({
             validEmail: false,
@@ -414,6 +418,10 @@ export async function requestMagicLink(emailInput: string, request: Request): Pr
 
     const domain = extractDomain(email);
     if (!domain || !(await hasAnyActiveTenantForDomain(domain))) {
+        console.warn("[auth.magic-link.request] rejected: domain", {
+            email,
+            domain,
+        });
         const rejectionReason = evaluateMagicLinkRequestDecision({
             validEmail: true,
             domainAllowed: false,
@@ -429,6 +437,7 @@ export async function requestMagicLink(emailInput: string, request: Request): Pr
 
     const user = await findUserByEmail(email);
     if (!user) {
+        console.warn("[auth.magic-link.request] rejected: user-not-found", { email });
         const rejectionReason = evaluateMagicLinkRequestDecision({
             validEmail: true,
             domainAllowed: true,
@@ -443,6 +452,11 @@ export async function requestMagicLink(emailInput: string, request: Request): Pr
     }
 
     if (!user.tenant_is_active || !(await isTenantDomainAllowed(user.tenant_id, domain))) {
+        console.warn("[auth.magic-link.request] rejected: user-domain-mismatch", {
+            userId: user.id,
+            tenantId: user.tenant_id,
+            domain,
+        });
         const rejectionReason = evaluateMagicLinkRequestDecision({
             validEmail: true,
             domainAllowed: true,
@@ -461,6 +475,13 @@ export async function requestMagicLink(emailInput: string, request: Request): Pr
     const tokenRecord = await rotateMagicLinkToken(user.id, tokenHash);
 
     const link = `${readMagicLinkBaseUrl()}/auth/magic?token=${encodeURIComponent(rawToken)}`;
+    console.info("[auth.magic-link.request] token-created", {
+        userId: user.id,
+        tenantId: user.tenant_id,
+        tokenId: tokenRecord.id,
+        expiresAt: tokenRecord.expiresAt.toISOString(),
+        baseUrl: readMagicLinkBaseUrl(),
+    });
 
     try {
         await sendMagicLinkEmail({
@@ -469,9 +490,19 @@ export async function requestMagicLink(emailInput: string, request: Request): Pr
             expiresMinutes: MAGIC_LINK_TTL_MINUTES,
             userAgentHint: request.headers.get("user-agent")?.slice(0, 180) ?? null,
         });
+        console.info("[auth.magic-link.request] email-sent", {
+            userId: user.id,
+            tenantId: user.tenant_id,
+            tokenId: tokenRecord.id,
+        });
     } catch (error) {
         await deleteMagicLinkToken(tokenRecord.id);
-        console.error("magic-link: failed to deliver email", error);
+        console.error("[auth.magic-link.request] failed-email-delivery", {
+            userId: user.id,
+            tenantId: user.tenant_id,
+            tokenId: tokenRecord.id,
+            error,
+        });
     }
 
     return {
@@ -488,7 +519,15 @@ export async function verifyMagicLink(rawToken: string): Promise<{ user: MagicLi
         throw new ApiError(400, "Invalid token");
     }
 
+    console.info("[auth.magic-link.verify] received", {
+        tokenLength: token.length,
+    });
+
     const consumed = await consumeMagicLinkToken(token);
+    console.info("[auth.magic-link.verify] token-consumed", {
+        tokenId: consumed.id,
+        userId: consumed.user_id,
+    });
 
     const users = await prisma.$queryRaw<MagicLinkUserRow[]>`
     SELECT
@@ -510,8 +549,22 @@ export async function verifyMagicLink(rawToken: string): Promise<{ user: MagicLi
         throw new ApiError(404, "User not found");
     }
 
-    await enforceUserAccess(user);
+    // Only block on account being explicitly deactivated — license/role/membership
+    // checks happen post-login and must not prevent session creation.
+    if (!user.is_active) {
+        throw new ApiError(403, "Account is deactivated");
+    }
+    if (!user.tenant_is_active) {
+        console.warn("[auth.magic-link] tenant inactive — session created but access restricted post-login", { userId: user.id, tenantId: user.tenant_id });
+    }
+
     const session = await createSessionForUser(user);
+    console.info("[auth.magic-link.verify] session-created", {
+        userId: user.id,
+        tenantId: user.tenant_id,
+        redirectTo: session.redirectTo,
+        userType: session.userType,
+    });
 
     return { user, session };
 }

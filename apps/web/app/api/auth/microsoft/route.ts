@@ -5,7 +5,6 @@ import { buildSessionCookieOptions, getSessionCookieName } from "@/lib/server/se
 import { createAccessToken, getJwtSecret, getTokenTtlSeconds } from "@/lib/server/auth-token";
 import { platformRoleForUserRole, userTypeForUserRole } from "@/lib/server/roles";
 import {
-    enforceSharedPostAuthAccess,
     extractDomain,
     isTenantDomainAllowed,
     normalizeEmail,
@@ -140,14 +139,12 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        await enforceSharedPostAuthAccess({
-            id: user.id,
-            tenantId: user.tenantId,
-            email: user.email,
-            role: user.role,
-            isActive: user.isActive,
-            status: null,
-        });
+        // Only block login if the account is explicitly deactivated.
+        // License/role/membership checks happen post-login, not here.
+        if (!user.isActive) {
+            console.warn("[auth.microsoft] login blocked — user is inactive", { userId: user.id, email: user.email });
+            throw new ApiError(403, "Account is deactivated");
+        }
 
         await prisma.$executeRaw`
           UPDATE users

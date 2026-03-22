@@ -27,6 +27,7 @@ test("evaluatePostAuthSnapshot denies when domain is not allowed", () => {
         userActive: true,
         status: "active",
         hasRole: true,
+        hasMembership: true,
         hasLicense: true,
     });
 
@@ -40,6 +41,7 @@ test("evaluatePostAuthSnapshot denies when user is pending", () => {
         userActive: true,
         status: "pending_approval",
         hasRole: true,
+        hasMembership: true,
         hasLicense: true,
     });
 
@@ -53,6 +55,7 @@ test("evaluatePostAuthSnapshot denies when role is missing", () => {
         userActive: true,
         status: "active",
         hasRole: false,
+        hasMembership: true,
         hasLicense: true,
     });
 
@@ -66,6 +69,7 @@ test("evaluatePostAuthSnapshot denies when license is missing", () => {
         userActive: true,
         status: "active",
         hasRole: true,
+        hasMembership: true,
         hasLicense: false,
     });
 
@@ -79,6 +83,7 @@ test("evaluatePostAuthSnapshot allows fully eligible user", () => {
         userActive: true,
         status: "active",
         hasRole: true,
+        hasMembership: true,
         hasLicense: true,
     });
 

@@ -4,24 +4,34 @@ import { useState } from "react";
 import type React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Mail, Lock, KeyRound } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LoginBrandPanel from "@/components/login/LoginBrandPanel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
+type AuthMode = "microsoft" | "magic-link" | "password";
+
 export default function LoginPage() {
   const { t, isRtl } = useI18n();
+  const router = useRouter();
   const allowDevPrefill =
     process.env.NODE_ENV === "development" &&
     process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN_PREFILL === "true";
   const devEmailPrefill = process.env.NEXT_PUBLIC_DEV_LOGIN_EMAIL ?? "";
+  const devPasswordPrefill = process.env.NEXT_PUBLIC_DEV_LOGIN_PASSWORD ?? "";
+
+  // State
   const [email, setEmail] = useState(allowDevPrefill ? devEmailPrefill : "");
+  const [password, setPassword] = useState(allowDevPrefill ? devPasswordPrefill : "");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>("magic-link");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleMagicLinkSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setNotice("");
@@ -34,9 +44,46 @@ export default function LoginPage() {
       });
 
       setNotice(response.message || "If your email is registered, a secure login link has been sent.");
+      setEmail("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("login.failed"));
+      setError(err instanceof Error ? err.message : "Failed to send login link");
     } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setNotice("");
+    setLoading(true);
+
+    try {
+      const result = await apiFetch<{ redirectTo: string }>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+
+      const nextPath = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") || result.redirectTo : result.redirectTo;
+      router.push(nextPath);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid email or password");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleMicrosoftSSO() {
+    setError("");
+    setLoading(true);
+
+    try {
+      // Initiate Microsoft login flow
+      // This typically involves redirecting to Microsoft login
+      const redirectUrl = `/api/auth/microsoft/login?email=${encodeURIComponent(email)}`;
+      window.location.href = redirectUrl;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Microsoft login failed");
       setLoading(false);
     }
   }
@@ -102,49 +149,185 @@ export default function LoginPage() {
                   </span>
                 </div>
 
-                <h2 className="text-xl font-bold text-gray-900">{t("login.formTitle")}</h2>
-                <p className="mt-1.5 text-sm text-gray-500">Use your email to receive a secure one-time login link.</p>
-
-                <form onSubmit={handleLogin} className="mt-6 space-y-4">
-                  <div>
-                    <label htmlFor="login-email" className="mb-1 block text-sm font-medium text-gray-700">
-                      {t("login.email")}
-                    </label>
-                    <input
-                      id="login-email"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      type="email"
-                      required
-                      autoComplete="email"
-                      autoFocus
-                      disabled={loading}
-                    />
-                  </div>
-
-                  {error ? (
-                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                      {error}
-                    </div>
-                  ) : null}
-
-                  {notice ? (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                      {notice}
-                    </div>
-                  ) : null}
-
+                {/* Auth Mode Tabs */}
+                <div className="mb-6 flex gap-2 border-b border-slate-200">
                   <button
-                    type="submit"
-                    disabled={loading}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                    style={{ background: "linear-gradient(120deg, #0f766e, #0891b2, #06b6d4)", boxShadow: "0 8px 20px rgba(8,145,178,0.28)" }}
+                    onClick={() => {
+                      setAuthMode("microsoft");
+                      setError("");
+                      setNotice("");
+                    }}
+                    className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "microsoft"
+                      ? "border-cyan-600 text-cyan-600"
+                      : "border-transparent text-slate-600 hover:text-slate-900"
+                      }`}
                   >
-                    <Mail className="h-4 w-4" />
-                    {loading ? "Sending secure link..." : "Send login link"}
+                    <span>Microsoft SSO</span>
                   </button>
-                </form>
+                  <button
+                    onClick={() => {
+                      setAuthMode("magic-link");
+                      setError("");
+                      setNotice("");
+                    }}
+                    className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "magic-link"
+                      ? "border-cyan-600 text-cyan-600"
+                      : "border-transparent text-slate-600 hover:text-slate-900"
+                      }`}
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    <span>Magic Link</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAuthMode("password");
+                      setError("");
+                      setNotice("");
+                    }}
+                    className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "password"
+                      ? "border-cyan-600 text-cyan-600"
+                      : "border-transparent text-slate-600 hover:text-slate-900"
+                      }`}
+                  >
+                    <Lock className="h-3.5 w-3.5" />
+                    <span>Password</span>
+                  </button>
+                </div>
+
+                {/* Microsoft SSO */}
+                {authMode === "microsoft" && (
+                  <div className="space-y-4">
+                    <h2 className="text-lg font-bold text-gray-900">Sign in with Microsoft</h2>
+                    <p className="text-sm text-gray-600">For institutional Microsoft 365 accounts</p>
+
+                    <div className="space-y-3">
+                      <input
+                        type="email"
+                        placeholder="your.name@company.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100"
+                      />
+
+                      {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+
+                      <button
+                        onClick={handleMicrosoftSSO}
+                        disabled={loading || !email}
+                        className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-50 disabled:opacity-60"
+                      >
+                        {loading ? "Signing in..." : "Continue with Microsoft"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Magic Link */}
+                {authMode === "magic-link" && (
+                  <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+                    <h2 className="text-lg font-bold text-gray-900">Send Secure Login Link</h2>
+                    <p className="text-sm text-gray-600">Receive a one-time login link via email</p>
+
+                    <div>
+                      <label htmlFor="magic-email" className="mb-1 block text-sm font-medium text-gray-700">
+                        Email
+                      </label>
+                      <input
+                        id="magic-email"
+                        type="email"
+                        required
+                        autoFocus
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                        placeholder="your.email@domain.com"
+                      />
+                    </div>
+
+                    {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+
+                    {notice && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</div>}
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{ background: "linear-gradient(120deg, #0f766e, #0891b2, #06b6d4)", boxShadow: "0 8px 20px rgba(8,145,178,0.28)" }}
+                    >
+                      <Mail className="h-4 w-4" />
+                      {loading ? "Sending..." : "Send Login Link"}
+                    </button>
+                  </form>
+                )}
+
+                {/* Password Login */}
+                {authMode === "password" && (
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    <h2 className="text-lg font-bold text-gray-900">Sign in with Password</h2>
+                    <p className="text-sm text-gray-600">Enter your email and password to continue</p>
+
+                    <div>
+                      <label htmlFor="password-email" className="mb-1 block text-sm font-medium text-gray-700">
+                        Email
+                      </label>
+                      <input
+                        id="password-email"
+                        type="email"
+                        required
+                        autoFocus
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                        placeholder="your.email@domain.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="password-input" className="mb-1 block text-sm font-medium text-gray-700">
+                        Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="password-input"
+                          type={showPassword ? "text" : "password"}
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          disabled={loading}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                          placeholder="Enter your password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                        >
+                          {showPassword ? "Hide" : "Show"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{ background: "linear-gradient(120deg, #0f766e, #0891b2, #06b6d4)", boxShadow: "0 8px 20px rgba(8,145,178,0.28)" }}
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      {loading ? "Signing in..." : "Sign in"}
+                    </button>
+
+                    <div className="flex gap-2 text-xs text-slate-600">
+                      <Link href="/auth/password-reset" className="text-cyan-600 hover:text-cyan-700 font-semibold">
+                        Forgot password?
+                      </Link>
+                    </div>
+                  </form>
+                )}
               </div>
             </div>
           </div>

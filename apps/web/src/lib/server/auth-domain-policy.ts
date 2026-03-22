@@ -118,6 +118,7 @@ export type PostAuthSnapshot = {
     userActive: boolean;
     status: string | null;
     hasRole: boolean;
+    hasMembership: boolean;
     hasLicense: boolean;
 };
 
@@ -138,6 +139,10 @@ export function evaluatePostAuthSnapshot(snapshot: PostAuthSnapshot): PostAuthDe
         return "NO_ROLE_ASSIGNED";
     }
 
+    if (!snapshot.hasMembership) {
+        return "PENDING_APPROVAL";
+    }
+
     if (!snapshot.hasLicense) {
         return "NO_LICENSE_ASSIGNED";
     }
@@ -146,8 +151,19 @@ export function evaluatePostAuthSnapshot(snapshot: PostAuthSnapshot): PostAuthDe
 }
 
 export async function enforceSharedPostAuthAccess(user: AuthPolicyUser): Promise<void> {
+    return enforceSharedPostAuthAccessForMethod(user, { requireApprovedDomain: true });
+}
+
+export async function enforceSharedPostAuthAccessForMethod(
+    user: AuthPolicyUser,
+    options?: { requireApprovedDomain?: boolean; requireActiveLicense?: boolean },
+): Promise<void> {
+    const requireApprovedDomain = options?.requireApprovedDomain ?? true;
+    const requireActiveLicense = options?.requireActiveLicense ?? true;
     const domain = extractDomain(user.email);
-    const domainAllowed = !!domain && (await isTenantDomainAllowed(user.tenantId, domain));
+    const domainAllowed = requireApprovedDomain
+        ? !!domain && (await isTenantDomainAllowed(user.tenantId, domain))
+        : true;
 
     const tenant = await prisma.tenant.findUnique({
         where: { id: user.tenantId },
@@ -184,7 +200,8 @@ export async function enforceSharedPostAuthAccess(user: AuthPolicyUser): Promise
         userActive: user.isActive,
         status: user.status,
         hasRole: role.length > 0,
-        hasLicense: membership?.status === "ACTIVE" && !!subscription,
+        hasMembership: membership?.status === "ACTIVE",
+        hasLicense: requireActiveLicense ? membership?.status === "ACTIVE" && !!subscription : true,
     });
 
     if (denial) {

@@ -146,37 +146,107 @@ export function hasPlatformAccess(auth: AuthContext): boolean {
   return isPlatformRole(auth.role);
 }
 
+type PlatformApiAccessResult = "allowed" | "denied";
+
+async function writePlatformApiAccessAttempt(args: {
+  request: NextRequest;
+  result: PlatformApiAccessResult;
+  reason?: string;
+  auth?: AuthContext;
+}): Promise<void> {
+  const ipAddress = args.request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const userAgent = args.request.headers.get("user-agent") ?? null;
+  const endpoint = args.request.nextUrl.pathname;
+  const method = args.request.method;
+  const timestamp = new Date().toISOString();
+  const role = args.auth?.platform_role ?? args.auth?.role ?? null;
+
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO platform_api_access_logs (
+        user_id,
+        email,
+        role,
+        endpoint,
+        method,
+        result,
+        reason,
+        ip_address,
+        user_agent,
+        created_at
+      ) VALUES (
+        ${args.auth?.sub ?? null},
+        ${args.auth?.email ?? null},
+        ${role},
+        ${endpoint},
+        ${method},
+        ${args.result},
+        ${args.reason ?? null},
+        ${ipAddress},
+        ${userAgent},
+        ${timestamp}::timestamptz
+      )
+    `;
+  } catch (accessLogError) {
+    console.error("platform access attempt log write failed (non-fatal)", accessLogError);
+  }
+
+  if (!args.auth?.tenant_id || !args.auth?.sub) {
+    return;
+  }
+
+  try {
+    await writeAuditLog({
+      tenantId: args.auth.tenant_id,
+      userId: args.auth.sub,
+      entityType: "PLATFORM_API",
+      entityId: endpoint,
+      action: "PLATFORM_ENDPOINT_ACCESS",
+      details: `${method} ${endpoint} ${args.result.toUpperCase()}`,
+      metadataJson: {
+        method,
+        path: endpoint,
+        result: args.result,
+        reason: args.reason ?? null,
+        timestamp,
+        email: args.auth.email ?? null,
+        role,
+      },
+      request: args.request,
+    });
+  } catch (auditError) {
+    console.error("platform access audit log write failed (non-fatal)", auditError);
+  }
+}
+
 export async function requirePlatformAccess(request: NextRequest): Promise<AuthContext> {
-  const auth = await requireAuth(request);
+  let auth: AuthContext;
+  try {
+    auth = await requireAuth(request);
+  } catch (error) {
+    await writePlatformApiAccessAttempt({
+      request,
+      result: "denied",
+      reason: error instanceof ApiError ? error.message : "Authentication failed",
+    });
+    throw error;
+  }
 
-  // Platform APIs must be restricted to platform-admin identity only.
-  if (auth.user_type !== "platform_admin") {
+  if (auth.user_type !== "platform_admin" || !hasPlatformAccess(auth)) {
+    await writePlatformApiAccessAttempt({
+      request,
+      auth,
+      result: "denied",
+      reason: "Platform admin permissions required",
+    });
     throw new ApiError(403, "Platform admin permissions required");
   }
 
-  if (!hasPlatformAccess(auth)) {
-    throw new ApiError(403, "Platform admin permissions required");
-  }
-
-  if (auth.tenant_id) {
-    try {
-      await writeAuditLog({
-        tenantId: auth.tenant_id,
-        userId: auth.sub,
-        entityType: "PLATFORM_API",
-        entityId: request.nextUrl.pathname,
-        action: "PLATFORM_ENDPOINT_ACCESS",
-        details: `${request.method} ${request.nextUrl.pathname}`,
-        metadataJson: {
-          method: request.method,
-          path: request.nextUrl.pathname,
-        },
-        request,
-      });
-    } catch (auditError) {
-      console.error("platform access audit log write failed (non-fatal)", auditError);
-    }
-  }
+  await writePlatformApiAccessAttempt({
+    request,
+    auth,
+    result: "allowed",
+  });
 
   return auth;
 }
