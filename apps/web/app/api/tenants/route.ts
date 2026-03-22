@@ -264,6 +264,9 @@ export async function POST(request: NextRequest) {
       });
 
       return { tenant, ownerUserId: ownerUser.id };
+    }, {
+      maxWait: 10_000,
+      timeout: 30_000,
     });
 
     await writeAuditLog({
