@@ -18,10 +18,6 @@ import {
 } from "@prisma/client";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
-import {
-    bootstrapTenantAdminConfiguration,
-    ensurePermissionCatalog,
-} from "@/lib/server/tenant-admin";
 
 export const runtime = "nodejs";
 
@@ -35,6 +31,7 @@ type ProvisionPayload = {
 };
 
 export async function POST(request: NextRequest) {
+    const steps: string[] = [];
     try {
         const body = (await request.json().catch(() => null)) as ProvisionPayload | null;
         if (!body || typeof body !== "object") {
@@ -42,7 +39,6 @@ export async function POST(request: NextRequest) {
         }
 
         // ---- Secret validation ----
-        // One-time provisioning token — this endpoint is removed immediately after use.
         const ONE_TIME_TOKEN = "d813ceb1-5812-4723-b52d-87b8b21b0f35";
         if (!body.secret || body.secret.trim() !== ONE_TIME_TOKEN) {
             throw new ApiError(403, "Invalid or missing secret");
@@ -62,57 +58,26 @@ export async function POST(request: NextRequest) {
             throw new ApiError(400, "adminEmail must be a valid email address");
         }
 
-        // ---- Ensure base plans exist ----
-        const planDefaults = [
-            {
-                code: PlanCode.STARTER,
-                name: "Starter",
-                description: "Starter tier",
-                seatLimit: 150,
-                priceMonthlyCents: 9900,
-                priceYearlyCents: 99000,
-                features: { maxCasesPerMonth: 5000, maxDocumentsPerMonth: 20000, support: "standard" },
-            },
-            {
+        // ---- Step 1: Ensure PROFESSIONAL plan exists ----
+        steps.push("plan_upsert");
+        const plan = await prisma.plan.upsert({
+            where: { code: PlanCode.PROFESSIONAL },
+            update: { isActive: true },
+            create: {
                 code: PlanCode.PROFESSIONAL,
                 name: "Professional",
                 description: "Professional tier",
                 seatLimit: 900,
                 priceMonthlyCents: 29900,
                 priceYearlyCents: 299000,
+                isActive: true,
                 features: { maxCasesPerMonth: 30000, maxDocumentsPerMonth: 120000, support: "priority" },
             },
-            {
-                code: PlanCode.ENTERPRISE,
-                name: "Enterprise",
-                description: "Enterprise tier",
-                seatLimit: 3000,
-                priceMonthlyCents: 99900,
-                priceYearlyCents: 999000,
-                features: { maxCasesPerMonth: 150000, maxDocumentsPerMonth: 600000, support: "24x7" },
-            },
-        ] as const;
+        });
+        steps.push("plan_ok");
 
-        for (const plan of planDefaults) {
-            await prisma.plan.upsert({
-                where: { code: plan.code },
-                update: { isActive: true },
-                create: {
-                    code: plan.code,
-                    name: plan.name,
-                    description: plan.description,
-                    seatLimit: plan.seatLimit,
-                    priceMonthlyCents: plan.priceMonthlyCents,
-                    priceYearlyCents: plan.priceYearlyCents,
-                    isActive: true,
-                    features: plan.features,
-                },
-            });
-        }
-
-        const plan = await prisma.plan.findUniqueOrThrow({ where: { code: PlanCode.PROFESSIONAL } });
-
-        // ---- Create or update tenant ----
+        // ---- Step 2: Create or update tenant ----
+        steps.push("tenant_upsert");
         const tenant = await prisma.tenant.upsert({
             where: { code: tenantCode },
             update: {
@@ -137,34 +102,26 @@ export async function POST(request: NextRequest) {
                 },
             },
         });
+        steps.push("tenant_ok:" + tenant.id);
 
-        // ---- Create or update allowed domain ----
-        const existingDomain = await prisma.$queryRaw<Array<{ id: string }>>`
-            SELECT id FROM tenant_allowed_domains
-            WHERE tenant_id = ${tenant.id} AND domain = ${domain}
-            LIMIT 1
+        // ---- Step 3: Create or update allowed domain ----
+        steps.push("domain_upsert");
+        await prisma.$executeRaw`
+            INSERT INTO tenant_allowed_domains (id, tenant_id, domain, is_active, created_at, updated_at)
+            VALUES (${randomUUID()}, ${tenant.id}, ${domain}, TRUE, NOW(), NOW())
+            ON CONFLICT (tenant_id, domain) DO UPDATE SET is_active = TRUE, updated_at = NOW()
         `;
-        if (existingDomain.length === 0) {
-            await prisma.$executeRaw`
-                INSERT INTO tenant_allowed_domains (id, tenant_id, domain, is_active, created_at, updated_at)
-                VALUES (${randomUUID()}, ${tenant.id}, ${domain}, TRUE, NOW(), NOW())
-                ON CONFLICT (tenant_id, domain) DO UPDATE SET is_active = TRUE, updated_at = NOW()
-            `;
-        } else {
-            await prisma.$executeRaw`
-                UPDATE tenant_allowed_domains SET is_active = TRUE, updated_at = NOW()
-                WHERE tenant_id = ${tenant.id} AND domain = ${domain}
-            `;
-        }
+        steps.push("domain_ok");
 
-        // ---- Subscription (ACTIVE, PROFESSIONAL plan) ----
+        // ---- Step 4: Subscription (ACTIVE, PROFESSIONAL plan) ----
+        steps.push("subscription_upsert");
+        const periodStart = new Date();
+        const periodEnd = new Date(periodStart.getTime() + 365 * 24 * 60 * 60 * 1000);
+
         const existingSub = await prisma.subscription.findFirst({
             where: { tenantId: tenant.id },
             orderBy: { createdAt: "desc" },
         });
-
-        const periodStart = new Date();
-        const periodEnd = new Date(periodStart.getTime() + 365 * 24 * 60 * 60 * 1000);
 
         const subscription = existingSub
             ? await prisma.subscription.update({
@@ -194,14 +151,10 @@ export async function POST(request: NextRequest) {
                     metadata: { source: "provision-tenant-api" },
                 },
             });
+        steps.push("subscription_ok:" + subscription.id);
 
-        // ---- Bootstrap roles / departments / permissions ----
-        await prisma.$transaction(async (tx) => {
-            await ensurePermissionCatalog(tx);
-        });
-        await bootstrapTenantAdminConfiguration(tenant.id);
-
-        // ---- Create or update user ----
+        // ---- Step 5: Create or update user ----
+        steps.push("user_upsert");
         const user = await prisma.user.upsert({
             where: { email: adminEmail },
             update: {
@@ -225,8 +178,10 @@ export async function POST(request: NextRequest) {
                 authProvider: "local_magic",
             },
         });
+        steps.push("user_ok:" + user.id);
 
-        // ---- Tenant membership ----
+        // ---- Step 6: Tenant membership ----
+        steps.push("membership_upsert");
         await prisma.tenantMembership.upsert({
             where: {
                 tenantId_userId: {
@@ -245,6 +200,7 @@ export async function POST(request: NextRequest) {
                 status: MembershipStatus.ACTIVE,
             },
         });
+        steps.push("membership_ok");
 
         console.info("PROVISION_TENANT_COMPLETE", {
             tenantId: tenant.id,
@@ -257,6 +213,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             ok: true,
+            steps,
             tenant: {
                 id: tenant.id,
                 code: tenant.code,
@@ -280,6 +237,10 @@ export async function POST(request: NextRequest) {
             },
         });
     } catch (error) {
-        return handleApiError(error);
+        console.error("PROVISION_TENANT_FAILED", { steps, error });
+        if (error instanceof ApiError) return handleApiError(error);
+        // Surface more info in the error response to aid debugging
+        const msg = error instanceof Error ? error.message : String(error);
+        return NextResponse.json({ ok: false, steps, error: msg }, { status: 500 });
     }
 }
