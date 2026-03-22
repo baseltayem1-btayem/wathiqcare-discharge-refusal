@@ -4,7 +4,11 @@ import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { normalizeEmail } from "@/lib/server/auth-domain-policy";
 import { generateResetToken, hashResetToken } from "@/lib/server/password";
-import { sendEmailWithDiagnostics } from "@/lib/server/email-provider";
+import {
+    buildWathiqCareEmailHtml,
+    buildWathiqCareEmailText,
+    sendEmailWithDiagnostics,
+} from "@/lib/server/email-provider";
 
 const PASSWORD_RESET_TTL_MINUTES = 30;
 
@@ -13,35 +17,44 @@ type PasswordResetRequestPayload = {
 };
 
 async function sendPasswordResetEmail(args: { to: string; resetLink: string; expiresMinutes: number }) {
+    const subject = "Reset your WathiqCare password";
 
-    const html = `
-    <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
-      <h2 style="margin-bottom: 12px;">WathiqCare Password Reset</h2>
-      <p>We received a request to reset your WathiqCare password.</p>
-      <p>
-        <a href="${args.resetLink}" style="display: inline-block; background: #0f766e; color: #ffffff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-          Reset your password
-        </a>
+    const bodyHtml = `
+      <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.7;">
+        We received a request to reset the password for your WathiqCare account.
+        Click the button below to choose a new password.
       </p>
-      <p>This link expires in ${args.expiresMinutes} minutes and can only be used once.</p>
-      <p style="font-size: 13px; color: #475569;">If you did not request this password reset, you can ignore this email.</p>
-    </div>
-  `;
+      <p style="margin:0 0 16px;font-size:13px;color:#64748b;line-height:1.6;">
+        If you did not request a password reset, you can safely ignore this email.
+        Your password will not be changed.
+      </p>
+    `;
 
-    const text = [
-        "WathiqCare Password Reset",
-        "",
-        `Reset your password using this link: ${args.resetLink}`,
-        `This link expires in ${args.expiresMinutes} minutes and can only be used once.`,
-        "If you did not request this password reset, you can ignore this email.",
-    ].join("\n");
-
-    return sendEmailWithDiagnostics({
-        to: args.to,
-        subject: "WathiqCare Password Reset Request",
-        html,
-        text,
+    const html = buildWathiqCareEmailHtml({
+        title: "Reset Your Password",
+        preheader: "Reset your WathiqCare password. This link expires in " + args.expiresMinutes + " minutes.",
+        bodyHtml,
+        ctaUrl: args.resetLink,
+        ctaText: "Reset my password →",
+        expiresNote: `This link expires in ${args.expiresMinutes} minutes and can only be used once.`,
+        securityNote: "You are receiving this because a password reset was requested for your WathiqCare account.",
     });
+
+    const text = buildWathiqCareEmailText({
+        title: "Reset Your WathiqCare Password",
+        bodyLines: [
+            "We received a request to reset the password for your WathiqCare account.",
+            "Use the link below to choose a new password.",
+            "",
+            "If you did not request a password reset, please ignore this email.",
+        ],
+        ctaUrl: args.resetLink,
+        ctaLabel: "Reset password",
+        expiresNote: `This link expires in ${args.expiresMinutes} minutes and can only be used once.`,
+        securityNote: "You are receiving this because a password reset was requested for your account.",
+    });
+
+    return sendEmailWithDiagnostics({ to: args.to, subject, html, text });
 }
 
 function readResetBaseUrl(): string {
@@ -54,7 +67,7 @@ function readResetBaseUrl(): string {
 
 export async function POST(request: NextRequest) {
     try {
-        console.info("RESET_REQUEST_RECEIVED");
+        console.info("PASSWORD_RESET_REQUESTED");
 
         const payload = (await request.json().catch(() => null)) as PasswordResetRequestPayload | null;
         if (!payload) {
@@ -80,7 +93,6 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate reset token
-        console.info("RESET_TOKEN_CREATED", { userId: user.id, email: user.email });
         const rawToken = generateResetToken();
         const tokenHash = hashResetToken(rawToken);
         const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
@@ -91,9 +103,8 @@ export async function POST(request: NextRequest) {
       INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, used)
       VALUES (${tokenId}, ${user.id}, ${tokenHash}, ${expiresAt}, FALSE)
     `;
-        console.info("RESET_TOKEN_STORED", { tokenId, userId: user.id, expiresAt: expiresAt.toISOString() });
 
-        // Mark old tokens as used
+        // Invalidate all previous unused tokens for this user
         await prisma.$executeRaw`
       UPDATE password_reset_tokens
       SET used = TRUE
@@ -105,30 +116,25 @@ export async function POST(request: NextRequest) {
 
         // Send email
         try {
-            console.info("RESET_EMAIL_SEND_STARTED", { tokenId, userId: user.id, to: user.email, resetLinkHost: readResetBaseUrl() });
+            console.info("RESET_EMAIL_SEND_STARTED", { tokenId, userId: user.id, to: user.email });
             const diagnostics = await sendPasswordResetEmail({
                 to: user.email,
                 resetLink,
                 expiresMinutes: PASSWORD_RESET_TTL_MINUTES,
             });
-            console.info("RESET_EMAIL_SEND_SUCCESS", {
+            console.info("EMAIL_SENT_SUCCESS", {
+                event: "password_reset",
                 tokenId,
                 userId: user.id,
                 to: user.email,
                 provider: diagnostics.provider,
-                tokenStatus: diagnostics.tokenStatus,
-                tokenBody: diagnostics.tokenBody,
-                sendStatus: diagnostics.sendStatus,
-                sendBody: diagnostics.sendBody,
                 smtpVerifyOk: diagnostics.smtpVerifyOk,
-                smtpVerifyError: diagnostics.smtpVerifyError,
-                smtpSendResponse: diagnostics.smtpSendResponse,
                 smtpAccepted: diagnostics.smtpAccepted,
-                smtpRejected: diagnostics.smtpRejected,
                 messageId: diagnostics.messageId,
             });
         } catch (error) {
-            console.error("RESET_EMAIL_SEND_FAILURE", {
+            console.error("EMAIL_SENT_FAILURE", {
+                event: "password_reset",
                 tokenId,
                 userId: user.id,
                 to: user.email,

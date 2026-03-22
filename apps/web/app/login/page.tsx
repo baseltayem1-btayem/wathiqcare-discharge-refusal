@@ -150,7 +150,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Auth Mode Tabs */}
-                <div className="mb-6 flex gap-2 border-b border-slate-200">
+                <div className="mb-6 flex gap-1 border-b border-slate-200">
                   <button
                     onClick={() => {
                       setAuthMode("microsoft");
@@ -158,8 +158,8 @@ export default function LoginPage() {
                       setNotice("");
                     }}
                     className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "microsoft"
-                      ? "border-cyan-600 text-cyan-600"
-                      : "border-transparent text-slate-600 hover:text-slate-900"
+                      ? "border-cyan-600 text-cyan-700"
+                      : "border-transparent text-slate-500 hover:text-slate-800"
                       }`}
                   >
                     <span>Microsoft SSO</span>
@@ -171,12 +171,12 @@ export default function LoginPage() {
                       setNotice("");
                     }}
                     className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "magic-link"
-                      ? "border-cyan-600 text-cyan-600"
-                      : "border-transparent text-slate-600 hover:text-slate-900"
+                      ? "border-cyan-600 text-cyan-700"
+                      : "border-transparent text-slate-500 hover:text-slate-800"
                       }`}
                   >
                     <Mail className="h-3.5 w-3.5" />
-                    <span>Magic Link</span>
+                    <span>Secure Link</span>
                   </button>
                   <button
                     onClick={() => {
@@ -185,8 +185,8 @@ export default function LoginPage() {
                       setNotice("");
                     }}
                     className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "password"
-                      ? "border-cyan-600 text-cyan-600"
-                      : "border-transparent text-slate-600 hover:text-slate-900"
+                      ? "border-cyan-600 text-cyan-700"
+                      : "border-transparent text-slate-500 hover:text-slate-800"
                       }`}
                   >
                     <Lock className="h-3.5 w-3.5" />
@@ -197,8 +197,8 @@ export default function LoginPage() {
                 {/* Microsoft SSO */}
                 {authMode === "microsoft" && (
                   <div className="space-y-4">
-                    <h2 className="text-lg font-bold text-gray-900">Sign in with Microsoft</h2>
-                    <p className="text-sm text-gray-600">For institutional Microsoft 365 accounts</p>
+                    <h2 className="text-lg font-bold text-gray-900">Institutional Sign-In</h2>
+                    <p className="text-sm text-gray-600">For hospital and healthcare organization accounts using Microsoft 365</p>
 
                     <div className="space-y-3">
                       <input
@@ -225,8 +225,8 @@ export default function LoginPage() {
                 {/* Magic Link */}
                 {authMode === "magic-link" && (
                   <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
-                    <h2 className="text-lg font-bold text-gray-900">Send Secure Login Link</h2>
-                    <p className="text-sm text-gray-600">Receive a one-time login link via email</p>
+                    <h2 className="text-lg font-bold text-gray-900">Sign In via Secure Link</h2>
+                    <p className="text-sm text-gray-600">Enter your email and receive a one-time sign-in link — no password needed</p>
 
                     <div>
                       <label htmlFor="magic-email" className="mb-1 block text-sm font-medium text-gray-700">
@@ -256,16 +256,29 @@ export default function LoginPage() {
                       style={{ background: "linear-gradient(120deg, #0f766e, #0891b2, #06b6d4)", boxShadow: "0 8px 20px rgba(8,145,178,0.28)" }}
                     >
                       <Mail className="h-4 w-4" />
-                      {loading ? "Sending..." : "Send Login Link"}
+                      {loading ? "Sending..." : "Send Secure Login Link"}
                     </button>
+
+                    <div className="flex items-center justify-between text-xs text-slate-600">
+                      <button
+                        type="button"
+                        onClick={() => { setAuthMode("password"); setError(""); setNotice(""); }}
+                        className="text-slate-500 hover:text-cyan-700 transition"
+                      >
+                        Sign in with password instead
+                      </button>
+                      <Link href="/auth/password-reset" className="text-cyan-600 hover:text-cyan-700 font-semibold">
+                        Forgot password?
+                      </Link>
+                    </div>
                   </form>
                 )}
 
                 {/* Password Login */}
                 {authMode === "password" && (
                   <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                    <h2 className="text-lg font-bold text-gray-900">Sign in with Password</h2>
-                    <p className="text-sm text-gray-600">Enter your email and password to continue</p>
+                    <h2 className="text-lg font-bold text-gray-900">Sign In with Password</h2>
+                    <p className="text-sm text-gray-600">Enter your email and password. Use <span className="font-medium text-cyan-700">Secure Link</span> above if you don't have a password yet.</p>
 
                     <div>
                       <label htmlFor="password-email" className="mb-1 block text-sm font-medium text-gray-700">
@@ -321,10 +334,17 @@ export default function LoginPage() {
                       {loading ? "Signing in..." : "Sign in"}
                     </button>
 
-                    <div className="flex gap-2 text-xs text-slate-600">
+                    <div className="flex items-center justify-between text-xs text-slate-600">
                       <Link href="/auth/password-reset" className="text-cyan-600 hover:text-cyan-700 font-semibold">
                         Forgot password?
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => { setAuthMode("magic-link"); setError(""); setNotice(""); }}
+                        className="text-slate-500 hover:text-cyan-700 transition"
+                      >
+                        Use secure link instead
+                      </button>
                     </div>
                   </form>
                 )}

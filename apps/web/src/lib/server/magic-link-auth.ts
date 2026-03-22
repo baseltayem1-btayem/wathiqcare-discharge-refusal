@@ -13,6 +13,11 @@ import {
     normalizeEmail,
     PostAuthAccessError,
 } from "@/lib/server/auth-domain-policy";
+import {
+    buildWathiqCareEmailHtml,
+    buildWathiqCareEmailText,
+    sendEmailWithDiagnostics,
+} from "@/lib/server/email-provider";
 
 const MAGIC_LINK_TTL_MINUTES = 10;
 const DEFAULT_MAGIC_LINK_BASE_URL = "https://wathiqcare.online";
@@ -187,91 +192,41 @@ async function sendMagicLinkEmail(args: {
     magicUrl: string;
     expiresMinutes: number;
     userAgentHint: string | null;
-}): Promise<void> {
-    const tenantId = process.env.MICROSOFT_TENANT_ID?.trim();
-    const clientId = process.env.MICROSOFT_CLIENT_ID?.trim();
-    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET?.trim();
-    const senderEmail = process.env.MICROSOFT_SENDER_EMAIL?.trim().toLowerCase();
+}): Promise<ReturnType<typeof sendEmailWithDiagnostics>> {
+    const subject = "Your secure WathiqCare sign-in link";
 
-    if (!tenantId || !clientId || !clientSecret || !senderEmail) {
-        throw new Error("Microsoft Graph email configuration is missing");
-    }
-
-    const tokenResponse = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            client_id: clientId,
-            client_secret: clientSecret,
-            scope: "https://graph.microsoft.com/.default",
-            grant_type: "client_credentials",
-        }),
-        cache: "no-store",
-    });
-
-    if (!tokenResponse.ok) {
-        throw new Error(`Failed to get Microsoft Graph token (${tokenResponse.status})`);
-    }
-
-    const tokenJson = (await tokenResponse.json()) as { access_token?: string };
-    if (!tokenJson.access_token) {
-        throw new Error("Microsoft Graph token response did not include access_token");
-    }
-
-    const html = `
-    <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
-      <h2 style="margin-bottom: 12px;">WathiqCare Secure Login Link</h2>
-      <p>Use this secure sign-in link to access your tenant workspace:</p>
-      <p>
-        <a href="${args.magicUrl}" style="display: inline-block; background: #0f766e; color: #ffffff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-          Sign in securely
-        </a>
+    const bodyHtml = `
+      <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.7;">
+        You requested a secure one-time sign-in link for your WathiqCare account.
+        Click the button below to sign in instantly — no password required.
       </p>
-      <p>This link expires in ${args.expiresMinutes} minutes and can only be used once.</p>
-      ${args.userAgentHint ? `<p style="font-size: 13px; color: #475569;">Request device hint: ${args.userAgentHint}</p>` : ""}
-      <p style="font-size: 13px; color: #475569;">If you did not request this login link, you can ignore this email.</p>
-    </div>
-  `;
+      ${args.userAgentHint ? `<p style="margin:0 0 16px;font-size:13px;color:#64748b;line-height:1.6;">Request received from: <span style="font-family:monospace;background:#f1f5f9;padding:2px 6px;border-radius:4px;">${args.userAgentHint.slice(0, 120)}</span></p>` : ""}
+    `;
 
-    const text = [
-        "WathiqCare Secure Login Link",
-        "",
-        `Use this secure sign-in link: ${args.magicUrl}`,
-        `This link expires in ${args.expiresMinutes} minutes and can only be used once.`,
-        args.userAgentHint ? `Request device hint: ${args.userAgentHint}` : null,
-        "If you did not request this login link, ignore this email.",
-    ]
-        .filter(Boolean)
-        .join("\n");
-
-    const sendResponse = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(senderEmail)}/sendMail`, {
-        method: "POST",
-        headers: {
-            authorization: `Bearer ${tokenJson.access_token}`,
-            "content-type": "application/json",
-        },
-        body: JSON.stringify({
-            message: {
-                subject: "Your secure WathiqCare sign-in link",
-                body: {
-                    contentType: "HTML",
-                    content: html,
-                },
-                toRecipients: [{ emailAddress: { address: args.to } }],
-            },
-            saveToSentItems: true,
-        }),
-        cache: "no-store",
+    const html = buildWathiqCareEmailHtml({
+        title: "Your Secure Sign-In Link",
+        preheader: "Use this one-time link to sign in to WathiqCare. It expires in " + args.expiresMinutes + " minutes.",
+        bodyHtml,
+        ctaUrl: args.magicUrl,
+        ctaText: "Sign in to WathiqCare →",
+        expiresNote: `This link expires in ${args.expiresMinutes} minutes and can only be used once.`,
+        securityNote: "You are receiving this because a sign-in was requested for your account.",
     });
 
-    if (!sendResponse.ok) {
-        const detail = await sendResponse.text().catch(() => "");
-        throw new Error(`Failed to send magic-link email (${sendResponse.status}): ${detail}`);
-    }
+    const text = buildWathiqCareEmailText({
+        title: "Your Secure WathiqCare Sign-In Link",
+        bodyLines: [
+            "You requested a secure one-time sign-in link for your WathiqCare account.",
+            "Use the link below to sign in — no password required.",
+            ...(args.userAgentHint ? [`Request from: ${args.userAgentHint.slice(0, 120)}`] : []),
+        ],
+        ctaUrl: args.magicUrl,
+        ctaLabel: "Sign in",
+        expiresNote: `This link expires in ${args.expiresMinutes} minutes and can only be used once.`,
+        securityNote: "You are receiving this because a sign-in was requested for your account.",
+    });
 
-    if (text.length === 0) {
-        throw new Error("Email body generation failed");
-    }
+    return sendEmailWithDiagnostics({ to: args.to, subject, html, text });
 }
 
 async function enforceUserAccess(user: MagicLinkUserRow): Promise<void> {
@@ -484,24 +439,34 @@ export async function requestMagicLink(emailInput: string, request: Request): Pr
     });
 
     try {
-        await sendMagicLinkEmail({
+        const diagnostics = await sendMagicLinkEmail({
             to: user.email,
             magicUrl: link,
             expiresMinutes: MAGIC_LINK_TTL_MINUTES,
             userAgentHint: request.headers.get("user-agent")?.slice(0, 180) ?? null,
         });
-        console.info("[auth.magic-link.request] email-sent", {
+        console.info("MAGIC_LINK_REQUESTED", {
             userId: user.id,
             tenantId: user.tenant_id,
             tokenId: tokenRecord.id,
         });
+        console.info("EMAIL_SENT_SUCCESS", {
+            event: "magic_link",
+            userId: user.id,
+            to: user.email,
+            provider: diagnostics.provider,
+            smtpVerifyOk: diagnostics.smtpVerifyOk,
+            smtpAccepted: diagnostics.smtpAccepted,
+            messageId: diagnostics.messageId,
+        });
     } catch (error) {
         await deleteMagicLinkToken(tokenRecord.id);
-        console.error("[auth.magic-link.request] failed-email-delivery", {
+        console.error("EMAIL_SENT_FAILURE", {
+            event: "magic_link",
             userId: user.id,
             tenantId: user.tenant_id,
             tokenId: tokenRecord.id,
-            error,
+            error: error instanceof Error ? error.message : String(error),
         });
     }
 

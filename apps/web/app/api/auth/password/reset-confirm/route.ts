@@ -45,7 +45,7 @@ async function consumePasswordResetToken(rawToken: string): Promise<{ id: string
 
 export async function POST(request: NextRequest) {
     try {
-        console.info("RESET_CONFIRM_STARTED");
+        console.info("PASSWORD_RESET_CONFIRM_STARTED");
 
         const payload = (await request.json().catch(() => null)) as PasswordResetConfirmPayload | null;
         if (!payload) {
@@ -99,10 +99,10 @@ export async function POST(request: NextRequest) {
       WHERE id = ${resetToken.userId}
     `;
 
-        console.info("RESET_CONFIRM_SUCCESS", { userId: resetToken.userId, tokenId: resetToken.id });
+        console.info("PASSWORD_RESET_COMPLETED", { userId: resetToken.userId, tokenId: resetToken.id });
         return NextResponse.json({ message: "Password has been reset successfully" });
     } catch (error) {
-        console.error("RESET_CONFIRM_FAILURE", {
+        console.error("PASSWORD_RESET_FAILED", {
             error: error instanceof Error ? error.message : String(error),
         });
         return handleApiError(error);
