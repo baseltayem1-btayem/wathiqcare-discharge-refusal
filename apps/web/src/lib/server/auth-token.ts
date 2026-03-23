@@ -3,7 +3,7 @@ import { ApiError } from "@/lib/server/http";
 import { getJwtIssuer } from "@/lib/server/jwt";
 
 export function getJwtSecret(): string {
-    const secret = process.env.JWT_SECRET_KEY;
+    const secret = process.env.JWT_SECRET_KEY?.trim();
     if (!secret || secret === "change-me") {
         throw new ApiError(500, "JWT_SECRET_KEY is not configured");
     }

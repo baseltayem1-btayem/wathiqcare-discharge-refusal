@@ -117,7 +117,9 @@ async function createSessionForPasswordUser(
     userId: string,
     email: string,
     tenantId: string,
-    role: string | null
+    role: string | null,
+    membershipStatus: string | null,
+    isActive: boolean,
 ): Promise<{ accessToken: string; redirectTo: string; userType: string }> {
     const tenant = await prisma.tenant.findUnique({
         where: { id: tenantId },
@@ -135,6 +137,7 @@ async function createSessionForPasswordUser(
     const accessToken = createAccessToken(
         {
             sub: userId,
+            user_id: userId,
             email,
             role: normalizedRole,
             user_type:
@@ -146,6 +149,8 @@ async function createSessionForPasswordUser(
             platform_role: platformRole,
             tenant_id: tenantId,
             tenant_code: tenant?.code ?? null,
+            membership_status: (membershipStatus || "UNKNOWN").toUpperCase(),
+            is_active: isActive,
             exp,
         },
         secret
@@ -263,7 +268,14 @@ export async function POST(request: NextRequest) {
         }
 
         // Create session
-        const session = await createSessionForPasswordUser(user.id, user.email, user.tenantId, user.role);
+        const session = await createSessionForPasswordUser(
+            user.id,
+            user.email,
+            user.tenantId,
+            user.role,
+            user.membershipStatus,
+            user.isActive,
+        );
 
         // Record successful login
         await recordLoginAttempt(email, true, null, request);
@@ -274,11 +286,35 @@ export async function POST(request: NextRequest) {
             redirectTo: session.redirectTo,
         });
 
+        const cookieName = getSessionCookieName();
+        const ttl = getTokenTtlSeconds();
         response.cookies.set(
-            getSessionCookieName(),
+            cookieName,
             session.accessToken,
-            buildSessionCookieOptions(getTokenTtlSeconds(), request),
+            buildSessionCookieOptions(ttl, request),
         );
+
+        console.info("LOGIN_SUCCESS", {
+            userId: user.id,
+            email: user.email,
+            role: user.role,
+            userType: session.userType,
+            tenantId: user.tenantId,
+            membershipStatus: user.membershipStatus,
+            isActive: user.isActive,
+            redirectTo: session.redirectTo,
+        });
+
+        console.info("COOKIE_SET", {
+            cookieName,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.AUTH_COOKIE_SAME_SITE || "lax",
+            domain: process.env.AUTH_COOKIE_DOMAIN || "(auto)",
+            path: "/",
+            maxAgeSeconds: ttl,
+            expiresAtIso: new Date(Date.now() + ttl * 1000).toISOString(),
+        });
 
         return response;
     } catch (error) {

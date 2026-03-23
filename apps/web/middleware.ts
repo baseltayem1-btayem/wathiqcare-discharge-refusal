@@ -68,11 +68,15 @@ export function middleware(request: NextRequest) {
 
     const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
     if (!token) {
+        console.info("MIDDLEWARE_SESSION_MISSING", { pathname });
         return NextResponse.next();
     }
 
+    console.info("MIDDLEWARE_SESSION_FOUND", { pathname, cookieName: SESSION_COOKIE_NAME });
+
     const payload = decodeJwtPayload(token);
     if (!payload) {
+        console.warn("MIDDLEWARE_SESSION_MISSING", { pathname, reason: "invalid_jwt_payload" });
         return NextResponse.next();
     }
 
@@ -84,14 +88,25 @@ export function middleware(request: NextRequest) {
         }
 
         if (isPlatformBlockedPath(pathname)) {
+            console.warn("TENANT_ACCESS_DENIED", { pathname, userType, reason: "platform_admin_blocked_from_tenant_routes" });
             return NextResponse.redirect(new URL(PLATFORM_ONLY_HOME, request.url));
         }
 
         return NextResponse.next();
     }
 
-    if (pathname === "/platform" || pathname.startsWith("/platform/")) {
+    if (pathname === "/login") {
+        console.info("TENANT_ACCESS_GRANTED", { pathname: TENANT_HOME, userType, reason: "authenticated_tenant_redirect_from_login" });
         return NextResponse.redirect(new URL(TENANT_HOME, request.url));
+    }
+
+    if (pathname === "/platform" || pathname.startsWith("/platform/")) {
+        console.warn("TENANT_ACCESS_DENIED", { pathname, userType, reason: "tenant_user_cannot_access_platform" });
+        return NextResponse.redirect(new URL(TENANT_HOME, request.url));
+    }
+
+    if (pathname === "/dashboard" || pathname.startsWith("/tenant/")) {
+        console.info("TENANT_ACCESS_GRANTED", { pathname, userType });
     }
 
     return NextResponse.next();
