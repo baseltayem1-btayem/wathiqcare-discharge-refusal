@@ -1,13 +1,56 @@
 import { SlaState } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
-import { handleApiError } from "@/lib/server/http";
+import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { DEPARTMENT_LABELS, runSlaSweepForTenant } from "@/lib/server/operations";
 
 function startOfDayOffset(offset: number): Date {
     const now = new Date();
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offset));
+}
+
+function emptyDashboardPayload() {
+    return {
+        generatedAt: new Date().toISOString(),
+        summary: {
+            totalActiveCases: 0,
+            delayedCases: 0,
+            atRiskCases: 0,
+            withinSlaCases: 0,
+            escalatedCases: 0,
+            unassignedCases: 0,
+            completionRate: 0,
+            averageDischargeHours: 0,
+        },
+        pendingByDepartment: Object.entries(DEPARTMENT_LABELS).map(([department, label]) => ({
+            department,
+            label,
+            count: 0,
+            breachCount: 0,
+            status: "on_track",
+        })),
+        averageCycleTimeByDepartment: Object.entries(DEPARTMENT_LABELS).map(([department, label]) => ({
+            department,
+            label,
+            averageHours: 0,
+        })),
+        throughputTrend: [...Array(7)].map((_, index) => {
+            const dayStart = startOfDayOffset(index - 6);
+            return {
+                day: dayStart.toISOString().slice(0, 10),
+                opened: 0,
+                closed: 0,
+            };
+        }),
+        bottlenecks: [] as Array<{ stage: string; count: number }>,
+        timelineAging: [
+            { bucket: "0-2h", count: 0 },
+            { bucket: "2-8h", count: 0 },
+            { bucket: "8-24h", count: 0 },
+            { bucket: ">24h", count: 0 },
+        ],
+    };
 }
 
 export async function GET(request: NextRequest) {
@@ -77,7 +120,7 @@ export async function GET(request: NextRequest) {
         const averageCycleTimeByDepartment = pendingByDepartment.map((item) => {
             const statesInDept = activeStates.filter((state) => state.assignedDepartment === item.department);
             const avg = statesInDept.length
-                ? Number((statesInDept.reduce((sum, state) => sum + state.waitingTimeMinutes, 0) / statesInDept.length / 60).toFixed(1))
+                ? Number((statesInDept.reduce((sum, state) => sum + (state.waitingTimeMinutes ?? 0), 0) / statesInDept.length / 60).toFixed(1))
                 : 0;
             return { department: item.department, label: item.label, averageHours: avg };
         });
@@ -104,10 +147,10 @@ export async function GET(request: NextRequest) {
             .slice(0, 6);
 
         const timelineAging = [
-            { bucket: "0-2h", count: activeStates.filter((item) => item.waitingTimeMinutes <= 120).length },
-            { bucket: "2-8h", count: activeStates.filter((item) => item.waitingTimeMinutes > 120 && item.waitingTimeMinutes <= 480).length },
-            { bucket: "8-24h", count: activeStates.filter((item) => item.waitingTimeMinutes > 480 && item.waitingTimeMinutes <= 1440).length },
-            { bucket: ">24h", count: activeStates.filter((item) => item.waitingTimeMinutes > 1440).length },
+            { bucket: "0-2h", count: activeStates.filter((item) => (item.waitingTimeMinutes ?? 0) <= 120).length },
+            { bucket: "2-8h", count: activeStates.filter((item) => (item.waitingTimeMinutes ?? 0) > 120 && (item.waitingTimeMinutes ?? 0) <= 480).length },
+            { bucket: "8-24h", count: activeStates.filter((item) => (item.waitingTimeMinutes ?? 0) > 480 && (item.waitingTimeMinutes ?? 0) <= 1440).length },
+            { bucket: ">24h", count: activeStates.filter((item) => (item.waitingTimeMinutes ?? 0) > 1440).length },
         ];
 
         return NextResponse.json({
@@ -129,6 +172,16 @@ export async function GET(request: NextRequest) {
             timelineAging,
         });
     } catch (error) {
-        return handleApiError(error);
+        console.error("OPERATIONS_DASHBOARD_GET_FAILED", {
+            error,
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+
+        if (error instanceof ApiError) {
+            return handleApiError(error);
+        }
+
+        return NextResponse.json(emptyDashboardPayload());
     }
 }

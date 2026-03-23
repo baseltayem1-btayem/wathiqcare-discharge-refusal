@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
-import { handleApiError } from "@/lib/server/http";
+import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 
 export async function GET(request: NextRequest) {
@@ -22,8 +22,18 @@ export async function GET(request: NextRequest) {
 
         const unread = notifications.filter((item) => !item.readAt && item.channel === "IN_APP").length;
 
-        return NextResponse.json({ notifications, unread });
+        return NextResponse.json({ notifications: notifications ?? [], unread: unread ?? 0 });
     } catch (error) {
-        return handleApiError(error);
+        console.error("OPERATIONS_NOTIFICATIONS_GET_FAILED", {
+            error,
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+
+        if (error instanceof ApiError) {
+            return handleApiError(error);
+        }
+
+        return NextResponse.json({ notifications: [], unread: 0 });
     }
 }
