@@ -6,15 +6,37 @@ export const DOCUMENT_TEMPLATE_KEYS = {
 } as const;
 
 export const DOCUMENT_CODES = {
-  dischargeRefusalForm: "IMC-PAT-DIS-REF-01",
-  financialResponsibilityNotice: "IMC-PAT-DIS-NOT-01",
+  dischargeRefusalForm: "TEN-PAT-DIS-REF-01",
+  financialResponsibilityNotice: "TEN-PAT-DIS-NOT-01",
 } as const;
 
 export type DocumentTemplateLocale = "ar" | "en";
 
+export type TenantDocumentRenderIdentity = {
+  displayName: string;
+  legalName: string | null;
+  licenseNumber: string | null;
+  commercialRegistrationNumber: string | null;
+  taxNumber: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  country: string | null;
+  postalCode: string | null;
+  websiteUrl: string | null;
+  logoUrl: string | null;
+  documentHeaderText: string | null;
+  documentFooterText: string | null;
+  legalDisclaimer: string | null;
+};
+
 export type DocumentTemplateRenderOptions = {
   locale?: DocumentTemplateLocale;
   tenantName?: string | null;
+  tenantIdentity?: TenantDocumentRenderIdentity | null;
+  documentCode?: string | null;
 };
 
 export interface DocumentTemplate<TPayload> {

@@ -194,7 +194,7 @@ export async function enforceSharedPostAuthAccessForMethod(
         }),
     ]);
 
-    const denial = evaluatePostAuthSnapshot({
+    const snapshot: PostAuthSnapshot = {
         domainAllowed,
         tenantActive: tenant?.isActive === true,
         userActive: user.isActive,
@@ -202,9 +202,25 @@ export async function enforceSharedPostAuthAccessForMethod(
         hasRole: role.length > 0,
         hasMembership: membership?.status === "ACTIVE",
         hasLicense: requireActiveLicense ? membership?.status === "ACTIVE" && !!subscription : true,
-    });
+    };
+
+    const denial = evaluatePostAuthSnapshot(snapshot);
 
     if (denial) {
+        console.warn("AUTH_POLICY_FAILURE", {
+            denial,
+            tenantId: user.tenantId,
+            userId: user.id,
+            tenantActive: snapshot.tenantActive,
+            membershipActive: snapshot.hasMembership,
+            role: role || null,
+            roleAssigned: snapshot.hasRole,
+            license: snapshot.hasLicense,
+            domainAllowed: snapshot.domainAllowed,
+            userActive: snapshot.userActive,
+            status: snapshot.status,
+        });
+
         const messageByCode: Record<PostAuthDenialCode, string> = {
             DOMAIN_NOT_ALLOWED: "Domain not allowed",
             TENANT_INACTIVE: "Tenant inactive",

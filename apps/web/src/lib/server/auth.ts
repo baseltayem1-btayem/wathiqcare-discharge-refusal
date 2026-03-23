@@ -76,6 +76,14 @@ function readToken(request: NextRequest): string | null {
   return request.cookies.get(getSessionCookieName())?.value ?? null;
 }
 
+function isTruthyEnvFlag(value: string | undefined, fallback: boolean): boolean {
+  if (value == null) {
+    return fallback;
+  }
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+}
+
 export async function requireAuth(request: NextRequest): Promise<AuthContext> {
   const token = readToken(request);
   if (!token) {
@@ -127,13 +135,56 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     user.userType === "PLATFORM_ADMIN"
       ? platformRoleForUserRole(user.role) ?? "platform_admin"
       : platformRoleForUserRole(user.role);
-  if (!platformRole && !user.primaryTenant?.isActive) {
-    throw new ApiError(403, "Tenant is inactive");
+  const tenantActive = user.primaryTenant?.isActive === true;
+  const membershipActive = user.memberships.some((item) => item.tenantId === user.tenantId);
+  const roleAssigned = Boolean((user.role || "").trim());
+  const tenantAdminInactiveBypassEnabled = isTruthyEnvFlag(
+    process.env.TEMP_TENANT_ADMIN_INACTIVE_BYPASS,
+    true,
+  );
+  const bypassTenantInactiveForAdmin =
+    tenantAdminInactiveBypassEnabled &&
+    !platformRole &&
+    user.userType === "TENANT_ADMIN" &&
+    !tenantActive;
+
+  if (!platformRole && !tenantActive) {
+    if (bypassTenantInactiveForAdmin) {
+      console.warn("AUTH_STATE_BYPASS", {
+        reason: "tenant_inactive",
+        userId: user.id,
+        tenantId: user.tenantId,
+        userType: user.userType,
+        tenantActive,
+        membershipActive,
+        role: user.role,
+        roleAssigned,
+      });
+    } else {
+      console.warn("AUTH_STATE_FAILURE", {
+        reason: "tenant_inactive",
+        userId: user.id,
+        tenantId: user.tenantId,
+        tenantActive,
+        membershipActive,
+        role: user.role,
+        roleAssigned,
+      });
+      throw new ApiError(403, "Tenant is inactive");
+    }
   }
 
   if (!platformRole) {
-    const accessibleTenantIds = new Set([user.tenantId, ...user.memberships.map((item) => item.tenantId)]);
-    if (!accessibleTenantIds.has(user.tenantId)) {
+    if (!membershipActive) {
+      console.warn("AUTH_STATE_FAILURE", {
+        reason: "membership_inactive",
+        userId: user.id,
+        tenantId: user.tenantId,
+        tenantActive,
+        membershipActive,
+        role: user.role,
+        roleAssigned,
+      });
       throw new ApiError(403, "Tenant membership is inactive");
     }
   }

@@ -195,8 +195,38 @@ model Tenant {
   tenantRoles        TenantRole[]
   roleAssignments    UserRoleAssignment[]
   allowedDomains     TenantAllowedDomain[]
+  branding           TenantBranding?
 
   @@map("tenants")
+}
+
+model TenantBranding {
+  id                            String   @id
+  tenantId                      String   @unique @map("tenant_id")
+  displayName                   String?  @map("display_name")
+  legalName                     String?  @map("legal_name")
+  licenseNumber                 String?  @map("license_number")
+  commercialRegistrationNumber  String?  @map("commercial_registration_number")
+  taxNumber                     String?  @map("tax_number")
+  contactEmail                  String?  @map("contact_email")
+  contactPhone                  String?  @map("contact_phone")
+  addressLine1                  String?  @map("address_line1")
+  addressLine2                  String?  @map("address_line2")
+  city                          String?
+  country                       String?
+  postalCode                    String?  @map("postal_code")
+  websiteUrl                    String?  @map("website_url")
+  logoUrl                       String?  @map("logo_url")
+  documentHeaderText            String?  @map("document_header_text")
+  documentFooterText            String?  @map("document_footer_text")
+  legalDisclaimer               String?  @map("legal_disclaimer")
+  createdAt                     DateTime @default(now()) @map("created_at")
+  updatedAt                     DateTime @updatedAt @map("updated_at")
+
+  tenant                        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("tenant_branding")
 }
 
 model TenantAllowedDomain {

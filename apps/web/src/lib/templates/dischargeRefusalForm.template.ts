@@ -9,7 +9,7 @@ import {
   validateDischargeRefusalGeneration,
   type ValidationResult,
 } from "@/lib/validators/dischargeRefusal.validator";
-import { buildTenantInstitutionLabel } from "@/lib/server/tenantBranding";
+import { buildTenantIdentityLines, buildTenantInstitutionLabel } from "@/lib/server/tenantBranding";
 
 export type DischargeRefusalTemplatePayload = {
   patientName?: string;
@@ -44,7 +44,10 @@ export const dischargeRefusalFormTemplate: DocumentTemplate<DischargeRefusalTemp
     const locale: DocumentTemplateLocale = options?.locale === "ar" ? "ar" : "en";
     const isArabic = locale === "ar";
     const title = isArabic ? "نموذج رفض الخروج الطبي" : "Medical Discharge Refusal Form";
-    const institution = buildTenantInstitutionLabel(options?.tenantName);
+    const tenantIdentity = options?.tenantIdentity ?? null;
+    const institution = buildTenantInstitutionLabel(tenantIdentity?.displayName ?? options?.tenantName);
+    const identityLines = tenantIdentity ? buildTenantIdentityLines(tenantIdentity) : [];
+    const documentCode = options?.documentCode || DOCUMENT_CODES.dischargeRefusalForm;
     const codeLabel = isArabic ? "الرمز" : "Form Code";
     const nameLabel = isArabic ? "الاسم الكامل" : "Full Name";
     const idLabel = isArabic ? "رقم الهوية / الإقامة" : "National ID / Iqama Number";
@@ -62,6 +65,10 @@ export const dischargeRefusalFormTemplate: DocumentTemplate<DischargeRefusalTemp
     const patientSignatureLabel = isArabic ? "توقيع المريض / الممثل النظامي" : "Patient / Legal Representative Signature";
     const witnessOneLabel = isArabic ? "توقيع الشاهد الأول" : "Witness 1 Signature";
     const witnessTwoLabel = isArabic ? "توقيع الشاهد الثاني" : "Witness 2 Signature";
+    const legalDisclaimer = tenantIdentity?.legalDisclaimer || "";
+    const headerText = tenantIdentity?.documentHeaderText || "";
+    const footerText = tenantIdentity?.documentFooterText || "";
+    const identityHtml = identityLines.map((line) => `<p class=\"muted\">${escapeHtml(line)}</p>`).join("\n");
 
     return `<!DOCTYPE html>
 <html lang="${locale}" dir="${isArabic ? "rtl" : "ltr"}">
@@ -80,9 +87,11 @@ export const dischargeRefusalFormTemplate: DocumentTemplate<DischargeRefusalTemp
 </head>
 <body>
   <div class="document">
+    ${headerText ? `<p class="muted"><strong>${escapeHtml(headerText)}</strong></p>` : ""}
     <p class="muted">${institution}</p>
+    ${identityHtml}
     <h1>${title}</h1>
-    <p><strong>${codeLabel}:</strong> ${DOCUMENT_CODES.dischargeRefusalForm}</p>
+    <p><strong>${codeLabel}:</strong> ${escapeHtml(documentCode)}</p>
     <div class="block">
       <p><strong>${nameLabel}:</strong> ${escapeHtml(payload.patientName)}</p>
       <p><strong>${idLabel}:</strong> ${escapeHtml(payload.patientIdNumber)}</p>
@@ -103,6 +112,8 @@ export const dischargeRefusalFormTemplate: DocumentTemplate<DischargeRefusalTemp
       <p><strong>${witnessTwoLabel}:</strong></p>
       <div class="signature"></div>
     </div>
+    ${legalDisclaimer ? `<p class="muted"><strong>${isArabic ? "تنويه قانوني" : "Legal Notice"}:</strong> ${escapeHtml(legalDisclaimer)}</p>` : ""}
+    ${footerText ? `<p class="muted">${escapeHtml(footerText)}</p>` : ""}
   </div>
 </body>
 </html>`;

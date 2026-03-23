@@ -9,6 +9,7 @@ import {
 import { checkAttendingPhysicianAuthority } from "@/lib/server/clinical-authority";
 import { ApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
+import { getTenantBrandingProfile } from "@/lib/server/tenantBrandingStore";
 import { buildTenantReferenceNumber } from "@/lib/server/tenantBranding";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { dischargeRefusalFormTemplate } from "@/lib/templates/dischargeRefusalForm.template";
@@ -274,6 +275,26 @@ function buildRefusalFormHtml(
     payload: Record<string, unknown>,
     generatedAt: string,
     locale: DocumentLocale,
+    tenantIdentity?: {
+        displayName: string;
+        legalName: string | null;
+        licenseNumber: string | null;
+        commercialRegistrationNumber: string | null;
+        taxNumber: string | null;
+        contactEmail: string | null;
+        contactPhone: string | null;
+        addressLine1: string | null;
+        addressLine2: string | null;
+        city: string | null;
+        country: string | null;
+        postalCode: string | null;
+        websiteUrl: string | null;
+        logoUrl: string | null;
+        documentHeaderText: string | null;
+        documentFooterText: string | null;
+        legalDisclaimer: string | null;
+    },
+    documentCode?: string,
 ): string {
     return dischargeRefusalFormTemplate.renderHtml(
         {
@@ -290,7 +311,12 @@ function buildRefusalFormHtml(
                     ? payload.social_administrative_interventions
                     : workflow.social_administrative_interventions ?? undefined,
         },
-        { locale, tenantName: workflow.tenant_name ?? null },
+        {
+            locale,
+            tenantName: workflow.tenant_name ?? null,
+            tenantIdentity: tenantIdentity ?? null,
+            documentCode: documentCode ?? null,
+        },
     );
 }
 
@@ -299,6 +325,26 @@ function buildFinancialNoticeHtml(
     payload: Record<string, unknown>,
     generatedAt: string,
     locale: DocumentLocale,
+    tenantIdentity?: {
+        displayName: string;
+        legalName: string | null;
+        licenseNumber: string | null;
+        commercialRegistrationNumber: string | null;
+        taxNumber: string | null;
+        contactEmail: string | null;
+        contactPhone: string | null;
+        addressLine1: string | null;
+        addressLine2: string | null;
+        city: string | null;
+        country: string | null;
+        postalCode: string | null;
+        websiteUrl: string | null;
+        logoUrl: string | null;
+        documentHeaderText: string | null;
+        documentFooterText: string | null;
+        legalDisclaimer: string | null;
+    },
+    documentCode?: string,
 ): string {
     return financialResponsibilityNoticeTemplate.renderHtml(
         {
@@ -321,8 +367,30 @@ function buildFinancialNoticeHtml(
             refusalReason: workflow.refusal_reason ?? undefined,
             discussionSummary: workflow.discussion_summary || workflow.refusal_reason || undefined,
         },
-        { locale, tenantName: workflow.tenant_name ?? null },
+        {
+            locale,
+            tenantName: workflow.tenant_name ?? null,
+            tenantIdentity: tenantIdentity ?? null,
+            documentCode: documentCode ?? null,
+        },
     );
+}
+
+function buildWorkflowDocumentCode(args: {
+    tenantCode: string | null | undefined;
+    templateKey: "discharge_refusal_form" | "financial_responsibility_notice";
+}): string {
+    const prefix = (args.tenantCode || "TEN")
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "TEN";
+
+    if (args.templateKey === "financial_responsibility_notice") {
+        return `${prefix}-PAT-DIS-NOT-01`;
+    }
+
+    return `${prefix}-PAT-DIS-REF-01`;
 }
 
 function mapWorkflowDocument(document: {
@@ -589,10 +657,38 @@ async function createGeneratedDocument(
     const tenantId = requireTenantId(auth);
     const generatedAt = nowIso();
     const locale = normalizeDocumentLocale(payload.locale);
+    const brandingProfile = await getTenantBrandingProfile(tenantId);
+    const tenantIdentity = {
+        displayName: brandingProfile?.displayName || workflow.tenant_name || "Healthcare Provider",
+        legalName: brandingProfile?.legalName ?? null,
+        licenseNumber: brandingProfile?.licenseNumber ?? null,
+        commercialRegistrationNumber: brandingProfile?.commercialRegistrationNumber ?? null,
+        taxNumber: brandingProfile?.taxNumber ?? null,
+        contactEmail: brandingProfile?.contactEmail ?? null,
+        contactPhone: brandingProfile?.contactPhone ?? null,
+        addressLine1: brandingProfile?.addressLine1 ?? null,
+        addressLine2: brandingProfile?.addressLine2 ?? null,
+        city: brandingProfile?.city ?? null,
+        country: brandingProfile?.country ?? null,
+        postalCode: brandingProfile?.postalCode ?? null,
+        websiteUrl: brandingProfile?.websiteUrl ?? null,
+        logoUrl: brandingProfile?.logoUrl ?? null,
+        documentHeaderText: brandingProfile?.documentHeaderText ?? null,
+        documentFooterText: brandingProfile?.documentFooterText ?? null,
+        legalDisclaimer: brandingProfile?.legalDisclaimer ?? null,
+    };
+    const documentCode = buildWorkflowDocumentCode({ tenantCode: workflow.tenant_code, templateKey });
     const html =
         templateKey === "discharge_refusal_form"
-            ? buildRefusalFormHtml(workflow as WorkflowSnapshot, payload, generatedAt, locale)
-            : buildFinancialNoticeHtml(workflow as WorkflowSnapshot, payload, generatedAt, locale);
+            ? buildRefusalFormHtml(workflow as WorkflowSnapshot, payload, generatedAt, locale, tenantIdentity, documentCode)
+            : buildFinancialNoticeHtml(
+                workflow as WorkflowSnapshot,
+                payload,
+                generatedAt,
+                locale,
+                tenantIdentity,
+                documentCode,
+            );
 
     const document = await prisma.document.create({
         data: {
@@ -603,8 +699,7 @@ async function createGeneratedDocument(
                     ? DocumentType.FINANCIAL_RESPONSIBILITY_NOTICE
                     : DocumentType.DISCHARGE_REFUSAL_FORM,
             status: DocumentStatus.GENERATED,
-            documentCode:
-                templateKey === "financial_responsibility_notice" ? "IMC-PAT-DIS-NOT-01" : "IMC-PAT-DIS-REF-01",
+            documentCode,
             titleEn:
                 templateKey === "financial_responsibility_notice"
                     ? "Notification and Acknowledgment of Financial Responsibility"

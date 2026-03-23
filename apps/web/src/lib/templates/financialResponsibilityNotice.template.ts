@@ -9,7 +9,7 @@ import {
   validateDischargeRefusalGeneration,
   type ValidationResult,
 } from "@/lib/validators/dischargeRefusal.validator";
-import { buildTenantInstitutionLabel } from "@/lib/server/tenantBranding";
+import { buildTenantIdentityLines, buildTenantInstitutionLabel } from "@/lib/server/tenantBranding";
 
 export type FinancialResponsibilityNoticePayload = {
   documentDate?: string;
@@ -57,7 +57,10 @@ export const financialResponsibilityNoticeTemplate: DocumentTemplate<FinancialRe
     const title = isArabic
       ? "إشعار وإقرار بتحمل المسؤولية المالية الناتجة عن رفض الخروج الطبي"
       : "Notification and Acknowledgment of Financial Responsibility for Refusal of Medical Discharge";
-    const institution = buildTenantInstitutionLabel(options?.tenantName);
+    const tenantIdentity = options?.tenantIdentity ?? null;
+    const institution = buildTenantInstitutionLabel(tenantIdentity?.displayName ?? options?.tenantName);
+    const identityLines = tenantIdentity ? buildTenantIdentityLines(tenantIdentity) : [];
+    const documentCode = options?.documentCode || DOCUMENT_CODES.financialResponsibilityNotice;
     const codeLabel = isArabic ? "الرمز" : "Form Code";
     const dateLabel = isArabic ? "التاريخ" : "Date";
     const referenceLabel = isArabic ? "المرجع" : "Reference No.";
@@ -73,6 +76,10 @@ export const financialResponsibilityNoticeTemplate: DocumentTemplate<FinancialRe
     const signatureLabel = isArabic ? "توقيع المريض / ولي الأمر" : "Patient / Legal Representative Signature";
     const representativeLabel = isArabic ? "توقيع / ختم علاقات المرضى" : "Patient Relations Signature / Stamp";
     const patientOrGuardian = payload.patientOrGuardianName ?? payload.patientName;
+    const legalDisclaimer = tenantIdentity?.legalDisclaimer || "";
+    const headerText = tenantIdentity?.documentHeaderText || "";
+    const footerText = tenantIdentity?.documentFooterText || "";
+    const identityHtml = identityLines.map((line) => `<p class=\"muted\">${escapeHtml(line)}</p>`).join("\n");
 
     return `<!DOCTYPE html>
 <html lang="${locale}" dir="${isArabic ? "rtl" : "ltr"}">
@@ -91,9 +98,11 @@ export const financialResponsibilityNoticeTemplate: DocumentTemplate<FinancialRe
 </head>
 <body>
   <div class="document">
+    ${headerText ? `<p class="muted"><strong>${escapeHtml(headerText)}</strong></p>` : ""}
     <p class="muted">${institution}</p>
+    ${identityHtml}
     <h1>${title}</h1>
-    <p><strong>${codeLabel}:</strong> ${DOCUMENT_CODES.financialResponsibilityNotice}</p>
+    <p><strong>${codeLabel}:</strong> ${escapeHtml(documentCode)}</p>
     <div class="block">
       <p><strong>${dateLabel}:</strong> ${escapeHtml(payload.documentDate)}</p>
       <p><strong>${referenceLabel}:</strong> ${escapeHtml(payload.referenceNumber)}</p>
@@ -108,6 +117,8 @@ export const financialResponsibilityNoticeTemplate: DocumentTemplate<FinancialRe
       <p><strong>${representativeLabel}:</strong></p>
       <div class="signature"></div>
     </div>
+    ${legalDisclaimer ? `<p class="muted"><strong>${isArabic ? "تنويه قانوني" : "Legal Notice"}:</strong> ${escapeHtml(legalDisclaimer)}</p>` : ""}
+    ${footerText ? `<p class="muted">${escapeHtml(footerText)}</p>` : ""}
   </div>
 </body>
 </html>`;
