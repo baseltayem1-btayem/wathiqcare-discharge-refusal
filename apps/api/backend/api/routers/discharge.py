@@ -29,6 +29,7 @@ from backend.core.discharge_query_service import (
     get_discharge_case_detail,
     list_audit_logs_for_case,
     list_bundles,
+    bundle_belongs_to_tenant,
     get_refusal_quality_metrics,
     get_compliance_dashboard_data,
 )
@@ -389,8 +390,7 @@ def get_case_audit(case_id: str, current_user=Depends(require_roles("tenant_admi
 
 @router.get("/bundles")
 def get_bundles(current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))):
-    del current_user
-    return list_bundles()
+    return list_bundles(current_user["tenant_id"])
 
 
 @router.get("/reports/refusal-quality")
@@ -464,7 +464,11 @@ def build_evidence_bundle(
     current_user=Depends(require_roles("tenant_admin", "legal_admin", ROLE_COMPLIANCE))
 ):
     try:
-        return generate_evidence_bundle(discharge_case_id, actor_user_id=current_user["id"])
+        return generate_evidence_bundle(
+            discharge_case_id,
+            tenant_id=current_user["tenant_id"],
+            actor_user_id=current_user["id"],
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception:
@@ -475,8 +479,7 @@ def download_evidence_bundle(
     filename: str,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))
 ):
-    del current_user
     file_path = Path("backend/generated/bundles") / filename
-    if not file_path.exists():
+    if not file_path.exists() or not bundle_belongs_to_tenant(file_path, current_user["tenant_id"]):
         raise HTTPException(status_code=404, detail="حزمة الأدلة غير موجودة")
     return FileResponse(path=str(file_path), filename=filename, media_type="application/zip")

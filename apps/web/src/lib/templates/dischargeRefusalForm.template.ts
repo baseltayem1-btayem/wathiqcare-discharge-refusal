@@ -9,6 +9,7 @@ import {
   validateDischargeRefusalGeneration,
   type ValidationResult,
 } from "@/lib/validators/dischargeRefusal.validator";
+import { buildTenantInstitutionLabel } from "@/lib/server/tenantBranding";
 
 export type DischargeRefusalTemplatePayload = {
   patientName?: string;
@@ -43,7 +44,7 @@ export const dischargeRefusalFormTemplate: DocumentTemplate<DischargeRefusalTemp
     const locale: DocumentTemplateLocale = options?.locale === "ar" ? "ar" : "en";
     const isArabic = locale === "ar";
     const title = isArabic ? "نموذج رفض الخروج الطبي" : "Medical Discharge Refusal Form";
-    const institution = isArabic ? "المركز الطبي الدولي - جدة" : "International Medical Center - Jeddah";
+    const institution = buildTenantInstitutionLabel(options?.tenantName);
     const codeLabel = isArabic ? "الرمز" : "Form Code";
     const nameLabel = isArabic ? "الاسم الكامل" : "Full Name";
     const idLabel = isArabic ? "رقم الهوية / الإقامة" : "National ID / Iqama Number";

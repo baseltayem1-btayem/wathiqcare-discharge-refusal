@@ -9,6 +9,7 @@ import {
   validateDischargeRefusalGeneration,
   type ValidationResult,
 } from "@/lib/validators/dischargeRefusal.validator";
+import { buildTenantInstitutionLabel } from "@/lib/server/tenantBranding";
 
 export type FinancialResponsibilityNoticePayload = {
   documentDate?: string;
@@ -56,7 +57,7 @@ export const financialResponsibilityNoticeTemplate: DocumentTemplate<FinancialRe
     const title = isArabic
       ? "إشعار وإقرار بتحمل المسؤولية المالية الناتجة عن رفض الخروج الطبي"
       : "Notification and Acknowledgment of Financial Responsibility for Refusal of Medical Discharge";
-    const institution = isArabic ? "المركز الطبي الدولي - جدة" : "International Medical Center - Jeddah";
+    const institution = buildTenantInstitutionLabel(options?.tenantName);
     const codeLabel = isArabic ? "الرمز" : "Form Code";
     const dateLabel = isArabic ? "التاريخ" : "Date";
     const referenceLabel = isArabic ? "المرجع" : "Reference No.";

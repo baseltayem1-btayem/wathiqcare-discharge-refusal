@@ -9,6 +9,7 @@ import {
 import { checkAttendingPhysicianAuthority } from "@/lib/server/clinical-authority";
 import { ApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
+import { buildTenantReferenceNumber } from "@/lib/server/tenantBranding";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { dischargeRefusalFormTemplate } from "@/lib/templates/dischargeRefusalForm.template";
 import { financialResponsibilityNoticeTemplate } from "@/lib/templates/financialResponsibilityNotice.template";
@@ -77,6 +78,8 @@ type WorkflowAuditSummary = {
 export type WorkflowSnapshot = {
     id: string;
     case_id: string;
+    tenant_name: string | null;
+    tenant_code: string | null;
     workflow_type: string;
     status: WorkflowStatus;
     current_stage: WorkflowStage;
@@ -117,9 +120,17 @@ type WorkflowActionName =
     | "escalate_legal_compliance"
     | "close_workflow";
 
-async function findCaseWithWorkflow(caseId: string) {
-    return prisma.case.findUnique({
-        where: { id: caseId },
+async function findCaseWithWorkflow(caseId: string, tenantId: string) {
+    return prisma.case.findFirst({
+        where: { id: caseId, tenantId },
+        include: {
+            tenant: {
+                select: {
+                    name: true,
+                    code: true,
+                },
+            },
+        },
     });
 }
 
@@ -279,7 +290,7 @@ function buildRefusalFormHtml(
                     ? payload.social_administrative_interventions
                     : workflow.social_administrative_interventions ?? undefined,
         },
-        { locale },
+        { locale, tenantName: workflow.tenant_name ?? null },
     );
 }
 
@@ -292,7 +303,11 @@ function buildFinancialNoticeHtml(
     return financialResponsibilityNoticeTemplate.renderHtml(
         {
             documentDate: formatDateOnly(generatedAt),
-            referenceNumber: `IMC-REF-${workflow.case_id.slice(0, 8).toUpperCase()}`,
+            referenceNumber: buildTenantReferenceNumber({
+                tenantCode: workflow.tenant_code,
+                caseId: workflow.case_id,
+                suffix: "REF",
+            }),
             patientOrGuardianName:
                 typeof payload.patient_name_or_guardian === "string"
                     ? payload.patient_name_or_guardian
@@ -306,7 +321,7 @@ function buildFinancialNoticeHtml(
             refusalReason: workflow.refusal_reason ?? undefined,
             discussionSummary: workflow.discussion_summary || workflow.refusal_reason || undefined,
         },
-        { locale },
+        { locale, tenantName: workflow.tenant_name ?? null },
     );
 }
 
@@ -342,14 +357,10 @@ function mapWorkflowDocument(document: {
 
 async function getAuthorizedCase(auth: AuthContext, caseId: string): Promise<AuthorizedCaseRecord> {
     const tenantId = requireTenantId(auth);
-    const caseRecord = await findCaseWithWorkflow(caseId);
+    const caseRecord = await findCaseWithWorkflow(caseId, tenantId);
 
     if (!caseRecord) {
         throw new ApiError(404, "Case not found");
-    }
-
-    if (caseRecord.tenantId !== tenantId) {
-        throw new ApiError(403, "Tenant access denied");
     }
 
     return caseRecord;
@@ -379,6 +390,8 @@ function buildWorkflowState(caseRecord: AuthorizedCaseRecord): Omit<WorkflowSnap
     const baseWorkflow: Omit<WorkflowSnapshot, "documents"> = {
         id: readString(storedWorkflow, "id") || caseRecord.id,
         case_id: caseRecord.id,
+        tenant_name: caseRecord.tenant?.name ?? null,
+        tenant_code: caseRecord.tenant?.code ?? null,
         workflow_type: readString(storedWorkflow, "workflow_type") || caseRecord.workflowType || "discharge_refusal",
         status: "draft",
         current_stage: "medical_discharge_decision",

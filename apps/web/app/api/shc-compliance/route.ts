@@ -62,6 +62,10 @@ export async function POST(request: NextRequest) {
     }
 
     const auth = await requireAuth(request);
+    const tenantId = auth.tenant_id;
+    if (!tenantId) {
+      throw new ApiError(403, "Tenant context is required");
+    }
     const payload = (await request.json().catch(() => null)) as
       | {
         caseId?: string;
@@ -79,12 +83,11 @@ export async function POST(request: NextRequest) {
     const patient = (payload.patient ?? {}) as Record<string, unknown>;
     const signature = (payload.signature ?? {}) as Record<string, unknown>;
 
-    const existingCase = await prisma.case.findUnique({ where: { id: payload.caseId } });
+    const existingCase = await prisma.case.findFirst({
+      where: { id: payload.caseId, tenantId },
+    });
     if (!existingCase) {
       throw new ApiError(404, "Case not found");
-    }
-    if (existingCase.tenantId !== auth.tenant_id) {
-      throw new ApiError(403, "Tenant access denied");
     }
 
     let backendResult: Record<string, unknown> | null = null;
@@ -153,7 +156,7 @@ export async function POST(request: NextRequest) {
     });
 
     await writeAuditLog({
-      tenantId: auth.tenant_id,
+      tenantId,
       userId: auth.sub,
       entityType: "case",
       entityId: payload.caseId,

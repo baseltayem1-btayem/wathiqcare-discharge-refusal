@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
+import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
+import { buildTenantReferenceNumber, resolveTenantBranding } from "@/lib/server/tenantBranding";
 import { dischargeRefusalFormTemplate } from "@/lib/templates/dischargeRefusalForm.template";
 import { financialResponsibilityNoticeTemplate } from "@/lib/templates/financialResponsibilityNotice.template";
 
@@ -61,7 +62,7 @@ function renderDischargeRefusalForm(ctx: Record<string, string>, locale: Preview
             refusalReason: ctx.refusal_reason,
             socialServicesSummary: ctx.forms_issued || ctx.insurance_coverage_status,
         },
-        { locale },
+        { locale, tenantName: ctx.tenant_name },
     );
 }
 
@@ -80,7 +81,7 @@ function renderFinancialResponsibilityNotice(ctx: Record<string, string>, locale
             refusalReason: ctx.refusal_reason,
             discussionSummary: ctx.discussion_summary,
         },
-        { locale },
+        { locale, tenantName: ctx.tenant_name },
     );
 }
 
@@ -202,6 +203,7 @@ const TEMPLATES: Record<string, TemplateInfo> = {
 export async function POST(request: NextRequest, { params }: RouteContext) {
     try {
         const auth = await requireAuth(request);
+        const tenantId = requireTenantId(auth);
         const { caseId } = await params;
 
         const body = (await request.json().catch(() => ({}))) as {
@@ -219,20 +221,33 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const inputPayload = (body.payload ?? {}) as Record<string, unknown>;
         const locale = normalizeLocale(body.locale ?? inputPayload.locale);
 
-        // Fetch case data for context enrichment
-        const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
+
+        const caseRecord = await prisma.case.findFirst({
+            where: {
+                id: caseId,
+                tenantId,
+            },
+        });
         if (!caseRecord) {
             throw new ApiError(404, "Case not found");
         }
-        if (caseRecord.tenantId !== auth.tenant_id) {
-            throw new ApiError(403, "Tenant access denied");
-        }
+
+        const tenantRecord = await prisma.tenant.findUnique({
+            where: { id: tenantId },
+            select: { id: true, name: true, code: true, metadata: true },
+        });
+        const tenantBranding = tenantRecord ? resolveTenantBranding(tenantRecord) : null;
 
         const generatedAt = nowIso();
-        const refNum = `IMC-REF-${caseId.slice(0, 8).toUpperCase()}-${new Date().toISOString().replace(/\D/g, "").slice(0, 12)}`;
+        const refNum = buildTenantReferenceNumber({
+            tenantCode: tenantBranding?.code,
+            caseId,
+            suffix: "REF",
+        });
 
         const ctx: Record<string, string> = {
             case_id: caseId,
+            tenant_name: tenantBranding?.name ?? "",
             patient_name: safe(inputPayload.patient_name ?? caseRecord.patientName),
             patient_name_or_guardian: safe(inputPayload.patient_name_or_guardian ?? inputPayload.patient_name ?? caseRecord.patientName),
             patient_id_number: safe(inputPayload.patient_id_number ?? caseRecord.patientIdNumber),

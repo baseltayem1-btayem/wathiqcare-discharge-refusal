@@ -1,3 +1,5 @@
+import json
+import zipfile
 from pathlib import Path
 from datetime import datetime
 
@@ -164,13 +166,30 @@ def list_audit_logs_for_case(tenant_id: str, case_id: str):
         db.close()
 
 
-def list_bundles():
+def _read_bundle_case_summary(bundle_path: Path) -> dict:
+    try:
+        with zipfile.ZipFile(bundle_path, "r") as archive:
+            with archive.open("case_summary.json") as handle:
+                payload = json.loads(handle.read().decode("utf-8"))
+                return payload if isinstance(payload, dict) else {}
+    except (FileNotFoundError, KeyError, OSError, ValueError, zipfile.BadZipFile):
+        return {}
+
+
+def bundle_belongs_to_tenant(bundle_path: Path, tenant_id: str) -> bool:
+    summary = _read_bundle_case_summary(bundle_path)
+    tenant = summary.get("tenant") if isinstance(summary, dict) else None
+    return isinstance(tenant, dict) and tenant.get("id") == tenant_id
+
+
+
+def list_bundles(tenant_id: str):
     bundles_dir = Path("backend/generated/bundles")
     bundles_dir.mkdir(parents=True, exist_ok=True)
 
     items = []
     for path in sorted(bundles_dir.iterdir(), key=lambda p: p.name, reverse=True):
-        if path.is_file() and path.suffix == ".zip":
+        if path.is_file() and path.suffix == ".zip" and bundle_belongs_to_tenant(path, tenant_id):
             items.append({
                 "name": path.name,
                 "path": str(path),

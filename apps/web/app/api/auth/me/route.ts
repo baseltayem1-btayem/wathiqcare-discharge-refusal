@@ -4,6 +4,7 @@ import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
 import { platformRoleForUserRole } from "@/lib/server/roles";
+import { resolveTenantBranding } from "@/lib/server/tenantBranding";
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,13 +42,26 @@ export async function GET(request: NextRequest) {
 
     const effectiveTenantId = auth.tenant_id ?? user.tenantId;
 
-    const subscription = effectiveTenantId
-      ? await prisma.subscription.findFirst({
-        where: { tenantId: effectiveTenantId },
-        include: { plan: true },
-        orderBy: { createdAt: "desc" },
-      })
-      : null;
+    const [subscription, tenant] = await Promise.all([
+      effectiveTenantId
+        ? prisma.subscription.findFirst({
+          where: { tenantId: effectiveTenantId },
+          include: { plan: true },
+          orderBy: { createdAt: "desc" },
+        })
+        : null,
+      effectiveTenantId
+        ? prisma.tenant.findUnique({
+          where: { id: effectiveTenantId },
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            metadata: true,
+          },
+        })
+        : null,
+    ]);
 
     const platformRole =
       auth.platform_role ??
@@ -67,6 +81,7 @@ export async function GET(request: NextRequest) {
         platformRole,
         userType,
         homePath,
+        tenant: tenant ? resolveTenantBranding(tenant) : null,
         user,
         subscription,
       }),

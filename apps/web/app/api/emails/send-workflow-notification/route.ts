@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
+import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
@@ -88,6 +88,7 @@ async function sendViaBackend(args: {
 export async function POST(request: NextRequest) {
     try {
         const auth = await requireAuth(request);
+        const tenantId = requireTenantId(auth);
 
         const body = (await request.json().catch(() => null)) as WorkflowNotificationBody | null;
         const caseId = safe(body?.case_id);
@@ -103,12 +104,9 @@ export async function POST(request: NextRequest) {
             throw new ApiError(400, "to is required");
         }
 
-        const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
+        const caseRecord = await prisma.case.findFirst({ where: { id: caseId, tenantId } });
         if (!caseRecord) {
             throw new ApiError(404, "Case not found");
-        }
-        if (caseRecord.tenantId !== auth.tenant_id) {
-            throw new ApiError(403, "Tenant access denied");
         }
 
         const templateVars = {
@@ -133,7 +131,7 @@ export async function POST(request: NextRequest) {
         });
 
         await writeAuditLog({
-            tenantId: auth.tenant_id,
+            tenantId,
             userId: auth.sub,
             entityType: "case",
             entityId: caseId,

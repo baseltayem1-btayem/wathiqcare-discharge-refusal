@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
+import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { prisma } from "@/lib/server/prisma";
 import { forwardToBackend } from "@/lib/server/backendProxy";
 
@@ -18,6 +18,7 @@ export async function GET(
     { params }: { params: Promise<{ documentId: string }> },
 ) {
     const auth = await requireAuth(request);
+    const tenantId = requireTenantId(auth);
     const { documentId } = await params;
 
     const backendResponse = await forwardToBackend(request, `/api/documents/${encodeURIComponent(documentId)}/download`);
@@ -25,8 +26,8 @@ export async function GET(
         return backendResponse;
     }
 
-    const document = await prisma.document.findUnique({ where: { id: documentId } });
-    if (!document || document.tenantId !== auth.tenant_id) {
+    const document = await prisma.document.findFirst({ where: { id: documentId, tenantId } });
+    if (!document) {
         return NextResponse.json({ detail: "Document not found" }, { status: 404 });
     }
 

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
+import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 
@@ -102,6 +102,7 @@ function renderHomecareAgreementHtml(ctx: Record<string, string>): string {
 export async function POST(request: NextRequest, { params }: RouteContext) {
     try {
         const auth = await requireAuth(request);
+        const tenantId = requireTenantId(auth);
         const { caseId } = await params;
 
         const body = (await request.json().catch(() => ({}))) as {
@@ -110,10 +111,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const inputPayload = (body.payload ?? {}) as Record<string, unknown>;
 
         // Fetch case for default patient data
-        const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
-        if (caseRecord && caseRecord.tenantId !== auth.tenant_id) {
-            throw new ApiError(403, "Tenant access denied");
-        }
+        const caseRecord = await prisma.case.findFirst({
+            where: { id: caseId, tenantId },
+        });
 
         const ctx: Record<string, string> = {
             case_id: caseId,

@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
+import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -245,6 +245,7 @@ async function sendEmailNotice(
 export async function POST(request: NextRequest, { params }: RouteContext) {
     try {
         const auth = await requireAuth(request);
+        const tenantId = requireTenantId(auth);
         const { caseId } = await params;
 
         const body = (await request.json().catch(() => null)) as {
@@ -262,9 +263,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const inputPayload = (body.payload ?? {}) as Record<string, unknown>;
 
         // Verify case ownership
-        const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
+        const caseRecord = await prisma.case.findFirst({ where: { id: caseId, tenantId } });
         if (!caseRecord) throw new ApiError(404, "Case not found");
-        if (caseRecord.tenantId !== auth.tenant_id) throw new ApiError(403, "Tenant access denied");
         const caseMetadata = asRecord(caseRecord.metadata);
 
         // Build context from case record + payload
@@ -328,7 +328,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         // Persist session as a Document record; id becomes the session_id
         const doc = await prisma.document.create({
             data: {
-                tenantId: auth.tenant_id,
+                tenantId,
                 caseId,
                 documentType: "OTHER",
                 templateKey: `ack_session:${templateKey}`,
@@ -344,7 +344,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
         // Write audit log
         await writeAuditLog({
-            tenantId: auth.tenant_id,
+            tenantId,
             userId: auth.sub,
             caseId,
             action: "acknowledgment_session_started",

@@ -1,6 +1,6 @@
 import { CaseStatus, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, requireTenantOperationalAccess } from "@/lib/server/auth";
+import { requireAuth, requireTenantId, requireTenantOperationalAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
@@ -21,10 +21,11 @@ export async function GET(
   try {
     const auth = await requireAuth(request);
     requireTenantOperationalAccess(auth);
+    const tenantId = requireTenantId(auth);
     const { caseId } = await params;
 
-    const item = await prisma.case.findUnique({
-      where: { id: caseId },
+    const item = await prisma.case.findFirst({
+      where: { id: caseId, tenantId },
       include: {
         documents: true,
         auditLogs: {
@@ -36,10 +37,6 @@ export async function GET(
 
     if (!item) {
       throw new ApiError(404, "Case not found");
-    }
-
-    if (item.tenantId !== auth.tenant_id) {
-      throw new ApiError(403, "Tenant access denied");
     }
 
     return NextResponse.json(toJsonSafe(item));
@@ -55,15 +52,12 @@ export async function PATCH(
   try {
     const auth = await requireAuth(request);
     requireTenantOperationalAccess(auth);
+    const tenantId = requireTenantId(auth);
     const { caseId } = await params;
 
-    const existing = await prisma.case.findUnique({ where: { id: caseId } });
+    const existing = await prisma.case.findFirst({ where: { id: caseId, tenantId } });
     if (!existing) {
       throw new ApiError(404, "Case not found");
-    }
-
-    if (existing.tenantId !== auth.tenant_id) {
-      throw new ApiError(403, "Tenant access denied");
     }
 
     const payload = (await request.json().catch(() => null)) as
@@ -86,8 +80,8 @@ export async function PATCH(
 
     const parsedStatus = parseCaseStatus(payload.status);
 
-    const updated = await prisma.case.update({
-      where: { id: caseId },
+    const updateResult = await prisma.case.updateMany({
+      where: { id: caseId, tenantId },
       data: {
         ...(payload.title !== undefined ? { title: payload.title } : {}),
         ...(parsedStatus ? { status: parsedStatus } : {}),
@@ -111,8 +105,17 @@ export async function PATCH(
       },
     });
 
+    if (updateResult.count === 0) {
+      throw new ApiError(404, "Case not found");
+    }
+
+    const updated = await prisma.case.findFirst({ where: { id: caseId, tenantId } });
+    if (!updated) {
+      throw new ApiError(404, "Case not found");
+    }
+
     await writeAuditLog({
-      tenantId: auth.tenant_id,
+      tenantId,
       userId: auth.sub,
       entityType: "case",
       entityId: caseId,

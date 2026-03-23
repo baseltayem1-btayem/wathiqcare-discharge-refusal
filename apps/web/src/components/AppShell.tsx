@@ -11,6 +11,13 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch, clearToken } from "@/utils/api";
 import { TENANT_NAV_ITEMS, CASE_STAGE_NAV_DEF, type TenantNavItem } from "@/config/tenantSidebar";
 
+type TenantBranding = {
+  id: string;
+  name: string;
+  code: string;
+  logoUrl: string | null;
+};
+
 type AppShellProps = {
   title: string;
   subtitle?: string;
@@ -83,6 +90,35 @@ function NavLink({ href, label, icon, active, disabled = false }: NavLinkProps) 
   );
 }
 
+function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; logoUrl: string | null; compact?: boolean }) {
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt={name}
+        className={compact ? "h-auto w-[78px] object-contain" : "h-auto w-[150px] object-contain"}
+      />
+    );
+  }
+
+  const initials = name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .filter(Boolean)
+    .join("")
+    .slice(0, compact ? 2 : 3)
+    .toUpperCase();
+
+  return (
+    <div
+      className={compact ? "flex h-9 w-[78px] items-center justify-center rounded-lg" : "flex h-20 w-[150px] items-center justify-center rounded-xl"}
+      style={{ background: "linear-gradient(135deg, #cffafe, #ecfeff)", color: "#0e7490", border: "1px solid #a5f3fc" }}
+    >
+      <span className={compact ? "text-sm font-bold tracking-[0.2em]" : "text-lg font-bold tracking-[0.3em]"}>{initials || "TEN"}</span>
+    </div>
+  );
+}
+
 export default function AppShell({ title, subtitle, actions, children, workflowCaseNav }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -93,13 +129,16 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
   // Middleware enforces this at the edge; this is defense-in-depth at component level.
   // If a platform_admin somehow reaches AppShell, redirect immediately.
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  const [tenantBranding, setTenantBranding] = useState<TenantBranding | null>(null);
   useEffect(() => {
-    apiFetch<{ userType?: string }>("/api/auth/me", { cache: "no-store" })
+    apiFetch<{ userType?: string; tenant?: TenantBranding | null }>("/api/auth/me", { cache: "no-store" })
       .then((me) => {
         if (me?.userType === "platform_admin") {
           setIsPlatformAdmin(true);
           router.replace("/platform");
+          return;
         }
+        setTenantBranding(me?.tenant ?? null);
       })
       .catch(() => { /* ignore — primary enforcement is middleware */ });
   }, [router]);
@@ -108,7 +147,8 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
   // ────────────────────────────────────────────────────────────────────────────
 
   const navItems = workflowCaseNav ? buildCaseWorkflowNav(workflowCaseNav) : TENANT_NAV_ITEMS;
-  const tenantLogoAlt = t("app.tenantName");
+  const tenantName = tenantBranding?.name?.trim() || t("app.tenantName");
+  const tenantLogoUrl = tenantBranding?.logoUrl ?? null;
 
   async function handleLogout() {
     try {
@@ -141,14 +181,7 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
             style={{ background: "#f0fdff", border: "1px solid #e0f2fe" }}
           >
             <div className="flex justify-center">
-              <Image
-                src="/images/imc-logo.png"
-                alt={tenantLogoAlt}
-                width={220}
-                height={88}
-                className="h-auto w-[150px] object-contain"
-                priority
-              />
+              <TenantBrandMark name={tenantName} logoUrl={tenantLogoUrl} />
             </div>
             <div className="mt-3 rounded-lg border border-cyan-100 bg-white/80 px-3 py-2">
               <div className="flex justify-center">
@@ -163,7 +196,7 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
               </div>
             </div>
             <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#0891b2" }}>
-              {tenantLogoAlt}
+              {tenantName}
             </p>
             <p className="mt-0.5 text-center text-[11px] text-gray-500">{t("app.moduleTagline")}</p>
           </div>
@@ -227,15 +260,9 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
                   <NotificationBell />
                   <div
                     className="hidden items-center gap-2 rounded-xl border border-cyan-100 bg-cyan-50/80 px-2.5 py-2 sm:inline-flex"
-                    title={tenantLogoAlt}
+                    title={tenantName}
                   >
-                    <Image
-                      src="/images/imc-logo.png"
-                      alt={tenantLogoAlt}
-                      width={96}
-                      height={38}
-                      className="h-auto w-[78px] object-contain"
-                    />
+                    <TenantBrandMark name={tenantName} logoUrl={tenantLogoUrl} compact />
                   </div>
                   <LanguageSwitcher className="md:hidden" />
                   <button

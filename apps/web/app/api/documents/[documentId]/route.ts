@@ -1,6 +1,6 @@
 import { DocumentStatus, Prisma, UsageMetric } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
+import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
@@ -24,10 +24,11 @@ export async function GET(
 ) {
   try {
     const auth = await requireAuth(request);
+    const tenantId = requireTenantId(auth);
     const { documentId } = await params;
 
-    const document = await prisma.document.findUnique({
-      where: { id: documentId },
+    const document = await prisma.document.findFirst({
+      where: { id: documentId, tenantId },
       include: {
         case: {
           select: {
@@ -44,10 +45,6 @@ export async function GET(
       throw new ApiError(404, "Document not found");
     }
 
-    if (document.tenantId !== auth.tenant_id) {
-      throw new ApiError(403, "Tenant access denied");
-    }
-
     return NextResponse.json(toJsonSafe(document));
   } catch (error) {
     return handleApiError(error);
@@ -60,15 +57,12 @@ export async function PATCH(
 ) {
   try {
     const auth = await requireAuth(request);
+    const tenantId = requireTenantId(auth);
     const { documentId } = await params;
 
-    const existing = await prisma.document.findUnique({ where: { id: documentId } });
+    const existing = await prisma.document.findFirst({ where: { id: documentId, tenantId } });
     if (!existing) {
       throw new ApiError(404, "Document not found");
-    }
-
-    if (existing.tenantId !== auth.tenant_id) {
-      throw new ApiError(403, "Tenant access denied");
     }
 
     const payload = (await request.json().catch(() => null)) as
@@ -95,11 +89,11 @@ export async function PATCH(
       existing.status !== DocumentStatus.GENERATED;
 
     if (generatedTransition) {
-      await enforcePlanUsage(auth.tenant_id, UsageMetric.DOCUMENTS, BigInt(1));
+      await enforcePlanUsage(tenantId, UsageMetric.DOCUMENTS, BigInt(1));
     }
 
-    const updated = await prisma.document.update({
-      where: { id: documentId },
+    const updateResult = await prisma.document.updateMany({
+      where: { id: documentId, tenantId },
       data: {
         ...(status ? { status } : {}),
         ...(payload.titleEn !== undefined ? { titleEn: payload.titleEn } : {}),
@@ -119,15 +113,24 @@ export async function PATCH(
       },
     });
 
+    if (updateResult.count === 0) {
+      throw new ApiError(404, "Document not found");
+    }
+
+    const updated = await prisma.document.findFirst({ where: { id: documentId, tenantId } });
+    if (!updated) {
+      throw new ApiError(404, "Document not found");
+    }
+
     if (generatedTransition) {
-      await recordUsage(auth.tenant_id, UsageMetric.DOCUMENTS, BigInt(1), {
+      await recordUsage(tenantId, UsageMetric.DOCUMENTS, BigInt(1), {
         source: "api/documents/[documentId]",
         documentId,
       });
     }
 
     await writeAuditLog({
-      tenantId: auth.tenant_id,
+      tenantId,
       userId: auth.sub,
       entityType: "document",
       entityId: documentId,

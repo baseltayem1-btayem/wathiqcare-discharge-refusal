@@ -83,11 +83,18 @@ def _write_json(path: Path, payload: Dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
 
 
-def generate_evidence_bundle(discharge_case_id: str, actor_user_id: str | None = None) -> Dict[str, Any]:
+def generate_evidence_bundle(
+    discharge_case_id: str,
+    tenant_id: str | None = None,
+    actor_user_id: str | None = None,
+) -> Dict[str, Any]:
     db = SessionLocal()
 
     try:
-        case = db.query(DischargeCase).filter(DischargeCase.id == discharge_case_id).first()
+        query = db.query(DischargeCase).filter(DischargeCase.id == discharge_case_id)
+        if tenant_id:
+            query = query.filter(DischargeCase.tenant_id == tenant_id)
+        case = query.first()
         if not case:
             raise ValueError(f"Discharge case '{discharge_case_id}' not found")
 
@@ -98,6 +105,7 @@ def generate_evidence_bundle(discharge_case_id: str, actor_user_id: str | None =
         audit_logs = (
             db.query(AuditLog)
             .filter(
+                AuditLog.tenant_id == case.tenant_id,
                 AuditLog.entity_type == "discharge_case",
                 AuditLog.entity_id == case.id
             )

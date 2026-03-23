@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
+import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -43,11 +43,11 @@ function decodeSignaturePayload(payload: string): Buffer {
 export async function POST(request: NextRequest, { params }: RouteContext) {
     try {
         const auth = await requireAuth(request);
+        const tenantId = requireTenantId(auth);
         const { caseId, sessionId } = await params;
 
-        const doc = await prisma.document.findUnique({ where: { id: sessionId } });
+        const doc = await prisma.document.findFirst({ where: { id: sessionId, tenantId } });
         if (!doc) throw new ApiError(404, "جلسة الإقرار غير موجودة");
-        if (doc.tenantId !== auth.tenant_id) throw new ApiError(403, "Tenant access denied");
         if (doc.status === "SIGNED" || doc.signedAt) {
             throw new ApiError(409, "جلسة الإقرار تم التحقق منها بالفعل");
         }
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
             try {
                 const existing = await prisma.dischargeRefusalCase.findFirst({
-                    where: { caseId, tenantId: auth.tenant_id },
+                    where: { caseId, tenantId },
                 });
 
                 if (existing) {
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 } else {
                     await prisma.dischargeRefusalCase.create({
                         data: {
-                            tenantId: auth.tenant_id,
+                            tenantId,
                             caseId,
                             dischargeStatus: "acknowledged",
                             signatureMethod: method,
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
             try {
                 await writeAuditLog({
-                    tenantId: auth.tenant_id,
+                    tenantId,
                     userId: auth.sub,
                     caseId,
                     action: "acknowledgment_verified",
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         } else if (method !== "EMAIL_NOTICE") {
             try {
                 await writeAuditLog({
-                    tenantId: auth.tenant_id,
+                    tenantId,
                     userId: auth.sub,
                     caseId,
                     action: locked ? "acknowledgment_locked" : "acknowledgment_verification_failed",
@@ -240,7 +240,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         if (method === "EMAIL_NOTICE") {
             try {
                 await writeAuditLog({
-                    tenantId: auth.tenant_id,
+                    tenantId,
                     userId: auth.sub,
                     caseId,
                     action: "acknowledgment_notification_confirmed",

@@ -20,7 +20,7 @@
     "moduleTagline": "Compliance-focused legal-medical workflow.",
     "activeWorkspace": "Active Workspace",
     "secureMode": "Tenant-scoped secure mode enabled.",
-    "tenantName": "International Medical Center"
+    "tenantName": "Tenant Workspace"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -298,7 +298,7 @@
   "caseDetails": {
     "caseTitle": "Case Details",
     "caseTitleWithName": "Case {name}",
-    "subtitle": "Policy-driven refusal workflow aligned with IMC discharge-refusal requirements.",
+    "subtitle": "Policy-driven refusal workflow aligned with the active tenant's discharge-refusal requirements.",
     "failedLoad": "Failed to load case details",
     "workflowActionFailed": "Workflow action failed",
     "failedBuildPreview": "Failed to build preview",

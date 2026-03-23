@@ -1,4 +1,5 @@
 "use client";
+import { buildTenantReferenceNumber } from "@/lib/server/tenantBranding";
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -110,6 +111,12 @@ type OperationTrackerPayload = {
 
 type AuthMeResponse = {
   platformRole?: string | null;
+  tenant?: {
+    id: string;
+    name: string;
+    code: string;
+    logoUrl: string | null;
+  } | null;
   claims?: {
     role?: string;
     platform_role?: string | null;
@@ -645,10 +652,18 @@ function toRefusalTemplatePayload(draft: WorkflowDraft): DischargeRefusalTemplat
   };
 }
 
-function toFinancialNoticePayload(draft: WorkflowDraft): FinancialResponsibilityNoticePayload {
+function toFinancialNoticePayload(
+  draft: WorkflowDraft,
+  caseId: string,
+  tenantCode?: string | null,
+): FinancialResponsibilityNoticePayload {
   return {
     documentDate: new Date().toISOString(),
-    referenceNumber: `IMC-NOT-${Date.now()}`,
+    referenceNumber: buildTenantReferenceNumber({
+      tenantCode,
+      caseId: draft.medical_record_number || draft.patient_id_number || String(Date.now()),
+      suffix: "NOT",
+    }),
     patientOrGuardianName: draft.patient_name,
     patientName: draft.patient_name,
     patientIdNumber: draft.patient_id_number,
@@ -691,6 +706,7 @@ export default function CaseDetailsPage() {
   const [workflowBackendUnavailable, setWorkflowBackendUnavailable] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [platformRole, setPlatformRole] = useState<string | null>(null);
+  const [tenantBranding, setTenantBranding] = useState<AuthMeResponse["tenant"]>(null);
   const [assignDepartment, setAssignDepartment] = useState<(typeof OPERATION_DEPARTMENTS)[number]>("CASE_MANAGEMENT");
   const [assignPriority, setAssignPriority] = useState<"LOW" | "NORMAL" | "HIGH" | "CRITICAL">("NORMAL");
   const [assignReason, setAssignReason] = useState("");
@@ -788,6 +804,7 @@ export default function CaseDetailsPage() {
       setCaseDetail(detail);
       setUserRole(me.user?.role ?? me.claims?.role ?? null);
       setPlatformRole(me.platformRole ?? me.claims?.platform_role ?? null);
+      setTenantBranding(me.tenant ?? null);
 
       try {
         const tracker = await apiFetch<OperationTrackerPayload>(`/api/operations/cases/${encodeURIComponent(caseId)}/tracker`);
@@ -978,7 +995,10 @@ export default function CaseDetailsPage() {
             missing_fields: missingFields,
             can_generate: true,
             policy_validation: policyValidation,
-            html_content: dischargeRefusalFormTemplate.renderHtml(toRefusalTemplatePayload(draft), { locale: lang === "ar" ? "ar" : "en" }),
+            html_content: dischargeRefusalFormTemplate.renderHtml(toRefusalTemplatePayload(draft), {
+              locale: lang === "ar" ? "ar" : "en",
+              tenantName: tenantBranding?.name,
+            }),
             context: compactPayload(draft),
           }
           : {
@@ -988,7 +1008,13 @@ export default function CaseDetailsPage() {
             missing_fields: missingFields,
             can_generate: true,
             policy_validation: policyValidation,
-            html_content: financialResponsibilityNoticeTemplate.renderHtml(toFinancialNoticePayload(draft), { locale: lang === "ar" ? "ar" : "en" }),
+            html_content: financialResponsibilityNoticeTemplate.renderHtml(
+              toFinancialNoticePayload(draft, caseId, tenantBranding?.code),
+              {
+                locale: lang === "ar" ? "ar" : "en",
+                tenantName: tenantBranding?.name,
+              },
+            ),
             context: compactPayload(draft),
           };
 
