@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { ApiHttpError, apiFetch } from "@/utils/api";
+import { toast } from "sonner";
 
 type TenantUser = {
     id: string;
@@ -37,6 +38,7 @@ export default function TenantUsersPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
     const [form, setForm] = useState({
         email: "",
@@ -80,6 +82,36 @@ export default function TenantUsersPage() {
             setError(message);
         } finally {
             setSubmitting(false);
+        }
+    }
+
+    async function onResendInvite(userId: string) {
+        setActionLoading((prev) => ({ ...prev, [`resend_${userId}`]: true }));
+        try {
+            await apiFetch<{ success: boolean }>(`/api/tenant/users/${userId}/resend-invite`, {
+                method: "POST",
+            });
+            toast.success("Invitation resent");
+        } catch (err) {
+            const message = err instanceof ApiHttpError ? err.message : "Failed to resend invite";
+            toast.error(message);
+        } finally {
+            setActionLoading((prev) => ({ ...prev, [`resend_${userId}`]: false }));
+        }
+    }
+
+    async function onResetPassword(userId: string) {
+        setActionLoading((prev) => ({ ...prev, [`reset_${userId}`]: true }));
+        try {
+            await apiFetch<{ success: boolean }>(`/api/tenant/users/${userId}/reset-password`, {
+                method: "POST",
+            });
+            toast.success("Password reset email sent");
+        } catch (err) {
+            const message = err instanceof ApiHttpError ? err.message : "Failed to send reset email";
+            toast.error(message);
+        } finally {
+            setActionLoading((prev) => ({ ...prev, [`reset_${userId}`]: false }));
         }
     }
 
@@ -182,6 +214,7 @@ export default function TenantUsersPage() {
                                             <th className="px-3 py-2">Role</th>
                                             <th className="px-3 py-2">Invite Status</th>
                                             <th className="px-3 py-2">Last Login</th>
+                                            <th className="px-3 py-2">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -193,6 +226,28 @@ export default function TenantUsersPage() {
                                                 <td className="px-3 py-2 text-slate-700">{user.inviteStatus}</td>
                                                 <td className="px-3 py-2 text-slate-700">
                                                     {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : "Never"}
+                                                </td>
+                                                <td className="px-3 py-2">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {user.inviteStatus === "PENDING" && (
+                                                            <button
+                                                                type="button"
+                                                                disabled={!!actionLoading[`resend_${user.id}`]}
+                                                                onClick={() => void onResendInvite(user.id)}
+                                                                className="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                                            >
+                                                                {actionLoading[`resend_${user.id}`] ? "Sending…" : "Resend Invite"}
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            disabled={!!actionLoading[`reset_${user.id}`]}
+                                                            onClick={() => void onResetPassword(user.id)}
+                                                            className="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                                        >
+                                                            {actionLoading[`reset_${user.id}`] ? "Sending…" : "Reset Password"}
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
