@@ -31,7 +31,6 @@ from backend.services.integration_monitoring_service import (
 )
 
 logger = logging.getLogger(__name__)
-RUNTIME_AUTH_LAYER_MARKER = "apps-api-main-auth-v2"
 
 app = FastAPI(title="WathiqCare Core API", version="0.1.0")
 
@@ -66,7 +65,6 @@ async def request_hardening_middleware(request: Request, call_next):
     if response.status_code >= 500:
         logger.error("api_error path=%s method=%s status=%s", request.url.path, request.method, response.status_code)
 
-    response.headers["x-runtime-auth-layer"] = RUNTIME_AUTH_LAYER_MARKER
     return response
 
 
@@ -89,7 +87,7 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "runtime_marker": RUNTIME_AUTH_LAYER_MARKER}
+    return {"status": "ok"}
 
 
 @app.on_event("startup")
