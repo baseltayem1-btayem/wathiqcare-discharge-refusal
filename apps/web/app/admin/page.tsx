@@ -374,8 +374,10 @@ export default function AdminPage() {
       setIsPlatformAdmin(platformAdmin);
 
       if (platformAdmin) {
-        setForbidden(true);
-        setError("Platform admins must use the WathiqCare Platform Management portal at /platform.");
+        setNotice("Redirecting to Platform Management...");
+        if (typeof window !== "undefined") {
+          window.location.assign("/platform");
+        }
         return;
       }
 

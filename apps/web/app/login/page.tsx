@@ -278,7 +278,7 @@ export default function LoginPage() {
                 {authMode === "password" && (
                   <form onSubmit={handlePasswordSubmit} className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">Sign In with Password</h2>
-                    <p className="text-sm text-gray-600">Enter your email and password. Use <span className="font-medium text-cyan-700">Secure Link</span> above if you don't have a password yet.</p>
+                    <p className="text-sm text-gray-600">Enter your email and password. Use <span className="font-medium text-cyan-700">Secure Link</span> above if you don&apos;t have a password yet.</p>
 
                     <div>
                       <label htmlFor="password-email" className="mb-1 block text-sm font-medium text-gray-700">

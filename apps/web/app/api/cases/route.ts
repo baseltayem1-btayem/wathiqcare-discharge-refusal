@@ -146,12 +146,22 @@ export async function POST(request: NextRequest) {
       request,
     });
 
-    await ensureOperationStateForCase({
-      tenantId,
-      caseId: created.id,
-      actorUserId: auth.sub,
-      actorRole: auth.role,
-    });
+    try {
+      await ensureOperationStateForCase({
+        tenantId,
+        caseId: created.id,
+        actorUserId: auth.sub,
+        actorRole: auth.role,
+      });
+    } catch (operationError) {
+      // Do not fail case registration when operations tracking initialization fails.
+      // The case itself is already persisted and can be used safely.
+      console.error("case-create: failed to initialize operation state (non-fatal)", {
+        caseId: created.id,
+        tenantId,
+        error: operationError instanceof Error ? operationError.message : String(operationError),
+      });
+    }
 
     return NextResponse.json(toJsonSafe(created), { status: 201 });
   } catch (error) {

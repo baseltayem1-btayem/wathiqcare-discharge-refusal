@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 
 export const runtime = "nodejs";
@@ -10,7 +9,7 @@ interface SendEmailRequest {
     html_body: string;
     text_body: string;
     cc?: string[];
-    attachments?: any[];
+    attachments?: unknown[];
 }
 
 /**

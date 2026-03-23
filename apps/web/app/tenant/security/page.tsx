@@ -119,7 +119,7 @@ export default function TenantSecurityPage() {
 
             let endpoint = '';
             let method = 'POST';
-            let body: any = {};
+            let body: Record<string, unknown> = {};
 
             switch (action) {
                 case OPERATIONS.RESEND_INVITE:

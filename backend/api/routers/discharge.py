@@ -388,7 +388,8 @@ def get_case_audit(case_id: str, current_user=Depends(require_roles("tenant_admi
     return result
 
 @router.get("/bundles")
-def get_bundles(current_user=Depends(require_roles("tenant_admin", "legal_admin"))):
+def get_bundles(current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))):
+    del current_user
     return list_bundles()
 
 
@@ -460,7 +461,7 @@ def get_pdf(filename: str, current_user=Depends(get_current_user)):
 @router.post("/evidence-bundle/{discharge_case_id}")
 def build_evidence_bundle(
     discharge_case_id: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin"))
+    current_user=Depends(require_roles("tenant_admin", "legal_admin", ROLE_COMPLIANCE))
 ):
     try:
         return generate_evidence_bundle(discharge_case_id, actor_user_id=current_user["id"])
@@ -472,8 +473,9 @@ def build_evidence_bundle(
 @router.get("/evidence-bundle/download/{filename}")
 def download_evidence_bundle(
     filename: str,
-    current_user=Depends(require_roles("tenant_admin", "legal_admin"))
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))
 ):
+    del current_user
     file_path = Path("backend/generated/bundles") / filename
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="حزمة الأدلة غير موجودة")

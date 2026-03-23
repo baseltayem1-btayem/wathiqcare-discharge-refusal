@@ -74,7 +74,7 @@ export default function PasswordResetClient() {
                     If an account exists for <strong>{email}</strong>, a password reset link has been sent.
                     The link expires in 30 minutes.
                 </p>
-                <p className="mt-2 text-xs text-slate-400">Didn't receive it? Check your spam folder.</p>
+                <p className="mt-2 text-xs text-slate-400">Didn&apos;t receive it? Check your spam folder.</p>
                 <div className="mt-6">
                     <Link
                         href="/login"

@@ -2,11 +2,14 @@ import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
-import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
-import { getSessionCookieName } from "@/lib/server/sessionCookie";
+import {
+    buildWathiqCareEmailHtml,
+    buildWathiqCareEmailText,
+    sendEmailWithDiagnostics,
+} from "@/lib/server/email-provider";
 import { buildAcknowledgmentMethods } from "../method-availability";
 type RouteContext = { params: Promise<{ caseId: string }> };
 
@@ -71,83 +74,170 @@ type EmailSendResponse = {
     sent_at?: string | null;
 };
 
-function extractBearerToken(request: NextRequest): string | null {
-    const cookieToken = request.cookies.get(getSessionCookieName())?.value?.trim();
-    if (cookieToken) {
-        return `Bearer ${cookieToken}`;
+function asRecord(value: unknown): Record<string, unknown> | null {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return null;
     }
-
-    return null;
+    return value as Record<string, unknown>;
 }
 
-async function sendEmailNoticeViaBackend(
-    request: NextRequest,
-    caseId: string,
-    patientName: string,
-    recipientEmail: string,
-): Promise<EmailSendResponse> {
-    const backendBase = getConfiguredBackendApiBaseUrl();
-    if (!backendBase) {
-        throw new ApiError(503, "تعذر إرسال إشعار البريد: خدمة الواجهة الخلفية غير متاحة حالياً.");
+function resolveRecipientEmail(inputPayload: Record<string, unknown>, caseMetadata: Record<string, unknown> | null): string {
+    const candidate = safe(
+        inputPayload.email
+        ?? inputPayload.patient_email
+        ?? caseMetadata?.email
+        ?? caseMetadata?.patient_email
+        ?? asRecord(caseMetadata?.discharge_plan)?.email
+        ?? asRecord(caseMetadata?.notifications)?.recipient_email,
+    ).toLowerCase();
+
+    if (!candidate) {
+        throw new ApiError(400, "email is required for EMAIL_NOTICE");
     }
 
-    const authHeader = extractBearerToken(request);
-    if (!authHeader) {
-        throw new ApiError(401, "Not authenticated");
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(candidate);
+    if (!valid) {
+        throw new ApiError(400, "Invalid recipient email");
     }
 
-    const endpoint = new URL("/api/emails/send", `${backendBase}/`);
-    let response: Response;
-    try {
-        response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                "accept": "application/json",
-                "authorization": authHeader,
-            },
-            body: JSON.stringify({
-                case_id: caseId,
-                to: [recipientEmail],
-                template_name: "discharge_refusal_follow_up",
-                template_vars: {
-                    case_id: caseId,
-                    patient_name: patientName,
-                },
-            }),
+    return candidate;
+}
+
+function buildEmailContent(documentType: string, caseId: string, patientName: string, recipientEmail: string): {
+    subject: string;
+    html: string;
+    text: string;
+} {
+    const commonBody = {
+        caseId,
+        patientName: patientName || "N/A",
+        recipient: recipientEmail,
+    };
+
+    if (documentType === "informed_consent") {
+        const subject = `WathiqCare | Informed Consent Notification - Case ${caseId.slice(0, 8).toUpperCase()}`;
+        const html = buildWathiqCareEmailHtml({
+            title: "Informed Consent Notification",
+            preheader: "A new informed consent acknowledgment has been initiated.",
+            bodyHtml: `<p>Informed consent acknowledgment has been initiated for case <strong>${commonBody.caseId}</strong>.</p><p>Patient: <strong>${commonBody.patientName}</strong></p><p>Recipient: <strong>${commonBody.recipient}</strong></p>`,
+            ctaUrl: `${process.env.NEXT_PUBLIC_APP_BASE_URL || "https://wathiqcare.online"}/cases/${caseId}/informed-consent`,
+            ctaText: "Open Informed Consent",
+            securityNote: "This communication is generated as part of a verified discharge workflow.",
         });
-    } catch {
-        throw new ApiError(503, "تعذر الاتصال بخدمة البريد في الواجهة الخلفية.");
+        const text = buildWathiqCareEmailText({
+            title: "Informed Consent Notification",
+            bodyLines: [
+                `Informed consent acknowledgment started for case ${commonBody.caseId}.`,
+                `Patient: ${commonBody.patientName}`,
+                `Recipient: ${commonBody.recipient}`,
+            ],
+            ctaUrl: `${process.env.NEXT_PUBLIC_APP_BASE_URL || "https://wathiqcare.online"}/cases/${caseId}/informed-consent`,
+            ctaLabel: "Open Informed Consent",
+            securityNote: "This communication is generated as part of a verified discharge workflow.",
+        });
+        return { subject, html, text };
     }
 
-    const isJson = (response.headers.get("content-type") || "").includes("application/json");
-    const responseBody = isJson
-        ? await response.json().catch(() => null)
-        : await response.text().catch(() => "");
-
-    if (!response.ok) {
-        const detail =
-            responseBody && typeof responseBody === "object" && "detail" in responseBody
-                ? String((responseBody as { detail?: unknown }).detail ?? "")
-                : typeof responseBody === "string"
-                    ? responseBody
-                    : "";
-        throw new ApiError(
-            response.status,
-            detail || `تعذر إرسال إشعار البريد الإلكتروني (${response.status})`,
-        );
+    if (documentType === "home_healthcare_agreement") {
+        const subject = `WathiqCare | Home Healthcare Agreement Notification - Case ${caseId.slice(0, 8).toUpperCase()}`;
+        const html = buildWathiqCareEmailHtml({
+            title: "Home Healthcare Agreement Notification",
+            preheader: "A home healthcare agreement acknowledgment has been initiated.",
+            bodyHtml: `<p>Home healthcare agreement acknowledgment has been initiated for case <strong>${commonBody.caseId}</strong>.</p><p>Patient: <strong>${commonBody.patientName}</strong></p><p>Recipient: <strong>${commonBody.recipient}</strong></p>`,
+            ctaUrl: `${process.env.NEXT_PUBLIC_APP_BASE_URL || "https://wathiqcare.online"}/cases/${caseId}/home-healthcare-agreement`,
+            ctaText: "Open Home Healthcare Agreement",
+            securityNote: "This communication is generated as part of a verified discharge workflow.",
+        });
+        const text = buildWathiqCareEmailText({
+            title: "Home Healthcare Agreement Notification",
+            bodyLines: [
+                `Home healthcare agreement acknowledgment started for case ${commonBody.caseId}.`,
+                `Patient: ${commonBody.patientName}`,
+                `Recipient: ${commonBody.recipient}`,
+            ],
+            ctaUrl: `${process.env.NEXT_PUBLIC_APP_BASE_URL || "https://wathiqcare.online"}/cases/${caseId}/home-healthcare-agreement`,
+            ctaLabel: "Open Home Healthcare Agreement",
+            securityNote: "This communication is generated as part of a verified discharge workflow.",
+        });
+        return { subject, html, text };
     }
 
-    return responseBody as EmailSendResponse;
+    const subject = `WathiqCare | Medical Discharge Refusal Notification - Case ${caseId.slice(0, 8).toUpperCase()}`;
+    const html = buildWathiqCareEmailHtml({
+        title: "Medical Discharge Refusal Notification",
+        preheader: "A discharge refusal acknowledgment has been initiated.",
+        bodyHtml: `<p>Discharge refusal acknowledgment has been initiated for case <strong>${commonBody.caseId}</strong>.</p><p>Patient: <strong>${commonBody.patientName}</strong></p><p>Recipient: <strong>${commonBody.recipient}</strong></p>`,
+        ctaUrl: `${process.env.NEXT_PUBLIC_APP_BASE_URL || "https://wathiqcare.online"}/cases/${caseId}/refusal-form`,
+        ctaText: "Open Medical Discharge Refusal Form",
+        securityNote: "This communication is generated as part of a verified discharge workflow.",
+    });
+    const text = buildWathiqCareEmailText({
+        title: "Medical Discharge Refusal Notification",
+        bodyLines: [
+            `Discharge refusal acknowledgment started for case ${commonBody.caseId}.`,
+            `Patient: ${commonBody.patientName}`,
+            `Recipient: ${commonBody.recipient}`,
+        ],
+        ctaUrl: `${process.env.NEXT_PUBLIC_APP_BASE_URL || "https://wathiqcare.online"}/cases/${caseId}/refusal-form`,
+        ctaLabel: "Open Medical Discharge Refusal Form",
+        securityNote: "This communication is generated as part of a verified discharge workflow.",
+    });
+    return { subject, html, text };
 }
 
 async function sendEmailNotice(
-    request: NextRequest,
+    _request: NextRequest,
     caseId: string,
     patientName: string,
     recipientEmail: string,
+    documentType: string,
 ): Promise<EmailSendResponse> {
-    return sendEmailNoticeViaBackend(request, caseId, patientName, recipientEmail);
+    const startedAt = nowIso();
+    const emailContent = buildEmailContent(documentType, caseId, patientName, recipientEmail);
+    console.info("EMAIL_SEND_STARTED", {
+        caseId,
+        documentType,
+        to: recipientEmail,
+        subject: emailContent.subject,
+        startedAt,
+    });
+
+    try {
+        const diagnostics = await sendEmailWithDiagnostics({
+            to: recipientEmail,
+            subject: emailContent.subject,
+            html: emailContent.html,
+            text: emailContent.text,
+        });
+
+        console.info("EMAIL_SEND_SUCCESS", {
+            caseId,
+            documentType,
+            to: recipientEmail,
+            provider: diagnostics.provider,
+            sendStatus: diagnostics.sendStatus ?? null,
+            completedAt: nowIso(),
+        });
+
+        return {
+            log_id: diagnostics.messageId || crypto.randomUUID(),
+            status: "sent",
+            provider: diagnostics.provider,
+            subject: emailContent.subject,
+            recipients: [recipientEmail],
+            cc: [],
+            sent_at: nowIso(),
+        };
+    } catch (error) {
+        console.error("EMAIL_SEND_FAILURE", {
+            caseId,
+            documentType,
+            to: recipientEmail,
+            error: error instanceof Error ? error.message : String(error),
+            failedAt: nowIso(),
+        });
+        throw new ApiError(502, "فشل إرسال إشعار البريد الإلكتروني. يرجى المحاولة مرة أخرى.");
+    }
 }
 
 // ── route ──────────────────────────────────────────────────────────────────
@@ -175,6 +265,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
         if (!caseRecord) throw new ApiError(404, "Case not found");
         if (caseRecord.tenantId !== auth.tenant_id) throw new ApiError(403, "Tenant access denied");
+        const caseMetadata = asRecord(caseRecord.metadata);
 
         // Build context from case record + payload
         const patientName = safe(inputPayload.patient_name ?? caseRecord.patientName);
@@ -216,10 +307,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 (sessionState.provider_result as Record<string, unknown>).challenge_id = crypto.randomUUID();
             }
         } else if (method === "EMAIL_NOTICE") {
-            const email = safe(inputPayload.email ?? inputPayload.patient_email);
-            if (!email) throw new ApiError(400, "email is required for EMAIL_NOTICE");
+            const email = resolveRecipientEmail(inputPayload, caseMetadata);
 
-            const emailResult = await sendEmailNotice(request, caseId, patientName, email);
+            const emailResult = await sendEmailNotice(request, caseId, patientName, email, templateKey);
             if (emailResult.status !== "sent") {
                 throw new ApiError(502, "فشل إرسال إشعار البريد الإلكتروني. يرجى المحاولة مرة أخرى.");
             }
