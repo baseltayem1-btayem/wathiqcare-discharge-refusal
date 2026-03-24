@@ -863,6 +863,7 @@ model DepartmentSlaConfig {
   @@unique([tenantId, department, stepCode])
   @@index([tenantId, department, isActive])
   @@map("department_sla_configs")
+}
 
 model DashboardAlert {
   id               String    @id @default(uuid())
@@ -951,5 +952,4 @@ model TenantNotificationSetting {
   tenant  Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("tenant_notification_settings")
-}
 }

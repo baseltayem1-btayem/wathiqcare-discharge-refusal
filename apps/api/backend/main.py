@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,6 +33,11 @@ from backend.services.integration_monitoring_service import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Global state for startup tracking - used by healthcheck endpoints
+_startup_complete = False
+_startup_error = None
+_startup_timestamp = 0
 
 app = FastAPI(title="WathiqCare Core API", version="0.1.0")
 
@@ -88,17 +94,52 @@ def root():
 
 @app.get("/health")
 def health():
+    """Liveness probe: returns OK if app is running (minimal dependencies)."""
     return {"status": "ok"}
+
+
+@app.get("/ready")
+def readiness():
+    """Readiness probe: returns OK only if startup is complete and no errors occurred."""
+    global _startup_complete, _startup_error
+    if not _startup_complete:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "starting", "message": "App initializing"}
+        )
+    if _startup_error:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "message": str(_startup_error)}
+        )
+    return {"status": "ready", "started_at": _startup_timestamp}
 
 
 @app.on_event("startup")
 def _startup_integration_scheduler() -> None:
-     try:
-          init_database()
-          logger.info("Database tables initialized successfully")
-     except Exception as e:
-          logger.error(f"Database initialization failed: {e}")
-    start_integration_scheduler()
+    global _startup_complete, _startup_error, _startup_timestamp
+    _startup_timestamp = time.time()
+    
+    try:
+        logger.info("Database initialization starting")
+        init_database()
+        logger.info("Database tables initialized successfully")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}", exc_info=True)
+        _startup_error = str(e)
+        return
+    
+    try:
+        logger.info("Integration scheduler starting")
+        start_integration_scheduler()
+        logger.info("Integration scheduler started successfully")
+    except Exception as e:
+        logger.error(f"Integration scheduler startup failed: {e}", exc_info=True)
+        _startup_error = str(e)
+        return
+    
+    _startup_complete = True
+    logger.info("Application startup completed successfully")
 
 
 @app.on_event("shutdown")
