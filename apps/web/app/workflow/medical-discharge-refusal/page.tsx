@@ -74,14 +74,22 @@ export default function MedicalDischargeRefusalDashboardPage() {
         title={t("mdrw.dashboard.title")}
         subtitle={t("mdrw.dashboard.subtitle")}
         actions={
-          <button
-            type="button"
-            onClick={() => void loadAll()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
-          >
-            <RefreshCw className="h-4 w-4" />
-            {t("common.refresh")}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/workflow/medical-discharge-refusal/create-case"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Start New Legal Case
+            </Link>
+            <button
+              type="button"
+              onClick={() => void loadAll()}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {t("common.refresh")}
+            </button>
+          </div>
         }
       >
         {error ? (
@@ -152,6 +160,10 @@ export default function MedicalDischargeRefusalDashboardPage() {
           <p className="inline-flex items-center gap-1.5 font-medium">
             <AlertTriangle className="h-4 w-4" />
             {t("mdrw.dashboard.escalationHint")}
+          </p>
+          <p className="mt-2 text-xs">
+            Seven-screen legal path: dashboard, create case, clinical decision, mandatory risk disclosure, patient interaction,
+            refusal confirmation, final review.
           </p>
         </section>
       </AppShell>

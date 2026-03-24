@@ -5,6 +5,9 @@
     "apps/web",
     "packages/*"
   ],
+  "overrides": {
+    "effect": "^3.20.0"
+  },
   "scripts": {
     "dev": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspace=apps/web",

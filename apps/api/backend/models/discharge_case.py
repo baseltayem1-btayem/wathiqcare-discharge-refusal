@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey
+from sqlalchemy import Boolean, Column, String, DateTime, Text, ForeignKey, text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -29,6 +29,28 @@ class DischargeCase(Base):
 
     status = Column(String, default="pending")
     refusal_reason = Column(Text)
+
+    # Structured medico-legal payloads captured across the legal artifact screens.
+    clinical_payload_json = Column(Text, nullable=True)
+    legal_payload_json = Column(Text, nullable=True)
+    tenant_header_json = Column(Text, nullable=True)
+    legal_footer_text = Column(Text, nullable=True)
+
+    capacity_status = Column(String, nullable=True)
+    capacity_assessed_by = Column(String, nullable=True)
+    capacity_validated_at = Column(DateTime, nullable=True)
+    risk_disclosure_completed_at = Column(DateTime, nullable=True)
+
+    patient_signature_hash = Column(String, nullable=True)
+    physician_signature_hash = Column(String, nullable=True)
+    witness_signature_hash = Column(String, nullable=True)
+    guardian_signature_hash = Column(String, nullable=True)
+    signature_context_json = Column(Text, nullable=True)
+
+    artifact_version = Column(String, nullable=False, default="1", server_default=text("'1'"))
+    finalized_hash = Column(String, nullable=True)
+    finalized_at = Column(DateTime, nullable=True)
+    immutable_lock = Column(Boolean, nullable=False, default=False, server_default=text("0"))
 
     signer_name = Column(String, nullable=True)
     signer_role = Column(String, nullable=True)

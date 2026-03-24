@@ -140,13 +140,14 @@ def seed_db() -> Generator:
             text(
                 "INSERT INTO discharge_cases"
                 " (id, tenant_id, patient_id, created_by, status, patient_name, mrn,"
-                "  department, attending_physician_name)"
-                " VALUES (:id, :tid, :pid, :uid, :status, :pname, :mrn, :dept, :dr)"
+                "  department, attending_physician_name, artifact_version, immutable_lock)"
+                " VALUES (:id, :tid, :pid, :uid, :status, :pname, :mrn, :dept, :dr, :artifact_version, :immutable_lock)"
             ),
             {
                 "id": CASE_ID, "tid": TENANT_ID, "pid": PATIENT_ID, "uid": USER_ID,
                 "status": "pending", "pname": "Ahmed Al-Qahtani",
                 "mrn": "MRN-SDL-001", "dept": "Cardiology", "dr": "Dr. Nasser",
+                "artifact_version": "1", "immutable_lock": False,
             },
         )
         db.commit()

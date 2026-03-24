@@ -1,5 +1,5 @@
 from pathlib import Path
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 from fastapi.responses import Response
@@ -40,6 +40,20 @@ from backend.legal.escalation_case_service import (
     list_escalation_cases,
     resolve_escalation_case,
     update_escalation_priority,
+)
+from backend.legal.legal_artifact_service import (
+    create_legal_artifact_case,
+    finalize_legal_artifact,
+    generate_legal_artifact_pdf,
+    get_legal_artifact_status,
+    record_legal_signature,
+    upsert_legal_artifact_screen,
+)
+from backend.schemas.legal_artifact import (
+    LegalArtifactCreateCaseRequest,
+    LegalArtifactFinalizeRequest,
+    LegalArtifactSignatureRequest,
+    LegalArtifactUpsertRequest,
 )
 
 router = APIRouter(prefix="/api/discharge", tags=["Discharge"])
@@ -143,6 +157,104 @@ def get_case(case_id: str, current_user=Depends(require_roles(*ROLE_WORKFLOW_VIE
     if not result:
         raise HTTPException(status_code=404, detail="الحالة غير موجودة")
     return result
+
+
+@router.post("/cases/legal-artifact/create")
+def create_legal_artifact_case_endpoint(
+    payload: LegalArtifactCreateCaseRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        return create_legal_artifact_case(
+            tenant_id=current_user["tenant_id"],
+            actor_user_id=current_user["id"],
+            payload=payload.model_dump(),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/cases/{case_id}/legal-artifact")
+def get_legal_artifact_case_status(
+    case_id: str,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
+):
+    try:
+        return get_legal_artifact_status(tenant_id=current_user["tenant_id"], case_id=case_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.put("/cases/{case_id}/legal-artifact")
+def upsert_legal_artifact_case_screen(
+    case_id: str,
+    payload: LegalArtifactUpsertRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        return upsert_legal_artifact_screen(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            screen=payload.screen,
+            payload=payload.payload,
+            actor_user_id=current_user["id"],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal-artifact/sign")
+def sign_legal_artifact_case(
+    case_id: str,
+    payload: LegalArtifactSignatureRequest,
+    request: Request,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        client_ip = payload.ip_address or (request.client.host if request.client else "unknown")
+        return record_legal_signature(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            role=payload.role,
+            signature_value=payload.signature_value,
+            signer_name=payload.signer_name,
+            signer_role=payload.signer_role,
+            ip_address=client_ip,
+            actor_user_id=current_user["id"],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal-artifact/finalize")
+def finalize_legal_artifact_case(
+    case_id: str,
+    payload: LegalArtifactFinalizeRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        return finalize_legal_artifact(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+            actor_user_id=current_user["id"],
+            confirm_all_sections_complete=payload.confirm_all_sections_complete,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal-artifact/pdf")
+def generate_legal_artifact_case_pdf(
+    case_id: str,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
+):
+    try:
+        return generate_legal_artifact_pdf(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/cases/{case_id}/workflow")

@@ -57,20 +57,26 @@ export default function MedicalDischargeRefusalCaseWorkflowPage() {
         </section>
 
         <section className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/initial-communication`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
-            <p className="text-sm font-semibold text-slate-900">{t("mdrw.screens.initialCommunication")}</p>
+          <Link href="/workflow/medical-discharge-refusal" className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
+            <p className="text-sm font-semibold text-slate-900">1) Dashboard</p>
           </Link>
-          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/social-services`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
-            <p className="text-sm font-semibold text-slate-900">{t("mdrw.screens.socialServices")}</p>
+          <Link href="/workflow/medical-discharge-refusal/create-case" className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
+            <p className="text-sm font-semibold text-slate-900">2) Create Case</p>
           </Link>
-          <Link href={`/cases/${caseId}/refusal-form`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
-            <p className="text-sm font-semibold text-slate-900">{t("workflow.stage.refusal_form")}</p>
+          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/clinical-decision`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
+            <p className="text-sm font-semibold text-slate-900">3) Clinical Decision</p>
           </Link>
-          <Link href={`/cases/${caseId}/financial-notice`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
-            <p className="text-sm font-semibold text-slate-900">{t("workflow.stage.official_notification")}</p>
+          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/risk-disclosure`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
+            <p className="text-sm font-semibold text-slate-900">4) Mandatory Risk Disclosure</p>
           </Link>
-          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/escalation-review`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
-            <p className="text-sm font-semibold text-slate-900">{t("workflow.stage.escalation")}</p>
+          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/patient-interaction`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
+            <p className="text-sm font-semibold text-slate-900">5) Patient Interaction (Tablet Bilingual)</p>
+          </Link>
+          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/refusal-confirmation`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
+            <p className="text-sm font-semibold text-slate-900">6) Refusal Confirmation + Signatures</p>
+          </Link>
+          <Link href={`/workflow/medical-discharge-refusal/case/${caseId}/final-review`} className="rounded-2xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
+            <p className="text-sm font-semibold text-slate-900">7) Final Review</p>
           </Link>
         </section>
 
@@ -86,7 +92,7 @@ export default function MedicalDischargeRefusalCaseWorkflowPage() {
             type="button"
             className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
             onClick={() => {
-              window.location.href = `/workflow/medical-discharge-refusal/case/${caseId}/initial-communication`;
+              window.location.href = `/workflow/medical-discharge-refusal/case/${caseId}/clinical-decision`;
             }}
           >
             <PlayCircle className="h-4 w-4" />
