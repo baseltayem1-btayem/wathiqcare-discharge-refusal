@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import WorkflowDropdownField from "@/components/cases/WorkflowDropdownField";
-import { CASE_WORKFLOW_STEPS } from "@/components/cases/workflowTreeConfig";
+import { buildWorkflowSteps } from "@/components/cases/workflowTreeConfig";
 import WorkflowStepCard from "@/components/cases/WorkflowStepCard";
 import Modal from "@/components/ui/Modal";
 import {
@@ -11,6 +11,7 @@ import {
   mergeWorkflowSelectionState,
 } from "@/components/cases/workflowTreeState";
 import type { WorkflowSelectionState } from "@/components/cases/workflowTreeTypes";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type CaseWorkflowTreeProps = {
   caseId: string;
@@ -41,6 +42,8 @@ function loadSelectionState(caseId: string): WorkflowSelectionState {
 }
 
 export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
+  const { t } = useI18n();
+  const CASE_WORKFLOW_STEPS = useMemo(() => buildWorkflowSteps(t), [t]);
   const [selectionState, setSelectionState] = useState<WorkflowSelectionState>(() =>
     loadSelectionState(caseId),
   );
@@ -84,7 +87,7 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
     }
 
     window.localStorage.setItem(storageKey(caseId), JSON.stringify(selectionState));
-    setSaveMessage("تم حفظ اختيارات سير العمل محليًا.");
+    setSaveMessage(t("workflowTree.savedLocally"));
     window.setTimeout(() => setSaveMessage(""), 2000);
   }
 
@@ -132,15 +135,16 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
     <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">شجرة سير عمل الحالة</h2>
-          <p className="text-sm text-slate-600">
-            سير عمل منظم بالقوائم المنسدلة للتعامل مع حالات رفض الخروج.
-          </p>
+          <h2 className="text-base font-semibold text-slate-900">{t("workflowTree.title")}</h2>
+          <p className="text-sm text-slate-600">{t("workflowTree.subtitle")}</p>
         </div>
 
         <div className="text-sm text-slate-600">
           <span className="rounded-full bg-white px-2.5 py-1 font-medium text-slate-700">
-            {progressSummary.completed}/{progressSummary.total} خطوة مكتملة
+            {t("workflowTree.stepsCompleted", {
+              completed: progressSummary.completed,
+              total: progressSummary.total,
+            })}
           </span>
         </div>
       </div>
@@ -173,23 +177,25 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
         </div>
 
         <aside className="rounded-2xl border border-slate-200 bg-white p-4">
-          <h3 className="text-sm font-semibold text-slate-900">حالة خطة الخروج</h3>
-          <p className="mt-1 text-xs text-slate-600">المكتملة مقابل المتبقية بالتسلسل الإجباري.</p>
+          <h3 className="text-sm font-semibold text-slate-900">{t("workflowTree.dischargePlanStatus")}</h3>
+          <p className="mt-1 text-xs text-slate-600">{t("workflowTree.sequentialNote")}</p>
 
           <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
-            <p className="text-xs text-indigo-700">الخطوة الحالية</p>
+            <p className="text-xs text-indigo-700">{t("workflowTree.currentStep")}</p>
             <p className="mt-1 text-sm font-semibold text-indigo-900">
               {progressSummary.current
                 ? CASE_WORKFLOW_STEPS[progressSummary.current.index]?.title
-                : "تم إكمال جميع الخطوات"}
+                : t("workflowTree.allStepsCompleted")}
             </p>
           </div>
 
           <div className="mt-3">
-            <p className="text-xs font-semibold text-emerald-700">خطوات منجزة ({completedSteps.length})</p>
+            <p className="text-xs font-semibold text-emerald-700">
+              {t("workflowTree.completedSteps", { count: completedSteps.length })}
+            </p>
             <ul className="mt-2 space-y-1.5 text-xs text-slate-700">
               {completedSteps.length === 0 ? (
-                <li className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5">لا توجد خطوات منجزة بعد.</li>
+                <li className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5">{t("workflowTree.noCompletedSteps")}</li>
               ) : (
                 completedSteps.map((step) => (
                   <li key={step.stepId} className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1.5">
@@ -201,10 +207,12 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
           </div>
 
           <div className="mt-3">
-            <p className="text-xs font-semibold text-amber-700">خطوات متبقية ({progressSummary.remaining})</p>
+            <p className="text-xs font-semibold text-amber-700">
+              {t("workflowTree.remainingSteps", { count: progressSummary.remaining })}
+            </p>
             <ul className="mt-2 space-y-1.5 text-xs text-slate-700">
               {remainingSteps.length === 0 ? (
-                <li className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5">لا توجد خطوات متبقية.</li>
+                <li className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5">{t("workflowTree.noRemainingSteps")}</li>
               ) : (
                 remainingSteps.map((step) => (
                   <li key={step.stepId} className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5">
@@ -223,7 +231,7 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
           onClick={handleSave}
           className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
         >
-          حفظ اختيارات سير العمل
+          {t("workflowTree.saveSelections")}
         </button>
         {saveMessage ? <span className="text-sm text-emerald-700">{saveMessage}</span> : null}
       </div>
@@ -231,7 +239,12 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
       <Modal
         isOpen={Boolean(activeStep)}
         onClose={handleCloseModal}
-        title={activeStep ? `الخطوة ${activeStepMeta ? activeStepMeta.index + 1 : ""}: ${activeStep.title}` : "الخطوة"}
+        title={activeStep
+          ? t("workflowTree.stepModalTitle", {
+            index: activeStepMeta ? activeStepMeta.index + 1 : "",
+            title: activeStep.title,
+          })
+          : t("workflowTree.currentStep")}
         size="md"
         footer={
           <div className="flex flex-wrap justify-end gap-2">
@@ -240,14 +253,14 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
               onClick={handleCloseModal}
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
-              إغلاق
+              {t("workflowTree.close")}
             </button>
             <button
               type="button"
               onClick={handleSaveAndNext}
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
             >
-              حفظ ومتابعة
+              {t("workflowTree.saveAndNext")}
             </button>
           </div>
         }

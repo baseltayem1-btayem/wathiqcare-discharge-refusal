@@ -1,196 +1,202 @@
+/**
+ * CANONICAL WORKFLOW STEPS — Single source of truth.
+ *
+ * Step IDs are intentionally identical to the backend WORKFLOW_STAGES constant
+ * (apps/api/backend/core/discharge_workflow_service.py) so that backend state
+ * and frontend tree stay in sync.
+ *
+ * Field labels reference i18n keys under "workflowTree.field.*" — call
+ * buildWorkflowSteps(t) to get a translated array at render time.
+ */
 import type { WorkflowStep } from "@/components/cases/workflowTreeTypes";
 
-const YES_NO = [
-  { label: "نعم", value: "yes" },
-  { label: "لا", value: "no" },
-];
+type TFn = (key: string) => string;
 
-export const CASE_WORKFLOW_STEPS: WorkflowStep[] = [
-  {
-    id: "case_created",
-    title: "إنشاء الحالة",
-    fields: [
-      {
-        id: "intake_status",
-        label: "حالة استقبال الحالة",
-        options: [
-          { label: "تم الإنشاء", value: "created" },
-          { label: "قيد الانتظار", value: "pending" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "risk_identified",
-    title: "تحديد المخاطر",
-    fields: [
-      {
-        id: "risk_level",
-        label: "مستوى الخطورة",
-        options: [
-          { label: "منخفض", value: "low" },
-          { label: "متوسط", value: "moderate" },
-          { label: "مرتفع", value: "high" },
-          { label: "حرج", value: "critical" },
-        ],
-      },
-      {
-        id: "barrier_type",
-        label: "نوع العائق",
-        options: [
-          { label: "المريض يرفض الخروج", value: "patient_refuses_discharge" },
-          { label: "الأسرة ترفض الخطة", value: "family_refuses_plan" },
-          { label: "لا توجد جهة مستقبِلة", value: "no_accepting_facility" },
-          { label: "لا توجد جهة تغطية مالية", value: "no_payer" },
-          { label: "عدم أهلية / عدم وجود ممثل نظامي", value: "no_capacity_or_no_surrogate" },
-          { label: "مخاوف سلوكية / تتعلق بالسلامة", value: "behavioral_or_safety_concern" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "discharge_planned",
-    title: "التخطيط للخروج",
-    fields: [
-      {
-        id: "discharge_destination",
-        label: "جهة الخروج",
-        options: [
-          { label: "المنزل", value: "home" },
-          { label: "المنزل مع خدمات", value: "home_with_services" },
-          { label: "مرفق تمريض متخصص", value: "skilled_nursing_facility" },
-          { label: "رعاية حادة طويلة الأجل", value: "long_term_acute_care" },
-          { label: "مرفق تأهيل", value: "rehabilitation_facility" },
-          { label: "إيواء اجتماعي", value: "social_placement" },
-          { label: "أخرى", value: "other" },
-        ],
-      },
-      {
-        id: "medical_stability",
-        label: "الاستقرار الطبي",
-        options: [
-          { label: "مستقر للخروج", value: "stable_for_discharge" },
-          { label: "بانتظار المراجعة", value: "pending_review" },
-          { label: "غير مستقر بعد", value: "not_yet_stable" },
-        ],
-      },
-      {
-        id: "patient_notified_discharge_decision",
-        label: "إبلاغ المريض / ولي الأمر بقرار الخروج الطبي",
-        options: YES_NO,
-      },
-      {
-        id: "patient_ack_homecare_provision",
-        label: "إقرار المريض / ولي الأمر بتوفير الرعاية الصحية المنزلية",
-        options: YES_NO,
-      },
-    ],
-  },
-  {
-    id: "patient_refusal_recorded",
-    title: "تسجيل رفض المريض",
-    fields: [
-      {
-        id: "refusal_type",
-        label: "نوع الرفض",
-        options: [
-          { label: "رفض شفهي", value: "verbal_refusal" },
-          { label: "رفض خطي", value: "written_refusal" },
-          { label: "رفض من الأسرة", value: "family_refusal" },
-          { label: "رفض من الممثل النظامي", value: "surrogate_refusal" },
-        ],
-      },
-      {
-        id: "family_present",
-        label: "حضور الأسرة",
-        options: YES_NO,
-      },
-    ],
-  },
-  {
-    id: "social_review",
-    title: "المراجعة الاجتماعية",
-    fields: [
-      {
-        id: "social_work_status",
-        label: "حالة الخدمة الاجتماعية",
-        options: [
-          { label: "بانتظار الإجراء", value: "pending" },
-          { label: "قيد التنفيذ", value: "in_progress" },
-          { label: "مكتمل", value: "completed" },
-          { label: "غير مطلوب", value: "not_required" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "administrative_escalation",
-    title: "التصعيد الإداري",
-    fields: [
-      {
-        id: "escalation_level",
-        label: "مستوى التصعيد",
-        options: [
-          { label: "المستوى 1", value: "level_1" },
-          { label: "المستوى 2", value: "level_2" },
-          { label: "المستوى 3", value: "level_3" },
-        ],
-      },
-      {
-        id: "administration_notified",
-        label: "تم إشعار الإدارة",
-        options: YES_NO,
-      },
-    ],
-  },
-  {
-    id: "financial_notice",
-    title: "الإشعار المالي",
-    fields: [
-      {
-        id: "financial_notice_status",
-        label: "حالة الإشعار المالي",
-        options: [
-          { label: "غير مُصدر", value: "not_issued" },
-          { label: "مسودة", value: "drafted" },
-          { label: "تم الإصدار", value: "issued" },
-          { label: "تم الإقرار", value: "acknowledged" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "legal_review",
-    title: "المراجعة القانونية",
-    fields: [
-      {
-        id: "legal_status",
-        label: "الحالة القانونية",
-        options: [
-          { label: "لم يبدأ", value: "not_started" },
-          { label: "قيد المراجعة", value: "under_review" },
-          { label: "تم إعداد إشعار قانوني", value: "legal_notice_prepared" },
-          { label: "تم النظر في إجراء خارجي", value: "external_action_considered" },
-          { label: "أُغلقت من الشؤون القانونية", value: "closed_by_legal" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "case_closed",
-    title: "إغلاق الحالة",
-    fields: [
-      {
-        id: "closure_outcome",
-        label: "نتيجة الإغلاق",
-        options: [
-          { label: "تم الخروج", value: "discharged" },
-          { label: "غادر خلافًا للتوصية الطبية", value: "left_against_advice" },
-          { label: "خروج إداري", value: "administrative_discharge" },
-          { label: "تم التحويل", value: "transferred" },
-          { label: "تم إلغاء الحالة", value: "case_cancelled" },
-        ],
-      },
-    ],
-  },
-];
+/** Bilingual option builder — (en, ar) pair, resolved at render time. */
+function opt(labelKey: string, value: string, t: TFn): { label: string; value: string } {
+  return { label: t(labelKey), value };
+}
+
+function yesNo(t: TFn) {
+  return [opt("workflowTree.option.yes", "yes", t), opt("workflowTree.option.no", "no", t)];
+}
+
+/**
+ * Returns the workflow steps array with translated labels.
+ * Step IDs match backend WORKFLOW_STAGES exactly.
+ */
+export function buildWorkflowSteps(t: TFn): WorkflowStep[] {
+  return [
+    {
+      id: "medical_discharge_decision",
+      title: t("workflow.stage.medical_discharge_decision"),
+      fields: [
+        {
+          id: "decision_status",
+          label: t("workflowTree.field.decisionStatus"),
+          options: [
+            opt("workflowTree.option.decisionIssued", "decision_issued", t),
+            opt("workflowTree.option.pendingPhysician", "pending_physician", t),
+          ],
+        },
+        {
+          id: "medical_stability",
+          label: t("workflowTree.field.medicalStability"),
+          options: [
+            opt("workflowTree.option.stableForDischarge", "stable_for_discharge", t),
+            opt("workflowTree.option.pendingReview", "pending_review", t),
+            opt("workflowTree.option.notYetStable", "not_yet_stable", t),
+          ],
+        },
+      ],
+    },
+    {
+      id: "initial_communication",
+      title: t("workflow.stage.initial_communication"),
+      fields: [
+        {
+          id: "patient_notified",
+          label: t("workflowTree.field.patientNotified"),
+          options: yesNo(t),
+        },
+        {
+          id: "barrier_type",
+          label: t("workflowTree.field.barrierType"),
+          options: [
+            opt("workflowTree.option.patientRefuses", "patient_refuses_discharge", t),
+            opt("workflowTree.option.familyRefuses", "family_refuses_plan", t),
+            opt("workflowTree.option.noAcceptingFacility", "no_accepting_facility", t),
+            opt("workflowTree.option.noPayer", "no_payer", t),
+            opt("workflowTree.option.noCapacity", "no_capacity_or_no_surrogate", t),
+            opt("workflowTree.option.behavioralConcern", "behavioral_or_safety_concern", t),
+          ],
+        },
+        {
+          id: "refusal_type",
+          label: t("workflowTree.field.refusalType"),
+          options: [
+            opt("workflowTree.option.verbalRefusal", "verbal_refusal", t),
+            opt("workflowTree.option.writtenRefusal", "written_refusal", t),
+            opt("workflowTree.option.familyRefusal", "family_refusal", t),
+            opt("workflowTree.option.surrogateRefusal", "surrogate_refusal", t),
+          ],
+        },
+      ],
+    },
+    {
+      id: "support_and_intervention",
+      title: t("workflow.stage.support_and_intervention"),
+      fields: [
+        {
+          id: "social_work_status",
+          label: t("workflowTree.field.socialWorkStatus"),
+          options: [
+            opt("workflowTree.option.pending", "pending", t),
+            opt("workflowTree.option.inProgress", "in_progress", t),
+            opt("workflowTree.option.completed", "completed", t),
+            opt("workflowTree.option.notRequired", "not_required", t),
+          ],
+        },
+        {
+          id: "discharge_destination",
+          label: t("workflowTree.field.dischargeDestination"),
+          options: [
+            opt("workflowTree.option.home", "home", t),
+            opt("workflowTree.option.homeWithServices", "home_with_services", t),
+            opt("workflowTree.option.skilledNursing", "skilled_nursing_facility", t),
+            opt("workflowTree.option.rehabilitation", "rehabilitation_facility", t),
+            opt("workflowTree.option.other", "other", t),
+          ],
+        },
+      ],
+    },
+    {
+      id: "refusal_form",
+      title: t("workflow.stage.refusal_form"),
+      fields: [
+        {
+          id: "form_status",
+          label: t("workflowTree.field.formStatus"),
+          options: [
+            opt("workflowTree.option.notIssued", "not_issued", t),
+            opt("workflowTree.option.drafted", "drafted", t),
+            opt("workflowTree.option.pendingSignature", "pending_signature", t),
+            opt("workflowTree.option.signed", "signed", t),
+            opt("workflowTree.option.witnessedRefusal", "witnessed_refusal", t),
+          ],
+        },
+        {
+          id: "family_present",
+          label: t("workflowTree.field.familyPresent"),
+          options: yesNo(t),
+        },
+      ],
+    },
+    {
+      id: "official_notification",
+      title: t("workflow.stage.official_notification"),
+      fields: [
+        {
+          id: "financial_notice_status",
+          label: t("workflowTree.field.financialNoticeStatus"),
+          options: [
+            opt("workflowTree.option.notIssued", "not_issued", t),
+            opt("workflowTree.option.drafted", "drafted", t),
+            opt("workflowTree.option.issued", "issued", t),
+            opt("workflowTree.option.acknowledged", "acknowledged", t),
+          ],
+        },
+        {
+          id: "administration_notified",
+          label: t("workflowTree.field.administrationNotified"),
+          options: yesNo(t),
+        },
+      ],
+    },
+    {
+      id: "escalation",
+      title: t("workflow.stage.escalation"),
+      fields: [
+        {
+          id: "escalation_level",
+          label: t("workflowTree.field.escalationLevel"),
+          options: [
+            opt("workflowTree.option.level1", "level_1", t),
+            opt("workflowTree.option.level2", "level_2", t),
+            opt("workflowTree.option.level3", "level_3", t),
+          ],
+        },
+        {
+          id: "legal_status",
+          label: t("workflowTree.field.legalStatus"),
+          options: [
+            opt("workflowTree.option.notStarted", "not_started", t),
+            opt("workflowTree.option.underReview", "under_review", t),
+            opt("workflowTree.option.legalNoticePrepared", "legal_notice_prepared", t),
+            opt("workflowTree.option.closedByLegal", "closed_by_legal", t),
+          ],
+        },
+      ],
+    },
+    {
+      id: "closed",
+      title: t("workflow.stage.closed"),
+      fields: [
+        {
+          id: "closure_outcome",
+          label: t("workflowTree.field.closureOutcome"),
+          options: [
+            opt("workflowTree.option.discharged", "discharged", t),
+            opt("workflowTree.option.leftAgainstAdvice", "left_against_advice", t),
+            opt("workflowTree.option.administrativeDischarge", "administrative_discharge", t),
+            opt("workflowTree.option.transferred", "transferred", t),
+            opt("workflowTree.option.caseCancelled", "case_cancelled", t),
+          ],
+        },
+      ],
+    },
+  ];
+}
+
+/** Static fallback used where translation context is not available (e.g. tests). */
+export const CASE_WORKFLOW_STEPS: WorkflowStep[] = buildWorkflowSteps((key: string) => key);

@@ -236,6 +236,11 @@ export default function InformedConsentPage() {
               <div className="mt-4 grid gap-2">
                 <label className="text-sm text-slate-700">{t("signaturePage.tabletLabel")}</label>
                 <TabletSignaturePad value={signaturePayload} onChange={setSignaturePayload} />
+                {!signaturePayload ? (
+                  <p className="text-xs font-medium text-amber-700" role="alert">
+                    {t("signaturePage.signatureRequired")}
+                  </p>
+                ) : null}
                 <label className="text-sm text-slate-700">{t("signaturePage.witnessLabel")}</label>
                 <input value={witnessName} onChange={(e) => setWitnessName(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
               </div>
@@ -243,7 +248,13 @@ export default function InformedConsentPage() {
 
             <div className="mt-4 flex gap-2">
               <button onClick={startFlow} className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white">{t("signaturePage.startBtn")}</button>
-              <button onClick={verifyFlow} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">{t("signaturePage.confirmBtn")}</button>
+              <button
+                onClick={verifyFlow}
+                disabled={method === "TABLET_SIGNATURE" && !signaturePayload}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t("signaturePage.confirmBtn")}
+              </button>
             </div>
 
             <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">

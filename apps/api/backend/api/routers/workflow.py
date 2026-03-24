@@ -33,8 +33,40 @@ from backend.services.task_service import TaskService
 from backend.services.workflow_engine import WorkflowEngineService
 from backend.workflow.constants import StageCode
 
+from backend.core.discharge_workflow_service import WORKFLOW_STAGES, STAGE_LABELS
+from backend.workflow.workflow_registry import WorkflowRegistry, WorkflowState
+
 router = APIRouter(prefix="/api/workflow", tags=["Workflow Engine"])
 logger = get_logger(__name__)
+
+_registry = WorkflowRegistry()
+
+
+@router.get("/config", tags=["Workflow Engine"])
+def get_workflow_config():
+    """
+    Return canonical workflow configuration.
+
+    This is the single source of truth consumed by the frontend sidebar and
+    workflow tree to ensure UI stages always match backend stage codes.
+    """
+    stages = [
+        {
+            "id": stage_id,
+            "label_en": STAGE_LABELS.get(stage_id, stage_id),
+            "order": idx,
+        }
+        for idx, stage_id in enumerate(WORKFLOW_STAGES)
+    ]
+    transitions = {
+        state.value: [s.value for s in _registry.next_states(state)]
+        for state in WorkflowState
+    }
+    return {
+        "stages": stages,
+        "transitions": transitions,
+        "initial_state": _registry.initial_state.value,
+    }
 
 
 def _db_session():
