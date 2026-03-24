@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 import backend.models  # noqa: F401
+from backend.init_db import init_database
 from backend.api.routers.auth import router as auth_router
 from backend.api.routers.discharge import router as discharge_router
 from backend.api.routers.discharge_refusal_workflow import router as discharge_refusal_workflow_router
@@ -92,6 +93,11 @@ def health():
 
 @app.on_event("startup")
 def _startup_integration_scheduler() -> None:
+     try:
+          init_database()
+          logger.info("Database tables initialized successfully")
+     except Exception as e:
+          logger.error(f"Database initialization failed: {e}")
     start_integration_scheduler()
 
 

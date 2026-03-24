@@ -8,6 +8,16 @@ from backend.models.discharge_workflow import DischargeRefusalWorkflow
 from backend.models.workflow_document import DischargeWorkflowDocument
 from backend.models.workflow_case_documentation import DischargeWorkflowCaseDocumentation
 
-Base.metadata.create_all(bind=engine)
+def init_database():
+	"""Create all database tables (idempotent)."""
+	try:
+		Base.metadata.create_all(bind=engine)
+		print("✓ Database tables initialized successfully")
+		return True
+	except Exception as e:
+		print(f"✗ Database initialization error: {e}")
+		raise
 
-print("Database tables created successfully")
+
+if __name__ == "__main__":
+	init_database()
