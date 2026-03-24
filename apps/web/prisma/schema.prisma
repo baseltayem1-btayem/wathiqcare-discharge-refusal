@@ -195,7 +195,11 @@ model Tenant {
   tenantRoles        TenantRole[]
   roleAssignments    UserRoleAssignment[]
   allowedDomains     TenantAllowedDomain[]
-  branding           TenantBranding?
+  branding                    TenantBranding?
+  dashboardAlerts             DashboardAlert[]
+  notificationDeliveryAttempts NotificationDeliveryAttempt[]
+  alertAcknowledgments        AlertAcknowledgment[]
+  notificationSettings        TenantNotificationSetting?
 
   @@map("tenants")
 }
@@ -328,6 +332,7 @@ model User {
   operationNotifications OperationNotification[] @relation("NotificationRecipient")
   operationNotificationsTriggered OperationNotification[] @relation("NotificationTrigger")
   roleAssignments     UserRoleAssignment[]
+  alertAcknowledgments AlertAcknowledgment[]
 
   @@index([tenantId])
   @@map("users")
@@ -858,4 +863,93 @@ model DepartmentSlaConfig {
   @@unique([tenantId, department, stepCode])
   @@index([tenantId, department, isActive])
   @@map("department_sla_configs")
+
+model DashboardAlert {
+  id               String    @id @default(uuid())
+  tenantId         String    @map("tenant_id")
+  caseId           String?   @map("case_id")
+  alertKey         String    @map("alert_key")
+  alertType        String    @map("alert_type")
+  severity         String    @default("info")
+  title            String
+  message          String
+  caseDeepLink     String?   @map("case_deep_link")
+  isAcknowledged   Boolean   @default(false) @map("is_acknowledged")
+  acknowledgedBy   String?   @map("acknowledged_by")
+  acknowledgedAt   DateTime? @map("acknowledged_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  metadataJson     Json?     @map("metadata_json")
+
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  deliveryAttempts NotificationDeliveryAttempt[]
+  acknowledgments  AlertAcknowledgment[]
+
+  @@unique([tenantId, alertKey])
+  @@index([tenantId, alertType, createdAt(sort: Desc)])
+  @@index([tenantId, isAcknowledged])
+  @@index([severity])
+  @@map("dashboard_alerts")
+}
+
+model NotificationDeliveryAttempt {
+  id               String    @id @default(uuid())
+  tenantId         String    @map("tenant_id")
+  caseId           String?   @map("case_id")
+  alertId          String?   @map("alert_id")
+  channel          String
+  provider         String?
+  recipient        String
+  notificationType String    @map("notification_type")
+  status           String    @default("pending")
+  statusCode       Int?      @map("status_code")
+  failureReason    String?   @map("failure_reason")
+  attemptedAt      DateTime  @default(now()) @map("attempted_at")
+  metadataJson     Json?     @map("metadata_json")
+
+  tenant           Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alert            DashboardAlert? @relation(fields: [alertId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, channel, status])
+  @@index([tenantId, caseId, attemptedAt(sort: Desc)])
+  @@index([alertId])
+  @@map("notification_delivery_attempts")
+}
+
+model AlertAcknowledgment {
+  id               String   @id @default(uuid())
+  alertId          String   @map("alert_id")
+  tenantId         String   @map("tenant_id")
+  acknowledgedBy   String   @map("acknowledged_by")
+  acknowledgedAt   DateTime @default(now()) @map("acknowledged_at")
+  note             String?
+
+  tenant           Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alert            DashboardAlert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user             User          @relation(fields: [acknowledgedBy], references: [id], onDelete: Cascade)
+
+  @@index([alertId])
+  @@index([tenantId, acknowledgedBy])
+  @@map("alert_acknowledgments")
+}
+
+model TenantNotificationSetting {
+  id                              String   @id @default(uuid())
+  tenantId                        String   @unique @map("tenant_id")
+  emailEnabled                    Boolean  @default(true) @map("email_enabled")
+  dashboardEnabled                Boolean  @default(true) @map("dashboard_enabled")
+  whatsappEnabled                 Boolean  @default(false) @map("whatsapp_enabled")
+  whatsappSenderNumber            String?  @map("whatsapp_sender_number")
+  legalRecipientPhonesJson        Json?    @map("legal_recipient_phones_json")
+  legalRecipientEmailsJson        Json?    @map("legal_recipient_emails_json")
+  complianceRecipientEmailsJson   Json?    @map("compliance_recipient_emails_json")
+  notificationThresholdMinutes    Int      @default(1440) @map("notification_threshold_minutes")
+  escalationThresholdMinutes      Int      @default(2880) @map("escalation_threshold_minutes")
+  createdAt                       DateTime @default(now()) @map("created_at")
+  updatedAt                       DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_notification_settings")
+}
 }

@@ -19,6 +19,10 @@ from backend.models.integration_connector import IntegrationConnector
 from backend.models.integration_alert_log import IntegrationAlertLog
 from backend.models.integration_run import IntegrationError, IntegrationRun, IntegrationRunItem
 from backend.models.integration_sla_breach import IntegrationSLABreach
+from backend.models.dashboard_alert import DashboardAlert
+from backend.models.notification_delivery_attempt import NotificationDeliveryAttempt
+from backend.models.alert_acknowledgment import AlertAcknowledgment
+from backend.models.tenant_notification_setting import TenantNotificationSetting
 from backend.models.discharge_legal_workflow import (
 	DischargeDocument,
 	DischargeEncounter,
@@ -53,6 +57,10 @@ __all__ = [
 	"IntegrationRun",
 	"IntegrationRunItem",
 	"IntegrationError",
+	"DashboardAlert",
+	"NotificationDeliveryAttempt",
+	"AlertAcknowledgment",
+	"TenantNotificationSetting",
 	"Patient",
 	"Tenant",
 	"User",

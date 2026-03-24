@@ -9,6 +9,7 @@
 import {
     AlertTriangle,
     Archive,
+    Bell,
     CheckCircle2,
     ClipboardList,
     Database,
@@ -44,6 +45,7 @@ export const TENANT_NAV_ITEMS: TenantNavItem[] = [
     { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
     { href: "/operations", label: "Operations", icon: <LayoutGrid className="h-4 w-4" /> },
     { href: "/operations/inboxes", label: "Department Inboxes", icon: <ClipboardList className="h-4 w-4" /> },
+    { href: "/legal-alerts", label: "Legal Alert Center", icon: <Bell className="h-4 w-4" /> },
     { href: "/cases/new", labelKey: "nav.newCase", icon: <FilePlus2 className="h-4 w-4" /> },
     { href: "/workflow", labelKey: "nav.workflowDocs", icon: <FileCog className="h-4 w-4" /> },
     { href: "/refusal-forms", labelKey: "nav.refusalForms", icon: <FileSignature className="h-4 w-4" /> },

@@ -17,6 +17,17 @@ from backend.models.patient import Patient
 from backend.models.tenant import Tenant
 from backend.models.user import User
 from backend.services.notification_service import NotificationService
+from backend.notifications.orchestrator import (
+    DispatchPayload,
+    SEVERITY_CRITICAL,
+    SEVERITY_WARNING,
+    TRIGGER_24H_LEGAL,
+    TRIGGER_48H_ESCALATION,
+    TRIGGER_BLOCKED_FINALIZE,
+    TRIGGER_MISSING_SIGNATURE,
+    TRIGGER_COMPLIANCE_REVIEW,
+    dispatch_with_fallback,
+)
 
 
 GENERATED_LEGAL_ARTIFACTS_DIR = Path("backend/generated/legal_artifacts")
@@ -222,6 +233,19 @@ def _resolve_notification_recipients(db, *, tenant_id: str, roles: tuple[str, ..
     )
 
 
+def _case_short_ref(case_id: str) -> str:
+    """Returns the last 8 chars of a UUID as a human-readable reference."""
+    return case_id.upper()[-8:]
+
+
+def _build_secure_case_link(case_id: str) -> str:
+    base = (
+        __import__("os").getenv("WATHIQCARE_FRONTEND_URL", "https://app.wathiqcare.sa")
+        .rstrip("/")
+    )
+    return f"{base}/workflow/medical-discharge-refusal/case/{case_id}/final-review"
+
+
 def _dispatch_escalation_notification(
     db,
     *,
@@ -232,7 +256,31 @@ def _dispatch_escalation_notification(
     roles: tuple[str, ...],
     team_code: str,
     metadata_json: Dict[str, Any],
+    trigger_type: str = TRIGGER_24H_LEGAL,
+    severity: str = SEVERITY_WARNING,
 ) -> None:
+    """Dispatches via the full fallback chain: email → dashboard → WhatsApp (critical only)."""
+    recipients = _resolve_notification_recipients(db, tenant_id=case.tenant_id, roles=roles)
+    emails = [r.email for r in recipients if r.email]
+
+    payload = DispatchPayload(
+        tenant_id=case.tenant_id,
+        case_id=case.id,
+        trigger_type=trigger_type,
+        severity=severity,
+        title=title,
+        message=body,
+        reference_id=_case_short_ref(case.id),
+        secure_link=_build_secure_case_link(case.id),
+        case_deep_link=_build_secure_case_link(case.id),
+        recipient_emails=emails,
+        recipient_phones=[],
+        team_code=team_code,
+        metadata=metadata_json,
+    )
+    dispatch_with_fallback(db, payload)
+
+    # Preserve in-app notifications via existing NotificationService (backward compat)
     notifications = NotificationService(db)
     notifications.create_in_app_notification(
         case_id=case.id,
@@ -244,29 +292,90 @@ def _dispatch_escalation_notification(
         body=body,
         metadata_json=metadata_json,
     )
-
-    for recipient in _resolve_notification_recipients(db, tenant_id=case.tenant_id, roles=roles):
+    for r in recipients:
         notifications.create_in_app_notification(
             case_id=case.id,
             task_id=None,
-            recipient_user_id=recipient.id,
+            recipient_user_id=r.id,
             recipient_team_code=None,
             notification_type="legal_artifact_escalation",
             title=title,
             body=body,
             metadata_json=metadata_json,
         )
-        if recipient.email:
-            notifications.send_email_notification(
-                tenant_id=case.tenant_id,
-                created_by=case.created_by,
-                case_id=case.id,
-                recipient_email=recipient.email,
-                title=title,
-                body=body,
-                metadata_json=metadata_json,
-                raise_on_failure=False,
-            )
+
+
+def _dispatch_blocked_finalization(db, *, case: DischargeCase, missing: list[str]) -> None:
+    """Fired when finalize_legal_artifact is called but requirements are not met."""
+    title = "Blocked: Legal Artifact Finalization Failed"
+    body = (
+        f"Case {case.id} cannot be finalized. "
+        f"Missing {len(missing)} requirement(s): {', '.join(missing[:5])}{'…' if len(missing) > 5 else ''}. "
+        "Urgent review and correction required."
+    )
+    payload = DispatchPayload(
+        tenant_id=case.tenant_id,
+        case_id=case.id,
+        trigger_type=TRIGGER_BLOCKED_FINALIZE,
+        severity=SEVERITY_CRITICAL,
+        title=title,
+        message=body,
+        reference_id=_case_short_ref(case.id),
+        secure_link=_build_secure_case_link(case.id),
+        case_deep_link=_build_secure_case_link(case.id),
+        recipient_emails=[],
+        recipient_phones=[],
+        metadata={"case_id": case.id, "missing_count": len(missing), "missing_fields": missing[:10]},
+    )
+    dispatch_with_fallback(db, payload)
+
+
+def _dispatch_missing_mandatory_signatures(db, *, case: DischargeCase, missing_sigs: list[str]) -> None:
+    """Fired when mandatory signatures are absent at finalization check."""
+    title = "Missing Mandatory Signatures"
+    body = (
+        f"Case {case.id} is missing {len(missing_sigs)} mandatory signature(s): "
+        f"{', '.join(missing_sigs)}. Legal artifact cannot be completed."
+    )
+    payload = DispatchPayload(
+        tenant_id=case.tenant_id,
+        case_id=case.id,
+        trigger_type=TRIGGER_MISSING_SIGNATURE,
+        severity=SEVERITY_WARNING,
+        title=title,
+        message=body,
+        reference_id=_case_short_ref(case.id),
+        secure_link=_build_secure_case_link(case.id),
+        case_deep_link=_build_secure_case_link(case.id),
+        recipient_emails=[],
+        recipient_phones=[],
+        metadata={"case_id": case.id, "missing_signatures": missing_sigs},
+    )
+    dispatch_with_fallback(db, payload)
+
+
+def _dispatch_compliance_review(db, *, case: DischargeCase) -> None:
+    """Fires an urgent compliance review alert (critical) when 48h escalation is reached."""
+    title = "Urgent Compliance Review Required"
+    body = (
+        f"Case {case.id} has been escalated after 48 hours unresolved. "
+        "Compliance and legal teams must review immediately."
+    )
+    payload = DispatchPayload(
+        tenant_id=case.tenant_id,
+        case_id=case.id,
+        trigger_type=TRIGGER_COMPLIANCE_REVIEW,
+        severity=SEVERITY_CRITICAL,
+        title=title,
+        message=body,
+        reference_id=_case_short_ref(case.id),
+        secure_link=_build_secure_case_link(case.id),
+        case_deep_link=_build_secure_case_link(case.id),
+        recipient_emails=[],
+        recipient_phones=[],
+        metadata={"case_id": case.id, "escalation": "48h"},
+    )
+    dispatch_with_fallback(db, payload)
 
 
 def _apply_escalation_automation(db, *, case: DischargeCase, workflow: DischargeRefusalWorkflow) -> None:
@@ -297,6 +406,8 @@ def _apply_escalation_automation(db, *, case: DischargeCase, workflow: Discharge
             roles=("legal_admin",),
             team_code="legal_admin",
             metadata_json={"case_id": case.id, "threshold": "24h", "stage": workflow.current_stage},
+            trigger_type=TRIGGER_24H_LEGAL,
+            severity=SEVERITY_WARNING,
         )
         state["legal_notified_24h_at"] = now.isoformat()
         _write_audit(
@@ -339,7 +450,11 @@ def _apply_escalation_automation(db, *, case: DischargeCase, workflow: Discharge
             roles=("legal_admin", "compliance"),
             team_code="compliance",
             metadata_json={"case_id": case.id, "threshold": "48h", "stage": workflow.current_stage},
+            trigger_type=TRIGGER_48H_ESCALATION,
+            severity=SEVERITY_CRITICAL,
         )
+        # Compliance review trigger — separate alert key for compliance team
+        _dispatch_compliance_review(db, case=case)
         state["escalated_48h_at"] = now.isoformat()
         _write_audit(
             db,
@@ -906,6 +1021,12 @@ def finalize_legal_artifact(
 
         missing = _validate_requirements(case, workflow)
         if missing:
+            # Fire persistent dashboard alerts for blocked finalization and signature gaps
+            missing_sigs = [m for m in missing if m.startswith("signature.")]
+            if missing_sigs:
+                _dispatch_missing_mandatory_signatures(db, case=case, missing_sigs=missing_sigs)
+            _dispatch_blocked_finalization(db, case=case, missing=missing)
+            db.flush()
             raise ValueError("Incomplete legal artifact; missing requirements: " + ", ".join(missing))
 
         status_snapshot = _status_payload(case, workflow)

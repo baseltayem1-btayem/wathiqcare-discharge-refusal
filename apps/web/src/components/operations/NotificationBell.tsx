@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Bell, CheckCheck } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Bell, CheckCheck, ShieldAlert } from "lucide-react";
 import { apiFetch } from "@/utils/api";
 
 type NotificationItem = {
@@ -14,22 +15,45 @@ type NotificationItem = {
     caseId?: string | null;
 };
 
+type LegalAlertItem = {
+    id: string;
+    alert_type: string;
+    title: string;
+    message: string;
+    severity: "info" | "warning" | "critical";
+    is_acknowledged: boolean;
+    created_at: string;
+    case_deep_link?: string | null;
+};
+
 export default function NotificationBell() {
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<NotificationItem[]>([]);
     const [unread, setUnread] = useState(0);
+    const [legalAlerts, setLegalAlerts] = useState<LegalAlertItem[]>([]);
+    const [legalUnread, setLegalUnread] = useState(0);
     const [canLoad, setCanLoad] = useState(true);
 
-    async function loadNotifications() {
+    const loadNotifications = useCallback(async () => {
         if (!canLoad) return;
         try {
-            const data = await apiFetch<{ notifications: NotificationItem[]; unread: number }>(
-                "/api/operations/notifications?limit=20",
-                { authFailureMode: "inline" }
-            );
+            const [data, legalData] = await Promise.all([
+                apiFetch<{ notifications: NotificationItem[]; unread: number }>(
+                    "/api/operations/notifications?limit=12",
+                    { authFailureMode: "inline" }
+                ),
+                apiFetch<{ alerts: LegalAlertItem[]; unread: number }>(
+                    "/api/legal/alerts?limit=6&unacknowledged_only=true",
+                    { authFailureMode: "inline", cache: "no-store" }
+                ).catch(() => ({ alerts: [], unread: 0 })),
+            ]);
             if (data && typeof data === "object") {
                 setItems(data.notifications || []);
                 setUnread(data.unread || 0);
+            }
+            if (legalData && typeof legalData === "object") {
+                setLegalAlerts(legalData.alerts || []);
+                setLegalUnread(legalData.unread || 0);
             }
         } catch (error) {
             // If user is platform admin, tenant notifications won't work
@@ -38,7 +62,7 @@ export default function NotificationBell() {
                 setCanLoad(false);
             }
         }
-    }
+    }, [canLoad]);
 
     useEffect(() => {
         // Check if user can even access tenant operations
@@ -53,7 +77,7 @@ export default function NotificationBell() {
                 // Continue anyway
             }
         };
-        
+
         void checkAccess();
         const initial = setTimeout(() => {
             void loadNotifications();
@@ -65,9 +89,10 @@ export default function NotificationBell() {
             clearTimeout(initial);
             clearInterval(timer);
         };
-    }, []);
+    }, [loadNotifications]);
 
     const unreadIds = useMemo(() => items.filter((item) => !item.readAt).map((item) => item.id), [items]);
+    const totalUnread = unread + legalUnread;
 
     async function markAllRead() {
         if (!unreadIds.length) return;
@@ -88,9 +113,9 @@ export default function NotificationBell() {
                 aria-label="Open notifications"
             >
                 <Bell className="h-4 w-4" />
-                {unread > 0 ? (
+                {totalUnread > 0 ? (
                     <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white">
-                        {unread > 9 ? "9+" : unread}
+                        {totalUnread > 9 ? "9+" : totalUnread}
                     </span>
                 ) : null}
             </button>
@@ -100,7 +125,7 @@ export default function NotificationBell() {
                     <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                         <div>
                             <p className="text-sm font-semibold text-slate-900">Notification Center</p>
-                            <p className="text-xs text-slate-500">Operational alerts and assignment updates</p>
+                            <p className="text-xs text-slate-500">Operational updates and legal fallback alerts</p>
                         </div>
                         <button
                             type="button"
@@ -113,6 +138,31 @@ export default function NotificationBell() {
                     </div>
 
                     <div className="max-h-[400px] overflow-y-auto">
+                        {legalAlerts.length > 0 ? (
+                            <div className="border-b border-slate-100 bg-rose-50/50 px-4 py-3">
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                    <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rose-700">
+                                        <ShieldAlert className="h-3.5 w-3.5" />
+                                        Legal alerts
+                                    </div>
+                                    <Link href="/legal-alerts" className="text-xs font-medium text-cyan-700 hover:text-cyan-800">
+                                        Open Alert Center
+                                    </Link>
+                                </div>
+                                <div className="space-y-2">
+                                    {legalAlerts.map((item) => (
+                                        <div key={item.id} className="rounded-xl border border-rose-100 bg-white px-3 py-2">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">{item.alert_type.replaceAll("_", " ")}</p>
+                                                <span className="text-[11px] text-slate-400">{new Date(item.created_at).toLocaleString()}</span>
+                                            </div>
+                                            <p className="mt-1 text-sm font-semibold text-slate-900">{item.title}</p>
+                                            <p className="mt-1 line-clamp-2 text-xs text-slate-600">{item.message}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
                         {items.length === 0 ? (
                             <div className="px-4 py-8 text-center text-sm text-slate-500">No notifications yet.</div>
                         ) : (
