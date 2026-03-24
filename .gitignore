@@ -220,5 +220,6 @@ __marimo__/
 
 # Generated discharge bundles and PDFs (runtime artifacts)
 apps/api/backend/generated/bundles/
+apps/api/backend/generated/legal_documents/
 apps/api/backend/generated/refusal_*.pdf
 apps/api/backend/generated/signed_documents/

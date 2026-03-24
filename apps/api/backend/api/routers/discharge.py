@@ -55,6 +55,11 @@ from backend.schemas.legal_artifact import (
     LegalArtifactSignatureRequest,
     LegalArtifactUpsertRequest,
 )
+from backend.core.database import SessionLocal
+from backend.modules.discharge_legal_workflow.legal_orchestration_service import (
+    ActorContext,
+    LegalOrchestrationService,
+)
 
 router = APIRouter(prefix="/api/discharge", tags=["Discharge"])
 
@@ -125,6 +130,78 @@ def _enforce_sensitive_action_roles(action: str, current_user: dict) -> None:
 class MedicalLegalFormsRenderRequest(BaseModel):
     template_key: str = Field(..., description="Template key from forms library")
     payload: dict[str, str] = Field(default_factory=dict)
+
+
+class DecisionEventUpsertRequest(BaseModel):
+    payload: dict = Field(default_factory=dict)
+
+
+class LegalStateTransitionRequest(BaseModel):
+    target_state: str
+    reason: str | None = None
+
+
+class MasterDocumentGenerateRequest(BaseModel):
+    payload: dict = Field(default_factory=dict)
+
+
+class NoticePresentationRequest(BaseModel):
+    payload: dict = Field(default_factory=dict)
+
+
+class PatientResponseRecordRequest(BaseModel):
+    payload: dict = Field(default_factory=dict)
+
+
+class FinancialAcknowledgmentRequest(BaseModel):
+    payload: dict = Field(default_factory=dict)
+
+
+class PromissoryNoteRequest(BaseModel):
+    payload: dict = Field(default_factory=dict)
+
+
+class HomeHealthcareAgreementRequest(BaseModel):
+    payload: dict = Field(default_factory=dict)
+
+
+class EquipmentLeaseRequest(BaseModel):
+    payload: dict = Field(default_factory=dict)
+
+
+class LegalUndertakingRequest(BaseModel):
+    payload: dict = Field(default_factory=dict)
+
+
+class EscalationEventCreateRequest(BaseModel):
+    payload: dict = Field(default_factory=dict)
+
+
+def _legal_actor(current_user: dict) -> ActorContext:
+    return ActorContext(
+        user_id=current_user.get("id"),
+        tenant_id=current_user["tenant_id"],
+        user_name=current_user.get("email", "unknown"),
+    )
+
+
+def _get_db():
+    """Yield a SQLAlchemy session and close it when done (proper DI pattern)."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def _with_legal_service(fn):
+    """Compatibility wrapper — creates its own scoped session for non-DI routes."""
+    db = SessionLocal()
+    try:
+        service = LegalOrchestrationService(db)
+        return fn(service)
+    finally:
+        db.close()
 
 @router.post("/refusal")
 def create_refusal(
@@ -518,6 +595,292 @@ def get_case_audit(case_id: str, current_user=Depends(require_roles("tenant_admi
 @router.get("/bundles")
 def get_bundles(current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))):
     return list_bundles(current_user["tenant_id"])
+
+
+@router.post("/cases/{case_id}/legal/decision-event")
+def upsert_legal_decision_event(
+    case_id: str,
+    payload: DecisionEventUpsertRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        event = _with_legal_service(
+            lambda svc: svc.create_or_update_decision_event(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                payload=payload.payload,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {"event_id": event.id, "legal_state": event.legal_state, "notification_state": event.notification_state}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/state-transition")
+def transition_legal_decision_state(
+    case_id: str,
+    payload: LegalStateTransitionRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        event = _with_legal_service(
+            lambda svc: svc.transition_state(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                target_state=payload.target_state,
+                actor=_legal_actor(current_user),
+                reason=payload.reason,
+            )
+        )
+        return {"event_id": event.id, "legal_state": event.legal_state, "state_history": event.state_history}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/master-document")
+def generate_legal_master_document(
+    case_id: str,
+    payload: MasterDocumentGenerateRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        document = _with_legal_service(
+            lambda svc: svc.generate_master_document(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                payload=payload.payload,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {
+            "document_id": document.id,
+            "status": document.status,
+            "verification_code": document.verification_code,
+            "document_hash": document.document_hash,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/notice-presentation")
+def record_legal_notice_presentation(
+    case_id: str,
+    payload: NoticePresentationRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        presentation = _with_legal_service(
+            lambda svc: svc.record_notice_presentation(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                payload=payload.payload,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {"presentation_id": presentation.id, "status": presentation.status, "mode": presentation.mode}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/patient-response")
+def record_legal_patient_response(
+    case_id: str,
+    payload: PatientResponseRecordRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        response = _with_legal_service(
+            lambda svc: svc.record_patient_response(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                payload=payload.payload,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {"response_id": response.id, "response_type": response.response_type, "status": response.status}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/financial-acknowledgment")
+def generate_financial_acknowledgment(
+    case_id: str,
+    payload: FinancialAcknowledgmentRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        ack = _with_legal_service(
+            lambda svc: svc.create_financial_acknowledgment(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                payload=payload.payload,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {"ack_id": ack.id, "status": ack.status}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/promissory-note")
+def generate_promissory_note(
+    case_id: str,
+    payload: PromissoryNoteRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        note = _with_legal_service(
+            lambda svc: svc.create_promissory_note(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                payload=payload.payload,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {
+            "promissory_note_id": note.id,
+            "status": note.status,
+            "amount_numeric": note.amount_numeric,
+            "amount_text_ar": note.amount_text_ar,
+            "verification_code": note.verification_code,
+            "document_hash": note.document_hash,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/home-healthcare-agreement")
+def generate_home_healthcare_agreement(
+    case_id: str,
+    payload: HomeHealthcareAgreementRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        agreement = _with_legal_service(
+            lambda svc: svc.create_home_healthcare_agreement(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                payload=payload.payload,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {"agreement_id": agreement.id, "status": agreement.status}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/equipment-lease")
+def generate_equipment_lease(
+    case_id: str,
+    payload: EquipmentLeaseRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        lease = _with_legal_service(
+            lambda svc: svc.create_equipment_lease(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                payload=payload.payload,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {"lease_id": lease.id, "status": lease.status}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/undertaking")
+def generate_legal_undertaking(
+    case_id: str,
+    payload: LegalUndertakingRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        undertaking = _with_legal_service(
+            lambda svc: svc.create_legal_undertaking(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                payload=payload.payload,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {"undertaking_id": undertaking.id, "status": undertaking.status}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/escalation-event")
+def create_legal_escalation_event(
+    case_id: str,
+    payload: EscalationEventCreateRequest,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        escalation_event = _with_legal_service(
+            lambda svc: svc.create_escalation_event(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                payload=payload.payload,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {
+            "escalation_event_id": escalation_event.id,
+            "escalation_level": escalation_event.escalation_level,
+            "status": escalation_event.status,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cases/{case_id}/legal/evidence-package")
+def generate_legal_evidence_package(
+    case_id: str,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
+):
+    try:
+        evidence = _with_legal_service(
+            lambda svc: svc.build_evidence_package(
+                tenant_id=current_user["tenant_id"],
+                case_id=case_id,
+                actor=_legal_actor(current_user),
+            )
+        )
+        return {
+            "evidence_package_id": evidence.id,
+            "package_reference": evidence.package_reference,
+            "status": evidence.status,
+            "generated_at": evidence.generated_at,
+            "package_index": evidence.package_index_json,
+            "verification": evidence.verification_metadata_json,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/cases/{case_id}/legal/summary")
+def get_legal_orchestration_summary(
+    case_id: str,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
+):
+    return _with_legal_service(
+        lambda svc: svc.get_case_legal_summary(
+            tenant_id=current_user["tenant_id"],
+            case_id=case_id,
+        )
+    )
+
+
+@router.get("/reports/legal-control-dashboard")
+def legal_control_dashboard(
+    current_user=Depends(require_roles("tenant_admin", ROLE_QUALITY, ROLE_COMPLIANCE, ROLE_LEGAL, "viewer")),
+):
+    return _with_legal_service(
+        lambda svc: svc.get_tenant_legal_control_metrics(
+            tenant_id=current_user["tenant_id"],
+        )
+    )
 
 
 @router.get("/reports/refusal-quality")

@@ -15,6 +15,26 @@ from backend.models.dashboard_alert import DashboardAlert
 from backend.models.notification_delivery_attempt import NotificationDeliveryAttempt
 from backend.models.alert_acknowledgment import AlertAcknowledgment
 from backend.models.tenant_notification_setting import TenantNotificationSetting
+from backend.models.discharge_legal_workflow import (
+	DischargeDecisionDocument,
+	DischargeDecisionEvent,
+	EscalationEvent,
+	EvidencePackage,
+	FinancialLiabilityAcknowledgmentInstance,
+	FinancialLiabilityAcknowledgmentTemplate,
+	HomeHealthcareAgreementInstance,
+	HomeHealthcareAgreementTemplate,
+	LegalUndertakingInstance,
+	LegalUndertakingTemplate,
+	MedicalEquipmentLeaseInstance,
+	MedicalEquipmentLeaseTemplate,
+	PatientNoticePresentation,
+	PatientResponse,
+	PromissoryNoteInstance,
+	PromissoryNoteTemplate,
+	SignatureArtifact,
+	SignerIdentity,
+)
 
 
 def init_database() -> None:
