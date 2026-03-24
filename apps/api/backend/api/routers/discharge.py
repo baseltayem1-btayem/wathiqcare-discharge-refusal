@@ -268,6 +268,21 @@ def get_case_workflow(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.get("/cases/{case_id}/readiness")
+def get_case_readiness(
+    case_id: str,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
+):
+    try:
+        snapshot = get_workflow_snapshot(tenant_id=current_user["tenant_id"], case_id=case_id)
+        readiness = snapshot.get("readiness") if isinstance(snapshot, dict) else None
+        if not isinstance(readiness, dict):
+            raise ValueError("Readiness data is unavailable")
+        return readiness
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.post("/cases/{case_id}/workflow/actions")
 def run_case_workflow_action(
     case_id: str,

@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from backend.core.database import SessionLocal
+from backend.core.discharge_readiness_service import (
+    build_case_readiness,
+    sync_department_tasks,
+)
 from backend.core.homecare_pdf_renderer import render_homecare_html_to_pdf
 from backend.core.pdf_renderer import PdfRenderError, render_html_to_pdf
 from backend.forms.medical_legal_forms_library import get_form_template_metadata
@@ -659,7 +663,7 @@ def _build_policy_validation(
     }
 
 
-def _serialize_workflow(bundle: CaseBundle) -> Dict[str, Any]:
+def _serialize_workflow(bundle: CaseBundle, *, db=None) -> Dict[str, Any]:
     workflow = bundle.workflow
     case_documentation = bundle.case_documentation
     stage_times = _stage_timestamps(workflow)
@@ -690,6 +694,18 @@ def _serialize_workflow(bundle: CaseBundle) -> Dict[str, Any]:
     documents = [_serialize_document(item) for item in workflow.documents]
     policy_validation = _build_policy_validation(bundle)
     lifecycle_status = _canonical_case_lifecycle_status(bundle)
+    readiness = build_case_readiness(db, case=bundle.discharge_case, workflow=workflow) if db else {
+        "status": "blocked_by_medical_tasks",
+        "blocked_by_medical_tasks": [],
+        "blocked_by_legal_tasks": [],
+        "blocked_by_patient_interaction": [],
+        "escalated_departments": [],
+        "required_signatures": {},
+        "missing_signature_requirements": [],
+        "can_finalize": False,
+        "department_panel": [],
+        "updated_at": _iso(_utc_now()),
+    }
 
     return {
         "id": workflow.id,
@@ -746,6 +762,8 @@ def _serialize_workflow(bundle: CaseBundle) -> Dict[str, Any]:
         "responsible_person": workflow.responsible_person,
         "next_action": workflow.next_action,
         "policy_validation": policy_validation,
+        "readiness": readiness,
+        "department_panel": readiness.get("department_panel", []),
         "timeline": timeline,
         "documents": documents,
     }
@@ -866,9 +884,10 @@ def get_workflow_snapshot(*, tenant_id: str, case_id: str) -> Dict[str, Any]:
     try:
         bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
         _sync_case_documentation(bundle)
+        sync_department_tasks(db, case=bundle.discharge_case, workflow=bundle.workflow, actor_user_id=None)
         db.flush()
         db.refresh(bundle.workflow)
-        return _serialize_workflow(bundle)
+        return _serialize_workflow(bundle, db=db)
     finally:
         db.close()
 
@@ -1063,7 +1082,7 @@ def run_workflow_action(
         workflow = bundle.workflow
         case_documentation = bundle.case_documentation
         now = _utc_now()
-        before_snapshot = _serialize_workflow(bundle)
+        before_snapshot = _serialize_workflow(bundle, db=db)
 
         actor = (
             db.query(User)
@@ -1226,13 +1245,14 @@ def run_workflow_action(
                     actor_user_id=current_user["id"],
                     action=action,
                     before_snapshot=before_snapshot,
-                    after_snapshot=_serialize_workflow(bundle),
+                    after_snapshot=_serialize_workflow(bundle, db=db),
                     generated_document_id=str(generated_document.get("id") or ""),
                 )
                 db.flush()
                 db.refresh(workflow)
                 db.commit()
-                snapshot = _serialize_workflow(bundle)
+                sync_department_tasks(db, case=bundle.discharge_case, workflow=workflow, actor_user_id=current_user.get("id"))
+                snapshot = _serialize_workflow(bundle, db=db)
                 return {
                     "workflow": snapshot,
                     "generated_document": generated_document,
@@ -1300,13 +1320,14 @@ def run_workflow_action(
                     actor_user_id=current_user["id"],
                     action=action,
                     before_snapshot=before_snapshot,
-                    after_snapshot=_serialize_workflow(bundle),
+                    after_snapshot=_serialize_workflow(bundle, db=db),
                     generated_document_id=str(generated_document.get("id") or ""),
                 )
                 db.flush()
                 db.refresh(workflow)
                 db.commit()
-                snapshot = _serialize_workflow(bundle)
+                sync_department_tasks(db, case=bundle.discharge_case, workflow=workflow, actor_user_id=current_user.get("id"))
+                snapshot = _serialize_workflow(bundle, db=db)
                 return {
                     "workflow": snapshot,
                     "generated_document": generated_document,
@@ -1453,6 +1474,7 @@ def run_workflow_action(
             raise ValueError("Unsupported workflow action")
 
         _sync_case_documentation(bundle)
+        sync_department_tasks(db, case=bundle.discharge_case, workflow=workflow, actor_user_id=current_user.get("id"))
         workflow.updated_at = now
         _log_structured_workflow_audit(
             db,
@@ -1460,14 +1482,14 @@ def run_workflow_action(
             actor_user_id=current_user["id"],
             action=action,
             before_snapshot=before_snapshot,
-            after_snapshot=_serialize_workflow(bundle),
+            after_snapshot=_serialize_workflow(bundle, db=db),
             generated_document_id=(str(generated_document.get("id")) if generated_document and generated_document.get("id") else None),
         )
         db.flush()
         db.refresh(workflow)
         db.commit()
 
-        snapshot = _serialize_workflow(bundle)
+        snapshot = _serialize_workflow(bundle, db=db)
         return {
             "workflow": snapshot,
             "generated_document": generated_document,
@@ -1537,7 +1559,7 @@ def generate_document_record(
         db.commit()
 
         return {
-            "workflow": _serialize_workflow(bundle),
+            "workflow": _serialize_workflow(bundle, db=db),
             "generated_document": generated_document,
             "policy_validation": generation_result.get("policy_validation"),
         }

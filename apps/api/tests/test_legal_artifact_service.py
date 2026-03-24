@@ -12,6 +12,7 @@ from backend.legal import legal_artifact_service as svc
 from backend.models.discharge_workflow import DischargeRefusalWorkflow
 from backend.models.tenant import Tenant
 from backend.models.user import User
+from backend.models.workflow_document import DischargeWorkflowDocument
 from backend.models.workflow_notification import WorkflowNotification
 
 
@@ -282,5 +283,83 @@ def test_legal_notification_triggers_once_at_24h(db_session_local):
         assert sorted({item.channel for item in notifications}) == ["email", "in_app"]
         assert sorted({item.recipient_team_code for item in notifications if item.recipient_team_code}) == ["legal_admin"]
         assert len(notifications) == 3
+    finally:
+        db.close()
+
+
+def test_generated_legal_pdf_uses_canonical_document_and_signature_payload(db_session_local, monkeypatch):
+    created = _create_case()
+    case_id = created["case_id"]
+
+    svc.upsert_legal_artifact_screen(
+        tenant_id="tenant-1",
+        case_id=case_id,
+        screen="clinical_decision",
+        payload={
+            "discharge_decision_at": datetime.utcnow().isoformat(),
+            "clinical_rationale": "Rationale",
+            "capacity_assessment": {
+                "outcome": "has_capacity",
+                "assessed_by": "Dr. House",
+            },
+        },
+        actor_user_id="user-1",
+    )
+    svc.record_legal_signature(
+        tenant_id="tenant-1",
+        case_id=case_id,
+        role="patient",
+        signature_value="data:image/png;base64,AAAABBBB",
+        signer_name="Patient One",
+        signer_role="patient",
+        ip_address="10.0.0.11",
+        actor_user_id="user-1",
+    )
+    svc.record_legal_signature(
+        tenant_id="tenant-1",
+        case_id=case_id,
+        role="physician",
+        signature_value="data:image/png;base64,CCCCDDDD",
+        signer_name="Dr. House",
+        signer_role="physician",
+        ip_address="10.0.0.12",
+        actor_user_id="user-1",
+    )
+    svc.record_legal_signature(
+        tenant_id="tenant-1",
+        case_id=case_id,
+        role="witness",
+        signature_value="data:image/png;base64,EEEFFFFF",
+        signer_name="Witness",
+        signer_role="witness",
+        ip_address="10.0.0.13",
+        actor_user_id="user-1",
+    )
+
+    monkeypatch.setattr(
+        svc,
+        "render_html_to_pdf",
+        lambda *, html_content, output_path, title: {
+            "engine": "mock",
+            "output": str(output_path),
+            "title": title,
+        },
+    )
+
+    result = svc.generate_legal_artifact_pdf(tenant_id="tenant-1", case_id=case_id)
+    assert result["file_name"].endswith(".pdf")
+
+    db = db_session_local()
+    try:
+        doc = (
+            db.query(DischargeWorkflowDocument)
+            .filter(
+                DischargeWorkflowDocument.case_id == case_id,
+                DischargeWorkflowDocument.template_key == "legal_discharge_artifact",
+            )
+            .first()
+        )
+        assert doc is not None
+        assert "data:image/png;base64,AAAABBBB" in (doc.html_content or "")
     finally:
         db.close()

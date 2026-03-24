@@ -8,6 +8,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from backend.core.discharge_readiness_service import (
+    build_case_readiness,
+    sync_department_tasks,
+)
 from backend.core.database import SessionLocal
 from backend.core.pdf_renderer import render_html_to_pdf
 from backend.models.audit_log import AuditLog
@@ -16,6 +20,7 @@ from backend.models.discharge_workflow import DischargeRefusalWorkflow
 from backend.models.patient import Patient
 from backend.models.tenant import Tenant
 from backend.models.user import User
+from backend.models.workflow_document import DischargeWorkflowDocument
 from backend.services.notification_service import NotificationService
 from backend.notifications.orchestrator import (
     DispatchPayload,
@@ -553,12 +558,29 @@ def _validate_requirements(case: DischargeCase, workflow: DischargeRefusalWorkfl
     return missing
 
 
-def _status_payload(case: DischargeCase, workflow: DischargeRefusalWorkflow) -> Dict[str, Any]:
+def _status_payload(case: DischargeCase, workflow: DischargeRefusalWorkflow, *, db=None) -> Dict[str, Any]:
     screens = _get_screen_data(case)
     signatures = _get_signatures(case)
     missing = _validate_requirements(case, workflow)
     create_case = screens.get("create_case", {})
     tenant_header = create_case.get("tenant_header") if isinstance(create_case.get("tenant_header"), dict) else {}
+
+    readiness = (
+        build_case_readiness(db, case=case, workflow=workflow)
+        if db is not None
+        else {
+            "status": "blocked_by_medical_tasks",
+            "blocked_by_medical_tasks": [],
+            "blocked_by_legal_tasks": [],
+            "blocked_by_patient_interaction": [],
+            "escalated_departments": [],
+            "required_signatures": {},
+            "missing_signature_requirements": [],
+            "can_finalize": False,
+            "department_panel": [],
+            "updated_at": _utc_now().isoformat(),
+        }
+    )
 
     return {
         "case_id": case.id,
@@ -572,6 +594,8 @@ def _status_payload(case: DischargeCase, workflow: DischargeRefusalWorkflow) -> 
         "missing_requirements": missing,
         "screens": screens,
         "signatures": signatures,
+        "readiness": readiness,
+        "department_panel": readiness.get("department_panel", []),
         "tenant_header": {
             "logo_url": str(tenant_header.get("logo_url") or ""),
             "moh_license": str(tenant_header.get("moh_license") or ""),
@@ -683,7 +707,7 @@ def create_legal_artifact_case(
         )
 
         db.commit()
-        return _status_payload(discharge_case, workflow)
+        return _status_payload(discharge_case, workflow, db=db)
     except Exception:
         db.rollback()
         raise
@@ -696,8 +720,13 @@ def get_legal_artifact_status(*, tenant_id: str, case_id: str) -> Dict[str, Any]
     try:
         bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
         _apply_escalation_automation(db, case=bundle.discharge_case, workflow=bundle.workflow)
+        sync_department_tasks(db, case=bundle.discharge_case, workflow=bundle.workflow, actor_user_id=None)
         db.commit()
-        return _status_payload(bundle.discharge_case, bundle.workflow)
+        readiness = build_case_readiness(db, case=bundle.discharge_case, workflow=bundle.workflow)
+        payload = _status_payload(bundle.discharge_case, bundle.workflow, db=db)
+        payload["readiness"] = readiness
+        payload["department_panel"] = readiness.get("department_panel", [])
+        return payload
     finally:
         db.close()
 
@@ -772,7 +801,7 @@ def upsert_legal_artifact_screen(
         )
 
         db.commit()
-        return _status_payload(case, workflow)
+        return _status_payload(case, workflow, db=db)
     except Exception:
         db.rollback()
         raise
@@ -839,7 +868,7 @@ def record_legal_signature(
         )
 
         db.commit()
-        return _status_payload(case, bundle.workflow)
+        return _status_payload(case, bundle.workflow, db=db)
     except Exception:
         db.rollback()
         raise
@@ -986,6 +1015,41 @@ def generate_legal_artifact_pdf(*, tenant_id: str, case_id: str) -> Dict[str, An
 
         case.pdf_file = file_name
         case.updated_at = _utc_now()
+
+        canonical_document = (
+            db.query(DischargeWorkflowDocument)
+            .filter(
+                DischargeWorkflowDocument.case_id == case.id,
+                DischargeWorkflowDocument.workflow_id == workflow.id,
+                DischargeWorkflowDocument.template_key == "legal_discharge_artifact",
+            )
+            .first()
+        )
+        if not canonical_document:
+            canonical_document = DischargeWorkflowDocument(
+                workflow_id=workflow.id,
+                case_id=case.id,
+                tenant_id=case.tenant_id,
+                generated_by=case.created_by,
+                template_key="legal_discharge_artifact",
+                document_code="WC-LEGAL-ARTIFACT-01",
+                title="Legal Discharge Artifact",
+                file_name=file_name,
+                file_path=str(output_path),
+                html_content=html_content,
+                locale="en",
+                template_version="1",
+                locked_template=True,
+                attachment_group=case.id,
+                generated_at=_utc_now(),
+            )
+            db.add(canonical_document)
+        else:
+            canonical_document.file_name = file_name
+            canonical_document.file_path = str(output_path)
+            canonical_document.html_content = html_content
+            canonical_document.generated_at = _utc_now()
+
         db.commit()
 
         return {
@@ -1020,16 +1084,30 @@ def finalize_legal_artifact(
             raise ValueError("Final review confirmation is required")
 
         missing = _validate_requirements(case, workflow)
+        sync_department_tasks(db, case=case, workflow=workflow, actor_user_id=actor_user_id)
+        readiness = build_case_readiness(db, case=case, workflow=workflow)
+        if not readiness.get("can_finalize"):
+            missing.extend(readiness.get("blocked_by_medical_tasks", []))
+            missing.extend(readiness.get("blocked_by_legal_tasks", []))
+            missing.extend(readiness.get("blocked_by_patient_interaction", []))
+            missing.extend(readiness.get("missing_signature_requirements", []))
+            missing = list(dict.fromkeys(missing))
+
         if missing:
             # Fire persistent dashboard alerts for blocked finalization and signature gaps
-            missing_sigs = [m for m in missing if m.startswith("signature.")]
+            missing_sigs = [
+                m
+                for m in missing
+                if m.startswith("signature.")
+                or m in {"patient_or_representative", "physician", "witness", "guardian"}
+            ]
             if missing_sigs:
                 _dispatch_missing_mandatory_signatures(db, case=case, missing_sigs=missing_sigs)
             _dispatch_blocked_finalization(db, case=case, missing=missing)
             db.flush()
             raise ValueError("Incomplete legal artifact; missing requirements: " + ", ".join(missing))
 
-        status_snapshot = _status_payload(case, workflow)
+        status_snapshot = _status_payload(case, workflow, db=db)
         digest_input = json.dumps(status_snapshot, ensure_ascii=False, sort_keys=True).encode("utf-8")
         final_hash = hashlib.sha256(digest_input).hexdigest()
 
@@ -1058,7 +1136,7 @@ def finalize_legal_artifact(
         )
 
         db.commit()
-        return _status_payload(case, workflow)
+        return _status_payload(case, workflow, db=db)
     except Exception:
         db.rollback()
         raise

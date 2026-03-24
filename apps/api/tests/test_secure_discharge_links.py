@@ -54,6 +54,7 @@ from backend.main import app
 from backend.models.audit_log import AuditLog
 from backend.models.discharge_case import DischargeCase
 from backend.models.discharge_execution_item import DischargeExecutionItem
+from backend.models.notification_delivery_attempt import NotificationDeliveryAttempt
 from backend.models.secure_discharge_link import SecureDischargeLink
 from backend.services import secure_link_service as secure_link_service_module
 from backend.services.secure_link_service import _hash_token
@@ -651,6 +652,34 @@ class TestEmailFallback:
         call_kwargs = mock_svc.send_email.call_args.kwargs
         assert call_kwargs["recipients"] == ["configured@example.com"]
         assert CASE_ID == call_kwargs["case_id"]
+
+
+class TestSecureLinkDiagnostics:
+    def test_diagnostics_endpoint_returns_delivery_trace(self):
+        resp = client.get(
+            f"/api/discharge/cases/{CASE_ID}/secure-link/diagnostics",
+            headers=_auth_headers(),
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["case_id"] == CASE_ID
+        assert "latest_link" in body
+        assert isinstance(body.get("delivery_attempts"), list)
+
+        db = SessionLocal()
+        try:
+            attempts_count = (
+                db.query(NotificationDeliveryAttempt)
+                .filter(
+                    NotificationDeliveryAttempt.case_id == CASE_ID,
+                    NotificationDeliveryAttempt.tenant_id == TENANT_ID,
+                    NotificationDeliveryAttempt.notification_type == "secure_link_sent",
+                )
+                .count()
+            )
+            assert attempts_count >= 1
+        finally:
+            db.close()
 
 
 class TestPublicDecisionSubmission:

@@ -31,6 +31,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, EmailStr
 
 from backend.api.deps import require_roles
+from backend.core import database as database_module
 from backend.services.secure_link_service import (
     SecureLinkRateLimitError,
     generate_link,
@@ -41,6 +42,8 @@ from backend.services.secure_link_service import (
     validate_token,
 )
 from backend.core.email_service import EmailConfigurationError, EmailService
+from backend.models.notification_delivery_attempt import NotificationDeliveryAttempt
+from backend.models.secure_discharge_link import SecureDischargeLink
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +159,27 @@ def _try_send_email(
 """
     text_body = f"رابط مراجعة قرار التصريح:\n{url}\n(ينتهي في: {expires_at})"
 
+    db = database_module.SessionLocal()
+    attempt = NotificationDeliveryAttempt(
+        tenant_id=tenant_id,
+        case_id=case_id,
+        alert_id=None,
+        channel="email",
+        provider="microsoft_graph",
+        recipient=recipient_email,
+        notification_type="secure_link_sent",
+        status="pending",
+        status_code=None,
+        failure_reason=None,
+        metadata_json={
+            "link_id": link_id,
+            "graph_url": "https://graph.microsoft.com/v1.0/users/{sender}/sendMail",
+            "retry_count": 0,
+        },
+    )
+    db.add(attempt)
+    db.flush()
+
     try:
         svc = EmailService()
         svc.send_email(
@@ -174,22 +198,45 @@ def _try_send_email(
             attachment_document_ids=[],
         )
         update_delivery_status(link_id, status="sent")
+        attempt.status = "sent"
+        attempt.status_code = 202
+        db.commit()
         logger.info(
             "secure_link_email_sent link_id=%s recipient=%s", link_id, recipient_email
         )
         return "sent"
     except EmailConfigurationError as exc:
         update_delivery_status(link_id, status="not_configured")
+        attempt.status = "failed"
+        attempt.status_code = 503
+        attempt.failure_reason = str(exc)
+        attempt.metadata_json = {
+            **(attempt.metadata_json or {}),
+            "error_body": str(exc),
+            "retry_count": 0,
+        }
+        db.commit()
         logger.warning(
             "secure_link_email_not_configured link_id=%s reason=%s", link_id, exc
         )
         return "not_configured"
     except Exception as exc:
         update_delivery_status(link_id, status="failed")
+        attempt.status = "failed"
+        attempt.status_code = 500
+        attempt.failure_reason = str(exc)
+        attempt.metadata_json = {
+            **(attempt.metadata_json or {}),
+            "error_body": str(exc),
+            "retry_count": 0,
+        }
+        db.commit()
         logger.error(
             "secure_link_email_failed link_id=%s error=%s", link_id, exc
         )
         return "failed"
+    finally:
+        db.close()
 
 
 def _client_ip(request: Request) -> Optional[str]:
@@ -305,6 +352,70 @@ def delete_secure_link(
         return {"revoked": True, "link_id": link_id}
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.get(
+    "/api/discharge/cases/{case_id}/secure-link/diagnostics",
+    summary="تشخيص مسار الرابط الآمن (للاختبار والتتبع)",
+)
+def secure_link_diagnostics(
+    case_id: str,
+    current_user=Depends(require_roles(*_STAFF_ROLES)),
+):
+    db = database_module.SessionLocal()
+    try:
+        latest_link = (
+            db.query(SecureDischargeLink)
+            .filter(
+                SecureDischargeLink.case_id == case_id,
+                SecureDischargeLink.tenant_id == current_user["tenant_id"],
+            )
+            .order_by(SecureDischargeLink.created_at.desc())
+            .first()
+        )
+        attempts = (
+            db.query(NotificationDeliveryAttempt)
+            .filter(
+                NotificationDeliveryAttempt.case_id == case_id,
+                NotificationDeliveryAttempt.tenant_id == current_user["tenant_id"],
+                NotificationDeliveryAttempt.notification_type == "secure_link_sent",
+            )
+            .order_by(NotificationDeliveryAttempt.attempted_at.desc())
+            .limit(20)
+            .all()
+        )
+
+        return {
+            "case_id": case_id,
+            "latest_link": None
+            if not latest_link
+            else {
+                "link_id": latest_link.id,
+                "recipient_email": latest_link.recipient_email,
+                "delivery_status": latest_link.delivery_status,
+                "created_at": latest_link.created_at.isoformat() if latest_link.created_at else None,
+                "expires_at": latest_link.expires_at.isoformat() if latest_link.expires_at else None,
+                "sent_at": latest_link.created_at.isoformat() if latest_link.created_at else None,
+                "opened_at": latest_link.accessed_at.isoformat() if latest_link.accessed_at else None,
+                "responded_at": latest_link.decision_submitted_at.isoformat() if latest_link.decision_submitted_at else None,
+            },
+            "delivery_attempts": [
+                {
+                    "id": item.id,
+                    "recipient": item.recipient,
+                    "provider": item.provider,
+                    "status": item.status,
+                    "status_code": item.status_code,
+                    "failure_reason": item.failure_reason,
+                    "retry_count": (item.metadata_json or {}).get("retry_count") if isinstance(item.metadata_json, dict) else None,
+                    "error_body": (item.metadata_json or {}).get("error_body") if isinstance(item.metadata_json, dict) else None,
+                    "attempted_at": item.attempted_at.isoformat() if item.attempted_at else None,
+                }
+                for item in attempts
+            ],
+        }
+    finally:
+        db.close()
 
 
 @router.get(
