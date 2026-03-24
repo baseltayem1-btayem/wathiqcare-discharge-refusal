@@ -1022,5 +1022,35 @@
       "transferred": "تم التحويل",
       "caseCancelled": "تم إلغاء الحالة"
     }
+  },
+  "stepper": {
+    "title": "مسار الحالة",
+    "nextAction": "الخطوة التالية",
+    "steps": {
+      "caseData": "بيانات الحالة",
+      "dischargeDecision": "قرار الخروج",
+      "patientNotice": "إشعار المريض",
+      "responseSignature": "الرد والتوقيع",
+      "documents": "المستندات",
+      "escalation": "التصعيد",
+      "finalFile": "الملف النهائي"
+    },
+    "status": {
+      "completed": "مكتمل",
+      "inProgress": "قيد التنفيذ",
+      "pending": "في الانتظار",
+      "actionNeeded": "يتطلب إجراءً",
+      "notRequired": "غير مطلوب"
+    },
+    "nextActions": {
+      "completeCaseData": "أكمل بيانات الحالة",
+      "recordDischargeDecision": "سجّل قرار الخروج",
+      "sendPatientNotice": "أرسل إشعار المريض",
+      "recordResponse": "سجّل رد المريض والتوقيع",
+      "generateDocuments": "أنشئ المستندات المطلوبة",
+      "escalateCase": "يتطلب تصعيداً",
+      "buildFinalPackage": "أنشئ الملف النهائي",
+      "caseComplete": "الحالة مكتملة"
+    }
   }
 }

@@ -31,6 +31,7 @@ import {
 import WorkflowProgress, { type WorkflowProgressStep } from "@/components/ui/WorkflowProgress";
 import DocumentPreviewModal from "@/components/workflow/DocumentPreviewModal";
 import CaseWorkflowTree from "@/components/cases/CaseWorkflowTree";
+import CaseWorkflowStepper from "@/components/cases/CaseWorkflowStepper";
 import PatientCommunicationPanel from "@/components/cases/PatientCommunicationPanel";
 import WorkflowDocumentList from "@/components/workflow/WorkflowDocumentList";
 import WorkflowTimelinePanel from "@/components/workflow/WorkflowTimelinePanel";
@@ -42,6 +43,7 @@ import {
   dischargeCasesService,
   type DischargeCaseDetail as CaseDetail,
 } from "@/lib/services/dischargeCases.service";
+import { legalOrchestrationService, type LegalCaseSummary } from "@/lib/services/legalOrchestration.service";
 import {
   dischargeRefusalFormTemplate,
   type DischargeRefusalTemplatePayload,
@@ -686,6 +688,7 @@ export default function CaseDetailsPage() {
   const [auditItems, setAuditItems] = useState<AuditItem[]>([]);
   const [workflow, setWorkflow] = useState<DischargeWorkflow | null>(null);
   const [operationTracker, setOperationTracker] = useState<OperationTrackerPayload | null>(null);
+  const [legalSummary, setLegalSummary] = useState<LegalCaseSummary | null>(null);
 
   const [draft, setDraft] = useState<WorkflowDraft>(buildDraft(null, null));
 
@@ -833,6 +836,13 @@ export default function CaseDetailsPage() {
         setWorkflow(null);
         setDraft(buildDraft(detail, null));
         setWorkflowBackendUnavailable(true);
+      }
+
+      try {
+        const summary = await legalOrchestrationService.getCaseSummary(caseId);
+        setLegalSummary(summary);
+      } catch {
+        setLegalSummary(null);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : t("caseDetails.failedLoad");
@@ -1736,6 +1746,14 @@ export default function CaseDetailsPage() {
             </div>
           </section>
         ) : null}
+
+        <CaseWorkflowStepper
+          caseId={caseId}
+          caseDetail={caseDetail}
+          workflow={workflow}
+          legalSummary={legalSummary}
+          loading={loading}
+        />
 
         {workflow?.policy_validation ? (
           <section className="mb-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">

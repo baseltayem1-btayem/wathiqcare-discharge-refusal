@@ -1022,5 +1022,35 @@
       "transferred": "Transferred",
       "caseCancelled": "Case Cancelled"
     }
+  },
+  "stepper": {
+    "title": "Case Journey",
+    "nextAction": "Next Step",
+    "steps": {
+      "caseData": "Case Data",
+      "dischargeDecision": "Discharge Decision",
+      "patientNotice": "Patient Notice",
+      "responseSignature": "Response & Signature",
+      "documents": "Documents",
+      "escalation": "Escalation",
+      "finalFile": "Final File"
+    },
+    "status": {
+      "completed": "Completed",
+      "inProgress": "In Progress",
+      "pending": "Pending",
+      "actionNeeded": "Action Needed",
+      "notRequired": "Not Required"
+    },
+    "nextActions": {
+      "completeCaseData": "Complete case data",
+      "recordDischargeDecision": "Record discharge decision",
+      "sendPatientNotice": "Send patient notice",
+      "recordResponse": "Record patient response & signature",
+      "generateDocuments": "Generate required documents",
+      "escalateCase": "Escalation required",
+      "buildFinalPackage": "Build final evidence package",
+      "caseComplete": "Case complete"
+    }
   }
 }
