@@ -16,6 +16,6 @@ from backend.models.notification_delivery_attempt import NotificationDeliveryAtt
 from backend.models.alert_acknowledgment import AlertAcknowledgment
 from backend.models.tenant_notification_setting import TenantNotificationSetting
 
-Base.metadata.create_all(bind=engine)
 
-print("Database tables created successfully")
+def init_database() -> None:
+	Base.metadata.create_all(bind=engine)

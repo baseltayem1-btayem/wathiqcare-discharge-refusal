@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run db:migrate && npm run prisma:generate && next build",
+    "build": "next build",
+    "postinstall": "prisma generate --schema ./prisma/schema.prisma",
     "start": "next start",
     "lint": "eslint",
-    "prisma:generate": "prisma generate --schema ./prisma/schema.prisma",
-    "db:migrate": "node scripts/apply-migrations.mjs"
+    "prisma:generate": "prisma generate --schema ./prisma/schema.prisma"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",

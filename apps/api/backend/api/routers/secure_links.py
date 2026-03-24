@@ -38,7 +38,6 @@ from backend.services.secure_link_service import (
     list_links_for_case,
     revoke_link,
     submit_decision,
-    update_delivery_status,
     validate_token,
 )
 from backend.core.email_service import EmailConfigurationError, EmailService
@@ -160,6 +159,7 @@ def _try_send_email(
     text_body = f"رابط مراجعة قرار التصريح:\n{url}\n(ينتهي في: {expires_at})"
 
     db = database_module.SessionLocal()
+    link_row = db.query(SecureDischargeLink).filter(SecureDischargeLink.id == link_id).first()
     attempt = NotificationDeliveryAttempt(
         tenant_id=tenant_id,
         case_id=case_id,
@@ -197,7 +197,8 @@ def _try_send_email(
             attachments=[],
             attachment_document_ids=[],
         )
-        update_delivery_status(link_id, status="sent")
+        if link_row:
+            link_row.delivery_status = "sent"
         attempt.status = "sent"
         attempt.status_code = 202
         db.commit()
@@ -206,7 +207,8 @@ def _try_send_email(
         )
         return "sent"
     except EmailConfigurationError as exc:
-        update_delivery_status(link_id, status="not_configured")
+        if link_row:
+            link_row.delivery_status = "not_configured"
         attempt.status = "failed"
         attempt.status_code = 503
         attempt.failure_reason = str(exc)
@@ -221,7 +223,8 @@ def _try_send_email(
         )
         return "not_configured"
     except Exception as exc:
-        update_delivery_status(link_id, status="failed")
+        if link_row:
+            link_row.delivery_status = "failed"
         attempt.status = "failed"
         attempt.status_code = 500
         attempt.failure_reason = str(exc)

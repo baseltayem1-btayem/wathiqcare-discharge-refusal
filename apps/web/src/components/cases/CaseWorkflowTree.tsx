@@ -43,7 +43,7 @@ function loadSelectionState(caseId: string): WorkflowSelectionState {
 
 export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
   const { t } = useI18n();
-  const CASE_WORKFLOW_STEPS = useMemo(() => buildWorkflowSteps(t), [t]);
+  const workflowSteps = useMemo(() => buildWorkflowSteps(t), [t]);
   const [selectionState, setSelectionState] = useState<WorkflowSelectionState>(() =>
     loadSelectionState(caseId),
   );
@@ -53,17 +53,17 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
   const sequentialMeta = useMemo(() => getSequentialStepMeta(selectionState), [selectionState]);
 
   const progressSummary = useMemo(() => {
-    const total = CASE_WORKFLOW_STEPS.length;
+    const total = workflowSteps.length;
     const completed = sequentialMeta.filter((step) => step.status === "completed").length;
     const current = sequentialMeta.find((step) => step.current) || null;
     const remaining = total - completed;
 
     return { total, completed, remaining, current };
-  }, [sequentialMeta]);
+  }, [sequentialMeta, workflowSteps]);
 
   const activeStep = useMemo(
-    () => CASE_WORKFLOW_STEPS.find((step) => step.id === activeStepId) || null,
-    [activeStepId],
+    () => workflowSteps.find((step) => step.id === activeStepId) || null,
+    [activeStepId, workflowSteps],
   );
 
   const activeStepMeta = useMemo(
@@ -109,8 +109,8 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
       return;
     }
 
-    const currentIndex = CASE_WORKFLOW_STEPS.findIndex((step) => step.id === activeStep.id);
-    const nextStep = CASE_WORKFLOW_STEPS[currentIndex + 1];
+    const currentIndex = workflowSteps.findIndex((step) => step.id === activeStep.id);
+    const nextStep = workflowSteps[currentIndex + 1];
 
     handleSave();
 
@@ -151,7 +151,7 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-3">
-          {CASE_WORKFLOW_STEPS.map((step, index) => {
+          {workflowSteps.map((step, index) => {
             const stepMeta = sequentialMeta.find((item) => item.stepId === step.id);
             if (!stepMeta) {
               return null;
@@ -159,7 +159,7 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
 
             return (
               <div key={step.id} className="relative">
-                {index < CASE_WORKFLOW_STEPS.length - 1 ? (
+                {index < workflowSteps.length - 1 ? (
                   <span className="pointer-events-none absolute left-4 top-[4.1rem] h-[calc(100%-1.2rem)] w-px bg-slate-300 md:left-5" />
                 ) : null}
                 <WorkflowStepCard
@@ -184,7 +184,7 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
             <p className="text-xs text-indigo-700">{t("workflowTree.currentStep")}</p>
             <p className="mt-1 text-sm font-semibold text-indigo-900">
               {progressSummary.current
-                ? CASE_WORKFLOW_STEPS[progressSummary.current.index]?.title
+                ? workflowSteps[progressSummary.current.index]?.title
                 : t("workflowTree.allStepsCompleted")}
             </p>
           </div>
@@ -199,7 +199,7 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
               ) : (
                 completedSteps.map((step) => (
                   <li key={step.stepId} className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1.5">
-                    {step.index + 1}. {CASE_WORKFLOW_STEPS[step.index]?.title}
+                    {step.index + 1}. {workflowSteps[step.index]?.title}
                   </li>
                 ))
               )}
@@ -216,7 +216,7 @@ export default function CaseWorkflowTree({ caseId }: CaseWorkflowTreeProps) {
               ) : (
                 remainingSteps.map((step) => (
                   <li key={step.stepId} className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5">
-                    {step.index + 1}. {CASE_WORKFLOW_STEPS[step.index]?.title}
+                    {step.index + 1}. {workflowSteps[step.index]?.title}
                   </li>
                 ))
               )}

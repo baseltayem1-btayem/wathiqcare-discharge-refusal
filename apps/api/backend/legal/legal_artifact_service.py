@@ -840,6 +840,7 @@ def record_legal_signature(
             "signer_role": str(signer_role or role),
             "ip_address": ip_address,
             "timestamp": now,
+            "signature_value": normalized_signature,
             "signature_hash": signature_hash,
             "e_transaction_binding": hashlib.sha256(f"{case.id}|{now}|{signature_hash}".encode("utf-8")).hexdigest(),
         }
@@ -894,6 +895,30 @@ def _render_legal_artifact_html(case: DischargeCase, workflow: DischargeRefusalW
         if isinstance(values, list):
             return "<br/>".join(str(v) for v in values if str(v).strip())
         return ""
+
+    def signature_block(role: str) -> str:
+        payload = signatures.get(role, {}) if isinstance(signatures.get(role), dict) else {}
+        raw_value = str(payload.get("signature_value") or "").strip()
+        signer_name = str(payload.get("signer_name") or "").strip()
+        signer_role = str(payload.get("signer_role") or role).strip()
+        signed_at = str(payload.get("timestamp") or "").strip()
+        signature_hash = str(payload.get("signature_hash") or "").strip()
+
+        if raw_value.startswith("data:image"):
+            signature_repr = (
+                f'<img src="{raw_value}" alt="{role} signature" '
+                'style="max-height:80px; max-width:220px; border:1px solid #e2e8f0;" />'
+            )
+        elif raw_value:
+            signature_repr = f"<code>{raw_value}</code>"
+        else:
+            signature_repr = "<span style=\"color:#b91c1c\">Missing</span>"
+
+        return (
+            f"<div><strong>{signer_name or role.title()}</strong> ({signer_role})</div>"
+            f"<div>{signature_repr}</div>"
+            f"<div style=\"font-size:11px;color:#475569\">Signed at: {signed_at or 'N/A'} | Hash: {signature_hash or 'N/A'}</div>"
+        )
 
     return f"""
 <!DOCTYPE html>
@@ -971,10 +996,10 @@ def _render_legal_artifact_html(case: DischargeCase, workflow: DischargeRefusalW
   <div class=\"section\">
     <h3>6) Signature Attestation / توثيق التواقيع</h3>
     <table>
-      <tr><td>Patient</td><td>{signatures.get('patient', {}).get('signature_hash', '')}</td><td class=\"rtl\">المريض</td></tr>
-      <tr><td>Physician</td><td>{signatures.get('physician', {}).get('signature_hash', '')}</td><td class=\"rtl\">الطبيب</td></tr>
-      <tr><td>Witness</td><td>{signatures.get('witness', {}).get('signature_hash', '')}</td><td class=\"rtl\">الشاهد</td></tr>
-      <tr><td>Guardian</td><td>{signatures.get('guardian', {}).get('signature_hash', '')}</td><td class=\"rtl\">ولي الأمر</td></tr>
+            <tr><td>Patient</td><td>{signature_block('patient')}</td><td class=\"rtl\">المريض</td></tr>
+            <tr><td>Physician</td><td>{signature_block('physician')}</td><td class=\"rtl\">الطبيب</td></tr>
+            <tr><td>Witness</td><td>{signature_block('witness')}</td><td class=\"rtl\">الشاهد</td></tr>
+            <tr><td>Guardian</td><td>{signature_block('guardian')}</td><td class=\"rtl\">ولي الأمر</td></tr>
     </table>
   </div>
 

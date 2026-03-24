@@ -11,6 +11,8 @@ import {
     type LegalAlert,
     type LegalAlertSeverity,
     type NotificationSettings,
+    type RecipientEmail,
+    type RecipientPhone,
 } from "@/lib/services/legalAlerts.service";
 
 const EMPTY_SETTINGS: NotificationSettings = {
@@ -124,16 +126,45 @@ export default function LegalAlertsCenter() {
         }
     }
 
-    function parseNamedLines(value: string, key: "email" | "phone") {
-        return value
+    function parseNamedLines(value: string, key: "email"): RecipientEmail[];
+    function parseNamedLines(value: string, key: "phone"): RecipientPhone[];
+    function parseNamedLines(value: string, key: "email" | "phone"): RecipientEmail[] | RecipientPhone[] {
+        const lines = value
             .split("\n")
             .map((line) => line.trim())
-            .filter(Boolean)
+            .filter(Boolean);
+
+        if (key === "email") {
+            return lines
+                .map((line) => {
+                    const [namePart, emailPart] = line.split("|").map((part) => part.trim());
+                    const email = emailPart || namePart || "";
+                    if (!email) {
+                        return null;
+                    }
+
+                    return {
+                        name: namePart || email,
+                        email,
+                    } satisfies RecipientEmail;
+                })
+                .filter((item): item is RecipientEmail => item !== null);
+        }
+
+        return lines
             .map((line) => {
-                const [name, field] = line.split("|").map((part) => part.trim());
-                return key === "email" ? { name: name || field, email: field || "" } : { name: name || field, phone: field || "" };
+                const [namePart, phonePart] = line.split("|").map((part) => part.trim());
+                const phone = phonePart || namePart || "";
+                if (!phone) {
+                    return null;
+                }
+
+                return {
+                    name: namePart || phone,
+                    phone,
+                } satisfies RecipientPhone;
             })
-            .filter((item) => (key === "email" ? "email" in item && item.email : "phone" in item && item.phone));
+            .filter((item): item is RecipientPhone => item !== null);
     }
 
     async function handleSaveRecipients() {
