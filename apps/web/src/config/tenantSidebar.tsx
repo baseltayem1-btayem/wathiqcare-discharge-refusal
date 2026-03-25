@@ -40,26 +40,10 @@ export type TenantNavItem = {
 
 /** Full tenant operational menu. No /platform routes here. */
 export const TENANT_NAV_ITEMS: TenantNavItem[] = [
-    { href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutGrid className="h-4 w-4" /> },
-    { href: "/tenant/users", label: "Tenant Users", icon: <Users className="h-4 w-4" /> },
-    { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
-    { href: "/operations", label: "Operations", icon: <LayoutGrid className="h-4 w-4" /> },
-    { href: "/operations/inboxes", label: "Department Inboxes", icon: <ClipboardList className="h-4 w-4" /> },
-    { href: "/legal-alerts", label: "Legal Alert Center", icon: <Bell className="h-4 w-4" /> },
-    { href: "/cases/new", labelKey: "nav.newCase", icon: <FilePlus2 className="h-4 w-4" /> },
-    { href: "/workflow", labelKey: "nav.workflowDocs", icon: <FileCog className="h-4 w-4" /> },
-    { href: "/refusal-forms", labelKey: "nav.refusalForms", icon: <FileSignature className="h-4 w-4" /> },
-    { href: "/legal-escalation", labelKey: "nav.legalEscalation", icon: <AlertTriangle className="h-4 w-4" /> },
-    { href: "/escalation-timeline", labelKey: "nav.escalationTimeline", icon: <Timer className="h-4 w-4" /> },
-    { href: "/legal-case-file", labelKey: "nav.legalCaseFile", icon: <Gavel className="h-4 w-4" /> },
-    { href: "/audit-log", labelKey: "nav.auditViewer", icon: <ClipboardList className="h-4 w-4" /> },
-    { href: "/icd11-validator", labelKey: "nav.icd11Validator", icon: <CheckCircle2 className="h-4 w-4" /> },
-    { href: "/emr-integration", labelKey: "nav.emrIntegration", icon: <Database className="h-4 w-4" /> },
-    { href: "/consents", labelKey: "nav.consents", icon: <FileCheck2 className="h-4 w-4" /> },
-    { href: "/compliance", labelKey: "nav.compliance", icon: <ShieldCheck className="h-4 w-4" /> },
-    { href: "/bundles", labelKey: "nav.bundles", icon: <Archive className="h-4 w-4" /> },
-    { href: "/launch-status", labelKey: "nav.launchStatus", icon: <Rocket className="h-4 w-4" /> },
-    { href: "/admin", labelKey: "nav.admin", icon: <ShieldCheck className="h-4 w-4" /> },
+    { href: "/cases", label: "Cases", icon: <FolderKanban className="h-4 w-4" /> },
+    { href: "/dashboards", label: "Dashboards", icon: <LayoutGrid className="h-4 w-4" /> },
+    { href: "/reports", label: "Reports", icon: <Archive className="h-4 w-4" /> },
+    { href: "/admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" /> },
 ];
 
 /** Case workflow stage navigation — used when workflowCaseNav prop is passed to AppShell. */

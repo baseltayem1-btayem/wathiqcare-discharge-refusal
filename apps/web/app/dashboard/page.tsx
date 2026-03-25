@@ -63,10 +63,10 @@ function StatCard(props: {
     props.tone === "good"
       ? "border-emerald-200 bg-emerald-50"
       : props.tone === "warn"
-      ? "border-amber-200 bg-amber-50"
-      : props.tone === "danger"
-      ? "border-rose-200 bg-rose-50"
-      : "border-slate-200 bg-white";
+        ? "border-amber-200 bg-amber-50"
+        : props.tone === "danger"
+          ? "border-rose-200 bg-rose-50"
+          : "border-slate-200 bg-white";
 
   return (
     <article className={`rounded-2xl border p-4 ${toneClass}`}>
@@ -157,9 +157,18 @@ export default function DashboardPage() {
                     <h2 className="text-sm font-semibold text-slate-900">Department Queue Status</h2>
                     <p className="text-xs text-slate-500">Transactions currently with each hospital department</p>
                   </div>
-                  <Link href="/operations/inboxes" className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-700">
-                    Open inboxes <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 cursor-not-allowed" title="Monitoring only">
+                    Monitoring only
+                  </span>
+                  <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <AlertTriangle className="h-4 w-4" />
+                      Dashboard is monitoring-only
+                    </div>
+                    <p className="mt-1 text-amber-800">
+                      No actions or workflow entry are available here. All execution and case management must be performed in <b>Cases</b>.
+                    </p>
+                  </section>
                 </div>
                 <div className="space-y-2">
                   {data.pendingByDepartment.map((item) => {
@@ -168,8 +177,8 @@ export default function DashboardPage() {
                       item.status === "breached"
                         ? "bg-rose-500"
                         : item.status === "at_risk"
-                        ? "bg-amber-500"
-                        : "bg-emerald-500";
+                          ? "bg-amber-500"
+                          : "bg-emerald-500";
                     return (
                       <div key={item.department} className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5">
                         <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">

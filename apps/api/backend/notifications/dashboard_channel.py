@@ -26,38 +26,7 @@ def send_dashboard_alert(
     case_deep_link: Optional[str] = None,
     metadata_json: Optional[Dict[str, Any]] = None,
 ) -> DashboardAlert:
-    """Upserts a dashboard alert (prevents duplicate creation for same alert_key).
-
-    Returns the existing or newly created alert.
-    """
-    existing = (
-        db.query(DashboardAlert)
-        .filter(
-            DashboardAlert.tenant_id == tenant_id,
-            DashboardAlert.alert_key == alert_key,
-        )
-        .first()
-    )
-    if existing:
-        # Record a skipped attempt — already exists, no duplicate
-        db.add(
-            NotificationDeliveryAttempt(
-                tenant_id=tenant_id,
-                case_id=case_id,
-                alert_id=existing.id,
-                channel="dashboard",
-                provider="internal",
-                recipient=f"dashboard:{tenant_id}",
-                notification_type=alert_type,
-                status="skipped",
-                failure_reason="Duplicate alert_key; existing alert already present.",
-                attempted_at=datetime.utcnow(),
-                metadata_json={"alert_key": alert_key},
-            )
-        )
-        db.flush()
-        logger.info("DASHBOARD_ALERT_SKIPPED_DUPLICATE", extra={"alert_key": alert_key, "tenant_id": tenant_id})
-        return existing
+    # Legacy duplicate alert prevention logic removed
 
     alert = DashboardAlert(
         tenant_id=tenant_id,

@@ -22,10 +22,8 @@
                 <option value="en">English</option>
             </select>
         </label>
-    </div>
-
-    <app-workflow-progress-tracker [steps]="activeSteps" [language]="language" [direction]="direction"
+        <!-- Legacy example workflow tracker HTML removed -->
         [enableStepNavigation]="true" (stepSelected)="onStepSelected($event)"></app-workflow-progress-tracker>
 
-    <p class="integration-note" *ngIf="integrationNote">{{ integrationNote }}</p>
+        <p class="integration-note" *ngIf="integrationNote">{{ integrationNote }}</p>
 </section>

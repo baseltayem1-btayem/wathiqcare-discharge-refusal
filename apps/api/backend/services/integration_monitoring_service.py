@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 CONNECTOR_DEFINITIONS = {
     "epic_emr": {"name": "Epic EMR", "kind": "mock"},
     "cerner_millennium": {"name": "Cerner Millennium", "kind": "mock"},
-    "legacy_system": {"name": "Legacy System", "kind": "mock"},
+    # Legacy system removed
     "fhir_integration": {"name": "FHIR Integration", "kind": "live"},
 }
 
@@ -36,9 +36,7 @@ CONNECTOR_KEY_ALIASES = {
     "cerner": "cerner_millennium",
     "cerner-millennium": "cerner_millennium",
     "cerner_millennium": "cerner_millennium",
-    "legacy": "legacy_system",
-    "legacy-system": "legacy_system",
-    "legacy_system": "legacy_system",
+    # Legacy system aliases removed
     "fhir": "fhir_integration",
     "fhir-integration": "fhir_integration",
     "fhir_integration": "fhir_integration",
@@ -669,7 +667,7 @@ def _run_fhir_sync(db: Session, connector: IntegrationConnector, run: Integratio
 
 def _run_mock_connector(db: Session, connector: IntegrationConnector, run: IntegrationRun) -> None:
     message = (
-        "Connector is not live yet. Epic/Cerner/Legacy adapters are pending implementation."
+        "Connector is not live yet. Epic/Cerner adapters are pending implementation."
     )
     run.status = "failed"
     run.records_processed = 0

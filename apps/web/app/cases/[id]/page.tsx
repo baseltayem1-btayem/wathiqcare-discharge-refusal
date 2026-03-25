@@ -1526,8 +1526,26 @@ export default function CaseDetailsPage() {
     setActiveTab("archive");
   };
 
+  // Executive summary bar at the top
+  const executiveSummary = (
+    <section className="mb-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1 className="text-lg font-bold text-blue-900">Case Overview</h1>
+        <div className="mt-1 flex flex-wrap gap-4 text-sm">
+          <span className="font-semibold text-slate-700">Status:</span>
+          <span className="rounded-full bg-slate-200 px-3 py-1 font-medium text-slate-900">{caseDetail?.status || t("common.na")}</span>
+          <span className="font-semibold text-slate-700">Responsible Department:</span>
+          <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-900">{operationTracker?.state?.assignedDepartmentLabel || operationTracker?.state?.assignedDepartment || t("common.na")}</span>
+          <span className="font-semibold text-slate-700">Required Action:</span>
+          <span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-900">{workflow?.current_stage_label || t("common.na")}</span>
+        </div>
+      </div>
+    </section>
+  );
+
   return (
     <AuthGuard>
+      {executiveSummary}
       <AppShell
         title={caseTitle}
         subtitle={t("caseDetails.subtitle")}
@@ -1803,12 +1821,12 @@ export default function CaseDetailsPage() {
             <section className="rounded-2xl border border-slate-200 p-2">
               <div className="flex flex-wrap gap-2">
                 {([
-                  ["overview", t("caseDetails.tab.overview")],
-                  ["consents", t("caseDetails.tab.consents")],
-                  ["agreements", t("caseDetails.tab.agreements")],
-                  ["roi", t("caseDetails.tab.roi")],
-                  ["archive", t("caseDetails.tab.archive")],
-                  ["audit", t("caseDetails.tab.audit")],
+                  ["overview", "Case Details"],
+                  ["consents", "Patient Consents"],
+                  ["agreements", "Home Care Agreements"],
+                  ["roi", "Release of Information"],
+                  ["archive", "Document Archive"],
+                  ["audit", "Case Audit Log"],
                 ] as Array<[TabKey, string]>).map(([key, label]) => (
                   <button
                     key={key}
@@ -1829,16 +1847,16 @@ export default function CaseDetailsPage() {
             {activeTab === "overview" ? (
               <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
                 <div className="min-w-0 rounded-2xl border border-slate-200 p-5">
-                  <h2 className="text-base font-semibold text-slate-900">{t("caseDetails.overview.workspaceTitle")}</h2>
-                  <p className="mt-1 text-sm text-slate-600">{t("caseDetails.overview.workspaceSubtitle")}</p>
+                  <h2 className="text-base font-semibold text-slate-900">Case Information</h2>
+                  <p className="mt-1 text-sm text-slate-600">Patient and case summary for review</p>
 
                   {visibleWorkflowProgressSteps.length > 0 ? (
                     <div className="mt-5">
-                      <h3 className="text-sm font-semibold text-slate-900">{t("caseDetails.overview.progressTitle")}</h3>
+                      <h3 className="text-sm font-semibold text-slate-900">Case Progress</h3>
                       <p className="mt-1 text-sm text-slate-600">
                         {workflowProgressSteps.length > 0
-                          ? t("caseDetails.overview.progressCurrentDescription")
-                          : t("caseDetails.overview.progressPlannedDescription")}
+                          ? "Current progress through required case steps."
+                          : "Planned steps for this case."}
                       </p>
                       <WorkflowProgress
                         className="mt-3"
@@ -1852,7 +1870,7 @@ export default function CaseDetailsPage() {
                     </div>
                   ) : null}
 
-                  <h3 className="mt-5 text-sm font-semibold text-slate-900">{t("caseDetails.overview.patientInfoTitle")}</h3>
+                  <h3 className="mt-5 text-sm font-semibold text-slate-900">Patient Information</h3>
                   <dl className="mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
                     <div>
                       <dt className="text-slate-500">{t("caseDetails.overview.mrn")}</dt>
@@ -1884,7 +1902,7 @@ export default function CaseDetailsPage() {
                     </div>
                   </dl>
 
-                  <h3 className="mt-5 text-sm font-semibold text-slate-900">{t("caseDetails.overview.additionalInfoTitle")}</h3>
+                  <h3 className="mt-5 text-sm font-semibold text-slate-900">Additional Case Details</h3>
                   <dl className="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
                     <div>
                       <dt className="text-slate-500">{t("field.attendingPhysician")}</dt>
@@ -1923,8 +1941,8 @@ export default function CaseDetailsPage() {
                   </dl>
 
                   <div className="mt-5">
-                    <h3 className="text-sm font-semibold text-slate-900">{t("caseDetails.overview.caseSummaryTitle")}</h3>
-                    <h3 className="text-sm font-medium text-slate-700">{t("caseDetails.overview.refusalReason")}</h3>
+                    <h3 className="text-sm font-semibold text-slate-900">Case Summary</h3>
+                    <h3 className="text-sm font-medium text-slate-700">Refusal Reason</h3>
                     <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-start">
                       <select
                         value={draft.refusal_reason}
@@ -1960,11 +1978,11 @@ export default function CaseDetailsPage() {
 
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <h3 className="text-sm font-medium text-slate-700">{t("field.socialAdministrativeInterventions")}</h3>
+                      <h3 className="text-sm font-medium text-slate-700">Social/Administrative Interventions</h3>
                       <p className="mt-1 text-sm text-slate-700">{workflow?.social_administrative_interventions || t("common.na")}</p>
                     </div>
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <h3 className="text-sm font-medium text-slate-700">{t("field.formsIssued")}</h3>
+                      <h3 className="text-sm font-medium text-slate-700">Forms Issued</h3>
                       <p className="mt-1 text-sm text-slate-700">{workflow?.forms_issued || t("common.na")}</p>
                     </div>
                   </div>
@@ -2003,7 +2021,7 @@ export default function CaseDetailsPage() {
                   <PatientCommunicationPanel
                     caseId={caseId}
                     patientName={caseDetail?.patient_name || workflow?.patient_name || null}
-                    disabledReason={workflowBackendUnavailable ? t("caseDetails.messages.workflowServiceUnavailable") : null}
+                    disabledReason={workflowBackendUnavailable ? "Workflow service unavailable" : null}
                   />
                 </div>
 
@@ -2014,8 +2032,8 @@ export default function CaseDetailsPage() {
             {activeTab === "consents" ? (
               <section className="space-y-4">
                 <div className="rounded-2xl border border-slate-200 p-5">
-                  <h2 className="text-base font-semibold text-slate-900">{t("caseDetails.consents.title")}</h2>
-                  <p className="mt-1 text-sm text-slate-600">{t("caseDetails.consents.subtitle")}</p>
+                  <h2 className="text-base font-semibold text-slate-900">Patient Consents</h2>
+                  <p className="mt-1 text-sm text-slate-600">Signed consent forms for this case</p>
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Link
@@ -2056,8 +2074,8 @@ export default function CaseDetailsPage() {
             {activeTab === "agreements" ? (
               <section className="space-y-4">
                 <div className="rounded-2xl border border-slate-200 p-5">
-                  <h2 className="text-base font-semibold text-slate-900">{t("caseDetails.agreements.title")}</h2>
-                  <p className="mt-1 text-sm text-slate-600">{t("caseDetails.agreements.subtitle")}</p>
+                  <h2 className="text-base font-semibold text-slate-900">Home Care Agreements</h2>
+                  <p className="mt-1 text-sm text-slate-600">Home care agreement documents for this case</p>
 
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Link
@@ -2085,8 +2103,8 @@ export default function CaseDetailsPage() {
             {activeTab === "roi" ? (
               <section className="space-y-4">
                 <div className="rounded-2xl border border-slate-200 p-5">
-                  <h2 className="text-base font-semibold text-slate-900">{t("caseDetails.roi.title")}</h2>
-                  <p className="mt-1 text-sm text-slate-600">{t("caseDetails.roi.subtitle")}</p>
+                  <h2 className="text-base font-semibold text-slate-900">Release of Information</h2>
+                  <p className="mt-1 text-sm text-slate-600">Release of information status and documents</p>
 
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
@@ -2115,8 +2133,8 @@ export default function CaseDetailsPage() {
             {activeTab === "archive" ? (
               <section className="space-y-4">
                 <div className="rounded-2xl border border-slate-200 p-5">
-                  <h2 className="text-base font-semibold text-slate-900">{t("caseDetails.archive.title")}</h2>
-                  <p className="mt-1 text-sm text-slate-600">{t("caseDetails.archive.subtitle")}</p>
+                  <h2 className="text-base font-semibold text-slate-900">Document Archive</h2>
+                  <p className="mt-1 text-sm text-slate-600">All generated documents and signatures for this case</p>
 
                   <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
                     <table className="w-full text-sm">
@@ -2258,7 +2276,7 @@ export default function CaseDetailsPage() {
             {activeTab === "audit" ? (
               <section className="rounded-2xl border border-slate-200 p-5">
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-slate-900">{t("caseDetails.audit.title")}</h2>
+                  <h2 className="text-base font-semibold text-slate-900">Case Audit Log</h2>
                   <button
                     type="button"
                     onClick={() => void loadCaseData()}

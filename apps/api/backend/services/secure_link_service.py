@@ -36,55 +36,7 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_EXPIRY_MINUTES = 10
 _DEFAULT_MAX_ACTIVE_LINKS_PER_CASE = 10
-_DEFAULT_ISSUE_COOLDOWN_SECONDS = 60
-_PUBLIC_LEGAL_NOTICE = (
-    "هذا الرابط مخصص لإقرار قرار الخروج فقط. تم عرض القرار وشرح آثاره والمخاطر "
-    "والبدائل العلاجية المتاحة. يرجى اختيار الموافقة أو الرفض بعد قراءة هذا "
-    "الإشعار بعناية."
-)
-
-
-def _pepper() -> str:
-    value = os.getenv("PUBLIC_LINK_TOKEN_PEPPER", "").strip()
-    if not value:
-        raise RuntimeError(
-            "PUBLIC_LINK_TOKEN_PEPPER is not configured.  "
-            "Set it in apps/api/.env before generating secure links."
-        )
-    return value
-
-
-def _expiry_minutes() -> int:
-    raw = os.getenv("SECURE_LINK_EXPIRY_MINUTES", "")
-    fallback_from_hours = os.getenv("SECURE_LINK_EXPIRY_HOURS", "")
-    try:
-        if raw.strip():
-            return max(1, min(10, int(raw)))
-        if fallback_from_hours.strip():
-            return max(1, min(10, int(fallback_from_hours) * 60))
-    except (ValueError, TypeError):
-        pass
-    return _DEFAULT_EXPIRY_MINUTES
-
-
-def _max_active_links_per_case() -> int:
-    raw = os.getenv("SECURE_LINK_MAX_ACTIVE_PER_CASE", "")
-    try:
-        if raw.strip():
-            return max(1, int(raw))
-    except (ValueError, TypeError):
-        pass
-    return _DEFAULT_MAX_ACTIVE_LINKS_PER_CASE
-
-
-def _issue_cooldown_seconds() -> int:
-    raw = os.getenv("SECURE_LINK_ISSUE_COOLDOWN_SECONDS", "")
-    try:
-        if raw.strip():
-            return max(0, int(raw))
-    except (ValueError, TypeError):
-        pass
-    return _DEFAULT_ISSUE_COOLDOWN_SECONDS
+## Legacy cooldown and expiry logic removed
 
 
 def _hash_token(raw_token: str) -> str:
