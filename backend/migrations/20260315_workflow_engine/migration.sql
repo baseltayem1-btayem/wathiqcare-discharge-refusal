@@ -8,7 +8,7 @@ ALTER TABLE IF EXISTS discharge_cases
   ADD COLUMN IF NOT EXISTS department VARCHAR NULL,
   ADD COLUMN IF NOT EXISTS attending_physician_user_id VARCHAR NULL REFERENCES users(id),
   ADD COLUMN IF NOT EXISTS attending_physician_name VARCHAR NULL,
-  ADD COLUMN IF NOT EXISTS current_stage_code VARCHAR NOT NULL DEFAULT 'nurse_draft',
+  ADD COLUMN IF NOT EXISTS current_stage_code VARCHAR NOT NULL DEFAULT 'draft',
   ADD COLUMN IF NOT EXISTS discharge_decision_date TIMESTAMP NULL,
   ADD COLUMN IF NOT EXISTS discharge_plan_summary TEXT NULL,
   ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMP NULL,

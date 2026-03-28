@@ -1,17 +1,17 @@
-from __future__ import annotations
+from backend.core.database import SessionLocal
 
+
+from fastapi import APIRouter, Depends, Request
+from backend.models.integration_connector import IntegrationConnector
+from backend.models.integration_sla_breach import IntegrationSLABreach
+from backend.services.integration_monitoring_service import evaluate_sla_for_connector
+from sqlalchemy.orm import Session
+from backend.api.deps import get_db, require_roles
 import os
 from datetime import datetime, timezone
 from typing import Dict
 
-from fastapi import APIRouter, Depends
-
-from backend.api.deps import require_roles
-from backend.integration.emr_connector import FHIRBuilder, InMemoryEMRConnector
-
 router = APIRouter(tags=["Integration"])
-_connector = InMemoryEMRConnector()
-
 INTEGRATION_VIEW_ROLES = (
     "tenant_admin",
     "legal_admin",
@@ -22,6 +22,54 @@ INTEGRATION_VIEW_ROLES = (
     "quality",
     "compliance",
 )
+from backend.integration.emr_connector import FHIRBuilder, InMemoryEMRConnector
+_connector = InMemoryEMRConnector()
+
+# --- SLA STATUS ENDPOINT ---
+@router.get("/api/integrations/sla/status")
+def get_sla_status(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles(*INTEGRATION_VIEW_ROLES)),
+):
+    _ = current_user
+    now = datetime.now(timezone.utc)
+    connectors = db.query(IntegrationConnector).all()
+    connector_results = []
+    connectors_ok = 0
+    connectors_breached = 0
+    connectors_disabled = 0
+    total_open_breaches = 0
+    for connector in connectors:
+        evaluation = evaluate_sla_for_connector(db, connector)
+        evaluation["connector_name"] = connector.connector_name
+        evaluation["enabled"] = connector.enabled
+        evaluation["sla_rules"] = {
+            "max_sync_delay_seconds": float(os.getenv("INTEGRATION_SLA_MAX_SYNC_DELAY_SECONDS", "3600")),
+            "max_failure_rate": float(os.getenv("INTEGRATION_SLA_MAX_FAILURE_RATE", "0.5")),
+            "max_queue_time_seconds": float(os.getenv("INTEGRATION_SLA_MAX_QUEUE_TIME_SECONDS", "300")),
+            "failure_rate_window": int(os.getenv("INTEGRATION_SLA_FAILURE_RATE_WINDOW", "10")),
+        }
+        if not evaluation["enabled"]:
+            connectors_disabled += 1
+        elif evaluation["sla_status"] == "breached":
+            connectors_breached += 1
+        else:
+            connectors_ok += 1
+        total_open_breaches += evaluation.get("open_breach_count", 0)
+        connector_results.append(evaluation)
+    summary = {
+        "connectors_ok": connectors_ok,
+        "connectors_breached": connectors_breached,
+        "connectors_disabled": connectors_disabled,
+        "total_open_breaches": total_open_breaches,
+    }
+    return {
+        "evaluated_at": now.isoformat(),
+        "summary": summary,
+        "connectors": connector_results,
+    }
+
 
 
 def _seed_if_missing(mrn: str) -> Dict[str, str]:

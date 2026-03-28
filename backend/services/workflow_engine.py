@@ -1,4 +1,10 @@
+
 from __future__ import annotations
+import os
+import sys
+print(f"[IMPORT TRACE] WorkflowEngineService loaded from: {os.path.abspath(__file__)}", file=sys.stderr)
+import importlib.util
+print('Resolved WorkflowEngineService path:', importlib.util.find_spec('backend.services.workflow_engine').origin)
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -38,6 +44,78 @@ class AssignmentTarget:
 
 
 class WorkflowEngineService:
+    def record_witness_confirmation(self, case_id: str, tenant_id: str, actor_user_id: str, actor_name: str, event_details: dict = None):
+        """Record a witness confirmation as an actor event (does not trigger workflow transition)."""
+        from backend.services.actor_event_service import ActorEventService
+        actor_event_service = ActorEventService(self.db)
+        actor_event_service.record_actor_event(
+            case_id=case_id,
+            actor_type="witness",
+            event_type="witness_confirmation",
+            actor_user_id=actor_user_id,
+            actor_name=actor_name,
+            event_details=event_details or {},
+        )
+
+    def record_physician_confirmation(self, case_id: str, tenant_id: str, actor_user_id: str, actor_name: str, event_details: dict = None):
+        """Record a physician confirmation as an actor event (does not trigger workflow transition)."""
+        from backend.services.actor_event_service import ActorEventService
+        actor_event_service = ActorEventService(self.db)
+        actor_event_service.record_actor_event(
+            case_id=case_id,
+            actor_type="doctor",
+            event_type="physician_confirmation",
+            actor_user_id=actor_user_id,
+            actor_name=actor_name,
+            event_details=event_details or {},
+        )
+
+    def transition_case(
+        self,
+        case_id: str,
+        tenant_id: str,
+        actor_user_id: str,
+        actor_role: str,
+        action_code: str,
+        payload: dict,
+    ):
+        """
+        Public API for performing a workflow transition. Wraps the private _transition_case.
+        """
+        with self._tx():
+            case = self._ensure_case(case_id, tenant_id)
+            return self._transition_case(
+                case=case,
+                action_code=action_code,
+                actor_user_id=actor_user_id,
+                actor_role=actor_role,
+                event_type=action_code,
+                event_title=f"Transition: {action_code}",
+                event_details=payload.get("event_details"),
+                metadata_json=payload,
+            )
+    # Canonical state machine for clinical execution
+    CANONICAL_STATES = [
+        "draft",         # DRAFT
+        "presentation", # PRESENTATION
+        "signature",    # SIGNATURE
+        "witness",      # WITNESS
+        "ready",        # READY
+        "legal",        # LEGAL
+    ]
+    CANONICAL_TRANSITIONS = {
+        "draft": "presentation",
+        "presentation": "signature",
+        "signature": "witness",
+        "witness": "ready",
+        "ready": "legal",
+    }
+
+    def _enforce_canonical_transition(self, from_state: str, to_state: str):
+        expected = self.CANONICAL_TRANSITIONS.get(from_state)
+        if expected != to_state:
+            raise ValueError(f"Invalid workflow transition: {from_state} → {to_state}. Only canonical transitions allowed.")
+
     def __init__(self, db: Session):
         self.db = db
         self.audit = AuditService(db)
@@ -89,9 +167,21 @@ class WorkflowEngineService:
             raise ValueError(f"Invalid transition: {from_stage_code} --{action_code}--> ?")
         return transition
 
+    ALLOWED_ROLES = {"doctor", "nurse", "legal", "admin", "legal_admin"}
+
     def _validate_required_role(self, transition: WorkflowTransition, actor_role: Optional[str]) -> None:
-        if transition.requires_role and transition.requires_role != actor_role:
-            raise ValueError(f"Action requires role: {transition.requires_role}")
+        # Normalize and strictly enforce allowed roles
+        if actor_role is not None:
+            normalized_role = str(actor_role).strip().lower()
+            if normalized_role not in self.ALLOWED_ROLES:
+                raise ValueError(f"Unauthorized role: {actor_role}. Allowed roles: {', '.join(self.ALLOWED_ROLES)}")
+        else:
+            normalized_role = None
+        # If transition requires a specific role, enforce it
+        if transition.requires_role:
+            required = str(transition.requires_role).strip().lower()
+            if normalized_role != required:
+                raise ValueError(f"Action requires role: {required}")
 
     def _ensure_stage_seeded(self, code: str) -> None:
         stage = self.db.query(WorkflowStage).filter(WorkflowStage.code == code).first()
@@ -145,6 +235,9 @@ class WorkflowEngineService:
         transition = self._resolve_transition(case.current_stage_code, action_code)
         self._validate_required_role(transition, actor_role)
         self._ensure_stage_seeded(transition.to_stage_code)
+
+        # ENFORCE STRICT CANONICAL STATE MACHINE
+        self._enforce_canonical_transition(case.current_stage_code, transition.to_stage_code)
 
         previous_stage = case.current_stage_code
         self.tasks.close_open_tasks_for_stage(
@@ -209,6 +302,24 @@ class WorkflowEngineService:
                 }
             ),
         )
+        # --- Unified Audit Log ---
+        from backend.services.workflow_audit_log_service import WorkflowAuditLogService
+        audit_service = WorkflowAuditLogService(self.db)
+        audit_service.append_audit_log(
+            case_id=case.id,
+            event_category="workflow_transition",
+            event_type=event_type,
+            user_id=actor_user_id,
+            actor_type=actor_role,
+            payload_json={
+                "from_stage": previous_stage,
+                "to_stage": transition.to_stage_code,
+                "event_type": event_type,
+                "event_title": event_title,
+                "event_details": event_details,
+                "metadata_json": self._json_safe(metadata_json or {}),
+            },
+        )
 
         return task
 
@@ -225,6 +336,7 @@ class WorkflowEngineService:
         attending_physician_user_id: Optional[str],
         attending_physician_name: Optional[str],
         discharge_plan_summary: Optional[str],
+        actor_role: str = "nurse",
     ) -> DischargeCase:
         with self._tx():
             case = DischargeCase(
@@ -237,7 +349,7 @@ class WorkflowEngineService:
                 department=department,
                 attending_physician_user_id=attending_physician_user_id,
                 attending_physician_name=attending_physician_name,
-                current_stage_code=StageCode.NURSE_DRAFT,
+                current_stage_code="draft",
                 status=CaseStatus.ACTIVE,
                 discharge_plan_summary=discharge_plan_summary,
                 created_by=created_by,
@@ -245,57 +357,33 @@ class WorkflowEngineService:
             self.db.add(case)
             self.db.flush()
 
-            task = self._transition_case(
-                case=case,
-                action_code=ActionCode.CREATE_CASE,
-                actor_user_id=created_by,
-                actor_role=None,
-                event_type=EventCode.CASE_CREATED,
-                event_title="Case Created",
-                event_details="Discharge workflow case created and routed to physician.",
-                next_task_code="physician_issue_order",
-                next_task_title="Issue discharge order",
-                next_task_description="Physician must issue discharge order for patient acknowledgment.",
-            )
-
-            if task and case.attending_physician_user_id:
-                self.notifications.create_in_app_notification(
-                    case_id=case.id,
-                    task_id=task.id,
-                    recipient_user_id=case.attending_physician_user_id,
-                    recipient_team_code=None,
-                    notification_type="physician_task_created",
-                    title="Discharge case assigned",
-                    body=f"Case {case.case_number} assigned for discharge order.",
-                )
-
+            # Do not perform a workflow transition on creation; case starts in 'draft'.
+            # Workflow progression begins with the first canonical transition (e.g., to_presentation).
             return case
 
-    def issue_discharge_order(
+    def record_discharge_order(
         self,
         case_id: str,
         tenant_id: Optional[str],
         actor_user_id: str,
-        actor_role: Optional[str],
         discharge_plan_payload: Dict[str, Any],
     ) -> DischargeCase:
+        """
+        Business event: Record discharge order details, but do NOT perform a workflow transition.
+        """
         with self._tx():
             case = self._ensure_case(case_id, tenant_id)
             case.discharge_decision_date = discharge_plan_payload.get("discharge_decision_date") or self._now()
             case.discharge_plan_summary = discharge_plan_payload.get("discharge_plan_summary") or case.discharge_plan_summary
-
-            self._transition_case(
-                case=case,
-                action_code=ActionCode.ISSUE_DISCHARGE_ORDER,
+            # Optionally log/audit this event
+            self.audit.log(
+                case_id=case.id,
+                task_id=None,
                 actor_user_id=actor_user_id,
-                actor_role=actor_role,
-                event_type=EventCode.DISCHARGE_ORDER_ISSUED,
-                event_title="Discharge Order Issued",
-                event_details="Physician issued discharge order.",
+                event_type="discharge_order_recorded",
+                event_title="Discharge Order Recorded",
+                event_details="Physician recorded discharge order.",
                 metadata_json={"payload": discharge_plan_payload},
-                next_task_code="nurse_request_patient_signature",
-                next_task_title="Request patient signature",
-                next_task_description="Nurse sends discharge order for patient acknowledgment.",
             )
             return case
 

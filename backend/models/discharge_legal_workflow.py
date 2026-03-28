@@ -1,4 +1,56 @@
+
+#
 from __future__ import annotations
+
+
+from datetime import date, datetime
+import uuid
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    JSON,
+    String,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import relationship
+from backend.core.database import Base
+# LegalEvent model for legal orchestration event system
+class LegalEvent(Base):
+    __tablename__ = "legal_events"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenant_id = Column(String, nullable=False)
+    case_id = Column(String, nullable=False)
+    legal_state = Column(String, nullable=False)
+    event_type = Column(String, nullable=False)
+    payload = Column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+# Real SQLAlchemy model for SignerIdentity
+class SignerIdentity(Base):
+    __tablename__ = "signer_identities"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    case_id = Column(String, nullable=False)
+    full_name = Column(String, nullable=False)
+    arabic_full_name = Column(String, nullable=True)
+    nationality = Column(String, nullable=True)
+    legal_capacity_indicator = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+# Real SQLAlchemy model for SignatureArtifact
+class SignatureArtifact(Base):
+    __tablename__ = "signature_artifacts"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    case_id = Column(String, nullable=False)
+    source_mode = Column(String, nullable=True)
+    document_version = Column(String, nullable=True)
+    signature_payload = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 from datetime import date, datetime
 import uuid
@@ -260,7 +312,28 @@ class DischargeLegalTemplate(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    __table_args__ = (
-        Index("idx_discharge_legal_templates_key", "template_key"),
-        Index("idx_discharge_legal_templates_published", "is_published"),
-    )
+class PatientNoticePresentation(Base):
+    __tablename__ = "patient_notice_presentations"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    case_id = Column(String, nullable=False)
+    presented_to_type = Column(String, nullable=True)
+    presented_to_name = Column(String, nullable=True)
+    presented_to_id_type = Column(String, nullable=True)
+    presented_to_id_number = Column(String, nullable=True)
+    acknowledged_view = Column(Boolean, nullable=True)
+    witness_name = Column(String, nullable=True)
+    document_type = Column(String, nullable=True)
+    viewed_duration_seconds = Column(String, nullable=True)
+    interpreter_used = Column(Boolean, nullable=True)
+    mode = Column(String, nullable=True)
+    language = Column(String, nullable=True)
+    notice_method = Column(String, nullable=True)
+    identity_verified = Column(Boolean, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# Keep __all__ for explicit export
+__all__ = [
+    "PatientNoticePresentation",
+]

@@ -63,8 +63,44 @@ OTP_ROLES = (
 )
 
 
+
+class GenerateDynamicPDFRequest(BaseModel):
+    type: str = Field(..., description="نوع الوثيقة")
+    fields: Dict[str, Any] = Field(default_factory=dict, description="الحقول الديناميكية")
+
 class GenerateFormRequest(BaseModel):
     payload: Dict[str, Any] = Field(default_factory=dict)
+
+# Endpoint جديد لتوليد PDF ديناميكي
+@router.post("/forms/generate-pdf")
+def generate_dynamic_pdf(
+    request: GenerateDynamicPDFRequest,
+    current_user=Depends(require_roles(*EDIT_ROLES)),
+):
+    """
+    توليد PDF ديناميكي آمن وقوي مع دعم الحقول المتغيرة.
+    type: نوع الوثيقة (مثال: refusal, financial, homecare)
+    fields: dict من الحقول المطلوبة
+    """
+    from backend.forms import pdf_generator
+    try:
+        pdf_path = None
+        if request.type == "refusal":
+            pdf_path = pdf_generator.generate_discharge_refusal_pdf(request.fields)
+        # يمكن إضافة أنواع أخرى هنا
+        else:
+            raise HTTPException(status_code=400, detail="نوع الوثيقة غير مدعوم")
+        if not pdf_path or not Path(pdf_path).exists():
+            raise HTTPException(status_code=500, detail="فشل توليد ملف PDF")
+        return FileResponse(
+            path=pdf_path,
+            filename=Path(pdf_path).name,
+            media_type="application/pdf",
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"خطأ في توليد PDF: {exc}")
 
 
 class SignDocumentRequest(BaseModel):

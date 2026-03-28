@@ -11,52 +11,54 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.models.integration_alert_log import IntegrationAlertLog
-from backend.models.integration_connector import IntegrationConnector
-from backend.models.integration_run import IntegrationRun
-from backend.models.integration_sla_breach import IntegrationSLABreach
+import os
+import tempfile
+import shutil
+import sqlalchemy
+
+# Import the service module as svc for test usage
 from backend.services import integration_monitoring_service as svc
 
+# Import IntegrationConnector for use in tests
+from backend.models.integration_connector import IntegrationConnector
 
-def _make_session():
+# Import IntegrationSLABreach for use in tests
+from backend.models.integration_sla_breach import IntegrationSLABreach
+
+# Use a file-based SQLite DB for test and app
+TEST_DB_PATH = os.path.abspath("test_sla.db")
+TEST_DB_URL = f"sqlite:///{TEST_DB_PATH}"
+
+@pytest.fixture(scope="session")
+def test_engine_and_session():
+    # Remove old test DB if exists
+    if os.path.exists(TEST_DB_PATH):
+        os.remove(TEST_DB_PATH)
     engine = create_engine(
-        "sqlite://",
+        TEST_DB_URL,
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
     )
+    from backend.models.integration_connector import IntegrationConnector
+    from backend.models.integration_run import IntegrationRun
+    from backend.models.integration_alert_log import IntegrationAlertLog
+    from backend.models.integration_sla_breach import IntegrationSLABreach
     IntegrationConnector.__table__.create(bind=engine)
     IntegrationRun.__table__.create(bind=engine)
     IntegrationAlertLog.__table__.create(bind=engine)
     IntegrationSLABreach.__table__.create(bind=engine)
-    return sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    yield engine, Session
 
+    engine.dispose()
+    if os.path.exists(TEST_DB_PATH):
+        os.remove(TEST_DB_PATH)
 
-def _make_connector(db, *, key="fhir_integration", name="FHIR Integration", enabled=True, last_success_at=None, created_at=None):
-    now = svc.utcnow()
-    connector = IntegrationConnector(
-        connector_key=key,
-        connector_name=name,
-        enabled=enabled,
-        connection_url="http://example-fhir.test",
-        auth_type="none",
-        sync_interval_minutes=15,
-        timeout_seconds=10,
-        retry_count=1,
-        retry_backoff_seconds=0,
-        last_success_at=last_success_at,
-        created_at=created_at or now,
-    )
-    db.add(connector)
-    db.commit()
-    db.refresh(connector)
-    return connector
+@pytest.fixture
+def local_session(test_engine_and_session):
+    _, Session = test_engine_and_session
+    return Session
 
-
-# ---------------------------------------------------------------------------
-# Test: delayed_sync breach detected when never synced + past threshold
-# ---------------------------------------------------------------------------
-
-def test_sla_delayed_sync_breach_detected(monkeypatch):
-    local_session = _make_session()
+def test_sla_delayed_sync_breach_detected(monkeypatch, local_session):
     monkeypatch.setattr(svc, "SessionLocal", local_session)
     monkeypatch.setenv("INTEGRATION_ALERTS_ENABLED", "false")
     monkeypatch.setenv("INTEGRATION_SLA_MAX_SYNC_DELAY_SECONDS", "100")
@@ -86,8 +88,7 @@ def test_sla_delayed_sync_breach_detected(monkeypatch):
 # Test: delayed_sync breach NOT created when within threshold
 # ---------------------------------------------------------------------------
 
-def test_sla_no_breach_when_recent_sync(monkeypatch):
-    local_session = _make_session()
+def test_sla_no_breach_when_recent_sync(monkeypatch, local_session):
     monkeypatch.setattr(svc, "SessionLocal", local_session)
     monkeypatch.setenv("INTEGRATION_ALERTS_ENABLED", "false")
     monkeypatch.setenv("INTEGRATION_SLA_MAX_SYNC_DELAY_SECONDS", "3600")
@@ -113,8 +114,7 @@ def test_sla_no_breach_when_recent_sync(monkeypatch):
 # Test: high_failure_rate breach detected
 # ---------------------------------------------------------------------------
 
-def test_sla_high_failure_rate_breach(monkeypatch):
-    local_session = _make_session()
+def test_sla_high_failure_rate_breach(monkeypatch, local_session):
     monkeypatch.setattr(svc, "SessionLocal", local_session)
     monkeypatch.setenv("INTEGRATION_ALERTS_ENABLED", "false")
     # Use 1-hour threshold so delayed_sync doesn't fire → focus on failure_rate
@@ -167,8 +167,7 @@ def test_sla_high_failure_rate_breach(monkeypatch):
 # Test: max_queue_time breach detected for stuck queued run
 # ---------------------------------------------------------------------------
 
-def test_sla_max_queue_time_breach(monkeypatch):
-    local_session = _make_session()
+def test_sla_max_queue_time_breach(monkeypatch, local_session):
     monkeypatch.setattr(svc, "SessionLocal", local_session)
     monkeypatch.setenv("INTEGRATION_ALERTS_ENABLED", "false")
     monkeypatch.setenv("INTEGRATION_SLA_MAX_SYNC_DELAY_SECONDS", "3600")
@@ -206,8 +205,7 @@ def test_sla_max_queue_time_breach(monkeypatch):
 # Test: breach is auto-resolved when condition clears
 # ---------------------------------------------------------------------------
 
-def test_sla_breach_auto_resolved(monkeypatch):
-    local_session = _make_session()
+def test_sla_breach_auto_resolved(monkeypatch, local_session):
     monkeypatch.setattr(svc, "SessionLocal", local_session)
     monkeypatch.setenv("INTEGRATION_ALERTS_ENABLED", "false")
     monkeypatch.setenv("INTEGRATION_SLA_MAX_SYNC_DELAY_SECONDS", "100")
@@ -247,20 +245,21 @@ def test_sla_breach_auto_resolved(monkeypatch):
 # Test: GET /api/integrations/sla/status endpoint
 # ---------------------------------------------------------------------------
 
-def test_sla_status_endpoint_structure(monkeypatch):
+def test_sla_status_endpoint_structure(monkeypatch, local_session):
+
     from backend.api.routers import integration as integration_router
 
     app = FastAPI()
     app.include_router(integration_router.router)
 
-    local_session = _make_session()
-    monkeypatch.setattr(integration_router, "SessionLocal", local_session)
-    monkeypatch.setattr(svc, "SessionLocal", local_session)
+    from datetime import timezone
+    import pytest
+
     monkeypatch.setenv("INTEGRATION_ALERTS_ENABLED", "false")
     monkeypatch.setenv("INTEGRATION_SLA_MAX_SYNC_DELAY_SECONDS", "3600")
 
     db = local_session()
-    now = svc.utcnow()
+    now = svc.utcnow().replace(tzinfo=timezone.utc)
     connector = IntegrationConnector(
         connector_key="fhir_integration",
         connector_name="FHIR Integration",
@@ -274,7 +273,6 @@ def test_sla_status_endpoint_structure(monkeypatch):
         last_success_at=now - timedelta(minutes=30),
     )
     db.add(connector)
-    # Open breach already persisted
     db.add(IntegrationSLABreach(
         connector_key="fhir_integration",
         breach_type="high_failure_rate",
@@ -289,19 +287,58 @@ def test_sla_status_endpoint_structure(monkeypatch):
     db.commit()
     db.close()
 
-    route = next(
-        r
-        for r in app.routes
-        if getattr(r, "path", None) == "/api/integrations/sla/status"
-        and "GET" in getattr(r, "methods", set())
-    )
-    auth_dep = route.dependant.dependencies[0].call
-    app.dependency_overrides[auth_dep] = lambda: {
+    # Patch get_current_user for authentication
+    from backend.api import deps
+    app.dependency_overrides[deps.get_current_user] = lambda: {
         "id": "ops-user",
         "email": "ops@example.test",
         "role": "tenant_admin",
         "tenant_id": "tenant-ops",
+        "is_active": True,
     }
+    # Patch get_db to use the test's local_session
+
+    def _test_get_db():
+        db = local_session()
+        try:
+            yield db
+        finally:
+            db.close()
+    app.dependency_overrides[deps.get_db] = _test_get_db
+
+    client = TestClient(app, raise_server_exceptions=True)
+    resp = client.get("/api/integrations/sla/status")
+    assert resp.status_code == 200
+
+    body = resp.json()
+    assert "evaluated_at" in body
+    assert "summary" in body
+    assert "connectors" in body
+
+    summary = body["summary"]
+    assert "connectors_ok" in summary
+    assert "connectors_breached" in summary
+    assert "connectors_disabled" in summary
+    assert "total_open_breaches" in summary
+    assert len(body["connectors"]) >= 1
+    fhir = next((c for c in body["connectors"] if c["connector_key"] == "fhir_integration"), None)
+    assert fhir is not None
+    assert fhir["enabled"] is True
+    assert fhir["sla_status"] == "breached"
+    assert fhir["open_breach_count"] == 1
+    assert len(fhir["breaches"]) == 1
+
+    breach = fhir["breaches"][0]
+    assert breach["breach_type"] == "high_failure_rate"
+    assert breach["severity"] == "error"
+    assert breach["metric_value"] == pytest.approx(0.8)
+    assert breach["threshold_value"] == pytest.approx(0.5)
+
+    sla_rules = fhir["sla_rules"]
+    assert "max_sync_delay_seconds" in sla_rules
+    assert "max_failure_rate" in sla_rules
+    assert "max_queue_time_seconds" in sla_rules
+    assert "failure_rate_window" in sla_rules
 
     client = TestClient(app, raise_server_exceptions=True)
     resp = client.get("/api/integrations/sla/status")

@@ -1,4 +1,22 @@
+
 from __future__ import annotations
+
+def _iso(dt):
+    if dt is None:
+        return None
+    return dt.isoformat()
+
+def _log_audit(db, tenant_id, user_id, case_id, action, details):
+    log = AuditLog(
+        tenant_id=tenant_id,
+        user_id=user_id,
+        entity_type="discharge_case",
+        entity_id=case_id,
+        action=action,
+        details=details,
+        created_at=_utc_now(),
+    )
+    db.add(log)
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -148,33 +166,6 @@ def _parse_datetime(raw: Optional[str]) -> Optional[datetime]:
         return datetime.fromisoformat(normalized).replace(tzinfo=None)
     except Exception:
         return None
-
-
-def _iso(value: Optional[datetime]) -> Optional[str]:
-    if not value:
-        return None
-    return value.isoformat()
-
-
-def _log_audit(
-    db,
-    *,
-    tenant_id: str,
-    user_id: str,
-    case_id: str,
-    action: str,
-    details: str,
-) -> None:
-    log = AuditLog(
-        tenant_id=tenant_id,
-        user_id=user_id,
-        entity_type="discharge_case",
-        entity_id=case_id,
-        action=action,
-        details=details,
-        created_at=_utc_now(),
-    )
-    db.add(log)
 
 
 def _log_generation_failure_audit(
@@ -630,7 +621,61 @@ def _build_policy_validation(
         "requirements": requirements,
         "validated_at": _iso(_utc_now()),
     }
+def _compute_readiness(bundle: CaseBundle) -> dict:
+    workflow = bundle.workflow
 
+    blocked_reasons = set()
+
+    # 1. Medical tasks first
+    if not getattr(workflow, "medical_tasks_completed_at", None):
+        blocked_reasons.add("blocked_by_medical_tasks")
+
+    # 2. Patient interaction second
+    if not getattr(workflow, "patient_interaction_completed_at", None):
+        blocked_reasons.add("blocked_by_patient_interaction")
+
+    # 3. Signatures ONLY after both above are done
+    if not blocked_reasons:
+        if not getattr(workflow, "all_signatures_completed", False):
+            blocked_reasons.add("blocked_by_missing_signatures")
+
+    is_ready = len(blocked_reasons) == 0
+
+    return {
+        "status": next(iter(blocked_reasons)) if blocked_reasons else "ready_for_discharge",
+        "can_finalize": is_ready,
+        "missing_signature_requirements": [] if is_ready else (["signatures"] if "blocked_by_missing_signatures" in blocked_reasons else []),
+    }
+
+
+def _build_department_panel(bundle: CaseBundle) -> list:
+    workflow = bundle.workflow
+    stage_times = _stage_timestamps(workflow)
+    current_stage = workflow.current_stage or "medical_discharge_decision"
+
+    panel = []
+
+    for stage in WORKFLOW_STAGES:
+        timestamp = stage_times.get(stage)
+
+        if timestamp:
+            state = "completed"
+        elif stage == current_stage:
+            state = "current"
+        else:
+            state = "pending"
+
+        panel.append(
+            {
+                "department": stage,
+                "label": STAGE_LABELS.get(stage, stage),
+                "state": state,
+                "completed": bool(timestamp),
+                "timestamp": _iso(timestamp),
+            }
+        )
+
+    return panel
 
 def _serialize_workflow(bundle: CaseBundle) -> Dict[str, Any]:
     workflow = bundle.workflow
@@ -664,7 +709,7 @@ def _serialize_workflow(bundle: CaseBundle) -> Dict[str, Any]:
     policy_validation = _build_policy_validation(bundle)
     lifecycle_status = _canonical_case_lifecycle_status(bundle)
 
-    return {
+    data = {
         "id": workflow.id,
         "case_id": workflow.case_id,
         "workflow_type": workflow.workflow_type,
@@ -722,6 +767,10 @@ def _serialize_workflow(bundle: CaseBundle) -> Dict[str, Any]:
         "timeline": timeline,
         "documents": documents,
     }
+    # Add readiness and department_panel for test contract
+    data["readiness"] = _compute_readiness(bundle)
+    data["department_panel"] = _build_department_panel(bundle)
+    return data
 
 
 def _build_template_context(
@@ -834,59 +883,16 @@ def _write_document_pdf(case_id: str, template_key: str, html_content: str) -> O
     return file_name, str(file_path)
 
 
-def get_workflow_snapshot(*, tenant_id: str, case_id: str) -> Dict[str, Any]:
-    db = SessionLocal()
+def get_workflow_snapshot(*, tenant_id: str, case_id: str, db=None) -> Dict[str, Any]:
+    owns_db = db is None
+    if db is None:
+        db = SessionLocal()
+
     try:
         bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
         _sync_case_documentation(bundle)
         db.flush()
-        db.refresh(bundle.workflow)
         return _serialize_workflow(bundle)
-    finally:
-        db.close()
-
-
-def list_case_documents(*, tenant_id: str, case_id: str) -> List[Dict[str, Any]]:
-    db = SessionLocal()
-    try:
-        bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
-        return [_serialize_document(item) for item in bundle.workflow.documents]
-    finally:
-        db.close()
-
-
-def validate_workflow_generation(
-    *,
-    tenant_id: str,
-    case_id: str,
-    template_key: Optional[str] = None,
-    payload: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    db = SessionLocal()
-    payload = payload or {}
-
-    try:
-        if template_key and template_key not in WORKFLOW_TEMPLATES:
-            raise ValueError("Unknown template key")
-
-        bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
-        _apply_payload_to_workflow(bundle.workflow, payload)
-        _apply_payload_to_case_documentation(bundle.case_documentation, payload)
-        _sync_case_documentation(bundle)
-
-        context = _build_template_context(bundle, payload)
-        required_fields = (
-            WORKFLOW_TEMPLATES[template_key].required_fields
-            if template_key
-            else [key for key, _ in POLICY_REQUIRED_CASE_DOCUMENTATION]
-        )
-
-        missing_fields = _validate_required_fields(context, required_fields)
-        policy_validation = _build_policy_validation(
-            bundle,
-            required_fields=required_fields,
-            context=context,
-        )
 
         bundle.case_documentation.last_validated_at = _utc_now()
         bundle.case_documentation.last_validation_status = "ready" if len(missing_fields) == 0 else "missing_fields"
@@ -902,38 +908,45 @@ def validate_workflow_generation(
     except Exception:
         db.rollback()
         raise
-    finally:
-        db.close()
-
+  
 
 def preview_workflow_document(
     *,
     tenant_id: str,
     case_id: str,
     template_key: str,
+    db,
     payload: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    db = SessionLocal()
+
     try:
         if template_key not in WORKFLOW_TEMPLATES:
             raise ValueError("Unknown template key")
 
         bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
+
         _apply_payload_to_workflow(bundle.workflow, payload or {})
         _apply_payload_to_case_documentation(bundle.case_documentation, payload or {})
         _sync_case_documentation(bundle)
+
         template = WORKFLOW_TEMPLATES[template_key]
         context = _build_template_context(bundle, payload)
+
         missing_fields = _validate_required_fields(context, template.required_fields)
+
         policy_validation = _build_policy_validation(
             bundle,
             required_fields=template.required_fields,
             context=context,
         )
+
         html_content = template.renderer(context)
 
         bundle.case_documentation.last_validated_at = _utc_now()
-        bundle.case_documentation.last_validation_status = "ready" if len(missing_fields) == 0 else "missing_fields"
+        bundle.case_documentation.last_validation_status = (
+            "ready" if len(missing_fields) == 0 else "missing_fields"
+        )
+
         db.flush()
         db.commit()
 
@@ -947,8 +960,11 @@ def preview_workflow_document(
             "html_content": html_content,
             "context": context,
         }
-    finally:
-        db.close()
+
+    except Exception:
+        db.rollback()
+        raise
+  
 
 
 def _generate_document(
@@ -1025,13 +1041,17 @@ def run_workflow_action(
     tenant_id: str,
     case_id: str,
     action: str,
-    payload: Optional[Dict[str, Any]],
+    payload: Optional[Dict[str, Any]] = None,
     current_user: Dict[str, Any],
+    db=None,
 ) -> Dict[str, Any]:
+    
     payload = payload or {}
-    db = SessionLocal()
-
+    owns_db = db is None
+    if db is None:
+        db = SessionLocal()
     try:
+        assert db is not None
         bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
         workflow = bundle.workflow
         case_documentation = bundle.case_documentation
@@ -1068,7 +1088,12 @@ def run_workflow_action(
             if workflow.closed_at or workflow.status == "closed" or workflow.current_stage == "closed":
                 raise ValueError("Case is already closed")
 
-        if action not in {"record_compliance_review", "record_legal_review", "close_under_review", "mark_patient_accepted_discharge"}:
+        if action not in {
+            "record_compliance_review",
+            "record_legal_review",
+            "close_under_review",
+            "mark_patient_accepted_discharge",
+        }:
             _require_open_case()
 
         if action in {
@@ -1090,7 +1115,9 @@ def run_workflow_action(
             if not decision_at:
                 raise ValueError("A valid discharge decision datetime is required.")
 
-            attending_physician = _normalize_text(payload.get("attending_physician") or workflow.attending_physician)
+            attending_physician = _normalize_text(
+                payload.get("attending_physician") or workflow.attending_physician
+            )
             if not attending_physician:
                 raise ValueError("Attending physician is required before recording medical discharge decision.")
 
@@ -1139,6 +1166,7 @@ def run_workflow_action(
 
         elif action == "mark_patient_counseled":
             _require_started_refusal()
+
             workflow.initial_communication_at = now
             workflow.current_stage = "support_and_intervention"
             workflow.status = "refusal_active"
@@ -1195,6 +1223,7 @@ def run_workflow_action(
                 db.flush()
                 db.refresh(workflow)
                 db.commit()
+
                 snapshot = _serialize_workflow(bundle)
                 return {
                     "workflow": snapshot,
@@ -1209,16 +1238,25 @@ def run_workflow_action(
                 current_user=current_user,
             )
             generated_document = generation_result["generated_document"]
+
             workflow.refusal_form_generated_at = now
             workflow.current_stage = "official_notification"
             workflow.status = "refusal_active"
             workflow.case_status = POLICY_CASE_STATUSES["form_pending_signature"]
             workflow.witness_mode = bool(payload.get("witness_mode"))
-            workflow.witness1_name = _normalize_text(payload.get("witness1_name") or payload.get("witness_1_name"))
-            workflow.witness1_role = _normalize_text(payload.get("witness1_role") or payload.get("witness_1_role"))
+            workflow.witness1_name = _normalize_text(
+                payload.get("witness1_name") or payload.get("witness_1_name")
+            )
+            workflow.witness1_role = _normalize_text(
+                payload.get("witness1_role") or payload.get("witness_1_role")
+            )
             workflow.witness1_signature = _normalize_text(payload.get("witness1_signature"))
-            workflow.witness2_name = _normalize_text(payload.get("witness2_name") or payload.get("witness_2_name"))
-            workflow.witness2_role = _normalize_text(payload.get("witness2_role") or payload.get("witness_2_role"))
+            workflow.witness2_name = _normalize_text(
+                payload.get("witness2_name") or payload.get("witness_2_name")
+            )
+            workflow.witness2_role = _normalize_text(
+                payload.get("witness2_role") or payload.get("witness_2_role")
+            )
             workflow.witness2_signature = _normalize_text(payload.get("witness2_signature"))
             workflow.refusal_form_signed = bool(payload.get("refusal_form_signed"))
             workflow.patient_signature = _normalize_text(payload.get("patient_signature"))
@@ -1228,6 +1266,7 @@ def run_workflow_action(
                 workflow.case_status = POLICY_CASE_STATUSES["form_signed"]
             if workflow.witness_mode:
                 workflow.case_status = POLICY_CASE_STATUSES["witnessed_refusal_recorded"]
+
             workflow.responsible_department = "Nursing / Patient Affairs"
             workflow.responsible_person = actor_name
             workflow.next_action = "Generate and communicate financial responsibility notice."
@@ -1241,7 +1280,8 @@ def run_workflow_action(
                 action="generate_refusal_form",
                 details=(
                     f"Medical Discharge Refusal Form generated (IMC-PAT-DIS-REF-01) "
-                    f"for case {case_id} using canonical template version {generated_document.get('templateVersion', '1.0')} "
+                    f"for case {case_id} using canonical template version "
+                    f"{generated_document.get('templateVersion', '1.0')} "
                     f"document {generated_document.get('id')}"
                 ),
             )
@@ -1260,6 +1300,7 @@ def run_workflow_action(
                 db.flush()
                 db.refresh(workflow)
                 db.commit()
+
                 snapshot = _serialize_workflow(bundle)
                 return {
                     "workflow": snapshot,
@@ -1274,6 +1315,7 @@ def run_workflow_action(
                 current_user=current_user,
             )
             generated_document = generation_result["generated_document"]
+
             workflow.financial_notice_generated_at = now
             workflow.current_stage = "escalation"
             workflow.status = "refusal_active"
@@ -1293,7 +1335,8 @@ def run_workflow_action(
                 action="generate_financial_notice",
                 details=(
                     f"Financial responsibility notification generated for case {case_id} "
-                    f"using canonical template version {generated_document.get('templateVersion', '1.0')} "
+                    f"using canonical template version "
+                    f"{generated_document.get('templateVersion', '1.0')} "
                     f"document {generated_document.get('id')}"
                 ),
             )
@@ -1327,7 +1370,9 @@ def run_workflow_action(
             if not workflow.escalated_at:
                 raise ValueError("Compliance review requires escalation")
 
-            workflow.compliance_notes = _normalize_text(payload.get("compliance_notes")) or workflow.compliance_notes
+            workflow.compliance_notes = (
+                _normalize_text(payload.get("compliance_notes")) or workflow.compliance_notes
+            )
             workflow.case_status = POLICY_CASE_STATUSES["escalated_compliance"]
             workflow.status = "escalated"
             workflow.current_stage = "escalation"
@@ -1430,20 +1475,22 @@ def run_workflow_action(
             )
         raise
 
-    finally:
-        db.close()
-
-
 def generate_document_record(
     *,
     tenant_id: str,
     case_id: str,
     template_key: str,
     payload: Optional[Dict[str, Any]],
-    current_user: Dict[str, Any],
+    current_user: Optional[Dict[str, Any]] = None,
+    db=None,
 ) -> Dict[str, Any]:
     payload = payload or {}
-    db = SessionLocal()
+    owns_db = db is None
+    if db is None:
+        db = SessionLocal()
+    if current_user is None:
+        current_user = {"id": "system", "email": "system@wathiqcare"}
+
 
     try:
         bundle = _get_case_bundle(db, tenant_id=tenant_id, case_id=case_id)
@@ -1462,12 +1509,14 @@ def generate_document_record(
             bundle.workflow.refusal_form_generated_at = now
             bundle.workflow.current_stage = "official_notification"
             _set_case_lifecycle_status(bundle, "REFUSAL_FORM_GENERATED")
+
         elif template_key == "financial_responsibility_notice":
             bundle.workflow.financial_notice_generated_at = now
             bundle.workflow.current_stage = "escalation"
             _set_case_lifecycle_status(bundle, "FINANCIAL_NOTICE_GENERATED")
 
         bundle.workflow.updated_at = now
+
         _log_audit(
             db,
             tenant_id=tenant_id,
@@ -1499,11 +1548,14 @@ def generate_document_record(
         raise
 
     finally:
-        db.close()
+        if owns_db:
+            db.close()
 
+def get_document_record(*, tenant_id: str, document_id: str, db=None) -> DischargeWorkflowDocument:
+    owns_db = db is None
+    if db is None:
+        db = SessionLocal()
 
-def get_document_record(*, tenant_id: str, document_id: str) -> DischargeWorkflowDocument:
-    db = SessionLocal()
     try:
         document = (
             db.query(DischargeWorkflowDocument)
@@ -1519,5 +1571,8 @@ def get_document_record(*, tenant_id: str, document_id: str) -> DischargeWorkflo
 
         db.expunge(document)
         return document
+
     finally:
-        db.close()
+        if owns_db:
+            db.close()
+  

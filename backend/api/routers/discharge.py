@@ -16,10 +16,8 @@ from backend.core.discharge_service import create_discharge_refusal
 from backend.core.discharge_workflow_service import (
     get_document_record,
     get_workflow_snapshot,
-    list_case_documents,
     preview_workflow_document,
     run_workflow_action,
-    validate_workflow_generation,
 )
 from backend.legal.evidence_bundle import generate_evidence_bundle
 from backend.api.deps import get_current_user, require_roles

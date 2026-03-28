@@ -41,8 +41,11 @@ def db_session_local(monkeypatch):
     return local
 
 
-def _create_case() -> str:
+def _create_case(db=None) -> str:
+    if db is None:
+        raise ValueError("db argument required")
     created = legal_artifact_service.create_legal_artifact_case(
+        db,
         tenant_id="tenant-r",
         actor_user_id="user-r",
         payload={
@@ -62,7 +65,8 @@ def _create_case() -> str:
 
 
 def test_readiness_blocks_then_becomes_ready(db_session_local):
-    case_id = _create_case()
+    db = db_session_local()
+    case_id = _create_case(db)
 
     # Canonical lifecycle transitions.
     workflow_service.run_workflow_action(

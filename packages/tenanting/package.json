@@ -1,0 +1,6 @@
+{
+    "name": "@tenanting/branding",
+    "version": "0.0.1",
+    "main": "dist/branding.js",
+    "types": "dist/branding.d.ts"
+}

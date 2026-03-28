@@ -15,6 +15,7 @@ from backend.api.routers.system_inspect import router as system_inspect_router
 from backend.api.routers.sms_test import router as sms_test_router
 from backend.api.routers.secure_links import router as secure_links_router
 from backend.api.routers.medico_legal_forms import router as medico_legal_forms_router
+from backend.api.routers.cases import router as cases_router
 
 app = FastAPI(
     title="WathiqCare Core API",
@@ -43,6 +44,8 @@ app.include_router(system_inspect_router)
 app.include_router(sms_test_router)
 app.include_router(secure_links_router)
 app.include_router(medico_legal_forms_router)
+
+app.include_router(cases_router)
 
 if os.getenv("SHC_COMPLIANCE_MODULE", "false").lower() == "true":
     app.include_router(shc_discharge_compliance_router)

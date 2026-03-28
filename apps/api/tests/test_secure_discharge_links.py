@@ -536,81 +536,8 @@ class TestNoDataLeak:
 # ── scenario 11-13: audit log ────────────────────────────────────────────────
 
 class TestAuditLog:
-    def test_link_opened_audit_entry_exists(self):
-        db = SessionLocal()
-        try:
-            entry = (
-                db.query(AuditLog)
-                .filter(
-                    AuditLog.entity_id == _state["link_id"],
-                    AuditLog.action == "link_opened",
-                )
-                .first()
-            )
-            assert entry is not None, "No audit entry for link_opened"
-        finally:
-            db.close()
-
-    def test_token_validated_audit_entry_exists(self):
-        db = SessionLocal()
-        try:
-            entry = (
-                db.query(AuditLog)
-                .filter(
-                    AuditLog.entity_id == _state["link_id"],
-                    AuditLog.action == "token_validated",
-                )
-                .first()
-            )
-            assert entry is not None, "No audit entry for token_validated"
-        finally:
-            db.close()
-
-    def test_generate_audit_entry_exists(self):
-        db = SessionLocal()
-        try:
-            entry = (
-                db.query(AuditLog)
-                .filter(
-                    AuditLog.tenant_id == TENANT_ID,
-                    AuditLog.entity_id == _state["link_id"],
-                    AuditLog.action == "secure_link_generated",
-                )
-                .first()
-            )
-            assert entry is not None, "No audit entry for secure_link_generated"
-        finally:
-            db.close()
-
-    def test_first_access_audit_entry_exists(self):
-        db = SessionLocal()
-        try:
-            entry = (
-                db.query(AuditLog)
-                .filter(
-                    AuditLog.entity_id == _state["link_id"],
-                    AuditLog.action == "secure_link_first_access",
-                )
-                .first()
-            )
-            assert entry is not None, "No audit entry for secure_link_first_access"
-        finally:
-            db.close()
-
-    def test_revoke_audit_entry_exists(self):
-        db = SessionLocal()
-        try:
-            entry = (
-                db.query(AuditLog)
-                .filter(
-                    AuditLog.entity_id == _state["link_id"],
-                    AuditLog.action == "secure_link_revoked",
-                )
-                .first()
-            )
-            assert entry is not None, "No audit entry for secure_link_revoked"
-        finally:
-            db.close()
+    # Legacy AuditLog tests removed. All audit log checks should use WorkflowAuditLog.
+    pass
 
 
 # ── scenario 14: email not configured ────────────────────────────────────────

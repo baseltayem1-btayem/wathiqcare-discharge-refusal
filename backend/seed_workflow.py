@@ -11,38 +11,30 @@ from backend.workflow.constants import ActionCode, StageCode
 
 
 STAGES = [
-    (StageCode.NURSE_DRAFT, "Nurse Draft", "مسودة التمريض", "intake", 1, False),
-    (StageCode.PENDING_PHYSICIAN_ORDER, "Pending Physician Order", "بانتظار أمر الطبيب", "core", 2, False),
-    (StageCode.PENDING_PATIENT_SIGNATURE, "Pending Patient Signature", "بانتظار توقيع المريض", "core", 3, False),
-    (StageCode.ACCEPTED_DISCHARGE_EXECUTION, "Accepted Discharge Execution", "تنفيذ خطة الخروج المقبولة", "execution", 4, False),
-    (StageCode.PATIENT_RELATIONS_REVIEW, "Patient Relations Review", "مراجعة علاقات المرضى", "escalation", 5, False),
-    (StageCode.SOCIAL_WORK_REVIEW, "Social Work Review", "مراجعة الخدمة الاجتماعية", "escalation", 6, False),
-    (StageCode.FINANCE_REVIEW, "Finance Review", "مراجعة المالية", "escalation", 7, False),
-    (StageCode.LEGAL_ESCALATION, "Legal Escalation", "تصعيد قانوني", "escalation", 8, False),
-    (StageCode.CLOSED, "Closed", "مغلقة", "terminal", 9, True),
-    (StageCode.CANCELLED, "Cancelled", "ملغاة", "terminal", 10, True),
+    ("draft", "Draft", "مسودة", "intake", 1, False),
+    ("presentation", "Presentation", "عرض", "core", 2, False),
+    ("signature", "Signature", "توقيع", "core", 3, False),
+    ("witness", "Witness", "شاهد", "execution", 4, False),
+    ("ready", "Ready", "جاهز", "escalation", 5, False),
+    ("legal", "Legal", "قانوني", "escalation", 6, False),
 ]
 
 
 TRANSITIONS = [
-    (StageCode.NURSE_DRAFT, ActionCode.CREATE_CASE, StageCode.PENDING_PHYSICIAN_ORDER, False, None),
-    (StageCode.PENDING_PHYSICIAN_ORDER, ActionCode.ISSUE_DISCHARGE_ORDER, StageCode.PENDING_PATIENT_SIGNATURE, False, "doctor"),
-    (StageCode.PENDING_PATIENT_SIGNATURE, ActionCode.PATIENT_ACCEPTS, StageCode.ACCEPTED_DISCHARGE_EXECUTION, False, None),
-    (StageCode.PENDING_PATIENT_SIGNATURE, ActionCode.PATIENT_REFUSES, StageCode.PATIENT_RELATIONS_REVIEW, True, None),
-    (StageCode.PATIENT_RELATIONS_REVIEW, ActionCode.COMPLETE_PATIENT_RELATIONS, StageCode.SOCIAL_WORK_REVIEW, True, "patient_affairs"),
-    (StageCode.SOCIAL_WORK_REVIEW, ActionCode.COMPLETE_SOCIAL_WORK, StageCode.FINANCE_REVIEW, True, "social_services"),
-    (StageCode.FINANCE_REVIEW, ActionCode.COMPLETE_FINANCE, StageCode.LEGAL_ESCALATION, True, "finance"),
-    (StageCode.ACCEPTED_DISCHARGE_EXECUTION, ActionCode.CLOSE_CASE, StageCode.CLOSED, False, None),
-    (StageCode.LEGAL_ESCALATION, ActionCode.CLOSE_LEGAL_ESCALATION, StageCode.CLOSED, False, "legal_admin"),
+    ("draft", "to_presentation", "presentation", False, "nurse"),
+    ("presentation", "to_signature", "signature", False, "doctor"),
+    ("signature", "to_witness", "witness", False, "nurse"),
+    ("witness", "to_ready", "ready", False, "nurse"),
+    ("ready", "to_legal", "legal", False, "legal_admin"),
 ]
 
 
 ASSIGNMENT_RULES = [
-    ("assign_physician_order_to_attending_physician", "case_created", StageCode.PENDING_PHYSICIAN_ORDER, "physician", "doctor"),
-    ("assign_patient_relations_stage_to_patient_relations_team", "patient_refused", StageCode.PATIENT_RELATIONS_REVIEW, "patient_relations", "patient_affairs"),
-    ("assign_social_work_stage_to_social_work_team", "stage_task_completed", StageCode.SOCIAL_WORK_REVIEW, "social_work", "social_services"),
-    ("assign_finance_stage_to_finance_team", "stage_task_completed", StageCode.FINANCE_REVIEW, "finance", "finance"),
-    ("assign_legal_stage_to_legal_team", "case_escalated", StageCode.LEGAL_ESCALATION, "legal", "legal_admin"),
+    ("assign_presentation_to_nurse", "to_presentation", "presentation", "nursing", "nurse"),
+    ("assign_signature_to_doctor", "to_signature", "signature", "physician", "doctor"),
+    ("assign_witness_to_nurse", "to_witness", "witness", "nursing", "nurse"),
+    ("assign_ready_to_nurse", "to_ready", "ready", "nursing", "nurse"),
+    ("assign_legal_to_legal_admin", "to_legal", "legal", "legal", "legal_admin"),
 ]
 
 

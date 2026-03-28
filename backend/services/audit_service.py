@@ -24,7 +24,6 @@ class AuditService:
     ) -> WorkflowAuditLog:
         entry = WorkflowAuditLog(
             case_id=case_id,
-            task_id=task_id,
             actor_user_id=actor_user_id,
             event_type=event_type,
             event_title=event_title,
