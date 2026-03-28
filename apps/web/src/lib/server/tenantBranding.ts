@@ -1,12 +1,45 @@
-
 type JsonRecord = Record<string, any>;
+
 type TenantBrandingProfileLike = {
     name?: string;
+    displayName?: string;
+    legalName?: string;
     logoUrl?: string;
+    licenseNumber?: string;
+    commercialRegistrationNumber?: string;
+    taxNumber?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+    websiteUrl?: string;
+    documentHeaderText?: string;
+    documentFooterText?: string;
+    legalDisclaimer?: string;
 };
 
 type TenantDocumentIdentity = {
     documentPrefix?: string;
+    displayName?: string;
+    legalName?: string;
+    licenseNumber?: string;
+    commercialRegistrationNumber?: string;
+    taxNumber?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+    websiteUrl?: string;
+    logoUrl?: string | null;
+    documentHeaderText?: string;
+    documentFooterText?: string;
+    legalDisclaimer?: string;
 };
 
 export type TenantBranding = {
@@ -103,7 +136,11 @@ export function resolveTenantBrandingWithProfile(
 ): TenantBranding {
     const metadataLogoUrl = extractTenantLogoUrl(source.metadata);
     const profileLogoUrl = identityString(profile?.logoUrl);
-    const displayName = identityString(profile?.displayName) || source.name;
+    const displayName =
+        identityString(profile?.displayName) ||
+        identityString(profile?.name) ||
+        source.name;
+
     const legalName = identityString(profile?.legalName);
     const licenseNumber = identityString(profile?.licenseNumber);
     const commercialRegistrationNumber = identityString(profile?.commercialRegistrationNumber);
@@ -154,12 +191,18 @@ export function buildTenantReferenceNumber(args: {
     timestamp?: Date;
     suffix?: string;
 }): string {
-    const prefix = (args.tenantCode || "TENANT")
-        .trim()
-        .toUpperCase()
-        .replace(/[^A-Z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "TENANT";
-    const timestamp = (args.timestamp ?? new Date()).toISOString().replace(/\D/g, "").slice(0, 12);
+    const prefix =
+        (args.tenantCode || "TENANT")
+            .trim()
+            .toUpperCase()
+            .replace(/[^A-Z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "") || "TENANT";
+
+    const timestamp = (args.timestamp ?? new Date())
+        .toISOString()
+        .replace(/\D/g, "")
+        .slice(0, 12);
+
     const suffix = args.suffix ? `-${args.suffix.toUpperCase()}` : "";
     return `${prefix}${suffix}-${args.caseId.slice(0, 8).toUpperCase()}-${timestamp}`;
 }
