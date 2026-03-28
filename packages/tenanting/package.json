@@ -1,0 +1,13 @@
+{
+  "name": "@tenanting/branding",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/branding.js",
+  "types": "./dist/branding.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/branding.d.ts",
+      "default": "./dist/branding.js"
+    }
+  }
+}
