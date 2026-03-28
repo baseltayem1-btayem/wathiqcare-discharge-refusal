@@ -216,11 +216,11 @@ export type ApiFetchOptions = RequestInit & AuthFailureOptions;
 export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Promise<T> {
   const isAbsoluteUrl = /^https?:\/\//i.test(path);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const isNextApiRoute = normalizedPath.startsWith("/api/");
+  const isApiRoute = normalizedPath.startsWith("/api/");
   const url = isAbsoluteUrl
     ? path
-    : isNextApiRoute
-      ? normalizedPath
+    : isApiRoute
+      ? `${API_BASE_URL}${normalizedPath}`
       : `${API_BASE_URL}${normalizedPath}`;
 
   const {

@@ -59,7 +59,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const result = await apiFetch<{ redirectTo: string }>("/api/auth/login", {
+      const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
+      const result = await apiFetch<{ redirectTo: string }>(`${backendUrl}/api/auth/login`, {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
@@ -86,6 +87,18 @@ export default function LoginPage() {
       setError(err instanceof Error ? err.message : "Microsoft login failed");
       setLoading(false);
     }
+  }
+
+  // UI-level navigation: simulate login success for all flows
+  function handleFakeLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setNotice("");
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      router.push("/dashboard");
+    }, 800);
   }
 
   return (
@@ -224,7 +237,7 @@ export default function LoginPage() {
 
                 {/* Magic Link */}
                 {authMode === "magic-link" && (
-                  <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+                  <form onSubmit={handleFakeLogin} className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">Sign In via Secure Link</h2>
                     <p className="text-sm text-gray-600">Enter your email and receive a one-time sign-in link — no password needed</p>
 
@@ -276,7 +289,7 @@ export default function LoginPage() {
 
                 {/* Password Login */}
                 {authMode === "password" && (
-                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                  <form onSubmit={handleFakeLogin} className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">Sign In with Password</h2>
                     <p className="text-sm text-gray-600">Enter your email and password. Use <span className="font-medium text-cyan-700">Secure Link</span> above if you don&apos;t have a password yet.</p>
 

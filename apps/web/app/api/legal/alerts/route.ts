@@ -1,7 +1,6 @@
-import { NextRequest } from "next/server";
-import { forwardToBackend } from "@/lib/server/backendProxy";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
-    const backendPath = `/api/legal/alerts${request.nextUrl.search}`;
-    return forwardToBackend(request, backendPath);
+export async function GET() {
+    // Placeholder: No legal alerts for pilot
+    return NextResponse.json([]);
 }
