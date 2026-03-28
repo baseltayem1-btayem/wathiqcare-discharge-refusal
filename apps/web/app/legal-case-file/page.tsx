@@ -20,10 +20,21 @@ import StatCard from "@/components/ui/StatCard";
 import { buildMetadataWorkflowProgress } from "@/lib/workflowProgress";
 import { apiFetch } from "@/utils/api";
 import {
-  legalOrchestrationService,
   type LegalCaseSummary,
   type LegalControlDashboard,
 } from "@/lib/services/legalOrchestration.service";
+import { legalOrchestrationService } from "@/lib/services/legalOrchestration.service";
+import { fetchLegalPackageMetadata } from "@/lib/services/legalPackage.service";
+// --- LEGAL PACKAGE GENERATION ---
+async function generateLegalPackage(caseId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+  const res = await fetch(
+    `${baseUrl}/api/cases/${caseId}/legal-package`,
+    { method: "POST" }
+  );
+  if (!res.ok) throw new Error("Failed to generate legal package");
+  return res.json();
+}
 
 type CaseItem = {
   id: string;
@@ -58,6 +69,7 @@ export default function LegalCaseFilePage() {
   const [summaries, setSummaries] = useState<Record<string, LegalCaseSummary>>({});
   const [busyCaseId, setBusyCaseId] = useState<string | null>(null);
   const [expandedCase, setExpandedCase] = useState<string | null>(null);
+  const [legalPackages, setLegalPackages] = useState<Record<string, any>>({});
 
   useEffect(() => {
     void loadLegalCaseFileData();
@@ -83,6 +95,19 @@ export default function LegalCaseFilePage() {
       })
     );
     setSummaries(Object.fromEntries(perCase));
+
+    // Fetch legal package metadata for each case
+    const legalPackagesEntries = await Promise.all(
+      loadedCases.map(async (item) => {
+        try {
+          const meta = await fetchLegalPackageMetadata(item.id);
+          return [item.id, meta];
+        } catch {
+          return [item.id, null];
+        }
+      })
+    );
+    setLegalPackages(Object.fromEntries(legalPackagesEntries));
   }
 
   async function handlePrepare(caseItem: CaseItem) {
@@ -125,11 +150,15 @@ export default function LegalCaseFilePage() {
     }
   }
 
-  async function handleBuildEvidence(caseId: string) {
+
+  async function handleGenerateLegalPackage(caseId: string) {
     setBusyCaseId(caseId);
     try {
-      await legalOrchestrationService.buildEvidencePackage(caseId);
+      await generateLegalPackage(caseId);
       await loadLegalCaseFileData();
+      alert("Legal package generated successfully.");
+    } catch (err) {
+      alert("Failed to generate legal package.");
     } finally {
       setBusyCaseId(null);
     }
@@ -272,6 +301,7 @@ export default function LegalCaseFilePage() {
             const isExpanded = expandedCase === item.id;
             const counts = summary?.counts ?? {};
 
+            const legalPackage = legalPackages[item.id];
             return (
               <article key={item.id} className="rounded-2xl border border-slate-200 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -295,6 +325,28 @@ export default function LegalCaseFilePage() {
                         currentStepId={workflow.currentStepId}
                       />
                     ) : null}
+
+                    {/* Legal Package Metadata */}
+                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                      <p className="text-xs font-semibold text-emerald-700 mb-1">Legal Package</p>
+                      {legalPackage ? (
+                        <>
+                          <span className="text-xs text-emerald-900">Generated: Yes</span>
+                          <span className="ml-2 text-xs text-emerald-900">Version: {legalPackage.version}</span>
+                          <span className="ml-2 text-xs text-emerald-900">Last Generated: {new Date(legalPackage.generated_at).toLocaleString()}</span>
+                          <a
+                            href={legalPackage.download_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-4 inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100"
+                          >
+                            Download PDF
+                          </a>
+                        </>
+                      ) : (
+                        <span className="text-xs text-emerald-700">Generated: No</span>
+                      )}
+                    </div>
 
                     {/* Legal State Timeline */}
                     <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -449,11 +501,11 @@ export default function LegalCaseFilePage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button
-                        onClick={() => void handleBuildEvidence(item.id)}
+                        onClick={() => void handleGenerateLegalPackage(item.id)}
                         disabled={busyCaseId === item.id}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {busyCaseId === item.id ? "Generating..." : "Generate Evidence Package"}
+                        {busyCaseId === item.id ? "Generating..." : "Generate Legal Package"}
                       </button>
                       <button
                         onClick={() => void handleGenerateFinancialAck(item)}

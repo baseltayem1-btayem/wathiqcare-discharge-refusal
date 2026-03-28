@@ -1,10 +1,6 @@
-/**
- * Next.js configuration for static export compatibility (Vercel)
- * See: https://nextjs.org/docs/app/building-your-application/deploying/static-exports
- */
-const path = require('node:path');
+const path = require("node:path");
 
-const monorepoRoot = path.resolve(process.cwd(), "../..")
+const monorepoRoot = path.resolve(process.cwd(), "../..");
 const CANONICAL_ORIGIN = "https://wathiqcare.online";
 
 const CSP = [
@@ -13,15 +9,14 @@ const CSP = [
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     "img-src 'self' data: blob: https://cdn.phototourl.com https://www.imc.med.sa",
-    "connect-src 'self'",
+    "connect-src 'self' https://*.app.github.dev",
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",
-].join('; ');
+].join("; ");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // output: 'export',
     outputFileTracingRoot: monorepoRoot,
     outputFileTracingIncludes: {
         "/api/discharge/**": ["./contracts/**"],
