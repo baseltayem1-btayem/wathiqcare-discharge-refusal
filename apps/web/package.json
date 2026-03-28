@@ -14,7 +14,6 @@
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@fontsource/ibm-plex-sans-arabic": "^5.2.9",
     "@prisma/client": "^6.19.2",
-    "@tenanting/branding": "file:../../packages/tenanting",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "geist": "^1.7.0",

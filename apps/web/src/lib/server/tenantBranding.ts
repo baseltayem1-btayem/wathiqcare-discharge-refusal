@@ -1,6 +1,13 @@
 
 type JsonRecord = Record<string, any>;
-import type { TenantBrandingProfileLike, TenantDocumentIdentity } from "@tenanting/branding";
+type TenantBrandingProfileLike = {
+    name?: string;
+    logoUrl?: string;
+};
+
+type TenantDocumentIdentity = {
+    documentPrefix?: string;
+};
 
 export type TenantBranding = {
     id: string;
