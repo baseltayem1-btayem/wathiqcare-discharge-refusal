@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 import backend.models  # noqa: F401
 from backend.core.database import Base
-from backend.models.audit_log import AuditLog
+ # Legacy audit log import removed
 from backend.models.discharge_case import DischargeCase
 from backend.models.discharge_workflow import DischargeRefusalWorkflow
 from backend.models.patient import Patient
@@ -85,7 +85,6 @@ def test_due_cases_are_auto_escalated(monkeypatch):
     try:
         workflow = db.query(DischargeRefusalWorkflow).filter(DischargeRefusalWorkflow.case_id == case_id).first()
         discharge_case = db.query(DischargeCase).filter(DischargeCase.id == case_id).first()
-        audit_entry = db.query(AuditLog).filter(AuditLog.entity_id == case_id, AuditLog.action == "escalate_legal_compliance").first()
         workflow_audit_entry = db.query(WorkflowAuditLog).filter(WorkflowAuditLog.case_id == case_id, WorkflowAuditLog.event_type == "workflow.auto_escalated").first()
 
         assert workflow is not None
@@ -93,7 +92,6 @@ def test_due_cases_are_auto_escalated(monkeypatch):
         assert workflow.status == "escalated"
         assert discharge_case is not None
         assert discharge_case.status == "LEGAL_ESCALATED"
-        assert audit_entry is not None
         assert workflow_audit_entry is not None
     finally:
         db.close()

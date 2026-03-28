@@ -1,0 +1,133 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0 -- /workspaces/wathiqcare-discharge-refusal/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/wathiqcare-discharge-refusal
+configfile: pytest.ini
+plugins: anyio-4.13.0
+collecting ... collected 13 items
+
+apps/api/tests/test_legal_orchestration_service.py::test_full_refusal_path_generates_financial_and_evidence_package [IMPORT TRACE] WorkflowEngineService loaded from: /workspaces/wathiqcare-discharge-refusal/backend/services/workflow_engine.py
+Resolved WorkflowEngineService path: /workspaces/wathiqcare-discharge-refusal/backend/services/workflow_engine.py
+PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_amount_to_arabic_words[0-\u0635\u0641\u0631 \u0631\u064a\u0627\u0644 \u0633\u0639\u0648\u062f\u064a \u0641\u0642\u0637 \u0644\u0627 \u063a\u064a\u0631] PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_amount_to_arabic_words[15-\u062e\u0645\u0633\u0629 \u0639\u0634\u0631 \u0631\u064a\u0627\u0644 \u0633\u0639\u0648\u062f\u064a \u0641\u0642\u0637 \u0644\u0627 \u063a\u064a\u0631] PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_amount_to_arabic_words[125.5-\u0645\u0627\u0626\u0629 \u0648 \u062e\u0645\u0633\u0629 \u0648 \u0639\u0634\u0631\u0648\u0646 \u0631\u064a\u0627\u0644 \u0633\u0639\u0648\u062f\u064a \u0648 \u062e\u0645\u0633\u0648\u0646 \u0647\u0644\u0644\u0629 \u0641\u0642\u0637 \u0644\u0627 \u063a\u064a\u0631] PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_master_document_injects_tenant_identity_and_audit_logs PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_tenant_legal_control_metrics FAILED
+apps/api/tests/test_legal_orchestration_service.py::test_create_home_healthcare_agreement_generates_document PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_create_equipment_lease_generates_document PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_create_legal_undertaking_generates_document PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_escalation_event_auto_transitions_to_escalated_state PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_invalid_state_transition_raises_value_error PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_signer_identity_and_signature_artifact_created_after_response PASSED
+apps/api/tests/test_legal_orchestration_service.py::test_notice_presentation_proof_fields_stored PASSED
+
+=================================== FAILURES ===================================
+______________________ test_tenant_legal_control_metrics _______________________
+
+db_session = <sqlalchemy.orm.session.Session object at 0x7e09c6906120>
+
+    def test_tenant_legal_control_metrics(db_session):
+        svc = LegalOrchestrationService(db_session)
+    
+        svc.create_or_update_decision_event(
+            tenant_id="tenant-1",
+            case_id="case-1",
+            payload={"decision_timestamp": datetime.utcnow().isoformat()},
+            actor=_actor(),
+        )
+        svc.transition_state(
+            tenant_id="tenant-1",
+            case_id="case-1",
+            target_state="DECISION_ISSUED",
+            actor=_actor(),
+        )
+        svc.generate_master_document(
+            tenant_id="tenant-1",
+            case_id="case-1",
+            payload={"language": "ar"},
+            actor=_actor(),
+        )
+        svc.record_notice_presentation(
+            tenant_id="tenant-1",
+            case_id="case-1",
+            payload={"identity_verified": True},
+            actor=_actor(),
+        )
+        svc.record_patient_response(
+            tenant_id="tenant-1",
+            case_id="case-1",
+            payload={
+                "response_type": "refused_discharge",
+                "refusal_reason": "Requested delay",
+                "signer_name": "Patient One",
+                "signer_type": "patient",
+                "signature_payload": "data:image/png;base64,abc123",
+            },
+            actor=_actor(),
+        )
+        svc.create_financial_acknowledgment(
+            tenant_id="tenant-1",
+            case_id="case-1",
+            payload={
+                "guarantor": "Guardian A",
+                "total_estimated_exposure": 9000,
+            },
+            actor=_actor(),
+        )
+        svc.create_promissory_note(
+            tenant_id="tenant-1",
+            case_id="case-1",
+            payload={
+                "amount_numeric": 9000,
+                "debtor_name": "Guardian A",
+                "debtor_id": "1234567890",
+                "creditor_name": "Hospital A",
+                "due_date": "2026-05-01",
+                "issue_place": "Riyadh",
+                "issue_date": "2026-03-24",
+            },
+            actor=_actor(),
+        )
+    
+        metrics = svc.get_tenant_legal_control_metrics(tenant_id="tenant-1")
+        assert metrics["total_discharge_decisions"] == 1
+>       assert metrics["total_refused"] == 1
+E       assert 0 == 1
+
+apps/api/tests/test_legal_orchestration_service.py:307: AssertionError
+=============================== warnings summary ===============================
+apps/api/tests/test_legal_orchestration_service.py: 106 warnings
+  /workspaces/wathiqcare-discharge-refusal/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3624: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+apps/api/tests/test_legal_orchestration_service.py::test_full_refusal_path_generates_financial_and_evidence_package
+  /workspaces/wathiqcare-discharge-refusal/apps/api/tests/test_legal_orchestration_service.py:94: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "decision_timestamp": datetime.utcnow().isoformat(),
+
+apps/api/tests/test_legal_orchestration_service.py: 36 warnings
+  /workspaces/wathiqcare-discharge-refusal/backend/services/workflow_audit_log_service.py:35: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    created_at_dt = datetime.utcnow()
+
+apps/api/tests/test_legal_orchestration_service.py::test_full_refusal_path_generates_financial_and_evidence_package
+apps/api/tests/test_legal_orchestration_service.py::test_tenant_legal_control_metrics
+apps/api/tests/test_legal_orchestration_service.py::test_create_home_healthcare_agreement_generates_document
+apps/api/tests/test_legal_orchestration_service.py::test_create_equipment_lease_generates_document
+apps/api/tests/test_legal_orchestration_service.py::test_create_legal_undertaking_generates_document
+apps/api/tests/test_legal_orchestration_service.py::test_escalation_event_auto_transitions_to_escalated_state
+apps/api/tests/test_legal_orchestration_service.py::test_signer_identity_and_signature_artifact_created_after_response
+  /workspaces/wathiqcare-discharge-refusal/backend/modules/discharge_legal_workflow/legal_orchestration_service.py:125: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    timestamp = datetime.utcnow().isoformat()
+
+apps/api/tests/test_legal_orchestration_service.py::test_master_document_injects_tenant_identity_and_audit_logs
+  /workspaces/wathiqcare-discharge-refusal/apps/api/tests/test_legal_orchestration_service.py:209: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    payload={"decision_timestamp": datetime.utcnow().isoformat()},
+
+apps/api/tests/test_legal_orchestration_service.py::test_tenant_legal_control_metrics
+  /workspaces/wathiqcare-discharge-refusal/apps/api/tests/test_legal_orchestration_service.py:248: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    payload={"decision_timestamp": datetime.utcnow().isoformat()},
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED apps/api/tests/test_legal_orchestration_service.py::test_tenant_legal_control_metrics
+================== 1 failed, 12 passed, 152 warnings in 0.89s ==================

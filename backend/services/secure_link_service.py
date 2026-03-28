@@ -399,6 +399,39 @@ def submit_decision(
             case.refused_at = now
             case.status = "refused"
 
+        # --- Actor Event Integration ---
+        from backend.services.actor_event_service import ActorEventService
+        actor_event_service = ActorEventService(db)
+        # Always record signature event
+        actor_event_service.record_actor_event(
+            case_id=case.id,
+            actor_type="patient",  # or "guardian" if logic applies
+            event_type="signature",
+            actor_user_id=None,
+            actor_name=normalized_name,
+            event_details={
+                "signed_at": now.isoformat(),
+                "ip_address": ip_address,
+                "user_agent": normalized_user_agent,
+                "signature_text": case.signature_text,
+                "decision_type": normalized_decision,
+            },
+        )
+        # If refusal, also record refusal acknowledgement event
+        if normalized_decision == "refuse":
+            actor_event_service.record_actor_event(
+                case_id=case.id,
+                actor_type="patient",
+                event_type="refusal_acknowledgement",
+                actor_user_id=None,
+                actor_name=normalized_name,
+                event_details={
+                    "acknowledged_at": now.isoformat(),
+                    "ip_address": ip_address,
+                    "user_agent": normalized_user_agent,
+                },
+            )
+
         audit_details = _build_audit_details(
             case_id=link.case_id,
             decision_type=normalized_decision,

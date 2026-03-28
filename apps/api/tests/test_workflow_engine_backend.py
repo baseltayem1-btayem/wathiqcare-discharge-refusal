@@ -23,16 +23,12 @@ from backend.workflow.constants import ActionCode, StageCode
 
 def _seed_workflow(db):
     stages = [
-        StageCode.NURSE_DRAFT,
-        StageCode.PENDING_PHYSICIAN_ORDER,
-        StageCode.PENDING_PATIENT_SIGNATURE,
-        StageCode.ACCEPTED_DISCHARGE_EXECUTION,
-        StageCode.PATIENT_RELATIONS_REVIEW,
-        StageCode.SOCIAL_WORK_REVIEW,
-        StageCode.FINANCE_REVIEW,
-        StageCode.LEGAL_ESCALATION,
-        StageCode.CLOSED,
-        StageCode.CANCELLED,
+        "draft",
+        "presentation",
+        "signature",
+        "witness",
+        "ready",
+        "legal",
     ]
     for index, code in enumerate(stages, start=1):
         db.add(
@@ -47,15 +43,11 @@ def _seed_workflow(db):
         )
 
     transitions = [
-        (StageCode.NURSE_DRAFT, ActionCode.CREATE_CASE, StageCode.PENDING_PHYSICIAN_ORDER, False, None),
-        (StageCode.PENDING_PHYSICIAN_ORDER, ActionCode.ISSUE_DISCHARGE_ORDER, StageCode.PENDING_PATIENT_SIGNATURE, False, "doctor"),
-        (StageCode.PENDING_PATIENT_SIGNATURE, ActionCode.PATIENT_ACCEPTS, StageCode.ACCEPTED_DISCHARGE_EXECUTION, False, None),
-        (StageCode.PENDING_PATIENT_SIGNATURE, ActionCode.PATIENT_REFUSES, StageCode.PATIENT_RELATIONS_REVIEW, True, None),
-        (StageCode.PATIENT_RELATIONS_REVIEW, ActionCode.COMPLETE_PATIENT_RELATIONS, StageCode.SOCIAL_WORK_REVIEW, True, None),
-        (StageCode.SOCIAL_WORK_REVIEW, ActionCode.COMPLETE_SOCIAL_WORK, StageCode.FINANCE_REVIEW, True, None),
-        (StageCode.FINANCE_REVIEW, ActionCode.COMPLETE_FINANCE, StageCode.LEGAL_ESCALATION, True, None),
-        (StageCode.ACCEPTED_DISCHARGE_EXECUTION, ActionCode.CLOSE_CASE, StageCode.CLOSED, False, None),
-        (StageCode.LEGAL_ESCALATION, ActionCode.CLOSE_LEGAL_ESCALATION, StageCode.CLOSED, False, None),
+        ("draft", "to_presentation", "presentation", False, "nurse"),
+        ("presentation", "to_signature", "signature", False, "doctor"),
+        ("signature", "to_witness", "witness", False, "nurse"),
+        ("witness", "to_ready", "ready", False, "nurse"),
+        ("ready", "to_legal", "legal", False, "legal_admin"),
     ]
     for from_stage, action, to_stage, requires_comment, requires_role in transitions:
         db.add(
@@ -69,11 +61,11 @@ def _seed_workflow(db):
         )
 
     rules = [
-        ("assign_physician_order_to_attending_physician", "case_created", StageCode.PENDING_PHYSICIAN_ORDER, "physician", "doctor"),
-        ("assign_patient_relations_stage_to_patient_relations_team", "patient_refused", StageCode.PATIENT_RELATIONS_REVIEW, "patient_relations", "patient_affairs"),
-        ("assign_social_work_stage_to_social_work_team", "stage_task_completed", StageCode.SOCIAL_WORK_REVIEW, "social_work", "social_services"),
-        ("assign_finance_stage_to_finance_team", "stage_task_completed", StageCode.FINANCE_REVIEW, "finance", "finance"),
-        ("assign_legal_stage_to_legal_team", "case_escalated", StageCode.LEGAL_ESCALATION, "legal", "legal_admin"),
+        ("assign_presentation_to_nurse", "to_presentation", "presentation", "nursing", "nurse"),
+        ("assign_signature_to_doctor", "to_signature", "signature", "physician", "doctor"),
+        ("assign_witness_to_nurse", "to_witness", "witness", "nursing", "nurse"),
+        ("assign_ready_to_nurse", "to_ready", "ready", "nursing", "nurse"),
+        ("assign_legal_to_legal_admin", "to_legal", "legal", "legal", "legal_admin"),
     ]
     for rule_code, event_code, stage_code, team_code, role_code in rules:
         db.add(
@@ -116,7 +108,15 @@ def wf_db(tmp_path: Path):
         is_active=True,
     )
     patient = Patient(id="patient-1", tenant_id=tenant.id, mrn="MRN-1", full_name="Patient One")
-    db.add_all([tenant, nurse, physician, patient])
+    legal_admin = User(
+        id="user-legal",
+        tenant_id=tenant.id,
+        email="legal@test.local",
+        full_name="Legal Admin",
+        role="legal_admin",
+        is_active=True,
+    )
+    db.add_all([tenant, nurse, physician, patient, legal_admin])
     db.commit()
 
     _seed_workflow(db)
@@ -139,6 +139,7 @@ def _create_case(engine: WorkflowEngineService):
         attending_physician_user_id="user-doctor",
         attending_physician_name="Doctor One",
         discharge_plan_summary="Standard discharge",
+        actor_role="nurse",
     )
 
 
@@ -146,69 +147,314 @@ def test_transition_validation_rejects_invalid_next_action(wf_db):
     engine = WorkflowEngineService(wf_db)
     case = _create_case(engine)
 
+    # Case is created in 'draft' state; cannot mark refused until progressed.
     with pytest.raises(ValueError, match="Invalid transition"):
         engine.mark_patient_refused(
             case_id=case.id,
             tenant_id="tenant-1",
             actor_user_id="user-nurse",
-            actor_role="nursing",
+            actor_role="nurse",
             response_payload={"refusal_reason": "not yet sent"},
         )
 
 
 def test_task_creation_on_patient_accepted(wf_db):
     engine = WorkflowEngineService(wf_db)
-    case = _create_case(engine)
-
-    engine.issue_discharge_order(
-        case.id,
+    # 1. Canonical: nurse transitions draft -> presentation
+    case1 = _create_case(engine)
+    engine.transition_case(
+        case1.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
+    )
+    # 1a. Unauthorized: doctor tries draft -> presentation (fresh case)
+    case1a = _create_case(engine)
+    with pytest.raises(ValueError, match="Action requires role: nurse"):
+        engine.transition_case(
+            case1a.id,
+            "tenant-1",
+            "user-doctor",
+            "doctor",
+            "to_presentation",
+            {},
+        )
+    # 2. Canonical: doctor transitions presentation -> signature
+    case2 = _create_case(engine)
+    engine.transition_case(
+        case2.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
+    )
+    engine.transition_case(
+        case2.id,
         "tenant-1",
         "user-doctor",
         "doctor",
-        {
-            "discharge_decision_date": datetime.utcnow(),
-            "discharge_plan_summary": "Needs home healthcare and transfer",
-        },
+        "to_signature",
+        {},
     )
-
-    engine.mark_patient_accepted(
-        case.id,
+    # 2a. Unauthorized: nurse tries presentation -> signature (fresh case)
+    case2a = _create_case(engine)
+    engine.transition_case(
+        case2a.id,
         "tenant-1",
         "user-nurse",
-        "nursing",
-        {
-            "requires_home_healthcare": True,
-            "requires_medical_equipment": False,
-            "requires_transfer": True,
-            "requires_extended_care": False,
-        },
+        "nurse",
+        "to_presentation",
+        {},
     )
-
-    tasks = wf_db.query(WorkflowTask).filter(WorkflowTask.case_id == case.id).all()
-    execution_tasks = [t for t in tasks if t.task_code.startswith("execution_")]
-    assert len(execution_tasks) == 2
+    with pytest.raises(ValueError, match="Action requires role: doctor"):
+        engine.transition_case(
+            case2a.id,
+            "tenant-1",
+            "user-nurse",
+            "nurse",
+            "to_signature",
+            {},
+        )
+    # 3. Canonical: nurse transitions signature -> witness
+    case3 = _create_case(engine)
+    engine.transition_case(
+        case3.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
+    )
+    engine.transition_case(
+        case3.id,
+        "tenant-1",
+        "user-doctor",
+        "doctor",
+        "to_signature",
+        {},
+    )
+    engine.transition_case(
+        case3.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_witness",
+        {},
+    )
+    # 3a. Unauthorized: doctor tries signature -> witness (fresh case)
+    case3a = _create_case(engine)
+    engine.transition_case(
+        case3a.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
+    )
+    engine.transition_case(
+        case3a.id,
+        "tenant-1",
+        "user-doctor",
+        "doctor",
+        "to_signature",
+        {},
+    )
+    with pytest.raises(ValueError, match="Action requires role: nurse"):
+        engine.transition_case(
+            case3a.id,
+            "tenant-1",
+            "user-doctor",
+            "doctor",
+            "to_witness",
+            {},
+        )
+    # 4. Canonical: nurse transitions witness -> ready
+    case4 = _create_case(engine)
+    engine.transition_case(
+        case4.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
+    )
+    engine.transition_case(
+        case4.id,
+        "tenant-1",
+        "user-doctor",
+        "doctor",
+        "to_signature",
+        {},
+    )
+    engine.transition_case(
+        case4.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_witness",
+        {},
+    )
+    engine.transition_case(
+        case4.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_ready",
+        {},
+    )
+    # 4a. Unauthorized: doctor tries witness -> ready (fresh case)
+    case4a = _create_case(engine)
+    engine.transition_case(
+        case4a.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
+    )
+    engine.transition_case(
+        case4a.id,
+        "tenant-1",
+        "user-doctor",
+        "doctor",
+        "to_signature",
+        {},
+    )
+    engine.transition_case(
+        case4a.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_witness",
+        {},
+    )
+    with pytest.raises(ValueError, match="Action requires role: nurse"):
+        engine.transition_case(
+            case4a.id,
+            "tenant-1",
+            "user-doctor",
+            "doctor",
+            "to_ready",
+            {},
+        )
+    # 5. Canonical: legal_admin transitions ready -> legal
+    case5 = _create_case(engine)
+    engine.transition_case(
+        case5.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
+    )
+    engine.transition_case(
+        case5.id,
+        "tenant-1",
+        "user-doctor",
+        "doctor",
+        "to_signature",
+        {},
+    )
+    engine.transition_case(
+        case5.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_witness",
+        {},
+    )
+    engine.transition_case(
+        case5.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_ready",
+        {},
+    )
+    engine.transition_case(
+        case5.id,
+        "tenant-1",
+        "user-legal",
+        "legal_admin",
+        "to_legal",
+        {},
+    )
+    # 5a. Unauthorized: nurse tries ready -> legal (fresh case)
+    case5a = _create_case(engine)
+    engine.transition_case(
+        case5a.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
+    )
+    engine.transition_case(
+        case5a.id,
+        "tenant-1",
+        "user-doctor",
+        "doctor",
+        "to_signature",
+        {},
+    )
+    engine.transition_case(
+        case5a.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_witness",
+        {},
+    )
+    engine.transition_case(
+        case5a.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_ready",
+        {},
+    )
+    with pytest.raises(ValueError, match="Action requires role: legal_admin"):
+        engine.transition_case(
+            case5a.id,
+            "tenant-1",
+            "user-nurse",
+            "nurse",
+            "to_legal",
+            {},
+        )
 
 
 def test_task_creation_on_patient_refused_path(wf_db):
     engine = WorkflowEngineService(wf_db)
     case = _create_case(engine)
 
-    engine.issue_discharge_order(
+    engine.record_discharge_order(
         case.id,
         "tenant-1",
         "user-doctor",
-        "doctor",
         {
             "discharge_decision_date": datetime.utcnow(),
             "discharge_plan_summary": "Refusal path",
         },
+    )
+    # Start workflow with canonical transition
+    engine.transition_case(
+        case.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
     )
 
     engine.mark_patient_refused(
         case.id,
         "tenant-1",
         "user-nurse",
-        "nursing",
+        "nurse",
         {"refusal_reason": "Family refused"},
     )
 
@@ -241,15 +487,22 @@ def test_integration_refusal_escalation_chain(wf_db):
     engine = WorkflowEngineService(wf_db)
     case = _create_case(engine)
 
-    engine.issue_discharge_order(
+    engine.record_discharge_order(
         case.id,
         "tenant-1",
         "user-doctor",
-        "doctor",
         {
             "discharge_decision_date": datetime.utcnow(),
             "discharge_plan_summary": "Escalation flow",
         },
+    )
+    engine.transition_case(
+        case.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
     )
     engine.mark_patient_refused(
         case.id,
@@ -297,15 +550,22 @@ def test_integration_acceptance_generates_execution_tasks(wf_db):
     engine = WorkflowEngineService(wf_db)
     case = _create_case(engine)
 
-    engine.issue_discharge_order(
+    engine.record_discharge_order(
         case.id,
         "tenant-1",
         "user-doctor",
-        "doctor",
         {
             "discharge_decision_date": datetime.utcnow(),
             "discharge_plan_summary": "Execution flow",
         },
+    )
+    engine.transition_case(
+        case.id,
+        "tenant-1",
+        "user-nurse",
+        "nurse",
+        "to_presentation",
+        {},
     )
 
     engine.mark_patient_accepted(

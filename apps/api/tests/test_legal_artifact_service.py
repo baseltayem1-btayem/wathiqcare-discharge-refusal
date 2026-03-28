@@ -50,8 +50,11 @@ def db_session_local(monkeypatch):
     return local
 
 
-def _create_case() -> dict:
+def _create_case(db=None) -> dict:
+    if db is None:
+        raise ValueError("db argument required")
     return svc.create_legal_artifact_case(
+        db,
         tenant_id="tenant-1",
         actor_user_id="user-1",
         payload={
@@ -70,7 +73,8 @@ def _create_case() -> dict:
 
 
 def test_finalize_requires_guardian_when_capacity_lacking(db_session_local):
-    created = _create_case()
+    db = db_session_local()
+    created = _create_case(db)
     case_id = created["case_id"]
 
     svc.upsert_legal_artifact_screen(
@@ -204,7 +208,8 @@ def test_finalize_requires_guardian_when_capacity_lacking(db_session_local):
 
 
 def test_escalation_state_reaches_48h(db_session_local):
-    created = _create_case()
+    db = db_session_local()
+    created = _create_case(db)
     case_id = created["case_id"]
 
     old_decision = (datetime.utcnow() - timedelta(hours=49)).isoformat()
@@ -245,7 +250,8 @@ def test_escalation_state_reaches_48h(db_session_local):
 
 
 def test_legal_notification_triggers_once_at_24h(db_session_local):
-    created = _create_case()
+    db = db_session_local()
+    created = _create_case(db)
     case_id = created["case_id"]
 
     old_decision = (datetime.utcnow() - timedelta(hours=25)).isoformat()
@@ -288,7 +294,8 @@ def test_legal_notification_triggers_once_at_24h(db_session_local):
 
 
 def test_generated_legal_pdf_uses_canonical_document_and_signature_payload(db_session_local, monkeypatch):
-    created = _create_case()
+    db = db_session_local()
+    created = _create_case(db)
     case_id = created["case_id"]
 
     svc.upsert_legal_artifact_screen(

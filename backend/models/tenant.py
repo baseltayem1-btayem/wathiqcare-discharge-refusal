@@ -10,3 +10,5 @@ class Tenant(Base):
     code = Column(String, unique=True, nullable=False)
     domain = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
+    moh_license = Column(String, nullable=True)
+    cr_number = Column(String, nullable=True)

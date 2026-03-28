@@ -20,7 +20,7 @@ class DischargeCase(Base):
     department = Column(String, nullable=True)
     attending_physician_user_id = Column(String, ForeignKey("users.id"), nullable=True)
     attending_physician_name = Column(String, nullable=True)
-    current_stage_code = Column(String, nullable=True, default="nurse_draft")
+    current_stage_code = Column(String, nullable=True, default="draft")
     discharge_decision_date = Column(DateTime, nullable=True)
     discharge_plan_summary = Column(Text, nullable=True)
     accepted_at = Column(DateTime, nullable=True)
@@ -38,6 +38,15 @@ class DischargeCase(Base):
     pdf_file = Column(String, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Discharge Refusal MVP fields
+    type = Column(String, default="discharge_refusal")
+    status = Column(String, default="draft")
+    escalation_due_2h = Column(DateTime, nullable=True)
+    escalation_due_6h = Column(DateTime, nullable=True)
+    escalation_due_24h = Column(DateTime, nullable=True)
+    escalated_at = Column(DateTime, nullable=True)
+    closed_at = Column(DateTime, nullable=True)
 
     patient = relationship("Patient")
     user = relationship("User", foreign_keys=[created_by])

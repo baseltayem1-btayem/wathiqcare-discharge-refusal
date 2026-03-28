@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "declaration": true,
+        "emitDeclarationOnly": false,
+        "outDir": "dist",
+        "module": "ESNext",
+        "target": "ES2017",
+        "moduleResolution": "Node",
+        "esModuleInterop": true,
+        "strict": true
+    },
+    "include": [
+        "branding.ts"
+    ]
+}

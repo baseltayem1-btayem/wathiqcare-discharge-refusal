@@ -52,7 +52,7 @@ class AuditLogger:
         outcome: str = "SUCCESS",
         details: Optional[str] = None,
     ) -> AuditEntry:
-        normalized_role = self._normalize_role(actor_role)
+        normalized_role = AuditLogger._normalize_role(actor_role)
         previous_hash = self._entries[-1].entry_hash if self._entries else "GENESIS"
         timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -97,7 +97,7 @@ class AuditLogger:
         event_category: Optional[str] = None,
         resource_id: Optional[str] = None,
     ) -> List[AuditEntry]:
-        normalized_role = self._normalize_role(requester_role)
+        normalized_role = AuditLogger._normalize_role(requester_role)
         self._ensure_read_permission(normalized_role, event_category)
 
         allowed_categories = self._allowed_categories(normalized_role)

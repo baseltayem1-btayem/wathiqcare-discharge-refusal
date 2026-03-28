@@ -11,7 +11,6 @@ from backend.core.discharge_query_service import list_audit_logs_for_case
 from backend.core.discharge_workflow_service import (
     generate_document_record,
     get_document_record,
-    list_case_documents,
     POLICY_CASE_STATUSES,
     run_workflow_action,
     serialize_document_record,
