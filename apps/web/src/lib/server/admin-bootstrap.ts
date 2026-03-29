@@ -2,6 +2,7 @@ import { BillingInterval, MembershipRole, MembershipStatus, PlanCode, Prisma, Su
 import { prisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { canonicalizeUserRole, membershipRoleForUserRole } from "@/lib/server/roles";
+import { getPlatformTenant } from "@/lib/server/platform-tenant";
 
 export type AdminDepartment = {
   code: string;
@@ -160,6 +161,9 @@ export async function ensureImcBootstrap(input: {
   }
 
   await ensureBasePlans();
+
+  // Ensure the WathiqCare platform tenant exists before creating any tenant-scoped resources.
+  await getPlatformTenant();
 
   const tenant = await prisma.tenant.upsert({
     where: { code: "IMC" },

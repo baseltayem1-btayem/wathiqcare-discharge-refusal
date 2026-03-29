@@ -164,6 +164,7 @@ model Tenant {
   code               String              @unique
   domain             String?
   isActive           Boolean             @default(true) @map("is_active")
+  isPlatform         Boolean             @default(false) @map("is_platform")
   timezone           String?             @default("UTC")
   country            String?
   billingEmail       String?             @map("billing_email")
