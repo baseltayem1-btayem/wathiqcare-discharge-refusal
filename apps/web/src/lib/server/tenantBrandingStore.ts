@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 
 export type TenantBrandingProfile = {
     id: string;

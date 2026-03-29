@@ -36,7 +36,7 @@ type TenantDocumentIdentity = {
     country?: string;
     postalCode?: string;
     websiteUrl?: string;
-    logoUrl?: string | null;
+    logoUrl?: string;
     documentHeaderText?: string;
     documentFooterText?: string;
     legalDisclaimer?: string;
@@ -46,7 +46,7 @@ export type TenantBranding = {
     id: string;
     name: string;
     code: string;
-    logoUrl: string | null;
+    logoUrl?: string;
     identity: TenantDocumentIdentity;
 };
 
@@ -59,26 +59,25 @@ type TenantBrandingSource = {
     metadata?: unknown;
 };
 
-function asRecord(value: unknown): JsonRecord | null {
+function asRecord(value: unknown): JsonRecord | undefined {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
-        return null;
+        return undefined;
     }
     return value as JsonRecord;
 }
 
-function readString(value: unknown): string | null {
+function readString(value: unknown): string | undefined {
     if (typeof value !== "string") {
-        return null;
+        return undefined;
     }
-
     const trimmed = value.trim();
-    return trimmed ? trimmed : null;
+    return trimmed ? trimmed : undefined;
 }
 
-export function extractTenantLogoUrl(metadata: unknown): string | null {
+export function extractTenantLogoUrl(metadata: unknown): string | undefined {
     const record = asRecord(metadata);
     if (!record) {
-        return null;
+        return undefined;
     }
 
     const branding = asRecord(record.branding);
@@ -87,21 +86,21 @@ export function extractTenantLogoUrl(metadata: unknown): string | null {
         readString(record.logo_url) ??
         readString(branding?.logoUrl) ??
         readString(branding?.logo_url) ??
-        null
+        undefined
     );
 }
 
-function getHostFromUrl(value: string): string | null {
+function getHostFromUrl(value: string): string | undefined {
     try {
         return new URL(value).hostname.toLowerCase();
     } catch {
-        return null;
+        return undefined;
     }
 }
 
-function sanitizeTenantLogoUrl(tenantCode: string, logoUrl: string | null): string | null {
+function sanitizeTenantLogoUrl(tenantCode: string, logoUrl?: string): string | undefined {
     if (!logoUrl) {
-        return null;
+        return undefined;
     }
 
     const normalizedCode = tenantCode.trim().toUpperCase();
@@ -111,7 +110,7 @@ function sanitizeTenantLogoUrl(tenantCode: string, logoUrl: string | null): stri
 
     const host = getHostFromUrl(logoUrl);
     if (host && IMC_LOGO_HOSTS.has(host)) {
-        return null;
+        return undefined;
     }
 
     return logoUrl;
@@ -121,13 +120,12 @@ export function resolveTenantBranding(source: TenantBrandingSource): TenantBrand
     return resolveTenantBrandingWithProfile(source);
 }
 
-function identityString(value: string | null | undefined): string | null {
+function identityString(value: string | null | undefined): string | undefined {
     if (typeof value !== "string") {
-        return null;
+        return undefined;
     }
-
     const trimmed = value.trim();
-    return trimmed ? trimmed : null;
+    return trimmed ? trimmed : undefined;
 }
 
 export function resolveTenantBrandingWithProfile(
@@ -156,7 +154,7 @@ export function resolveTenantBrandingWithProfile(
     const documentHeaderText = identityString(profile?.documentHeaderText);
     const documentFooterText = identityString(profile?.documentFooterText);
     const legalDisclaimer = identityString(profile?.legalDisclaimer);
-    const sanitizedLogoUrl = sanitizeTenantLogoUrl(source.code, profileLogoUrl ?? metadataLogoUrl);
+    const sanitizedLogoUrl = sanitizeTenantLogoUrl(source.code, profileLogoUrl ?? metadataLogoUrl) ?? undefined;
 
     return {
         id: source.id,

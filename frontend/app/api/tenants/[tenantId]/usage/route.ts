@@ -4,6 +4,7 @@ import { requireTenantAccess } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 
 function parseUsageMetric(value: string | null): UsageMetric | null {
   if (!value) return null;
@@ -29,6 +30,7 @@ export async function GET(
     const fromDate = new Date();
     fromDate.setUTCDate(fromDate.getUTCDate() - (Number.isFinite(days) ? Math.max(days, 1) : 30));
 
+    const prisma = getPrisma();
     const records = await prisma.usageRecord.findMany({
       where: {
         tenantId,

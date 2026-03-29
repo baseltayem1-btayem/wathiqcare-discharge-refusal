@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 
 type BackendValidateResponse = {
@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
 
     const auth = await validateTokenWithBackend(token);
 
+    const prisma = getPrisma();
     const user = await prisma.user.findUnique({
       where: { id: auth.sub },
       include: {

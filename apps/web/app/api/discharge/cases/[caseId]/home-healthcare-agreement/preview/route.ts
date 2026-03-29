@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
-
+import { getPrisma } from "@/lib/server/prisma";
 type RouteContext = { params: Promise<{ caseId: string }> };
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -21,8 +21,9 @@ function escapeHtml(text: string): string {
         .replace(/"/g, "&quot;");
 }
 
-function applyLineValue(text: string, label: string, value: string): string {
-    if (!value) return text;
+const prisma = getPrisma();
+const caseRecord = await prisma.case.findFirst({
+    if(!value) return text;
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     return text.replace(
         new RegExp(`(^\\s*${escaped}\\s*)(?:$|\\t.*$)`, "m"),
@@ -34,38 +35,38 @@ function applyDynamicFields(
     lockedText: string,
     ctx: Record<string, string>,
 ): string {
-    const mappings: [string, string][] = [
-        ["Name of Patient:", safe(ctx.patient_name)],
-        ["Contact Numbers:", safe(ctx.contact_numbers)],
-        ["Date:", safe(ctx.date)],
-        ["Time:", safe(ctx.time)],
-        ["Name of Guardian / Representative (Print):", safe(ctx.legal_guardian)],
-        ["Relationship to Patient", safe(ctx.relationship)],
-        ["Interpreter Name (Print):", safe(ctx.interpreter_name)],
-        ["Name (Print):", safe(ctx.hhc_representative_name)],
-        ["Designation:", safe(ctx.hhc_representative_designation)],
-        ["Care Partner (if identified):", safe(ctx.care_partner_name)],
-        ["Relationship:", safe(ctx.care_partner_relationship || ctx.relationship)],
-    ];
+        const mappings: [string, string][] = [
+            ["Name of Patient:", safe(ctx.patient_name)],
+            ["Contact Numbers:", safe(ctx.contact_numbers)],
+            ["Date:", safe(ctx.date)],
+            ["Time:", safe(ctx.time)],
+            ["Name of Guardian / Representative (Print):", safe(ctx.legal_guardian)],
+            ["Relationship to Patient", safe(ctx.relationship)],
+            ["Interpreter Name (Print):", safe(ctx.interpreter_name)],
+            ["Name (Print):", safe(ctx.hhc_representative_name)],
+            ["Designation:", safe(ctx.hhc_representative_designation)],
+            ["Care Partner (if identified):", safe(ctx.care_partner_name)],
+            ["Relationship:", safe(ctx.care_partner_relationship || ctx.relationship)],
+        ];
 
-    let result = lockedText;
-    for (const [label, value] of mappings) {
-        result = applyLineValue(result, label, value);
+        let result = lockedText;
+        for (const [label, value] of mappings) {
+            result = applyLineValue(result, label, value);
+        }
+        return result;
     }
-    return result;
-}
 
 function loadLockedContractText(): string {
-    const contractPath = path.join(process.cwd(), "contracts", "HHC_Contract.locked.txt");
-    return fs.readFileSync(contractPath, "utf8");
-}
+        const contractPath = path.join(process.cwd(), "contracts", "HHC_Contract.locked.txt");
+        return fs.readFileSync(contractPath, "utf8");
+    }
 
 function renderHomecareAgreementHtml(ctx: Record<string, string>): string {
-    const lockedText = loadLockedContractText();
-    const renderedText = applyDynamicFields(lockedText, ctx);
-    const contractHtml = `<pre class="contract-text">${escapeHtml(renderedText)}</pre>`;
+        const lockedText = loadLockedContractText();
+        const renderedText = applyDynamicFields(lockedText, ctx);
+        const contractHtml = `<pre class="contract-text">${escapeHtml(renderedText)}</pre>`;
 
-    return `<!DOCTYPE html>
+        return `<!DOCTYPE html>
 <html lang="ar">
 <head>
   <meta charset="utf-8" />
@@ -95,7 +96,7 @@ function renderHomecareAgreementHtml(ctx: Record<string, string>): string {
   ${contractHtml}
 </body>
 </html>`;
-}
+    }
 
 // ── route ──────────────────────────────────────────────────────────────────
 

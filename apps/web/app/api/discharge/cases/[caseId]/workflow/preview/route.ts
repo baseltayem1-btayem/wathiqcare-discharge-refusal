@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { buildTenantReferenceNumber, resolveTenantBranding } from "@/lib/server/tenantBranding";
 import { dischargeRefusalFormTemplate } from "@/lib/templates/dischargeRefusalForm.template";
 import { financialResponsibilityNoticeTemplate } from "@/lib/templates/financialResponsibilityNotice.template";
@@ -200,105 +200,105 @@ const TEMPLATES: Record<string, TemplateInfo> = {
 
 // ── route ──────────────────────────────────────────────────────────────────
 
-export async function POST(request: NextRequest, { params }: RouteContext) {
-    try {
-        const auth = await requireAuth(request);
-        const tenantId = requireTenantId(auth);
-        const { caseId } = await params;
+const prisma = getPrisma();
+try {
+    const auth = await requireAuth(request);
+    const tenantId = requireTenantId(auth);
+    const { caseId } = await params;
 
-        const body = (await request.json().catch(() => ({}))) as {
-            template_key?: string;
-            payload?: Record<string, unknown>;
-            locale?: string;
-        };
+    const body = (await request.json().catch(() => ({}))) as {
+        template_key?: string;
+        payload?: Record<string, unknown>;
+        locale?: string;
+    };
 
-        const templateKey = (body.template_key ?? "").trim();
-        const template = TEMPLATES[templateKey];
-        if (!template) {
-            throw new ApiError(400, "مفتاح النموذج غير مدعوم");
-        }
-
-        const inputPayload = (body.payload ?? {}) as Record<string, unknown>;
-        const locale = normalizeLocale(body.locale ?? inputPayload.locale);
-
-
-        const caseRecord = await prisma.case.findFirst({
-            where: {
-                id: caseId,
-                tenantId,
-            },
-        });
-        if (!caseRecord) {
-            throw new ApiError(404, "Case not found");
-        }
-
-        const tenantRecord = await prisma.tenant.findUnique({
-            where: { id: tenantId },
-            select: { id: true, name: true, code: true, metadata: true },
-        });
-        const tenantBranding = tenantRecord ? resolveTenantBranding(tenantRecord) : null;
-
-        const generatedAt = nowIso();
-        const refNum = buildTenantReferenceNumber({
-            tenantCode: tenantBranding?.code,
-            caseId,
-            suffix: "REF",
-        });
-
-        const ctx: Record<string, string> = {
-            case_id: caseId,
-            tenant_name: tenantBranding?.name ?? "",
-            patient_name: safe(inputPayload.patient_name ?? caseRecord.patientName),
-            patient_name_or_guardian: safe(inputPayload.patient_name_or_guardian ?? inputPayload.patient_name ?? caseRecord.patientName),
-            patient_id_number: safe(inputPayload.patient_id_number ?? caseRecord.patientIdNumber),
-            medical_record_number: safe(inputPayload.medical_record_number ?? caseRecord.medicalRecordNo),
-            room_number: safe(inputPayload.room_number ?? caseRecord.roomNumber),
-            department: safe(inputPayload.department ?? inputPayload.ward),
-            attending_physician: safe(inputPayload.attending_physician),
-            nurse_name: safe(inputPayload.nurse_name),
-            witness_1_name: safe(inputPayload.witness_1_name),
-            witness_2_name: safe(inputPayload.witness_2_name),
-            witness1_role: safe(inputPayload.witness1_role),
-            witness2_role: safe(inputPayload.witness2_role),
-            witness1_signature: safe(inputPayload.witness1_signature),
-            witness2_signature: safe(inputPayload.witness2_signature),
-            legal_guardian: safe(inputPayload.legal_guardian),
-            relationship: safe(inputPayload.relationship),
-            date: safe(inputPayload.date) || nowDate(),
-            time: safe(inputPayload.time),
-            representative_name: safe(inputPayload.representative_name),
-            patient_signature: safe(inputPayload.patient_signature),
-            representative_signature: safe(inputPayload.representative_signature),
-            attending_physician_signature: safe(inputPayload.attending_physician_signature),
-            nurse_signature: safe(inputPayload.nurse_signature),
-            refusal_reason: safe(inputPayload.refusal_reason),
-            discussion_summary: safe(inputPayload.discussion_summary),
-            insurance_coverage_status: safe(inputPayload.insurance_coverage_status),
-            forms_issued: safe(inputPayload.forms_issued),
-            discharge_decision_at: safe(inputPayload.discharge_decision_at),
-            generated_at: generatedAt,
-            reference_number: refNum,
-        };
-
-        const htmlContent = template.renderer(ctx, locale);
-
-        const missingFields = template.required_fields.filter((f) => {
-            if (f === "refusal_reason_or_summary") {
-                return !ctx.refusal_reason && !ctx.discussion_summary;
-            }
-            return !ctx[f];
-        });
-
-        return NextResponse.json({
-            template_key: template.key,
-            title: locale === "ar" ? template.title_ar : template.title_en,
-            document_code: template.document_code,
-            missing_fields: missingFields,
-            can_generate: missingFields.length === 0,
-            html_content: htmlContent,
-            context: ctx,
-        });
-    } catch (error) {
-        return handleApiError(error);
+    const templateKey = (body.template_key ?? "").trim();
+    const template = TEMPLATES[templateKey];
+    if (!template) {
+        throw new ApiError(400, "مفتاح النموذج غير مدعوم");
     }
+
+    const inputPayload = (body.payload ?? {}) as Record<string, unknown>;
+    const locale = normalizeLocale(body.locale ?? inputPayload.locale);
+
+
+    const caseRecord = await prisma.case.findFirst({
+        where: {
+            id: caseId,
+            tenantId,
+        },
+    });
+    if (!caseRecord) {
+        throw new ApiError(404, "Case not found");
+    }
+
+    const tenantRecord = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { id: true, name: true, code: true, metadata: true },
+    });
+    const tenantBranding = tenantRecord ? resolveTenantBranding(tenantRecord) : null;
+
+    const generatedAt = nowIso();
+    const refNum = buildTenantReferenceNumber({
+        tenantCode: tenantBranding?.code,
+        caseId,
+        suffix: "REF",
+    });
+
+    const ctx: Record<string, string> = {
+        case_id: caseId,
+        tenant_name: tenantBranding?.name ?? "",
+        patient_name: safe(inputPayload.patient_name ?? caseRecord.patientName),
+        patient_name_or_guardian: safe(inputPayload.patient_name_or_guardian ?? inputPayload.patient_name ?? caseRecord.patientName),
+        patient_id_number: safe(inputPayload.patient_id_number ?? caseRecord.patientIdNumber),
+        medical_record_number: safe(inputPayload.medical_record_number ?? caseRecord.medicalRecordNo),
+        room_number: safe(inputPayload.room_number ?? caseRecord.roomNumber),
+        department: safe(inputPayload.department ?? inputPayload.ward),
+        attending_physician: safe(inputPayload.attending_physician),
+        nurse_name: safe(inputPayload.nurse_name),
+        witness_1_name: safe(inputPayload.witness_1_name),
+        witness_2_name: safe(inputPayload.witness_2_name),
+        witness1_role: safe(inputPayload.witness1_role),
+        witness2_role: safe(inputPayload.witness2_role),
+        witness1_signature: safe(inputPayload.witness1_signature),
+        witness2_signature: safe(inputPayload.witness2_signature),
+        legal_guardian: safe(inputPayload.legal_guardian),
+        relationship: safe(inputPayload.relationship),
+        date: safe(inputPayload.date) || nowDate(),
+        time: safe(inputPayload.time),
+        representative_name: safe(inputPayload.representative_name),
+        patient_signature: safe(inputPayload.patient_signature),
+        representative_signature: safe(inputPayload.representative_signature),
+        attending_physician_signature: safe(inputPayload.attending_physician_signature),
+        nurse_signature: safe(inputPayload.nurse_signature),
+        refusal_reason: safe(inputPayload.refusal_reason),
+        discussion_summary: safe(inputPayload.discussion_summary),
+        insurance_coverage_status: safe(inputPayload.insurance_coverage_status),
+        forms_issued: safe(inputPayload.forms_issued),
+        discharge_decision_at: safe(inputPayload.discharge_decision_at),
+        generated_at: generatedAt,
+        reference_number: refNum,
+    };
+
+    const htmlContent = template.renderer(ctx, locale);
+
+    const missingFields = template.required_fields.filter((f) => {
+        if (f === "refusal_reason_or_summary") {
+            return !ctx.refusal_reason && !ctx.discussion_summary;
+        }
+        return !ctx[f];
+    });
+
+    return NextResponse.json({
+        template_key: template.key,
+        title: locale === "ar" ? template.title_ar : template.title_en,
+        document_code: template.document_code,
+        missing_fields: missingFields,
+        can_generate: missingFields.length === 0,
+        html_content: htmlContent,
+        context: ctx,
+    });
+} catch (error) {
+    return handleApiError(error);
+}
 }

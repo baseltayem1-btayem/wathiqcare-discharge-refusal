@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { dischargeRefusalFormTemplate } from "@/lib/templates/dischargeRefusalForm.template";
 import { financialResponsibilityNoticeTemplate } from "@/lib/templates/financialResponsibilityNotice.template";
 
@@ -220,6 +221,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const locale = normalizeLocale(body.locale ?? inputPayload.locale);
 
         // Fetch case data for context enrichment
+        const prisma = getPrisma();
         const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
         if (!caseRecord) {
             throw new ApiError(404, "Case not found");

@@ -2,7 +2,7 @@ import { CaseStatus, DocumentStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 
 function isAuthConfigured(): boolean {
   const secret = process.env.JWT_SECRET_KEY;
@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const now = Date.now();
     const dayAgo = new Date(now - 24 * 60 * 60 * 1000);
 
+    const prisma = getPrisma();
     const [
       openCases,
       inProgressCases,

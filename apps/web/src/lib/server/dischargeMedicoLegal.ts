@@ -2,7 +2,7 @@ import { CaseStatus, CaseType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { requireTenantId, type AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 type RefusalCaseListItem = {
@@ -201,6 +201,7 @@ function isRefusalCase(caseRecord: { workflowType: string | null; caseType: Case
 }
 
 async function findRefusalCases(tenantId: string, limit = 200) {
+    const prisma = getPrisma();
     const cases = await prisma.case.findMany({
         where: { tenantId },
         include: {
@@ -391,6 +392,7 @@ function mapLegalEscalationCase(caseRecord: RefusalCaseRecord): LegalEscalationC
 }
 
 async function getAuthorizedRefusalCase(auth: AuthContext, caseId: string): Promise<RefusalCaseRecord> {
+    const prisma = getPrisma();
     const caseRecord = await prisma.case.findUnique({
         where: { id: caseId },
         include: {

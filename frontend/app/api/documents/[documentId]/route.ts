@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import {
   enforcePlanUsage,
   recordUsage,
@@ -26,6 +27,7 @@ export async function GET(
     const auth = requireAuth(request);
     const { documentId } = await params;
 
+    const prisma = getPrisma();
     const document = await prisma.document.findUnique({
       where: { id: documentId },
       include: {
@@ -73,15 +75,15 @@ export async function PATCH(
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          status?: string;
-          titleEn?: string;
-          titleAr?: string | null;
-          storagePath?: string | null;
-          previewHtml?: string | null;
-          payloadJson?: Prisma.InputJsonValue;
-          metadata?: Prisma.InputJsonValue | null;
-          signedAt?: string | null;
-        }
+        status?: string;
+        titleEn?: string;
+        titleAr?: string | null;
+        storagePath?: string | null;
+        previewHtml?: string | null;
+        payloadJson?: Prisma.InputJsonValue;
+        metadata?: Prisma.InputJsonValue | null;
+        signedAt?: string | null;
+      }
       | null;
 
     if (!payload) {
@@ -112,9 +114,9 @@ export async function PATCH(
           : {}),
         ...(payload.signedAt !== undefined
           ? {
-              signedAt: payload.signedAt ? new Date(payload.signedAt) : null,
-              signedByUserId: payload.signedAt ? auth.sub : null,
-            }
+            signedAt: payload.signedAt ? new Date(payload.signedAt) : null,
+            signedByUserId: payload.signedAt ? auth.sub : null,
+          }
           : {}),
       },
     });

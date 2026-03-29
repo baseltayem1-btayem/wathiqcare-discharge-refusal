@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { ApiError, handleApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { normalizeEmail, extractDomain, hasAnyActiveTenantForDomain } from "@/lib/server/auth-domain-policy";
 import { hashPassword, validatePasswordStrength } from "@/lib/server/password";
 
@@ -11,50 +11,50 @@ type PasswordSignupPayload = {
     fullName?: string;
 };
 
-export async function POST(request: NextRequest) {
-    try {
-        const payload = (await request.json().catch(() => null)) as PasswordSignupPayload | null;
-        if (!payload) {
-            throw new ApiError(400, "Invalid JSON body");
-        }
+try {
+    const prisma = getPrisma();
+    const payload = (await request.json().catch(() => null)) as PasswordSignupPayload | null;
+    if (!payload) {
+        throw new ApiError(400, "Invalid JSON body");
+    }
 
-        const { email: emailInput, password, fullName } = payload;
-        const email = normalizeEmail(emailInput || "");
+    const { email: emailInput, password, fullName } = payload;
+    const email = normalizeEmail(emailInput || "");
 
-        if (!email || !password || !fullName) {
-            throw new ApiError(400, "Email, password, and full name are required");
-        }
+    if (!email || !password || !fullName) {
+        throw new ApiError(400, "Email, password, and full name are required");
+    }
 
-        // Validate password strength
-        const passwordValidation = validatePasswordStrength(password);
-        if (!passwordValidation.valid) {
-            throw new ApiError(400, passwordValidation.errors.join("; "));
-        }
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.valid) {
+        throw new ApiError(400, passwordValidation.errors.join("; "));
+    }
 
-        // Check if email already exists
-        const existingUser = await prisma.user.findUnique({
-            where: { email },
-            select: { id: true },
-        });
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true },
+    });
 
-        if (existingUser) {
-            throw new ApiError(409, "An account with this email already exists");
-        }
+    if (existingUser) {
+        throw new ApiError(409, "An account with this email already exists");
+    }
 
-        // Extract domain and find tenant
-        const domain = extractDomain(email);
-        if (!domain) {
-            throw new ApiError(400, "Invalid email domain");
-        }
+    // Extract domain and find tenant
+    const domain = extractDomain(email);
+    if (!domain) {
+        throw new ApiError(400, "Invalid email domain");
+    }
 
-        // Check if there's an active tenant for this domain
-        const hasTenant = await hasAnyActiveTenantForDomain(domain);
-        if (!hasTenant) {
-            throw new ApiError(403, "Organization for this email domain is not found or not active");
-        }
+    // Check if there's an active tenant for this domain
+    const hasTenant = await hasAnyActiveTenantForDomain(domain);
+    if (!hasTenant) {
+        throw new ApiError(403, "Organization for this email domain is not found or not active");
+    }
 
-        // Find default tenant for domain
-        const tenantRows = await prisma.$queryRaw<Array<{ id: string; code: string }>>`
+    // Find default tenant for domain
+    const tenantRows = await prisma.$queryRaw<Array<{ id: string; code: string }>>`
       SELECT DISTINCT t.id, t.code
       FROM tenants t
       INNER JOIN tenant_allowed_domains tad ON tad.tenant_id = t.id
@@ -62,18 +62,18 @@ export async function POST(request: NextRequest) {
       LIMIT 1
     `;
 
-        if (!tenantRows[0]) {
-            throw new ApiError(403, "No active organization found for this domain");
-        }
+    if (!tenantRows[0]) {
+        throw new ApiError(403, "No active organization found for this domain");
+    }
 
-        const tenant = tenantRows[0];
+    const tenant = tenantRows[0];
 
-        // Hash password
-        const hashedPassword = await hashPassword(password);
+    // Hash password
+    const hashedPassword = await hashPassword(password);
 
-        // Create user with email_verification_required status
-        const userId = crypto.randomUUID();
-        await prisma.$executeRaw`
+    // Create user with email_verification_required status
+    const userId = crypto.randomUUID();
+    await prisma.$executeRaw`
       INSERT INTO users (
         id,
         tenant_id,
@@ -98,9 +98,9 @@ export async function POST(request: NextRequest) {
       )
     `;
 
-        // Create default membership
-        const membershipId = crypto.randomUUID();
-        await prisma.$executeRaw`
+    // Create default membership
+    const membershipId = crypto.randomUUID();
+    await prisma.$executeRaw`
       INSERT INTO tenant_memberships (
         id,
         tenant_id,
@@ -119,24 +119,24 @@ export async function POST(request: NextRequest) {
       )
     `;
 
-        // Send verification email request
-        try {
-            await fetch(`${request.nextUrl.origin}/api/auth/email/verify-request`, {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ email }),
-            });
-        } catch (error) {
-            console.error("Failed to send verification email:", error);
-        }
-
-        return NextResponse.json({
-            message: "Account created successfully. Please check your email to verify your account.",
-            email,
-            userId,
-            tenantId: tenant.id,
-        }, { status: 201 });
+    // Send verification email request
+    try {
+        await fetch(`${request.nextUrl.origin}/api/auth/email/verify-request`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email }),
+        });
     } catch (error) {
-        return handleApiError(error);
+        console.error("Failed to send verification email:", error);
     }
+
+    return NextResponse.json({
+        message: "Account created successfully. Please check your email to verify your account.",
+        email,
+        userId,
+        tenantId: tenant.id,
+    }, { status: 201 });
+} catch (error) {
+    return handleApiError(error);
+}
 }

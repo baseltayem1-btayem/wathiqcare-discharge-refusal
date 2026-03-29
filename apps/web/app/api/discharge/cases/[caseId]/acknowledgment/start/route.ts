@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import {
     buildWathiqCareEmailHtml,
@@ -242,125 +242,125 @@ async function sendEmailNotice(
 
 // ── route ──────────────────────────────────────────────────────────────────
 
-export async function POST(request: NextRequest, { params }: RouteContext) {
-    try {
-        const auth = await requireAuth(request);
-        const tenantId = requireTenantId(auth);
-        const { caseId } = await params;
+const prisma = getPrisma();
+try {
+    const auth = await requireAuth(request);
+    const tenantId = requireTenantId(auth);
+    const { caseId } = await params;
 
-        const body = (await request.json().catch(() => null)) as {
-            document_type?: string;
-            method?: string;
-            payload?: Record<string, unknown>;
-        } | null;
+    const body = (await request.json().catch(() => null)) as {
+        document_type?: string;
+        method?: string;
+        payload?: Record<string, unknown>;
+    } | null;
 
-        if (!body?.document_type || !body?.method) {
-            throw new ApiError(400, "document_type and method are required");
-        }
-
-        const templateKey = normalizeDocumentType(body.document_type);
-        const method = normalizeMethod(body.method);
-        const inputPayload = (body.payload ?? {}) as Record<string, unknown>;
-
-        // Verify case ownership
-        const caseRecord = await prisma.case.findFirst({ where: { id: caseId, tenantId } });
-        if (!caseRecord) throw new ApiError(404, "Case not found");
-        const caseMetadata = asRecord(caseRecord.metadata);
-
-        // Build context from case record + payload
-        const patientName = safe(inputPayload.patient_name ?? caseRecord.patientName);
-        const medicalRecordNo = safe(inputPayload.medical_record_number ?? inputPayload.urn ?? caseRecord.medicalRecordNo);
-        const refNum = `ACK-${caseId.slice(0, 8).toUpperCase()}-${new Date().toISOString().replace(/\D/g, "").slice(0, 12)}`;
-
-        // Session state stored in Document.payloadJson
-        const sessionState: Record<string, unknown> = {
-            case_id: caseId,
-            tenant_id: auth.tenant_id,
-            document_type: templateKey,
-            acknowledgment_method: method,
-            verification_status: "pending",
-            created_at: nowIso(),
-            patient_name: patientName,
-            medical_record_number: medicalRecordNo,
-            patient_id_number: safe(inputPayload.patient_id_number ?? caseRecord.patientIdNumber),
-            reference_number: refNum,
-            provider_result: {} as Record<string, unknown>,
-        };
-
-        const availableMethods = await buildAcknowledgmentMethods(request);
-
-        // Method-specific setup
-        if (method === "TABLET_SIGNATURE") {
-            sessionState.verification_status = "awaiting_signature";
-            sessionState.provider_result = { device_source: "TABLET" } as Record<string, unknown>;
-
-            // Optional mobile OTP linkage (kept for backward compatibility)
-            const phone = safe(inputPayload.phone_number);
-            if (phone) {
-                const otpCode = generateOtp();
-                const otpHash = hashOtp(otpCode);
-                sessionState.otp_code_hash = otpHash;
-                sessionState.phone_number_masked = maskPhone(phone);
-                sessionState.otp_sent_at = nowIso();
-                (sessionState.provider_result as Record<string, unknown>).otp_debug_code = otpCode;
-                (sessionState.provider_result as Record<string, unknown>).stub_mode = true;
-                (sessionState.provider_result as Record<string, unknown>).challenge_id = crypto.randomUUID();
-            }
-        } else if (method === "EMAIL_NOTICE") {
-            const email = resolveRecipientEmail(inputPayload, caseMetadata);
-
-            const emailResult = await sendEmailNotice(request, caseId, patientName, email, templateKey);
-            if (emailResult.status !== "sent") {
-                throw new ApiError(502, "فشل إرسال إشعار البريد الإلكتروني. يرجى المحاولة مرة أخرى.");
-            }
-
-            sessionState.verification_status = "notification_sent";
-            sessionState.provider_result = {
-                channel: "email",
-                recipient_email: email,
-                delivery_status: emailResult.status,
-                provider: emailResult.provider,
-                sent_at: emailResult.sent_at ?? nowIso(),
-                message_id: emailResult.log_id,
-            };
-        }
-
-        // Persist session as a Document record; id becomes the session_id
-        const doc = await prisma.document.create({
-            data: {
-                tenantId,
-                caseId,
-                documentType: "OTHER",
-                templateKey: `ack_session:${templateKey}`,
-                titleEn: `Acknowledgment Session – ${templateKey}`,
-                titleAr: "جلسة إقرار",
-                fileName: `ack_session_${templateKey}.json`,
-                mimeType: "application/json",
-                status: "DRAFT",
-                payloadJson: sessionState as Prisma.InputJsonValue,
-                generatedByUserId: auth.sub,
-            },
-        });
-
-        // Write audit log
-        await writeAuditLog({
-            tenantId,
-            userId: auth.sub,
-            caseId,
-            action: "acknowledgment_session_started",
-            entityType: "document",
-            entityId: doc.id,
-            documentId: doc.id,
-            metadataJson: { document_type: templateKey, method },
-        });
-
-        return NextResponse.json({
-            session_id: doc.id,
-            verification_status: sessionState.verification_status,
-            provider_result: sessionState.provider_result,
-            available_methods: availableMethods,
-        });
-    } catch (error) {
-        return handleApiError(error);
+    if (!body?.document_type || !body?.method) {
+        throw new ApiError(400, "document_type and method are required");
     }
+
+    const templateKey = normalizeDocumentType(body.document_type);
+    const method = normalizeMethod(body.method);
+    const inputPayload = (body.payload ?? {}) as Record<string, unknown>;
+
+    // Verify case ownership
+    const caseRecord = await prisma.case.findFirst({ where: { id: caseId, tenantId } });
+    if (!caseRecord) throw new ApiError(404, "Case not found");
+    const caseMetadata = asRecord(caseRecord.metadata);
+
+    // Build context from case record + payload
+    const patientName = safe(inputPayload.patient_name ?? caseRecord.patientName);
+    const medicalRecordNo = safe(inputPayload.medical_record_number ?? inputPayload.urn ?? caseRecord.medicalRecordNo);
+    const refNum = `ACK-${caseId.slice(0, 8).toUpperCase()}-${new Date().toISOString().replace(/\D/g, "").slice(0, 12)}`;
+
+    // Session state stored in Document.payloadJson
+    const sessionState: Record<string, unknown> = {
+        case_id: caseId,
+        tenant_id: auth.tenant_id,
+        document_type: templateKey,
+        acknowledgment_method: method,
+        verification_status: "pending",
+        created_at: nowIso(),
+        patient_name: patientName,
+        medical_record_number: medicalRecordNo,
+        patient_id_number: safe(inputPayload.patient_id_number ?? caseRecord.patientIdNumber),
+        reference_number: refNum,
+        provider_result: {} as Record<string, unknown>,
+    };
+
+    const availableMethods = await buildAcknowledgmentMethods(request);
+
+    // Method-specific setup
+    if (method === "TABLET_SIGNATURE") {
+        sessionState.verification_status = "awaiting_signature";
+        sessionState.provider_result = { device_source: "TABLET" } as Record<string, unknown>;
+
+        // Optional mobile OTP linkage (kept for backward compatibility)
+        const phone = safe(inputPayload.phone_number);
+        if (phone) {
+            const otpCode = generateOtp();
+            const otpHash = hashOtp(otpCode);
+            sessionState.otp_code_hash = otpHash;
+            sessionState.phone_number_masked = maskPhone(phone);
+            sessionState.otp_sent_at = nowIso();
+            (sessionState.provider_result as Record<string, unknown>).otp_debug_code = otpCode;
+            (sessionState.provider_result as Record<string, unknown>).stub_mode = true;
+            (sessionState.provider_result as Record<string, unknown>).challenge_id = crypto.randomUUID();
+        }
+    } else if (method === "EMAIL_NOTICE") {
+        const email = resolveRecipientEmail(inputPayload, caseMetadata);
+
+        const emailResult = await sendEmailNotice(request, caseId, patientName, email, templateKey);
+        if (emailResult.status !== "sent") {
+            throw new ApiError(502, "فشل إرسال إشعار البريد الإلكتروني. يرجى المحاولة مرة أخرى.");
+        }
+
+        sessionState.verification_status = "notification_sent";
+        sessionState.provider_result = {
+            channel: "email",
+            recipient_email: email,
+            delivery_status: emailResult.status,
+            provider: emailResult.provider,
+            sent_at: emailResult.sent_at ?? nowIso(),
+            message_id: emailResult.log_id,
+        };
+    }
+
+    // Persist session as a Document record; id becomes the session_id
+    const doc = await prisma.document.create({
+        data: {
+            tenantId,
+            caseId,
+            documentType: "OTHER",
+            templateKey: `ack_session:${templateKey}`,
+            titleEn: `Acknowledgment Session – ${templateKey}`,
+            titleAr: "جلسة إقرار",
+            fileName: `ack_session_${templateKey}.json`,
+            mimeType: "application/json",
+            status: "DRAFT",
+            payloadJson: sessionState as Prisma.InputJsonValue,
+            generatedByUserId: auth.sub,
+        },
+    });
+
+    // Write audit log
+    await writeAuditLog({
+        tenantId,
+        userId: auth.sub,
+        caseId,
+        action: "acknowledgment_session_started",
+        entityType: "document",
+        entityId: doc.id,
+        documentId: doc.id,
+        metadataJson: { document_type: templateKey, method },
+    });
+
+    return NextResponse.json({
+        session_id: doc.id,
+        verification_status: sessionState.verification_status,
+        provider_result: sessionState.provider_result,
+        available_methods: availableMethods,
+    });
+} catch (error) {
+    return handleApiError(error);
+}
 }

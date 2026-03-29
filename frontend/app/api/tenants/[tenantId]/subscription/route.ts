@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRole, requireTenantAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 function parsePlanCode(value: unknown): PlanCode | null {
@@ -43,6 +43,7 @@ export async function GET(
     const { tenantId } = await params;
     requireTenantAccess(request, tenantId);
 
+    const prisma = getPrisma();
     const subscription = await prisma.subscription.findFirst({
       where: { tenantId },
       include: { plan: true },
@@ -70,11 +71,11 @@ export async function PATCH(
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          planCode?: string;
-          billingInterval?: string;
-          status?: string;
-          seatLimit?: number;
-        }
+        planCode?: string;
+        billingInterval?: string;
+        status?: string;
+        seatLimit?: number;
+      }
       | null;
 
     if (!payload) {
@@ -85,6 +86,7 @@ export async function PATCH(
     const billingInterval = parseBillingInterval(payload.billingInterval);
     const status = parseSubscriptionStatus(payload.status);
 
+    const prisma = getPrisma();
     let selectedPlan = null;
     if (planCode) {
       selectedPlan = await prisma.plan.findUnique({ where: { code: planCode } });

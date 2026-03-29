@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 type RouteContext = { params: Promise<{ caseId: string; sessionId: string }> };
@@ -26,6 +26,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const { caseId, sessionId } = await params;
 
         // Load session from Document record
+        const prisma = getPrisma();
         const doc = await prisma.document.findUnique({ where: { id: sessionId } });
         if (!doc) throw new ApiError(404, "جلسة الإقرار غير موجودة");
         if (doc.tenantId !== auth.tenant_id) throw new ApiError(403, "Tenant access denied");

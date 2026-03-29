@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { isPlatformRole, platformRoleForUserRole } from "@/lib/server/roles";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";

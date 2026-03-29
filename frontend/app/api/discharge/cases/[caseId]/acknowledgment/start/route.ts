@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/server/auth";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { buildAcknowledgmentMethods } from "../method-availability";
 type RouteContext = { params: Promise<{ caseId: string }> };
@@ -207,6 +208,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const inputPayload = (body.payload ?? {}) as Record<string, unknown>;
 
         // Verify case ownership
+        const prisma = getPrisma();
         const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
         if (!caseRecord) throw new ApiError(404, "Case not found");
         if (caseRecord.tenantId !== auth.tenant_id) throw new ApiError(403, "Tenant access denied");

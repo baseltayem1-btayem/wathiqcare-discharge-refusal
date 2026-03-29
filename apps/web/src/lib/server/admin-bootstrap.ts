@@ -1,5 +1,5 @@
 import { BillingInterval, MembershipRole, MembershipStatus, PlanCode, Prisma, SubscriptionStatus } from "@prisma/client";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { canonicalizeUserRole, membershipRoleForUserRole } from "@/lib/server/roles";
 

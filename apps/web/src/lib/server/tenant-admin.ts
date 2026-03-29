@@ -1,5 +1,5 @@
 import { Prisma, TenantRoleStatus } from "@prisma/client";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 
 const DEFAULT_DEPARTMENTS = [
     { code: "DOCTOR", name: "Doctor" },
@@ -219,6 +219,7 @@ export async function ensureTenantRoleTemplates(tx: Prisma.TransactionClient, te
 }
 
 export async function bootstrapTenantAdminConfiguration(tenantId: string): Promise<void> {
+    const prisma = getPrisma();
     await prisma.$transaction(async (tx) => {
         await ensureTenantDepartments(tx, tenantId);
         await ensureTenantRoleTemplates(tx, tenantId);
@@ -274,6 +275,7 @@ export async function bootstrapTenantAdminConfiguration(tenantId: string): Promi
 }
 
 export async function getTenantRoleByCode(tenantId: string, code: string) {
+    const prisma = getPrisma();
     return prisma.tenantRole.findUnique({
         where: {
             tenantId_code: {

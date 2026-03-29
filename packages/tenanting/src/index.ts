@@ -1,0 +1,45 @@
+export type TenantBrandingProfileLike = {
+    id?: string;
+    name?: string;
+    displayName?: string;
+    legalName?: string;
+    logoUrl?: string;
+    licenseNumber?: string;
+    commercialRegistrationNumber?: string;
+    taxNumber?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+    websiteUrl?: string;
+    documentHeaderText?: string;
+    documentFooterText?: string;
+    legalDisclaimer?: string;
+};
+
+export type TenantDocumentIdentity = {
+    documentPrefix?: string;
+    watermarkText?: string;
+    facilityName?: string;
+    departmentName?: string;
+    displayName?: string;
+    legalName?: string;
+    licenseNumber?: string;
+    commercialRegistrationNumber?: string;
+    taxNumber?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+    websiteUrl?: string;
+    logoUrl?: string;
+    documentHeaderText?: string;
+    documentFooterText?: string;
+    legalDisclaimer?: string;
+};

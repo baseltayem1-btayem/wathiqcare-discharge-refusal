@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { platformRoleForUserRole, userTypeForUserRole } from "@/lib/server/roles";
 import { createAccessToken, getJwtSecret, getTokenTtlSeconds } from "@/lib/server/auth-token";
 import {

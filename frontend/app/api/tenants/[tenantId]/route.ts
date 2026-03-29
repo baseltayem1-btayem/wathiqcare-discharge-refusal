@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { requireRole, requireTenantAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 export async function GET(
@@ -14,6 +14,7 @@ export async function GET(
     const { tenantId } = await params;
     requireTenantAccess(request, tenantId);
 
+    const prisma = getPrisma();
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
       include: {
@@ -55,14 +56,14 @@ export async function PATCH(
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          name?: string;
-          domain?: string | null;
-          timezone?: string | null;
-          country?: string | null;
-          billingEmail?: string | null;
-          isActive?: boolean;
-          metadata?: Prisma.InputJsonValue | null;
-        }
+        name?: string;
+        domain?: string | null;
+        timezone?: string | null;
+        country?: string | null;
+        billingEmail?: string | null;
+        isActive?: boolean;
+        metadata?: Prisma.InputJsonValue | null;
+      }
       | null;
 
     if (!payload) {

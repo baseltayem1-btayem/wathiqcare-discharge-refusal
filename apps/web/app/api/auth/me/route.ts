@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { platformRoleForUserRole } from "@/lib/server/roles";
 import { resolveTenantBrandingWithProfile } from "@/lib/server/tenantBranding";
 import { getTenantBrandingProfile } from "@/lib/server/tenantBrandingStore";
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
         platformRole,
         userType,
         homePath,
-        tenant: tenant ? resolveTenantBrandingWithProfile(tenant, brandingProfile) : null,
+        tenant: tenant ? resolveTenantBrandingWithProfile(tenant, brandingProfile) : undefined,
         user,
         subscription,
       }),

@@ -8,7 +8,7 @@ import {
     SlaState,
 } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 export const DEPARTMENT_LABELS: Record<OperationDepartment, string> = {

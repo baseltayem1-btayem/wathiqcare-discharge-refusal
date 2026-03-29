@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import {
   enforcePlanUsage,
   recordUsage,
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     const status = parseCaseStatus(url.searchParams.get("status"));
     const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? "50"), 1), 200);
-
+    const prisma = getPrisma();
     const cases = await prisma.case.findMany({
       where: {
         tenantId: auth.tenant_id,
@@ -67,17 +67,17 @@ export async function POST(request: NextRequest) {
     const auth = requireAuth(request);
     const payload = (await request.json().catch(() => null)) as
       | {
-          caseNumber?: string;
-          caseType?: string;
-          title?: string;
-          status?: string;
-          workflowType?: string;
-          patientName?: string;
-          patientIdNumber?: string;
-          medicalRecordNo?: string;
-          roomNumber?: string;
-          metadata?: Prisma.InputJsonValue;
-        }
+        caseNumber?: string;
+        caseType?: string;
+        title?: string;
+        status?: string;
+        workflowType?: string;
+        patientName?: string;
+        patientIdNumber?: string;
+        medicalRecordNo?: string;
+        roomNumber?: string;
+        metadata?: Prisma.InputJsonValue;
+      }
       | null;
 
     if (!payload) {
@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
 
     await enforcePlanUsage(auth.tenant_id, UsageMetric.CASES, BigInt(1));
 
+    const prisma = getPrisma();
     const created = await prisma.case.create({
       data: {
         tenantId: auth.tenant_id,

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 function parseCaseStatus(value: unknown): CaseStatus | null {
@@ -22,6 +22,7 @@ export async function GET(
     const auth = requireAuth(request);
     const { caseId } = await params;
 
+    const prisma = getPrisma();
     const item = await prisma.case.findUnique({
       where: { id: caseId },
       include: {
@@ -66,16 +67,16 @@ export async function PATCH(
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          title?: string | null;
-          status?: string;
-          workflowType?: string | null;
-          patientName?: string | null;
-          patientIdNumber?: string | null;
-          medicalRecordNo?: string | null;
-          roomNumber?: string | null;
-          closedAt?: string | null;
-          metadata?: Prisma.InputJsonValue | null;
-        }
+        title?: string | null;
+        status?: string;
+        workflowType?: string | null;
+        patientName?: string | null;
+        patientIdNumber?: string | null;
+        medicalRecordNo?: string | null;
+        roomNumber?: string | null;
+        closedAt?: string | null;
+        metadata?: Prisma.InputJsonValue | null;
+      }
       | null;
 
     if (!payload) {

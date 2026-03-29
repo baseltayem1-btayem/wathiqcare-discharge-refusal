@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRole, requireTenantAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import {
   enforceSeatLimit,
   syncActiveUserUsage,
@@ -31,6 +31,7 @@ export async function GET(
     const { tenantId } = await params;
     requireTenantAccess(request, tenantId);
 
+    const prisma = getPrisma();
     const members = await prisma.tenantMembership.findMany({
       where: { tenantId },
       include: {
@@ -66,10 +67,10 @@ export async function POST(
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          email?: string;
-          fullName?: string;
-          role?: string;
-        }
+        email?: string;
+        fullName?: string;
+        role?: string;
+      }
       | null;
 
     const email = payload?.email?.trim().toLowerCase();

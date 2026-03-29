@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireRole } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 function slugifyTenantCode(input: string): string {
@@ -20,6 +20,7 @@ async function generateTenantCode(name: string): Promise<string> {
   let candidate = base;
   let suffix = 1;
 
+  const prisma = getPrisma();
   while (await prisma.tenant.findUnique({ where: { code: candidate } })) {
     suffix += 1;
     candidate = `${base}-${suffix}`.slice(0, 40);
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest) {
 
     const limit = Math.min(Math.max(Number(new URL(request.url).searchParams.get("limit") ?? "50"), 1), 200);
 
+    const prisma = getPrisma();
     const memberships = await prisma.tenantMembership.findMany({
       where: {
         userId: auth.sub,
@@ -83,12 +85,12 @@ export async function POST(request: NextRequest) {
 
     const payload = (await request.json().catch(() => null)) as
       | {
-          name?: string;
-          code?: string;
-          country?: string | null;
-          timezone?: string | null;
-          billingEmail?: string | null;
-        }
+        name?: string;
+        code?: string;
+        country?: string | null;
+        timezone?: string | null;
+        billingEmail?: string | null;
+      }
       | null;
 
     if (!payload) {

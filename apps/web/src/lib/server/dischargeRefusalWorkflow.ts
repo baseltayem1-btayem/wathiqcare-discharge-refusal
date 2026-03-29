@@ -8,7 +8,7 @@ import {
 } from "@/lib/server/auth";
 import { checkAttendingPhysicianAuthority } from "@/lib/server/clinical-authority";
 import { ApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { getTenantBrandingProfile } from "@/lib/server/tenantBrandingStore";
 import { buildTenantReferenceNumber } from "@/lib/server/tenantBranding";
 import { writeAuditLog } from "@/lib/server/saas-services";

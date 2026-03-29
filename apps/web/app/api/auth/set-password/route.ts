@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApiError, handleApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { requireAuth } from "@/lib/server/auth";
 import { normalizeEmail } from "@/lib/server/auth-domain-policy";
 import { hashPassword, hashResetToken, validatePasswordStrength } from "@/lib/server/password";
@@ -11,10 +11,10 @@ type SetPasswordPayload = {
     token?: string;
 };
 
-async function consumeSetupToken(email: string, rawToken: string): Promise<string> {
+async function consumeSetupToken(prisma: any, email: string, rawToken: string): Promise<string> {
     const tokenHash = hashResetToken(rawToken);
 
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: any) => {
         const userRows = await tx.$queryRaw<Array<{ id: string }>>`
       SELECT id
       FROM users
@@ -79,40 +79,40 @@ async function consumeSetupToken(email: string, rawToken: string): Promise<strin
     });
 }
 
-export async function POST(request: NextRequest) {
-    try {
-        const payload = (await request.json().catch(() => null)) as SetPasswordPayload | null;
-        if (!payload) {
-            throw new ApiError(400, "Invalid JSON body");
-        }
+try {
+    const prisma = getPrisma();
+    const payload = (await request.json().catch(() => null)) as SetPasswordPayload | null;
+    if (!payload) {
+        throw new ApiError(400, "Invalid JSON body");
+    }
 
-        const email = normalizeEmail(payload.email || "");
-        const password = payload.password || "";
-        const token = payload.token?.trim() || "";
+    const email = normalizeEmail(payload.email || "");
+    const password = payload.password || "";
+    const token = payload.token?.trim() || "";
 
-        if (!email || !password) {
-            throw new ApiError(400, "Email and password are required");
-        }
+    if (!email || !password) {
+        throw new ApiError(400, "Email and password are required");
+    }
 
-        const passwordValidation = validatePasswordStrength(password);
-        if (!passwordValidation.valid) {
-            throw new ApiError(400, passwordValidation.errors.join("; "));
-        }
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.valid) {
+        throw new ApiError(400, passwordValidation.errors.join("; "));
+    }
 
-        const currentAuth = await requireAuth(request).catch(() => null);
+    const currentAuth = await requireAuth(request).catch(() => null);
 
-        let userId: string | null = null;
-        if (currentAuth?.email && normalizeEmail(currentAuth.email) === email) {
-            userId = currentAuth.sub;
-        } else if (token) {
-            userId = await consumeSetupToken(email, token);
-        } else {
-            throw new ApiError(401, "Password setup requires a valid session or setup token");
-        }
+    let userId: string | null = null;
+    if (currentAuth?.email && normalizeEmail(currentAuth.email) === email) {
+        userId = currentAuth.sub;
+    } else if (token) {
+        userId = await consumeSetupToken(prisma, email, token);
+    } else {
+        throw new ApiError(401, "Password setup requires a valid session or setup token");
+    }
 
-        const passwordHash = await hashPassword(password);
+    const passwordHash = await hashPassword(password);
 
-        await prisma.$executeRaw`
+    await prisma.$executeRaw`
       UPDATE users
       SET hashed_password = ${passwordHash},
           auth_provider = 'local_password',
@@ -122,11 +122,11 @@ export async function POST(request: NextRequest) {
       WHERE id = ${userId}
     `;
 
-        return NextResponse.json({
-            success: true,
-            message: "Password set successfully",
-        });
-    } catch (error) {
-        return handleApiError(error);
-    }
+    return NextResponse.json({
+        success: true,
+        message: "Password set successfully",
+    });
+} catch (error) {
+    return handleApiError(error);
+}
 }

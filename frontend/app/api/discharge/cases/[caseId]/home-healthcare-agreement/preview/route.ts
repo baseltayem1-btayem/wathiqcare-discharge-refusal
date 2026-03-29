@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 
 type RouteContext = { params: Promise<{ caseId: string }> };
 
@@ -110,6 +111,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const inputPayload = (body.payload ?? {}) as Record<string, unknown>;
 
         // Fetch case for default patient data
+        const prisma = getPrisma();
         const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
         if (caseRecord && caseRecord.tenantId !== auth.tenant_id) {
             throw new ApiError(403, "Tenant access denied");

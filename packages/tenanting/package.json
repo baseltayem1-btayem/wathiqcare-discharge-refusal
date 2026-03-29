@@ -9,5 +9,8 @@
       "types": "./dist/branding.d.ts",
       "default": "./dist/branding.js"
     }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
   }
 }

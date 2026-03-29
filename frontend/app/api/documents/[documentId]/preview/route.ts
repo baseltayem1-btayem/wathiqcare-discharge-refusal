@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { forwardToBackend } from "@/lib/server/backendProxy";
 
 function fallbackPreviewHtml(documentId: string): string {
@@ -31,6 +32,7 @@ export async function GET(
         return backendResponse;
     }
 
+    const prisma = getPrisma();
     const document = await prisma.document.findUnique({ where: { id: documentId } });
     if (!document || document.tenantId !== auth.tenant_id) {
         return NextResponse.json({ detail: "Document not found" }, { status: 404 });

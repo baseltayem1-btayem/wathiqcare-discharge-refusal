@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 
@@ -55,6 +55,7 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue | null {
 }
 
 export async function POST(request: NextRequest) {
+  const prisma = getPrisma();
   try {
     if (!isEnabled()) {
       throw new ApiError(404, "SHC compliance module is disabled");

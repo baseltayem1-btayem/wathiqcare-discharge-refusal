@@ -1,7 +1,7 @@
 import { BillingInterval, PlanCode, Prisma, SubscriptionStatus, UsageMetric } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 
 type SubscriptionWithPlan = Prisma.SubscriptionGetPayload<{
   include: { plan: true };

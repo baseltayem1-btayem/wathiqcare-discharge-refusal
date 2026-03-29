@@ -4,12 +4,15 @@ import { requireAuth } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
 import { prisma } from "@/lib/server/prisma";
 
+
 function isAuthConfigured(): boolean {
+  // Access env only when called, not at top-level
   const secret = process.env.JWT_SECRET_KEY;
   return Boolean(secret && secret !== "change-me");
 }
 
 function envFlag(name: string, fallback = "false"): boolean {
+  // Access env only when called, not at top-level
   return (process.env[name] ?? fallback).toLowerCase() === "true";
 }
 

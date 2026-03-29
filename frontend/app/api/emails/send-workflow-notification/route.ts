@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 type EmailSendResponse = {
@@ -120,89 +120,89 @@ async function sendViaBackend(args: {
 
     return (payload || { status: "sent", provider: "backend" }) as EmailSendResponse;
 }
-export async function POST(request: NextRequest) {
-    try {
-        const auth = requireAuth(request);
+try {
+    const prisma = getPrisma();
+    const auth = requireAuth(request);
 
-        const body = (await request.json().catch(() => null)) as WorkflowNotificationBody | null;
-        const caseId = safe(body?.case_id);
-        const recipients = Array.isArray(body?.to)
-            ? body!.to.map((item) => safe(item).toLowerCase()).filter((item) => item.length > 0)
-            : [];
-        const templateName = safe(body?.template_name) || "discharge_refusal_follow_up";
+    const body = (await request.json().catch(() => null)) as WorkflowNotificationBody | null;
+    const caseId = safe(body?.case_id);
+    const recipients = Array.isArray(body?.to)
+        ? body!.to.map((item) => safe(item).toLowerCase()).filter((item) => item.length > 0)
+        : [];
+    const templateName = safe(body?.template_name) || "discharge_refusal_follow_up";
 
-        authDebugLog("email_notification_request_received", {
-            actorUserId: auth.sub,
-            tenantId: auth.tenant_id,
-            caseId,
-            recipientCount: recipients.length,
-            templateName,
-            includeLatestCaseDocuments: Boolean(body?.include_latest_case_documents),
-        });
+    authDebugLog("email_notification_request_received", {
+        actorUserId: auth.sub,
+        tenantId: auth.tenant_id,
+        caseId,
+        recipientCount: recipients.length,
+        templateName,
+        includeLatestCaseDocuments: Boolean(body?.include_latest_case_documents),
+    });
 
-        if (!caseId) {
-            throw new ApiError(400, "case_id is required");
-        }
-        if (recipients.length === 0) {
-            throw new ApiError(400, "to is required");
-        }
-
-        const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
-        if (!caseRecord) {
-            throw new ApiError(404, "Case not found");
-        }
-        if (caseRecord.tenantId !== auth.tenant_id) {
-            throw new ApiError(403, "Tenant access denied");
-        }
-
-        const templateVars = {
-            ...(body?.template_vars || {}),
-            case_id: caseId,
-            patient_name: safe(body?.template_vars?.patient_name || caseRecord.patientName),
-        } as Record<string, unknown>;
-
-        const result = await sendViaBackend({
-            request,
-            body: {
-                case_id: caseId,
-                to: recipients,
-                cc: Array.isArray(body?.cc) ? body.cc.map((item) => safe(item).toLowerCase()).filter(Boolean) : [],
-                template_name: templateName,
-                template_vars: templateVars,
-                include_latest_case_documents: Boolean(body?.include_latest_case_documents),
-                attachment_document_ids: Array.isArray(body?.attachment_document_ids)
-                    ? body.attachment_document_ids.map((item) => safe(item)).filter(Boolean)
-                    : [],
-            },
-        });
-
-        await writeAuditLog({
-            tenantId: auth.tenant_id,
-            userId: auth.sub,
-            entityType: "case",
-            entityId: caseId,
-            caseId,
-            action: "workflow_email_notification_sent",
-            details: `Workflow email notification sent via ${result.provider || "unknown"}`,
-            metadataJson: {
-                template_name: templateName,
-                recipients,
-                provider: result.provider || null,
-            },
-            request,
-        });
-
-        return NextResponse.json({
-            status: "sent",
-            provider: result.provider || "backend",
-            recipients,
-            subject: result.subject || null,
-            sent_at: result.sent_at || null,
-        });
-    } catch (error) {
-        authDebugLog("email_notification_request_failed", {
-            error: error instanceof Error ? error.message : String(error),
-        });
-        return handleApiError(error);
+    if (!caseId) {
+        throw new ApiError(400, "case_id is required");
     }
+    if (recipients.length === 0) {
+        throw new ApiError(400, "to is required");
+    }
+
+    const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
+    if (!caseRecord) {
+        throw new ApiError(404, "Case not found");
+    }
+    if (caseRecord.tenantId !== auth.tenant_id) {
+        throw new ApiError(403, "Tenant access denied");
+    }
+
+    const templateVars = {
+        ...(body?.template_vars || {}),
+        case_id: caseId,
+        patient_name: safe(body?.template_vars?.patient_name || caseRecord.patientName),
+    } as Record<string, unknown>;
+
+    const result = await sendViaBackend({
+        request,
+        body: {
+            case_id: caseId,
+            to: recipients,
+            cc: Array.isArray(body?.cc) ? body.cc.map((item) => safe(item).toLowerCase()).filter(Boolean) : [],
+            template_name: templateName,
+            template_vars: templateVars,
+            include_latest_case_documents: Boolean(body?.include_latest_case_documents),
+            attachment_document_ids: Array.isArray(body?.attachment_document_ids)
+                ? body.attachment_document_ids.map((item) => safe(item)).filter(Boolean)
+                : [],
+        },
+    });
+
+    await writeAuditLog({
+        tenantId: auth.tenant_id,
+        userId: auth.sub,
+        entityType: "case",
+        entityId: caseId,
+        caseId,
+        action: "workflow_email_notification_sent",
+        details: `Workflow email notification sent via ${result.provider || "unknown"}`,
+        metadataJson: {
+            template_name: templateName,
+            recipients,
+            provider: result.provider || null,
+        },
+        request,
+    });
+
+    return NextResponse.json({
+        status: "sent",
+        provider: result.provider || "backend",
+        recipients,
+        subject: result.subject || null,
+        sent_at: result.sent_at || null,
+    });
+} catch (error) {
+    authDebugLog("email_notification_request_failed", {
+        error: error instanceof Error ? error.message : String(error),
+    });
+    return handleApiError(error);
+}
 }

@@ -7,8 +7,18 @@ import { writeAuditLog } from "@/lib/server/saas-services";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 
+
 function isEnabled(): boolean {
+  // Access env only when called, not at top-level
   return process.env.SHC_COMPLIANCE_MODULE === "true";
+}
+export async function GET(request: NextRequest) {
+  try {
+    const enabled = isEnabled();
+    return NextResponse.json({ enabled });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 function extractBackendErrorDetail(value: unknown): string {

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId, requireTenantOperationalAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { prisma } from "@/lib/server/prisma";
+import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 function parseCaseStatus(value: unknown): CaseStatus | null {
@@ -14,11 +14,11 @@ function parseCaseStatus(value: unknown): CaseStatus | null {
     : null;
 }
 
-export async function GET(
-  request: NextRequest,
+request: NextRequest,
   { params }: { params: Promise<{ caseId: string }> },
 ) {
   try {
+    const prisma = getPrisma();
     const auth = await requireAuth(request);
     requireTenantOperationalAccess(auth);
     const tenantId = requireTenantId(auth);
