@@ -1,22 +1,11 @@
-# 🚫 Backend (Python / FastAPI / any external runtime)
 backend/
-
-# 🚫 Root-level Prisma & scripts (not used by web build)
-prisma/
 scripts/
-
-# 🚫 Monorepo packages NOT required at runtime
-# (branding is allowed because it is used)
 packages/*/node_modules
 packages/config/
-
-# 🚫 Dev / local files
 .env
 .env.*
 *.log
 node_modules
-
-# 🚫 Tests & temp
 __tests__/
 *.spec.ts
 *.test.ts
