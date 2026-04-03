@@ -14,8 +14,12 @@ function parseCaseStatus(value: unknown): CaseStatus | null {
     : null;
 }
 
+<<<<<<< HEAD
 export async function GET(
   request: NextRequest,
+=======
+request: NextRequest,
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   { params }: { params: Promise<{ caseId: string }> },
 ) {
   try {
@@ -51,7 +55,10 @@ export async function PATCH(
   { params }: { params: Promise<{ caseId: string }> },
 ) {
   try {
+<<<<<<< HEAD
     const prisma = getPrisma();
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     const auth = await requireAuth(request);
     requireTenantOperationalAccess(auth);
     const tenantId = requireTenantId(auth);

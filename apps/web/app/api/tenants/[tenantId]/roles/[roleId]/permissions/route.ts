@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+<<<<<<< HEAD
 import {
     hasPlatformAccess,
     requireAuth,
@@ -55,6 +56,36 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
             | null;
 
         const permissionIds = normalizePermissionIds(payload);
+=======
+import { hasPlatformAccess, requireAuth, requireTenantAccess, requireTenantPermission } from "@/lib/server/auth";
+import { ApiError, handleApiError } from "@/lib/server/http";
+import { toJsonSafe } from "@/lib/server/json";
+import { prisma } from "@/lib/server/prisma";
+import { writeAuditLog } from "@/lib/server/saas-services";
+
+export async function PUT(
+    request: NextRequest,
+    { params }: { params: Promise<{ tenantId: string; roleId: string }> },
+) {
+    try {
+        const { tenantId, roleId } = await params;
+        const auth = await requireAuth(request);
+        if (!hasPlatformAccess(auth)) {
+            await requireTenantPermission(request, tenantId, "permissions.manage");
+        } else {
+            await requireTenantAccess(request, tenantId);
+        }
+
+        const payload = (await request.json().catch(() => null)) as
+            | {
+                permissionIds?: string[];
+            }
+            | null;
+
+        const permissionIds = Array.isArray(payload?.permissionIds)
+            ? payload.permissionIds.map((item) => String(item).trim()).filter(Boolean)
+            : [];
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
         const role = await prisma.tenantRole.findFirst({
             where: {
@@ -133,4 +164,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     } catch (error) {
         return handleApiError(error);
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

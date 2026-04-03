@@ -27,7 +27,11 @@ import { legalOrchestrationService } from "@/lib/services/legalOrchestration.ser
 import { fetchLegalPackageMetadata } from "@/lib/services/legalPackage.service";
 // --- LEGAL PACKAGE GENERATION ---
 async function generateLegalPackage(caseId: string) {
+<<<<<<< HEAD
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+=======
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   const res = await fetch(
     `${baseUrl}/api/cases/${caseId}/legal-package`,
     { method: "POST" }
@@ -63,19 +67,26 @@ const REFUSAL_STATES = new Set([
   "ESCALATED",
 ]);
 
+<<<<<<< HEAD
 type LegalPackageMeta = {
   version?: string | number | null;
   generated_at?: string | null;
   download_url?: string | null;
 };
 
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 export default function LegalCaseFilePage() {
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [dashboard, setDashboard] = useState<LegalControlDashboard | null>(null);
   const [summaries, setSummaries] = useState<Record<string, LegalCaseSummary>>({});
   const [busyCaseId, setBusyCaseId] = useState<string | null>(null);
   const [expandedCase, setExpandedCase] = useState<string | null>(null);
+<<<<<<< HEAD
   const [legalPackages, setLegalPackages] = useState<Record<string, LegalPackageMeta | null>>({});
+=======
+  const [legalPackages, setLegalPackages] = useState<Record<string, any>>({});
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
   useEffect(() => {
     void loadLegalCaseFileData();
@@ -107,7 +118,11 @@ export default function LegalCaseFilePage() {
       loadedCases.map(async (item) => {
         try {
           const meta = await fetchLegalPackageMetadata(item.id);
+<<<<<<< HEAD
           return [item.id, meta as LegalPackageMeta];
+=======
+          return [item.id, meta];
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         } catch {
           return [item.id, null];
         }
@@ -339,9 +354,15 @@ export default function LegalCaseFilePage() {
                         <>
                           <span className="text-xs text-emerald-900">Generated: Yes</span>
                           <span className="ml-2 text-xs text-emerald-900">Version: {legalPackage.version}</span>
+<<<<<<< HEAD
                           <span className="ml-2 text-xs text-emerald-900">Last Generated: {legalPackage.generated_at ? new Date(legalPackage.generated_at).toLocaleString() : "—"}</span>
                           <a
                             href={legalPackage.download_url ?? undefined}
+=======
+                          <span className="ml-2 text-xs text-emerald-900">Last Generated: {new Date(legalPackage.generated_at).toLocaleString()}</span>
+                          <a
+                            href={legalPackage.download_url}
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
                             target="_blank"
                             rel="noopener noreferrer"
                             className="ml-4 inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 px-3 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100"

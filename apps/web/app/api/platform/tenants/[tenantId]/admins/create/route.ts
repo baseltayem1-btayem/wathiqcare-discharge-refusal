@@ -1,24 +1,37 @@
 import { randomUUID } from "node:crypto";
+<<<<<<< HEAD
 import {
     InvitationStatus,
     MembershipStatus,
 } from "@prisma/client";
+=======
+import { InvitationStatus, MembershipRole, MembershipStatus } from "@prisma/client";
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { issueMagicLinkForUser } from "@/lib/server/magic-link-auth";
+<<<<<<< HEAD
 import { getPrisma } from "@/lib/server/prisma";
+=======
+import { prisma } from "@/lib/server/prisma";
+import { writeAuditLog } from "@/lib/server/saas-services";
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import {
     buildWathiqCareEmailHtml,
     buildWathiqCareEmailText,
     sendEmailWithDiagnostics,
 } from "@/lib/server/email-provider";
+<<<<<<< HEAD
 import {
     canonicalizeUserRole,
     membershipRoleForUserRole,
     userTypeForUserRole,
 } from "@/lib/server/roles";
+=======
+import { canonicalizeUserRole, membershipRoleForUserRole, userTypeForUserRole } from "@/lib/server/roles";
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
 export const runtime = "nodejs";
 
@@ -33,27 +46,59 @@ type CreateTenantAdminPayload = {
     isActive?: boolean;
 };
 
+<<<<<<< HEAD
+=======
+/**
+ * POST /api/platform/tenants/[tenantId]/admins/create
+ * Platform admin creates a new tenant admin or tenant owner for existing tenant.
+ * Bypasses domain restriction — platform admin can provision any email domain.
+ * Gated: PLATFORM_ADMIN only.
+ */
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 export async function POST(
     request: NextRequest,
     context: { params: Promise<{ tenantId: string }> },
 ) {
     try {
+<<<<<<< HEAD
         const prisma = getPrisma();
         const auth = await requirePlatformAccess(request);
         const { tenantId } = await context.params;
 
         if (!tenantId) throw new ApiError(400, "tenantId is required");
+=======
+        const auth = await requirePlatformAccess(request);
+        const { tenantId } = await context.params;
+
+        if (!tenantId) {
+            throw new ApiError(400, "tenantId is required");
+        }
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
         const tenant = await prisma.tenant.findUnique({
             where: { id: tenantId },
             select: { id: true, name: true, isActive: true },
         });
+<<<<<<< HEAD
 
         if (!tenant) throw new ApiError(404, "Tenant not found");
         if (!tenant.isActive) throw new ApiError(403, "Tenant is inactive");
 
         const payload = (await request.json().catch(() => null)) as CreateTenantAdminPayload | null;
         if (!payload) throw new ApiError(400, "Invalid JSON body");
+=======
+        if (!tenant) {
+            throw new ApiError(404, "Tenant not found");
+        }
+        if (!tenant.isActive) {
+            throw new ApiError(403, "Cannot add admins to an inactive tenant");
+        }
+
+        const payload = (await request.json().catch(() => null)) as CreateTenantAdminPayload | null;
+        if (!payload) {
+            throw new ApiError(400, "Invalid JSON body");
+        }
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
         const email = (payload.email || "").trim().toLowerCase();
         const fullName = (payload.fullName || "").trim();
@@ -65,6 +110,7 @@ export async function POST(
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             throw new ApiError(400, "Valid email is required");
         }
+<<<<<<< HEAD
 
         if (!fullName) {
             throw new ApiError(400, "fullName is required");
@@ -72,6 +118,13 @@ export async function POST(
 
         if (!ALLOWED_ADMIN_ROLES.has(rawRole)) {
             throw new ApiError(400, "Invalid role");
+=======
+        if (!fullName) {
+            throw new ApiError(400, "fullName is required");
+        }
+        if (!ALLOWED_ADMIN_ROLES.has(rawRole)) {
+            throw new ApiError(400, "role must be one of: tenant_owner, tenant_admin");
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         }
 
         const role = canonicalizeUserRole(rawRole);
@@ -79,6 +132,7 @@ export async function POST(
         const userType = userTypeForUserRole(role, email);
 
         const existing = await prisma.user.findUnique({ where: { email } });
+<<<<<<< HEAD
 
         const invitationToken =
             randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
@@ -96,6 +150,19 @@ export async function POST(
             if (existingMembership) {
                 throw new ApiError(409, "User already in tenant");
             }
+=======
+        if (existing) {
+            // Check if they already have a membership in this tenant
+            const existingMembership = await prisma.tenantMembership.findUnique({
+                where: { tenantId_userId: { tenantId, userId: existing.id } },
+            });
+            if (existingMembership) {
+                throw new ApiError(409, "User already has membership in this tenant");
+            }
+            // If user exists elsewhere, create membership for this tenant
+            const invitationToken = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+            const invitationExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
             const membership = await prisma.tenantMembership.create({
                 data: {
@@ -107,11 +174,19 @@ export async function POST(
                     metadata: {
                         department,
                         invitedByUserId: auth.sub,
+<<<<<<< HEAD
+=======
+                        inviteFlow: "platform_tenant_admin_create",
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
                     },
                 },
             });
 
+<<<<<<< HEAD
             await prisma.invitation.create({
+=======
+            const invitation = await prisma.invitation.create({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
                 data: {
                     tenantId,
                     email,
@@ -123,6 +198,7 @@ export async function POST(
                 },
             });
 
+<<<<<<< HEAD
             if (sendInvite) {
                 const magic = await issueMagicLinkForUser(existing.id);
 
@@ -132,22 +208,70 @@ export async function POST(
                     tenantName: tenant.name,
                     role,
                     magic,
+=======
+            await writeAuditLog({
+                tenantId,
+                userId: auth.sub,
+                entityType: "USER",
+                entityId: existing.id,
+                action: "TENANT_ADMIN_CREATED",
+                details: `Existing user ${email} added as ${role} to tenant ${tenant.name}`,
+                metadataJson: { email, role, membershipId: membership.id },
+                request,
+            });
+
+            await writeAuditLog({
+                tenantId,
+                userId: auth.sub,
+                entityType: "ROLE",
+                entityId: existing.id,
+                action: "ROLE_ASSIGNED",
+                details: `Role ${role} assigned to ${email} by platform admin`,
+                metadataJson: { email, role, membershipRole },
+                request,
+            });
+
+            if (sendInvite) {
+                const magic = await issueMagicLinkForUser(existing.id);
+                await sendInviteEmail({ email, fullName: existing.fullName, tenantName: tenant.name, role, magic });
+
+                await writeAuditLog({
+                    tenantId,
+                    userId: auth.sub,
+                    entityType: "INVITATION",
+                    entityId: invitation.id,
+                    action: "USER_INVITED",
+                    details: `Invite sent to existing user ${email} for tenant ${tenant.name}`,
+                    metadataJson: { email, role },
+                    request,
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
                 });
             }
 
             return NextResponse.json(
+<<<<<<< HEAD
                 toJsonSafe({
                     success: true,
                     user_id: existing.id,
                     membershipId: membership.id,
                 }),
+=======
+                toJsonSafe({ success: true, user_id: existing.id, membershipId: membership.id }),
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
                 { status: 201 },
             );
         }
 
+<<<<<<< HEAD
         // ─────────────────────────────────────────────
         // New user flow
         // ─────────────────────────────────────────────
+=======
+        // New user
+        const invitationToken = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+        const invitationExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         const created = await prisma.$transaction(async (tx) => {
             const user = await tx.user.create({
                 data: {
@@ -174,11 +298,19 @@ export async function POST(
                     metadata: {
                         department,
                         invitedByUserId: auth.sub,
+<<<<<<< HEAD
+=======
+                        inviteFlow: "platform_tenant_admin_create",
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
                     },
                 },
             });
 
+<<<<<<< HEAD
             await tx.invitation.create({
+=======
+            const invitation = await tx.invitation.create({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
                 data: {
                     tenantId,
                     email,
@@ -190,11 +322,38 @@ export async function POST(
                 },
             });
 
+<<<<<<< HEAD
             return { user, membership };
+=======
+            return { user, membership, invitation };
+        });
+
+        await writeAuditLog({
+            tenantId,
+            userId: auth.sub,
+            entityType: "USER",
+            entityId: created.user.id,
+            action: "TENANT_ADMIN_CREATED",
+            details: `Tenant admin created: ${email} with role ${role} in tenant ${tenant.name}`,
+            metadataJson: { email, fullName, role, department },
+            request,
+        });
+
+        await writeAuditLog({
+            tenantId,
+            userId: auth.sub,
+            entityType: "ROLE",
+            entityId: created.user.id,
+            action: "ROLE_ASSIGNED",
+            details: `Role ${role} assigned to ${email} by platform admin`,
+            metadataJson: { email, role, membershipRole },
+            request,
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         });
 
         if (sendInvite) {
             const magic = await issueMagicLinkForUser(created.user.id);
+<<<<<<< HEAD
 
             await sendInviteEmail({
                 email,
@@ -202,14 +361,31 @@ export async function POST(
                 tenantName: tenant.name,
                 role,
                 magic,
+=======
+            await sendInviteEmail({ email, fullName, tenantName: tenant.name, role, magic });
+
+            await writeAuditLog({
+                tenantId,
+                userId: auth.sub,
+                entityType: "INVITATION",
+                entityId: created.invitation.id,
+                action: "USER_INVITED",
+                details: `Invitation sent to ${email} for tenant ${tenant.name}`,
+                metadataJson: { email, role, tenantId },
+                request,
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             });
         }
 
         return NextResponse.json(
+<<<<<<< HEAD
             toJsonSafe({
                 success: true,
                 user_id: created.user.id,
             }),
+=======
+            toJsonSafe({ success: true, user_id: created.user.id }),
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             { status: 201 },
         );
     } catch (error) {
@@ -217,10 +393,13 @@ export async function POST(
     }
 }
 
+<<<<<<< HEAD
 // ─────────────────────────────────────────────
 // Email
 // ─────────────────────────────────────────────
 
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 interface InviteEmailArgs {
     email: string;
     fullName: string;
@@ -229,6 +408,7 @@ interface InviteEmailArgs {
     magic: { magicUrl: string; expiresMinutes: number };
 }
 
+<<<<<<< HEAD
 async function sendInviteEmail({
     email,
     fullName,
@@ -254,12 +434,50 @@ async function sendInviteEmail({
         ctaUrl: magic.magicUrl,
         ctaLabel: "Access",
         securityNote: "You are receiving this because an admin invited you to WathiqCare.",
+=======
+async function sendInviteEmail({ email, fullName, tenantName, role, magic }: InviteEmailArgs) {
+    const html = buildWathiqCareEmailHtml({
+        title: "You've been invited to WathiqCare",
+        preheader: `${fullName}, you've been set up as ${role} for ${tenantName}.`,
+        bodyHtml: `
+      <p style="margin:0 0 14px;font-size:15px;color:#334155;line-height:1.7;">Hello ${fullName},</p>
+      <p style="margin:0 0 14px;font-size:15px;color:#334155;line-height:1.7;">
+        You have been added as <strong>${role}</strong> for <strong>${tenantName}</strong> on WathiqCare.
+        Use the secure link below to access your account.
+      </p>
+    `,
+        ctaUrl: magic.magicUrl,
+        ctaText: "Access WathiqCare",
+        expiresNote: `This secure link expires in ${magic.expiresMinutes} minutes and can only be used once.`,
+        securityNote: "You received this because a platform administrator provisioned your account.",
+    });
+
+    const text = buildWathiqCareEmailText({
+        title: "You've been invited to WathiqCare",
+        bodyLines: [
+            `Hello ${fullName},`,
+            `You have been added as ${role} for ${tenantName} on WathiqCare.`,
+            "Use the secure link below to access your account:",
+        ],
+        ctaUrl: magic.magicUrl,
+        ctaLabel: "Access WathiqCare",
+        expiresNote: `This secure link expires in ${magic.expiresMinutes} minutes.`,
+        securityNote: "You received this because a platform administrator provisioned your account.",
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     });
 
     await sendEmailWithDiagnostics({
         to: email,
+<<<<<<< HEAD
         subject: "WathiqCare Invitation",
         html,
         text,
     });
 }
+=======
+        subject: "You've been invited to WathiqCare",
+        html,
+        text,
+    });
+}
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

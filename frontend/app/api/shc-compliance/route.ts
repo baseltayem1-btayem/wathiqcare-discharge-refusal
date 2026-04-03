@@ -28,7 +28,11 @@ function extractBackendErrorDetail(value: unknown): string {
   return "Unknown backend error";
 }
 
+<<<<<<< HEAD
 function toInputJsonValue(value: unknown): getPrisma().InputJsonValue | null {
+=======
+function toInputJsonValue(value: unknown): Prisma.InputJsonValue | null {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   if (
     value === null ||
     typeof value === "string" ||
@@ -44,7 +48,11 @@ function toInputJsonValue(value: unknown): getPrisma().InputJsonValue | null {
 
   if (typeof value === "object") {
     const obj = value as Record<string, unknown>;
+<<<<<<< HEAD
     const jsonObj: Record<string, getPrisma().InputJsonValue | null> = {};
+=======
+    const jsonObj: Record<string, Prisma.InputJsonValue | null> = {};
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     for (const [key, val] of Object.entries(obj)) {
       jsonObj[key] = toInputJsonValue(val);
     }
@@ -79,7 +87,11 @@ export async function POST(request: NextRequest) {
     const patient = (payload.patient ?? {}) as Record<string, unknown>;
     const signature = (payload.signature ?? {}) as Record<string, unknown>;
 
+<<<<<<< HEAD
     const existingCase = await getPrisma().case.findUnique({ where: { id: payload.caseId } });
+=======
+    const existingCase = await prisma.case.findUnique({ where: { id: payload.caseId } });
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!existingCase) {
       throw new ApiError(404, "Case not found");
     }
@@ -145,10 +157,17 @@ export async function POST(request: NextRequest) {
       },
     } satisfies Record<string, unknown>;
 
+<<<<<<< HEAD
     await getPrisma().case.update({
       where: { id: payload.caseId },
       data: {
         metadata: toInputJsonValue(updatedMetadata) as getPrisma().InputJsonObject,
+=======
+    await prisma.case.update({
+      where: { id: payload.caseId },
+      data: {
+        metadata: toInputJsonValue(updatedMetadata) as Prisma.InputJsonObject,
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         updatedByUserId: auth.sub,
       },
     });

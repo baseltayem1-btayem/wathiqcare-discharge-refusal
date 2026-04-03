@@ -93,7 +93,11 @@ export async function GET(request: NextRequest) {
     const auth = await validateTokenWithBackend(token);
 
     const prisma = getPrisma();
+<<<<<<< HEAD
     const user = await getPrisma().user.findUnique({
+=======
+    const user = await prisma.user.findUnique({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       where: { id: auth.sub },
       include: {
         memberships: {
@@ -122,7 +126,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
+<<<<<<< HEAD
     const subscription = await getPrisma().subscription.findFirst({
+=======
+    const subscription = await prisma.subscription.findFirst({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       where: { tenantId: auth.tenant_id },
       include: { plan: true },
       orderBy: { createdAt: "desc" },

@@ -3,13 +3,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
+<<<<<<< HEAD
 import { getPrisma } from "@/lib/server/prisma";
+=======
+import { prisma } from "@/lib/server/prisma";
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import {
   enforcePlanUsage,
   recordUsage,
   writeAuditLog,
 } from "@/lib/server/saas-services";
 
+<<<<<<< HEAD
 type RouteContext = {
   params: Promise<{ documentId: string }>;
 };
@@ -30,11 +35,17 @@ function parseDocumentStatus(value: unknown): DocumentStatus | null {
 
   const normalized = value.toUpperCase();
 
+=======
+function parseDocumentStatus(value: unknown): DocumentStatus | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.toUpperCase();
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   return Object.values(DocumentStatus).includes(normalized as DocumentStatus)
     ? (normalized as DocumentStatus)
     : null;
 }
 
+<<<<<<< HEAD
 function parseSignedAt(value: string | null | undefined): Date | null | undefined {
   if (value === undefined) return undefined;
   if (value === null || value === "") return null;
@@ -51,6 +62,13 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
     const prisma = getPrisma();
 
+=======
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ documentId: string }> },
+) {
+  try {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     const auth = await requireAuth(request);
     const tenantId = requireTenantId(auth);
     const { documentId } = await params;
@@ -79,23 +97,50 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   }
 }
 
+<<<<<<< HEAD
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
     const prisma = getPrisma();
 
+=======
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ documentId: string }> },
+) {
+  try {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     const auth = await requireAuth(request);
     const tenantId = requireTenantId(auth);
     const { documentId } = await params;
 
+<<<<<<< HEAD
     const existing = await prisma.document.findFirst({
       where: { id: documentId, tenantId },
     });
 
+=======
+    const existing = await prisma.document.findFirst({ where: { id: documentId, tenantId } });
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!existing) {
       throw new ApiError(404, "Document not found");
     }
 
+<<<<<<< HEAD
     const payload = (await request.json().catch(() => null)) as PatchDocumentPayload | null;
+=======
+    const payload = (await request.json().catch(() => null)) as
+      | {
+        status?: string;
+        titleEn?: string;
+        titleAr?: string | null;
+        storagePath?: string | null;
+        previewHtml?: string | null;
+        payloadJson?: Prisma.InputJsonValue;
+        metadata?: Prisma.InputJsonValue | null;
+        signedAt?: string | null;
+      }
+      | null;
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
     if (!payload) {
       throw new ApiError(400, "Invalid JSON body");
@@ -103,7 +148,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
     const status = parseDocumentStatus(payload.status);
     const nextStatus = status ?? existing.status;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     const generatedTransition =
       nextStatus === DocumentStatus.GENERATED &&
       existing.status !== DocumentStatus.GENERATED;
@@ -112,6 +160,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       await enforcePlanUsage(tenantId, UsageMetric.DOCUMENTS, BigInt(1));
     }
 
+<<<<<<< HEAD
     const parsedSignedAt = parseSignedAt(payload.signedAt);
 
     const updateData: Prisma.DocumentUpdateManyMutationInput = {
@@ -135,16 +184,41 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const updateResult = await prisma.document.updateMany({
       where: { id: documentId, tenantId },
       data: updateData,
+=======
+    const updateResult = await prisma.document.updateMany({
+      where: { id: documentId, tenantId },
+      data: {
+        ...(status ? { status } : {}),
+        ...(payload.titleEn !== undefined ? { titleEn: payload.titleEn } : {}),
+        ...(payload.titleAr !== undefined ? { titleAr: payload.titleAr } : {}),
+        ...(payload.storagePath !== undefined ? { storagePath: payload.storagePath } : {}),
+        ...(payload.previewHtml !== undefined ? { previewHtml: payload.previewHtml } : {}),
+        ...(payload.payloadJson !== undefined ? { payloadJson: payload.payloadJson } : {}),
+        ...(payload.metadata !== undefined
+          ? { metadata: payload.metadata === null ? Prisma.JsonNull : payload.metadata }
+          : {}),
+        ...(payload.signedAt !== undefined
+          ? {
+            signedAt: payload.signedAt ? new Date(payload.signedAt) : null,
+            signedByUserId: payload.signedAt ? auth.sub : null,
+          }
+          : {}),
+      },
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     });
 
     if (updateResult.count === 0) {
       throw new ApiError(404, "Document not found");
     }
 
+<<<<<<< HEAD
     const updated = await prisma.document.findFirst({
       where: { id: documentId, tenantId },
     });
 
+=======
+    const updated = await prisma.document.findFirst({ where: { id: documentId, tenantId } });
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!updated) {
       throw new ApiError(404, "Document not found");
     }
@@ -176,4 +250,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   } catch (error) {
     return handleApiError(error);
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

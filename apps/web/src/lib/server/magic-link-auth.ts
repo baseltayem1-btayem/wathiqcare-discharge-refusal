@@ -140,7 +140,11 @@ function readMagicLinkBaseUrl(): string {
 }
 
 async function findUserByEmail(email: string): Promise<MagicLinkUserRow | null> {
+<<<<<<< HEAD
     const users = await getPrisma().$queryRaw<MagicLinkUserRow[]>`
+=======
+    const users = await prisma.$queryRaw<MagicLinkUserRow[]>`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     SELECT
             u.id,
             u.email,
@@ -162,7 +166,11 @@ async function rotateMagicLinkToken(userId: string, tokenHash: string): Promise<
     const id = randomUUID();
     const expiresAt = new Date(Date.now() + MAGIC_LINK_TTL_MINUTES * 60 * 1000);
 
+<<<<<<< HEAD
     await getPrisma().$transaction(async (tx) => {
+=======
+    await prisma.$transaction(async (tx) => {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         await tx.$executeRaw`
                     UPDATE magic_link_tokens
                     SET used = TRUE, used_at = NOW()
@@ -201,7 +209,11 @@ export async function issueMagicLinkForUser(userId: string): Promise<{
 }
 
 async function deleteMagicLinkToken(tokenId: string): Promise<void> {
+<<<<<<< HEAD
     await getPrisma().$executeRaw`
+=======
+    await prisma.$executeRaw`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     DELETE FROM magic_link_tokens
     WHERE id = ${tokenId}
   `;
@@ -263,7 +275,11 @@ async function enforceUserAccess(user: MagicLinkUserRow): Promise<void> {
 async function consumeMagicLinkToken(rawToken: string): Promise<MagicLinkTokenRow> {
     const tokenHash = hashToken(rawToken);
 
+<<<<<<< HEAD
     return getPrisma().$transaction(async (tx) => {
+=======
+    return prisma.$transaction(async (tx) => {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         const rows = await tx.$queryRaw<MagicLinkTokenRow[]>`
       SELECT id, user_id, token_hash, expires_at, used
       FROM magic_link_tokens
@@ -296,7 +312,11 @@ async function consumeMagicLinkToken(rawToken: string): Promise<MagicLinkTokenRo
 }
 
 async function createSessionForUser(user: MagicLinkUserRow): Promise<MagicLinkVerifyResult> {
+<<<<<<< HEAD
     const tenant = await getPrisma().tenant.findUnique({
+=======
+    const tenant = await prisma.tenant.findUnique({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { id: user.tenant_id },
         select: { code: true },
     });
@@ -328,7 +348,11 @@ async function createSessionForUser(user: MagicLinkUserRow): Promise<MagicLinkVe
         secret,
     );
 
+<<<<<<< HEAD
     await getPrisma().$executeRaw`
+=======
+    await prisma.$executeRaw`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     UPDATE users
     SET auth_provider = 'local_magic', last_login_at = NOW()
     WHERE id = ${user.id}
@@ -514,7 +538,11 @@ export async function verifyMagicLink(rawToken: string): Promise<{ user: MagicLi
         userId: consumed.user_id,
     });
 
+<<<<<<< HEAD
     const users = await getPrisma().$queryRaw<MagicLinkUserRow[]>`
+=======
+    const users = await prisma.$queryRaw<MagicLinkUserRow[]>`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     SELECT
             u.id,
             u.email,

@@ -202,7 +202,11 @@ function isRefusalCase(caseRecord: { workflowType: string | null; caseType: Case
 
 async function findRefusalCases(tenantId: string, limit = 200) {
     const prisma = getPrisma();
+<<<<<<< HEAD
     const cases = await getPrisma().case.findMany({
+=======
+    const cases = await prisma.case.findMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { tenantId },
         include: {
             auditLogs: {
@@ -393,7 +397,11 @@ function mapLegalEscalationCase(caseRecord: RefusalCaseRecord): LegalEscalationC
 
 async function getAuthorizedRefusalCase(auth: AuthContext, caseId: string): Promise<RefusalCaseRecord> {
     const prisma = getPrisma();
+<<<<<<< HEAD
     const caseRecord = await getPrisma().case.findUnique({
+=======
+    const caseRecord = await prisma.case.findUnique({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { id: caseId },
         include: {
             auditLogs: {
@@ -464,7 +472,11 @@ export async function addLegalEscalationNote(args: {
     }
 
     const metadata = asRecord(caseRecord.metadata);
+<<<<<<< HEAD
     await getPrisma().case.update({
+=======
+    await prisma.case.update({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { id: caseRecord.id },
         data: {
             metadata: buildLegalMetadata(metadata, { updated_at: nowIso() }),
@@ -511,7 +523,11 @@ export async function updateLegalEscalationPriority(args: {
     const priority = toPriority(args.priority);
     const metadata = asRecord(caseRecord.metadata);
 
+<<<<<<< HEAD
     await getPrisma().case.update({
+=======
+    await prisma.case.update({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { id: caseRecord.id },
         data: {
             metadata: buildLegalMetadata(metadata, {
@@ -553,7 +569,11 @@ export async function resolveLegalEscalation(args: {
     }
 
     const metadata = asRecord(caseRecord.metadata);
+<<<<<<< HEAD
     await getPrisma().case.update({
+=======
+    await prisma.case.update({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { id: caseRecord.id },
         data: {
             status: args.closeCase ? CaseStatus.CLOSED : caseRecord.status,
@@ -585,4 +605,8 @@ export async function resolveLegalEscalation(args: {
     });
 
     return getLegalEscalation(args.auth, args.caseId);
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

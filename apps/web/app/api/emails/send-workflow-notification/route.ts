@@ -85,7 +85,10 @@ async function sendViaBackend(args: {
 
     return (payload || { status: "sent", provider: "backend" }) as EmailSendResponse;
 }
+<<<<<<< HEAD
 export async function POST(request: NextRequest) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 try {
     const prisma = getPrisma();
     const auth = await requireAuth(request);
@@ -105,7 +108,11 @@ try {
         throw new ApiError(400, "to is required");
     }
 
+<<<<<<< HEAD
     const caseRecord = await getPrisma().case.findFirst({ where: { id: caseId, tenantId } });
+=======
+    const caseRecord = await prisma.case.findFirst({ where: { id: caseId, tenantId } });
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!caseRecord) {
         throw new ApiError(404, "Case not found");
     }

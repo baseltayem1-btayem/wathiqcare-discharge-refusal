@@ -11,7 +11,10 @@ type PasswordSignupPayload = {
     fullName?: string;
 };
 
+<<<<<<< HEAD
 export async function POST(request: NextRequest) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 try {
     const prisma = getPrisma();
     const payload = (await request.json().catch(() => null)) as PasswordSignupPayload | null;
@@ -33,7 +36,11 @@ try {
     }
 
     // Check if email already exists
+<<<<<<< HEAD
     const existingUser = await getPrisma().user.findUnique({
+=======
+    const existingUser = await prisma.user.findUnique({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { email },
         select: { id: true },
     });
@@ -55,7 +62,11 @@ try {
     }
 
     // Find default tenant for domain
+<<<<<<< HEAD
     const tenantRows = await getPrisma().$queryRaw<Array<{ id: string; code: string }>>`
+=======
+    const tenantRows = await prisma.$queryRaw<Array<{ id: string; code: string }>>`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       SELECT DISTINCT t.id, t.code
       FROM tenants t
       INNER JOIN tenant_allowed_domains tad ON tad.tenant_id = t.id
@@ -74,7 +85,11 @@ try {
 
     // Create user with email_verification_required status
     const userId = crypto.randomUUID();
+<<<<<<< HEAD
     await getPrisma().$executeRaw`
+=======
+    await prisma.$executeRaw`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       INSERT INTO users (
         id,
         tenant_id,
@@ -101,7 +116,11 @@ try {
 
     // Create default membership
     const membershipId = crypto.randomUUID();
+<<<<<<< HEAD
     await getPrisma().$executeRaw`
+=======
+    await prisma.$executeRaw`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       INSERT INTO tenant_memberships (
         id,
         tenant_id,

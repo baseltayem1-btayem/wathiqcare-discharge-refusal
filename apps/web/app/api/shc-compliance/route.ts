@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
+<<<<<<< HEAD
 import { getPrisma } from "@/lib/server/prisma";
+=======
+import { prisma } from "@/lib/server/prisma";
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 
+<<<<<<< HEAD
 function isEnabled(): boolean {
   return process.env.SHC_COMPLIANCE_MODULE === "true";
 }
@@ -18,6 +23,36 @@ function extractBackendErrorDetail(value: unknown): string {
 
   if (typeof obj.detail === "string" && obj.detail.trim()) return obj.detail;
   if (typeof obj.message === "string" && obj.message.trim()) return obj.message;
+=======
+
+function isEnabled(): boolean {
+  // Access env only when called, not at top-level
+  return process.env.SHC_COMPLIANCE_MODULE === "true";
+}
+export async function GET(request: NextRequest) {
+  try {
+    const enabled = isEnabled();
+    return NextResponse.json({ enabled });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+function extractBackendErrorDetail(value: unknown): string {
+  if (!value || typeof value !== "object") {
+    return "Unknown backend error";
+  }
+
+  const detail = (value as Record<string, unknown>).detail;
+  if (typeof detail === "string" && detail.trim()) {
+    return detail;
+  }
+
+  const message = (value as Record<string, unknown>).message;
+  if (typeof message === "string" && message.trim()) {
+    return message;
+  }
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
   return "Unknown backend error";
 }
@@ -39,17 +74,24 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue | null {
   if (typeof value === "object") {
     const obj = value as Record<string, unknown>;
     const jsonObj: Record<string, Prisma.InputJsonValue | null> = {};
+<<<<<<< HEAD
 
     for (const [key, val] of Object.entries(obj)) {
       jsonObj[key] = toInputJsonValue(val);
     }
 
+=======
+    for (const [key, val] of Object.entries(obj)) {
+      jsonObj[key] = toInputJsonValue(val);
+    }
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     return jsonObj;
   }
 
   return null;
 }
 
+<<<<<<< HEAD
 export async function GET() {
   try {
     return NextResponse.json({ enabled: isEnabled() });
@@ -58,12 +100,15 @@ export async function GET() {
   }
 }
 
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 export async function POST(request: NextRequest) {
   try {
     if (!isEnabled()) {
       throw new ApiError(404, "SHC compliance module is disabled");
     }
 
+<<<<<<< HEAD
     const prisma = getPrisma(); // ✅ FIX
 
     const auth = await requireAuth(request);
@@ -80,12 +125,27 @@ export async function POST(request: NextRequest) {
           patient?: Record<string, unknown>;
           signature?: Record<string, unknown>;
         }
+=======
+    const auth = await requireAuth(request);
+    const tenantId = auth.tenant_id;
+    if (!tenantId) {
+      throw new ApiError(403, "Tenant context is required");
+    }
+    const payload = (await request.json().catch(() => null)) as
+      | {
+        caseId?: string;
+        shc?: Record<string, unknown>;
+        patient?: Record<string, unknown>;
+        signature?: Record<string, unknown>;
+      }
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       | null;
 
     if (!payload?.caseId || !payload.shc) {
       throw new ApiError(400, "caseId and shc payload are required");
     }
 
+<<<<<<< HEAD
     const { caseId } = payload;
     const shc = payload.shc;
     const patient = payload.patient ?? {};
@@ -95,10 +155,20 @@ export async function POST(request: NextRequest) {
       where: { id: caseId, tenantId },
     });
 
+=======
+    const shc = payload.shc as Record<string, unknown>;
+    const patient = (payload.patient ?? {}) as Record<string, unknown>;
+    const signature = (payload.signature ?? {}) as Record<string, unknown>;
+
+    const existingCase = await prisma.case.findFirst({
+      where: { id: payload.caseId, tenantId },
+    });
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!existingCase) {
       throw new ApiError(404, "Case not found");
     }
 
+<<<<<<< HEAD
     const backendApiBase = getConfiguredBackendApiBaseUrl();
     if (!backendApiBase) {
       throw new ApiError(503, "BACKEND_API_BASE_URL is not configured");
@@ -142,6 +212,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
+=======
+    let backendResult: Record<string, unknown> | null = null;
+    const backendApiBase = getConfiguredBackendApiBaseUrl();
+    if (!backendApiBase) {
+      throw new ApiError(503, "BACKEND_API_BASE_URL is not configured for SHC module");
+    }
+
+    const accessTokenCookie = request.cookies.get(getSessionCookieName())?.value ?? "";
+    const upstreamAuthorization = accessTokenCookie ? `Bearer ${accessTokenCookie}` : "";
+
+    const response = await fetch(`${backendApiBase}/api/shc-compliance/workflow`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(upstreamAuthorization ? { Authorization: upstreamAuthorization } : {}),
+      },
+      body: JSON.stringify({
+        case_id: payload.caseId,
+        patient_name: String(patient["patient_name"] ?? existingCase.patientName ?? ""),
+        patient_id_number: String(patient["patient_id_number"] ?? existingCase.patientIdNumber ?? ""),
+        medical_record_number: String(
+          patient["medical_record_number"] ?? existingCase.medicalRecordNo ?? ""
+        ),
+        room_number: String(patient["room_number"] ?? existingCase.roomNumber ?? ""),
+        attending_physician: String(patient["attending_physician"] ?? ""),
+        discharge_status: String(shc["discharge_status"] ?? "accept_discharge"),
+        discharge_alternative: shc["discharge_alternative"] ?? null,
+        homecare_plan: shc["home_care_plan"] ?? null,
+        transfer_request: shc["transfer_request"] ?? null,
+        equipment_request: shc["equipment_request"] ?? null,
+        signature_method: signature["signature_method"] ?? null,
+        signature_device: signature["device"] ?? null,
+      }),
+    });
+
+    const backendPayload = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!response.ok) {
+      throw new ApiError(
+        response.status,
+        `SHC backend workflow failed: ${extractBackendErrorDetail(backendPayload)}`,
+      );
+    }
+
+    backendResult = backendPayload;
+
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     const currentMeta =
       existingCase.metadata && typeof existingCase.metadata === "object"
         ? (existingCase.metadata as Record<string, unknown>)
@@ -151,12 +267,21 @@ export async function POST(request: NextRequest) {
       ...currentMeta,
       shc_compliance: {
         ...shc,
+<<<<<<< HEAD
         backend_result: backendPayload,
       },
     };
 
     await getPrisma().case.update({
       where: { id: caseId },
+=======
+        backend_result: backendResult,
+      },
+    } satisfies Record<string, unknown>;
+
+    await prisma.case.update({
+      where: { id: payload.caseId },
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       data: {
         metadata: toInputJsonValue(updatedMetadata) as Prisma.InputJsonObject,
         updatedByUserId: auth.sub,
@@ -167,6 +292,7 @@ export async function POST(request: NextRequest) {
       tenantId,
       userId: auth.sub,
       entityType: "case",
+<<<<<<< HEAD
       entityId: caseId,
       action: "shc_compliance_recorded",
       details: "SHC workflow recorded",
@@ -174,11 +300,26 @@ export async function POST(request: NextRequest) {
       metadataJson: {
         decision: String(shc["discharge_status"] ?? ""),
         signature_method: String(signature["signature_method"] ?? ""),
+=======
+      entityId: payload.caseId,
+      action: "shc_compliance_recorded",
+      details: "SHC discharge refusal workflow recorded",
+      caseId: payload.caseId,
+      metadataJson: {
+        decision: shc["discharge_status"] ?? null,
+        forms_generated: backendResult?.forms_generated ?? null,
+        signature_method: signature["signature_method"] ?? null,
+        equipment_requests: shc["equipment_request"] ?? null,
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       },
       request,
     });
 
+<<<<<<< HEAD
     return NextResponse.json({ ok: true, backendResult: backendPayload });
+=======
+    return NextResponse.json({ ok: true, backendResult });
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   } catch (error) {
     return handleApiError(error);
   }

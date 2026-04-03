@@ -1,8 +1,12 @@
+<<<<<<< HEAD
 import { Prisma } from "@prisma/client";
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import { NextRequest, NextResponse } from "next/server";
 import { hasPlatformAccess, requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
+<<<<<<< HEAD
 import { getPrisma } from "@/lib/server/prisma";
 
 export async function GET(request: NextRequest) {
@@ -69,4 +73,41 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return handleApiError(error);
   }
+=======
+import { prisma } from "@/lib/server/prisma";
+
+export async function GET(request: NextRequest) {
+    try {
+        const auth = await requireAuth(request);
+        const platformAccess = hasPlatformAccess(auth);
+
+        if (!platformAccess && !auth.tenant_id) {
+            throw new ApiError(403, "Tenant context is required for subscription summary");
+        }
+
+        const where = platformAccess ? undefined : { tenantId: auth.tenant_id };
+
+        const [total, active, trialing, pastDue, canceled, seatTotals] = await Promise.all([
+            prisma.subscription.count({ where }),
+            prisma.subscription.count({ where: { ...where, status: "ACTIVE" } }),
+            prisma.subscription.count({ where: { ...where, status: "TRIALING" } }),
+            prisma.subscription.count({ where: { ...where, status: "PAST_DUE" } }),
+            prisma.subscription.count({ where: { ...where, status: "CANCELED" } }),
+            prisma.subscription.aggregate({ where, _sum: { seatLimit: true } }),
+        ]);
+
+        return NextResponse.json(
+            toJsonSafe({
+                total,
+                active,
+                trialing,
+                pastDue,
+                canceled,
+                totalLicensedSeats: seatTotals._sum.seatLimit ?? 0,
+            }),
+        );
+    } catch (error) {
+        return handleApiError(error);
+    }
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 }

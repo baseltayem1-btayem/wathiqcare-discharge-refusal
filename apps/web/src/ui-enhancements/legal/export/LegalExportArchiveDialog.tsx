@@ -1,10 +1,20 @@
+<<<<<<< HEAD
 
+=======
+import { apiFetch } from "@/utils/api";
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 "use client";
 
 import * as React from "react";
 import { Button } from "@/components/design-system/button";
+<<<<<<< HEAD
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/design-system/dialog";
 import { FormLabel, FormItem } from "@/components/design-system/form";
+=======
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/design-system/dialog";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/design-system/dropdown-menu";
+import { Form, FormField, FormLabel, FormControl, FormItem } from "@/components/design-system/form";
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import { Input, Select } from "@/components/design-system/input";
 
 /**
@@ -68,8 +78,13 @@ export default function LegalExportArchiveDialog({
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
+<<<<<<< HEAD
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "خطأ غير متوقع");
+=======
+        } catch (err: any) {
+            setError(err.message || "خطأ غير متوقع");
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         } finally {
             setLoading(false);
         }

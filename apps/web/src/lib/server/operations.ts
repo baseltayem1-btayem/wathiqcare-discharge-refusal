@@ -81,7 +81,11 @@ async function resolveSlaDeadline(args: {
     stepCode: string;
     now: Date;
 }): Promise<Date> {
+<<<<<<< HEAD
     const config = await getPrisma().departmentSlaConfig.findUnique({
+=======
+    const config = await prisma.departmentSlaConfig.findUnique({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
             tenantId_department_stepCode: {
                 tenantId: args.tenantId,
@@ -111,7 +115,11 @@ export async function ensureOperationStateForCase(args: {
         now,
     });
 
+<<<<<<< HEAD
     await getPrisma().caseOperationState.upsert({
+=======
+    await prisma.caseOperationState.upsert({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { caseId: args.caseId },
         update: {
             lastActionAt: now,
@@ -152,7 +160,11 @@ export async function createOperationNotification(args: {
 }): Promise<void> {
     const now = new Date();
 
+<<<<<<< HEAD
     await getPrisma().operationNotification.createMany({
+=======
+    await prisma.operationNotification.createMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         data: [
             {
                 tenantId: args.tenantId,
@@ -200,7 +212,11 @@ export async function assignCaseOperation(args: {
 }): Promise<void> {
     const now = new Date();
 
+<<<<<<< HEAD
     const currentState = await getPrisma().caseOperationState.findUnique({ where: { caseId: args.caseId } });
+=======
+    const currentState = await prisma.caseOperationState.findUnique({ where: { caseId: args.caseId } });
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!currentState) {
         throw new ApiError(404, "Operational state not initialized for this case");
     }
@@ -212,7 +228,11 @@ export async function assignCaseOperation(args: {
         now,
     });
 
+<<<<<<< HEAD
     const nextState = await getPrisma().caseOperationState.update({
+=======
+    const nextState = await prisma.caseOperationState.update({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { caseId: args.caseId },
         data: {
             assignedToUserId: args.toUserId ?? null,
@@ -227,7 +247,11 @@ export async function assignCaseOperation(args: {
         },
     });
 
+<<<<<<< HEAD
     await getPrisma().caseAssignmentHistory.create({
+=======
+    await prisma.caseAssignmentHistory.create({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         data: {
             tenantId: args.tenantId,
             caseId: args.caseId,
@@ -289,7 +313,11 @@ export async function recordCaseStepAction(args: {
     reason?: string;
 }): Promise<void> {
     const now = new Date();
+<<<<<<< HEAD
     const state = await getPrisma().caseOperationState.findUnique({ where: { caseId: args.caseId } });
+=======
+    const state = await prisma.caseOperationState.findUnique({ where: { caseId: args.caseId } });
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!state) {
         throw new ApiError(404, "Operational state not found");
     }
@@ -320,7 +348,11 @@ export async function recordCaseStepAction(args: {
             ? SlaState.AT_RISK
             : slaStateFromDeadline(slaDeadline, now);
 
+<<<<<<< HEAD
     await getPrisma().caseOperationState.update({
+=======
+    await prisma.caseOperationState.update({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { caseId: args.caseId },
         data: {
             currentStage: args.stageCode,
@@ -337,7 +369,11 @@ export async function recordCaseStepAction(args: {
         },
     });
 
+<<<<<<< HEAD
     await getPrisma().caseStepEvent.create({
+=======
+    await prisma.caseStepEvent.create({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         data: {
             tenantId: args.tenantId,
             caseId: args.caseId,
@@ -382,7 +418,11 @@ export async function recordCaseStepAction(args: {
     });
 
     if (args.action === "sla_breached" || args.action === "escalation_triggered") {
+<<<<<<< HEAD
         const recipients = await getPrisma().user.findMany({
+=======
+        const recipients = await prisma.user.findMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             where: {
                 tenantId: args.tenantId,
                 isActive: true,
@@ -412,7 +452,11 @@ export async function recordCaseStepAction(args: {
 
 export async function runSlaSweepForTenant(tenantId: string): Promise<{ atRisk: number; breached: number }> {
     const now = new Date();
+<<<<<<< HEAD
     const states = await getPrisma().caseOperationState.findMany({
+=======
+    const states = await prisma.caseOperationState.findMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
             tenantId,
             status: { not: "CLOSED" },
@@ -440,7 +484,11 @@ export async function runSlaSweepForTenant(tenantId: string): Promise<{ atRisk: 
             continue;
         }
 
+<<<<<<< HEAD
         await getPrisma().caseOperationState.update({
+=======
+        await prisma.caseOperationState.update({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             where: { caseId: state.caseId },
             data: { slaState: nextState, waitingTimeMinutes: minutesBetween(state.slaDeadline ?? now, now) },
         });

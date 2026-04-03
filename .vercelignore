@@ -1,6 +1,4 @@
 backend/
-frontend/
-frontend-angular/
 scripts/
 packages/*/node_modules
 packages/config/

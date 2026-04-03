@@ -17,7 +17,10 @@ function startOfDayOffset(offset: number): Date {
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offset));
 }
 
+<<<<<<< HEAD
 export async function GET(request: NextRequest, { params }: RouteContext) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 try {
     const prisma = getPrisma();
     const auth = await requireAuth(request);

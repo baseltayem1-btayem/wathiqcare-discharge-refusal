@@ -6,7 +6,10 @@ import { getPrisma } from "@/lib/server/prisma";
 
 type RouteContext = { params: Promise<{ caseId: string }> };
 
+<<<<<<< HEAD
 export async function GET(request: NextRequest, { params }: RouteContext) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 try {
     const prisma = getPrisma();
     const auth = await requireAuth(request);

@@ -26,29 +26,7 @@ def send_dashboard_alert(
     case_deep_link: Optional[str] = None,
     metadata_json: Optional[Dict[str, Any]] = None,
 ) -> DashboardAlert:
-    existing = (
-        db.query(DashboardAlert)
-        .filter(DashboardAlert.alert_key == alert_key)
-        .first()
-    )
-    if existing is not None:
-        db.add(
-            NotificationDeliveryAttempt(
-                tenant_id=tenant_id,
-                case_id=case_id,
-                alert_id=existing.id,
-                channel="dashboard",
-                provider="internal",
-                recipient=f"dashboard:{tenant_id}",
-                notification_type=alert_type,
-                status="skipped",
-                status_code=200,
-                attempted_at=datetime.utcnow(),
-                metadata_json={"alert_key": alert_key, "severity": severity},
-            )
-        )
-        db.flush()
-        return existing
+    # Legacy duplicate alert prevention logic removed
 
     alert = DashboardAlert(
         tenant_id=tenant_id,

@@ -220,7 +220,11 @@ export async function ensureTenantRoleTemplates(tx: Prisma.TransactionClient, te
 
 export async function bootstrapTenantAdminConfiguration(tenantId: string): Promise<void> {
     const prisma = getPrisma();
+<<<<<<< HEAD
     await getPrisma().$transaction(async (tx) => {
+=======
+    await prisma.$transaction(async (tx) => {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         await ensureTenantDepartments(tx, tenantId);
         await ensureTenantRoleTemplates(tx, tenantId);
 
@@ -276,7 +280,11 @@ export async function bootstrapTenantAdminConfiguration(tenantId: string): Promi
 
 export async function getTenantRoleByCode(tenantId: string, code: string) {
     const prisma = getPrisma();
+<<<<<<< HEAD
     return getPrisma().tenantRole.findUnique({
+=======
+    return prisma.tenantRole.findUnique({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
             tenantId_code: {
                 tenantId,

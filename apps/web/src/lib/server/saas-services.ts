@@ -63,7 +63,11 @@ function usageMetricToPlanKey(metric: UsageMetric): string | null {
 
 async function createDefaultTrialSubscription(tenantId: string): Promise<SubscriptionWithPlan> {
   const prisma = getPrisma();
+<<<<<<< HEAD
   const starterPlan = await getPrisma().plan.findFirst({
+=======
+  const starterPlan = await prisma.plan.findFirst({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       isActive: true,
       code: PlanCode.STARTER,
@@ -72,7 +76,11 @@ async function createDefaultTrialSubscription(tenantId: string): Promise<Subscri
 
   const fallbackPlan = starterPlan
     ? starterPlan
+<<<<<<< HEAD
     : await getPrisma().plan.findFirst({
+=======
+    : await prisma.plan.findFirst({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       where: {
         isActive: true,
       },
@@ -89,7 +97,11 @@ async function createDefaultTrialSubscription(tenantId: string): Promise<Subscri
   const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   const currentPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+<<<<<<< HEAD
   return getPrisma().subscription.create({
+=======
+  return prisma.subscription.create({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     data: {
       tenantId,
       planId: fallbackPlan.id,
@@ -107,7 +119,11 @@ async function createDefaultTrialSubscription(tenantId: string): Promise<Subscri
 }
 
 export async function getTenantSubscription(tenantId: string): Promise<SubscriptionWithPlan> {
+<<<<<<< HEAD
   const existingSubscription = await getPrisma().subscription.findFirst({
+=======
+  const existingSubscription = await prisma.subscription.findFirst({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: { tenantId },
     include: { plan: true },
     orderBy: { createdAt: "desc" },
@@ -158,7 +174,11 @@ export async function enforcePlanUsage(
 
   const currentMonthStart = startOfUtcMonth();
 
+<<<<<<< HEAD
   const aggregate = await getPrisma().usageRecord.aggregate({
+=======
+  const aggregate = await prisma.usageRecord.aggregate({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId,
       metric,
@@ -188,7 +208,11 @@ export async function recordUsage(
 ): Promise<void> {
   const periodDate = startOfUtcDay();
 
+<<<<<<< HEAD
   await getPrisma().usageRecord.upsert({
+=======
+  await prisma.usageRecord.upsert({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId_metric_periodDate: {
         tenantId,
@@ -215,7 +239,11 @@ export async function syncActiveUserUsage(tenantId: string): Promise<void> {
   const periodDate = startOfUtcDay();
   const activeUsers = await countActiveSeatUsers(tenantId);
 
+<<<<<<< HEAD
   await getPrisma().usageRecord.upsert({
+=======
+  await prisma.usageRecord.upsert({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId_metric_periodDate: {
         tenantId,
@@ -238,7 +266,11 @@ export async function syncActiveUserUsage(tenantId: string): Promise<void> {
 }
 
 export async function countActiveSeatUsers(tenantId: string): Promise<number> {
+<<<<<<< HEAD
   return getPrisma().tenantMembership.count({
+=======
+  return prisma.tenantMembership.count({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId,
       status: "ACTIVE",
@@ -250,7 +282,11 @@ export async function countActiveSeatUsers(tenantId: string): Promise<number> {
 }
 
 export async function countPendingSeatUsers(tenantId: string): Promise<number> {
+<<<<<<< HEAD
   return getPrisma().tenantMembership.count({
+=======
+  return prisma.tenantMembership.count({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId,
       OR: [
@@ -308,7 +344,11 @@ export async function writeAuditLog(args: AuditArgs): Promise<void> {
   const ipAddress = args.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   const userAgent = args.request?.headers.get("user-agent") ?? null;
 
+<<<<<<< HEAD
   await getPrisma().auditLog.create({
+=======
+  await prisma.auditLog.create({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     data: {
       tenantId: args.tenantId,
       userId: args.userId,

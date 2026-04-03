@@ -18,7 +18,11 @@ cleanup() {
 trap cleanup EXIT
 
 log() {
+<<<<<<< HEAD
   printf '[smoke][%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
+=======
+  printf '[smoke] %s\n' "$*"
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 }
 
 fail() {
@@ -67,6 +71,7 @@ curl_json() {
   local body_file="$3"
   local headers_file="$4"
   shift 4
+<<<<<<< HEAD
   log "curl request: $method $url"
   if [[ "$method" == "POST" || "$method" == "PUT" ]]; then
     for arg in "$@"; do
@@ -78,6 +83,9 @@ curl_json() {
   curl --max-time 45 -sS -X "$method" "$url" -D "$headers_file" -o "$body_file" "$@"
   log "curl response headers: $(cat "$headers_file")"
   log "curl response body: $(cat "$body_file")"
+=======
+  curl --max-time 45 -sS -X "$method" "$url" -D "$headers_file" -o "$body_file" "$@"
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 }
 
 http_status() {
@@ -231,6 +239,7 @@ fetch_case_artifacts() {
   printf 'case_audit=%s\n' "$(cat "$WORK_DIR/case-audit.body")"
 }
 
+<<<<<<< HEAD
 
 print_env() {
   log "Environment Variables:"
@@ -256,12 +265,17 @@ summary() {
   log "See above for detailed step-by-step output."
 }
 
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 main() {
   require_command curl
   require_command python3
 
+<<<<<<< HEAD
   print_env
 
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   check_public_health
   check_public_email
 
@@ -275,8 +289,11 @@ main() {
     log "tenant credentials not provided; skipped authenticated tenant smoke path"
     printf 'tenant_smoke_skipped=true\n'
   fi
+<<<<<<< HEAD
 
   summary
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 }
 
 main "$@"

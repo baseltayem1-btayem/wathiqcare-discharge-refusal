@@ -65,7 +65,10 @@ function readResetBaseUrl(): string {
     return "https://wathiqcare.online";
 }
 
+<<<<<<< HEAD
 export async function POST(request: NextRequest) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 try {
     const prisma = getPrisma();
     console.info("PASSWORD_RESET_REQUESTED");
@@ -83,7 +86,11 @@ try {
         return NextResponse.json({ message: "If an account exists with this email, a password reset link has been sent." });
     }
 
+<<<<<<< HEAD
     const user = await getPrisma().user.findUnique({
+=======
+    const user = await prisma.user.findUnique({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { email },
         select: { id: true, email: true, hashedPassword: true },
     });
@@ -100,13 +107,21 @@ try {
 
     // Store token
     const tokenId = crypto.randomUUID();
+<<<<<<< HEAD
     await getPrisma().$executeRaw`
+=======
+    await prisma.$executeRaw`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, used)
       VALUES (${tokenId}, ${user.id}, ${tokenHash}, ${expiresAt}, FALSE)
     `;
 
     // Invalidate all previous unused tokens for this user
+<<<<<<< HEAD
     await getPrisma().$executeRaw`
+=======
+    await prisma.$executeRaw`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       UPDATE password_reset_tokens
       SET used = TRUE
       WHERE user_id = ${user.id} AND id != ${tokenId}

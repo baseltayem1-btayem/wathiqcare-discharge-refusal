@@ -36,28 +36,7 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_EXPIRY_MINUTES = 10
 _DEFAULT_MAX_ACTIVE_LINKS_PER_CASE = 10
-
-_PUBLIC_LEGAL_NOTICE = (
-    "This document is issued pursuant to the healthcare provider's legal obligations. "
-    "By submitting your decision, you acknowledge receipt of the discharge advice and "
-    "accept responsibility for the consequences of your choice."
-)
-
-
-def _pepper() -> str:
-    return os.getenv("PUBLIC_LINK_TOKEN_PEPPER", "default-pepper-change-me")
-
-
-def _expiry_minutes() -> int:
-    return int(os.getenv("SECURE_LINK_EXPIRY_HOURS", "72")) * 60
-
-
-def _issue_cooldown_seconds() -> int:
-    return int(os.getenv("SECURE_LINK_ISSUE_COOLDOWN_SECONDS", "300"))
-
-
-def _max_active_links_per_case() -> int:
-    return int(os.getenv("SECURE_LINK_MAX_ACTIVE_PER_CASE", str(_DEFAULT_MAX_ACTIVE_LINKS_PER_CASE)))
+## Legacy cooldown and expiry logic removed
 
 
 def _hash_token(raw_token: str) -> str:

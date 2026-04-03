@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+<<<<<<< HEAD
 import type { Prisma } from "@prisma/client";
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { requireAuth } from "@/lib/server/auth";
@@ -12,10 +15,17 @@ type SetPasswordPayload = {
     token?: string;
 };
 
+<<<<<<< HEAD
 async function consumeSetupToken(prisma: ReturnType<typeof getPrisma>, email: string, rawToken: string): Promise<string> {
     const tokenHash = hashResetToken(rawToken);
 
     return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+=======
+async function consumeSetupToken(prisma: any, email: string, rawToken: string): Promise<string> {
+    const tokenHash = hashResetToken(rawToken);
+
+    return prisma.$transaction(async (tx: any) => {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         const userRows = await tx.$queryRaw<Array<{ id: string }>>`
       SELECT id
       FROM users
@@ -80,7 +90,10 @@ async function consumeSetupToken(prisma: ReturnType<typeof getPrisma>, email: st
     });
 }
 
+<<<<<<< HEAD
 export async function POST(request: NextRequest) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 try {
     const prisma = getPrisma();
     const payload = (await request.json().catch(() => null)) as SetPasswordPayload | null;
@@ -114,7 +127,11 @@ try {
 
     const passwordHash = await hashPassword(password);
 
+<<<<<<< HEAD
     await getPrisma().$executeRaw`
+=======
+    await prisma.$executeRaw`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       UPDATE users
       SET hashed_password = ${passwordHash},
           auth_provider = 'local_password',
@@ -131,4 +148,8 @@ try {
 } catch (error) {
     return handleApiError(error);
 }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

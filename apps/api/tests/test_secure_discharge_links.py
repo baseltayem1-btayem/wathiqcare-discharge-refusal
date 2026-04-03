@@ -189,7 +189,6 @@ def seed_db() -> Generator:
         db.close()
 
     Base.metadata.drop_all(bind=TEST_ENGINE)
-    TEST_ENGINE.dispose()
     if SQLITE_PATH.exists():
         SQLITE_PATH.unlink()
 

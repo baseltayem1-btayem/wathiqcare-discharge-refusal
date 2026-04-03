@@ -32,10 +32,17 @@ export async function GET(request: NextRequest) {
       recentErrors,
       recentAudits,
     ] = await Promise.all([
+<<<<<<< HEAD
       getPrisma().case.count({ where: { tenantId, status: CaseStatus.OPEN } }),
       getPrisma().case.count({ where: { tenantId, status: CaseStatus.IN_PROGRESS } }),
       getPrisma().case.count({ where: { tenantId, status: CaseStatus.CLOSED } }),
       getPrisma().document.count({
+=======
+      prisma.case.count({ where: { tenantId, status: CaseStatus.OPEN } }),
+      prisma.case.count({ where: { tenantId, status: CaseStatus.IN_PROGRESS } }),
+      prisma.case.count({ where: { tenantId, status: CaseStatus.CLOSED } }),
+      prisma.document.count({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
           tenantId,
           status: {
@@ -43,9 +50,15 @@ export async function GET(request: NextRequest) {
           },
         },
       }),
+<<<<<<< HEAD
       getPrisma().document.count({ where: { tenantId, status: DocumentStatus.SIGNED } }),
       getPrisma().document.count({ where: { tenantId, status: DocumentStatus.ARCHIVED } }),
       getPrisma().auditLog.count({
+=======
+      prisma.document.count({ where: { tenantId, status: DocumentStatus.SIGNED } }),
+      prisma.document.count({ where: { tenantId, status: DocumentStatus.ARCHIVED } }),
+      prisma.auditLog.count({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
           tenantId,
           createdAt: { gte: dayAgo },
@@ -55,7 +68,11 @@ export async function GET(request: NextRequest) {
           ],
         },
       }),
+<<<<<<< HEAD
       getPrisma().auditLog.findMany({
+=======
+      prisma.auditLog.findMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
           tenantId,
           createdAt: { gte: dayAgo },

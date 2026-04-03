@@ -56,4 +56,8 @@ export function hasOperationsEscalationPermission(
     platformRole?: string | null,
 ): boolean {
     return Boolean(platformRole) || ESCALATION_ROLES.has(normalizeOperationsRole(role));
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

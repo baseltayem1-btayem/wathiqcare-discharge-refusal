@@ -12,7 +12,11 @@ export type CaseDocument = {
     mimeType: string;
     storagePath: string | null;
     previewHtml: string | null;
+<<<<<<< HEAD
     payloadJson: Record<string, unknown>;
+=======
+    payloadJson: Record<string, any>;
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     status: string;
     generatedBy: string | null;
     generatedAt: string | null;
@@ -32,6 +36,12 @@ export type WorkflowAuditLog = {
     actorRole: string | null;
     notes: string | null;
     documentType: string | null;
+<<<<<<< HEAD
     metadataJson: Record<string, unknown> | null;
     createdAt: string;
 };
+=======
+    metadataJson: Record<string, any> | null;
+    createdAt: string;
+};
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

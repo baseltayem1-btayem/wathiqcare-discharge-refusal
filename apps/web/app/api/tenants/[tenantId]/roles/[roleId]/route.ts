@@ -1,5 +1,6 @@
 import { TenantRoleStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+<<<<<<< HEAD
 import {
     hasPlatformAccess,
     requireAuth,
@@ -21,10 +22,19 @@ type UpdateTenantRolePayload = {
     status?: string;
 };
 
+=======
+import { hasPlatformAccess, requireAuth, requireTenantAccess, requireTenantPermission } from "@/lib/server/auth";
+import { ApiError, handleApiError } from "@/lib/server/http";
+import { toJsonSafe } from "@/lib/server/json";
+import { prisma } from "@/lib/server/prisma";
+import { writeAuditLog } from "@/lib/server/saas-services";
+
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 function parseStatus(input: unknown): TenantRoleStatus | null {
     if (typeof input !== "string") {
         return null;
     }
+<<<<<<< HEAD
 
     const normalized = input.trim().toUpperCase();
 
@@ -59,6 +69,34 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
         const payload = (await request.json().catch(() => null)) as
             | UpdateTenantRolePayload
+=======
+    const normalized = input.trim().toUpperCase();
+    if (normalized === TenantRoleStatus.ACTIVE || normalized === TenantRoleStatus.INACTIVE) {
+        return normalized as TenantRoleStatus;
+    }
+    return null;
+}
+
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: Promise<{ tenantId: string; roleId: string }> },
+) {
+    try {
+        const { tenantId, roleId } = await params;
+        const auth = await requireAuth(request);
+        if (!hasPlatformAccess(auth)) {
+            await requireTenantPermission(request, tenantId, "roles.manage");
+        } else {
+            await requireTenantAccess(request, tenantId);
+        }
+
+        const payload = (await request.json().catch(() => null)) as
+            | {
+                name?: string;
+                description?: string | null;
+                status?: string;
+            }
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             | null;
 
         if (!payload) {
@@ -73,18 +111,28 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
         if (typeof payload.name === "string") {
             const name = payload.name.trim();
+<<<<<<< HEAD
 
             if (!name) {
                 throw new ApiError(400, "name cannot be empty");
             }
 
+=======
+            if (!name) {
+                throw new ApiError(400, "name cannot be empty");
+            }
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             data.name = name;
         }
 
         if (payload.description === null || typeof payload.description === "string") {
+<<<<<<< HEAD
             data.description = payload.description
                 ? payload.description.trim()
                 : null;
+=======
+            data.description = payload.description ? payload.description.trim() : null;
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         }
 
         const status = parseStatus(payload.status);
@@ -123,12 +171,27 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     }
 }
 
+<<<<<<< HEAD
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
     try {
         const prisma = getPrisma();
 
         const { tenantId, roleId } = await params;
         const auth = await authorizeRoleManagement(request, tenantId);
+=======
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ tenantId: string; roleId: string }> },
+) {
+    try {
+        const { tenantId, roleId } = await params;
+        const auth = await requireAuth(request);
+        if (!hasPlatformAccess(auth)) {
+            await requireTenantPermission(request, tenantId, "roles.manage");
+        } else {
+            await requireTenantAccess(request, tenantId);
+        }
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
         const role = await prisma.tenantRole.findFirst({
             where: {
@@ -177,6 +240,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
             request,
         });
 
+<<<<<<< HEAD
         return NextResponse.json(
             toJsonSafe({
                 deleted: true,
@@ -187,3 +251,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
         return handleApiError(error);
     }
 }
+=======
+        return NextResponse.json(toJsonSafe({ deleted: true, roleId: role.id }));
+    } catch (error) {
+        return handleApiError(error);
+    }
+}
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

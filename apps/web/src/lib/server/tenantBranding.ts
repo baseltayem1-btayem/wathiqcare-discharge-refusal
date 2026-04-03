@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 type JsonRecord = Record<string, unknown>;
 
 type TenantBrandingProfileLike = {
@@ -40,6 +41,50 @@ type TenantDocumentIdentity = {
     documentHeaderText?: string | null;
     documentFooterText?: string | null;
     legalDisclaimer?: string | null;
+=======
+type JsonRecord = Record<string, any>;
+
+type TenantBrandingProfileLike = {
+    name?: string;
+    displayName?: string;
+    legalName?: string;
+    logoUrl?: string;
+    licenseNumber?: string;
+    commercialRegistrationNumber?: string;
+    taxNumber?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+    websiteUrl?: string;
+    documentHeaderText?: string;
+    documentFooterText?: string;
+    legalDisclaimer?: string;
+};
+
+type TenantDocumentIdentity = {
+    documentPrefix?: string;
+    displayName?: string;
+    legalName?: string;
+    licenseNumber?: string;
+    commercialRegistrationNumber?: string;
+    taxNumber?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+    websiteUrl?: string;
+    logoUrl?: string;
+    documentHeaderText?: string;
+    documentFooterText?: string;
+    legalDisclaimer?: string;
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 };
 
 export type TenantBranding = {
@@ -228,4 +273,8 @@ export function buildTenantIdentityLines(identity: TenantDocumentIdentity): stri
         identity.contactEmail ? `Email: ${identity.contactEmail}` : null,
         identity.websiteUrl,
     ].filter((line): line is string => typeof line === "string" && Boolean(line.trim()));
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

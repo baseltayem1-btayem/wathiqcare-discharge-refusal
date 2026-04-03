@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
-import { getPrisma } from "@/lib/server/prisma";
+import { prisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 type RouteContext = { params: Promise<{ caseId: string; sessionId: string }> };
@@ -20,7 +20,6 @@ function nowIso(): string {
 
 function decodeSignaturePayload(payload: string): Buffer {
     const normalized = payload.replace(/^data:[^,]+,/u, "").trim();
-
     if (!normalized) {
         throw new ApiError(400, "signature_payload is required");
     }
@@ -30,7 +29,6 @@ function decodeSignaturePayload(payload: string): Buffer {
     }
 
     const buffer = Buffer.from(normalized, "base64");
-
     if (!buffer.length) {
         throw new ApiError(400, "signature_payload must not be empty");
     }
@@ -46,17 +44,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     try {
         const auth = await requireAuth(request);
         const tenantId = requireTenantId(auth);
-
-        const prisma = getPrisma(); // ✅ FIX
-
         const { caseId, sessionId } = await params;
 
-        const doc = await prisma.document.findFirst({
-            where: { id: sessionId, tenantId },
-        });
-
+        const doc = await prisma.document.findFirst({ where: { id: sessionId, tenantId } });
         if (!doc) throw new ApiError(404, "جلسة الإقرار غير موجودة");
-
         if (doc.status === "SIGNED" || doc.signedAt) {
             throw new ApiError(409, "جلسة الإقرار تم التحقق منها بالفعل");
         }
@@ -64,9 +55,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         if (!doc.payloadJson || typeof doc.payloadJson !== "object" || Array.isArray(doc.payloadJson)) {
             throw new ApiError(500, "بيانات الجلسة تالفة");
         }
-
         const session = doc.payloadJson as Record<string, unknown>;
-
         if (session.case_id !== caseId) {
             throw new ApiError(400, "جلسة الإقرار لا تطابق الحالة");
         }
@@ -74,27 +63,20 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const bodyRaw = (await request.json().catch(() => null)) as {
             payload?: Record<string, unknown>;
         } | null;
-
         const payload = (bodyRaw?.payload ?? {}) as Record<string, unknown>;
 
         const method = String(session.acknowledgment_method ?? "").toUpperCase();
         const verificationTimestamp = nowIso();
-
         let verified = false;
         let signatureHash: string | null = null;
 
         const expectedHash = safe(session.otp_code_hash ?? session.otpCodeHash);
-
-        let attemptCount = Math.max(
-            0,
-            Number(session.attempt_count ?? session.attemptCount ?? 0) || 0
-        );
-
-        const maxRetries = Math.min(
-            Math.max(Number(session.max_retries ?? session.maxRetries ?? DEFAULT_MAX_OTP_RETRIES) || DEFAULT_MAX_OTP_RETRIES, 1),
-            10
-        );
-
+        const parsedAttemptCount = Number(session.attempt_count ?? session.attemptCount ?? 0);
+        let attemptCount = Number.isFinite(parsedAttemptCount) ? Math.max(0, parsedAttemptCount) : 0;
+        const parsedMaxRetries = Number(session.max_retries ?? session.maxRetries ?? DEFAULT_MAX_OTP_RETRIES);
+        const maxRetries = Number.isFinite(parsedMaxRetries)
+            ? Math.min(Math.max(parsedMaxRetries, 1), 10)
+            : DEFAULT_MAX_OTP_RETRIES;
         let locked = Boolean(session.locked) || attemptCount >= maxRetries;
         let lockedAt = safe(session.locked_at ?? session.lockedAt) || null;
 
@@ -102,29 +84,23 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             if (!expectedHash) {
                 throw new ApiError(400, "لا يوجد رمز OTP مرتبط بهذه الجلسة");
             }
-
             if (locked) {
                 throw new ApiError(429, "OTP attempts exceeded. Please request a new verification session.");
             }
 
             const submitted = safe(payload.otp_code);
-
             if (!submitted) {
                 throw new ApiError(400, "otp_code is required");
             }
 
-            const isValid =
-                crypto.createHash("sha256").update(submitted).digest("hex") === expectedHash;
-
+            const isValid = crypto.createHash("sha256").update(submitted).digest("hex") === expectedHash;
             if (!isValid) {
                 attemptCount += 1;
-
                 if (attemptCount >= maxRetries) {
                     locked = true;
                     lockedAt = verificationTimestamp;
                 }
             }
-
             return isValid;
         };
 
@@ -133,11 +109,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         } else if (method === "TABLET_SIGNATURE") {
             const signaturePayload = safe(payload.signature_payload);
             const signatureBytes = decodeSignaturePayload(signaturePayload);
-
-            signatureHash = crypto.createHash("sha256")
-                .update(signatureBytes)
-                .digest("hex");
-
+            signatureHash = crypto.createHash("sha256").update(signatureBytes).digest("hex");
             verified = true;
 
             if (expectedHash) {
@@ -147,12 +119,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             verified = false;
         }
 
-        const newStatus =
-            verified
-                ? "verified"
-                : method === "EMAIL_NOTICE"
-                ? "notification_sent"
-                : "failed";
+        const newStatus = verified ? "verified" : (method === "EMAIL_NOTICE" ? "notification_sent" : "failed");
 
         const updatedSession: Record<string, unknown> = {
             ...session,
@@ -171,8 +138,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
         const providerResult =
             updatedSession.provider_result &&
-            typeof updatedSession.provider_result === "object" &&
-            !Array.isArray(updatedSession.provider_result)
+                typeof updatedSession.provider_result === "object" &&
+                !Array.isArray(updatedSession.provider_result)
                 ? (updatedSession.provider_result as Record<string, unknown>)
                 : null;
 
@@ -193,15 +160,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         });
 
         if (verified) {
-            const persistedSignatureHash =
-                signatureHash ??
-                crypto.createHash("sha256")
-                    .update(`${sessionId}:${caseId}:${verificationTimestamp}`)
-                    .digest("hex");
-
+            const templateKey = String(session.document_type ?? "");
+            const persistedSignatureHash = signatureHash
+                ?? crypto.createHash("sha256").update(`${sessionId}:${caseId}:${verificationTimestamp}`).digest("hex");
             const signatureDevice = safe(payload.device ?? payload.device_source);
-            const signatureIp =
-                request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+            const signatureIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
             try {
                 const existing = await prisma.dischargeRefusalCase.findFirst({
@@ -234,27 +197,79 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                     });
                 }
             } catch (dbErr) {
-                console.error("verify-ack: dischargeRefusalCase upsert failed", dbErr);
+                console.error("verify-ack: dischargeRefusalCase upsert failed (non-fatal)", dbErr);
             }
 
-            await writeAuditLog({
-                tenantId,
-                userId: auth.sub,
-                caseId,
-                action: "acknowledgment_verified",
-                entityType: "document",
-                entityId: sessionId,
-                documentId: sessionId,
-                metadataJson: { method, session_id: sessionId },
-            });
+            try {
+                await writeAuditLog({
+                    tenantId,
+                    userId: auth.sub,
+                    caseId,
+                    action: "acknowledgment_verified",
+                    entityType: "document",
+                    entityId: sessionId,
+                    documentId: sessionId,
+                    metadataJson: { document_type: templateKey, method, session_id: sessionId },
+                });
+            } catch (auditErr) {
+                console.error("verify-ack: audit log write failed (non-fatal)", auditErr);
+            }
+        } else if (method !== "EMAIL_NOTICE") {
+            try {
+                await writeAuditLog({
+                    tenantId,
+                    userId: auth.sub,
+                    caseId,
+                    action: locked ? "acknowledgment_locked" : "acknowledgment_verification_failed",
+                    entityType: "document",
+                    entityId: sessionId,
+                    documentId: sessionId,
+                    metadataJson: {
+                        method,
+                        session_id: sessionId,
+                        attempt_count: attemptCount,
+                        max_retries: maxRetries,
+                        locked,
+                    },
+                });
+            } catch (auditErr) {
+                console.error("verify-ack: verification failure audit log write failed (non-fatal)", auditErr);
+            }
+        }
+
+        if (method === "EMAIL_NOTICE") {
+            try {
+                await writeAuditLog({
+                    tenantId,
+                    userId: auth.sub,
+                    caseId,
+                    action: "acknowledgment_notification_confirmed",
+                    entityType: "document",
+                    entityId: sessionId,
+                    documentId: sessionId,
+                    metadataJson: {
+                        method,
+                        session_id: sessionId,
+                        verification_status: newStatus,
+                        recipient_email: providerResult ? safe(providerResult.recipient_email) : null,
+                        message_id: providerResult ? safe(providerResult.message_id) : null,
+                        provider: providerResult ? safe(providerResult.provider) : null,
+                    },
+                });
+            } catch (auditErr) {
+                console.error("verify-ack: email notification audit log write failed (non-fatal)", auditErr);
+            }
         }
 
         return NextResponse.json({
             verification_status: newStatus,
             verified,
             session_id: sessionId,
+            pdf_path: null,
+            delivery_status: providerResult ? safe(providerResult.delivery_status) : null,
+            provider: providerResult ? safe(providerResult.provider) : null,
+            recipient_email: providerResult ? safe(providerResult.recipient_email) : null,
         });
-
     } catch (error) {
         return handleApiError(error);
     }

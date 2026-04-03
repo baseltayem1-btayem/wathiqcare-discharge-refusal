@@ -97,8 +97,13 @@ export default function CasePage() {
     try {
       const pkg = await apiFetch<LegalPackageMeta>(`/api/discharge/cases/${caseId}/legal-package`, { method: "POST" });
       setLegalPackage(pkg);
+<<<<<<< HEAD
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to generate legal package");
+=======
+    } catch (err: any) {
+      setError(err?.message || "Failed to generate legal package");
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     } finally {
       setLoading(false);
     }
@@ -115,8 +120,13 @@ export default function CasePage() {
         body: JSON.stringify(presentation),
       });
       // Optionally update readiness or fetch new data
+<<<<<<< HEAD
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to record presentation");
+=======
+    } catch (err: any) {
+      setError(err?.message || "Failed to record presentation");
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     } finally {
       setLoading(false);
     }
@@ -133,8 +143,13 @@ export default function CasePage() {
         body: JSON.stringify(signature),
       });
       // Optionally update readiness or fetch new data
+<<<<<<< HEAD
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to record signature");
+=======
+    } catch (err: any) {
+      setError(err?.message || "Failed to record signature");
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     } finally {
       setLoading(false);
     }
@@ -151,8 +166,13 @@ export default function CasePage() {
         body: JSON.stringify(witness),
       });
       // Optionally update readiness or fetch new data
+<<<<<<< HEAD
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to record witness");
+=======
+    } catch (err: any) {
+      setError(err?.message || "Failed to record witness");
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     } finally {
       setLoading(false);
     }

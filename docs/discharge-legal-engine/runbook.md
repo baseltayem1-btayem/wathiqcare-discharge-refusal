@@ -53,7 +53,11 @@ Critical variables:
 | `PUBLIC_LINK_TOKEN_PEPPER` | Yes | API |
 | `SMS_PROVIDER` | Yes | API |
 | `APP_BASE_URL` | Yes | API (used in SMS link) |
+<<<<<<< HEAD
 | `NEXT_PUBLIC_API_BASE_URL` | Yes | Web |
+=======
+| `NEXT_PUBLIC_API_URL` | Yes | Web |
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
 ---
 
@@ -62,8 +66,13 @@ Critical variables:
 ### Web (Vercel)
 The root `vercel.json` is pre-configured:
 ```
+<<<<<<< HEAD
 buildCommand:  npm run build --workspace=@wathiqcare/web
 installCommand: npm install
+=======
+buildCommand:  npm --prefix apps/web run build
+installCommand: npm --prefix apps/web install
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 outputDirectory: apps/web/.next
 ```
 

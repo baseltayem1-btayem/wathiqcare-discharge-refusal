@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+<<<<<<< HEAD
 import type { Prisma } from "@prisma/client";
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { hashPassword, hashResetToken, validatePasswordStrength } from "@/lib/server/password";
@@ -9,10 +12,17 @@ type PasswordResetConfirmPayload = {
     password?: string;
 };
 
+<<<<<<< HEAD
 async function consumePasswordResetToken(prisma: ReturnType<typeof getPrisma>, rawToken: string): Promise<{ id: string; userId: string }> {
     const tokenHash = hashResetToken(rawToken);
 
     return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+=======
+async function consumePasswordResetToken(prisma: any, rawToken: string): Promise<{ id: string; userId: string }> {
+    const tokenHash = hashResetToken(rawToken);
+
+    return prisma.$transaction(async (tx: any) => {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         const rows = await tx.$queryRaw<Array<{ id: string; user_id: string; expires_at: Date; used: boolean }>>`
       SELECT id, user_id, expires_at, used
       FROM password_reset_tokens
@@ -44,7 +54,10 @@ async function consumePasswordResetToken(prisma: ReturnType<typeof getPrisma>, r
     });
 }
 
+<<<<<<< HEAD
 export async function POST(request: NextRequest) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 try {
     const prisma = getPrisma();
     console.info("PASSWORD_RESET_CONFIRM_STARTED");
@@ -70,7 +83,11 @@ try {
     const resetToken = await consumePasswordResetToken(prisma, token);
 
     // Get current password hash to prevent reuse
+<<<<<<< HEAD
     const currentUser = await getPrisma().user.findUnique({
+=======
+    const currentUser = await prisma.user.findUnique({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { id: resetToken.userId },
         select: { hashedPassword: true },
     });
@@ -84,14 +101,22 @@ try {
 
     // Store in password history
     if (currentUser.hashedPassword) {
+<<<<<<< HEAD
         await getPrisma().$executeRaw`
+=======
+        await prisma.$executeRaw`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         INSERT INTO password_history (user_id, password_hash)
         VALUES (${resetToken.userId}, ${currentUser.hashedPassword})
       `;
     }
 
     // Update user password
+<<<<<<< HEAD
     await getPrisma().$executeRaw`
+=======
+    await prisma.$executeRaw`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       UPDATE users
       SET 
         hashed_password = ${newPasswordHash},

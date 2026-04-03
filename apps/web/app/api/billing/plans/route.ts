@@ -18,12 +18,19 @@ function parsePlanCode(value: unknown): PlanCode {
     return normalized as PlanCode;
 }
 
+<<<<<<< HEAD
 export async function GET(request: NextRequest) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 try {
     const prisma = getPrisma();
     await requirePlatformAccess(request);
 
+<<<<<<< HEAD
     const plans = await getPrisma().plan.findMany({
+=======
+    const plans = await prisma.plan.findMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         orderBy: { createdAt: "asc" },
     });
 
@@ -33,7 +40,10 @@ try {
 }
 }
 
+<<<<<<< HEAD
 export async function POST(request: NextRequest) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 try {
     const prisma = getPrisma();
     await requirePlatformAccess(request);
@@ -66,7 +76,11 @@ try {
     const yearly = Math.max(0, Math.floor(Number(payload.priceYearlyCents ?? 0)));
     const features = (payload.features ?? {}) as Prisma.InputJsonValue;
 
+<<<<<<< HEAD
     const plan = await getPrisma().plan.upsert({
+=======
+    const plan = await prisma.plan.upsert({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { code },
         update: {
             name,

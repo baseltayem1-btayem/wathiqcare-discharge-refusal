@@ -21,7 +21,11 @@ async function generateTenantCode(name: string): Promise<string> {
   let suffix = 1;
 
   const prisma = getPrisma();
+<<<<<<< HEAD
   while (await getPrisma().tenant.findUnique({ where: { code: candidate } })) {
+=======
+  while (await prisma.tenant.findUnique({ where: { code: candidate } })) {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     suffix += 1;
     candidate = `${base}-${suffix}`.slice(0, 40);
   }
@@ -37,7 +41,11 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Math.max(Number(new URL(request.url).searchParams.get("limit") ?? "50"), 1), 200);
 
     const prisma = getPrisma();
+<<<<<<< HEAD
     const memberships = await getPrisma().tenantMembership.findMany({
+=======
+    const memberships = await prisma.tenantMembership.findMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       where: {
         userId: auth.sub,
         status: MembershipStatus.ACTIVE,
@@ -48,7 +56,11 @@ export async function GET(request: NextRequest) {
 
     const tenantIds = [...new Set([auth.tenant_id, ...memberships.map((item) => item.tenantId)])];
 
+<<<<<<< HEAD
     const tenants = await getPrisma().tenant.findMany({
+=======
+    const tenants = await prisma.tenant.findMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       where: {
         id: {
           in: tenantIds,
@@ -111,8 +123,13 @@ export async function POST(request: NextRequest) {
     }
 
     const plan =
+<<<<<<< HEAD
       (await getPrisma().plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
       (await getPrisma().plan.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
+=======
+      (await prisma.plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
+      (await prisma.plan.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
     if (!plan) {
       throw new ApiError(404, "No active plan available");
@@ -121,7 +138,11 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+<<<<<<< HEAD
     const created = await getPrisma().$transaction(async (tx) => {
+=======
+    const created = await prisma.$transaction(async (tx) => {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       const tenant = await tx.tenant.create({
         data: {
           name: tenantName,

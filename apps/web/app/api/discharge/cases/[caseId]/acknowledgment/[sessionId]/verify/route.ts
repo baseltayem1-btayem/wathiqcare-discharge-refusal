@@ -20,7 +20,10 @@ function nowIso(): string {
 
 // ── route ──────────────────────────────────────────────────────────────────
 
+<<<<<<< HEAD
 export async function POST(request: NextRequest, { params }: RouteContext) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 const prisma = getPrisma();
 try {
     const auth = await requireAuth(request);

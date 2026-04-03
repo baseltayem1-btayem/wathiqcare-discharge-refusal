@@ -3,7 +3,10 @@ import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 
+<<<<<<< HEAD
 export async function GET(request: NextRequest) {
+=======
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 try {
     const prisma = getPrisma();
     const auth = await requireAuth(request);
@@ -12,7 +15,11 @@ try {
     const url = new URL(request.url);
     const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? "30"), 1), 100);
 
+<<<<<<< HEAD
     const notifications = await getPrisma().operationNotification.findMany({
+=======
+    const notifications = await prisma.operationNotification.findMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
             tenantId,
             recipientUserId: auth.sub,

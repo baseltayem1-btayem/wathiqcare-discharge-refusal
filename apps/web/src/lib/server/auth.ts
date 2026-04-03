@@ -100,7 +100,11 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     throw new ApiError(401, "Invalid access token");
   }
 
+<<<<<<< HEAD
   const user = await getPrisma().user.findUnique({
+=======
+  const user = await prisma.user.findUnique({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: { id: parsedPayload.sub },
     include: {
       primaryTenant: {
@@ -232,7 +236,11 @@ async function writePlatformApiAccessAttempt(args: {
   const role = args.auth?.platform_role ?? args.auth?.role ?? null;
 
   try {
+<<<<<<< HEAD
     await getPrisma().$executeRaw`
+=======
+    await prisma.$executeRaw`
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       INSERT INTO platform_api_access_logs (
         user_id,
         email,
@@ -358,7 +366,11 @@ export function requireRole(auth: AuthContext, allowedRoles: string[]): void {
 }
 
 export async function getUserTenantPermissionKeys(userId: string, tenantId: string): Promise<Set<string>> {
+<<<<<<< HEAD
   const assignments = await getPrisma().userRoleAssignment.findMany({
+=======
+  const assignments = await prisma.userRoleAssignment.findMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId,
       userId,

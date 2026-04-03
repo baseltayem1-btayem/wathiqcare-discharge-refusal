@@ -3,19 +3,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantPermissionForAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
+<<<<<<< HEAD
 import { getPrisma } from "@/lib/server/prisma";
+=======
+import { prisma } from "@/lib/server/prisma";
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import { getTenantSubscriptionSummary } from "@/lib/server/saas-services";
 
 const ALLOWED_CREATOR_ROLES = new Set(["tenant_admin", "tenant_owner"]);
 
 function ensureCreatorRole(role: string | undefined): void {
+<<<<<<< HEAD
     const normalized = (role ?? "").trim().toLowerCase();
 
+=======
+    const normalized = (role || "").trim().toLowerCase();
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!ALLOWED_CREATOR_ROLES.has(normalized)) {
         throw new ApiError(403, "Only tenant admins can manage users");
     }
 }
 
+<<<<<<< HEAD
 function extractDepartment(metadata: unknown): string | null {
     if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
         return null;
@@ -28,6 +37,10 @@ export async function GET(request: NextRequest) {
     try {
         const prisma = getPrisma(); // ✅ FIX
 
+=======
+export async function GET(request: NextRequest) {
+    try {
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         const auth = await requireAuth(request);
         const tenantId = auth.tenant_id;
 
@@ -36,12 +49,18 @@ export async function GET(request: NextRequest) {
         }
 
         ensureCreatorRole(auth.role);
+<<<<<<< HEAD
 
         await requireTenantPermissionForAuth(auth, tenantId, "users.read", {
             allowPlatform: false,
         });
 
         const creatorMembership = await getPrisma().tenantMembership.findUnique({
+=======
+        await requireTenantPermissionForAuth(auth, tenantId, "users.read", { allowPlatform: false });
+
+        const creatorMembership = await prisma.tenantMembership.findUnique({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             where: {
                 tenantId_userId: {
                     tenantId,
@@ -58,8 +77,15 @@ export async function GET(request: NextRequest) {
         }
 
         const [memberships, subscriptionSummary] = await Promise.all([
+<<<<<<< HEAD
             getPrisma().tenantMembership.findMany({
                 where: { tenantId },
+=======
+            prisma.tenantMembership.findMany({
+                where: {
+                    tenantId,
+                },
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
                 include: {
                     user: {
                         select: {
@@ -75,11 +101,18 @@ export async function GET(request: NextRequest) {
                         },
                     },
                 },
+<<<<<<< HEAD
                 orderBy: { createdAt: "desc" },
+=======
+                orderBy: {
+                    createdAt: "desc",
+                },
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             }),
             getTenantSubscriptionSummary(tenantId),
         ]);
 
+<<<<<<< HEAD
         const emails = Array.from(
             new Set(
                 memberships
@@ -92,6 +125,12 @@ export async function GET(request: NextRequest) {
 
         if (emails.length > 0) {
             const invitations = await getPrisma().invitation.findMany({
+=======
+        const emails = Array.from(new Set(memberships.map((membership) => membership.user.email).filter(Boolean)));
+        const latestInvitationByEmail = new Map<string, string>();
+        if (emails.length > 0) {
+            const invitations = await prisma.invitation.findMany({
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
                 where: {
                     tenantId,
                     email: { in: emails },
@@ -101,7 +140,13 @@ export async function GET(request: NextRequest) {
                     status: true,
                     createdAt: true,
                 },
+<<<<<<< HEAD
                 orderBy: { createdAt: "desc" },
+=======
+                orderBy: {
+                    createdAt: "desc",
+                },
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             });
 
             for (const invitation of invitations) {
@@ -119,14 +164,24 @@ export async function GET(request: NextRequest) {
             userType: membership.user.userType,
             isActive: membership.user.isActive,
             status: membership.user.status,
+<<<<<<< HEAD
             inviteStatus:
                 latestInvitationByEmail.get(membership.user.email) ??
                 membership.status,
+=======
+            inviteStatus: latestInvitationByEmail.get(membership.user.email) ?? membership.status,
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             membershipRole: membership.role,
             invitedAt: membership.invitedAt,
             lastLoginAt: membership.user.lastLoginAt,
             createdAt: membership.user.createdAt,
+<<<<<<< HEAD
             department: extractDepartment(membership.metadata),
+=======
+            department: typeof membership.metadata === "object" && membership.metadata && !Array.isArray(membership.metadata)
+                ? (membership.metadata as Record<string, unknown>).department ?? null
+                : null,
+>>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         }));
 
         return NextResponse.json(
