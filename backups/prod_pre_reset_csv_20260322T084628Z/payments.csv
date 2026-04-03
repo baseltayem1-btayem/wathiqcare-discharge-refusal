@@ -1,0 +1,1 @@
+id,session_id,payment_purpose,provider,amount,currency,status,provider_reference,checkout_url,paid_at,metadata,created_at,updated_at

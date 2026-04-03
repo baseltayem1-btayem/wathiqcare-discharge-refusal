@@ -1,0 +1,14 @@
+backend/
+frontend/
+frontend-angular/
+scripts/
+packages/*/node_modules
+packages/config/
+.env
+.env.*
+*.log
+node_modules
+__tests__/
+*.spec.ts
+*.test.ts
+tmp/

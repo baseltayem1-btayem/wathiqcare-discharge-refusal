@@ -1,0 +1,1 @@
+id,tenant_id,case_id,discharge_status,discharge_alternative,rights_acknowledgment_doc_path,refusal_form_doc_path,signature_method,signature_timestamp,signature_device,signature_ip_address,signature_hash,created_at,updated_at

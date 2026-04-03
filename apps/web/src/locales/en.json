@@ -1,0 +1,1056 @@
+{
+  "language": {
+    "label": "Language",
+    "english": "English",
+    "arabic": "Arabic"
+  },
+  "common": {
+    "na": "-",
+    "cancel": "Cancel",
+    "refresh": "Refresh",
+    "preview": "Preview",
+    "submitting": "Submitting...",
+    "noPreview": "No preview available.",
+    "backToCases": "Back to Cases",
+    "logout": "Logout"
+  },
+  "app": {
+    "name": "WathiqCare",
+    "moduleName": "Discharge Refusal",
+    "moduleTagline": "Compliance-focused legal-medical workflow.",
+    "activeWorkspace": "Active Workspace",
+    "secureMode": "Tenant-scoped secure mode enabled.",
+    "tenantName": "Tenant Workspace"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "cases": "Cases",
+    "consents": "Consents",
+    "newCase": "New Case",
+    "workflowDocs": "Workflow / Documents",
+    "refusalForms": "Refusal Forms",
+    "legalEscalation": "Legal Escalation",
+    "escalationTimeline": "Escalation Timeline",
+    "legalCaseFile": "Legal Case File",
+    "auditViewer": "Audit Viewer",
+    "icd11Validator": "ICD-11 Validator",
+    "emrIntegration": "EMR Integration",
+    "launchStatus": "Launch Status",
+    "compliance": "Compliance",
+    "bundles": "Bundles",
+    "admin": "Admin"
+  },
+  "home": {
+    "title": "WathiqCare Dashboard",
+    "subtitle": "Legal-medical discharge refusal management, audit trails, and evidence bundles.",
+    "login": "Login",
+    "cases": "Cases"
+  },
+  "login": {
+    "badge": "Secure Access",
+    "title": "WathiqCare Login",
+    "subtitle": "Sign in to access the legal-medical dashboard.",
+    "brandTitle": "Discharge Refusal",
+    "brandSubtitle": "Legal-Medical Workflow",
+    "brandDescription": "A platform to manage discharge refusal cases, documentation, and legal escalation in a structured, secure way.",
+    "formTitle": "Sign In",
+    "formSubtitle": "Enter your credentials to access the system.",
+    "email": "Email",
+    "password": "Password",
+    "showPassword": "Show",
+    "hidePassword": "Hide",
+    "rememberMe": "Remember me",
+    "errorInline": "Unable to sign in. Please verify your credentials and try again.",
+    "footer": "WathiqCare Medico-Legal Workflow Platform",
+    "submit": "Login",
+    "submitting": "Signing in...",
+    "failed": "Login failed"
+  },
+  "auth": {
+    "sessionRequired": "Session required",
+    "sessionMissing": "Your session is not available. Continue to the login page.",
+    "goToLogin": "Go to Login"
+  },
+  "field": {
+    "patientMrn": "Patient MRN",
+    "patientName": "Patient Name",
+    "idIqama": "ID / Iqama Number",
+    "roomNumber": "Room Number",
+    "attendingPhysician": "Attending Physician",
+    "dateOfBirth": "Date of Birth",
+    "mobileNumber": "Mobile Number",
+    "guardianName": "Guardian / Legal Representative",
+    "department": "Department",
+    "dischargeDecisionDate": "Discharge Decision Date",
+    "refusalReason": "Refusal Reason",
+    "discussionSummary": "Summary of Discussions",
+    "socialAdministrativeInterventions": "Social / Administrative Interventions",
+    "formsIssued": "Forms Issued",
+    "insuranceCoverageStatus": "Insurance Coverage Status",
+    "signerName": "Signer Name",
+    "signerRole": "Signer Role",
+    "signatureText": "Signature Text",
+    "dischargeCaseId": "Discharge Case ID"
+  },
+  "cases": {
+    "title": "Cases",
+    "subtitle": "Track discharge refusals and legal-medical workflow status.",
+    "newCase": "New Case",
+    "loading": "Loading cases...",
+    "failedLoad": "Failed to load cases",
+    "table": {
+      "mrn": "MRN",
+      "patient": "Patient",
+      "status": "Status",
+      "signer": "Signer",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "open": "Open",
+    "noCases": "No cases found."
+  },
+  "newCase": {
+    "title": "New Case",
+    "titleEdit": "Edit Case",
+    "subtitle": "Capture policy-required details and initialize discharge-refusal workflow.",
+    "pageTitle": "Case Registration and Discharge Plan",
+    "pageSubtitle": "Simplified form: basic case details, then discharge planning and communication",
+    "backDashboard": "Back to Dashboard",
+    "backToCaseDetails": "Back to Case Details",
+    "loadingExisting": "Loading existing case data...",
+    "failedLoad": "Failed to load case",
+    "failedSave": "Failed to save case",
+    "failedCreate": "Unable to create the case at the moment.",
+    "successCreated": "Case registered and submitted successfully.",
+    "saveAsNew": "Save as New Case",
+    "create": "Create Case",
+    "saving": "Saving...",
+    "sections": {
+      "registrationTitle": "1) Case Registration Data",
+      "planTitle": "2) Create Discharge Plan",
+      "instructionsTitle": "3) Discharge Instructions",
+      "routeTitle": "4) Select Discharge Route",
+      "notificationTitle": "5) Notification and Signature"
+    },
+    "labels": {
+      "sendDischargeOrderRequest": "Send a request to physician to issue discharge order",
+      "medicalCondition": "Current Medical Condition",
+      "preferredLanguage": "Preferred Language",
+      "livingAlone": "Is the patient living alone?",
+      "hasCaregiver": "Do you have a caregiver or family member available to assist with post-discharge care?",
+      "dischargeDate": "Date of Discharge (MM-DD-YYYY)",
+      "signatureOptional": "Signature (optional and non-blocking)"
+    },
+    "placeholders": {
+      "admissionDepartment": "Admitting department",
+      "dateOfBirth": "Date of Birth",
+      "primaryMobile": "Primary Mobile Number",
+      "email": "Email",
+      "gender": "Gender",
+      "homeAddress": "Home Address",
+      "streetName": "Street Name",
+      "cityName": "City",
+      "districtName": "District",
+      "postalCode": "Postal Code",
+      "poBox": "PO Box",
+      "admissionReason": "Reason for hospital admission",
+      "dischargeDateFormat": "MM-DD-YYYY",
+      "preferredDestination": "Preferred Discharge Destination",
+      "additionalInstructions": "Additional Comments or Instructions",
+      "medicationInstructions": "Medication usage instructions",
+      "followupAppointment": "Follow-up appointment",
+      "contactInfoAfterDischarge": "Contact information"
+    },
+    "select": {
+      "pleaseSelect": "Please Select",
+      "arabic": "Arabic",
+      "english": "English",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "dischargePlanType": {
+      "outpatientFollowup": "Discharge with follow-up",
+      "homecareRisk": "Discharge with home care plan"
+    },
+    "notification": {
+      "emailPrimary": "Send by email (primary option)"
+    },
+    "signatureMethod": {
+      "email": "Email Acknowledgment",
+      "nafez": "Nafath",
+      "tablet": "Tablet Signature"
+    },
+    "actions": {
+      "submit": "Submit",
+      "resendOrder": "Resend discharge order request to physician",
+      "enableEmailDelivery": "Enable email delivery"
+    }
+  },
+  "archive": {
+    "title": "Archive",
+    "subtitle": "Search previous cases by name, identity number, or case file number",
+    "backDashboard": "Back to Dashboard",
+    "searchPlaceholder": "Search by name / ID / MRN / case number",
+    "search": "Search",
+    "searching": "Searching...",
+    "table": {
+      "recordNumber": "Record Number",
+      "patientName": "Patient Name",
+      "workflowProgress": "Workflow Progress",
+      "status": "Status",
+      "date": "Date",
+      "action": "Action"
+    },
+    "noSavedStages": "No saved stages",
+    "open": "Open",
+    "noMatchingResults": "No matching results."
+  },
+  "workflow": {
+    "action": {
+      "recordDischargeDecision": "Record Discharge Decision",
+      "startRefusalWorkflow": "Start Refusal Workflow",
+      "homeHealthcareAgreement": "Home Healthcare Agreement",
+      "generateRefusalForm": "Generate Refusal Form",
+      "generateFinancialNotice": "Generate Financial Responsibility Notice",
+      "markPatientCounseled": "Mark Patient Counseled",
+      "referSocialServices": "Refer to Social Services",
+      "escalate": "Escalate to Legal & Compliance",
+      "sendEmailNotice": "Send Email Notice",
+      "downloadGenerated": "Download Generated Document",
+      "viewGenerated": "View Generated Document",
+      "openRefusalPdf": "Open Refusal PDF",
+      "generateBundle": "Generate Bundle",
+      "refreshDocuments": "Refresh Documents"
+    },
+    "department": {
+      "attendingPhysician": "Attending Physician",
+      "nursing": "Nursing",
+      "patientAffairs": "Patient Affairs",
+      "patientAffairsSocialServices": "Patient Affairs / Social Services",
+      "nursingPatientAffairs": "Nursing / Patient Affairs",
+      "legalCompliance": "Legal / Compliance",
+      "compliance": "Compliance",
+      "legal": "Legal"
+    },
+    "next": {
+      "recordRefusalIfNeeded": "If discharge is refused, start refusal workflow.",
+      "documentCommunication": "Document communication and counseling details.",
+      "coordinateSupport": "Coordinate support and social intervention.",
+      "issueForms": "Issue required policy forms and notices.",
+      "generateFinancialNotice": "Generate and communicate financial responsibility notice.",
+      "escalateIfPersists": "Escalate to Legal / Compliance if refusal persists beyond 24 hours.",
+      "legalReview": "Legal department review and final disposition.",
+      "escalateNow": "Escalate to Legal & Compliance"
+    },
+    "panel": {
+      "title": "Patient Discharge Plan Workflow",
+      "empty": "Workflow will appear after case data is loaded.",
+      "escalationRequired": "Escalation Required",
+      "persisted24h": "Refusal has persisted more than 24 hours after discharge decision.",
+      "escalationDue": "Escalation due since {date}.",
+      "responsibleDepartment": "Responsible Department",
+      "responsiblePerson": "Responsible Person",
+      "nextAction": "Next Action",
+      "policyValidation": "Policy Validation",
+      "policyReady": "All required policy documentation is complete.",
+      "policyMissing": "Missing {count} required policy documentation item(s)."
+    },
+    "stage": {
+      "medical_assessment": "Medical Assessment",
+      "legal_capacity_check": "Legal Capacity Check",
+      "authorized_signatory_identification": "Authorized Signatory Identification",
+      "discharge_plan_preparation": "Discharge Plan Preparation",
+      "forms_and_consent_presentation": "Forms and Consent Presentation",
+      "approval_or_refusal_path": "Approval or Refusal Path",
+      "legal_escalation_if_needed": "Legal Escalation if Needed",
+      "final_verification": "Final Verification",
+      "execute_discharge_or_hold": "Execute Discharge or Hold",
+      "medical_discharge_decision": "Medical Discharge Decision",
+      "initial_communication": "Initial Communication",
+      "support_and_intervention": "Support and Intervention",
+      "refusal_form": "Refusal Form",
+      "official_notification": "Official Notification",
+      "escalation": "Escalation",
+      "closed": "Closed"
+    },
+    "progressState": {
+      "completed": "Completed",
+      "current": "Current",
+      "upcoming": "Upcoming",
+      "escalationRequired": "Escalation required"
+    },
+    "pageTitle": "Patient Discharge Plan Workflow",
+    "pageSubtitle": "Track discharge refusal workflow stages and case progress",
+    "badge": "Workflow Management",
+    "kpi": {
+      "totalWorkflows": "Total Workflows",
+      "activeWorkflows": "Active Workflows",
+      "completedWorkflows": "Completed"
+    },
+    "filterAll": "All Cases",
+    "sortByNewest": "Newest First",
+    "sortByOldest": "Oldest First",
+    "noCases": "No workflow cases found.",
+    "loadingCases": "Loading workflow cases...",
+    "unknownDate": "Unknown date",
+    "viewDetails": "View Details"
+  },
+  "caseDetails": {
+    "caseTitle": "Case Details",
+    "caseTitleWithName": "Case {name}",
+    "subtitle": "Policy-driven refusal workflow aligned with the active tenant's discharge-refusal requirements.",
+    "failedLoad": "Failed to load case details",
+    "workflowActionFailed": "Workflow action failed",
+    "failedBuildPreview": "Failed to build preview",
+    "failedGenerateDocument": "Failed to generate document",
+    "failedGenerateBundle": "Failed to generate evidence bundle",
+    "failedOpenPdf": "Failed to open PDF",
+    "actionCompleted": "Action completed: {action}",
+    "generatedSuccess": "{title} generated successfully.",
+    "bundleGenerated": "Evidence bundle generated: {file}",
+    "useCardsDownload": "Use generated form cards below to view and download.",
+    "useCardsView": "Use generated form cards below to open document previews.",
+    "loadingWorkflow": "Loading case workflow...",
+    "escalationRequired": "Escalation Required",
+    "escalationBody": "Refusal is still active beyond 24h after discharge decision. Escalate to Legal & Compliance.",
+    "tab": {
+      "overview": "Overview",
+      "consents": "Consents",
+      "agreements": "Agreements",
+      "roi": "Release of Information",
+      "archive": "Archive",
+      "audit": "Audit"
+    },
+    "overview": {
+      "caseProfile": "Case Profile",
+      "mrn": "MRN",
+      "patient": "Patient",
+      "workspaceTitle": "Patient Workspace",
+      "workspaceSubtitle": "Core patient details and the current case summary.",
+      "progressTitle": "Patient Discharge Plan Workflow",
+      "progressCurrentDescription": "Track the current policy stage and move directly to available steps from the case pathway.",
+      "progressPlannedDescription": "Review the workflow stages defined at case creation together with the available progress updates.",
+      "patientInfoTitle": "Patient Information",
+      "additionalInfoTitle": "Additional Information",
+      "caseSummaryTitle": "Case Summary",
+      "status": "Status",
+      "created": "Created",
+      "signer": "Signer",
+      "signedAt": "Signed At",
+      "refusalReason": "Refusal Reason",
+      "selectRefusalReason": "Select refusal reason",
+      "saveRefusalReason": "Save Reason",
+      "refusalReasonSaved": "Refusal reason updated successfully.",
+      "refusalReasonSaveFailed": "Failed to update the refusal reason.",
+      "refusalReasonHelpDecision": "Record the discharge decision first, then document the reason for refusal according to the policy stage.",
+      "refusalReasonHelpCommunication": "Choose the reason captured during the initial communication and counseling step.",
+      "refusalReasonHelpSupport": "Choose the operational reason documented during Patient Affairs or Social Services support.",
+      "refusalReasonHelpRefusalForm": "Select the refusal reason that supports form issuance and acknowledgment capture.",
+      "refusalReasonHelpOfficialNotification": "Select the reason that justifies issuing the financial responsibility notice.",
+      "refusalReasonHelpEscalation": "Select the reason that remains active after notice issuance and supports escalation review."
+    },
+    "documentTitles": {
+      "dischargeRefusalForm": "Medical Discharge Refusal Form",
+      "informedConsent": "Informed Consent",
+      "financialResponsibilityNotice": "Financial Responsibility Notice",
+      "homeHealthcareAgreement": "Home Healthcare Agreement",
+      "equipmentLiability": "Equipment Liability",
+      "releaseOfInformation": "Release of Information"
+    },
+    "refusalReasons": {
+      "needsAdditionalClinicalExplanation": "Needs additional clinical explanation",
+      "familyOrGuardianNeedsTime": "Family or guardian needs more time",
+      "requestsExtendedStay": "Requests an extended hospital stay",
+      "caregiverOrHomeSupportUnavailable": "Caregiver or home support is unavailable",
+      "homecareOrEquipmentNotReady": "Home healthcare or equipment is not ready",
+      "transportOrDestinationNotReady": "Transport or destination is not ready",
+      "refusesToSignAcknowledgment": "Refuses to sign the acknowledgment",
+      "financialResponsibilityConcern": "Financial responsibility concern",
+      "continuedRefusalAfterNotice": "Refusal continues after notice issuance",
+      "otherDocumentedPolicyReason": "Other documented policy reason"
+    },
+    "consents": {
+      "title": "Consents",
+      "subtitle": "View informed consent status and the related signatures for this case.",
+      "openInformedConsent": "Open Informed Consent",
+      "signerName": "Signer Name",
+      "signedAt": "Signed At",
+      "noDocuments": "No consent documents are available for this case yet."
+    },
+    "agreements": {
+      "title": "Agreements",
+      "subtitle": "Case agreements such as the Home Healthcare Agreement.",
+      "noDocuments": "No agreement documents have been published yet."
+    },
+    "roi": {
+      "title": "Release of Information",
+      "subtitle": "Monitor ROI requests and the associated legal handling requirements.",
+      "statusLabel": "ROI Status",
+      "pendingLegalReview": "Pending Legal Review",
+      "noOpenEscalation": "No Open ROI Escalation",
+      "responsibleDepartmentLabel": "Responsible Department",
+      "responsibleDepartmentValue": "Medical Records / Legal",
+      "noDocuments": "No ROI documents are attached yet."
+    },
+    "archive": {
+      "title": "Document Issuance Workspace",
+      "subtitle": "Generate legal forms, send them for signature, issue the final PDF, and archive the record.",
+      "document": "Document",
+      "generation": "Generation",
+      "signature": "Signature",
+      "finalPdf": "Final PDF",
+      "generated": "Generated",
+      "readyToGenerate": "Ready to Generate",
+      "planned": "Planned",
+      "signatureEnabled": "Signature Flow Enabled",
+      "notWired": "Not Wired",
+      "issued": "Issued",
+      "pendingSignature": "Pending Signature",
+      "generateDocument": "Generate Document",
+      "sendForSignature": "Send for Signature",
+      "tabletMobileLink": "Tablet + Mobile Link",
+      "verifySignature": "Verify Signature",
+      "issueFinalPdf": "Issue Final PDF",
+      "archiveDocument": "Archive Document"
+    },
+    "messages": {
+      "templateComingSoon": "{template} will be enabled through the backend legal templates in the next release.",
+      "noSignaturePath": "This document does not have an enabled electronic signature path yet.",
+      "signatureVerifiedAt": "Signature verified at {date}.",
+      "noVerifiedSignature": "No verified signature is available for this case yet.",
+      "finalPdfAfterSignature": "The final signed PDF will be issued automatically after the electronic signature is completed.",
+      "archiveCompleted": "Archive action completed through evidence bundle generation.",
+      "emailPrompt": "Enter the recipient email address to send the workflow notice",
+      "emailSent": "Workflow email notification sent successfully.",
+      "emailRecorded": "Workflow notification recorded successfully.",
+      "emailFailed": "Failed to send the workflow email notification.",
+      "workflowServiceUnavailable": "Workflow service is temporarily unavailable. Core case details remain accessible while workflow actions are disabled."
+    },
+    "audit": {
+      "title": "Audit Trail",
+      "noRecords": "No audit records found."
+    },
+    "previewBuilding": "Building document preview...",
+    "validationBlocked": "Cannot proceed. Missing required fields: {fields}",
+    "policyChecklist": {
+      "title": "Policy Documentation Checklist",
+      "ready": "Documentation Complete",
+      "missing": "Missing Documentation",
+      "completed": "Documented",
+      "pending": "Pending"
+    }
+  },
+  "documents": {
+    "generatedForms": "Generated Forms",
+    "none": "No forms generated yet for this case.",
+    "generatedAt": "Generated at {date}",
+    "code": "Code: {code}",
+    "opening": "Opening...",
+    "downloading": "Downloading...",
+    "failedOpen": "Failed to open document preview",
+    "failedDownload": "Failed to download document"
+  },
+  "preview": {
+    "validation": "Validation",
+    "allFieldsComplete": "All required fields are complete. Document can be generated.",
+    "missingFields": "Missing required fields",
+    "policyChecklist": "Policy Checklist",
+    "policyCompleted": "Completed",
+    "policyPending": "Pending",
+    "close": "Close",
+    "generateFinal": "Generate Final Document",
+    "generating": "Generating...",
+    "iframeTitle": "Document preview",
+    "field": {
+      "patient_name": "Patient Name",
+      "patient_id_number": "ID Number",
+      "medical_record_number": "Medical Record Number",
+      "room_number": "Room Number",
+      "discharge_decision_at": "Discharge Decision Date",
+      "attending_physician": "Attending Physician",
+      "discussion_summary": "Summary of Discussions",
+      "refusal_reason": "Refusal Reason",
+      "forms_issued": "Forms Issued",
+      "social_administrative_interventions": "Social / Administrative Interventions",
+      "refusal_reason_or_summary": "Refusal Reason or Discussion Summary"
+    }
+  },
+  "dataCapture": {
+    "title": "Policy Data Capture",
+    "subtitle": "Complete these fields to enable policy-compliant form generation."
+  },
+  "bundles": {
+    "title": "Evidence Bundles",
+    "subtitle": "Generate and download legal evidence packages for discharge cases.",
+    "newBundle": "New Bundle",
+    "failedLoad": "Failed to load bundles",
+    "failedCreate": "Failed to create bundle",
+    "failedDownload": "Failed to download bundle",
+    "createTitle": "Create New Bundle",
+    "availableTitle": "Available Bundles",
+    "loading": "Loading bundles...",
+    "none": "No evidence bundles found.",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "download": "Download",
+    "downloading": "Downloading...",
+    "placeholder": "e.g. cc1e6c8e-5402-45bd-9dd5-785171d81f8a",
+    "generated": "Bundle generated: {file}"
+  },
+  "homePage": {
+    "badge": "Healthcare Governance Platform",
+    "platformType": "Enterprise Medico-Legal Platform",
+    "heroTitle": "Unified Digital Command Center for Medical Discharge and Legal Acknowledgment",
+    "heroSubtitle": "An enterprise-grade platform that connects clinical, legal, and patient affairs teams in a governed digital framework to document discharge decisions, manage refusal cases, and execute legal escalation with full compliance assurance.",
+    "enterSystem": "Enter System",
+    "requestDemo": "Request Demo",
+    "trustFactors": {
+      "dataSecurity": "Data Security",
+      "dataSecurityValue": "ISO 27001",
+      "compliance": "Compliance",
+      "complianceValue": "CBAHI / JCI",
+      "documentation": "Documentation",
+      "documentationValue": "Legally Defensible",
+      "traceability": "Traceability",
+      "traceabilityValue": "100%"
+    },
+    "whatTitle": "WathiqCare: Digital Governance for Healthcare Institutions",
+    "whatBody": "An integrated operating system designed to manage the full lifecycle of medical discharge decisions—from clinical judgment to legal documentation and regulatory escalation—providing an immutable audit trail that protects rights and supports institutional compliance.",
+    "coreModulesTitle": "Core Modules",
+    "coreModulesSubtitle": "Integrated platform covering all aspects of medico-legal governance",
+    "module": {
+      "consent": {
+        "title": "Digital Informed Consent",
+        "description": "Digital acknowledgment sessions with documented e-signatures and auditable legal evidence",
+        "badge": "Verified"
+      },
+      "refusal": {
+        "title": "Discharge Refusal Workflow",
+        "description": "Structured pathway to document physician decision and required administrative interventions",
+        "badge": "Structured"
+      },
+      "legal": {
+        "title": "Legal Escalation & Protection",
+        "description": "Build complete legal case files with clear escalation steps and defensible evidence archival",
+        "badge": "Protected"
+      },
+      "icd11": {
+        "title": "ICD-11 Code Validation",
+        "description": "Instant reference and validator for medical diagnoses per global standards",
+        "badge": "Precise"
+      },
+      "audit": {
+        "title": "Comprehensive Compliance & Audit",
+        "description": "Operational compliance dashboards with complete temporal audit log per case",
+        "badge": "Continuous"
+      },
+      "emr": {
+        "title": "Hospital System Integration",
+        "description": "Ready-built connectors for electronic medical record systems",
+        "badge": "Connected"
+      }
+    },
+    "institutionalRolesTitle": "Unified Platform for All Institutional Roles",
+    "role": {
+      "clinical": "Clinical Teams",
+      "clinicalCount": "Physicians & Caregivers",
+      "legal": "Legal Affairs",
+      "legalCount": "Counsels & Attorneys",
+      "patient": "Patient Relations",
+      "patientCount": "Social Services",
+      "compliance": "Compliance & Quality",
+      "complianceCount": "Internal Audit"
+    },
+    "ctaTitle": "Start Building Your Institutional Governance Framework",
+    "ctaSubtitle": "Join leading healthcare institutions adopting digital governance standards",
+    "footer": {
+      "allRightsReserved": "All rights reserved."
+    }
+  },
+  "dashboard": {
+    "pageTitle": "Dashboard",
+    "pageSubtitle": "Comprehensive overview of discharge refusal cases, workflows, and compliance metrics",
+    "quickStartSubtitle": "Get started quickly: register a new case, manage an existing case, or search the archive",
+    "badge": "Command Center",
+    "actions": {
+      "newCase": {
+        "title": "Register New Case",
+        "description": "Create the case file and start the discharge planning workflow.",
+        "cta": "Open Form"
+      },
+      "existingCase": {
+        "title": "Take Action on Existing Case",
+        "description": "Review open cases and complete pending actions.",
+        "cta": "View Cases"
+      },
+      "archive": {
+        "title": "Search Archive",
+        "description": "Quick access to previous cases using patient name or case number.",
+        "cta": "Open Archive"
+      }
+    },
+    "health": {
+      "loading": "Loading system health...",
+      "unavailable": "System health check unavailable.",
+      "viewLaunchStatus": "View Launch Status",
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "dbReachable": "reachable",
+      "dbUnreachable": "unreachable",
+      "statusLine": "DB {dbStatus} · {active}/{total} modules active · Inspected at {inspectedAt}",
+      "moduleActive": "Active",
+      "moduleOff": "Disabled",
+      "moduleDisabled": "Disabled",
+      "moduleStopped": "Stopped",
+      "moduleReason": "Reason: {reason}"
+    },
+    "kpi": {
+      "totalCases": "Total Cases",
+      "totalCasesSubtitle": "All discharge refusal cases",
+      "totalCasesTrend": "+12% from last month",
+      "activeCases": "Active Cases",
+      "activeCasesSubtitle": "Currently in progress",
+      "activeCasesTrend": "+5% from last week",
+      "escalatedCases": "Escalated Cases",
+      "escalatedCasesSubtitle": "Requiring legal review",
+      "closedCases": "Closed Cases",
+      "closedCasesSubtitle": "Successfully completed",
+      "auditEntries": "Audit Entries",
+      "auditEntriesSubtitle": "Compliance trail records",
+      "documentsGenerated": "Documents Generated",
+      "documentsSubtitle": "Forms and notices",
+      "openCases": "Open Cases",
+      "openCasesSubtitle": "Awaiting action"
+    },
+    "recentCases": "Recent Discharge Cases",
+    "recentCasesSubtitle": "Latest case activity",
+    "viewAll": "View all",
+    "caseId": "Case {id}",
+    "modulesTitle": "Platform Modules",
+    "modulesSubtitle": "Navigate to specialized workflow modules",
+    "module": {
+      "workflow": {
+        "title": "Patient Discharge Plan Workflow",
+        "description": "Track workflow stages and manage discharge refusal processes.",
+        "action": "Open Module"
+      },
+      "refusalForms": {
+        "title": "Refusal Forms",
+        "description": "Manage refusal forms, signatures, and financial notices."
+      },
+      "legalEscalation": {
+        "title": "Legal Escalation",
+        "description": "Review and manage cases escalated for legal intervention."
+      },
+      "icd11": {
+        "title": "ICD-11 Validator",
+        "description": "Validate medical diagnosis codes against ICD-11 standards."
+      },
+      "auditLog": {
+        "title": "Audit Log",
+        "description": "Review immutable audit trails and compliance records."
+      },
+      "emr": {
+        "title": "EMR Integration",
+        "description": "Monitor EMR system connections and data synchronization."
+      }
+    }
+  },
+  "legalEscalation": {
+    "pageTitle": "Legal Escalation",
+    "pageSubtitle": "Manage cases requiring legal intervention and compliance review",
+    "badge": "Legal Affairs",
+    "kpi": {
+      "activeCases": "Active Legal Cases",
+      "highRiskCases": "High Risk",
+      "underReview": "Under Review",
+      "resolvedCases": "Resolved"
+    },
+    "addNote": "Add Note",
+    "resolveCase": "Resolve Case",
+    "viewDetails": "View Details",
+    "noCases": "No legal escalation cases found.",
+    "loadingCases": "Loading legal cases...",
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "status": {
+      "active": "Active",
+      "underReview": "Under Review",
+      "resolved": "Resolved",
+      "highRisk": "High Risk"
+    },
+    "assignedCounsel": "Assigned Counsel",
+    "escalatedOn": "Escalated on",
+    "escalationReason": "Escalation Reason",
+    "caseTimeline": "Case Timeline",
+    "notes": "Notes",
+    "noNotes": "No notes yet",
+    "addNoteTitle": "Add Legal Note",
+    "noteText": "Note text",
+    "noteTextPlaceholder": "Enter your legal note...",
+    "resolveTitle": "Resolve Legal Case",
+    "resolutionNotes": "Resolution notes",
+    "resolutionNotesPlaceholder": "Enter resolution details...",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "close": "Close"
+  },
+  "refusalForms": {
+    "pageTitle": "Refusal Forms",
+    "pageSubtitle": "Manage discharge refusal forms, signatures, and financial notices",
+    "badge": "Form Management",
+    "kpi": {
+      "totalForms": "Total Forms",
+      "pendingSignature": "Pending Signature",
+      "completed": "Completed",
+      "requiresAction": "Requires Action"
+    },
+    "noCases": "No refusal forms found.",
+    "loadingForms": "Loading forms...",
+    "formType": "Form Type",
+    "patient": "Patient",
+    "status": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "signed": "Signed",
+      "completed": "Completed"
+    },
+    "createdDate": "Created",
+    "actions": "Actions",
+    "view": "View",
+    "sign": "Sign",
+    "download": "Download"
+  },
+  "icd11": {
+    "pageTitle": "ICD-11 Validator",
+    "pageSubtitle": "Validate medical diagnosis codes against ICD-11 international standards",
+    "badge": "Code Validation",
+    "kpi": {
+      "totalValidations": "Total Validations",
+      "validCodes": "Valid Codes",
+      "invalidCodes": "Invalid Codes",
+      "todayValidations": "Today"
+    },
+    "searchPlaceholder": "Enter ICD-11 code (e.g., 1A00)",
+    "validate": "Validate",
+    "validating": "Validating...",
+    "codeReference": "Code Reference",
+    "recentValidations": "Recent Validations",
+    "noValidations": "No recent validations",
+    "code": "Code",
+    "description": "Description",
+    "result": "Result",
+    "timestamp": "Timestamp",
+    "valid": "Valid",
+    "invalid": "Invalid"
+  },
+  "auditLog": {
+    "pageTitle": "Audit Log",
+    "pageSubtitle": "Immutable audit trail for compliance and regulatory review",
+    "badge": "Audit Trail",
+    "kpi": {
+      "totalEntries": "Total Entries",
+      "todayEntries": "Today",
+      "criticalEvents": "Critical Events",
+      "complianceScore": "Compliance Score"
+    },
+    "filters": "Filters",
+    "search": "Search logs...",
+    "dateRange": "Date Range",
+    "eventType": "Event Type",
+    "user": "User",
+    "applyFilters": "Apply Filters",
+    "exportLogs": "Export Logs",
+    "noLogs": "No audit logs found",
+    "loadingLogs": "Loading audit logs...",
+    "timestamp": "Timestamp",
+    "event": "Event",
+    "actor": "Actor",
+    "resource": "Resource",
+    "action": "Action",
+    "status": "Status",
+    "details": "Details"
+  },
+  "emrIntegration": {
+    "pageTitle": "EMR Integration",
+    "pageSubtitle": "Monitor electronic medical record system connections and sync status",
+    "badge": "System Integration",
+    "kpi": {
+      "connectedSystems": "Connected Systems",
+      "syncStatus": "Sync Status",
+      "lastSync": "Last Sync",
+      "syncErrors": "Sync Errors"
+    },
+    "connectors": "EMR Connectors",
+    "systemName": "System Name",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "error": "Error",
+      "syncing": "Syncing"
+    },
+    "lastSyncTime": "Last Sync",
+    "recordsSynced": "Records Synced",
+    "actions": "Actions",
+    "configure": "Configure",
+    "testConnection": "Test Connection",
+    "viewLogs": "View Logs",
+    "syncNow": "Sync Now",
+    "standards": "Integration Standards",
+    "standardsDescription": "Compliant with HL7 FHIR, DICOM, and IHE standards",
+    "recentActivity": "Recent Sync Activity",
+    "noActivity": "No recent sync activity"
+  },
+  "mdrw": {
+    "error": {
+      "loadFailed": "Failed to load Medical Discharge Refusal data",
+      "saveFailed": "Failed to save workflow update"
+    },
+    "dashboard": {
+      "title": "Medical Discharge Refusal Workflow",
+      "subtitle": "Operational dashboard for refusal management, legal documentation, and escalation controls.",
+      "caseList": "Refusal Cases",
+      "qualityLink": "Quality Monitoring",
+      "loading": "Loading refusal cases...",
+      "empty": "No refusal cases found.",
+      "escalationHint": "Escalation to Compliance and Legal must be triggered when refusal persists beyond 24 hours."
+    },
+    "metrics": {
+      "totalCases": "Total Refusal Cases",
+      "activeCases": "Active Refusal Cases",
+      "escalated24h": "Escalated After 24 Hours",
+      "formsLibrary": "Forms Library Templates",
+      "avgResolution": "Average Resolution Time (Hours)",
+      "escalated": "Escalated Cases"
+    },
+    "case": {
+      "title": "Case Detail Workflow Screen",
+      "subtitle": "Workflow case: {caseId}",
+      "backDashboard": "Back to Dashboard",
+      "backCase": "Back to Case",
+      "statusSection": "Case Workflow Status",
+      "currentStatus": "Current Status",
+      "currentStage": "Current Stage",
+      "openLegacyCase": "Open Case Detail",
+      "continueWorkflow": "Continue Workflow"
+    },
+    "screens": {
+      "initialCommunication": "Initial Communication Form",
+      "socialServices": "Social Services Intervention Form",
+      "signature": "Refusal Form Signature Screen",
+      "witness": "Witness Documentation Screen",
+      "financialNotice": "Financial Responsibility Notice Generator",
+      "escalation": "Escalation Review Screen"
+    },
+    "form": {
+      "saved": "Saved successfully.",
+      "saveContinue": "Save and Continue",
+      "initialCommunicationSubtitle": "Capture physician and nursing communication, risk explanation, and refusal details.",
+      "socialSubtitle": "Record Patient Affairs and Social Services intervention and outcomes.",
+      "witnessSubtitle": "Enable witness mode and capture two staff witnesses when patient refuses signature.",
+      "financialSubtitle": "Generate and acknowledge financial responsibility notice.",
+      "escalationSubtitle": "Record compliance/legal reviews and finalize disposition.",
+      "nursingNotes": "Nursing Notes",
+      "patientAffairsNotes": "Patient Affairs Notes",
+      "socialServicesNotes": "Social Services Notes",
+      "supportProvided": "Support Provided",
+      "witness1Name": "Witness 1 Name",
+      "witness1Role": "Witness 1 Role",
+      "witness2Name": "Witness 2 Name",
+      "witness2Role": "Witness 2 Role",
+      "representativeName": "Hospital Representative Name",
+      "representativeSignature": "Hospital Representative Signature",
+      "financialAcknowledged": "Financial responsibility acknowledged",
+      "generateNotice": "Generate Financial Notice",
+      "complianceNotes": "Compliance Notes",
+      "legalNotes": "Legal Notes",
+      "recordCompliance": "Record Compliance Review",
+      "recordLegal": "Record Legal Review",
+      "escalateNow": "Escalate to Compliance and Legal",
+      "closeAdmin": "Close - Administrative / Legal Action",
+      "closeDischarged": "Close - Patient Discharged"
+    },
+    "quality": {
+      "title": "Quality Monitoring Dashboard",
+      "subtitle": "Track refusal volume, escalations, resolution times, and distribution reports.",
+      "reasons": "Refusal Reasons Distribution",
+      "departments": "Cases by Department",
+      "monthly": "Monthly Review Reports",
+      "quarterly": "Quarterly Reports"
+    }
+  },
+  "status": {
+    "open": "Open",
+    "closed": "Closed",
+    "pending": "Pending",
+    "active": "Active",
+    "inactive": "Inactive",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "draft": "Draft",
+    "escalated": "Escalated",
+    "resolved": "Resolved",
+    "underReview": "Under Review"
+  },
+  "signaturePage": {
+    "officialText": "Official Approved Text",
+    "methodSection": "Acknowledgment / Signature Method",
+    "emailLabel": "Patient Email",
+    "tabletLabel": "Patient Tablet Signature",
+    "witnessLabel": "Witness Name",
+    "signatureRequired": "Tablet signature is required before confirming.",
+    "startBtn": "Start Verification",
+    "confirmBtn": "Confirm",
+    "statusLabel": "Status:",
+    "sessionIdLabel": "Session ID:",
+    "backToCase": "Back to Case",
+    "loading": "Loading...",
+    "method": {
+      "TABLET_SIGNATURE": "Tablet Signature",
+      "EMAIL_NOTICE": "Send Email Notification"
+    },
+    "status": {
+      "waiting": "Pending Verification",
+      "verified": "Verified",
+      "notificationSent": "Email Notification Sent",
+      "notificationRegistered": "Email notification registered (pending delivery)"
+    },
+    "message": {
+      "finalCreated": "Final version created.",
+      "emailSent": "Email notification sent to patient.",
+      "emailRegistered": "Email notification registered, verifying delivery status.",
+      "tabletActivated": "Tablet signature mode activated.",
+      "startFirst": "Please start the process first.",
+      "verifyFailed": "Could not verify signature.",
+      "startFailed": "Could not start signature session."
+    },
+    "refusalForm": {
+      "title": "Medical Discharge Refusal Form",
+      "subtitle": "Acknowledgment / Signature Method"
+    },
+    "financialNotice": {
+      "title": "Financial Responsibility Notice",
+      "subtitle": "Acknowledgment / Signature Method"
+    },
+    "informedConsent": {
+      "title": "Informed Consent",
+      "subtitle": "Informed Consent — Electronic Signature",
+      "completedMessage": "Informed consent completed successfully."
+    }
+  },
+  "workflowTree": {
+    "title": "Case Workflow Tree",
+    "subtitle": "Structured workflow for managing discharge refusal cases.",
+    "stepsCompleted": "{completed}/{total} steps completed",
+    "dischargePlanStatus": "Discharge Plan Status",
+    "sequentialNote": "Completed vs. remaining steps (sequential order enforced).",
+    "currentStep": "Current Step",
+    "allStepsCompleted": "All steps completed",
+    "completedSteps": "Completed Steps ({count})",
+    "remainingSteps": "Remaining Steps ({count})",
+    "noCompletedSteps": "No completed steps yet.",
+    "noRemainingSteps": "No remaining steps.",
+    "saveSelections": "Save Workflow Selections",
+    "savedLocally": "Workflow selections saved locally.",
+    "stepModalTitle": "Step {index}: {title}",
+    "close": "Close",
+    "saveAndNext": "Save & Next",
+    "field": {
+      "decisionStatus": "Decision Status",
+      "medicalStability": "Medical Stability",
+      "patientNotified": "Patient / Guardian Notified of Discharge Decision",
+      "barrierType": "Barrier Type",
+      "refusalType": "Refusal Type",
+      "socialWorkStatus": "Social Work Status",
+      "dischargeDestination": "Discharge Destination",
+      "formStatus": "Refusal Form Status",
+      "familyPresent": "Family Present",
+      "financialNoticeStatus": "Financial Notice Status",
+      "administrationNotified": "Administration Notified",
+      "escalationLevel": "Escalation Level",
+      "legalStatus": "Legal Status",
+      "closureOutcome": "Closure Outcome"
+    },
+    "option": {
+      "yes": "Yes",
+      "no": "No",
+      "decisionIssued": "Decision Issued",
+      "pendingPhysician": "Pending Physician Order",
+      "stableForDischarge": "Stable for Discharge",
+      "pendingReview": "Pending Review",
+      "notYetStable": "Not Yet Stable",
+      "patientRefuses": "Patient Refuses Discharge",
+      "familyRefuses": "Family Refuses Plan",
+      "noAcceptingFacility": "No Accepting Facility",
+      "noPayer": "No Payer / Insurance Coverage",
+      "noCapacity": "No Legal Capacity / No Surrogate",
+      "behavioralConcern": "Behavioral / Safety Concern",
+      "verbalRefusal": "Verbal Refusal",
+      "writtenRefusal": "Written Refusal",
+      "familyRefusal": "Family Refusal",
+      "surrogateRefusal": "Surrogate Refusal",
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "notRequired": "Not Required",
+      "home": "Home",
+      "homeWithServices": "Home with Services",
+      "skilledNursing": "Skilled Nursing Facility",
+      "rehabilitation": "Rehabilitation Facility",
+      "other": "Other",
+      "notIssued": "Not Issued",
+      "drafted": "Drafted",
+      "pendingSignature": "Pending Signature",
+      "signed": "Signed",
+      "witnessedRefusal": "Witnessed Refusal Recorded",
+      "issued": "Issued",
+      "acknowledged": "Acknowledged",
+      "level1": "Level 1",
+      "level2": "Level 2",
+      "level3": "Level 3",
+      "notStarted": "Not Started",
+      "underReview": "Under Review",
+      "legalNoticePrepared": "Legal Notice Prepared",
+      "closedByLegal": "Closed by Legal",
+      "discharged": "Discharged",
+      "leftAgainstAdvice": "Left Against Medical Advice",
+      "administrativeDischarge": "Administrative Discharge",
+      "transferred": "Transferred",
+      "caseCancelled": "Case Cancelled"
+    }
+  },
+  "stepper": {
+    "title": "Case Journey",
+    "nextAction": "Next Step",
+    "steps": {
+      "caseData": "Case Data",
+      "dischargeDecision": "Discharge Decision",
+      "patientNotice": "Patient Notice",
+      "responseSignature": "Response & Signature",
+      "documents": "Documents",
+      "escalation": "Escalation",
+      "finalFile": "Final File"
+    },
+    "status": {
+      "completed": "Completed",
+      "inProgress": "In Progress",
+      "pending": "Pending",
+      "actionNeeded": "Action Needed",
+      "notRequired": "Not Required"
+    },
+    "nextActions": {
+      "completeCaseData": "Complete case data",
+      "recordDischargeDecision": "Record discharge decision",
+      "sendPatientNotice": "Send patient notice",
+      "recordResponse": "Record patient response & signature",
+      "generateDocuments": "Generate required documents",
+      "escalateCase": "Escalation required",
+      "buildFinalPackage": "Build final evidence package",
+      "caseComplete": "Case complete"
+    }
+  }
+}

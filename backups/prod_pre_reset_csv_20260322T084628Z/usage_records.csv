@@ -1,0 +1,12 @@
+id,tenant_id,metric,value,unit,period_date,recorded_at,metadata
+305019b1-4c4b-4a1d-a8d4-10b9d712489f,86f33ca1-9c02-421c-a3bd-5a1d06cf3521,ACTIVE_USERS,1,count,2026-03-08,2026-03-08 04:31:14.788+00,"{""source"": ""seed""}"
+fabf0010-1dc3-4df2-a425-1508efde235d,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,CASES,1,count,2026-03-08,2026-03-08 07:20:22.407+00,"{""caseId"": ""969cee3a-28a9-48ae-a0f5-1bab73e7a541"", ""source"": ""api/cases""}"
+5978480f-002d-4307-8e57-8572565a37b5,86f33ca1-9c02-421c-a3bd-5a1d06cf3521,ACTIVE_USERS,1,count,2026-03-09,2026-03-09 17:50:07.183+00,"{""source"": ""seed""}"
+37405af1-67a2-45e2-9ea3-2560ba1b09a3,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,CASES,2,count,2026-03-09,2026-03-09 09:49:34.594+00,"{""caseId"": ""23b3b476-4d21-459d-b132-758f16388d6c"", ""source"": ""api/cases""}"
+d83135a5-fef2-4909-ab76-c209bc6d9a6a,86f33ca1-9c02-421c-a3bd-5a1d06cf3521,ACTIVE_USERS,1,count,2026-03-10,2026-03-10 02:05:03.836+00,"{""source"": ""seed""}"
+52cf4ccc-95e3-42e3-88a1-e50cfb924d0c,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,CASES,1,count,2026-03-11,2026-03-11 02:05:36.348+00,"{""caseId"": ""e336b152-635a-4c47-868b-1a85615d76e7"", ""source"": ""api/cases""}"
+48bb696b-b211-4406-a5d8-1aacbd960237,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,ACTIVE_USERS,3,count,2026-03-11,2026-03-11 17:50:47.907+00,
+70d72bac-4bc9-4535-b6e1-2f303a1065ea,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,CASES,2,count,2026-03-14,2026-03-14 00:17:30.658+00,"{""caseId"": ""a7def7fb-ac96-4c91-8727-88bf8e1627c9"", ""source"": ""api/cases""}"
+8a797fbc-2f19-4fef-9036-9278acee5da6,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,ACTIVE_USERS,4,count,2026-03-14,2026-03-14 22:44:57.785+00,
+79131dd5-9605-42f3-8975-afd99377f3b4,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,CASES,1,count,2026-03-17,2026-03-17 19:40:57.604+00,"{""caseId"": ""42958bbc-485c-4535-abc7-48220f6c5ebf"", ""source"": ""api/cases""}"
+2b7b317d-cc12-48de-ac35-441a442c4802,0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,CASES,1,count,2026-03-18,2026-03-18 15:51:41.948+00,"{""caseId"": ""3db4571d-0f4a-4ac6-ac83-b7ebba609406"", ""source"": ""api/cases""}"

@@ -1,0 +1,1 @@
+id,tenant_id,case_id,patient_id,recipient_email,cc,subject,template_name,status,provider,sent_at,created_by,error_message,attachment_metadata,created_at

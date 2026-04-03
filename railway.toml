@@ -1,0 +1,15 @@
+[build]
+builder = "dockerfile"
+# Railway service rootDirectory=apps/api/ is the build context;
+# this Dockerfile uses paths relative to that directory.
+dockerfilePath = "apps/api/Dockerfile"
+
+[deploy]
+# Explicitly set startCommand to override any persisted dashboard value.
+# sh -c guarantees $PORT is shell-expanded before passing to uvicorn.
+startCommand = "sh -c 'if [ -d /app/apps/api ]; then cd /app/apps/api; fi; uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000} --timeout-keep-alive 120 --timeout-graceful-shutdown 30'"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+healthcheckInterval = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

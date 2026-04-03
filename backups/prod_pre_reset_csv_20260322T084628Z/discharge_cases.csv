@@ -1,0 +1,1 @@
+id,tenant_id,patient_id,created_by,case_number,patient_name,mrn,room_number,department,attending_physician_user_id,attending_physician_name,current_stage_code,discharge_decision_date,discharge_plan_summary,accepted_at,refused_at,updated_at,status,refusal_reason,signer_name,signer_role,signature_text,signed_at,pdf_file,created_at

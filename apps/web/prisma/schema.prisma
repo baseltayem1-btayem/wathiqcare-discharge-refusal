@@ -1,0 +1,955 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlanCode {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  PAUSED
+  CANCELED
+  EXPIRED
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MANAGER
+  BILLING
+  MEMBER
+  VIEWER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  REMOVED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum TenantRoleStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum UserType {
+  PLATFORM_ADMIN
+  TENANT_ADMIN
+  TENANT_USER
+}
+
+enum CaseStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+  ARCHIVED
+}
+
+enum CaseType {
+  GENERAL
+  DISCHARGE_REFUSAL
+}
+
+enum DocumentType {
+  CASE_FILE
+  DISCHARGE_REFUSAL_FORM
+  FINANCIAL_RESPONSIBILITY_NOTICE
+  OTHER
+}
+
+enum DocumentStatus {
+  DRAFT
+  GENERATED
+  SIGNED
+  ARCHIVED
+}
+
+enum UsageMetric {
+  ACTIVE_USERS
+  CASES
+  DOCUMENTS
+  STORAGE_BYTES
+  API_REQUESTS
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum SubscriptionEventType {
+  CREATED
+  UPDATED
+  RENEWED
+  CANCELED
+  PAST_DUE
+  PLAN_CHANGED
+  SEAT_CHANGED
+  PAYMENT_FAILED
+  PAYMENT_SUCCEEDED
+}
+
+enum OperationDepartment {
+  PHARMACY
+  NURSING
+  LEGAL
+  LABORATORY
+  RADIOLOGY
+  CASE_MANAGEMENT
+  PATIENT_RELATIONS
+  BILLING_INSURANCE
+  ADMIN_MEDICAL_DIRECTOR
+}
+
+enum OperationPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum SlaState {
+  ON_TRACK
+  AT_RISK
+  BREACHED
+}
+
+enum EscalationLevel {
+  NONE
+  SUPERVISOR
+  MANAGER
+  DIRECTOR
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model Tenant {
+  id                 String              @id @default(uuid())
+  name               String
+  code               String              @unique
+  domain             String?
+  isActive           Boolean             @default(true) @map("is_active")
+  timezone           String?             @default("UTC")
+  country            String?
+  billingEmail       String?             @map("billing_email")
+  metadata           Json?
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  users              User[]              @relation("PrimaryTenantUsers")
+  memberships        TenantMembership[]
+  invitations        Invitation[]
+  subscriptions      Subscription[]
+  cases              Case[]
+  dischargeRefusalCases DischargeRefusalCase[]
+  homeCarePlans      HomeCarePlan[]
+  equipmentRequests  EquipmentRequest[]
+  transferRequests   TransferRequest[]
+  patientFinancialLiabilities PatientFinancialLiability[]
+  documents          Document[]
+  auditLogs          AuditLog[]
+  usageRecords       UsageRecord[]
+  invoices           Invoice[]
+  subscriptionEvents SubscriptionEvent[]
+  caseOperationStates CaseOperationState[]
+  caseAssignmentHistory CaseAssignmentHistory[]
+  caseStepEvents      CaseStepEvent[]
+  operationNotifications OperationNotification[]
+  departmentSlaConfigs DepartmentSlaConfig[]
+  departments        Department[]
+  tenantRoles        TenantRole[]
+  roleAssignments    UserRoleAssignment[]
+  allowedDomains     TenantAllowedDomain[]
+  branding                    TenantBranding?
+  dashboardAlerts             DashboardAlert[]
+  notificationDeliveryAttempts NotificationDeliveryAttempt[]
+  alertAcknowledgments        AlertAcknowledgment[]
+  notificationSettings        TenantNotificationSetting?
+
+  @@map("tenants")
+}
+
+model TenantBranding {
+  id                            String   @id
+  tenantId                      String   @unique @map("tenant_id")
+  displayName                   String?  @map("display_name")
+  legalName                     String?  @map("legal_name")
+  licenseNumber                 String?  @map("license_number")
+  commercialRegistrationNumber  String?  @map("commercial_registration_number")
+  taxNumber                     String?  @map("tax_number")
+  contactEmail                  String?  @map("contact_email")
+  contactPhone                  String?  @map("contact_phone")
+  addressLine1                  String?  @map("address_line1")
+  addressLine2                  String?  @map("address_line2")
+  city                          String?
+  country                       String?
+  postalCode                    String?  @map("postal_code")
+  websiteUrl                    String?  @map("website_url")
+  logoUrl                       String?  @map("logo_url")
+  documentHeaderText            String?  @map("document_header_text")
+  documentFooterText            String?  @map("document_footer_text")
+  legalDisclaimer               String?  @map("legal_disclaimer")
+  createdAt                     DateTime @default(now()) @map("created_at")
+  updatedAt                     DateTime @updatedAt @map("updated_at")
+
+  tenant                        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("tenant_branding")
+}
+
+model TenantAllowedDomain {
+  id        String   @id
+  tenantId  String   @map("tenant_id")
+  domain    String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, domain])
+  @@index([domain])
+  @@map("tenant_allowed_domains")
+}
+
+model Plan {
+  id                String          @id @default(uuid())
+  code              PlanCode        @unique
+  name              String
+  description       String?
+  priceMonthlyCents Int             @default(0) @map("price_monthly_cents")
+  priceYearlyCents  Int             @default(0) @map("price_yearly_cents")
+  seatLimit         Int             @default(5) @map("seat_limit")
+  features          Json
+  isActive          Boolean         @default(true) @map("is_active")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  subscriptions     Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                     String             @id @default(uuid())
+  tenantId               String             @map("tenant_id")
+  planId                 String             @map("plan_id")
+  status                 SubscriptionStatus @default(TRIALING)
+  billingInterval        BillingInterval    @default(MONTHLY) @map("billing_interval")
+  seatLimit              Int                @default(5) @map("seat_limit")
+  trialEndsAt            DateTime?          @map("trial_ends_at")
+  currentPeriodStart     DateTime           @map("current_period_start")
+  currentPeriodEnd       DateTime           @map("current_period_end")
+  cancelAt               DateTime?          @map("cancel_at")
+  canceledAt             DateTime?          @map("canceled_at")
+  externalCustomerId     String?            @map("external_customer_id")
+  externalSubscriptionId String?            @map("external_subscription_id")
+  metadata               Json?
+  version                Int                @default(1)
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  tenant                 Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan                   Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  invoices               Invoice[]
+  events                 SubscriptionEvent[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model User {
+  id                  String             @id @default(uuid())
+  tenantId            String             @map("tenant_id")
+  email               String             @unique
+  fullName            String             @map("full_name")
+  userType            UserType           @default(TENANT_USER) @map("user_type")
+  role                String
+  status              String             @default("active")
+  isActive            Boolean            @default(true) @map("is_active")
+  emailVerified       Boolean            @default(false) @map("email_verified")
+  emailVerifiedAt     DateTime?          @map("email_verified_at")
+  hashedPassword      String?            @map("hashed_password")
+  lastPasswordChangedAt DateTime?        @map("last_password_changed_at")
+  passwordResetTokenHash String?         @map("password_reset_token_hash")
+  passwordResetExpiresAt DateTime?       @map("password_reset_expires_at")
+  authProvider        String             @default("local_magic") @map("auth_provider")
+  failedLoginAttempts Int                @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime?          @map("locked_until")
+  lastLoginAt         DateTime?          @map("last_login_at")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  primaryTenant       Tenant             @relation("PrimaryTenantUsers", fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships         TenantMembership[]
+  sentInvitations     Invitation[]       @relation("InvitationSender")
+  acceptedInvitations Invitation[]       @relation("InvitationAcceptor")
+  createdCases        Case[]             @relation("CaseCreator")
+  updatedCases        Case[]             @relation("CaseUpdater")
+  generatedDocuments  Document[]         @relation("DocumentGenerator")
+  signedDocuments     Document[]         @relation("DocumentSigner")
+  auditLogs           AuditLog[]
+  ownedCaseOperationStates CaseOperationState[] @relation("CaseAssignedUser")
+  caseAssignmentsByActor CaseAssignmentHistory[] @relation("AssignmentActor")
+  caseStepEventsByActor CaseStepEvent[] @relation("StepEventActor")
+  operationNotifications OperationNotification[] @relation("NotificationRecipient")
+  operationNotificationsTriggered OperationNotification[] @relation("NotificationTrigger")
+  roleAssignments     UserRoleAssignment[]
+  alertAcknowledgments AlertAcknowledgment[]
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  code        String
+  name        String
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive])
+  @@map("departments")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String?
+  module      String
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  rolePermissions TenantRolePermission[]
+
+  @@index([module, isActive])
+  @@map("permissions")
+}
+
+model TenantRole {
+  id              String           @id @default(uuid())
+  tenantId        String           @map("tenant_id")
+  code            String
+  name            String
+  description     String?
+  status          TenantRoleStatus @default(ACTIVE)
+  isTemplate      Boolean          @default(false) @map("is_template")
+  clonedFromRoleId String?         @map("cloned_from_role_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  permissions     TenantRolePermission[]
+  users           UserRoleAssignment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@map("tenant_roles")
+}
+
+model TenantRolePermission {
+  id            String    @id @default(uuid())
+  tenantRoleId  String    @map("tenant_role_id")
+  permissionId  String    @map("permission_id")
+  allowed       Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenantRole    TenantRole  @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+  permission    Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantRoleId, permissionId])
+  @@index([permissionId])
+  @@map("tenant_role_permissions")
+}
+
+model UserRoleAssignment {
+  id            String    @id @default(uuid())
+  tenantId      String    @map("tenant_id")
+  userId        String    @map("user_id")
+  tenantRoleId  String    @map("tenant_role_id")
+  isPrimary     Boolean   @default(false) @map("is_primary")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantRole    TenantRole @relation(fields: [tenantRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, tenantRoleId])
+  @@index([tenantId, userId])
+  @@index([tenantId, tenantRoleId])
+  @@map("user_role_assignments")
+}
+
+model TenantMembership {
+  id         String           @id @default(uuid())
+  tenantId   String           @map("tenant_id")
+  userId     String           @map("user_id")
+  role       MembershipRole
+  status     MembershipStatus @default(ACTIVE)
+  joinedAt   DateTime         @default(now()) @map("joined_at")
+  invitedAt  DateTime?        @map("invited_at")
+  suspendedAt DateTime?       @map("suspended_at")
+  metadata   Json?
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId, status])
+  @@map("tenant_memberships")
+}
+
+model Invitation {
+  id              String           @id @default(uuid())
+  tenantId        String           @map("tenant_id")
+  email           String
+  role            MembershipRole
+  status          InvitationStatus @default(PENDING)
+  token           String           @unique
+  expiresAt       DateTime         @map("expires_at")
+  invitedByUserId String           @map("invited_by_user_id")
+  acceptedByUserId String?         @map("accepted_by_user_id")
+  acceptedAt      DateTime?        @map("accepted_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedBy       User             @relation("InvitationSender", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+  acceptedBy      User?            @relation("InvitationAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
+  @@index([email])
+  @@map("invitations")
+}
+
+model Case {
+  id               String      @id @default(uuid())
+  tenantId         String      @map("tenant_id")
+  caseNumber       String?     @map("case_number")
+  caseType         CaseType    @default(GENERAL) @map("case_type")
+  title            String?
+  status           CaseStatus  @default(OPEN)
+  workflowType     String?     @map("workflow_type")
+  patientName      String?     @map("patient_name")
+  patientIdNumber  String?     @map("patient_id_number")
+  medicalRecordNo  String?     @map("medical_record_no")
+  roomNumber       String?     @map("room_number")
+  createdByUserId  String?     @map("created_by_user_id")
+  updatedByUserId  String?     @map("updated_by_user_id")
+  closedAt         DateTime?   @map("closed_at")
+  metadata         Json?
+  version          Int         @default(1)
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  tenant           Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy        User?       @relation("CaseCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedBy        User?       @relation("CaseUpdater", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  documents        Document[]
+  auditLogs        AuditLog[]
+  dischargeRefusalCases DischargeRefusalCase[]
+  homeCarePlans      HomeCarePlan[]
+  equipmentRequests  EquipmentRequest[]
+  transferRequests   TransferRequest[]
+  patientFinancialLiabilities PatientFinancialLiability[]
+  operationState   CaseOperationState?
+  assignmentHistory CaseAssignmentHistory[]
+  stepEvents       CaseStepEvent[]
+  notifications    OperationNotification[]
+
+  @@unique([tenantId, caseNumber])
+  @@index([tenantId, status])
+  @@map("cases")
+}
+
+model DischargeRefusalCase {
+  id                  String      @id @default(uuid())
+  tenantId            String      @map("tenant_id")
+  caseId              String      @map("case_id")
+  dischargeStatus     String      @map("discharge_status")
+  dischargeAlternative String?    @map("discharge_alternative")
+  rightsAcknowledgmentDocPath String? @map("rights_acknowledgment_doc_path")
+  refusalFormDocPath  String?     @map("refusal_form_doc_path")
+  signatureMethod     String?     @map("signature_method")
+  signatureTimestamp  DateTime?   @map("signature_timestamp")
+  signatureDevice     String?     @map("signature_device")
+  signatureIpAddress  String?     @map("signature_ip_address")
+  signatureHash       String?     @map("signature_hash")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  tenant              Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  homeCarePlans       HomeCarePlan[]
+  equipmentRequests   EquipmentRequest[]
+  transferRequests    TransferRequest[]
+  financialLiabilities PatientFinancialLiability[]
+
+  @@index([tenantId, caseId])
+  @@map("discharge_refusal_cases")
+}
+
+model HomeCarePlan {
+  id                    String      @id @default(uuid())
+  tenantId              String      @map("tenant_id")
+  caseId                String      @map("case_id")
+  dischargeRefusalCaseId String     @map("discharge_refusal_case_id")
+  careType              String      @map("care_type")
+  equipmentRequired     Json        @map("equipment_required")
+  careProvider          String      @map("care_provider")
+  agreementDocPath      String?     @map("agreement_doc_path")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  tenant                Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                  Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  dischargeRefusalCase  DischargeRefusalCase @relation(fields: [dischargeRefusalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId])
+  @@map("home_care_plans")
+}
+
+model EquipmentRequest {
+  id                    String      @id @default(uuid())
+  tenantId              String      @map("tenant_id")
+  caseId                String      @map("case_id")
+  dischargeRefusalCaseId String     @map("discharge_refusal_case_id")
+  requestedEquipment    String      @map("requested_equipment")
+  department            String
+  status                String      @default("pending")
+  requestDocPath        String?     @map("request_doc_path")
+  temporaryApprovalDocPath String?  @map("temporary_approval_doc_path")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  tenant                Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                  Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  dischargeRefusalCase  DischargeRefusalCase @relation(fields: [dischargeRefusalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId])
+  @@map("equipment_requests")
+}
+
+model TransferRequest {
+  id                    String      @id @default(uuid())
+  tenantId              String      @map("tenant_id")
+  caseId                String      @map("case_id")
+  dischargeRefusalCaseId String     @map("discharge_refusal_case_id")
+  receivingHospital     String      @map("receiving_hospital")
+  transferReason        String      @map("transfer_reason")
+  medicalStabilityConfirmation Boolean @default(false) @map("medical_stability_confirmation")
+  authorizationDocPath  String?     @map("authorization_doc_path")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  tenant                Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                  Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  dischargeRefusalCase  DischargeRefusalCase @relation(fields: [dischargeRefusalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId])
+  @@map("transfer_requests")
+}
+
+model PatientFinancialLiability {
+  id                    String      @id @default(uuid())
+  tenantId              String      @map("tenant_id")
+  caseId                String      @map("case_id")
+  dischargeRefusalCaseId String     @map("discharge_refusal_case_id")
+  noticeDocPath         String?     @map("notice_doc_path")
+  accepted              Boolean     @default(false)
+  signedAt              DateTime?   @map("signed_at")
+  signatureMethod       String?     @map("signature_method")
+  signatureHash         String?     @map("signature_hash")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  tenant                Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                  Case        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  dischargeRefusalCase  DischargeRefusalCase @relation(fields: [dischargeRefusalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId])
+  @@map("patient_financial_liability")
+}
+
+model Document {
+  id                 String         @id @default(uuid())
+  tenantId           String         @map("tenant_id")
+  caseId             String?        @map("case_id")
+  documentType       DocumentType   @map("document_type")
+  status             DocumentStatus @default(DRAFT)
+  documentCode       String?        @map("document_code")
+  titleEn            String         @map("title_en")
+  titleAr            String?        @map("title_ar")
+  templateKey        String         @map("template_key")
+  versionLabel       String         @default("1.0") @map("version")
+  fileName           String         @map("file_name")
+  mimeType           String         @map("mime_type")
+  storagePath        String?        @map("storage_path")
+  previewHtml        String?        @map("preview_html") @db.Text
+  payloadJson        Json           @map("payload_json")
+  sizeBytes          BigInt         @default(0) @map("size_bytes")
+  generatedByUserId  String?        @map("generated_by_user_id")
+  generatedAt        DateTime       @default(now()) @map("generated_at")
+  signedByUserId     String?        @map("signed_by_user_id")
+  signedAt           DateTime?      @map("signed_at")
+  metadata           Json?
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  tenant             Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case               Case?          @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  generatedBy        User?          @relation("DocumentGenerator", fields: [generatedByUserId], references: [id], onDelete: SetNull)
+  signedBy           User?          @relation("DocumentSigner", fields: [signedByUserId], references: [id], onDelete: SetNull)
+  auditLogs          AuditLog[]
+
+  @@index([tenantId, documentType])
+  @@index([caseId])
+  @@map("documents")
+}
+
+model AuditLog {
+  id             String      @id @default(uuid())
+  tenantId       String      @map("tenant_id")
+  userId         String      @map("user_id")
+  entityType     String      @map("entity_type")
+  entityId       String      @map("entity_id")
+  action         String
+  details        String?
+  caseId         String?     @map("case_id")
+  documentId     String?     @map("document_id")
+  ipAddress      String?     @map("ip_address")
+  userAgent      String?     @map("user_agent")
+  metadataJson   Json?       @map("metadata_json")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  case           Case?       @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  document       Document?   @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model UsageRecord {
+  id           String      @id @default(uuid())
+  tenantId     String      @map("tenant_id")
+  metric       UsageMetric
+  value        BigInt
+  unit         String      @default("count")
+  periodDate   DateTime    @map("period_date") @db.Date
+  recordedAt   DateTime    @default(now()) @map("recorded_at")
+  metadata     Json?
+
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, metric, periodDate])
+  @@index([tenantId, recordedAt])
+  @@map("usage_records")
+}
+
+model Invoice {
+  id              String       @id @default(uuid())
+  tenantId        String       @map("tenant_id")
+  subscriptionId  String?      @map("subscription_id")
+  invoiceNumber   String       @map("invoice_number")
+  status          InvoiceStatus @default(DRAFT)
+  currency        String       @default("USD")
+  subtotalCents   Int          @default(0) @map("subtotal_cents")
+  taxCents        Int          @default(0) @map("tax_cents")
+  totalCents      Int          @default(0) @map("total_cents")
+  amountDueCents  Int          @default(0) @map("amount_due_cents")
+  amountPaidCents Int          @default(0) @map("amount_paid_cents")
+  dueAt           DateTime?    @map("due_at")
+  paidAt          DateTime?    @map("paid_at")
+  externalInvoiceId String?    @map("external_invoice_id")
+  metadata        Json?
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId, status])
+  @@map("invoices")
+}
+
+model SubscriptionEvent {
+  id               String                 @id @default(uuid())
+  tenantId         String                 @map("tenant_id")
+  subscriptionId   String?                @map("subscription_id")
+  eventType        SubscriptionEventType  @map("event_type")
+  status           String                 @default("success")
+  occurredAt       DateTime               @default(now()) @map("occurred_at")
+  actorUserId      String?                @map("actor_user_id")
+  metadata         Json?
+  createdAt        DateTime               @default(now()) @map("created_at")
+
+  tenant           Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription     Subscription?          @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, occurredAt])
+  @@index([subscriptionId])
+  @@map("subscription_events")
+}
+
+model CaseOperationState {
+  id                  String              @id @default(uuid())
+  tenantId            String              @map("tenant_id")
+  caseId              String              @unique @map("case_id")
+  currentStage        String              @default("CASE_CREATED") @map("current_stage")
+  currentStep         String              @default("case_created") @map("current_step")
+  assignedToUserId    String?             @map("assigned_to_user_id")
+  assignedDepartment  OperationDepartment @default(CASE_MANAGEMENT) @map("assigned_department")
+  assignmentTimestamp DateTime?           @map("assignment_timestamp")
+  waitingTimeMinutes  Int                 @default(0) @map("waiting_time_minutes")
+  priority            OperationPriority   @default(NORMAL)
+  slaDeadline         DateTime?           @map("sla_deadline")
+  slaState            SlaState            @default(ON_TRACK) @map("sla_state")
+  escalationLevel     EscalationLevel     @default(NONE) @map("escalation_level")
+  lastActionAt        DateTime?           @map("last_action_at")
+  lastActionByUserId  String?             @map("last_action_by_user_id")
+  completedStepsCount Int                 @default(0) @map("completed_steps_count")
+  totalStepsCount     Int                 @default(0) @map("total_steps_count")
+  status              String              @default("OPEN")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  tenant              Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                Case                @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  assignedTo          User?               @relation("CaseAssignedUser", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, assignedDepartment, slaState])
+  @@index([tenantId, assignedToUserId])
+  @@index([tenantId, priority, status])
+  @@map("case_operation_states")
+}
+
+model CaseAssignmentHistory {
+  id                   String              @id @default(uuid())
+  tenantId             String              @map("tenant_id")
+  caseId               String              @map("case_id")
+  fromUserId           String?             @map("from_user_id")
+  toUserId             String?             @map("to_user_id")
+  fromDepartment       OperationDepartment? @map("from_department")
+  toDepartment         OperationDepartment @map("to_department")
+  reason               String?
+  reassignedByUserId   String              @map("reassigned_by_user_id")
+  reassignedAt         DateTime            @default(now()) @map("reassigned_at")
+
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                 Case                @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  reassignedBy         User                @relation("AssignmentActor", fields: [reassignedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId, reassignedAt])
+  @@index([tenantId, toDepartment, reassignedAt])
+  @@map("case_assignment_history")
+}
+
+model CaseStepEvent {
+  id                   String              @id @default(uuid())
+  tenantId             String              @map("tenant_id")
+  caseId               String              @map("case_id")
+  stepCode             String              @map("step_code")
+  stageCode            String              @map("stage_code")
+  action               String
+  oldValue             Json?               @map("old_value")
+  newValue             Json?               @map("new_value")
+  actorUserId          String              @map("actor_user_id")
+  actorDepartment      OperationDepartment? @map("actor_department")
+  createdAt            DateTime            @default(now()) @map("created_at")
+
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                 Case                @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  actor                User                @relation("StepEventActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId, createdAt])
+  @@index([tenantId, stageCode, createdAt])
+  @@map("case_step_events")
+}
+
+model OperationNotification {
+  id                   String              @id @default(uuid())
+  tenantId             String              @map("tenant_id")
+  caseId               String?             @map("case_id")
+  recipientUserId      String              @map("recipient_user_id")
+  triggeredByUserId    String?             @map("triggered_by_user_id")
+  channel              NotificationChannel @default(IN_APP)
+  eventType            String              @map("event_type")
+  title                String
+  message              String
+  status               NotificationStatus  @default(PENDING)
+  readAt               DateTime?           @map("read_at")
+  sentAt               DateTime?           @map("sent_at")
+  metadata             Json?
+  createdAt            DateTime            @default(now()) @map("created_at")
+
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                 Case?               @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  recipient            User                @relation("NotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  triggeredBy          User?               @relation("NotificationTrigger", fields: [triggeredByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, recipientUserId, readAt])
+  @@index([tenantId, caseId, createdAt])
+  @@index([tenantId, eventType, createdAt])
+  @@map("operation_notifications")
+}
+
+model DepartmentSlaConfig {
+  id                    String              @id @default(uuid())
+  tenantId              String              @map("tenant_id")
+  department            OperationDepartment
+  stepCode              String              @map("step_code")
+  targetMinutes         Int                 @default(240) @map("target_minutes")
+  warnBeforeMinutes     Int                 @default(60) @map("warn_before_minutes")
+  escalateAfterMinutes  Int                 @default(0) @map("escalate_after_minutes")
+  escalationDepartment  OperationDepartment? @map("escalation_department")
+  isActive              Boolean             @default(true) @map("is_active")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, department, stepCode])
+  @@index([tenantId, department, isActive])
+  @@map("department_sla_configs")
+}
+
+model DashboardAlert {
+  id               String    @id @default(uuid())
+  tenantId         String    @map("tenant_id")
+  caseId           String?   @map("case_id")
+  alertKey         String    @map("alert_key")
+  alertType        String    @map("alert_type")
+  severity         String    @default("info")
+  title            String
+  message          String
+  caseDeepLink     String?   @map("case_deep_link")
+  isAcknowledged   Boolean   @default(false) @map("is_acknowledged")
+  acknowledgedBy   String?   @map("acknowledged_by")
+  acknowledgedAt   DateTime? @map("acknowledged_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  metadataJson     Json?     @map("metadata_json")
+
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  deliveryAttempts NotificationDeliveryAttempt[]
+  acknowledgments  AlertAcknowledgment[]
+
+  @@unique([tenantId, alertKey])
+  @@index([tenantId, alertType, createdAt(sort: Desc)])
+  @@index([tenantId, isAcknowledged])
+  @@index([severity])
+  @@map("dashboard_alerts")
+}
+
+model NotificationDeliveryAttempt {
+  id               String    @id @default(uuid())
+  tenantId         String    @map("tenant_id")
+  caseId           String?   @map("case_id")
+  alertId          String?   @map("alert_id")
+  channel          String
+  provider         String?
+  recipient        String
+  notificationType String    @map("notification_type")
+  status           String    @default("pending")
+  statusCode       Int?      @map("status_code")
+  failureReason    String?   @map("failure_reason")
+  attemptedAt      DateTime  @default(now()) @map("attempted_at")
+  metadataJson     Json?     @map("metadata_json")
+
+  tenant           Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alert            DashboardAlert? @relation(fields: [alertId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, channel, status])
+  @@index([tenantId, caseId, attemptedAt(sort: Desc)])
+  @@index([alertId])
+  @@map("notification_delivery_attempts")
+}
+
+model AlertAcknowledgment {
+  id               String   @id @default(uuid())
+  alertId          String   @map("alert_id")
+  tenantId         String   @map("tenant_id")
+  acknowledgedBy   String   @map("acknowledged_by")
+  acknowledgedAt   DateTime @default(now()) @map("acknowledged_at")
+  note             String?
+
+  tenant           Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alert            DashboardAlert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user             User          @relation(fields: [acknowledgedBy], references: [id], onDelete: Cascade)
+
+  @@index([alertId])
+  @@index([tenantId, acknowledgedBy])
+  @@map("alert_acknowledgments")
+}
+
+model TenantNotificationSetting {
+  id                              String   @id @default(uuid())
+  tenantId                        String   @unique @map("tenant_id")
+  emailEnabled                    Boolean  @default(true) @map("email_enabled")
+  dashboardEnabled                Boolean  @default(true) @map("dashboard_enabled")
+  whatsappEnabled                 Boolean  @default(false) @map("whatsapp_enabled")
+  whatsappSenderNumber            String?  @map("whatsapp_sender_number")
+  legalRecipientPhonesJson        Json?    @map("legal_recipient_phones_json")
+  legalRecipientEmailsJson        Json?    @map("legal_recipient_emails_json")
+  complianceRecipientEmailsJson   Json?    @map("compliance_recipient_emails_json")
+  notificationThresholdMinutes    Int      @default(1440) @map("notification_threshold_minutes")
+  escalationThresholdMinutes      Int      @default(2880) @map("escalation_threshold_minutes")
+  createdAt                       DateTime @default(now()) @map("created_at")
+  updatedAt                       DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_notification_settings")
+}

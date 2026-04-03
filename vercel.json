@@ -1,0 +1,7 @@
+{
+    "framework": "nextjs",
+    "buildCommand": "npm run build --workspace=@wathiqcare/web",
+    "installCommand": "npm install",
+    "ignoreCommand": "git diff --quiet HEAD^ HEAD ./apps/web",
+    "outputDirectory": "apps/web/.next"
+}

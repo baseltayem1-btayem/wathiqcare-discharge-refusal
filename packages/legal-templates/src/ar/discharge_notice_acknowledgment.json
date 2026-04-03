@@ -1,0 +1,35 @@
+{
+    "key": "discharge_notice_acknowledgment",
+    "version": "1.0.0",
+    "language": "ar",
+    "title": "إشعار إجراء الخروج من المستشفى",
+    "subtitle": "إشعار رسمي بصدور أمر الخروج الطبي",
+    "body": [
+        "يُشعر المريض / المريضة: {{patient_name}}",
+        "رقم السجل الطبي (MRN): {{mrn}}",
+        "رقم المواجهة / الزيارة: {{encounter_number}}",
+        "",
+        "أصدر الفريق الطبي في {{hospital_name}} أمر الخروج الطبي بتاريخ {{discharge_date}} وفق التوقيت: {{discharge_time}}.",
+        "",
+        "يُرجى مراجعة خطة الخروج الموضحة أدناه واتخاذ الإجراء المناسب من خلال هذه المنصة.",
+        "",
+        "خطة الخروج:",
+        "{{discharge_plan_summary}}",
+        "",
+        "يُؤكد المريض / وليّ الأمر أو ممثله القانوني استلام هذا الإشعار والاطلاع على محتواه كاملًا.",
+        "",
+        "تاريخ الاطلاع: {{acknowledgment_date}}"
+    ],
+    "signature_declaration": "أقر أنا الموقّع أدناه بأنني اطلعت على هذا الإشعار وفهمت محتواه.",
+    "legal_footer": "هذا الإشعار محفوظ توثيقيًا بموجب سياسة WathiqCare للوثائق الطبية-القانونية. يظل هذا الإشعار جزءًا من الملف الطبي-القانوني للمريض.",
+    "variables": [
+        "patient_name",
+        "mrn",
+        "encounter_number",
+        "hospital_name",
+        "discharge_date",
+        "discharge_time",
+        "discharge_plan_summary",
+        "acknowledgment_date"
+    ]
+}

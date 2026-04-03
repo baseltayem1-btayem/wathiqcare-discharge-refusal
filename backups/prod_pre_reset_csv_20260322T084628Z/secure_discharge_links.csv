@@ -1,0 +1,1 @@
+id,tenant_id,case_id,created_by,recipient_email,token_hash,expires_at,sent_via,delivery_status,accessed_at,revoked_at,decision_type,decision_name,decision_submitted_at,decision_ip_address,decision_user_agent,refusal_acknowledged_at,created_at

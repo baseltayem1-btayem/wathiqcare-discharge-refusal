@@ -1,0 +1,1 @@
+id,session_id,channel,provider,recipient,template_key,message_body,provider_message_id,delivery_status,sent_at,delivered_at,failed_at,failure_reason,created_at

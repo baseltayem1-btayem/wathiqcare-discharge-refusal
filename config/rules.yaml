@@ -1,0 +1,91 @@
+# WathiqCare Discharge Refusal Module – Configuration
+# =====================================================
+# This file defines the operational rules and parameters for the module.
+# Copy to config/rules.yaml and adjust values to match your deployment.
+
+# ---------------------------------------------------------------------------
+# ICD-11 Validation
+# ---------------------------------------------------------------------------
+icd11:
+  # strict: true  → validates against the known code set (offline)
+  # strict: false → validates format only (useful for development / testing)
+  strict: true
+  # Optional: URL of the WHO ICD-11 API for live validation
+  # api_url: "https://icd11.who.int/icd/api"
+  # api_token: ""   # set via environment variable ICD11_API_TOKEN
+
+# ---------------------------------------------------------------------------
+# Legal Escalation Timeline
+# ---------------------------------------------------------------------------
+escalation:
+  # Hours until each tier activates after a refusal is recorded
+  tier_24h_hours: 24
+  tier_48h_hours: 48
+  tier_72h_hours: 72
+  # E-mail / messaging endpoint for legal department notifications
+  legal_department_email: "legal@hospital.example.com"
+  # Enable / disable automatic notifications
+  auto_notify: true
+
+# ---------------------------------------------------------------------------
+# Audit Logging
+# ---------------------------------------------------------------------------
+audit:
+  # backend: "memory" (default) | "file" | "database"
+  backend: "memory"
+  # For file backend – path to the JSONL audit log file
+  # file_path: "/var/log/wathiqcare/audit.jsonl"
+  # Retain logs for (days) – set 0 for indefinite retention
+  retention_days: 0
+  # PDPL: mask PII in log exports (always recommended in production)
+  mask_pii: true
+
+# ---------------------------------------------------------------------------
+# Roles & Permissions
+# ---------------------------------------------------------------------------
+roles:
+  # List of permitted event categories per role.
+  # Values map to AuditLogger._ROLE_READ_PERMISSIONS in audit_logger.py
+  DOCTOR:
+    - DISCHARGE_ORDER
+    - REFUSAL_RECORD
+    - ICD11_VALIDATION
+  NURSE:
+    - REFUSAL_RECORD
+    - REFUSAL_FORM
+  LEGAL_OFFICER:
+    - REFUSAL_RECORD
+    - LEGAL_CASE
+    - ESCALATION
+    - REFUSAL_FORM
+    - REFUSAL_DOCUMENTATION
+  ADMIN:
+    - DISCHARGE_ORDER
+    - REFUSAL_RECORD
+    - ICD11_VALIDATION
+    - REFUSAL_FORM
+    - LEGAL_CASE
+    - ESCALATION
+    - REFUSAL_DOCUMENTATION
+    - AUDIT_ACCESS
+    - SYSTEM
+
+# ---------------------------------------------------------------------------
+# EMR / HIS Integration
+# ---------------------------------------------------------------------------
+emr:
+  # connector: "memory" (default) | "fhir_r4" | "epic" | "cerner"
+  connector: "memory"
+  # FHIR R4 base URL (required when connector is "fhir_r4")
+  # fhir_base_url: "https://emr.hospital.example.com/fhir/r4"
+  # Authentication token – set via environment variable EMR_API_TOKEN
+  # api_token: ""
+
+# ---------------------------------------------------------------------------
+# Forms
+# ---------------------------------------------------------------------------
+forms:
+  # Require a witness signature before marking a form as completed
+  require_witness: true
+  # Maximum time (hours) a form can remain in DRAFT state before expiry
+  draft_expiry_hours: 48

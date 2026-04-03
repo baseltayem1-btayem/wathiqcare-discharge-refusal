@@ -1,0 +1,5 @@
+id,name,code,domain,is_active,created_at,updated_at,timezone,country,billing_email,metadata
+86f33ca1-9c02-421c-a3bd-5a1d06cf3521,Demo Hospital Group,demo-hospital,demo.wathiqcare.local,t,2026-03-08 04:31:12.772+00,2026-03-10 02:05:02.047+00,Asia/Riyadh,SA,billing@demo.wathiqcare.local,"{""seededBy"": ""prisma-seed"", ""environment"": ""local""}"
+0aa6bb34-4f25-45b8-a9f0-34b4f9e7b2e1,WathiqCare,wathiqcare,wathiqcare.online,t,2026-03-08 04:31:15.295+00,2026-03-10 02:05:04.348+00,UTC,,,"{""seededBy"": ""prisma-seed"", ""environment"": ""production""}"
+ba70317a-5ce9-47b9-b45f-98d6462280ed,IMC,INTERNATIONAL-MEDICAL-CENTER,,t,2026-03-11 17:46:24.432+00,2026-03-11 17:46:24.432+00,Asia/Riyadh,SA,dvillanueva@imc.med.sa,
+3c71b7f0-e99c-48f9-a94d-9d061f5c3fd8,IMC Tenant (Smoke),imc,imc.local,t,2026-03-15 06:55:14.498+00,2026-03-15 06:57:26.068+00,UTC,,,

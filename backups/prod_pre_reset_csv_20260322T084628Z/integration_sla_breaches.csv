@@ -1,0 +1,1 @@
+id,connector_key,breach_type,severity,status,message,metric_value,threshold_value,details_json,alert_dispatched,detected_at,resolved_at,created_at

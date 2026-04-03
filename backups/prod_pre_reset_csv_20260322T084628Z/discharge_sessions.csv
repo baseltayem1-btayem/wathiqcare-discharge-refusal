@@ -1,0 +1,1 @@
+id,tenant_id,patient_id,encounter_id,token_hash,token_expires_at,access_status,workflow_status,routing_flags,initiated_by_user_id,source_system,opened_at,completed_at,one_time_access,otp_enabled,verified_at,payment_required,payment_amount,payment_currency,workflow_sequence,public_metadata,created_at,updated_at
