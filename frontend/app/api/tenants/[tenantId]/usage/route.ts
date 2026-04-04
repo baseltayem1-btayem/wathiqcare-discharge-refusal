@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireTenantAccess } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-<<<<<<< HEAD
 import { getPrisma } from "@/lib/server/prisma";
 
 type RouteContext = {
@@ -12,17 +11,11 @@ type RouteContext = {
 
 function parseUsageMetric(value: string | null): UsageMetric | null {
   if (!value) return null;
-
   const normalized = value.toUpperCase();
-
-=======
-import { prisma } from "@/lib/server/prisma";
-import { getPrisma } from "@/lib/server/prisma";
-
-function parseUsageMetric(value: string | null): UsageMetric | null {
-  if (!value) return null;
-  const normalized = value.toUpperCase();
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
+  return Object.values(UsageMetric).includes(normalized as UsageMetric)
+    ? (normalized as UsageMetric)
+    : null;
+}
   return Object.values(UsageMetric).includes(normalized as UsageMetric)
     ? (normalized as UsageMetric)
     : null;
@@ -34,9 +27,9 @@ function parsePositiveInt(
   fallback: number,
   min: number,
   max?: number,
-): number {
-  const parsed = Number(value);
-
+    return Object.values(UsageMetric).includes(normalized as UsageMetric) 
+      ? (normalized as UsageMetric) 
+      : null; 
   if (!Number.isFinite(parsed)) {
     return fallback;
   }

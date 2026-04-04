@@ -223,3 +223,10 @@ apps/api/backend/generated/bundles/
 apps/api/backend/generated/legal_documents/
 apps/api/backend/generated/refusal_*.pdf
 apps/api/backend/generated/signed_documents/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

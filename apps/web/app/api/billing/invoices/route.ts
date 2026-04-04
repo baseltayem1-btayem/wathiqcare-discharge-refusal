@@ -13,51 +13,44 @@ function parseInvoiceStatus(value: string | null): InvoiceStatus | null {
     : null;
 }
 
-<<<<<<< HEAD
 export async function GET(request: NextRequest) {
-=======
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
-try {
-  const prisma = getPrisma();
-  const auth = await requireAuth(request);
-  const platformAccess = hasPlatformAccess(auth);
-  const url = new URL(request.url);
-  const status = parseInvoiceStatus(url.searchParams.get("status"));
-  const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? "50"), 1), 200);
+  try {
+    const prisma = getPrisma();
+    const auth = await requireAuth(request);
+    const platformAccess = hasPlatformAccess(auth);
+    const url = new URL(request.url);
+    const status = parseInvoiceStatus(url.searchParams.get("status"));
+    const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? "50"), 1), 200);
 
-  if (!platformAccess && !auth.tenant_id) {
-    throw new ApiError(403, "Tenant context is required for invoice access");
+    if (!platformAccess && !auth.tenant_id) {
+      throw new ApiError(403, "Tenant context is required for invoice access");
+    }
+
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        ...(platformAccess ? {} : { tenantId: auth.tenant_id }),
+        ...(status ? { status } : {}),
+      },
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
+        },
+        subscription: {
+          include: {
+            plan: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+
+    return NextResponse.json(toJsonSafe(invoices));
+  } catch (error) {
+    return handleApiError(error);
   }
-
-<<<<<<< HEAD
-  const invoices = await getPrisma().invoice.findMany({
-=======
-  const invoices = await prisma.invoice.findMany({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
-    where: {
-      ...(platformAccess ? {} : { tenantId: auth.tenant_id }),
-      ...(status ? { status } : {}),
-    },
-    include: {
-      tenant: {
-        select: {
-          id: true,
-          code: true,
-          name: true,
-        },
-      },
-      subscription: {
-        include: {
-          plan: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-    take: limit,
-  });
-
-  return NextResponse.json(toJsonSafe(invoices));
-} catch (error) {
-  return handleApiError(error);
-}
 }

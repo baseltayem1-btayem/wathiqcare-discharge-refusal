@@ -5,11 +5,7 @@ export const METADATA_STAGE_ROUTES: Partial<Record<string, (caseId: string) => s
     discharge_plan_preparation: (caseId) => `/cases/${caseId}`,
     forms_and_consent_presentation: (caseId) => `/cases/${caseId}/informed-consent`,
     approval_or_refusal_path: (caseId) => `/cases/${caseId}/refusal-form`,
-<<<<<<< HEAD
-    legal_escalation_if_needed: (_caseId) => `/legal-escalation`,
-=======
     legal_escalation_if_needed: (caseId) => `/workflow/medical-discharge-refusal/case/${caseId}/escalation-review`,
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 };
 
 export const WORKFLOW_TO_METADATA_STAGE: Partial<Record<string, string>> = {
@@ -204,8 +200,4 @@ export function buildMetadataWorkflowProgress({
         steps,
         currentStepId: steps.find((step) => step.state === "current" || step.state === "warning")?.id,
     };
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

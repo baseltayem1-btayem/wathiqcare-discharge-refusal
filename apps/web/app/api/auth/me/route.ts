@@ -11,11 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireAuth(request);
 
-<<<<<<< HEAD
-    const user = await getPrisma().user.findUnique({
-=======
-    const user = await prisma.user.findUnique({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
+  const user = await getPrisma().user.findUnique({
       where: { id: auth.sub },
       include: {
         memberships: {
@@ -49,30 +45,22 @@ export async function GET(request: NextRequest) {
 
     const [subscription, tenant, brandingProfile] = await Promise.all([
       effectiveTenantId
-<<<<<<< HEAD
         ? getPrisma().subscription.findFirst({
-=======
-        ? prisma.subscription.findFirst({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
-          where: { tenantId: effectiveTenantId },
-          include: { plan: true },
-          orderBy: { createdAt: "desc" },
-        })
+            where: { tenantId: effectiveTenantId },
+            include: { plan: true },
+            orderBy: { createdAt: "desc" },
+          })
         : null,
       effectiveTenantId
-<<<<<<< HEAD
         ? getPrisma().tenant.findUnique({
-=======
-        ? prisma.tenant.findUnique({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
-          where: { id: effectiveTenantId },
-          select: {
-            id: true,
-            name: true,
-            code: true,
-            metadata: true,
-          },
-        })
+            where: { id: effectiveTenantId },
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              metadata: true,
+            },
+          })
         : null,
       effectiveTenantId ? getTenantBrandingProfile(effectiveTenantId) : null,
     ]);

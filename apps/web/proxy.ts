@@ -63,7 +63,7 @@ function isPlatformBlockedPath(pathname: string): boolean {
     return PLATFORM_BLOCKED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-export function middleware(request: NextRequest) {
+function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -101,6 +101,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
 }
 
+export default middleware;
 export const config = {
     matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

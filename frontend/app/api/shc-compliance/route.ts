@@ -28,11 +28,7 @@ function extractBackendErrorDetail(value: unknown): string {
   return "Unknown backend error";
 }
 
-<<<<<<< HEAD
-function toInputJsonValue(value: unknown): getPrisma().InputJsonValue | null {
-=======
 function toInputJsonValue(value: unknown): Prisma.InputJsonValue | null {
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   if (
     value === null ||
     typeof value === "string" ||
@@ -48,11 +44,7 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue | null {
 
   if (typeof value === "object") {
     const obj = value as Record<string, unknown>;
-<<<<<<< HEAD
-    const jsonObj: Record<string, getPrisma().InputJsonValue | null> = {};
-=======
     const jsonObj: Record<string, Prisma.InputJsonValue | null> = {};
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     for (const [key, val] of Object.entries(obj)) {
       jsonObj[key] = toInputJsonValue(val);
     }

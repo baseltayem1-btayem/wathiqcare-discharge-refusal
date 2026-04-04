@@ -1,15 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
 declare global {
-  var __wathiqcarePrisma__: PrismaClient | undefined;
-}
-
-export const prisma =
-  global.__wathiqcarePrisma__ ??
-  new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL,
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  global.__wathiqcarePrisma__ = prisma;
-}
+// Deprecated: Use getPrisma from apps/web/src/lib/server/prisma.ts
+// This file is kept for legacy imports but will throw if used directly.
+throw new Error("[frontend/src/lib/server/prisma.ts] Deprecated. Use getPrisma from apps/web/src/lib/server/prisma.ts");

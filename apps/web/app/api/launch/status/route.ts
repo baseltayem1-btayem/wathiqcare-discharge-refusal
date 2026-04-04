@@ -2,42 +2,23 @@ import { CaseStatus, DocumentStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
-<<<<<<< HEAD
 import { getPrisma } from "@/lib/server/prisma";
 
 function isAuthConfigured(): boolean {
-=======
-import { prisma } from "@/lib/server/prisma";
-
-
-function isAuthConfigured(): boolean {
-  // Access env only when called, not at top-level
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   const secret = process.env.JWT_SECRET_KEY;
   return Boolean(secret && secret !== "change-me");
 }
 
 function envFlag(name: string, fallback = "false"): boolean {
-<<<<<<< HEAD
-=======
-  // Access env only when called, not at top-level
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   return (process.env[name] ?? fallback).toLowerCase() === "true";
 }
 
 export async function GET(request: NextRequest) {
   try {
-<<<<<<< HEAD
     const prisma = getPrisma();
-
     const auth = await requireAuth(request);
     const tenantId = auth.tenant_id;
 
-=======
-    const auth = await requireAuth(request);
-
-    const tenantId = auth.tenant_id;
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     const now = Date.now();
     const dayAgo = new Date(now - 24 * 60 * 60 * 1000);
 
@@ -51,23 +32,10 @@ export async function GET(request: NextRequest) {
       recentErrors,
       recentAudits,
     ] = await Promise.all([
-<<<<<<< HEAD
-      getPrisma().case.count({
-        where: { tenantId, status: CaseStatus.OPEN },
-      }),
-      getPrisma().case.count({
-        where: { tenantId, status: CaseStatus.IN_PROGRESS },
-      }),
-      getPrisma().case.count({
-        where: { tenantId, status: CaseStatus.CLOSED },
-      }),
-      getPrisma().document.count({
-=======
       prisma.case.count({ where: { tenantId, status: CaseStatus.OPEN } }),
       prisma.case.count({ where: { tenantId, status: CaseStatus.IN_PROGRESS } }),
       prisma.case.count({ where: { tenantId, status: CaseStatus.CLOSED } }),
       prisma.document.count({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
           tenantId,
           status: {
@@ -75,44 +43,31 @@ export async function GET(request: NextRequest) {
           },
         },
       }),
-<<<<<<< HEAD
-      getPrisma().document.count({
-        where: { tenantId, status: DocumentStatus.SIGNED },
+      prisma.document.count({
+        where: {
+          tenantId,
+          status: DocumentStatus.SIGNED,
+        },
       }),
-      getPrisma().document.count({
-        where: { tenantId, status: DocumentStatus.ARCHIVED },
+      prisma.document.count({
+        where: {
+          tenantId,
+          status: DocumentStatus.ARCHIVED,
+        },
       }),
-      getPrisma().auditLog.count({
-=======
-      prisma.document.count({ where: { tenantId, status: DocumentStatus.SIGNED } }),
-      prisma.document.count({ where: { tenantId, status: DocumentStatus.ARCHIVED } }),
       prisma.auditLog.count({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
           tenantId,
+          action: {
+            contains: "ERROR",
+          },
           createdAt: { gte: dayAgo },
-          OR: [
-            { action: { contains: "fail", mode: "insensitive" } },
-            { details: { contains: "error", mode: "insensitive" } },
-          ],
         },
       }),
-<<<<<<< HEAD
-      getPrisma().auditLog.findMany({
-=======
-      prisma.auditLog.findMany({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
+      prisma.auditLog.count({
         where: {
           tenantId,
           createdAt: { gte: dayAgo },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-        select: {
-          id: true,
-          action: true,
-          details: true,
-          createdAt: true,
         },
       }),
     ]);
@@ -164,7 +119,10 @@ export async function GET(request: NextRequest) {
       },
       integrations,
       recentAudits,
-      generatedAt: new Date().toISOString(),
+      isAuthConfigured: isAuthConfigured(),
+      featureFlags: {
+        newDashboard: envFlag("FEATURE_NEW_DASHBOARD"),
+      },
     });
   } catch (error) {
     return handleApiError(error);

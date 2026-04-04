@@ -85,83 +85,72 @@ async function sendViaBackend(args: {
 
     return (payload || { status: "sent", provider: "backend" }) as EmailSendResponse;
 }
-<<<<<<< HEAD
 export async function POST(request: NextRequest) {
-=======
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
-try {
+  try {
     const prisma = getPrisma();
     const auth = await requireAuth(request);
     const tenantId = requireTenantId(auth);
-
     const body = (await request.json().catch(() => null)) as WorkflowNotificationBody | null;
     const caseId = safe(body?.case_id);
     const recipients = Array.isArray(body?.to)
-        ? body!.to.map((item) => safe(item).toLowerCase()).filter((item) => item.length > 0)
-        : [];
+      ? body!.to.map((item) => safe(item).toLowerCase()).filter((item) => item.length > 0)
+      : [];
     const templateName = safe(body?.template_name) || "discharge_refusal_follow_up";
-
     if (!caseId) {
-        throw new ApiError(400, "case_id is required");
+      throw new ApiError(400, "case_id is required");
     }
     if (recipients.length === 0) {
-        throw new ApiError(400, "to is required");
+      throw new ApiError(400, "to is required");
     }
-
-<<<<<<< HEAD
-    const caseRecord = await getPrisma().case.findFirst({ where: { id: caseId, tenantId } });
-=======
     const caseRecord = await prisma.case.findFirst({ where: { id: caseId, tenantId } });
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!caseRecord) {
-        throw new ApiError(404, "Case not found");
+      throw new ApiError(404, "Case not found");
     }
-
     const templateVars = {
-        ...(body?.template_vars || {}),
-        case_id: caseId,
-        patient_name: safe(body?.template_vars?.patient_name || caseRecord.patientName),
+      ...(body?.template_vars || {}),
+      case_id: caseId,
+      patient_name: safe(body?.template_vars?.patient_name || caseRecord.patientName),
     } as Record<string, unknown>;
 
     const result = await sendViaBackend({
-        request,
-        body: {
-            case_id: caseId,
-            to: recipients,
-            cc: Array.isArray(body?.cc) ? body.cc.map((item) => safe(item).toLowerCase()).filter(Boolean) : [],
-            template_name: templateName,
-            template_vars: templateVars,
-            include_latest_case_documents: Boolean(body?.include_latest_case_documents),
-            attachment_document_ids: Array.isArray(body?.attachment_document_ids)
-                ? body.attachment_document_ids.map((item) => safe(item)).filter(Boolean)
-                : [],
-        },
+      request,
+      body: {
+        case_id: caseId,
+        to: recipients,
+        cc: Array.isArray(body?.cc) ? body.cc.map((item) => safe(item).toLowerCase()).filter(Boolean) : [],
+        template_name: templateName,
+        template_vars: templateVars,
+        include_latest_case_documents: Boolean(body?.include_latest_case_documents),
+        attachment_document_ids: Array.isArray(body?.attachment_document_ids)
+          ? body.attachment_document_ids.map((item) => safe(item)).filter(Boolean)
+          : [],
+      },
     });
 
     await writeAuditLog({
-        tenantId,
-        userId: auth.sub,
-        entityType: "case",
-        entityId: caseId,
-        caseId,
-        action: "workflow_email_notification_sent",
-        details: `Workflow email notification sent via ${result.provider || "unknown"}`,
-        metadataJson: {
-            template_name: templateName,
-            recipients,
-            provider: result.provider || null,
-        },
-        request,
+      tenantId,
+      userId: auth.sub,
+      entityType: "case",
+      entityId: caseId,
+      caseId,
+      action: "workflow_email_notification_sent",
+      details: `Workflow email notification sent via ${result.provider || "unknown"}`,
+      metadataJson: {
+        template_name: templateName,
+        recipients,
+        provider: result.provider || null,
+      },
+      request,
     });
 
     return NextResponse.json({
-        status: "sent",
-        provider: result.provider || "backend",
-        recipients,
-        subject: result.subject || null,
-        sent_at: result.sent_at || null,
+      status: "sent",
+      provider: result.provider || "backend",
+      recipients,
+      subject: result.subject || null,
+      sent_at: result.sent_at || null,
     });
-} catch (error) {
+  } catch (error) {
     return handleApiError(error);
-}
+  }
 }

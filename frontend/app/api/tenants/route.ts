@@ -20,12 +20,8 @@ async function generateTenantCode(name: string): Promise<string> {
   let candidate = base;
   let suffix = 1;
 
-  const prisma = getPrisma();
-<<<<<<< HEAD
-  while (await getPrisma().tenant.findUnique({ where: { code: candidate } })) {
-=======
+    const prisma = getPrisma();
   while (await prisma.tenant.findUnique({ where: { code: candidate } })) {
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     suffix += 1;
     candidate = `${base}-${suffix}`.slice(0, 40);
   }
@@ -40,10 +36,7 @@ export async function GET(request: NextRequest) {
 
     const limit = Math.min(Math.max(Number(new URL(request.url).searchParams.get("limit") ?? "50"), 1), 200);
 
-    const prisma = getPrisma();
-<<<<<<< HEAD
-    const memberships = await getPrisma().tenantMembership.findMany({
-=======
+      const prisma = getPrisma();
     const memberships = await prisma.tenantMembership.findMany({
 >>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       where: {
@@ -55,8 +48,7 @@ export async function GET(request: NextRequest) {
     });
 
     const tenantIds = [...new Set([auth.tenant_id, ...memberships.map((item) => item.tenantId)])];
-
-<<<<<<< HEAD
+      const tenants = await prisma.tenant.findMany({
     const tenants = await getPrisma().tenant.findMany({
 =======
     const tenants = await prisma.tenant.findMany({
@@ -119,9 +111,8 @@ export async function POST(request: NextRequest) {
       : await generateTenantCode(tenantName);
 
     if (!code) {
-      throw new ApiError(400, "Tenant code is invalid");
-    }
-
+        (await prisma.plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
+        (await prisma.plan.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
     const plan =
 <<<<<<< HEAD
       (await getPrisma().plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
@@ -130,9 +121,7 @@ export async function POST(request: NextRequest) {
       (await prisma.plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
       (await prisma.plan.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
 >>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
-
-    if (!plan) {
-      throw new ApiError(404, "No active plan available");
+      const created = await prisma.$transaction(async (tx) => {
     }
 
     const now = new Date();

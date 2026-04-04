@@ -1,7 +1,15 @@
-import { BillingInterval, PlanCode, Prisma, SubscriptionStatus, UsageMetric } from "@prisma/client";
+import {
+  BillingInterval,
+  PlanCode,
+  Prisma,
+  SubscriptionStatus,
+  UsageMetric,
+} from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
+
+const prisma = getPrisma();
 
 type SubscriptionWithPlan = Prisma.SubscriptionGetPayload<{
   include: { plan: true };
@@ -32,20 +40,21 @@ function startOfUtcMonth(date = new Date()): Date {
 }
 
 function startOfUtcDay(date = new Date()): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
 }
 
 function parsePlanLimit(features: unknown, key: string): bigint | null {
-  if (!features || typeof features !== "object") {
+  if (!features || typeof features !== "object") return null;
+
+  const raw = (features as Record<string, unknown>)[key];
+
+  if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) {
     return null;
   }
 
-  const rawValue = (features as Record<string, unknown>)[key];
-  if (typeof rawValue !== "number" || !Number.isFinite(rawValue) || rawValue <= 0) {
-    return null;
-  }
-
-  return BigInt(Math.floor(rawValue));
+  return BigInt(Math.floor(raw));
 }
 
 function usageMetricToPlanKey(metric: UsageMetric): string | null {
@@ -61,33 +70,22 @@ function usageMetricToPlanKey(metric: UsageMetric): string | null {
   }
 }
 
-async function createDefaultTrialSubscription(tenantId: string): Promise<SubscriptionWithPlan> {
-  const prisma = getPrisma();
-<<<<<<< HEAD
-  const starterPlan = await getPrisma().plan.findFirst({
-=======
+async function createDefaultTrialSubscription(
+  tenantId: string,
+): Promise<SubscriptionWithPlan> {
   const starterPlan = await prisma.plan.findFirst({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       isActive: true,
       code: PlanCode.STARTER,
     },
   });
 
-  const fallbackPlan = starterPlan
-    ? starterPlan
-<<<<<<< HEAD
-    : await getPrisma().plan.findFirst({
-=======
-    : await prisma.plan.findFirst({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
-      where: {
-        isActive: true,
-      },
-      orderBy: {
-        createdAt: "asc",
-      },
-    });
+  const fallbackPlan =
+    starterPlan ??
+    (await prisma.plan.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: "asc" },
+    }));
 
   if (!fallbackPlan) {
     throw new ApiError(503, "No active billing plans configured");
@@ -97,11 +95,7 @@ async function createDefaultTrialSubscription(tenantId: string): Promise<Subscri
   const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   const currentPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-<<<<<<< HEAD
-  return getPrisma().subscription.create({
-=======
   return prisma.subscription.create({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     data: {
       tenantId,
       planId: fallbackPlan.id,
@@ -112,27 +106,27 @@ async function createDefaultTrialSubscription(tenantId: string): Promise<Subscri
       currentPeriodStart: now,
       currentPeriodEnd,
     },
-    include: {
-      plan: true,
-    },
+    include: { plan: true },
   });
 }
 
-export async function getTenantSubscription(tenantId: string): Promise<SubscriptionWithPlan> {
-<<<<<<< HEAD
-  const existingSubscription = await getPrisma().subscription.findFirst({
-=======
-  const existingSubscription = await prisma.subscription.findFirst({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
+export async function getTenantSubscription(
+  tenantId: string,
+): Promise<SubscriptionWithPlan> {
+  const existing = await prisma.subscription.findFirst({
     where: { tenantId },
     include: { plan: true },
     orderBy: { createdAt: "desc" },
   });
 
-  const subscription = existingSubscription ?? (await createDefaultTrialSubscription(tenantId));
+  const subscription =
+    existing ?? (await createDefaultTrialSubscription(tenantId));
 
   if (!SUBSCRIPTION_ALLOWED_STATUSES.includes(subscription.status)) {
-    throw new ApiError(402, `Subscription status ${subscription.status} does not allow this action`);
+    throw new ApiError(
+      402,
+      `Subscription status ${subscription.status} does not allow this action`,
+    );
   }
 
   return subscription;
@@ -145,15 +139,14 @@ export async function enforceSeatLimit(
   const subscription = await getTenantSubscription(tenantId);
   const activeSeats = await countActiveSeatUsers(tenantId);
 
-  const seatLimit = subscription.seatLimit;
-  if (activeSeats + seatsToAdd > seatLimit) {
+  if (activeSeats + seatsToAdd > subscription.seatLimit) {
     throw new ApiError(
       403,
-      `No available seats (${activeSeats}/${seatLimit} active). Ask your platform admin to increase seat_limit.`,
+      `No available seats (${activeSeats}/${subscription.seatLimit}).`,
     );
   }
 
-  return { activeSeats, seatLimit };
+  return { activeSeats, seatLimit: subscription.seatLimit };
 }
 
 export async function enforcePlanUsage(
@@ -162,40 +155,30 @@ export async function enforcePlanUsage(
   incrementBy: bigint,
 ): Promise<void> {
   const planKey = usageMetricToPlanKey(metric);
-  if (!planKey) {
-    return;
-  }
+  if (!planKey) return;
 
   const subscription = await getTenantSubscription(tenantId);
-  const planLimit = parsePlanLimit(subscription.plan.features, planKey);
-  if (!planLimit) {
-    return;
-  }
+  const limit = parsePlanLimit(subscription.plan.features, planKey);
+
+  if (!limit) return;
 
   const currentMonthStart = startOfUtcMonth();
 
-<<<<<<< HEAD
-  const aggregate = await getPrisma().usageRecord.aggregate({
-=======
   const aggregate = await prisma.usageRecord.aggregate({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId,
       metric,
-      periodDate: {
-        gte: currentMonthStart,
-      },
+      periodDate: { gte: currentMonthStart },
     },
-    _sum: {
-      value: true,
-    },
+    _sum: { value: true },
   });
 
   const used = aggregate._sum.value ?? BigInt(0);
-  if (used + incrementBy > planLimit) {
+
+  if (used + incrementBy > limit) {
     throw new ApiError(
       403,
-      `Plan limit reached for ${metric}. Used ${used.toString()} / ${planLimit.toString()} this month.`,
+      `Plan limit reached for ${metric} (${used}/${limit})`,
     );
   }
 }
@@ -208,11 +191,7 @@ export async function recordUsage(
 ): Promise<void> {
   const periodDate = startOfUtcDay();
 
-<<<<<<< HEAD
-  await getPrisma().usageRecord.upsert({
-=======
   await prisma.usageRecord.upsert({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId_metric_periodDate: {
         tenantId,
@@ -235,15 +214,13 @@ export async function recordUsage(
   });
 }
 
-export async function syncActiveUserUsage(tenantId: string): Promise<void> {
-  const periodDate = startOfUtcDay();
+export async function syncActiveUserUsage(
+  tenantId: string,
+): Promise<void> {
   const activeUsers = await countActiveSeatUsers(tenantId);
+  const periodDate = startOfUtcDay();
 
-<<<<<<< HEAD
-  await getPrisma().usageRecord.upsert({
-=======
   await prisma.usageRecord.upsert({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId_metric_periodDate: {
         tenantId,
@@ -253,7 +230,6 @@ export async function syncActiveUserUsage(tenantId: string): Promise<void> {
     },
     update: {
       value: BigInt(activeUsers),
-      unit: "count",
     },
     create: {
       tenantId,
@@ -265,52 +241,47 @@ export async function syncActiveUserUsage(tenantId: string): Promise<void> {
   });
 }
 
-export async function countActiveSeatUsers(tenantId: string): Promise<number> {
-<<<<<<< HEAD
-  return getPrisma().tenantMembership.count({
-=======
+export async function countActiveSeatUsers(
+  tenantId: string,
+): Promise<number> {
   return prisma.tenantMembership.count({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId,
       status: "ACTIVE",
-      user: {
-        isActive: true,
-      },
+      user: { isActive: true },
     },
   });
 }
 
-export async function countPendingSeatUsers(tenantId: string): Promise<number> {
-<<<<<<< HEAD
-  return getPrisma().tenantMembership.count({
-=======
+export async function countPendingSeatUsers(
+  tenantId: string,
+): Promise<number> {
   return prisma.tenantMembership.count({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId,
       OR: [
         { status: "INVITED" },
         {
           status: "ACTIVE",
-          user: {
-            isActive: false,
-          },
+          user: { isActive: false },
         },
       ],
     },
   });
 }
 
-export async function getTenantSubscriptionSummary(tenantId: string): Promise<TenantSubscriptionSummary> {
+export async function getTenantSubscriptionSummary(
+  tenantId: string,
+): Promise<TenantSubscriptionSummary> {
   const subscription = await getTenantSubscription(tenantId);
-  const activeUserCount = await countActiveSeatUsers(tenantId);
-  const pendingUsersCount = await countPendingSeatUsers(tenantId);
-  const seatLimit = subscription.seatLimit;
-  const availableSeats = Math.max(0, seatLimit - activeUserCount);
-  const gracePeriodDays = Number(
-    (subscription.metadata as Record<string, unknown> | null)?.gracePeriodDays ?? 7,
-  );
+  const active = await countActiveSeatUsers(tenantId);
+  const pending = await countPendingSeatUsers(tenantId);
+
+  const grace =
+    Number(
+      (subscription.metadata as Record<string, unknown> | null)
+        ?.gracePeriodDays ?? 7,
+    ) || 7;
 
   return {
     subscriptionId: subscription.id,
@@ -319,11 +290,11 @@ export async function getTenantSubscriptionSummary(tenantId: string): Promise<Te
     planCode: subscription.plan.code,
     startDate: subscription.currentPeriodStart,
     endDate: subscription.currentPeriodEnd,
-    gracePeriodDays: Number.isFinite(gracePeriodDays) && gracePeriodDays >= 0 ? Math.floor(gracePeriodDays) : 7,
-    seatLimit,
-    activeUserCount,
-    pendingUsersCount,
-    availableSeats,
+    gracePeriodDays: Math.max(0, Math.floor(grace)),
+    seatLimit: subscription.seatLimit,
+    activeUserCount: active,
+    pendingUsersCount: pending,
+    availableSeats: Math.max(0, subscription.seatLimit - active),
   };
 }
 
@@ -341,14 +312,13 @@ type AuditArgs = {
 };
 
 export async function writeAuditLog(args: AuditArgs): Promise<void> {
-  const ipAddress = args.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const ip =
+    args.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    null;
+
   const userAgent = args.request?.headers.get("user-agent") ?? null;
 
-<<<<<<< HEAD
-  await getPrisma().auditLog.create({
-=======
   await prisma.auditLog.create({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     data: {
       tenantId: args.tenantId,
       userId: args.userId,
@@ -358,7 +328,7 @@ export async function writeAuditLog(args: AuditArgs): Promise<void> {
       details: args.details,
       caseId: args.caseId,
       documentId: args.documentId,
-      ipAddress,
+      ipAddress: ip,
       userAgent,
       metadataJson: args.metadataJson,
     },

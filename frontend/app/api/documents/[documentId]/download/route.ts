@@ -1,19 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
-<<<<<<< HEAD
 import { getPrisma } from "@/lib/server/prisma";
 import { forwardToBackend } from "@/lib/server/backendProxy";
-
-type RouteContext = {
-    params: Promise<{ documentId: string }>;
-};
-
-=======
-import { prisma } from "@/lib/server/prisma";
-import { getPrisma } from "@/lib/server/prisma";
-import { forwardToBackend } from "@/lib/server/backendProxy";
-
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 function htmlDownloadResponse(content: string, fileName: string): NextResponse {
     return new NextResponse(content, {
         status: 200,

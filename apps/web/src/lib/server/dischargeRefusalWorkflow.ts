@@ -122,11 +122,7 @@ type WorkflowActionName =
     | "close_workflow";
 
 async function findCaseWithWorkflow(caseId: string, tenantId: string) {
-<<<<<<< HEAD
     return getPrisma().case.findFirst({
-=======
-    return prisma.case.findFirst({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { id: caseId, tenantId },
         include: {
             tenant: {
@@ -439,11 +435,7 @@ async function getAuthorizedCase(auth: AuthContext, caseId: string): Promise<Aut
 }
 
 async function listWorkflowDocumentsInternal(tenantId: string, caseId: string): Promise<WorkflowDocumentSummary[]> {
-<<<<<<< HEAD
     const documents = await getPrisma().document.findMany({
-=======
-    const documents = await prisma.document.findMany({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
             tenantId,
             caseId,
@@ -644,11 +636,7 @@ async function persistWorkflowState(
 ): Promise<void> {
     const metadata = buildMetadata(asRecord(caseRecord.metadata), workflow);
 
-<<<<<<< HEAD
     await getPrisma().case.update({
-=======
-    await prisma.case.update({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { id: caseRecord.id },
         data: {
             workflowType: "discharge_refusal",
@@ -702,11 +690,7 @@ async function createGeneratedDocument(
                 documentCode,
             );
 
-<<<<<<< HEAD
     const document = await getPrisma().document.create({
-=======
-    const document = await prisma.document.create({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         data: {
             tenantId,
             caseId: workflow.case_id,
@@ -767,11 +751,7 @@ export async function listWorkflowAudit(auth: AuthContext, caseId: string): Prom
     const tenantId = requireTenantId(auth);
     await getAuthorizedCase(auth, caseId);
 
-<<<<<<< HEAD
     const logs = await getPrisma().auditLog.findMany({
-=======
-    const logs = await prisma.auditLog.findMany({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
             tenantId,
             caseId,
@@ -970,8 +950,4 @@ export async function applyWorkflowAction(args: {
 
     const nextWorkflow = await getWorkflowSnapshot(auth, caseId);
     return { workflow: nextWorkflow, generatedDocument };
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

@@ -75,8 +75,4 @@ export function buildSessionCookieClearOptions(request?: Request) {
         expires: new Date(0),
         domain: getCookieDomain(request),
     } as const;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

@@ -1,25 +1,26 @@
-import { CaseStatus, Prisma } from "@prisma/client";
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, requireTenantId, requireTenantOperationalAccess } from "@/lib/server/auth";
+import { NextRequest } from "next/server";
+
+import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { CaseStatus } from "@prisma/client";
+import { getPrisma } from "@/lib/server/prisma";
+import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { getPrisma } from "@/lib/server/prisma";
+import { requireTenantOperationalAccess, requireTenantId } from "@/lib/server/auth";
+
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-function parseCaseStatus(value: unknown): CaseStatus | null {
-  if (typeof value !== "string") return null;
+function parseCaseStatus(value: string | null | undefined): CaseStatus | null {
+  if (!value) return null;
   const normalized = value.toUpperCase();
   return Object.values(CaseStatus).includes(normalized as CaseStatus)
     ? (normalized as CaseStatus)
     : null;
 }
 
-<<<<<<< HEAD
 export async function GET(
   request: NextRequest,
-=======
-request: NextRequest,
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   { params }: { params: Promise<{ caseId: string }> },
 ) {
   try {
@@ -50,15 +51,13 @@ request: NextRequest,
   }
 }
 
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ caseId: string }> },
 ) {
   try {
-<<<<<<< HEAD
     const prisma = getPrisma();
-=======
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     const auth = await requireAuth(request);
     requireTenantOperationalAccess(auth);
     const tenantId = requireTenantId(auth);

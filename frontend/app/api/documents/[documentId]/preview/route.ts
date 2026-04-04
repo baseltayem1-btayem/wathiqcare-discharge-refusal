@@ -9,7 +9,7 @@ type RouteContext = {
 };
 
 =======
-import { prisma } from "@/lib/server/prisma";
+// prisma import removed: use getPrisma()
 import { getPrisma } from "@/lib/server/prisma";
 import { forwardToBackend } from "@/lib/server/backendProxy";
 

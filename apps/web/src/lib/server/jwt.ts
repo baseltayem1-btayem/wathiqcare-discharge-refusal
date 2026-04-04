@@ -119,9 +119,5 @@ export function verifyAndDecodeJwt(token: string): JwtClaims {
         throw new Error("Access token expired");
     }
 
-    return claims;
-<<<<<<< HEAD
-}
-=======
-}
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
+        return claims;
+    }

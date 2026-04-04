@@ -154,11 +154,7 @@ function sanitizeBrandingInput(input: TenantBrandingUpsertInput): Required<Tenan
 }
 
 export async function getTenantBrandingProfile(tenantId: string): Promise<TenantBrandingProfile | null> {
-<<<<<<< HEAD
     const rows = await getPrisma().$queryRaw<BrandingRow[]>`
-=======
-    const rows = await prisma.$queryRaw<BrandingRow[]>`
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     SELECT
       id,
       tenant_id,
@@ -200,11 +196,7 @@ export async function upsertTenantBrandingProfile(
     const sanitized = sanitizeBrandingInput(input);
     const generatedId = randomUUID();
 
-<<<<<<< HEAD
     const rows = await getPrisma().$queryRaw<BrandingRow[]>`
-=======
-    const rows = await prisma.$queryRaw<BrandingRow[]>`
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     INSERT INTO tenant_branding (
       id,
       tenant_id,

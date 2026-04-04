@@ -67,11 +67,7 @@ export async function hasAnyActiveTenantForDomain(domain: string): Promise<boole
         return false;
     }
 
-<<<<<<< HEAD
     const rows = await getPrisma().$queryRaw<Array<{ tenant_id: string }>>`
-=======
-    const rows = await prisma.$queryRaw<Array<{ tenant_id: string }>>`
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     SELECT tad.tenant_id
     FROM tenant_allowed_domains tad
     INNER JOIN tenants t ON t.id = tad.tenant_id
@@ -90,11 +86,7 @@ export async function isTenantDomainAllowed(tenantId: string, domain: string): P
         return false;
     }
 
-<<<<<<< HEAD
     const rows = await getPrisma().$queryRaw<Array<{ tenant_id: string }>>`
-=======
-    const rows = await prisma.$queryRaw<Array<{ tenant_id: string }>>`
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     SELECT tenant_id
     FROM tenant_allowed_domains
     WHERE tenant_id = ${tenantId}
@@ -173,11 +165,7 @@ export async function enforceSharedPostAuthAccessForMethod(
         ? !!domain && (await isTenantDomainAllowed(user.tenantId, domain))
         : true;
 
-<<<<<<< HEAD
     const tenant = await getPrisma().tenant.findUnique({
-=======
-    const tenant = await prisma.tenant.findUnique({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: { id: user.tenantId },
         select: { isActive: true },
     });
@@ -185,11 +173,7 @@ export async function enforceSharedPostAuthAccessForMethod(
     const role = (user.role || "").trim();
 
     const [membership, subscription] = await Promise.all([
-<<<<<<< HEAD
         getPrisma().tenantMembership.findUnique({
-=======
-        prisma.tenantMembership.findUnique({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             where: {
                 tenantId_userId: {
                     tenantId: user.tenantId,
@@ -198,11 +182,7 @@ export async function enforceSharedPostAuthAccessForMethod(
             },
             select: { status: true },
         }),
-<<<<<<< HEAD
         getPrisma().subscription.findFirst({
-=======
-        prisma.subscription.findFirst({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             where: {
                 tenantId: user.tenantId,
                 status: {

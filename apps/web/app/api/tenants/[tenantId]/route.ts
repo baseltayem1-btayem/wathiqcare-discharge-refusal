@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-<<<<<<< HEAD
 import {
   hasPlatformAccess,
   requireAuth,
@@ -125,21 +124,6 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const { tenantId } = await params;
     const auth = await requireAuth(request);
 
-=======
-import { hasPlatformAccess, requireAuth, requireTenantAccess, requireTenantPermission } from "@/lib/server/auth";
-import { ApiError, handleApiError } from "@/lib/server/http";
-import { toJsonSafe } from "@/lib/server/json";
-import { prisma } from "@/lib/server/prisma";
-import { writeAuditLog } from "@/lib/server/saas-services";
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ tenantId: string }> },
-) {
-  try {
-    const { tenantId } = await params;
-    const auth = await requireAuth(request);
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!hasPlatformAccess(auth)) {
       await requireTenantPermission(request, tenantId, ["users.read", "subscription.read"]);
     } else {
@@ -159,13 +143,9 @@ export async function GET(
           },
         },
         subscriptions: {
-<<<<<<< HEAD
           include: {
             plan: true,
           },
-=======
-          include: { plan: true },
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
           orderBy: { createdAt: "desc" },
           take: 1,
         },
@@ -182,18 +162,10 @@ export async function GET(
   }
 }
 
-<<<<<<< HEAD
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
     const prisma = getPrisma();
 
-=======
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ tenantId: string }> },
-) {
-  try {
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     const { tenantId } = await params;
     const auth = await requireAuth(request);
     const platformAccess = hasPlatformAccess(auth);
@@ -204,29 +176,14 @@ export async function PATCH(
       await requireTenantAccess(request, tenantId);
     }
 
-<<<<<<< HEAD
+    // Only declare payload once
     const payload = (await request.json().catch(() => null)) as PatchTenantPayload | null;
-=======
-    const payload = (await request.json().catch(() => null)) as
-      | {
-        name?: string;
-        domain?: string | null;
-        timezone?: string | null;
-        country?: string | null;
-        billingEmail?: string | null;
-        isActive?: boolean;
-        metadata?: Prisma.InputJsonValue | null;
-      }
-      | null;
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 
     if (!payload) {
       throw new ApiError(400, "Invalid JSON body");
     }
 
-<<<<<<< HEAD
-    const updateData = buildTenantUpdateData(payload, platformAccess);
-=======
+    // Only declare updateData once
     const updateData: {
       name?: string;
       domain?: string | null;
@@ -235,44 +192,7 @@ export async function PATCH(
       billingEmail?: string | null;
       isActive?: boolean;
       metadata?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
-    } = {};
-
-    if (typeof payload.name === "string") {
-      const trimmed = payload.name.trim();
-      if (!trimmed) {
-        throw new ApiError(400, "name cannot be empty");
-      }
-      updateData.name = trimmed;
-    }
-    if (payload.domain === null || typeof payload.domain === "string") updateData.domain = payload.domain;
-    if (payload.timezone === null || typeof payload.timezone === "string") updateData.timezone = payload.timezone;
-    if (payload.country === null || typeof payload.country === "string") updateData.country = payload.country;
-    if (payload.billingEmail === null || typeof payload.billingEmail === "string") {
-      if (
-        typeof payload.billingEmail === "string" &&
-        payload.billingEmail.trim() &&
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.billingEmail.trim())
-      ) {
-        throw new ApiError(400, "billingEmail is invalid");
-      }
-      updateData.billingEmail = payload.billingEmail;
-    }
-    if (typeof payload.isActive === "boolean") {
-      if (!platformAccess) {
-        throw new ApiError(403, "Only platform admins can activate/deactivate tenants");
-      }
-      updateData.isActive = payload.isActive;
-    }
-    if (payload.metadata === null) {
-      updateData.metadata = Prisma.JsonNull;
-    } else if (typeof payload.metadata === "object") {
-      updateData.metadata = payload.metadata;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      throw new ApiError(400, "No updatable fields supplied");
-    }
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
+    } = buildTenantUpdateData(payload, platformAccess);
 
     const tenant = await prisma.tenant.update({
       where: { id: tenantId },
@@ -296,8 +216,4 @@ export async function PATCH(
   } catch (error) {
     return handleApiError(error);
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

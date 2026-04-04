@@ -21,7 +21,6 @@ export async function GET(
   try {
     const auth = requireAuth(request);
     const { caseId } = await params;
-
     const prisma = getPrisma();
     const item = await prisma.case.findUnique({
       where: { id: caseId },
@@ -55,7 +54,7 @@ export async function PATCH(
   try {
     const auth = requireAuth(request);
     const { caseId } = await params;
-
+    const prisma = getPrisma();
     const existing = await prisma.case.findUnique({ where: { id: caseId } });
     if (!existing) {
       throw new ApiError(404, "Case not found");

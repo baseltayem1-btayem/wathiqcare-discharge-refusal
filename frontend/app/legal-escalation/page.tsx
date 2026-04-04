@@ -166,6 +166,7 @@ export default function LegalEscalationPage() {
           </Link>
         }
       >
+        {/* Header Section */}
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="mb-3 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
@@ -237,7 +238,6 @@ export default function LegalEscalationPage() {
         {/* Escalation Cases List */}
         <div className="space-y-5">
           <h2 className="text-2xl font-semibold text-gray-900">Escalation Cases</h2>
-
           {loading ? (
             <p className="text-sm text-slate-600">Loading escalation cases...</p>
           ) : cases.length === 0 ? (
@@ -260,7 +260,6 @@ export default function LegalEscalationPage() {
                             {escalationCase.patientName}
                           </div>
                         </div>
-
                         <div className="flex flex-wrap gap-2">
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_TONE[escalationCase.status] || STATUS_TONE.active}`}>
                             {escalationCase.status.replace("-", " ").toUpperCase()}
@@ -270,12 +269,10 @@ export default function LegalEscalationPage() {
                           </span>
                         </div>
                       </div>
-
                       <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
                         <div className="text-sm font-semibold text-red-700">Escalation Reason</div>
                         <p className="mt-1 text-sm leading-6 text-red-700">{escalationCase.reason}</p>
                       </div>
-
                       <div className="mt-5 grid grid-cols-1 gap-4 rounded-2xl bg-slate-50 p-4 md:grid-cols-3">
                         <div>
                           <div className="text-xs uppercase tracking-wide text-slate-400">Patient</div>
@@ -292,7 +289,6 @@ export default function LegalEscalationPage() {
                           <div className="mt-1 text-sm font-semibold text-slate-900">{escalationCase.assignedCounsel || "-"}</div>
                         </div>
                       </div>
-
                       <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4">
                         <div className="text-sm font-semibold text-blue-800">Risk & Priority</div>
                         <div className="mt-2 text-sm text-blue-900">
@@ -302,7 +298,6 @@ export default function LegalEscalationPage() {
                         </div>
                       </div>
                     </div>
-
                     <div className="w-full xl:w-56">
                       <div className="flex flex-col gap-3">
                         <button
@@ -387,26 +382,22 @@ export default function LegalEscalationPage() {
                   </div>
                 )}
               </div>
-
               <div>
                 <p className="text-xs font-medium text-slate-500">Escalation Reason</p>
                 <p className="mt-1 text-sm text-slate-700">{selectedCase.reason}</p>
               </div>
-
               {selectedCase.riskLevel && (
                 <div>
                   <p className="text-xs font-medium text-slate-500">Risk Level</p>
                   <p className="mt-1 text-sm text-slate-700">{selectedCase.riskLevel}</p>
                 </div>
               )}
-
               {selectedCase.resolutionNotes && (
                 <div>
                   <p className="text-xs font-medium text-slate-500">Resolution Notes</p>
                   <p className="mt-1 text-sm text-slate-700">{selectedCase.resolutionNotes}</p>
                 </div>
               )}
-
               {/* Case Timeline */}
               <div>
                 <h4 className="text-sm font-semibold text-slate-900">Case Timeline</h4>
@@ -427,7 +418,6 @@ export default function LegalEscalationPage() {
                   )}
                 </div>
               </div>
-
               {/* Notes */}
               {selectedCase.notes.length > 0 && (
                 <div>
@@ -449,7 +439,6 @@ export default function LegalEscalationPage() {
             </div>
           )}
         </Modal>
-
         {/* Add Note Modal */}
         <Modal
           isOpen={showAddNoteModal}
@@ -486,7 +475,6 @@ export default function LegalEscalationPage() {
             />
           </div>
         </Modal>
-
         {/* Resolve Case Modal */}
         <Modal
           isOpen={showResolveModal}

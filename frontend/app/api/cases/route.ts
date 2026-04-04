@@ -35,15 +35,10 @@ export async function GET(request: NextRequest) {
   try {
     const auth = requireAuth(request);
     const url = new URL(request.url);
-
     const status = parseCaseStatus(url.searchParams.get("status"));
     const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? "50"), 1), 200);
     const prisma = getPrisma();
-<<<<<<< HEAD
-    const cases = await getPrisma().case.findMany({
-=======
     const cases = await prisma.case.findMany({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       where: {
         tenantId: auth.tenant_id,
         ...(status ? { status } : {}),

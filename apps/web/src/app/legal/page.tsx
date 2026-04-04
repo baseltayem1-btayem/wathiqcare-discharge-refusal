@@ -39,17 +39,6 @@ export default function LegalQueuePage() {
     const [roleChecked, setRoleChecked] = useState(false);
     const [hasRole, setHasRole] = useState(false);
 
-    // Helper to get token from localStorage/sessionStorage
-    function getToken() {
-        if (typeof window === "undefined") return null;
-        return (
-            localStorage.getItem("wathiqcare_access_token") ||
-            localStorage.getItem("token") ||
-            sessionStorage.getItem("wathiqcare_access_token") ||
-            sessionStorage.getItem("token")
-        );
-    }
-
     // Get user roles from /api/auth/me
     useEffect(() => {
         async function checkRole() {
@@ -77,9 +66,8 @@ export default function LegalQueuePage() {
         } else if (filter === "package_generated") {
             url += "?package_generated=true";
         }
-        const token = getToken();
         fetch(url, {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            credentials: "include",
         })
             .then((res) => {
                 if (!res.ok) throw new Error("Failed to load data");
@@ -91,9 +79,8 @@ export default function LegalQueuePage() {
     }, [filter]);
 
     const handleDownload = async (caseId: string) => {
-        const token = getToken();
         const res = await fetch(`/api/cases/${caseId}/legal-package/download`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            credentials: "include",
         });
         if (!res.ok) return alert("Failed to download legal package");
         const blob = await res.blob();

@@ -1,23 +1,12 @@
 import { randomUUID } from "node:crypto";
-<<<<<<< HEAD
-import {
-    InvitationStatus,
-    MembershipRole,
-    MembershipStatus,
-} from "@prisma/client";
-=======
 import { InvitationStatus, MembershipRole, MembershipStatus } from "@prisma/client";
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { issueMagicLinkForUser } from "@/lib/server/magic-link-auth";
-<<<<<<< HEAD
+
 import { getPrisma } from "@/lib/server/prisma";
-=======
-import { prisma } from "@/lib/server/prisma";
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import { writeAuditLog } from "@/lib/server/saas-services";
 import {
     buildWathiqCareEmailHtml,
@@ -42,51 +31,6 @@ type CreatePlatformUserPayload = {
     isActive?: boolean;
 };
 
-<<<<<<< HEAD
-function normalizeEmail(value?: string): string {
-    return (value ?? "").trim().toLowerCase();
-}
-
-function validateEmail(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-export async function POST(request: NextRequest) {
-    try {
-        const prisma = getPrisma(); // ✅ FIX
-
-        const auth = await requirePlatformAccess(request);
-
-        const payload = (await request.json().catch(() => null)) as CreatePlatformUserPayload | null;
-        if (!payload) throw new ApiError(400, "Invalid JSON body");
-
-        const email = normalizeEmail(payload.email);
-        const fullName = (payload.fullName ?? "").trim();
-        const role = (payload.role ?? "platform_operator").trim().toLowerCase();
-        const sendInvite = payload.sendInvite !== false;
-        const isActive = payload.isActive !== false;
-
-        if (!email || !validateEmail(email)) {
-            throw new ApiError(400, "Valid email is required");
-        }
-
-        if (!fullName) {
-            throw new ApiError(400, "fullName is required");
-        }
-
-        if (!PLATFORM_USER_ROLES.has(role)) {
-            throw new ApiError(
-                400,
-                `role must be one of: ${[...PLATFORM_USER_ROLES].join(", ")}`
-            );
-        }
-
-        const platformTenant = await getPrisma().tenant.findUnique({
-            where: { code: "wathiqcare" },
-            select: { id: true, name: true },
-        });
-
-=======
 /**
  * POST /api/platform/users/create
  * Create a new platform-scoped user.
@@ -118,28 +62,19 @@ export async function POST(request: NextRequest) {
             throw new ApiError(400, `role must be one of: ${[...PLATFORM_USER_ROLES].join(", ")}`);
         }
 
+
+        // Use singleton Prisma client
+        const prisma = getPrisma();
+
         // Platform users are associated with the WathiqCare platform tenant
         const platformTenant = await prisma.tenant.findUnique({
             where: { code: "wathiqcare" },
             select: { id: true, name: true },
         });
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         if (!platformTenant) {
             throw new ApiError(500, "Platform tenant not configured");
         }
 
-<<<<<<< HEAD
-        const existing = await getPrisma().user.findUnique({ where: { email } });
-        if (existing) {
-            throw new ApiError(409, "User already exists");
-        }
-
-        const invitationToken =
-            randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
-        const invitationExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-        const created = await getPrisma().$transaction(async (tx) => {
-=======
         const existing = await prisma.user.findUnique({ where: { email } });
         if (existing) {
             throw new ApiError(409, "A user with this email already exists");
@@ -149,7 +84,6 @@ export async function POST(request: NextRequest) {
         const invitationExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
         const created = await prisma.$transaction(async (tx) => {
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             const user = await tx.user.create({
                 data: {
                     tenantId: platformTenant.id,
@@ -211,21 +145,6 @@ export async function POST(request: NextRequest) {
 
             const html = buildWathiqCareEmailHtml({
                 title: "You've been invited to WathiqCare",
-<<<<<<< HEAD
-                bodyHtml: `<p>Hello ${fullName}, you are now ${role} on the platform.</p>`,
-                ctaUrl: magic.magicUrl,
-                ctaText: "Access WathiqCare",
-                expiresNote: `Expires in ${magic.expiresMinutes} minutes`,
-                securityNote: "You are receiving this because a platform admin created your account.",
-            });
-
-            const text = buildWathiqCareEmailText({
-                title: "Invitation",
-                bodyLines: [`Hello ${fullName}`, `You are now ${role} on WathiqCare`],
-                ctaUrl: magic.magicUrl,
-                ctaLabel: "Access",
-                securityNote: "You are receiving this because a platform admin created your account.",
-=======
                 preheader: `${fullName}, you have been added as a platform team member.`,
                 bodyHtml: `
           <p style="margin:0 0 14px;font-size:15px;color:#334155;line-height:1.7;">Hello ${fullName},</p>
@@ -252,17 +171,10 @@ export async function POST(request: NextRequest) {
                 ctaLabel: "Access WathiqCare",
                 expiresNote: `This link expires in ${magic.expiresMinutes} minutes.`,
                 securityNote: "You received this because a platform administrator provisioned your account.",
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
             });
 
             await sendEmailWithDiagnostics({
                 to: email,
-<<<<<<< HEAD
-                subject: "WathiqCare Invitation",
-                html,
-                text,
-            });
-=======
                 subject: "You've been invited to WathiqCare",
                 html,
                 text,
@@ -278,7 +190,6 @@ export async function POST(request: NextRequest) {
                 metadataJson: { email, role },
                 request,
             });
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         }
 
         return NextResponse.json(

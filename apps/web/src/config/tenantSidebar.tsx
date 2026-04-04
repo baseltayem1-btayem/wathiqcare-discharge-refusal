@@ -56,21 +56,13 @@ export const CASE_STAGE_NAV_DEF = [
     },
     {
         key: "initial_communication",
-<<<<<<< HEAD
-        href: (caseId: string) => `/cases/${caseId}`,
-=======
         href: (caseId: string) => `/workflow/medical-discharge-refusal/case/${caseId}/initial-communication`,
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         labelKey: "workflow.stage.initial_communication",
         icon: <MessageSquareHeart className="h-4 w-4" />,
     },
     {
         key: "support_and_intervention",
-<<<<<<< HEAD
-        href: (caseId: string) => `/cases/${caseId}`,
-=======
         href: (caseId: string) => `/workflow/medical-discharge-refusal/case/${caseId}/social-services`,
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         labelKey: "workflow.stage.support_and_intervention",
         icon: <HandHelping className="h-4 w-4" />,
     },
@@ -88,11 +80,7 @@ export const CASE_STAGE_NAV_DEF = [
     },
     {
         key: "escalation",
-<<<<<<< HEAD
-        href: (_caseId: string) => `/legal-escalation`,
-=======
         href: (caseId: string) => `/workflow/medical-discharge-refusal/case/${caseId}/escalation-review`,
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         labelKey: "workflow.stage.escalation",
         icon: <AlertTriangle className="h-4 w-4" />,
     },

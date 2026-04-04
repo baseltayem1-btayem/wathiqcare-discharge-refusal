@@ -18,11 +18,7 @@ cleanup() {
 trap cleanup EXIT
 
 log() {
-<<<<<<< HEAD
   printf '[smoke][%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
-=======
-  printf '[smoke] %s\n' "$*"
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 }
 
 fail() {
@@ -65,13 +61,6 @@ else:
 PY
 }
 
-curl_json() {
-  local method="$1"
-  local url="$2"
-  local body_file="$3"
-  local headers_file="$4"
-  shift 4
-<<<<<<< HEAD
   log "curl request: $method $url"
   if [[ "$method" == "POST" || "$method" == "PUT" ]]; then
     for arg in "$@"; do
@@ -83,9 +72,6 @@ curl_json() {
   curl --max-time 45 -sS -X "$method" "$url" -D "$headers_file" -o "$body_file" "$@"
   log "curl response headers: $(cat "$headers_file")"
   log "curl response body: $(cat "$body_file")"
-=======
-  curl --max-time 45 -sS -X "$method" "$url" -D "$headers_file" -o "$body_file" "$@"
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 }
 
 http_status() {

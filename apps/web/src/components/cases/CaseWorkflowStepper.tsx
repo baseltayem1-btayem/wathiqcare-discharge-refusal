@@ -242,11 +242,7 @@ function buildSteps(
             clickable: escalationState === "warning" || escalationState === "completed",
             href:
                 escalationState === "warning" || escalationState === "completed"
-<<<<<<< HEAD
-                    ? `/legal-escalation`
-=======
                     ? `/workflow/medical-discharge-refusal/case/${caseId}/escalation-review`
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
                     : undefined,
         },
         {

@@ -20,11 +20,8 @@ try {
   const status = parseInvoiceStatus(url.searchParams.get("status"));
   const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? "50"), 1), 200);
 
-<<<<<<< HEAD
-  const invoices = await getPrisma().invoice.findMany({
-=======
+  const prisma = getPrisma();
   const invoices = await prisma.invoice.findMany({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     where: {
       tenantId: auth.tenant_id,
       ...(status ? { status } : {}),

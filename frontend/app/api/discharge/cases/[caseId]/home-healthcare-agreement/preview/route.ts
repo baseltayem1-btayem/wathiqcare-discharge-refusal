@@ -5,7 +5,6 @@ import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 <<<<<<< HEAD
 =======
-import { prisma } from "@/lib/server/prisma";
 >>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 import { getPrisma } from "@/lib/server/prisma";
 
