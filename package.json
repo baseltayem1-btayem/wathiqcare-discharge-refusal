@@ -1,6 +1,10 @@
 {
   "name": "wathiqcare",
   "private": true,
+  "packageManager": "npm@10.9.0",
+  "engines": {
+    "node": ">=20.11.0"
+  },
   "workspaces": [
     "apps/web",
     "packages/*"
@@ -9,13 +13,11 @@
     "effect": "^3.20.0"
   },
   "scripts": {
-    "build": "cd apps/web && npm run build",
-    "dev": "cd apps/web && npm run dev"
-  },
-  "dependencies": {
-    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
-    "@fontsource/ibm-plex-sans-arabic": "^5.2.9",
-    "@prisma/client": "^6.19.2"
+    "dev": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "start": "npm run start -w apps/web",
+    "lint": "npm run lint -w apps/web",
+    "prisma:generate": "npm run prisma:generate -w apps/web"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
