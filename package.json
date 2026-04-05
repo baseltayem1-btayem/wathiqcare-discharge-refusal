@@ -13,11 +13,16 @@
     "dev": "cd apps/web && npm run dev"
   },
   "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@fontsource/ibm-plex-sans-arabic": "^5.2.9",
     "@prisma/client": "^6.19.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^25.5.2",
-    "prisma": "^6.19.2"
+    "postcss": "^8.5.8",
+    "prisma": "^6.19.2",
+    "tailwindcss": "^4.2.2"
   }
 }

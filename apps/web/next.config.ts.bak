@@ -4,12 +4,18 @@ import path from "node:path";
 const monorepoRoot = path.resolve(process.cwd(), "../..");
 const CANONICAL_ORIGIN = "https://wathiqcare.online";
 
-// Content-Security-Policy that works with self-hosted fonts (next/font/local + fontsource).
-// font-src intentionally omits fonts.googleapis.com and fonts.gstatic.com —
-// all fonts are served from the same origin (/_next/static/media/).
-// 'unsafe-inline' in script-src/style-src is required by Next.js until
-// nonce-based CSP is configured via middleware.
-const CSP = [
+/**
+ * Content-Security-Policy
+ *
+ * Notes:
+ * - Works with self-hosted fonts only.
+ * - No Google Fonts runtime dependency.
+ * - 'unsafe-inline' and 'unsafe-eval' are kept because many Next.js setups
+ *   still require them unless you move to a nonce-based CSP via proxy/middleware.
+ * - A stricter CSP should ideally use nonces for scripts/styles. Next.js documents
+ *   nonce-based CSP through middleware/proxy for stronger protection.
+ */
+const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
@@ -19,17 +25,37 @@ const CSP = [
   "frame-ancestors 'none'",
   "form-action 'self'",
   "base-uri 'self'",
+  "object-src 'none'",
+  "upgrade-insecure-requests",
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  reactStrictMode: true,
+
+  /**
+   * Monorepo tracing
+   * Ensures Next can trace files outside apps/web when bundling.
+   */
   outputFileTracingRoot: monorepoRoot,
-  // Include contract files in serverless function bundles (Vercel)
+
+  /**
+   * Include non-imported runtime assets in server bundles.
+   * Keep the glob narrow and route-specific.
+   */
   outputFileTracingIncludes: {
     "/api/discharge/**": ["./contracts/**"],
   },
+
+  /**
+   * Turbopack monorepo root
+   */
   turbopack: {
     root: monorepoRoot,
   },
+
+  /**
+   * Remote images allowed for next/image
+   */
   images: {
     remotePatterns: [
       {
@@ -57,21 +83,39 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
-    // Keep rewrites empty to prevent platform-level forwarding to private hosts.
-    // All backend calls must go through controlled Next API route handlers.
+    /**
+     * Keep empty intentionally.
+     * Backend access should stay behind controlled Next API routes,
+     * not platform rewrites to private/internal hosts.
+     */
     return [];
   },
 
   async headers() {
     return [
       {
-        // Apply security headers to all routes.
         source: "/(.*)",
         headers: [
-          { key: "Content-Security-Policy", value: CSP },
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Content-Security-Policy",
+            value: CONTENT_SECURITY_POLICY,
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
         ],
       },
     ];
