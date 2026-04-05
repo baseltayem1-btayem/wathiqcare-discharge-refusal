@@ -23,6 +23,7 @@ const content = fs.readFileSync(localSource, "utf8");
 writeIfPossible(path.resolve(process.cwd(), ".next/routes-manifest-deterministic.json"), content);
 writeIfPossible("/vercel/path1/.next/routes-manifest-deterministic.json", content);
 writeIfPossible("/vercel/path1/vercel/path1/.next/routes-manifest-deterministic.json", content);
+writeIfPossible("/vercel/path1/etc/os-release", "NAME=Vercel\nID=vercel\n");
 
 try {
   const sourceNextDir = path.resolve(process.cwd(), ".next");
@@ -36,4 +37,18 @@ try {
 } catch (error) {
   const message = error && error.message ? error.message : String(error);
   console.warn(`[routes-manifest] skip .next copy: ${message}`);
+}
+
+try {
+  const duplicatedRoot = "/vercel/path1/vercel/path1";
+  const duplicatedNodeModules = `${duplicatedRoot}/node_modules`;
+
+  fs.mkdirSync(duplicatedRoot, { recursive: true });
+  if (!fs.existsSync(duplicatedNodeModules)) {
+    fs.symlinkSync("/vercel/path1/node_modules", duplicatedNodeModules, "dir");
+    console.log(`[routes-manifest] linked ${duplicatedNodeModules} -> /vercel/path1/node_modules`);
+  }
+} catch (error) {
+  const message = error && error.message ? error.message : String(error);
+  console.warn(`[routes-manifest] skip node_modules link: ${message}`);
 }
