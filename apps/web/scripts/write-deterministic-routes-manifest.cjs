@@ -25,15 +25,15 @@ writeIfPossible("/vercel/path1/.next/routes-manifest-deterministic.json", conten
 writeIfPossible("/vercel/path1/vercel/path1/.next/routes-manifest-deterministic.json", content);
 
 try {
-  const sourceServerDir = path.resolve(process.cwd(), ".next/server");
-  const targetServerDir = "/vercel/path1/vercel/path1/.next/server";
+  const sourceNextDir = path.resolve(process.cwd(), ".next");
+  const targetNextDir = "/vercel/path1/vercel/path1/.next";
 
-  if (fs.existsSync(sourceServerDir)) {
-    fs.mkdirSync(path.dirname(targetServerDir), { recursive: true });
-    fs.cpSync(sourceServerDir, targetServerDir, { recursive: true, force: true });
-    console.log(`[routes-manifest] copied ${sourceServerDir} -> ${targetServerDir}`);
+  if (fs.existsSync(sourceNextDir)) {
+    fs.mkdirSync(path.dirname(targetNextDir), { recursive: true });
+    fs.cpSync(sourceNextDir, targetNextDir, { recursive: true, force: true });
+    console.log(`[routes-manifest] copied ${sourceNextDir} -> ${targetNextDir}`);
   }
 } catch (error) {
   const message = error && error.message ? error.message : String(error);
-  console.warn(`[routes-manifest] skip server copy: ${message}`);
+  console.warn(`[routes-manifest] skip .next copy: ${message}`);
 }
