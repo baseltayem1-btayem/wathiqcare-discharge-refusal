@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "check:lightningcss-native": "node scripts/ensure-lightningcss-native.cjs --check-only",
-    "prebuild": "node scripts/ensure-lightningcss-native.cjs",
+    "prebuild": "node scripts/ensure-lightningcss-native.cjs || npm install --no-save lightningcss@1.32.0",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
