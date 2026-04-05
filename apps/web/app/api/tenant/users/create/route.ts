@@ -103,8 +103,8 @@ export async function POST(request: NextRequest) {
 
         const prisma = getPrisma();
 
-        if (!isTenantDomainAllowed(email, await prisma.tenantAllowedDomain.findMany({ where: { tenantId } }))) {
-            const domain = extractDomain(email);
+        const domain = extractDomain(email);
+        if (!domain || !(await isTenantDomainAllowed(tenantId, domain))) {
             throw new ApiError(403, `Email domain @${domain} is not allowed for this organisation`);
         }
 
