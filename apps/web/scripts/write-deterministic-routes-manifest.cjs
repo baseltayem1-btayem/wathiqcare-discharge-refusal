@@ -26,6 +26,11 @@ writeIfPossible("/vercel/path1/vercel/path1/.next/routes-manifest-deterministic.
 writeIfPossible("/vercel/path1/etc/os-release", "NAME=Vercel\nID=vercel\n");
 writeIfPossible("/vercel/path1/usr/lib/os-release", "NAME=Vercel\nID=vercel\n");
 
+const rootPackageJson = path.resolve(process.cwd(), "../../package.json");
+if (fs.existsSync(rootPackageJson)) {
+  writeIfPossible("/vercel/path1/vercel/path1/package.json", fs.readFileSync(rootPackageJson, "utf8"));
+}
+
 try {
   const sourceNextDir = path.resolve(process.cwd(), ".next");
   const targetNextDir = "/vercel/path1/vercel/path1/.next";
