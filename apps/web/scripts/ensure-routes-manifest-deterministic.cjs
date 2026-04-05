@@ -21,6 +21,8 @@ function main() {
   const sourceCandidates = [
     path.resolve(cwd, ".next/routes-manifest.json"),
     path.resolve(cwd, ".next/server/routes-manifest.json"),
+    "/vercel/path1/.next/routes-manifest.json",
+    "/vercel/path1/apps/web/.next/routes-manifest.json",
   ];
 
   const source = readFirstExisting(sourceCandidates);
@@ -33,6 +35,8 @@ function main() {
     path.resolve(cwd, ".next/routes-manifest-deterministic.json"),
     path.resolve(cwd, "../../.next/routes-manifest-deterministic.json"),
     path.resolve(cwd, "../../vercel/path1/.next/routes-manifest-deterministic.json"),
+    "/vercel/path1/.next/routes-manifest-deterministic.json",
+    "/vercel/path1/vercel/path1/.next/routes-manifest-deterministic.json",
   ];
 
   for (const t of targets) {
