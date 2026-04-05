@@ -1,5 +1,4 @@
 backend/
-scripts/
 packages/*/node_modules
 packages/config/
 .env
