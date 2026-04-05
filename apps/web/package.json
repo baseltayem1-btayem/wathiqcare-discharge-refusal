@@ -4,8 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "check:lightningcss-native": "node scripts/ensure-lightningcss-native.cjs --check-only",
-    "prebuild": "node scripts/ensure-lightningcss-native.cjs || npm install --no-save lightningcss@1.32.0",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -36,6 +34,7 @@
     "eslint": "^9",
     "eslint-config-next": "^16.2.1",
     "madge": "^8.0.0",
+    "postcss": "^8.4.49",
     "prisma": "^6.19.2",
     "tailwindcss": "^4",
     "typescript": "^5"
