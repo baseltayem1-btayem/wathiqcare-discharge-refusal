@@ -47,9 +47,30 @@ type PasswordSessionResult = {
 
 const GENERIC_LOGIN_ERROR = "Invalid email or password";
 const TOO_MANY_ATTEMPTS_ERROR = "Too many login attempts. Please try again later";
+const AUTH_SERVICE_UNAVAILABLE_ERROR = "Login service is temporarily unavailable. Please try again shortly";
 const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_RATE_LIMIT_MAX_FAILURES = 5;
 const ACCOUNT_LOCK_MINUTES = 15;
+
+function isPrismaConnectivityError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const e = error as { name?: unknown; message?: unknown };
+  const name = typeof e.name === "string" ? e.name : "";
+  const message = typeof e.message === "string" ? e.message : "";
+
+  if (name.includes("PrismaClientInitializationError")) {
+    return true;
+  }
+
+  return (
+    message.includes("Authentication failed against database server") ||
+    message.includes("Can't reach database server") ||
+    message.includes("timed out")
+  );
+}
 
 function readClientIp(request: NextRequest): string {
   const forwardedFor = request.headers.get("x-forwarded-for") ?? "";
@@ -483,6 +504,20 @@ export async function POST(request: NextRequest) {
       request,
     });
   } catch (error) {
+    if (isPrismaConnectivityError(error)) {
+      console.error("LOGIN_DATABASE_UNAVAILABLE", error);
+      return NextResponse.json(
+        { detail: AUTH_SERVICE_UNAVAILABLE_ERROR },
+        {
+          status: 503,
+          headers: {
+            "Cache-Control": "no-store",
+            "Retry-After": "60",
+          },
+        },
+      );
+    }
+
     return handleApiError(error);
   }
 }
