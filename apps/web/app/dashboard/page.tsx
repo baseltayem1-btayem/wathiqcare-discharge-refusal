@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
-  ArrowRight,
   BellRing,
   Building2,
   CheckCircle2,
@@ -80,6 +78,22 @@ function StatCard(props: {
       </div>
     </article>
   );
+}
+
+function widthClass(percent: number): string {
+  if (percent >= 100) return "w-full";
+  if (percent >= 92) return "w-11/12";
+  if (percent >= 84) return "w-10/12";
+  if (percent >= 75) return "w-9/12";
+  if (percent >= 67) return "w-8/12";
+  if (percent >= 59) return "w-7/12";
+  if (percent >= 50) return "w-6/12";
+  if (percent >= 42) return "w-5/12";
+  if (percent >= 34) return "w-4/12";
+  if (percent >= 25) return "w-3/12";
+  if (percent >= 17) return "w-2/12";
+  if (percent >= 9) return "w-1/12";
+  return "w-[4%]";
 }
 
 export default function DashboardPage() {
@@ -173,6 +187,7 @@ export default function DashboardPage() {
                 <div className="space-y-2">
                   {data.pendingByDepartment.map((item) => {
                     const width = Math.max(4, Math.round((item.count / maxDept) * 100));
+                    const widthTone = widthClass(width);
                     const stateTone =
                       item.status === "breached"
                         ? "bg-rose-500"
@@ -188,7 +203,7 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <div className="h-2 rounded-full bg-slate-200">
-                          <div className={`h-2 rounded-full ${stateTone}`} style={{ width: `${width}%` }} />
+                          <div className={`h-2 rounded-full ${stateTone} ${widthTone}`} />
                         </div>
                       </div>
                     );
@@ -227,6 +242,8 @@ export default function DashboardPage() {
                   {data.throughputTrend.map((point) => {
                     const openedWidth = Math.max(2, Math.round((point.opened / maxThroughput) * 100));
                     const closedWidth = Math.max(2, Math.round((point.closed / maxThroughput) * 100));
+                    const openedWidthTone = widthClass(openedWidth);
+                    const closedWidthTone = widthClass(closedWidth);
                     return (
                       <div key={point.day} className="rounded-xl border border-slate-100 p-2">
                         <div className="mb-1 flex items-center justify-between text-xs">
@@ -235,10 +252,10 @@ export default function DashboardPage() {
                         </div>
                         <div className="space-y-1">
                           <div className="h-1.5 rounded-full bg-slate-200">
-                            <div className="h-1.5 rounded-full bg-cyan-600" style={{ width: `${openedWidth}%` }} />
+                            <div className={`h-1.5 rounded-full bg-cyan-600 ${openedWidthTone}`} />
                           </div>
                           <div className="h-1.5 rounded-full bg-slate-200">
-                            <div className="h-1.5 rounded-full bg-emerald-600" style={{ width: `${closedWidth}%` }} />
+                            <div className={`h-1.5 rounded-full bg-emerald-600 ${closedWidthTone}`} />
                           </div>
                         </div>
                       </div>

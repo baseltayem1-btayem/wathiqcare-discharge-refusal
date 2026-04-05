@@ -161,7 +161,7 @@ export async function resolveLegalEscalation(args: {
 	});
 	return getLegalEscalation(args.auth, args.caseId);
 }
-function mapLegalEscalationCase(caseRecord: any): LegalEscalationCase | null {
+function mapLegalEscalationCase(caseRecord: CaseWithAuditLogs): LegalEscalationCase | null {
 	const metadata = asRecord(caseRecord.metadata);
 	const workflow = getWorkflowRecord(metadata);
 	const legalRecord = getLegalRecord(metadata);
@@ -175,8 +175,8 @@ function mapLegalEscalationCase(caseRecord: any): LegalEscalationCase | null {
 	const priority = toPriority(readString(legalRecord, "priority"));
 	const status = deriveLegalStatus(legalRecord, priority);
 	const notes = (caseRecord.auditLogs || [])
-		.filter((item: any) => item.action === "legal_escalation_note_added")
-		.map((item: any) => {
+		.filter((item: AuditLog) => item.action === "legal_escalation_note_added")
+		.map((item: AuditLog) => {
 			const meta = asRecord(item.metadataJson);
 			return {
 				id: item.id,
@@ -188,8 +188,8 @@ function mapLegalEscalationCase(caseRecord: any): LegalEscalationCase | null {
 			} satisfies LegalEscalationNote;
 		});
 	const auditTrail = (caseRecord.auditLogs || [])
-		.filter((item: any) => LEGAL_AUDIT_ACTIONS.has(item.action))
-		.map((item: any) => ({
+		.filter((item: AuditLog) => LEGAL_AUDIT_ACTIONS.has(item.action))
+		.map((item: AuditLog) => ({
 			action: item.action,
 			details: item.details || undefined,
 			timestamp: item.createdAt?.toISOString?.() || "",
@@ -215,7 +215,7 @@ function mapLegalEscalationCase(caseRecord: any): LegalEscalationCase | null {
 	};
 }
 
-async function getAuthorizedRefusalCase(auth: AuthContext, caseId: string): Promise<any> {
+async function getAuthorizedRefusalCase(auth: AuthContext, caseId: string): Promise<CaseWithAuditLogs> {
 	const prisma = getPrisma();
 	const caseRecord = await prisma.case.findUnique({
 		where: { id: caseId },
@@ -338,7 +338,7 @@ async function findRefusalCases(tenantId: string, limit = 200) {
 	return cases.filter((caseRecord) => isRefusalCase(caseRecord));
 }
 
-function mapRefusalCase(caseRecord: any): RefusalCaseListItem {
+function mapRefusalCase(caseRecord: CaseWithAuditLogs): RefusalCaseListItem {
 	const metadata = asRecord(caseRecord.metadata);
 	const workflow = getWorkflowRecord(metadata);
 	const caseStatus =
@@ -372,9 +372,12 @@ function isRefusalCase(caseRecord: { workflowType: string | null; caseType: Case
 		Boolean(getWorkflowRecord(metadata))
 	);
 }
+import type { AuditLog } from "@prisma/client";
 import { CaseStatus, CaseType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { requireTenantId, type AuthContext } from "@/lib/server/auth";
+
+type CaseWithAuditLogs = Prisma.CaseGetPayload<{ include: { auditLogs: true } }>;
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";

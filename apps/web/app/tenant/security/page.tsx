@@ -39,12 +39,6 @@ interface Role {
     permissions?: string[];
 }
 
-interface Department {
-    id: string;
-    code: string;
-    name: string;
-}
-
 const DEPARTMENTS = [
     { code: 'NURSING', name: 'Nursing' },
     { code: 'DOCTORS', name: 'Doctors' },
@@ -92,7 +86,7 @@ export default function TenantSecurityPage() {
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, []);
 
     // Fetch roles
     const fetchRoles = useCallback(async () => {
@@ -250,6 +244,18 @@ export default function TenantSecurityPage() {
                                         {DEPARTMENTS.map((dept) => (
                                             <option key={dept.code} value={dept.code}>
                                                 {dept.name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                    <Select
+                                        className="w-[220px]"
+                                        value={selectedRoleFilter}
+                                        onChange={(e) => setSelectedRoleFilter(e.target.value)}
+                                    >
+                                        <option value="">All Roles</option>
+                                        {roles.map((role) => (
+                                            <option key={role.id} value={role.code}>
+                                                {role.name}
                                             </option>
                                         ))}
                                     </Select>

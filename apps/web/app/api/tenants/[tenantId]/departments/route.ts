@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hasPlatformAccess, requireAuth, requireTenantAccess, requireTenantPermission } from "@/lib/server/auth";
+import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
@@ -15,15 +15,6 @@ type DepartmentPayload = {
     name?: string;
     isActive?: boolean;
 };
-function normalizeDepartmentCode(input: string): string {
-    return input
-        .trim()
-        .toUpperCase()
-        .replace(/[^A-Z0-9]+/g, "_")
-        .replace(/^_+|_+$/g, "")
-        .slice(0, 40);
-}
-
 export async function GET(request: NextRequest, { params }: RouteContext) {
     try {
         const prisma = getPrisma();

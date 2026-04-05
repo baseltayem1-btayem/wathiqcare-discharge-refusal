@@ -4,14 +4,6 @@ import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { DEPARTMENT_LABELS, runSlaSweepForTenant } from "@/lib/server/operations";
-type DepartmentStatus = "on_track" | "at_risk" | "breached";
-
-type PendingDepartmentItem = {
-        department: string;
-        count: number;
-        breachCount: number;
-};
-
 function startOfDayOffset(offset: number): Date {
         const now = new Date();
         return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offset));

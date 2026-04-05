@@ -297,8 +297,8 @@ export default function UIShowcasePage() {
                 <DischargeCaseTable
                   cases={mockCases}
                   onRowClick={(caseItem) => {
-                    console.log("Clicked case:", caseItem);
-                    // Navigate or open dialog
+                    // Navigate or open dialog (caseItem not yet used)
+                    void caseItem;
                   }}
                 />
               </CardContent>
@@ -337,7 +337,6 @@ export default function UIShowcasePage() {
                     ],
                   }}
                   onSave={() => {
-                    console.log("Save clicked");
                     setCaseDialogOpen(false);
                   }}
                 />
@@ -364,7 +363,7 @@ export default function UIShowcasePage() {
                     highRisk: 3,
                   }}
                   onCaseClick={(caseItem) => {
-                    console.log("Clicked legal case:", caseItem);
+                    void caseItem;
                   }}
                 />
               </CardContent>
@@ -390,10 +389,10 @@ export default function UIShowcasePage() {
                     expired: 1,
                   }}
                   onStartConsent={(documentType) => {
-                    console.log("Start consent for:", documentType);
+                    void documentType;
                   }}
                   onVerifyConsent={(consentId) => {
-                    console.log("Verify consent:", consentId);
+                    void consentId;
                   }}
                 />
               </CardContent>

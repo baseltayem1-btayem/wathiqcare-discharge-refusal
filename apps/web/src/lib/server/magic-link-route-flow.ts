@@ -110,10 +110,6 @@ export type MagicLinkVerifyFlowResult =
           };
       };
 
-function createStatusError(status: number, message: string): Error & { status: number } {
-    return Object.assign(new Error(message), { status });
-}
-
 function readErrorStatus(error: unknown): number | null {
     if (!error || typeof error !== "object") {
         return null;

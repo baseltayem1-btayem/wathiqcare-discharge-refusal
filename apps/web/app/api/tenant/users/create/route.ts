@@ -60,3 +60,162 @@ async function ensureCreatorMembershipActive(tenantId: string, userId: string): 
         throw new ApiError(403, "Creator must have an active tenant membership");
     }
 }
+
+export const runtime = "nodejs";
+
+/**
+ * POST /api/tenant/users/create
+ * Create a new tenant-scoped user and send a magic-link invitation.
+ * Allowed creators: tenant_admin, tenant_owner.
+ */
+export async function POST(request: NextRequest) {
+    try {
+        const auth = await requireAuth(request);
+        const tenantId = auth.tenant_id;
+
+        if (!tenantId) {
+            throw new ApiError(403, "Tenant context is required");
+        }
+
+        ensureCreatorRole(auth.role);
+        await ensureCreatorMembershipActive(tenantId, auth.sub);
+
+        await requireTenantPermissionForAuth(auth, tenantId, "users.create", {
+            allowPlatform: false,
+        });
+
+        const body = (await request.json().catch(() => null)) as CreateTenantUserPayload | null;
+        if (!body) {
+            throw new ApiError(400, "Invalid JSON body");
+        }
+
+        const email = normalizeEmail((body.email || "").trim());
+        const fullName = (body.fullName || "").trim();
+        const department = (body.department || "").trim() || null;
+        const { userRole, membershipRole } = mapRequestedRole(body.role);
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            throw new ApiError(400, "Valid email is required");
+        }
+        if (!fullName) {
+            throw new ApiError(400, "fullName is required");
+        }
+
+        const prisma = getPrisma();
+
+        if (!isTenantDomainAllowed(email, await prisma.tenantAllowedDomain.findMany({ where: { tenantId } }))) {
+            const domain = extractDomain(email);
+            throw new ApiError(403, `Email domain @${domain} is not allowed for this organisation`);
+        }
+
+        const subscription = await getTenantSubscriptionSummary(tenantId);
+        if (subscription.availableSeats !== null && subscription.availableSeats <= 0) {
+            throw new ApiError(402, "No available seats. Please upgrade your subscription.");
+        }
+
+        const existing = await prisma.user.findUnique({ where: { email } });
+        if (existing) {
+            throw new ApiError(409, "A user with this email already exists");
+        }
+
+        const invitationToken = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+        const invitationExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        const { user, invitation } = await prisma.$transaction(async (tx) => {
+            const newUser = await tx.user.create({
+                data: {
+                    tenantId,
+                    email,
+                    fullName,
+                    role: userRole,
+                    userType: userTypeForUserRole(userRole, email),
+                    status: "invited",
+                    isActive: false,
+                    hashedPassword: null,
+                    emailVerified: false,
+                    authProvider: "local_magic",
+                },
+            });
+
+            await tx.tenantMembership.create({
+                data: {
+                    tenantId,
+                    userId: newUser.id,
+                    role: membershipRole,
+                    status: MembershipStatus.PENDING,
+                    invitedAt: new Date(),
+                    metadata: department
+                        ? { invitedByUserId: auth.sub, department }
+                        : { invitedByUserId: auth.sub },
+                },
+            });
+
+            const inv = await tx.invitation.create({
+                data: {
+                    tenantId,
+                    email,
+                    role: membershipRole,
+                    status: InvitationStatus.PENDING,
+                    token: invitationToken,
+                    expiresAt: invitationExpiresAt,
+                    invitedByUserId: auth.sub,
+                },
+            });
+
+            return { user: newUser, invitation: inv };
+        });
+
+        const magic = await issueMagicLinkForUser(user.id);
+
+        const html = buildWathiqCareEmailHtml({
+            title: "You've been invited to WathiqCare",
+            preheader: `${fullName}, you've been added to your organisation on WathiqCare.`,
+            bodyHtml: `
+      <p style="margin:0 0 14px;font-size:15px;color:#334155;line-height:1.7;">Hello ${fullName},</p>
+      <p style="margin:0 0 14px;font-size:15px;color:#334155;line-height:1.7;">
+        You have been added to your organisation on <strong>WathiqCare</strong>.
+        Use the secure link below to set up your account and get started.
+      </p>
+    `,
+            ctaUrl: magic.magicUrl,
+            ctaText: "Access WathiqCare →",
+            expiresNote: `This link expires in ${magic.expiresMinutes} minutes and can only be used once.`,
+            securityNote: "You received this because an administrator invited you to the platform. If you did not expect this, you may ignore this email.",
+        });
+
+        const text = buildWathiqCareEmailText({
+            title: "You've been invited to WathiqCare",
+            bodyLines: [
+                `Hello ${fullName},`,
+                "You have been added to your organisation on WathiqCare.",
+                "Use the secure link below to access your account:",
+            ],
+            ctaUrl: magic.magicUrl,
+            ctaLabel: "Access WathiqCare",
+            expiresNote: `This link expires in ${magic.expiresMinutes} minutes.`,
+            securityNote: "You received this because an administrator invited you to the platform.",
+        });
+
+        await sendEmailWithDiagnostics({ to: email, subject: "You've been invited to WathiqCare", html, text });
+
+        await writeAuditLog({
+            tenantId,
+            userId: auth.sub,
+            entityType: "USER",
+            entityId: user.id,
+            action: "TENANT_USER_INVITED",
+            details: `Tenant user invited: ${email}`,
+            metadataJson: { email, fullName, role: userRole, department },
+            request,
+        });
+
+        await syncActiveUserUsage(tenantId);
+
+        return NextResponse.json(
+            toJsonSafe({ success: true, user_id: user.id, invitation_id: invitation.id }),
+            { status: 201 },
+        );
+    } catch (error) {
+        return handleApiError(error);
+    }
+}

@@ -59,7 +59,16 @@ export async function GET(request: NextRequest) {
             take: limit,
         });
 
-        const result: AuditLogListItem[] = logs.map((log) => ({
+        const result: AuditLogListItem[] = logs.map((log: {
+            id: string;
+            createdAt: Date;
+            user?: { email: string | null; fullName: string | null } | null;
+            userId: string | null;
+            action: string;
+            entityType: string;
+            entityId: string | null;
+            details: string | null;
+        }) => ({
             id: log.id,
             timestamp: log.createdAt.toISOString(),
             actor: log.user?.fullName || log.user?.email || log.userId || "system",

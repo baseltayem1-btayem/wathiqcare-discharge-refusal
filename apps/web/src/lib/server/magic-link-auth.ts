@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import { SubscriptionStatus, type Prisma } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import {
   evaluatePostAuthSnapshot,
@@ -18,6 +17,8 @@ import { platformRoleForUserRole, userTypeForUserRole } from "@/lib/server/roles
 import { hashResetToken } from "@/lib/server/password";
 
 const MAGIC_LINK_TTL_MINUTES = 10;
+const ACTIVE_SUBSCRIPTION_STATUSES = ["TRIALING", "ACTIVE", "PAST_DUE"] as const;
+type TransactionClient = Parameters<Parameters<ReturnType<typeof getPrisma>["$transaction"]>[0]>[0];
 
 type MagicLinkRequestDecision =
   | "INVALID_EMAIL"
@@ -150,7 +151,7 @@ function buildMagicLinkSession(args: {
 }
 
 async function assertMagicLinkAccessAllowed(
-  tx: Prisma.TransactionClient,
+  tx: TransactionClient,
   user: {
     id: string;
     email: string;
@@ -182,7 +183,7 @@ async function assertMagicLinkAccessAllowed(
     where: {
       tenantId: user.tenantId,
       status: {
-        in: [SubscriptionStatus.TRIALING, SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE],
+        in: [...ACTIVE_SUBSCRIPTION_STATUSES],
       },
     },
     select: { id: true },
@@ -233,7 +234,7 @@ export async function issueMagicLinkForUser(userId: string): Promise<{
   const tokenId = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + MAGIC_LINK_TTL_MINUTES * 60 * 1000);
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: TransactionClient) => {
     await tx.$executeRaw`
       UPDATE magic_link_tokens
       SET used = TRUE, used_at = NOW()
@@ -325,7 +326,7 @@ export const verifyMagicLink = async (
   const tokenHash = hashResetToken(trimmedToken);
   const prisma = getPrisma();
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: TransactionClient) => {
     const rows = await tx.$queryRaw<
       Array<{
         id: string;

@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requirePlatformAccess } from "@/lib/server/auth";
+import { handleApiError } from "@/lib/server/http";
 import {
     buildWathiqCareEmailHtml,
     buildWathiqCareEmailText,
@@ -7,7 +9,13 @@ import {
 
 const TEST_EMAIL_RECIPIENT = "Dolly@linagroups.com";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+    try {
+        await requirePlatformAccess(request);
+    } catch (error) {
+        return handleApiError(error);
+    }
+
     const startedAt = new Date().toISOString();
 
     const html = buildWathiqCareEmailHtml({

@@ -80,8 +80,8 @@ export async function GET(request: NextRequest) {
     const emails = Array.from(
       new Set(
         memberships
-          .map((m: any) => m.user.email)
-          .filter((email: any): email is string => Boolean(email)),
+          .map((m) => m.user.email)
+          .filter((email): email is string => Boolean(email)),
       ),
     );
 
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const users = memberships.map((membership: any) => ({
+    const users = memberships.map((membership) => ({
       id: membership.user.id,
       email: membership.user.email,
       fullName: membership.user.fullName,

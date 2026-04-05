@@ -15,10 +15,6 @@ type DomainRow = {
     updated_at: Date;
 };
 
-type RouteContext = {
-    params: Promise<{ tenantId: string }>;
-};
-
 async function authorize(request: NextRequest, tenantId: string) {
     const auth = await requireAuth(request);
     if (hasPlatformAccess(auth)) {

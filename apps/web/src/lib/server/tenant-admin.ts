@@ -1,5 +1,6 @@
-import { Prisma, TenantRoleStatus } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
+
+type TransactionClient = Parameters<Parameters<ReturnType<typeof getPrisma>["$transaction"]>[0]>[0];
 
 const DEFAULT_DEPARTMENTS = [
     { code: "DOCTOR", name: "Doctor" },
@@ -122,7 +123,7 @@ export function slugRoleCode(input: string): string {
         .slice(0, 40);
 }
 
-export async function ensurePermissionCatalog(tx: Prisma.TransactionClient): Promise<void> {
+export async function ensurePermissionCatalog(tx: TransactionClient): Promise<void> {
     for (const permission of PERMISSION_CATALOG) {
         await tx.permission.upsert({
             where: { key: permission.key },
@@ -141,7 +142,7 @@ export async function ensurePermissionCatalog(tx: Prisma.TransactionClient): Pro
     }
 }
 
-export async function ensureTenantDepartments(tx: Prisma.TransactionClient, tenantId: string): Promise<void> {
+export async function ensureTenantDepartments(tx: TransactionClient, tenantId: string): Promise<void> {
     for (const department of DEFAULT_DEPARTMENTS) {
         await tx.department.upsert({
             where: {
@@ -164,12 +165,12 @@ export async function ensureTenantDepartments(tx: Prisma.TransactionClient, tena
     }
 }
 
-export async function ensureTenantRoleTemplates(tx: Prisma.TransactionClient, tenantId: string): Promise<void> {
+export async function ensureTenantRoleTemplates(tx: TransactionClient, tenantId: string): Promise<void> {
     await ensurePermissionCatalog(tx);
     const permissions = await tx.permission.findMany({
         where: { isActive: true },
     });
-    const permissionByKey = new Map(permissions.map((item) => [item.key, item.id]));
+    const permissionByKey = new Map(permissions.map((item: { key: string; id: string }) => [item.key, item.id]));
 
     for (const template of DEFAULT_ROLE_TEMPLATES) {
         const role = await tx.tenantRole.upsert({
@@ -182,14 +183,14 @@ export async function ensureTenantRoleTemplates(tx: Prisma.TransactionClient, te
             update: {
                 name: template.name,
                 description: template.description,
-                status: TenantRoleStatus.ACTIVE,
+                status: "ACTIVE",
             },
             create: {
                 tenantId,
                 code: template.code,
                 name: template.name,
                 description: template.description,
-                status: TenantRoleStatus.ACTIVE,
+                status: "ACTIVE",
                 isTemplate: true,
             },
         });
@@ -220,7 +221,7 @@ export async function ensureTenantRoleTemplates(tx: Prisma.TransactionClient, te
 
 export async function bootstrapTenantAdminConfiguration(tenantId: string): Promise<void> {
     const prisma = getPrisma();
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: TransactionClient) => {
         await ensureTenantDepartments(tx, tenantId);
         await ensureTenantRoleTemplates(tx, tenantId);
 

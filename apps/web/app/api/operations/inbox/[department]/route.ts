@@ -90,7 +90,22 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         });
 
         const now = Date.now();
-        const items = caseStates.map((item) => ({
+        const items = caseStates.map((item: {
+            caseId: string;
+            case: { caseNumber: string | null; title: string | null; patientName: string | null };
+            currentStage: string | null;
+            currentStep: string | null;
+            assignedDepartment: keyof typeof DEPARTMENT_LABELS;
+            status: string;
+            priority: string;
+            slaState: string;
+            escalationLevel: number | string;
+            waitingTimeMinutes: number;
+            assignmentTimestamp: Date | null;
+            lastActionAt: Date | null;
+            assignedTo: { id: string; fullName: string | null; role: string } | null;
+            slaDeadline: Date | null;
+        }) => ({
             caseId: item.caseId,
             caseNumber: item.case.caseNumber,
             title: item.case.title,
@@ -111,21 +126,21 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         }));
 
         const agingBuckets = [
-            { bucket: "0-2h", count: items.filter((item) => item.waitingTimeMinutes <= 120).length },
-            { bucket: "2-8h", count: items.filter((item) => item.waitingTimeMinutes > 120 && item.waitingTimeMinutes <= 480).length },
-            { bucket: "8-24h", count: items.filter((item) => item.waitingTimeMinutes > 480 && item.waitingTimeMinutes <= 1440).length },
-            { bucket: ">24h", count: items.filter((item) => item.waitingTimeMinutes > 1440).length },
+            { bucket: "0-2h", count: items.filter((item: { waitingTimeMinutes: number }) => item.waitingTimeMinutes <= 120).length },
+            { bucket: "2-8h", count: items.filter((item: { waitingTimeMinutes: number }) => item.waitingTimeMinutes > 120 && item.waitingTimeMinutes <= 480).length },
+            { bucket: "8-24h", count: items.filter((item: { waitingTimeMinutes: number }) => item.waitingTimeMinutes > 480 && item.waitingTimeMinutes <= 1440).length },
+            { bucket: ">24h", count: items.filter((item: { waitingTimeMinutes: number }) => item.waitingTimeMinutes > 1440).length },
         ];
 
         const breachTrend = [...Array(7)].map((_, index) => {
             const dayStart = startOfDayOffset(index - 6);
             const nextDay = startOfDayOffset(index - 5);
-            const dayEvents = breachEvents.filter((event) => event.createdAt >= dayStart && event.createdAt < nextDay);
+            const dayEvents = breachEvents.filter((event: { action: string; createdAt: Date }) => event.createdAt >= dayStart && event.createdAt < nextDay);
 
             return {
                 day: dayStart.toISOString().slice(0, 10),
-                breaches: dayEvents.filter((event) => event.action === "sla_breached").length,
-                escalations: dayEvents.filter((event) => event.action === "escalation_triggered").length,
+                breaches: dayEvents.filter((event: { action: string }) => event.action === "sla_breached").length,
+                escalations: dayEvents.filter((event: { action: string }) => event.action === "escalation_triggered").length,
             };
         });
 
@@ -140,9 +155,9 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
             },
             summary: {
                 total: items.length,
-                overdue: items.filter((item) => item.slaState === "BREACHED").length,
-                atRisk: items.filter((item) => item.slaState === "AT_RISK").length,
-                unassigned: items.filter((item) => !item.assignedTo).length,
+                overdue: items.filter((item: { slaState: string }) => item.slaState === "BREACHED").length,
+                atRisk: items.filter((item: { slaState: string }) => item.slaState === "AT_RISK").length,
+                unassigned: items.filter((item: { assignedTo: unknown }) => !item.assignedTo).length,
             },
         });
     } catch (error) {

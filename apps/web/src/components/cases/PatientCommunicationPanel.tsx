@@ -329,6 +329,9 @@ export default function PatientCommunicationPanel({
                     <input
                         readOnly
                         value={generatedLink.url}
+                        title="Generated secure link"
+                        placeholder="Generated secure link"
+                        aria-label="Generated secure link"
                         className="mt-3 w-full rounded-lg border border-cyan-200 bg-white px-3 py-2 text-sm text-slate-900"
                     />
                     <div className="mt-3 flex flex-wrap gap-2">

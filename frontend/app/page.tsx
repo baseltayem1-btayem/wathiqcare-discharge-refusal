@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
 import type { ComponentType } from "react";
@@ -217,6 +215,8 @@ const LANDING_COPY: Record<"ar" | "en", LandingCopy> = {
 export default function HomePage() {
   const { lang, isRtl } = useI18n();
   const copy = LANDING_COPY[lang];
+  const statDelayClasses = ["delay-stat-0", "delay-stat-1", "delay-stat-2", "delay-stat-3"];
+  const featureDelayClasses = ["delay-feature-0", "delay-feature-1", "delay-feature-2", "delay-feature-3", "delay-feature-4", "delay-feature-5"];
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#f2f9fa] text-slate-900" dir={isRtl ? "rtl" : "ltr"}>
@@ -226,7 +226,7 @@ export default function HomePage() {
         <div className="orb-3 absolute bottom-[-180px] left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full" />
       </div>
 
-      <div style={{ height: "3px", background: "linear-gradient(90deg, #0ea5a4, #06b6d4, #0ea5a4)" }} />
+      <div className="landing-top-bar" />
 
       <header className="sticky top-0 z-30 border-b border-white/60 bg-white/70 px-4 py-3 backdrop-blur-xl md:px-8">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
@@ -248,8 +248,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/login"
-              className="rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:translate-y-[-1px] hover:shadow-cyan-500/30 sm:text-sm"
-              style={{ background: "linear-gradient(120deg, #0f766e, #0891b2, #06b6d4)" }}
+              className="cta-gradient rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:translate-y-[-1px] hover:shadow-cyan-500/30 sm:text-sm"
             >
               {copy.headerLogin}
             </Link>
@@ -265,7 +264,7 @@ export default function HomePage() {
 
           <h1 className="mt-5 text-3xl font-extrabold leading-tight text-slate-900 sm:text-5xl">
             {copy.heroTitleLead}
-            <span className="block text-transparent" style={{ backgroundImage: "linear-gradient(120deg, #0f766e, #0891b2)", WebkitBackgroundClip: "text" }}>
+            <span className="hero-gradient-text block text-transparent">
               {copy.heroTitleAccent}
             </span>
           </h1>
@@ -277,8 +276,7 @@ export default function HomePage() {
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link
               href="/login"
-              className="rounded-2xl px-6 py-3 text-sm font-bold text-white transition hover:translate-y-[-1px]"
-              style={{ background: "linear-gradient(120deg, #0f766e, #0891b2, #06b6d4)" }}
+              className="cta-gradient rounded-2xl px-6 py-3 text-sm font-bold text-white transition hover:translate-y-[-1px]"
             >
               {copy.heroPrimaryCta}
             </Link>
@@ -292,7 +290,7 @@ export default function HomePage() {
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {copy.stats.map((stat, index) => (
-              <div key={stat.label} className="hero-reveal rounded-2xl border border-white/70 bg-white/85 p-4 shadow-[0_8px_24px_rgba(12,74,110,0.08)]" style={{ animationDelay: `${0.14 + index * 0.08}s` }}>
+              <div key={stat.label} className={`hero-reveal ${statDelayClasses[index] ?? "delay-stat-0"} rounded-2xl border border-white/70 bg-white/85 p-4 shadow-[0_8px_24px_rgba(12,74,110,0.08)]`}>
                 <p className="text-2xl font-extrabold text-cyan-700">{stat.value}</p>
                 <p className="mt-1 text-xs font-medium text-slate-600">{stat.label}</p>
               </div>
@@ -300,7 +298,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="hero-reveal" style={{ animationDelay: "0.16s" }}>
+        <div className="hero-reveal delay-panel">
           <div className="relative overflow-hidden rounded-[28px] border border-teal-100 bg-white p-5 shadow-[0_20px_50px_rgba(8,145,178,0.18)] sm:p-6">
             <div className="absolute -left-10 top-16 h-24 w-24 rounded-full bg-cyan-100/60" />
             <div className="absolute -bottom-16 -right-8 h-40 w-40 rounded-full bg-teal-100/60" />
@@ -362,7 +360,7 @@ export default function HomePage() {
             const Icon = feature.icon;
 
             return (
-              <article key={feature.title} className="hero-reveal group rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-cyan-200" style={{ animationDelay: `${0.16 + index * 0.07}s` }}>
+              <article key={feature.title} className={`hero-reveal group ${featureDelayClasses[index] ?? "delay-feature-0"} rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-cyan-200`}>
                 <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 text-white shadow-lg shadow-cyan-500/25">
                   <Icon className="h-5 w-5" />
                 </span>
@@ -424,6 +422,65 @@ export default function HomePage() {
           50% {
             transform: translateY(-14px) translateX(10px);
           }
+        }
+
+        .landing-top-bar {
+          height: 3px;
+          background: linear-gradient(90deg, #0ea5a4, #06b6d4, #0ea5a4);
+        }
+
+        .cta-gradient {
+          background: linear-gradient(120deg, #0f766e, #0891b2, #06b6d4);
+        }
+
+        .hero-gradient-text {
+          background-image: linear-gradient(120deg, #0f766e, #0891b2);
+          -webkit-background-clip: text;
+          background-clip: text;
+        }
+
+        .delay-panel {
+          animation-delay: 0.16s;
+        }
+
+        .delay-stat-0 {
+          animation-delay: 0.14s;
+        }
+
+        .delay-stat-1 {
+          animation-delay: 0.22s;
+        }
+
+        .delay-stat-2 {
+          animation-delay: 0.3s;
+        }
+
+        .delay-stat-3 {
+          animation-delay: 0.38s;
+        }
+
+        .delay-feature-0 {
+          animation-delay: 0.16s;
+        }
+
+        .delay-feature-1 {
+          animation-delay: 0.23s;
+        }
+
+        .delay-feature-2 {
+          animation-delay: 0.3s;
+        }
+
+        .delay-feature-3 {
+          animation-delay: 0.37s;
+        }
+
+        .delay-feature-4 {
+          animation-delay: 0.44s;
+        }
+
+        .delay-feature-5 {
+          animation-delay: 0.51s;
         }
       `}</style>
     </main>

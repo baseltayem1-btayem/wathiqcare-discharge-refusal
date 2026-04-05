@@ -89,18 +89,6 @@ export default function LoginPage() {
     }
   }
 
-  // UI-level navigation: simulate login success for all flows
-  function handleFakeLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setNotice("");
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      router.push("/dashboard");
-    }, 800);
-  }
-
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#eff7fa]">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -109,7 +97,7 @@ export default function LoginPage() {
         <div className="orb-login-3 absolute bottom-[-150px] left-1/2 h-[380px] w-[380px] -translate-x-1/2 rounded-full" />
       </div>
 
-      <div style={{ height: "3px", background: "linear-gradient(90deg, #0f766e, #0891b2, #0f766e)" }} />
+      <div className="login-top-bar" />
 
       <div className="relative mx-auto w-full max-w-6xl px-4 py-8 md:px-8 md:py-12">
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -124,17 +112,11 @@ export default function LoginPage() {
         </div>
 
         <section
-          className="overflow-hidden rounded-[28px] border border-white/70 bg-white/80 backdrop-blur-xl"
-          style={{ boxShadow: "0 18px 48px rgba(12,74,110,0.16)" }}
+          className="login-shell overflow-hidden rounded-[28px] border border-white/70 bg-white/80 backdrop-blur-xl"
         >
           <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
             <div
-              className="relative border-b p-5 md:p-7 lg:border-b-0 lg:border-e"
-              style={{
-                background:
-                  "radial-gradient(90% 130% at 18% 20%, rgba(34,211,238,0.17) 0%, rgba(15,23,42,0.03) 75%), linear-gradient(165deg, #ecfeff 0%, #f8fafc 55%, #e6f6fb 100%)",
-                borderColor: "#dbeafe",
-              }}
+              className="login-brand-panel relative border-b p-5 md:p-7 lg:border-b-0 lg:border-e"
             >
               <LoginBrandPanel />
             </div>
@@ -237,7 +219,7 @@ export default function LoginPage() {
 
                 {/* Magic Link */}
                 {authMode === "magic-link" && (
-                  <form onSubmit={handleFakeLogin} className="space-y-4">
+                  <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">Sign In via Secure Link</h2>
                     <p className="text-sm text-gray-600">Enter your email and receive a one-time sign-in link — no password needed</p>
 
@@ -265,8 +247,7 @@ export default function LoginPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                      style={{ background: "linear-gradient(120deg, #0f766e, #0891b2, #06b6d4)", boxShadow: "0 8px 20px rgba(8,145,178,0.28)" }}
+                      className="login-submit-btn inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Mail className="h-4 w-4" />
                       {loading ? "Sending..." : "Send Secure Login Link"}
@@ -289,7 +270,7 @@ export default function LoginPage() {
 
                 {/* Password Login */}
                 {authMode === "password" && (
-                  <form onSubmit={handleFakeLogin} className="space-y-4">
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">Sign In with Password</h2>
                     <p className="text-sm text-gray-600">Enter your email and password. Use <span className="font-medium text-cyan-700">Secure Link</span> above if you don&apos;t have a password yet.</p>
 
@@ -340,8 +321,7 @@ export default function LoginPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                      style={{ background: "linear-gradient(120deg, #0f766e, #0891b2, #06b6d4)", boxShadow: "0 8px 20px rgba(8,145,178,0.28)" }}
+                      className="login-submit-btn inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <KeyRound className="h-4 w-4" />
                       {loading ? "Signing in..." : "Sign in"}
@@ -397,6 +377,26 @@ export default function LoginPage() {
           50% {
             transform: translateY(-14px) translateX(9px);
           }
+        }
+
+        .login-top-bar {
+          height: 3px;
+          background: linear-gradient(90deg, #0f766e, #0891b2, #0f766e);
+        }
+
+        .login-shell {
+          box-shadow: 0 18px 48px rgba(12, 74, 110, 0.16);
+        }
+
+        .login-brand-panel {
+          background: radial-gradient(90% 130% at 18% 20%, rgba(34, 211, 238, 0.17) 0%, rgba(15, 23, 42, 0.03) 75%),
+            linear-gradient(165deg, #ecfeff 0%, #f8fafc 55%, #e6f6fb 100%);
+          border-color: #dbeafe;
+        }
+
+        .login-submit-btn {
+          background: linear-gradient(120deg, #0f766e, #0891b2, #06b6d4);
+          box-shadow: 0 8px 20px rgba(8, 145, 178, 0.28);
         }
       `}</style>
     </main>

@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { InvitationStatus, MembershipRole, MembershipStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -16,6 +15,9 @@ import { userTypeForUserRole } from "@/lib/server/roles";
 export const runtime = "nodejs";
 
 const TENANT_ADMIN_ROLES = new Set(["tenant_admin", "tenant_owner"]);
+const MEMBERSHIP_ROLE_ADMIN = "ADMIN" as const;
+const MEMBERSHIP_STATUS_ACTIVE = "ACTIVE" as const;
+const INVITATION_STATUS_PENDING = "PENDING" as const;
 
 type RouteContext = {
     params: Promise<{ tenantId: string }>;
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         const invitationToken = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
         const invitationExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-        const created = await prisma.$transaction(async (tx) => {
+        const created = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
             const user = await tx.user.create({
                 data: {
                     tenantId: tenant.id,
@@ -98,8 +100,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 data: {
                     tenantId: tenant.id,
                     userId: user.id,
-                    role: MembershipRole.ADMIN,
-                    status: MembershipStatus.ACTIVE,
+                    role: MEMBERSHIP_ROLE_ADMIN,
+                    status: MEMBERSHIP_STATUS_ACTIVE,
                     invitedAt: new Date(),
                     metadata: {
                         invitedByUserId: auth.sub,
@@ -114,8 +116,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 data: {
                     tenantId: tenant.id,
                     email,
-                    role: MembershipRole.ADMIN,
-                    status: InvitationStatus.PENDING,
+                    role: MEMBERSHIP_ROLE_ADMIN,
+                    status: INVITATION_STATUS_PENDING,
                     token: invitationToken,
                     expiresAt: invitationExpiresAt,
                     invitedByUserId: auth.sub,

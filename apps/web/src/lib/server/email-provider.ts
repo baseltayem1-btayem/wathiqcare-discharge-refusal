@@ -1,10 +1,5 @@
 import nodemailer from "nodemailer";
 
-type GraphTokenPayload = {
-    access_token?: string;
-    [key: string]: unknown;
-};
-
 // ---------------------------------------------------------------------------
 // Shared WathiqCare brand email template
 // ---------------------------------------------------------------------------
@@ -149,18 +144,6 @@ function safeErrorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-function redactTokenBody(body: string): string {
-    try {
-        const parsed = JSON.parse(body) as GraphTokenPayload;
-        if (parsed.access_token) {
-            parsed.access_token = "[REDACTED]";
-        }
-        return JSON.stringify(parsed);
-    } catch {
-        return body;
-    }
-}
-
 function smtpConfigured(): boolean {
     const pass = process.env.SMTP_PASS?.trim() || process.env.RESEND_API_KEY?.trim();
     return !!pass;
@@ -208,81 +191,6 @@ async function sendViaSmtp(args: SendEmailArgs): Promise<EmailDiagnostics> {
     diagnostics.smtpAccepted = (result.accepted || []).map(String);
     diagnostics.smtpRejected = (result.rejected || []).map(String);
     diagnostics.smtpSendResponse = result.response;
-    return diagnostics;
-}
-
-async function sendViaMicrosoftGraph(args: SendEmailArgs): Promise<EmailDiagnostics> {
-    const tenantId = process.env.MICROSOFT_TENANT_ID?.trim();
-    const clientId = process.env.MICROSOFT_CLIENT_ID?.trim();
-    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET?.trim();
-    const senderEmail = process.env.MICROSOFT_SENDER_EMAIL?.trim().toLowerCase();
-
-    if (!tenantId || !clientId || !clientSecret || !senderEmail) {
-        throw new Error("Microsoft Graph email configuration is missing");
-    }
-
-    const tokenResponse = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            client_id: clientId,
-            client_secret: clientSecret,
-            scope: "https://graph.microsoft.com/.default",
-            grant_type: "client_credentials",
-        }),
-        cache: "no-store",
-    });
-
-    const tokenBodyRaw = await tokenResponse.text().catch(() => "");
-    const diagnostics: EmailDiagnostics = {
-        provider: "microsoft-graph",
-        tokenStatus: tokenResponse.status,
-        tokenBody: redactTokenBody(tokenBodyRaw),
-    };
-
-    if (!tokenResponse.ok) {
-        throw new Error(`Failed to get Microsoft Graph token (${tokenResponse.status}): ${tokenBodyRaw}`);
-    }
-
-    let tokenJson: GraphTokenPayload;
-    try {
-        tokenJson = JSON.parse(tokenBodyRaw) as GraphTokenPayload;
-    } catch {
-        throw new Error("Microsoft Graph token response was not valid JSON");
-    }
-
-    if (!tokenJson.access_token) {
-        throw new Error("Microsoft Graph token response did not include access_token");
-    }
-
-    const sendResponse = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(senderEmail)}/sendMail`, {
-        method: "POST",
-        headers: {
-            authorization: `Bearer ${tokenJson.access_token}`,
-            "content-type": "application/json",
-        },
-        body: JSON.stringify({
-            message: {
-                subject: args.subject,
-                body: {
-                    contentType: "HTML",
-                    content: args.html,
-                },
-                toRecipients: [{ emailAddress: { address: args.to } }],
-            },
-            saveToSentItems: true,
-        }),
-        cache: "no-store",
-    });
-
-    const sendBodyRaw = await sendResponse.text().catch(() => "");
-    diagnostics.sendStatus = sendResponse.status;
-    diagnostics.sendBody = sendBodyRaw;
-
-    if (!sendResponse.ok) {
-        throw new Error(`Failed to send email via Microsoft Graph (${sendResponse.status}): ${sendBodyRaw}`);
-    }
-
     return diagnostics;
 }
 

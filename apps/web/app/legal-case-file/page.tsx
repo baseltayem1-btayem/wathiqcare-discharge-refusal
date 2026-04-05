@@ -3,15 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowRight,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   FolderArchive,
   RefreshCw,
   ScrollText,
   ShieldCheck,
-  User,
 } from "lucide-react";
 
 import AppShell from "@/components/AppShell";
@@ -63,12 +58,12 @@ type LegalPackageMeta = {
 };
 
 // ---------------- CONSTANTS ----------------
-const REFUSAL_STATES = new Set([
-  "PATIENT_REFUSED",
-  "REFUSED_TO_SIGN",
-  "UNABLE_TO_SIGN",
-  "ESCALATED",
-]);
+// const REFUSAL_STATES = new Set([
+//   "PATIENT_REFUSED",
+//   "REFUSED_TO_SIGN",
+//   "UNABLE_TO_SIGN",
+//   "ESCALATED",
+// ]);
 
 // ---------------- API ----------------
 async function generateLegalPackage(caseId: string) {
@@ -94,7 +89,6 @@ export default function LegalCaseFilePage() {
     useState<Record<string, LegalPackageMeta | null>>({});
 
   const [busyCaseId, setBusyCaseId] = useState<string | null>(null);
-  const [expandedCase, setExpandedCase] = useState<string | null>(null);
 
   // ---------------- LOAD ----------------
   useEffect(() => {
@@ -140,7 +134,6 @@ export default function LegalCaseFilePage() {
 
     setLegalPackages(Object.fromEntries(packagesEntries));
   }
-
   // ---------------- ACTIONS ----------------
   async function runAction(
     caseId: string,
@@ -208,7 +201,6 @@ export default function LegalCaseFilePage() {
 
         {/* Cases */}
         {rows.map(({ item, workflow }) => {
-          const summary = summaries[item.id];
           const legalPackage = legalPackages[item.id];
           const isBusy = busyCaseId === item.id;
 

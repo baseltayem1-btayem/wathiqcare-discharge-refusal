@@ -51,12 +51,12 @@ export async function POST(request: NextRequest) {
         const { email: emailInput, secret, level } = body;
 
         // Constant-time string comparison to prevent timing attacks
-        if (!secret || secret.length !== bootstrapSecret.length || secret !== bootstrapSecret) {
+        if (!secret || !secureEquals(secret, bootstrapSecret)) {
             throw new ApiError(403, "Invalid bootstrap secret");
         }
 
-        const email = (emailInput || "").trim().toLowerCase();
-        if (!email || !email.includes("@")) {
+        const email = normalizeEmail(emailInput);
+        if (!isValidEmail(email)) {
             throw new ApiError(400, "A valid email address is required");
         }
 

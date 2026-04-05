@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         const invitationToken = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
         const invitationExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-        const created = await prisma.$transaction(async (tx) => {
+        const created = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
             const user = await tx.user.create({
                 data: {
                     tenantId: platformTenant.id,

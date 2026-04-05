@@ -10,7 +10,8 @@
     "packages/*"
   ],
   "overrides": {
-    "effect": "^3.20.0"
+    "effect": "^3.20.0",
+    "defu": "^6.1.5"
   },
   "scripts": {
     "dev": "npm run dev -w apps/web",

@@ -30,7 +30,7 @@
   --font-mono-primary: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
-@theme inline {
+:root {
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);
@@ -40,7 +40,6 @@
   --color-accent-hover: var(--accent-hover);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
-
   --font-sans: var(--font-sans-primary);
   --font-mono: var(--font-mono-primary);
 }
@@ -48,7 +47,6 @@
 html {
   background: var(--background);
   color: var(--foreground);
-  -webkit-text-size-adjust: 100%;
 }
 
 body {

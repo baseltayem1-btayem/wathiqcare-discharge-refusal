@@ -9,25 +9,14 @@
 import {
     AlertTriangle,
     Archive,
-    Bell,
-    CheckCircle2,
-    ClipboardList,
-    Database,
-    FileCheck2,
-    FileCog,
-    FilePlus2,
     FileSignature,
     FileText,
     FolderKanban,
-    Gavel,
     HandHelping,
     LayoutGrid,
     MessageSquareHeart,
-    Rocket,
     ShieldCheck,
     Stethoscope,
-    Timer,
-    Users,
 } from "lucide-react";
 
 export type TenantNavItem = {

@@ -13,9 +13,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
-  // next.config.js is a CommonJS file; require() is intentional.
+  // CommonJS files: next.config.js and build scripts use require() intentionally.
   {
-    files: ["next.config.js"],
+    files: ["next.config.js", "scripts/*.cjs"],
     rules: {
       "@typescript-eslint/no-require-imports": "off",
     },
