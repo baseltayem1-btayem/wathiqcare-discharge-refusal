@@ -24,6 +24,7 @@ writeIfPossible(path.resolve(process.cwd(), ".next/routes-manifest-deterministic
 writeIfPossible("/vercel/path1/.next/routes-manifest-deterministic.json", content);
 writeIfPossible("/vercel/path1/vercel/path1/.next/routes-manifest-deterministic.json", content);
 writeIfPossible("/vercel/path1/etc/os-release", "NAME=Vercel\nID=vercel\n");
+writeIfPossible("/vercel/path1/usr/lib/os-release", "NAME=Vercel\nID=vercel\n");
 
 try {
   const sourceNextDir = path.resolve(process.cwd(), ".next");
