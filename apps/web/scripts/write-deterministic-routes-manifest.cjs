@@ -12,6 +12,21 @@ function writeIfPossible(targetPath, content) {
   }
 }
 
+function copyIfPossible(sourcePath, targetPath, label) {
+  try {
+    if (!fs.existsSync(sourcePath)) {
+      return;
+    }
+
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    fs.cpSync(sourcePath, targetPath, { recursive: true, force: true });
+    console.log(`[routes-manifest] copied ${sourcePath} -> ${targetPath}${label ? ` (${label})` : ""}`);
+  } catch (error) {
+    const message = error && error.message ? error.message : String(error);
+    console.warn(`[routes-manifest] skip ${label || targetPath}: ${message}`);
+  }
+}
+
 const localSource = path.resolve(process.cwd(), ".next/routes-manifest.json");
 if (!fs.existsSync(localSource)) {
   console.warn(`[routes-manifest] source not found: ${localSource}`);
@@ -40,22 +55,24 @@ const duplicatedRootPackageJson = packageJsonSource
 
 writeIfPossible("/vercel/path1/vercel/path1/package.json", duplicatedRootPackageJson);
 
-try {
-  const sourceNextDir = path.resolve(process.cwd(), ".next");
-  const targetNextDir = "/vercel/path1/vercel/path1/.next";
+const duplicatedRoot = "/vercel/path1/vercel/path1";
+const sourceAppRoot = process.cwd();
 
-  if (fs.existsSync(sourceNextDir)) {
-    fs.mkdirSync(path.dirname(targetNextDir), { recursive: true });
-    fs.cpSync(sourceNextDir, targetNextDir, { recursive: true, force: true });
-    console.log(`[routes-manifest] copied ${sourceNextDir} -> ${targetNextDir}`);
+copyIfPossible(path.resolve(sourceAppRoot, ".next"), `${duplicatedRoot}/.next`, ".next copy");
+
+for (const entry of fs.readdirSync(sourceAppRoot, { withFileTypes: true })) {
+  if (entry.name === ".next" || entry.name === "node_modules") {
+    continue;
   }
-} catch (error) {
-  const message = error && error.message ? error.message : String(error);
-  console.warn(`[routes-manifest] skip .next copy: ${message}`);
+
+  copyIfPossible(
+    path.resolve(sourceAppRoot, entry.name),
+    `${duplicatedRoot}/${entry.name}`,
+    `app root mirror: ${entry.name}`,
+  );
 }
 
 try {
-  const duplicatedRoot = "/vercel/path1/vercel/path1";
   const duplicatedNodeModules = `${duplicatedRoot}/node_modules`;
 
   fs.mkdirSync(duplicatedRoot, { recursive: true });
