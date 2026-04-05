@@ -3,14 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 const SESSION_COOKIE_NAME =
   process.env.AUTH_COOKIE_NAME || "wathiqcare_access_token";
 
-const PLATFORM_HOME = "/platform";
+const PLATFORM_ONLY_HOME = "/platform";
 const TENANT_HOME = "/dashboard";
-const LOGIN_PATH = "/login";
-
-const PUBLIC_PATHS = new Set([
-  "/",
-  LOGIN_PATH,
-]);
 
 const PLATFORM_BLOCKED_PREFIXES = [
   "/dashboard",
@@ -39,25 +33,20 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 
   try {
     const normalized = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-    const decoded = JSON.parse(atob(padded));
+    const padded = normalized.padEnd(
+      Math.ceil(normalized.length / 4) * 4,
+      "=",
+    );
+    const payload = JSON.parse(atob(padded));
 
-    if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       return null;
     }
 
-    return decoded as Record<string, unknown>;
+    return payload as Record<string, unknown>;
   } catch {
     return null;
   }
-}
-
-function isTokenExpired(payload: Record<string, unknown>): boolean {
-  const exp = payload.exp;
-  if (typeof exp !== "number") return true;
-
-  const now = Math.floor(Date.now() / 1000);
-  return exp <= now;
 }
 
 function resolveUserType(
@@ -87,57 +76,51 @@ function isPlatformBlockedPath(pathname: string): boolean {
   );
 }
 
-function isPublicPath(pathname: string): boolean {
-  if (PUBLIC_PATHS.has(pathname)) return true;
-  if (pathname.startsWith("/_next/")) return true;
-  if (pathname === "/favicon.ico") return true;
-  return false;
-}
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-function clearSessionCookie(response: NextResponse) {
-  response.cookies.set(SESSION_COOKIE_NAME, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
-}
-
-export function middleware(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-
   if (!token) {
     return NextResponse.next();
   }
 
   const payload = decodeJwtPayload(token);
-
-  if (!payload || isTokenExpired(payload)) {
-    const response = NextResponse.redirect(new URL(LOGIN_PATH, request.url));
-    clearSessionCookie(response);
-    return response;
+  if (!payload) {
+    return NextResponse.next();
   }
 
   const userType = resolveUserType(payload);
 
-  if (pathname === LOGIN_PATH) {
-    return NextResponse.redirect(
-      new URL(userType === "platform_admin" ? PLATFORM_HOME : TENANT_HOME, request.url),
-    );
-  }
-
   if (userType === "platform_admin") {
+    if (pathname === "/login") {
+      const url = request.nextUrl.clone();
+      url.pathname = PLATFORM_ONLY_HOME;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
     if (isPlatformBlockedPath(pathname)) {
-      return NextResponse.redirect(new URL(PLATFORM_HOME, request.url));
+      const url = request.nextUrl.clone();
+      url.pathname = PLATFORM_ONLY_HOME;
+      url.search = "";
+      return NextResponse.redirect(url);
     }
 
     return NextResponse.next();
   }
 
-  if (pathname === PLATFORM_HOME || pathname.startsWith(`${PLATFORM_HOME}/`)) {
-    return NextResponse.redirect(new URL(TENANT_HOME, request.url));
+  if (pathname === "/login") {
+    const url = request.nextUrl.clone();
+    url.pathname = TENANT_HOME;
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  if (pathname === "/platform" || pathname.startsWith("/platform/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = TENANT_HOME;
+    url.search = "";
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
