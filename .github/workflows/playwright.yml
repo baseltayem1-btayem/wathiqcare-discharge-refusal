@@ -15,6 +15,8 @@ jobs:
         node-version: lts/*
     - name: Install dependencies
       run: npm ci
+    - name: Validate lightningcss native package (Linux)
+      run: npm run check:lightningcss-native --workspace=apps/web
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests
