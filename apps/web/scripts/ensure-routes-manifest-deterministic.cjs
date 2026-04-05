@@ -24,7 +24,25 @@ function firstExistingDir(paths) {
   return null;
 }
 
+function ensureDuplicatedRootAlias() {
+  const aliasPath = "/vercel/path1/vercel/path1";
+  if (fs.existsSync(aliasPath)) {
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(aliasPath), { recursive: true });
+  fs.symlinkSync("/vercel/path1", aliasPath, "dir");
+  console.log(`[ensure-routes-manifest] linked ${aliasPath} -> /vercel/path1`);
+}
+
 function main() {
+  try {
+    ensureDuplicatedRootAlias();
+  } catch (error) {
+    const message = error && error.message ? error.message : String(error);
+    console.warn(`[ensure-routes-manifest] symlink setup skipped: ${message}`);
+  }
+
   const cwd = process.cwd();
 
   const sourceCandidates = [
