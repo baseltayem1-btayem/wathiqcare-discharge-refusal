@@ -18,7 +18,6 @@
     "@prisma/client": "^6.19.2",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
-    "geist": "^1.7.0",
     "lucide-react": "^0.577.0",
     "next": "^16.2.1",
     "nodemailer": "^8.0.2",

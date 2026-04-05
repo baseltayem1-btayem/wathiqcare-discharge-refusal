@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-// GeistMono is loaded from the self-hosted `geist` npm package — no Google Fonts runtime dependency.
-import { GeistMono } from "geist/font/mono";
 import I18nProvider from "@/i18n/I18nProvider";
 import { Toaster } from "@/components/make-ui/sonner";
 import "./globals.css";
@@ -23,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className={`${GeistMono.variable} antialiased`}>
+      <body className="antialiased">
         <I18nProvider>
           {children}
           <Toaster />
