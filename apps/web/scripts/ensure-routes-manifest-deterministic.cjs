@@ -15,15 +15,6 @@ function ensureFile(targetPath, content) {
   fs.writeFileSync(targetPath, content, "utf8");
 }
 
-function firstExistingDir(paths) {
-  for (const p of paths) {
-    if (fs.existsSync(p) && fs.statSync(p).isDirectory()) {
-      return p;
-    }
-  }
-  return null;
-}
-
 function ensureDuplicatedRootAlias() {
   const aliasPath = "/vercel/path1/vercel/path1";
   if (fs.existsSync(aliasPath)) {
@@ -71,18 +62,6 @@ function main() {
     console.log(`[ensure-routes-manifest] wrote ${t}`);
   }
 
-  const nextDir = firstExistingDir([
-    path.resolve(cwd, ".next"),
-    "/vercel/path1/.next",
-    "/vercel/path1/apps/web/.next",
-  ]);
-
-  if (nextDir) {
-    const duplicateNextDir = "/vercel/path1/vercel/path1/.next";
-    fs.mkdirSync(path.dirname(duplicateNextDir), { recursive: true });
-    fs.cpSync(nextDir, duplicateNextDir, { recursive: true, force: true });
-    console.log(`[ensure-routes-manifest] mirrored ${nextDir} -> ${duplicateNextDir}`);
-  }
 }
 
 main();
