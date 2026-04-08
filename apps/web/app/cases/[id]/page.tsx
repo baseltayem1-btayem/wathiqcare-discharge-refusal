@@ -68,6 +68,16 @@ type WitnessPayload = {
   witness_role: string;
 };
 
+type ConsentFormPayload = {
+  processingPurpose: string;
+  lawfulBasis: string;
+  consentType: string;
+  consentMethod: string;
+  documentVersion: string;
+  witnessName: string;
+  otpReference: string;
+};
+
 type ReadinessState = {
   ready_for_legal: boolean;
   reason?: string;
@@ -77,6 +87,153 @@ type LegalPackageMeta = {
   version: number;
   download_url: string;
 };
+
+type CaseApiRecord = {
+  id: string;
+  medicalRecordNo?: string | null;
+  patientName?: string | null;
+  status?: string | null;
+  title?: string | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+type WorkflowApiRecord = {
+  attending_physician?: string | null;
+  discussion_summary?: string | null;
+  refusal_reason?: string | null;
+  escalation_required?: boolean;
+  refusal_form_generated_at?: string | null;
+  financial_notice_generated_at?: string | null;
+  documents?: Array<{ templateKey?: string; template_key?: string }>;
+};
+
+type ConsentRecordSummary = {
+  id: string;
+  processingPurpose?: string;
+  lawfulBasis?: string;
+  consentMethod?: string;
+  documentHash?: string | null;
+  consentedAt?: string;
+};
+
+type LegalReadinessReport = {
+  status: string;
+  readyForLegal: boolean;
+  blockers: string[];
+  checklist: Array<{
+    key: string;
+    label: string;
+    required: boolean;
+    satisfied: boolean;
+    reason: string;
+  }>;
+  evidence?: {
+    consentCount?: number;
+    documentCount?: number;
+    auditChainVerified?: boolean;
+  };
+};
+
+type AuditChainResponse = {
+  events: Array<{
+    id: string;
+    eventType: string;
+    actorRole?: string | null;
+    payloadSummary: string;
+    currentHash: string;
+    previousHash?: string | null;
+    createdAt: string;
+  }>;
+  verification?: {
+    verified: boolean;
+    totalEvents: number;
+  };
+};
+
+type DocumentSummary = {
+  id: string;
+  template_key?: string;
+  title?: string;
+  generationStatus?: string;
+  generated_at?: string;
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function getString(record: Record<string, unknown> | null | undefined, ...keys: string[]): string {
+  if (!record) return "";
+
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
+}
+
+function mapCaseRecordToCaseData(record: CaseApiRecord): CaseData {
+  const metadata = asRecord(record.metadata);
+  const workflow = asRecord(metadata?.workflow);
+
+  return {
+    id: record.id,
+    mrn:
+      (typeof record.medicalRecordNo === "string" && record.medicalRecordNo.trim()) ||
+      getString(metadata, "mrn", "medical_record_number") ||
+      "N/A",
+    patient:
+      (typeof record.patientName === "string" && record.patientName.trim()) ||
+      getString(metadata, "patient_name") ||
+      "Unknown Patient",
+    physician:
+      getString(workflow, "attending_physician") ||
+      getString(metadata, "attending_physician") ||
+      "Not assigned",
+    diagnosis:
+      getString(workflow, "discussion_summary", "refusal_reason") ||
+      (typeof record.title === "string" && record.title.trim()) ||
+      "Discharge refusal workflow",
+    status:
+      (typeof record.status === "string" && record.status.trim()) ||
+      "OPEN",
+  };
+}
+
+function toReadinessState(workflow: WorkflowApiRecord | null): ReadinessState {
+  if (!workflow) {
+    return {
+      ready_for_legal: false,
+      reason: "Generate the legal evidence bundle to complete readiness.",
+    };
+  }
+
+  const hasRequiredEvidence = Boolean(
+    workflow.refusal_form_generated_at ||
+    workflow.financial_notice_generated_at ||
+    workflow.documents?.length,
+  );
+
+  if (workflow.escalation_required) {
+    return {
+      ready_for_legal: false,
+      reason: "Legal escalation is still required before closure.",
+    };
+  }
+
+  return {
+    ready_for_legal: hasRequiredEvidence,
+    reason: hasRequiredEvidence
+      ? undefined
+      : "Generate the refusal form or legal package to complete the case evidence.",
+  };
+}
 
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers ?? {});
@@ -114,18 +271,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   return (await response.json()) as T;
 }
 
-function toCaseData(payload: CaseApiResponse): CaseData {
-  return {
-    id: payload.id,
-    mrn: payload.mrn ?? "",
-    patient: payload.patient ?? payload.patientName ?? "",
-    physician: payload.physician ?? payload.attendingPhysician ?? "",
-    diagnosis: payload.diagnosis ?? "",
-    status: payload.status ?? "unknown",
-  };
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
+function getErrorMessage(error: unknown, fallback = "An unexpected error occurred."): string {
   return error instanceof Error ? error.message : fallback;
 }
 
@@ -150,12 +296,55 @@ export default function CasePage() {
     witness_name: "",
     witness_role: "",
   });
+  const [consentForm, setConsentForm] = useState<ConsentFormPayload>({
+    processingPurpose: "Discharge refusal medico-legal processing",
+    lawfulBasis: "PDPL healthcare and legal obligation basis",
+    consentType: "informed_refusal_consent",
+    consentMethod: "ELECTRONIC_SIGNATURE",
+    documentVersion: "1.0",
+    witnessName: "",
+    otpReference: "",
+  });
   const [readiness, setReadiness] = useState<ReadinessState | null>(null);
+  const [legalReadinessReport, setLegalReadinessReport] = useState<LegalReadinessReport | null>(null);
+  const [consentRecords, setConsentRecords] = useState<ConsentRecordSummary[]>([]);
+  const [auditChain, setAuditChain] = useState<AuditChainResponse | null>(null);
+  const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [legalPackage, setLegalPackage] = useState<LegalPackageMeta | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState("");
+
+  async function reloadComplianceState(targetCaseId: string) {
+    const [readinessReport, consentList, auditInfo, docs, pkg] = await Promise.all([
+      apiFetch<LegalReadinessReport>(`/api/discharge/cases/${targetCaseId}/legal-readiness`).catch(() => null),
+      apiFetch<ConsentRecordSummary[]>(`/api/discharge/cases/${targetCaseId}/consent`).catch(() => []),
+      apiFetch<AuditChainResponse>(`/api/discharge/cases/${targetCaseId}/audit-chain`).catch(() => null),
+      apiFetch<DocumentSummary[]>(`/api/discharge/cases/${targetCaseId}/documents`).catch(() => []),
+      apiFetch<LegalPackageMeta>(`/api/discharge/cases/${targetCaseId}/legal-package`).catch(() => null),
+    ]);
+
+    setLegalReadinessReport(readinessReport);
+    setConsentRecords(consentList ?? []);
+    setAuditChain(auditInfo);
+    setDocuments(docs ?? []);
+    setLegalPackage(pkg);
+
+    if (readinessReport) {
+      setReadiness({
+        ready_for_legal: readinessReport.readyForLegal,
+        reason: readinessReport.blockers?.[0],
+      });
+      return;
+    }
+
+    if (docs?.length || pkg) {
+      setReadiness({
+        ready_for_legal: true,
+      });
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -170,27 +359,48 @@ export default function CasePage() {
       setError("");
 
       try {
-        const casePromise = apiFetch<CaseApiResponse>(`/api/cases/${caseId}`);
+        const [caseRecord, workflow, existingPackage, readinessReport, consentList, auditInfo, docs, readinessResponse] = await Promise.all([
+          apiFetch<CaseApiRecord>(`/api/cases/${caseId}`),
+          apiFetch<WorkflowApiRecord>(`/api/discharge/cases/${caseId}/workflow`).catch(() => null),
+          apiFetch<LegalPackageMeta>(`/api/discharge/cases/${caseId}/legal-package`).catch(() => null),
+          apiFetch<LegalReadinessReport>(`/api/discharge/cases/${caseId}/legal-readiness`).catch(() => null),
+          apiFetch<ConsentRecordSummary[]>(`/api/discharge/cases/${caseId}/consent`).catch(() => []),
+          apiFetch<AuditChainResponse>(`/api/discharge/cases/${caseId}/audit-chain`).catch(() => null),
+          apiFetch<DocumentSummary[]>(`/api/discharge/cases/${caseId}/documents`).catch(() => []),
+          apiFetch<ReadinessState>(`/api/discharge/cases/${caseId}/readiness`).catch(() => null),
+        ]);
 
-        const readinessPromise = apiFetch<ReadinessState>(
-          `/api/discharge/cases/${caseId}/readiness`,
-        ).catch(() => null);
+        if (cancelled) {
+          return;
+        }
 
-        const legalPackagePromise = apiFetch<LegalPackageMeta>(
-          `/api/discharge/cases/${caseId}/legal-package`,
-        ).catch(() => null);
-
-        const [caseResponse, readinessResponse, legalPackageResponse] =
-          await Promise.all([casePromise, readinessPromise, legalPackagePromise]);
-
-        if (cancelled) return;
-
-        setCaseData(toCaseData(caseResponse));
-        setReadiness(readinessResponse);
-        setLegalPackage(legalPackageResponse);
+        setCaseData(mapCaseRecordToCaseData(caseRecord));
+        setReadiness(
+          readinessReport
+            ? {
+                ready_for_legal: readinessReport.readyForLegal,
+                reason: readinessReport.blockers?.[0],
+              }
+            : readinessResponse ?? toReadinessState(workflow),
+        );
+        setLegalReadinessReport(readinessReport);
+        setConsentRecords(consentList ?? []);
+        setAuditChain(auditInfo);
+        setDocuments(docs ?? []);
+        setLegalPackage(existingPackage);
       } catch (err: unknown) {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
+
         setError(getErrorMessage(err, "Failed to load case"));
+        setCaseData(null);
+        setReadiness(null);
+        setLegalReadinessReport(null);
+        setConsentRecords([]);
+        setAuditChain(null);
+        setDocuments([]);
+        setLegalPackage(null);
       } finally {
         if (!cancelled) {
           setPageLoading(false);
@@ -208,13 +418,7 @@ export default function CasePage() {
   async function refreshReadinessAndPackage(): Promise<void> {
     if (!caseId) return;
 
-    const [readinessResponse, legalPackageResponse] = await Promise.all([
-      apiFetch<ReadinessState>(`/api/discharge/cases/${caseId}/readiness`).catch(() => null),
-      apiFetch<LegalPackageMeta>(`/api/discharge/cases/${caseId}/legal-package`).catch(() => null),
-    ]);
-
-    setReadiness(readinessResponse);
-    setLegalPackage(legalPackageResponse);
+    await reloadComplianceState(caseId);
   }
 
   async function handleGenerateLegalPackage(): Promise<void> {
@@ -229,6 +433,7 @@ export default function CasePage() {
         { method: "POST" },
       );
       setLegalPackage(pkg);
+      await reloadComplianceState(caseId);
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Failed to generate legal package"));
     } finally {
@@ -742,6 +947,180 @@ export default function CasePage() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Legal Readiness Checklist</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {legalReadinessReport ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={legalReadinessReport.readyForLegal ? "success" : "warning"}>
+                  {legalReadinessReport.status}
+                </Badge>
+                <span className="text-sm text-slate-600">
+                  Consent: {legalReadinessReport.evidence?.consentCount ?? 0} • Documents: {legalReadinessReport.evidence?.documentCount ?? 0}
+                </span>
+              </div>
+              <ul className="space-y-2 text-sm">
+                {legalReadinessReport.checklist.map((item) => (
+                  <li key={item.key} className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2">
+                    <div>
+                      <div className="font-medium text-slate-800">{item.label}</div>
+                      <div className="text-slate-500">{item.reason}</div>
+                    </div>
+                    <Badge variant={item.satisfied ? "success" : item.required ? "warning" : "outline"}>
+                      {item.satisfied ? "Compliant" : item.required ? "Blocked" : "Optional"}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-600">No checklist has been evaluated yet.</div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="mb-6 grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Consent & Signatures</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-3 flex flex-wrap gap-2">
+              <Badge variant={consentRecords.length > 0 ? "success" : "warning"}>{consentRecords.length} consent record(s)</Badge>
+              <Badge variant={signature.signer_name ? "success" : "warning"}>Signature {signature.signer_name ? "captured" : "missing"}</Badge>
+              <Badge variant={witness.witness_name ? "success" : "outline"}>Witness {witness.witness_name ? "recorded" : "not required / pending"}</Badge>
+            </div>
+            <div className="mb-4 grid gap-3 md:grid-cols-2">
+              <div className="space-y-3">
+                <select aria-label="Consent method" className="w-full rounded border px-3 py-2 text-sm" value={consentForm.consentMethod} onChange={(e) => setConsentForm((prev) => ({ ...prev, consentMethod: e.target.value }))}>
+                  <option value="ELECTRONIC_SIGNATURE">Electronic signature</option>
+                  <option value="OTP">OTP</option>
+                  <option value="WITNESS_ACKNOWLEDGMENT">Witness acknowledgment</option>
+                  <option value="WRITTEN">Written</option>
+                </select>
+                <input className="w-full rounded border px-3 py-2 text-sm" placeholder="Processing purpose" value={consentForm.processingPurpose} onChange={(e) => setConsentForm((prev) => ({ ...prev, processingPurpose: e.target.value }))} />
+                <input className="w-full rounded border px-3 py-2 text-sm" placeholder="Lawful basis" value={consentForm.lawfulBasis} onChange={(e) => setConsentForm((prev) => ({ ...prev, lawfulBasis: e.target.value }))} />
+              </div>
+              <div className="space-y-3">
+                <input className="w-full rounded border px-3 py-2 text-sm" placeholder="Consent type" value={consentForm.consentType} onChange={(e) => setConsentForm((prev) => ({ ...prev, consentType: e.target.value }))} />
+                <input className="w-full rounded border px-3 py-2 text-sm" placeholder="Document version" value={consentForm.documentVersion} onChange={(e) => setConsentForm((prev) => ({ ...prev, documentVersion: e.target.value }))} />
+                <input className="w-full rounded border px-3 py-2 text-sm" placeholder="Witness / confirmer name" value={consentForm.witnessName} onChange={(e) => setConsentForm((prev) => ({ ...prev, witnessName: e.target.value }))} />
+                {consentForm.consentMethod === "OTP" ? (
+                  <input className="w-full rounded border px-3 py-2 text-sm" placeholder="OTP reference" value={consentForm.otpReference} onChange={(e) => setConsentForm((prev) => ({ ...prev, otpReference: e.target.value }))} />
+                ) : null}
+              </div>
+            </div>
+            <div className="mb-4 flex items-center gap-2">
+              <Button variant="outline" disabled={loading} onClick={handleRecordConsent}>Record Consent Evidence</Button>
+              <Badge variant={consentRecords.length > 0 ? "success" : "outline"}>{consentForm.consentMethod.replaceAll("_", " ")}</Badge>
+            </div>
+            <div className="space-y-2 text-sm">
+              {consentRecords.length === 0 ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">No consent records saved yet.</div>
+              ) : (
+                consentRecords.slice(0, 5).map((record) => (
+                  <div key={record.id} className="rounded-xl border border-slate-200 px-3 py-2">
+                    <div className="font-medium text-slate-800">{record.processingPurpose || "Discharge refusal consent"}</div>
+                    <div className="text-slate-500">Method: {record.consentMethod || "N/A"}</div>
+                    <div className="text-slate-500">Hash: {record.documentHash?.slice(0, 16) || "—"}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Assignments & SLA</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between"><span className="text-slate-600">Current workflow phase</span><Badge variant="outline">{steps[Math.max(activeStep, 0)]?.label || "Case Intake"}</Badge></div>
+              <div className="flex items-center justify-between"><span className="text-slate-600">Open blockers</span><Badge variant={readiness?.ready_for_legal ? "success" : "warning"}>{legalReadinessReport?.blockers?.length ?? 0}</Badge></div>
+              <div className="flex items-center justify-between"><span className="text-slate-600">Escalation required</span><Badge variant={legalReadinessReport?.readyForLegal ? "success" : "warning"}>{legalReadinessReport?.readyForLegal ? "No" : "Review required"}</Badge></div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">
+                The case remains case-centric; medical, legal, consent, audit, and export controls are evaluated from one workspace.
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mb-6 grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Audit Trail</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-3 flex items-center gap-2">
+              <Badge variant={auditChain?.verification?.verified ? "success" : "warning"}>
+                Hash chain {auditChain?.verification?.verified ? "verified" : "pending / attention"}
+              </Badge>
+              <span className="text-sm text-slate-600">{auditChain?.verification?.totalEvents ?? 0} event(s)</span>
+            </div>
+            <div className="space-y-2 text-sm">
+              {auditChain?.events?.length ? auditChain.events.slice(0, 6).map((event) => (
+                <div key={event.id} className="rounded-xl border border-slate-200 px-3 py-2">
+                  <div className="font-medium text-slate-800">{event.eventType}</div>
+                  <div className="text-slate-500">{event.payloadSummary}</div>
+                  <div className="text-slate-400">{new Date(event.createdAt).toLocaleString()}</div>
+                </div>
+              )) : <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">No audit chain events available yet.</div>}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Documents</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              {documents.length === 0 ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">No generated documents found for this case yet.</div>
+              ) : (
+                documents.slice(0, 8).map((document) => (
+                  <div key={document.id} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
+                    <div>
+                      <div className="font-medium text-slate-800">{document.title || document.template_key || "Document"}</div>
+                      <div className="text-slate-500">{document.generated_at ? new Date(document.generated_at).toLocaleString() : "Pending"}</div>
+                    </div>
+                    <Badge variant={document.generationStatus === "generated" ? "success" : "outline"}>{document.generationStatus || "draft"}</Badge>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Security / Access Log</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            {(auditChain?.events ?? []).filter((event) => /EXPORT|SIGNATURE|CONSENT|PRIVILEGED/i.test(event.eventType)).slice(0, 8).map((event) => (
+              <div key={event.id} className="rounded-xl border border-slate-200 px-3 py-2">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-medium text-slate-800">{event.eventType}</span>
+                  <Badge variant="outline">{event.actorRole || "system"}</Badge>
+                </div>
+                <div className="text-slate-500">{event.payloadSummary}</div>
+                <div className="text-slate-400">Hash: {event.currentHash.slice(0, 16)}…</div>
+              </div>
+            ))}
+            {(auditChain?.events ?? []).filter((event) => /EXPORT|SIGNATURE|CONSENT|PRIVILEGED/i.test(event.eventType)).length === 0 ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">No security-sensitive access events have been captured yet.</div>
+            ) : null}
+          </div>
         </CardContent>
       </Card>
     </AppShell>

@@ -4,6 +4,7 @@ import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 import { platformRoleForUserRole } from "@/lib/server/roles";
+import { getStepUpStatusFromRequest } from "@/lib/server/security-policy-service";
 import { resolveTenantBrandingWithProfile } from "@/lib/server/tenantBranding";
 import { getTenantBrandingProfile } from "@/lib/server/tenantBrandingStore";
 
@@ -68,6 +69,11 @@ export async function GET(request: NextRequest) {
     const platformRole =
       auth.platform_role ??
       (user.userType === "PLATFORM_ADMIN" ? platformRoleForUserRole(user.role) ?? "platform_admin" : platformRoleForUserRole(user.role));
+    const stepUp = getStepUpStatusFromRequest({
+      request,
+      auth,
+      tenantId: effectiveTenantId ?? "platform",
+    });
     const userType =
       user.userType === "PLATFORM_ADMIN"
         ? "platform_admin"
@@ -83,6 +89,7 @@ export async function GET(request: NextRequest) {
         platformRole,
         userType,
         homePath,
+        stepUp,
         tenant: tenant ? resolveTenantBrandingWithProfile(tenant, brandingProfile) : undefined,
         user,
         subscription,

@@ -8,6 +8,7 @@ import {
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
+import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 
 const prisma = getPrisma();
 
@@ -333,4 +334,23 @@ export async function writeAuditLog(args: AuditArgs): Promise<void> {
       metadataJson: args.metadataJson,
     },
   });
+
+  try {
+    await appendAuditChainEvent({
+      tenantId: args.tenantId,
+      caseId: args.caseId ?? null,
+      eventType: String(args.action).toUpperCase(),
+      actorId: args.userId,
+      payloadSummary: args.details || `${args.entityType}:${args.action}`,
+      metadataJson: {
+        entityType: args.entityType,
+        entityId: args.entityId,
+        documentId: args.documentId ?? null,
+        metadata: args.metadataJson ?? null,
+      },
+      request: args.request,
+    });
+  } catch (auditChainError) {
+    console.error("audit chain append failed (non-fatal)", auditChainError);
+  }
 }

@@ -31,6 +31,9 @@ echo "==> Running frontend lint"
 cd "$ROOT_DIR/apps/web"
 npm run lint
 
+echo "==> Running frontend compliance/unit tests"
+npm run test
+
 if [[ "$MODE" == "full" ]]; then
   echo "==> Running frontend production build"
   npm run build

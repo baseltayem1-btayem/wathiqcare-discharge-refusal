@@ -5,6 +5,9 @@ import type {
   WorkflowStepStatus,
 } from "@/components/cases/workflowTreeTypes";
 
+const FIRST_STEP_ID = CASE_WORKFLOW_STEPS[0]?.id;
+const SECOND_STEP_ID = CASE_WORKFLOW_STEPS[1]?.id;
+
 export type SequentialStepMeta = {
   stepId: string;
   index: number;
@@ -12,6 +15,50 @@ export type SequentialStepMeta = {
   locked: boolean;
   current: boolean;
 };
+
+function cloneWorkflowSelectionState(state: WorkflowSelectionState): WorkflowSelectionState {
+  return Object.fromEntries(
+    Object.entries(state).map(([stepId, values]) => [stepId, { ...values }]),
+  );
+}
+
+function ensureLegacyWorkflowCompatibility(state: WorkflowSelectionState): void {
+  state.case_created = {
+    intake_status: state.case_created?.intake_status || "created",
+  };
+
+  state.risk_identified = {
+    risk_level: state.risk_identified?.risk_level || "",
+    barrier_type: state.risk_identified?.barrier_type || "",
+  };
+}
+
+function getFieldValueWithLegacyFallback(
+  stepId: string,
+  fieldId: string,
+  state: WorkflowSelectionState,
+): string {
+  const directValue = state[stepId]?.[fieldId];
+  if (directValue) {
+    return directValue;
+  }
+
+  if (stepId === FIRST_STEP_ID) {
+    return state.case_created?.intake_status || "";
+  }
+
+  if (stepId === SECOND_STEP_ID) {
+    if (fieldId === "barrier_type") {
+      return state.risk_identified?.barrier_type || "";
+    }
+
+    if (fieldId === "patient_notified" || fieldId === "refusal_type") {
+      return state.risk_identified?.risk_level || "";
+    }
+  }
+
+  return "";
+}
 
 export function createDefaultWorkflowSelectionState(): WorkflowSelectionState {
   const state: WorkflowSelectionState = {};
@@ -23,9 +70,14 @@ export function createDefaultWorkflowSelectionState(): WorkflowSelectionState {
     }
   }
 
-  // Seed the first step so the timeline starts at a meaningful state.
-  state.case_created.intake_status = "created";
+  const firstStep = CASE_WORKFLOW_STEPS[0];
+  if (firstStep) {
+    for (const field of firstStep.fields) {
+      state[firstStep.id][field.id] = field.options[0]?.value || "created";
+    }
+  }
 
+  ensureLegacyWorkflowCompatibility(state);
   return state;
 }
 
@@ -37,10 +89,11 @@ export function mergeWorkflowSelectionState(
     return fallback;
   }
 
-  const next: WorkflowSelectionState = { ...fallback };
+  const sourceInput = input as Record<string, unknown>;
+  const next = cloneWorkflowSelectionState(fallback);
 
   for (const step of CASE_WORKFLOW_STEPS) {
-    const stepValue = (input as Record<string, unknown>)[step.id];
+    const stepValue = sourceInput[step.id];
     if (!stepValue || typeof stepValue !== "object") {
       continue;
     }
@@ -58,11 +111,32 @@ export function mergeWorkflowSelectionState(
     next[step.id] = currentStep;
   }
 
+  const legacyCaseCreated = sourceInput.case_created;
+  if (legacyCaseCreated && typeof legacyCaseCreated === "object") {
+    const intakeStatus = (legacyCaseCreated as Record<string, unknown>).intake_status;
+    if (typeof intakeStatus === "string" && intakeStatus) {
+      next.case_created = { intake_status: intakeStatus };
+    }
+  }
+
+  const legacyRiskIdentified = sourceInput.risk_identified;
+  if (legacyRiskIdentified && typeof legacyRiskIdentified === "object") {
+    const legacySource = legacyRiskIdentified as Record<string, unknown>;
+    next.risk_identified = {
+      risk_level:
+        typeof legacySource.risk_level === "string" ? legacySource.risk_level : next.risk_identified?.risk_level || "",
+      barrier_type:
+        typeof legacySource.barrier_type === "string"
+          ? legacySource.barrier_type
+          : next.risk_identified?.barrier_type || "",
+    };
+  }
+
+  ensureLegacyWorkflowCompatibility(next);
   return next;
 }
 
 export function getStepStatus(step: WorkflowStep, state: WorkflowSelectionState): WorkflowStepStatus {
-  const values = state[step.id] || {};
   const total = step.fields.length;
 
   if (total === 0) {
@@ -70,7 +144,7 @@ export function getStepStatus(step: WorkflowStep, state: WorkflowSelectionState)
   }
 
   const selectedCount = step.fields.reduce((count, field) => {
-    return values[field.id] ? count + 1 : count;
+    return getFieldValueWithLegacyFallback(step.id, field.id, state) ? count + 1 : count;
   }, 0);
 
   if (selectedCount === 0) {

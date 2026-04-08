@@ -7,7 +7,8 @@
     "build": "next build --webpack && node scripts/write-deterministic-routes-manifest.cjs",
     "start": "next start",
     "lint": "eslint",
-    "prisma:generate": "prisma generate",
+    "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts",
+    "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",
     "test:magic-link": "node --test --experimental-strip-types src/lib/server/magic-link-route-flow.test.mjs"
   },
   "dependencies": {
@@ -37,6 +38,7 @@
     "postcss": "^8.4.49",
     "prisma": "^6.19.2",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

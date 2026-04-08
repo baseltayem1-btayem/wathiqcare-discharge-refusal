@@ -12,12 +12,15 @@ export const OPERATIONAL_ROLES = [
     "finance_officer",
     "reception",
     "patient_affairs",
+    "social_services",
     "quality",
     "compliance",
     "legal_admin",
     "it_admin",
     "medical_director",
     "bed_manager",
+    "auditor",
+    "read_only_manager",
     "viewer",
 ] as const;
 
@@ -30,6 +33,7 @@ export const CASE_CREATOR_ROLES = [
     "doctor",
     "nursing",
     "patient_affairs",
+    "social_services",
 ] as const;
 
 export type CanonicalUserRole =
@@ -58,14 +62,18 @@ const USER_ROLE_ALIASES: Record<string, CanonicalUserRole> = {
     front_desk: "reception",
     patient_affairs: "patient_affairs",
     patient_relations: "patient_affairs",
-    social_services: "patient_affairs",
+    social_services: "social_services",
     quality: "quality",
     compliance: "compliance",
     legal_admin: "legal_admin",
+    legal: "legal_admin",
     legal_officer: "legal_admin",
     it_admin: "it_admin",
     medical_director: "medical_director",
     bed_manager: "bed_manager",
+    auditor: "auditor",
+    read_only_manager: "read_only_manager",
+    read_only: "read_only_manager",
     viewer: "viewer",
     member: "viewer",
 };
@@ -112,8 +120,11 @@ export function membershipRoleForUserRole(role: CanonicalUserRole): MembershipRo
         case "lab_tech":
             return MembershipRole.ADMIN;
         case "patient_affairs":
+        case "social_services":
         case "quality":
         case "compliance":
+        case "auditor":
+        case "read_only_manager":
         case "viewer":
             return MembershipRole.VIEWER;
         case "nursing":

@@ -213,6 +213,34 @@ function getErrorCode(status: number): string {
 
 export type ApiFetchOptions = RequestInit & AuthFailureOptions;
 
+function buildClientRequestId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `web-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+}
+
+function appendDefaultClientHeaders(headers: Headers): void {
+  if (!headers.has("x-request-id")) {
+    headers.set("x-request-id", buildClientRequestId());
+  }
+
+  if (!headers.has("x-client-platform")) {
+    headers.set("x-client-platform", "web");
+  }
+
+  if (typeof window !== "undefined") {
+    if (!headers.has("x-client-timezone")) {
+      headers.set("x-client-timezone", Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown");
+    }
+
+    if (!headers.has("x-client-path")) {
+      headers.set("x-client-path", `${window.location.pathname}${window.location.search}`);
+    }
+  }
+}
+
 export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Promise<T> {
   const isAbsoluteUrl = /^https?:\/\//i.test(path);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -235,6 +263,8 @@ export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Pro
   if (hasBody && !(requestInit.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+
+  appendDefaultClientHeaders(headers);
 
   const response = await fetch(url, {
     ...requestInit,
@@ -297,6 +327,8 @@ export async function apiFetchJson<T>(path: string, init: ApiFetchOptions = {}):
   if (hasBody && !(requestInit.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+
+  appendDefaultClientHeaders(headers);
 
   const response = await fetch(url, {
     ...requestInit,

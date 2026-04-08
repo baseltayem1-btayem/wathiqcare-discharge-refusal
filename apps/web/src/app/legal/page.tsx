@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Badge } from "../../components/design-system/badge";
 import { Button } from "../../components/design-system/button";
+import StepUpVerificationPanel from "../../components/security/StepUpVerificationPanel";
 import AuthGuard from "../../components/AuthGuard";
 import AccessDenied from "../../components/AccessDenied";
 
@@ -101,6 +102,13 @@ export default function LegalQueuePage() {
             ) : (
                 <div className="p-6">
                     <h1 className="text-2xl font-bold mb-4">Legal Queue</h1>
+                    <div className="mb-4 max-w-2xl">
+                        <StepUpVerificationPanel
+                            actionKey="legal_package_export"
+                            title="Legal evidence export verification"
+                            description="Saudi medico-legal package downloads now require a short-lived verified step-up session."
+                        />
+                    </div>
                     <div className="mb-4 flex gap-2">
                         {FILTERS.map((f) => (
                             <Button

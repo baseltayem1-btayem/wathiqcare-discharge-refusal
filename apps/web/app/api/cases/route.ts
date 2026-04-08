@@ -11,6 +11,7 @@ import {
   recordUsage,
   writeAuditLog,
 } from "@/lib/server/saas-services";
+import { assertDataResidencyCompliance } from "@/lib/server/privacy-service";
 
 function parseCaseStatus(value: string | null | undefined): CaseStatus | null {
   if (!value) return null;
@@ -97,6 +98,11 @@ export async function POST(request: NextRequest) {
     const caseType = parseCaseType(payload.caseType) ?? CaseType.GENERAL;
     const status = parseCaseStatus(payload.status) ?? CaseStatus.OPEN;
     await enforcePlanUsage(tenantId, UsageMetric.CASES, BigInt(1));
+    await assertDataResidencyCompliance({
+      tenantId,
+      dataType: "PATIENT_SENSITIVE",
+      operation: "case_create",
+    });
     const created = await prisma.case.create({
       data: {
         tenantId,

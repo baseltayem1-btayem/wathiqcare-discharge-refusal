@@ -158,6 +158,84 @@ enum NotificationStatus {
   FAILED
 }
 
+enum DataClassification {
+  PATIENT_SENSITIVE
+  OPERATIONAL
+  AUDIT_LOG
+  ANALYTICS
+  BACKUP
+}
+
+enum ResidencyScope {
+  KSA_ONLY
+  CONTROLLED_EXPORT
+  GLOBAL_NON_PERSONAL
+}
+
+enum ConsentMethod {
+  ELECTRONIC_SIGNATURE
+  OTP
+  WITNESS_ACKNOWLEDGMENT
+  WRITTEN
+}
+
+enum DsrRequestType {
+  ACCESS
+  CORRECTION
+  DELETION
+  RESTRICTION_OBJECTION
+  EXPORT
+}
+
+enum DsrRequestStatus {
+  REQUESTED
+  IDENTITY_VERIFIED
+  LEGAL_REVIEW
+  APPROVED
+  REJECTED
+  EXECUTED
+  CLOSED
+}
+
+enum RetentionActionStatus {
+  PENDING
+  LEGAL_HOLD
+  BLOCKED
+  APPROVED
+  EXECUTED
+  CANCELED
+}
+
+enum LegalReadinessStatus {
+  COMPLIANT
+  WARNING
+  BLOCKED
+}
+
+enum IncidentSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum IncidentStatus {
+  DETECTED
+  TRIAGED
+  CONTAINED
+  REMEDIATED
+  RECOVERED
+  CLOSED
+}
+
+enum BackupJobStatus {
+  SCHEDULED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  VERIFIED
+}
+
 model Tenant {
   id                 String              @id @default(uuid())
   name               String
@@ -200,6 +278,19 @@ model Tenant {
   notificationDeliveryAttempts NotificationDeliveryAttempt[]
   alertAcknowledgments        AlertAcknowledgment[]
   notificationSettings        TenantNotificationSetting?
+  consentRecords              ConsentRecord[]
+  dataSubjectRequests         DataSubjectRequest[]
+  retentionPolicies           RetentionPolicy[]
+  retentionActions            RetentionAction[]
+  legalReadinessChecks        LegalReadinessCheck[]
+  auditChainEvents            AuditChainEvent[]
+  securityIncidents           SecurityIncident[]
+  backupJobs                  BackupJob[]
+  backupRestoreTests          BackupRestoreTest[]
+  reportAccessLogs            ReportAccessLog[]
+  dataResidencyRules          DataResidencyRule[]
+  tenantSecuritySettings      TenantSecuritySetting?
+  privilegedAccessLogs        PrivilegedAccessLog[]
 
   @@map("tenants")
 }
@@ -504,6 +595,14 @@ model Case {
   assignmentHistory CaseAssignmentHistory[]
   stepEvents       CaseStepEvent[]
   notifications    OperationNotification[]
+  consentRecords      ConsentRecord[]
+  dataSubjectRequests DataSubjectRequest[]
+  retentionActions    RetentionAction[]
+  legalReadinessChecks LegalReadinessCheck[]
+  auditChainEvents    AuditChainEvent[]
+  securityIncidents   SecurityIncident[]
+  reportAccessLogs    ReportAccessLog[]
+  privilegedAccessLogs PrivilegedAccessLog[]
 
   @@unique([tenantId, caseNumber])
   @@index([tenantId, status])
@@ -952,4 +1051,305 @@ model TenantNotificationSetting {
   tenant  Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("tenant_notification_settings")
+}
+
+model DataResidencyRule {
+  id                 String             @id @default(uuid())
+  tenantId           String             @map("tenant_id")
+  dataType           DataClassification @map("data_type")
+  residencyScope     ResidencyScope     @default(KSA_ONLY) @map("residency_scope")
+  hostingRegion      String             @default("saudi-arabia-riyadh") @map("hosting_region")
+  exportAllowed      Boolean            @default(false) @map("export_allowed")
+  anonymizationRequired Boolean         @default(true) @map("anonymization_required")
+  notes              String?
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, dataType])
+  @@index([tenantId, residencyScope])
+  @@map("data_residency_rules")
+}
+
+model TenantSecuritySetting {
+  id                        String   @id @default(uuid())
+  tenantId                  String   @unique @map("tenant_id")
+  mfaRequiredForAdmins      Boolean  @default(true) @map("mfa_required_for_admins")
+  mfaRequiredForPrivileged  Boolean  @default(true) @map("mfa_required_for_privileged")
+  privilegedStepUpEnabled   Boolean  @default(true) @map("privileged_step_up_enabled")
+  enforceKsaResidency       Boolean  @default(true) @map("enforce_ksa_residency")
+  exportApprovalRequired    Boolean  @default(true) @map("export_approval_required")
+  sessionTimeoutMinutes     Int      @default(30) @map("session_timeout_minutes")
+  allowedAnalyticsRegion    String?  @map("allowed_analytics_region")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  tenant                    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_security_settings")
+}
+
+model ConsentRecord {
+  id                 String         @id @default(uuid())
+  tenantId           String         @map("tenant_id")
+  caseId             String         @map("case_id")
+  processingPurpose  String         @map("processing_purpose")
+  lawfulBasis        String         @map("lawful_basis")
+  consentType        String         @map("consent_type")
+  consentMethod      ConsentMethod  @map("consent_method")
+  consentedAt        DateTime       @default(now()) @map("consented_at")
+  documentId         String?        @map("document_id")
+  documentVersion    String?        @map("document_version")
+  documentHash       String?        @map("document_hash")
+  witnessName        String?        @map("witness_name")
+  otpReference       String?        @map("otp_reference")
+  status             String         @default("captured")
+  metadata           Json?
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  tenant             Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case               Case           @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId, consentedAt])
+  @@index([tenantId, status])
+  @@map("consent_records")
+}
+
+model DataSubjectRequest {
+  id                 String           @id @default(uuid())
+  tenantId           String           @map("tenant_id")
+  caseId             String?          @map("case_id")
+  requestType        DsrRequestType   @map("request_type")
+  status             DsrRequestStatus @default(REQUESTED)
+  requesterName      String           @map("requester_name")
+  requesterIdNumber  String?          @map("requester_id_number")
+  requestReason      String?          @map("request_reason")
+  requestedAt        DateTime         @default(now()) @map("requested_at")
+  identityVerifiedAt DateTime?        @map("identity_verified_at")
+  legalReviewedAt    DateTime?        @map("legal_reviewed_at")
+  dueAt              DateTime         @map("due_at")
+  extendedDueAt      DateTime?        @map("extended_due_at")
+  extensionReason    String?          @map("extension_reason")
+  executedAt         DateTime?        @map("executed_at")
+  closedAt           DateTime?        @map("closed_at")
+  metadata           Json?
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case               Case?            @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status, dueAt])
+  @@index([tenantId, requestType, requestedAt])
+  @@map("data_subject_requests")
+}
+
+model RetentionPolicy {
+  id                    String             @id @default(uuid())
+  tenantId              String             @map("tenant_id")
+  dataType              DataClassification @map("data_type")
+  recordCategory        String             @map("record_category")
+  retentionYears        Int                @default(10) @map("retention_years")
+  legalHoldRequired     Boolean            @default(true) @map("legal_hold_required")
+  requiresLegalApproval Boolean            @default(true) @map("requires_legal_approval")
+  autoDeleteEnabled     Boolean            @default(false) @map("auto_delete_enabled")
+  secureDeletionStandard String            @default("crypto-shred") @map("secure_deletion_standard")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  tenant                Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  retentionActions      RetentionAction[]
+
+  @@unique([tenantId, recordCategory])
+  @@index([tenantId, dataType])
+  @@map("retention_policies")
+}
+
+model RetentionAction {
+  id                 String                @id @default(uuid())
+  tenantId           String                @map("tenant_id")
+  caseId             String?               @map("case_id")
+  policyId           String?               @map("policy_id")
+  targetType         String                @map("target_type")
+  targetId           String                @map("target_id")
+  status             RetentionActionStatus @default(PENDING)
+  holdReason         String?               @map("hold_reason")
+  scheduledFor       DateTime              @map("scheduled_for")
+  approvedAt         DateTime?             @map("approved_at")
+  executedAt         DateTime?             @map("executed_at")
+  evidenceJson       Json?                 @map("evidence_json")
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+
+  tenant             Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case               Case?                 @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  policy             RetentionPolicy?      @relation(fields: [policyId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status, scheduledFor])
+  @@index([tenantId, caseId])
+  @@map("retention_actions")
+}
+
+model LegalReadinessCheck {
+  id                 String               @id @default(uuid())
+  tenantId           String               @map("tenant_id")
+  caseId             String               @map("case_id")
+  status             LegalReadinessStatus @default(BLOCKED)
+  canFinalize        Boolean              @default(false) @map("can_finalize")
+  checklistJson      Json                 @map("checklist_json")
+  blockersJson       Json?                @map("blockers_json")
+  checkedByUserId    String?              @map("checked_by_user_id")
+  checkedAt          DateTime             @default(now()) @map("checked_at")
+
+  tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case               Case                 @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, caseId, checkedAt(sort: Desc)])
+  @@index([tenantId, status])
+  @@map("legal_readiness_checks")
+}
+
+model AuditChainEvent {
+  id                 String    @id @default(uuid())
+  tenantId           String    @map("tenant_id")
+  caseId             String?   @map("case_id")
+  eventType          String    @map("event_type")
+  actorId            String?   @map("actor_id")
+  actorRole          String?   @map("actor_role")
+  sourceIp           String?   @map("source_ip")
+  deviceInfo         String?   @map("device_info")
+  sessionInfo        String?   @map("session_info")
+  previousHash       String?   @map("previous_hash")
+  currentHash        String    @unique @map("current_hash")
+  payloadSummary     String    @map("payload_summary")
+  documentVersion    String?   @map("document_version")
+  metadataJson       Json?     @map("metadata_json")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case               Case?     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, caseId, createdAt])
+  @@index([tenantId, eventType, createdAt])
+  @@map("audit_chain_events")
+}
+
+model SecurityIncident {
+  id                        String           @id @default(uuid())
+  tenantId                  String           @map("tenant_id")
+  caseId                    String?          @map("case_id")
+  severity                  IncidentSeverity
+  status                    IncidentStatus   @default(DETECTED)
+  title                     String
+  summary                   String
+  affectedScope             String?          @map("affected_scope")
+  detectedAt                DateTime         @default(now()) @map("detected_at")
+  triagedAt                 DateTime?        @map("triaged_at")
+  containedAt               DateTime?        @map("contained_at")
+  remediatedAt              DateTime?        @map("remediated_at")
+  recoveredAt               DateTime?        @map("recovered_at")
+  closedAt                  DateTime?        @map("closed_at")
+  clientNotificationDueAt   DateTime?        @map("client_notification_due_at")
+  regulatorNotificationDueAt DateTime?       @map("regulator_notification_due_at")
+  evidenceJson              Json?            @map("evidence_json")
+  postIncidentReview        String?          @map("post_incident_review") @db.Text
+  createdAt                 DateTime         @default(now()) @map("created_at")
+  updatedAt                 DateTime         @updatedAt @map("updated_at")
+
+  tenant                    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                      Case?            @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, severity, status])
+  @@index([tenantId, detectedAt])
+  @@map("security_incidents")
+}
+
+model BackupJob {
+  id                 String             @id @default(uuid())
+  tenantId           String             @map("tenant_id")
+  classification     DataClassification @default(BACKUP)
+  backupType         String             @map("backup_type")
+  storageLocation    String             @map("storage_location")
+  region             String             @default("saudi-arabia-riyadh")
+  encrypted          Boolean            @default(true)
+  status             BackupJobStatus    @default(SCHEDULED)
+  startedAt          DateTime?          @map("started_at")
+  completedAt        DateTime?          @map("completed_at")
+  restoreVerifiedAt  DateTime?          @map("restore_verified_at")
+  rpoTargetMinutes   Int                @default(60) @map("rpo_target_minutes")
+  rtoTargetMinutes   Int                @default(240) @map("rto_target_minutes")
+  evidenceJson       Json?              @map("evidence_json")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  restoreTests       BackupRestoreTest[]
+
+  @@index([tenantId, status, createdAt])
+  @@map("backup_jobs")
+}
+
+model BackupRestoreTest {
+  id                 String    @id @default(uuid())
+  tenantId           String    @map("tenant_id")
+  backupJobId        String?   @map("backup_job_id")
+  resultStatus       String    @map("result_status")
+  executedAt         DateTime  @default(now()) @map("executed_at")
+  rpoMinutes         Int?      @map("rpo_minutes")
+  rtoMinutes         Int?      @map("rto_minutes")
+  notes              String?
+  evidenceJson       Json?     @map("evidence_json")
+
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  backupJob          BackupJob? @relation(fields: [backupJobId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, executedAt])
+  @@index([backupJobId])
+  @@map("backup_restore_tests")
+}
+
+model ReportAccessLog {
+  id                 String    @id @default(uuid())
+  tenantId           String    @map("tenant_id")
+  caseId             String?   @map("case_id")
+  reportKey          String    @map("report_key")
+  filterSummary      String?   @map("filter_summary")
+  exportFormat       String?   @map("export_format")
+  accessedByUserId   String?   @map("accessed_by_user_id")
+  accessedByRole     String?   @map("accessed_by_role")
+  sourceIp           String?   @map("source_ip")
+  metadataJson       Json?     @map("metadata_json")
+  accessedAt         DateTime  @default(now()) @map("accessed_at")
+
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case               Case?     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, reportKey, accessedAt])
+  @@index([tenantId, caseId])
+  @@map("report_access_logs")
+}
+
+model PrivilegedAccessLog {
+  id                 String    @id @default(uuid())
+  tenantId           String    @map("tenant_id")
+  caseId             String?   @map("case_id")
+  actionKey          String    @map("action_key")
+  reason             String?
+  actorUserId        String?   @map("actor_user_id")
+  actorRole          String?   @map("actor_role")
+  accessChannel      String?   @map("access_channel")
+  stepUpVerified     Boolean   @default(false) @map("step_up_verified")
+  result             String    @default("allowed")
+  ipAddress          String?   @map("ip_address")
+  metadataJson       Json?     @map("metadata_json")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case               Case?     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, actionKey, createdAt])
+  @@index([tenantId, actorUserId, createdAt])
+  @@map("privileged_access_logs")
 }
