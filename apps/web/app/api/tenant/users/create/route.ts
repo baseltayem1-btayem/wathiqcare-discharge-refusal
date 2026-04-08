@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
                     tenantId,
                     userId: newUser.id,
                     role: membershipRole,
-                    status: MembershipStatus.PENDING,
+                    status: MembershipStatus.INVITED,
                     invitedAt: new Date(),
                     metadata: department
                         ? { invitedByUserId: auth.sub, department }

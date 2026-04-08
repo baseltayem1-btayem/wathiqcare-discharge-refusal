@@ -28,17 +28,6 @@ type ApiErrorPayload = {
   message?: string;
 };
 
-type CaseApiResponse = {
-  id: string;
-  mrn?: string;
-  patient?: string;
-  patientName?: string;
-  physician?: string;
-  attendingPhysician?: string;
-  diagnosis?: string;
-  status?: string;
-};
-
 type CaseData = {
   id: string;
   mrn: string;
@@ -496,6 +485,36 @@ export default function CasePage() {
       await refreshReadinessAndPackage();
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Failed to record witness"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRecordConsent(): Promise<void> {
+    if (!caseId) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      await apiFetch(`/api/discharge/cases/${caseId}/consent`, {
+        method: "POST",
+        body: JSON.stringify({
+          ...consentForm,
+          witnessName: consentForm.witnessName || witness.witness_name || undefined,
+          otpReference: consentForm.otpReference || undefined,
+          documentSnapshot: {
+            presentation,
+            signature,
+            witness,
+            consentForm,
+          },
+        }),
+      });
+
+      await refreshReadinessAndPackage();
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to record consent"));
     } finally {
       setLoading(false);
     }
