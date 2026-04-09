@@ -36,8 +36,12 @@ if (!fs.existsSync(localSource)) {
 const content = fs.readFileSync(localSource, "utf8");
 
 writeIfPossible(path.resolve(process.cwd(), ".next/routes-manifest-deterministic.json"), content);
+writeIfPossible("/vercel/path0/.next/routes-manifest-deterministic.json", content);
+writeIfPossible("/vercel/path0/vercel/path0/.next/routes-manifest-deterministic.json", content);
 writeIfPossible("/vercel/path1/.next/routes-manifest-deterministic.json", content);
 writeIfPossible("/vercel/path1/vercel/path1/.next/routes-manifest-deterministic.json", content);
+writeIfPossible("/vercel/path0/etc/os-release", "NAME=Vercel\nID=vercel\n");
+writeIfPossible("/vercel/path0/usr/lib/os-release", "NAME=Vercel\nID=vercel\n");
 writeIfPossible("/vercel/path1/etc/os-release", "NAME=Vercel\nID=vercel\n");
 writeIfPossible("/vercel/path1/usr/lib/os-release", "NAME=Vercel\nID=vercel\n");
 
@@ -54,31 +58,45 @@ const duplicatedRootPackageJson = packageJsonSource
   : JSON.stringify({ private: true }, null, 2);
 
 writeIfPossible("/vercel/path1/vercel/path1/package.json", duplicatedRootPackageJson);
+writeIfPossible("/vercel/path0/vercel/path0/package.json", duplicatedRootPackageJson);
 
-const duplicatedRoot = "/vercel/path1/vercel/path1";
 const sourceAppRoot = process.cwd();
+const duplicatedRoots = ["/vercel/path0/vercel/path0", "/vercel/path1/vercel/path1"];
 
-copyIfPossible(path.resolve(sourceAppRoot, ".next"), `${duplicatedRoot}/.next`, ".next copy");
+for (const duplicatedRoot of duplicatedRoots) {
+  copyIfPossible(path.resolve(sourceAppRoot, ".next"), `${duplicatedRoot}/.next`, `.next copy (${duplicatedRoot})`);
+}
 
 for (const entry of fs.readdirSync(sourceAppRoot, { withFileTypes: true })) {
   if (entry.name === ".next" || entry.name === "node_modules") {
     continue;
   }
 
-  copyIfPossible(
-    path.resolve(sourceAppRoot, entry.name),
-    `${duplicatedRoot}/${entry.name}`,
-    `app root mirror: ${entry.name}`,
-  );
+  for (const duplicatedRoot of duplicatedRoots) {
+    copyIfPossible(
+      path.resolve(sourceAppRoot, entry.name),
+      `${duplicatedRoot}/${entry.name}`,
+      `app root mirror (${duplicatedRoot}): ${entry.name}`,
+    );
+  }
 }
 
 try {
-  const duplicatedNodeModules = `${duplicatedRoot}/node_modules`;
+  for (const duplicatedRoot of duplicatedRoots) {
+    const duplicatedNodeModules = `${duplicatedRoot}/node_modules`;
+    const preferredSource = duplicatedRoot.includes("/path0/")
+      ? "/vercel/path0/node_modules"
+      : "/vercel/path1/node_modules";
+    const fallbackSource = duplicatedRoot.includes("/path0/")
+      ? "/vercel/path1/node_modules"
+      : "/vercel/path0/node_modules";
+    const nodeModulesSource = fs.existsSync(preferredSource) ? preferredSource : fallbackSource;
 
-  fs.mkdirSync(duplicatedRoot, { recursive: true });
-  if (!fs.existsSync(duplicatedNodeModules)) {
-    fs.symlinkSync("/vercel/path1/node_modules", duplicatedNodeModules, "dir");
-    console.log(`[routes-manifest] linked ${duplicatedNodeModules} -> /vercel/path1/node_modules`);
+    fs.mkdirSync(duplicatedRoot, { recursive: true });
+    if (!fs.existsSync(duplicatedNodeModules) && fs.existsSync(nodeModulesSource)) {
+      fs.symlinkSync(nodeModulesSource, duplicatedNodeModules, "dir");
+      console.log(`[routes-manifest] linked ${duplicatedNodeModules} -> ${nodeModulesSource}`);
+    }
   }
 } catch (error) {
   const message = error && error.message ? error.message : String(error);
