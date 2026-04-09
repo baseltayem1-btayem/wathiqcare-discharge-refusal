@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack && node scripts/write-deterministic-routes-manifest.cjs",
+    "build": "npm run prisma:generate && next build --webpack && node scripts/write-deterministic-routes-manifest.cjs",
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts",

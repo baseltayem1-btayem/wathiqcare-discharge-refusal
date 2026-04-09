@@ -7,6 +7,20 @@ import { toIsoString } from "@/lib/server/compliance-utils";
 
 const prisma = getPrisma();
 
+type AuditChainEventDelegate = {
+  findFirst: (...args: any[]) => Promise<any>;
+  create: (...args: any[]) => Promise<any>;
+  findMany: (...args: any[]) => Promise<any[]>;
+};
+
+function getAuditChainEventDelegate(): AuditChainEventDelegate {
+  const delegate = (prisma as unknown as { auditChainEvent?: AuditChainEventDelegate }).auditChainEvent;
+  if (!delegate) {
+    throw new ApiError(500, "Audit chain model is not available in current Prisma client");
+  }
+  return delegate;
+}
+
 export type AuditChainHashInput = {
   previousHash?: string | null;
   tenantId: string;
@@ -115,7 +129,9 @@ export async function appendAuditChainEvent(args: {
     throw new ApiError(400, "Missing mandatory audit chain fields");
   }
 
-  const previous = await prisma.auditChainEvent.findFirst({
+  const auditChainEvent = getAuditChainEventDelegate();
+
+  const previous = await auditChainEvent.findFirst({
     where: {
       tenantId: args.tenantId,
       ...(args.caseId ? { caseId: args.caseId } : {}),
@@ -140,7 +156,7 @@ export async function appendAuditChainEvent(args: {
     metadataJson: args.metadataJson ?? null,
   });
 
-  return prisma.auditChainEvent.create({
+  return auditChainEvent.create({
     data: {
       tenantId: args.tenantId,
       caseId: args.caseId ?? null,
@@ -166,7 +182,9 @@ export async function appendAuditChainEvent(args: {
 }
 
 export async function getCaseAuditChain(tenantId: string, caseId: string) {
-  const events = await prisma.auditChainEvent.findMany({
+  const auditChainEvent = getAuditChainEventDelegate();
+
+  const events = await auditChainEvent.findMany({
     where: { tenantId, caseId },
     orderBy: { createdAt: "asc" },
   });
