@@ -1,4 +1,7 @@
-// Disabled: Use backend API for login. This route is intentionally disabled.
-export async function POST() {
-    return Response.json({ error: "This route is disabled. Use the backend API." }, { status: 410 });
+import { NextRequest } from "next/server";
+
+// Compatibility route: preserve older clients that still call /api/auth/login.
+export async function POST(request: NextRequest) {
+    const target = new URL("/api/auth/password/login", request.url);
+    return Response.redirect(target, 307);
 }
