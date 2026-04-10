@@ -92,7 +92,20 @@ export async function GET(request: NextRequest) {
     }
     const tenants = await prisma.tenant.findMany({
       where: platformAccess ? undefined : { id: { in: tenantIds } },
-      include: {
+      // Select stable columns explicitly to tolerate DBs that have not yet
+      // applied newer optional tenant columns.
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        domain: true,
+        isActive: true,
+        timezone: true,
+        country: true,
+        billingEmail: true,
+        metadata: true,
+        createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
             memberships: true,
