@@ -50,7 +50,7 @@ class DischargeCase(Base):
     artifact_version = Column(String, nullable=False, default="1", server_default=text("'1'"))
     finalized_hash = Column(String, nullable=True)
     finalized_at = Column(DateTime, nullable=True)
-    immutable_lock = Column(Boolean, nullable=False, default=False, server_default=text("0"))
+    immutable_lock = Column(Boolean, nullable=False, default=False, server_default=text("false"))
 
     signer_name = Column(String, nullable=True)
     signer_role = Column(String, nullable=True)
