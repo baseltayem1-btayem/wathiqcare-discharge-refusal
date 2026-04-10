@@ -101,10 +101,13 @@ export default function LangLoginPage() {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
+      const safeRedirect = typeof result?.redirectTo === "string" && result.redirectTo.trim()
+        ? result.redirectTo
+        : `/${lang}`;
       const nextPath =
         typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("next") || result.redirectTo
-          : result.redirectTo;
+          ? new URLSearchParams(window.location.search).get("next") || safeRedirect
+          : safeRedirect;
       router.push(nextPath);
     } catch (err) {
       setError(localizeAuthError(err));

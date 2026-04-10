@@ -108,7 +108,12 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const nextPath = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") || result.redirectTo : result.redirectTo;
+      const safeRedirect = typeof result?.redirectTo === "string" && result.redirectTo.trim()
+        ? result.redirectTo
+        : (isRtl ? "/ar" : "/en");
+      const nextPath = typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("next") || safeRedirect
+        : safeRedirect;
       router.push(nextPath);
     } catch (err) {
       setError(localizeAuthError(err));
