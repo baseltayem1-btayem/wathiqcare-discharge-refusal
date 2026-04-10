@@ -2,6 +2,7 @@ import { BillingInterval, MembershipRole, MembershipStatus, PlanCode, Prisma, Su
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { canonicalizeUserRole, membershipRoleForUserRole } from "@/lib/server/roles";
+import { getPlatformTenant } from "@/lib/server/platform-tenant";
 
 export type AdminDepartment = {
   code: string;
@@ -163,6 +164,7 @@ export async function ensureImcBootstrap(input: {
 
   const prisma = getPrisma();
   await ensureBasePlans();
+  await getPlatformTenant();
 
   const tenant = await prisma.tenant.upsert({
     where: { code: "IMC" },

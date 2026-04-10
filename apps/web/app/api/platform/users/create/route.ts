@@ -5,6 +5,7 @@ import { requirePlatformAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { issueMagicLinkForUser } from "@/lib/server/magic-link-auth";
+import { getPlatformTenant } from "@/lib/server/platform-tenant";
 
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -66,14 +67,8 @@ export async function POST(request: NextRequest) {
         // Use singleton Prisma client
         const prisma = getPrisma();
 
-        // Platform users are associated with the WathiqCare platform tenant
-        const platformTenant = await prisma.tenant.findUnique({
-            where: { code: "wathiqcare" },
-            select: { id: true, name: true },
-        });
-        if (!platformTenant) {
-            throw new ApiError(500, "Platform tenant not configured");
-        }
+        // Ensure the platform tenant exists (auto-bootstrapped if missing).
+        const platformTenant = await getPlatformTenant();
 
         const existing = await prisma.user.findUnique({ where: { email } });
         if (existing) {
