@@ -1,8 +1,9 @@
 import { MembershipStatus, UserType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAccess } from "@/lib/server/auth";
-import { ApiError, handleApiError } from "@/lib/server/http";
+import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
+import { getPlatformTenant } from "@/lib/server/platform-tenant";
 import { getPrisma } from "@/lib/server/prisma";
 
 export const runtime = "nodejs";
@@ -16,13 +17,7 @@ export async function GET(request: NextRequest) {
     try {
         await requirePlatformAccess(request);
         const prisma = getPrisma();
-        const platformTenant = await prisma.tenant.findUnique({
-            where: { code: "wathiqcare" },
-            select: { id: true },
-        });
-        if (!platformTenant) {
-            throw new ApiError(500, "Platform tenant not found");
-        }
+        const platformTenant = await getPlatformTenant();
         const users = await prisma.user.findMany({
             where: {
                 OR: [
