@@ -54,47 +54,59 @@ def _masked_email(email: str) -> str:
 def login(payload: LoginRequest):
     db = SessionLocal()
     try:
-        email = (payload.email or "").strip().lower()
-        logger.info("login_attempt email=%s", _masked_email(email))
+        try:
+            email = (payload.email or "").strip().lower()
+            logger.info("login_attempt email=%s", _masked_email(email))
 
-        if _is_rate_limited(email):
-            logger.warning("login_rate_limited email=%s", _masked_email(email))
-            raise HTTPException(status_code=429, detail="عدد محاولات الدخول كبير. يرجى المحاولة لاحقاً")
+            if _is_rate_limited(email):
+                logger.warning("login_rate_limited email=%s", _masked_email(email))
+                raise HTTPException(status_code=429, detail="عدد محاولات الدخول كبير. يرجى المحاولة لاحقاً")
 
-        user = db.query(User).filter(User.email == email).first()
-        if not user or not user.hashed_password:
-            _register_failed_attempt(email)
-            logger.warning("login_failed_invalid_credentials email=%s", _masked_email(email))
-            raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
-        if not user.is_active:
-            logger.warning("login_failed_inactive_user email=%s", _masked_email(email))
-            raise HTTPException(status_code=401, detail="تم تعطيل حساب المستخدم")
+            user = db.query(User).filter(User.email == email).first()
+            if not user or not user.hashed_password:
+                _register_failed_attempt(email)
+                logger.warning("login_failed_invalid_credentials email=%s", _masked_email(email))
+                raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
+            if not user.is_active:
+                logger.warning("login_failed_inactive_user email=%s", _masked_email(email))
+                raise HTTPException(status_code=401, detail="تم تعطيل حساب المستخدم")
 
-        if not verify_password(payload.password, user.hashed_password):
-            _register_failed_attempt(email)
-            logger.warning("login_failed_invalid_credentials email=%s", _masked_email(email))
-            raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
+            if not verify_password(payload.password, user.hashed_password):
+                _register_failed_attempt(email)
+                logger.warning("login_failed_invalid_credentials email=%s", _masked_email(email))
+                raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
 
-        _clear_failed_attempts(email)
+            _clear_failed_attempts(email)
 
-        tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+            tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
 
-        token = create_access_token({
-            "sub": user.id,
-            "email": user.email,
-            "role": user.role,
-            "tenant_id": user.tenant_id,
-            "tenant_code": tenant.code if tenant else None,
-        })
+            token = create_access_token({
+                "sub": user.id,
+                "email": user.email,
+                "role": user.role,
+                "tenant_id": user.tenant_id,
+                "tenant_code": tenant.code if tenant else None,
+            })
 
-        logger.info(
-            "login_success user_id=%s tenant_id=%s role=%s",
-            user.id,
-            user.tenant_id,
-            user.role,
-        )
+            logger.info(
+                "login_success user_id=%s tenant_id=%s role=%s",
+                user.id,
+                user.tenant_id,
+                user.role,
+            )
 
-        return TokenResponse(access_token=token)
+            return TokenResponse(access_token=token)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.exception("login_unhandled_error email=%s", _masked_email((payload.email or "").strip().lower()), exc_info=exc)
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "message": "Login service temporarily unavailable",
+                    "code": "AUTH_LOGIN_BACKEND_ERROR",
+                },
+            )
 
     finally:
         db.close()
