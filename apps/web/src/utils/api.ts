@@ -241,6 +241,23 @@ function appendDefaultClientHeaders(headers: Headers): void {
   }
 }
 
+async function performFetchWithNetworkGuard(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch";
+    const readableMessage =
+      message === "Failed to fetch"
+        ? "503: Unable to reach the server. Please check your connection and try again."
+        : `503: ${message}`;
+
+    throw new ApiHttpError(503, readableMessage, "NETWORK_ERROR", {
+      url,
+      cause: message,
+    });
+  }
+}
+
 export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Promise<T> {
   const isAbsoluteUrl = /^https?:\/\//i.test(path);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -248,7 +265,7 @@ export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Pro
   const url = isAbsoluteUrl
     ? path
     : isApiRoute
-      ? `${API_BASE_URL}${normalizedPath}`
+      ? normalizedPath
       : `${API_BASE_URL}${normalizedPath}`;
 
   const {
@@ -266,7 +283,7 @@ export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Pro
 
   appendDefaultClientHeaders(headers);
 
-  const response = await fetch(url, {
+  const response = await performFetchWithNetworkGuard(url, {
     ...requestInit,
     headers,
     credentials: requestInit.credentials ?? "include",
@@ -330,7 +347,7 @@ export async function apiFetchJson<T>(path: string, init: ApiFetchOptions = {}):
 
   appendDefaultClientHeaders(headers);
 
-  const response = await fetch(url, {
+  const response = await performFetchWithNetworkGuard(url, {
     ...requestInit,
     headers,
     credentials: requestInit.credentials ?? "include",
