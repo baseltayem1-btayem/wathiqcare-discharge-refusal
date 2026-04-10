@@ -1,14 +1,14 @@
 /* Self-hosted fonts — no Google Fonts runtime dependency, safe for strict CSP.
- * Plus Jakarta Sans (variable): @fontsource-variable/plus-jakarta-sans
- * IBM Plex Sans Arabic (static weights): @fontsource/ibm-plex-sans-arabic
+ * Inter (variable): @fontsource-variable/inter — English LTR
+ * Tajawal: @fontsource/tajawal — Arabic RTL
  * Monospace fallback: local system mono stack
  */
 
-@import "@fontsource-variable/plus-jakarta-sans";
-@import "@fontsource/ibm-plex-sans-arabic/400.css";
-@import "@fontsource/ibm-plex-sans-arabic/500.css";
-@import "@fontsource/ibm-plex-sans-arabic/600.css";
-@import "@fontsource/ibm-plex-sans-arabic/700.css";
+@import "@fontsource-variable/inter";
+@import "@fontsource/tajawal/400.css";
+@import "@fontsource/tajawal/500.css";
+@import "@fontsource/tajawal/600.css";
+@import "@fontsource/tajawal/700.css";
 
 @import "tailwindcss";
 
@@ -25,8 +25,9 @@
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
 
-  --font-sans-primary: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", sans-serif;
-  --font-sans-arabic: "IBM Plex Sans Arabic", sans-serif;
+  --font-sans-latin: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans-arabic: "Tajawal", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-sans-primary: var(--font-sans-latin);
   --font-mono-primary: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
@@ -53,19 +54,25 @@ body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans-primary), var(--font-sans-arabic), "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: var(--font-sans-latin), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 html[dir="rtl"] body {
   direction: rtl;
+  font-family: var(--font-sans-arabic), sans-serif;
+  letter-spacing: 0;
+  line-height: 1.75;
 }
 
+html[dir="rtl"] input,
+/* RTL font for inputs in Arabic */
 html[dir="rtl"] input,
 html[dir="rtl"] textarea,
 html[dir="rtl"] select {
   text-align: right;
+  font-family: var(--font-sans-arabic), sans-serif;
 }
 
 *,

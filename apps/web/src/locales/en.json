@@ -1053,4 +1053,272 @@
       "caseComplete": "Case complete"
     }
   }
+  ,
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "howItWorks": "How It Works",
+      "demo": "Request Demo",
+      "login": "Subscriber Login",
+      "contact": "Contact",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use"
+    },
+    "hero": {
+      "badge": "PDPL Compliant · CBAHI Accreditation Ready",
+      "title": "Medical Discharge Refusal Management Platform",
+      "subtitle": "WathiqCare — an integrated system that helps healthcare facilities document discharge refusals, manage legal escalation, and ensure regulatory compliance with speed and security.",
+      "cta1": "Request Free Demo",
+      "cta2": "Subscriber Login"
+    },
+    "stats": {
+      "pdpl": "PDPL Compliance",
+      "pdplVal": "100%",
+      "uptime": "Available Around the Clock",
+      "uptimeVal": "24/7",
+      "docTime": "Avg. Documentation Time",
+      "docTimeVal": "< 2 min",
+      "icd": "Diagnostic Verification",
+      "icdVal": "ICD-11"
+    },
+    "features": {
+      "title": "Platform Features",
+      "subtitle": "Everything a healthcare facility needs to manage discharge refusal cases legally and with full documentation",
+      "workflow": {
+        "title": "Clinical Workflow Management",
+        "desc": "Record medical discharge orders, track patient refusals, and validate ICD-11 codes in real time."
+      },
+      "legal": {
+        "title": "Automated Legal Escalation",
+        "desc": "Automatically generate legal case files with escalation timelines at 24 / 48 / 72 hours."
+      },
+      "forms": {
+        "title": "Digital Refusal Forms",
+        "desc": "Discharge refusal forms with witness attestation and documented electronic signature."
+      },
+      "emr": {
+        "title": "EMR / FHIR Integration",
+        "desc": "Pluggable FHIR R4 interfaces compatible with existing electronic health record systems."
+      },
+      "dashboard": {
+        "title": "Dashboard & Reports",
+        "desc": "Key performance indicators, compliance reports, and discharge refusal case statistics."
+      },
+      "security": {
+        "title": "Security & PDPL Compliance",
+        "desc": "Immutable audit log, data encryption, and full compliance with Saudi Personal Data Protection Law."
+      }
+    },
+    "howItWorks": {
+      "title": "How the System Works",
+      "subtitle": "Four simple steps from registration to legal archiving",
+      "step1": {
+        "title": "Case Registration",
+        "desc": "The physician enters the medical discharge order and records the patient's refusal directly in the system."
+      },
+      "step2": {
+        "title": "Document Generation",
+        "desc": "The system instantly generates a discharge refusal form with electronic signature and witness confirmation."
+      },
+      "step3": {
+        "title": "Legal Escalation",
+        "desc": "If the refusal persists, the system triggers the automated legal escalation cycle with team notifications."
+      },
+      "step4": {
+        "title": "Archiving & Reporting",
+        "desc": "All events are stored in a secure, auditable log accessible for review at any time."
+      }
+    },
+    "whoFor": {
+      "title": "Who Is This Platform For?",
+      "clinical": {
+        "title": "Physicians & Clinical Teams",
+        "desc": "Instant documentation of discharge orders and patient responses without administrative burden."
+      },
+      "facility": {
+        "title": "Healthcare Facilities",
+        "desc": "Full legal protection, precise reporting, and automatic compliance with health regulations."
+      },
+      "legal": {
+        "title": "Legal & Compliance Teams",
+        "desc": "A comprehensive and immutable audit trail to support any legal case file."
+      }
+    },
+    "compliance": {
+      "title": "Compliance & International Standards",
+      "subtitle": "The platform is designed to the highest security and regulatory compliance standards",
+      "items": [
+        "Saudi Personal Data Protection Law (PDPL)",
+        "CBAHI Healthcare Accreditation Standards",
+        "HL7 FHIR R4 Standard",
+        "ICD-11 Medical Diagnoses",
+        "AES-256 Data Encryption",
+        "Immutable SHA-256 Audit Log"
+      ]
+    },
+    "demo": {
+      "title": "Start Your Free Trial",
+      "subtitle": "Register your facility details and the WathiqCare team will contact you to deliver a customized demo and activate your trial.",
+      "cta1": "Request Demo",
+      "cta2": "Subscriber Login",
+      "contact": "For direct contact:",
+      "email": "demo@wathiqcare.online"
+    },
+    "footer": {
+      "features": "Features",
+      "howItWorks": "How It Works",
+      "demo": "Request Demo",
+      "login": "Subscriber Login",
+      "contact": "Contact Us",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use",
+      "rights": "All rights reserved."
+    }
+  },
+  "loginPage": {
+    "homeLink": "Home",
+    "badge": "Secure Access",
+    "tabMicrosoft": "Microsoft SSO",
+    "tabMagicLink": "Secure Link",
+    "tabPassword": "Password",
+    "microsoftTitle": "Institutional Sign-In",
+    "microsoftSubtitle": "For hospital and healthcare organization accounts using Microsoft 365",
+    "microsoftEmailPlaceholder": "your.name@company.com",
+    "microsoftBtn": "Continue with Microsoft",
+    "microsoftSigning": "Signing in...",
+    "magicTitle": "Sign In via Secure Link",
+    "magicSubtitle": "Enter your email and receive a one-time sign-in link — no password needed",
+    "magicEmailLabel": "Email",
+    "magicEmailPlaceholder": "your.email@domain.com",
+    "magicSendBtn": "Send Secure Login Link",
+    "magicSending": "Sending...",
+    "magicSwitchToPassword": "Sign in with password instead",
+    "forgotPassword": "Forgot password?",
+    "passwordTitle": "Sign In with Password",
+    "passwordSubtitle": "Enter your email and password.",
+    "passwordEmailLabel": "Email",
+    "passwordEmailPlaceholder": "your.email@domain.com",
+    "passwordLabel": "Password",
+    "passwordShow": "Show",
+    "passwordHide": "Hide",
+    "passwordBtn": "Sign In",
+    "passwordSigning": "Signing in...",
+    "switchToMagicLink": "No password? Use Secure Link",
+    "forgotPasswordLink": "Forgot password?",
+    "errorGeneric": "Unable to sign in. Please verify your credentials and try again.",
+    "noticeGeneric": "If your email is registered, a secure login link has been sent."
+  },
+  "requestDemoPage": {
+    "title": "Request a Demo",
+    "subtitle": "Please fill in your facility details and our team will contact you to schedule a personalized demonstration.",
+    "backHome": "Back to Home",
+    "enterSystem": "Enter System",
+    "formTitle": "Demo Request Details",
+    "facilityName": "Facility Name",
+    "contactName": "Contact Person Name",
+    "contactEmail": "Contact Email",
+    "contactPhone": "Phone Number",
+    "contactAddress": "Contact Address",
+    "employeeCount": "Number of Employees",
+    "website": "Website (optional)",
+    "submit": "Submit Request",
+    "submitting": "Submitting...",
+    "successTitle": "Request Submitted Successfully",
+    "successMessage": "Thank you! Our team will contact you within 24 hours to schedule your personalized demo.",
+    "errorMessage": "Failed to submit request. Please try again or contact us directly at demo@wathiqcare.online",
+    "required": "Required",
+    "features": {
+      "pdpl": "PDPL Compliant",
+      "cbahi": "CBAHI Ready",
+      "uptime": "99.9% Uptime",
+      "support": "24/7 Support"
+    }
+  },
+  "contactPage": {
+    "title": "Contact Us",
+    "subtitle": "We are here to answer all your questions about WathiqCare platform.",
+    "backHome": "Back to Home",
+    "formTitle": "Send a Message",
+    "name": "Full Name",
+    "email": "Email Address",
+    "subject": "Subject",
+    "message": "Your Message",
+    "messagePlaceholder": "Write your message here...",
+    "submit": "Send Message",
+    "submitting": "Sending...",
+    "successTitle": "Message Sent",
+    "successMessage": "Thank you for reaching out. We will respond within one business day.",
+    "errorMessage": "Failed to send message. Please email us directly at support@wathiqcare.online",
+    "infoTitle": "Get in Touch",
+    "emailLabel": "Email",
+    "emailValue": "support@wathiqcare.online",
+    "demoLabel": "Demo Requests",
+    "demoValue": "demo@wathiqcare.online",
+    "hoursLabel": "Business Hours",
+    "hoursValue": "Sunday – Thursday, 8 AM – 5 PM (AST)"
+  },
+  "privacyPage": {
+    "title": "Privacy Policy",
+    "subtitle": "Effective Date: January 1, 2025",
+    "backHome": "Back to Home",
+    "intro": "WathiqCare is committed to protecting the privacy and confidentiality of all personal health data processed through this platform. This policy describes how we collect, use, store, and safeguard your information in accordance with the Saudi Personal Data Protection Law (PDPL) and applicable healthcare regulations.",
+    "sections": [
+      {
+        "heading": "1. Data We Collect",
+        "body": "We collect patient health information, clinical documentation, staff authentication credentials, and facility configuration data strictly as necessary to operate the discharge refusal management workflow."
+      },
+      {
+        "heading": "2. How We Use Your Data",
+        "body": "All collected data is used exclusively to (a) generate legally required medical discharge documentation, (b) maintain compliance audit trails, (c) support legal escalation workflows, and (d) provide platform analytics to authorized administrators."
+      },
+      {
+        "heading": "3. Data Storage & Security",
+        "body": "Data is encrypted at rest using AES-256 and in transit using TLS 1.3. All data is stored in GDPR and PDPL compliant cloud infrastructure. Access is role-based and fully audited."
+      },
+      {
+        "heading": "4. Data Retention",
+        "body": "Medical records and audit logs are retained for the minimum period required by Saudi MOH regulations and applicable healthcare law. Tenants may request data deletion after the mandatory retention period expires."
+      },
+      {
+        "heading": "5. Your Rights",
+        "body": "Under the PDPL, you have the right to access, correct, and request deletion of your personal data. Requests may be submitted to privacy@wathiqcare.online."
+      },
+      {
+        "heading": "6. Contact",
+        "body": "For privacy inquiries, contact our Data Protection Officer at: privacy@wathiqcare.online"
+      }
+    ]
+  },
+  "termsPage": {
+    "title": "Terms of Use",
+    "subtitle": "Effective Date: January 1, 2025",
+    "backHome": "Back to Home",
+    "intro": "By accessing or using the WathiqCare platform, you agree to be bound by these Terms of Use. If you do not agree, please do not use the platform.",
+    "sections": [
+      {
+        "heading": "1. Authorized Use",
+        "body": "WathiqCare is a B2B medico-legal workflow platform licensed exclusively to authorized healthcare facilities. Access is restricted to credentialed clinical, administrative, and legal staff of licensed tenants."
+      },
+      {
+        "heading": "2. Data Responsibility",
+        "body": "Tenant administrators are responsible for ensuring that all patient data entered into the platform is accurate, authorized, and handled in accordance with applicable healthcare privacy laws including the Saudi PDPL."
+      },
+      {
+        "heading": "3. Prohibited Activities",
+        "body": "You may not reverse-engineer the platform, attempt unauthorized access, use the platform for any purpose other than licensed medical documentation, or share access credentials with unauthorized parties."
+      },
+      {
+        "heading": "4. Limitation of Liability",
+        "body": "WathiqCare provides workflow tools to support clinical and legal documentation. All medical, legal, and clinical decisions remain the sole responsibility of the licensed healthcare professional and facility."
+      },
+      {
+        "heading": "5. Modifications",
+        "body": "We reserve the right to update these terms at any time. Continued use of the platform after changes constitutes acceptance of the new terms."
+      },
+      {
+        "heading": "6. Governing Law",
+        "body": "These Terms are governed by the laws of the Kingdom of Saudi Arabia. Any disputes will be subject to the jurisdiction of Saudi courts."
+      }
+    ]
+  }
 }

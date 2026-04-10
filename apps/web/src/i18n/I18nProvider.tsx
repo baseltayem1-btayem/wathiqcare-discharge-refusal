@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState, useRef } from "react";
 import { getTranslation, interpolate, isSupportedLanguage, type Language } from "@/lib/i18n";
 
 type TranslateVars = Record<string, string | number>;
@@ -14,8 +14,21 @@ type I18nContextValue = {
 };
 
 const LANGUAGE_STORAGE_KEY = "wathiqcare_lang";
+const LANGUAGE_COOKIE_KEY = "wathiqcare_lang";
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined);
+
+function getCookieLang(): Language | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|; )wathiqcare_lang=([^;]*)/);
+  if (match && isSupportedLanguage(match[1])) return match[1];
+  return null;
+}
+
+function setCookieLang(lang: Language) {
+  if (typeof document === "undefined") return;
+  document.cookie = `${LANGUAGE_COOKIE_KEY}=${lang};path=/;max-age=31536000;SameSite=Lax`;
+}
 
 export function useI18n(): I18nContextValue {
   const context = useContext(I18nContext);
@@ -25,16 +38,27 @@ export function useI18n(): I18nContextValue {
   return context;
 }
 
-export default function I18nProvider({ children }: { children: ReactNode }) {
+export default function I18nProvider({
+  children,
+  initialLang,
+}: {
+  children: ReactNode;
+  initialLang?: Language;
+}) {
+  const didInit = useRef(false);
   const [lang, setLangState] = useState<Language>(() => {
+    // Server-seeded lang from URL takes highest priority
+    if (initialLang) return initialLang;
+
     if (typeof window === "undefined") {
       return "en";
     }
 
+    const cookie = getCookieLang();
+    if (cookie) return cookie;
+
     const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    if (isSupportedLanguage(stored)) {
-      return stored;
-    }
+    if (isSupportedLanguage(stored)) return stored;
 
     const browserLanguage = window.navigator.language.toLowerCase();
     if (browserLanguage.startsWith("ar")) {
@@ -43,6 +67,14 @@ export default function I18nProvider({ children }: { children: ReactNode }) {
 
     return "en";
   });
+
+  // Sync initialLang changes (e.g. navigating /ar → /en)
+  useEffect(() => {
+    if (initialLang && initialLang !== lang) {
+      setLangState(initialLang);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLang]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -55,6 +87,7 @@ export default function I18nProvider({ children }: { children: ReactNode }) {
 
     if (typeof window !== "undefined") {
       window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+      setCookieLang(lang);
     }
   }, [lang]);
 

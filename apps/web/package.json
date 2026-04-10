@@ -12,8 +12,10 @@
     "test:magic-link": "node --test --experimental-strip-types src/lib/server/magic-link-route-flow.test.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@fontsource/ibm-plex-sans-arabic": "^5.2.9",
+    "@fontsource/tajawal": "^5.2.7",
     "@prisma/client": "^6.19.2",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
