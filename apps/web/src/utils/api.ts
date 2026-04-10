@@ -91,7 +91,7 @@ async function checkSessionWithAuthMe(reason: string): Promise<SessionValidation
     console.warn(`[auth] auth/me failed after ${reason}; status=${response.status}`);
     return { valid: false, status: response.status };
   } catch (error) {
-    console.error(`[auth] auth/me check errored after ${reason}; preserving current route.`, error);
+    console.warn(`[auth] auth/me check errored after ${reason}; preserving current route.`, error);
     return { valid: null, status: null };
   } finally {
     clearTimeout(timeout);

@@ -16,6 +16,18 @@ type PasswordResetRequestPayload = {
     email?: string;
 };
 
+function isMissingTableOrColumnError(error: unknown): boolean {
+    if (!error || typeof error !== "object") return false;
+    const err = error as { code?: unknown; meta?: { code?: unknown } };
+    const code = err.code ? String(err.code) : "";
+    const sqlState = err.meta?.code ? String(err.meta.code) : "";
+    return (
+        code === "P2021" ||
+        code === "P2022" ||
+        (code === "P2010" && (sqlState === "42P01" || sqlState === "42703"))
+    );
+}
+
 function readResetBaseUrl(): string {
     const configured =
         process.env.NEXT_PUBLIC_APP_URL?.trim() ||
@@ -95,26 +107,48 @@ export async function POST(request: NextRequest) {
         const tokenHash = hashResetToken(rawToken);
         const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
 
-        // Store token
         const tokenId = crypto.randomUUID();
-        await prisma.$executeRaw`
-            INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, used)
-            VALUES (${tokenId}, ${user.id}, ${tokenHash}, ${expiresAt}, FALSE)
-        `;
+        let usedLegacyUserColumns = false;
+        try {
+            // Store token in dedicated table when available.
+            await prisma.$executeRaw`
+                INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, used)
+                VALUES (${tokenId}, ${user.id}, ${tokenHash}, ${expiresAt}, FALSE)
+            `;
 
-        // Invalidate all previous unused tokens for this user
-        await prisma.$executeRaw`
-            UPDATE password_reset_tokens
-            SET used = TRUE
-            WHERE user_id = ${user.id} AND id != ${tokenId}
-        `;
+            // Invalidate all previous unused tokens for this user.
+            await prisma.$executeRaw`
+                UPDATE password_reset_tokens
+                SET used = TRUE
+                WHERE user_id = ${user.id} AND id != ${tokenId}
+            `;
+        } catch (tokenStoreError) {
+            if (!isMissingTableOrColumnError(tokenStoreError)) {
+                throw tokenStoreError;
+            }
+
+            // Backward compatibility for environments that still use user-level reset columns.
+            usedLegacyUserColumns = true;
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    passwordResetTokenHash: tokenHash,
+                    passwordResetExpiresAt: expiresAt,
+                },
+            });
+        }
 
         // Build reset link
         const resetLink = `${readResetBaseUrl()}/auth/password-reset?token=${encodeURIComponent(rawToken)}`;
 
         // Send email
         try {
-            console.info("RESET_EMAIL_SEND_STARTED", { tokenId, userId: user.id, to: user.email });
+            console.info("RESET_EMAIL_SEND_STARTED", {
+                tokenId,
+                userId: user.id,
+                to: user.email,
+                storage: usedLegacyUserColumns ? "legacy_user_columns" : "password_reset_tokens",
+            });
             const diagnostics = await sendPasswordResetEmail({
                 to: user.email,
                 resetLink,

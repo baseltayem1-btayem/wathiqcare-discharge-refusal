@@ -46,8 +46,13 @@ export default function AuthGuard({ children, authFailureMode = "redirect", bloc
         setAuthenticated(false);
       } catch {
         if (!cancelled) {
-          // Avoid forced logout on transient session-check failures.
-          setAuthenticated(true);
+          if (authFailureMode === "inline") {
+            // Inline pages handle session failures in-page and should remain mounted.
+            setAuthenticated(true);
+          } else {
+            // Fail closed for protected routes so unauthenticated users don't render guarded content.
+            setAuthenticated(false);
+          }
         }
       } finally {
         if (!cancelled) {

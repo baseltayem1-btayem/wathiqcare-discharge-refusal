@@ -5,6 +5,7 @@ const LANGUAGE_COOKIE_NAME = "wathiqcare_lang";
 const SUPPORTED_LOCALES = ["ar", "en"] as const;
 type Locale = (typeof SUPPORTED_LOCALES)[number];
 const DEFAULT_LOCALE: Locale = "ar";
+const EDGE_PROTECTED_PREFIXES = ["/dashboard", "/platform"] as const;
 
 function detectLocale(request: NextRequest): Locale {
   const cookie = request.cookies.get(LANGUAGE_COOKIE_NAME)?.value;
@@ -35,6 +36,19 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
 
   if (!token) {
+    const isProtectedPath = EDGE_PROTECTED_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+
+    if (isProtectedPath) {
+      const loginUrl = request.nextUrl.clone();
+      const nextPath = `${pathname}${request.nextUrl.search}`;
+      loginUrl.pathname = "/login";
+      loginUrl.search = "";
+      loginUrl.searchParams.set("next", nextPath || "/dashboard");
+      return NextResponse.redirect(loginUrl);
+    }
+
     return NextResponse.next();
   }
 

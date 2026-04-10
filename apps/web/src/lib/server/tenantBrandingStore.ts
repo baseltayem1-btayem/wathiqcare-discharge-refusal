@@ -153,8 +153,23 @@ function sanitizeBrandingInput(input: TenantBrandingUpsertInput): Required<Tenan
     };
 }
 
+function isMissingTableError(error: unknown, tableName: string): boolean {
+    if (!error || typeof error !== "object") {
+        return false;
+    }
+
+    const candidate = error as { code?: unknown; meta?: { code?: unknown; message?: unknown } };
+    const prismaCode = typeof candidate.code === "string" ? candidate.code : "";
+    const sqlState = typeof candidate.meta?.code === "string" ? candidate.meta.code : "";
+    const message = typeof candidate.meta?.message === "string" ? candidate.meta.message : "";
+
+    return prismaCode === "P2010" && sqlState === "42P01" && message.includes(`relation \"${tableName}\" does not exist`);
+}
+
 export async function getTenantBrandingProfile(tenantId: string): Promise<TenantBrandingProfile | null> {
-    const rows = await getPrisma().$queryRaw<BrandingRow[]>`
+    let rows: BrandingRow[];
+    try {
+        rows = await getPrisma().$queryRaw<BrandingRow[]>`
     SELECT
       id,
       tenant_id,
@@ -181,6 +196,13 @@ export async function getTenantBrandingProfile(tenantId: string): Promise<Tenant
     WHERE tenant_id = ${tenantId}
     LIMIT 1
   `;
+    } catch (error) {
+        if (isMissingTableError(error, "tenant_branding")) {
+            console.warn("[tenant-branding] tenant_branding table not found; returning null profile.");
+            return null;
+        }
+        throw error;
+    }
 
     if (rows.length === 0) {
         return null;

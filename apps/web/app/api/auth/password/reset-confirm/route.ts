@@ -11,6 +11,50 @@ type PasswordResetConfirmPayload = {
     password?: string;
 };
 
+function isMissingTableOrColumnError(error: unknown): boolean {
+    if (!error || typeof error !== "object") return false;
+    const err = error as { code?: unknown; meta?: { code?: unknown } };
+    const code = err.code ? String(err.code) : "";
+    const sqlState = err.meta?.code ? String(err.meta.code) : "";
+    return (
+        code === "P2021" ||
+        code === "P2022" ||
+        (code === "P2010" && (sqlState === "42P01" || sqlState === "42703"))
+    );
+}
+
+async function consumePasswordResetTokenLegacy(
+    prisma: ReturnType<typeof getPrisma>,
+    rawToken: string,
+): Promise<{ id: string; userId: string }> {
+    const tokenHash = hashResetToken(rawToken);
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        const rows = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id
+      FROM users
+      WHERE password_reset_token_hash = ${tokenHash}
+        AND password_reset_expires_at IS NOT NULL
+                AND password_reset_expires_at > NOW()
+      LIMIT 1
+      FOR UPDATE
+    `;
+        const user = rows[0];
+        if (!user) {
+            throw new ApiError(400, "Invalid reset token");
+        }
+
+        await tx.user.update({
+            where: { id: user.id },
+            data: {
+                passwordResetTokenHash: null,
+                passwordResetExpiresAt: null,
+            },
+        });
+
+        return { id: user.id, userId: user.id };
+    });
+}
+
 async function consumePasswordResetToken(prisma: ReturnType<typeof getPrisma>, rawToken: string): Promise<{ id: string; userId: string }> {
     const tokenHash = hashResetToken(rawToken);
     return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -62,7 +106,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Consume token
-        const resetToken = await consumePasswordResetToken(prisma, token);
+        let resetToken: { id: string; userId: string };
+        try {
+            resetToken = await consumePasswordResetToken(prisma, token);
+        } catch (tokenError) {
+            if (!isMissingTableOrColumnError(tokenError)) {
+                throw tokenError;
+            }
+            resetToken = await consumePasswordResetTokenLegacy(prisma, token);
+        }
 
         // Get current password hash to prevent reuse
         const currentUser = await prisma.user.findUnique({
@@ -78,10 +130,19 @@ export async function POST(request: NextRequest) {
 
         // Store in password history
         if (currentUser.hashedPassword) {
-            await prisma.$executeRaw`
-        INSERT INTO password_history (user_id, password_hash)
-        VALUES (${resetToken.userId}, ${currentUser.hashedPassword})
-      `;
+            try {
+                await prisma.$executeRaw`
+          INSERT INTO password_history (user_id, password_hash)
+          VALUES (${resetToken.userId}, ${currentUser.hashedPassword})
+        `;
+            } catch (historyError) {
+                if (!isMissingTableOrColumnError(historyError)) {
+                    throw historyError;
+                }
+                console.warn("PASSWORD_HISTORY_TABLE_MISSING", {
+                    userId: resetToken.userId,
+                });
+            }
         }
 
         // Update user password
