@@ -1205,6 +1205,8 @@
     "passwordSigning": "Signing in...",
     "switchToMagicLink": "No password? Use Secure Link",
     "forgotPasswordLink": "Forgot password?",
+    "errorInvalidCredentials": "Incorrect email or password. Please try again.",
+    "errorNetwork": "Unable to reach the server right now. Please check your connection and try again.",
     "errorGeneric": "Unable to sign in. Please verify your credentials and try again.",
     "noticeGeneric": "If your email is registered, a secure login link has been sent."
   },

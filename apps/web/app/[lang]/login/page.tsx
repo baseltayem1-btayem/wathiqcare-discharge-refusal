@@ -17,6 +17,30 @@ export default function LangLoginPage() {
   const { t, isRtl, lang } = useI18n();
   const router = useRouter();
   const ArrowBack = isRtl ? ArrowRight : ArrowLeft;
+  const fieldAlignClass = isRtl ? "text-right placeholder:text-right" : "text-left";
+
+  function localizeAuthError(err: unknown): string {
+    if (!(err instanceof Error)) {
+      return t("loginPage.errorGeneric");
+    }
+
+    const raw = err.message || "";
+    const normalized = raw.replace(/^\d{3}\s*:\s*/, "").trim();
+
+    if (isRtl) {
+      if (/network|failed to fetch|unable to reach|timeout|timed out|server/i.test(raw)) {
+        return t("loginPage.errorNetwork");
+      }
+
+      if (/invalid|credentials|unauthorized|auth required|session validation|required/i.test(raw)) {
+        return t("loginPage.errorInvalidCredentials");
+      }
+
+      return t("loginPage.errorGeneric");
+    }
+
+    return normalized || t("loginPage.errorGeneric");
+  }
 
   const allowDevPrefill =
     process.env.NODE_ENV === "development" &&
@@ -44,10 +68,10 @@ export default function LangLoginPage() {
         method: "POST",
         body: JSON.stringify({ email }),
       });
-      setNotice(response.message || t("loginPage.noticeGeneric"));
+      setNotice(isRtl ? t("loginPage.noticeGeneric") : response.message || t("loginPage.noticeGeneric"));
       setEmail("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("loginPage.errorGeneric"));
+      setError(localizeAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -69,7 +93,7 @@ export default function LangLoginPage() {
           : result.redirectTo;
       router.push(nextPath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("loginPage.errorGeneric"));
+      setError(localizeAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -82,7 +106,7 @@ export default function LangLoginPage() {
       const redirectUrl = `/api/auth/microsoft/login?email=${encodeURIComponent(email)}`;
       window.location.href = redirectUrl;
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("loginPage.errorGeneric"));
+      setError(localizeAuthError(err));
       setLoading(false);
     }
   }
@@ -93,7 +117,7 @@ export default function LangLoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#eff7fa]">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#eff7fa]" dir={isRtl ? "rtl" : "ltr"}>
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="orb-login-1 absolute -left-24 top-[-140px] h-[340px] w-[340px] rounded-full" />
         <div className="orb-login-2 absolute -right-24 top-[12%] h-[360px] w-[360px] rounded-full" />
@@ -116,12 +140,14 @@ export default function LangLoginPage() {
 
         <section className="login-shell overflow-hidden rounded-[28px] border border-white/70 bg-white/80 backdrop-blur-xl">
           <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="login-brand-panel relative border-b p-5 md:p-7 lg:border-b-0 lg:border-e">
+            <div
+              className={`login-brand-panel relative border-b p-5 md:p-7 lg:border-b-0 ${isRtl ? "lg:order-1 lg:border-r" : "lg:order-2 lg:border-l"}`}
+            >
               <LoginBrandPanel />
             </div>
 
-            <div className="p-5 md:p-7 lg:p-9" dir={isRtl ? "rtl" : "ltr"}>
-              <div className="mx-auto w-full max-w-xl rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] md:p-6">
+            <div className={`p-5 md:p-7 lg:p-9 ${isRtl ? "lg:order-2" : "lg:order-1"}`}>
+              <div className={`mx-auto w-full max-w-xl rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] md:p-6 ${isRtl ? "text-right" : "text-left"}`}>
                 {/* Logo */}
                 <div className="mb-5 flex justify-center">
                   <div className="relative w-[160px] sm:w-[190px] md:w-[210px]">
@@ -144,7 +170,7 @@ export default function LangLoginPage() {
                 </div>
 
                 {/* Auth Mode Tabs */}
-                <div className="mb-6 flex gap-1 border-b border-slate-200">
+                <div className={`mb-6 flex gap-1 border-b border-slate-200 ${isRtl ? "justify-end" : "justify-start"}`}>
                   <button
                     onClick={() => { setAuthMode("microsoft"); clearMsgs(); }}
                     className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "microsoft" ? "border-cyan-600 text-cyan-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
@@ -178,7 +204,7 @@ export default function LangLoginPage() {
                         placeholder={t("loginPage.microsoftEmailPlaceholder")}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100"
+                        className={`w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 ${fieldAlignClass}`}
                       />
                       {error && (
                         <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -214,7 +240,7 @@ export default function LangLoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={loading}
                         placeholder={t("loginPage.magicEmailPlaceholder")}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                        className={`w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100 ${fieldAlignClass}`}
                       />
                     </div>
                     {error && (
@@ -271,7 +297,7 @@ export default function LangLoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={loading}
                         placeholder={t("loginPage.passwordEmailPlaceholder")}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                        className={`w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100 ${fieldAlignClass}`}
                       />
                     </div>
                     <div>
@@ -286,7 +312,7 @@ export default function LangLoginPage() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           disabled={loading}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                          className={`w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100 ${fieldAlignClass}`}
                           placeholder="••••••••"
                         />
                         <button
