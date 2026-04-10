@@ -4,8 +4,10 @@ import en from "@/locales/en.json";
 export type Language = "en" | "ar";
 
 type TranslationLeaf = string;
+type TranslationArray = TranslationNode[];
+type TranslationNode = TranslationLeaf | TranslationTree | TranslationArray;
 type TranslationTree = {
-  [key: string]: TranslationLeaf | TranslationTree;
+  [key: string]: TranslationNode;
 };
 
 type TranslateVars = Record<string, string | number>;
@@ -22,13 +24,27 @@ function getNestedValue(tree: TranslationTree, path: string): string | undefined
   }
 
   const parts = path.split(".");
-  let cursor: TranslationLeaf | TranslationTree | undefined = tree;
+  let cursor: TranslationNode | undefined = tree;
 
   for (const part of parts) {
-    if (!cursor || typeof cursor === "string" || !(part in cursor)) {
+    if (!cursor || typeof cursor === "string") {
       return undefined;
     }
-    cursor = cursor[part] as TranslationLeaf | TranslationTree;
+
+    if (Array.isArray(cursor)) {
+      const index = Number(part);
+      if (!Number.isInteger(index) || index < 0 || index >= cursor.length) {
+        return undefined;
+      }
+      cursor = cursor[index];
+      continue;
+    }
+
+    if (!(part in cursor)) {
+      return undefined;
+    }
+
+    cursor = cursor[part] as TranslationNode;
   }
 
   return typeof cursor === "string" ? cursor : undefined;
