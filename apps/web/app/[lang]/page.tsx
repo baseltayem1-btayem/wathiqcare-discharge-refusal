@@ -40,9 +40,9 @@ function NavBar({ lang }: { lang: string }) {
   const { t, isRtl } = useI18n();
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur border-b border-slate-100">
+    <header className="wc-nav-shell fixed top-0 inset-x-0 z-50">
       <div
-        className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between"
+        className="wc-container h-16 flex items-center justify-between"
         dir={isRtl ? "rtl" : "ltr"}
       >
         <div className="flex items-center gap-3">
@@ -55,7 +55,7 @@ function NavBar({ lang }: { lang: string }) {
             priority
           />
         </div>
-        <nav className="hidden md:flex items-center gap-8 text-sm text-slate-600 font-medium">
+        <nav className="hidden md:flex items-center gap-8 text-sm text-neutral-600 font-medium">
           <a href="#features" className="hover:text-cyan-700 transition">
             {t("landing.nav.features")}
           </a>
@@ -70,13 +70,13 @@ function NavBar({ lang }: { lang: string }) {
           <LanguageSwitcher />
           <Link
             href={`/${lang}/login`}
-            className="text-sm font-semibold text-cyan-700 hover:text-cyan-900 transition px-4 py-2 rounded-lg hover:bg-cyan-50"
+            className="wc-button-ghost h-10 px-4 text-sm"
           >
             {t("landing.nav.login")}
           </Link>
           <Link
             href={`/${lang}/request-demo`}
-            className="hidden sm:inline-flex text-sm font-semibold bg-cyan-700 text-white px-4 py-2 rounded-lg hover:bg-cyan-800 transition shadow-sm"
+            className="wc-button-primary hidden sm:inline-flex h-10 px-4 text-sm"
           >
             {t("landing.nav.demo")}
           </Link>
@@ -92,7 +92,7 @@ function HeroSection({ lang }: { lang: string }) {
 
   return (
     <section
-      className="pt-32 pb-20 px-6 bg-gradient-to-br from-cyan-50 via-white to-slate-100"
+      className="pt-32 pb-20 px-6 bg-[linear-gradient(135deg,#EAF6FB_0%,#F8FCFE_100%)]"
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-6">
@@ -100,23 +100,23 @@ function HeroSection({ lang }: { lang: string }) {
           <Stethoscope size={14} />
           {t("landing.hero.badge")}
         </span>
-        <h1 className="text-4xl md:text-5xl font-extrabold text-cyan-950 leading-tight">
+        <h1 className="wc-h1 text-brand-navy leading-tight">
           {t("landing.hero.title")}
         </h1>
-        <p className="text-lg md:text-xl text-slate-600 max-w-2xl leading-relaxed">
+        <p className="wc-body text-neutral-600 max-w-2xl leading-relaxed">
           {t("landing.hero.subtitle")}
         </p>
         <div className="flex flex-col sm:flex-row gap-4 mt-2">
           <Link
             href={`/${lang}/request-demo`}
-            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-cyan-700 text-white text-base font-bold shadow-lg hover:bg-cyan-800 transition"
+            className="wc-button-primary px-8"
           >
             {t("landing.hero.cta1")}
             <ChevronDir size={18} />
           </Link>
           <Link
             href={`/${lang}/login`}
-            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white text-cyan-700 text-base font-bold border border-cyan-200 shadow hover:bg-cyan-50 transition"
+            className="wc-button-secondary px-8"
           >
             {t("landing.hero.cta2")}
           </Link>
@@ -137,12 +137,12 @@ function StatsBar() {
   ];
 
   return (
-    <section className="bg-cyan-800 py-10 px-6" dir={isRtl ? "rtl" : "ltr"}>
+    <section className="bg-brand-blue py-10 px-6" dir={isRtl ? "rtl" : "ltr"}>
       <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
         {stats.map((s) => (
           <div key={s.label} className="text-center">
             <div className="text-3xl font-extrabold text-white">{s.value}</div>
-            <div className="text-cyan-200 text-sm mt-1">{s.label}</div>
+            <div className="text-sky-100 text-sm mt-1">{s.label}</div>
           </div>
         ))}
       </div>
@@ -157,7 +157,7 @@ function FeaturesSection() {
     <section id="features" className="py-20 px-6 bg-white" dir={isRtl ? "rtl" : "ltr"}>
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
-          <h2 className="text-3xl font-extrabold text-cyan-950 mb-3">
+          <h2 className="wc-h2 text-brand-navy mb-3">
             {t("landing.features.title")}
           </h2>
           <p className="text-slate-500 text-lg max-w-xl mx-auto">
@@ -170,13 +170,10 @@ function FeaturesSection() {
             return (
               <div
                 key={key}
-                className="p-6 rounded-2xl border border-slate-100 bg-slate-50 hover:shadow-md hover:border-cyan-200 transition group"
+                className="wc-card-soft hover:shadow-card transition group"
               >
                 <div className="w-11 h-11 rounded-xl bg-cyan-100 flex items-center justify-center mb-4 group-hover:bg-cyan-700 transition">
-                  <Icon
-                    size={22}
-                    className="text-cyan-700 group-hover:text-white transition"
-                  />
+                  <Icon size={22} className="text-cyan-700 group-hover:text-white transition" />
                 </div>
                 <h3 className="font-bold text-cyan-900 text-base mb-2">
                   {t(`landing.features.${key}.title`)}
@@ -199,21 +196,17 @@ function HowItWorksSection() {
   const steps = [1, 2, 3, 4] as const;
 
   return (
-    <section
-      id="how"
-      className="py-20 px-6 bg-gradient-to-br from-slate-50 to-cyan-50"
-      dir={isRtl ? "rtl" : "ltr"}
-    >
+    <section id="how" className="py-20 px-6 bg-[linear-gradient(135deg,#F5F9FC_0%,#EAF6FB_100%)]" dir={isRtl ? "rtl" : "ltr"}>
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-14">
-          <h2 className="text-3xl font-extrabold text-cyan-950 mb-3">
+          <h2 className="wc-h2 text-brand-navy mb-3">
             {t("landing.howItWorks.title")}
           </h2>
           <p className="text-slate-500 text-lg">{t("landing.howItWorks.subtitle")}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {steps.map((n) => (
-            <div key={n} className="flex gap-5 p-6 rounded-2xl bg-white border border-slate-100 shadow-sm">
+            <div key={n} className="wc-card flex gap-5">
               <div className="flex-shrink-0 w-12 h-12 rounded-full bg-cyan-700 text-white flex items-center justify-center text-xl font-extrabold">
                 {n}
               </div>
@@ -240,7 +233,7 @@ function WhoIsItForSection() {
     <section className="py-20 px-6 bg-white" dir={isRtl ? "rtl" : "ltr"}>
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-14">
-          <h2 className="text-3xl font-extrabold text-cyan-950 mb-3">
+          <h2 className="wc-h2 text-brand-navy mb-3">
             {t("landing.whoFor.title")}
           </h2>
         </div>
@@ -250,7 +243,7 @@ function WhoIsItForSection() {
             return (
               <div
                 key={key}
-                className="text-center p-8 rounded-2xl border border-slate-100 bg-slate-50 hover:shadow-md transition"
+                className="wc-card-soft text-center hover:shadow-card transition"
               >
                 <div className="w-14 h-14 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4">
                   <Icon size={26} className="text-cyan-700" />
@@ -283,10 +276,10 @@ function ComplianceSection() {
   ];
 
   return (
-    <section className="py-16 px-6 bg-cyan-900" dir={isRtl ? "rtl" : "ltr"}>
+    <section className="py-16 px-6 bg-brand-navy" dir={isRtl ? "rtl" : "ltr"}>
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-2xl font-extrabold text-white mb-2">
+          <h2 className="wc-h3 text-white mb-2">
             {t("landing.compliance.title")}
           </h2>
           <p className="text-cyan-200 text-sm">{t("landing.compliance.subtitle")}</p>
@@ -295,7 +288,7 @@ function ComplianceSection() {
           {items.map((item, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 bg-cyan-800/60 rounded-xl px-4 py-3 border border-cyan-700"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 border border-slate-600 bg-slate-800/60"
             >
               <CheckCircle2 size={18} className="text-cyan-300 flex-shrink-0" />
               <span className="text-white text-sm font-medium">{item}</span>
@@ -314,23 +307,23 @@ function DemoSection({ lang }: { lang: string }) {
   return (
     <section
       id="demo"
-      className="py-20 px-6 bg-gradient-to-br from-cyan-50 to-slate-100"
+      className="py-20 px-6 bg-[linear-gradient(135deg,#EAF6FB_0%,#F8FCFE_100%)]"
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div className="max-w-2xl mx-auto text-center flex flex-col items-center gap-6">
-        <h2 className="text-3xl font-extrabold text-cyan-950">{t("landing.demo.title")}</h2>
+        <h2 className="wc-h2 text-brand-navy">{t("landing.demo.title")}</h2>
         <p className="text-slate-600 text-lg leading-relaxed">{t("landing.demo.subtitle")}</p>
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
           <Link
             href={`/${lang}/request-demo`}
-            className="flex items-center justify-center gap-2 px-10 py-4 rounded-xl bg-cyan-700 text-white text-base font-bold shadow-lg hover:bg-cyan-800 transition"
+            className="wc-button-primary px-10"
           >
             {t("landing.demo.cta1")}
             <ChevronDir size={18} />
           </Link>
           <Link
             href={`/${lang}/login`}
-            className="flex items-center justify-center gap-2 px-10 py-4 rounded-xl bg-white text-cyan-700 text-base font-bold border border-cyan-200 shadow hover:bg-cyan-50 transition"
+            className="wc-button-secondary px-10"
           >
             {t("landing.demo.cta2")}
           </Link>
@@ -351,8 +344,8 @@ function Footer({ lang }: { lang: string }) {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-900 py-10 px-6" dir={isRtl ? "rtl" : "ltr"}>
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <footer className="wc-footer py-10 px-6" dir={isRtl ? "rtl" : "ltr"}>
+      <div className="wc-container flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Image
             src="/images/wathiqcare-logo.png"

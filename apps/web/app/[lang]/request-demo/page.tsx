@@ -60,7 +60,7 @@ export default function RequestDemoPage() {
   function field(id: keyof FormState, labelKey: string, type = "text", required = true) {
     return (
       <div>
-        <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-700">
+        <label htmlFor={id} className="wc-label">
           {t(`requestDemoPage.${labelKey}`)}
           {required && <span className="ms-1 text-red-500">*</span>}
         </label>
@@ -71,7 +71,7 @@ export default function RequestDemoPage() {
           value={form[id]}
           onChange={(e) => setForm((prev) => ({ ...prev, [id]: e.target.value }))}
           disabled={isSubmitting}
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+          className="wc-input"
         />
       </div>
     );
@@ -81,16 +81,16 @@ export default function RequestDemoPage() {
   const featureIcons = [CheckCircle2, CheckCircle2, CheckCircle2, CheckCircle2];
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-slate-100" dir={isRtl ? "rtl" : "ltr"}>
+    <main className="wc-page" dir={isRtl ? "rtl" : "ltr"}>
       {/* Top bar */}
       <div className="h-[3px] bg-gradient-to-r from-teal-600 via-cyan-600 to-cyan-400" />
 
-      <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
+      <div className="wc-container py-8 md:py-12">
         {/* Nav row */}
         <div className="mb-8 flex items-center justify-between">
           <Link
             href={`/${lang}`}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50"
+            className="wc-button-secondary h-10 gap-2 px-3 text-sm"
           >
             <ArrowBack className="h-4 w-4" />
             {t("requestDemoPage.backHome")}
@@ -99,7 +99,7 @@ export default function RequestDemoPage() {
             <LanguageSwitcher />
             <Link
               href={`/${lang}/login`}
-              className="rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm font-semibold text-cyan-700 shadow-sm transition hover:bg-cyan-50"
+              className="wc-button-ghost h-10 px-3 text-sm"
             >
               {t("requestDemoPage.enterSystem")}
             </Link>
@@ -110,17 +110,17 @@ export default function RequestDemoPage() {
           {/* Left panel */}
           <div className="flex flex-col gap-8">
             <div>
-              <h1 className="mb-3 text-3xl font-extrabold text-cyan-950">
+              <h1 className="wc-h2 mb-3 text-brand-navy">
                 {t("requestDemoPage.title")}
               </h1>
-              <p className="text-slate-600 leading-relaxed">{t("requestDemoPage.subtitle")}</p>
+              <p className="wc-body text-neutral-600">{t("requestDemoPage.subtitle")}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               {featureKeys.map((k, i) => {
                 const Icon = featureIcons[i];
                 return (
-                  <div key={k} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div key={k} className="wc-card-soft flex items-center gap-3">
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-cyan-100">
                       <Icon className="h-5 w-5 text-cyan-700" />
                     </div>
@@ -132,7 +132,7 @@ export default function RequestDemoPage() {
               })}
             </div>
 
-            <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-5">
+            <div className="wc-card-soft border-cyan-100 bg-cyan-50 p-5">
               <div className="flex items-center gap-3 mb-3">
                 <Mail className="h-5 w-5 text-cyan-700" />
                 <span className="text-sm font-semibold text-cyan-800">demo@wathiqcare.online</span>
@@ -145,8 +145,8 @@ export default function RequestDemoPage() {
           </div>
 
           {/* Form */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl md:p-8">
-            <h2 className="mb-6 text-xl font-bold text-cyan-950">
+          <div className="wc-card p-6 md:p-8">
+            <h2 className="wc-h3 mb-6 text-brand-navy">
               {t("requestDemoPage.formTitle")}
             </h2>
 
@@ -169,7 +169,7 @@ export default function RequestDemoPage() {
                 {field("website", "website", "url", false)}
 
                 {errorMessage && (
-                  <div className="sm:col-span-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  <div className="sm:col-span-2 wc-alert-error">
                     {errorMessage}
                   </div>
                 )}
@@ -178,7 +178,7 @@ export default function RequestDemoPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 py-3 font-bold text-white shadow-lg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="wc-button-primary w-full"
                   >
                     {isSubmitting ? t("requestDemoPage.submitting") : t("requestDemoPage.submit")}
                   </button>

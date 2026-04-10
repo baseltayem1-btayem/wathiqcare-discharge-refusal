@@ -1056,6 +1056,7 @@
   ,
   "landing": {
     "nav": {
+      "home": "Home",
       "features": "Features",
       "howItWorks": "How It Works",
       "demo": "Request Demo",
@@ -1189,7 +1190,7 @@
     "magicTitle": "Sign In via Secure Link",
     "magicSubtitle": "Enter your email and receive a one-time sign-in link — no password needed",
     "magicEmailLabel": "Email",
-    "magicEmailPlaceholder": "your.email@domain.com",
+    "magicEmailPlaceholder": "example@hospital.sa",
     "magicSendBtn": "Send Secure Login Link",
     "magicSending": "Sending...",
     "magicSwitchToPassword": "Sign in with password instead",
@@ -1197,7 +1198,7 @@
     "passwordTitle": "Sign In with Password",
     "passwordSubtitle": "Enter your email and password.",
     "passwordEmailLabel": "Email",
-    "passwordEmailPlaceholder": "your.email@domain.com",
+    "passwordEmailPlaceholder": "example@hospital.sa",
     "passwordLabel": "Password",
     "passwordShow": "Show",
     "passwordHide": "Hide",
@@ -1205,7 +1206,7 @@
     "passwordSigning": "Signing in...",
     "switchToMagicLink": "No password? Use Secure Link",
     "forgotPasswordLink": "Forgot password?",
-    "errorInvalidCredentials": "Incorrect email or password. Please try again.",
+    "errorInvalidCredentials": "Invalid email or password.",
     "errorNetwork": "Unable to reach the server right now. Please check your connection and try again.",
     "errorGeneric": "Unable to sign in. Please verify your credentials and try again.",
     "noticeGeneric": "If your email is registered, a secure login link has been sent."
@@ -1217,7 +1218,7 @@
     "enterSystem": "Enter System",
     "formTitle": "Demo Request Details",
     "facilityName": "Facility Name",
-    "contactName": "Contact Person Name",
+    "contactName": "Full Name",
     "contactEmail": "Contact Email",
     "contactPhone": "Phone Number",
     "contactAddress": "Contact Address",
@@ -1227,7 +1228,7 @@
     "submitting": "Submitting...",
     "successTitle": "Request Submitted Successfully",
     "successMessage": "Thank you! Our team will contact you within 24 hours to schedule your personalized demo.",
-    "errorMessage": "Failed to submit request. Please try again or contact us directly at demo@wathiqcare.online",
+    "errorMessage": "Unable to complete the request at this time.",
     "required": "Required",
     "features": {
       "pdpl": "PDPL Compliant",
