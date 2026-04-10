@@ -9,7 +9,7 @@ import { ArrowLeft, ArrowRight, Mail, Lock, KeyRound } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LoginBrandPanel from "@/components/login/LoginBrandPanel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch } from "@/utils/api";
+import { ApiHttpError, apiFetch } from "@/utils/api";
 
 type AuthMode = "microsoft" | "magic-link" | "password";
 
@@ -20,6 +20,20 @@ export default function LangLoginPage() {
   const fieldAlignClass = isRtl ? "text-right placeholder:text-right" : "text-left";
 
   function localizeAuthError(err: unknown): string {
+    if (err instanceof ApiHttpError) {
+      console.warn("[auth-ui] Login request failed", {
+        status: err.status,
+        code: err.code,
+        details: err.details,
+      });
+
+      if (err.status === 401) {
+        return isRtl
+          ? "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+          : "Invalid email or password.";
+      }
+    }
+
     if (!(err instanceof Error)) {
       return t("loginPage.errorGeneric");
     }

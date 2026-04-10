@@ -9,13 +9,57 @@ import { ArrowLeft, Mail, Lock, KeyRound } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LoginBrandPanel from "@/components/login/LoginBrandPanel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch } from "@/utils/api";
+import { ApiHttpError, apiFetch } from "@/utils/api";
 
 type AuthMode = "microsoft" | "magic-link" | "password";
 
 export default function LoginPage() {
   const { t, isRtl } = useI18n();
   const router = useRouter();
+
+  function localizeAuthError(err: unknown): string {
+    if (err instanceof ApiHttpError) {
+      console.warn("[auth-ui] Login request failed", {
+        status: err.status,
+        code: err.code,
+        details: err.details,
+      });
+
+      if (err.status === 401) {
+        return isRtl
+          ? "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+          : "Invalid email or password.";
+      }
+
+      if (err.status === 403) {
+        return isRtl
+          ? "ليس لديك صلاحية للوصول إلى هذا الحساب."
+          : "You do not have permission to access this account.";
+      }
+    }
+
+    if (!(err instanceof Error)) {
+      return isRtl ? "حدث خطأ غير متوقع. حاول مرة أخرى." : "Something went wrong. Please try again.";
+    }
+
+    const raw = err.message || "";
+    const normalized = raw.replace(/^\d{3}\s*:\s*/, "").trim();
+
+    if (/network|failed to fetch|unable to reach|timeout|timed out|server/i.test(raw)) {
+      return isRtl
+        ? "تعذر الاتصال بالخادم. يرجى التحقق من الشبكة والمحاولة مرة أخرى."
+        : "Unable to reach the server. Please check your connection and try again.";
+    }
+
+    if (/invalid|credentials|unauthorized|auth required|session validation|required/i.test(raw)) {
+      return isRtl
+        ? "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+        : "Invalid email or password.";
+    }
+
+    return normalized || (isRtl ? "حدث خطأ غير متوقع. حاول مرة أخرى." : "Something went wrong. Please try again.");
+  }
+
   const allowDevPrefill =
     process.env.NODE_ENV === "development" &&
     process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN_PREFILL === "true";
@@ -46,7 +90,7 @@ export default function LoginPage() {
       setNotice(response.message || "If your email is registered, a secure login link has been sent.");
       setEmail("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send login link");
+      setError(localizeAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -67,7 +111,7 @@ export default function LoginPage() {
       const nextPath = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") || result.redirectTo : result.redirectTo;
       router.push(nextPath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid email or password");
+      setError(localizeAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -83,7 +127,7 @@ export default function LoginPage() {
       const redirectUrl = `/api/auth/microsoft/login?email=${encodeURIComponent(email)}`;
       window.location.href = redirectUrl;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Microsoft login failed");
+      setError(localizeAuthError(err));
       setLoading(false);
     }
   }
