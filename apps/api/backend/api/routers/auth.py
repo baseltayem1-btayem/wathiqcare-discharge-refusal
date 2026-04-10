@@ -100,6 +100,11 @@ def login(payload: LoginRequest):
         db.close()
 
 
+@router.post("/password/login", response_model=TokenResponse)
+def password_login(payload: LoginRequest):
+    return login(payload)
+
+
 @router.get("/validate")
 def validate(current_user=Depends(get_current_user)):
     return {

@@ -41,13 +41,20 @@ _startup_timestamp = 0
 
 app = FastAPI(title="WathiqCare Core API", version="0.1.0")
 
-cors_origins = [o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "https://wathiqcare.online").split(",") if o.strip()]
+default_cors_origins = [
+    "https://wathiqcare.online",
+    "https://www.wathiqcare.online",
+]
+configured_cors_origins = [
+    o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", ",".join(default_cors_origins)).split(",") if o.strip()
+]
+cors_origins = configured_cors_origins or default_cors_origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Requested-With", "Accept"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 rate_limiter = SensitiveRouteRateLimiter(
@@ -60,6 +67,9 @@ if os.getenv("SENTRY_DSN"):
 
 @app.middleware("http")
 async def request_hardening_middleware(request: Request, call_next):
+    if request.url.path.startswith("/auth") or request.url.path.startswith("/api/auth"):
+        logger.info("incoming_request method=%s path=%s", request.method, request.url.path)
+
     if not rate_limiter.allow(request):
         return JSONResponse(status_code=429, content={"message": "Too many requests"})
 
@@ -71,6 +81,9 @@ async def request_hardening_middleware(request: Request, call_next):
 
     if response.status_code >= 500:
         logger.error("api_error path=%s method=%s status=%s", request.url.path, request.method, response.status_code)
+
+    if request.url.path.startswith("/auth") or request.url.path.startswith("/api/auth"):
+        logger.info("completed_request method=%s path=%s status=%s", request.method, request.url.path, response.status_code)
 
     return response
 
@@ -148,6 +161,7 @@ def _shutdown_integration_scheduler() -> None:
 
 
 app.include_router(auth_router)
+app.include_router(auth_router, prefix="/api")
 app.include_router(discharge_router)
 app.include_router(discharge_refusal_workflow_router)
 app.include_router(forms_engine_router)

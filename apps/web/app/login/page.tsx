@@ -59,8 +59,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? "";
-      const result = await apiFetch<{ redirectTo: string }>(`${backendUrl}/api/auth/login`, {
+      const result = await apiFetch<{ redirectTo: string }>("/api/auth/password/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
