@@ -197,29 +197,23 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#eff7fa]">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="orb-login-1 absolute -left-24 top-[-140px] h-[340px] w-[340px] rounded-full" />
-        <div className="orb-login-2 absolute -right-24 top-[12%] h-[360px] w-[360px] rounded-full" />
-        <div className="orb-login-3 absolute bottom-[-150px] left-1/2 h-[380px] w-[380px] -translate-x-1/2 rounded-full" />
-      </div>
-
+    <main className="relative min-h-screen overflow-x-hidden bg-[#f4f7fb]">
       <div className="login-top-bar" />
 
       <div className="relative mx-auto w-full max-w-6xl px-4 py-8 md:px-8 md:py-12">
         <div className="mb-4 flex items-center justify-between gap-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/80 bg-white/75 px-3 py-2 text-xs font-semibold text-slate-700 backdrop-blur transition hover:border-cyan-200 hover:bg-cyan-50 sm:text-sm"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-[var(--primary-soft-border)] hover:bg-[var(--primary-soft)] sm:text-sm"
           >
             <ArrowLeft className="h-4 w-4" />
             {isRtl ? "الصفحة الرئيسية" : "Home"}
           </Link>
-          <LanguageSwitcher className="bg-white/95" />
+          <LanguageSwitcher className="bg-white" />
         </div>
 
         <section
-          className="login-shell overflow-hidden rounded-[28px] border border-white/70 bg-white/80 backdrop-blur-xl"
+          className="login-shell overflow-hidden rounded-[24px] border border-slate-200 bg-white"
         >
           <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
             <div
@@ -230,7 +224,7 @@ export default function LoginPage() {
 
             <div className="p-5 md:p-7 lg:p-9" dir={isRtl ? "rtl" : "ltr"}>
               <div
-                className="mx-auto w-full max-w-xl rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] md:p-6"
+                className="mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-sm)] md:p-6"
               >
                 <div className="mb-5 flex justify-center">
                   <div className="relative w-[160px] sm:w-[190px] md:w-[210px]">
@@ -246,7 +240,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="mb-4 flex justify-center">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-700">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700">
                     {t("login.badge")}
                   </span>
                 </div>
@@ -261,7 +255,7 @@ export default function LoginPage() {
                         setNotice("");
                       }}
                       className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "microsoft"
-                        ? "border-cyan-600 text-cyan-700"
+                        ? "border-[var(--primary)] text-[var(--primary-pressed)]"
                         : "border-transparent text-slate-500 hover:text-slate-800"
                         }`}
                     >
@@ -276,7 +270,7 @@ export default function LoginPage() {
                         setNotice("");
                       }}
                       className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "magic-link"
-                        ? "border-cyan-600 text-cyan-700"
+                        ? "border-[var(--primary)] text-[var(--primary-pressed)]"
                         : "border-transparent text-slate-500 hover:text-slate-800"
                         }`}
                     >
@@ -292,7 +286,7 @@ export default function LoginPage() {
                         setNotice("");
                       }}
                       className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "password"
-                        ? "border-cyan-600 text-cyan-700"
+                        ? "border-[var(--primary)] text-[var(--primary-pressed)]"
                         : "border-transparent text-slate-500 hover:text-slate-800"
                         }`}
                     >
@@ -320,7 +314,7 @@ export default function LoginPage() {
                         placeholder="your.name@company.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft)]"
                       />
 
                       {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
@@ -354,7 +348,7 @@ export default function LoginPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={loading}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft)] disabled:bg-slate-100"
                         placeholder="your.email@domain.com"
                       />
                     </div>
@@ -366,7 +360,7 @@ export default function LoginPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="login-submit-btn inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] py-2.5 font-semibold text-[var(--primary-pressed)] transition hover:border-[var(--primary)] hover:bg-[#e2edf8] focus:outline-none focus:ring-2 focus:ring-[var(--primary-soft)] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Mail className="h-4 w-4" />
                       {loading ? "Sending..." : "Send Secure Login Link"}
@@ -377,12 +371,12 @@ export default function LoginPage() {
                         <button
                           type="button"
                           onClick={() => { setAuthMode("password"); setError(""); setNotice(""); }}
-                          className="text-slate-500 hover:text-cyan-700 transition"
+                          className="text-slate-500 transition hover:text-[var(--primary-pressed)]"
                         >
                           Sign in with password instead
                         </button>
                       )}
-                      <Link href="/auth/password-reset" className="text-cyan-600 hover:text-cyan-700 font-semibold">
+                      <Link href="/auth/password-reset" className="text-[var(--primary-pressed)] hover:text-[var(--primary)] font-semibold">
                         Forgot password?
                       </Link>
                     </div>
@@ -393,7 +387,7 @@ export default function LoginPage() {
                 {authConfig.password_enabled && authMode === "password" && (
                   <form onSubmit={handlePasswordSubmit} className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">Sign In with Password</h2>
-                    <p className="text-sm text-gray-600">Enter your email and password. Use <span className="font-medium text-cyan-700">Secure Link</span> above if you don&apos;t have a password yet.</p>
+                    <p className="text-sm text-gray-600">Enter your email and password. Use <span className="font-medium text-[var(--primary-pressed)]">Secure Link</span> above if you don&apos;t have a password yet.</p>
 
                     <div>
                       <label htmlFor="password-email" className="mb-1 block text-sm font-medium text-gray-700">
@@ -407,7 +401,7 @@ export default function LoginPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={loading}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft)] disabled:bg-slate-100"
                         placeholder="your.email@domain.com"
                       />
                     </div>
@@ -424,7 +418,7 @@ export default function LoginPage() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           disabled={loading}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft)] disabled:bg-slate-100"
                           placeholder="Enter your password"
                         />
                         <button
@@ -442,21 +436,21 @@ export default function LoginPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="login-submit-btn inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] py-2.5 font-semibold text-[var(--primary-pressed)] transition hover:border-[var(--primary)] hover:bg-[#e2edf8] focus:outline-none focus:ring-2 focus:ring-[var(--primary-soft)] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <KeyRound className="h-4 w-4" />
                       {loading ? "Signing in..." : "Sign in"}
                     </button>
 
                     <div className="flex items-center justify-between text-xs text-slate-600">
-                      <Link href="/auth/password-reset" className="text-cyan-600 hover:text-cyan-700 font-semibold">
+                      <Link href="/auth/password-reset" className="text-[var(--primary-pressed)] hover:text-[var(--primary)] font-semibold">
                         Forgot password?
                       </Link>
                       {authConfig.secure_link_enabled && (
                         <button
                           type="button"
                           onClick={() => { setAuthMode("magic-link"); setError(""); setNotice(""); }}
-                          className="text-slate-500 hover:text-cyan-700 transition"
+                          className="text-slate-500 transition hover:text-[var(--primary-pressed)]"
                         >
                           Use secure link instead
                         </button>
@@ -471,57 +465,21 @@ export default function LoginPage() {
       </div>
 
       <style jsx>{`
-        .orb-login-1,
-        .orb-login-2,
-        .orb-login-3 {
-          filter: blur(56px);
-        }
-
-        .orb-login-1 {
-          background: rgba(8, 145, 178, 0.24);
-          animation: driftLogin 10s ease-in-out infinite;
-        }
-
-        .orb-login-2 {
-          background: rgba(13, 148, 136, 0.18);
-          animation: driftLogin 12s ease-in-out infinite reverse;
-        }
-
-        .orb-login-3 {
-          background: rgba(34, 211, 238, 0.2);
-          animation: driftLogin 14s ease-in-out infinite;
-        }
-
-        @keyframes driftLogin {
-          0%,
-          100% {
-            transform: translateY(0) translateX(0);
-          }
-          50% {
-            transform: translateY(-14px) translateX(9px);
-          }
-        }
-
         .login-top-bar {
           height: 3px;
-          background: linear-gradient(90deg, #0f766e, #0891b2, #0f766e);
+          background: var(--primary);
         }
 
         .login-shell {
-          box-shadow: 0 18px 48px rgba(12, 74, 110, 0.16);
+          box-shadow: var(--shadow-lg);
         }
 
         .login-brand-panel {
-          background: radial-gradient(90% 130% at 18% 20%, rgba(34, 211, 238, 0.17) 0%, rgba(15, 23, 42, 0.03) 75%),
-            linear-gradient(165deg, #ecfeff 0%, #f8fafc 55%, #e6f6fb 100%);
-          border-color: #dbeafe;
-        }
-
-        .login-submit-btn {
-          background: linear-gradient(120deg, #0f766e, #0891b2, #06b6d4);
-          box-shadow: 0 8px 20px rgba(8, 145, 178, 0.28);
+          background: linear-gradient(180deg, #f8fbff 0%, #f8fafc 100%);
+          border-color: var(--border);
         }
       `}</style>
     </main>
   );
 }
+

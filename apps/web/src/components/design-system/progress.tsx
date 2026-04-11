@@ -19,7 +19,7 @@ export function Progress({ value = 0, max = 100, className }: ProgressProps) {
       aria-valuenow={value}
     >
       <div
-        className="h-full bg-emerald-600 transition-all duration-300 ease-in-out"
+        className="h-full bg-[var(--primary)] transition-all duration-300 ease-in-out"
         style={{ width: `${percentage}%` }}
       />
     </div>

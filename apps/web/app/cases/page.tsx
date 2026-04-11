@@ -47,7 +47,7 @@ export default function CasesPage() {
           <>
             <Link
               href="/cases/new"
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
             >
               <PlusCircle className="h-4 w-4" />
               {t("cases.newCase")}
@@ -55,7 +55,7 @@ export default function CasesPage() {
 
             <Link
               href="/bundles"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               <FileText className="h-4 w-4" />
               {t("bundles.title")}
@@ -68,7 +68,7 @@ export default function CasesPage() {
                 .catch((err) => {
                   setError(err.message);
                 })}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               <RefreshCw className="h-4 w-4" />
               {t("common.refresh")}
@@ -79,15 +79,15 @@ export default function CasesPage() {
         {loading ? <div className="text-sm text-slate-600">{t("cases.loading")}</div> : null}
 
         {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-lg border border-[var(--state-error-border)] bg-[var(--state-error-bg)] px-3 py-2 text-sm text-[var(--state-error)]">
             {error}
           </div>
         ) : null}
 
         {!loading && !error ? (
-          <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-sm)]">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-slate-100 text-slate-700">
+              <thead className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
                 <tr>
                   <th className="px-4 py-3 text-left">{t("cases.table.mrn")}</th>
                   <th className="px-4 py-3 text-left">{t("cases.table.patient")}</th>
@@ -99,7 +99,7 @@ export default function CasesPage() {
               </thead>
               <tbody>
                 {cases.map((item) => (
-                  <tr key={item.id} className="border-t">
+                  <tr key={item.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/80">
                     <td className="px-4 py-3">{item.medicalRecordNo || item.patient_mrn || "-"}</td>
                     <td className="px-4 py-3">{item.patientName || item.patient_name || "-"}</td>
                     <td className="px-4 py-3">{item.status || "-"}</td>
@@ -110,7 +110,7 @@ export default function CasesPage() {
                     <td className="px-4 py-3">
                       <Link
                         href={`/cases/${item.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-white"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-1.5 text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
                       >
                         {t("cases.open")}
                         <ArrowRight className="h-3.5 w-3.5" />

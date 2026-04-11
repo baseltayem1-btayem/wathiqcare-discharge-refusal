@@ -36,13 +36,13 @@ function NavLink({ href, label, icon, active }: NavLinkProps) {
     return (
         <Link
             href={href}
-            className="inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all"
+            className="inline-flex w-full items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors"
             style={
                 active
-                    ? { background: "#ecfeff", color: "#0e7490", fontWeight: 600, borderInlineStart: "3px solid #0891b2", paddingInlineStart: "calc(0.75rem - 3px)" }
-                    : { color: "#374151", borderInlineStart: "3px solid transparent", paddingInlineStart: "calc(0.75rem - 3px)" }
+                    ? { background: "#edf4fb", color: "#1f5fa7", fontWeight: 600, borderColor: "#cdddf0" }
+                    : { color: "#374151", borderColor: "transparent" }
             }
-            onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "#f0f9ff"; }}
+            onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "#f8fafc"; }}
             onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = ""; }}
         >
             {icon}
@@ -67,24 +67,22 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
     }
 
     return (
-        <div className="min-h-screen" style={{ background: "#f5f7fa" }}>
-            {/* Top accent stripe */}
-            <div style={{ height: "3px", background: "linear-gradient(90deg, #7c3aed, #6d28d9, #7c3aed)" }} />
+        <div className="min-h-screen bg-[var(--background)]">
+            <div className="h-1 bg-[var(--primary)]" />
             <div className="mx-auto flex max-w-7xl gap-4 px-4 py-4 md:py-6">
                 <aside
-                    className="hidden w-64 shrink-0 md:flex md:flex-col"
+                    className="hidden w-72 shrink-0 md:flex md:flex-col"
                     style={{
                         background: "#ffffff",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "16px",
-                        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                        border: "1px solid #d6dde5",
+                        borderRadius: "18px",
+                        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
                         padding: "20px 16px",
                     }}
                 >
-                    {/* Brand block */}
                     <div
-                        className="rounded-xl p-3"
-                        style={{ background: "#f5f3ff", border: "1px solid #ede9fe" }}
+                        className="rounded-lg p-4"
+                        style={{ background: "#f8fafc", border: "1px solid #e7edf3" }}
                     >
                         <div className="flex justify-center">
                             <Image
@@ -96,14 +94,13 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                                 priority
                             />
                         </div>
-                        <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#7c3aed" }}>
+                        <p className="mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: "#1f5fa7" }}>
                             Platform Admin
                         </p>
-                        <p className="mt-0.5 text-center text-[11px] text-gray-500">System Operations</p>
+                        <p className="mt-1 text-center text-[11px] text-slate-500">System Operations</p>
                     </div>
 
-                    {/* Nav */}
-                    <nav className="mt-4 flex-1 space-y-0.5">
+                    <nav className="mt-5 flex-1 space-y-1">
                         {PLATFORM_NAV_ITEMS.map((item) => (
                             <NavLink
                                 key={item.href}
@@ -115,16 +112,15 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                         ))}
                     </nav>
 
-                    {/* Status badge */}
                     <div
-                        className="mt-4 rounded-xl p-3 text-xs"
-                        style={{ background: "#f5f3ff", border: "1px solid #e9d5ff", color: "#6b21a8" }}
+                        className="mt-5 rounded-lg p-3 text-xs"
+                        style={{ background: "#edf4fb", border: "1px solid #cdddf0", color: "#1f5fa7" }}
                     >
                         <div className="inline-flex items-center gap-1.5 font-semibold">
                             <Settings className="h-3.5 w-3.5" />
                             System Mode
                         </div>
-                        <p className="mt-0.5" style={{ color: "#7c3aed" }}>SaaS management only</p>
+                        <p className="mt-1 text-slate-600">SaaS management only</p>
                     </div>
 
                     <LanguageSwitcher className="mt-3" />
@@ -132,8 +128,7 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                     <button
                         type="button"
                         onClick={() => { void handleLogout(); }}
-                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                        style={{ borderColor: "#e2e8f0" }}
+                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     >
                         <LogOut className="h-4 w-4" />
                         {t("common.logout")}
@@ -142,24 +137,24 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
 
                 <div className="min-w-0 flex-1">
                     <header
-                        className="sticky top-0 z-10 rounded-xl px-4 py-4 md:px-5"
+                        className="sticky top-0 z-10 rounded-lg px-4 py-4 md:px-5"
                         style={{
                             background: "rgba(255,255,255,0.90)",
-                            backdropFilter: "blur(14px)",
-                            border: "1px solid #e2e8f0",
-                            boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+                            backdropFilter: "blur(10px)",
+                            border: "1px solid #d6dde5",
+                            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
                         }}
                     >
                         <div className="flex flex-col gap-3">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div>
-                                    <h1 className="text-xl font-bold text-gray-900">{title}</h1>
-                                    {subtitle ? <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p> : null}
+                                    <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
+                                    {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
                                 </div>
                                 <div className="inline-flex items-center gap-2">
                                     <PlatformNotificationBell />
                                     <div
-                                        className="hidden items-center gap-2 rounded-xl border border-purple-100 bg-purple-50/80 px-2.5 py-2 sm:inline-flex"
+                                        className="hidden items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 sm:inline-flex"
                                         title="WathiqCare"
                                     >
                                         <Image
@@ -174,8 +169,7 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                                     <button
                                         type="button"
                                         onClick={() => { void handleLogout(); }}
-                                        className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 md:hidden"
-                                        style={{ borderColor: "#e2e8f0" }}
+                                        className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 md:hidden"
                                     >
                                         <LogOut className="h-4 w-4" />
                                         {t("common.logout")}
@@ -183,10 +177,9 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                                 </div>
                             </div>
 
-                            {/* Mobile nav */}
                             <div
-                                className="flex flex-wrap items-center gap-1.5 rounded-xl p-2 md:hidden"
-                                style={{ background: "#f5f7fa", border: "1px solid #e2e8f0" }}
+                                className="flex flex-wrap items-center gap-1.5 rounded-lg p-2 md:hidden"
+                                style={{ background: "#f8fafc", border: "1px solid #d6dde5" }}
                             >
                                 {PLATFORM_NAV_ITEMS.map((item) => (
                                     <NavLink
@@ -201,8 +194,8 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
 
                             {actions ? (
                                 <div
-                                    className="flex flex-wrap items-center gap-2 rounded-xl p-2"
-                                    style={{ background: "#f5f7fa", border: "1px solid #e2e8f0" }}
+                                    className="flex flex-wrap items-center gap-2 rounded-lg p-2"
+                                    style={{ background: "#f8fafc", border: "1px solid #d6dde5" }}
                                 >
                                     {actions}
                                 </div>
@@ -211,8 +204,7 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                     </header>
 
                     <main
-                        className="mt-4 rounded-xl p-5"
-                        style={{ background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                        className="mt-4 rounded-lg border border-slate-200 bg-white p-5 shadow-[var(--shadow-sm)]"
                     >
                         {children}
                     </main>

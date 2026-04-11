@@ -207,10 +207,10 @@ export default function LangLoginPage() {
             <ArrowBack className="h-4 w-4" />
             {t("loginPage.homeLink")}
           </Link>
-          <LanguageSwitcher className="bg-white/95" />
+          <LanguageSwitcher className="bg-white" />
         </div>
 
-        <section className="login-shell overflow-hidden rounded-[28px] border border-border bg-white/80 backdrop-blur-xl">
+        <section className="login-shell overflow-hidden rounded-[24px] border border-border bg-white">
           <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
             <div
               className={`login-brand-panel relative border-b p-5 md:p-7 lg:border-b-0 ${isRtl ? "lg:order-1 lg:border-r" : "lg:order-2 lg:border-l"}`}
@@ -236,7 +236,7 @@ export default function LangLoginPage() {
 
                 {/* Badge */}
                 <div className="mb-4 flex justify-center">
-                  <span className="wc-badge wc-badge-info gap-2 border border-cyan-200 bg-cyan-50 text-[11px] uppercase tracking-[0.12em]">
+                  <span className="wc-badge gap-2 border border-slate-200 bg-slate-50 text-[11px] uppercase tracking-[0.12em] text-slate-700">
                     {t("loginPage.badge")}
                   </span>
                 </div>
@@ -350,14 +350,14 @@ export default function LangLoginPage() {
                         <button
                           type="button"
                           onClick={() => { setAuthMode("password"); clearMsgs(); }}
-                          className="text-slate-500 hover:text-cyan-700 transition"
+                          className="text-slate-500 transition hover:text-[var(--primary-pressed)]"
                         >
                           {t("loginPage.magicSwitchToPassword")}
                         </button>
                       )}
                       <Link
                         href="/auth/password-reset"
-                        className="text-cyan-600 hover:text-cyan-700 font-semibold"
+                        className="text-[var(--primary-pressed)] hover:text-[var(--primary)] font-semibold"
                       >
                         {t("loginPage.forgotPassword")}
                       </Link>
@@ -426,7 +426,7 @@ export default function LangLoginPage() {
                     <div className="flex items-center justify-between text-xs text-slate-600">
                       <Link
                         href="/auth/password-reset"
-                        className="text-cyan-600 hover:text-cyan-700 font-semibold"
+                        className="text-[var(--primary-pressed)] hover:text-[var(--primary)] font-semibold"
                       >
                         {t("loginPage.forgotPasswordLink")}
                       </Link>
@@ -434,7 +434,7 @@ export default function LangLoginPage() {
                         <button
                           type="button"
                           onClick={() => { setAuthMode("magic-link"); clearMsgs(); }}
-                          className="text-slate-500 hover:text-cyan-700 transition"
+                          className="text-slate-500 transition hover:text-[var(--primary-pressed)]"
                         >
                           {t("loginPage.switchToMagicLink")}
                         </button>
@@ -449,13 +449,14 @@ export default function LangLoginPage() {
       </div>
 
       <style jsx>{`
-        .login-top-bar { height: 3px; background: linear-gradient(90deg, #0f8b8d, #17b7d8, #114c8d); }
-        .login-shell { box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08); }
+        .login-top-bar { height: 3px; background: var(--primary); }
+        .login-shell { box-shadow: var(--shadow-lg); }
         .login-brand-panel {
-          background: linear-gradient(165deg, #f4fbfe 0%, #f8fafc 55%, #eef6fb 100%);
-          border-color: #dce5ec;
+          background: linear-gradient(180deg, #f8fbff 0%, #f8fafc 100%);
+          border-color: var(--border);
         }
       `}</style>
     </main>
   );
 }
+

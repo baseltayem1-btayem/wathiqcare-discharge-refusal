@@ -24,9 +24,9 @@ export function Switch({
       onClick={() => onCheckedChange?.(!checked)}
       className={cn(
         "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/20",
         "disabled:cursor-not-allowed disabled:opacity-50",
-        checked ? "bg-emerald-600" : "bg-slate-300",
+        checked ? "bg-[var(--primary)]" : "bg-slate-300",
         className
       )}
       {...props}

@@ -91,57 +91,57 @@ export default function PlatformUsersPage() {
     }
 
     function roleBadgeClass(role: string): string {
-        if (role === "platform_superadmin") return "bg-violet-100 text-violet-700";
-        if (role === "platform_admin") return "bg-purple-100 text-purple-700";
-        if (role === "platform_operator") return "bg-blue-100 text-blue-700";
-        if (role === "support_viewer") return "bg-slate-100 text-slate-700";
-        return "bg-slate-100 text-slate-700";
+        if (role === "platform_superadmin") return "border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] text-[var(--primary)]";
+        if (role === "platform_admin") return "border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] text-[var(--primary)]";
+        if (role === "platform_operator") return "border border-slate-200 bg-slate-100 text-slate-700";
+        if (role === "support_viewer") return "border border-slate-200 bg-slate-100 text-slate-700";
+        return "border border-slate-200 bg-slate-100 text-slate-700";
     }
 
     return (
         <>
-            <div className="mb-5 flex items-center justify-between">
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Platform Users</h2>
-                    <p className="mt-1 text-sm text-gray-500">
-                        Manage platform-level staff — admins, operators, and support viewers
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        onClick={() => void loadUsers()}
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                        <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                        Refresh
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setShowCreateModal(true)}
-                        className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Create Platform User
-                    </button>
+            <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <h2 className="text-lg font-semibold text-slate-900">Platform Users</h2>
+                        <p className="mt-1 text-sm text-slate-500">
+                            Manage platform-level staff — admins, operators, and support viewers
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => void loadUsers()}
+                            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                            Refresh
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowCreateModal(true)}
+                            className="inline-flex items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Create Platform User
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Info banner */}
-            <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 <Shield className="mb-0.5 mr-2 inline-block h-4 w-4" />
                 Platform users have <strong>global access</strong> to all tenant data.
                 Only provision platform staff here. Tenant users are managed separately under each tenant.
             </div>
 
-            {/* Users Table */}
-            <div className="rounded-2xl border border-slate-200 bg-white">
-                <div className="border-b border-slate-200 px-5 py-3">
+            <div className="rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-sm)]">
+                <div className="border-b border-slate-200 px-5 py-4">
                     <h3 className="text-sm font-semibold text-slate-900">Platform Users ({users.length})</h3>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-100 text-sm">
-                        <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                        <thead className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
                             <tr>
                                 <th className="px-4 py-3 text-left">Name</th>
                                 <th className="px-4 py-3 text-left">Email</th>
@@ -166,7 +166,7 @@ export default function PlatformUsersPage() {
                                 </tr>
                             ) : (
                                 users.map((user) => (
-                                    <tr key={user.id} className="hover:bg-slate-50">
+                                    <tr key={user.id} className="hover:bg-slate-50/80">
                                         <td className="px-4 py-3 font-medium text-slate-900">{user.fullName}</td>
                                         <td className="px-4 py-3 text-slate-600">{user.email}</td>
                                         <td className="px-4 py-3">
@@ -195,10 +195,9 @@ export default function PlatformUsersPage() {
                 </div>
             </div>
 
-            {/* Create Platform User Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-xl">
+                    <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-floating)]">
                         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                             <div>
                                 <h3 className="text-base font-semibold text-slate-900">Create Platform User</h3>
@@ -221,7 +220,7 @@ export default function PlatformUsersPage() {
                             <div>
                                 <label className="mb-1 block text-xs font-medium text-slate-700">Full Name *</label>
                                 <input
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
                                     placeholder="Ahmad Al-Rashidi"
                                     value={createForm.fullName}
                                     onChange={(e) => setCreateForm((p) => ({ ...p, fullName: e.target.value }))}
@@ -231,7 +230,7 @@ export default function PlatformUsersPage() {
                                 <label className="mb-1 block text-xs font-medium text-slate-700">Email *</label>
                                 <input
                                     type="email"
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
                                     placeholder="operator@wathiqcare.online"
                                     value={createForm.email}
                                     onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))}
@@ -242,7 +241,7 @@ export default function PlatformUsersPage() {
                                 <select
                                     title="Select platform role"
                                     aria-label="Select platform role"
-                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
                                     value={createForm.role}
                                     onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))}
                                 >
@@ -275,7 +274,6 @@ export default function PlatformUsersPage() {
                                 </label>
                             </div>
 
-                            {/* Security warning */}
                             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                                 Platform users have access to all tenants. Only create accounts for trusted staff.
                             </div>
@@ -285,7 +283,7 @@ export default function PlatformUsersPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowCreateModal(false)}
-                                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                             >
                                 Cancel
                             </button>
@@ -293,7 +291,7 @@ export default function PlatformUsersPage() {
                                 type="button"
                                 onClick={() => void handleCreateUser()}
                                 disabled={saving}
-                                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                                className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50"
                             >
                                 {saving ? "Creating..." : "Create User"}
                             </button>

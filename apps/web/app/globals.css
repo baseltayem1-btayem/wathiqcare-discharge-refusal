@@ -1,44 +1,51 @@
 /* WathiqCare Design System
  * English: Inter | Arabic: IBM Plex Sans Arabic
- * Tokens + reusable UI primitives for institutional Saudi gov-style UI.
+ * Phase 1 foundation for a calm, professional medical/legal product UI.
  */
 
 @import "tailwindcss";
 
 :root {
-  --background: #f8fcfe;
+  --background: #f3f6f8;
   --surface: #ffffff;
-  --surface-muted: #f5f9fc;
-  --foreground: #111827;
-  --foreground-secondary: #6b7280;
-  --accent: #17b7d8;
-  --accent-light: #eaf6fb;
-  --accent-hover: #0f8b8d;
-  --primary-strong: #114c8d;
-  --border: #dce5ec;
-  --border-strong: #c9d6e2;
-  --border-soft: #e8eef3;
-  --state-success: #0e9f6e;
-  --state-success-bg: #e8fff5;
-  --state-warning: #d97706;
-  --state-warning-bg: #fff7e8;
-  --state-error: #dc2626;
-  --state-error-bg: #fdecec;
-  --state-info: #2563eb;
-  --state-info-bg: #eff6ff;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
-  --shadow-floating: 0 16px 40px rgba(15, 23, 42, 0.12);
-  --shadow-focus: 0 0 0 4px rgba(23, 183, 216, 0.12);
+  --surface-muted: #f8fafc;
+  --surface-subtle: #eef2f6;
+  --foreground: #16202b;
+  --foreground-secondary: #4b5563;
+  --foreground-muted: #6b7280;
+  --primary: #1f5fa7;
+  --primary-hover: #174c86;
+  --primary-pressed: #123f6f;
+  --primary-soft: #edf4fb;
+  --primary-soft-border: #cdddf0;
+  --border: #d6dde5;
+  --border-strong: #c4ced8;
+  --border-soft: #e7edf3;
+  --state-success: #15803d;
+  --state-success-bg: #edf9f0;
+  --state-success-border: #c9e8d0;
+  --state-warning: #b45309;
+  --state-warning-bg: #fff7ed;
+  --state-warning-border: #f5d7b1;
+  --state-error: #b42318;
+  --state-error-bg: #fef3f2;
+  --state-error-border: #f3c7c2;
+  --state-info: #1f5fa7;
+  --state-info-bg: #edf4fb;
+  --state-info-border: #cdddf0;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.05);
+  --shadow-floating: 0 12px 28px rgba(15, 23, 42, 0.08);
+  --shadow-focus: 0 0 0 3px rgba(31, 95, 167, 0.14);
 
   --font-sans-latin: var(--font-english), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-sans-arabic: var(--font-arabic), "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
   --font-sans-primary: var(--font-sans-latin);
   --font-mono-primary: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", Menlo, monospace;
 
-  --radius-sm: 12px;
-  --radius-md: 14px;
-  --radius-lg: 24px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
   --radius-pill: 999px;
 }
 
@@ -47,9 +54,9 @@
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);
   --color-foreground-secondary: var(--foreground-secondary);
-  --color-accent: var(--accent);
-  --color-accent-light: var(--accent-light);
-  --color-accent-hover: var(--accent-hover);
+  --color-accent: var(--primary);
+  --color-accent-light: var(--primary-soft);
+  --color-accent-hover: var(--primary-hover);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --font-sans: var(--font-sans-primary);
@@ -203,7 +210,7 @@ h3,
     border: 1px solid var(--border);
     background: var(--surface);
     padding: 1.5rem;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
   }
 
   .wc-card-soft {
@@ -221,16 +228,17 @@ h3,
     min-height: 48px;
     padding-inline: 1.25rem;
     border-radius: var(--radius-md);
-    background: linear-gradient(90deg, #0f8b8d 0%, #17b7d8 100%);
-    color: #ffffff;
+    border: 1px solid var(--primary-soft-border);
+    background: var(--primary-soft);
+    color: var(--primary-pressed);
     font-size: 1rem;
     font-weight: 600;
-    box-shadow: var(--shadow-sm);
     transition: all 180ms ease-out;
   }
 
   .wc-button-primary:hover {
-    opacity: 0.95;
+    background: #e2edf8;
+    border-color: var(--primary);
   }
 
   .wc-button-primary:disabled {
@@ -248,14 +256,14 @@ h3,
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
     background: #ffffff;
-    color: #1f2937;
+    color: var(--foreground);
     font-size: 1rem;
     font-weight: 600;
     transition: all 180ms ease-out;
   }
 
   .wc-button-secondary:hover {
-    background: #f8fafc;
+    background: var(--surface-muted);
   }
 
   .wc-button-ghost {
@@ -266,14 +274,14 @@ h3,
     min-height: 44px;
     padding-inline: 1rem;
     border-radius: var(--radius-md);
-    color: var(--accent-hover);
+    color: var(--primary);
     font-size: 0.95rem;
     font-weight: 600;
     transition: all 180ms ease-out;
   }
 
   .wc-button-ghost:hover {
-    background: var(--accent-light);
+    background: var(--primary-soft);
   }
 
   .wc-input {
@@ -281,7 +289,7 @@ h3,
     min-height: 48px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
-    background: var(--surface-muted);
+    background: var(--surface);
     padding-inline: 1rem;
     font-size: 1rem;
     color: var(--foreground);
@@ -293,7 +301,7 @@ h3,
   }
 
   .wc-input:focus {
-    border-color: var(--accent);
+    border-color: var(--primary);
   }
 
   .wc-label {
@@ -302,12 +310,12 @@ h3,
     font-size: 0.875rem;
     line-height: 1.4;
     font-weight: 500;
-    color: #374151;
+    color: var(--foreground-secondary);
   }
 
   .wc-alert-error {
     border-radius: var(--radius-md);
-    border: 1px solid #fecaca;
+    border: 1px solid var(--state-error-border);
     background: var(--state-error-bg);
     padding: 0.75rem 1rem;
     color: var(--state-error);
@@ -316,7 +324,7 @@ h3,
 
   .wc-alert-success {
     border-radius: var(--radius-md);
-    border: 1px solid #a7f3d0;
+    border: 1px solid var(--state-success-border);
     background: var(--state-success-bg);
     padding: 0.75rem 1rem;
     color: var(--state-success);
@@ -333,8 +341,8 @@ h3,
   }
 
   .wc-badge-info {
-    background: var(--accent-light);
-    color: var(--primary-strong);
+    background: var(--state-info-bg);
+    color: var(--state-info);
   }
 
   .wc-tab {
@@ -344,17 +352,17 @@ h3,
     border-bottom: 2px solid transparent;
     padding: 0.5rem 0.75rem;
     font-size: 0.9rem;
-    color: #6b7280;
+    color: var(--foreground-muted);
     transition: all 180ms ease-out;
   }
 
   .wc-tab:hover {
-    color: var(--accent-hover);
+    color: var(--primary-hover);
   }
 
   .wc-tab-active {
-    border-color: var(--accent);
-    color: var(--accent-hover);
+    border-color: var(--primary);
+    color: var(--primary-hover);
     font-weight: 600;
   }
 

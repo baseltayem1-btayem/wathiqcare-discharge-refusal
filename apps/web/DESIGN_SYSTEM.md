@@ -1,263 +1,184 @@
 # WathiqCare Design System
 
-## Overview
+## Purpose
 
-A comprehensive, production-ready design system built for the WathiqCare Discharge Refusal Management platform. This system provides reusable UI components and enhancement wrappers that integrate seamlessly with existing application logic.
+Phase 1 defines the shared visual foundation only. It does not change business logic, routes, API behavior, authentication flows, or database schema.
 
-## Architecture
+The design direction is intentionally calm, formal, and hospital-appropriate:
 
-```
-apps/web/
-├── src/
-│   ├── components/
-│   │   ├── design-system/      # Core UI primitives
-│   │   ├── ui/                  # Existing UI components (preserved)
-│   │   ├── make-ui/             # Previously imported components (preserved)
-│   │   └── ...                  # Other existing components
-│   └── ui-enhancements/         # Enhancement wrappers for modules
-│       ├── discharge/
-│       ├── legal/
-│       ├── consent/
-│       └── dashboard/
-```
+- Enterprise medical/legal presentation
+- Blue for primary actions and selected states
+- Gray for layout, panels, and neutral structure
+- Green only for success and completion
+- Red only for destructive or error states
+- Amber only for warnings and pending attention
+- Minimal gradients, minimal shadows, no playful consumer styling
 
-## Design System Components
+## Phase 1 Scope
 
-### Core Primitives (`/src/components/design-system/`)
+Phase 1 includes only:
 
-All components follow these principles:
-  - **Accessible**: ARIA-compliant with keyboard navigation
-- **Consistent**: Emerald accent color (#10b981) for brand alignment
-- **Type-safe**: Full TypeScript support with strict types
-- **Composable**: Built with compound component patterns
+- Global design tokens in [app/globals.css](c:/work/wathiqcare-discharge-refusal-main/apps/web/app/globals.css)
+- Reusable primitives in [src/components/design-system/button.tsx](c:/work/wathiqcare-discharge-refusal-main/apps/web/src/components/design-system/button.tsx), [src/components/design-system/badge.tsx](c:/work/wathiqcare-discharge-refusal-main/apps/web/src/components/design-system/badge.tsx), [src/components/design-system/card.tsx](c:/work/wathiqcare-discharge-refusal-main/apps/web/src/components/design-system/card.tsx), [src/components/design-system/input.tsx](c:/work/wathiqcare-discharge-refusal-main/apps/web/src/components/design-system/input.tsx), [src/components/design-system/switch.tsx](c:/work/wathiqcare-discharge-refusal-main/apps/web/src/components/design-system/switch.tsx), [src/components/design-system/tabs.tsx](c:/work/wathiqcare-discharge-refusal-main/apps/web/src/components/design-system/tabs.tsx), [src/components/design-system/table.tsx](c:/work/wathiqcare-discharge-refusal-main/apps/web/src/components/design-system/table.tsx), and [src/components/design-system/progress.tsx](c:/work/wathiqcare-discharge-refusal-main/apps/web/src/components/design-system/progress.tsx)
+- Documentation of rules and rollout order
 
-#### Available Components
+Phase 1 does not include page-by-page restyling yet.
 
-| Component | Description | Variants |
-|-----------|-------------|----------|
-| **Button** | Action trigger | default, outline, ghost, destructive, success |
-| **Badge** | Status indicator | default, secondary, outline, success, warning, destructive |
-| **Card** | Container with header/footer | - |
-| **Dialog** | Modal overlay | - |
-| **Drawer** | Side panel | left, right, top, bottom |
-| **Dropdown Menu** | Action menu | - |
-| **Form** | Form wrapper with validation | - |
-| **Input** | Text input | includes Textarea, Select |
-| **Popover** | Floating content | - |
-| **Progress** | Progress bar | - |
-| **Radio Group** | Radio button set | - |
-| **Switch** | Toggle control | - |
-| **Table** | Data table | - |
-| **Tabs** | Tab navigation | - |
-| **Tooltip** | Contextual help | - |
+## Design Tokens
 
-### Usage Examples
+### Core Color Roles
 
-```tsx
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/design-system";
+| Role | Token | Usage |
+|------|-------|-------|
+| App background | `--background` | Page canvas and neutral shells |
+| Primary surface | `--surface` | Cards, forms, modal bodies |
+| Secondary surface | `--surface-muted` | Quiet panels, grouped filters, table headers |
+| Primary text | `--foreground` | Headings, key values, labels |
+| Secondary text | `--foreground-secondary` | Descriptions, metadata |
+| Primary action | `--primary` | Primary buttons, active tabs, focus states, selected controls |
+| Primary hover | `--primary-hover` | Hover state for primary actions |
+| Border | `--border` | Default input, card, and table borders |
 
-function MyComponent() {
-  return (
-    <Dialog open={true} onOpenChange={setOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Discharge Case Details</DialogTitle>
-        </DialogHeader>
-        <p>Content here...</p>
-        <Button variant="default">Save Changes</Button>
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
+### State Tokens
 
-## UI Enhancement Layer (`/src/ui-enhancements/`)
+| State | Token family | Allowed usage |
+|-------|--------------|---------------|
+| Success | `--state-success-*` | Approval, completion, successful submission |
+| Warning | `--state-warning-*` | Pending attention, caution |
+| Error | `--state-error-*` | Validation, failed actions, destructive flows |
+| Info | `--state-info-*` | Informational callouts only |
 
-Pre-built, module-specific components that wrap existing business logic without modification.
+### Shape and Elevation
 
-### Discharge Module
+| Token | Intent |
+|-------|--------|
+| `--radius-sm` | Inputs, compact controls |
+| `--radius-md` | Buttons, selects, tabs |
+| `--radius-lg` | Cards, dialogs, grouped panels |
+| `--shadow-sm` | Default surface separation |
+| `--shadow-md` | Reserved for elevated containers |
+| `--shadow-floating` | Reserved for dialogs and overlays |
 
-#### `DischargeCaseTable`
-Enhanced table for displaying discharge cases with filtering and sorting.
+## Component Rules
 
-**Props:**
-```tsx
-{
-  cases: DischargeCaseItem[];
-  loading?: boolean;
-  onRowClick?: (caseItem: DischargeCaseItem) => void;
-}
-```
+### Buttons
 
-**Usage:**
-```tsx
-import { DischargeCaseTable } from "@/ui-enhancements";
+- `default` is the only primary visual action and must be blue.
+- `outline` is neutral and used for secondary actions.
+- `ghost` is neutral and should not compete with primary CTAs.
+- `success` and `destructive` are reserved for true status or irreversible actions.
+- Avoid using green or red for ordinary navigation or standard CRUD actions.
 
-<DischargeCaseTable 
-  cases={cases} 
-  loading={loading}
-  onRowClick={(item) => navigate(`/cases/${item.id}`)}
-/>
-```
+### Badges
 
-#### `DischargeCaseDialog`
-Modal dialog for viewing/editing case details with tabbed interface.
+- Default badge is informational and blue-toned.
+- Neutral metadata uses `secondary` or `outline`.
+- Success, warning, and destructive variants are semantic only.
+- Badges should remain quiet, compact, and highly legible.
 
-**Props:**
-```tsx
-{
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  caseData: CaseData | null;
-  onSave?: () => void;
-  saving?: boolean;
-}
-```
+### Cards and Panels
 
-### Legal Module
+- White surfaces on gray page backgrounds.
+- Thin borders first, light shadow second.
+- Large panels should feel structured, not decorative.
+- Avoid stacked heavy shadows or tinted card backgrounds unless status-specific.
 
-#### `LegalCaseDashboard`
-Comprehensive dashboard for legal escalation cases with KPI cards and case table.
+### Inputs and Form Fields
 
-**Props:**
-```tsx
-{
-  cases: LegalCase[];
-  stats: { active: number; underReview: number; resolved: number; highRisk: number };
-  onCaseClick?: (caseItem: LegalCase) => void;
-}
-```
+- White field surfaces with gray border.
+- Blue focus ring and blue focus border.
+- Rounded corners should be consistent and not overly soft.
+- Placeholder text should remain muted and secondary.
 
-### Consent Module
+### Switches and Tabs
 
-#### `ConsentWorkflowPanel`
-Workflow panel for managing informed consent and signature capture.
+- Active state is blue, not green.
+- Inactive state remains neutral gray.
+- Selected tabs should feel formal and structured, with border emphasis instead of loud fills.
 
-**Props:**
-```tsx
-{
-  caseId: string;
-  consents: ConsentItem[];
-  stats: { pending: number; verified: number; expired: number };
-  onStartConsent?: (documentType: string) => void;
-  onVerifyConsent?: (consentId: string) => void;
-}
-```
+### Tables
 
-### Dashboard Module
+- Use gray header rows and quiet row hover states.
+- Header typography is compact, uppercase, and subdued.
+- Keep borders subtle and alignment consistent.
+- Avoid decorative zebra striping unless necessary for readability.
 
-#### `DashboardStatsGrid`
-KPI cards grid with loading states and trend indicators.
+### Progress Indicators
 
-**Props:**
-```tsx
-{
-  stats: {
-    totalCases: number;
-    activeCases: number;
-    escalatedCases: number;
-    closedCases: number;
-    totalTrend?: string;
-    activeTrend?: string;
-  };
-  loading?: boolean;
-}
-```
+- Default progress uses blue to indicate process, not success.
+- Green should be reserved for explicit completion messaging.
 
-## Integration Guidelines
+## Typography Rules
 
-### ✅ Safe Integration Practices
+- Prioritize clarity over decoration.
+- Maintain strong heading hierarchy with restrained weight.
+- Labels and metadata should be readable but visually secondary.
+- Arabic and English typography should remain consistent in density and spacing.
 
-1. **Import from Enhancement Layer**
-   ```tsx
-   import { DischargeCaseTable } from "@/ui-enhancements";
-   ```
+## Icon Rules
 
-2. **Pass Existing Data**
-   - Use existing API responses/state
-   - No transformation required
-   - Maintains backward compatibility
+- Use line icons only.
+- Prefer formal, structured geometry.
+- Avoid filled icons except for specific status emphasis.
+- Avoid overly playful or highly rounded icon styles.
 
-3. **Preserve Event Handlers**
-   ```tsx
-   <DischargeCaseTable 
-     cases={existingCases}
-     onRowClick={existingClickHandler}
-   />
-   ```
+## Safe Integration Rules
 
-### ❌ Avoid These Patterns
+- Do not change workflows.
+- Do not change case logic.
+- Do not change forms behavior.
+- Do not change backend integrations.
+- Do not change route structures.
+- Keep component public APIs stable during redesign.
 
-1. **Don't Modify Backend Services**
-   - Never change API endpoints
-   - Never alter database models
-   - Never refactor services
+## Proposed Page Transformation Order
 
-2. **Don't Replace Existing Components Directly**
-   - Create NEW routes/pages for testing
-   - Use feature flags if available
-   - Gradual migration, not wholesale replacement
+This is the rollout order for Phase 2, after Phase 1 tokens and primitives are validated:
 
-3. **Don't Break Existing Routes**
-   - Test in isolated environments
-   - Verify all existing links still work
+1. Platform shell and shared navigation
+2. Platform tenants page
+3. Platform users page
+4. Platform health page
+5. Login pages and auth surfaces
+6. Dashboard summary surfaces
+7. Case list pages
+8. Case detail header and meta panels
+9. Workflow panels and timeline surfaces
+10. Admin/compliance modules
+11. Reports workspace
+12. Remaining modal and utility surfaces
 
-## Migration Strategy
+## Why This Order
 
-### Phase 1: Parallel Implementation (Current)
-- ✅ Design system created
-- ✅ Enhancement wrappers built
-- ✅ No existing code touched
+- The shell defines spacing, header, and navigation tone for everything else.
+- The tenants and users pages are operationally important and visually repetitive, making them ideal for safe incremental validation.
+- Login comes after shared controls are stabilized, so auth visuals can change without changing auth flow behavior.
+- Workflow-heavy pages come later because they have denser interactions and need stronger regression discipline.
 
-### Phase 2: Gradual Adoption (Recommended)
-1. Create demo pages using new components
-2. Test with real data in isolated routes
-3. Gather feedback from stakeholders
-4. Update one module at a time
+## Validation Checklist For Each Future Page
 
-### Phase 3: Full Integration (Future)
-1. Replace old components route-by-route
-2. Keep old components as fallback
-3. Monitor for regressions
-4. Document breaking changes (if any)
+- No routing changes
+- No API request changes
+- No auth behavior changes
+- No form submission changes
+- No accessibility regression in focus, contrast, or labels
+- Visual changes limited to layout, spacing, color, typography, or component replacement using the same handlers and data
 
-## Styling System
+## Shared Component Inventory
 
-### Tailwind Configuration
-All components use Tailwind CSS with these conventions:
+Reusable primitives currently aligned to Phase 1:
 
-- **Primary Color**: Emerald (#10b981)
-- **Base Gray**: Slate
-- **Border Radius**: `rounded-lg` (8px), `rounded-2xl` (16px)
-- **Shadows**: Minimal, subtle elevation
-- **Focus Ring**: 2px emerald-500
+- Button
+- Badge
+- Card
+- Dialog
+- Input, Textarea, Select
+- Progress
+- Switch
+- Tabs
+- Table
 
-### Dark Mode (Future)
-Components are built to support dark mode via Tailwind's `dark:` variants. Implementation pending.
-
-## Accessibility
-
-All components follow WCAG 2.1 Level AA standards:
-
-- ✅ Keyboard navigation
-- ✅ ARIA labels and roles
-- ✅ Focus management
-- ✅ Screen reader support
-- ✅ Color contrast compliance
-
-## Testing
-
-### Unit Tests (Recommended)
-```bash
-npm test -- design-system
-```
-
-### Visual Regression (Recommended)
-```bash
-npm run storybook  # If Storybook is added
-```
-
-### Integration Tests
+Module wrappers remain available and should adopt the new primitives without changing the underlying application logic.
 Test enhancement wrappers with existing data flows.
 
 ## Performance

@@ -15,7 +15,7 @@ export function Table({ className, ...props }: React.ComponentProps<"table">) {
 export function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
-      className={cn("bg-slate-50 [&_tr]:border-b", className)}
+      className={cn("bg-slate-50/80 [&_tr]:border-b", className)}
       {...props}
     />
   );
@@ -33,7 +33,7 @@ export function TableBody({ className, ...props }: React.ComponentProps<"tbody">
 export function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   return (
     <tfoot
-      className={cn("border-t bg-slate-50 font-medium", className)}
+      className={cn("border-t border-slate-200 bg-slate-50 font-medium", className)}
       {...props}
     />
   );
@@ -43,7 +43,7 @@ export function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   return (
     <tr
       className={cn(
-        "border-b border-slate-200 transition-colors hover:bg-slate-50",
+        "border-b border-slate-200 transition-colors hover:bg-slate-50/80",
         className
       )}
       {...props}
@@ -55,7 +55,7 @@ export function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       className={cn(
-        "px-4 py-3 text-left font-semibold text-slate-700 [&:has([role=checkbox])]:pr-0",
+        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.04em] text-slate-600 [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}

@@ -67,14 +67,14 @@ function StatCard(props: {
           : "border-slate-200 bg-white";
 
   return (
-    <article className={`rounded-2xl border p-4 ${toneClass}`}>
+    <article className={`rounded-xl border p-4 ${toneClass}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{props.label}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{props.value}</p>
           {props.hint ? <p className="mt-1 text-xs text-slate-500">{props.hint}</p> : null}
         </div>
-        <div className="rounded-xl border border-white/70 bg-white/70 p-2 text-slate-700">{props.icon}</div>
+        <div className="rounded-lg border border-slate-200 bg-white p-2 text-[var(--primary)]">{props.icon}</div>
       </div>
     </article>
   );
@@ -131,16 +131,16 @@ export default function DashboardPage() {
         subtitle="Real-time orchestration, SLA monitoring, escalation controls, and executive visibility"
       >
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
             Loading operations dashboard...
           </div>
         ) : !data ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="rounded-lg border border-[var(--state-error-border)] bg-[var(--state-error-bg)] px-4 py-3 text-sm text-[var(--state-error)]">
             Unable to load dashboard metrics.
           </div>
         ) : (
           <div className="space-y-5">
-            <section className="sticky top-[88px] z-[5] rounded-2xl border border-slate-200 bg-white/95 p-4 backdrop-blur">
+            <section className="sticky top-[88px] z-[5] rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <StatCard label="Active Cases" value={data.summary.totalActiveCases} icon={<Layers3 className="h-4 w-4" />} />
                 <StatCard
@@ -165,7 +165,7 @@ export default function DashboardPage() {
             </section>
 
             <section className="grid gap-4 xl:grid-cols-3">
-              <article className="rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-2">
+              <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)] xl:col-span-2">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-sm font-semibold text-slate-900">Department Queue Status</h2>
@@ -174,7 +174,7 @@ export default function DashboardPage() {
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 cursor-not-allowed" title="Monitoring only">
                     Monitoring only
                   </span>
-                  <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                     <div className="flex items-center gap-2 font-semibold">
                       <AlertTriangle className="h-4 w-4" />
                       Dashboard is monitoring-only
@@ -211,7 +211,7 @@ export default function DashboardPage() {
                 </div>
               </article>
 
-              <article className="rounded-2xl border border-slate-200 bg-white p-4">
+              <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
                 <h2 className="text-sm font-semibold text-slate-900">Executive Summary</h2>
                 <div className="mt-3 space-y-2 text-sm">
                   <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
@@ -236,7 +236,7 @@ export default function DashboardPage() {
             </section>
 
             <section className="grid gap-4 lg:grid-cols-2">
-              <article className="rounded-2xl border border-slate-200 bg-white p-4">
+              <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
                 <h2 className="text-sm font-semibold text-slate-900">Daily Throughput (7 days)</h2>
                 <div className="mt-3 space-y-2">
                   {data.throughputTrend.map((point) => {
@@ -252,7 +252,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="space-y-1">
                           <div className="h-1.5 rounded-full bg-slate-200">
-                            <div className={`h-1.5 rounded-full bg-cyan-600 ${openedWidthTone}`} />
+                            <div className={`h-1.5 rounded-full bg-[var(--primary)] ${openedWidthTone}`} />
                           </div>
                           <div className="h-1.5 rounded-full bg-slate-200">
                             <div className={`h-1.5 rounded-full bg-emerald-600 ${closedWidthTone}`} />
@@ -264,7 +264,7 @@ export default function DashboardPage() {
                 </div>
               </article>
 
-              <article className="rounded-2xl border border-slate-200 bg-white p-4">
+              <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
                 <h2 className="text-sm font-semibold text-slate-900">Bottlenecks & Aging</h2>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div className="rounded-xl border border-slate-100 p-3">
@@ -307,12 +307,12 @@ export default function DashboardPage() {
               <StatCard label="Operators" value={data.summary.totalActiveCases - data.summary.unassignedCases} icon={<Users className="h-4 w-4" />} />
             </section>
 
-            <section className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900">
+            <section className="rounded-xl border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] p-4 text-sm text-[var(--primary-pressed)]">
               <div className="flex items-center gap-2 font-semibold">
                 <TrendingUp className="h-4 w-4" />
                 Leadership Insight
               </div>
-              <p className="mt-1 text-cyan-800">
+              <p className="mt-1 text-slate-600">
                 The command center is live with real-time department queues, SLA status, bottleneck tracking, and escalation signals.
                 Use Department Inboxes for operational intervention and case-level orchestration actions.
               </p>

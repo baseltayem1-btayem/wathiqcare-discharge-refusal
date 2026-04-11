@@ -4,7 +4,7 @@ import { cn } from "./utils";
 export function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn("rounded-2xl border border-slate-200 bg-white shadow-sm", className)}
+      className={cn("rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-sm)]", className)}
       {...props}
     />
   );
@@ -13,7 +13,7 @@ export function Card({ className, ...props }: React.ComponentProps<"div">) {
 export function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn("flex flex-col space-y-1.5 p-6", className)}
+      className={cn("flex flex-col space-y-1.5 p-5", className)}
       {...props}
     />
   );
@@ -39,14 +39,14 @@ export function CardDescription({ className, ...props }: React.ComponentProps<"p
 
 export function CardContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div className={cn("p-6 pt-0", className)} {...props} />
+    <div className={cn("p-5 pt-0", className)} {...props} />
   );
 }
 
 export function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn("flex items-center p-6 pt-0", className)}
+      className={cn("flex items-center p-5 pt-0", className)}
       {...props}
     />
   );

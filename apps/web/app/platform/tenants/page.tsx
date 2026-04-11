@@ -284,18 +284,19 @@ export default function TenantsPage() {
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Tenant Management</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="text-lg font-semibold text-slate-900">Tenant Management</h2>
+          <p className="mt-1 text-sm text-slate-500">
             Provision tenants, assign admins, and manage subscriptions
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void loadTenants()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             Refresh
@@ -303,20 +304,21 @@ export default function TenantsPage() {
           <button
             type="button"
             onClick={() => setShowCreateTenant((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
+            className="inline-flex items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
           >
             <Plus className="h-4 w-4" />
             Create Tenant
           </button>
         </div>
       </div>
+      </div>
 
       {showCreateTenant && (
-        <div className="mb-5 rounded-2xl border border-purple-200 bg-purple-50 p-5">
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-sm)]">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-purple-700" />
-              <h3 className="text-sm font-semibold text-purple-900">Create New Tenant</h3>
+              <Building2 className="h-4 w-4 text-[var(--primary)]" />
+              <h3 className="text-sm font-semibold text-slate-900">Create New Tenant</h3>
             </div>
             <button type="button" onClick={() => setShowCreateTenant(false)} className="text-slate-400 hover:text-slate-600">
               <span className="sr-only">Close create tenant form</span>
@@ -326,37 +328,37 @@ export default function TenantsPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Tenant Name *</label>
-              <input className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="e.g. King Faisal Hospital"
+              <input className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="e.g. King Faisal Hospital"
                 value={tenantForm.name} onChange={(e) => setTenantForm((p) => ({ ...p, name: e.target.value }))} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Tenant Code</label>
-              <input className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="Auto-generated if empty"
+              <input className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="Auto-generated if empty"
                 value={tenantForm.code} onChange={(e) => setTenantForm((p) => ({ ...p, code: e.target.value }))} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Domain</label>
-              <input className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="e.g. kfh.com"
+              <input className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="e.g. kfh.com"
                 value={tenantForm.domain} onChange={(e) => setTenantForm((p) => ({ ...p, domain: e.target.value }))} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Billing Email</label>
-              <input type="email" className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="billing@hospital.com"
+              <input type="email" className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="billing@hospital.com"
                 value={tenantForm.billingEmail} onChange={(e) => setTenantForm((p) => ({ ...p, billingEmail: e.target.value }))} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Admin Email *</label>
-              <input type="email" className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="admin@hospital.com"
+              <input type="email" className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="admin@hospital.com"
                 value={tenantForm.ownerEmail} onChange={(e) => setTenantForm((p) => ({ ...p, ownerEmail: e.target.value }))} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Admin Full Name</label>
-              <input className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="Dr. Mohammed Al-Rashid"
+              <input className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="Dr. Mohammed Al-Rashid"
                 value={tenantForm.ownerFullName} onChange={(e) => setTenantForm((p) => ({ ...p, ownerFullName: e.target.value }))} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Admin Role</label>
-              <select className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              <select className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
                 title="Select admin role"
                 value={tenantForm.ownerRole} onChange={(e) => setTenantForm((p) => ({ ...p, ownerRole: e.target.value }))}>
                 <option value="tenant_admin">tenant_admin</option>
@@ -365,31 +367,31 @@ export default function TenantsPage() {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Seat Limit</label>
-              <input type="number" min="1" max="500" className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              <input type="number" min="1" max="500" className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
                 placeholder="e.g. 10"
                 value={tenantForm.seatLimit} onChange={(e) => setTenantForm((p) => ({ ...p, seatLimit: e.target.value }))} />
             </div>
           </div>
           <div className="mt-4 flex justify-end gap-2">
             <button type="button" onClick={() => setShowCreateTenant(false)}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
               Cancel
             </button>
             <button type="button" onClick={() => void handleCreateTenant()} disabled={savingTenant}
-              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50">
+              className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50">
               {savingTenant ? "Creating..." : "Create Tenant & Send Invite"}
             </button>
           </div>
         </div>
       )}
 
-      <div className="rounded-2xl border border-slate-200 bg-white">
-        <div className="border-b border-slate-200 px-5 py-3">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-sm)]">
+        <div className="border-b border-slate-200 px-5 py-4">
           <h3 className="text-sm font-semibold text-slate-900">Tenants ({tenants.length})</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
               <tr>
                 <th className="px-4 py-3 text-left">Tenant</th>
                 <th className="px-4 py-3 text-left">Domain</th>
@@ -414,7 +416,7 @@ export default function TenantsPage() {
                   const authConfig = normalizeAuthConfig(tenant.authConfig);
                   const enabledMethods = getEnabledAuthMethods(authConfig);
                   return (
-                    <tr key={tenant.id} className="hover:bg-slate-50">
+                    <tr key={tenant.id} className="hover:bg-slate-50/80">
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-900">{tenant.name}</p>
                         <p className="text-xs text-slate-400">{tenant.code}</p>
@@ -429,7 +431,7 @@ export default function TenantsPage() {
                         {sub ? (
                           <div>
                             <p className="text-slate-700">{sub.plan?.name ?? sub.plan?.code ?? "—"}</p>
-                            <p className="text-xs text-slate-400">{sub.status}</p>
+                            <p className="text-xs text-slate-500">{sub.status}</p>
                           </div>
                         ) : <span className="text-slate-300">—</span>}
                       </td>
@@ -437,7 +439,7 @@ export default function TenantsPage() {
                         {enabledMethods.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {enabledMethods.map((method) => (
-                              <span key={method} className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                              <span key={method} className="inline-flex items-center gap-1 rounded-full border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2 py-0.5 text-xs font-medium text-[var(--primary)]">
                                 <Lock className="h-3 w-3" />
                                 {method}
                               </span>
@@ -457,23 +459,23 @@ export default function TenantsPage() {
                         <div className="flex flex-wrap gap-1">
                           <button type="button"
                             onClick={() => openLoginSettings(tenant)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                            className="inline-flex items-center gap-1 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[#e3eef9]"
                             title="Configure login methods">
                             <Lock className="h-3 w-3" />
                             Login Settings
                           </button>
                           <button type="button"
                             onClick={() => { setAdminModalTenantId(tenant.id); setAdminForm(EMPTY_ADMIN_FORM); }}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                            className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
                             <Shield className="h-3 w-3" />Create Admin
                           </button>
                           <a href={`/platform/support?tenant=${tenant.id}`}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                            className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
                             <Users className="h-3 w-3" />View Users
                           </a>
                           <button type="button"
                             onClick={() => void handleToggleActive(tenant.id, tenant.isActive)}
-                            className={`rounded-lg border px-2 py-1 text-xs font-medium ${tenant.isActive ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100" : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}>
+                            className={`rounded-md border px-2 py-1 text-xs font-medium ${tenant.isActive ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100" : "border-slate-300 bg-white text-[var(--primary)] hover:bg-slate-50"}`}>
                             {tenant.isActive ? "Deactivate" : "Activate"}
                           </button>
                         </div>
@@ -489,7 +491,7 @@ export default function TenantsPage() {
 
       {adminModalTenantId && adminModalTenant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-xl">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-floating)]">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">Create Tenant Admin</h3>
@@ -503,18 +505,18 @@ export default function TenantsPage() {
             <div className="space-y-4 p-5">
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-700">Full Name *</label>
-                <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Dr. Sarah Al-Dosari"
+                <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Dr. Sarah Al-Dosari"
                   value={adminForm.fullName} onChange={(e) => setAdminForm((p) => ({ ...p, fullName: e.target.value }))} />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-700">Email *</label>
-                <input type="email" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="admin@hospital.com"
+                <input type="email" className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="admin@hospital.com"
                   value={adminForm.email} onChange={(e) => setAdminForm((p) => ({ ...p, email: e.target.value }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-700">Role</label>
-                  <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
                     title="Select tenant admin role"
                     value={adminForm.role} onChange={(e) => setAdminForm((p) => ({ ...p, role: e.target.value }))}>
                     <option value="tenant_admin">tenant_admin</option>
@@ -523,7 +525,7 @@ export default function TenantsPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-700">Department</label>
-                  <input className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Optional"
+                  <input className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Optional"
                     value={adminForm.department} onChange={(e) => setAdminForm((p) => ({ ...p, department: e.target.value }))} />
                 </div>
               </div>
@@ -542,11 +544,11 @@ export default function TenantsPage() {
             </div>
             <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
               <button type="button" onClick={() => setAdminModalTenantId(null)}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                 Cancel
               </button>
               <button type="button" onClick={() => void handleCreateAdmin()} disabled={savingAdmin}
-                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50">
+                className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50">
                 {savingAdmin ? "Creating..." : "Create Admin"}
               </button>
             </div>
@@ -556,7 +558,7 @@ export default function TenantsPage() {
 
       {loginSettingsTenantId && loginSettingsTenant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-xl">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-floating)]">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">Login Settings</h3>
@@ -570,18 +572,18 @@ export default function TenantsPage() {
 
             <div className="space-y-5 p-5">
               {/* Enabled Methods Summary */}
-              <div className="rounded-lg bg-blue-50 p-3">
-                <p className="mb-2 text-xs font-medium text-blue-900">Active Login Methods</p>
+              <div className="rounded-lg border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] p-3">
+                <p className="mb-2 text-xs font-medium text-[var(--primary)]">Active Login Methods</p>
                 <div className="flex flex-wrap gap-1">
                   {getEnabledAuthMethods(loginSettingsForm).length > 0 ? (
                     getEnabledAuthMethods(loginSettingsForm).map((method) => (
-                      <span key={method} className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                      <span key={method} className="inline-flex items-center gap-1 rounded-full border border-[var(--primary-soft-border)] bg-white px-2 py-0.5 text-xs font-medium text-[var(--primary)]">
                         <Lock className="h-3 w-3" />
                         {method}
                       </span>
                     ))
                   ) : (
-                    <span className="text-xs text-blue-600">None selected</span>
+                    <span className="text-xs text-[var(--primary)]">None selected</span>
                   )}
                 </div>
               </div>
@@ -596,7 +598,7 @@ export default function TenantsPage() {
 
               {/* Auth Method Toggles */}
               <div className="space-y-3">
-                <div className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50/80 p-3">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-900">Password Login</p>
                     <p className="mt-0.5 text-xs text-slate-500">Allow users to sign in with email and password</p>
@@ -612,7 +614,7 @@ export default function TenantsPage() {
                   </label>
                 </div>
 
-                <div className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50/80 p-3">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-900">Microsoft SSO</p>
                     <p className="mt-0.5 text-xs text-slate-500">Allow users to sign in with Microsoft account</p>
@@ -628,7 +630,7 @@ export default function TenantsPage() {
                   </label>
                 </div>
 
-                <div className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50/80 p-3">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-900">Secure Link (Magic Link)</p>
                     <p className="mt-0.5 text-xs text-slate-500">Allow users to sign in with email link</p>
@@ -646,8 +648,8 @@ export default function TenantsPage() {
               </div>
 
               {/* Info Message */}
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-                <p className="text-xs text-blue-700">
+              <div className="rounded-lg border border-[var(--primary-soft-border)] bg-slate-50 p-3">
+                <p className="text-xs text-slate-600">
                   <strong>Note:</strong> Changes will be reflected immediately on the login page for this tenant.
                 </p>
               </div>
@@ -655,11 +657,11 @@ export default function TenantsPage() {
 
             <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
               <button type="button" onClick={() => closeLoginSettings()}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                 Cancel
               </button>
               <button type="button" onClick={() => void handleSaveLoginSettings()} disabled={savingLoginSettings}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50">
                 {savingLoginSettings ? "Saving..." : "Save Settings"}
               </button>
             </div>

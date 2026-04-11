@@ -123,19 +123,21 @@ export default function HealthPage() {
 
     return (
         <>
-            <div className="mb-4 flex items-center justify-between">
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-900">System Health Monitoring</h2>
-                    <p className="mt-1 text-sm text-gray-500">Real-time service status and performance metrics</p>
+            <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <h2 className="text-lg font-semibold text-slate-900">System Health Monitoring</h2>
+                        <p className="mt-1 text-sm text-slate-500">Real-time service status and performance metrics</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => void loadHealth()}
+                        className="inline-flex items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                        {refreshing ? "Checking..." : "Check Now"}
+                    </button>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => void loadHealth()}
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                    <RefreshCw className="h-4 w-4" />
-                    {refreshing ? "Checking..." : "Check Now"}
-                </button>
             </div>
 
             {error ? (
@@ -155,7 +157,7 @@ export default function HealthPage() {
             {/* Status Overview */}
             {health && (
                 <>
-                    <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-sm)]">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className={`h-3 w-3 rounded-full ${health.status === "healthy" ? "bg-emerald-500" :
@@ -177,10 +179,10 @@ export default function HealthPage() {
                     </div>
 
                     {/* Services Grid */}
-                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {(health.services || []).map((service) => (
-                            <div key={service.name} className="rounded-2xl border border-slate-200 bg-white p-4">
-                                <div className="flex items-center justify-between mb-2">
+                            <div key={service.name} className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
+                                <div className="mb-2 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         {service.status === "up" ? (
                                             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -191,9 +193,9 @@ export default function HealthPage() {
                                         )}
                                         <p className="font-medium text-slate-900">{service.name}</p>
                                     </div>
-                                    <span className={`text-xs px-2 py-1 rounded font-medium ${service.status === "up" ? "bg-emerald-100 text-emerald-700" :
-                                        service.status === "degraded" ? "bg-amber-100 text-amber-700" :
-                                            "bg-rose-100 text-rose-700"
+                                    <span className={`rounded-full border px-2 py-1 text-xs font-medium ${service.status === "up" ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
+                                        service.status === "degraded" ? "border-amber-200 bg-amber-50 text-amber-700" :
+                                            "border-rose-200 bg-rose-50 text-rose-700"
                                         }`}>
                                         {service.status.toUpperCase()}
                                     </span>
@@ -212,9 +214,10 @@ export default function HealthPage() {
 
             {!health && !error && (
                 <div className="flex justify-center py-12">
-                    <div className="text-center text-gray-500">Loading system health...</div>
+                    <div className="text-center text-slate-500">Loading system health...</div>
                 </div>
             )}
         </>
     );
 }
+
