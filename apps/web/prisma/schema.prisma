@@ -241,6 +241,7 @@ model Tenant {
   name               String
   code               String              @unique
   domain             String?
+  authConfig         Json                @default("{\"password_enabled\":true,\"microsoft_sso_enabled\":false,\"secure_link_enabled\":false}") @map("auth_config")
   isActive           Boolean             @default(true) @map("is_active")
   isPlatform         Boolean             @default(false) @map("is_platform")
   timezone           String?             @default("UTC")

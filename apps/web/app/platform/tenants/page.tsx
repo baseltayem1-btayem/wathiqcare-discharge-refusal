@@ -17,12 +17,50 @@ type TenantListItem = {
   code: string;
   name: string;
   domain?: string | null;
+  authConfig?: {
+    password_enabled?: boolean;
+    microsoft_sso_enabled?: boolean;
+    secure_link_enabled?: boolean;
+  } | null;
   isActive: boolean;
   country?: string | null;
   billingEmail?: string | null;
   subscriptions?: TenantSubscription[];
   _count?: { memberships?: number; cases?: number };
 };
+
+type TenantAuthConfig = {
+  password_enabled: boolean;
+  microsoft_sso_enabled: boolean;
+  secure_link_enabled: boolean;
+};
+
+const DEFAULT_AUTH_CONFIG: TenantAuthConfig = {
+  password_enabled: true,
+  microsoft_sso_enabled: false,
+  secure_link_enabled: false,
+};
+
+function normalizeAuthConfig(input: TenantListItem["authConfig"]): TenantAuthConfig {
+  if (!input || typeof input !== "object") {
+    return { ...DEFAULT_AUTH_CONFIG };
+  }
+
+  return {
+    password_enabled:
+      typeof input.password_enabled === "boolean"
+        ? input.password_enabled
+        : DEFAULT_AUTH_CONFIG.password_enabled,
+    microsoft_sso_enabled:
+      typeof input.microsoft_sso_enabled === "boolean"
+        ? input.microsoft_sso_enabled
+        : DEFAULT_AUTH_CONFIG.microsoft_sso_enabled,
+    secure_link_enabled:
+      typeof input.secure_link_enabled === "boolean"
+        ? input.secure_link_enabled
+        : DEFAULT_AUTH_CONFIG.secure_link_enabled,
+  };
+}
 
 const EMPTY_TENANT_FORM = {
   name: "",
@@ -151,6 +189,37 @@ export default function TenantsPage() {
     }
   }
 
+  async function handleAuthConfigToggle(
+    tenant: TenantListItem,
+    key: keyof TenantAuthConfig,
+    nextValue: boolean,
+  ) {
+    const current = normalizeAuthConfig(tenant.authConfig);
+    const nextConfig = { ...current, [key]: nextValue };
+
+    try {
+      await apiFetchJson(`/api/tenants/${tenant.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ authConfig: nextConfig }),
+      });
+
+      setTenants((prev) =>
+        prev.map((item) =>
+          item.id === tenant.id
+            ? {
+                ...item,
+                authConfig: nextConfig,
+              }
+            : item,
+        ),
+      );
+
+      toast.success("Authentication configuration updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update authentication settings");
+    }
+  }
+
   function getSeats(tenant: TenantListItem): { used: number; limit: number } {
     const used = tenant._count?.memberships ?? 0;
     const limit = tenant.subscriptions?.[0]?.seatLimit ?? 0;
@@ -194,6 +263,7 @@ export default function TenantsPage() {
               <h3 className="text-sm font-semibold text-purple-900">Create New Tenant</h3>
             </div>
             <button type="button" onClick={() => setShowCreateTenant(false)} className="text-slate-400 hover:text-slate-600">
+              <span className="sr-only">Close create tenant form</span>
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -231,6 +301,7 @@ export default function TenantsPage() {
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Admin Role</label>
               <select className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                title="Select admin role"
                 value={tenantForm.ownerRole} onChange={(e) => setTenantForm((p) => ({ ...p, ownerRole: e.target.value }))}>
                 <option value="tenant_admin">tenant_admin</option>
                 <option value="tenant_owner">tenant_owner</option>
@@ -239,6 +310,7 @@ export default function TenantsPage() {
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Seat Limit</label>
               <input type="number" min="1" max="500" className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                placeholder="e.g. 10"
                 value={tenantForm.seatLimit} onChange={(e) => setTenantForm((p) => ({ ...p, seatLimit: e.target.value }))} />
             </div>
           </div>
@@ -267,6 +339,7 @@ export default function TenantsPage() {
                 <th className="px-4 py-3 text-left">Domain</th>
                 <th className="px-4 py-3 text-left">Status</th>
                 <th className="px-4 py-3 text-left">Subscription</th>
+                <th className="px-4 py-3 text-left">Auth Methods</th>
                 <th className="px-4 py-3 text-left">Seats</th>
                 <th className="px-4 py-3 text-left">Cases</th>
                 <th className="px-4 py-3 text-left">Actions</th>
@@ -275,13 +348,14 @@ export default function TenantsPage() {
             <tbody className="divide-y divide-slate-100">
               {tenants.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-slate-400">No tenants found</td>
+                  <td colSpan={8} className="px-4 py-8 text-center text-slate-400">No tenants found</td>
                 </tr>
               ) : (
                 tenants.map((tenant) => {
                   const seats = getSeats(tenant);
                   const sub = tenant.subscriptions?.[0];
                   const seatsAvailable = seats.limit > 0 ? seats.limit - seats.used : 0;
+                  const authConfig = normalizeAuthConfig(tenant.authConfig);
                   return (
                     <tr key={tenant.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
@@ -301,6 +375,34 @@ export default function TenantsPage() {
                             <p className="text-xs text-slate-400">{sub.status}</p>
                           </div>
                         ) : <span className="text-slate-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1 text-xs">
+                          <label className="inline-flex items-center gap-2 text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={authConfig.password_enabled}
+                              onChange={(e) => void handleAuthConfigToggle(tenant, "password_enabled", e.target.checked)}
+                            />
+                            Password
+                          </label>
+                          <label className="inline-flex items-center gap-2 text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={authConfig.microsoft_sso_enabled}
+                              onChange={(e) => void handleAuthConfigToggle(tenant, "microsoft_sso_enabled", e.target.checked)}
+                            />
+                            Microsoft SSO
+                          </label>
+                          <label className="inline-flex items-center gap-2 text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={authConfig.secure_link_enabled}
+                              onChange={(e) => void handleAuthConfigToggle(tenant, "secure_link_enabled", e.target.checked)}
+                            />
+                            Secure Link
+                          </label>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-medium text-slate-700">{seats.used}</span>
@@ -344,6 +446,7 @@ export default function TenantsPage() {
                 <p className="mt-0.5 text-xs text-slate-500">For: {adminModalTenant.name}</p>
               </div>
               <button type="button" onClick={() => setAdminModalTenantId(null)} className="text-slate-400 hover:text-slate-600">
+                <span className="sr-only">Close create admin dialog</span>
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -362,6 +465,7 @@ export default function TenantsPage() {
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-700">Role</label>
                   <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    title="Select tenant admin role"
                     value={adminForm.role} onChange={(e) => setAdminForm((p) => ({ ...p, role: e.target.value }))}>
                     <option value="tenant_admin">tenant_admin</option>
                     <option value="tenant_owner">tenant_owner</option>

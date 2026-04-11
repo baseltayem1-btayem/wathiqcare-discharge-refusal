@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,6 +12,18 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { ApiHttpError, apiFetch } from "@/utils/api";
 
 type AuthMode = "microsoft" | "magic-link" | "password";
+
+type TenantAuthConfig = {
+  password_enabled: boolean;
+  microsoft_sso_enabled: boolean;
+  secure_link_enabled: boolean;
+};
+
+const DEFAULT_AUTH_CONFIG: TenantAuthConfig = {
+  password_enabled: true,
+  microsoft_sso_enabled: false,
+  secure_link_enabled: false,
+};
 
 export default function LoginPage() {
   const { t, isRtl } = useI18n();
@@ -71,9 +83,56 @@ export default function LoginPage() {
   const [password, setPassword] = useState(allowDevPrefill ? devPasswordPrefill : "");
   const [showPassword, setShowPassword] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("magic-link");
+  const [authConfig, setAuthConfig] = useState<TenantAuthConfig>(DEFAULT_AUTH_CONFIG);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const enabledModes = useMemo<AuthMode[]>(() => {
+    const modes: AuthMode[] = [];
+    if (authConfig.microsoft_sso_enabled) modes.push("microsoft");
+    if (authConfig.secure_link_enabled) modes.push("magic-link");
+    if (authConfig.password_enabled) modes.push("password");
+    return modes;
+  }, [authConfig]);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        const query = email.trim() ? `?email=${encodeURIComponent(email.trim())}` : "";
+        const result = await apiFetch<{ auth_config?: Partial<TenantAuthConfig> }>(`/api/auth/config${query}`);
+        const raw = result?.auth_config ?? {};
+        setAuthConfig({
+          password_enabled:
+            typeof raw.password_enabled === "boolean"
+              ? raw.password_enabled
+              : DEFAULT_AUTH_CONFIG.password_enabled,
+          microsoft_sso_enabled:
+            typeof raw.microsoft_sso_enabled === "boolean"
+              ? raw.microsoft_sso_enabled
+              : DEFAULT_AUTH_CONFIG.microsoft_sso_enabled,
+          secure_link_enabled:
+            typeof raw.secure_link_enabled === "boolean"
+              ? raw.secure_link_enabled
+              : DEFAULT_AUTH_CONFIG.secure_link_enabled,
+        });
+      } catch {
+        setAuthConfig(DEFAULT_AUTH_CONFIG);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [email]);
+
+  useEffect(() => {
+    if (enabledModes.length === 0) {
+      return;
+    }
+
+    if (!enabledModes.includes(authMode)) {
+      setAuthMode(enabledModes[0]);
+    }
+  }, [enabledModes, authMode]);
 
   async function handleMagicLinkSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -194,51 +253,63 @@ export default function LoginPage() {
 
                 {/* Auth Mode Tabs */}
                 <div className="mb-6 flex gap-1 border-b border-slate-200">
-                  <button
-                    onClick={() => {
-                      setAuthMode("microsoft");
-                      setError("");
-                      setNotice("");
-                    }}
-                    className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "microsoft"
-                      ? "border-cyan-600 text-cyan-700"
-                      : "border-transparent text-slate-500 hover:text-slate-800"
-                      }`}
-                  >
-                    <span>Microsoft SSO</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAuthMode("magic-link");
-                      setError("");
-                      setNotice("");
-                    }}
-                    className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "magic-link"
-                      ? "border-cyan-600 text-cyan-700"
-                      : "border-transparent text-slate-500 hover:text-slate-800"
-                      }`}
-                  >
-                    <Mail className="h-3.5 w-3.5" />
-                    <span>Secure Link</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAuthMode("password");
-                      setError("");
-                      setNotice("");
-                    }}
-                    className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "password"
-                      ? "border-cyan-600 text-cyan-700"
-                      : "border-transparent text-slate-500 hover:text-slate-800"
-                      }`}
-                  >
-                    <Lock className="h-3.5 w-3.5" />
-                    <span>Password</span>
-                  </button>
+                  {authConfig.microsoft_sso_enabled && (
+                    <button
+                      onClick={() => {
+                        setAuthMode("microsoft");
+                        setError("");
+                        setNotice("");
+                      }}
+                      className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "microsoft"
+                        ? "border-cyan-600 text-cyan-700"
+                        : "border-transparent text-slate-500 hover:text-slate-800"
+                        }`}
+                    >
+                      <span>Microsoft SSO</span>
+                    </button>
+                  )}
+                  {authConfig.secure_link_enabled && (
+                    <button
+                      onClick={() => {
+                        setAuthMode("magic-link");
+                        setError("");
+                        setNotice("");
+                      }}
+                      className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "magic-link"
+                        ? "border-cyan-600 text-cyan-700"
+                        : "border-transparent text-slate-500 hover:text-slate-800"
+                        }`}
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      <span>Secure Link</span>
+                    </button>
+                  )}
+                  {authConfig.password_enabled && (
+                    <button
+                      onClick={() => {
+                        setAuthMode("password");
+                        setError("");
+                        setNotice("");
+                      }}
+                      className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "password"
+                        ? "border-cyan-600 text-cyan-700"
+                        : "border-transparent text-slate-500 hover:text-slate-800"
+                        }`}
+                    >
+                      <Lock className="h-3.5 w-3.5" />
+                      <span>Password</span>
+                    </button>
+                  )}
                 </div>
 
+                {enabledModes.length === 0 && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    All sign-in methods are disabled for this tenant.
+                  </div>
+                )}
+
                 {/* Microsoft SSO */}
-                {authMode === "microsoft" && (
+                {authConfig.microsoft_sso_enabled && authMode === "microsoft" && (
                   <div className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">Institutional Sign-In</h2>
                     <p className="text-sm text-gray-600">For hospital and healthcare organization accounts using Microsoft 365</p>
@@ -266,7 +337,7 @@ export default function LoginPage() {
                 )}
 
                 {/* Magic Link */}
-                {authMode === "magic-link" && (
+                {authConfig.secure_link_enabled && authMode === "magic-link" && (
                   <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">Sign In via Secure Link</h2>
                     <p className="text-sm text-gray-600">Enter your email and receive a one-time sign-in link — no password needed</p>
@@ -302,13 +373,15 @@ export default function LoginPage() {
                     </button>
 
                     <div className="flex items-center justify-between text-xs text-slate-600">
-                      <button
-                        type="button"
-                        onClick={() => { setAuthMode("password"); setError(""); setNotice(""); }}
-                        className="text-slate-500 hover:text-cyan-700 transition"
-                      >
-                        Sign in with password instead
-                      </button>
+                      {authConfig.password_enabled && (
+                        <button
+                          type="button"
+                          onClick={() => { setAuthMode("password"); setError(""); setNotice(""); }}
+                          className="text-slate-500 hover:text-cyan-700 transition"
+                        >
+                          Sign in with password instead
+                        </button>
+                      )}
                       <Link href="/auth/password-reset" className="text-cyan-600 hover:text-cyan-700 font-semibold">
                         Forgot password?
                       </Link>
@@ -317,7 +390,7 @@ export default function LoginPage() {
                 )}
 
                 {/* Password Login */}
-                {authMode === "password" && (
+                {authConfig.password_enabled && authMode === "password" && (
                   <form onSubmit={handlePasswordSubmit} className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">Sign In with Password</h2>
                     <p className="text-sm text-gray-600">Enter your email and password. Use <span className="font-medium text-cyan-700">Secure Link</span> above if you don&apos;t have a password yet.</p>
@@ -379,13 +452,15 @@ export default function LoginPage() {
                       <Link href="/auth/password-reset" className="text-cyan-600 hover:text-cyan-700 font-semibold">
                         Forgot password?
                       </Link>
-                      <button
-                        type="button"
-                        onClick={() => { setAuthMode("magic-link"); setError(""); setNotice(""); }}
-                        className="text-slate-500 hover:text-cyan-700 transition"
-                      >
-                        Use secure link instead
-                      </button>
+                      {authConfig.secure_link_enabled && (
+                        <button
+                          type="button"
+                          onClick={() => { setAuthMode("magic-link"); setError(""); setNotice(""); }}
+                          className="text-slate-500 hover:text-cyan-700 transition"
+                        >
+                          Use secure link instead
+                        </button>
+                      )}
                     </div>
                   </form>
                 )}

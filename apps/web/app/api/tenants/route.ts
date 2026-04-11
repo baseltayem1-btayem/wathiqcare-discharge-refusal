@@ -10,6 +10,11 @@ import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { ensureBasePlans } from "@/lib/server/admin-bootstrap";
+import {
+  DEFAULT_TENANT_AUTH_CONFIG,
+  normalizeTenantAuthConfig,
+} from "@/lib/server/tenant-auth-config";
 import {
   ensureTenantDepartments,
   ensureTenantRoleTemplates,
@@ -27,6 +32,11 @@ type CreateTenantPayload = {
   isActive?: boolean;
   country?: string | null;
   timezone?: string | null;
+  authConfig?: {
+    password_enabled?: boolean;
+    microsoft_sso_enabled?: boolean;
+    secure_link_enabled?: boolean;
+  };
   subscription?: {
     planCode?: string;
     billingInterval?: string;
@@ -99,6 +109,7 @@ export async function GET(request: NextRequest) {
         name: true,
         code: true,
         domain: true,
+        authConfig: true,
         isActive: true,
         timezone: true,
         country: true,
@@ -152,6 +163,9 @@ export async function POST(request: NextRequest) {
     if (!code) {
       throw new ApiError(400, "Tenant code is invalid");
     }
+
+    await ensureBasePlans();
+
     const plan =
       (await prisma.plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
       (await prisma.plan.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
@@ -183,6 +197,10 @@ export async function POST(request: NextRequest) {
       throw new ApiError(400, "initialOwner.email is invalid");
     }
     const created = await prisma.$transaction(async (tx) => {
+      const authConfig = payload.authConfig
+        ? normalizeTenantAuthConfig(payload.authConfig)
+        : DEFAULT_TENANT_AUTH_CONFIG;
+
       const tenant = await tx.tenant.create({
         data: {
           name: tenantName,
@@ -190,6 +208,7 @@ export async function POST(request: NextRequest) {
           country: payload.country ?? null,
           timezone: payload.timezone ?? "UTC",
           billingEmail: normalizedBillingEmail,
+          authConfig,
           isActive: payload.isActive ?? true,
         },
       });

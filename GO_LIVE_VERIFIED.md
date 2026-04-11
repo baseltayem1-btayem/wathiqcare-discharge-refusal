@@ -1,8 +1,12 @@
+<!-- markdownlint-disable MD012 MD022 MD026 MD032 MD034 MD040 MD058 MD060 -->
+
 # WATHIQCARE PLATFORM - GO LIVE DECISION VERDICT
 
 **Date:** March 24, 2026  
 **Assessment Basis:** Complete end-to-end production smoke test  
 **Time in Production:** Previously deployed on Vercel (wathiqcare.online) and Railway  
+
+**Current API Domain Decision:** Option A. `api.wathiqcare.online` remains a Vercel-hosted frontend/API-proxy alias for this release and is not treated as a dedicated backend-origin hostname. Keep DNS unchanged and validate backend readiness on the backend service origin separately from the frontend proxy alias.
 
 ---
 
@@ -239,7 +243,6 @@ The WathiqCare platform is **READY FOR PRODUCTION** based on:
 4. Consider adding `/api/ready` to Vercel rewrite rules
 
 ---
-
 **Assessment Complete**  
 **Time:** March 24, 2026, 14:41 UTC  
 **Assessor:** Automated Smoke Test Suite + Manual Verification  

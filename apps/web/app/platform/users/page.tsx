@@ -209,6 +209,8 @@ export default function PlatformUsersPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowCreateModal(false)}
+                                title="Close create platform user dialog"
+                                aria-label="Close create platform user dialog"
                                 className="text-slate-400 hover:text-slate-600"
                             >
                                 <X className="h-5 w-5" />
@@ -238,6 +240,8 @@ export default function PlatformUsersPage() {
                             <div>
                                 <label className="mb-1 block text-xs font-medium text-slate-700">Platform Role</label>
                                 <select
+                                    title="Select platform role"
+                                    aria-label="Select platform role"
                                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                                     value={createForm.role}
                                     onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))}

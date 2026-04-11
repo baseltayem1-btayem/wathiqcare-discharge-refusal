@@ -16,6 +16,85 @@ type HealthStatus = {
     timestamp: string;
 };
 
+function normalizeHealthStatus(payload: unknown): HealthStatus | null {
+    if (!payload || typeof payload !== "object") {
+        return null;
+    }
+
+    const raw = payload as Record<string, unknown>;
+    const nowIso = new Date().toISOString();
+
+    const hasKnownShape =
+        typeof raw.status === "string" &&
+        Array.isArray(raw.services);
+
+    if (hasKnownShape) {
+        const statusValue = (raw.status as string).toLowerCase();
+        const status: HealthStatus["status"] =
+            statusValue === "healthy" || statusValue === "degraded" || statusValue === "down"
+                ? (statusValue as HealthStatus["status"])
+                : "degraded";
+
+        const services = (raw.services as unknown[])
+            .filter((item) => item && typeof item === "object")
+            .map((item, index) => {
+                const service = item as Record<string, unknown>;
+                const serviceStatusValue = typeof service.status === "string" ? service.status.toLowerCase() : "degraded";
+                const serviceStatus: "up" | "down" | "degraded" =
+                    serviceStatusValue === "up" || serviceStatusValue === "down" || serviceStatusValue === "degraded"
+                        ? (serviceStatusValue as "up" | "down" | "degraded")
+                        : "degraded";
+
+                return {
+                    name: typeof service.name === "string" && service.name.trim() ? service.name : `service-${index + 1}`,
+                    status: serviceStatus,
+                    responseTime:
+                        typeof service.responseTime === "number" && Number.isFinite(service.responseTime)
+                            ? service.responseTime
+                            : undefined,
+                    lastChecked:
+                        typeof service.lastChecked === "string" && service.lastChecked.trim()
+                            ? service.lastChecked
+                            : undefined,
+                };
+            });
+
+        return {
+            status,
+            services,
+            uptime: typeof raw.uptime === "number" && Number.isFinite(raw.uptime) ? raw.uptime : undefined,
+            timestamp: typeof raw.timestamp === "string" && raw.timestamp.trim() ? raw.timestamp : nowIso,
+        };
+    }
+
+    const proxyStatus = typeof raw.status === "string" ? raw.status.toLowerCase() : "unknown";
+    const backendHealth = typeof raw.backendHealth === "string" ? raw.backendHealth.toLowerCase() : "unknown";
+    const proxyServiceStatus: "up" | "down" | "degraded" = proxyStatus === "ok" ? "up" : "degraded";
+    const backendServiceStatus: "up" | "down" | "degraded" =
+        backendHealth === "healthy" || backendHealth === "ok"
+            ? "up"
+            : backendHealth === "down" || backendHealth === "stopped"
+                ? "down"
+                : "degraded";
+
+    return {
+        status: backendServiceStatus === "down" ? "down" : proxyServiceStatus === "up" ? "healthy" : "degraded",
+        services: [
+            {
+                name: "frontend-proxy",
+                status: proxyServiceStatus,
+                lastChecked: nowIso,
+            },
+            {
+                name: "backend",
+                status: backendServiceStatus,
+                lastChecked: nowIso,
+            },
+        ],
+        timestamp: nowIso,
+    };
+}
+
 export default function HealthPage() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
@@ -27,7 +106,7 @@ export default function HealthPage() {
 
         try {
             const result = await apiFetchJson<HealthStatus>("/api/health", { cache: "no-store" });
-            setHealth(result || null);
+            setHealth(normalizeHealthStatus(result));
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load system health");
         } finally {
@@ -99,7 +178,7 @@ export default function HealthPage() {
 
                     {/* Services Grid */}
                     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                        {health.services.map((service) => (
+                        {(health.services || []).map((service) => (
                             <div key={service.name} className="rounded-2xl border border-slate-200 bg-white p-4">
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">

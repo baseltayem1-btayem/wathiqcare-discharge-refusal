@@ -133,9 +133,8 @@ def _load_valid_link(db, raw_token: str) -> SecureDischargeLink:
         raise ValueError("تم إلغاء رابط التصريح")
 
     now = datetime.now(timezone.utc)
-    expires_naive = link.expires_at.replace(tzinfo=None)
-    now_naive = now.replace(tzinfo=None)
-    if expires_naive < now_naive:
+    expires_aware = link.expires_at if link.expires_at.tzinfo else link.expires_at.replace(tzinfo=timezone.utc)
+    if expires_aware < now:
         _write_audit(
             db,
             tenant_id=link.tenant_id,

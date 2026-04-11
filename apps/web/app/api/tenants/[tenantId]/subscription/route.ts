@@ -1,5 +1,6 @@
 import {
   BillingInterval,
+  Prisma,
   PlanCode,
   SubscriptionEventType,
   SubscriptionStatus,
@@ -19,6 +20,7 @@ import {
   getTenantSubscriptionSummary,
   writeAuditLog,
 } from "@/lib/server/saas-services";
+import { ensureBasePlans } from "@/lib/server/admin-bootstrap";
 
 type RouteContext = {
   params: Promise<{ tenantId: string }>;
@@ -100,6 +102,8 @@ export async function PATCH(
     if (!payload) {
       throw new ApiError(400, "Invalid JSON body");
     }
+
+    await ensureBasePlans();
 
     const planCode = parsePlanCode(payload.planCode);
     const billingInterval = parseBillingInterval(payload.billingInterval);
@@ -218,10 +222,9 @@ export async function PATCH(
     });
 
     if (shouldActivateTenant) {
-      await prisma.tenant.update({
-        where: { id: tenantId },
-        data: { isActive: true },
-      });
+      await prisma.$executeRaw(
+        Prisma.sql`UPDATE tenants SET is_active = TRUE WHERE id = ${tenantId}`,
+      );
     }
 
     await writeAuditLog({

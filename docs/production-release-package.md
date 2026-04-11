@@ -1,8 +1,10 @@
+<!-- markdownlint-disable MD022 MD031 MD032 MD034 MD040 MD058 MD060 -->
+
 # WathiqCare — Production Release Package
 
 **Prepared:** 2026-03-22  
 **Branch:** `main` | **Latest commit:** `391a4ca` — "Fix web build and Prisma metadata typing"  
-**Domain:** https://wathiqcare.online  
+**Domain:** <https://wathiqcare.online>  
 **Stack:** Next.js 16.1.6 / FastAPI (Python 3.11) / PostgreSQL (Prisma 6.19.2) / Railway (backend) + Vercel (frontend)
 
 ---
@@ -12,7 +14,7 @@
 ### 1.1 Security & Auth
 
 | # | Check | Owner | Status |
-|---|-------|-------|--------|
+| --- | --- | --- | --- |
 | S-01 | `JWT_SECRET_KEY` is a strong random string (≥32 chars), NOT "change-me" | DevOps | ⬜ |
 | S-02 | Same `JWT_SECRET_KEY` value set on both Vercel (Next.js) AND Railway (Python backend) | DevOps | ⬜ |
 | S-03 | `AUTH_COOKIE_SAME_SITE=lax` and `NODE_ENV=production` confirmed → `secure: true` cookie flag enforced | DevOps | ⬜ |
@@ -34,7 +36,7 @@
 ### 1.2 Workflow & Automation
 
 | # | Check | Owner | Status |
-|---|-------|-------|--------|
+| --- | --- | --- | --- |
 | W-01 | All 9 workflow stages reachable in staging: `nurse_draft → pending_physician_order → pending_patient_signature → accepted_discharge_execution → patient_relations_review → social_work_review → finance_review → legal_escalation → closed` | QA | ⬜ |
 | W-02 | SLA timers fire correctly per stage (doctor: 6h, nursing: 8h, patient_affairs: 6h, finance: 8h, legal: 12h) | QA | ⬜ |
 | W-03 | Escalation auto-triggers when SLA breached; `escalation_triggered` event recorded in `caseStepEvent` | QA | ⬜ |
@@ -51,7 +53,7 @@
 ### 1.3 SaaS Admin & Billing
 
 | # | Check | Owner | Status |
-|---|-------|-------|--------|
+| --- | --- | --- | --- |
 | B-01 | Prisma migrations fully applied on production DB (`prisma migrate deploy` completed, no pending migrations) | DevOps | ⬜ |
 | B-02 | Subscription plans seeded (STARTER / PROFESSIONAL / ENTERPRISE) in `SubscriptionPlan` table | DevOps | ⬜ |
 | B-03 | Platform superadmin account created and password known only to authorized personnel | DevOps | ⬜ |
@@ -68,7 +70,7 @@
 ### 1.4 Tests & QA
 
 | # | Check | Owner | Status |
-|---|-------|-------|--------|
+| --- | --- | --- | --- |
 | T-01 | Backend pytest suite passes: `cd apps/api && pytest -v` — target 60+ tests pass, 0 failures | Dev | ⬜ |
 | T-02 | Frontend TypeScript build clean: `npx tsc --noEmit` — 0 errors | Dev | ✅ (391a4ca) |
 | T-03 | Frontend production build passes: `npm run build` — 0 errors, 57+ static pages compiled | Dev | ✅ (391a4ca) |
@@ -85,12 +87,12 @@
 ### 1.5 Environment Variables
 
 | # | Check | Owner | Status |
-|---|-------|-------|--------|
+| --- | --- | --- | --- |
 | E-01 | `DATABASE_URL` set on Railway backend pointing to production PostgreSQL | DevOps | ⬜ |
 | E-02 | `DATABASE_URL` set on Vercel (Next.js) pointing to same production database | DevOps | ⬜ |
 | E-03 | `DIRECT_URL` set on Vercel for Prisma direct connection (needed for migrations via Vercel) | DevOps | ⬜ |
 | E-04 | `JWT_SECRET_KEY` identical on both Vercel and Railway | DevOps | ⬜ |
-| E-05 | `NEXT_PUBLIC_API_BASE_URL` set to `https://api.wathiqcare.online` (or Railway backend URL) | DevOps | ⬜ |
+| E-05 | `NEXT_PUBLIC_API_BASE_URL` set to `https://api.wathiqcare.online` (Vercel-hosted frontend/API-proxy alias) or the direct Railway backend URL | DevOps | ⬜ |
 | E-06 | `BACKEND_URL` / `BACKEND_API_BASE_URL` set on Vercel for server-side proxy | DevOps | ⬜ |
 | E-07 | `APP_BASE_URL` set to `https://wathiqcare.online` | DevOps | ⬜ |
 | E-08 | Microsoft Graph email: `MICROSOFT_TENANT_ID`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_SENDER_EMAIL` all set | DevOps | ⬜ |
@@ -104,12 +106,16 @@
 | E-16 | `SENTRY_DSN` set for production error monitoring | DevOps | ⬜ |
 | E-17 | Review `apps/web/.env.example` and `.env.example` — every required (non-optional) variable confirmed set | DevOps | ⬜ |
 
+Note: `api.wathiqcare.online` currently points to the Vercel frontend deployment and can serve Next.js API/proxy routes. It is not the direct Railway backend origin. Validate backend readiness on the backend service origin as well as through the frontend proxy.
+
+Decision: Option A is approved for the current release. Keep `api.wathiqcare.online` as the Vercel-hosted frontend/API-proxy alias, keep current DNS unchanged, use Vercel proxying for browser-facing API traffic, and revisit dedicated backend-domain separation only if webhook handling or direct backend routing becomes necessary.
+
 ---
 
 ### 1.6 Post-Deploy Verification
 
 | # | Check | Owner | Status |
-|---|-------|-------|--------|
+| --- | --- | --- | --- |
 | P-01 | Root `https://wathiqcare.online/` serves public landing page (not redirected to `/dashboard`) | QA | ⬜ |
 | P-02 | `Enter System` CTA routes to `/login` | QA | ⬜ |
 | P-03 | Login with pilot tenant credentials succeeds; JWT cookie set with `httpOnly, secure, SameSite=Lax` | QA | ⬜ |

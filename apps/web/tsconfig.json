@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
     "target": "ES2017",
     "lib": [
       "dom",

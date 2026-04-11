@@ -35,6 +35,7 @@ def workflow_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     for path in (case_docs_dir, signature_dir, otp_dir, bundle_dir, pdf_dir):
         path.mkdir(parents=True, exist_ok=True)
 
+    monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("WATHIQ_SMS_STUB_MODE", "true")
     # Expose debug OTP codes in test environment so the test can read the code
     # that was just dispatched and pass it back to verify_document_otp.

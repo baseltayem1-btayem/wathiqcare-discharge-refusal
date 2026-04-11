@@ -4,6 +4,7 @@ import { getPrisma } from "@/lib/server/prisma";
 import { buildSessionCookieOptions, getSessionCookieName } from "@/lib/server/sessionCookie";
 import { createAccessToken, getJwtSecret, getTokenTtlSeconds } from "@/lib/server/auth-token";
 import { platformRoleForUserRole, userTypeForUserRole } from "@/lib/server/roles";
+import { normalizeTenantAuthConfig } from "@/lib/server/tenant-auth-config";
 import {
     extractDomain,
     isTenantDomainAllowed,
@@ -94,13 +95,18 @@ export async function POST(request: NextRequest) {
             where: { email: profile.email },
             include: {
                 primaryTenant: {
-                    select: { code: true },
+                    select: { code: true, authConfig: true },
                 },
             },
         });
 
         if (!user) {
             throw new ApiError(403, "Account not eligible for Microsoft login");
+        }
+
+        const authConfig = normalizeTenantAuthConfig(user.primaryTenant?.authConfig);
+        if (!authConfig.microsoft_sso_enabled) {
+            throw new ApiError(403, "Microsoft SSO is disabled for this tenant");
         }
 
         const domainAllowed = await isTenantDomainAllowed(user.tenantId, domain);

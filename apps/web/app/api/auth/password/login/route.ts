@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { UserType } from "@prisma/client";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@/lib/server/roles";
 import { normalizeEmail } from "@/lib/server/auth-domain-policy";
 import { verifyPassword } from "@/lib/server/password";
+import { normalizeTenantAuthConfig } from "@/lib/server/tenant-auth-config";
 
 type PasswordLoginPayload = {
   email?: string;
@@ -30,6 +32,8 @@ type RateLimitResult = {
 type FoundUser = {
   id: string;
   email: string;
+  userType: UserType;
+  authConfig: unknown;
   hashedPassword: string | null;
   isActive: boolean;
   lockedUntil: Date | null;
@@ -81,6 +85,26 @@ function readClientIp(request: NextRequest): string {
 function buildRedirectPath(userRole: string | null | undefined, email: string): string {
   const userType = userTypeForUserRole(userRole ?? "", email);
   return userType === "PLATFORM_ADMIN" ? "/platform" : "/dashboard";
+}
+
+function toSessionUserTypeFromStored(
+  storedUserType: UserType | null | undefined,
+  userRole: string | null | undefined,
+  email: string,
+): "platform_admin" | "tenant_admin" | "tenant_user" {
+  if (storedUserType === UserType.PLATFORM_ADMIN) {
+    return "platform_admin";
+  }
+
+  if (storedUserType === UserType.TENANT_ADMIN) {
+    return "tenant_admin";
+  }
+
+  if (storedUserType === UserType.TENANT_USER) {
+    return "tenant_user";
+  }
+
+  return toSessionUserType(userRole, email);
 }
 
 function toSessionUserType(
@@ -171,6 +195,7 @@ async function findUserByEmailWithDomain(
     select: {
       id: true,
       email: true,
+      userType: true,
       hashedPassword: true,
       isActive: true,
       lockedUntil: true,
@@ -179,6 +204,7 @@ async function findUserByEmailWithDomain(
       primaryTenant: {
         select: {
           isActive: true,
+          authConfig: true,
         },
       },
       memberships: {
@@ -197,6 +223,8 @@ async function findUserByEmailWithDomain(
   return {
     id: user.id,
     email: user.email,
+    userType: user.userType,
+    authConfig: user.primaryTenant?.authConfig,
     hashedPassword: user.hashedPassword,
     isActive: user.isActive,
     lockedUntil: user.lockedUntil,
@@ -213,8 +241,9 @@ async function createSessionForPasswordUser(args: {
   email: string;
   tenantId: string | null;
   role: string | null;
+  userType: UserType;
 }): Promise<PasswordSessionResult> {
-  const { prisma, userId, email, tenantId, role } = args;
+  const { prisma, userId, email, tenantId, role, userType } = args;
 
   const tenant = tenantId
     ? await prisma.tenant.findUnique({
@@ -227,7 +256,8 @@ async function createSessionForPasswordUser(args: {
   const ttlSeconds = getTokenTtlSeconds();
   const now = Math.floor(Date.now() / 1000);
   const exp = now + ttlSeconds;
-  const sessionUserType = toSessionUserType(normalizedRole, email);
+  const sessionUserType = toSessionUserTypeFromStored(userType, normalizedRole, email);
+  const redirectTo = sessionUserType === "platform_admin" ? "/platform" : "/dashboard";
 
   const accessToken = createAccessToken(
     {
@@ -253,7 +283,7 @@ async function createSessionForPasswordUser(args: {
 
   return {
     accessToken,
-    redirectTo: buildRedirectPath(normalizedRole, email),
+    redirectTo,
     userType: sessionUserType,
   };
 }
@@ -398,6 +428,18 @@ export async function POST(request: NextRequest) {
       throw new ApiError(401, GENERIC_LOGIN_ERROR);
     }
 
+    const authConfig = normalizeTenantAuthConfig(user.authConfig);
+    if (!authConfig.password_enabled) {
+      await recordLoginAttempt({
+        prisma,
+        email,
+        success: false,
+        reason: "PASSWORD_LOGIN_DISABLED",
+        request,
+      });
+      throw new ApiError(403, "Password login is disabled for this tenant");
+    }
+
     if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
       await recordLoginAttempt({
         prisma,
@@ -477,6 +519,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       tenantId: user.tenantId,
       role: user.role,
+      userType: user.userType,
     });
 
     await recordLoginAttempt({

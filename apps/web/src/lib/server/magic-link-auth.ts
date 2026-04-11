@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { UserType } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import {
   evaluatePostAuthSnapshot,
@@ -15,6 +16,7 @@ import {
 import { getPrisma } from "@/lib/server/prisma";
 import { platformRoleForUserRole, userTypeForUserRole } from "@/lib/server/roles";
 import { hashResetToken } from "@/lib/server/password";
+import { normalizeTenantAuthConfig } from "@/lib/server/tenant-auth-config";
 
 const MAGIC_LINK_TTL_MINUTES = 10;
 const ACTIVE_SUBSCRIPTION_STATUSES = ["TRIALING", "ACTIVE", "PAST_DUE"] as const;
@@ -39,6 +41,7 @@ type MagicLinkRequestUser = {
   fullName: string;
   tenantId: string;
   role: string;
+  userType: UserType;
   isActive: boolean;
 };
 
@@ -104,21 +107,44 @@ function requestDecisionError(decision: MagicLinkRequestDecision): ApiError {
   }
 }
 
-function buildRedirectPath(userRole: string, email: string): string {
-  return userTypeForUserRole(userRole, email) === "PLATFORM_ADMIN" ? "/platform" : "/dashboard";
+function toSessionUserTypeFromStored(
+  storedUserType: UserType | null | undefined,
+  userRole: string,
+  email: string,
+): "platform_admin" | "tenant_admin" | "tenant_user" {
+  if (storedUserType === UserType.PLATFORM_ADMIN) {
+    return "platform_admin";
+  }
+
+  if (storedUserType === UserType.TENANT_ADMIN) {
+    return "tenant_admin";
+  }
+
+  if (storedUserType === UserType.TENANT_USER) {
+    return "tenant_user";
+  }
+
+  const computedUserType = userTypeForUserRole(userRole, email);
+  return computedUserType === "PLATFORM_ADMIN"
+    ? "platform_admin"
+    : computedUserType === "TENANT_ADMIN"
+      ? "tenant_admin"
+      : "tenant_user";
 }
 
 function buildMagicLinkSession(args: {
   userId: string;
   email: string;
   role: string;
+  userType: UserType;
   tenantId: string;
   tenantCode: string | null;
 }): MagicLinkSession {
   const ttlSeconds = getTokenTtlSeconds();
   const now = Math.floor(Date.now() / 1000);
   const exp = now + ttlSeconds;
-  const computedUserType = userTypeForUserRole(args.role, args.email);
+  const sessionUserType = toSessionUserTypeFromStored(args.userType, args.role, args.email);
+  const redirectTo = sessionUserType === "platform_admin" ? "/platform" : "/dashboard";
 
   return {
     accessToken: createAccessToken(
@@ -127,12 +153,7 @@ function buildMagicLinkSession(args: {
         user_id: args.userId,
         email: args.email,
         role: args.role,
-        user_type:
-          computedUserType === "PLATFORM_ADMIN"
-            ? "platform_admin"
-            : computedUserType === "TENANT_ADMIN"
-              ? "tenant_admin"
-              : "tenant_user",
+        user_type: sessionUserType,
         platform_role: platformRoleForUserRole(args.role),
         tenant_id: args.tenantId,
         tenant_code: args.tenantCode,
@@ -140,13 +161,8 @@ function buildMagicLinkSession(args: {
       },
       getJwtSecret(),
     ),
-    redirectTo: buildRedirectPath(args.role, args.email),
-    userType:
-      computedUserType === "PLATFORM_ADMIN"
-        ? "platform_admin"
-        : computedUserType === "TENANT_ADMIN"
-          ? "tenant_admin"
-          : "tenant_user",
+    redirectTo,
+    userType: sessionUserType,
   };
 }
 
@@ -157,13 +173,14 @@ async function assertMagicLinkAccessAllowed(
     email: string;
     tenantId: string;
     role: string;
+    userType: UserType;
     status: string;
     isActive: boolean;
     primaryTenant: { code: string; isActive: boolean } | null;
     memberships: Array<{ status: string }>;
   },
 ): Promise<void> {
-  if (platformRoleForUserRole(user.role)) {
+  if (user.userType === UserType.PLATFORM_ADMIN) {
     return;
   }
 
@@ -272,15 +289,26 @@ export const magicLinkAuth = async (email: string): Promise<MagicLinkRequestUser
       fullName: true,
       tenantId: true,
       role: true,
+      userType: true,
       isActive: true,
+      primaryTenant: {
+        select: {
+          authConfig: true,
+        },
+      },
     },
   });
 
-  const platformRole = platformRoleForUserRole(user?.role || "");
-  const userDomainEligible =
-    !!user?.tenantId && !!domain && (platformRole ? true : await isTenantDomainAllowed(user.tenantId, domain));
+  const tenantAuthConfig = normalizeTenantAuthConfig(user?.primaryTenant?.authConfig);
+  if (user && !tenantAuthConfig.secure_link_enabled) {
+    throw new ApiError(403, "Secure Link sign-in is disabled for this tenant");
+  }
 
-  const decision = platformRole && user?.isActive && user.tenantId
+  const isPlatformUser = user?.userType === UserType.PLATFORM_ADMIN;
+  const userDomainEligible =
+    !!user?.tenantId && !!domain && (isPlatformUser ? true : await isTenantDomainAllowed(user.tenantId, domain));
+
+  const decision = isPlatformUser && user?.isActive && user.tenantId
     ? null
     : evaluateMagicLinkRequestDecision({
         validEmail: !!domain,
@@ -311,6 +339,7 @@ export const magicLinkAuth = async (email: string): Promise<MagicLinkRequestUser
     fullName: user.fullName,
     tenantId: user.tenantId,
     role: user.role || "",
+    userType: user.userType,
     isActive: user.isActive,
   };
 };
@@ -359,12 +388,14 @@ export const verifyMagicLink = async (
         email: true,
         tenantId: true,
         role: true,
+        userType: true,
         status: true,
         isActive: true,
         primaryTenant: {
           select: {
             code: true,
             isActive: true,
+            authConfig: true,
           },
         },
         memberships: {
@@ -378,11 +409,17 @@ export const verifyMagicLink = async (
       throw new ApiError(404, "User not found");
     }
 
+    const tenantAuthConfig = normalizeTenantAuthConfig(user.primaryTenant?.authConfig);
+    if (!tenantAuthConfig.secure_link_enabled) {
+      throw new ApiError(403, "Secure Link sign-in is disabled for this tenant");
+    }
+
     await assertMagicLinkAccessAllowed(tx, {
       id: user.id,
       email: user.email,
       tenantId: user.tenantId,
       role: user.role || "",
+      userType: user.userType,
       status: user.status,
       isActive: user.isActive,
       primaryTenant: user.primaryTenant,
@@ -406,6 +443,7 @@ export const verifyMagicLink = async (
       userId: user.id,
       email: user.email,
       role: user.role || "",
+      userType: user.userType,
       tenantId: user.tenantId,
       tenantCode: user.primaryTenant?.code ?? null,
     });

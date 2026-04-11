@@ -35,6 +35,12 @@ OTP_DIR.mkdir(parents=True, exist_ok=True)
 
 OTP_MAX_RETRIES = max(1, int(os.getenv("DOCUMENT_OTP_MAX_RETRIES", "3")))
 EXPOSE_DEBUG_OTP = (os.getenv("EXPOSE_DEBUG_OTP") or "false").strip().lower() == "true"
+_APP_ENV = (os.getenv("APP_ENV") or os.getenv("ENVIRONMENT") or "production").strip().lower()
+if EXPOSE_DEBUG_OTP and _APP_ENV not in {"development", "dev", "test", "testing", "local"}:
+    raise RuntimeError(
+        "EXPOSE_DEBUG_OTP=true is not allowed outside of development/test environments. "
+        "Set APP_ENV=development or remove EXPOSE_DEBUG_OTP to start the server."
+    )
 
 
 @dataclass(frozen=True)

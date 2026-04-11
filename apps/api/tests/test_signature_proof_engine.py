@@ -11,6 +11,7 @@ from backend.signature.providers.nafath_provider import NafathProvider
 from backend.signature.providers.sms_otp_provider import SmsOtpProvider
 from backend.signature.providers.tablet_signature_provider import TabletSignatureProvider
 from backend.signature.signature_proof_service import _try_write_pdf
+from backend.services.notifications.taqnyat_provider import TaqnyatProvider
 
 
 def _sample_context() -> dict[str, str]:
@@ -44,7 +45,7 @@ def test_official_templates_keep_approved_wording_markers():
 
 
 def test_sms_otp_stub_flow_verification_works(monkeypatch):
-    # Explicitly force fallback mode to ensure missing provider config never breaks flow.
+    monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("WATHIQ_SMS_STUB_MODE", "true")
     provider = SmsOtpProvider()
     result = provider.send_otp("+966500000000", case_id="case-1", document_type="discharge_refusal_form")
@@ -61,36 +62,52 @@ def test_sms_otp_stub_flow_verification_works(monkeypatch):
 
 
 def test_sms_otp_live_provider_dispatches_http(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.delenv("WATHIQ_SMS_STUB_MODE", raising=False)
-    monkeypatch.setenv("WATHIQ_SMS_PROVIDER_URL", "https://sms.example.test/send")
-    monkeypatch.setenv("WATHIQ_SMS_PROVIDER_API_KEY", "provider-key")
-    monkeypatch.setenv("WATHIQ_SMS_PROVIDER_NAME", "test-gateway")
+    monkeypatch.setenv("SMS_PROVIDER", "taqnyat")
+    monkeypatch.setenv("SMS_BEARER_TOKEN", "provider-key")
+    monkeypatch.setenv("SMS_ENABLED", "true")
 
     captured: dict[str, object] = {}
 
-    class _Response:
-        def raise_for_status(self) -> None:
-            return None
+    def _fake_send(self, to, message, *, message_type):
+        captured["to"] = to
+        captured["message"] = message
+        captured["message_type"] = message_type
+        return {"ok": True, "status_code": 201, "data": {"statusCode": 201}}
 
-    def _fake_post(url, json, headers, timeout):
-        captured["url"] = url
-        captured["json"] = json
-        captured["headers"] = headers
-        captured["timeout"] = timeout
-        return _Response()
-
-    monkeypatch.setattr("backend.signature.providers.sms_otp_provider.requests.post", _fake_post)
+    monkeypatch.setattr("backend.signature.providers.sms_otp_provider.SmsService.send", _fake_send)
 
     provider = SmsOtpProvider()
     result = provider.send_otp("+966500000000", case_id="case-1", document_type="discharge_refusal_form")
 
     assert result.delivery_status == "sent"
-    assert result.provider == "test-gateway"
+    assert result.provider == "taqnyat"
     assert result.stub_mode is False
     assert result.otp_debug_code is not None
-    assert captured["url"] == "https://sms.example.test/send"
-    assert captured["json"]["otp_code"] == result.otp_debug_code
-    assert captured["headers"]["X-API-Key"] == "provider-key"
+    assert captured["to"] == "+966500000000"
+    assert result.otp_debug_code in str(captured["message"])
+    assert captured["message_type"] == "transactional"
+
+
+def test_sms_otp_stub_mode_is_rejected_in_production(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv("WATHIQ_SMS_STUB_MODE", "true")
+
+    provider = SmsOtpProvider()
+
+    with pytest.raises(RuntimeError, match="not allowed in production"):
+        provider.send_otp("+966500000000", case_id="case-1", document_type="discharge_refusal_form")
+
+
+def test_taqnyat_normalizes_ksa_phone_numbers(monkeypatch):
+    monkeypatch.setenv("SMS_BEARER_TOKEN", "provider-key")
+    provider = TaqnyatProvider()
+
+    assert provider.normalize_recipient("+966500000000") == "966500000000"
+    assert provider.normalize_recipient("00966500000000") == "966500000000"
+    assert provider.normalize_recipient("0500000000") == "966500000000"
+    assert provider.normalize_recipient("500000000") == "966500000000"
 
 
 def test_tablet_signature_capture_returns_proof_metadata():
@@ -124,6 +141,7 @@ def test_nafath_placeholder_does_not_break_when_unconfigured(monkeypatch):
 
 
 def test_method_availability_safe_when_providers_unconfigured(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("WATHIQ_SMS_STUB_MODE", "true")
     monkeypatch.delenv("WATHIQ_NAFATH_ENABLED", raising=False)
     monkeypatch.delenv("WATHIQ_NAFATH_API_URL", raising=False)

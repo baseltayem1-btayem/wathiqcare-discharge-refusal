@@ -10,6 +10,7 @@ import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { mergeTenantAuthConfig } from "@/lib/server/tenant-auth-config";
 
 type RouteContext = {
   params: Promise<{ tenantId: string }>;
@@ -22,6 +23,11 @@ type PatchTenantPayload = {
   country?: string | null;
   billingEmail?: string | null;
   isActive?: boolean;
+  authConfig?: {
+    password_enabled?: boolean;
+    microsoft_sso_enabled?: boolean;
+    secure_link_enabled?: boolean;
+  };
   metadata?: Prisma.InputJsonValue | null;
 };
 
@@ -32,6 +38,7 @@ type TenantUpdateData = {
   country?: string | null;
   billingEmail?: string | null;
   isActive?: boolean;
+  authConfig?: Prisma.InputJsonValue;
   metadata?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
 };
 
@@ -61,6 +68,7 @@ function normalizeBillingEmail(value: unknown): string | null | undefined {
 }
 
 function buildTenantUpdateData(
+  currentAuthConfig: unknown,
   payload: PatchTenantPayload,
   platformAccess: boolean,
 ): TenantUpdateData {
@@ -99,6 +107,18 @@ function buildTenantUpdateData(
       throw new ApiError(403, "Only platform admins can activate/deactivate tenants");
     }
     updateData.isActive = payload.isActive;
+  }
+
+  if (payload.authConfig !== undefined) {
+    if (!platformAccess) {
+      throw new ApiError(403, "Only platform admins can update tenant auth configuration");
+    }
+
+    if (!payload.authConfig || typeof payload.authConfig !== "object") {
+      throw new ApiError(400, "authConfig must be an object");
+    }
+
+    updateData.authConfig = mergeTenantAuthConfig(currentAuthConfig, payload.authConfig);
   }
 
   if (payload.metadata === null) {
@@ -183,6 +203,15 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       throw new ApiError(400, "Invalid JSON body");
     }
 
+    const currentTenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { id: true, authConfig: true },
+    });
+
+    if (!currentTenant) {
+      throw new ApiError(404, "Tenant not found");
+    }
+
     // Only declare updateData once
     const updateData: {
       name?: string;
@@ -191,8 +220,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       country?: string | null;
       billingEmail?: string | null;
       isActive?: boolean;
+      authConfig?: Prisma.InputJsonValue;
       metadata?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
-    } = buildTenantUpdateData(payload, platformAccess);
+    } = buildTenantUpdateData(currentTenant.authConfig, payload, platformAccess);
 
     const tenant = await prisma.tenant.update({
       where: { id: tenantId },

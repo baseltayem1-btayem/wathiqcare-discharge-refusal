@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,6 +12,18 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { ApiHttpError, apiFetch } from "@/utils/api";
 
 type AuthMode = "microsoft" | "magic-link" | "password";
+
+type TenantAuthConfig = {
+  password_enabled: boolean;
+  microsoft_sso_enabled: boolean;
+  secure_link_enabled: boolean;
+};
+
+const DEFAULT_AUTH_CONFIG: TenantAuthConfig = {
+  password_enabled: true,
+  microsoft_sso_enabled: false,
+  secure_link_enabled: false,
+};
 
 export default function LangLoginPage() {
   const { t, isRtl, lang } = useI18n();
@@ -68,9 +80,58 @@ export default function LangLoginPage() {
   );
   const [showPassword, setShowPassword] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("magic-link");
+  const [authConfig, setAuthConfig] = useState<TenantAuthConfig>(DEFAULT_AUTH_CONFIG);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const enabledModes = useMemo<AuthMode[]>(() => {
+    const modes: AuthMode[] = [];
+    if (authConfig.microsoft_sso_enabled) modes.push("microsoft");
+    if (authConfig.secure_link_enabled) modes.push("magic-link");
+    if (authConfig.password_enabled) modes.push("password");
+    return modes;
+  }, [authConfig]);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        const query = email.trim()
+          ? `?email=${encodeURIComponent(email.trim())}`
+          : "";
+        const result = await apiFetch<{ auth_config?: Partial<TenantAuthConfig> }>(`/api/auth/config${query}`);
+        const raw = result?.auth_config ?? {};
+        setAuthConfig({
+          password_enabled:
+            typeof raw.password_enabled === "boolean"
+              ? raw.password_enabled
+              : DEFAULT_AUTH_CONFIG.password_enabled,
+          microsoft_sso_enabled:
+            typeof raw.microsoft_sso_enabled === "boolean"
+              ? raw.microsoft_sso_enabled
+              : DEFAULT_AUTH_CONFIG.microsoft_sso_enabled,
+          secure_link_enabled:
+            typeof raw.secure_link_enabled === "boolean"
+              ? raw.secure_link_enabled
+              : DEFAULT_AUTH_CONFIG.secure_link_enabled,
+        });
+      } catch {
+        setAuthConfig(DEFAULT_AUTH_CONFIG);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [email]);
+
+  useEffect(() => {
+    if (enabledModes.length === 0) {
+      return;
+    }
+
+    if (!enabledModes.includes(authMode)) {
+      setAuthMode(enabledModes[0]);
+    }
+  }, [enabledModes, authMode]);
 
   async function handleMagicLinkSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -182,30 +243,42 @@ export default function LangLoginPage() {
 
                 {/* Auth Mode Tabs */}
                 <div className={`mb-6 flex gap-1 border-b border-slate-200 ${isRtl ? "justify-end" : "justify-start"}`}>
-                  <button
-                    onClick={() => { setAuthMode("microsoft"); clearMsgs(); }}
-                    className={`wc-tab ${authMode === "microsoft" ? "wc-tab-active" : ""}`}
-                  >
-                    {t("loginPage.tabMicrosoft")}
-                  </button>
-                  <button
-                    onClick={() => { setAuthMode("magic-link"); clearMsgs(); }}
-                    className={`wc-tab ${authMode === "magic-link" ? "wc-tab-active" : ""}`}
-                  >
-                    <Mail className="h-3.5 w-3.5" />
-                    {t("loginPage.tabMagicLink")}
-                  </button>
-                  <button
-                    onClick={() => { setAuthMode("password"); clearMsgs(); }}
-                    className={`wc-tab ${authMode === "password" ? "wc-tab-active" : ""}`}
-                  >
-                    <Lock className="h-3.5 w-3.5" />
-                    {t("loginPage.tabPassword")}
-                  </button>
+                  {authConfig.microsoft_sso_enabled && (
+                    <button
+                      onClick={() => { setAuthMode("microsoft"); clearMsgs(); }}
+                      className={`wc-tab ${authMode === "microsoft" ? "wc-tab-active" : ""}`}
+                    >
+                      {t("loginPage.tabMicrosoft")}
+                    </button>
+                  )}
+                  {authConfig.secure_link_enabled && (
+                    <button
+                      onClick={() => { setAuthMode("magic-link"); clearMsgs(); }}
+                      className={`wc-tab ${authMode === "magic-link" ? "wc-tab-active" : ""}`}
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      {t("loginPage.tabMagicLink")}
+                    </button>
+                  )}
+                  {authConfig.password_enabled && (
+                    <button
+                      onClick={() => { setAuthMode("password"); clearMsgs(); }}
+                      className={`wc-tab ${authMode === "password" ? "wc-tab-active" : ""}`}
+                    >
+                      <Lock className="h-3.5 w-3.5" />
+                      {t("loginPage.tabPassword")}
+                    </button>
+                  )}
                 </div>
 
+                {enabledModes.length === 0 && (
+                  <div className="wc-alert-error">
+                    {isRtl ? "تم تعطيل جميع طرق تسجيل الدخول لهذا المستأجر." : "All sign-in methods are disabled for this tenant."}
+                  </div>
+                )}
+
                 {/* Microsoft SSO */}
-                {authMode === "microsoft" && (
+                {authConfig.microsoft_sso_enabled && authMode === "microsoft" && (
                   <div className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">{t("loginPage.microsoftTitle")}</h2>
                     <p className="text-sm text-gray-600">{t("loginPage.microsoftSubtitle")}</p>
@@ -234,7 +307,7 @@ export default function LangLoginPage() {
                 )}
 
                 {/* Magic Link */}
-                {authMode === "magic-link" && (
+                {authConfig.secure_link_enabled && authMode === "magic-link" && (
                   <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">{t("loginPage.magicTitle")}</h2>
                     <p className="text-sm text-gray-600">{t("loginPage.magicSubtitle")}</p>
@@ -273,13 +346,15 @@ export default function LangLoginPage() {
                       {loading ? t("loginPage.magicSending") : t("loginPage.magicSendBtn")}
                     </button>
                     <div className="flex items-center justify-between text-xs text-slate-600">
-                      <button
-                        type="button"
-                        onClick={() => { setAuthMode("password"); clearMsgs(); }}
-                        className="text-slate-500 hover:text-cyan-700 transition"
-                      >
-                        {t("loginPage.magicSwitchToPassword")}
-                      </button>
+                      {authConfig.password_enabled && (
+                        <button
+                          type="button"
+                          onClick={() => { setAuthMode("password"); clearMsgs(); }}
+                          className="text-slate-500 hover:text-cyan-700 transition"
+                        >
+                          {t("loginPage.magicSwitchToPassword")}
+                        </button>
+                      )}
                       <Link
                         href="/auth/password-reset"
                         className="text-cyan-600 hover:text-cyan-700 font-semibold"
@@ -291,7 +366,7 @@ export default function LangLoginPage() {
                 )}
 
                 {/* Password Login */}
-                {authMode === "password" && (
+                {authConfig.password_enabled && authMode === "password" && (
                   <form onSubmit={handlePasswordSubmit} className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">{t("loginPage.passwordTitle")}</h2>
                     <p className="text-sm text-gray-600">{t("loginPage.passwordSubtitle")}</p>
@@ -355,13 +430,15 @@ export default function LangLoginPage() {
                       >
                         {t("loginPage.forgotPasswordLink")}
                       </Link>
-                      <button
-                        type="button"
-                        onClick={() => { setAuthMode("magic-link"); clearMsgs(); }}
-                        className="text-slate-500 hover:text-cyan-700 transition"
-                      >
-                        {t("loginPage.switchToMagicLink")}
-                      </button>
+                      {authConfig.secure_link_enabled && (
+                        <button
+                          type="button"
+                          onClick={() => { setAuthMode("magic-link"); clearMsgs(); }}
+                          className="text-slate-500 hover:text-cyan-700 transition"
+                        >
+                          {t("loginPage.switchToMagicLink")}
+                        </button>
+                      )}
                     </div>
                   </form>
                 )}
