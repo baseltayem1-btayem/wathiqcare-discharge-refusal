@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
-import { handleApiError } from "@/lib/server/http";
+import { handleApiError, jsonSuccess } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 import { platformRoleForUserRole } from "@/lib/server/roles";
@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireAuth(request);
 
-  const user = await getPrisma().user.findUnique({
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({
       where: { id: auth.sub },
       include: {
         memberships: {
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({
+      return jsonSuccess({
         authenticated: true,
         claims: auth,
         platformRole: null,
@@ -44,16 +45,16 @@ export async function GET(request: NextRequest) {
 
     const effectiveTenantId = auth.tenant_id ?? user.tenantId;
 
-    const [subscription, tenant, brandingProfile] = await Promise.all([
+    const [subscriptionResult, tenantResult, brandingResult] = await Promise.allSettled([
       effectiveTenantId
-        ? getPrisma().subscription.findFirst({
+        ? prisma.subscription.findFirst({
             where: { tenantId: effectiveTenantId },
             include: { plan: true },
             orderBy: { createdAt: "desc" },
           })
         : null,
       effectiveTenantId
-        ? getPrisma().tenant.findUnique({
+        ? prisma.tenant.findUnique({
             where: { id: effectiveTenantId },
             select: {
               id: true,
@@ -65,6 +66,20 @@ export async function GET(request: NextRequest) {
         : null,
       effectiveTenantId ? getTenantBrandingProfile(effectiveTenantId) : null,
     ]);
+
+    if (subscriptionResult.status === "rejected") {
+      console.error("AUTH_ME_SUBSCRIPTION_FETCH_FAILED", subscriptionResult.reason);
+    }
+    if (tenantResult.status === "rejected") {
+      console.error("AUTH_ME_TENANT_FETCH_FAILED", tenantResult.reason);
+    }
+    if (brandingResult.status === "rejected") {
+      console.error("AUTH_ME_BRANDING_FETCH_FAILED", brandingResult.reason);
+    }
+
+    const subscription = subscriptionResult.status === "fulfilled" ? subscriptionResult.value : null;
+    const tenant = tenantResult.status === "fulfilled" ? tenantResult.value : null;
+    const brandingProfile = brandingResult.status === "fulfilled" ? brandingResult.value : null;
 
     const platformRole =
       auth.platform_role ??
@@ -82,7 +97,7 @@ export async function GET(request: NextRequest) {
           : "tenant_user";
     const homePath = userType === "platform_admin" ? "/platform" : "/dashboard";
 
-    return NextResponse.json(
+    return jsonSuccess(
       toJsonSafe({
         authenticated: true,
         claims: auth,

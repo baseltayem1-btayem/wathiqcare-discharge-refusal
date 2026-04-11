@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
+import { jsonSuccess } from "@/lib/server/http";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import {
   DEFAULT_TENANT_AUTH_CONFIG,
@@ -26,14 +27,14 @@ export async function GET(request: NextRequest) {
 
   if (tenantIdFromToken) {
     const authConfig = await readTenantAuthConfig(tenantIdFromToken);
-    return NextResponse.json({
+    return jsonSuccess({
       tenantId: tenantIdFromToken,
       auth_config: normalizeTenantAuthConfig(authConfig),
     });
   }
 
   if (!email) {
-    return NextResponse.json({
+    return jsonSuccess({
       tenantId: null,
       auth_config: { ...DEFAULT_TENANT_AUTH_CONFIG },
     });
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 
   const resolved = await resolveTenantAuthConfigByEmail(email);
 
-  return NextResponse.json({
+  return jsonSuccess({
     tenantId: resolved.tenantId,
     auth_config: resolved.authConfig,
   });

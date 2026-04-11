@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Settings } from "lucide-react";
@@ -85,13 +84,14 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                         style={{ background: "#f8fafc", border: "1px solid #e7edf3" }}
                     >
                         <div className="flex justify-center">
-                            <Image
+                            <img
                                 src="/images/wathiqcare-logo.png"
                                 alt="WathiqCare"
                                 width={180}
                                 height={54}
                                 className="h-auto w-[120px] object-contain"
-                                priority
+                                loading="eager"
+                                decoding="async"
                             />
                         </div>
                         <p className="mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: "#1f5fa7" }}>
@@ -157,12 +157,14 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                                         className="hidden items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 sm:inline-flex"
                                         title="WathiqCare"
                                     >
-                                        <Image
+                                        <img
                                             src="/images/wathiqcare-logo.png"
                                             alt="WathiqCare"
                                             width={104}
                                             height={32}
                                             className="h-auto w-[84px] object-contain"
+                                            loading="eager"
+                                            decoding="async"
                                         />
                                     </div>
                                     <LanguageSwitcher className="md:hidden" />

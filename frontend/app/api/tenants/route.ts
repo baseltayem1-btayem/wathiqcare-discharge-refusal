@@ -36,9 +36,8 @@ export async function GET(request: NextRequest) {
 
     const limit = Math.min(Math.max(Number(new URL(request.url).searchParams.get("limit") ?? "50"), 1), 200);
 
-      const prisma = getPrisma();
+    const prisma = getPrisma();
     const memberships = await prisma.tenantMembership.findMany({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       where: {
         userId: auth.sub,
         status: MembershipStatus.ACTIVE,
@@ -48,11 +47,7 @@ export async function GET(request: NextRequest) {
     });
 
     const tenantIds = [...new Set([auth.tenant_id, ...memberships.map((item) => item.tenantId)])];
-      const tenants = await prisma.tenant.findMany({
-    const tenants = await getPrisma().tenant.findMany({
-=======
     const tenants = await prisma.tenant.findMany({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       where: {
         id: {
           in: tenantIds,
@@ -114,24 +109,15 @@ export async function POST(request: NextRequest) {
         (await prisma.plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
         (await prisma.plan.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
     const plan =
-<<<<<<< HEAD
-      (await getPrisma().plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
-      (await getPrisma().plan.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
-=======
       (await prisma.plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
       (await prisma.plan.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       const created = await prisma.$transaction(async (tx) => {
     }
 
     const now = new Date();
     const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-<<<<<<< HEAD
-    const created = await getPrisma().$transaction(async (tx) => {
-=======
     const created = await prisma.$transaction(async (tx) => {
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       const tenant = await tx.tenant.create({
         data: {
           name: tenantName,

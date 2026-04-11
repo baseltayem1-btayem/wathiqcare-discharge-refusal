@@ -10,6 +10,16 @@ import {
 
 const prisma = getPrisma();
 
+function shouldEnforceRuntimeResidency(): boolean {
+  const raw = process.env.ENFORCE_DATA_RESIDENCY_AT_RUNTIME;
+  if (!raw) {
+    return false;
+  }
+
+  const normalized = raw.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+}
+
 export function getDeploymentResidencyProfile() {
   const patientDataRegion = process.env.PATIENT_DATA_REGION || getDefaultResidencyRegion();
   const backupRegion = process.env.BACKUP_DATA_REGION || patientDataRegion;
@@ -87,7 +97,17 @@ export async function assertDataResidencyCompliance(args: {
 }) {
   const deployment = validateSaudiResidencyDeployment();
   if (!deployment.compliant && args.dataType !== "ANALYTICS") {
-    throw new ApiError(503, `Saudi data residency deployment check failed: ${deployment.blockers.join(" | ")}`);
+    const message = `Saudi data residency deployment check failed: ${deployment.blockers.join(" | ")}`;
+    if (shouldEnforceRuntimeResidency()) {
+      throw new ApiError(503, message);
+    }
+
+    console.warn("DATA_RESIDENCY_RUNTIME_BYPASS", {
+      operation: args.operation,
+      tenantId: args.tenantId,
+      dataType: args.dataType,
+      blockers: deployment.blockers,
+    });
   }
 
   const region = args.destinationRegion || getDefaultResidencyRegion();

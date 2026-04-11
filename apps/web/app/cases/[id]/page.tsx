@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import AppShell from "@/components/AppShell";
+import AuthGuard from "@/components/AuthGuard";
 import {
   Card,
   CardContent,
@@ -165,6 +166,15 @@ function getString(record: Record<string, unknown> | null | undefined, ...keys: 
   }
 
   return "";
+}
+
+function getBoolean(record: Record<string, unknown> | null | undefined, key: string, fallback = false): boolean {
+  if (!record) {
+    return fallback;
+  }
+
+  const value = record[key];
+  return typeof value === "boolean" ? value : fallback;
 }
 
 function mapCaseRecordToCaseData(record: CaseApiRecord): CaseData {
@@ -362,6 +372,41 @@ export default function CasePage() {
         if (cancelled) {
           return;
         }
+
+        const caseMetadata = asRecord(caseRecord.metadata);
+        const presentationMeta = asRecord(caseMetadata?.presentation);
+        const signatureMeta = asRecord(caseMetadata?.signature);
+        const witnessMeta = asRecord(caseMetadata?.witness);
+
+        setPresentation({
+          language: getString(presentationMeta, "language"),
+          interpreter_used: getBoolean(presentationMeta, "interpreter_used", false),
+          presented_to: getString(presentationMeta, "presented_to"),
+          presented_by: getString(presentationMeta, "presented_by"),
+        });
+
+        const signatureOutcome = getString(signatureMeta, "outcome") as SignatureOutcome;
+        setSignature({
+          outcome:
+            signatureOutcome === "refused_to_sign" ||
+            signatureOutcome === "unable_to_sign" ||
+            signatureOutcome === "signed"
+              ? signatureOutcome
+              : "signed",
+          signer_name: getString(signatureMeta, "signer_name"),
+          reason: getString(signatureMeta, "reason"),
+        });
+
+        const hydratedWitnessName = getString(witnessMeta, "witness_name");
+        setWitness({
+          witness_name: hydratedWitnessName,
+          witness_role: getString(witnessMeta, "witness_role"),
+        });
+
+        setConsentForm((previous) => ({
+          ...previous,
+          witnessName: previous.witnessName || hydratedWitnessName,
+        }));
 
         setCaseData(mapCaseRecordToCaseData(caseRecord));
         setReadiness(
@@ -580,44 +625,45 @@ export default function CasePage() {
   }
 
   return (
-    <AppShell
-      title="Case Execution Workspace"
-      actions={
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => router.push("/cases")}>
-            <ArrowLeft className="h-4 w-4" />
-            Back to Cases
-          </Button>
+    <AuthGuard>
+      <AppShell
+        title="Case Execution Workspace"
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.push("/cases")}>
+              <ArrowLeft className="h-4 w-4" />
+              Back to Cases
+            </Button>
 
-          <Button
-            variant="outline"
-            onClick={handleGenerateLegalPackage}
-            disabled={loading}
-          >
-            <Package className="h-4 w-4" />
-            Generate Legal Package
-          </Button>
-
-          {legalPackage?.download_url ? (
-            <a
-              href={legalPackage.download_url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Button
+              variant="outline"
+              onClick={handleGenerateLegalPackage}
+              disabled={loading}
             >
-              <Button variant="outline">
-                <Download className="h-4 w-4" />
-                Download PDF
-              </Button>
-            </a>
-          ) : null}
-        </div>
-      }
-    >
-      {error ? (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      ) : null}
+              <Package className="h-4 w-4" />
+              Generate Legal Package
+            </Button>
+
+            {legalPackage?.download_url ? (
+              <a
+                href={legalPackage.download_url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="outline">
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </Button>
+              </a>
+            ) : null}
+          </div>
+        }
+      >
+        {error ? (
+          <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
 
       <div className="mb-6">
         <ol className="flex flex-wrap gap-2 md:gap-4">
@@ -1142,6 +1188,7 @@ export default function CasePage() {
           </div>
         </CardContent>
       </Card>
-    </AppShell>
+      </AppShell>
+    </AuthGuard>
   );
 }

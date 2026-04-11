@@ -21,49 +21,6 @@ function parseUsageMetric(value: string | null): UsageMetric | null {
     : null;
 }
 
-<<<<<<< HEAD
-function parsePositiveInt(
-  value: string | null,
-  fallback: number,
-  min: number,
-  max?: number,
-    return Object.values(UsageMetric).includes(normalized as UsageMetric) 
-      ? (normalized as UsageMetric) 
-      : null; 
-  if (!Number.isFinite(parsed)) {
-    return fallback;
-  }
-
-  const normalized = Math.floor(parsed);
-
-  if (normalized < min) {
-    return min;
-  }
-
-  if (typeof max === "number" && normalized > max) {
-    return max;
-  }
-
-  return normalized;
-}
-
-export async function GET(request: NextRequest, { params }: RouteContext) {
-  try {
-    const { tenantId } = await params;
-
-    await requireTenantAccess(request, tenantId);
-
-    const url = new URL(request.url);
-    const metric = parseUsageMetric(url.searchParams.get("metric"));
-    const days = parsePositiveInt(url.searchParams.get("days"), 30, 1);
-    const limit = parsePositiveInt(url.searchParams.get("limit"), 100, 1, 500);
-
-    const fromDate = new Date();
-    fromDate.setUTCDate(fromDate.getUTCDate() - days);
-
-    const prisma = getPrisma();
-
-=======
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tenantId: string }> },
@@ -81,7 +38,6 @@ export async function GET(
     fromDate.setUTCDate(fromDate.getUTCDate() - (Number.isFinite(days) ? Math.max(days, 1) : 30));
 
     const prisma = getPrisma();
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     const records = await prisma.usageRecord.findMany({
       where: {
         tenantId,
@@ -98,8 +54,4 @@ export async function GET(
   } catch (error) {
     return handleApiError(error);
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e

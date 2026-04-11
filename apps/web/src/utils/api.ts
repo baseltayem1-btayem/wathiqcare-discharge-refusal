@@ -27,12 +27,44 @@ export class ApiHttpError extends Error {
   }
 }
 
+function extractLocaleFromPath(pathname: string): "ar" | "en" | null {
+  if (pathname === "/ar" || pathname.startsWith("/ar/")) {
+    return "ar";
+  }
+
+  if (pathname === "/en" || pathname.startsWith("/en/")) {
+    return "en";
+  }
+
+  return null;
+}
+
+function localizePath(path: string, locale: "ar" | "en" | null): string {
+  if (!locale) {
+    return path;
+  }
+
+  if (path === "/") {
+    return `/${locale}`;
+  }
+
+  if (path === `/${locale}` || path.startsWith(`/${locale}/`)) {
+    return path;
+  }
+
+  return `/${locale}${path}`;
+}
+
 export function redirectToLogin(nextPath?: string, source = "unknown"): void {
   if (typeof window === "undefined") {
     return;
   }
 
-  if (window.location.pathname === "/login") {
+  const currentPathname = window.location.pathname;
+  const locale = extractLocaleFromPath(currentPathname);
+  const loginPath = localizePath("/login", locale);
+
+  if (currentPathname === loginPath || currentPathname === "/login") {
     console.info(`[auth] Skip redirect to /login (already there). source=${source}`);
     return;
   }
@@ -40,7 +72,7 @@ export function redirectToLogin(nextPath?: string, source = "unknown"): void {
   const current = nextPath || `${window.location.pathname}${window.location.search}`;
   const next = encodeURIComponent(current || "/");
   console.warn(`[auth] Redirecting to /login. source=${source} next=${current || "/"}`);
-  window.location.assign(`/login?next=${next}`);
+  window.location.assign(`${loginPath}?next=${next}`);
 }
 
 export function clearToken(): void {
@@ -89,7 +121,12 @@ async function checkSessionWithAuthMe(reason: string): Promise<SessionValidation
     }
 
     console.warn(`[auth] auth/me failed after ${reason}; status=${response.status}`);
-    return { valid: false, status: response.status };
+    if (response.status === 401 || response.status === 403) {
+      return { valid: false, status: response.status };
+    }
+
+    // Treat transient backend failures as indeterminate so users are not forced-logout.
+    return { valid: null, status: response.status };
   } catch (error) {
     console.warn(`[auth] auth/me check errored after ${reason}; preserving current route.`, error);
     return { valid: null, status: null };
@@ -168,7 +205,13 @@ export function triggerSessionValidation(
 
 function getErrorMessage(status: number, statusText: string, body: unknown): string {
   if (body && typeof body === "object") {
-    const maybeDetail = (body as { detail?: unknown }).detail;
+    const objectBody = body as { error?: unknown; detail?: unknown; message?: unknown };
+    const maybeDetail =
+      typeof objectBody.error === "string" && objectBody.error.trim()
+        ? objectBody.error
+        : typeof objectBody.detail === "string" && objectBody.detail.trim()
+          ? objectBody.detail
+          : objectBody.message;
     if (typeof maybeDetail === "string" && maybeDetail.trim()) {
       return `${status}: ${maybeDetail}`;
     }
@@ -179,6 +222,19 @@ function getErrorMessage(status: number, statusText: string, body: unknown): str
   }
 
   return `${status} ${statusText}`.trim();
+}
+
+function unwrapSuccessPayload<T>(payload: unknown): T {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    (payload as { success?: unknown }).success === true &&
+    "data" in (payload as Record<string, unknown>)
+  ) {
+    return (payload as { data: T }).data;
+  }
+
+  return payload as T;
 }
 
 function stripHtmlTags(value: string): string {
@@ -316,7 +372,7 @@ export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Pro
   }
 
   if (isJson) {
-    return (await response.json()) as T;
+    return unwrapSuccessPayload<T>(await response.json());
   }
 
   return (await response.text()) as unknown as T;
@@ -396,5 +452,5 @@ export async function apiFetchJson<T>(path: string, init: ApiFetchOptions = {}):
     );
   }
 
-  return (await response.json()) as T;
+  return unwrapSuccessPayload<T>(await response.json());
 }

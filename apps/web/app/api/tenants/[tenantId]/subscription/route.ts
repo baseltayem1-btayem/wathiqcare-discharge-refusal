@@ -227,40 +227,48 @@ export async function PATCH(
       );
     }
 
-    await writeAuditLog({
-      tenantId,
-      userId: auth.sub,
-      entityType: "subscription",
-      entityId: subscription.id,
-      action: existing ? "subscription_updated" : "subscription_created",
-      details: "Subscription updated from platform API",
-      metadataJson: {
-        planCode: selectedPlan?.code,
-        billingInterval,
-        status,
-        seatLimit:
-          typeof payload.seatLimit === "number" && payload.seatLimit > 0
-            ? Math.floor(payload.seatLimit)
-            : undefined,
-        activeSeats,
-        pendingSeats,
-      },
-      request,
-    });
-
-    if (typeof payload.seatLimit === "number" && payload.seatLimit > 0) {
+    try {
       await writeAuditLog({
         tenantId,
         userId: auth.sub,
         entityType: "subscription",
         entityId: subscription.id,
-        action: "seat_limit_changed",
-        details: `Seat limit changed to ${Math.floor(payload.seatLimit)}`,
+        action: existing ? "subscription_updated" : "subscription_created",
+        details: "Subscription updated from platform API",
         metadataJson: {
-          seatLimit: Math.floor(payload.seatLimit),
+          planCode: selectedPlan?.code,
+          billingInterval,
+          status,
+          seatLimit:
+            typeof payload.seatLimit === "number" && payload.seatLimit > 0
+              ? Math.floor(payload.seatLimit)
+              : undefined,
           activeSeats,
+          pendingSeats,
         },
         request,
+      });
+
+      if (typeof payload.seatLimit === "number" && payload.seatLimit > 0) {
+        await writeAuditLog({
+          tenantId,
+          userId: auth.sub,
+          entityType: "subscription",
+          entityId: subscription.id,
+          action: "seat_limit_changed",
+          details: `Seat limit changed to ${Math.floor(payload.seatLimit)}`,
+          metadataJson: {
+            seatLimit: Math.floor(payload.seatLimit),
+            activeSeats,
+          },
+          request,
+        });
+      }
+    } catch (auditError) {
+      console.error("subscription-update: audit logging failed (non-fatal)", {
+        tenantId,
+        subscriptionId: subscription.id,
+        error: auditError instanceof Error ? auditError.message : String(auditError),
       });
     }
 

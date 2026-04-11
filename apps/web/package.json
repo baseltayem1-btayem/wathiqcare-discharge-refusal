@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts",
     "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+    "db:backfill:missing-tables": "npx prisma db execute --schema=./prisma/schema.prisma --file=./prisma/migrations/0014_production_backfill_missing_tables.sql",
     "test:magic-link": "node --test --experimental-strip-types src/lib/server/magic-link-route-flow.test.mjs"
   },
   "dependencies": {

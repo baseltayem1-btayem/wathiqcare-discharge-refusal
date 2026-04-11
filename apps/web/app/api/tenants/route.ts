@@ -6,7 +6,7 @@ import {
 } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { hasPlatformAccess, requireAuth } from "@/lib/server/auth";
-import { ApiError, handleApiError } from "@/lib/server/http";
+import { ApiError, handleApiError, jsonSuccess } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -15,10 +15,7 @@ import {
   DEFAULT_TENANT_AUTH_CONFIG,
   normalizeTenantAuthConfig,
 } from "@/lib/server/tenant-auth-config";
-import {
-  ensureTenantDepartments,
-  ensureTenantRoleTemplates,
-} from "@/lib/server/tenant-admin";
+import { bootstrapTenantAdminConfiguration } from "@/lib/server/tenant-admin";
 import {
   canonicalizeUserRole,
   membershipRoleForUserRole,
@@ -133,7 +130,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
       take: limit,
     });
-    return NextResponse.json(toJsonSafe(tenants));
+    return jsonSuccess(toJsonSafe(tenants));
   } catch (error) {
     return handleApiError(error);
   }
@@ -166,8 +163,16 @@ export async function POST(request: NextRequest) {
 
     await ensureBasePlans();
 
+    const requestedPlanCodeRaw = payload.subscription?.planCode?.toUpperCase();
+    const requestedPlanCode =
+      requestedPlanCodeRaw && Object.values(PlanCode).includes(requestedPlanCodeRaw as PlanCode)
+        ? (requestedPlanCodeRaw as PlanCode)
+        : null;
+
     const plan =
-      (await prisma.plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
+      (requestedPlanCode
+        ? await prisma.plan.findUnique({ where: { code: requestedPlanCode } })
+        : await prisma.plan.findUnique({ where: { code: PlanCode.STARTER } })) ||
       (await prisma.plan.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
     if (!plan) throw new ApiError(404, "No active plan available");
     const now = new Date();
@@ -232,8 +237,6 @@ export async function POST(request: NextRequest) {
           },
         },
       });
-      await ensureTenantDepartments(tx, tenant.id);
-      await ensureTenantRoleTemplates(tx, tenant.id);
       const ownerUser = await tx.user.upsert({
         where: { email: ownerEmail },
         update: {
@@ -275,37 +278,52 @@ export async function POST(request: NextRequest) {
       maxWait: 10_000,
       timeout: 30_000,
     });
-    await writeAuditLog({
-      tenantId: created.tenant.id,
-      userId: auth.sub,
-      entityType: "tenant",
-      entityId: created.tenant.id,
-      action: "tenant_created",
-      details: "Tenant created from admin panel",
-      metadataJson: {
-        code: created.tenant.code,
-        ownerEmail,
-        planCode: plan.code,
-        status: subscriptionStatus,
-      },
-      request,
-    });
-    if (created.ownerUserId) {
+    try {
+      await bootstrapTenantAdminConfiguration(created.tenant.id);
+    } catch (bootstrapError) {
+      console.error("tenant-create: tenant RBAC bootstrap failed (non-fatal)", {
+        tenantId: created.tenant.id,
+        error: bootstrapError instanceof Error ? bootstrapError.message : String(bootstrapError),
+      });
+    }
+    try {
       await writeAuditLog({
         tenantId: created.tenant.id,
         userId: auth.sub,
-        entityType: "user",
-        entityId: created.ownerUserId,
-        action: "tenant_admin_created",
-        details: "Initial tenant admin account created",
+        entityType: "tenant",
+        entityId: created.tenant.id,
+        action: "tenant_created",
+        details: "Tenant created from admin panel",
         metadataJson: {
+          code: created.tenant.code,
           ownerEmail,
-          ownerRole,
+          planCode: plan.code,
+          status: subscriptionStatus,
         },
         request,
       });
+      if (created.ownerUserId) {
+        await writeAuditLog({
+          tenantId: created.tenant.id,
+          userId: auth.sub,
+          entityType: "user",
+          entityId: created.ownerUserId,
+          action: "tenant_admin_created",
+          details: "Initial tenant admin account created",
+          metadataJson: {
+            ownerEmail,
+            ownerRole,
+          },
+          request,
+        });
+      }
+    } catch (auditError) {
+      console.error("tenant-create: audit logging failed (non-fatal)", {
+        tenantId: created.tenant.id,
+        error: auditError instanceof Error ? auditError.message : String(auditError),
+      });
     }
-    return NextResponse.json(toJsonSafe(created.tenant), { status: 201 });
+    return jsonSuccess(toJsonSafe(created.tenant), { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }

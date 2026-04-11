@@ -1,7 +1,7 @@
 import { CaseStatus, DocumentStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
-import { handleApiError } from "@/lib/server/http";
+import { handleApiError, jsonSuccess } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 
 function isAuthConfigured(): boolean {
@@ -64,11 +64,19 @@ export async function GET(request: NextRequest) {
           createdAt: { gte: dayAgo },
         },
       }),
-      prisma.auditLog.count({
+      prisma.auditLog.findMany({
         where: {
           tenantId,
           createdAt: { gte: dayAgo },
         },
+        select: {
+          id: true,
+          action: true,
+          details: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
       }),
     ]);
 
@@ -105,7 +113,7 @@ export async function GET(request: NextRequest) {
 
     const goNoGo = checks.every((item) => item.ok);
 
-    return NextResponse.json({
+    return jsonSuccess({
       goNoGo,
       checks,
       metrics: {
@@ -119,6 +127,7 @@ export async function GET(request: NextRequest) {
       },
       integrations,
       recentAudits,
+      generatedAt: new Date().toISOString(),
       isAuthConfigured: isAuthConfigured(),
       featureFlags: {
         newDashboard: envFlag("FEATURE_NEW_DASHBOARD"),

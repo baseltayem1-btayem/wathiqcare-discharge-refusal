@@ -46,8 +46,6 @@ export async function GET(
       include: {
         // ...existing code...
 
-=======
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     const updated = await prisma.document.update({
       where: { id: documentId },
       data: {
@@ -58,18 +56,6 @@ export async function GET(
         ...(payload.previewHtml !== undefined ? { previewHtml: payload.previewHtml } : {}),
         ...(payload.payloadJson !== undefined ? { payloadJson: payload.payloadJson } : {}),
         ...(payload.metadata !== undefined
-<<<<<<< HEAD
-          ? {
-              metadata:
-                payload.metadata === null ? Prisma.JsonNull : payload.metadata,
-            }
-          : {}),
-        ...(parsedSignedAt !== undefined
-          ? {
-              signedAt: parsedSignedAt,
-              signedByUserId: parsedSignedAt ? auth.sub : null,
-            }
-=======
           ? { metadata: payload.metadata === null ? Prisma.JsonNull : payload.metadata }
           : {}),
         ...(payload.signedAt !== undefined
@@ -77,7 +63,6 @@ export async function GET(
             signedAt: payload.signedAt ? new Date(payload.signedAt) : null,
             signedByUserId: payload.signedAt ? auth.sub : null,
           }
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
           : {}),
       },
     });

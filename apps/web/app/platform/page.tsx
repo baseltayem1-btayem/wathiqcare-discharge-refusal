@@ -318,7 +318,13 @@ export default function PlatformPage() {
                         <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Billing Email" value={tenantForm.billingEmail} onChange={(e) => setTenantForm((p) => ({ ...p, billingEmail: e.target.value }))} />
                         <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Tenant Admin Email" value={tenantForm.ownerEmail} onChange={(e) => setTenantForm((p) => ({ ...p, ownerEmail: e.target.value }))} />
                         <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Tenant Admin Name" value={tenantForm.ownerFullName} onChange={(e) => setTenantForm((p) => ({ ...p, ownerFullName: e.target.value }))} />
-                        <select className="rounded-lg border border-slate-300 px-3 py-2 text-sm" value={tenantForm.ownerRole} onChange={(e) => setTenantForm((p) => ({ ...p, ownerRole: e.target.value }))}>
+                        <select
+                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            title="Select tenant admin role"
+                            aria-label="Tenant admin role"
+                            value={tenantForm.ownerRole}
+                            onChange={(e) => setTenantForm((p) => ({ ...p, ownerRole: e.target.value }))}
+                        >
                             <option value="tenant_admin">tenant_admin</option>
                             <option value="tenant_owner">tenant_owner</option>
                         </select>
@@ -333,22 +339,54 @@ export default function PlatformPage() {
                     <h2 className="text-base font-semibold text-slate-900">Subscription and Seat Licensing</h2>
                     <p className="mt-1 text-sm text-slate-600">Manage plan, status, and seat limits by tenant.</p>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        <select className="rounded-lg border border-slate-300 px-3 py-2 text-sm sm:col-span-2" value={selectedTenantId} onChange={(e) => setSelectedTenantId(e.target.value)}>
+                        <select
+                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm sm:col-span-2"
+                            title="Select tenant"
+                            aria-label="Select tenant"
+                            value={selectedTenantId}
+                            onChange={(e) => setSelectedTenantId(e.target.value)}
+                        >
                             <option value="">Select Tenant</option>
                             {tenants.map((tenant) => (
                                 <option key={tenant.id} value={tenant.id}>{tenant.name} ({tenant.code})</option>
                             ))}
                         </select>
-                        <select className="rounded-lg border border-slate-300 px-3 py-2 text-sm" value={subscriptionForm.planCode} onChange={(e) => setSubscriptionForm((p) => ({ ...p, planCode: e.target.value }))}>
+                        <select
+                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            title="Select plan"
+                            aria-label="Subscription plan"
+                            value={subscriptionForm.planCode}
+                            onChange={(e) => setSubscriptionForm((p) => ({ ...p, planCode: e.target.value }))}
+                        >
                             {PLAN_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
                         </select>
-                        <select className="rounded-lg border border-slate-300 px-3 py-2 text-sm" value={subscriptionForm.billingInterval} onChange={(e) => setSubscriptionForm((p) => ({ ...p, billingInterval: e.target.value }))}>
+                        <select
+                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            title="Select billing interval"
+                            aria-label="Billing interval"
+                            value={subscriptionForm.billingInterval}
+                            onChange={(e) => setSubscriptionForm((p) => ({ ...p, billingInterval: e.target.value }))}
+                        >
                             {BILLING_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
                         </select>
-                        <select className="rounded-lg border border-slate-300 px-3 py-2 text-sm" value={subscriptionForm.status} onChange={(e) => setSubscriptionForm((p) => ({ ...p, status: e.target.value }))}>
+                        <select
+                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            title="Select subscription status"
+                            aria-label="Subscription status"
+                            value={subscriptionForm.status}
+                            onChange={(e) => setSubscriptionForm((p) => ({ ...p, status: e.target.value }))}
+                        >
                             {SUB_STATUS_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
                         </select>
-                        <input type="number" min={1} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" value={subscriptionForm.seatLimit} onChange={(e) => setSubscriptionForm((p) => ({ ...p, seatLimit: Number(e.target.value || 0) }))} />
+                        <input
+                            type="number"
+                            min={1}
+                            title="Seat limit"
+                            aria-label="Seat limit"
+                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            value={subscriptionForm.seatLimit}
+                            onChange={(e) => setSubscriptionForm((p) => ({ ...p, seatLimit: Number(e.target.value || 0) }))}
+                        />
                     </div>
                     <button type="button" onClick={() => void handleUpdateSubscription()} disabled={savingSubscription} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
                         {savingSubscription ? "Saving..." : "Update Subscription"}

@@ -147,11 +147,7 @@ try {
         throw new ApiError(400, "to is required");
     }
 
-<<<<<<< HEAD
-    const caseRecord = await getPrisma().case.findUnique({ where: { id: caseId } });
-=======
     const caseRecord = await prisma.case.findUnique({ where: { id: caseId } });
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!caseRecord) {
         throw new ApiError(404, "Case not found");
     }

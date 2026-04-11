@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasPlatformAccess, requireAuth } from "@/lib/server/auth";
-import { ApiError, handleApiError } from "@/lib/server/http";
+import { ApiError, handleApiError, jsonSuccess } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
             prisma.subscription.aggregate({ where, _sum: { seatLimit: true } }),
         ]);
 
-        return NextResponse.json(
+        return jsonSuccess(
             toJsonSafe({
                 total,
                 active,

@@ -5,7 +5,106 @@ const LANGUAGE_COOKIE_NAME = "wathiqcare_lang";
 const SUPPORTED_LOCALES = ["ar", "en"] as const;
 type Locale = (typeof SUPPORTED_LOCALES)[number];
 const DEFAULT_LOCALE: Locale = "ar";
-const EDGE_PROTECTED_PREFIXES = ["/dashboard", "/platform"] as const;
+const EDGE_PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/platform",
+  "/cases",
+  "/tenant",
+  "/admin",
+  "/operations",
+  "/reports",
+  "/compliance",
+  "/archive",
+  "/escalation-timeline",
+  "/consents",
+  "/bundles",
+  "/refusal-forms",
+  "/audit-log",
+  "/emr-integration",
+  "/icd11-validator",
+  "/launch-status",
+  "/legal-case-file",
+  "/legal-alerts",
+  "/legal-escalation",
+  "/dashboards",
+] as const;
+const PLATFORM_ONLY_PREFIXES = ["/platform"] as const;
+const PLATFORM_BLOCKED_PREFIXES = [
+  "/dashboard",
+  "/cases",
+  "/tenant",
+  "/admin",
+  "/operations",
+  "/reports",
+  "/compliance",
+  "/archive",
+  "/escalation-timeline",
+  "/consents",
+  "/bundles",
+  "/refusal-forms",
+  "/audit-log",
+  "/emr-integration",
+  "/icd11-validator",
+  "/launch-status",
+  "/legal-case-file",
+  "/legal-alerts",
+  "/legal-escalation",
+  "/dashboards",
+] as const;
+
+function splitLocaleFromPath(pathname: string): { locale: Locale | null; pathWithoutLocale: string } {
+  for (const locale of SUPPORTED_LOCALES) {
+    if (pathname === `/${locale}`) {
+      return { locale, pathWithoutLocale: "/" };
+    }
+
+    if (pathname.startsWith(`/${locale}/`)) {
+      const stripped = pathname.slice(locale.length + 1);
+      return {
+        locale,
+        pathWithoutLocale: stripped.startsWith("/") ? stripped : `/${stripped}`,
+      };
+    }
+  }
+
+  return { locale: null, pathWithoutLocale: pathname };
+}
+
+function buildLocalizedPath(path: string, locale: Locale | null): string {
+  if (!locale || path.startsWith(`/${locale}/`) || path === `/${locale}`) {
+    return path;
+  }
+
+  if (path === "/") {
+    return `/${locale}`;
+  }
+
+  return `/${locale}${path}`;
+}
+
+type DecodedSessionClaims = {
+  user_type?: string;
+};
+
+function decodeSessionClaims(token: string | undefined): DecodedSessionClaims | null {
+  if (!token) {
+    return null;
+  }
+
+  const segments = token.split(".");
+  if (segments.length < 2) {
+    return null;
+  }
+
+  try {
+    const base64 = segments[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const json = atob(padded);
+    return JSON.parse(json) as DecodedSessionClaims;
+  } catch {
+    return null;
+  }
+}
 
 function detectLocale(request: NextRequest): Locale {
   const cookie = request.cookies.get(LANGUAGE_COOKIE_NAME)?.value;
@@ -23,6 +122,7 @@ function detectLocale(request: NextRequest): Locale {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const { locale, pathWithoutLocale } = splitLocaleFromPath(pathname);
   const alreadyLocale = SUPPORTED_LOCALES.some(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)
   );
@@ -34,16 +134,24 @@ export function proxy(request: NextRequest) {
   }
 
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const isProtectedPath = EDGE_PROTECTED_PREFIXES.some(
+    (prefix) => pathWithoutLocale === prefix || pathWithoutLocale.startsWith(`${prefix}/`),
+  );
+  const sessionClaims = decodeSessionClaims(token);
+  const userType = sessionClaims?.user_type;
+  const isPlatformOnlyPath = PLATFORM_ONLY_PREFIXES.some(
+    (prefix) => pathWithoutLocale === prefix || pathWithoutLocale.startsWith(`${prefix}/`),
+  );
+  const isPlatformBlockedPath = PLATFORM_BLOCKED_PREFIXES.some(
+    (prefix) => pathWithoutLocale === prefix || pathWithoutLocale.startsWith(`${prefix}/`),
+  );
+  const isLoginPath = pathWithoutLocale === "/login";
 
   if (!token) {
-    const isProtectedPath = EDGE_PROTECTED_PREFIXES.some(
-      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-    );
-
     if (isProtectedPath) {
       const loginUrl = request.nextUrl.clone();
       const nextPath = `${pathname}${request.nextUrl.search}`;
-      loginUrl.pathname = "/login";
+      loginUrl.pathname = buildLocalizedPath("/login", locale);
       loginUrl.search = "";
       loginUrl.searchParams.set("next", nextPath || "/dashboard");
       return NextResponse.redirect(loginUrl);
@@ -52,9 +160,42 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === "/login" || pathname === "/ar/login" || pathname === "/en/login") {
+  if (userType === "platform_admin") {
+    if (isLoginPath) {
+      const url = request.nextUrl.clone();
+      url.pathname = buildLocalizedPath("/platform", locale);
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    if (isPlatformBlockedPath) {
+      const url = request.nextUrl.clone();
+      url.pathname = buildLocalizedPath("/platform", locale);
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  if (userType !== "platform_admin" && isPlatformOnlyPath) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = buildLocalizedPath("/dashboard", locale);
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  if (isLoginPath) {
+    const url = request.nextUrl.clone();
+    const requestedNext = request.nextUrl.searchParams.get("next");
+    if (userType === "platform_admin") {
+      url.pathname = buildLocalizedPath("/platform", locale);
+      url.search = "";
+    } else if (requestedNext && requestedNext.startsWith("/")) {
+      url.pathname = requestedNext;
+      url.search = "";
+    } else {
+      url.pathname = buildLocalizedPath("/dashboard", locale);
+      url.search = "";
+    }
     return NextResponse.redirect(url);
   }
 

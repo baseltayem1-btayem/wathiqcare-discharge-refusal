@@ -75,11 +75,7 @@ export async function POST(request: NextRequest) {
         patientIdNumber?: string;
         medicalRecordNo?: string;
         roomNumber?: string;
-<<<<<<< HEAD
-        metadata?: getPrisma().InputJsonValue;
-=======
         metadata?: Prisma.InputJsonValue;
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       }
       | null;
 
@@ -93,11 +89,7 @@ export async function POST(request: NextRequest) {
     await enforcePlanUsage(auth.tenant_id, UsageMetric.CASES, BigInt(1));
 
     const prisma = getPrisma();
-<<<<<<< HEAD
-    const created = await getPrisma().case.create({
-=======
     const created = await prisma.case.create({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
       data: {
         tenantId: auth.tenant_id,
         caseNumber: payload.caseNumber?.trim() || defaultCaseNumber(),

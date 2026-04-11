@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {
   Shield,
   FileText,
@@ -46,13 +45,14 @@ function NavBar({ lang }: { lang: string }) {
         dir={isRtl ? "rtl" : "ltr"}
       >
         <div className="flex items-center gap-3">
-          <Image
+          <img
             src="/images/wathiqcare-logo.png"
             alt="WathiqCare"
             width={140}
             height={40}
-            className="object-contain"
-            priority
+            className="h-auto object-contain"
+            loading="eager"
+            decoding="async"
           />
         </div>
         <nav className="hidden md:flex items-center gap-8 text-sm text-neutral-600 font-medium">
@@ -137,7 +137,7 @@ function StatsBar() {
   ];
 
   return (
-    <section className="bg-brand-blue py-10 px-6" dir={isRtl ? "rtl" : "ltr"}>
+    <section className="bg-cyan-800 py-10 px-6" dir={isRtl ? "rtl" : "ltr"}>
       <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
         {stats.map((s) => (
           <div key={s.label} className="text-center">
@@ -276,7 +276,7 @@ function ComplianceSection() {
   ];
 
   return (
-    <section className="py-16 px-6 bg-brand-navy" dir={isRtl ? "rtl" : "ltr"}>
+    <section className="py-16 px-6 bg-cyan-900" dir={isRtl ? "rtl" : "ltr"}>
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="wc-h3 text-white mb-2">
@@ -347,12 +347,14 @@ function Footer({ lang }: { lang: string }) {
     <footer className="wc-footer py-10 px-6" dir={isRtl ? "rtl" : "ltr"}>
       <div className="wc-container flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Image
+          <img
             src="/images/wathiqcare-logo.png"
             alt="WathiqCare"
             width={120}
             height={34}
-            className="object-contain brightness-0 invert"
+            className="h-auto object-contain brightness-0 invert"
+            loading="eager"
+            decoding="async"
           />
         </div>
         <nav className="flex flex-wrap justify-center gap-6 text-slate-400 text-sm">

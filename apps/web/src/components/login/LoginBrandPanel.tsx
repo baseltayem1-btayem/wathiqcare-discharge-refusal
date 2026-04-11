@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { ActivitySquare, Scale, ShieldCheck, Stethoscope } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -8,13 +7,14 @@ export default function LoginBrandPanel() {
   return (
     <section className="flex h-full flex-col">
       <div className="mb-5 flex justify-center">
-        <Image
+        <img
           src="/images/wathiqcare-logo.png"
           alt="WathiqCare"
           width={260}
           height={80}
           className="h-auto w-[180px] object-contain sm:w-[210px]"
-          priority
+          loading="eager"
+          decoding="async"
         />
       </div>
 

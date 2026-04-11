@@ -123,6 +123,25 @@ export function slugRoleCode(input: string): string {
         .slice(0, 40);
 }
 
+function isMissingTableError(error: unknown): boolean {
+    if (!error || typeof error !== "object") {
+        return false;
+    }
+
+    const code = (error as { code?: unknown }).code;
+    return code === "P2021" || code === "P2022";
+}
+
+async function relationExists(
+    prisma: ReturnType<typeof getPrisma>,
+    relationName: string,
+): Promise<boolean> {
+    const rows = await prisma.$queryRaw<Array<{ rel: string | null }>>`
+        SELECT to_regclass(${relationName})::text AS rel
+    `;
+    return Boolean(rows[0]?.rel);
+}
+
 export async function ensurePermissionCatalog(tx: TransactionClient): Promise<void> {
     for (const permission of PERMISSION_CATALOG) {
         await tx.permission.upsert({
@@ -143,86 +162,141 @@ export async function ensurePermissionCatalog(tx: TransactionClient): Promise<vo
 }
 
 export async function ensureTenantDepartments(tx: TransactionClient, tenantId: string): Promise<void> {
-    for (const department of DEFAULT_DEPARTMENTS) {
-        await tx.department.upsert({
-            where: {
-                tenantId_code: {
+    try {
+        for (const department of DEFAULT_DEPARTMENTS) {
+            await tx.department.upsert({
+                where: {
+                    tenantId_code: {
+                        tenantId,
+                        code: department.code,
+                    },
+                },
+                update: {
+                    name: department.name,
+                    isActive: true,
+                },
+                create: {
                     tenantId,
                     code: department.code,
+                    name: department.name,
+                    isActive: true,
                 },
-            },
-            update: {
-                name: department.name,
-                isActive: true,
-            },
-            create: {
-                tenantId,
-                code: department.code,
-                name: department.name,
-                isActive: true,
-            },
-        });
+            });
+        }
+    } catch (error) {
+        if (isMissingTableError(error)) {
+            console.warn("tenant-admin: departments table missing; skipping default department bootstrap");
+            return;
+        }
+        throw error;
     }
 }
 
 export async function ensureTenantRoleTemplates(tx: TransactionClient, tenantId: string): Promise<void> {
-    await ensurePermissionCatalog(tx);
-    const permissions = await tx.permission.findMany({
-        where: { isActive: true },
-    });
-    const permissionByKey = new Map(permissions.map((item: { key: string; id: string }) => [item.key, item.id]));
-
-    for (const template of DEFAULT_ROLE_TEMPLATES) {
-        const role = await tx.tenantRole.upsert({
-            where: {
-                tenantId_code: {
-                    tenantId,
-                    code: template.code,
-                },
-            },
-            update: {
-                name: template.name,
-                description: template.description,
-                status: "ACTIVE",
-            },
-            create: {
-                tenantId,
-                code: template.code,
-                name: template.name,
-                description: template.description,
-                status: "ACTIVE",
-                isTemplate: true,
-            },
+    try {
+        await ensurePermissionCatalog(tx);
+        const permissions = await tx.permission.findMany({
+            where: { isActive: true },
         });
+        const permissionByKey = new Map(permissions.map((item: { key: string; id: string }) => [item.key, item.id]));
 
-        for (const key of template.permissionKeys) {
-            const permissionId = permissionByKey.get(key);
-            if (!permissionId) continue;
-
-            await tx.tenantRolePermission.upsert({
+        for (const template of DEFAULT_ROLE_TEMPLATES) {
+            const role = await tx.tenantRole.upsert({
                 where: {
-                    tenantRoleId_permissionId: {
-                        tenantRoleId: role.id,
-                        permissionId,
+                    tenantId_code: {
+                        tenantId,
+                        code: template.code,
                     },
                 },
                 update: {
-                    allowed: true,
+                    name: template.name,
+                    description: template.description,
+                    status: "ACTIVE",
                 },
                 create: {
-                    tenantRoleId: role.id,
-                    permissionId,
-                    allowed: true,
+                    tenantId,
+                    code: template.code,
+                    name: template.name,
+                    description: template.description,
+                    status: "ACTIVE",
+                    isTemplate: true,
                 },
             });
+
+            for (const key of template.permissionKeys) {
+                const permissionId = permissionByKey.get(key);
+                if (!permissionId) continue;
+
+                await tx.tenantRolePermission.upsert({
+                    where: {
+                        tenantRoleId_permissionId: {
+                            tenantRoleId: role.id,
+                            permissionId,
+                        },
+                    },
+                    update: {
+                        allowed: true,
+                    },
+                    create: {
+                        tenantRoleId: role.id,
+                        permissionId,
+                        allowed: true,
+                    },
+                });
+            }
         }
+    } catch (error) {
+        if (isMissingTableError(error)) {
+            console.warn("tenant-admin: RBAC tables missing; skipping role template bootstrap");
+            return;
+        }
+        throw error;
     }
 }
 
 export async function bootstrapTenantAdminConfiguration(tenantId: string): Promise<void> {
     const prisma = getPrisma();
+
+    // Guard against partially migrated environments where RBAC tables are absent.
+    // If we enter a transaction and touch a missing table, Postgres aborts the
+    // whole transaction (25P02), which creates noisy non-fatal errors on every
+    // tenant creation. Preflight relations first and skip safely.
+    const [hasDepartmentTable, hasPermissionTable, hasTenantRoleTable, hasTenantRolePermissionTable, hasUserRoleAssignmentTable] =
+        await Promise.all([
+            relationExists(prisma, "departments"),
+            relationExists(prisma, "permissions"),
+            relationExists(prisma, "tenant_roles"),
+            relationExists(prisma, "tenant_role_permissions"),
+            relationExists(prisma, "user_role_assignments"),
+        ]);
+
+    if (!hasDepartmentTable) {
+        console.warn("tenant-admin: departments table missing; skipping default department bootstrap");
+    }
+
+    const hasRbacTables =
+        hasPermissionTable &&
+        hasTenantRoleTable &&
+        hasTenantRolePermissionTable &&
+        hasUserRoleAssignmentTable;
+
+    if (!hasRbacTables) {
+        console.warn("tenant-admin: RBAC tables missing; skipping role template bootstrap");
+    }
+
+    if (!hasDepartmentTable && !hasRbacTables) {
+        return;
+    }
+
     return await prisma.$transaction(async (tx: TransactionClient) => {
-        await ensureTenantDepartments(tx, tenantId);
+        if (hasDepartmentTable) {
+            await ensureTenantDepartments(tx, tenantId);
+        }
+
+        if (!hasRbacTables) {
+            return;
+        }
+
         await ensureTenantRoleTemplates(tx, tenantId);
 
         const tenantAdminRole = await tx.tenantRole.findUnique({
@@ -272,6 +346,9 @@ export async function bootstrapTenantAdminConfiguration(tenantId: string): Promi
                 });
             }
         }
+    }, {
+        maxWait: 10_000,
+        timeout: 30_000,
     });
 }
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Mail, Lock, KeyRound } from "lucide-react";
@@ -223,13 +222,14 @@ export default function LangLoginPage() {
                 {/* Logo */}
                 <div className="mb-5 flex justify-center">
                   <div className="relative w-[160px] sm:w-[190px] md:w-[210px]">
-                    <Image
+                    <img
                       src="/images/wathiqcare-logo.png"
                       alt="WathiqCare"
                       width={420}
                       height={120}
                       className="h-auto w-full object-contain"
-                      priority
+                      loading="eager"
+                      decoding="async"
                     />
                   </div>
                 </div>

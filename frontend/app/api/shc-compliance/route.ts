@@ -79,11 +79,7 @@ export async function POST(request: NextRequest) {
     const patient = (payload.patient ?? {}) as Record<string, unknown>;
     const signature = (payload.signature ?? {}) as Record<string, unknown>;
 
-<<<<<<< HEAD
-    const existingCase = await getPrisma().case.findUnique({ where: { id: payload.caseId } });
-=======
     const existingCase = await prisma.case.findUnique({ where: { id: payload.caseId } });
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (!existingCase) {
       throw new ApiError(404, "Case not found");
     }
@@ -149,17 +145,10 @@ export async function POST(request: NextRequest) {
       },
     } satisfies Record<string, unknown>;
 
-<<<<<<< HEAD
-    await getPrisma().case.update({
-      where: { id: payload.caseId },
-      data: {
-        metadata: toInputJsonValue(updatedMetadata) as getPrisma().InputJsonObject,
-=======
     await prisma.case.update({
       where: { id: payload.caseId },
       data: {
         metadata: toInputJsonValue(updatedMetadata) as Prisma.InputJsonObject,
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         updatedByUserId: auth.sub,
       },
     });

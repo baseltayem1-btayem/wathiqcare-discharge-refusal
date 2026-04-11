@@ -225,43 +225,10 @@ fetch_case_artifacts() {
   printf 'case_audit=%s\n' "$(cat "$WORK_DIR/case-audit.body")"
 }
 
-<<<<<<< HEAD
-
-print_env() {
-  log "Environment Variables:"
-  log "BASE_URL=$BASE_URL"
-  log "RUN_PUBLIC_EMAIL_TEST=$RUN_PUBLIC_EMAIL_TEST"
-  log "TENANT_EMAIL=$TENANT_EMAIL"
-  log "TENANT_PASSWORD=${TENANT_PASSWORD:+***}"
-  log "SMOKE_RECIPIENT_EMAIL=$SMOKE_RECIPIENT_EMAIL"
-  log "TYPED_NAME=$TYPED_NAME"
-}
-
-summary() {
-  log "--- SMOKE TEST SUMMARY ---"
-  if [[ -n "$CASE_ID" ]]; then
-    log "Case ID: $CASE_ID"
-  fi
-  if [[ -n "$SECURE_URL" ]]; then
-    log "Secure Link: $SECURE_URL"
-  fi
-  if [[ -n "$DELIVERY_STATUS" ]]; then
-    log "Delivery Status: $DELIVERY_STATUS"
-  fi
-  log "See above for detailed step-by-step output."
-}
-
-=======
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 main() {
   require_command curl
   require_command python3
 
-<<<<<<< HEAD
-  print_env
-
-=======
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
   check_public_health
   check_public_email
 
@@ -275,11 +242,6 @@ main() {
     log "tenant credentials not provided; skipped authenticated tenant smoke path"
     printf 'tenant_smoke_skipped=true\n'
   fi
-<<<<<<< HEAD
-
-  summary
-=======
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
 }
 
 main "$@"

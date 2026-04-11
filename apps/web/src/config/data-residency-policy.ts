@@ -58,7 +58,6 @@ export function getDefaultResidencyRegion(): string {
   return (
     process.env.PRIMARY_DATA_REGION ||
     process.env.PATIENT_DATA_REGION ||
-    process.env.VERCEL_REGION ||
     "saudi-arabia-riyadh"
   );
 }

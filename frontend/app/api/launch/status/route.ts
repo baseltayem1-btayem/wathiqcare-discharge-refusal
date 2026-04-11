@@ -55,11 +55,7 @@ export async function GET(request: NextRequest) {
           ],
         },
       }),
-<<<<<<< HEAD
-      getPrisma().auditLog.findMany({
-=======
       prisma.auditLog.findMany({
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
         where: {
           tenantId,
           createdAt: { gte: dayAgo },

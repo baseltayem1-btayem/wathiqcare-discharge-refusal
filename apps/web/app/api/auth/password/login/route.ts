@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UserType } from "@prisma/client";
-import { ApiError, handleApiError } from "@/lib/server/http";
+import { ApiError, handleApiError, jsonSuccess } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import {
   buildSessionCookieOptions,
@@ -329,15 +329,17 @@ async function resetFailedPasswordAttempts(
 function buildLoginSuccessResponse(args: {
   accessToken: string;
   redirectTo: string;
+  userType: "platform_admin" | "tenant_admin" | "tenant_user";
   request: NextRequest;
 }): NextResponse {
-  const { accessToken, redirectTo, request } = args;
+  const { accessToken, redirectTo, request, userType } = args;
 
-  const response = NextResponse.json(
+  const response = jsonSuccess(
     {
       ok: true,
       accessToken,
       redirectTo,
+      userType,
     },
     {
       status: 200,
@@ -544,6 +546,7 @@ export async function POST(request: NextRequest) {
     return buildLoginSuccessResponse({
       accessToken: session.accessToken,
       redirectTo: session.redirectTo,
+      userType: session.userType,
       request,
     });
   } catch (error) {

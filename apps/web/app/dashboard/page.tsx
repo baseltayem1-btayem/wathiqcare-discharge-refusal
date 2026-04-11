@@ -174,16 +174,16 @@ export default function DashboardPage() {
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 cursor-not-allowed" title="Monitoring only">
                     Monitoring only
                   </span>
-                  <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <AlertTriangle className="h-4 w-4" />
-                      Dashboard is monitoring-only
-                    </div>
-                    <p className="mt-1 text-amber-800">
-                      No actions or workflow entry are available here. All execution and case management must be performed in <b>Cases</b>.
-                    </p>
-                  </section>
                 </div>
+                <section className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <AlertTriangle className="h-4 w-4" />
+                    Dashboard is monitoring-only
+                  </div>
+                  <p className="mt-1 text-amber-800">
+                    No actions or workflow entry are available here. All execution and case management must be performed in <b>Cases</b>.
+                  </p>
+                </section>
                 <div className="space-y-2">
                   {data.pendingByDepartment.map((item) => {
                     const width = Math.max(4, Math.round((item.count / maxDept) * 100));

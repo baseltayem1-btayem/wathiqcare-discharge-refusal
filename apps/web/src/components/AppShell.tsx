@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Stethoscope } from "lucide-react";
@@ -185,13 +184,14 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
             </div>
             <div className="mt-3 rounded-lg border border-cyan-100 bg-white/80 px-3 py-2">
               <div className="flex justify-center">
-                <Image
+                <img
                   src="/images/wathiqcare-logo.png"
                   alt={t("app.name")}
                   width={180}
                   height={54}
                   className="h-auto w-[110px] object-contain"
-                  priority
+                  loading="eager"
+                  decoding="async"
                 />
               </div>
             </div>

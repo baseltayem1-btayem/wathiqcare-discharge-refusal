@@ -12,17 +12,6 @@ function htmlDownloadResponse(content: string, fileName: string): NextResponse {
     });
 }
 
-<<<<<<< HEAD
-export async function GET(request: NextRequest, { params }: RouteContext) {
-    const auth = await requireAuth(request);
-    const { documentId } = await params;
-
-    const backendResponse = await forwardToBackend(
-        request,
-        `/api/documents/${encodeURIComponent(documentId)}/download`,
-    );
-
-=======
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ documentId: string }> },
@@ -31,31 +20,11 @@ export async function GET(
     const { documentId } = await params;
 
     const backendResponse = await forwardToBackend(request, `/api/documents/${encodeURIComponent(documentId)}/download`);
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     if (backendResponse.ok) {
         return backendResponse;
     }
 
     const prisma = getPrisma();
-<<<<<<< HEAD
-
-    const document = await prisma.document.findUnique({
-        where: { id: documentId },
-    });
-
-    if (!document || document.tenantId !== auth.tenant_id) {
-        return NextResponse.json(
-            { detail: "Document not found" },
-            { status: 404 },
-        );
-    }
-
-    if (document.previewHtml && document.previewHtml.trim()) {
-        return htmlDownloadResponse(
-            document.previewHtml,
-            document.fileName || `${document.templateKey}.html`,
-        );
-=======
     const document = await prisma.document.findUnique({ where: { id: documentId } });
     if (!document || document.tenantId !== auth.tenant_id) {
         return NextResponse.json({ detail: "Document not found" }, { status: 404 });
@@ -63,7 +32,6 @@ export async function GET(
 
     if (document.previewHtml && document.previewHtml.trim()) {
         return htmlDownloadResponse(document.previewHtml, document.fileName || `${document.templateKey}.html`);
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
     }
 
     return NextResponse.json(
@@ -73,8 +41,4 @@ export async function GET(
         },
         { status: 503 },
     );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 8b4edbb0e6b97c2ecf6f01145c6f0146116c6f6e
