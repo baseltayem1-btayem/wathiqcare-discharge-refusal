@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Building2, Plus, RefreshCw, Shield, Users, X } from "lucide-react";
+import { AlertCircle, Building2, Lock, Plus, RefreshCw, Shield, Users, X } from "lucide-react";
 import { apiFetchJson } from "@/utils/api";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ type TenantListItem = {
   code: string;
   name: string;
   domain?: string | null;
+  metadata?: Record<string, unknown> | null;
   authConfig?: {
     password_enabled?: boolean;
     microsoft_sso_enabled?: boolean;
@@ -96,7 +97,14 @@ export default function TenantsPage() {
   const [adminForm, setAdminForm] = useState(EMPTY_ADMIN_FORM);
   const [savingAdmin, setSavingAdmin] = useState(false);
 
+  // Login settings modal
+  const [loginSettingsTenantId, setLoginSettingsTenantId] = useState<string | null>(null);
+  const [loginSettingsForm, setLoginSettingsForm] = useState<TenantAuthConfig>({ ...DEFAULT_AUTH_CONFIG });
+  const [savingLoginSettings, setSavingLoginSettings] = useState(false);
+  const [loginSettingsError, setLoginSettingsError] = useState<string | null>(null);
+
   const adminModalTenant = tenants.find((t) => t.id === adminModalTenantId) ?? null;
+  const loginSettingsTenant = tenants.find((t) => t.id === loginSettingsTenantId) ?? null;
 
   const loadTenants = useCallback(async () => {
     setRefreshing(true);
@@ -189,34 +197,82 @@ export default function TenantsPage() {
     }
   }
 
-  async function handleAuthConfigToggle(
-    tenant: TenantListItem,
-    key: keyof TenantAuthConfig,
-    nextValue: boolean,
-  ) {
-    const current = normalizeAuthConfig(tenant.authConfig);
-    const nextConfig = { ...current, [key]: nextValue };
+  function openLoginSettings(tenant: TenantListItem) {
+    setLoginSettingsTenantId(tenant.id);
+    setLoginSettingsForm(normalizeAuthConfig(tenant.authConfig));
+    setLoginSettingsError(null);
+  }
 
+  function closeLoginSettings() {
+    setLoginSettingsTenantId(null);
+    setLoginSettingsForm({ ...DEFAULT_AUTH_CONFIG });
+    setLoginSettingsError(null);
+  }
+
+  function getEnabledAuthMethods(config: TenantAuthConfig): string[] {
+    const methods: string[] = [];
+    if (config.password_enabled) methods.push("Password Login");
+    if (config.microsoft_sso_enabled) methods.push("Microsoft SSO");
+    if (config.secure_link_enabled) methods.push("Secure Link");
+    return methods;
+  }
+
+  function handleLoginSettingsToggle(key: keyof TenantAuthConfig, value: boolean) {
+    const newConfig = { ...loginSettingsForm, [key]: value };
+    const enabledMethods = getEnabledAuthMethods(newConfig);
+
+    if (enabledMethods.length === 0) {
+      setLoginSettingsError("At least one authentication method must be enabled");
+      return;
+    }
+
+    // Validate Microsoft SSO configuration if enabling it
+    if (key === "microsoft_sso_enabled" && value === true) {
+      if (!loginSettingsTenant?.metadata) {
+        setLoginSettingsError(
+          "Microsoft SSO requires valid Azure AD configuration. Please configure it first."
+        );
+        return;
+      }
+    }
+
+    setLoginSettingsError(null);
+    setLoginSettingsForm(newConfig);
+  }
+
+  async function handleSaveLoginSettings() {
+    if (!loginSettingsTenantId) return;
+
+    const enabledMethods = getEnabledAuthMethods(loginSettingsForm);
+    if (enabledMethods.length === 0) {
+      setLoginSettingsError("At least one authentication method must be enabled");
+      return;
+    }
+
+    setSavingLoginSettings(true);
     try {
-      await apiFetchJson(`/api/tenants/${tenant.id}`, {
+      await apiFetchJson(`/api/tenants/${loginSettingsTenantId}`, {
         method: "PATCH",
-        body: JSON.stringify({ authConfig: nextConfig }),
+        body: JSON.stringify({ authConfig: loginSettingsForm }),
       });
 
       setTenants((prev) =>
         prev.map((item) =>
-          item.id === tenant.id
+          item.id === loginSettingsTenantId
             ? {
                 ...item,
-                authConfig: nextConfig,
+                authConfig: loginSettingsForm,
               }
             : item,
         ),
       );
 
-      toast.success("Authentication configuration updated");
+      toast.success("Login settings updated successfully");
+      closeLoginSettings();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update authentication settings");
+      toast.error(err instanceof Error ? err.message : "Failed to update login settings");
+    } finally {
+      setSavingLoginSettings(false);
     }
   }
 
@@ -339,7 +395,7 @@ export default function TenantsPage() {
                 <th className="px-4 py-3 text-left">Domain</th>
                 <th className="px-4 py-3 text-left">Status</th>
                 <th className="px-4 py-3 text-left">Subscription</th>
-                <th className="px-4 py-3 text-left">Auth Methods</th>
+                <th className="px-4 py-3 text-left">Login Methods</th>
                 <th className="px-4 py-3 text-left">Seats</th>
                 <th className="px-4 py-3 text-left">Cases</th>
                 <th className="px-4 py-3 text-left">Actions</th>
@@ -356,6 +412,7 @@ export default function TenantsPage() {
                   const sub = tenant.subscriptions?.[0];
                   const seatsAvailable = seats.limit > 0 ? seats.limit - seats.used : 0;
                   const authConfig = normalizeAuthConfig(tenant.authConfig);
+                  const enabledMethods = getEnabledAuthMethods(authConfig);
                   return (
                     <tr key={tenant.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
@@ -377,32 +434,18 @@ export default function TenantsPage() {
                         ) : <span className="text-slate-300">—</span>}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1 text-xs">
-                          <label className="inline-flex items-center gap-2 text-slate-700">
-                            <input
-                              type="checkbox"
-                              checked={authConfig.password_enabled}
-                              onChange={(e) => void handleAuthConfigToggle(tenant, "password_enabled", e.target.checked)}
-                            />
-                            Password
-                          </label>
-                          <label className="inline-flex items-center gap-2 text-slate-700">
-                            <input
-                              type="checkbox"
-                              checked={authConfig.microsoft_sso_enabled}
-                              onChange={(e) => void handleAuthConfigToggle(tenant, "microsoft_sso_enabled", e.target.checked)}
-                            />
-                            Microsoft SSO
-                          </label>
-                          <label className="inline-flex items-center gap-2 text-slate-700">
-                            <input
-                              type="checkbox"
-                              checked={authConfig.secure_link_enabled}
-                              onChange={(e) => void handleAuthConfigToggle(tenant, "secure_link_enabled", e.target.checked)}
-                            />
-                            Secure Link
-                          </label>
-                        </div>
+                        {enabledMethods.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {enabledMethods.map((method) => (
+                              <span key={method} className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                <Lock className="h-3 w-3" />
+                                {method}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-medium text-slate-700">{seats.used}</span>
@@ -412,6 +455,13 @@ export default function TenantsPage() {
                       <td className="px-4 py-3 text-slate-600">{tenant._count?.cases ?? 0}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
+                          <button type="button"
+                            onClick={() => openLoginSettings(tenant)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                            title="Configure login methods">
+                            <Lock className="h-3 w-3" />
+                            Login Settings
+                          </button>
                           <button type="button"
                             onClick={() => { setAdminModalTenantId(tenant.id); setAdminForm(EMPTY_ADMIN_FORM); }}
                             className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
@@ -498,6 +548,119 @@ export default function TenantsPage() {
               <button type="button" onClick={() => void handleCreateAdmin()} disabled={savingAdmin}
                 className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50">
                 {savingAdmin ? "Creating..." : "Create Admin"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loginSettingsTenantId && loginSettingsTenant && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Login Settings</h3>
+                <p className="mt-0.5 text-xs text-slate-500">For: {loginSettingsTenant.name}</p>
+              </div>
+              <button type="button" onClick={() => closeLoginSettings()} className="text-slate-400 hover:text-slate-600">
+                <span className="sr-only">Close login settings dialog</span>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-5 p-5">
+              {/* Enabled Methods Summary */}
+              <div className="rounded-lg bg-blue-50 p-3">
+                <p className="mb-2 text-xs font-medium text-blue-900">Active Login Methods</p>
+                <div className="flex flex-wrap gap-1">
+                  {getEnabledAuthMethods(loginSettingsForm).length > 0 ? (
+                    getEnabledAuthMethods(loginSettingsForm).map((method) => (
+                      <span key={method} className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                        <Lock className="h-3 w-3" />
+                        {method}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-blue-600">None selected</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {loginSettingsError && (
+                <div className="flex gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-600" />
+                  <p className="text-xs text-rose-700">{loginSettingsError}</p>
+                </div>
+              )}
+
+              {/* Auth Method Toggles */}
+              <div className="space-y-3">
+                <div className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900">Password Login</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Allow users to sign in with email and password</p>
+                  </div>
+                  <label className="ml-3 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={loginSettingsForm.password_enabled}
+                      onChange={(e) => handleLoginSettingsToggle("password_enabled", e.target.checked)}
+                      className="rounded border-slate-300"
+                    />
+                    <span className="sr-only">Toggle password login</span>
+                  </label>
+                </div>
+
+                <div className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900">Microsoft SSO</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Allow users to sign in with Microsoft account</p>
+                  </div>
+                  <label className="ml-3 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={loginSettingsForm.microsoft_sso_enabled}
+                      onChange={(e) => handleLoginSettingsToggle("microsoft_sso_enabled", e.target.checked)}
+                      className="rounded border-slate-300"
+                    />
+                    <span className="sr-only">Toggle Microsoft SSO</span>
+                  </label>
+                </div>
+
+                <div className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900">Secure Link (Magic Link)</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Allow users to sign in with email link</p>
+                  </div>
+                  <label className="ml-3 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={loginSettingsForm.secure_link_enabled}
+                      onChange={(e) => handleLoginSettingsToggle("secure_link_enabled", e.target.checked)}
+                      className="rounded border-slate-300"
+                    />
+                    <span className="sr-only">Toggle secure link login</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Info Message */}
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                <p className="text-xs text-blue-700">
+                  <strong>Note:</strong> Changes will be reflected immediately on the login page for this tenant.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button type="button" onClick={() => closeLoginSettings()}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                Cancel
+              </button>
+              <button type="button" onClick={() => void handleSaveLoginSettings()} disabled={savingLoginSettings}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                {savingLoginSettings ? "Saving..." : "Save Settings"}
               </button>
             </div>
           </div>
