@@ -65,7 +65,9 @@ def test_sms_otp_live_provider_dispatches_http(monkeypatch):
     monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.delenv("WATHIQ_SMS_STUB_MODE", raising=False)
     monkeypatch.setenv("SMS_PROVIDER", "taqnyat")
+    monkeypatch.setenv("SMS_BASE_URL", "https://api.taqnyat.sa")
     monkeypatch.setenv("SMS_BEARER_TOKEN", "provider-key")
+    monkeypatch.setenv("SMS_SENDER", "WathiqCare")
     monkeypatch.setenv("SMS_ENABLED", "true")
 
     captured: dict[str, object] = {}
@@ -101,6 +103,8 @@ def test_sms_otp_stub_mode_is_rejected_in_production(monkeypatch):
 
 
 def test_taqnyat_normalizes_ksa_phone_numbers(monkeypatch):
+    monkeypatch.setenv("SMS_BASE_URL", "https://api.taqnyat.sa")
+    monkeypatch.setenv("SMS_SENDER", "WathiqCare")
     monkeypatch.setenv("SMS_BEARER_TOKEN", "provider-key")
     provider = TaqnyatProvider()
 
@@ -108,6 +112,64 @@ def test_taqnyat_normalizes_ksa_phone_numbers(monkeypatch):
     assert provider.normalize_recipient("00966500000000") == "966500000000"
     assert provider.normalize_recipient("0500000000") == "966500000000"
     assert provider.normalize_recipient("500000000") == "966500000000"
+
+
+def test_taqnyat_send_sms_invalid_phone_returns_failure(monkeypatch):
+    monkeypatch.setenv("SMS_BASE_URL", "https://api.taqnyat.sa")
+    monkeypatch.setenv("SMS_SENDER", "WathiqCare")
+    monkeypatch.setenv("SMS_BEARER_TOKEN", "provider-key")
+    provider = TaqnyatProvider()
+
+    result = provider.send_sms("abc", "test")
+
+    assert result["ok"] is False
+    assert result["status_code"] == 400
+    assert result["data"]["error_code"] == "INVALID_PHONE_NUMBER"
+
+
+def test_taqnyat_send_sms_retries_then_succeeds(monkeypatch):
+    monkeypatch.setenv("SMS_BASE_URL", "https://api.taqnyat.sa")
+    monkeypatch.setenv("SMS_SENDER", "WathiqCare")
+    monkeypatch.setenv("SMS_BEARER_TOKEN", "provider-key")
+    monkeypatch.setenv("SMS_RETRY_BACKOFF_SECONDS", "0.01")
+    provider = TaqnyatProvider()
+
+    class _Response:
+        def __init__(self, status_code: int, payload: dict):
+            self.status_code = status_code
+            self._payload = payload
+            self.ok = status_code < 400
+            self.text = str(payload)
+
+        def json(self):
+            return self._payload
+
+    attempts = {"count": 0}
+
+    def _fake_request(**kwargs):
+        attempts["count"] += 1
+        if attempts["count"] < 3:
+            return _Response(503, {"statusCode": 503, "message": "temporary error"})
+        return _Response(201, {"statusCode": 201, "message": "accepted"})
+
+    monkeypatch.setattr("backend.services.notifications.taqnyat_provider.requests.request", _fake_request)
+
+    result = provider.send_sms("0500000000", "retry message")
+
+    assert attempts["count"] == 3
+    assert result["ok"] is True
+    assert result["status_code"] == 201
+    assert result["attempt"] == 3
+    assert result["max_attempts"] == 3
+
+
+def test_taqnyat_requires_base_url_sender_and_token(monkeypatch):
+    monkeypatch.delenv("SMS_BASE_URL", raising=False)
+    monkeypatch.delenv("SMS_SENDER", raising=False)
+    monkeypatch.delenv("SMS_BEARER_TOKEN", raising=False)
+
+    with pytest.raises(ValueError, match="SMS_BASE_URL"):
+        TaqnyatProvider()
 
 
 def test_tablet_signature_capture_returns_proof_metadata():

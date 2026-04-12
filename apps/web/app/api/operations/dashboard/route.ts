@@ -1,7 +1,7 @@
 import { SlaState } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
-import { ApiError, handleApiError } from "@/lib/server/http";
+import { ApiError, handleApiError, logApiFailure } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { DEPARTMENT_LABELS, runSlaSweepForTenant } from "@/lib/server/operations";
 function startOfDayOffset(offset: number): Date {
@@ -9,9 +9,18 @@ function startOfDayOffset(offset: number): Date {
         return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offset));
 }
 
-function emptyDashboardPayload() {
+function resolveTraceId(request: NextRequest): string {
+        return (
+                request.headers.get("x-trace-id")?.trim() ||
+                request.headers.get("x-request-id")?.trim() ||
+                `ops-dashboard-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`
+        );
+}
+
+function emptyDashboardPayload(traceId?: string) {
     return {
         generatedAt: new Date().toISOString(),
+        traceId,
         summary: {
             totalActiveCases: 0,
             delayedCases: 0,
@@ -53,6 +62,8 @@ function emptyDashboardPayload() {
 }
 
 export async function GET(request: NextRequest) {
+    const traceId = resolveTraceId(request);
+
     try {
         const auth = await requireAuth(request);
         const tenantId = requireTenantId(auth);
@@ -155,6 +166,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             generatedAt: new Date().toISOString(),
+            traceId,
             summary: {
                 totalActiveCases,
                 delayedCases,
@@ -172,16 +184,22 @@ export async function GET(request: NextRequest) {
             timelineAging,
         });
     } catch (error) {
-        console.error("OPERATIONS_DASHBOARD_GET_FAILED", {
+        logApiFailure({
+            traceId,
+            status: error instanceof ApiError ? error.status : 500,
+            message: error instanceof ApiError ? error.message : "Failed to load operations dashboard",
             error,
-            message: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
+            code: "OPERATIONS_DASHBOARD_GET_FAILED",
         });
 
         if (error instanceof ApiError) {
             return handleApiError(error);
         }
 
-        return NextResponse.json(emptyDashboardPayload());
+        return NextResponse.json(emptyDashboardPayload(traceId), {
+            headers: {
+                "x-trace-id": traceId,
+            },
+        });
     }
 }

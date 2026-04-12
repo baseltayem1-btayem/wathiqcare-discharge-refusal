@@ -96,8 +96,8 @@ Set `DATABASE_URL`, `REDIS_URL`, and all secrets as environment variables on the
 ### SMS not delivered
 
 1. Check `notifications` table: `delivery_status`, `failure_reason`.
-2. Verify `SMS_PROVIDER` is set correctly (`taqnyat` or `unifonic`).
-3. Check API key validity with the provider dashboard.
+2. Verify `SMS_PROVIDER=taqnyat` and `SMS_ENABLED=true`.
+3. Verify `SMS_BASE_URL`, `SMS_BEARER_TOKEN`, and `SMS_SENDER` are set correctly.
 4. If SMS fails and `email` is present on the session, a fallback email job is enqueued automatically.
 
 ### PDF not generating
@@ -121,6 +121,30 @@ Set `DATABASE_URL`, `REDIS_URL`, and all secrets as environment variables on the
 - Structured JSON logs emitted to stdout; collect with your log aggregator.
 - Failed SMS, PDF, payment events surface in the admin notification/payment logs.
 - Critical errors raise `500` with a sanitised message (no stack traces to client).
+
+---
+
+## Manual SMS Verification
+
+Use a platform admin bearer token and call the backend API directly.
+
+```bash
+# 1) Provider health/status
+curl -X GET "$API_BASE_URL/api/sms/status" \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+
+# 2) Send a test SMS
+curl -X POST "$API_BASE_URL/api/sms/test" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"to":"+9665XXXXXXXX","message":"WathiqCare SMS production test"}'
+```
+
+Expected log events:
+
+- `sms_send_requested`
+- `sms_send_succeeded`
+- `sms_send_failed` (only on error paths, with status and attempt metadata)
 
 ---
 

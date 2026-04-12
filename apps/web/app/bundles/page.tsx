@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Download, FolderArchive, PackagePlus, RefreshCw } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
@@ -20,6 +21,7 @@ type GenerateBundleResponse = {
 
 export default function BundlesPage() {
   const { t } = useI18n();
+  const permissions = useUiPermissions();
 
   const [bundles, setBundles] = useState<BundleItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +31,9 @@ export default function BundlesPage() {
   const [newBundleCaseId, setNewBundleCaseId] = useState("");
   const [creatingBundle, setCreatingBundle] = useState(false);
   const [downloadingName, setDownloadingName] = useState<string | null>(null);
+
+  const canGenerateBundle = permissions.can("legal.approve.readiness");
+  const canDownloadBundle = permissions.can("documents.download.final");
 
   const loadBundles = useCallback(async () => {
     setLoading(true);
@@ -51,6 +56,11 @@ export default function BundlesPage() {
 
   async function handleCreateBundle(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canGenerateBundle) {
+      setError(permissions.deniedMessage);
+      return;
+    }
+
     const trimmedCaseId = newBundleCaseId.trim();
     if (!trimmedCaseId) {
       return;
@@ -80,6 +90,11 @@ export default function BundlesPage() {
   }
 
   async function handleDownloadBundle(bundleName: string) {
+    if (!canDownloadBundle) {
+      setError(permissions.deniedMessage);
+      return;
+    }
+
     setDownloadingName(bundleName);
     setError("");
 
@@ -163,12 +178,16 @@ export default function BundlesPage() {
 
             <button
               type="submit"
-              disabled={creatingBundle}
+              disabled={creatingBundle || !canGenerateBundle}
+              title={!canGenerateBundle ? permissions.deniedMessage : undefined}
               className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
             >
               <PackagePlus className="h-4 w-4" />
               {creatingBundle ? t("bundles.generating") : t("bundles.generate")}
             </button>
+            {!canGenerateBundle ? (
+              <span className="text-xs text-amber-700">{permissions.deniedMessage}</span>
+            ) : null}
           </form>
         </section>
 
@@ -194,6 +213,8 @@ export default function BundlesPage() {
                   </div>
                   <button
                     type="button"
+                    disabled={downloadingName === bundle.name || !canDownloadBundle}
+                    title={!canDownloadBundle ? permissions.deniedMessage : undefined}
                     onClick={() => {
                       void handleDownloadBundle(bundle.name);
                     }}

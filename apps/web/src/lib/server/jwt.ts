@@ -19,6 +19,7 @@ export type JwtClaims = {
 
 const DEFAULT_ISSUER = "wathiqcare";
 const REQUIRED_ALGORITHM = "HS256" as const;
+const DEFAULT_CLOCK_SKEW_SECONDS = 30;
 
 function decodeBase64Url(input: string): string {
     const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
@@ -48,6 +49,20 @@ export function getJwtSecret(): string {
         throw new Error("JWT_SECRET_KEY is not configured");
     }
     return secret;
+}
+
+function getJwtClockSkewSeconds(): number {
+    const raw = process.env.JWT_CLOCK_SKEW_SECONDS?.trim();
+    if (!raw) {
+        return DEFAULT_CLOCK_SKEW_SECONDS;
+    }
+
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        return DEFAULT_CLOCK_SKEW_SECONDS;
+    }
+
+    return Math.floor(parsed);
 }
 
 export function createSignedJwt(payload: JwtClaims): string {
@@ -115,9 +130,10 @@ export function verifyAndDecodeJwt(token: string): JwtClaims {
     }
 
     const now = Math.floor(Date.now() / 1000);
-    if (typeof claims.exp === "number" && claims.exp < now) {
+    const clockSkewSeconds = getJwtClockSkewSeconds();
+    if (typeof claims.exp === "number" && claims.exp + clockSkewSeconds < now) {
         throw new Error("Access token expired");
     }
 
-        return claims;
-    }
+    return claims;
+}

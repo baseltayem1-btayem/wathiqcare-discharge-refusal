@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from backend.api.deps import require_roles
+from backend.core.rbac import require_permission
 from backend.services.notifications.sms_service import SmsService
 
 router = APIRouter(prefix="/api/sms", tags=["sms"])
@@ -33,9 +34,10 @@ def _raise_if_failed(result: dict, operation: str) -> None:
 @router.post("/test")
 def test_sms(
     req: SmsTestRequest,
-    _: dict = Depends(require_roles("platform_superadmin", "platform_admin")),
+    current_user: dict = Depends(require_roles("platform_superadmin", "platform_admin")),
 ):
     """Send a test SMS message. Requires SMS_ENABLED=true and valid credentials."""
+    require_permission(current_user, "sms.send")
     service = SmsService()
     result = service.send(req.to, req.message)
 
@@ -46,9 +48,10 @@ def test_sms(
 
 @router.get("/status")
 def get_sms_status(
-    _: dict = Depends(require_roles("platform_superadmin", "platform_admin")),
+    current_user: dict = Depends(require_roles("platform_superadmin", "platform_admin")),
 ):
     """Get Taqnyat system status (/system/status)."""
+    require_permission(current_user, "sms.send")
     service = SmsService()
     result = service.get_system_status()
 
@@ -59,9 +62,10 @@ def get_sms_status(
 
 @router.get("/balance")
 def get_sms_balance(
-    _: dict = Depends(require_roles("platform_superadmin", "platform_admin")),
+    current_user: dict = Depends(require_roles("platform_superadmin", "platform_admin")),
 ):
     """Get Taqnyat account balance (/account/balance)."""
+    require_permission(current_user, "sms.send")
     service = SmsService()
     result = service.get_account_balance()
 
@@ -72,9 +76,10 @@ def get_sms_balance(
 
 @router.get("/senders")
 def get_sms_senders(
-    _: dict = Depends(require_roles("platform_superadmin", "platform_admin")),
+    current_user: dict = Depends(require_roles("platform_superadmin", "platform_admin")),
 ):
     """Get Taqnyat approved sender names (/v1/messages/senders)."""
+    require_permission(current_user, "sms.send")
     service = SmsService()
     result = service.get_sender_names()
 

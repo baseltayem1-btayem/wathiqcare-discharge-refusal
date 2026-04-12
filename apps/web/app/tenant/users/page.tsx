@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { ApiHttpError, apiFetch } from "@/utils/api";
 import { toast } from "sonner";
 
@@ -34,6 +35,7 @@ type TenantUsersPayload = {
 };
 
 export default function TenantUsersPage() {
+    const permissions = useUiPermissions();
     const [payload, setPayload] = useState<TenantUsersPayload | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -46,6 +48,8 @@ export default function TenantUsersPage() {
         role: "user",
         department: "",
     });
+
+    const canManageUsers = permissions.can("users.manage");
 
     async function loadUsers() {
         setLoading(true);
@@ -67,6 +71,11 @@ export default function TenantUsersPage() {
 
     async function onCreateUser(e: React.FormEvent) {
         e.preventDefault();
+        if (!canManageUsers) {
+            setError(permissions.deniedMessage);
+            return;
+        }
+
         setSubmitting(true);
         setError(null);
 
@@ -86,6 +95,11 @@ export default function TenantUsersPage() {
     }
 
     async function onResendInvite(userId: string) {
+        if (!canManageUsers) {
+            toast.error(permissions.deniedMessage);
+            return;
+        }
+
         setActionLoading((prev) => ({ ...prev, [`resend_${userId}`]: true }));
         try {
             await apiFetch<{ success: boolean }>(`/api/tenant/users/${userId}/resend-invite`, {
@@ -101,6 +115,11 @@ export default function TenantUsersPage() {
     }
 
     async function onResetPassword(userId: string) {
+        if (!canManageUsers) {
+            toast.error(permissions.deniedMessage);
+            return;
+        }
+
         setActionLoading((prev) => ({ ...prev, [`reset_${userId}`]: true }));
         try {
             await apiFetch<{ success: boolean }>(`/api/tenant/users/${userId}/reset-password`, {
@@ -191,11 +210,15 @@ export default function TenantUsersPage() {
                             <div className="md:col-span-2">
                                 <button
                                     type="submit"
-                                    disabled={submitting}
+                                    disabled={submitting || !canManageUsers}
+                                    title={!canManageUsers ? permissions.deniedMessage : undefined}
                                     className="inline-flex items-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     {submitting ? "Creating..." : "Create and Invite User"}
                                 </button>
+                                {!canManageUsers ? (
+                                    <span className="ml-2 text-xs text-amber-700">{permissions.deniedMessage}</span>
+                                ) : null}
                             </div>
                         </form>
                     </section>
@@ -232,7 +255,8 @@ export default function TenantUsersPage() {
                                                         {user.inviteStatus === "PENDING" && (
                                                             <button
                                                                 type="button"
-                                                                disabled={!!actionLoading[`resend_${user.id}`]}
+                                                                disabled={!!actionLoading[`resend_${user.id}`] || !canManageUsers}
+                                                                title={!canManageUsers ? permissions.deniedMessage : undefined}
                                                                 onClick={() => void onResendInvite(user.id)}
                                                                 className="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                                                             >
@@ -241,7 +265,8 @@ export default function TenantUsersPage() {
                                                         )}
                                                         <button
                                                             type="button"
-                                                            disabled={!!actionLoading[`reset_${user.id}`]}
+                                                            disabled={!!actionLoading[`reset_${user.id}`] || !canManageUsers}
+                                                            title={!canManageUsers ? permissions.deniedMessage : undefined}
                                                             onClick={() => void onResetPassword(user.id)}
                                                             className="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                                                         >

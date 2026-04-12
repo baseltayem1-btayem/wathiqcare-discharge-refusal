@@ -6,6 +6,7 @@ from backend.api.routers.integration import router as integration_router
 from backend.api.routers.emails import router as emails_router
 from backend.api.routers.secure_links import router as secure_links_router
 from backend.api.routers.alerts import router as alerts_router
+from backend.api.routers.sms_evidence import router as sms_evidence_router
 from backend.services.integration_monitoring_service import (
 	start_integration_scheduler,
 	stop_integration_scheduler,
@@ -20,6 +21,7 @@ app.include_router(integration_router)
 app.include_router(emails_router)
 app.include_router(secure_links_router)
 app.include_router(alerts_router)
+app.include_router(sms_evidence_router)
 
 
 @app.on_event("startup")

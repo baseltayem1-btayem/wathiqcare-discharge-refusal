@@ -13,6 +13,7 @@ from backend.models.integration_run import IntegrationRun, IntegrationRunItem, I
 from backend.models.integration_sla_breach import IntegrationSLABreach
 from backend.models.dashboard_alert import DashboardAlert
 from backend.models.notification_delivery_attempt import NotificationDeliveryAttempt
+from backend.models.sms_dispatch_record import SmsDispatchRecord
 from backend.models.alert_acknowledgment import AlertAcknowledgment
 from backend.models.tenant_notification_setting import TenantNotificationSetting
 from backend.models.discharge_legal_workflow import (

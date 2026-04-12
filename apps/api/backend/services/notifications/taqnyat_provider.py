@@ -1,11 +1,15 @@
 import logging
 import os
+import time
 
 import requests
 
 from backend.services.notifications.base import SmsMessageType, SmsProvider
 
 logger = logging.getLogger(__name__)
+
+RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
+MAX_SMS_SEND_ATTEMPTS = 3
 
 
 class TaqnyatProvider(SmsProvider):
@@ -37,7 +41,7 @@ class TaqnyatProvider(SmsProvider):
         return normalized
 
     def __init__(self):
-        base_url = (os.getenv("SMS_BASE_URL") or "https://api.taqnyat.sa").rstrip("/")
+        base_url = (os.getenv("SMS_BASE_URL") or "").strip().rstrip("/")
         endpoint = (os.getenv("SMS_MESSAGES_ENDPOINT") or "/v1/messages").strip()
         if not endpoint.startswith("/"):
             endpoint = f"/{endpoint}"
@@ -45,13 +49,24 @@ class TaqnyatProvider(SmsProvider):
         self.base_url = base_url
         self.messages_path = endpoint
         self.url = f"{base_url}{endpoint}"
-        self.token = os.getenv("SMS_BEARER_TOKEN", "")
-        self.sender = os.getenv("SMS_SENDER", "IMC")
+        self.token = (os.getenv("SMS_BEARER_TOKEN") or "").strip()
+        self.sender = (os.getenv("SMS_SENDER") or "").strip()
+        self.initial_backoff_seconds = float((os.getenv("SMS_RETRY_BACKOFF_SECONDS") or "1").strip() or "1")
         # Separate CST-registered promotional sender ID (must be distinct from service sender)
         self.promotional_sender = os.getenv("SMS_PROMOTIONAL_SENDER", "").strip() or None
 
+        if not self.base_url:
+            raise ValueError("SMS_BASE_URL is not configured")
         if not self.token:
             raise ValueError("SMS_BEARER_TOKEN is not configured")
+        if not self.sender:
+            raise ValueError("SMS_SENDER is not configured")
+
+    @staticmethod
+    def _mask_recipient(recipient: str) -> str:
+        if len(recipient) <= 4:
+            return "****"
+        return f"{recipient[:3]}****{recipient[-2:]}"
 
     def _headers(self) -> dict:
         return {
@@ -108,36 +123,96 @@ class TaqnyatProvider(SmsProvider):
 
     def send_sms(self, to: str, message: str, *, message_type: SmsMessageType = SmsMessageType.TRANSACTIONAL) -> dict:
         if message_type == SmsMessageType.PROMOTIONAL and not self.promotional_sender:
-            raise ValueError(
-                "Promotional SMS requires SMS_PROMOTIONAL_SENDER to be configured with a CST-registered "
-                "ADV sender ID. Cannot use the transactional sender ID for promotional messages."
+            logger.error(
+                "sms_send_failed provider=taqnyat error_code=MISSING_PROMOTIONAL_SENDER reason=promotional_sender_missing",
             )
+            return {
+                "ok": False,
+                "status_code": 500,
+                "data": {
+                    "error": "Promotional SMS requires SMS_PROMOTIONAL_SENDER.",
+                    "error_code": "MISSING_PROMOTIONAL_SENDER",
+                },
+            }
 
         sender = self.promotional_sender if message_type == SmsMessageType.PROMOTIONAL else self.sender
-        normalized_recipient = self.normalize_recipient(to)
+        try:
+            normalized_recipient = self.normalize_recipient(to)
+        except ValueError as exc:
+            logger.warning(
+                "sms_send_failed provider=taqnyat error_code=INVALID_PHONE_NUMBER reason=%s",
+                str(exc),
+            )
+            return {
+                "ok": False,
+                "status_code": 400,
+                "data": {
+                    "error": str(exc),
+                    "error_code": "INVALID_PHONE_NUMBER",
+                },
+            }
+
         payload = {
             "recipients": [normalized_recipient],
             "body": message,
             "sender": sender,
         }
 
-        # Log intent without exposing token
-        logger.info(
-            "Sending SMS via Taqnyat to=%s sender=%s url=%s",
-            normalized_recipient,
-            sender,
-            self.url,
-        )
+        backoff_seconds = max(self.initial_backoff_seconds, 0.1)
+        masked_recipient = self._mask_recipient(normalized_recipient)
+        last_result: dict | None = None
 
-        result = self._request(method="POST", path=self.messages_path, json_payload=payload)
-        http_ok = bool(result.get("ok"))
-
-        if not http_ok:
-            logger.warning(
-                "Taqnyat SMS delivery failed: status=%s to=%s",
-                result.get("status_code"),
-                normalized_recipient,
+        for attempt in range(1, MAX_SMS_SEND_ATTEMPTS + 1):
+            logger.info(
+                "sms_send_requested provider=taqnyat attempt=%s max_attempts=%s recipient=%s sender=%s message_type=%s",
+                attempt,
+                MAX_SMS_SEND_ATTEMPTS,
+                masked_recipient,
+                sender,
+                message_type.value,
             )
-        else:
-            logger.info("Taqnyat SMS delivered successfully to=%s", normalized_recipient)
-        return result
+
+            result = self._request(method="POST", path=self.messages_path, json_payload=payload)
+            result["attempt"] = attempt
+            result["max_attempts"] = MAX_SMS_SEND_ATTEMPTS
+            last_result = result
+
+            if result.get("ok"):
+                logger.info(
+                    "sms_send_succeeded provider=taqnyat attempt=%s recipient=%s status_code=%s",
+                    attempt,
+                    masked_recipient,
+                    result.get("status_code"),
+                )
+                return result
+
+            status_code = int(result.get("status_code") or 500)
+            retryable = status_code in RETRYABLE_STATUS_CODES
+            logger.warning(
+                "sms_send_failed provider=taqnyat attempt=%s recipient=%s status_code=%s retryable=%s",
+                attempt,
+                masked_recipient,
+                status_code,
+                retryable,
+            )
+
+            if retryable and attempt < MAX_SMS_SEND_ATTEMPTS:
+                logger.info(
+                    "sms_send_retry_scheduled provider=taqnyat next_attempt=%s sleep_seconds=%.2f recipient=%s",
+                    attempt + 1,
+                    backoff_seconds,
+                    masked_recipient,
+                )
+                time.sleep(backoff_seconds)
+                backoff_seconds *= 2
+
+        return last_result or {
+            "ok": False,
+            "status_code": 503,
+            "data": {
+                "error": "SMS request failed",
+                "error_code": "SMS_REQUEST_FAILED",
+            },
+            "attempt": MAX_SMS_SEND_ATTEMPTS,
+            "max_attempts": MAX_SMS_SEND_ATTEMPTS,
+        }

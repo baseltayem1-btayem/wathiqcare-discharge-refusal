@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, FileText, PlusCircle, RefreshCw } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
@@ -25,9 +26,12 @@ type CaseItem = {
 
 export default function CasesPage() {
   const { t } = useI18n();
+  const permissions = useUiPermissions();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const canCreateCase = permissions.can("cases.create");
 
   useEffect(() => {
     apiFetch<CaseItem[]>("/api/cases")
@@ -47,7 +51,15 @@ export default function CasesPage() {
           <>
             <Link
               href="/cases/new"
+              aria-disabled={!canCreateCase}
+              onClick={(event) => {
+                if (!canCreateCase) {
+                  event.preventDefault();
+                }
+              }}
+              title={!canCreateCase ? permissions.deniedMessage : undefined}
               className="inline-flex items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
+              style={!canCreateCase ? { opacity: 0.5, pointerEvents: "none" } : undefined}
             >
               <PlusCircle className="h-4 w-4" />
               {t("cases.newCase")}

@@ -15,6 +15,7 @@ import AuthGuard from "@/components/AuthGuard";
 import StatCard from "@/components/ui/StatCard";
 import ActionButton from "@/components/ui/ActionButton";
 import DataTable, { type Column } from "@/components/ui/DataTable";
+import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { apiFetch } from "@/utils/api";
 
 type CaseItem = {
@@ -32,12 +33,15 @@ type AuditItem = {
 };
 
 export default function AuditLogPage() {
+  const permissions = useUiPermissions();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState("");
   const [auditItems, setAuditItems] = useState<AuditItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
+
+  const canReadAudit = permissions.can("audit.read");
 
   const loadAuditLogs = useCallback(async (caseId: string) => {
     setLoading(true);
@@ -187,6 +191,7 @@ export default function AuditLogPage() {
               }}
               variant="outline"
               size="sm"
+              disabled={!canReadAudit}
               icon={<RefreshCw className="h-4 w-4" />}
             >
               Refresh
@@ -195,7 +200,7 @@ export default function AuditLogPage() {
               onClick={handleExport}
               variant="outline"
               size="sm"
-              disabled={filteredAuditItems.length === 0}
+              disabled={filteredAuditItems.length === 0 || !canReadAudit}
               icon={<Download className="h-4 w-4" />}
             >
               Export CSV
@@ -203,6 +208,12 @@ export default function AuditLogPage() {
           </div>
         }
       >
+        {!canReadAudit ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            {permissions.deniedMessage}
+          </div>
+        ) : null}
+
         {/* Stats Cards */}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
@@ -237,6 +248,7 @@ export default function AuditLogPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700">Case</label>
               <select
+                title="Case selector"
                 className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 value={selectedCaseId}
                 onChange={(event) => setSelectedCaseId(event.target.value)}
@@ -252,6 +264,7 @@ export default function AuditLogPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700">Action Type</label>
               <select
+                title="Action type filter"
                 className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 value={actionFilter}
                 onChange={(e) => setActionFilter(e.target.value)}

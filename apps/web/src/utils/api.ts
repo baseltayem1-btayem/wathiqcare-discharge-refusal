@@ -314,6 +314,99 @@ async function performFetchWithNetworkGuard(url: string, init: RequestInit): Pro
   }
 }
 
+const TRANSIENT_STATUS_CODES = new Set([401, 403, 429, 502, 503, 504]);
+const IDEMPOTENT_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseRetryAfterMs(value: string | null): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const asSeconds = Number(value);
+  if (Number.isFinite(asSeconds) && asSeconds >= 0) {
+    return asSeconds * 1000;
+  }
+
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) {
+    return null;
+  }
+
+  return Math.max(0, timestamp - Date.now());
+}
+
+function shouldRetryRequest(method: string, status: number, attempt: number): boolean {
+  if (!IDEMPOTENT_METHODS.has(method)) {
+    return false;
+  }
+
+  if (attempt >= 3) {
+    return false;
+  }
+
+  return TRANSIENT_STATUS_CODES.has(status);
+}
+
+async function requestWithRetry(
+  url: string,
+  normalizedPath: string,
+  requestInit: RequestInit,
+  options: { authFailureMode: AuthFailureMode; nextPath?: string; label: string },
+): Promise<Response> {
+  const method = (requestInit.method || "GET").toUpperCase();
+
+  let lastError: ApiHttpError | null = null;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await performFetchWithNetworkGuard(url, requestInit);
+
+      if (response.ok) {
+        return response;
+      }
+
+      if (response.status === 401) {
+        console.warn(`[auth] ${method} ${normalizedPath} returned 401; validating session via /api/auth/me.`);
+        triggerSessionValidation(`${options.label} ${method} ${normalizedPath}`, options.nextPath, {
+          authFailureMode: options.authFailureMode,
+        });
+      }
+
+      if (shouldRetryRequest(method, response.status, attempt)) {
+        const retryAfterMs = parseRetryAfterMs(response.headers.get("retry-after"));
+        const delayMs = retryAfterMs ?? 120 * Math.pow(2, attempt - 1);
+        await sleep(delayMs);
+        continue;
+      }
+
+      return response;
+    } catch (error) {
+      const wrapped =
+        error instanceof ApiHttpError
+          ? error
+          : new ApiHttpError(503, "503: Unable to reach the server.", "NETWORK_ERROR", { cause: error });
+      lastError = wrapped;
+
+      if (shouldRetryRequest(method, wrapped.status, attempt)) {
+        await sleep(120 * Math.pow(2, attempt - 1));
+        continue;
+      }
+
+      throw wrapped;
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  throw new ApiHttpError(503, "503: Unable to reach the server.", "NETWORK_ERROR");
+}
+
 export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Promise<T> {
   const isAbsoluteUrl = /^https?:\/\//i.test(path);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -339,22 +432,21 @@ export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Pro
 
   appendDefaultClientHeaders(headers);
 
-  const response = await performFetchWithNetworkGuard(url, {
-    ...requestInit,
-    headers,
-    credentials: requestInit.credentials ?? "include",
-  });
+  const response = await requestWithRetry(
+    url,
+    normalizedPath,
+    {
+      ...requestInit,
+      headers,
+      credentials: requestInit.credentials ?? "include",
+    },
+    { authFailureMode, nextPath, label: "apiFetch" },
+  );
 
   const contentType = response.headers.get("content-type") ?? "";
   const isJson = contentType.includes("application/json");
 
   if (!response.ok) {
-    if (response.status === 401) {
-      const method = (requestInit.method || "GET").toUpperCase();
-      console.warn(`[auth] ${method} ${normalizedPath} returned 401; validating session via /api/auth/me.`);
-      triggerSessionValidation(`apiFetch ${method} ${normalizedPath}`, nextPath, { authFailureMode });
-    }
-
     const errorBody = isJson
       ? await response.json().catch(() => null)
       : sanitizeNonJsonErrorText(await response.text().catch(() => ""));
@@ -403,22 +495,21 @@ export async function apiFetchJson<T>(path: string, init: ApiFetchOptions = {}):
 
   appendDefaultClientHeaders(headers);
 
-  const response = await performFetchWithNetworkGuard(url, {
-    ...requestInit,
-    headers,
-    credentials: requestInit.credentials ?? "include",
-  });
+  const response = await requestWithRetry(
+    url,
+    normalizedPath,
+    {
+      ...requestInit,
+      headers,
+      credentials: requestInit.credentials ?? "include",
+    },
+    { authFailureMode, nextPath, label: "apiFetchJson" },
+  );
 
   const contentType = response.headers.get("content-type") ?? "";
   const isJson = contentType.includes("application/json");
 
   if (!response.ok) {
-    if (response.status === 401) {
-      const method = (requestInit.method || "GET").toUpperCase();
-      console.warn(`[auth] ${method} ${normalizedPath} returned 401; validating session via /api/auth/me.`);
-      triggerSessionValidation(`apiFetchJson ${method} ${normalizedPath}`, nextPath, { authFailureMode });
-    }
-
     if (!isJson) {
       throw new ApiHttpError(
         response.status,

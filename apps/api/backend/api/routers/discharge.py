@@ -23,6 +23,13 @@ from backend.core.discharge_workflow_service import (
 )
 from backend.legal.evidence_bundle import generate_evidence_bundle
 from backend.api.deps import get_current_user, require_roles
+from backend.core.rbac import (
+    filter_case_summaries,
+    log_privileged_document_download,
+    require_any_permission,
+    require_case_access,
+    require_permission,
+)
 from backend.forms.medical_legal_forms_library import FORMS_LIBRARY, render_form_by_key
 from backend.core.discharge_query_service import (
     list_discharge_cases_for_tenant,
@@ -208,6 +215,7 @@ def create_refusal(
     payload: DischargeRefusalRequest,
     current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor"))
 ):
+    require_permission(current_user, "cases.create")
     try:
         return create_discharge_refusal(
             tenant_code=current_user["tenant_code"],
@@ -226,10 +234,14 @@ def create_refusal(
 
 @router.get("/cases")
 def get_cases(current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))):
-    return list_discharge_cases_for_tenant(current_user["tenant_id"])
+    require_any_permission(current_user, ("cases.read.all", "cases.read.tenant", "cases.read.assigned"))
+    results = list_discharge_cases_for_tenant(current_user["tenant_id"])
+    return filter_case_summaries(current_user, results)
 
 @router.get("/cases/{case_id}")
 def get_case(case_id: str, current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))):
+    require_any_permission(current_user, ("cases.read.all", "cases.read.tenant", "cases.read.assigned"))
+    require_case_access(current_user, case_id)
     result = get_discharge_case_detail(current_user["tenant_id"], case_id)
     if not result:
         raise HTTPException(status_code=404, detail="الحالة غير موجودة")
@@ -256,6 +268,8 @@ def get_legal_artifact_case_status(
     case_id: str,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
+    require_permission(current_user, "legal.review")
+    require_case_access(current_user, case_id)
     try:
         return get_legal_artifact_status(tenant_id=current_user["tenant_id"], case_id=case_id)
     except ValueError as e:
@@ -268,6 +282,8 @@ def upsert_legal_artifact_case_screen(
     payload: LegalArtifactUpsertRequest,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
 ):
+    require_permission(current_user, "legal.review")
+    require_case_access(current_user, case_id)
     try:
         return upsert_legal_artifact_screen(
             tenant_id=current_user["tenant_id"],
@@ -309,6 +325,8 @@ def finalize_legal_artifact_case(
     payload: LegalArtifactFinalizeRequest,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
 ):
+    require_permission(current_user, "legal.approve.readiness")
+    require_case_access(current_user, case_id)
     try:
         return finalize_legal_artifact(
             tenant_id=current_user["tenant_id"],
@@ -325,6 +343,8 @@ def generate_legal_artifact_case_pdf(
     case_id: str,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
+    require_permission(current_user, "documents.generate_pdf")
+    require_case_access(current_user, case_id)
     try:
         return generate_legal_artifact_pdf(
             tenant_id=current_user["tenant_id"],
@@ -339,6 +359,8 @@ def get_case_workflow(
     case_id: str,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
+    require_any_permission(current_user, ("cases.read.all", "cases.read.tenant", "cases.read.assigned"))
+    require_case_access(current_user, case_id)
     try:
         return get_workflow_snapshot(tenant_id=current_user["tenant_id"], case_id=case_id)
     except ValueError as e:
@@ -350,6 +372,8 @@ def get_case_readiness(
     case_id: str,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
+    require_any_permission(current_user, ("cases.read.all", "cases.read.tenant", "cases.read.assigned"))
+    require_case_access(current_user, case_id)
     try:
         snapshot = get_workflow_snapshot(tenant_id=current_user["tenant_id"], case_id=case_id)
         readiness = snapshot.get("readiness") if isinstance(snapshot, dict) else None
@@ -366,6 +390,8 @@ def run_case_workflow_action(
     payload: WorkflowActionRequest,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
 ):
+    require_permission(current_user, "cases.submit.legal_review")
+    require_case_access(current_user, case_id)
     try:
         _enforce_sensitive_action_roles(payload.action, current_user)
         return run_workflow_action(
@@ -476,6 +502,8 @@ def preview_case_workflow_document(
     payload: WorkflowTemplatePreviewRequest,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
+    require_any_permission(current_user, ("cases.read.all", "cases.read.tenant", "cases.read.assigned"))
+    require_case_access(current_user, case_id)
     try:
         return preview_workflow_document(
             tenant_id=current_user["tenant_id"],
@@ -493,6 +521,8 @@ def validate_case_workflow_document(
     payload: WorkflowValidationRequest,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
+    require_any_permission(current_user, ("cases.read.all", "cases.read.tenant", "cases.read.assigned"))
+    require_case_access(current_user, case_id)
     try:
         return validate_workflow_generation(
             tenant_id=current_user["tenant_id"],
@@ -510,6 +540,8 @@ def generate_case_workflow_document(
     payload: WorkflowTemplateGenerateRequest,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_EDIT)),
 ):
+    require_permission(current_user, "documents.generate_pdf")
+    require_case_access(current_user, case_id)
     action = {
         "discharge_refusal_form": "generate_refusal_form",
         "financial_responsibility_notice": "generate_financial_notice",
@@ -537,6 +569,8 @@ def get_case_documents(
     case_id: str,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
+    require_any_permission(current_user, ("cases.read.all", "cases.read.tenant", "cases.read.assigned"))
+    require_case_access(current_user, case_id)
     try:
         return list_case_documents(tenant_id=current_user["tenant_id"], case_id=case_id)
     except ValueError as e:
@@ -548,6 +582,7 @@ def view_case_document(
     document_id: str,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
+    require_permission(current_user, "documents.download.final")
     try:
         document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
     except ValueError as e:
@@ -565,10 +600,13 @@ def download_case_document(
     document_id: str,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
 ):
+    require_permission(current_user, "documents.download.final")
     try:
         document = get_document_record(tenant_id=current_user["tenant_id"], document_id=document_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+    log_privileged_document_download(current_user, document_id)
 
     path = Path(document.file_path)
     if not path.exists():
@@ -587,6 +625,8 @@ def download_case_document(
 
 @router.get("/audit/{case_id}")
 def get_case_audit(case_id: str, current_user=Depends(require_roles("tenant_admin", "legal_admin", "doctor", "viewer"))):
+    require_permission(current_user, "audit.read")
+    require_case_access(current_user, case_id)
     result = list_audit_logs_for_case(current_user["tenant_id"], case_id)
     if result is None:
         raise HTTPException(status_code=404, detail="الحالة غير موجودة")
@@ -876,6 +916,7 @@ def get_legal_orchestration_summary(
 def legal_control_dashboard(
     current_user=Depends(require_roles("tenant_admin", ROLE_QUALITY, ROLE_COMPLIANCE, ROLE_LEGAL, "viewer")),
 ):
+    require_permission(current_user, "reports.read")
     return _with_legal_service(
         lambda svc: svc.get_tenant_legal_control_metrics(
             tenant_id=current_user["tenant_id"],
@@ -887,6 +928,7 @@ def legal_control_dashboard(
 def refusal_quality_dashboard(
     current_user=Depends(require_roles("tenant_admin", ROLE_QUALITY, ROLE_COMPLIANCE, ROLE_LEGAL)),
 ):
+    require_permission(current_user, "compliance.review")
     return get_refusal_quality_metrics(current_user["tenant_id"])
 
 
@@ -894,6 +936,7 @@ def refusal_quality_dashboard(
 def compliance_dashboard(
     current_user=Depends(require_roles("tenant_admin", ROLE_QUALITY, ROLE_COMPLIANCE, ROLE_LEGAL, "viewer")),
 ):
+    require_permission(current_user, "compliance.review")
     return get_compliance_dashboard_data(current_user["tenant_id"])
 
 
@@ -943,6 +986,7 @@ def render_medical_legal_template(
 
 @router.get("/pdf/{filename}")
 def get_pdf(filename: str, current_user=Depends(get_current_user)):
+    require_permission(current_user, "documents.download.final")
     file_path = Path("backend/generated") / filename
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="ملف PDF غير موجود")
@@ -953,6 +997,8 @@ def build_evidence_bundle(
     discharge_case_id: str,
     current_user=Depends(require_roles("tenant_admin", "legal_admin", ROLE_COMPLIANCE))
 ):
+    require_permission(current_user, "legal.approve.readiness")
+    require_case_access(current_user, discharge_case_id)
     try:
         return generate_evidence_bundle(
             discharge_case_id,
@@ -969,6 +1015,7 @@ def download_evidence_bundle(
     filename: str,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))
 ):
+    require_permission(current_user, "documents.download.final")
     file_path = Path("backend/generated/bundles") / filename
     if not file_path.exists() or not bundle_belongs_to_tenant(file_path, current_user["tenant_id"]):
         raise HTTPException(status_code=404, detail="حزمة الأدلة غير موجودة")

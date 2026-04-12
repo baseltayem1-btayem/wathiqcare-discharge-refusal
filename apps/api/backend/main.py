@@ -20,6 +20,7 @@ from backend.api.routers.secure_links import router as secure_links_router
 from backend.api.routers.shc_discharge_compliance import router as shc_discharge_compliance_router
 from backend.api.routers.signature import router as signature_router
 from backend.api.routers.sms_test import router as sms_test_router
+from backend.api.routers.sms_evidence import router as sms_evidence_router
 from backend.api.routers.system_inspect import router as system_inspect_router
 from backend.api.routers.workflow import router as workflow_router
 from backend.core.http_hardening import (
@@ -172,6 +173,7 @@ app.include_router(emails_router)
 app.include_router(workflow_router)
 app.include_router(system_inspect_router)
 app.include_router(sms_test_router)
+app.include_router(sms_evidence_router)
 app.include_router(secure_links_router)
 app.include_router(medico_legal_forms_router)
 

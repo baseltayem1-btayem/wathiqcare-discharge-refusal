@@ -13,6 +13,7 @@ import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import WorkflowProgress from "@/components/ui/WorkflowProgress";
 import StatCard from "@/components/ui/StatCard";
+import { useUiPermissions } from "@/hooks/useUiPermissions";
 
 import { buildMetadataWorkflowProgress } from "@/lib/workflowProgress";
 import { apiFetch } from "@/utils/api";
@@ -78,6 +79,7 @@ async function generateLegalPackage(caseId: string) {
 
 // ---------------- COMPONENT ----------------
 export default function LegalCaseFilePage() {
+  const permissions = useUiPermissions();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [dashboard, setDashboard] =
     useState<LegalControlDashboard | null>(null);
@@ -89,6 +91,10 @@ export default function LegalCaseFilePage() {
     useState<Record<string, LegalPackageMeta | null>>({});
 
   const [busyCaseId, setBusyCaseId] = useState<string | null>(null);
+
+  const canLegalReview = permissions.can("legal.review");
+  const canLegalApprove = permissions.can("legal.approve.readiness");
+  const canDownloadFinal = permissions.can("documents.download.final");
 
   // ---------------- LOAD ----------------
   useEffect(() => {
@@ -220,9 +226,13 @@ export default function LegalCaseFilePage() {
                 {legalPackage ? (
                   <>
                     <span>Version: {legalPackage.version}</span>
-                    <a href={legalPackage.download_url || "#"} target="_blank">
-                      Download
-                    </a>
+                    {canDownloadFinal ? (
+                      <a href={legalPackage.download_url || "#"} target="_blank" rel="noopener noreferrer">
+                        Download
+                      </a>
+                    ) : (
+                      <span className="text-xs text-amber-700">{permissions.deniedMessage}</span>
+                    )}
                   </>
                 ) : (
                   <span>No package</span>
@@ -233,7 +243,8 @@ export default function LegalCaseFilePage() {
               <div className="flex gap-2 mt-3">
 
                 <button
-                  disabled={isBusy}
+                  disabled={isBusy || !canLegalApprove}
+                  title={!canLegalApprove ? permissions.deniedMessage : undefined}
                   onClick={() =>
                     runAction(item.id, () =>
                       generateLegalPackage(item.id),
@@ -245,7 +256,8 @@ export default function LegalCaseFilePage() {
                 </button>
 
                 <button
-                  disabled={isBusy}
+                  disabled={isBusy || !canLegalReview}
+                  title={!canLegalReview ? permissions.deniedMessage : undefined}
                   onClick={() =>
                     runAction(item.id, () =>
                       legalOrchestrationService.quickPrepareLegalEvent(item.id, {})

@@ -5,7 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Download,
+  Eye,
+  FileText,
   Package,
+  RefreshCw,
 } from "lucide-react";
 
 import AppShell from "@/components/AppShell";
@@ -18,6 +21,8 @@ import {
 } from "@/components/design-system/card";
 import { Badge } from "@/components/design-system/badge";
 import { Button } from "@/components/design-system/button";
+import { useUiPermissions } from "@/hooks/useUiPermissions";
+import type { UiCaseAccessContext } from "@/lib/permissions/ui-rbac";
 import {
   RadioGroup,
   RadioGroupItem,
@@ -148,6 +153,47 @@ type DocumentSummary = {
   generated_at?: string;
 };
 
+type CasePdfValidationResult = {
+  canFinalize: boolean;
+  missingRequired: string[];
+  checklist: Array<{
+    key: string;
+    label: string;
+    required: boolean;
+    satisfied: boolean;
+    reason: string;
+  }>;
+};
+
+type CasePdfVersionSummary = {
+  id: string;
+  version: number;
+  fileName: string;
+  generatedAt: string;
+  status: "draft" | "final" | "failed";
+  isFinal: boolean;
+  templateVersion: string;
+  language: string;
+  fileSize: number;
+  sha256Hash: string | null;
+};
+
+type CasePdfLatestResponse = {
+  latest: CasePdfVersionSummary | null;
+  validation: CasePdfValidationResult;
+};
+
+type CasePdfVersionsResponse = {
+  versions: CasePdfVersionSummary[];
+};
+
+type CasePdfGenerateResponse = {
+  report: CasePdfVersionSummary;
+  validation: CasePdfValidationResult;
+  previewUrl: string;
+  downloadUrl: string;
+};
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
@@ -275,6 +321,7 @@ function getErrorMessage(error: unknown, fallback = "An unexpected error occurre
 }
 
 export default function CasePage() {
+  const permissions = useUiPermissions();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const caseId = typeof params?.id === "string" ? params.id : "";
@@ -310,6 +357,12 @@ export default function CasePage() {
   const [auditChain, setAuditChain] = useState<AuditChainResponse | null>(null);
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [legalPackage, setLegalPackage] = useState<LegalPackageMeta | null>(null);
+  const [caseAccessContext, setCaseAccessContext] = useState<UiCaseAccessContext | null>(null);
+  const [pdfLatest, setPdfLatest] = useState<CasePdfVersionSummary | null>(null);
+  const [pdfValidation, setPdfValidation] = useState<CasePdfValidationResult | null>(null);
+  const [pdfVersions, setPdfVersions] = useState<CasePdfVersionSummary[]>([]);
+  const [pdfLanguage, setPdfLanguage] = useState<"en" | "ar">("en");
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -345,6 +398,17 @@ export default function CasePage() {
     }
   }
 
+  async function reloadCasePdfState(targetCaseId: string): Promise<void> {
+    const [latestPayload, versionsPayload] = await Promise.all([
+      apiFetch<CasePdfLatestResponse>(`/api/cases/${targetCaseId}/pdf`).catch(() => null),
+      apiFetch<CasePdfVersionsResponse>(`/api/cases/${targetCaseId}/pdf/versions`).catch(() => ({ versions: [] })),
+    ]);
+
+    setPdfLatest(latestPayload?.latest ?? null);
+    setPdfValidation(latestPayload?.validation ?? null);
+    setPdfVersions(versionsPayload?.versions ?? []);
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -358,7 +422,18 @@ export default function CasePage() {
       setError("");
 
       try {
-        const [caseRecord, workflow, existingPackage, readinessReport, consentList, auditInfo, docs, readinessResponse] = await Promise.all([
+        const [
+          caseRecord,
+          workflow,
+          existingPackage,
+          readinessReport,
+          consentList,
+          auditInfo,
+          docs,
+          readinessResponse,
+          latestPdf,
+          pdfVersionList,
+        ] = await Promise.all([
           apiFetch<CaseApiRecord>(`/api/cases/${caseId}`),
           apiFetch<WorkflowApiRecord>(`/api/discharge/cases/${caseId}/workflow`).catch(() => null),
           apiFetch<LegalPackageMeta>(`/api/discharge/cases/${caseId}/legal-package`).catch(() => null),
@@ -367,6 +442,8 @@ export default function CasePage() {
           apiFetch<AuditChainResponse>(`/api/discharge/cases/${caseId}/audit-chain`).catch(() => null),
           apiFetch<DocumentSummary[]>(`/api/discharge/cases/${caseId}/documents`).catch(() => []),
           apiFetch<ReadinessState>(`/api/discharge/cases/${caseId}/readiness`).catch(() => null),
+          apiFetch<CasePdfLatestResponse>(`/api/cases/${caseId}/pdf`).catch(() => null),
+          apiFetch<CasePdfVersionsResponse>(`/api/cases/${caseId}/pdf/versions`).catch(() => ({ versions: [] })),
         ]);
 
         if (cancelled) {
@@ -409,6 +486,14 @@ export default function CasePage() {
         }));
 
         setCaseData(mapCaseRecordToCaseData(caseRecord));
+        const accessContext: UiCaseAccessContext = {
+          metadata: caseMetadata,
+          attendingPhysicianUserId: getString(asRecord(caseMetadata?.workflow), "attending_physician_user_id"),
+          assignedUserId: getString(asRecord(caseMetadata?.workflow), "assigned_user_id", "assigned_to_user_id"),
+          createdByUserId: getString(caseMetadata, "created_by", "created_by_user_id"),
+          ownerUserId: getString(caseMetadata, "owner_user_id"),
+        };
+        setCaseAccessContext(accessContext);
         setReadiness(
           readinessReport
             ? {
@@ -422,6 +507,9 @@ export default function CasePage() {
         setAuditChain(auditInfo);
         setDocuments(docs ?? []);
         setLegalPackage(existingPackage);
+        setPdfLatest(latestPdf?.latest ?? null);
+        setPdfValidation(latestPdf?.validation ?? null);
+        setPdfVersions(pdfVersionList?.versions ?? []);
       } catch (err: unknown) {
         if (cancelled) {
           return;
@@ -435,6 +523,10 @@ export default function CasePage() {
         setAuditChain(null);
         setDocuments([]);
         setLegalPackage(null);
+        setCaseAccessContext(null);
+        setPdfLatest(null);
+        setPdfValidation(null);
+        setPdfVersions([]);
       } finally {
         if (!cancelled) {
           setPageLoading(false);
@@ -452,7 +544,39 @@ export default function CasePage() {
   async function refreshReadinessAndPackage(): Promise<void> {
     if (!caseId) return;
 
-    await reloadComplianceState(caseId);
+    await Promise.all([
+      reloadComplianceState(caseId),
+      reloadCasePdfState(caseId),
+    ]);
+  }
+
+  async function handleGenerateCasePdf(mode: "draft" | "final", regenerate = false): Promise<void> {
+    if (!caseId) return;
+
+    setPdfBusy(true);
+    setError("");
+
+    try {
+      const generated = await apiFetch<CasePdfGenerateResponse>(`/api/cases/${caseId}/generate-pdf`, {
+        method: "POST",
+        body: JSON.stringify({
+          mode,
+          regenerate,
+          language: pdfLanguage,
+        }),
+      });
+
+      setPdfLatest(generated.report);
+      setPdfValidation(generated.validation);
+      await Promise.all([
+        reloadCasePdfState(caseId),
+        reloadComplianceState(caseId),
+      ]);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to generate legal case PDF"));
+    } finally {
+      setPdfBusy(false);
+    }
   }
 
   async function handleGenerateLegalPackage(): Promise<void> {
@@ -591,6 +715,19 @@ export default function CasePage() {
 
   const activeStep = stepStatus.findIndex((status) => status === "missing");
 
+  const canMedicalActions =
+    permissions.canAccessCase(caseAccessContext, "cases.update.medical") ||
+    permissions.canAccessCase(caseAccessContext, "cases.record.risk") ||
+    permissions.canAccessCase(caseAccessContext, "cases.record.decision");
+  const canOperationalActions = permissions.canAccessCase(caseAccessContext, "cases.update.operational");
+  const canWitnessAction =
+    permissions.canAccessCase(caseAccessContext, "cases.add.witness") || canOperationalActions;
+  const canLegalApprove = permissions.canAccessCase(caseAccessContext, "legal.approve.readiness");
+  const canGeneratePdf = permissions.canAccessCase(caseAccessContext, "documents.generate_pdf");
+  const canDownloadFinalDocs = permissions.canAccessCase(caseAccessContext, "documents.download.final");
+  const canReadAudit = permissions.canAccessCase(caseAccessContext, "audit.read");
+  const canReadSmsEvidence = permissions.canAccessCase(caseAccessContext, "sms.evidence.read");
+
   if (!caseId) {
     return (
       <div className="p-8 text-center text-lg text-red-600">
@@ -638,13 +775,24 @@ export default function CasePage() {
             <Button
               variant="outline"
               onClick={handleGenerateLegalPackage}
-              disabled={loading}
+              disabled={loading || !canLegalApprove}
+              title={!canLegalApprove ? permissions.deniedMessage : undefined}
             >
               <Package className="h-4 w-4" />
               Generate Legal Package
             </Button>
 
-            {legalPackage?.download_url ? (
+            <Button
+              variant="outline"
+              onClick={() => handleGenerateCasePdf("draft", false)}
+              disabled={pdfBusy || !canGeneratePdf}
+              title={!canGeneratePdf ? permissions.deniedMessage : undefined}
+            >
+              <FileText className="h-4 w-4" />
+              Generate Case PDF
+            </Button>
+
+            {legalPackage?.download_url && canDownloadFinalDocs ? (
               <a
                 href={legalPackage.download_url}
                 target="_blank"
@@ -841,9 +989,18 @@ export default function CasePage() {
             </div>
 
             <div className="flex flex-col items-start justify-center gap-2">
-              <Button variant="default" disabled={loading} onClick={handlePresentation}>
+              <Button
+                variant="default"
+                disabled={loading || !canMedicalActions}
+                title={!canMedicalActions ? permissions.deniedMessage : undefined}
+                onClick={handlePresentation}
+              >
                 Record Presentation
               </Button>
+
+              {!canMedicalActions ? (
+                <span className="text-xs text-amber-700">{permissions.deniedMessage}</span>
+              ) : null}
 
               {presentation.language ? (
                 <Badge variant="success">Completed</Badge>
@@ -912,7 +1069,12 @@ export default function CasePage() {
             </div>
 
             <div className="flex flex-col items-start justify-center gap-2">
-              <Button variant="default" disabled={loading} onClick={handleSignature}>
+              <Button
+                variant="default"
+                disabled={loading || !canMedicalActions}
+                title={!canMedicalActions ? permissions.deniedMessage : undefined}
+                onClick={handleSignature}
+              >
                 Record Signature Outcome
               </Button>
 
@@ -959,7 +1121,12 @@ export default function CasePage() {
             </div>
 
             <div className="flex flex-col items-start justify-center gap-2">
-              <Button variant="default" disabled={loading} onClick={handleWitness}>
+              <Button
+                variant="default"
+                disabled={loading || !canWitnessAction}
+                title={!canWitnessAction ? permissions.deniedMessage : undefined}
+                onClick={handleWitness}
+              >
                 Record Witness
               </Button>
 
@@ -989,29 +1156,189 @@ export default function CasePage() {
                 <Badge variant="success">Generated</Badge>
               </div>
 
-              <a
-                href={legalPackage.download_url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="outline">
-                  <Download className="h-4 w-4" />
-                  Download
-                </Button>
-              </a>
+              {canDownloadFinalDocs ? (
+                <a
+                  href={legalPackage.download_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline">
+                    <Download className="h-4 w-4" />
+                    Download
+                  </Button>
+                </a>
+              ) : (
+                <span className="text-xs text-amber-700">{permissions.deniedMessage}</span>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-2">
               <Badge variant="warning">Not generated</Badge>
               <Button
                 variant="default"
-                disabled={loading}
+                disabled={loading || !canLegalApprove}
+                title={!canLegalApprove ? permissions.deniedMessage : undefined}
                 onClick={handleGenerateLegalPackage}
               >
                 Generate Legal Package
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Legal Case PDF Reports</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <select
+              aria-label="PDF language"
+              className="rounded border px-3 py-2 text-sm"
+              value={pdfLanguage}
+              onChange={(e) => setPdfLanguage(e.target.value === "ar" ? "ar" : "en")}
+            >
+              <option value="en">English</option>
+              <option value="ar">Arabic</option>
+            </select>
+
+            <Button
+              variant="default"
+              disabled={pdfBusy || !canGeneratePdf}
+              title={!canGeneratePdf ? permissions.deniedMessage : undefined}
+              onClick={() => handleGenerateCasePdf("draft", false)}
+            >
+              <FileText className="h-4 w-4" />
+              Generate Draft PDF
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={pdfBusy || !canGeneratePdf || !canLegalApprove}
+              title={!canGeneratePdf || !canLegalApprove ? permissions.deniedMessage : undefined}
+              onClick={() => handleGenerateCasePdf("final", false)}
+            >
+              <FileText className="h-4 w-4" />
+              Generate Final PDF
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={pdfBusy || !canGeneratePdf}
+              title={!canGeneratePdf ? permissions.deniedMessage : undefined}
+              onClick={() => handleGenerateCasePdf("draft", true)}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Regenerate
+            </Button>
+
+            {pdfLatest ? (
+              <a
+                href={`/api/cases/${caseId}/pdf/${pdfLatest.version}/preview`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="outline">
+                  <Eye className="h-4 w-4" />
+                  Preview Latest
+                </Button>
+              </a>
+            ) : null}
+
+            {pdfLatest && canDownloadFinalDocs ? (
+              <a
+                href={`/api/cases/${caseId}/pdf/${pdfLatest.version}/download`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="outline">
+                  <Download className="h-4 w-4" />
+                  Download Latest
+                </Button>
+              </a>
+            ) : null}
+          </div>
+
+          {pdfLatest ? (
+            <div className="mb-4 rounded-xl border border-slate-200 p-3 text-sm">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <Badge variant={pdfLatest.status === "final" ? "success" : pdfLatest.status === "failed" ? "warning" : "outline"}>
+                  v{pdfLatest.version} • {pdfLatest.status.toUpperCase()}
+                </Badge>
+                <Badge variant="outline">{pdfLatest.language.toUpperCase()}</Badge>
+                <Badge variant="outline">{Math.round((pdfLatest.fileSize || 0) / 1024)} KB</Badge>
+              </div>
+              <div className="text-slate-600">Generated: {new Date(pdfLatest.generatedAt).toLocaleString()}</div>
+              <div className="text-slate-600">File: {pdfLatest.fileName}</div>
+              <div className="text-slate-500">SHA-256: {pdfLatest.sha256Hash?.slice(0, 24) || "N/A"}</div>
+            </div>
+          ) : (
+            <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+              No legal case PDF generated yet.
+            </div>
+          )}
+
+          <div className="mb-4 rounded-xl border border-slate-200 p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm">
+              <span className="font-semibold text-slate-700">Finalization readiness</span>
+              <Badge variant={pdfValidation?.canFinalize ? "success" : "warning"}>
+                {pdfValidation?.canFinalize ? "Ready" : "Missing required fields"}
+              </Badge>
+            </div>
+            {pdfValidation?.missingRequired?.length ? (
+              <ul className="space-y-1 text-sm text-amber-700">
+                {pdfValidation.missingRequired.map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-sm text-slate-600">All required compliance fields are available.</div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-semibold text-slate-700">Versions</div>
+            {pdfVersions.length === 0 ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">No versions available.</div>
+            ) : (
+              pdfVersions.map((version) => (
+                <div key={version.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                  <div>
+                    <div className="font-medium text-slate-800">v{version.version} • {version.fileName}</div>
+                    <div className="text-slate-500">{new Date(version.generatedAt).toLocaleString()}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={version.status === "final" ? "success" : version.status === "failed" ? "warning" : "outline"}>
+                      {version.status}
+                    </Badge>
+                    <a
+                      href={`/api/cases/${caseId}/pdf/${version.version}/preview`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button variant="outline">
+                        <Eye className="h-4 w-4" />
+                        Preview
+                      </Button>
+                    </a>
+                    {canDownloadFinalDocs ? (
+                      <a
+                        href={`/api/cases/${caseId}/pdf/${version.version}/download`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button variant="outline">
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -1124,20 +1451,26 @@ export default function CasePage() {
             <CardTitle>Audit Trail</CardTitle>
           </CardHeader>
           <CardContent>
+            {!canReadAudit ? (
+              <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                {permissions.deniedMessage}
+              </div>
+            ) : null}
             <div className="mb-3 flex items-center gap-2">
               <Badge variant={auditChain?.verification?.verified ? "success" : "warning"}>
                 Hash chain {auditChain?.verification?.verified ? "verified" : "pending / attention"}
               </Badge>
               <span className="text-sm text-slate-600">{auditChain?.verification?.totalEvents ?? 0} event(s)</span>
+              {canReadSmsEvidence ? <Badge variant="outline">SMS evidence access enabled</Badge> : null}
             </div>
             <div className="space-y-2 text-sm">
-              {auditChain?.events?.length ? auditChain.events.slice(0, 6).map((event) => (
+              {canReadAudit && auditChain?.events?.length ? auditChain.events.slice(0, 6).map((event) => (
                 <div key={event.id} className="rounded-xl border border-slate-200 px-3 py-2">
                   <div className="font-medium text-slate-800">{event.eventType}</div>
                   <div className="text-slate-500">{event.payloadSummary}</div>
                   <div className="text-slate-400">{new Date(event.createdAt).toLocaleString()}</div>
                 </div>
-              )) : <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">No audit chain events available yet.</div>}
+              )) : <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">{canReadAudit ? "No audit chain events available yet." : "Audit records are hidden for your role."}</div>}
             </div>
           </CardContent>
         </Card>

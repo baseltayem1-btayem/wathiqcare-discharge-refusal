@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
+import { jsonError, logApiFailure } from "@/lib/server/http";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 
 const LEGACY_SESSION_COOKIE_NAMES = ["wathiqcare_access_token", "token"] as const;
+
+const TRANSIENT_BACKEND_STATUSES = new Set([429, 502, 503, 504]);
 
 type BackendUrlResult =
     | { ok: true; url: URL }
@@ -86,7 +89,51 @@ export function buildBackendUrl(pathname: string): BackendUrlResult {
     return { ok: true, url: new URL(normalizedPath, baseWithPath) };
 }
 
-function buildForwardHeaders(request: NextRequest): Headers {
+function buildRequestTraceId(request: NextRequest): string {
+    const fromHeader =
+        request.headers.get("x-trace-id")?.trim() ||
+        request.headers.get("x-request-id")?.trim();
+
+    if (fromHeader) {
+        return fromHeader;
+    }
+
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        return crypto.randomUUID();
+    }
+
+    return `proxy-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+}
+
+function shouldRetryBackendResponse(status: number, method: string): boolean {
+    if (!(method === "GET" || method === "HEAD")) {
+        return false;
+    }
+
+    return TRANSIENT_BACKEND_STATUSES.has(status);
+}
+
+function shouldRetryBackendError(method: string, error: unknown): boolean {
+    if (!(method === "GET" || method === "HEAD")) {
+        return false;
+    }
+
+    if (!(error instanceof Error)) {
+        return false;
+    }
+
+    return error.name !== "AbortError";
+}
+
+function backoffDelayMs(attempt: number): number {
+    return 150 * Math.pow(2, Math.max(0, attempt - 1));
+}
+
+async function sleep(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function buildForwardHeaders(request: NextRequest, traceId: string): Headers {
     const headers = new Headers();
     const incomingAuthorization = request.headers.get("authorization")?.trim();
     const token = request.cookies.get(getSessionCookieName())?.value
@@ -139,6 +186,8 @@ function buildForwardHeaders(request: NextRequest): Headers {
         headers.set("x-wathiqcare-real-ip", realIp);
     }
 
+    headers.set("x-trace-id", traceId);
+
     return headers;
 }
 
@@ -146,6 +195,7 @@ export async function forwardToBackend(
     request: NextRequest,
     backendPath: string,
 ): Promise<NextResponse> {
+    const traceId = buildRequestTraceId(request);
     const built = buildBackendUrl(backendPath);
     if (!built.ok) {
         return built.response;
@@ -158,58 +208,106 @@ export async function forwardToBackend(
 
     // Prevent recursive self-calls when backend base URL points to the same host+path.
     if (targetHost && requestHost && targetHost === requestHost && targetPath === sourcePath) {
-        return NextResponse.json(
-            {
-                detail: "خدمة الواجهة الخلفية غير متاحة حالياً. يرجى ضبط BACKEND_API_BASE_URL على خدمة backend الحقيقية.",
-            },
-            { status: 503 },
-        );
+        const message = "خدمة الواجهة الخلفية غير متاحة حالياً. يرجى ضبط BACKEND_API_BASE_URL على خدمة backend الحقيقية.";
+        logApiFailure({
+            traceId,
+            status: 503,
+            message,
+            error: new Error("backend proxy recursion detected"),
+            code: "BACKEND_PROXY_RECURSION",
+        });
+        return jsonError(503, message, { traceId });
     }
 
     const method = request.method.toUpperCase();
     const body = method === "GET" || method === "HEAD" ? undefined : await request.arrayBuffer();
+    const maxAttempts = method === "GET" || method === "HEAD" ? 3 : 1;
 
-    try {
-        const backendResponse = await fetch(built.url, {
-            method,
-            headers: buildForwardHeaders(request),
-            body,
-            credentials: "include",
-            redirect: "manual",
-            // Propagate the incoming request's abort signal so that when the
-            // client navigates away (Next.js fires request.signal), the outgoing
-            // backend fetch is cancelled immediately instead of hanging.
-            signal: request.signal,
-        });
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+            const backendResponse = await fetch(built.url, {
+                method,
+                headers: buildForwardHeaders(request, traceId),
+                body,
+                credentials: "include",
+                redirect: "manual",
+                // Propagate the incoming request's abort signal so that when the
+                // client navigates away (Next.js fires request.signal), the outgoing
+                // backend fetch is cancelled immediately instead of hanging.
+                signal: request.signal,
+            });
 
-        const proxyHeaders = new Headers();
-        const contentType = backendResponse.headers.get("content-type");
-        const contentDisposition = backendResponse.headers.get("content-disposition");
+            if (attempt < maxAttempts && shouldRetryBackendResponse(backendResponse.status, method)) {
+                await sleep(backoffDelayMs(attempt));
+                continue;
+            }
 
-        if (contentType) {
-            proxyHeaders.set("content-type", contentType);
+            const proxyHeaders = new Headers();
+            const contentType = backendResponse.headers.get("content-type");
+            const contentDisposition = backendResponse.headers.get("content-disposition");
+
+            if (contentType) {
+                proxyHeaders.set("content-type", contentType);
+            }
+            if (contentDisposition) {
+                proxyHeaders.set("content-disposition", contentDisposition);
+            }
+            proxyHeaders.set("x-trace-id", traceId);
+
+            if (backendResponse.status >= 400) {
+                logApiFailure({
+                    traceId,
+                    status: backendResponse.status,
+                    message: `Backend proxy returned ${backendResponse.status}`,
+                    error: new Error("backend-proxy-response-failure"),
+                    code: "BACKEND_PROXY_RESPONSE",
+                });
+            }
+
+            return new NextResponse(backendResponse.body, {
+                status: backendResponse.status,
+                headers: proxyHeaders,
+            });
+        } catch (err) {
+            // Re-throw abort errors: the client already disconnected, so there is
+            // nothing to respond to. Letting Next.js handle these prevents the
+            // "signal is aborted without reason" noise in server logs.
+            if (err instanceof Error && err.name === "AbortError") {
+                throw err;
+            }
+
+            if (attempt < maxAttempts && shouldRetryBackendError(method, err)) {
+                await sleep(backoffDelayMs(attempt));
+                continue;
+            }
+
+            logApiFailure({
+                traceId,
+                status: 503,
+                message: "Backend workflow service temporarily unavailable",
+                error: err,
+                code: "BACKEND_PROXY_FETCH_FAILED",
+            });
+
+            return jsonError(
+                503,
+                "Backend workflow service is temporarily unavailable. Please retry shortly or contact support.",
+                { traceId },
+            );
         }
-        if (contentDisposition) {
-            proxyHeaders.set("content-disposition", contentDisposition);
-        }
-
-        return new NextResponse(backendResponse.body, {
-            status: backendResponse.status,
-            headers: proxyHeaders,
-        });
-    } catch (err) {
-        // Re-throw abort errors: the client already disconnected, so there is
-        // nothing to respond to.  Letting Next.js handle these prevents the
-        // "signal is aborted without reason" noise in server logs.
-        if (err instanceof Error && err.name === "AbortError") {
-            throw err;
-        }
-        return NextResponse.json(
-            {
-                detail:
-                    "Backend workflow service is temporarily unavailable. Please retry shortly or contact support.",
-            },
-            { status: 503 },
-        );
     }
+
+    logApiFailure({
+        traceId,
+        status: 503,
+        message: "Backend workflow service temporarily unavailable",
+        error: new Error("backend-proxy-unreachable"),
+        code: "BACKEND_PROXY_UNREACHABLE",
+    });
+
+    return jsonError(
+        503,
+        "Backend workflow service is temporarily unavailable. Please retry shortly or contact support.",
+        { traceId },
+    );
 }

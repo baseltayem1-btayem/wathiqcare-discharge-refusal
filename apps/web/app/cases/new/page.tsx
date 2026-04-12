@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Mail, Save, Send } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
@@ -35,6 +36,7 @@ const MEDICAL_CONDITIONS: Array<{ value: MedicalCondition; ar: string; en: strin
 export default function NewCasePage() {
     const router = useRouter();
     const { t, lang } = useI18n();
+    const permissions = useUiPermissions();
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
@@ -79,8 +81,16 @@ export default function NewCasePage() {
     const [notifySectionsByEmail, setNotifySectionsByEmail] = useState(true);
     const [signatureMethod, setSignatureMethod] = useState<"email" | "nafez" | "tablet">("email");
 
+    const canCreateCase = permissions.can("cases.create");
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+
+        if (!canCreateCase) {
+            setError(permissions.deniedMessage);
+            return;
+        }
+
         setSaving(true);
         setError("");
         setSuccessMessage("");
@@ -223,7 +233,7 @@ export default function NewCasePage() {
                             <input required value={medicalRecordNo} onChange={(e) => setMedicalRecordNo(e.target.value)} placeholder={t("field.patientMrn")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                             <input required value={attendingPhysician} onChange={(e) => setAttendingPhysician(e.target.value)} placeholder={t("field.attendingPhysician")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                             <input required value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} placeholder={t("field.roomNumber")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                            <input required type="date" value={admissionDate} onChange={(e) => setAdmissionDate(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                            <input title="Admission date" required type="date" value={admissionDate} onChange={(e) => setAdmissionDate(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                             <input required value={admissionDepartment} onChange={(e) => setAdmissionDepartment(e.target.value)} placeholder={t("newCase.placeholders.admissionDepartment")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
                         </div>
 
@@ -253,7 +263,7 @@ export default function NewCasePage() {
                             <input required value={admissionReason} onChange={(e) => setAdmissionReason(e.target.value)} placeholder={t("newCase.placeholders.admissionReason")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2" />
 
                             <label className="text-xs text-slate-600">{t("newCase.labels.medicalCondition")}</label>
-                            <select required value={medicalCondition} onChange={(e) => setMedicalCondition(e.target.value as MedicalCondition)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                            <select title="Medical condition" required value={medicalCondition} onChange={(e) => setMedicalCondition(e.target.value as MedicalCondition)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
                                 <option value="">{t("newCase.select.pleaseSelect")}</option>
                                 {MEDICAL_CONDITIONS.map((option) => (
                                     <option key={option.value} value={option.value}>{lang === "ar" ? option.ar : option.en}</option>
@@ -261,21 +271,21 @@ export default function NewCasePage() {
                             </select>
 
                             <label className="text-xs text-slate-600">{t("newCase.labels.preferredLanguage")}</label>
-                            <select value={preferredLanguage} onChange={(e) => setPreferredLanguage(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                            <select title="Preferred language" value={preferredLanguage} onChange={(e) => setPreferredLanguage(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
                                 <option value="">{t("newCase.select.pleaseSelect")}</option>
                                 <option value="ar">{t("newCase.select.arabic")}</option>
                                 <option value="en">{t("newCase.select.english")}</option>
                             </select>
 
                             <label className="text-xs text-slate-600">{t("newCase.labels.livingAlone")}</label>
-                            <select value={livingAlone} onChange={(e) => setLivingAlone(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                            <select title="Living alone" value={livingAlone} onChange={(e) => setLivingAlone(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
                                 <option value="">{t("newCase.select.pleaseSelect")}</option>
                                 <option value="yes">{t("newCase.select.yes")}</option>
                                 <option value="no">{t("newCase.select.no")}</option>
                             </select>
 
                             <label className="text-xs text-slate-600">{t("newCase.labels.hasCaregiver")}</label>
-                            <select value={hasCaregiver} onChange={(e) => setHasCaregiver(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
+                            <select title="Has caregiver" value={hasCaregiver} onChange={(e) => setHasCaregiver(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm md:col-span-2">
                                 <option value="">{t("newCase.select.pleaseSelect")}</option>
                                 <option value="yes">{t("newCase.select.yes")}</option>
                                 <option value="no">{t("newCase.select.no")}</option>
@@ -336,6 +346,7 @@ export default function NewCasePage() {
 
                             <label className="block text-xs font-medium text-slate-600">{t("newCase.labels.signatureOptional")}</label>
                             <select
+                                title="Optional signature channel"
                                 value={signatureMethod}
                                 onChange={(e) => setSignatureMethod(e.target.value as "email" | "nafez" | "tablet")}
                                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
@@ -350,12 +361,19 @@ export default function NewCasePage() {
                     <div className="flex flex-wrap gap-2">
                         <button
                             type="submit"
-                            disabled={saving}
+                            disabled={saving || !canCreateCase}
+                            title={!canCreateCase ? permissions.deniedMessage : undefined}
                             className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
                         >
                             <Save className="h-4 w-4" />
                             {saving ? t("newCase.saving") : t("newCase.actions.submit")}
                         </button>
+
+                        {!canCreateCase ? (
+                            <span className="self-center text-xs text-amber-700">
+                                {permissions.deniedMessage}
+                            </span>
+                        ) : null}
 
                         <button
                             type="button"

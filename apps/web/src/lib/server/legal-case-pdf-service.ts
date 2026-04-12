@@ -1,0 +1,1195 @@
+import crypto from "node:crypto";
+import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
+import type { NextRequest } from "next/server";
+import puppeteer from "puppeteer";
+import QRCode from "qrcode";
+import type { AuthContext } from "@/lib/server/auth";
+import { ApiError } from "@/lib/server/http";
+import { getPrisma } from "@/lib/server/prisma";
+import { canonicalizeUserRole } from "@/lib/server/roles";
+import { writeAuditLog } from "@/lib/server/saas-services";
+import { getLegalReadiness } from "@/lib/server/legal-readiness-service";
+import { asRecord, readBoolean, readString } from "@/lib/server/compliance-utils";
+import { getTenantBrandingProfile } from "@/lib/server/tenantBrandingStore";
+import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
+import { logReportAccess } from "@/lib/server/report-access-service";
+
+const prisma = getPrisma();
+
+const PDF_TEMPLATE_VERSION = "1.0.0";
+const CASE_PDF_TEMPLATE_KEY = "legal_case_pdf";
+const SYSTEM_LABEL = "WathiqCare System";
+
+type GenerateTrigger =
+  | "manual_generate"
+  | "manual_regenerate"
+  | "auto_ready_for_legal"
+  | "auto_escalated"
+  | "auto_closed";
+
+type CasePdfChecklistItem = {
+  key: string;
+  label: string;
+  required: boolean;
+  satisfied: boolean;
+  reason: string;
+};
+
+export type CasePdfValidationResult = {
+  canFinalize: boolean;
+  checklist: CasePdfChecklistItem[];
+  missingRequired: string[];
+};
+
+export type CasePdfVersionSummary = {
+  id: string;
+  version: number;
+  fileName: string;
+  generatedAt: string;
+  status: "draft" | "final" | "failed";
+  isFinal: boolean;
+  templateVersion: string;
+  language: string;
+  mimeType: string;
+  fileSize: number;
+  sha256Hash: string | null;
+  generatedBy: string | null;
+};
+
+export type GeneratedCasePdfResult = {
+  report: CasePdfVersionSummary;
+  validation: CasePdfValidationResult;
+  previewUrl: string;
+  downloadUrl: string;
+};
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function hashSha256(value: string | Buffer | Uint8Array): string {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function formatDateForFileName(date = new Date()): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function escapeHtml(value: string | null | undefined): string {
+  if (!value) return "";
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function normalizeLanguage(input: unknown): "en" | "ar" {
+  return String(input || "").trim().toLowerCase() === "ar" ? "ar" : "en";
+}
+
+function renderValue(value: string | null | undefined, fallback = "N/A"): string {
+  const normalized = (value || "").trim();
+  return normalized || fallback;
+}
+
+function parseNumericVersion(value: string | null | undefined): number {
+  if (!value) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isPdfReportDocument(document: { templateKey: string; mimeType: string }): boolean {
+  return document.templateKey === CASE_PDF_TEMPLATE_KEY && document.mimeType === "application/pdf";
+}
+
+async function getAuthorizedCase(auth: AuthContext, caseId: string) {
+  if (!auth.tenant_id) {
+    throw new ApiError(403, "Tenant context is required");
+  }
+
+  const caseRecord = await prisma.case.findFirst({
+    where: { id: caseId, tenantId: auth.tenant_id },
+    include: {
+      tenant: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          metadata: true,
+        },
+      },
+      documents: {
+        orderBy: { generatedAt: "desc" },
+      },
+      auditLogs: {
+        orderBy: { createdAt: "desc" },
+        take: 100,
+        include: {
+          user: {
+            select: {
+              fullName: true,
+              role: true,
+            },
+          },
+        },
+      },
+      dischargeRefusalCases: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
+    },
+  });
+
+  if (!caseRecord) {
+    throw new ApiError(404, "Case not found");
+  }
+
+  return caseRecord;
+}
+
+function canAccessCasePdf(auth: AuthContext, caseRecord: Awaited<ReturnType<typeof getAuthorizedCase>>): boolean {
+  const role = canonicalizeUserRole(auth.role);
+  const adminLikeRoles = new Set(["tenant_owner", "tenant_admin", "legal_admin", "quality", "compliance"]);
+
+  if (auth.user_type === "platform_admin") {
+    return true;
+  }
+
+  if (adminLikeRoles.has(role)) {
+    return true;
+  }
+
+  if (role === "doctor" || role === "medical_director") {
+    const metadata = asRecord(caseRecord.metadata);
+    const workflow = asRecord(metadata?.workflow);
+    const attendingPhysicianId = readString(workflow, "attending_physician_id");
+    if (!attendingPhysicianId || attendingPhysicianId === auth.sub) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function ensureCasePdfAccess(auth: AuthContext, caseRecord: Awaited<ReturnType<typeof getAuthorizedCase>>): void {
+  if (!canAccessCasePdf(auth, caseRecord)) {
+    throw new ApiError(403, "Unauthorized to access legal case PDF reports");
+  }
+}
+
+function buildValidation(caseRecord: Awaited<ReturnType<typeof getAuthorizedCase>>): CasePdfValidationResult {
+  const metadata = asRecord(caseRecord.metadata);
+  const workflow = asRecord(metadata?.workflow);
+  const presentation = asRecord(metadata?.presentation);
+  const signature = asRecord(metadata?.signature);
+  const witness = asRecord(metadata?.witness);
+
+  const patientMrn = caseRecord.medicalRecordNo || readString(metadata, "medical_record_number");
+  const treatingPhysician = readString(workflow, "attending_physician");
+  const incidentTimestamp =
+    readString(workflow, "refusal_started_at") ||
+    readString(workflow, "discharge_decision_at") ||
+    readString(metadata, "refusal_started_at");
+  const patientDecision = readString(signature, "outcome");
+  const riskDisclosure =
+    readBoolean(presentation, "risks_explained") ||
+    Boolean(readString(workflow, "discussion_summary")) ||
+    Boolean(readString(metadata, "discussion_summary"));
+  const witnessName = readString(witness, "witness_name");
+  const noWitnessReason = readString(witness, "reason_no_witness", "no_witness_reason");
+  const hasAuditSummary = caseRecord.auditLogs.length > 0;
+
+  const checklist: CasePdfChecklistItem[] = [
+    {
+      key: "case_id",
+      label: "Case ID",
+      required: true,
+      satisfied: Boolean(caseRecord.id),
+      reason: caseRecord.id ? "Available" : "Missing case identifier",
+    },
+    {
+      key: "patient_mrn",
+      label: "Patient MRN",
+      required: true,
+      satisfied: Boolean(patientMrn),
+      reason: patientMrn ? "Available" : "Missing patient MRN",
+    },
+    {
+      key: "treating_physician",
+      label: "Treating physician",
+      required: true,
+      satisfied: Boolean(treatingPhysician),
+      reason: treatingPhysician ? "Available" : "Missing treating physician",
+    },
+    {
+      key: "incident_timestamp",
+      label: "Incident timestamp",
+      required: true,
+      satisfied: Boolean(incidentTimestamp),
+      reason: incidentTimestamp ? "Available" : "Missing refusal/incident timestamp",
+    },
+    {
+      key: "patient_decision",
+      label: "Patient decision",
+      required: true,
+      satisfied: Boolean(patientDecision),
+      reason: patientDecision ? "Available" : "Missing patient decision",
+    },
+    {
+      key: "risk_disclosure",
+      label: "Risk disclosure",
+      required: true,
+      satisfied: Boolean(riskDisclosure),
+      reason: riskDisclosure ? "Available" : "Missing risk disclosure record",
+    },
+    {
+      key: "witness_or_reason",
+      label: "Witness or reason",
+      required: true,
+      satisfied: Boolean(witnessName || noWitnessReason),
+      reason: witnessName || noWitnessReason ? "Available" : "Missing witness and no reason provided",
+    },
+    {
+      key: "audit_summary",
+      label: "Audit summary",
+      required: true,
+      satisfied: hasAuditSummary,
+      reason: hasAuditSummary ? "Available" : "No audit events available",
+    },
+  ];
+
+  const missingRequired = checklist.filter((item) => item.required && !item.satisfied).map((item) => item.label);
+
+  return {
+    canFinalize: missingRequired.length === 0,
+    checklist,
+    missingRequired,
+  };
+}
+
+function summarizeCaseStatus(caseRecord: Awaited<ReturnType<typeof getAuthorizedCase>>): string {
+  const metadata = asRecord(caseRecord.metadata);
+  const workflow = asRecord(metadata?.workflow);
+  return (
+    readString(workflow, "case_status") ||
+    readString(workflow, "status") ||
+    caseRecord.status ||
+    "unknown"
+  );
+}
+
+function buildAuditRows(caseRecord: Awaited<ReturnType<typeof getAuthorizedCase>>) {
+  return caseRecord.auditLogs.slice(0, 20).map((log) => ({
+    event: log.action,
+    user: log.user?.fullName || SYSTEM_LABEL,
+    role: log.user?.role || "system",
+    timestamp: log.createdAt.toISOString(),
+  }));
+}
+
+function buildCasePayload(args: {
+  caseRecord: Awaited<ReturnType<typeof getAuthorizedCase>>;
+  validation: CasePdfValidationResult;
+  trigger: GenerateTrigger;
+  language: "en" | "ar";
+  version: number;
+  hashForDisplay: string;
+  qrDataUrl: string;
+  isFinal: boolean;
+  generatedAt: string;
+}) {
+  const { caseRecord, validation } = args;
+  const metadata = asRecord(caseRecord.metadata);
+  const workflow = asRecord(metadata?.workflow);
+  const presentation = asRecord(metadata?.presentation);
+  const signature = asRecord(metadata?.signature);
+  const witness = asRecord(metadata?.witness);
+  const legal = asRecord(metadata?.legal);
+  const tenantMeta = asRecord(caseRecord.tenant?.metadata);
+
+  const legalReadinessScore = Math.round(
+    (validation.checklist.filter((item) => item.satisfied).length / Math.max(validation.checklist.length, 1)) * 100,
+  );
+
+  return {
+    version: args.version,
+    language: args.language,
+    generatedAt: args.generatedAt,
+    trigger: args.trigger,
+    templateVersion: PDF_TEMPLATE_VERSION,
+    isFinal: args.isFinal,
+    reportStatus: args.isFinal ? "final" : "draft",
+    hashForDisplay: args.hashForDisplay,
+    qrDataUrl: args.qrDataUrl,
+    facility: {
+      name: renderValue(caseRecord.tenant?.name),
+      logoUrl: readString(tenantMeta, "logo_url", "logoUrl") || null,
+      commercialRegistrationNumber: readString(tenantMeta, "commercial_registration_number", "cr_number") || "N/A",
+      healthLicenseNumber: readString(tenantMeta, "health_license_number", "license_number") || "N/A",
+      department: readString(workflow, "department", "department_name") || "N/A",
+      generatedDate: args.generatedAt,
+      caseId: caseRecord.id,
+      caseNumber: caseRecord.caseNumber || caseRecord.id,
+    },
+    patient: {
+      fullName: renderValue(caseRecord.patientName),
+      mrn: renderValue(caseRecord.medicalRecordNo),
+      age: readString(metadata, "patient_age") || "N/A",
+      gender: readString(metadata, "patient_gender") || "N/A",
+      nationality: readString(metadata, "patient_nationality") || "N/A",
+      department: readString(workflow, "department", "department_name") || "N/A",
+      treatingPhysician: readString(workflow, "attending_physician") || "N/A",
+    },
+    medicalSummary: {
+      encounterSummary:
+        readString(workflow, "discussion_summary") ||
+        readString(metadata, "encounter_summary") ||
+        "No summary provided.",
+      diagnosisSummary:
+        readString(workflow, "diagnosis_summary") ||
+        readString(metadata, "diagnosis_summary") ||
+        renderValue(caseRecord.title),
+      dischargeRecommendation:
+        readString(workflow, "discharge_recommendation") ||
+        readString(metadata, "discharge_recommendation") ||
+        "Recommendation not explicitly captured.",
+      timestamps: {
+        decisionAt: readString(workflow, "discharge_decision_at") || "N/A",
+        refusalStartedAt: readString(workflow, "refusal_started_at") || "N/A",
+        escalatedAt: readString(workflow, "escalated_at") || "N/A",
+      },
+    },
+    refusalIncident: {
+      refusedBy: readString(workflow, "refused_by") || readString(metadata, "refused_by") || "patient",
+      refusalReason:
+        readString(workflow, "refusal_reason") ||
+        readString(metadata, "refusal_reason") ||
+        "No refusal reason captured.",
+      refusalAt: readString(workflow, "refusal_started_at") || "N/A",
+      documentationMethod:
+        readString(workflow, "documentation_method") ||
+        readString(metadata, "documentation_method") ||
+        "Electronic clinical record",
+    },
+    riskDisclosure: {
+      clinicianName: readString(workflow, "attending_physician") || "N/A",
+      clinicianTitle: readString(legal, "clinician_title") || "Treating physician",
+      explainedAt: readString(presentation, "recorded_at") || "N/A",
+      explanationMethod: readString(presentation, "method") || "Bedside counseling",
+      summary: readString(workflow, "discussion_summary") || "Risk summary not provided",
+    },
+    patientDecision: {
+      decision: readString(signature, "outcome") || "unknown",
+      signedState: readString(signature, "outcome") === "signed" ? "signed" : "refused_to_sign",
+      recorder: readString(signature, "signer_name") || SYSTEM_LABEL,
+      timestamp: readString(signature, "recorded_at") || "N/A",
+    },
+    witness: {
+      name: readString(witness, "witness_name") || "N/A",
+      role: readString(witness, "witness_role") || "N/A",
+      signature: readString(witness, "signature") || "N/A",
+      timestamp: readString(witness, "recorded_at") || "N/A",
+      noWitnessReason: readString(witness, "reason_no_witness", "no_witness_reason") || "",
+    },
+    legalChecklist: validation.checklist,
+    auditTrail: buildAuditRows(caseRecord),
+    finalAssessment: {
+      caseStatus: summarizeCaseStatus(caseRecord),
+      complianceStatus: validation.canFinalize ? "compliant" : "incomplete",
+      legalReadinessScore,
+      completeness: validation.canFinalize ? "complete" : "incomplete",
+      missingFields: validation.missingRequired,
+    },
+    signatures: {
+      physician: readString(workflow, "attending_physician") || "",
+      legalRepresentative: readString(legal, "legal_representative") || "",
+      qualityRepresentative: readString(legal, "quality_representative") || "",
+    },
+    legalStatement:
+      "This report is a system-generated medico-legal record intended for internal compliance review, regulatory inspection, and legal defense documentation.",
+  };
+}
+
+function renderChecklistRows(items: CasePdfChecklistItem[]): string {
+  return items
+    .map(
+      (item) => `<tr>
+<td>${escapeHtml(item.label)}</td>
+<td>${item.required ? "Yes" : "No"}</td>
+<td>${item.satisfied ? "Yes" : "No"}</td>
+<td>${escapeHtml(item.reason)}</td>
+</tr>`,
+    )
+    .join("\n");
+}
+
+function renderAuditRows(rows: Array<{ event: string; user: string; role: string; timestamp: string }>): string {
+  return rows
+    .map(
+      (row) => `<tr>
+<td>${escapeHtml(row.event)}</td>
+<td>${escapeHtml(row.user)}</td>
+<td>${escapeHtml(row.role)}</td>
+<td>${escapeHtml(row.timestamp)}</td>
+</tr>`,
+    )
+    .join("\n");
+}
+
+function buildPdfHtml(payload: ReturnType<typeof buildCasePayload>): string {
+  const rtl = payload.language === "ar";
+  const draftWatermark = payload.reportStatus === "draft" ? '<div class="draft-watermark">DRAFT</div>' : "";
+
+  return `<!doctype html>
+<html lang="${payload.language}" dir="${rtl ? "rtl" : "ltr"}">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @page { size: A4; margin: 24mm 14mm 18mm 14mm; }
+      body {
+        font-family: "Tajawal", "IBM Plex Sans Arabic", "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+        color: #0f172a;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom: 2px solid #0f766e; padding-bottom: 8px; margin-bottom: 12px; }
+      .title { font-size: 18px; font-weight: 700; color: #0f766e; }
+      .meta { font-size: 11px; color: #334155; }
+      .section { margin-bottom: 14px; page-break-inside: avoid; }
+      .section h2 { margin: 0 0 8px; font-size: 14px; color: #115e59; border-left: 3px solid #0d9488; padding-left: 8px; }
+      .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .field { background:#f8fafc; border:1px solid #e2e8f0; border-radius: 8px; padding: 6px 8px; }
+      .field .k { color:#475569; font-size: 10px; text-transform: uppercase; letter-spacing: .03em; }
+      .field .v { font-weight: 600; margin-top: 2px; }
+      table { width:100%; border-collapse: collapse; }
+      th, td { border:1px solid #cbd5e1; padding: 6px; vertical-align: top; text-align: ${rtl ? "right" : "left"}; }
+      th { background:#f1f5f9; }
+      .small { font-size: 10px; color:#475569; }
+      .validation { display:flex; gap: 12px; align-items:center; border:1px solid #cbd5e1; border-radius:8px; padding:10px; }
+      .validation img { width: 96px; height: 96px; }
+      .draft-watermark {
+        position: fixed;
+        top: 45%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-30deg);
+        font-size: 88px;
+        color: rgba(239, 68, 68, 0.16);
+        font-weight: 800;
+        z-index: 1000;
+        pointer-events: none;
+      }
+      .signature-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .signature-box { min-height: 76px; border:1px dashed #94a3b8; border-radius:8px; padding:8px; }
+      .legal-note { background:#ecfeff; border:1px solid #a5f3fc; border-radius:8px; padding:10px; }
+    </style>
+  </head>
+  <body>
+    ${draftWatermark}
+    <div class="header">
+      <div>
+        <div class="title">Legal Case File - Discharge Refusal</div>
+        <div class="meta">Case ID: ${escapeHtml(payload.facility.caseId)} | Case Number: ${escapeHtml(payload.facility.caseNumber)}</div>
+        <div class="meta">Generated: ${escapeHtml(payload.facility.generatedDate)} | Version: ${payload.version}</div>
+      </div>
+      <div class="meta" style="text-align:${rtl ? "left" : "right"}">
+        <div>${escapeHtml(payload.facility.name)}</div>
+        <div>CR: ${escapeHtml(payload.facility.commercialRegistrationNumber)}</div>
+        <div>License: ${escapeHtml(payload.facility.healthLicenseNumber)}</div>
+      </div>
+    </div>
+
+    <section class="section">
+      <h2>1. Facility Information</h2>
+      <div class="grid">
+        <div class="field"><div class="k">Facility</div><div class="v">${escapeHtml(payload.facility.name)}</div></div>
+        <div class="field"><div class="k">Department</div><div class="v">${escapeHtml(payload.facility.department)}</div></div>
+        <div class="field"><div class="k">Generated Date</div><div class="v">${escapeHtml(payload.facility.generatedDate)}</div></div>
+        <div class="field"><div class="k">Case ID</div><div class="v">${escapeHtml(payload.facility.caseId)}</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. Patient Information</h2>
+      <div class="grid">
+        <div class="field"><div class="k">Full Name</div><div class="v">${escapeHtml(payload.patient.fullName)}</div></div>
+        <div class="field"><div class="k">MRN</div><div class="v">${escapeHtml(payload.patient.mrn)}</div></div>
+        <div class="field"><div class="k">Age / Gender</div><div class="v">${escapeHtml(String(payload.patient.age))} / ${escapeHtml(String(payload.patient.gender))}</div></div>
+        <div class="field"><div class="k">Nationality</div><div class="v">${escapeHtml(payload.patient.nationality)}</div></div>
+        <div class="field"><div class="k">Department</div><div class="v">${escapeHtml(payload.patient.department)}</div></div>
+        <div class="field"><div class="k">Treating Physician</div><div class="v">${escapeHtml(payload.patient.treatingPhysician)}</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>3. Medical Case Summary</h2>
+      <div class="field"><div class="k">Encounter Summary</div><div class="v">${escapeHtml(payload.medicalSummary.encounterSummary)}</div></div>
+      <div class="field"><div class="k">Diagnosis Summary</div><div class="v">${escapeHtml(payload.medicalSummary.diagnosisSummary)}</div></div>
+      <div class="field"><div class="k">Discharge Recommendation</div><div class="v">${escapeHtml(payload.medicalSummary.dischargeRecommendation)}</div></div>
+      <div class="small">Decision: ${escapeHtml(payload.medicalSummary.timestamps.decisionAt)} | Refusal: ${escapeHtml(payload.medicalSummary.timestamps.refusalStartedAt)} | Escalated: ${escapeHtml(payload.medicalSummary.timestamps.escalatedAt)}</div>
+    </section>
+
+    <section class="section">
+      <h2>4. Discharge Refusal Incident</h2>
+      <div class="grid">
+        <div class="field"><div class="k">Refused By</div><div class="v">${escapeHtml(payload.refusalIncident.refusedBy)}</div></div>
+        <div class="field"><div class="k">Refusal Date/Time</div><div class="v">${escapeHtml(payload.refusalIncident.refusalAt)}</div></div>
+      </div>
+      <div class="field"><div class="k">Reason</div><div class="v">${escapeHtml(payload.refusalIncident.refusalReason)}</div></div>
+      <div class="field"><div class="k">Documentation Method</div><div class="v">${escapeHtml(payload.refusalIncident.documentationMethod)}</div></div>
+    </section>
+
+    <section class="section">
+      <h2>5. Risk Disclosure Section</h2>
+      <div class="grid">
+        <div class="field"><div class="k">Clinician</div><div class="v">${escapeHtml(payload.riskDisclosure.clinicianName)}</div></div>
+        <div class="field"><div class="k">Title</div><div class="v">${escapeHtml(payload.riskDisclosure.clinicianTitle)}</div></div>
+        <div class="field"><div class="k">Explained At</div><div class="v">${escapeHtml(payload.riskDisclosure.explainedAt)}</div></div>
+        <div class="field"><div class="k">Method</div><div class="v">${escapeHtml(payload.riskDisclosure.explanationMethod)}</div></div>
+      </div>
+      <div class="field"><div class="k">Risk Summary</div><div class="v">${escapeHtml(payload.riskDisclosure.summary)}</div></div>
+    </section>
+
+    <section class="section">
+      <h2>6. Patient Decision</h2>
+      <div class="grid">
+        <div class="field"><div class="k">Decision</div><div class="v">${escapeHtml(payload.patientDecision.decision)}</div></div>
+        <div class="field"><div class="k">Signed State</div><div class="v">${escapeHtml(payload.patientDecision.signedState)}</div></div>
+        <div class="field"><div class="k">Recorder</div><div class="v">${escapeHtml(payload.patientDecision.recorder)}</div></div>
+        <div class="field"><div class="k">Timestamp</div><div class="v">${escapeHtml(payload.patientDecision.timestamp)}</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>7. Witness Information</h2>
+      <div class="grid">
+        <div class="field"><div class="k">Witness Name</div><div class="v">${escapeHtml(payload.witness.name)}</div></div>
+        <div class="field"><div class="k">Role/Title</div><div class="v">${escapeHtml(payload.witness.role)}</div></div>
+        <div class="field"><div class="k">Signature</div><div class="v">${escapeHtml(payload.witness.signature)}</div></div>
+        <div class="field"><div class="k">Timestamp</div><div class="v">${escapeHtml(payload.witness.timestamp)}</div></div>
+      </div>
+      ${payload.witness.noWitnessReason ? `<div class="field"><div class="k">No Witness Reason</div><div class="v">${escapeHtml(payload.witness.noWitnessReason)}</div></div>` : ""}
+    </section>
+
+    <section class="section">
+      <h2>8. Legal Readiness Checklist</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Required</th><th>Satisfied</th><th>Reason</th></tr></thead>
+        <tbody>${renderChecklistRows(payload.legalChecklist)}</tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>9. Audit Trail Summary</h2>
+      <table>
+        <thead><tr><th>Event</th><th>User</th><th>Role</th><th>Timestamp</th></tr></thead>
+        <tbody>${renderAuditRows(payload.auditTrail)}</tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>10. Final Assessment</h2>
+      <div class="grid">
+        <div class="field"><div class="k">Case Status</div><div class="v">${escapeHtml(payload.finalAssessment.caseStatus)}</div></div>
+        <div class="field"><div class="k">Compliance</div><div class="v">${escapeHtml(payload.finalAssessment.complianceStatus)}</div></div>
+        <div class="field"><div class="k">Legal Readiness Score</div><div class="v">${payload.finalAssessment.legalReadinessScore}%</div></div>
+        <div class="field"><div class="k">Report Completeness</div><div class="v">${escapeHtml(payload.finalAssessment.completeness)}</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>11. Digital Validation Block</h2>
+      <div class="validation">
+        <img src="${payload.qrDataUrl}" alt="validation-qr" />
+        <div>
+          <div><strong>SHA-256:</strong> ${escapeHtml(payload.hashForDisplay)}</div>
+          <div><strong>Version:</strong> ${payload.version}</div>
+          <div><strong>Generated At:</strong> ${escapeHtml(payload.generatedAt)}</div>
+          <div><strong>Template:</strong> ${escapeHtml(payload.templateVersion)}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>12. Signature Section</h2>
+      <div class="signature-grid">
+        <div class="signature-box"><strong>Treating Physician</strong><br/>${escapeHtml(payload.signatures.physician)}</div>
+        <div class="signature-box"><strong>Legal Affairs Representative</strong><br/>${escapeHtml(payload.signatures.legalRepresentative)}</div>
+        <div class="signature-box"><strong>Quality Representative</strong><br/>${escapeHtml(payload.signatures.qualityRepresentative)}</div>
+      </div>
+    </section>
+
+    <section class="section legal-note">
+      <h2>13. Legal Statement</h2>
+      <div>${escapeHtml(payload.legalStatement)}</div>
+    </section>
+  </body>
+</html>`;
+}
+
+async function renderPdfBuffer(args: {
+  html: string;
+  reportStatus: "draft" | "final";
+  version: number;
+  generatedAt: string;
+  hashForFooter: string;
+}) {
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(args.html, { waitUntil: "networkidle0" });
+
+    return await page.pdf({
+      format: "A4",
+      printBackground: true,
+      displayHeaderFooter: true,
+      margin: {
+        top: "24mm",
+        right: "14mm",
+        bottom: "18mm",
+        left: "14mm",
+      },
+      headerTemplate: `
+        <div style="font-size:9px;width:100%;padding:0 10mm;color:#334155;display:flex;justify-content:space-between;">
+          <span>WathiqCare Legal Case File</span>
+          <span>Generated: ${escapeHtml(args.generatedAt)}</span>
+        </div>
+      `,
+      footerTemplate: `
+        <div style="font-size:9px;width:100%;padding:0 10mm;color:#334155;display:flex;justify-content:space-between;">
+          <span>Confidential | System-generated medico-legal record</span>
+          <span>v${args.version} | ${escapeHtml(args.reportStatus)} | ${escapeHtml(args.hashForFooter.slice(0, 16))}</span>
+          <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+        </div>
+      `,
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
+function toReportSummary(document: {
+  id: string;
+  versionLabel: string;
+  fileName: string;
+  generatedAt: Date;
+  status: DocumentStatus;
+  metadata: Prisma.JsonValue | null;
+  mimeType: string;
+  sizeBytes: bigint;
+  generatedBy?: { fullName: string } | null;
+}): CasePdfVersionSummary {
+  const metadata = asRecord(document.metadata);
+  const reportStatus = readString(metadata, "report_status") || "draft";
+
+  return {
+    id: document.id,
+    version: parseNumericVersion(document.versionLabel),
+    fileName: document.fileName,
+    generatedAt: document.generatedAt.toISOString(),
+    status: (reportStatus === "final" ? "final" : reportStatus === "failed" ? "failed" : "draft") as
+      | "draft"
+      | "final"
+      | "failed",
+    isFinal: Boolean(readBoolean(metadata, "is_final") || reportStatus === "final"),
+    templateVersion: readString(metadata, "template_version") || PDF_TEMPLATE_VERSION,
+    language: readString(metadata, "language") || "en",
+    mimeType: document.mimeType,
+    fileSize: Number(document.sizeBytes),
+    sha256Hash: readString(metadata, "sha256_binary_hash", "sha256_hash"),
+    generatedBy: document.generatedBy?.fullName || null,
+  };
+}
+
+async function listPdfDocumentsInternal(tenantId: string, caseId: string) {
+  return prisma.document.findMany({
+    where: {
+      tenantId,
+      caseId,
+      templateKey: CASE_PDF_TEMPLATE_KEY,
+      mimeType: "application/pdf",
+    },
+    include: {
+      generatedBy: {
+        select: {
+          fullName: true,
+        },
+      },
+    },
+    orderBy: { generatedAt: "desc" },
+  });
+}
+
+function buildFileName(caseId: string, date = new Date()): string {
+  return `WathiqCare_DischargeRefusal_Case_${caseId}_${formatDateForFileName(date)}.pdf`;
+}
+
+async function createFailedRecord(args: {
+  tenantId: string;
+  caseId: string;
+  generatedBy: string;
+  version: number;
+  fileName: string;
+  trigger: GenerateTrigger;
+  language: "en" | "ar";
+  errorMessage: string;
+  request?: NextRequest;
+}) {
+  const failed = await prisma.document.create({
+    data: {
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      documentType: DocumentType.CASE_FILE,
+      status: DocumentStatus.DRAFT,
+      documentCode: `LEGAL-CASE-PDF-${args.version}`,
+      titleEn: "Legal Case PDF Report",
+      titleAr: "تقرير ملف القضية القانوني",
+      templateKey: CASE_PDF_TEMPLATE_KEY,
+      versionLabel: String(args.version),
+      fileName: args.fileName,
+      mimeType: "application/pdf",
+      storagePath: null,
+      previewHtml: null,
+      payloadJson: {
+        error: args.errorMessage,
+      },
+      sizeBytes: BigInt(0),
+      generatedByUserId: args.generatedBy,
+      metadata: {
+        trigger: args.trigger,
+        report_status: "failed",
+        language: args.language,
+        template_version: PDF_TEMPLATE_VERSION,
+        is_final: false,
+      },
+    },
+  });
+
+  await writeAuditLog({
+    tenantId: args.tenantId,
+    userId: args.generatedBy,
+    entityType: "case_pdf",
+    entityId: failed.id,
+    action: "pdf_generation_failed",
+    details: "Legal case PDF generation failed",
+    caseId: args.caseId,
+    documentId: failed.id,
+    metadataJson: {
+      version: args.version,
+      trigger: args.trigger,
+      message: args.errorMessage,
+    },
+    request: args.request,
+  });
+
+  return failed;
+}
+
+export async function generateCasePdfReport(args: {
+  auth: AuthContext;
+  caseId: string;
+  request?: NextRequest;
+  trigger: GenerateTrigger;
+  requestedFinal?: boolean;
+  language?: "en" | "ar";
+  bypassAccessCheck?: boolean;
+}): Promise<GeneratedCasePdfResult> {
+  const caseRecord = await getAuthorizedCase(args.auth, args.caseId);
+  if (!args.bypassAccessCheck) {
+    ensureCasePdfAccess(args.auth, caseRecord);
+  }
+
+  const language = args.language || "en";
+  const validation = buildValidation(caseRecord);
+  const allowFinal = Boolean(args.requestedFinal && validation.canFinalize);
+
+  const existingPdfDocs = caseRecord.documents.filter(isPdfReportDocument);
+  const version = existingPdfDocs.length + 1;
+  const fileName = buildFileName(args.caseId);
+  const generatedAt = nowIso();
+
+  await writeAuditLog({
+    tenantId: caseRecord.tenantId,
+    userId: args.auth.sub,
+    entityType: "case_pdf",
+    entityId: args.caseId,
+    action: "pdf_generation_requested",
+    details: "Legal case PDF generation requested",
+    caseId: args.caseId,
+    metadataJson: {
+      trigger: args.trigger,
+      requested_final: Boolean(args.requestedFinal),
+      version,
+    },
+    request: args.request,
+  });
+
+  try {
+    const brandingProfile = await getTenantBrandingProfile(caseRecord.tenantId).catch(() => null);
+    const validationPath = `${process.env.NEXT_PUBLIC_APP_URL || "https://wathiqcare.online"}/api/cases/${encodeURIComponent(
+      args.caseId,
+    )}/pdf/${version}/preview`;
+
+    const contentHashInput = {
+      caseId: caseRecord.id,
+      generatedAt,
+      validation,
+      trigger: args.trigger,
+      language,
+      readinessSummary: summarizeCaseStatus(caseRecord),
+      branding: brandingProfile,
+    };
+
+    const contentHash = hashSha256(JSON.stringify(contentHashInput));
+    const qrDataUrl = await QRCode.toDataURL(validationPath, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 160,
+    });
+
+    const payload = buildCasePayload({
+      caseRecord,
+      validation,
+      trigger: args.trigger,
+      language,
+      version,
+      hashForDisplay: contentHash,
+      qrDataUrl,
+      isFinal: allowFinal,
+      generatedAt,
+    });
+
+    const html = buildPdfHtml(payload);
+    const pdfBuffer = await renderPdfBuffer({
+      html,
+      reportStatus: allowFinal ? "final" : "draft",
+      version,
+      generatedAt,
+      hashForFooter: contentHash,
+    });
+
+    const binaryHash = hashSha256(pdfBuffer);
+
+    const document = await prisma.document.create({
+      data: {
+        tenantId: caseRecord.tenantId,
+        caseId: args.caseId,
+        documentType: DocumentType.CASE_FILE,
+        status: DocumentStatus.GENERATED,
+        documentCode: `LEGAL-CASE-PDF-${version}`,
+        titleEn: "Legal Case File Report",
+        titleAr: "تقرير ملف القضية القانوني",
+        templateKey: CASE_PDF_TEMPLATE_KEY,
+        versionLabel: String(version),
+        fileName,
+        mimeType: "application/pdf",
+        storagePath: `db://documents/${version}`,
+        previewHtml: null,
+        payloadJson: {
+          report_payload: payload,
+          pdf_base64: Buffer.from(pdfBuffer).toString("base64"),
+        } as Prisma.InputJsonValue,
+        sizeBytes: BigInt(pdfBuffer.byteLength),
+        generatedByUserId: args.auth.sub,
+        metadata: {
+          trigger: args.trigger,
+          report_status: allowFinal ? "final" : "draft",
+          is_final: allowFinal,
+          template_version: PDF_TEMPLATE_VERSION,
+          language,
+          sha256_hash: contentHash,
+          sha256_binary_hash: binaryHash,
+          can_finalize: validation.canFinalize,
+          missing_required: validation.missingRequired,
+          immutable: allowFinal,
+        } as Prisma.InputJsonObject,
+      },
+      include: {
+        generatedBy: {
+          select: {
+            fullName: true,
+          },
+        },
+      },
+    });
+
+    await writeAuditLog({
+      tenantId: caseRecord.tenantId,
+      userId: args.auth.sub,
+      entityType: "case_pdf",
+      entityId: document.id,
+      action: args.trigger === "manual_regenerate" ? "pdf_regenerated" : "pdf_generated",
+      details: `Legal case PDF generated (v${version})`,
+      caseId: args.caseId,
+      documentId: document.id,
+      metadataJson: {
+        version,
+        status: allowFinal ? "final" : "draft",
+        sha256_hash: contentHash,
+        sha256_binary_hash: binaryHash,
+      },
+      request: args.request,
+    });
+
+    await writeAuditLog({
+      tenantId: caseRecord.tenantId,
+      userId: args.auth.sub,
+      entityType: "case_pdf",
+      entityId: document.id,
+      action: "pdf_version_created",
+      details: `PDF version created (v${version})`,
+      caseId: args.caseId,
+      documentId: document.id,
+      metadataJson: {
+        version,
+      },
+      request: args.request,
+    });
+
+    await appendAuditChainEvent({
+      tenantId: caseRecord.tenantId,
+      caseId: args.caseId,
+      eventType: "PDF_GENERATED",
+      actorId: args.auth.sub,
+      actorRole: args.auth.role ?? null,
+      payloadSummary: `Legal case PDF generated v${version}`,
+      documentVersion: String(version),
+      metadataJson: {
+        documentId: document.id,
+        status: allowFinal ? "final" : "draft",
+      },
+      request: args.request,
+    }).catch(() => undefined);
+
+    const summary = toReportSummary(document);
+
+    return {
+      report: summary,
+      validation,
+      previewUrl: `/api/cases/${encodeURIComponent(args.caseId)}/pdf/${version}/preview`,
+      downloadUrl: `/api/cases/${encodeURIComponent(args.caseId)}/pdf/${version}/download`,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown PDF generation error";
+    await createFailedRecord({
+      tenantId: caseRecord.tenantId,
+      caseId: args.caseId,
+      generatedBy: args.auth.sub,
+      version,
+      fileName,
+      trigger: args.trigger,
+      language,
+      errorMessage: message,
+      request: args.request,
+    });
+    throw new ApiError(
+      500,
+      "PDF generation failed. Please review missing case fields or template rendering errors.",
+    );
+  }
+}
+
+export async function getLatestCasePdf(auth: AuthContext, caseId: string) {
+  const caseRecord = await getAuthorizedCase(auth, caseId);
+  ensureCasePdfAccess(auth, caseRecord);
+
+  const docs = await listPdfDocumentsInternal(caseRecord.tenantId, caseId);
+  const latest = docs[0] ?? null;
+  const validation = buildValidation(caseRecord);
+
+  return {
+    latest: latest ? toReportSummary(latest) : null,
+    validation,
+  };
+}
+
+export async function listCasePdfVersions(auth: AuthContext, caseId: string) {
+  const caseRecord = await getAuthorizedCase(auth, caseId);
+  ensureCasePdfAccess(auth, caseRecord);
+
+  const docs = await listPdfDocumentsInternal(caseRecord.tenantId, caseId);
+  return docs.map((doc) => toReportSummary(doc));
+}
+
+async function getCasePdfDocumentByVersion(auth: AuthContext, caseId: string, version: number) {
+  const caseRecord = await getAuthorizedCase(auth, caseId);
+  ensureCasePdfAccess(auth, caseRecord);
+
+  const document = await prisma.document.findFirst({
+    where: {
+      tenantId: caseRecord.tenantId,
+      caseId,
+      templateKey: CASE_PDF_TEMPLATE_KEY,
+      mimeType: "application/pdf",
+      versionLabel: String(version),
+    },
+    include: {
+      generatedBy: {
+        select: {
+          fullName: true,
+        },
+      },
+    },
+  });
+
+  if (!document) {
+    throw new ApiError(404, `PDF version ${version} not found`);
+  }
+
+  return { caseRecord, document };
+}
+
+function readPdfBufferFromDocument(document: { payloadJson: Prisma.JsonValue | null }): Buffer {
+  const payload = asRecord(document.payloadJson);
+  const base64 = readString(payload, "pdf_base64");
+  if (!base64) {
+    throw new ApiError(410, "Stored PDF binary is not available for this version");
+  }
+  return Buffer.from(base64, "base64");
+}
+
+export async function previewCasePdfVersion(args: {
+  auth: AuthContext;
+  caseId: string;
+  version: number;
+  request?: NextRequest;
+}) {
+  const { caseRecord, document } = await getCasePdfDocumentByVersion(args.auth, args.caseId, args.version);
+
+  await writeAuditLog({
+    tenantId: caseRecord.tenantId,
+    userId: args.auth.sub,
+    entityType: "case_pdf",
+    entityId: document.id,
+    action: "pdf_previewed",
+    details: `Previewed legal case PDF v${args.version}`,
+    caseId: args.caseId,
+    documentId: document.id,
+    metadataJson: { version: args.version },
+    request: args.request,
+  });
+
+  await logReportAccess({
+    tenantId: caseRecord.tenantId,
+    caseId: args.caseId,
+    reportKey: "case_pdf_preview",
+    exportFormat: "PDF",
+    accessedByUserId: args.auth.sub,
+    accessedByRole: args.auth.role ?? null,
+    request: args.request,
+    metadataJson: {
+      version: args.version,
+      documentId: document.id,
+    },
+  }).catch(() => undefined);
+
+  return {
+    fileName: document.fileName,
+    buffer: readPdfBufferFromDocument(document),
+  };
+}
+
+export async function downloadCasePdfVersion(args: {
+  auth: AuthContext;
+  caseId: string;
+  version: number;
+  request?: NextRequest;
+}) {
+  const { caseRecord, document } = await getCasePdfDocumentByVersion(args.auth, args.caseId, args.version);
+
+  await writeAuditLog({
+    tenantId: caseRecord.tenantId,
+    userId: args.auth.sub,
+    entityType: "case_pdf",
+    entityId: document.id,
+    action: "pdf_downloaded",
+    details: `Downloaded legal case PDF v${args.version}`,
+    caseId: args.caseId,
+    documentId: document.id,
+    metadataJson: { version: args.version },
+    request: args.request,
+  });
+
+  await logReportAccess({
+    tenantId: caseRecord.tenantId,
+    caseId: args.caseId,
+    reportKey: "case_pdf_download",
+    exportFormat: "PDF",
+    accessedByUserId: args.auth.sub,
+    accessedByRole: args.auth.role ?? null,
+    request: args.request,
+    metadataJson: {
+      version: args.version,
+      documentId: document.id,
+    },
+  }).catch(() => undefined);
+
+  return {
+    fileName: document.fileName,
+    buffer: readPdfBufferFromDocument(document),
+  };
+}
+
+export async function maybeAutoGenerateCasePdf(args: {
+  auth: AuthContext;
+  caseId: string;
+  trigger: "auto_ready_for_legal" | "auto_escalated" | "auto_closed";
+  request?: NextRequest;
+  statusSnapshot?: string;
+}) {
+  const caseRecord = await getAuthorizedCase(args.auth, args.caseId);
+
+  const latestPdf = caseRecord.documents
+    .filter(isPdfReportDocument)
+    .sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime())[0];
+  const latestMeta = asRecord(latestPdf?.metadata ?? null);
+
+  const currentStatus = args.statusSnapshot || summarizeCaseStatus(caseRecord);
+  if (
+    latestMeta &&
+    readString(latestMeta, "trigger") === args.trigger &&
+    readString(latestMeta, "status_snapshot") === currentStatus
+  ) {
+    return null;
+  }
+
+  const readiness = await getLegalReadiness(args.auth, args.caseId).catch(() => null);
+  if (args.trigger === "auto_ready_for_legal" && !readiness?.readyForLegal) {
+    return null;
+  }
+  const requestedFinal = args.trigger === "auto_closed" && Boolean(readiness?.readyForLegal);
+
+  const result = await generateCasePdfReport({
+    auth: args.auth,
+    caseId: args.caseId,
+    request: args.request,
+    trigger: args.trigger,
+    requestedFinal,
+    language: "en",
+    bypassAccessCheck: true,
+  });
+
+  await prisma.document.update({
+    where: { id: result.report.id },
+    data: {
+      metadata: {
+        ...(asRecord(
+          (
+            await prisma.document.findUnique({
+              where: { id: result.report.id },
+              select: { metadata: true },
+            })
+          )?.metadata,
+        ) ?? {}),
+        status_snapshot: currentStatus,
+      } as Prisma.InputJsonObject,
+    },
+  });
+
+  return result;
+}

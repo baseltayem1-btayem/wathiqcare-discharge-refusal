@@ -20,10 +20,41 @@ function buildTraceId(): string {
 type JsonResponseInit = {
   status?: number;
   headers?: HeadersInit;
+  traceId?: string;
 };
 
+function resolveTraceId(init: JsonResponseInit = {}): string {
+  const requestedTraceId = init.traceId?.trim();
+  return requestedTraceId && requestedTraceId.length > 0 ? requestedTraceId : buildTraceId();
+}
+
+type FailureLogContext = {
+  traceId: string;
+  status: number;
+  message: string;
+  error: unknown;
+  code?: string | null;
+};
+
+export function logApiFailure(context: FailureLogContext): void {
+  const payload = {
+    traceId: context.traceId,
+    status: context.status,
+    message: context.message,
+    code: context.code ?? null,
+    errorName: context.error instanceof Error ? context.error.name : undefined,
+  };
+
+  if (context.status >= 500) {
+    console.error("API_FAILURE", payload, context.error);
+    return;
+  }
+
+  console.warn("API_FAILURE", payload);
+}
+
 export function jsonSuccess<T>(data: T, init: JsonResponseInit = {}) {
-  const traceId = buildTraceId();
+  const traceId = resolveTraceId(init);
   const timestamp = new Date().toISOString();
   const payload =
     data && typeof data === "object" && !Array.isArray(data)
@@ -50,7 +81,7 @@ export function jsonSuccess<T>(data: T, init: JsonResponseInit = {}) {
 }
 
 export function jsonError(status: number, detail: string, init: JsonResponseInit = {}) {
-  const traceId = buildTraceId();
+  const traceId = resolveTraceId(init);
   const timestamp = new Date().toISOString();
 
   return NextResponse.json(
@@ -125,8 +156,16 @@ function readPrismaMeta(error: unknown): Record<string, unknown> | null {
 }
 
 export function handleApiError(error: unknown) {
+  const traceId = buildTraceId();
+
   if (error instanceof ApiError) {
-    return jsonError(error.status, error.message);
+    logApiFailure({
+      traceId,
+      status: error.status,
+      message: error.message,
+      error,
+    });
+    return jsonError(error.status, error.message, { traceId });
   }
 
   const prismaCode = readPrismaCode(error);
@@ -137,24 +176,39 @@ export function handleApiError(error: unknown) {
       : typeof meta?.target === "string"
         ? meta.target
         : "unique field";
-    return jsonError(409, `Duplicate value for ${target}`);
+    const message = `Duplicate value for ${target}`;
+    logApiFailure({ traceId, status: 409, message, error, code: prismaCode });
+    return jsonError(409, message, { traceId });
   }
   if (prismaCode === "P2003") {
-    return jsonError(400, "Related record is missing or invalid");
+    const message = "Related record is missing or invalid";
+    logApiFailure({ traceId, status: 400, message, error, code: prismaCode });
+    return jsonError(400, message, { traceId });
   }
   if (prismaCode === "P2025") {
-    return jsonError(404, "Requested record was not found");
+    const message = "Requested record was not found";
+    logApiFailure({ traceId, status: 404, message, error, code: prismaCode });
+    return jsonError(404, message, { traceId });
   }
   if (prismaCode === "P2011" || prismaCode === "P2012") {
-    return jsonError(400, "Required field is missing");
+    const message = "Required field is missing";
+    logApiFailure({ traceId, status: 400, message, error, code: prismaCode });
+    return jsonError(400, message, { traceId });
   }
 
   const status = readStatus(error);
   const message = readMessage(error);
   if (status && message) {
-    return jsonError(status, message);
+    logApiFailure({ traceId, status, message, error, code: prismaCode });
+    return jsonError(status, message, { traceId });
   }
 
-  console.error("API route error", error);
-  return jsonError(500, "Internal server error");
+  logApiFailure({
+    traceId,
+    status: 500,
+    message: "Internal server error",
+    error,
+    code: prismaCode,
+  });
+  return jsonError(500, "Internal server error", { traceId });
 }

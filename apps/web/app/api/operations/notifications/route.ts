@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
-import { ApiError, handleApiError } from "@/lib/server/http";
+import { ApiError, handleApiError, logApiFailure } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 
+function resolveTraceId(request: NextRequest): string {
+    return (
+        request.headers.get("x-trace-id")?.trim() ||
+        request.headers.get("x-request-id")?.trim() ||
+        `ops-notif-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`
+    );
+}
+
 export async function GET(request: NextRequest) {
+    const traceId = resolveTraceId(request);
+
     try {
         const prisma = getPrisma();
         const auth = await requireAuth(request);
@@ -25,16 +35,25 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ notifications: notifications ?? [], unread: unread ?? 0 });
     } catch (error) {
-        console.error("OPERATIONS_NOTIFICATIONS_GET_FAILED", {
+        logApiFailure({
+            traceId,
+            status: error instanceof ApiError ? error.status : 500,
+            message: error instanceof ApiError ? error.message : "Failed to load operations notifications",
             error,
-            message: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
+            code: "OPERATIONS_NOTIFICATIONS_GET_FAILED",
         });
 
         if (error instanceof ApiError) {
             return handleApiError(error);
         }
 
-        return NextResponse.json({ notifications: [], unread: 0 });
+        return NextResponse.json(
+            { notifications: [], unread: 0, traceId },
+            {
+                headers: {
+                    "x-trace-id": traceId,
+                },
+            },
+        );
     }
 }

@@ -10,6 +10,7 @@ import { toJsonSafe } from "@/lib/server/json";
 import { requireTenantOperationalAccess, requireTenantId } from "@/lib/server/auth";
 
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { maybeAutoGenerateCasePdf } from "@/lib/server/legal-case-pdf-service";
 
 function parseCaseStatus(value: string | null | undefined): CaseStatus | null {
   if (!value) return null;
@@ -135,6 +136,16 @@ export async function PATCH(
       },
       request,
     });
+
+    if (updated.status === CaseStatus.CLOSED) {
+      await maybeAutoGenerateCasePdf({
+        auth,
+        caseId,
+        trigger: "auto_closed",
+        statusSnapshot: "closed",
+        request,
+      }).catch(() => undefined);
+    }
 
     return NextResponse.json(toJsonSafe(updated));
   } catch (error) {

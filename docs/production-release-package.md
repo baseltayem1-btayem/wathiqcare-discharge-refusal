@@ -96,9 +96,9 @@
 | E-06 | `BACKEND_URL` / `BACKEND_API_BASE_URL` set on Vercel for server-side proxy | DevOps | ⬜ |
 | E-07 | `APP_BASE_URL` set to `https://wathiqcare.online` | DevOps | ⬜ |
 | E-08 | Microsoft Graph email: `MICROSOFT_TENANT_ID`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_SENDER_EMAIL` all set | DevOps | ⬜ |
-| E-09 | SMS provider: `SMS_PROVIDER` set to `taqnyat` or `unifonic`; corresponding API key set; `WATHIQ_SMS_STUB_MODE` is NOT set (or set to false) | DevOps | ⬜ |
+| E-09 | SMS provider: `SMS_PROVIDER=taqnyat`; `SMS_BASE_URL`, `SMS_BEARER_TOKEN`, `SMS_SENDER` set; `SMS_ENABLED=true`; `WATHIQ_SMS_STUB_MODE` is NOT set (or set to false) | DevOps | ⬜ |
 | E-10 | `PUBLIC_LINK_TOKEN_PEPPER` — unique, random, ≥32 chars; documented in password vault | DevOps | ⬜ |
-| E-11 | `SMS_SENDER_ID` set to registered sender name | DevOps | ⬜ |
+| E-11 | `SMS_SENDER` set to registered sender name | DevOps | ⬜ |
 | E-12 | `PLATFORM_ADMIN_PASSWORD_HASH` set (bcrypt hash of initial superadmin password) | DevOps | ⬜ |
 | E-13 | `DEMO_OWNER_PASSWORD_HASH` set if seeding demo tenant; otherwise unset | DevOps | ⬜ |
 | E-14 | `SHC_COMPLIANCE_MODULE=true` to activate Shareable Health Certificate module | DevOps | ⬜ |
@@ -243,14 +243,15 @@ test(sms): add SMS OTP provider unit tests
 
 | Variable | Required | Notes |
 |----------|----------|-------|
-| `SMS_PROVIDER` | **REQUIRED** | `taqnyat` (Saudi Arabia) or `unifonic`; `mock` is dev-only |
-| `TAQNYAT_API_KEY` | Required if provider=taqnyat | Obtain from Taqnyat account dashboard |
-| `UNIFONIC_API_KEY` | Required if provider=unifonic | Obtain from Unifonic account |
-| `SMS_SENDER_ID` | **REQUIRED** | Registered sender name (e.g. `WathiqCare`; must be pre-approved by provider) |
+| `SMS_PROVIDER` | **REQUIRED** | `taqnyat` (production contract) |
+| `SMS_BASE_URL` | **REQUIRED** | Taqnyat API base URL (for example: `https://api.taqnyat.sa`) |
+| `SMS_BEARER_TOKEN` | **REQUIRED** | Bearer token from Taqnyat dashboard |
+| `SMS_SENDER` | **REQUIRED** | Registered sender name (must be pre-approved by provider) |
+| `SMS_ENABLED` | **REQUIRED** | Must be `true` in production |
 | `WATHIQ_SMS_STUB_MODE` | Must be **unset** or `false` | If set to `true`, real SMS is suppressed — do NOT set in production |
 
 **Prerequisites:**
-1. Create account with Taqnyat (https://taqnyat.sa) or Unifonic
+1. Create account with Taqnyat (https://taqnyat.sa)
 2. Register sender ID "WathiqCare" (approval takes 1–3 business days in Saudi Arabia)
 3. Top up SMS credit balance for pilot volume
 4. Test with real phone number in staging before production cutover

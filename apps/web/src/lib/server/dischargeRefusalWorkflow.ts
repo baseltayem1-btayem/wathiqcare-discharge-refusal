@@ -11,6 +11,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { getTenantBrandingProfile } from "@/lib/server/tenantBrandingStore";
 import { buildTenantReferenceNumber } from "@/lib/server/tenantBranding";
+import { maybeAutoGenerateCasePdf } from "@/lib/server/legal-case-pdf-service";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { dischargeRefusalFormTemplate } from "@/lib/templates/dischargeRefusalForm.template";
 import { financialResponsibilityNoticeTemplate } from "@/lib/templates/financialResponsibilityNotice.template";
@@ -947,6 +948,39 @@ export async function applyWorkflowAction(args: {
         } as Prisma.InputJsonObject,
         request,
     });
+
+    let autoPdfTrigger: "auto_ready_for_legal" | "auto_escalated" | "auto_closed" = "auto_ready_for_legal";
+    if (workflow.status === "escalated") {
+        autoPdfTrigger = "auto_escalated";
+    }
+    if (workflow.status === "closed") {
+        autoPdfTrigger = "auto_closed";
+    }
+
+    try {
+        await maybeAutoGenerateCasePdf({
+            auth,
+            caseId,
+            trigger: autoPdfTrigger,
+            statusSnapshot: workflow.case_status,
+            request,
+        });
+    } catch (pdfError) {
+        await writeAuditLog({
+            tenantId: requireTenantId(auth),
+            userId: auth.sub,
+            entityType: "case_pdf",
+            entityId: caseId,
+            action: "pdf_generation_failed",
+            details: "Automatic case PDF generation failed",
+            caseId,
+            metadataJson: {
+                trigger: autoPdfTrigger,
+                reason: pdfError instanceof Error ? pdfError.message : String(pdfError),
+            } as Prisma.InputJsonObject,
+            request,
+        }).catch(() => undefined);
+    }
 
     const nextWorkflow = await getWorkflowSnapshot(auth, caseId);
     return { workflow: nextWorkflow, generatedDocument };
