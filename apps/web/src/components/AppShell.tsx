@@ -107,13 +107,24 @@ function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; log
     .join("")
     .slice(0, compact ? 2 : 3)
     .toUpperCase();
+  const isImcTenant = /\bIMC\b/i.test(name);
 
   return (
     <div
       className={compact ? "flex h-9 w-[78px] items-center justify-center rounded-lg" : "flex h-20 w-[150px] items-center justify-center rounded-xl"}
       style={{ background: "linear-gradient(135deg, #cffafe, #ecfeff)", color: "#0e7490", border: "1px solid #a5f3fc" }}
     >
-      <span className={compact ? "text-sm font-bold tracking-[0.2em]" : "text-lg font-bold tracking-[0.3em]"}>{initials || "TEN"}</span>
+      {isImcTenant ? (
+        <img
+          src="https://www.imc.med.sa/images/logo.jpg"
+          alt="IMC"
+          className="h-8 w-auto object-contain"
+          loading="eager"
+          decoding="async"
+        />
+      ) : (
+        <span className={compact ? "text-sm font-bold tracking-[0.2em]" : "text-lg font-bold tracking-[0.3em]"}>{initials || "TEN"}</span>
+      )}
     </div>
   );
 }
