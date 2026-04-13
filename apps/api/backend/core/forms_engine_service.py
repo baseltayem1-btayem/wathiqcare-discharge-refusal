@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -36,6 +37,7 @@ OTP_DIR.mkdir(parents=True, exist_ok=True)
 OTP_MAX_RETRIES = max(1, int(os.getenv("DOCUMENT_OTP_MAX_RETRIES", "3")))
 EXPOSE_DEBUG_OTP = (os.getenv("EXPOSE_DEBUG_OTP") or "false").strip().lower() == "true"
 _APP_ENV = (os.getenv("APP_ENV") or os.getenv("ENVIRONMENT") or "production").strip().lower()
+logger = logging.getLogger(__name__)
 if EXPOSE_DEBUG_OTP and _APP_ENV not in {"development", "dev", "test", "testing", "local"}:
     raise RuntimeError(
         "EXPOSE_DEBUG_OTP=true is not allowed outside of development/test environments. "
@@ -149,7 +151,18 @@ def _render_locked_content(template_key: str) -> str:
 
     context = {field: "" for field in template.required_fields}
     context.update({"generated_at": _iso(_now()) or ""})
-    return template.renderer(context)
+
+    try:
+        return template.renderer(context)
+    except Exception as exc:
+        # Endpoint hardening: a single template rendering issue must not take
+        # down catalog listing in production.
+        logger.exception(
+            "forms_templates_locked_content_render_failed template=%s",
+            template_key,
+            exc_info=exc,
+        )
+        return ""
 
 
 def _write_audit(
