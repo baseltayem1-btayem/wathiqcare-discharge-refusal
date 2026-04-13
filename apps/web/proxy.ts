@@ -133,6 +133,13 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Legacy path hotfix: keep old dashboard URLs working after pluralized route migration.
+  if (pathWithoutLocale === "/dashboard") {
+    const url = request.nextUrl.clone();
+    url.pathname = buildLocalizedPath("/dashboards", locale);
+    return NextResponse.redirect(url, 308);
+  }
+
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   const isProtectedPath = EDGE_PROTECTED_PREFIXES.some(
     (prefix) => pathWithoutLocale === prefix || pathWithoutLocale.startsWith(`${prefix}/`),
