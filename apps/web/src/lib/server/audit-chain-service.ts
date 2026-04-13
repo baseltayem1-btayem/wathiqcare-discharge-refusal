@@ -8,9 +8,9 @@ import { toIsoString } from "@/lib/server/compliance-utils";
 const prisma = getPrisma();
 
 type AuditChainEventDelegate = {
-  findFirst: (...args: any[]) => Promise<any>;
-  create: (...args: any[]) => Promise<any>;
-  findMany: (...args: any[]) => Promise<any[]>;
+  findFirst: (args: unknown) => Promise<{ currentHash?: string | null } | null>;
+  create: (args: unknown) => Promise<unknown>;
+  findMany: (args: unknown) => Promise<VerifiableChainEvent[]>;
 };
 
 function getAuditChainEventDelegate(): AuditChainEventDelegate {

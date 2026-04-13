@@ -98,7 +98,11 @@ export default function TenantListSection() {
   }, []);
 
   useEffect(() => {
-    void loadTenants();
+    const timer = setTimeout(() => {
+      void loadTenants();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [loadTenants]);
 
   // ── Mutation handlers ───────────────────────────────────────────────────────

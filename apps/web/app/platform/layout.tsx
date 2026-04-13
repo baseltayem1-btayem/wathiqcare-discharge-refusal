@@ -39,7 +39,11 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void resolveAccess();
+    const timer = setTimeout(() => {
+      void resolveAccess();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [resolveAccess]);
 
   if (state === "checking") {

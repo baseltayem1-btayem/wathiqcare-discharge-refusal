@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Dict
 
 from backend.discharge.home_healthcare.homecare_agreement_engine import render_homecare_agreement_html
+from backend.modules.discharge_refusal_templates import TEMPLATE_REGISTRY_BY_KEY, generate_from_template
 
 
 CANONICAL_TEMPLATE_SOURCE = "backend.forms.medical_legal_forms_library.FORMS_LIBRARY"
@@ -269,7 +270,7 @@ FORMS_LIBRARY: Dict[str, MedicalLegalFormTemplate] = {
     "discharge_refusal_form": MedicalLegalFormTemplate(
         key="discharge_refusal_form",
         title="Medical Discharge Refusal Form",
-        code="IMC-PAT-DIS-REF-01",
+        code="IMC-DIS-REF-01",
         version="1.0",
         locked_template=True,
         bilingual=True,
@@ -277,7 +278,71 @@ FORMS_LIBRARY: Dict[str, MedicalLegalFormTemplate] = {
     "financial_responsibility_notice": MedicalLegalFormTemplate(
         key="financial_responsibility_notice",
         title="Notification and Acknowledgment of Financial Responsibility for Refusal of Medical Discharge",
-        code="IMC-PAT-DIS-NOT-01",
+        code="IMC-DIS-NOT-01",
+        version="1.0",
+        locked_template=True,
+        bilingual=True,
+    ),
+    "promissory_note": MedicalLegalFormTemplate(
+        key="promissory_note",
+        title="Promissory Note / سند لأمر",
+        code="IMC-PN-01",
+        version="1.0",
+        locked_template=True,
+        bilingual=True,
+    ),
+    "communication_log": MedicalLegalFormTemplate(
+        key="communication_log",
+        title="Initial Communication Documentation",
+        code="IMC-COM-01",
+        version="1.0",
+        locked_template=True,
+        bilingual=True,
+    ),
+    "social_intervention_form": MedicalLegalFormTemplate(
+        key="social_intervention_form",
+        title="Social / Patient Affairs Intervention",
+        code="IMC-SOC-01",
+        version="1.0",
+        locked_template=True,
+        bilingual=True,
+    ),
+    "escalation_compliance_form": MedicalLegalFormTemplate(
+        key="escalation_compliance_form",
+        title="Legal Escalation and Compliance",
+        code="IMC-ESC-01",
+        version="1.0",
+        locked_template=True,
+        bilingual=True,
+    ),
+    "witness_confirmation_form": MedicalLegalFormTemplate(
+        key="witness_confirmation_form",
+        title="Witness Confirmation",
+        code="IMC-WIT-01",
+        version="1.0",
+        locked_template=True,
+        bilingual=True,
+    ),
+    "timeline_report": MedicalLegalFormTemplate(
+        key="timeline_report",
+        title="Chronological Timeline Report",
+        code="IMC-TIME-01",
+        version="1.0",
+        locked_template=True,
+        bilingual=True,
+    ),
+    "legal_summary": MedicalLegalFormTemplate(
+        key="legal_summary",
+        title="Legal Summary",
+        code="IMC-LEGAL-01",
+        version="1.0",
+        locked_template=True,
+        bilingual=True,
+    ),
+    "closure_summary": MedicalLegalFormTemplate(
+        key="closure_summary",
+        title="Case Closure Summary",
+        code="IMC-CLOSE-01",
         version="1.0",
         locked_template=True,
         bilingual=True,
@@ -335,9 +400,25 @@ def get_form_template_metadata(template_key: str) -> Dict[str, str | bool]:
 
 def render_form_by_key(template_key: str, context: Dict[str, str]) -> str:
     if template_key == "discharge_refusal_form":
-        return render_medical_discharge_refusal_form(context)
+        return generate_from_template(TEMPLATE_REGISTRY_BY_KEY[template_key].template_id, context)
     if template_key == "financial_responsibility_notice":
-        return render_financial_responsibility_notice_en(context)
+        return generate_from_template(TEMPLATE_REGISTRY_BY_KEY[template_key].template_id, context)
+    if template_key == "promissory_note":
+        return generate_from_template(TEMPLATE_REGISTRY_BY_KEY[template_key].template_id, context)
+    if template_key == "communication_log":
+        return generate_from_template(TEMPLATE_REGISTRY_BY_KEY[template_key].template_id, context)
+    if template_key == "social_intervention_form":
+        return generate_from_template(TEMPLATE_REGISTRY_BY_KEY[template_key].template_id, context)
+    if template_key == "escalation_compliance_form":
+        return generate_from_template(TEMPLATE_REGISTRY_BY_KEY[template_key].template_id, context)
+    if template_key == "witness_confirmation_form":
+        return generate_from_template(TEMPLATE_REGISTRY_BY_KEY[template_key].template_id, context)
+    if template_key == "timeline_report":
+        return generate_from_template(TEMPLATE_REGISTRY_BY_KEY[template_key].template_id, context)
+    if template_key == "legal_summary":
+        return generate_from_template(TEMPLATE_REGISTRY_BY_KEY[template_key].template_id, context)
+    if template_key == "closure_summary":
+        return generate_from_template(TEMPLATE_REGISTRY_BY_KEY[template_key].template_id, context)
     if template_key == "financial_responsibility_notice_ar":
         return render_financial_responsibility_notice_ar(context)
     if template_key == "home_healthcare_agreement":

@@ -38,10 +38,12 @@ def test_official_templates_keep_approved_wording_markers():
     financial_html = WORKFLOW_TEMPLATES["financial_responsibility_notice"].renderer(context)
 
     assert "Medical Discharge Refusal Form" in refusal_html
-    assert "I acknowledge that I have received and understood the medical discharge decision" in refusal_html
+    assert "I acknowledge that I have been informed of the medical discharge decision" in refusal_html
+    assert "أقر بأنه قد تم إبلاغي بقرار الخروج الطبي" in refusal_html
 
     assert "Notification and Acknowledgment of Financial Responsibility for Refusal of Medical Discharge" in financial_html
-    assert "This is to formally notify you that despite completion of medical discharge criteria" in financial_html
+    assert "As you have chosen to remain in the hospital despite this medical advice" in financial_html
+    assert "تتحملون كامل المسؤولية المالية" in financial_html
 
 
 def test_sms_otp_stub_flow_verification_works(monkeypatch):

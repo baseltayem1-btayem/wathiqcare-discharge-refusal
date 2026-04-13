@@ -89,3 +89,15 @@ forms:
   require_witness: true
   # Maximum time (hours) a form can remain in DRAFT state before expiry
   draft_expiry_hours: 48
+
+# ---------------------------------------------------------------------------
+# Discharge Refusal Templates Package (non-breaking extension)
+# ---------------------------------------------------------------------------
+discharge_refusal_templates:
+  require_refusal_form: true
+  require_financial_notice: true
+  require_two_witnesses: true
+  block_case_completion_if_missing_required_documents: true
+  escalate_after_24h: true
+  require_promissory_note_if_uninsured: true
+  require_promissory_note_if_uncovered_stay: true

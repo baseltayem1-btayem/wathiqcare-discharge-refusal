@@ -4,6 +4,7 @@ from typing import Callable, Dict, List, Optional
 
 from backend.discharge.home_healthcare.homecare_agreement_engine import render_homecare_agreement_html
 from backend.forms.medical_legal_forms_library import render_form_by_key
+from backend.modules.discharge_refusal_templates import TEMPLATE_REGISTRY_BY_KEY, generate_from_template
 
 
 TemplateRenderer = Callable[[Dict[str, str]], str]
@@ -34,11 +35,43 @@ def _fmt_date(value: Optional[str]) -> str:
 
 
 def render_discharge_refusal_form(context: Dict[str, str]) -> str:
-    return render_form_by_key("discharge_refusal_form", context)
+  return generate_from_template(TEMPLATE_REGISTRY_BY_KEY["discharge_refusal_form"].template_id, context)
 
 
 def render_financial_responsibility_notice(context: Dict[str, str]) -> str:
-    return render_form_by_key("financial_responsibility_notice", context)
+  return generate_from_template(TEMPLATE_REGISTRY_BY_KEY["financial_responsibility_notice"].template_id, context)
+
+
+def render_promissory_note(context: Dict[str, str]) -> str:
+  return generate_from_template(TEMPLATE_REGISTRY_BY_KEY["promissory_note"].template_id, context)
+
+
+def render_communication_log(context: Dict[str, str]) -> str:
+  return generate_from_template(TEMPLATE_REGISTRY_BY_KEY["communication_log"].template_id, context)
+
+
+def render_social_intervention_form(context: Dict[str, str]) -> str:
+  return generate_from_template(TEMPLATE_REGISTRY_BY_KEY["social_intervention_form"].template_id, context)
+
+
+def render_escalation_compliance_form(context: Dict[str, str]) -> str:
+  return generate_from_template(TEMPLATE_REGISTRY_BY_KEY["escalation_compliance_form"].template_id, context)
+
+
+def render_witness_confirmation_form(context: Dict[str, str]) -> str:
+  return generate_from_template(TEMPLATE_REGISTRY_BY_KEY["witness_confirmation_form"].template_id, context)
+
+
+def render_timeline_report(context: Dict[str, str]) -> str:
+  return generate_from_template(TEMPLATE_REGISTRY_BY_KEY["timeline_report"].template_id, context)
+
+
+def render_legal_summary(context: Dict[str, str]) -> str:
+  return generate_from_template(TEMPLATE_REGISTRY_BY_KEY["legal_summary"].template_id, context)
+
+
+def render_closure_summary(context: Dict[str, str]) -> str:
+  return generate_from_template(TEMPLATE_REGISTRY_BY_KEY["closure_summary"].template_id, context)
 
 
 def render_discharge_decision_record(context: Dict[str, str]) -> str:
@@ -244,6 +277,103 @@ WORKFLOW_TEMPLATES: Dict[str, WorkflowTemplate] = {
         ],
         renderer=render_financial_responsibility_notice,
     ),
+      "promissory_note": WorkflowTemplate(
+        key="promissory_note",
+        title="Promissory Note / سند لأمر",
+        document_code="IMC-PN-01",
+        required_fields=[
+          "debtor_name",
+          "debtor_id",
+          "case_id",
+          "mrn",
+          "amount",
+          "issue_date",
+          "city",
+        ],
+        renderer=render_promissory_note,
+      ),
+      "communication_log": WorkflowTemplate(
+        key="communication_log",
+        title="Initial Communication Documentation",
+        document_code="IMC-COM-01",
+        required_fields=[
+          "case_id",
+          "communication_date_time",
+          "explained_by",
+          "explanation_summary",
+          "risks_explained",
+          "patient_response",
+          "next_action",
+        ],
+        renderer=render_communication_log,
+      ),
+      "social_intervention_form": WorkflowTemplate(
+        key="social_intervention_form",
+        title="Social / Patient Affairs Intervention",
+        document_code="IMC-SOC-01",
+        required_fields=[
+          "case_id",
+          "referred_to_social_services",
+          "intervention_details",
+          "support_provided",
+          "intervention_result",
+          "staff_name",
+          "date",
+          "signature",
+        ],
+        renderer=render_social_intervention_form,
+      ),
+      "escalation_compliance_form": WorkflowTemplate(
+        key="escalation_compliance_form",
+        title="Legal Escalation and Compliance",
+        document_code="IMC-ESC-01",
+        required_fields=[
+          "case_id",
+          "escalation_date_time",
+          "refusal_duration",
+          "escalation_reason",
+          "notified_department",
+          "current_status",
+          "notes",
+        ],
+        renderer=render_escalation_compliance_form,
+      ),
+      "witness_confirmation_form": WorkflowTemplate(
+        key="witness_confirmation_form",
+        title="Witness Confirmation",
+        document_code="IMC-WIT-01",
+        required_fields=[
+          "case_id",
+          "witness_1_name",
+          "witness_1_title",
+          "witness_1_signature",
+          "witness_2_name",
+          "witness_2_title",
+          "witness_2_signature",
+        ],
+        renderer=render_witness_confirmation_form,
+      ),
+      "timeline_report": WorkflowTemplate(
+        key="timeline_report",
+        title="Chronological Timeline Report",
+        document_code="IMC-TIME-01",
+        required_fields=["case_id"],
+        renderer=render_timeline_report,
+      ),
+      "legal_summary": WorkflowTemplate(
+        key="legal_summary",
+        title="Legal Summary",
+        document_code="IMC-LEGAL-01",
+        required_fields=["case_id"],
+        renderer=render_legal_summary,
+      ),
+      "closure_summary": WorkflowTemplate(
+        key="closure_summary",
+        title="Case Closure Summary",
+        document_code="IMC-CLOSE-01",
+        required_fields=["case_id"],
+        renderer=render_closure_summary,
+      ),
     "informed_consent": WorkflowTemplate(
         key="informed_consent",
         title="Acknowledgment & Informed Consent",

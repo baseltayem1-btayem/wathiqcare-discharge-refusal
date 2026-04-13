@@ -15,6 +15,12 @@ from backend.core.homecare_pdf_renderer import render_homecare_html_to_pdf
 from backend.core.pdf_renderer import PdfRenderError, render_html_to_pdf
 from backend.forms.medical_legal_forms_library import get_form_template_metadata
 from backend.forms.workflow_templates import WORKFLOW_TEMPLATES
+from backend.modules.discharge_refusal_templates import (
+    STAGE_TEMPLATE_MAPPING,
+    load_discharge_template_rules,
+    resolve_required_templates,
+    should_require_promissory_note,
+)
 from backend.models.audit_log import AuditLog
 from backend.models.discharge_case import DischargeCase
 from backend.models.discharge_workflow import DischargeRefusalWorkflow
@@ -43,6 +49,27 @@ STAGE_LABELS = {
     "official_notification": "Official Notification",
     "escalation": "Escalation",
     "closed": "Closed",
+}
+
+POLICY_STAGE_CODES = [
+    "stage_1_discharge_decision",
+    "stage_2_initial_communication",
+    "stage_3_social_intervention",
+    "stage_4_refusal_documentation",
+    "stage_5_financial_liability",
+    "stage_6_financial_enforcement",
+    "stage_7_escalation",
+    "stage_8_evidence_closure",
+]
+
+WORKFLOW_TO_POLICY_STAGE = {
+    "medical_discharge_decision": "stage_1_discharge_decision",
+    "initial_communication": "stage_2_initial_communication",
+    "support_and_intervention": "stage_3_social_intervention",
+    "refusal_form": "stage_4_refusal_documentation",
+    "official_notification": "stage_5_financial_liability",
+    "escalation": "stage_7_escalation",
+    "closed": "stage_8_evidence_closure",
 }
 
 POLICY_CASE_STATUSES = {
@@ -358,6 +385,123 @@ def _build_forms_issued_text(workflow: DischargeRefusalWorkflow) -> str:
     return "; ".join(titles)
 
 
+def _has_document(workflow: DischargeRefusalWorkflow, template_key: str) -> bool:
+    return any(item.template_key == template_key for item in (workflow.documents or []))
+
+
+def _count_missing_required_documents(
+    *,
+    workflow: DischargeRefusalWorkflow,
+    required_template_keys: List[str],
+) -> List[str]:
+    missing: List[str] = []
+    for template_key in required_template_keys:
+        if not _has_document(workflow, template_key):
+            missing.append(template_key)
+    return missing
+
+
+def _build_timeline_report_payload(bundle: CaseBundle) -> Dict[str, str]:
+    workflow = bundle.workflow
+    return {
+        "case_id": bundle.discharge_case.id,
+        "discharge_decision": _iso(workflow.discharge_decision_at) or "",
+        "communication": _iso(workflow.initial_communication_at) or "",
+        "social_intervention": _iso(workflow.support_and_intervention_at) or "",
+        "refusal_form_completion": _iso(workflow.refusal_form_generated_at) or "",
+        "financial_acknowledgment": _iso(workflow.financial_notice_generated_at) or "",
+        "promissory_note": "generated" if _has_document(workflow, "promissory_note") else "pending",
+        "escalation": _iso(workflow.escalated_at) or "",
+        "closure": _iso(workflow.closed_at) or "",
+    }
+
+
+def _build_legal_summary_payload(bundle: CaseBundle) -> Dict[str, str]:
+    workflow = bundle.workflow
+    docs = [item.template_key for item in (workflow.documents or [])]
+    missing_evidence: List[str] = []
+    for key in [
+        "discharge_refusal_form",
+        "financial_responsibility_notice",
+        "witness_confirmation_form",
+    ]:
+        if key not in docs:
+            missing_evidence.append(key)
+
+    legal_risk_level = "low"
+    if missing_evidence:
+        legal_risk_level = "high"
+    elif workflow.escalated_at:
+        legal_risk_level = "medium"
+
+    return {
+        "case_id": bundle.discharge_case.id,
+        "case_facts": workflow.discussion_summary or workflow.refusal_reason or "",
+        "legal_risk_level": legal_risk_level,
+        "missing_evidence": ", ".join(missing_evidence),
+        "recommendations": "Complete missing evidence and maintain signed audit trail.",
+        "document_inventory": ", ".join(docs),
+    }
+
+
+def _build_closure_summary_payload(bundle: CaseBundle) -> Dict[str, str]:
+    workflow = bundle.workflow
+    docs = [item.template_key for item in (workflow.documents or [])]
+    return {
+        "case_id": bundle.discharge_case.id,
+        "case_status": workflow.case_status or "",
+        "closure_date": _iso(workflow.closed_at) or _iso(_utc_now()) or "",
+        "documents_generated": ", ".join(docs),
+        "escalation_result": "escalated" if workflow.escalated_at else "not_escalated",
+        "final_financial_position": workflow.insurance_coverage_status or "pending_settlement",
+    }
+
+
+def _generate_if_missing(
+    db,
+    *,
+    bundle: CaseBundle,
+    template_key: str,
+    payload: Dict[str, Any],
+    current_user: Dict[str, Any],
+) -> Optional[Dict[str, Any]]:
+    if _has_document(bundle.workflow, template_key):
+        return None
+    result = _generate_document(
+        db,
+        bundle=bundle,
+        template_key=template_key,
+        payload=payload,
+        current_user=current_user,
+    )
+    return result.get("generated_document")
+
+
+def _enforce_completion_rules(
+    *,
+    workflow: DischargeRefusalWorkflow,
+    payload: Dict[str, Any],
+) -> None:
+    rules = load_discharge_template_rules()
+    if not rules.block_case_completion_if_missing_required_documents:
+        return
+
+    required_templates = resolve_required_templates(
+        rules=rules,
+        insurance_coverage_status=workflow.insurance_coverage_status or "",
+        payload=payload,
+    )
+    missing = _count_missing_required_documents(workflow=workflow, required_template_keys=required_templates)
+    if missing:
+        raise ValueError("Cannot close case. Missing required documents: " + ", ".join(missing))
+
+    if rules.require_two_witnesses and (
+        not (workflow.witness1_name and workflow.witness1_signature)
+        or not (workflow.witness2_name and workflow.witness2_signature)
+    ):
+        raise ValueError("Cannot close case. Two witness names/signatures are required.")
+
+
 def _upsert_workflow(
     db,
     *,
@@ -473,6 +617,10 @@ def _get_case_bundle(db, *, tenant_id: str, case_id: str) -> CaseBundle:
 
 
 def _is_escalation_required(workflow: DischargeRefusalWorkflow) -> bool:
+    rules = load_discharge_template_rules()
+    if not rules.escalate_after_24h:
+        return bool(workflow.refusal_started_at and workflow.status in {"active", "refusal_active"})
+
     if workflow.escalated_at:
         return False
 
@@ -694,6 +842,17 @@ def _serialize_workflow(bundle: CaseBundle, *, db=None) -> Dict[str, Any]:
     documents = [_serialize_document(item) for item in workflow.documents]
     policy_validation = _build_policy_validation(bundle)
     lifecycle_status = _canonical_case_lifecycle_status(bundle)
+    policy_stage_code = WORKFLOW_TO_POLICY_STAGE.get(current_stage, "stage_1_discharge_decision")
+    rules = load_discharge_template_rules()
+    required_templates = resolve_required_templates(
+        rules=rules,
+        insurance_coverage_status=workflow.insurance_coverage_status or "",
+        payload={},
+    )
+    missing_required_templates = _count_missing_required_documents(
+        workflow=workflow,
+        required_template_keys=required_templates,
+    )
     readiness = build_case_readiness(db, case=bundle.discharge_case, workflow=workflow) if db else {
         "status": "blocked_by_medical_tasks",
         "blocked_by_medical_tasks": [],
@@ -713,6 +872,19 @@ def _serialize_workflow(bundle: CaseBundle, *, db=None) -> Dict[str, Any]:
         "workflow_type": workflow.workflow_type,
         "status": workflow.status,
         "lifecycle_status": lifecycle_status,
+        "policy_stage_code": policy_stage_code,
+        "policy_stage_mapping": STAGE_TEMPLATE_MAPPING,
+        "document_rules": {
+            "require_refusal_form": rules.require_refusal_form,
+            "require_financial_notice": rules.require_financial_notice,
+            "require_two_witnesses": rules.require_two_witnesses,
+            "block_case_completion_if_missing_required_documents": rules.block_case_completion_if_missing_required_documents,
+            "escalate_after_24h": rules.escalate_after_24h,
+            "require_promissory_note_if_uninsured": rules.require_promissory_note_if_uninsured,
+            "require_promissory_note_if_uncovered_stay": rules.require_promissory_note_if_uncovered_stay,
+        },
+        "required_template_keys": required_templates,
+        "missing_required_template_keys": missing_required_templates,
         "current_stage": current_stage,
         "current_stage_label": STAGE_LABELS.get(current_stage, current_stage),
         "escalation_required": escalation_required,
@@ -837,6 +1009,42 @@ def _build_template_context(
         "generated_at": _iso(_utc_now()),
         "reference_number": f"IMC-REF-{case.id[:8]}-{_utc_now().strftime('%Y%m%d%H%M')}",
     }
+
+    context["date"] = str(payload.get("date") or context["date"])
+    context["ref_no"] = str(payload.get("ref_no") or context["reference_number"])
+    context["national_id"] = str(payload.get("national_id") or context["patient_id_number"])
+    context["mrn"] = str(payload.get("mrn") or context["medical_record_number"])
+    context["discharge_date"] = str(payload.get("discharge_date") or context.get("discharge_decision_at") or "")
+    context["discharge_time"] = str(payload.get("discharge_time") or payload.get("time") or "")
+    context["physician_name"] = str(payload.get("physician_name") or context["attending_physician"])
+    context["ack_date"] = str(payload.get("ack_date") or context["date"])
+    context["debtor_name"] = str(payload.get("debtor_name") or context["patient_name"])
+    context["debtor_id"] = str(payload.get("debtor_id") or context["national_id"])
+    context["issue_date"] = str(payload.get("issue_date") or context["date"])
+    context["city"] = str(payload.get("city") or "Jeddah")
+    context["amount"] = str(payload.get("amount") or payload.get("estimated_amount") or "")
+    context["communication_date_time"] = str(payload.get("communication_date_time") or _iso(_utc_now()) or "")
+    context["explained_by"] = str(payload.get("explained_by") or context["attending_physician"])
+    context["explanation_summary"] = str(payload.get("explanation_summary") or context["discussion_summary"])
+    context["risks_explained"] = str(payload.get("risks_explained") or "yes")
+    context["patient_response"] = str(payload.get("patient_response") or "refused_discharge")
+    context["next_action"] = str(payload.get("next_action") or workflow.next_action or "")
+    context["referred_to_social_services"] = str(payload.get("referred_to_social_services") or "")
+    context["intervention_details"] = str(payload.get("intervention_details") or context["social_administrative_interventions"])
+    context["intervention_result"] = str(payload.get("intervention_result") or "")
+    context["signature"] = str(payload.get("signature") or payload.get("staff_signature") or "")
+    context["escalation_date_time"] = str(payload.get("escalation_date_time") or _iso(workflow.escalated_at) or "")
+    context["refusal_duration"] = str(payload.get("refusal_duration") or "")
+    context["escalation_reason"] = str(payload.get("escalation_reason") or context["refusal_reason"])
+    context["notified_department"] = str(payload.get("notified_department") or "Legal / Compliance")
+    context["current_status"] = str(payload.get("current_status") or workflow.case_status or "")
+    context["notes"] = str(payload.get("notes") or workflow.legal_notes or workflow.compliance_notes or "")
+    context["witness_1_name"] = str(payload.get("witness_1_name") or workflow.witness1_name or "")
+    context["witness_1_title"] = str(payload.get("witness_1_title") or workflow.witness1_role or "")
+    context["witness_1_signature"] = str(payload.get("witness_1_signature") or workflow.witness1_signature or "")
+    context["witness_2_name"] = str(payload.get("witness_2_name") or workflow.witness2_name or "")
+    context["witness_2_title"] = str(payload.get("witness_2_title") or workflow.witness2_role or "")
+    context["witness_2_signature"] = str(payload.get("witness_2_signature") or workflow.witness2_signature or "")
 
     return context
 
@@ -1125,6 +1333,10 @@ def run_workflow_action(
             "refer_social_services",
             "generate_refusal_form",
             "generate_financial_notice",
+            "generate_promissory_note",
+            "generate_social_intervention_form",
+            "generate_initial_communication_form",
+            "generate_witness_confirmation",
         } and workflow.escalated_at:
             raise ValueError("Case is already escalated; continue with review or closure actions")
 
@@ -1204,6 +1416,32 @@ def run_workflow_action(
                 details="Patient/family counseling documented.",
             )
 
+        elif action == "generate_initial_communication_form":
+            _require_started_refusal()
+            generated_document = _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="communication_log",
+                payload={
+                    **_build_template_context(bundle, payload),
+                    **payload,
+                },
+                current_user=current_user,
+            )
+            workflow.current_stage = "support_and_intervention"
+            workflow.responsible_department = "Patient Affairs"
+            workflow.responsible_person = actor_name
+            workflow.next_action = "Complete social intervention and refusal documentation."
+
+            _log_audit(
+                db,
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=case_id,
+                action="generate_initial_communication_form",
+                details="IMC-COM-01 generated.",
+            )
+
         elif action == "refer_social_services":
             _require_started_refusal()
             if not workflow.initial_communication_at:
@@ -1226,6 +1464,33 @@ def run_workflow_action(
                 case_id=case_id,
                 action="refer_social_services",
                 details="Case referred to Social Services / Patient Affairs.",
+            )
+
+        elif action == "generate_social_intervention_form":
+            _require_started_refusal()
+            generated_document = _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="social_intervention_form",
+                payload={
+                    **_build_template_context(bundle, payload),
+                    **payload,
+                },
+                current_user=current_user,
+            )
+            workflow.support_and_intervention_at = workflow.support_and_intervention_at or now
+            workflow.current_stage = "refusal_form"
+            workflow.responsible_department = "Patient Affairs / Social Services"
+            workflow.responsible_person = actor_name
+            workflow.next_action = "Generate refusal documentation."
+
+            _log_audit(
+                db,
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=case_id,
+                action="generate_social_intervention_form",
+                details="IMC-SOC-01 generated.",
             )
 
         elif action == "generate_refusal_form":
@@ -1297,10 +1562,32 @@ def run_workflow_action(
                 case_id=case_id,
                 action="generate_refusal_form",
                 details=(
-                    f"Medical Discharge Refusal Form generated (IMC-PAT-DIS-REF-01) "
+                    f"Medical Discharge Refusal Form generated (IMC-DIS-REF-01) "
                     f"for case {case_id} using canonical template version {generated_document.get('templateVersion', '1.0')} "
                     f"document {generated_document.get('id')}"
                 ),
+            )
+
+        elif action == "generate_witness_confirmation":
+            _require_started_refusal()
+            generated_document = _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="witness_confirmation_form",
+                payload={
+                    **_build_template_context(bundle, payload),
+                    **payload,
+                },
+                current_user=current_user,
+            )
+            workflow.case_status = POLICY_CASE_STATUSES["witnessed_refusal_recorded"]
+            _log_audit(
+                db,
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=case_id,
+                action="generate_witness_confirmation",
+                details="IMC-WIT-01 generated.",
             )
 
         elif action == "generate_financial_notice":
@@ -1365,11 +1652,83 @@ def run_workflow_action(
                 ),
             )
 
+        elif action == "generate_promissory_note":
+            _require_started_refusal()
+            if not workflow.financial_notice_generated_at:
+                raise ValueError("Generate official financial notice before promissory note")
+
+            generated_document = _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="promissory_note",
+                payload={
+                    **_build_template_context(bundle, payload),
+                    **payload,
+                },
+                current_user=current_user,
+            )
+            workflow.current_stage = "escalation"
+            workflow.responsible_department = "Patient Affairs / Finance"
+            workflow.responsible_person = actor_name
+            workflow.next_action = "Proceed to escalation workflow when threshold is met."
+
+            _log_audit(
+                db,
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=case_id,
+                action="generate_promissory_note",
+                details="IMC-PN-01 generated.",
+            )
+
+        elif action == "generate_closure_reports":
+            _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="timeline_report",
+                payload=_build_timeline_report_payload(bundle),
+                current_user=current_user,
+            )
+            _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="legal_summary",
+                payload=_build_legal_summary_payload(bundle),
+                current_user=current_user,
+            )
+            generated_document = _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="closure_summary",
+                payload=_build_closure_summary_payload(bundle),
+                current_user=current_user,
+            )
+            workflow.responsible_department = "Legal / Compliance"
+            workflow.responsible_person = actor_name
+            workflow.next_action = "Review closure package and close case when criteria are met."
+
+            _log_audit(
+                db,
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=case_id,
+                action="generate_closure_reports",
+                details="IMC-TIME-01, IMC-LEGAL-01, IMC-CLOSE-01 generated.",
+            )
+
         elif action == "escalate_legal_compliance":
             if not workflow.financial_notice_generated_at:
                 raise ValueError("Generate official financial notice before escalation")
-            if not _is_escalation_required(workflow):
+            rules = load_discharge_template_rules()
+            if rules.escalate_after_24h and not _is_escalation_required(workflow):
                 raise ValueError("Escalation is available only when refusal persists beyond 24 hours")
+
+            if should_require_promissory_note(
+                rules=rules,
+                insurance_coverage_status=workflow.insurance_coverage_status or "",
+                payload=payload,
+            ) and not _has_document(workflow, "promissory_note"):
+                raise ValueError("Promissory note is required before escalation for this financial risk profile")
 
             workflow.escalated_at = now
             workflow.escalation_timestamp = now
@@ -1388,6 +1747,19 @@ def run_workflow_action(
                 case_id=case_id,
                 action="escalate_legal_compliance",
                 details="Case escalated to Legal and Compliance.",
+            )
+
+            _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="escalation_compliance_form",
+                payload={
+                    **_build_template_context(bundle, payload),
+                    **payload,
+                    "escalation_date_time": _iso(now) or "",
+                    "current_status": workflow.case_status,
+                },
+                current_user=current_user,
             )
 
         elif action == "record_compliance_review":
@@ -1433,6 +1805,28 @@ def run_workflow_action(
             )
 
         elif action == "mark_patient_accepted_discharge":
+            _enforce_completion_rules(workflow=workflow, payload=payload)
+            _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="timeline_report",
+                payload=_build_timeline_report_payload(bundle),
+                current_user=current_user,
+            )
+            _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="legal_summary",
+                payload=_build_legal_summary_payload(bundle),
+                current_user=current_user,
+            )
+            _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="closure_summary",
+                payload=_build_closure_summary_payload(bundle),
+                current_user=current_user,
+            )
             workflow.current_stage = "closed"
             workflow.status = "closed"
             workflow.case_status = POLICY_CASE_STATUSES["closed_discharged"]
@@ -1452,6 +1846,28 @@ def run_workflow_action(
             )
 
         elif action == "close_under_review":
+            _enforce_completion_rules(workflow=workflow, payload=payload)
+            _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="timeline_report",
+                payload=_build_timeline_report_payload(bundle),
+                current_user=current_user,
+            )
+            _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="legal_summary",
+                payload=_build_legal_summary_payload(bundle),
+                current_user=current_user,
+            )
+            _generate_if_missing(
+                db,
+                bundle=bundle,
+                template_key="closure_summary",
+                payload=_build_closure_summary_payload(bundle),
+                current_user=current_user,
+            )
             workflow.current_stage = "closed"
             workflow.status = "closed"
             workflow.case_status = POLICY_CASE_STATUSES["closed_admin_legal"]
@@ -1497,7 +1913,15 @@ def run_workflow_action(
 
     except Exception as exc:
         db.rollback()
-        if action in {"generate_refusal_form", "generate_financial_notice"}:
+        if action in {
+            "generate_refusal_form",
+            "generate_financial_notice",
+            "generate_promissory_note",
+            "generate_social_intervention_form",
+            "generate_initial_communication_form",
+            "generate_witness_confirmation",
+            "generate_closure_reports",
+        }:
             _log_generation_failure_audit(
                 tenant_id=tenant_id,
                 user_id=current_user["id"],

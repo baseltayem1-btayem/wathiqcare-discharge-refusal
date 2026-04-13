@@ -545,6 +545,14 @@ def generate_case_workflow_document(
     action = {
         "discharge_refusal_form": "generate_refusal_form",
         "financial_responsibility_notice": "generate_financial_notice",
+        "promissory_note": "generate_promissory_note",
+        "communication_log": "generate_initial_communication_form",
+        "social_intervention_form": "generate_social_intervention_form",
+        "witness_confirmation_form": "generate_witness_confirmation",
+        "escalation_compliance_form": "escalate_legal_compliance",
+        "timeline_report": "generate_closure_reports",
+        "legal_summary": "generate_closure_reports",
+        "closure_summary": "generate_closure_reports",
     }.get(payload.template_key)
 
     if not action:
