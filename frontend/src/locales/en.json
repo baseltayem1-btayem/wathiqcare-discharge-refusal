@@ -38,7 +38,8 @@
     "launchStatus": "Launch Status",
     "compliance": "Compliance",
     "bundles": "Bundles",
-    "admin": "Admin"
+    "admin": "Admin",
+    "documents": "Documents"
   },
   "home": {
     "title": "WathiqCare Dashboard",
@@ -497,14 +498,20 @@
     }
   },
   "documents": {
-    "generatedForms": "Generated Forms",
-    "none": "No forms generated yet for this case.",
-    "generatedAt": "Generated at {date}",
-    "code": "Code: {code}",
-    "opening": "Opening...",
+    "title": "Documents",
+    "subtitle": "View and download case documents across all discharge refusal cases.",
+    "totalDocuments": "Total Documents",
+    "casesWithDocuments": "Cases with Documents",
+    "totalCases": "Total Cases",
+    "noCases": "No cases found.",
+    "noDocumentsForCase": "No documents for this case.",
+    "viewCase": "View Case",
+    "view": "View",
+    "download": "Download",
     "downloading": "Downloading...",
-    "failedOpen": "Failed to open document preview",
-    "failedDownload": "Failed to download document"
+    "failedLoad": "Failed to load documents.",
+    "failedDownload": "Failed to download document.",
+    "failedView": "Failed to open document preview."
   },
   "preview": {
     "validation": "Validation",

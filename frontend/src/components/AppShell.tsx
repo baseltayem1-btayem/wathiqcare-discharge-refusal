@@ -34,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
   { href: "/cases/new", labelKey: "nav.newCase", icon: <FilePlus2 className="h-4 w-4" /> },
   { href: "/workflow", labelKey: "nav.workflowDocs", icon: <FileCog className="h-4 w-4" /> },
+  { href: "/documents", labelKey: "nav.documents", icon: <FileText className="h-4 w-4" /> },
   { href: "/refusal-forms", labelKey: "nav.refusalForms", icon: <FileSignature className="h-4 w-4" /> },
   { href: "/legal-escalation", labelKey: "nav.legalEscalation", icon: <AlertTriangle className="h-4 w-4" /> },
   { href: "/escalation-timeline", labelKey: "nav.escalationTimeline", icon: <Timer className="h-4 w-4" /> },

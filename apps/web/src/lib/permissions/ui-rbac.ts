@@ -7,6 +7,7 @@ export type UiPermissionKey =
   | "cases.add.witness"
   | "legal.review"
   | "legal.approve.readiness"
+  | "documents.read"
   | "documents.generate_pdf"
   | "documents.download.final"
   | "audit.read"
@@ -56,6 +57,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
     "cases.add.witness",
     "legal.review",
     "legal.approve.readiness",
+    "documents.read",
     "documents.generate_pdf",
     "documents.download.final",
     "audit.read",
@@ -73,6 +75,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
     "cases.add.witness",
     "legal.review",
     "legal.approve.readiness",
+    "documents.read",
     "documents.generate_pdf",
     "documents.download.final",
     "audit.read",
@@ -90,6 +93,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
     "cases.add.witness",
     "legal.review",
     "legal.approve.readiness",
+    "documents.read",
     "documents.generate_pdf",
     "documents.download.final",
     "audit.read",
@@ -106,6 +110,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
     "cases.add.witness",
     "legal.review",
     "legal.approve.readiness",
+    "documents.read",
     "documents.generate_pdf",
     "documents.download.final",
     "audit.read",
@@ -118,6 +123,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
     "cases.update.medical",
     "cases.record.risk",
     "cases.record.decision",
+    "documents.read",
     "documents.download.final",
   ]),
   nursing: new Set<UiPermissionKey>([
@@ -127,6 +133,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
   legal_admin: new Set<UiPermissionKey>([
     "legal.review",
     "legal.approve.readiness",
+    "documents.read",
     "documents.generate_pdf",
     "documents.download.final",
     "audit.read",
