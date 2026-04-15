@@ -66,7 +66,8 @@ export default function DocumentsPage() {
           `/api/cases/${encodeURIComponent(caseId)}/documents`,
         );
         return Array.isArray(docs) ? docs : [];
-      } catch {
+      } catch (err) {
+        console.error("[documents] failed to load documents for case", caseId, err);
         return [];
       }
     },

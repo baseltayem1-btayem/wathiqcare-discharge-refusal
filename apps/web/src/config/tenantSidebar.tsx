@@ -11,7 +11,6 @@ import {
     Archive,
     FileSignature,
     FileText,
-    Files,
     FolderKanban,
     HandHelping,
     LayoutGrid,
@@ -31,7 +30,7 @@ export type TenantNavItem = {
 /** Full tenant operational menu. No /platform routes here. */
 export const TENANT_NAV_ITEMS: TenantNavItem[] = [
     { href: "/cases", label: "Cases", icon: <FolderKanban className="h-4 w-4" /> },
-    { href: "/documents", label: "Documents", icon: <Files className="h-4 w-4" /> },
+    { href: "/documents", label: "Documents", icon: <FileText className="h-4 w-4" /> },
     { href: "/dashboards", label: "Dashboards", icon: <LayoutGrid className="h-4 w-4" /> },
     { href: "/reports", label: "Reports", icon: <Archive className="h-4 w-4" /> },
     { href: "/admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" /> },
