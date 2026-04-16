@@ -248,6 +248,7 @@ export default function AdminPage() {
   const [savingTenant, setSavingTenant] = useState(false);
   const [savingSubscription, setSavingSubscription] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
+  const [previewingMemberEmail, setPreviewingMemberEmail] = useState(false);
   const [savingRoleMatrixByRoleId, setSavingRoleMatrixByRoleId] = useState<Record<string, boolean>>({});
   const [savingDepartment, setSavingDepartment] = useState(false);
   const [savingRole, setSavingRole] = useState(false);
@@ -565,6 +566,52 @@ export default function AdminPage() {
       setError(err instanceof Error ? err.message : "فشل إضافة العضو");
     } finally {
       setAddingMember(false);
+    }
+  }
+
+  async function handlePreviewMemberEmail() {
+    if (!tenantId) return;
+    if (!memberForm.fullName.trim()) {
+      setError("الاسم الكامل مطلوب لإنشاء معاينة البريد الإلكتروني");
+      return;
+    }
+
+    setPreviewingMemberEmail(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await apiFetch<{
+        success: boolean;
+        preview: {
+          email: string;
+          mappedFirstName: string;
+          mappingApplied: boolean;
+          duplicateIndex: number;
+        };
+      }>(`/api/tenants/${tenantId}/members`, {
+        method: "POST",
+        body: JSON.stringify({
+          fullName: memberForm.fullName,
+          role: memberForm.role,
+          departmentCode: memberForm.departmentCode,
+          tenantRoleCodes: memberForm.tenantRoleCodes,
+          previewOnly: true,
+          email: memberForm.email || undefined,
+        }),
+        ...INLINE_AUTH_REQUEST,
+      });
+
+      setMemberForm((prev) => ({ ...prev, email: response.preview.email }));
+      setNotice(
+        response.preview.mappingApplied
+          ? `Preview generated: ${response.preview.email} (mapped)`
+          : `Preview generated: ${response.preview.email}`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "فشل إنشاء المعاينة");
+    } finally {
+      setPreviewingMemberEmail(false);
     }
   }
 
@@ -1666,6 +1713,14 @@ export default function AdminPage() {
                   />
                   Activate now
                 </label>
+                <button
+                  type="button"
+                  onClick={() => void handlePreviewMemberEmail()}
+                  disabled={previewingMemberEmail}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                >
+                  {previewingMemberEmail ? "Generating preview..." : "Preview IMC Email"}
+                </button>
                 <button
                   type="button"
                   onClick={() => void handleAddMember()}
