@@ -88,6 +88,31 @@ export async function ensurePasswordResetSchema(prisma: PrismaClient): Promise<v
   `);
 
   await prisma.$executeRawUnsafe(`
+    ALTER TABLE password_reset_tokens
+      ADD COLUMN IF NOT EXISTS created_by TEXT NULL
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE password_reset_tokens
+      ADD COLUMN IF NOT EXISTS reason TEXT NULL
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE password_reset_tokens
+      ADD COLUMN IF NOT EXISTS used BOOLEAN NOT NULL DEFAULT FALSE
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE password_reset_tokens
+      ADD COLUMN IF NOT EXISTS used_at TIMESTAMPTZ NULL
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE password_reset_tokens
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  `);
+
+  await prisma.$executeRawUnsafe(`
     CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id
       ON password_reset_tokens (user_id)
   `);
