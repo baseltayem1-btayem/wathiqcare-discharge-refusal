@@ -585,8 +585,7 @@ export default function AdminPage() {
         success: boolean;
         preview: {
           email: string;
-          mappedFirstName: string;
-          mappingApplied: boolean;
+          normalizedFirstName: string;
           duplicateIndex: number;
         };
       }>(`/api/tenants/${tenantId}/members`, {
@@ -603,11 +602,7 @@ export default function AdminPage() {
       });
 
       setMemberForm((prev) => ({ ...prev, email: response.preview.email }));
-      setNotice(
-        response.preview.mappingApplied
-          ? `Preview generated: ${response.preview.email} (mapped)`
-          : `Preview generated: ${response.preview.email}`,
-      );
+      setNotice(`Preview generated: ${response.preview.email}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل إنشاء المعاينة");
     } finally {

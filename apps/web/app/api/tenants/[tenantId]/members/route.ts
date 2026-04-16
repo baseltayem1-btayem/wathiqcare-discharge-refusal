@@ -52,10 +52,6 @@ type ExistingUserSummary = {
   userType: string;
 };
 
-const IMC_FIRST_NAME_MAPPING: Record<string, string> = {
-  ahmed: "fahad",
-};
-
 const IMC_EMAIL_DOMAIN = "imc.med.sa";
 
 function isImcTenant(tenant: TenantIdentity): boolean {
@@ -72,22 +68,6 @@ function sanitizeLocalPart(input: string): string {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
-}
-
-function mapImcFirstName(firstName: string): {
-  normalizedFirstName: string;
-  mappedFirstName: string;
-  mappingApplied: boolean;
-} {
-  const normalizedFirstName = sanitizeLocalPart(firstName);
-  const mappedFirstName =
-    IMC_FIRST_NAME_MAPPING[normalizedFirstName] ?? normalizedFirstName;
-
-  return {
-    normalizedFirstName,
-    mappedFirstName,
-    mappingApplied: mappedFirstName !== normalizedFirstName,
-  };
 }
 
 async function generateUniqueImcEmail(
@@ -272,7 +252,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       throw new ApiError(400, "fullName is required");
     }
 
-    const mapped = mapImcFirstName(extractFirstName(fullName));
+    const normalizedFirstName = sanitizeLocalPart(extractFirstName(fullName));
     let duplicateIndex = 1;
 
     if (!email) {
@@ -280,11 +260,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         throw new ApiError(400, "email is required for non-IMC tenants");
       }
 
-      if (!mapped.mappedFirstName) {
+      if (!normalizedFirstName) {
         throw new ApiError(400, "Unable to generate email from fullName");
       }
 
-      const generated = await generateUniqueImcEmail(mapped.mappedFirstName);
+      const generated = await generateUniqueImcEmail(normalizedFirstName);
       email = generated.email;
       duplicateIndex = generated.duplicateIndex;
     }
@@ -300,9 +280,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           preview: {
             tenantCode: tenant.code,
             fullName,
-            normalizedFirstName: mapped.normalizedFirstName,
-            mappedFirstName: mapped.mappedFirstName,
-            mappingApplied: mapped.mappingApplied,
+            normalizedFirstName,
             email,
             duplicateIndex,
           },
