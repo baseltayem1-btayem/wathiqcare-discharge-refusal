@@ -18,6 +18,7 @@ import {
 import { normalizeEmail } from "@/lib/server/auth-domain-policy";
 import { verifyPassword } from "@/lib/server/password";
 import { normalizeTenantAuthConfig } from "@/lib/server/tenant-auth-config";
+import { getUserResetState } from "@/lib/server/auth-reset";
 
 type PasswordLoginPayload = {
   email?: string;
@@ -80,11 +81,6 @@ function readClientIp(request: NextRequest): string {
   const forwardedFor = request.headers.get("x-forwarded-for") ?? "";
   const firstForwardedIp = forwardedFor.split(",")[0]?.trim();
   return firstForwardedIp || request.headers.get("x-real-ip") || "unknown";
-}
-
-function buildRedirectPath(userRole: string | null | undefined, email: string): string {
-  const userType = userTypeForUserRole(userRole ?? "", email);
-  return userType === "PLATFORM_ADMIN" ? "/platform" : "/dashboard";
 }
 
 function toSessionUserTypeFromStored(
@@ -269,6 +265,7 @@ async function createSessionForPasswordUser(args: {
       platform_role: platformRoleForUserRole(normalizedRole),
       tenant_id: tenantId,
       tenant_code: tenant?.code ?? null,
+      iat: now,
       exp,
     },
     getJwtSecret(),
@@ -511,6 +508,18 @@ export async function POST(request: NextRequest) {
 
       await incrementFailedPasswordAttempts(prisma, user.id);
       throw new ApiError(401, GENERIC_LOGIN_ERROR);
+    }
+
+    const resetState = await getUserResetState(prisma, user.id);
+    if (resetState.passwordResetRequired) {
+      await recordLoginAttempt({
+        prisma,
+        email,
+        success: false,
+        reason: "PASSWORD_RESET_REQUIRED",
+        request,
+      });
+      throw new ApiError(403, "Password reset required. Please reset your password using the secure link sent to your email.");
     }
 
     await resetFailedPasswordAttempts(prisma, user.id);

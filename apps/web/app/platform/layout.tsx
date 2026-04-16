@@ -7,6 +7,10 @@ import { apiFetchJson } from "@/utils/api";
 
 type AuthMeResponse = {
   userType?: "platform_admin" | "tenant_admin" | "tenant_user";
+  platformRole?: string | null;
+  claims?: {
+    platform_role?: string | null;
+  };
 };
 
 /**
@@ -32,7 +36,8 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
       const me = await apiFetchJson<AuthMeResponse>("/api/auth/me", {
         cache: "no-store",
       });
-      setState(me?.userType === "platform_admin" ? "allowed" : "forbidden");
+      const hasPlatformRole = Boolean(me?.platformRole ?? me?.claims?.platform_role);
+      setState(me?.userType === "platform_admin" || hasPlatformRole ? "allowed" : "forbidden");
     } catch {
       setState("forbidden");
     }

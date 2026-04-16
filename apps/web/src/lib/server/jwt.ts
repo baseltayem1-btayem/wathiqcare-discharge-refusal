@@ -13,6 +13,7 @@ export type JwtClaims = {
     tenant_id?: string;
     tenant_code?: string | null;
     platform_role?: "platform_superadmin" | "platform_admin" | null;
+    iat?: number;
     exp?: number;
     iss?: string;
 };

@@ -42,6 +42,12 @@ export default function LoginPage() {
           : "Invalid email or password.";
       }
 
+      if (err.status === 403 && /password reset required/i.test(err.message || "")) {
+        return isRtl
+          ? "تم طلب إعادة تعيين كلمة المرور لهذا الحساب. يرجى استخدام رابط إعادة التعيين المرسل إلى بريدك الإلكتروني."
+          : "Password reset is required for this account. Use the reset link sent to your email.";
+      }
+
       if (err.status === 403) {
         return isRtl
           ? "ليس لديك صلاحية للوصول إلى هذا الحساب."

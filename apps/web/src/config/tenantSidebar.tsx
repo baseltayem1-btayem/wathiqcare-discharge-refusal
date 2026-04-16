@@ -17,6 +17,7 @@ import {
     MessageSquareHeart,
     ShieldCheck,
     Stethoscope,
+    Users,
 } from "lucide-react";
 
 export type TenantNavItem = {
@@ -33,6 +34,7 @@ export const TENANT_NAV_ITEMS: TenantNavItem[] = [
     { href: "/documents", label: "Documents", icon: <FileText className="h-4 w-4" /> },
     { href: "/dashboards", label: "Dashboards", icon: <LayoutGrid className="h-4 w-4" /> },
     { href: "/reports", label: "Reports", icon: <Archive className="h-4 w-4" /> },
+    { href: "/tenant/users", label: "Users", icon: <Users className="h-4 w-4" /> },
     { href: "/admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" /> },
 ];
 

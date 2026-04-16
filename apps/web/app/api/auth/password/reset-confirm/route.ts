@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { hashPassword, hashResetToken, validatePasswordStrength } from "@/lib/server/password";
+import { ensurePasswordResetSchema, isMissingTableOrColumnError } from "@/lib/server/auth-reset";
 
 // Types
 
@@ -10,18 +11,6 @@ type PasswordResetConfirmPayload = {
     token?: string;
     password?: string;
 };
-
-function isMissingTableOrColumnError(error: unknown): boolean {
-    if (!error || typeof error !== "object") return false;
-    const err = error as { code?: unknown; meta?: { code?: unknown } };
-    const code = err.code ? String(err.code) : "";
-    const sqlState = err.meta?.code ? String(err.meta.code) : "";
-    return (
-        code === "P2021" ||
-        code === "P2022" ||
-        (code === "P2010" && (sqlState === "42P01" || sqlState === "42703"))
-    );
-}
 
 async function consumePasswordResetTokenLegacy(
     prisma: ReturnType<typeof getPrisma>,
@@ -88,6 +77,7 @@ export async function POST(request: NextRequest) {
     try {
         const prisma = getPrisma();
         console.info("PASSWORD_RESET_CONFIRM_STARTED");
+        await ensurePasswordResetSchema(prisma);
 
         const payload = (await request.json().catch(() => null)) as PasswordResetConfirmPayload | null;
         if (!payload) {
@@ -151,6 +141,8 @@ export async function POST(request: NextRequest) {
       SET 
         hashed_password = ${newPasswordHash},
         last_password_changed_at = NOW(),
+                password_reset_required = FALSE,
+                session_revoked_at = NOW(),
         failed_login_attempts = 0,
         locked_until = NULL
       WHERE id = ${resetToken.userId}

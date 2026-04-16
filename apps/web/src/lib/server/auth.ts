@@ -5,6 +5,7 @@ import { isPlatformRole, platformRoleForUserRole } from "@/lib/server/roles";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
+import { getUserResetState } from "@/lib/server/auth-reset";
 
 export type AuthContext = {
   sub: string;
@@ -14,6 +15,7 @@ export type AuthContext = {
   tenant_id?: string;
   tenant_code?: string;
   platform_role?: "platform_superadmin" | "platform_admin" | null;
+  iat?: number;
   exp?: number;
 };
 
@@ -132,6 +134,20 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
 
   if (!user.isActive) {
     throw new ApiError(401, "Authenticated user is inactive");
+  }
+
+  const resetState = await getUserResetState(prisma, user.id);
+  if (resetState.passwordResetRequired) {
+    throw new ApiError(403, "Password reset required");
+  }
+
+  if (resetState.sessionRevokedAt) {
+    const tokenIssuedAt = typeof parsedPayload.iat === "number" ? parsedPayload.iat : null;
+    const revokedAtEpoch = Math.floor(resetState.sessionRevokedAt.getTime() / 1000);
+
+    if (!tokenIssuedAt || tokenIssuedAt <= revokedAtEpoch) {
+      throw new ApiError(401, "Session expired");
+    }
   }
 
   if (parsedPayload.tenant_id && user.tenantId !== parsedPayload.tenant_id) {
@@ -309,7 +325,7 @@ export async function requirePlatformAccess(request: NextRequest): Promise<AuthC
     throw error;
   }
 
-  if (auth.user_type !== "platform_admin" || !hasPlatformAccess(auth)) {
+  if (!hasPlatformAccess(auth)) {
     await writePlatformApiAccessAttempt({
       request,
       auth,

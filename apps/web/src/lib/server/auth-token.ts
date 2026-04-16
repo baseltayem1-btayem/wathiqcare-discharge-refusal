@@ -31,6 +31,7 @@ export function createAccessToken(payload: Record<string, unknown>, secret: stri
 
     const normalizedPayload = {
         ...payload,
+        iat: typeof payload.iat === "number" ? payload.iat : Math.floor(Date.now() / 1000),
         iss: typeof payload.iss === "string" && payload.iss.trim() ? payload.iss : getJwtIssuer(),
     };
 

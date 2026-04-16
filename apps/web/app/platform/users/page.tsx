@@ -44,6 +44,7 @@ export default function PlatformUsersPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
     const [saving, setSaving] = useState(false);
+    const [forcingReset, setForcingReset] = useState(false);
 
     const loadUsers = useCallback(async (opts?: { silent?: boolean }) => {
         if (!opts?.silent) setRefreshing(true);
@@ -86,6 +87,40 @@ export default function PlatformUsersPage() {
         }
     }
 
+    async function handleForceResetAllUsers() {
+        const confirmed = window.confirm(
+            "Force password reset for all users and invalidate existing sessions?",
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        setForcingReset(true);
+        try {
+            const result = await apiFetchJson<{
+                success: boolean;
+                processed: number;
+                emailSent: number;
+                emailFailed: number;
+            }>("/api/platform/users/force-password-reset-all", {
+                method: "POST",
+                body: JSON.stringify({
+                    reason: "Platform-initiated global security reset",
+                    clearPasswordHashes: false,
+                    includeInactiveUsers: false,
+                }),
+            });
+
+            toast.success(
+                `Forced reset completed: ${result.processed} users, ${result.emailSent} emails sent, ${result.emailFailed} failed`,
+            );
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to force password reset");
+        } finally {
+            setForcingReset(false);
+        }
+    }
+
     function roleLabel(role: string): string {
         return ROLE_LABELS[role] ?? role;
     }
@@ -109,6 +144,15 @@ export default function PlatformUsersPage() {
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => void handleForceResetAllUsers()}
+                            disabled={forcingReset}
+                            className="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+                        >
+                            <Shield className={`h-4 w-4 ${forcingReset ? "animate-pulse" : ""}`} />
+                            {forcingReset ? "Forcing Reset..." : "Force Reset All Users"}
+                        </button>
                         <button
                             type="button"
                             onClick={() => void loadUsers()}
