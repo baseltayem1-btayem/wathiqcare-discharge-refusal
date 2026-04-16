@@ -8,6 +8,7 @@ import { Archive, FileCheck2, FileCog, FilePlus2, FolderKanban, Gavel, LayoutGri
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clearToken, getToken } from "@/utils/api";
+import { featureFlags } from "@/config/featureFlags";
 
 type AppShellProps = {
   title: string;
@@ -29,11 +30,14 @@ type NavItem = {
   disabled?: boolean;
 };
 
-const NAV_ITEMS: NavItem[] = [
+const BASE_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutGrid className="h-4 w-4" /> },
   { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
   { href: "/cases/new", labelKey: "nav.newCase", icon: <FilePlus2 className="h-4 w-4" /> },
   { href: "/workflow", labelKey: "nav.workflowDocs", icon: <FileCog className="h-4 w-4" /> },
+  ...(featureFlags.documentsEnabled
+    ? [{ href: "/documents", labelKey: "nav.documents", icon: <FileText className="h-4 w-4" /> } as NavItem]
+    : []),
   { href: "/refusal-forms", labelKey: "nav.refusalForms", icon: <FileSignature className="h-4 w-4" /> },
   { href: "/legal-escalation", labelKey: "nav.legalEscalation", icon: <AlertTriangle className="h-4 w-4" /> },
   { href: "/escalation-timeline", labelKey: "nav.escalationTimeline", icon: <Timer className="h-4 w-4" /> },
@@ -47,6 +51,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/launch-status", labelKey: "nav.launchStatus", icon: <Rocket className="h-4 w-4" /> },
   { href: "/admin", labelKey: "nav.admin", icon: <ShieldCheck className="h-4 w-4" /> },
 ];
+
+const NAV_ITEMS = BASE_NAV_ITEMS;
 
 const CASE_STAGE_NAV = [
   {

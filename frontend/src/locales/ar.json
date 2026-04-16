@@ -38,7 +38,8 @@
     "launchStatus": "حالة الإطلاق",
     "compliance": "الامتثال",
     "bundles": "الحزم",
-    "admin": "الإدارة"
+    "admin": "الإدارة",
+    "documents": "المستندات"
   },
   "home": {
     "title": "لوحة واثق كير",
@@ -497,14 +498,20 @@
     }
   },
   "documents": {
-    "generatedForms": "النماذج المُنشأة",
-    "none": "لا توجد نماذج منشأة لهذه الحالة حتى الآن.",
-    "generatedAt": "تم الإنشاء في {date}",
-    "code": "الرمز: {code}",
-    "opening": "جار الفتح...",
+    "title": "المستندات",
+    "subtitle": "عرض وتنزيل مستندات الحالات الخاصة برفض الخروج الطبي.",
+    "totalDocuments": "إجمالي المستندات",
+    "casesWithDocuments": "حالات تحتوي مستندات",
+    "totalCases": "إجمالي الحالات",
+    "noCases": "لم يتم العثور على حالات.",
+    "noDocumentsForCase": "لا توجد مستندات لهذه الحالة.",
+    "viewCase": "عرض الحالة",
+    "view": "عرض",
+    "download": "تنزيل",
     "downloading": "جار التنزيل...",
-    "failedOpen": "فشل فتح معاينة المستند",
-    "failedDownload": "فشل تنزيل المستند"
+    "failedLoad": "فشل تحميل المستندات.",
+    "failedDownload": "فشل تنزيل المستند.",
+    "failedView": "فشل فتح معاينة المستند."
   },
   "preview": {
     "validation": "التحقق",
