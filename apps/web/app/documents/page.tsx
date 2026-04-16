@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Download, FolderArchive, PackagePlus, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, FolderArchive, PackagePlus, RefreshCw, ShieldCheck } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch } from "@/utils/api";
+import { apiFetch, isForbiddenError } from "@/utils/api";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
 
 type BundleItem = {
@@ -17,6 +17,18 @@ type BundleItem = {
 
 type GenerateBundleResponse = {
   bundle_file: string;
+};
+
+type VerifyBundleResponse = {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+};
+
+type BundleVerificationState = {
+  valid: boolean;
+  checkedAt: string;
+  errors: string[];
 };
 
 export default function DocumentsPage() {
@@ -31,6 +43,8 @@ export default function DocumentsPage() {
   const [newBundleCaseId, setNewBundleCaseId] = useState("");
   const [creatingBundle, setCreatingBundle] = useState(false);
   const [downloadingName, setDownloadingName] = useState<string | null>(null);
+  const [verifyingName, setVerifyingName] = useState<string | null>(null);
+  const [verificationByBundle, setVerificationByBundle] = useState<Record<string, BundleVerificationState>>({});
 
   const canGenerateBundle = permissions.can("legal.approve.readiness");
   const canDownloadBundle = permissions.can("documents.download.final");
@@ -51,6 +65,11 @@ export default function DocumentsPage() {
       const response = await apiFetch<BundleItem[]>("/api/discharge/bundles");
       setBundles(response);
     } catch (err) {
+      if (isForbiddenError(err)) {
+        setError(permissions.deniedMessage);
+        setBundles([]);
+        return;
+      }
       const message = err instanceof Error ? err.message : t("bundles.failedLoad");
       setError(message);
     } finally {
@@ -116,6 +135,37 @@ export default function DocumentsPage() {
       setError(message);
     } finally {
       setDownloadingName(null);
+    }
+  }
+
+  async function handleVerifyBundle(bundleName: string) {
+    setVerifyingName(bundleName);
+    setError("");
+
+    try {
+      const result = await apiFetch<VerifyBundleResponse>(
+        `/api/discharge/verify?bundleId=${encodeURIComponent(bundleName)}`,
+      );
+
+      setVerificationByBundle((prev) => ({
+        ...prev,
+        [bundleName]: {
+          valid: Boolean(result.valid),
+          checkedAt: new Date().toISOString(),
+          errors: Array.isArray(result.errors) ? result.errors : [],
+        },
+      }));
+
+      setInfoMessage(
+        result.valid
+          ? `Verification PASS for ${bundleName}`
+          : `Verification FAIL for ${bundleName}`,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to verify bundle";
+      setError(message);
+    } finally {
+      setVerifyingName(null);
     }
   }
 
@@ -218,19 +268,43 @@ export default function DocumentsPage() {
                   <div>
                     <p className="text-sm font-medium text-slate-900">{bundle.name}</p>
                     <p className="text-xs text-slate-500">{bundle.path}</p>
+                    {verificationByBundle[bundle.name] ? (
+                      <p
+                        className={`mt-1 text-xs ${verificationByBundle[bundle.name].valid ? "text-emerald-700" : "text-red-700"}`}
+                      >
+                        {verificationByBundle[bundle.name].valid ? "PASS" : "FAIL"}
+                        {!verificationByBundle[bundle.name].valid && verificationByBundle[bundle.name].errors[0]
+                          ? ` - ${verificationByBundle[bundle.name].errors[0]}`
+                          : ""}
+                      </p>
+                    ) : null}
                   </div>
-                  <button
-                    type="button"
-                    disabled={downloadingName === bundle.name || !canDownloadBundle}
-                    title={!canDownloadBundle ? permissions.deniedMessage : undefined}
-                    onClick={() => {
-                      void handleDownloadBundle(bundle.name);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-white"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    {downloadingName === bundle.name ? t("bundles.downloading") : t("bundles.download")}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={verifyingName === bundle.name || !canAccessBundles}
+                      title={!canAccessBundles ? permissions.deniedMessage : undefined}
+                      onClick={() => {
+                        void handleVerifyBundle(bundle.name);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-white"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      {verifyingName === bundle.name ? "Verifying..." : "Verify"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={downloadingName === bundle.name || !canDownloadBundle}
+                      title={!canDownloadBundle ? permissions.deniedMessage : undefined}
+                      onClick={() => {
+                        void handleDownloadBundle(bundle.name);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-white"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      {downloadingName === bundle.name ? t("bundles.downloading") : t("bundles.download")}
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

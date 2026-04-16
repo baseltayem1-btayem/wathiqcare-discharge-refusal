@@ -3,8 +3,11 @@ import os
 import shutil
 import subprocess
 import tempfile
+import json
+import hashlib
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 from dataclasses import dataclass
 
 
@@ -37,6 +40,7 @@ class TimestampAuthorityResult:
             "hash_algorithm": self.hash_algorithm,
             "payload_hash": self.payload_hash,
             "token_present": bool(self.token_bytes),
+            "timestamp_file": "timestamp.tsr" if self.token_bytes else None,
             "detail": self.detail,
         }
 
@@ -58,20 +62,20 @@ class RFC3161TimestampService:
                 endpoint=self.endpoint,
                 payload_hash=payload_hash,
                 hash_algorithm=self.hash_algorithm,
-                token_bytes=None,
+                token_bytes=self._build_internal_token(payload_hash, "TSA disabled; generated internal timestamp token."),
                 detail="TSA disabled; internal UTC timestamp assertions are active.",
             )
 
         if not self.endpoint:
             return TimestampAuthorityResult(
-                status="unavailable",
-                mode="external",
+                status="fallback_internal",
+                mode="internal",
                 enabled=True,
                 configured=False,
                 endpoint=None,
                 payload_hash=payload_hash,
                 hash_algorithm=self.hash_algorithm,
-                token_bytes=None,
+                token_bytes=self._build_internal_token(payload_hash, "TSA URL missing; generated internal timestamp token."),
                 detail="TSA enabled but WATHIQ_TSA_URL is not configured.",
             )
 
@@ -87,14 +91,14 @@ class RFC3161TimestampService:
                 token = response.read()
                 if not token:
                     return TimestampAuthorityResult(
-                        status="unavailable",
-                        mode="external",
+                        status="fallback_internal",
+                        mode="internal",
                         enabled=True,
                         configured=True,
                         endpoint=self.endpoint,
                         payload_hash=payload_hash,
                         hash_algorithm=self.hash_algorithm,
-                        token_bytes=None,
+                        token_bytes=self._build_internal_token(payload_hash, "TSA returned empty token; generated internal timestamp token."),
                         detail="TSA responded with an empty token.",
                     )
 
@@ -112,16 +116,27 @@ class RFC3161TimestampService:
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, ValueError) as exc:
             logger.warning("tsa_issue_failed endpoint=%s reason=%s", self.endpoint, str(exc))
             return TimestampAuthorityResult(
-                status="unavailable",
-                mode="external",
+                status="fallback_internal",
+                mode="internal",
                 enabled=True,
                 configured=True,
                 endpoint=self.endpoint,
                 payload_hash=payload_hash,
                 hash_algorithm=self.hash_algorithm,
-                token_bytes=None,
+                token_bytes=self._build_internal_token(payload_hash, f"TSA request failed ({exc}); generated internal timestamp token."),
                 detail=str(exc),
             )
+
+    def _build_internal_token(self, payload_hash: str, reason: str) -> bytes:
+        payload = {
+            "schema": "wathiqcare.evidence_bundle.timestamp_token.v1",
+            "mode": "internal",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "hash_algorithm": self.hash_algorithm,
+            "payload_hash": payload_hash,
+            "reason": reason,
+        }
+        return json.dumps(payload, ensure_ascii=True, sort_keys=True).encode("utf-8")
 
 
 @dataclass
@@ -160,38 +175,38 @@ class DetachedManifestSignatureService:
     def sign_manifest(self, manifest_bytes: bytes) -> DetachedSignatureResult:
         if not self.enabled:
             return DetachedSignatureResult(
-                status="not_configured",
+                status="fallback_internal",
                 configured=False,
                 enabled=False,
                 key_path=self.key_path,
                 certificate_path=self.certificate_path,
                 algorithm=self.algorithm,
-                signature_bytes=None,
+                signature_bytes=self._build_internal_signature(manifest_bytes),
                 detail="Manifest signing disabled.",
             )
 
         if not self.key_path or not os.path.exists(self.key_path):
             return DetachedSignatureResult(
-                status="not_configured",
+                status="fallback_internal",
                 configured=False,
                 enabled=True,
                 key_path=self.key_path,
                 certificate_path=self.certificate_path,
                 algorithm=self.algorithm,
-                signature_bytes=None,
+                signature_bytes=self._build_internal_signature(manifest_bytes),
                 detail="Signing key path is missing or file does not exist.",
             )
 
         openssl_path = shutil.which("openssl")
         if not openssl_path:
             return DetachedSignatureResult(
-                status="unavailable",
+                status="fallback_internal",
                 configured=True,
                 enabled=True,
                 key_path=self.key_path,
                 certificate_path=self.certificate_path,
                 algorithm=self.algorithm,
-                signature_bytes=None,
+                signature_bytes=self._build_internal_signature(manifest_bytes),
                 detail="OpenSSL executable is not available on PATH.",
             )
 
@@ -217,13 +232,13 @@ class DetachedManifestSignatureService:
                 detail = process.stderr.strip() or process.stdout.strip() or "OpenSSL signing failed"
                 logger.warning("manifest_signing_failed reason=%s", detail)
                 return DetachedSignatureResult(
-                    status="unavailable",
+                    status="fallback_internal",
                     configured=True,
                     enabled=True,
                     key_path=self.key_path,
                     certificate_path=self.certificate_path,
                     algorithm=self.algorithm,
-                    signature_bytes=None,
+                    signature_bytes=self._build_internal_signature(manifest_bytes),
                     detail=detail,
                 )
 
@@ -240,3 +255,14 @@ class DetachedManifestSignatureService:
             signature_bytes=signature_bytes,
             detail="Detached manifest signature created.",
         )
+
+    def _build_internal_signature(self, manifest_bytes: bytes) -> bytes:
+        digest = hashlib.sha256(manifest_bytes).hexdigest()
+        payload = {
+            "schema": "wathiqcare.evidence_bundle.detached_signature.v1",
+            "mode": "internal",
+            "algorithm": "sha256",
+            "manifest_sha256": digest,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        return json.dumps(payload, ensure_ascii=True, sort_keys=True).encode("utf-8")

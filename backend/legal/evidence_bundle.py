@@ -404,6 +404,8 @@ def generate_evidence_bundle(
                     "evidence_cover_sheet.json",
                     "signing_metadata.json",
                     "manifest.json",
+                    "manifest.sig",
+                    "timestamp.tsr",
                     pdf_name,
                 ],
             },
@@ -422,7 +424,7 @@ def generate_evidence_bundle(
         evidence_cover_sheet_file = bundle_folder / "evidence_cover_sheet.json"
         signing_metadata_file = bundle_folder / "signing_metadata.json"
         manifest_signature_file = bundle_folder / "manifest.sig"
-        tsa_token_file = bundle_folder / "tsa_token.tsr"
+        tsa_token_file = bundle_folder / "timestamp.tsr"
 
         case_summary_file.write_text(case_summary_text, encoding="utf-8")
         audit_logs_file.write_text(audit_logs_text, encoding="utf-8")
@@ -597,7 +599,7 @@ def generate_evidence_bundle(
             if manifest_signature_file.exists():
                 zf.write(manifest_signature_file, arcname="manifest.sig")
             if tsa_token_file.exists():
-                zf.write(tsa_token_file, arcname="tsa_token.tsr")
+                zf.write(tsa_token_file, arcname="timestamp.tsr")
         archived_at = _utc_now_iso()
         archived_document_ids: list[str] = []
         if workflow:

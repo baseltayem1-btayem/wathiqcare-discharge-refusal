@@ -19,6 +19,8 @@ REQUIRED_FILES = {
     "timestamps.json",
     "court_admissible_index.json",
     "manifest.json",
+    "manifest.sig",
+    "timestamp.tsr",
 }
 
 
@@ -248,7 +250,7 @@ def verify_evidence_bundle(bundle_zip_path: str | Path) -> dict[str, Any]:
             if isinstance(tsa_meta, dict):
                 tsa_status = tsa_meta.get("status")
                 tsa_configured = bool(tsa_meta.get("configured"))
-                tsa_token_present = "tsa_token.tsr" in members
+                tsa_token_present = "timestamp.tsr" in members
                 result["tsa"] = {
                     "present": tsa_token_present,
                     "configured": tsa_configured,
@@ -257,7 +259,7 @@ def verify_evidence_bundle(bundle_zip_path: str | Path) -> dict[str, Any]:
                 }
                 if tsa_status == "enabled" and not tsa_token_present:
                     result["valid"] = False
-                    result["errors"].append("TSA status is enabled but tsa_token.tsr is missing")
+                    result["errors"].append("TSA status is enabled but timestamp.tsr is missing")
                 if tsa_status in {"fallback_internal", "unavailable"}:
                     result["warnings"].append(f"TSA status is {tsa_status}")
             else:

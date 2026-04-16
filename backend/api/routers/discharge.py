@@ -23,6 +23,7 @@ from backend.core.discharge_workflow_service import (
     validate_workflow_generation,
 )
 from backend.legal.evidence_bundle import generate_evidence_bundle
+from backend.legal.evidence_bundle_verifier import verify_evidence_bundle
 from backend.api.deps import get_current_user, require_roles
 from backend.core.rbac import require_case_access, require_permission
 from backend.forms.medical_legal_forms_library import FORMS_LIBRARY, render_form_by_key
@@ -393,7 +394,51 @@ def get_case_audit(case_id: str, current_user=Depends(require_roles("tenant_admi
 
 @router.get("/bundles")
 def get_bundles(current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))):
-    return list_bundles(current_user["tenant_id"])
+    tenant_id = current_user.get("tenant_id")
+    role = current_user.get("role")
+    user_id = current_user.get("id")
+
+    logger.info(
+        "bundles_list_start tenant_id=%s user_id=%s role=%s",
+        tenant_id,
+        user_id,
+        role,
+    )
+
+    try:
+        require_any_permission(current_user, ("documents.download.final", "legal.approve.readiness"))
+        logger.info(
+            "bundles_list_permission_granted tenant_id=%s user_id=%s role=%s",
+            tenant_id,
+            user_id,
+            role,
+        )
+
+        bundles = list_bundles(tenant_id)
+        logger.info(
+            "bundles_list_success tenant_id=%s user_id=%s role=%s result_count=%s",
+            tenant_id,
+            user_id,
+            role,
+            len(bundles),
+        )
+        return bundles
+    except HTTPException:
+        logger.info(
+            "bundles_list_permission_denied tenant_id=%s user_id=%s role=%s",
+            tenant_id,
+            user_id,
+            role,
+        )
+        raise
+    except Exception:
+        logger.exception(
+            "bundles_unexpected_error tenant_id=%s user_id=%s role=%s",
+            tenant_id,
+            user_id,
+            role,
+        )
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")
 
 
 @router.get("/reports/refusal-quality")
@@ -505,6 +550,56 @@ def build_evidence_bundle(
         logger.exception(
             "evidence_bundle_generation_failed case_id=%s tenant_id=%s user_id=%s",
             normalized_case_id,
+            current_user.get("tenant_id"),
+            current_user.get("id"),
+        )
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")
+
+
+@router.get("/verify")
+def verify_bundle(
+    bundleId: str,
+    current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW)),
+):
+    normalized_bundle = bundleId.strip()
+    if not normalized_bundle:
+        raise HTTPException(status_code=400, detail="اسم الحزمة مطلوب")
+
+    safe_filename = Path(normalized_bundle).name
+    if safe_filename != normalized_bundle:
+        raise HTTPException(status_code=400, detail="اسم الملف غير صالح")
+
+    try:
+        require_any_permission(current_user, ("documents.download.final", "legal.approve.readiness"))
+
+        file_path = Path("backend/generated/bundles") / safe_filename
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="حزمة الأدلة غير موجودة")
+
+        if not bundle_belongs_to_tenant(file_path, current_user["tenant_id"]):
+            raise HTTPException(status_code=403, detail="غير مصرح بالتحقق من هذه الحزمة")
+
+        verification = verify_evidence_bundle(file_path)
+        return {
+            "success": True,
+            "bundleId": safe_filename,
+            **verification,
+        }
+    except HTTPException as exc:
+        if exc.status_code in (400, 403, 404):
+            logger.warning(
+                "evidence_bundle_verify_rejected file=%s tenant_id=%s user_id=%s status=%s detail=%s",
+                safe_filename,
+                current_user.get("tenant_id"),
+                current_user.get("id"),
+                exc.status_code,
+                exc.detail,
+            )
+        raise
+    except Exception:
+        logger.exception(
+            "evidence_bundle_verify_failed file=%s tenant_id=%s user_id=%s",
+            safe_filename,
             current_user.get("tenant_id"),
             current_user.get("id"),
         )
