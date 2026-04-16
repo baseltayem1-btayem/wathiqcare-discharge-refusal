@@ -62,29 +62,60 @@ export async function POST(request: NextRequest) {
     const failures: Array<{ userId: string; email: string; reason: string }> = [];
 
     for (const user of filtered) {
-      const token = await createPasswordResetToken(prisma, {
-        userId: user.id,
-        createdBy: auth.sub,
-        reason,
-      });
-
-      await prisma.$executeRaw`
-        UPDATE users
-        SET password_reset_required = TRUE,
-            session_revoked_at = NOW(),
-            hashed_password = CASE WHEN ${clearPasswordHashes} THEN NULL ELSE hashed_password END
-        WHERE id = ${user.id}
-      `;
-
-      const resetLink = buildPasswordResetLink(token.rawToken);
-
       try {
-        await sendPasswordResetEmail({
-          to: user.email,
-          resetLink,
-          expiresMinutes: ttlMinutes,
+        const token = await createPasswordResetToken(prisma, {
+          userId: user.id,
+          createdBy: auth.sub,
+          reason,
         });
-        emailSent += 1;
+
+        await prisma.$executeRaw`
+          UPDATE users
+          SET password_reset_required = TRUE,
+              session_revoked_at = NOW(),
+              hashed_password = CASE WHEN ${clearPasswordHashes} THEN NULL ELSE hashed_password END
+          WHERE id = ${user.id}
+        `;
+
+        const resetLink = buildPasswordResetLink(token.rawToken);
+
+        try {
+          await sendPasswordResetEmail({
+            to: user.email,
+            resetLink,
+            expiresMinutes: ttlMinutes,
+          });
+          emailSent += 1;
+        } catch (error) {
+          emailFailed += 1;
+          failures.push({
+            userId: user.id,
+            email: user.email,
+            reason: error instanceof Error ? error.message : String(error),
+          });
+        }
+
+        try {
+          await writeAuditLog({
+            tenantId: auth.tenant_id,
+            userId: auth.sub,
+            entityType: "USER_ACCOUNT",
+            entityId: user.id,
+            action: "FORCE_PASSWORD_RESET_ISSUED",
+            details: `reason=${reason} clearPasswordHashes=${clearPasswordHashes} email=${user.email}`,
+            metadataJson: {
+              reason,
+              clearPasswordHashes,
+              recipient: user.email,
+              tokenId: token.tokenId,
+            },
+            request,
+          });
+        } catch (auditError) {
+          console.error("force-reset per-user audit write failed", auditError);
+        }
+
+        processed += 1;
       } catch (error) {
         emailFailed += 1;
         failures.push({
@@ -93,43 +124,29 @@ export async function POST(request: NextRequest) {
           reason: error instanceof Error ? error.message : String(error),
         });
       }
+    }
 
+    try {
       await writeAuditLog({
         tenantId: auth.tenant_id,
         userId: auth.sub,
-        entityType: "USER_ACCOUNT",
-        entityId: user.id,
-        action: "FORCE_PASSWORD_RESET_ISSUED",
-        details: `reason=${reason} clearPasswordHashes=${clearPasswordHashes} email=${user.email}`,
+        entityType: "SECURITY_OPERATION",
+        entityId: "global-force-password-reset",
+        action: "FORCE_PASSWORD_RESET_COMPLETED",
+        details: `processed=${processed} emailSent=${emailSent} emailFailed=${emailFailed}`,
         metadataJson: {
           reason,
+          includeInactiveUsers,
           clearPasswordHashes,
-          recipient: user.email,
-          tokenId: token.tokenId,
+          processed,
+          emailSent,
+          emailFailed,
         },
         request,
       });
-
-      processed += 1;
+    } catch (auditError) {
+      console.error("force-reset summary audit write failed", auditError);
     }
-
-    await writeAuditLog({
-      tenantId: auth.tenant_id,
-      userId: auth.sub,
-      entityType: "SECURITY_OPERATION",
-      entityId: "global-force-password-reset",
-      action: "FORCE_PASSWORD_RESET_COMPLETED",
-      details: `processed=${processed} emailSent=${emailSent} emailFailed=${emailFailed}`,
-      metadataJson: {
-        reason,
-        includeInactiveUsers,
-        clearPasswordHashes,
-        processed,
-        emailSent,
-        emailFailed,
-      },
-      request,
-    });
 
     return NextResponse.json({
       success: true,
