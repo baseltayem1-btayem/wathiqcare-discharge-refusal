@@ -32,9 +32,12 @@ export type UiCaseAccessContext = {
 const ROLE_ALIASES: Record<string, string> = {
   owner: "tenant_owner",
   admin: "tenant_admin",
+  administrator: "tenant_admin",
   billing: "tenant_admin",
   nurse: "nursing",
   legal: "legal_admin",
+  legal_manager: "legal_admin",
+  legal_team: "legal_admin",
   legal_officer: "legal_admin",
   legal_affairs: "legal_admin",
   treating_physician: "doctor",

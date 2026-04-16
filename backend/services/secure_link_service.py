@@ -34,29 +34,52 @@ from backend.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_EXPIRY_HOURS = 72
+_DEFAULT_EXPIRY_MINUTES = 10
+_DEFAULT_MAX_ACTIVE_LINKS_PER_CASE = 10
+_DEFAULT_ISSUE_COOLDOWN_SECONDS = 300
+_DEFAULT_TOKEN_PEPPER = "wathiqcare-public-link-pepper"
+
 _PUBLIC_LEGAL_NOTICE = (
-    "هذا الرابط مخصص لإقرار قرار الخروج فقط. تم عرض القرار وشرح آثاره والمخاطر "
-    "والبدائل العلاجية المتاحة. يرجى اختيار الموافقة أو الرفض بعد قراءة هذا "
-    "الإشعار بعناية."
+    "This secure link provides access to discharge decision data through a "
+    "tamper-evident and internally verifiable workflow."
 )
 
 
-def _pepper() -> str:
-    value = os.getenv("PUBLIC_LINK_TOKEN_PEPPER", "").strip()
-    if not value:
-        raise RuntimeError(
-            "PUBLIC_LINK_TOKEN_PEPPER is not configured.  "
-            "Set it in apps/api/.env before generating secure links."
-        )
-    return value
-
-
-def _expiry_hours() -> int:
+def _parse_positive_int_env(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
     try:
-        return max(1, int(os.getenv("SECURE_LINK_EXPIRY_HOURS", str(_DEFAULT_EXPIRY_HOURS))))
-    except (ValueError, TypeError):
-        return _DEFAULT_EXPIRY_HOURS
+        value = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
+def _pepper() -> str:
+    return os.getenv("PUBLIC_LINK_TOKEN_PEPPER", _DEFAULT_TOKEN_PEPPER)
+
+
+def _expiry_minutes() -> int:
+    expiry_hours = _parse_positive_int_env("SECURE_LINK_EXPIRY_HOURS", 0)
+    if expiry_hours > 0:
+        return expiry_hours * 60
+    return _parse_positive_int_env("SECURE_LINK_EXPIRY_MINUTES", _DEFAULT_EXPIRY_MINUTES)
+
+
+def _issue_cooldown_seconds() -> int:
+    raw = os.getenv("SECURE_LINK_ISSUE_COOLDOWN_SECONDS")
+    if raw is None:
+        return _DEFAULT_ISSUE_COOLDOWN_SECONDS
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_ISSUE_COOLDOWN_SECONDS
+    return max(0, value)
+
+
+def _max_active_links_per_case() -> int:
+    return _parse_positive_int_env("SECURE_LINK_MAX_ACTIVE_PER_CASE", _DEFAULT_MAX_ACTIVE_LINKS_PER_CASE)
 
 
 def _hash_token(raw_token: str) -> str:
@@ -65,6 +88,10 @@ def _hash_token(raw_token: str) -> str:
         raw_token.encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()
+
+
+class SecureLinkRateLimitError(ValueError):
+    """Raised when secure-link generation exceeds issuance limits."""
 
 
 def _write_audit(
@@ -149,9 +176,8 @@ def _load_valid_link(db, raw_token: str) -> SecureDischargeLink:
         raise ValueError("تم إلغاء رابط التصريح")
 
     now = datetime.now(timezone.utc)
-    expires_naive = link.expires_at.replace(tzinfo=None)
-    now_naive = now.replace(tzinfo=None)
-    if expires_naive < now_naive:
+    expires_aware = link.expires_at if link.expires_at.tzinfo else link.expires_at.replace(tzinfo=timezone.utc)
+    if expires_aware < now:
         _write_audit(
             db,
             tenant_id=link.tenant_id,
@@ -191,6 +217,8 @@ def generate_link(
     """
     db = SessionLocal()
     try:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+
         # Validate case ownership
         case = (
             db.query(DischargeCase)
@@ -200,9 +228,45 @@ def generate_link(
         if not case:
             raise ValueError("حالة التصريح غير موجودة أو لا تنتمي لهذه المؤسسة")
 
+        active_link_count = (
+            db.query(SecureDischargeLink)
+            .filter(
+                SecureDischargeLink.tenant_id == tenant_id,
+                SecureDischargeLink.case_id == case_id,
+                SecureDischargeLink.revoked_at.is_(None),
+                SecureDischargeLink.expires_at > now,
+            )
+            .count()
+        )
+        if active_link_count >= _max_active_links_per_case():
+            raise SecureLinkRateLimitError(
+                "Maximum active secure links reached for this case. Revoke an existing link or wait for expiry."
+            )
+
+        cooldown_seconds = _issue_cooldown_seconds()
+        if cooldown_seconds > 0:
+            recent_cutoff = now - timedelta(seconds=cooldown_seconds)
+            recent_link = (
+                db.query(SecureDischargeLink)
+                .filter(
+                    SecureDischargeLink.tenant_id == tenant_id,
+                    SecureDischargeLink.case_id == case_id,
+                    SecureDischargeLink.recipient_email == recipient_email,
+                    SecureDischargeLink.revoked_at.is_(None),
+                    SecureDischargeLink.created_at >= recent_cutoff,
+                    SecureDischargeLink.expires_at > now,
+                )
+                .order_by(SecureDischargeLink.created_at.desc())
+                .first()
+            )
+            if recent_link:
+                raise SecureLinkRateLimitError(
+                    "A secure link was already issued recently for this recipient. Please wait before sending another link."
+                )
+
         raw_token = secrets.token_urlsafe(32)
         token_hash = _hash_token(raw_token)
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=_expiry_hours())
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=_expiry_minutes())
         base_url = os.getenv("APP_BASE_URL", "http://localhost:3000").rstrip("/")
         url = f"{base_url}/secure/{raw_token}"
 
@@ -390,7 +454,9 @@ def submit_decision(
         case.signer_name = normalized_name
         case.signer_role = "patient_representative"
         # Prefer canvas signature data; fall back to typed name as plain-text proof
-        case.signature_text = signature_data.strip() if signature_data and signature_data.strip() else normalized_name
+        normalized_signature = signature_data.strip() if signature_data and signature_data.strip() else normalized_name
+        signature_hash = hashlib.sha256(normalized_signature.encode("utf-8")).hexdigest()
+        case.signature_text = normalized_signature
         case.signed_at = now
         if normalized_decision == "accept":
             case.accepted_at = now
@@ -403,6 +469,7 @@ def submit_decision(
             case_id=link.case_id,
             decision_type=normalized_decision,
             typed_name=normalized_name,
+            signature_hash=signature_hash,
             ip_address=ip_address,
             user_agent=normalized_user_agent,
         )
@@ -424,6 +491,18 @@ def submit_decision(
             action="decision_submitted",
             details=audit_details,
         )
+
+        # One-time use: invalidate token after successful decision submission.
+        link.revoked_at = now
+        _write_audit(
+            db,
+            tenant_id=link.tenant_id,
+            user_id=link.created_by,
+            entity_id=link.id,
+            action="secure_link_consumed",
+            details=f"consumed_at={now.isoformat()}",
+        )
+
         db.commit()
 
         payload = _get_public_payload(db, link)

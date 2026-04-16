@@ -19,7 +19,7 @@ type GenerateBundleResponse = {
   bundle_file: string;
 };
 
-export default function BundlesPage() {
+export default function DocumentsPage() {
   const { t } = useI18n();
   const permissions = useUiPermissions();
 
@@ -83,7 +83,7 @@ export default function BundlesPage() {
         `/api/discharge/evidence-bundle/${encodeURIComponent(trimmedCaseId)}`,
         {
           method: "POST",
-        }
+        },
       );
 
       setInfoMessage(t("bundles.generated", { file: response.bundle_file }));
@@ -109,7 +109,7 @@ export default function BundlesPage() {
     try {
       await downloadProtectedDocument(
         `/api/discharge/evidence-bundle/download/${bundleName}`,
-        bundleName
+        bundleName,
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : t("bundles.failedDownload");

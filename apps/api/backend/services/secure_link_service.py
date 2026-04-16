@@ -36,7 +36,50 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_EXPIRY_MINUTES = 10
 _DEFAULT_MAX_ACTIVE_LINKS_PER_CASE = 10
-## Legacy cooldown and expiry logic removed
+_DEFAULT_ISSUE_COOLDOWN_SECONDS = 300
+_DEFAULT_TOKEN_PEPPER = "wathiqcare-public-link-pepper"
+
+_PUBLIC_LEGAL_NOTICE = (
+    "This secure link provides access to discharge decision data through a "
+    "tamper-evident and internally verifiable workflow."
+)
+
+
+def _parse_positive_int_env(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
+def _pepper() -> str:
+    return os.getenv("PUBLIC_LINK_TOKEN_PEPPER", _DEFAULT_TOKEN_PEPPER)
+
+
+def _expiry_minutes() -> int:
+    expiry_hours = _parse_positive_int_env("SECURE_LINK_EXPIRY_HOURS", 0)
+    if expiry_hours > 0:
+        return expiry_hours * 60
+    return _parse_positive_int_env("SECURE_LINK_EXPIRY_MINUTES", _DEFAULT_EXPIRY_MINUTES)
+
+
+def _issue_cooldown_seconds() -> int:
+    raw = os.getenv("SECURE_LINK_ISSUE_COOLDOWN_SECONDS")
+    if raw is None:
+        return _DEFAULT_ISSUE_COOLDOWN_SECONDS
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_ISSUE_COOLDOWN_SECONDS
+    return max(0, value)
+
+
+def _max_active_links_per_case() -> int:
+    return _parse_positive_int_env("SECURE_LINK_MAX_ACTIVE_PER_CASE", _DEFAULT_MAX_ACTIVE_LINKS_PER_CASE)
 
 
 def _hash_token(raw_token: str) -> str:

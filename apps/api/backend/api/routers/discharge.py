@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import FileResponse
@@ -69,6 +70,7 @@ from backend.modules.discharge_legal_workflow.legal_orchestration_service import
 )
 
 router = APIRouter(prefix="/api/discharge", tags=["Discharge"])
+logger = logging.getLogger(__name__)
 
 ROLE_PHYSICIAN = "doctor"
 ROLE_NURSING = "nursing"
@@ -1005,17 +1007,48 @@ def build_evidence_bundle(
     discharge_case_id: str,
     current_user=Depends(require_roles("tenant_admin", "legal_admin", ROLE_COMPLIANCE))
 ):
-    require_permission(current_user, "legal.approve.readiness")
-    require_case_access(current_user, discharge_case_id)
+    normalized_case_id = discharge_case_id.strip()
+    if not normalized_case_id:
+        raise HTTPException(status_code=400, detail="معرف الحالة مطلوب")
+
     try:
+        require_permission(current_user, "legal.approve.readiness")
+        require_case_access(current_user, normalized_case_id)
         return generate_evidence_bundle(
-            discharge_case_id,
+            normalized_case_id,
             tenant_id=current_user["tenant_id"],
             actor_user_id=current_user["id"],
         )
+    except HTTPException as exc:
+        if exc.status_code in (400, 403, 404):
+            logger.warning(
+                "evidence_bundle_request_rejected case_id=%s tenant_id=%s user_id=%s status=%s detail=%s",
+                normalized_case_id,
+                current_user.get("tenant_id"),
+                current_user.get("id"),
+                exc.status_code,
+                exc.detail,
+            )
+        raise
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        detail = str(e)
+        status_code = 404 if "not found" in detail.lower() else 400
+        logger.info(
+            "evidence_bundle_validation_failed case_id=%s tenant_id=%s user_id=%s status=%s detail=%s",
+            normalized_case_id,
+            current_user.get("tenant_id"),
+            current_user.get("id"),
+            status_code,
+            detail,
+        )
+        raise HTTPException(status_code=status_code, detail=detail)
     except Exception:
+        logger.exception(
+            "evidence_bundle_generation_failed case_id=%s tenant_id=%s user_id=%s",
+            normalized_case_id,
+            current_user.get("tenant_id"),
+            current_user.get("id"),
+        )
         raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")
 
 @router.get("/evidence-bundle/download/{filename}")
@@ -1023,8 +1056,41 @@ def download_evidence_bundle(
     filename: str,
     current_user=Depends(require_roles(*ROLE_WORKFLOW_VIEW))
 ):
-    require_permission(current_user, "documents.download.final")
-    file_path = Path("backend/generated/bundles") / filename
-    if not file_path.exists() or not bundle_belongs_to_tenant(file_path, current_user["tenant_id"]):
-        raise HTTPException(status_code=404, detail="حزمة الأدلة غير موجودة")
-    return FileResponse(path=str(file_path), filename=filename, media_type="application/zip")
+    normalized_filename = filename.strip()
+    if not normalized_filename:
+        raise HTTPException(status_code=400, detail="اسم الملف مطلوب")
+
+    safe_filename = Path(normalized_filename).name
+    if safe_filename != normalized_filename:
+        raise HTTPException(status_code=400, detail="اسم الملف غير صالح")
+
+    try:
+        require_permission(current_user, "documents.download.final")
+
+        file_path = Path("backend/generated/bundles") / safe_filename
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="حزمة الأدلة غير موجودة")
+
+        if not bundle_belongs_to_tenant(file_path, current_user["tenant_id"]):
+            raise HTTPException(status_code=403, detail="غير مصرح بتحميل هذه الحزمة")
+
+        return FileResponse(path=str(file_path), filename=safe_filename, media_type="application/zip")
+    except HTTPException as exc:
+        if exc.status_code in (400, 403, 404):
+            logger.warning(
+                "evidence_bundle_download_rejected file=%s tenant_id=%s user_id=%s status=%s detail=%s",
+                safe_filename,
+                current_user.get("tenant_id"),
+                current_user.get("id"),
+                exc.status_code,
+                exc.detail,
+            )
+        raise
+    except Exception:
+        logger.exception(
+            "evidence_bundle_download_failed file=%s tenant_id=%s user_id=%s",
+            safe_filename,
+            current_user.get("tenant_id"),
+            current_user.get("id"),
+        )
+        raise HTTPException(status_code=500, detail="حدث خطأ داخلي في الخادم")

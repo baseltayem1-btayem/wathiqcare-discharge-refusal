@@ -27,6 +27,8 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import gc
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -189,8 +191,15 @@ def seed_db() -> Generator:
         db.close()
 
     Base.metadata.drop_all(bind=TEST_ENGINE)
+    TEST_ENGINE.dispose()
     if SQLITE_PATH.exists():
-        SQLITE_PATH.unlink()
+        for _ in range(5):
+            try:
+                SQLITE_PATH.unlink()
+                break
+            except PermissionError:
+                gc.collect()
+                time.sleep(0.1)
 
 
 # We store generated link_id + raw_token across tests in module-level state
