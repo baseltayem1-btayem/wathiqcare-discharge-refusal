@@ -1,4 +1,6 @@
 import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import puppeteer from "puppeteer";
@@ -54,6 +56,9 @@ export type CasePdfVersionSummary = {
   fileSize: number;
   sha256Hash: string | null;
   generatedBy: string | null;
+  binaryAvailable: boolean;
+  recoveryRequired: boolean;
+  recoveryMessage: string | null;
 };
 
 export type GeneratedCasePdfResult = {
@@ -63,12 +68,170 @@ export type GeneratedCasePdfResult = {
   downloadUrl: string;
 };
 
+type PdfBinaryAvailability = {
+  available: boolean;
+  reason: "db_inline_payload_missing" | "db_inline_payload_empty" | "local_file_missing" | null;
+};
+
+type PersistedPdfBinary = {
+  storagePath: string;
+  payloadJson: Prisma.InputJsonObject;
+  cleanup: (() => Promise<void>) | null;
+};
+
 function nowIso(): string {
   return new Date().toISOString();
 }
 
 function hashSha256(value: string | Buffer | Uint8Array): string {
   return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function getPdfBinaryStorageMode(): "db_inline" | "local_file" {
+  const mode = String(process.env.PDF_BINARY_STORAGE_MODE || "db_inline")
+    .trim()
+    .toLowerCase();
+  return mode === "local_file" ? "local_file" : "db_inline";
+}
+
+function getPdfLocalStorageRoot(): string {
+  const configured =
+    process.env.PDF_STORAGE_ROOT || process.env.DOCUMENT_STORAGE_ROOT || process.env.STORAGE_ROOT;
+
+  if (configured && configured.trim()) {
+    return path.resolve(configured.trim());
+  }
+
+  return path.resolve(process.cwd(), ".pdf-storage");
+}
+
+function getRelativeLocalPdfPath(args: { tenantId: string; caseId: string; version: number; fileName: string }): string {
+  const safeFileName = args.fileName.replace(/[^a-zA-Z0-9_.-]/g, "_");
+  return path.join(args.tenantId, args.caseId, `v${args.version}`, safeFileName).replace(/\\/g, "/");
+}
+
+function resolveLocalPdfPath(storagePath: string): string | null {
+  const normalized = storagePath.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  if (normalized.startsWith("local://")) {
+    const relativePath = normalized.slice("local://".length).replace(/^\/+/, "");
+    return path.resolve(getPdfLocalStorageRoot(), relativePath);
+  }
+
+  if (normalized.startsWith("file://")) {
+    return path.resolve(normalized.slice("file://".length));
+  }
+
+  if (path.isAbsolute(normalized)) {
+    return normalized;
+  }
+
+  return null;
+}
+
+function getInlinePdfBase64(payload: Record<string, unknown> | null | undefined): string | null {
+  return readString(payload, "pdf_base64", "pdfBase64", "binary_base64", "binaryBase64");
+}
+
+async function getDocumentBinaryAvailability(document: {
+  storagePath: string | null;
+  payloadJson: Prisma.JsonValue | null;
+}): Promise<PdfBinaryAvailability> {
+  const payload = asRecord(document.payloadJson);
+  const inlineBase64 = getInlinePdfBase64(payload);
+
+  if (document.storagePath?.startsWith("local://") || document.storagePath?.startsWith("file://")) {
+    const absolutePath = resolveLocalPdfPath(document.storagePath);
+    if (!absolutePath) {
+      return { available: false, reason: "local_file_missing" };
+    }
+
+    try {
+      const stat = await fs.stat(absolutePath);
+      if (stat.isFile() && stat.size > 0) {
+        return { available: true, reason: null };
+      }
+      return { available: false, reason: "local_file_missing" };
+    } catch {
+      return { available: false, reason: "local_file_missing" };
+    }
+  }
+
+  if (document.storagePath?.startsWith("db-inline://") || !document.storagePath) {
+    if (!inlineBase64) {
+      return { available: false, reason: "db_inline_payload_missing" };
+    }
+    if (!inlineBase64.trim()) {
+      return { available: false, reason: "db_inline_payload_empty" };
+    }
+    return { available: true, reason: null };
+  }
+
+  if (inlineBase64 && inlineBase64.trim()) {
+    return { available: true, reason: null };
+  }
+
+  return { available: false, reason: "db_inline_payload_missing" };
+}
+
+async function persistPdfBinary(args: {
+  tenantId: string;
+  caseId: string;
+  version: number;
+  fileName: string;
+  pdfBuffer: Buffer;
+  reportPayload: Record<string, unknown>;
+}): Promise<PersistedPdfBinary> {
+  const storageMode = getPdfBinaryStorageMode();
+
+  if (storageMode === "local_file") {
+    if (process.env.VERCEL === "1" || process.env.NEXT_RUNTIME === "edge") {
+      throw new Error(
+        "Local PDF storage is disabled in ephemeral deployment environments. Configure PDF_BINARY_STORAGE_MODE=db_inline.",
+      );
+    }
+
+    const relativePath = getRelativeLocalPdfPath(args);
+    const absolutePath = path.resolve(getPdfLocalStorageRoot(), relativePath);
+
+    await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+    await fs.writeFile(absolutePath, args.pdfBuffer);
+
+    const stat = await fs.stat(absolutePath);
+    if (!stat.isFile() || stat.size <= 0) {
+      throw new Error("PDF binary file was not persisted correctly");
+    }
+
+    return {
+      storagePath: `local://${relativePath}`,
+      payloadJson: {
+        report_payload: args.reportPayload as Prisma.InputJsonValue,
+        binary_storage_mode: "local_file",
+        binary_storage_key: `local://${relativePath}`,
+      },
+      cleanup: async () => {
+        await fs.rm(absolutePath, { force: true });
+      },
+    };
+  }
+
+  const base64 = Buffer.from(args.pdfBuffer).toString("base64");
+  if (!base64) {
+    throw new Error("PDF base64 encoding failed");
+  }
+
+  return {
+    storagePath: "db-inline://payload",
+    payloadJson: {
+      report_payload: args.reportPayload as Prisma.InputJsonValue,
+      pdf_base64: base64,
+      binary_storage_mode: "db_inline",
+    },
+    cleanup: null,
+  };
 }
 
 function formatDateForFileName(date = new Date()): string {
@@ -644,7 +807,7 @@ async function renderPdfBuffer(args: {
     const page = await browser.newPage();
     await page.setContent(args.html, { waitUntil: "networkidle0" });
 
-    return await page.pdf({
+    const rendered = await page.pdf({
       format: "A4",
       printBackground: true,
       displayHeaderFooter: true,
@@ -668,6 +831,8 @@ async function renderPdfBuffer(args: {
         </div>
       `,
     });
+
+    return Buffer.from(rendered);
   } finally {
     await browser.close();
   }
@@ -683,9 +848,15 @@ function toReportSummary(document: {
   mimeType: string;
   sizeBytes: bigint;
   generatedBy?: { fullName: string } | null;
-}): CasePdfVersionSummary {
+}, binary: PdfBinaryAvailability = { available: true, reason: null }): CasePdfVersionSummary {
   const metadata = asRecord(document.metadata);
   const reportStatus = readString(metadata, "report_status") || "draft";
+  const recoveryMessage =
+    !binary.available && reportStatus !== "failed"
+      ? "Version metadata exists but file is missing; regenerate required"
+      : reportStatus === "failed"
+        ? readString(metadata, "error", "recovery_message") || "Regeneration required"
+        : null;
 
   return {
     id: document.id,
@@ -703,6 +874,9 @@ function toReportSummary(document: {
     fileSize: Number(document.sizeBytes),
     sha256Hash: readString(metadata, "sha256_binary_hash", "sha256_hash"),
     generatedBy: document.generatedBy?.fullName || null,
+    binaryAvailable: binary.available,
+    recoveryRequired: !binary.available || reportStatus === "failed",
+    recoveryMessage,
   };
 }
 
@@ -738,37 +912,59 @@ async function createFailedRecord(args: {
   trigger: GenerateTrigger;
   language: "en" | "ar";
   errorMessage: string;
+  existingDocumentId?: string;
   request?: NextRequest;
 }) {
-  const failed = await prisma.document.create({
-    data: {
-      tenantId: args.tenantId,
-      caseId: args.caseId,
-      documentType: DocumentType.CASE_FILE,
-      status: DocumentStatus.DRAFT,
-      documentCode: `LEGAL-CASE-PDF-${args.version}`,
-      titleEn: "Legal Case PDF Report",
-      titleAr: "تقرير ملف القضية القانوني",
-      templateKey: CASE_PDF_TEMPLATE_KEY,
-      versionLabel: String(args.version),
-      fileName: args.fileName,
-      mimeType: "application/pdf",
-      storagePath: null,
-      previewHtml: null,
-      payloadJson: {
-        error: args.errorMessage,
-      },
-      sizeBytes: BigInt(0),
-      generatedByUserId: args.generatedBy,
-      metadata: {
-        trigger: args.trigger,
-        report_status: "failed",
-        language: args.language,
-        template_version: PDF_TEMPLATE_VERSION,
-        is_final: false,
-      },
-    },
-  });
+  const metadata: Prisma.InputJsonObject = {
+    trigger: args.trigger,
+    report_status: "failed",
+    language: args.language,
+    template_version: PDF_TEMPLATE_VERSION,
+    is_final: false,
+    recovery_required: true,
+    recovery_message: "Version metadata exists but file is missing; regenerate required",
+    error: args.errorMessage,
+  };
+
+  const failed = args.existingDocumentId
+    ? await prisma.document.update({
+        where: { id: args.existingDocumentId },
+        data: {
+          status: DocumentStatus.DRAFT,
+          fileName: args.fileName,
+          storagePath: null,
+          previewHtml: null,
+          payloadJson: {
+            error: args.errorMessage,
+          },
+          sizeBytes: BigInt(0),
+          generatedByUserId: args.generatedBy,
+          metadata,
+        },
+      })
+    : await prisma.document.create({
+        data: {
+          tenantId: args.tenantId,
+          caseId: args.caseId,
+          documentType: DocumentType.CASE_FILE,
+          status: DocumentStatus.DRAFT,
+          documentCode: `LEGAL-CASE-PDF-${args.version}`,
+          titleEn: "Legal Case PDF Report",
+          titleAr: "تقرير ملف القضية القانوني",
+          templateKey: CASE_PDF_TEMPLATE_KEY,
+          versionLabel: String(args.version),
+          fileName: args.fileName,
+          mimeType: "application/pdf",
+          storagePath: null,
+          previewHtml: null,
+          payloadJson: {
+            error: args.errorMessage,
+          },
+          sizeBytes: BigInt(0),
+          generatedByUserId: args.generatedBy,
+          metadata,
+        },
+      });
 
   await writeAuditLog({
     tenantId: args.tenantId,
@@ -809,7 +1005,19 @@ export async function generateCasePdfReport(args: {
   const allowFinal = Boolean(args.requestedFinal && validation.canFinalize);
 
   const existingPdfDocs = caseRecord.documents.filter(isPdfReportDocument);
-  const version = existingPdfDocs.length + 1;
+  const latestBrokenForRepair =
+    args.trigger === "manual_regenerate"
+      ? existingPdfDocs
+          .filter((doc) => {
+            const metadata = asRecord(doc.metadata);
+            return readString(metadata, "report_status") === "failed";
+          })
+          .sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime())[0] || null
+      : null;
+
+  const version = latestBrokenForRepair
+    ? parseNumericVersion(latestBrokenForRepair.versionLabel) || existingPdfDocs.length + 1
+    : existingPdfDocs.length + 1;
   const fileName = buildFileName(args.caseId);
   const generatedAt = nowIso();
 
@@ -875,48 +1083,78 @@ export async function generateCasePdfReport(args: {
 
     const binaryHash = hashSha256(pdfBuffer);
 
-    const document = await prisma.document.create({
-      data: {
-        tenantId: caseRecord.tenantId,
-        caseId: args.caseId,
-        documentType: DocumentType.CASE_FILE,
-        status: DocumentStatus.GENERATED,
-        documentCode: `LEGAL-CASE-PDF-${version}`,
-        titleEn: "Legal Case File Report",
-        titleAr: "تقرير ملف القضية القانوني",
-        templateKey: CASE_PDF_TEMPLATE_KEY,
-        versionLabel: String(version),
-        fileName,
-        mimeType: "application/pdf",
-        storagePath: `db://documents/${version}`,
-        previewHtml: null,
-        payloadJson: {
-          report_payload: payload,
-          pdf_base64: Buffer.from(pdfBuffer).toString("base64"),
-        } as Prisma.InputJsonValue,
-        sizeBytes: BigInt(pdfBuffer.byteLength),
-        generatedByUserId: args.auth.sub,
-        metadata: {
-          trigger: args.trigger,
-          report_status: allowFinal ? "final" : "draft",
-          is_final: allowFinal,
-          template_version: PDF_TEMPLATE_VERSION,
-          language,
-          sha256_hash: contentHash,
-          sha256_binary_hash: binaryHash,
-          can_finalize: validation.canFinalize,
-          missing_required: validation.missingRequired,
-          immutable: allowFinal,
-        } as Prisma.InputJsonObject,
-      },
-      include: {
-        generatedBy: {
-          select: {
-            fullName: true,
-          },
-        },
-      },
+    const persisted = await persistPdfBinary({
+      tenantId: caseRecord.tenantId,
+      caseId: args.caseId,
+      version,
+      fileName,
+      pdfBuffer,
+      reportPayload: payload,
     });
+
+    const sharedDocumentData = {
+      status: DocumentStatus.GENERATED,
+      documentCode: `LEGAL-CASE-PDF-${version}`,
+      titleEn: "Legal Case File Report",
+      titleAr: "تقرير ملف القضية القانوني",
+      versionLabel: String(version),
+      fileName,
+      mimeType: "application/pdf",
+      storagePath: persisted.storagePath,
+      previewHtml: null,
+      payloadJson: persisted.payloadJson,
+      sizeBytes: BigInt(pdfBuffer.byteLength),
+      generatedByUserId: args.auth.sub,
+      metadata: {
+        trigger: args.trigger,
+        report_status: allowFinal ? "final" : "draft",
+        is_final: allowFinal,
+        template_version: PDF_TEMPLATE_VERSION,
+        language,
+        sha256_hash: contentHash,
+        sha256_binary_hash: binaryHash,
+        can_finalize: validation.canFinalize,
+        missing_required: validation.missingRequired,
+        immutable: allowFinal,
+      } as Prisma.InputJsonObject,
+    };
+
+    let document;
+    try {
+      document = latestBrokenForRepair
+        ? await prisma.document.update({
+            where: { id: latestBrokenForRepair.id },
+            data: sharedDocumentData,
+            include: {
+              generatedBy: {
+                select: {
+                  fullName: true,
+                },
+              },
+            },
+          })
+        : await prisma.document.create({
+            data: {
+              tenantId: caseRecord.tenantId,
+              caseId: args.caseId,
+              documentType: DocumentType.CASE_FILE,
+              templateKey: CASE_PDF_TEMPLATE_KEY,
+              ...sharedDocumentData,
+            },
+            include: {
+              generatedBy: {
+                select: {
+                  fullName: true,
+                },
+              },
+            },
+          });
+    } catch (persistError) {
+      if (persisted.cleanup) {
+        await persisted.cleanup().catch(() => undefined);
+      }
+      throw persistError;
+    }
 
     await writeAuditLog({
       tenantId: caseRecord.tenantId,
@@ -966,7 +1204,13 @@ export async function generateCasePdfReport(args: {
       request: args.request,
     }).catch(() => undefined);
 
-    const summary = toReportSummary(document);
+    const summary = toReportSummary(
+      document,
+      await getDocumentBinaryAvailability({
+        storagePath: document.storagePath,
+        payloadJson: document.payloadJson,
+      }),
+    );
 
     return {
       report: summary,
@@ -985,6 +1229,7 @@ export async function generateCasePdfReport(args: {
       trigger: args.trigger,
       language,
       errorMessage: message,
+      existingDocumentId: latestBrokenForRepair?.id,
       request: args.request,
     });
     throw new ApiError(
@@ -1002,8 +1247,12 @@ export async function getLatestCasePdf(auth: AuthContext, caseId: string) {
   const latest = docs[0] ?? null;
   const validation = buildValidation(caseRecord);
 
+  const latestSummary = latest
+    ? toReportSummary(latest, await getDocumentBinaryAvailability({ storagePath: latest.storagePath, payloadJson: latest.payloadJson }))
+    : null;
+
   return {
-    latest: latest ? toReportSummary(latest) : null,
+    latest: latestSummary,
     validation,
   };
 }
@@ -1013,7 +1262,16 @@ export async function listCasePdfVersions(auth: AuthContext, caseId: string) {
   ensureCasePdfAccess(auth, caseRecord);
 
   const docs = await listPdfDocumentsInternal(caseRecord.tenantId, caseId);
-  return docs.map((doc) => toReportSummary(doc));
+
+  return Promise.all(
+    docs.map(async (doc) => {
+      const binary = await getDocumentBinaryAvailability({
+        storagePath: doc.storagePath,
+        payloadJson: doc.payloadJson,
+      });
+      return toReportSummary(doc, binary);
+    }),
+  );
 }
 
 async function getCasePdfDocumentByVersion(auth: AuthContext, caseId: string, version: number) {
@@ -1028,6 +1286,7 @@ async function getCasePdfDocumentByVersion(auth: AuthContext, caseId: string, ve
       mimeType: "application/pdf",
       versionLabel: String(version),
     },
+    orderBy: { generatedAt: "desc" },
     include: {
       generatedBy: {
         select: {
@@ -1044,12 +1303,71 @@ async function getCasePdfDocumentByVersion(auth: AuthContext, caseId: string, ve
   return { caseRecord, document };
 }
 
-function readPdfBufferFromDocument(document: { payloadJson: Prisma.JsonValue | null }): Buffer {
-  const payload = asRecord(document.payloadJson);
-  const base64 = readString(payload, "pdf_base64");
-  if (!base64) {
-    throw new ApiError(410, "Stored PDF binary is not available for this version");
+async function markDocumentAsBinaryMissing(args: {
+  documentId: string;
+  metadata: Prisma.JsonValue | null;
+  payloadJson: Prisma.JsonValue | null;
+}) {
+  const previousMetadata = asRecord(args.metadata);
+  const previousPayload = asRecord(args.payloadJson);
+
+  await prisma.document.update({
+    where: { id: args.documentId },
+    data: {
+      status: DocumentStatus.DRAFT,
+      metadata: {
+        ...previousMetadata,
+        report_status: "failed",
+        recovery_required: true,
+        recovery_message: "Version metadata exists but file is missing; regenerate required",
+        binary_available: false,
+      } as Prisma.InputJsonObject,
+      payloadJson: {
+        ...previousPayload,
+        error: "Version metadata exists but file is missing; regenerate required",
+      } as Prisma.InputJsonObject,
+    },
+  });
+}
+
+async function readPdfBufferFromDocument(document: {
+  id: string;
+  storagePath: string | null;
+  payloadJson: Prisma.JsonValue | null;
+  metadata: Prisma.JsonValue | null;
+}): Promise<Buffer> {
+  const availability = await getDocumentBinaryAvailability(document);
+  if (!availability.available) {
+    await markDocumentAsBinaryMissing({
+      documentId: document.id,
+      metadata: document.metadata,
+      payloadJson: document.payloadJson,
+    }).catch(() => undefined);
+    throw new ApiError(410, "Version metadata exists but file is missing; regenerate required");
   }
+
+  if (document.storagePath?.startsWith("local://") || document.storagePath?.startsWith("file://")) {
+    const absolutePath = resolveLocalPdfPath(document.storagePath);
+    if (absolutePath) {
+      try {
+        return await fs.readFile(absolutePath);
+      } catch {
+        // Fall through to inline payload fallback.
+      }
+    }
+  }
+
+  const payload = asRecord(document.payloadJson);
+  const base64 = getInlinePdfBase64(payload);
+  if (!base64) {
+    await markDocumentAsBinaryMissing({
+      documentId: document.id,
+      metadata: document.metadata,
+      payloadJson: document.payloadJson,
+    }).catch(() => undefined);
+    throw new ApiError(410, "Version metadata exists but file is missing; regenerate required");
+  }
+
   return Buffer.from(base64, "base64");
 }
 
@@ -1090,7 +1408,7 @@ export async function previewCasePdfVersion(args: {
 
   return {
     fileName: document.fileName,
-    buffer: readPdfBufferFromDocument(document),
+    buffer: await readPdfBufferFromDocument(document),
   };
 }
 
@@ -1131,9 +1449,17 @@ export async function downloadCasePdfVersion(args: {
 
   return {
     fileName: document.fileName,
-    buffer: readPdfBufferFromDocument(document),
+    buffer: await readPdfBufferFromDocument(document),
   };
 }
+
+export const __casePdfStorageInternals = {
+  getPdfBinaryStorageMode,
+  getPdfLocalStorageRoot,
+  resolveLocalPdfPath,
+  getInlinePdfBase64,
+  getDocumentBinaryAvailability,
+};
 
 export async function maybeAutoGenerateCasePdf(args: {
   auth: AuthContext;
