@@ -5,8 +5,9 @@ import path from "node:path";
 import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import puppeteer from "puppeteer";
+import chromium from "@sparticuz/chromium";
 import QRCode from "qrcode";
-import type { Browser } from "puppeteer";
+import type { Browser, LaunchOptions } from "puppeteer";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
@@ -904,6 +905,26 @@ function buildPdfHtml(payload: ReturnType<typeof buildCasePayload>): string {
 </html>`;
 }
 
+async function launchPdfBrowser(): Promise<Browser> {
+  const defaultLaunchOptions: LaunchOptions = {
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"],
+  };
+
+  try {
+    return await puppeteer.launch(defaultLaunchOptions);
+  } catch (error) {
+    // Vercel/serverless runtimes might not have a system Chrome binary.
+    const executablePath = await chromium.executablePath();
+    return await puppeteer.launch({
+      ...defaultLaunchOptions,
+      executablePath,
+      args: [...chromium.args, ...(defaultLaunchOptions.args ?? [])],
+      headless: true,
+    });
+  }
+}
+
 async function renderPdfBuffer(args: {
   html: string;
   reportStatus: "draft" | "final";
@@ -912,10 +933,7 @@ async function renderPdfBuffer(args: {
   hashForFooter: string;
 }) {
   if (!sharedPdfBrowserPromise) {
-    sharedPdfBrowserPromise = puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"],
-    });
+    sharedPdfBrowserPromise = launchPdfBrowser();
   }
 
   const browser = await sharedPdfBrowserPromise;
