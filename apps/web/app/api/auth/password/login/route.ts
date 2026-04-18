@@ -19,6 +19,11 @@ import { normalizeEmail } from "@/lib/server/auth-domain-policy";
 import { verifyPassword } from "@/lib/server/password";
 import { normalizeTenantAuthConfig } from "@/lib/server/tenant-auth-config";
 import { getUserResetState } from "@/lib/server/auth-reset";
+import {
+  DatabaseUnavailableError,
+  isDbConnectivityError,
+  runDbOperation,
+} from "@/lib/server/db-resilience";
 
 type PasswordLoginPayload = {
   email?: string;
@@ -73,8 +78,22 @@ function isPrismaConnectivityError(error: unknown): boolean {
   return (
     message.includes("Authentication failed against database server") ||
     message.includes("Can't reach database server") ||
+    message.includes("Server has closed the connection") ||
     message.includes("timed out")
   );
+}
+
+function resolveLoginTraceId(request: NextRequest): string {
+  const requestTraceId = request.headers.get("x-trace-id") || request.headers.get("x-request-id");
+  if (requestTraceId && requestTraceId.trim().length > 0) {
+    return requestTraceId.trim();
+  }
+
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `trace-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 }
 
 function readClientIp(request: NextRequest): string {
@@ -374,6 +393,7 @@ function buildLoginSuccessResponse(args: {
 export async function POST(request: NextRequest) {
   try {
     const prisma = getPrisma();
+    const traceId = resolveLoginTraceId(request);
 
     const payload = (await request.json().catch(() => null)) as PasswordLoginPayload | null;
     if (!payload) {
@@ -395,11 +415,18 @@ export async function POST(request: NextRequest) {
       throw new ApiError(401, GENERIC_LOGIN_ERROR);
     }
 
-    const rateLimitCheck = await checkRateLimit({
-      prisma,
-      email,
-      request,
-    });
+    const rateLimitCheck = await runDbOperation(
+      () =>
+        checkRateLimit({
+          prisma,
+          email,
+          request,
+        }),
+      {
+        traceId,
+        operationName: "login_check_rate_limit",
+      },
+    );
 
     if (rateLimitCheck.limited) {
       await recordLoginAttempt({
@@ -413,7 +440,10 @@ export async function POST(request: NextRequest) {
       throw new ApiError(429, TOO_MANY_ATTEMPTS_ERROR);
     }
 
-    const user = await findUserByEmailWithDomain(prisma, email);
+    const user = await runDbOperation(() => findUserByEmailWithDomain(prisma, email), {
+      traceId,
+      operationName: "login_find_user",
+    });
 
     if (!user) {
       await recordLoginAttempt({
@@ -510,7 +540,12 @@ export async function POST(request: NextRequest) {
       throw new ApiError(401, GENERIC_LOGIN_ERROR);
     }
 
-    const resetState = await getUserResetState(prisma, user.id);
+    const resetState = await runDbOperation(() => getUserResetState(prisma, user.id), {
+      traceId,
+      operationName: "login_get_reset_state",
+      timeoutMs: 20000,
+      maxRetries: 0,
+    });
     if (resetState.passwordResetRequired) {
       await recordLoginAttempt({
         prisma,
@@ -522,16 +557,26 @@ export async function POST(request: NextRequest) {
       throw new ApiError(403, "Password reset required. Please reset your password using the secure link sent to your email.");
     }
 
-    await resetFailedPasswordAttempts(prisma, user.id);
-
-    const session = await createSessionForPasswordUser({
-      prisma,
-      userId: user.id,
-      email: user.email,
-      tenantId: user.tenantId,
-      role: user.role,
-      userType: user.userType,
+    await runDbOperation(() => resetFailedPasswordAttempts(prisma, user.id), {
+      traceId,
+      operationName: "login_reset_failed_attempts",
     });
+
+    const session = await runDbOperation(
+      () =>
+        createSessionForPasswordUser({
+          prisma,
+          userId: user.id,
+          email: user.email,
+          tenantId: user.tenantId,
+          role: user.role,
+          userType: user.userType,
+        }),
+      {
+        traceId,
+        operationName: "login_create_session",
+      },
+    );
 
     await recordLoginAttempt({
       prisma,
@@ -559,15 +604,20 @@ export async function POST(request: NextRequest) {
       request,
     });
   } catch (error) {
-    if (isPrismaConnectivityError(error)) {
-      console.error("LOGIN_DATABASE_UNAVAILABLE", error);
+    if (error instanceof DatabaseUnavailableError || isDbConnectivityError(error) || isPrismaConnectivityError(error)) {
+      const traceId = error instanceof DatabaseUnavailableError ? error.traceId : resolveLoginTraceId(request);
+      console.error("LOGIN_DATABASE_UNAVAILABLE", {
+        traceId,
+        error,
+      });
       return NextResponse.json(
-        { detail: AUTH_SERVICE_UNAVAILABLE_ERROR },
+        { detail: AUTH_SERVICE_UNAVAILABLE_ERROR, traceId },
         {
           status: 503,
           headers: {
             "Cache-Control": "no-store",
             "Retry-After": "60",
+            "x-trace-id": traceId,
           },
         },
       );

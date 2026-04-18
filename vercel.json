@@ -2,5 +2,8 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "outputDirectory": "apps/web/.next",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_ENABLE_WORKFLOW_GUIDANCE": "true"
+  }
 }

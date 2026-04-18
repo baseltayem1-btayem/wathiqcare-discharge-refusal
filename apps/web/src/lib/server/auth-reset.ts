@@ -160,7 +160,6 @@ export async function createPasswordResetToken(
 
 export async function getUserResetState(prisma: PrismaClient, userId: string): Promise<UserResetState> {
   try {
-    await ensurePasswordResetSchema(prisma);
     const rows = await prisma.$queryRaw<RawResetStateRow[]>`
       SELECT password_reset_required, session_revoked_at
       FROM users

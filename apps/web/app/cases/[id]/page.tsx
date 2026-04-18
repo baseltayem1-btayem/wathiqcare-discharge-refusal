@@ -28,6 +28,10 @@ import {
   RadioGroupItem,
   RadioGroupLabel,
 } from "@/components/design-system/radio-group";
+import { buildWorkspaceGuidance } from "@/components/cases/workspaceGuidance";
+import { getLegalReadinessDecisionIndicator } from "@/components/cases/legalReadinessDecision";
+
+const ENABLE_WORKFLOW_GUIDANCE = process.env.NEXT_PUBLIC_ENABLE_WORKFLOW_GUIDANCE === "true";
 
 type ApiErrorPayload = {
   detail?: string;
@@ -51,8 +55,10 @@ type PresentationPayload = {
 };
 
 type SignatureOutcome = "signed" | "refused_to_sign" | "unable_to_sign";
+type PatientDecision = "accepted" | "refused";
 
 type SignaturePayload = {
+  patient_decision: PatientDecision | "";
   outcome: SignatureOutcome;
   signer_name: string;
   reason: string;
@@ -334,6 +340,7 @@ export default function CasePage() {
     presented_by: "",
   });
   const [signature, setSignature] = useState<SignaturePayload>({
+    patient_decision: "",
     outcome: "signed",
     signer_name: "",
     reason: "",
@@ -463,7 +470,17 @@ export default function CasePage() {
         });
 
         const signatureOutcome = getString(signatureMeta, "outcome") as SignatureOutcome;
+        const signatureDecision = getString(signatureMeta, "patient_decision");
+        const normalizedDecision: SignaturePayload["patient_decision"] =
+          signatureDecision === "accepted" || signatureDecision === "refused"
+            ? signatureDecision
+            : signatureOutcome === "signed"
+              ? "accepted"
+              : signatureOutcome === "refused_to_sign" || signatureOutcome === "unable_to_sign"
+                ? "refused"
+                : "";
         setSignature({
+          patient_decision: normalizedDecision,
           outcome:
             signatureOutcome === "refused_to_sign" ||
             signatureOutcome === "unable_to_sign" ||
@@ -705,12 +722,19 @@ export default function CasePage() {
     () => [
       "completed",
       presentation.language ? "completed" : "missing",
-      signature.signer_name ? "completed" : "missing",
+      signature.patient_decision && signature.signer_name ? "completed" : "missing",
       witness.witness_name ? "completed" : "missing",
       readiness?.ready_for_legal ? "completed" : "missing",
       legalPackage ? "completed" : "missing",
     ],
-    [legalPackage, presentation.language, readiness?.ready_for_legal, signature.signer_name, witness.witness_name],
+    [
+      legalPackage,
+      presentation.language,
+      readiness?.ready_for_legal,
+      signature.patient_decision,
+      signature.signer_name,
+      witness.witness_name,
+    ],
   );
 
   const activeStep = stepStatus.findIndex((status) => status === "missing");
@@ -723,10 +747,70 @@ export default function CasePage() {
   const canWitnessAction =
     permissions.canAccessCase(caseAccessContext, "cases.add.witness") || canOperationalActions;
   const canLegalApprove = permissions.canAccessCase(caseAccessContext, "legal.approve.readiness");
+  const canGenerateBundle = permissions.canAccessCase(caseAccessContext, "evidence.generate");
   const canGeneratePdf = permissions.canAccessCase(caseAccessContext, "documents.generate_pdf");
   const canDownloadFinalDocs = permissions.canAccessCase(caseAccessContext, "documents.download.final");
   const canReadAudit = permissions.canAccessCase(caseAccessContext, "audit.read");
   const canReadSmsEvidence = permissions.canAccessCase(caseAccessContext, "sms.evidence.read");
+  const refusalScenario =
+    signature.patient_decision === "refused" ||
+    (!signature.patient_decision && signature.outcome !== "signed");
+  const legalDecisionIndicator = getLegalReadinessDecisionIndicator(
+    signature.patient_decision || null,
+  );
+  const financialNoticeAvailable = documents.some(
+    (document) => document.template_key === "financial_responsibility_notice",
+  );
+
+  const workspaceSections = useMemo(
+    () =>
+      buildWorkspaceGuidance({
+        role: permissions.auth.role,
+        canMedicalActions,
+        canLegalApprove,
+        canGeneratePdf,
+        canGenerateBundle,
+        readinessReadyForLegal: Boolean(readiness?.ready_for_legal),
+        readinessReason: readiness?.reason,
+        presentationRecorded: Boolean(presentation.language),
+        patientDecision: signature.patient_decision || null,
+        patientAcknowledged: Boolean(signature.signer_name),
+        refusalScenario,
+        financialNoticeAvailable,
+        latestPdfStatus: pdfLatest?.status ?? null,
+        legalPackageGenerated: Boolean(legalPackage),
+      }),
+    [
+      canGenerateBundle,
+      canGeneratePdf,
+      canLegalApprove,
+      canMedicalActions,
+      financialNoticeAvailable,
+      legalPackage,
+      pdfLatest?.status,
+      permissions.auth.role,
+      presentation.language,
+      signature.patient_decision,
+      readiness?.ready_for_legal,
+      readiness?.reason,
+      refusalScenario,
+      signature.signer_name,
+    ],
+  );
+
+  const legalPackageDisabledReason = !canLegalApprove
+    ? "Legal documentation package is available to Legal and authorized signatories only."
+    : null;
+
+  const draftPdfDisabledReason = !canGeneratePdf
+    ? "Documents and PDF generation are available to Legal roles."
+    : null;
+
+  const finalPdfDisabledReason = !canGeneratePdf
+    ? "Documents and PDF generation are available to Legal roles."
+    : !canLegalApprove
+      ? "Final PDF issuance is restricted to authorized signatory."
+      : null;
 
   if (!caseId) {
     return (
@@ -779,8 +863,11 @@ export default function CasePage() {
               title={!canLegalApprove ? permissions.deniedMessage : undefined}
             >
               <Package className="h-4 w-4" />
-              Generate Legal Package
+              Generate Legal Documentation Package
             </Button>
+            {legalPackageDisabledReason ? (
+              <span className="self-center text-xs text-amber-700">{legalPackageDisabledReason}</span>
+            ) : null}
 
             <Button
               variant="outline"
@@ -789,8 +876,11 @@ export default function CasePage() {
               title={!canGeneratePdf ? permissions.deniedMessage : undefined}
             >
               <FileText className="h-4 w-4" />
-              Generate Case PDF
+              Generate Discharge Decision PDF
             </Button>
+            {draftPdfDisabledReason ? (
+              <span className="self-center text-xs text-amber-700">{draftPdfDisabledReason}</span>
+            ) : null}
 
             {legalPackage?.download_url && canDownloadFinalDocs ? (
               <a
@@ -812,6 +902,54 @@ export default function CasePage() {
             {error}
           </div>
         ) : null}
+
+        {!permissions.can('cases.update.medical') && !permissions.can('legal.approve.readiness') && !permissions.can('cases.record.decision') ? (
+          <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3">
+            <span className="font-semibold text-blue-700">🔍 View-Only Mode</span>
+            <p className="text-sm text-blue-600">You can view case details and track progress. Contact your team to record decisions or generate documents.</p>
+          </div>
+        ) : null}
+
+      {ENABLE_WORKFLOW_GUIDANCE ? (
+        <Card className="mb-6 border-cyan-200 bg-cyan-50/40">
+          <CardHeader>
+            <CardTitle>IMC Case Workspace Guidance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-sm text-slate-700">
+              Hospital workflow ownership: Doctor initiates medical decision, Legal owns escalation and documentation, patient acknowledgment is mandatory, Finance notification is required in refusal scenarios, and final closure is restricted to authorized signatory.
+            </p>
+            <div className="space-y-3">
+              {workspaceSections.map((section) => (
+                <div key={section.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold text-slate-800">{section.title}</div>
+                      <div className="text-xs text-slate-500">Current Owner: {section.ownerRole}</div>
+                    </div>
+                    <Badge variant={section.status === "completed" ? "success" : section.status === "blocked" ? "warning" : "outline"}>
+                      {section.status === "completed" ? "Completed" : section.status === "blocked" ? "Blocked" : "In Progress"}
+                    </Badge>
+                  </div>
+                  {section.missingItems.length > 0 ? (
+                    <ul className="mb-2 list-disc space-y-1 pl-5 text-sm text-amber-800">
+                      {section.missingItems.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="mb-2 text-sm text-emerald-700">No missing requirements.</div>
+                  )}
+                  <div className="text-sm text-slate-700">Required Next Step: {section.nextAction}</div>
+                  {section.blockedReason ? (
+                    <div className="mt-1 text-xs font-medium text-amber-700">Why action is disabled: {section.blockedReason}</div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="mb-6">
         <ol className="flex flex-wrap gap-2 md:gap-4">
@@ -897,6 +1035,27 @@ export default function CasePage() {
                 )}
               </div>
 
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-700">
+                  Patient Decision:
+                </span>
+                <Badge variant={legalDecisionIndicator.badgeVariant}>
+                  {legalDecisionIndicator.label}
+                </Badge>
+              </div>
+
+              <div
+                className={`text-sm ${
+                  legalDecisionIndicator.followUpTone === "destructive"
+                    ? "text-red-700"
+                    : legalDecisionIndicator.followUpTone === "success"
+                      ? "text-emerald-700"
+                      : "text-amber-700"
+                }`}
+              >
+                {legalDecisionIndicator.followUpText}
+              </div>
+
               {readiness?.reason ? (
                 <div className="text-sm text-amber-700">
                   Reason: {readiness.reason}
@@ -910,8 +1069,8 @@ export default function CasePage() {
                   </Badge>
                 </li>
                 <li>
-                  <Badge variant={signature.signer_name ? "success" : "outline"}>
-                    Signature outcome recorded
+                  <Badge variant={signature.patient_decision ? "success" : "outline"}>
+                    Patient decision recorded
                   </Badge>
                 </li>
                 <li>
@@ -1014,11 +1173,40 @@ export default function CasePage() {
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Patient Decision / Signature Outcome</CardTitle>
+          <CardTitle>Patient Decision</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-3">
+              <div className="rounded border border-slate-200 p-3">
+                <div className="mb-2">
+                  <div className="text-sm font-semibold text-slate-700">Decision Status</div>
+                  <div className="text-xs text-slate-500">Patient&apos;s response to proposed treatment</div>
+                </div>
+                <RadioGroup
+                  value={signature.patient_decision}
+                  onValueChange={(value) => {
+                    const patientDecision = value as PatientDecision;
+                    setSignature((prev) => ({
+                      ...prev,
+                      patient_decision: patientDecision,
+                      outcome: patientDecision === "accepted" ? "signed" : "refused_to_sign",
+                    }));
+                  }}
+                >
+                  <RadioGroupLabel>
+                    <RadioGroupItem value="accepted" /> Accepted
+                  </RadioGroupLabel>
+                  <RadioGroupLabel>
+                    <RadioGroupItem value="refused" /> Refused
+                  </RadioGroupLabel>
+                </RadioGroup>
+              </div>
+
+              <div>
+                <div className="text-sm font-semibold text-slate-700">Signature Outcome</div>
+                <div className="text-xs text-slate-500">Signer&apos;s attestation (must align with patient decision)</div>
+              </div>
               <div className="flex gap-3">
                 <RadioGroup
                   value={signature.outcome}
@@ -1026,6 +1214,7 @@ export default function CasePage() {
                     setSignature((prev) => ({
                       ...prev,
                       outcome: value as SignatureOutcome,
+                      patient_decision: value === "signed" ? "accepted" : "refused",
                     }))
                   }
                 >
@@ -1071,14 +1260,20 @@ export default function CasePage() {
             <div className="flex flex-col items-start justify-center gap-2">
               <Button
                 variant="default"
-                disabled={loading || !canMedicalActions}
+                disabled={loading || !canMedicalActions || !signature.patient_decision}
                 title={!canMedicalActions ? permissions.deniedMessage : undefined}
                 onClick={handleSignature}
               >
-                Record Signature Outcome
+                Record Patient Decision
               </Button>
 
-              {signature.signer_name ? (
+              {!canMedicalActions ? (
+                <span className="text-xs text-amber-700">Doctor role is required to capture patient acknowledgment.</span>
+              ) : !signature.patient_decision ? (
+                <span className="text-xs text-amber-700">Select accepted or refused before recording the decision.</span>
+              ) : null}
+
+              {signature.patient_decision && signature.signer_name ? (
                 <Badge variant="success">Completed</Badge>
               ) : (
                 <Badge variant="warning">Missing</Badge>
@@ -1130,6 +1325,10 @@ export default function CasePage() {
                 Record Witness
               </Button>
 
+              {!canWitnessAction ? (
+                <span className="text-xs text-amber-700">Witness capture is limited to assigned medical or operations roles.</span>
+              ) : null}
+
               {witness.witness_name ? (
                 <Badge variant="success">Completed</Badge>
               ) : (
@@ -1180,8 +1379,11 @@ export default function CasePage() {
                 title={!canLegalApprove ? permissions.deniedMessage : undefined}
                 onClick={handleGenerateLegalPackage}
               >
-                Generate Legal Package
+                Generate Legal Documentation Package
               </Button>
+              {legalPackageDisabledReason ? (
+                <span className="text-xs text-amber-700">{legalPackageDisabledReason}</span>
+              ) : null}
             </div>
           )}
         </CardContent>
@@ -1212,6 +1414,9 @@ export default function CasePage() {
               <FileText className="h-4 w-4" />
               Generate Draft PDF
             </Button>
+            {draftPdfDisabledReason ? (
+              <span className="text-xs text-amber-700">{draftPdfDisabledReason}</span>
+            ) : null}
 
             <Button
               variant="outline"
@@ -1220,8 +1425,11 @@ export default function CasePage() {
               onClick={() => handleGenerateCasePdf("final", false)}
             >
               <FileText className="h-4 w-4" />
-              Generate Final PDF
+              Generate Authorized Final PDF
             </Button>
+            {finalPdfDisabledReason ? (
+              <span className="text-xs text-amber-700">{finalPdfDisabledReason}</span>
+            ) : null}
 
             <Button
               variant="outline"
@@ -1385,6 +1593,7 @@ export default function CasePage() {
           <CardContent>
             <div className="mb-3 flex flex-wrap gap-2">
               <Badge variant={consentRecords.length > 0 ? "success" : "warning"}>{consentRecords.length} consent record(s)</Badge>
+              <Badge variant={signature.patient_decision ? "success" : "warning"}>Patient decision {signature.patient_decision || "missing"}</Badge>
               <Badge variant={signature.signer_name ? "success" : "warning"}>Signature {signature.signer_name ? "captured" : "missing"}</Badge>
               <Badge variant={witness.witness_name ? "success" : "outline"}>Witness {witness.witness_name ? "recorded" : "not required / pending"}</Badge>
             </div>
