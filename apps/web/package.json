@@ -4,11 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run prisma:generate && next build --webpack && node scripts/write-deterministic-routes-manifest.cjs",
+    "build": "npm run prisma:generate && node scripts/run-sql-migrations.cjs && next build --webpack && node scripts/write-deterministic-routes-manifest.cjs",
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts",
     "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+    "db:probe:runtime": "node scripts/db-probe-runtime.cjs",
+    "db:probe:migration": "node scripts/db-probe-migration.cjs",
+    "validate:live:3111": "node scripts/live-validation-3111.cjs",
     "db:backfill:missing-tables": "npx prisma db execute --schema=./prisma/schema.prisma --file=./prisma/migrations/0014_production_backfill_missing_tables.sql",
     "test:magic-link": "node --test --experimental-strip-types src/lib/server/magic-link-route-flow.test.mjs"
   },

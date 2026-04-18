@@ -190,6 +190,11 @@ export function handleApiError(error: unknown) {
     logApiFailure({ traceId, status: 404, message, error, code: prismaCode });
     return jsonError(404, message, { traceId });
   }
+  if (prismaCode === "P2021" || prismaCode === "P2022") {
+    const message = "Database schema is not ready — pending migrations";
+    logApiFailure({ traceId, status: 503, message, error, code: prismaCode });
+    return jsonError(503, message, { traceId });
+  }
   if (prismaCode === "P2011" || prismaCode === "P2012") {
     const message = "Required field is missing";
     logApiFailure({ traceId, status: 400, message, error, code: prismaCode });
