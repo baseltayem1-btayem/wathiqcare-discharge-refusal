@@ -67,7 +67,7 @@ for (const file of migrationFiles) {
 
   try {
     execSync(
-      `node_modules/.bin/prisma db execute --schema="${SCHEMA_PATH}" --file="${filePath}" --url="${directUrl}"`,
+      `npx prisma db execute --schema="${SCHEMA_PATH}" --file="${filePath}" --url="${directUrl}"`,
       {
         stdio: ['pipe', 'pipe', 'pipe'],
         cwd: path.resolve(__dirname, '..'),
