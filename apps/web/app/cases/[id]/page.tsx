@@ -747,7 +747,7 @@ export default function CasePage() {
   const canWitnessAction =
     permissions.canAccessCase(caseAccessContext, "cases.add.witness") || canOperationalActions;
   const canLegalApprove = permissions.canAccessCase(caseAccessContext, "legal.approve.readiness");
-  const canGenerateBundle = permissions.canAccessCase(caseAccessContext, "evidence.generate");
+  const canGenerateBundle = permissions.canAccessCase(caseAccessContext, "documents.generate_pdf");
   const canGeneratePdf = permissions.canAccessCase(caseAccessContext, "documents.generate_pdf");
   const canDownloadFinalDocs = permissions.canAccessCase(caseAccessContext, "documents.download.final");
   const canReadAudit = permissions.canAccessCase(caseAccessContext, "audit.read");
