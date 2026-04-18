@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { ConsentMethod, Prisma } from "@prisma/client";
+import { ConsentMethod, Prisma, type ConsentRecord } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -27,6 +27,160 @@ function normalizeConsentMethod(value: string | null | undefined): ConsentMethod
 
 function hashDocumentVersion(payload: Record<string, unknown>): string {
   return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+}
+
+function isMissingConsentMethodEnumError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("consentmethod") &&
+    normalized.includes("does not exist") &&
+    normalized.includes("type")
+  );
+}
+
+async function createConsentRecordWithFallback(args: {
+  tenantId: string;
+  caseId: string;
+  payload: {
+    processingPurpose?: string;
+    lawfulBasis?: string;
+    consentType?: string;
+    consentMethod?: string;
+    documentVersion?: string;
+    witnessName?: string;
+    otpReference?: string;
+    documentSnapshot?: Record<string, unknown>;
+  };
+  documentHash: string;
+}): Promise<ConsentRecord> {
+  const normalizedMethod = normalizeConsentMethod(args.payload.consentMethod);
+  const metadataValue = args.payload.documentSnapshot ?? args.payload;
+  const createData = {
+    tenantId: args.tenantId,
+    caseId: args.caseId,
+    processingPurpose:
+      args.payload.processingPurpose?.trim() || "Discharge refusal medico-legal processing",
+    lawfulBasis:
+      args.payload.lawfulBasis?.trim() || "PDPL healthcare and legal obligation basis",
+    consentType: args.payload.consentType?.trim() || "informed_refusal_consent",
+    consentMethod: normalizedMethod,
+    documentVersion: args.payload.documentVersion?.trim() || "1.0",
+    documentHash: args.documentHash,
+    witnessName: args.payload.witnessName?.trim() || null,
+    otpReference: args.payload.otpReference?.trim() || null,
+    metadata: metadataValue as Prisma.InputJsonValue,
+  };
+
+  try {
+    return await prisma.consentRecord.create({ data: createData });
+  } catch (error) {
+    if (!isMissingConsentMethodEnumError(error)) {
+      throw error;
+    }
+
+    const generatedId = crypto.randomUUID();
+
+    const inserted = await prisma.$queryRaw<Array<{
+      id: string;
+      tenant_id: string;
+      case_id: string;
+      processing_purpose: string;
+      lawful_basis: string;
+      consent_type: string;
+      consent_method: string;
+      consented_at: Date;
+      document_id: string | null;
+      document_version: string | null;
+      document_hash: string | null;
+      witness_name: string | null;
+      otp_reference: string | null;
+      status: string;
+      metadata: Prisma.JsonValue | null;
+      created_at: Date;
+      updated_at: Date;
+    }>>(
+      Prisma.sql`
+        INSERT INTO consent_records (
+          id,
+          tenant_id,
+          case_id,
+          processing_purpose,
+          lawful_basis,
+          consent_type,
+          consent_method,
+          document_version,
+          document_hash,
+          witness_name,
+          otp_reference,
+          status,
+          metadata,
+          created_at,
+          updated_at
+        )
+        VALUES (
+          ${generatedId},
+          ${createData.tenantId},
+          ${createData.caseId},
+          ${createData.processingPurpose},
+          ${createData.lawfulBasis},
+          ${createData.consentType},
+          ${createData.consentMethod},
+          ${createData.documentVersion},
+          ${createData.documentHash},
+          ${createData.witnessName},
+          ${createData.otpReference},
+          ${"captured"},
+          ${JSON.stringify(metadataValue)}::jsonb,
+          NOW(),
+          NOW()
+        )
+        RETURNING
+          id,
+          tenant_id,
+          case_id,
+          processing_purpose,
+          lawful_basis,
+          consent_type,
+          consent_method,
+          consented_at,
+          document_id,
+          document_version,
+          document_hash,
+          witness_name,
+          otp_reference,
+          status,
+          metadata,
+          created_at,
+          updated_at
+      `,
+    );
+
+    const row = inserted[0];
+    if (!row) {
+      throw new Error("Consent insert fallback did not return a row");
+    }
+
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      caseId: row.case_id,
+      processingPurpose: row.processing_purpose,
+      lawfulBasis: row.lawful_basis,
+      consentType: row.consent_type,
+      consentMethod: normalizeConsentMethod(row.consent_method),
+      consentedAt: row.consented_at,
+      documentId: row.document_id,
+      documentVersion: row.document_version,
+      documentHash: row.document_hash,
+      witnessName: row.witness_name,
+      otpReference: row.otp_reference,
+      status: row.status,
+      metadata: row.metadata,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
 }
 
 async function getAuthorizedCase(auth: AuthContext, caseId: string) {
@@ -72,20 +226,11 @@ export async function recordCaseConsent(
   const caseRecord = await getAuthorizedCase(auth, caseId);
   const documentHash = hashDocumentVersion(payload.documentSnapshot ?? payload);
 
-  const record = await prisma.consentRecord.create({
-    data: {
-      tenantId: auth.tenant_id!,
-      caseId,
-      processingPurpose: payload.processingPurpose?.trim() || "Discharge refusal medico-legal processing",
-      lawfulBasis: payload.lawfulBasis?.trim() || "PDPL healthcare and legal obligation basis",
-      consentType: payload.consentType?.trim() || "informed_refusal_consent",
-      consentMethod: normalizeConsentMethod(payload.consentMethod),
-      documentVersion: payload.documentVersion?.trim() || "1.0",
-      documentHash,
-      witnessName: payload.witnessName?.trim() || null,
-      otpReference: payload.otpReference?.trim() || null,
-      metadata: (payload.documentSnapshot ?? payload) as Prisma.InputJsonValue,
-    },
+  const record = await createConsentRecordWithFallback({
+    tenantId: auth.tenant_id!,
+    caseId,
+    payload,
+    documentHash,
   });
 
   const metadata = asRecord(caseRecord.metadata);

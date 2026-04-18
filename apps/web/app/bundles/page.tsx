@@ -32,7 +32,7 @@ export default function BundlesPage() {
   const [creatingBundle, setCreatingBundle] = useState(false);
   const [downloadingName, setDownloadingName] = useState<string | null>(null);
 
-  const canGenerateBundle = permissions.can("legal.approve.readiness");
+  const canGenerateBundle = permissions.can("evidence.generate");
   const canDownloadBundle = permissions.can("documents.download.final");
   const canAccessBundles = canGenerateBundle || canDownloadBundle;
 

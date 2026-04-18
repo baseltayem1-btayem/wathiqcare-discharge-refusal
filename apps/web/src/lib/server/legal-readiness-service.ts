@@ -215,6 +215,10 @@ export async function getLegalReadiness(auth: AuthContext, caseId: string) {
   const legal = asRecord(metadata?.legal);
   const validation = asRecord(metadata?.validation);
   const financial = asRecord(metadata?.financial);
+  const treatingPhysician =
+    readString(workflow, "attending_physician") || readString(metadata, "attending_physician", "doctor_name");
+  const decisionTimestamp =
+    readString(workflow, "discharge_decision_at") || readString(metadata, "discharge_decision_at");
 
   const documentKeys = new Set(caseRecord.documents.map((item) => item.templateKey));
   const auditVerification = verifyAuditChain(caseRecord.auditChainEvents);
@@ -222,7 +226,8 @@ export async function getLegalReadiness(auth: AuthContext, caseId: string) {
   const report = evaluateLegalReadinessFromSnapshot({
     caseId,
     medicalDecisionDocumented:
-      Boolean(readString(workflow, "discussion_summary", "discharge_decision_at")) ||
+      (Boolean(treatingPhysician) && Boolean(decisionTimestamp)) ||
+      Boolean(readString(workflow, "discussion_summary")) ||
       Boolean(readBoolean(legal, "medical_decision_documented")),
     risksExplained:
       Boolean(readBoolean(presentation, "risks_explained", "acknowledged_view")) ||

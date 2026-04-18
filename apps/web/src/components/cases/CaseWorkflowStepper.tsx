@@ -37,14 +37,11 @@ function deriveCaseDataState(caseDetail: CaseDetail | null): WorkflowProgressSte
 
 function deriveDischargeDecisionState(
     workflow: DischargeWorkflow | null,
-    legalSummary: LegalCaseSummary | null | undefined,
+    _legalSummary: LegalCaseSummary | null | undefined,
     caseDataDone: boolean,
 ): WorkflowProgressStep["state"] {
     if (!caseDataDone) return "upcoming";
-    if (
-        workflow?.discharge_decision_at ||
-        (legalSummary?.event?.legal_state && legalSummary.event.legal_state !== "DRAFT")
-    ) {
+    if (workflow?.discharge_decision_at) {
         return "completed";
     }
     return "current";

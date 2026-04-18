@@ -30,9 +30,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof ApiError) {
+      const missingRequired = error.message.startsWith("PDF generation blocked. Missing required fields:")
+        ? error.message
+            .replace("PDF generation blocked. Missing required fields:", "")
+            .split(",")
+            .map((entry) => entry.trim())
+            .filter((entry) => entry.length > 0)
+        : [];
       return NextResponse.json(
         {
           detail: error.message,
+          missingRequired,
         },
         { status: error.status },
       );

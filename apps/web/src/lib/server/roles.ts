@@ -36,6 +36,14 @@ export const CASE_CREATOR_ROLES = [
     "social_services",
 ] as const;
 
+export const EVIDENCE_BUNDLE_CREATOR_ROLES = [
+    "platform_superadmin",
+    "platform_admin",
+    "tenant_owner",
+    "tenant_admin",
+    "legal_admin",
+] as const;
+
 export type CanonicalUserRole =
     | PlatformRole
     | (typeof TENANT_ADMIN_ROLES)[number]
@@ -50,6 +58,9 @@ const USER_ROLE_ALIASES: Record<string, CanonicalUserRole> = {
     admin: "tenant_admin",
     billing: "tenant_admin",
     doctor: "doctor",
+    er_doctor: "doctor",
+    emergency_doctor: "doctor",
+    physician: "doctor",
     nursing: "nursing",
     nurse: "nursing",
     lab_tech: "lab_tech",

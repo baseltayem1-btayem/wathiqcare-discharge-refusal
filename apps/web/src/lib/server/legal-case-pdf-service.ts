@@ -1,10 +1,12 @@
 import crypto from "node:crypto";
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import puppeteer from "puppeteer";
 import QRCode from "qrcode";
+import type { Browser } from "puppeteer";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
@@ -17,6 +19,7 @@ import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { logReportAccess } from "@/lib/server/report-access-service";
 
 const prisma = getPrisma();
+let sharedPdfBrowserPromise: Promise<Browser> | null = null;
 
 const PDF_TEMPLATE_VERSION = "1.0.0";
 const CASE_PDF_TEMPLATE_KEY = "legal_case_pdf";
@@ -68,6 +71,15 @@ export type GeneratedCasePdfResult = {
   downloadUrl: string;
 };
 
+export type LatestCasePdfResponse = {
+  latest: CasePdfVersionSummary | null;
+  latestValid: CasePdfVersionSummary | null;
+  latestKnown: CasePdfVersionSummary | null;
+  fallbackApplied: boolean;
+  forceRegenerateRequired: boolean;
+  validation: CasePdfValidationResult;
+};
+
 type PdfBinaryAvailability = {
   available: boolean;
   reason: "db_inline_payload_missing" | "db_inline_payload_empty" | "local_file_missing" | null;
@@ -79,8 +91,26 @@ type PersistedPdfBinary = {
   cleanup: (() => Promise<void>) | null;
 };
 
+type AuthoritativeCaseFacts = {
+  treatingPhysician: string | null;
+  dischargeDecisionAt: string | null;
+  refusalStartedAt: string | null;
+  incidentTimestamp: string | null;
+};
+
 function nowIso(): string {
   return new Date().toISOString();
+}
+
+function logCasePdfLifecycle(event: string, data: Record<string, unknown>): void {
+  const payload = {
+    timestamp: nowIso(),
+    component: "legal_case_pdf",
+    event,
+    ...data,
+  };
+
+  console.info(JSON.stringify(payload));
 }
 
 function hashSha256(value: string | Buffer | Uint8Array): string {
@@ -186,24 +216,62 @@ async function persistPdfBinary(args: {
   reportPayload: Record<string, unknown>;
 }): Promise<PersistedPdfBinary> {
   const storageMode = getPdfBinaryStorageMode();
+  const environment = process.env.NODE_ENV === "production" ? "prod" : "dev";
 
   if (storageMode === "local_file") {
     if (process.env.VERCEL === "1" || process.env.NEXT_RUNTIME === "edge") {
       throw new Error(
-        "Local PDF storage is disabled in ephemeral deployment environments. Configure PDF_BINARY_STORAGE_MODE=db_inline.",
+        "Local disk PDF storage is not allowed on Vercel/edge runtime. Configure external object storage (S3/blob).",
       );
     }
 
     const relativePath = getRelativeLocalPdfPath(args);
     const absolutePath = path.resolve(getPdfLocalStorageRoot(), relativePath);
 
+    logCasePdfLifecycle("binary_write_started", {
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      version: args.version,
+      storageMode,
+      filePath: relativePath,
+      absolutePath,
+      environment,
+    });
+
     await fs.mkdir(path.dirname(absolutePath), { recursive: true });
     await fs.writeFile(absolutePath, args.pdfBuffer);
 
+    // Critical write verification: fail fast before metadata can be persisted.
+    const fileExists = existsSync(absolutePath);
+    if (!fileExists) {
+      throw new Error(`PDF storage write verification failed at exists check: ${absolutePath}`);
+    }
+
     const stat = await fs.stat(absolutePath);
     if (!stat.isFile() || stat.size <= 0) {
-      throw new Error("PDF binary file was not persisted correctly");
+      throw new Error(`PDF storage write verification failed at size check: ${absolutePath}`);
     }
+
+    try {
+      const readBack = await fs.readFile(absolutePath);
+      if (readBack.byteLength <= 0) {
+        throw new Error(`PDF storage read-after-write returned empty file: ${absolutePath}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`PDF storage read-after-write failed: ${message}`);
+    }
+
+    logCasePdfLifecycle("binary_write_verified", {
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      version: args.version,
+      storageMode,
+      filePath: relativePath,
+      absolutePath,
+      environment,
+      sizeBytes: stat.size,
+    });
 
     return {
       storagePath: `local://${relativePath}`,
@@ -349,12 +417,15 @@ function buildValidation(caseRecord: Awaited<ReturnType<typeof getAuthorizedCase
   const signature = asRecord(metadata?.signature);
   const witness = asRecord(metadata?.witness);
 
+  const authoritative = getAuthoritativeCaseFacts(caseRecord);
+
   const patientMrn = caseRecord.medicalRecordNo || readString(metadata, "medical_record_number");
-  const treatingPhysician = readString(workflow, "attending_physician");
-  const incidentTimestamp =
-    readString(workflow, "refusal_started_at") ||
-    readString(workflow, "discharge_decision_at") ||
-    readString(metadata, "refusal_started_at");
+  const diagnosisSummary =
+    readString(workflow, "icd_code", "icd11_code", "diagnosis_summary") ||
+    readString(workflow, "discussion_summary", "refusal_reason") ||
+    readString(metadata, "icd_code", "icd11_code", "diagnosis_summary", "discussion_summary") ||
+    caseRecord.title ||
+    null;
   const patientDecision = readString(signature, "outcome");
   const riskDisclosure =
     readBoolean(presentation, "risks_explained") ||
@@ -383,15 +454,29 @@ function buildValidation(caseRecord: Awaited<ReturnType<typeof getAuthorizedCase
       key: "treating_physician",
       label: "Treating physician",
       required: true,
-      satisfied: Boolean(treatingPhysician),
-      reason: treatingPhysician ? "Available" : "Missing treating physician",
+      satisfied: Boolean(authoritative.treatingPhysician),
+      reason: authoritative.treatingPhysician ? "Available" : "Missing treating physician",
+    },
+    {
+      key: "diagnosis_summary",
+      label: "Diagnosis (ICD)",
+      required: true,
+      satisfied: Boolean(diagnosisSummary),
+      reason: diagnosisSummary ? "Available" : "Missing diagnosis (ICD)",
     },
     {
       key: "incident_timestamp",
       label: "Incident timestamp",
       required: true,
-      satisfied: Boolean(incidentTimestamp),
-      reason: incidentTimestamp ? "Available" : "Missing refusal/incident timestamp",
+      satisfied: Boolean(authoritative.incidentTimestamp),
+      reason: authoritative.incidentTimestamp ? "Available" : "Missing refusal/incident timestamp",
+    },
+    {
+      key: "discharge_decision",
+      label: "Decision",
+      required: true,
+      satisfied: Boolean(authoritative.dischargeDecisionAt),
+      reason: authoritative.dischargeDecisionAt ? "Available" : "Missing discharge decision",
     },
     {
       key: "patient_decision",
@@ -429,6 +514,33 @@ function buildValidation(caseRecord: Awaited<ReturnType<typeof getAuthorizedCase
     canFinalize: missingRequired.length === 0,
     checklist,
     missingRequired,
+  };
+}
+
+function getAuthoritativeCaseFacts(caseRecord: Awaited<ReturnType<typeof getAuthorizedCase>>): AuthoritativeCaseFacts {
+  const metadata = asRecord(caseRecord.metadata);
+  const workflow = asRecord(metadata?.workflow);
+  const signature = asRecord(metadata?.signature);
+
+  const treatingPhysician =
+    readString(workflow, "attending_physician") ||
+    readString(metadata, "attending_physician", "doctor_name") ||
+    null;
+
+  const dischargeDecisionAt =
+    readString(workflow, "discharge_decision_at") ||
+    readString(metadata, "discharge_decision_at") ||
+    readString(signature, "recorded_at") ||
+    null;
+
+  const refusalStartedAt =
+    readString(workflow, "refusal_started_at") || readString(metadata, "refusal_started_at") || null;
+
+  return {
+    treatingPhysician,
+    dischargeDecisionAt,
+    refusalStartedAt,
+    incidentTimestamp: refusalStartedAt || dischargeDecisionAt,
   };
 }
 
@@ -471,6 +583,7 @@ function buildCasePayload(args: {
   const witness = asRecord(metadata?.witness);
   const legal = asRecord(metadata?.legal);
   const tenantMeta = asRecord(caseRecord.tenant?.metadata);
+  const authoritative = getAuthoritativeCaseFacts(caseRecord);
 
   const legalReadinessScore = Math.round(
     (validation.checklist.filter((item) => item.satisfied).length / Math.max(validation.checklist.length, 1)) * 100,
@@ -503,7 +616,7 @@ function buildCasePayload(args: {
       gender: readString(metadata, "patient_gender") || "N/A",
       nationality: readString(metadata, "patient_nationality") || "N/A",
       department: readString(workflow, "department", "department_name") || "N/A",
-      treatingPhysician: readString(workflow, "attending_physician") || "N/A",
+      treatingPhysician: authoritative.treatingPhysician || "N/A",
     },
     medicalSummary: {
       encounterSummary:
@@ -519,8 +632,8 @@ function buildCasePayload(args: {
         readString(metadata, "discharge_recommendation") ||
         "Recommendation not explicitly captured.",
       timestamps: {
-        decisionAt: readString(workflow, "discharge_decision_at") || "N/A",
-        refusalStartedAt: readString(workflow, "refusal_started_at") || "N/A",
+        decisionAt: authoritative.dischargeDecisionAt || "N/A",
+        refusalStartedAt: authoritative.refusalStartedAt || "N/A",
         escalatedAt: readString(workflow, "escalated_at") || "N/A",
       },
     },
@@ -530,14 +643,14 @@ function buildCasePayload(args: {
         readString(workflow, "refusal_reason") ||
         readString(metadata, "refusal_reason") ||
         "No refusal reason captured.",
-      refusalAt: readString(workflow, "refusal_started_at") || "N/A",
+      refusalAt: authoritative.refusalStartedAt || "N/A",
       documentationMethod:
         readString(workflow, "documentation_method") ||
         readString(metadata, "documentation_method") ||
         "Electronic clinical record",
     },
     riskDisclosure: {
-      clinicianName: readString(workflow, "attending_physician") || "N/A",
+      clinicianName: authoritative.treatingPhysician || "N/A",
       clinicianTitle: readString(legal, "clinician_title") || "Treating physician",
       explainedAt: readString(presentation, "recorded_at") || "N/A",
       explanationMethod: readString(presentation, "method") || "Bedside counseling",
@@ -566,7 +679,7 @@ function buildCasePayload(args: {
       missingFields: validation.missingRequired,
     },
     signatures: {
-      physician: readString(workflow, "attending_physician") || "",
+      physician: authoritative.treatingPhysician || "",
       legalRepresentative: readString(legal, "legal_representative") || "",
       qualityRepresentative: readString(legal, "quality_representative") || "",
     },
@@ -798,14 +911,18 @@ async function renderPdfBuffer(args: {
   generatedAt: string;
   hashForFooter: string;
 }) {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"],
-  });
+  if (!sharedPdfBrowserPromise) {
+    sharedPdfBrowserPromise = puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"],
+    });
+  }
+
+  const browser = await sharedPdfBrowserPromise;
 
   try {
     const page = await browser.newPage();
-    await page.setContent(args.html, { waitUntil: "networkidle0" });
+    await page.setContent(args.html, { waitUntil: "domcontentloaded" });
 
     const rendered = await page.pdf({
       format: "A4",
@@ -832,9 +949,20 @@ async function renderPdfBuffer(args: {
       `,
     });
 
+    await page.close();
+
     return Buffer.from(rendered);
-  } finally {
-    await browser.close();
+  } catch (error) {
+    if (sharedPdfBrowserPromise) {
+      try {
+        const currentBrowser = await sharedPdfBrowserPromise;
+        await currentBrowser.close();
+      } catch {
+        // Ignore close failures; browser will be reinitialized on next call.
+      }
+      sharedPdfBrowserPromise = null;
+    }
+    throw error;
   }
 }
 
@@ -851,6 +979,13 @@ function toReportSummary(document: {
 }, binary: PdfBinaryAvailability = { available: true, reason: null }): CasePdfVersionSummary {
   const metadata = asRecord(document.metadata);
   const reportStatus = readString(metadata, "report_status") || "draft";
+  const normalizedStatus: "draft" | "final" | "failed" = !binary.available
+    ? "failed"
+    : reportStatus === "final"
+      ? "final"
+      : reportStatus === "failed"
+        ? "failed"
+        : "draft";
   const recoveryMessage =
     !binary.available && reportStatus !== "failed"
       ? "Version metadata exists but file is missing; regenerate required"
@@ -863,11 +998,8 @@ function toReportSummary(document: {
     version: parseNumericVersion(document.versionLabel),
     fileName: document.fileName,
     generatedAt: document.generatedAt.toISOString(),
-    status: (reportStatus === "final" ? "final" : reportStatus === "failed" ? "failed" : "draft") as
-      | "draft"
-      | "final"
-      | "failed",
-    isFinal: Boolean(readBoolean(metadata, "is_final") || reportStatus === "final"),
+    status: normalizedStatus,
+    isFinal: normalizedStatus === "final" && Boolean(readBoolean(metadata, "is_final") || reportStatus === "final"),
     templateVersion: readString(metadata, "template_version") || PDF_TEMPLATE_VERSION,
     language: readString(metadata, "language") || "en",
     mimeType: document.mimeType,
@@ -901,6 +1033,51 @@ async function listPdfDocumentsInternal(tenantId: string, caseId: string) {
 
 function buildFileName(caseId: string, date = new Date()): string {
   return `WathiqCare_DischargeRefusal_Case_${caseId}_${formatDateForFileName(date)}.pdf`;
+}
+
+function pickLatestValidCasePdfVersion(summaries: CasePdfVersionSummary[]): CasePdfVersionSummary | null {
+  for (const summary of summaries) {
+    if (summary.binaryAvailable && !summary.recoveryRequired && summary.status !== "failed") {
+      return summary;
+    }
+  }
+
+  return null;
+}
+
+async function summarizeAndHealPdfDocuments(documents: Array<{
+  id: string;
+  versionLabel: string;
+  fileName: string;
+  generatedAt: Date;
+  status: DocumentStatus;
+  metadata: Prisma.JsonValue | null;
+  mimeType: string;
+  sizeBytes: bigint;
+  storagePath: string | null;
+  payloadJson: Prisma.JsonValue | null;
+  generatedBy?: { fullName: string } | null;
+}>): Promise<CasePdfVersionSummary[]> {
+  const summaries: CasePdfVersionSummary[] = [];
+
+  for (const document of documents) {
+    const availability = await getDocumentBinaryAvailability({
+      storagePath: document.storagePath,
+      payloadJson: document.payloadJson,
+    });
+
+    if (!availability.available) {
+      await markDocumentAsBinaryMissing({
+        documentId: document.id,
+        metadata: document.metadata,
+        payloadJson: document.payloadJson,
+      }).catch(() => undefined);
+    }
+
+    summaries.push(toReportSummary(document, availability));
+  }
+
+  return summaries;
 }
 
 async function createFailedRecord(args: {
@@ -1002,24 +1179,35 @@ export async function generateCasePdfReport(args: {
 
   const language = args.language || "en";
   const validation = buildValidation(caseRecord);
+  if (!validation.canFinalize) {
+    throw new ApiError(
+      400,
+      `PDF generation blocked. Missing required fields: ${validation.missingRequired.join(", ")}`,
+    );
+  }
   const allowFinal = Boolean(args.requestedFinal && validation.canFinalize);
+  const lifecycleContext = {
+    tenantId: caseRecord.tenantId,
+    caseId: args.caseId,
+    trigger: args.trigger,
+    requestedFinal: Boolean(args.requestedFinal),
+    allowFinal,
+  };
 
   const existingPdfDocs = caseRecord.documents.filter(isPdfReportDocument);
-  const latestBrokenForRepair =
-    args.trigger === "manual_regenerate"
-      ? existingPdfDocs
-          .filter((doc) => {
-            const metadata = asRecord(doc.metadata);
-            return readString(metadata, "report_status") === "failed";
-          })
-          .sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime())[0] || null
-      : null;
-
-  const version = latestBrokenForRepair
-    ? parseNumericVersion(latestBrokenForRepair.versionLabel) || existingPdfDocs.length + 1
-    : existingPdfDocs.length + 1;
+  const highestVersion = existingPdfDocs.reduce(
+    (maxVersion, document) => Math.max(maxVersion, parseNumericVersion(document.versionLabel)),
+    0,
+  );
+  const version = highestVersion + 1;
   const fileName = buildFileName(args.caseId);
   const generatedAt = nowIso();
+
+  logCasePdfLifecycle("generation_requested", {
+    ...lifecycleContext,
+    version,
+    missingRequired: validation.missingRequired,
+  });
 
   await writeAuditLog({
     tenantId: caseRecord.tenantId,
@@ -1092,6 +1280,15 @@ export async function generateCasePdfReport(args: {
       reportPayload: payload,
     });
 
+    logCasePdfLifecycle("binary_persisted", {
+      ...lifecycleContext,
+      version,
+      storagePath: persisted.storagePath,
+      storageMode: getPdfBinaryStorageMode(),
+      sizeBytes: pdfBuffer.byteLength,
+      sha256BinaryHash: binaryHash,
+    });
+
     const sharedDocumentData = {
       status: DocumentStatus.GENERATED,
       documentCode: `LEGAL-CASE-PDF-${version}`,
@@ -1121,34 +1318,22 @@ export async function generateCasePdfReport(args: {
 
     let document;
     try {
-      document = latestBrokenForRepair
-        ? await prisma.document.update({
-            where: { id: latestBrokenForRepair.id },
-            data: sharedDocumentData,
-            include: {
-              generatedBy: {
-                select: {
-                  fullName: true,
-                },
-              },
+      document = await prisma.document.create({
+        data: {
+          tenantId: caseRecord.tenantId,
+          caseId: args.caseId,
+          documentType: DocumentType.CASE_FILE,
+          templateKey: CASE_PDF_TEMPLATE_KEY,
+          ...sharedDocumentData,
+        },
+        include: {
+          generatedBy: {
+            select: {
+              fullName: true,
             },
-          })
-        : await prisma.document.create({
-            data: {
-              tenantId: caseRecord.tenantId,
-              caseId: args.caseId,
-              documentType: DocumentType.CASE_FILE,
-              templateKey: CASE_PDF_TEMPLATE_KEY,
-              ...sharedDocumentData,
-            },
-            include: {
-              generatedBy: {
-                select: {
-                  fullName: true,
-                },
-              },
-            },
-          });
+          },
+        },
+      });
     } catch (persistError) {
       if (persisted.cleanup) {
         await persisted.cleanup().catch(() => undefined);
@@ -1212,6 +1397,15 @@ export async function generateCasePdfReport(args: {
       }),
     );
 
+    logCasePdfLifecycle("generation_succeeded", {
+      ...lifecycleContext,
+      version,
+      documentId: document.id,
+      status: summary.status,
+      binaryAvailable: summary.binaryAvailable,
+      recoveryRequired: summary.recoveryRequired,
+    });
+
     return {
       report: summary,
       validation,
@@ -1220,6 +1414,11 @@ export async function generateCasePdfReport(args: {
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown PDF generation error";
+    logCasePdfLifecycle("generation_failed", {
+      ...lifecycleContext,
+      version,
+      error: message,
+    });
     await createFailedRecord({
       tenantId: caseRecord.tenantId,
       caseId: args.caseId,
@@ -1229,7 +1428,6 @@ export async function generateCasePdfReport(args: {
       trigger: args.trigger,
       language,
       errorMessage: message,
-      existingDocumentId: latestBrokenForRepair?.id,
       request: args.request,
     });
     throw new ApiError(
@@ -1239,20 +1437,41 @@ export async function generateCasePdfReport(args: {
   }
 }
 
-export async function getLatestCasePdf(auth: AuthContext, caseId: string) {
+export async function getLatestCasePdf(auth: AuthContext, caseId: string): Promise<LatestCasePdfResponse> {
   const caseRecord = await getAuthorizedCase(auth, caseId);
   ensureCasePdfAccess(auth, caseRecord);
 
   const docs = await listPdfDocumentsInternal(caseRecord.tenantId, caseId);
-  const latest = docs[0] ?? null;
   const validation = buildValidation(caseRecord);
+  const summaries = await summarizeAndHealPdfDocuments(docs);
+  const latestKnown = summaries[0] ?? null;
+  const latestValid = pickLatestValidCasePdfVersion(summaries);
+  const fallbackApplied = Boolean(latestKnown && latestValid && latestKnown.id !== latestValid.id);
+  const forceRegenerateRequired = !latestValid && summaries.some((summary) => summary.recoveryRequired);
 
-  const latestSummary = latest
-    ? toReportSummary(latest, await getDocumentBinaryAvailability({ storagePath: latest.storagePath, payloadJson: latest.payloadJson }))
-    : null;
+  if (fallbackApplied && latestKnown && latestValid) {
+    logCasePdfLifecycle("latest_version_fallback_applied", {
+      tenantId: caseRecord.tenantId,
+      caseId,
+      latestKnownVersion: latestKnown.version,
+      latestKnownStatus: latestKnown.status,
+      latestValidVersion: latestValid.version,
+    });
+  }
+
+  if (forceRegenerateRequired) {
+    logCasePdfLifecycle("latest_version_force_regenerate_required", {
+      tenantId: caseRecord.tenantId,
+      caseId,
+    });
+  }
 
   return {
-    latest: latestSummary,
+    latest: latestValid,
+    latestValid,
+    latestKnown,
+    fallbackApplied,
+    forceRegenerateRequired,
     validation,
   };
 }
@@ -1263,15 +1482,7 @@ export async function listCasePdfVersions(auth: AuthContext, caseId: string) {
 
   const docs = await listPdfDocumentsInternal(caseRecord.tenantId, caseId);
 
-  return Promise.all(
-    docs.map(async (doc) => {
-      const binary = await getDocumentBinaryAvailability({
-        storagePath: doc.storagePath,
-        payloadJson: doc.payloadJson,
-      });
-      return toReportSummary(doc, binary);
-    }),
-  );
+  return summarizeAndHealPdfDocuments(docs);
 }
 
 async function getCasePdfDocumentByVersion(auth: AuthContext, caseId: string, version: number) {
@@ -1338,6 +1549,10 @@ async function readPdfBufferFromDocument(document: {
 }): Promise<Buffer> {
   const availability = await getDocumentBinaryAvailability(document);
   if (!availability.available) {
+    logCasePdfLifecycle("binary_missing", {
+      documentId: document.id,
+      reason: availability.reason,
+    });
     await markDocumentAsBinaryMissing({
       documentId: document.id,
       metadata: document.metadata,
@@ -1392,6 +1607,15 @@ export async function previewCasePdfVersion(args: {
     request: args.request,
   });
 
+  logCasePdfLifecycle("preview_access", {
+    tenantId: caseRecord.tenantId,
+    caseId: args.caseId,
+    version: args.version,
+    documentId: document.id,
+    userId: args.auth.sub,
+    role: args.auth.role ?? null,
+  });
+
   await logReportAccess({
     tenantId: caseRecord.tenantId,
     caseId: args.caseId,
@@ -1433,6 +1657,15 @@ export async function downloadCasePdfVersion(args: {
     request: args.request,
   });
 
+  logCasePdfLifecycle("download_access", {
+    tenantId: caseRecord.tenantId,
+    caseId: args.caseId,
+    version: args.version,
+    documentId: document.id,
+    userId: args.auth.sub,
+    role: args.auth.role ?? null,
+  });
+
   await logReportAccess({
     tenantId: caseRecord.tenantId,
     caseId: args.caseId,
@@ -1458,7 +1691,10 @@ export const __casePdfStorageInternals = {
   getPdfLocalStorageRoot,
   resolveLocalPdfPath,
   getInlinePdfBase64,
+  persistPdfBinary,
   getDocumentBinaryAvailability,
+  getAuthoritativeCaseFacts,
+  pickLatestValidCasePdfVersion,
 };
 
 export async function maybeAutoGenerateCasePdf(args: {

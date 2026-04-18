@@ -7,6 +7,7 @@ export type UiPermissionKey =
   | "cases.add.witness"
   | "legal.review"
   | "legal.approve.readiness"
+  | "evidence.generate"
   | "documents.generate_pdf"
   | "documents.download.final"
   | "audit.read"
@@ -34,6 +35,9 @@ const ROLE_ALIASES: Record<string, string> = {
   admin: "tenant_admin",
   administrator: "tenant_admin",
   billing: "tenant_admin",
+  er_doctor: "doctor",
+  emergency_doctor: "doctor",
+  physician: "doctor",
   nurse: "nursing",
   legal: "legal_admin",
   legal_manager: "legal_admin",
@@ -59,6 +63,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
     "cases.add.witness",
     "legal.review",
     "legal.approve.readiness",
+    "evidence.generate",
     "documents.generate_pdf",
     "documents.download.final",
     "audit.read",
@@ -76,6 +81,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
     "cases.add.witness",
     "legal.review",
     "legal.approve.readiness",
+    "evidence.generate",
     "documents.generate_pdf",
     "documents.download.final",
     "audit.read",
@@ -93,6 +99,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
     "cases.add.witness",
     "legal.review",
     "legal.approve.readiness",
+    "evidence.generate",
     "documents.generate_pdf",
     "documents.download.final",
     "audit.read",
@@ -109,6 +116,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
     "cases.add.witness",
     "legal.review",
     "legal.approve.readiness",
+    "evidence.generate",
     "documents.generate_pdf",
     "documents.download.final",
     "audit.read",
@@ -130,6 +138,7 @@ const ROLE_PERMISSIONS: Record<string, Set<UiPermissionKey>> = {
   legal_admin: new Set<UiPermissionKey>([
     "legal.review",
     "legal.approve.readiness",
+    "evidence.generate",
     "documents.generate_pdf",
     "documents.download.final",
     "audit.read",

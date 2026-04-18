@@ -46,7 +46,7 @@ export default function DocumentsPage() {
   const [verifyingName, setVerifyingName] = useState<string | null>(null);
   const [verificationByBundle, setVerificationByBundle] = useState<Record<string, BundleVerificationState>>({});
 
-  const canGenerateBundle = permissions.can("legal.approve.readiness");
+  const canGenerateBundle = permissions.can("evidence.generate");
   const canDownloadBundle = permissions.can("documents.download.final");
   const canAccessBundles = canGenerateBundle || canDownloadBundle;
 

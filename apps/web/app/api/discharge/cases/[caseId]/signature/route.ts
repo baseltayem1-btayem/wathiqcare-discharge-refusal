@@ -13,6 +13,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const { caseId } = await params;
     const payload = (await request.json().catch(() => ({}))) as {
       outcome?: string;
+      patient_decision?: string;
       signer_name?: string;
       reason?: string;
       signer_role?: string;

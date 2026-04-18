@@ -52,6 +52,18 @@ const PLATFORM_BLOCKED_PREFIXES = [
   "/dashboards",
 ] as const;
 
+function isTruthyEnv(value: string | undefined): boolean {
+  const normalized = (value || "").trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+}
+
+function shouldAllowPlatformAdminCaseAccess(): boolean {
+  if (isTruthyEnv(process.env.ALLOW_PLATFORM_ADMIN_CASE_ACCESS)) {
+    return true;
+  }
+  return process.env.NODE_ENV !== "production";
+}
+
 function splitLocaleFromPath(pathname: string): { locale: Locale | null; pathWithoutLocale: string } {
   for (const locale of SUPPORTED_LOCALES) {
     if (pathname === `/${locale}`) {
@@ -176,6 +188,12 @@ export function proxy(request: NextRequest) {
     }
 
     if (isPlatformBlockedPath) {
+      const caseRouteForTesting =
+        pathWithoutLocale === "/cases" || pathWithoutLocale.startsWith("/cases/");
+      if (caseRouteForTesting && shouldAllowPlatformAdminCaseAccess()) {
+        return NextResponse.next();
+      }
+
       const url = request.nextUrl.clone();
       url.pathname = buildLocalizedPath("/platform", locale);
       url.search = "";

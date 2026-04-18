@@ -183,17 +183,6 @@ function toIsoString(value: Date | string | null | undefined): string | null {
     return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
-function firstIsoString(...values: Array<Date | string | null | undefined>): string | null {
-    for (const value of values) {
-        const normalized = toIsoString(value);
-        if (normalized) {
-            return normalized;
-        }
-    }
-
-    return null;
-}
-
 function nowIso(): string {
     return new Date().toISOString();
 }
@@ -543,28 +532,6 @@ function buildWorkflowState(caseRecord: AuthorizedCaseRecord): Omit<WorkflowSnap
         baseWorkflow.escalation_required = true;
     }
 
-    if (!baseWorkflow.discharge_decision_at) {
-        const progressedBeyondDecision = Boolean(
-            baseWorkflow.refusal_started_at ||
-            baseWorkflow.initial_communication_at ||
-            baseWorkflow.support_and_intervention_at ||
-            baseWorkflow.refusal_form_generated_at ||
-            baseWorkflow.financial_notice_generated_at ||
-            baseWorkflow.escalated_at,
-        );
-
-        if (progressedBeyondDecision) {
-            baseWorkflow.discharge_decision_at = firstIsoString(
-                baseWorkflow.refusal_started_at,
-                baseWorkflow.initial_communication_at,
-                baseWorkflow.support_and_intervention_at,
-                baseWorkflow.refusal_form_generated_at,
-                baseWorkflow.financial_notice_generated_at,
-                baseWorkflow.escalated_at,
-            );
-        }
-    }
-
     return baseWorkflow;
 }
 
@@ -804,6 +771,23 @@ export async function applyWorkflowAction(args: {
     workflow.attending_physician_id =
         (typeof payload.attending_physician_id === "string" && payload.attending_physician_id.trim()) ||
         workflow.attending_physician_id;
+
+    const requiresRecordedDecision =
+        action === "start_refusal_workflow" ||
+        action === "mark_patient_counseled" ||
+        action === "refer_social_services" ||
+        action === "generate_refusal_form" ||
+        action === "generate_financial_notice" ||
+        action === "escalate_legal_compliance" ||
+        action === "close_workflow";
+
+    if (action === "record_discharge_decision" && !workflow.attending_physician) {
+        throw new ApiError(409, "Treating physician must be saved before recording discharge decision");
+    }
+
+    if (requiresRecordedDecision && !workflow.discharge_decision_at) {
+        throw new ApiError(409, "Discharge decision timestamp must be saved before completing this step");
+    }
 
     const actionRequiresAttendingAuthority = action === "record_discharge_decision" || action === "close_workflow";
     if (actionRequiresAttendingAuthority) {

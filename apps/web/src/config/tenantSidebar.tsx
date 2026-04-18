@@ -30,8 +30,9 @@ export type TenantNavItem = {
 
 /** Full tenant operational menu. No /platform routes here. */
 export const TENANT_NAV_ITEMS: TenantNavItem[] = [
-    { href: "/cases", label: "Cases", icon: <FolderKanban className="h-4 w-4" /> },
-    { href: "/documents", label: "Documents", icon: <FileText className="h-4 w-4" /> },
+    { href: "/cases", label: "Case Workspace", icon: <FolderKanban className="h-4 w-4" /> },
+    { href: "/bundles", label: "Evidence Bundles", icon: <Archive className="h-4 w-4" /> },
+    { href: "/documents", label: "Legal Documents", icon: <FileText className="h-4 w-4" /> },
     { href: "/dashboards", label: "Dashboards", icon: <LayoutGrid className="h-4 w-4" /> },
     { href: "/reports", label: "Reports", icon: <Archive className="h-4 w-4" /> },
     { href: "/tenant/users", label: "Users", icon: <Users className="h-4 w-4" /> },

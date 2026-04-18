@@ -104,6 +104,7 @@ export async function recordCaseSignature(
   caseId: string,
   payload: {
     outcome?: string;
+    patient_decision?: string;
     signer_name?: string;
     reason?: string;
     signer_role?: string;
@@ -118,13 +119,23 @@ export async function recordCaseSignature(
     operation: "signature_store",
   });
 
+  const normalizedOutcome = payload.outcome?.trim() || "signed";
+  const normalizedDecisionInput = payload.patient_decision?.trim().toLowerCase();
+  const normalizedDecision =
+    normalizedDecisionInput === "accepted" || normalizedDecisionInput === "refused"
+      ? normalizedDecisionInput
+      : normalizedOutcome === "signed"
+        ? "accepted"
+        : "refused";
+
   const updated = await prisma.case.update({
     where: { id: caseId },
     data: {
       metadata: {
         ...(asRecord(caseRecord.metadata) ?? {}),
         signature: {
-          outcome: payload.outcome?.trim() || "signed",
+          outcome: normalizedOutcome,
+          patient_decision: normalizedDecision,
           signer_name: payload.signer_name?.trim() || null,
           signer_role: payload.signer_role?.trim() || "patient",
           reason: payload.reason?.trim() || null,
@@ -133,8 +144,9 @@ export async function recordCaseSignature(
         },
         legal: {
           ...(asRecord(asRecord(caseRecord.metadata)?.legal) ?? {}),
-          signature_obtained: (payload.outcome?.trim() || "signed") === "signed",
-          witness_required: (payload.outcome?.trim() || "signed") !== "signed",
+          signature_obtained: normalizedOutcome === "signed",
+          witness_required: normalizedOutcome !== "signed",
+          patient_decision: normalizedDecision,
           authority_verified: payload.identity_verified !== false,
         },
       } as Prisma.InputJsonValue,
@@ -155,11 +167,12 @@ export async function recordCaseSignature(
           processingPurpose: "Discharge refusal legal consent evidence",
           lawfulBasis: "PDPL healthcare treatment + legal defense basis",
           consentType: "discharge_refusal_consent",
-          consentMethod: payload.outcome?.trim() === "signed" ? "ELECTRONIC_SIGNATURE" : "WITNESS_ACKNOWLEDGMENT",
+          consentMethod: normalizedOutcome === "signed" ? "ELECTRONIC_SIGNATURE" : "WITNESS_ACKNOWLEDGMENT",
           documentSnapshot: {
             signer_name: payload.signer_name,
             signer_role: payload.signer_role ?? "patient",
-            outcome: payload.outcome ?? "signed",
+            outcome: normalizedOutcome,
+            patient_decision: normalizedDecision,
           },
         },
         request,
@@ -173,7 +186,7 @@ export async function recordCaseSignature(
     entityType: "case_signature",
     entityId: caseId,
     action: "signature_recorded",
-    details: `Signature outcome: ${payload.outcome?.trim() || "signed"}`,
+    details: `Signature outcome: ${normalizedOutcome}; decision: ${normalizedDecision}`,
     caseId,
     metadataJson: payload as Prisma.InputJsonValue,
     request,
@@ -185,7 +198,7 @@ export async function recordCaseSignature(
     eventType: "SIGNATURE_RECORDED",
     actorId: auth.sub,
     actorRole: auth.role ?? null,
-    payloadSummary: `Signature recorded: ${payload.outcome?.trim() || "signed"}`,
+    payloadSummary: `Signature recorded: ${normalizedOutcome}; decision: ${normalizedDecision}`,
     metadataJson: payload,
     request,
   }).catch(() => undefined);
