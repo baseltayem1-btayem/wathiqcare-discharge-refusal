@@ -1,0 +1,16 @@
+{
+  "testName": "PDF Lifecycle E2E Verification",
+  "timestamp": "2026-04-17T01:13:13.916Z",
+  "steps": [
+    {
+      "name": "Generate Draft PDF",
+      "ok": false,
+      "error": "fetch failed",
+      "data": null
+    }
+  ],
+  "passed": 0,
+  "failed": 1,
+  "summary": "✗ Test failed at step 1: fetch failed",
+  "success": false
+}

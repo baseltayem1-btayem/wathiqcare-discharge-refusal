@@ -106,46 +106,112 @@ const STEP_META: Array<
   },
 ];
 
-function buildMissingItems(input: BuildCaseWorkspaceFlowInput): Record<CaseWorkspaceStepKey, string[]> {
+function getStepMeta(isArabic: boolean): Array<
+  Omit<CaseWorkspaceStep, "status" | "missingItems" | "nextAction">
+> {
+  if (!isArabic) {
+    return STEP_META;
+  }
+
+  return [
+    {
+      key: "case_creation",
+      label: "إنشاء الحالة",
+      shortLabel: "إنشاء",
+      description: "تأكيد اكتمال سجل الحالة قبل بدء الإجراءات السريرية والقانونية.",
+      ownerLabel: "منسق الحالة / العمليات",
+      includedSections: ["ملخص الحالة", "التكليفات واتفاقية مستوى الخدمة"],
+      recommendedVisibleRoles: ["الطبيب", "التمريض", "العمليات", "مدير الجهة", "القانوني"],
+    },
+    {
+      key: "medical_decision",
+      label: "القرار الطبي",
+      shortLabel: "طبي",
+      description: "تسجيل الشرح الطبي بقيادة الطبيب والمبرر الطبي لمسار الخروج.",
+      ownerLabel: "الطبيب",
+      includedSections: ["العرض / إثبات الإبلاغ", "سياق الطبيب والتشخيص"],
+      recommendedVisibleRoles: ["الطبيب", "التمريض", "مدير الجهة", "مراجعون للقراءة فقط"],
+    },
+    {
+      key: "patient_decision",
+      label: "قرار المريض",
+      shortLabel: "القرار",
+      description: "توثيق استجابة المريض والإقرار وشاهد الإثبات وسجل الموافقة.",
+      ownerLabel: "الطبيب مع دعم الشاهد / العمليات",
+      includedSections: ["قرار المريض", "الشاهد", "الموافقات والتواقيع"],
+      recommendedVisibleRoles: ["الطبيب", "العمليات", "طاقم قادر على الشهادة", "مدير الجهة", "القانوني"],
+    },
+    {
+      key: "legal_readiness",
+      label: "الجاهزية القانونية",
+      shortLabel: "الجاهزية",
+      description: "تقييم العوائق ومتطلبات الامتثال وجاهزية التصعيد قبل إصدار المستندات.",
+      ownerLabel: "المشرف القانوني / الموظف القانوني",
+      includedSections: ["الجاهزية القانونية", "قائمة تحقق الجاهزية القانونية", "متابعة القرار"],
+      recommendedVisibleRoles: ["القانوني", "مدير الجهة", "الطبيب", "مراجعون للقراءة فقط"],
+    },
+    {
+      key: "legal_documents_bundle",
+      label: "المستندات والحزمة القانونية",
+      shortLabel: "المستندات",
+      description: "إنشاء الحزمة القانونية وملفات PDF وحزمة الأدلة الداعمة.",
+      ownerLabel: "القانوني",
+      includedSections: ["الحزمة القانونية", "تقارير PDF القانونية للحالة", "المستندات"],
+      recommendedVisibleRoles: ["القانوني", "المفوّض المعتمد", "مدير الجهة", "مراجعون للقراءة فقط"],
+    },
+    {
+      key: "closure",
+      label: "الإغلاق",
+      shortLabel: "إغلاق",
+      description: "التحقق من المخرجات النهائية والتأكد من جاهزية الحالة للإغلاق المعتمد.",
+      ownerLabel: "المفوّض المعتمد",
+      includedSections: ["قائمة تحقق الإغلاق النهائي", "أحدث PDF نهائي", "تنزيل الحزمة"],
+      recommendedVisibleRoles: ["المفوّض المعتمد", "القانوني", "مدير الجهة", "المدقق"],
+    },
+  ];
+}
+
+function buildMissingItems(input: BuildCaseWorkspaceFlowInput, isArabic: boolean): Record<CaseWorkspaceStepKey, string[]> {
+  const tr = (en: string, ar: string): string => (isArabic ? ar : en);
   const caseCreationMissing: string[] = [];
   if (!input.mrn || input.mrn === "N/A") {
-    caseCreationMissing.push("Medical record number is missing.");
+    caseCreationMissing.push(tr("Medical record number is missing.", "رقم السجل الطبي مفقود."));
   }
   if (!input.patientName || input.patientName === "Unknown Patient") {
-    caseCreationMissing.push("Patient identity is incomplete.");
+    caseCreationMissing.push(tr("Patient identity is incomplete.", "هوية المريض غير مكتملة."));
   }
   if (!input.physician || input.physician === "Not assigned") {
-    caseCreationMissing.push("Attending physician is not assigned.");
+    caseCreationMissing.push(tr("Attending physician is not assigned.", "لم يتم تعيين الطبيب المعالج."));
   }
   if (!input.diagnosis || input.diagnosis === "Discharge refusal workflow") {
-    caseCreationMissing.push("Clinical diagnosis / summary still needs to be recorded.");
+    caseCreationMissing.push(tr("Clinical diagnosis / summary still needs to be recorded.", "لا يزال التشخيص/الملخص السريري بحاجة إلى التوثيق."));
   }
 
   const medicalDecisionMissing: string[] = [];
   if (!input.presentationRecorded) {
-    medicalDecisionMissing.push("Medical explanation / proof of notice is not recorded.");
+    medicalDecisionMissing.push(tr("Medical explanation / proof of notice is not recorded.", "لم يتم تسجيل الشرح الطبي / إثبات الإبلاغ."));
   }
   if (!input.physician || input.physician === "Not assigned") {
-    medicalDecisionMissing.push("Physician ownership is still unassigned.");
+    medicalDecisionMissing.push(tr("Physician ownership is still unassigned.", "لا تزال مسؤولية الطبيب غير معينة."));
   }
 
   const patientDecisionMissing: string[] = [];
   if (!input.patientDecision) {
-    patientDecisionMissing.push("Patient decision has not been recorded.");
+    patientDecisionMissing.push(tr("Patient decision has not been recorded.", "لم يتم تسجيل قرار المريض."));
   }
   if (!input.patientAcknowledged) {
-    patientDecisionMissing.push("Patient acknowledgment / signer evidence is missing.");
+    patientDecisionMissing.push(tr("Patient acknowledgment / signer evidence is missing.", "إقرار المريض / دليل الموقّع مفقود."));
   }
   if (!input.witnessRecorded) {
-    patientDecisionMissing.push("Witness details are not recorded yet.");
+    patientDecisionMissing.push(tr("Witness details are not recorded yet.", "لم يتم تسجيل تفاصيل الشاهد بعد."));
   }
   if (!input.consentRecorded) {
-    patientDecisionMissing.push("Consent evidence has not been saved.");
+    patientDecisionMissing.push(tr("Consent evidence has not been saved.", "لم يتم حفظ أدلة الموافقة."));
   }
 
   const legalReadinessMissing: string[] = [];
   if (!input.readinessReadyForLegal) {
-    legalReadinessMissing.push(input.readinessReason || "Legal readiness requirements are still incomplete.");
+    legalReadinessMissing.push(input.readinessReason || tr("Legal readiness requirements are still incomplete.", "متطلبات الجاهزية القانونية لا تزال غير مكتملة."));
   }
   for (const blocker of input.readinessBlockers) {
     if (blocker && !legalReadinessMissing.includes(blocker)) {
@@ -153,32 +219,32 @@ function buildMissingItems(input: BuildCaseWorkspaceFlowInput): Record<CaseWorks
     }
   }
   if (input.refusalScenario && !input.financialNoticeAvailable) {
-    legalReadinessMissing.push("Financial notice is required for the refusal path.");
+    legalReadinessMissing.push(tr("Financial notice is required for the refusal path.", "الإشعار المالي مطلوب لمسار الرفض."));
   }
 
   const documentMissing: string[] = [];
   if (!input.pdfLatestStatus || input.pdfLatestStatus === "failed") {
-    documentMissing.push("A valid legal PDF is not available yet.");
+    documentMissing.push(tr("A valid legal PDF is not available yet.", "ملف PDF قانوني صالح غير متوفر بعد."));
   }
   if (!input.legalPackageGenerated) {
-    documentMissing.push("Legal documentation package is not generated.");
+    documentMissing.push(tr("Legal documentation package is not generated.", "لم يتم إنشاء حزمة المستندات القانونية."));
   }
   if (input.documentCount === 0) {
-    documentMissing.push("No supporting documents are attached to the case yet.");
+    documentMissing.push(tr("No supporting documents are attached to the case yet.", "لا توجد مستندات داعمة مرفقة بالحالة حتى الآن."));
   }
 
   const closureMissing: string[] = [];
   if (input.pdfLatestStatus !== "final") {
-    closureMissing.push("Authorized final PDF is required before closure.");
+    closureMissing.push(tr("Authorized final PDF is required before closure.", "يلزم توفر PDF نهائي معتمد قبل الإغلاق."));
   }
   if (!input.pdfCanFinalize) {
-    closureMissing.push("PDF finalization checklist still has unresolved requirements.");
+    closureMissing.push(tr("PDF finalization checklist still has unresolved requirements.", "لا تزال قائمة تحقق إنهاء PDF تحتوي على متطلبات غير مستوفاة."));
   }
   if (!input.legalPackageGenerated) {
-    closureMissing.push("Evidence bundle / legal package must be generated before closure.");
+    closureMissing.push(tr("Evidence bundle / legal package must be generated before closure.", "يجب إنشاء حزمة الأدلة / الحزمة القانونية قبل الإغلاق."));
   }
   if (String(input.caseStatus || "").toUpperCase() !== "CLOSED") {
-    closureMissing.push("Case status is still open.");
+    closureMissing.push(tr("Case status is still open.", "حالة الملف لا تزال مفتوحة."));
   }
 
   return {
@@ -194,52 +260,57 @@ function buildMissingItems(input: BuildCaseWorkspaceFlowInput): Record<CaseWorks
 function buildNextActions(
   input: BuildCaseWorkspaceFlowInput,
   missingItems: Record<CaseWorkspaceStepKey, string[]>,
+  isArabic: boolean,
 ): Record<CaseWorkspaceStepKey, string> {
+  const tr = (en: string, ar: string): string => (isArabic ? ar : en);
   return {
     case_creation:
       missingItems.case_creation.length === 0
-        ? "Move the case into Medical Decision."
-        : "Complete the case record basics so the clinical workflow can start.",
+        ? tr("Move the case into Medical Decision.", "انقل الحالة إلى القرار الطبي.")
+        : tr("Complete the case record basics so the clinical workflow can start.", "أكمل أساسيات سجل الحالة لبدء سير العمل السريري."),
     medical_decision:
       missingItems.medical_decision.length === 0
-        ? "Move to Patient Decision and capture the response."
-        : "Doctor should record the discharge explanation and medical rationale.",
+        ? tr("Move to Patient Decision and capture the response.", "انتقل إلى قرار المريض وسجل الاستجابة.")
+        : tr("Doctor should record the discharge explanation and medical rationale.", "يجب على الطبيب تسجيل شرح الخروج والمبرر الطبي."),
     patient_decision:
       missingItems.patient_decision.length === 0
         ? input.patientDecision === "refused"
-          ? "Send the refusal path to Legal Readiness."
-          : "Advance to Legal Readiness for review and document preparation."
-        : "Capture patient response, acknowledgment, witness, and consent evidence.",
+          ? tr("Send the refusal path to Legal Readiness.", "أرسل مسار الرفض إلى الجاهزية القانونية.")
+          : tr("Advance to Legal Readiness for review and document preparation.", "انتقل إلى الجاهزية القانونية للمراجعة وإعداد المستندات.")
+        : tr("Capture patient response, acknowledgment, witness, and consent evidence.", "سجل استجابة المريض والإقرار والشاهد وأدلة الموافقة."),
     legal_readiness:
       missingItems.legal_readiness.length === 0
-        ? "Generate legal documents and the evidence bundle."
-        : "Resolve legal blockers before document issuance.",
+        ? tr("Generate legal documents and the evidence bundle.", "أنشئ المستندات القانونية وحزمة الأدلة.")
+        : tr("Resolve legal blockers before document issuance.", "عالج العوائق القانونية قبل إصدار المستندات."),
     legal_documents_bundle:
       missingItems.legal_documents_bundle.length === 0
-        ? "Issue the authorized final PDF and prepare the case for closure."
-        : "Generate or recover the legal PDF set and the legal package.",
+        ? tr("Issue the authorized final PDF and prepare the case for closure.", "أصدر PDF النهائي المعتمد وجهز الحالة للإغلاق.")
+        : tr("Generate or recover the legal PDF set and the legal package.", "أنشئ أو استرجع مجموعة PDF القانونية والحزمة القانونية."),
     closure:
       missingItems.closure.length === 0
-        ? "Closure prerequisites are satisfied."
-        : "Resolve final sign-off and closure blockers in order.",
+        ? tr("Closure prerequisites are satisfied.", "متطلبات الإغلاق مستوفاة.")
+        : tr("Resolve final sign-off and closure blockers in order.", "عالج عوائق الاعتماد النهائي والإغلاق بالترتيب."),
   };
 }
 
 export function buildCaseExecutionWorkspaceFlow(
   input: BuildCaseWorkspaceFlowInput,
+  locale: "en" | "ar" = "en",
 ): {
   steps: CaseWorkspaceStep[];
   currentStep: CaseWorkspaceStep;
   recommendedStepKey: CaseWorkspaceStepKey;
   roleSummaryLabel: string;
 } {
-  const missingItems = buildMissingItems(input);
-  const nextActions = buildNextActions(input, missingItems);
-  const firstIncompleteStep = STEP_META.find((step) => missingItems[step.key].length > 0)?.key;
+  const isArabic = locale === "ar";
+  const stepMeta = getStepMeta(isArabic);
+  const missingItems = buildMissingItems(input, isArabic);
+  const nextActions = buildNextActions(input, missingItems, isArabic);
+  const firstIncompleteStep = stepMeta.find((step) => missingItems[step.key].length > 0)?.key;
   const recommendedStepKey = firstIncompleteStep || "closure";
 
   let currentReached = false;
-  const steps = STEP_META.map((step) => {
+  const steps = stepMeta.map((step) => {
     let status: CaseWorkspaceStepStatus = "upcoming";
 
     if (missingItems[step.key].length === 0) {
@@ -263,14 +334,14 @@ export function buildCaseExecutionWorkspaceFlow(
   const normalizedRole = normalizeWorkspaceRole(input.role);
   const roleSummaryLabel =
     normalizedRole === "doctor"
-      ? "Doctor workspace"
+      ? (isArabic ? "مساحة عمل الطبيب" : "Doctor workspace")
       : normalizedRole === "legal"
-        ? "Legal workspace"
+        ? (isArabic ? "مساحة العمل القانونية" : "Legal workspace")
         : normalizedRole === "signatory"
-          ? "Authorized signatory workspace"
+          ? (isArabic ? "مساحة عمل المفوّض المعتمد" : "Authorized signatory workspace")
           : normalizedRole === "tenant_admin"
-            ? "Tenant admin workspace"
-            : "Case workspace";
+            ? (isArabic ? "مساحة عمل مدير الجهة" : "Tenant admin workspace")
+            : (isArabic ? "مساحة عمل الحالة" : "Case workspace");
 
   return {
     steps,

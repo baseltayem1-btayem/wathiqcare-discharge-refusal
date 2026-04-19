@@ -154,7 +154,7 @@
       "postalCode": "الرمز البريدي",
       "poBox": "صندوق البريد",
       "admissionReason": "سبب الدخول للمستشفى",
-      "dischargeDateFormat": "MM-DD-YYYY",
+      "dischargeDateFormat": "شهر-يوم-سنة",
       "preferredDestination": "الوجهة المفضلة بعد الخروج",
       "additionalInstructions": "ملاحظات أو تعليمات إضافية",
       "medicationInstructions": "تعليمات استخدام الأدوية",
@@ -506,13 +506,13 @@
     "requestDemo": "طلب عرض توضيحي",
     "trustFactors": {
       "dataSecurity": "أمان البيانات",
-      "dataSecurityValue": "ISO 27001",
+      "dataSecurityValue": "معيار الأيزو 27001",
       "compliance": "الامتثال",
-      "complianceValue": "CBAHI / JCI",
+      "complianceValue": "امتثال سيباهي وجيه سي آي",
       "documentation": "التوثيق",
       "documentationValue": "قانوني محكم",
       "traceability": "قابلية التتبع",
-      "traceabilityValue": "100%"
+      "traceabilityValue": "اكتمال بنسبة 100٪"
     },
     "whatTitle": "واثق كير: الحوكمة الرقمية للمنشآت الصحية",
     "whatBody": "نظام تشغيلي متكامل مصمم لإدارة دورة حياة قرارات الخروج الطبي - من الحكم السريري إلى التوثيق القانوني والتصعيد التنظيمي - مع توفير سجل تدقيق غير قابل للتعديل يحمي الحقوق ويدعم الامتثال المؤسسي.",
@@ -1074,13 +1074,13 @@
     },
     "stats": {
       "pdpl": "الامتثال لنظام PDPL",
-      "pdplVal": "100%",
+      "pdplVal": "اكتمال بنسبة 100٪",
       "uptime": "متاح على مدار الساعة",
-      "uptimeVal": "24/7",
+      "uptimeVal": "على مدار الساعة",
       "docTime": "متوسط وقت التوثيق",
       "docTimeVal": "< دقيقتين",
       "icd": "التحقق من التشخيص",
-      "icdVal": "ICD-11"
+      "icdVal": "التصنيف الدولي للأمراض 11"
     },
     "features": {
       "title": "مميزات المنصة",
@@ -1190,7 +1190,7 @@
     "magicTitle": "تسجيل الدخول عبر الرابط الآمن",
     "magicSubtitle": "أدخل بريدك الإلكتروني وستصلك رابط دخول لمرة واحدة — دون الحاجة إلى كلمة مرور",
     "magicEmailLabel": "البريد الإلكتروني",
-    "magicEmailPlaceholder": "example@hospital.sa",
+    "magicEmailPlaceholder": "أدخل بريدك الإلكتروني",
     "magicSendBtn": "إرسال رابط الدخول",
     "magicSending": "جارٍ الإرسال...",
     "magicSwitchToPassword": "الدخول بكلمة المرور بدلاً من ذلك",
@@ -1198,7 +1198,7 @@
     "passwordTitle": "تسجيل الدخول بكلمة المرور",
     "passwordSubtitle": "أدخل بريدك الإلكتروني وكلمة المرور.",
     "passwordEmailLabel": "البريد الإلكتروني",
-    "passwordEmailPlaceholder": "example@hospital.sa",
+    "passwordEmailPlaceholder": "أدخل بريدك الإلكتروني",
     "passwordLabel": "كلمة المرور",
     "passwordShow": "إظهار",
     "passwordHide": "إخفاء",

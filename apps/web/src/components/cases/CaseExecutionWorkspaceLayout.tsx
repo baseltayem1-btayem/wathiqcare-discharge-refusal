@@ -43,6 +43,7 @@ import {
   type CaseWorkspaceStepKey,
 } from "@/components/cases/caseExecutionWorkspaceFlow";
 import { getLegalReadinessDecisionIndicator } from "@/components/cases/legalReadinessDecision";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type CaseData = {
   id: string;
@@ -223,14 +224,14 @@ function stepBadgeVariant(step: CaseWorkspaceStep): "success" | "warning" | "out
   return step.missingItems.length > 0 ? "warning" : "outline";
 }
 
-function stepStatusLabel(step: CaseWorkspaceStep): string {
+function stepStatusLabel(step: CaseWorkspaceStep, isArabic: boolean): string {
   if (step.status === "completed") {
-    return "Completed";
+    return isArabic ? "مكتمل" : "Completed";
   }
   if (step.status === "current") {
-    return "Current";
+    return isArabic ? "الحالي" : "Current";
   }
-  return "Upcoming";
+  return isArabic ? "القادم" : "Upcoming";
 }
 
 function stepIcon(key: CaseWorkspaceStepKey) {
@@ -256,6 +257,93 @@ function renderMissingState(message: string) {
       {message}
     </div>
   );
+}
+
+function translateCaseStatus(status: string, isArabic: boolean): string {
+  if (!isArabic) {
+    return status;
+  }
+
+  switch (String(status || "").trim().toUpperCase()) {
+    case "OPEN":
+      return "مفتوحة";
+    case "CLOSED":
+      return "مغلقة";
+    case "PENDING":
+      return "قيد الانتظار";
+    case "IN_PROGRESS":
+      return "قيد التنفيذ";
+    case "FINAL":
+      return "نهائي";
+    case "DRAFT":
+      return "مسودة";
+    case "FAILED":
+      return "فشل";
+    case "GENERATED":
+      return "تم الإنشاء";
+    default:
+      return status;
+  }
+}
+
+function translatePdfLanguage(language: string, isArabic: boolean): string {
+  if (!isArabic) {
+    return language.toUpperCase();
+  }
+
+  switch (String(language || "").trim().toLowerCase()) {
+    case "en":
+      return "الإنجليزية";
+    case "ar":
+      return "العربية";
+    default:
+      return language;
+  }
+}
+
+function translateConsentMethod(method: string | undefined, isArabic: boolean): string {
+  if (!method || !isArabic) {
+    return method || "";
+  }
+
+  switch (method) {
+    case "ELECTRONIC_SIGNATURE":
+      return "توقيع إلكتروني";
+    case "OTP":
+      return "رمز تحقق لمرة واحدة";
+    case "WITNESS_ACKNOWLEDGMENT":
+      return "إقرار الشاهد";
+    case "WRITTEN":
+      return "كتابي";
+    default:
+      return method;
+  }
+}
+
+function translateActorRole(role: string | null | undefined, isArabic: boolean): string {
+  if (!isArabic) {
+    return role || "system";
+  }
+
+  switch (String(role || "").trim().toLowerCase()) {
+    case "system":
+      return "النظام";
+    case "doctor":
+    case "physician":
+    case "er_doctor":
+      return "طبيب";
+    case "legal":
+    case "legal_admin":
+    case "legal_officer":
+      return "قانوني";
+    case "signatory":
+    case "authorized_signatory":
+      return "مفوّض معتمد";
+    case "tenant_admin":
+      return "مدير الجهة";
+    default:
+      return role || "النظام";
+  }
 }
 
 export default function CaseExecutionWorkspaceLayout({
@@ -300,6 +388,10 @@ export default function CaseExecutionWorkspaceLayout({
   onGenerateLegalPackage,
   onGenerateCasePdf,
 }: LayoutProps) {
+  const { lang } = useI18n();
+  const isArabic = lang === "ar";
+  const tr = (en: string, ar: string): string => (isArabic ? ar : en);
+
   const [manualStepKey, setSelectedStepKey] = useState<CaseWorkspaceStepKey | null>(null);
   const [detailTab, setDetailTab] = useState<DetailTab>("supporting");
 
@@ -311,6 +403,7 @@ export default function CaseExecutionWorkspaceLayout({
   );
   const legalDecisionIndicator = getLegalReadinessDecisionIndicator(
     signature.patient_decision || null,
+    isArabic ? "ar" : "en",
   );
 
   const workflowFlow = useMemo(
@@ -337,7 +430,7 @@ export default function CaseExecutionWorkspaceLayout({
         pdfVersionCount: pdfVersions.length,
         legalPackageGenerated: Boolean(legalPackage),
         documentCount: documents.length,
-      }),
+      }, isArabic ? "ar" : "en"),
     [
       caseData.diagnosis,
       caseData.mrn,
@@ -357,6 +450,7 @@ export default function CaseExecutionWorkspaceLayout({
       readiness?.reason,
       refusalScenario,
       role,
+      isArabic,
       signature.patient_decision,
       signature.signer_name,
       witness.witness_name,
@@ -382,29 +476,29 @@ export default function CaseExecutionWorkspaceLayout({
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Case Summary</CardTitle>
+            <CardTitle>{tr("Case Summary", "ملخص الحالة")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">MRN</div>
+                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("MRN", "رقم الملف الطبي")}</div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">{caseData.mrn}</div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Patient</div>
+                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Patient", "المريض")}</div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">{caseData.patient}</div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Current owner</div>
+                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Current owner", "المالك الحالي")}</div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">{caseData.physician}</div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Case status</div>
-                <div className="mt-1"><Badge variant="outline">{caseData.status}</Badge></div>
+                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Case status", "حالة الحالة")}</div>
+                <div className="mt-1"><Badge variant="outline">{translateCaseStatus(caseData.status, isArabic)}</Badge></div>
               </div>
             </div>
             <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Clinical context</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Clinical context", "السياق السريري")}</div>
               <div className="mt-1 text-sm text-slate-700">{caseData.diagnosis}</div>
             </div>
           </CardContent>
@@ -412,27 +506,30 @@ export default function CaseExecutionWorkspaceLayout({
 
         <Card>
           <CardHeader>
-            <CardTitle>Intake Completion</CardTitle>
+            <CardTitle>{tr("Intake Completion", "اكتمال الاستقبال")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-              <span className="text-slate-600">Case record established</span>
-              <Badge variant="success">Complete</Badge>
+              <span className="text-slate-600">{tr("Case record established", "تم إنشاء سجل الحالة")}</span>
+              <Badge variant="success">{tr("Complete", "مكتمل")}</Badge>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-              <span className="text-slate-600">Owner assigned</span>
+              <span className="text-slate-600">{tr("Owner assigned", "تم تعيين المسؤول")}</span>
               <Badge variant={caseData.physician !== "Not assigned" ? "success" : "warning"}>
-                {caseData.physician !== "Not assigned" ? "Assigned" : "Missing"}
+                {caseData.physician !== "Not assigned" ? tr("Assigned", "معين") : tr("Missing", "مفقود")}
               </Badge>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-              <span className="text-slate-600">Clinical summary present</span>
+              <span className="text-slate-600">{tr("Clinical summary present", "الملخص السريري متوفر")}</span>
               <Badge variant={caseData.diagnosis !== "Discharge refusal workflow" ? "success" : "warning"}>
-                {caseData.diagnosis !== "Discharge refusal workflow" ? "Recorded" : "Needs update"}
+                {caseData.diagnosis !== "Discharge refusal workflow" ? tr("Recorded", "موثق") : tr("Needs update", "يحتاج تحديث")}
               </Badge>
             </div>
             <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-slate-700">
-              This step now owns the old Case Summary and Assignments / SLA sections.
+              {tr(
+                "This step now owns the old Case Summary and Assignments / SLA sections.",
+                "تتضمن هذه الخطوة الآن أقسام ملخص الحالة والتكليفات/اتفاقية مستوى الخدمة السابقة.",
+              )}
             </div>
           </CardContent>
         </Card>
@@ -445,12 +542,12 @@ export default function CaseExecutionWorkspaceLayout({
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Record Medical Explanation</CardTitle>
+            <CardTitle>{tr("Record Medical Explanation", "تسجيل الشرح الطبي")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="space-y-3">
               <Select
-                aria-label="Presentation language"
+                aria-label={tr("Presentation language", "لغة الشرح")}
                 value={presentation.language}
                 onChange={(event) =>
                   setPresentation((previous) => ({
@@ -459,10 +556,10 @@ export default function CaseExecutionWorkspaceLayout({
                   }))
                 }
               >
-                <option value="">Select language</option>
-                <option value="English">English</option>
-                <option value="Arabic">Arabic</option>
-                <option value="Bilingual">Bilingual</option>
+                <option value="">{tr("Select language", "اختر اللغة")}</option>
+                <option value="English">{tr("English", "الإنجليزية")}</option>
+                <option value="Arabic">{tr("Arabic", "العربية")}</option>
+                <option value="Bilingual">{tr("Bilingual", "ثنائي اللغة")}</option>
               </Select>
               <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700">
                 <input
@@ -475,10 +572,10 @@ export default function CaseExecutionWorkspaceLayout({
                     }))
                   }
                 />
-                Interpreter used during explanation
+                {tr("Interpreter used during explanation", "تم استخدام مترجم أثناء الشرح")}
               </label>
               <Input
-                placeholder="Presented to"
+                placeholder={tr("Presented to", "قُدم الشرح إلى")}
                 value={presentation.presented_to}
                 onChange={(event) =>
                   setPresentation((previous) => ({
@@ -488,7 +585,7 @@ export default function CaseExecutionWorkspaceLayout({
                 }
               />
               <Input
-                placeholder="Presented by"
+                placeholder={tr("Presented by", "قُدم الشرح بواسطة")}
                 value={presentation.presented_by}
                 onChange={(event) =>
                   setPresentation((previous) => ({
@@ -501,9 +598,9 @@ export default function CaseExecutionWorkspaceLayout({
 
             <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div>
-                <div className="text-sm font-semibold text-slate-900">Current clinical owner</div>
+                <div className="text-sm font-semibold text-slate-900">{tr("Current clinical owner", "المسؤول السريري الحالي")}</div>
                 <div className="mt-1 text-sm text-slate-600">{caseData.physician}</div>
-                <div className="mt-4 text-sm font-semibold text-slate-900">Diagnosis / rationale</div>
+                <div className="mt-4 text-sm font-semibold text-slate-900">{tr("Diagnosis / rationale", "التشخيص / المبرر")}</div>
                 <div className="mt-1 text-sm text-slate-600">{caseData.diagnosis}</div>
               </div>
               <div className="space-y-2">
@@ -514,13 +611,15 @@ export default function CaseExecutionWorkspaceLayout({
                     void onRecordPresentation();
                   }}
                 >
-                  Record Medical Decision
+                  {tr("Record Medical Decision", "تسجيل القرار الطبي")}
                 </Button>
                 {!canMedicalActions ? (
                   <div className="text-xs text-amber-700">{deniedMessage}</div>
                 ) : null}
                 <Badge variant={presentation.language ? "success" : "warning"}>
-                  {presentation.language ? "Medical explanation recorded" : "Medical explanation pending"}
+                  {presentation.language
+                    ? tr("Medical explanation recorded", "تم تسجيل الشرح الطبي")
+                    : tr("Medical explanation pending", "تسجيل الشرح الطبي قيد الانتظار")}
                 </Badge>
               </div>
             </div>
@@ -529,12 +628,12 @@ export default function CaseExecutionWorkspaceLayout({
 
         <Card>
           <CardHeader>
-            <CardTitle>What Moved Here</CardTitle>
+            <CardTitle>{tr("What Moved Here", "ما الذي انتقل إلى هنا")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-slate-700">
-            <div className="rounded-xl border border-slate-200 px-3 py-2">Old section: Presentation / Proof of Notice</div>
-            <div className="rounded-xl border border-slate-200 px-3 py-2">Old read-only case physician and diagnosis fields</div>
-            <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2">Only the doctor-facing explanation task is shown here to reduce noise.</div>
+            <div className="rounded-xl border border-slate-200 px-3 py-2">{tr("Old section: Presentation / Proof of Notice", "القسم السابق: العرض / إثبات الإبلاغ")}</div>
+            <div className="rounded-xl border border-slate-200 px-3 py-2">{tr("Old read-only case physician and diagnosis fields", "حقول الطبيب والتشخيص القديمة للقراءة فقط")}</div>
+            <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2">{tr("Only the doctor-facing explanation task is shown here to reduce noise.", "يظهر هنا فقط إجراء الشرح الخاص بالطبيب لتقليل التشتيت.")}</div>
           </CardContent>
         </Card>
       </div>
@@ -546,14 +645,14 @@ export default function CaseExecutionWorkspaceLayout({
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Patient Response & Acknowledgment</CardTitle>
+            <CardTitle>{tr("Patient Response & Acknowledgment", "استجابة المريض والإقرار")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
                 <div>
-                  <div className="text-sm font-semibold text-slate-900">Patient Decision</div>
-                  <div className="text-xs text-slate-500">Record the response to the proposed treatment path.</div>
+                  <div className="text-sm font-semibold text-slate-900">{tr("Patient Decision", "قرار المريض")}</div>
+                  <div className="text-xs text-slate-500">{tr("Record the response to the proposed treatment path.", "سجل استجابة المريض لخطة العلاج المقترحة.")}</div>
                 </div>
                 <RadioGroup
                   value={signature.patient_decision}
@@ -567,18 +666,18 @@ export default function CaseExecutionWorkspaceLayout({
                   }}
                 >
                   <RadioGroupLabel>
-                    <RadioGroupItem value="accepted" /> Accepted
+                    <RadioGroupItem value="accepted" /> {tr("Accepted", "قبول")}
                   </RadioGroupLabel>
                   <RadioGroupLabel>
-                    <RadioGroupItem value="refused" /> Refused
+                    <RadioGroupItem value="refused" /> {tr("Refused", "رفض")}
                   </RadioGroupLabel>
                 </RadioGroup>
               </div>
 
               <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
                 <div>
-                  <div className="text-sm font-semibold text-slate-900">Attestation</div>
-                  <div className="text-xs text-slate-500">Keep outcome aligned with the patient decision.</div>
+                  <div className="text-sm font-semibold text-slate-900">{tr("Attestation", "الإقرار")}</div>
+                  <div className="text-xs text-slate-500">{tr("Keep outcome aligned with the patient decision.", "احرص على توافق النتيجة مع قرار المريض.")}</div>
                 </div>
                 <RadioGroup
                   value={signature.outcome}
@@ -591,13 +690,13 @@ export default function CaseExecutionWorkspaceLayout({
                   }
                 >
                   <RadioGroupLabel>
-                    <RadioGroupItem value="signed" /> Signed
+                    <RadioGroupItem value="signed" /> {tr("Signed", "تم التوقيع")}
                   </RadioGroupLabel>
                   <RadioGroupLabel>
-                    <RadioGroupItem value="refused_to_sign" /> Refused to sign
+                    <RadioGroupItem value="refused_to_sign" /> {tr("Refused to sign", "رفض التوقيع")}
                   </RadioGroupLabel>
                   <RadioGroupLabel>
-                    <RadioGroupItem value="unable_to_sign" /> Unable to sign
+                    <RadioGroupItem value="unable_to_sign" /> {tr("Unable to sign", "غير قادر على التوقيع")}
                   </RadioGroupLabel>
                 </RadioGroup>
               </div>
@@ -605,9 +704,9 @@ export default function CaseExecutionWorkspaceLayout({
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
-                <div className="text-sm font-semibold text-slate-900">Signer</div>
+                <div className="text-sm font-semibold text-slate-900">{tr("Signer", "الموقّع")}</div>
                 <Input
-                  placeholder="Signer name"
+                  placeholder={tr("Signer name", "اسم الموقّع")}
                   value={signature.signer_name}
                   onChange={(event) =>
                     setSignature((previous) => ({
@@ -618,7 +717,7 @@ export default function CaseExecutionWorkspaceLayout({
                 />
                 {signature.outcome !== "signed" ? (
                   <Input
-                    placeholder="Reason"
+                    placeholder={tr("Reason", "السبب")}
                     value={signature.reason}
                     onChange={(event) =>
                       setSignature((previous) => ({
@@ -635,14 +734,14 @@ export default function CaseExecutionWorkspaceLayout({
                     void onRecordSignature();
                   }}
                 >
-                  Record Patient Decision
+                  {tr("Record Patient Decision", "تسجيل قرار المريض")}
                 </Button>
               </div>
 
               <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
-                <div className="text-sm font-semibold text-slate-900">Witness</div>
+                <div className="text-sm font-semibold text-slate-900">{tr("Witness", "الشاهد")}</div>
                 <Input
-                  placeholder="Witness name"
+                  placeholder={tr("Witness name", "اسم الشاهد")}
                   value={witness.witness_name}
                   onChange={(event) =>
                     setWitness((previous) => ({
@@ -652,7 +751,7 @@ export default function CaseExecutionWorkspaceLayout({
                   }
                 />
                 <Input
-                  placeholder="Witness role"
+                    placeholder={tr("Witness role", "صفة الشاهد")}
                   value={witness.witness_role}
                   onChange={(event) =>
                     setWitness((previous) => ({
@@ -669,7 +768,7 @@ export default function CaseExecutionWorkspaceLayout({
                     void onRecordWitness();
                   }}
                 >
-                  Record Witness
+                  {tr("Record Witness", "تسجيل الشاهد")}
                 </Button>
               </div>
             </div>
@@ -678,11 +777,11 @@ export default function CaseExecutionWorkspaceLayout({
 
         <Card>
           <CardHeader>
-            <CardTitle>Consent Evidence</CardTitle>
+            <CardTitle>{tr("Consent Evidence", "أدلة الموافقة")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <Select
-              aria-label="Consent method"
+              aria-label={tr("Consent method", "طريقة الموافقة")}
               value={consentForm.consentMethod}
               onChange={(event) =>
                 setConsentForm((previous) => ({
@@ -691,13 +790,13 @@ export default function CaseExecutionWorkspaceLayout({
                 }))
               }
             >
-              <option value="ELECTRONIC_SIGNATURE">Electronic signature</option>
-              <option value="OTP">OTP</option>
-              <option value="WITNESS_ACKNOWLEDGMENT">Witness acknowledgment</option>
-              <option value="WRITTEN">Written</option>
+              <option value="ELECTRONIC_SIGNATURE">{tr("Electronic signature", "توقيع إلكتروني")}</option>
+              <option value="OTP">{tr("One-time password", "رمز تحقق لمرة واحدة")}</option>
+              <option value="WITNESS_ACKNOWLEDGMENT">{tr("Witness acknowledgment", "إقرار الشاهد")}</option>
+              <option value="WRITTEN">{tr("Written", "كتابي")}</option>
             </Select>
             <Input
-              placeholder="Processing purpose"
+              placeholder={tr("Processing purpose", "غرض المعالجة")}
               value={consentForm.processingPurpose}
               onChange={(event) =>
                 setConsentForm((previous) => ({
@@ -707,7 +806,7 @@ export default function CaseExecutionWorkspaceLayout({
               }
             />
             <Input
-              placeholder="Lawful basis"
+              placeholder={tr("Lawful basis", "الأساس النظامي")}
               value={consentForm.lawfulBasis}
               onChange={(event) =>
                 setConsentForm((previous) => ({
@@ -717,7 +816,7 @@ export default function CaseExecutionWorkspaceLayout({
               }
             />
             <Input
-              placeholder="Witness / confirmer"
+              placeholder={tr("Witness / confirmer", "الشاهد / المقر")}
               value={consentForm.witnessName}
               onChange={(event) =>
                 setConsentForm((previous) => ({
@@ -728,7 +827,7 @@ export default function CaseExecutionWorkspaceLayout({
             />
             {consentForm.consentMethod === "OTP" ? (
               <Input
-                placeholder="OTP reference"
+                placeholder={tr("OTP reference", "مرجع رمز التحقق")}
                 value={consentForm.otpReference}
                 onChange={(event) =>
                   setConsentForm((previous) => ({
@@ -745,10 +844,12 @@ export default function CaseExecutionWorkspaceLayout({
                 void onRecordConsent();
               }}
             >
-              Record Consent Evidence
+              {tr("Record Consent Evidence", "تسجيل أدلة الموافقة")}
             </Button>
             <Badge variant={consentRecords.length > 0 ? "success" : "warning"}>
-              {consentRecords.length > 0 ? `${consentRecords.length} consent record(s)` : "Consent evidence pending"}
+              {consentRecords.length > 0
+                ? tr(`${consentRecords.length} consent record(s)`, `${consentRecords.length} سجل موافقة`)
+                : tr("Consent evidence pending", "أدلة الموافقة قيد الانتظار")}
             </Badge>
           </CardContent>
         </Card>
@@ -761,17 +862,17 @@ export default function CaseExecutionWorkspaceLayout({
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Readiness Summary</CardTitle>
+            <CardTitle>{tr("Readiness Summary", "ملخص الجاهزية")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-              <span className="text-slate-600">Ready for legal</span>
+              <span className="text-slate-600">{tr("Ready for legal", "جاهز للشؤون القانونية")}</span>
               <Badge variant={readiness?.ready_for_legal ? "success" : "warning"}>
-                {readiness?.ready_for_legal ? "Yes" : "No"}
+                {readiness?.ready_for_legal ? tr("Yes", "نعم") : tr("No", "لا")}
               </Badge>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-              <span className="text-slate-600">Patient decision</span>
+              <span className="text-slate-600">{tr("Patient decision", "قرار المريض")}</span>
               <Badge variant={legalDecisionIndicator.badgeVariant}>{legalDecisionIndicator.label}</Badge>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
@@ -783,14 +884,17 @@ export default function CaseExecutionWorkspaceLayout({
               </div>
             ) : null}
             <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-slate-700">
-              This step now owns the old Legal Readiness card and Legal Readiness Checklist.
+              {tr(
+                "This step now owns the old Legal Readiness card and Legal Readiness Checklist.",
+                "تتضمن هذه الخطوة الآن بطاقة الجاهزية القانونية وقائمة التحقق القانونية السابقة.",
+              )}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Checklist</CardTitle>
+            <CardTitle>{tr("Checklist", "قائمة التحقق")}</CardTitle>
           </CardHeader>
           <CardContent>
             {legalReadinessReport ? (
@@ -800,7 +904,7 @@ export default function CaseExecutionWorkspaceLayout({
                     {legalReadinessReport.status}
                   </Badge>
                   <span className="text-sm text-slate-600">
-                    Consent: {legalReadinessReport.evidence?.consentCount ?? 0} • Documents: {legalReadinessReport.evidence?.documentCount ?? 0}
+                    {tr("Consent", "الموافقة")}: {legalReadinessReport.evidence?.consentCount ?? 0} • {tr("Documents", "المستندات")}: {legalReadinessReport.evidence?.documentCount ?? 0}
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -811,14 +915,14 @@ export default function CaseExecutionWorkspaceLayout({
                         <div className="text-slate-500">{item.reason}</div>
                       </div>
                       <Badge variant={item.satisfied ? "success" : item.required ? "warning" : "outline"}>
-                        {item.satisfied ? "Compliant" : item.required ? "Blocked" : "Optional"}
+                        {item.satisfied ? tr("Compliant", "متوافق") : item.required ? tr("Blocked", "محظور") : tr("Optional", "اختياري")}
                       </Badge>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              renderMissingState("No readiness checklist has been evaluated yet.")
+              renderMissingState(tr("No readiness checklist has been evaluated yet.", "لم يتم تقييم قائمة تحقق الجاهزية بعد."))
             )}
           </CardContent>
         </Card>
@@ -831,18 +935,18 @@ export default function CaseExecutionWorkspaceLayout({
       <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Generate Legal Documents</CardTitle>
+            <CardTitle>{tr("Generate Legal Documents", "إنشاء المستندات القانونية")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <Select
-                aria-label="PDF language"
+                aria-label={tr("PDF language", "لغة ملف PDF")}
                 className="w-auto min-w-[10rem]"
                 value={pdfLanguage}
                 onChange={(event) => setPdfLanguage(event.target.value === "ar" ? "ar" : "en")}
               >
-                <option value="en">English</option>
-                <option value="ar">Arabic</option>
+                <option value="en">{tr("English", "الإنجليزية")}</option>
+                <option value="ar">{tr("Arabic", "العربية")}</option>
               </Select>
               <Button
                 disabled={pdfBusy || !canGeneratePdf}
@@ -852,7 +956,7 @@ export default function CaseExecutionWorkspaceLayout({
                 }}
               >
                 <FileText className="h-4 w-4" />
-                Generate Draft PDF
+                {tr("Generate Draft PDF", "إنشاء مسودة PDF")}
               </Button>
               <Button
                 variant="outline"
@@ -863,7 +967,7 @@ export default function CaseExecutionWorkspaceLayout({
                 }}
               >
                 <ShieldCheck className="h-4 w-4" />
-                Generate Final PDF
+                {tr("Generate Final PDF", "إنشاء PDF نهائي")}
               </Button>
               <Button
                 variant="outline"
@@ -874,7 +978,7 @@ export default function CaseExecutionWorkspaceLayout({
                 }}
               >
                 <RefreshCw className="h-4 w-4" />
-                Regenerate
+                {tr("Regenerate", "إعادة الإنشاء")}
               </Button>
             </div>
 
@@ -888,13 +992,13 @@ export default function CaseExecutionWorkspaceLayout({
                 }}
               >
                 <Package className="h-4 w-4" />
-                Generate Legal Package
+                {tr("Generate Legal Package", "إنشاء الحزمة القانونية")}
               </Button>
               {legalPackage?.download_url && canDownloadFinalDocs ? (
                 <a href={legalPackage.download_url} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline">
                     <Download className="h-4 w-4" />
-                    Download Package
+                    {tr("Download Package", "تنزيل الحزمة")}
                   </Button>
                 </a>
               ) : null}
@@ -904,30 +1008,30 @@ export default function CaseExecutionWorkspaceLayout({
               <div className="rounded-2xl border border-slate-200 p-4 text-sm">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <Badge variant={pdfLatest.status === "final" ? "success" : pdfLatest.status === "failed" ? "warning" : "outline"}>
-                    v{pdfLatest.version} • {pdfLatest.status.toUpperCase()}
+                    v{pdfLatest.version} • {translateCaseStatus(pdfLatest.status, isArabic)}
                   </Badge>
-                  <Badge variant="outline">{pdfLatest.language.toUpperCase()}</Badge>
-                  <Badge variant="outline">{Math.round((pdfLatest.fileSize || 0) / 1024)} KB</Badge>
+                  <Badge variant="outline">{translatePdfLanguage(pdfLatest.language, isArabic)}</Badge>
+                  <Badge variant="outline">{Math.round((pdfLatest.fileSize || 0) / 1024)} {tr("KB", "ك.ب")}</Badge>
                 </div>
-                <div className="text-slate-600">Generated: {new Date(pdfLatest.generatedAt).toLocaleString()}</div>
-                <div className="text-slate-600">File: {pdfLatest.fileName}</div>
-                <div className="text-slate-500">SHA-256: {pdfLatest.sha256Hash?.slice(0, 24) || "N/A"}</div>
+                <div className="text-slate-600">{tr("Generated", "تم الإنشاء")}: {new Date(pdfLatest.generatedAt).toLocaleString()}</div>
+                <div className="text-slate-600">{tr("File", "الملف")}: {pdfLatest.fileName}</div>
+                <div className="text-slate-500">SHA-256: {pdfLatest.sha256Hash?.slice(0, 24) || tr("N/A", "غير متوفر")}</div>
               </div>
             ) : (
-              renderMissingState("No legal case PDF has been generated yet.")
+              renderMissingState(tr("No legal case PDF has been generated yet.", "لم يتم إنشاء PDF قانوني للحالة بعد."))
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Readiness for Final Documents</CardTitle>
+            <CardTitle>{tr("Readiness for Final Documents", "جاهزية المستندات النهائية")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2 text-sm">
-              <span className="font-semibold text-slate-700">Finalization readiness</span>
+              <span className="font-semibold text-slate-700">{tr("Finalization readiness", "جاهزية الإنهاء")}</span>
               <Badge variant={pdfValidation?.canFinalize ? "success" : "warning"}>
-                {pdfValidation?.canFinalize ? "Ready" : "Missing required fields"}
+                {pdfValidation?.canFinalize ? tr("Ready", "جاهز") : tr("Missing required fields", "حقول مطلوبة مفقودة")}
               </Badge>
             </div>
             {pdfValidation?.missingRequired?.length ? (
@@ -937,10 +1041,13 @@ export default function CaseExecutionWorkspaceLayout({
                 ))}
               </ul>
             ) : (
-              <div className="text-sm text-slate-600">All required compliance fields are available.</div>
+              <div className="text-sm text-slate-600">{tr("All required compliance fields are available.", "جميع حقول الامتثال المطلوبة متوفرة.")}</div>
             )}
             <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm text-slate-700">
-              This step now owns the old Legal Package, Legal Case PDF Reports, and document export actions.
+              {tr(
+                "This step now owns the old Legal Package, Legal Case PDF Reports, and document export actions.",
+                "تتضمن هذه الخطوة الآن الحزمة القانونية وتقارير PDF القانونية وإجراءات تصدير المستندات السابقة.",
+              )}
             </div>
           </CardContent>
         </Card>
@@ -953,32 +1060,35 @@ export default function CaseExecutionWorkspaceLayout({
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Closure Readiness</CardTitle>
+            <CardTitle>{tr("Closure Readiness", "جاهزية الإغلاق")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-              <span className="text-slate-600">Authorized final PDF</span>
+              <span className="text-slate-600">{tr("Authorized final PDF", "PDF النهائي المعتمد")}</span>
               <Badge variant={pdfLatest?.status === "final" ? "success" : "warning"}>
-                {pdfLatest?.status === "final" ? "Available" : "Pending"}
+                {pdfLatest?.status === "final" ? tr("Available", "متوفر") : tr("Pending", "قيد الانتظار")}
               </Badge>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-              <span className="text-slate-600">Legal package</span>
-              <Badge variant={legalPackage ? "success" : "warning"}>{legalPackage ? "Generated" : "Pending"}</Badge>
+              <span className="text-slate-600">{tr("Legal package", "الحزمة القانونية")}</span>
+              <Badge variant={legalPackage ? "success" : "warning"}>{legalPackage ? tr("Generated", "تم الإنشاء") : tr("Pending", "قيد الانتظار")}</Badge>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-              <span className="text-slate-600">Case status</span>
-              <Badge variant={caseData.status.toUpperCase() === "CLOSED" ? "success" : "warning"}>{caseData.status}</Badge>
+              <span className="text-slate-600">{tr("Case status", "حالة الحالة")}</span>
+              <Badge variant={caseData.status.toUpperCase() === "CLOSED" ? "success" : "warning"}>{translateCaseStatus(caseData.status, isArabic)}</Badge>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
-              No backend closure contract is changed here. This step reorganizes the final review and sign-off presentation only.
+              {tr(
+                "No backend closure contract is changed here. This step reorganizes the final review and sign-off presentation only.",
+                "لم يتم تعديل عقد الإغلاق في الخلفية هنا. تعيد هذه الخطوة تنظيم العرض النهائي للمراجعة والاعتماد فقط.",
+              )}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Final Outputs</CardTitle>
+            <CardTitle>{tr("Final Outputs", "المخرجات النهائية")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {pdfLatest ? (
@@ -986,14 +1096,14 @@ export default function CaseExecutionWorkspaceLayout({
                 <a href={`/api/cases/${caseId}/pdf/${pdfLatest.version}/preview`} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline">
                     <Eye className="h-4 w-4" />
-                    Preview Latest
+                    {tr("Preview Latest", "معاينة الأحدث")}
                   </Button>
                 </a>
                 {canDownloadFinalDocs ? (
                   <a href={`/api/cases/${caseId}/pdf/${pdfLatest.version}/download`} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline">
                       <Download className="h-4 w-4" />
-                      Download Latest
+                      {tr("Download Latest", "تنزيل الأحدث")}
                     </Button>
                   </a>
                 ) : null}
@@ -1003,7 +1113,7 @@ export default function CaseExecutionWorkspaceLayout({
               <a href={legalPackage.download_url} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline">
                   <Package className="h-4 w-4" />
-                  Download Bundle
+                  {tr("Download Bundle", "تنزيل الحزمة")}
                 </Button>
               </a>
             ) : null}
@@ -1015,7 +1125,10 @@ export default function CaseExecutionWorkspaceLayout({
               </ul>
             ) : (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                Closure prerequisites are satisfied. Authorized signatory may complete the final workflow action.
+                {tr(
+                  "Closure prerequisites are satisfied. Authorized signatory may complete the final workflow action.",
+                  "متطلبات الإغلاق مستوفاة. يمكن للمفوّض المعتمد إكمال الإجراء النهائي لسير العمل.",
+                )}
               </div>
             )}
           </CardContent>
@@ -1051,9 +1164,12 @@ export default function CaseExecutionWorkspaceLayout({
 
       {viewOnlyMode ? (
         <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-          <div className="font-semibold">View-only workspace</div>
+          <div className="font-semibold">{tr("View-only workspace", "مساحة عرض فقط")}</div>
           <div className="mt-1 text-blue-600">
-            You can inspect case progress and evidence, but action steps remain assigned to workflow owners.
+            {tr(
+              "You can inspect case progress and evidence, but action steps remain assigned to workflow owners.",
+              "يمكنك استعراض تقدم الحالة والأدلة، لكن خطوات التنفيذ تبقى مخصصة لمالكي سير العمل.",
+            )}
           </div>
         </div>
       ) : null}
@@ -1065,10 +1181,10 @@ export default function CaseExecutionWorkspaceLayout({
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">{workflowFlow.roleSummaryLabel}</Badge>
                 <Badge variant={selectedStep.status === "completed" ? "success" : "warning"}>
-                  {stepStatusLabel(selectedStep)} stage
+                  {stepStatusLabel(selectedStep, isArabic)} {tr("stage", "المرحلة")}
                 </Badge>
               </div>
-              <CardTitle className="text-2xl">Case Execution Workflow</CardTitle>
+              <CardTitle className="text-2xl">{tr("Case Execution Workflow", "سير تنفيذ الحالة")}</CardTitle>
               <div className="text-sm text-slate-600">
                 {caseData.patient} • {caseData.mrn} • {caseData.status}
               </div>
@@ -1076,12 +1192,15 @@ export default function CaseExecutionWorkspaceLayout({
 
             <div className="min-w-[18rem] rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur">
               <div className="mb-2 flex items-center justify-between text-sm text-slate-600">
-                <span>Workflow progress</span>
-                <span>{completedSteps}/{workflowFlow.steps.length} completed</span>
+                <span>{tr("Workflow progress", "تقدم سير العمل")}</span>
+                <span>{completedSteps}/{workflowFlow.steps.length} {tr("completed", "مكتملة")}</span>
               </div>
               <Progress value={progressValue} className="mb-3" />
               <div className="text-xs text-slate-500">
-                One active step is shown at a time. Technical detail stays in supporting tabs below.
+                {tr(
+                  "One active step is shown at a time. Technical detail stays in supporting tabs below.",
+                  "يتم عرض خطوة نشطة واحدة في كل مرة. تبقى التفاصيل الفنية في تبويبات الدعم أدناه.",
+                )}
               </div>
             </div>
           </div>
@@ -1089,21 +1208,21 @@ export default function CaseExecutionWorkspaceLayout({
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Current Stage</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Current Stage", "المرحلة الحالية")}</div>
               <div className="mt-1 text-sm font-semibold text-slate-900">{selectedStep.label}</div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Current Owner</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Current Owner", "المالك الحالي")}</div>
               <div className="mt-1 text-sm font-semibold text-slate-900">{selectedStep.ownerLabel}</div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Next Action</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Next Action", "الإجراء التالي")}</div>
               <div className="mt-1 text-sm font-semibold text-slate-900">{selectedStep.nextAction}</div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Missing Items</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Missing Items", "العناصر المفقودة")}</div>
               <div className="mt-1 text-sm font-semibold text-slate-900">
-                {selectedStep.missingItems.length === 0 ? "None" : `${selectedStep.missingItems.length} open item(s)`}
+                {selectedStep.missingItems.length === 0 ? tr("None", "لا يوجد") : tr(`${selectedStep.missingItems.length} open item(s)`, `${selectedStep.missingItems.length} عنصر مفتوح`) }
               </div>
             </div>
           </div>
@@ -1113,7 +1232,7 @@ export default function CaseExecutionWorkspaceLayout({
       <div className="grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)]">
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle>Workflow Steps</CardTitle>
+            <CardTitle>{tr("Workflow Steps", "خطوات سير العمل")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {workflowFlow.steps.map((step, index) => {
@@ -1137,15 +1256,15 @@ export default function CaseExecutionWorkspaceLayout({
                         <Icon className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Step {index + 1}</div>
+                        <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Step", "الخطوة")} {index + 1}</div>
                         <div className="font-semibold text-slate-900">{step.label}</div>
                       </div>
                     </div>
-                    <Badge variant={stepBadgeVariant(step)}>{stepStatusLabel(step)}</Badge>
+                    <Badge variant={stepBadgeVariant(step)}>{stepStatusLabel(step, isArabic)}</Badge>
                   </div>
-                  <div className="text-xs text-slate-500">Owner: {step.ownerLabel}</div>
+                  <div className="text-xs text-slate-500">{tr("Owner", "المالك")}: {step.ownerLabel}</div>
                   <div className="mt-2 flex items-center text-xs text-slate-600">
-                    Open step
+                    {tr("Open step", "فتح الخطوة")}
                     <ChevronRight className="ml-1 h-3 w-3" />
                   </div>
                 </button>
@@ -1160,14 +1279,14 @@ export default function CaseExecutionWorkspaceLayout({
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <Badge variant={stepBadgeVariant(selectedStep)}>{stepStatusLabel(selectedStep)}</Badge>
+                    <Badge variant={stepBadgeVariant(selectedStep)}>{stepStatusLabel(selectedStep, isArabic)}</Badge>
                     <Badge variant="outline">{selectedStep.shortLabel}</Badge>
                   </div>
                   <CardTitle>{selectedStep.label}</CardTitle>
                   <div className="mt-1 text-sm text-slate-600">{selectedStep.description}</div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  <div className="font-semibold text-slate-900">Recommended visibility</div>
+                  <div className="font-semibold text-slate-900">{tr("Recommended visibility", "الرؤية الموصى بها")}</div>
                   <div className="mt-1">{selectedStep.recommendedVisibleRoles.join(" • ")}</div>
                 </div>
               </div>
@@ -1175,11 +1294,11 @@ export default function CaseExecutionWorkspaceLayout({
             <CardContent className="space-y-4">
               <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  <div className="font-semibold text-slate-900">Next Action</div>
+                  <div className="font-semibold text-slate-900">{tr("Next Action", "الإجراء التالي")}</div>
                   <div className="mt-1">{selectedStep.nextAction}</div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  <div className="font-semibold text-slate-900">Sections moved into this step</div>
+                  <div className="font-semibold text-slate-900">{tr("Sections moved into this step", "الأقسام المنقولة إلى هذه الخطوة")}</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {selectedStep.includedSections.map((section) => (
                       <Badge key={section} variant="outline">{section}</Badge>
@@ -1190,7 +1309,7 @@ export default function CaseExecutionWorkspaceLayout({
 
               {selectedStep.missingItems.length > 0 ? (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <div className="mb-2 font-semibold text-amber-900">Missing Items</div>
+                  <div className="mb-2 font-semibold text-amber-900">{tr("Missing Items", "العناصر المفقودة")}</div>
                   <ul className="space-y-1 text-sm text-amber-800">
                     {selectedStep.missingItems.map((item) => (
                       <li key={item}>• {item}</li>
@@ -1201,7 +1320,7 @@ export default function CaseExecutionWorkspaceLayout({
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                   <div className="flex items-center gap-2 font-semibold">
                     <CheckCircle2 className="h-4 w-4" />
-                    No missing items in this step.
+                    {tr("No missing items in this step.", "لا توجد عناصر مفقودة في هذه الخطوة.")}
                   </div>
                 </div>
               )}
@@ -1212,51 +1331,51 @@ export default function CaseExecutionWorkspaceLayout({
 
           <Card>
             <CardHeader>
-              <CardTitle>Supporting Detail</CardTitle>
+              <CardTitle>{tr("Supporting Detail", "تفاصيل داعمة")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Tabs value={detailTab} onValueChange={(value) => setDetailTab(value as DetailTab)}>
                 <TabsList>
-                  <TabsTrigger value="supporting">Supporting Evidence</TabsTrigger>
-                  <TabsTrigger value="documents">Documents & Versions</TabsTrigger>
-                  <TabsTrigger value="audit">Audit & Security</TabsTrigger>
+                  <TabsTrigger value="supporting">{tr("Supporting Evidence", "الأدلة الداعمة")}</TabsTrigger>
+                  <TabsTrigger value="documents">{tr("Documents & Versions", "المستندات والإصدارات")}</TabsTrigger>
+                  <TabsTrigger value="audit">{tr("Audit & Security", "التدقيق والأمان")}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="supporting" className="space-y-4">
                   <div className="grid gap-4 xl:grid-cols-2">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Readiness Snapshot</CardTitle>
+                        <CardTitle>{tr("Readiness Snapshot", "لقطة الجاهزية")}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2 text-sm">
                         <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-                          <span className="text-slate-600">Ready for legal</span>
-                          <Badge variant={readiness?.ready_for_legal ? "success" : "warning"}>{readiness?.ready_for_legal ? "Yes" : "No"}</Badge>
+                          <span className="text-slate-600">{tr("Ready for legal", "جاهز للشؤون القانونية")}</span>
+                          <Badge variant={readiness?.ready_for_legal ? "success" : "warning"}>{readiness?.ready_for_legal ? tr("Yes", "نعم") : tr("No", "لا")}</Badge>
                         </div>
                         <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-                          <span className="text-slate-600">Patient decision</span>
+                          <span className="text-slate-600">{tr("Patient decision", "قرار المريض")}</span>
                           <Badge variant={legalDecisionIndicator.badgeVariant}>{legalDecisionIndicator.label}</Badge>
                         </div>
                         <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-                          <span className="text-slate-600">Financial notice</span>
-                          <Badge variant={financialNoticeAvailable ? "success" : "outline"}>{financialNoticeAvailable ? "Available" : "Not found"}</Badge>
+                          <span className="text-slate-600">{tr("Financial notice", "الإشعار المالي")}</span>
+                          <Badge variant={financialNoticeAvailable ? "success" : "outline"}>{financialNoticeAvailable ? tr("Available", "متوفر") : tr("Not found", "غير موجود")}</Badge>
                         </div>
                       </CardContent>
                     </Card>
 
                     <Card>
                       <CardHeader>
-                        <CardTitle>Consent Records</CardTitle>
+                        <CardTitle>{tr("Consent Records", "سجلات الموافقة")}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2 text-sm">
                         {consentRecords.length === 0 ? (
-                          renderMissingState("No consent records saved yet.")
+                          renderMissingState(tr("No consent records saved yet.", "لا توجد سجلات موافقة محفوظة حتى الآن."))
                         ) : (
                           consentRecords.slice(0, 5).map((record) => (
                             <div key={record.id} className="rounded-xl border border-slate-200 px-3 py-2">
-                              <div className="font-medium text-slate-800">{record.processingPurpose || "Discharge refusal consent"}</div>
-                              <div className="text-slate-500">Method: {record.consentMethod || "N/A"}</div>
-                              <div className="text-slate-500">Hash: {record.documentHash?.slice(0, 16) || "-"}</div>
+                              <div className="font-medium text-slate-800">{record.processingPurpose || tr("Discharge refusal consent", "موافقة رفض الخروج")}</div>
+                              <div className="text-slate-500">{tr("Method", "الطريقة")}: {translateConsentMethod(record.consentMethod, isArabic) || tr("N/A", "غير متوفر")}</div>
+                              <div className="text-slate-500">{tr("Hash", "البصمة")}: {record.documentHash?.slice(0, 16) || "-"}</div>
                             </div>
                           ))
                         )}
@@ -1269,19 +1388,19 @@ export default function CaseExecutionWorkspaceLayout({
                   <div className="grid gap-4 xl:grid-cols-2">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Generated Documents</CardTitle>
+                        <CardTitle>{tr("Generated Documents", "المستندات المُنشأة")}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2 text-sm">
                         {documents.length === 0 ? (
-                          renderMissingState("No generated documents found for this case yet.")
+                          renderMissingState(tr("No generated documents found for this case yet.", "لا توجد مستندات مُنشأة لهذه الحالة حتى الآن."))
                         ) : (
                           documents.slice(0, 8).map((document) => (
                             <div key={document.id} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
                               <div>
-                                <div className="font-medium text-slate-800">{document.title || document.template_key || "Document"}</div>
-                                <div className="text-slate-500">{document.generated_at ? new Date(document.generated_at).toLocaleString() : "Pending"}</div>
+                                <div className="font-medium text-slate-800">{document.title || document.template_key || tr("Document", "مستند")}</div>
+                                <div className="text-slate-500">{document.generated_at ? new Date(document.generated_at).toLocaleString() : tr("Pending", "قيد الانتظار")}</div>
                               </div>
-                              <Badge variant={document.generationStatus === "generated" ? "success" : "outline"}>{document.generationStatus || "draft"}</Badge>
+                              <Badge variant={document.generationStatus === "generated" ? "success" : "outline"}>{translateCaseStatus(document.generationStatus || "draft", isArabic)}</Badge>
                             </div>
                           ))
                         )}
@@ -1290,11 +1409,11 @@ export default function CaseExecutionWorkspaceLayout({
 
                     <Card>
                       <CardHeader>
-                        <CardTitle>PDF Versions</CardTitle>
+                        <CardTitle>{tr("PDF Versions", "إصدارات PDF")}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2 text-sm">
                         {pdfVersions.length === 0 ? (
-                          renderMissingState("No PDF versions are available yet.")
+                          renderMissingState(tr("No PDF versions are available yet.", "لا توجد إصدارات PDF متاحة حتى الآن."))
                         ) : (
                           pdfVersions.map((version) => (
                             <div key={version.id} className="rounded-xl border border-slate-200 px-3 py-2">
@@ -1304,18 +1423,18 @@ export default function CaseExecutionWorkspaceLayout({
                                   <div className="text-slate-500">{new Date(version.generatedAt).toLocaleString()}</div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Badge variant={version.status === "final" ? "success" : version.status === "failed" ? "warning" : "outline"}>{version.status}</Badge>
+                                  <Badge variant={version.status === "final" ? "success" : version.status === "failed" ? "warning" : "outline"}>{translateCaseStatus(version.status, isArabic)}</Badge>
                                   <a href={`/api/cases/${caseId}/pdf/${version.version}/preview`} target="_blank" rel="noopener noreferrer">
                                     <Button variant="outline" size="sm">
                                       <Eye className="h-4 w-4" />
-                                      Preview
+                                      {tr("Preview", "معاينة")}
                                     </Button>
                                   </a>
                                   {canDownloadFinalDocs ? (
                                     <a href={`/api/cases/${caseId}/pdf/${version.version}/download`} target="_blank" rel="noopener noreferrer">
                                       <Button variant="outline" size="sm">
                                         <Download className="h-4 w-4" />
-                                        Download
+                                        {tr("Download", "تنزيل")}
                                       </Button>
                                     </a>
                                   ) : null}
@@ -1333,7 +1452,7 @@ export default function CaseExecutionWorkspaceLayout({
                   <div className="grid gap-4 xl:grid-cols-2">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Audit Trail</CardTitle>
+                        <CardTitle>{tr("Audit Trail", "مسار التدقيق")}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2 text-sm">
                         {!canReadAudit ? (
@@ -1343,10 +1462,10 @@ export default function CaseExecutionWorkspaceLayout({
                         ) : null}
                         <div className="mb-2 flex items-center gap-2">
                           <Badge variant={auditChain?.verification?.verified ? "success" : "warning"}>
-                            Hash chain {auditChain?.verification?.verified ? "verified" : "pending"}
+                            {tr("Hash chain", "سلسلة التجزئة")} {auditChain?.verification?.verified ? tr("verified", "متحقق") : tr("pending", "قيد الانتظار")}
                           </Badge>
-                          <span className="text-slate-600">{auditChain?.verification?.totalEvents ?? 0} event(s)</span>
-                          {canReadSmsEvidence ? <Badge variant="outline">SMS evidence enabled</Badge> : null}
+                          <span className="text-slate-600">{auditChain?.verification?.totalEvents ?? 0} {tr("event(s)", "حدث")}</span>
+                          {canReadSmsEvidence ? <Badge variant="outline">{tr("SMS evidence enabled", "أدلة الرسائل النصية مفعّلة")}</Badge> : null}
                         </div>
                         {canReadAudit && auditChain?.events?.length ? (
                           auditChain.events.slice(0, 6).map((event) => (
@@ -1357,14 +1476,14 @@ export default function CaseExecutionWorkspaceLayout({
                             </div>
                           ))
                         ) : (
-                          renderMissingState(canReadAudit ? "No audit chain events available yet." : "Audit records are hidden for your role.")
+                          renderMissingState(canReadAudit ? tr("No audit chain events available yet.", "لا توجد أحداث ضمن سلسلة التدقيق حتى الآن.") : tr("Audit records are hidden for your role.", "سجلات التدقيق مخفية لدورك."))
                         )}
                       </CardContent>
                     </Card>
 
                     <Card>
                       <CardHeader>
-                        <CardTitle>Security / Access Log</CardTitle>
+                        <CardTitle>{tr("Security / Access Log", "سجل الأمان / الوصول")}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2 text-sm">
                         {(auditChain?.events ?? [])
@@ -1374,14 +1493,14 @@ export default function CaseExecutionWorkspaceLayout({
                             <div key={event.id} className="rounded-xl border border-slate-200 px-3 py-2">
                               <div className="flex items-center justify-between gap-3">
                                 <span className="font-medium text-slate-800">{event.eventType}</span>
-                                <Badge variant="outline">{event.actorRole || "system"}</Badge>
+                                <Badge variant="outline">{translateActorRole(event.actorRole, isArabic)}</Badge>
                               </div>
                               <div className="text-slate-500">{event.payloadSummary}</div>
-                              <div className="text-slate-400">Hash: {event.currentHash.slice(0, 16)}...</div>
+                              <div className="text-slate-400">{tr("Hash", "البصمة")}: {event.currentHash.slice(0, 16)}...</div>
                             </div>
                           ))}
                         {(auditChain?.events ?? []).filter((event) => /EXPORT|SIGNATURE|CONSENT|PRIVILEGED/i.test(event.eventType)).length === 0
-                          ? renderMissingState("No security-sensitive access events have been captured yet.")
+                          ? renderMissingState(tr("No security-sensitive access events have been captured yet.", "لم يتم التقاط أحداث وصول حساسة أمنيًا حتى الآن."))
                           : null}
                       </CardContent>
                     </Card>

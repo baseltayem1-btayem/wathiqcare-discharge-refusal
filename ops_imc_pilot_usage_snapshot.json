@@ -1,0 +1,169 @@
+{
+  "generated_at_utc": "2026-04-16T20:51:39.224141+00:00",
+  "total_bundles_found": 61,
+  "verified_sample_size": 20,
+  "verified_valid_count": 0,
+  "verified_invalid_count": 20,
+  "sample": [
+    {
+      "bundle": "discharge_refusal_bundle_02a5ef4b-d36b-43fc-b155-e57584c83900_ed86a977-fe40-4c2e-96ea-51da42f5647a.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_02c82096-cd69-44c2-827e-28dee6b84d5f_f0753537-0e34-455f-b130-34112aa0e4c8.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_07519a0b-aba1-4862-baac-5b19e2f86803_16d8fbd3-a185-4218-9caa-bf20a6c3f0c8.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_0dfd4466-4e03-4518-aabe-086f83da5207_2b0311eb-acc0-4a85-9a74-2221e04f45f4.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_0f76aa03-b50e-4d64-aba0-ab9e2ccd39b7_1cd490a2-e2d2-4c3a-a40a-794c2456e8d5.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_16c41ded-2996-4791-b75a-70deda6e055b_7768854b-86bc-40ee-8fbf-1d07bee6d7e0.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_192eff92-9f72-4934-832d-31fc2f8a6366_586e66b7-059b-4a0a-9eda-d892f1552325.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_1c40e0c9-f5c0-475a-9a5e-9ac3d8be49ed_fc943710-3eca-4f69-8112-1278fd5a8450.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_24ad3748-c6e5-4082-bbae-c839b594b38f_974cc8f2-0cc7-42fe-83d0-8595e6a90fc3.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_35fa7e39-a661-4b73-ba94-e1f447c28694_b9728699-f17b-4e99-ba4c-426ab5d85c54.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_35fe488f-9e0a-408f-9804-2c1cfdd4b9cf_9138384b-8026-4554-9605-33cbc835979a.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_3ffbc6e7-342f-4ddb-a2a7-294973843f4b_36f2af58-3b35-4225-bb4b-313040b28266.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_417c3d8b-4260-4d83-b002-7bcd6f91edd9_6f74a3bf-4058-4474-8928-53137a64ad00.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_4404fd23-bd1c-4729-b857-012c5ad3d4c2_29bcd56c-1930-45e9-b6df-3539c0b36dde.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_48e18cfc-a1b7-475f-a49a-867b439ab0c2_3914a4b8-6af3-4f73-ab25-5e5805a8a4c1.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_4b4a430e-9472-4aed-9076-3a065d8aa937_142e19e4-19b0-483b-9553-e1859dbb05ed.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_4c870c66-f408-4775-bf29-4fa6a5cd4d78_40153576-5eb1-477c-95a5-fcc1b598833d.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_4e0efcc5-3562-4bea-b606-0e4039949444_35bf63e9-f097-47ac-bcb7-1d7f07579e65.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_5d6492e6-5a87-4521-a5f9-56fda7fd8ab0_1c6bb3e2-ba70-4ecb-a726-6cbfab449807.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    },
+    {
+      "bundle": "discharge_refusal_bundle_60656102-2bd9-4984-a5c0-64800c12c40b_a5b341b8-2de9-4bfa-80c7-d703e646ea68.zip",
+      "valid": false,
+      "errors": [
+        "Missing required files: 00_evidence_cover_certificate.pdf, audit_logs.json, case_summary.json, chain_of_custody.json, court_admissible_index.json, manifest.json, manifest.sig, signatures.json, timestamp.tsr, timestamps.json"
+      ],
+      "warnings": []
+    }
+  ]
+}

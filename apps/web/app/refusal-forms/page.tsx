@@ -18,6 +18,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import StatCard from "@/components/ui/StatCard";
 import Modal from "@/components/ui/Modal";
 import ActionButton from "@/components/ui/ActionButton";
+import { useI18n } from "@/i18n/I18nProvider";
 import { refusalFormsService } from "@/lib/services/refusalForms.service";
 import type { RefusalForm, SignatureData, RefusalFormType } from "@/types/refusal-forms";
 import { downloadProtectedDocument } from "@/utils/protectedDocuments";
@@ -29,6 +30,8 @@ const FORM_TYPE_LABELS: Record<RefusalFormType, string> = {
 };
 
 export default function RefusalFormsPage() {
+  const { lang } = useI18n();
+  const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
   const [forms, setForms] = useState<RefusalForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedForm, setSelectedForm] = useState<RefusalForm | null>(null);
@@ -91,7 +94,7 @@ export default function RefusalFormsPage() {
     if (!selectedForm) return;
 
     if (!signatureData.acknowledgedRisks || !signatureData.acknowledgedFinancial) {
-      alert("Please acknowledge all requirements before signing.");
+      alert(txt("Please acknowledge all requirements before signing.", "يرجى الإقرار بجميع المتطلبات قبل التوقيع."));
       return;
     }
 
@@ -118,7 +121,7 @@ export default function RefusalFormsPage() {
       setShowDetailsModal(false);
     } catch (error) {
       console.error("Failed to sign form:", error);
-      alert("Failed to sign form. Please try again.");
+      alert(txt("Failed to sign form. Please try again.", "تعذر توقيع النموذج. يرجى المحاولة مرة أخرى."));
     } finally {
       setSubmitting(false);
     }
@@ -131,47 +134,47 @@ export default function RefusalFormsPage() {
       await downloadProtectedDocument(form.documentUrl, `${form.caseNumber || form.id}.html`);
     } catch (error) {
       console.error("Failed to download form:", error);
-      alert("Failed to download form. Please try again.");
+      alert(txt("Failed to download form. Please try again.", "تعذر تنزيل النموذج. يرجى المحاولة مرة أخرى."));
     }
   }
 
   return (
     <AuthGuard>
       <AppShell
-        title="Refusal Forms"
-        subtitle="Manage and track discharge refusal forms and financial responsibility notices."
+        title={txt("Refusal Forms", "نماذج رفض الخروج")}
+        subtitle={txt("Manage and track discharge refusal forms and financial responsibility notices.", "إدارة وتتبع نماذج رفض الخروج وإشعارات المسؤولية المالية.")}
         actions={
           <Link
             href="/cases"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
           >
             <FileText className="h-4 w-4" />
-            View Cases
+            {txt("View Cases", "عرض الحالات")}
           </Link>
         }
       >
         {/* Summary Cards */}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            title="Total Forms"
+            title={txt("Total Forms", "إجمالي النماذج")}
             value={loading ? "-" : stats.total}
             icon={<FileText className="h-5 w-5" />}
             variant="default"
           />
           <StatCard
-            title="Pending Signature"
+            title={txt("Pending Signature", "بانتظار التوقيع")}
             value={loading ? "-" : stats.pending}
             icon={<Clock className="h-5 w-5" />}
             variant="warning"
           />
           <StatCard
-            title="Signed"
+            title={txt("Signed", "موقعة")}
             value={loading ? "-" : stats.signed}
             icon={<CheckCircle2 className="h-5 w-5" />}
             variant="success"
           />
           <StatCard
-            title="Escalated"
+            title={txt("Escalated", "مصعدة")}
             value={loading ? "-" : stats.escalated}
             icon={<AlertTriangle className="h-5 w-5" />}
             variant="error"
@@ -180,15 +183,15 @@ export default function RefusalFormsPage() {
 
         {/* Forms List */}
         <div className="mt-6 space-y-3">
-          <h2 className="text-lg font-semibold text-slate-900">Refusal Forms</h2>
+          <h2 className="text-lg font-semibold text-slate-900">{txt("Refusal Forms", "نماذج رفض الخروج")}</h2>
 
           {loading ? (
-            <p className="text-sm text-slate-600">Loading forms...</p>
+            <p className="text-sm text-slate-600">{txt("Loading forms...", "جارٍ تحميل النماذج...")}</p>
           ) : forms.length === 0 ? (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center">
               <FileSignature className="mx-auto h-12 w-12 text-slate-400" />
-              <p className="mt-3 text-sm font-medium text-slate-700">No refusal forms found</p>
-              <p className="mt-1 text-xs text-slate-500">Generated forms will appear here</p>
+              <p className="mt-3 text-sm font-medium text-slate-700">{txt("No refusal forms found", "لم يتم العثور على نماذج رفض")}</p>
+              <p className="mt-1 text-xs text-slate-500">{txt("Generated forms will appear here", "ستظهر النماذج المنشأة هنا")}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -219,22 +222,22 @@ export default function RefusalFormsPage() {
                       </p>
 
                       <p className="mt-1 text-sm text-slate-600">
-                        Patient: {form.patientName}
+                        {txt("Patient", "المريض")}: {form.patientName}
                       </p>
 
                       <p className="mt-1 text-xs text-slate-500">
-                        Generated: {new Date(form.generatedAt).toLocaleDateString()}
+                        {txt("Generated", "تم الإنشاء")}: {new Date(form.generatedAt).toLocaleDateString()}
                       </p>
 
                       {form.signedAt && (
                         <p className="mt-1 text-xs text-emerald-600 font-medium">
-                          Signed: {new Date(form.signedAt).toLocaleDateString()}
+                          {txt("Signed", "تم التوقيع")}: {new Date(form.signedAt).toLocaleDateString()}
                         </p>
                       )}
 
                       {form.attendingPhysician && (
                         <p className="mt-1 text-xs text-slate-600">
-                          Physician: {form.attendingPhysician}
+                          {txt("Physician", "الطبيب")}: {form.attendingPhysician}
                         </p>
                       )}
                     </div>
@@ -245,7 +248,7 @@ export default function RefusalFormsPage() {
                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
                         <Eye className="h-3.5 w-3.5" />
-                        View
+                        {txt("View", "عرض")}
                       </button>
 
                       {form.status === "pending" && (
@@ -254,7 +257,7 @@ export default function RefusalFormsPage() {
                           className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
                         >
                           <PenTool className="h-3.5 w-3.5" />
-                          Sign
+                          {txt("Sign", "توقيع")}
                         </button>
                       )}
 
@@ -266,7 +269,7 @@ export default function RefusalFormsPage() {
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                         >
                           <Download className="h-3.5 w-3.5" />
-                          Download
+                          {txt("Download", "تنزيل")}
                         </button>
                       )}
                     </div>
@@ -281,7 +284,7 @@ export default function RefusalFormsPage() {
         <Modal
           isOpen={showDetailsModal}
           onClose={() => setShowDetailsModal(false)}
-          title="Form Details"
+          title={txt("Form Details", "تفاصيل النموذج")}
           size="lg"
         >
           {selectedForm && (

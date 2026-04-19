@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
@@ -15,6 +15,7 @@ import {
 } from "@/components/design-system/card";
 import { Button } from "@/components/design-system/button";
 import { useUiPermissions } from "@/hooks/useUiPermissions";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { UiCaseAccessContext } from "@/lib/permissions/ui-rbac";
 
 type ApiErrorPayload = {
@@ -213,7 +214,7 @@ function getBoolean(record: Record<string, unknown> | null | undefined, key: str
   return typeof value === "boolean" ? value : fallback;
 }
 
-function mapCaseRecordToCaseData(record: CaseApiRecord): CaseData {
+function mapCaseRecordToCaseData(record: CaseApiRecord, isArabic: boolean): CaseData {
   const metadata = asRecord(record.metadata);
   const workflow = asRecord(metadata?.workflow);
 
@@ -222,30 +223,30 @@ function mapCaseRecordToCaseData(record: CaseApiRecord): CaseData {
     mrn:
       (typeof record.medicalRecordNo === "string" && record.medicalRecordNo.trim()) ||
       getString(metadata, "mrn", "medical_record_number") ||
-      "N/A",
+      (isArabic ? "غير متوفر" : "N/A"),
     patient:
       (typeof record.patientName === "string" && record.patientName.trim()) ||
       getString(metadata, "patient_name") ||
-      "Unknown Patient",
+      (isArabic ? "مريض غير معروف" : "Unknown Patient"),
     physician:
       getString(workflow, "attending_physician") ||
       getString(metadata, "attending_physician") ||
-      "Not assigned",
+      (isArabic ? "غير محدد" : "Not assigned"),
     diagnosis:
       getString(workflow, "discussion_summary", "refusal_reason") ||
       (typeof record.title === "string" && record.title.trim()) ||
-      "Discharge refusal workflow",
+      (isArabic ? "مسار رفض الخروج" : "Discharge refusal workflow"),
     status:
       (typeof record.status === "string" && record.status.trim()) ||
       "OPEN",
   };
 }
 
-function toReadinessState(workflow: WorkflowApiRecord | null): ReadinessState {
+function toReadinessState(workflow: WorkflowApiRecord | null, isArabic: boolean): ReadinessState {
   if (!workflow) {
     return {
       ready_for_legal: false,
-      reason: "Generate the legal evidence bundle to complete readiness.",
+      reason: isArabic ? "أنشئ حزمة الأدلة القانونية لاستكمال الجاهزية." : "Generate the legal evidence bundle to complete readiness.",
     };
   }
 
@@ -258,7 +259,7 @@ function toReadinessState(workflow: WorkflowApiRecord | null): ReadinessState {
   if (workflow.escalation_required) {
     return {
       ready_for_legal: false,
-      reason: "Legal escalation is still required before closure.",
+      reason: isArabic ? "ما يزال التصعيد القانوني مطلوبًا قبل الإغلاق." : "Legal escalation is still required before closure.",
     };
   }
 
@@ -266,7 +267,7 @@ function toReadinessState(workflow: WorkflowApiRecord | null): ReadinessState {
     ready_for_legal: hasRequiredEvidence,
     reason: hasRequiredEvidence
       ? undefined
-      : "Generate the refusal form or legal package to complete the case evidence.",
+      : (isArabic ? "أنشئ نموذج الرفض أو الحزمة القانونية لاستكمال أدلة الحالة." : "Generate the refusal form or legal package to complete the case evidence."),
   };
 }
 
@@ -311,10 +312,12 @@ function getErrorMessage(error: unknown, fallback = "An unexpected error occurre
 }
 
 export default function CaseWorkspaceClient() {
+  const { isRtl } = useI18n();
   const permissions = useUiPermissions();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const caseId = typeof params?.id === "string" ? params.id : "";
+  const txt = useCallback((en: string, ar: string) => (isRtl ? ar : en), [isRtl]);
 
   const [caseData, setCaseData] = useState<CaseData | null>(null);
   const [presentation, setPresentation] = useState<PresentationPayload>({
@@ -334,8 +337,8 @@ export default function CaseWorkspaceClient() {
     witness_role: "",
   });
   const [consentForm, setConsentForm] = useState<ConsentFormPayload>({
-    processingPurpose: "Discharge refusal medico-legal processing",
-    lawfulBasis: "PDPL healthcare and legal obligation basis",
+    processingPurpose: txt("Discharge refusal medico-legal processing", "المعالجة القانونية الطبية لرفض الخروج"),
+    lawfulBasis: txt("PDPL healthcare and legal obligation basis", "أساس الالتزام القانوني والرعاية الصحية وفق نظام حماية البيانات الشخصية"),
     consentType: "informed_refusal_consent",
     consentMethod: "ELECTRONIC_SIGNATURE",
     documentVersion: "1.0",
@@ -354,6 +357,7 @@ export default function CaseWorkspaceClient() {
   const [pdfVersions, setPdfVersions] = useState<CasePdfVersionSummary[]>([]);
   const [pdfLanguage, setPdfLanguage] = useState<"en" | "ar">("en");
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [deferredDataLoading, setDeferredDataLoading] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -403,6 +407,34 @@ export default function CaseWorkspaceClient() {
   useEffect(() => {
     let cancelled = false;
 
+    async function loadDeferredPanels(targetCaseId: string): Promise<void> {
+      setDeferredDataLoading(true);
+
+      try {
+        const [existingPackage, consentList, auditInfo, docs, pdfVersionList] = await Promise.all([
+          apiFetch<LegalPackageMeta>(`/api/discharge/cases/${targetCaseId}/legal-package`).catch(() => null),
+          apiFetch<ConsentRecordSummary[]>(`/api/discharge/cases/${targetCaseId}/consent`).catch(() => []),
+          apiFetch<AuditChainResponse>(`/api/discharge/cases/${targetCaseId}/audit-chain`).catch(() => null),
+          apiFetch<DocumentSummary[]>(`/api/discharge/cases/${targetCaseId}/documents`).catch(() => []),
+          apiFetch<CasePdfVersionsResponse>(`/api/cases/${targetCaseId}/pdf/versions`).catch(() => ({ versions: [] })),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setLegalPackage(existingPackage);
+        setConsentRecords(consentList ?? []);
+        setAuditChain(auditInfo);
+        setDocuments(docs ?? []);
+        setPdfVersions(pdfVersionList?.versions ?? []);
+      } finally {
+        if (!cancelled) {
+          setDeferredDataLoading(false);
+        }
+      }
+    }
+
     async function loadPage(): Promise<void> {
       if (!caseId) {
         setPageLoading(false);
@@ -416,25 +448,15 @@ export default function CaseWorkspaceClient() {
         const [
           caseRecord,
           workflow,
-          existingPackage,
           readinessReport,
-          consentList,
-          auditInfo,
-          docs,
           readinessResponse,
           latestPdf,
-          pdfVersionList,
         ] = await Promise.all([
           apiFetch<CaseApiRecord>(`/api/cases/${caseId}`),
           apiFetch<WorkflowApiRecord>(`/api/discharge/cases/${caseId}/workflow`).catch(() => null),
-          apiFetch<LegalPackageMeta>(`/api/discharge/cases/${caseId}/legal-package`).catch(() => null),
           apiFetch<LegalReadinessReport>(`/api/discharge/cases/${caseId}/legal-readiness`).catch(() => null),
-          apiFetch<ConsentRecordSummary[]>(`/api/discharge/cases/${caseId}/consent`).catch(() => []),
-          apiFetch<AuditChainResponse>(`/api/discharge/cases/${caseId}/audit-chain`).catch(() => null),
-          apiFetch<DocumentSummary[]>(`/api/discharge/cases/${caseId}/documents`).catch(() => []),
           apiFetch<ReadinessState>(`/api/discharge/cases/${caseId}/readiness`).catch(() => null),
           apiFetch<CasePdfLatestResponse>(`/api/cases/${caseId}/pdf`).catch(() => null),
-          apiFetch<CasePdfVersionsResponse>(`/api/cases/${caseId}/pdf/versions`).catch(() => ({ versions: [] })),
         ]);
 
         if (cancelled) {
@@ -486,7 +508,7 @@ export default function CaseWorkspaceClient() {
           witnessName: previous.witnessName || hydratedWitnessName,
         }));
 
-        setCaseData(mapCaseRecordToCaseData(caseRecord));
+        setCaseData(mapCaseRecordToCaseData(caseRecord, isRtl));
         const accessContext: UiCaseAccessContext = {
           metadata: caseMetadata,
           attendingPhysicianUserId: getString(asRecord(caseMetadata?.workflow), "attending_physician_user_id"),
@@ -501,22 +523,24 @@ export default function CaseWorkspaceClient() {
                 ready_for_legal: readinessReport.readyForLegal,
                 reason: readinessReport.blockers?.[0],
               }
-            : readinessResponse ?? toReadinessState(workflow),
+            : readinessResponse ?? toReadinessState(workflow, isRtl),
         );
         setLegalReadinessReport(readinessReport);
-        setConsentRecords(consentList ?? []);
-        setAuditChain(auditInfo);
-        setDocuments(docs ?? []);
-        setLegalPackage(existingPackage);
+        setConsentRecords([]);
+        setAuditChain(null);
+        setDocuments([]);
+        setLegalPackage(null);
         setPdfLatest(latestPdf?.latest ?? null);
         setPdfValidation(latestPdf?.validation ?? null);
-        setPdfVersions(pdfVersionList?.versions ?? []);
+        setPdfVersions([]);
+
+        void loadDeferredPanels(caseId);
       } catch (err: unknown) {
         if (cancelled) {
           return;
         }
 
-        setError(getErrorMessage(err, "Failed to load case"));
+        setError(getErrorMessage(err, txt("Failed to load case", "فشل تحميل الحالة")));
         setCaseData(null);
         setReadiness(null);
         setLegalReadinessReport(null);
@@ -528,6 +552,7 @@ export default function CaseWorkspaceClient() {
         setPdfLatest(null);
         setPdfValidation(null);
         setPdfVersions([]);
+        setDeferredDataLoading(false);
       } finally {
         if (!cancelled) {
           setPageLoading(false);
@@ -540,7 +565,7 @@ export default function CaseWorkspaceClient() {
     return () => {
       cancelled = true;
     };
-  }, [caseId]);
+  }, [caseId, isRtl, txt]);
 
   async function refreshReadinessAndPackage(): Promise<void> {
     if (!caseId) return;
@@ -574,7 +599,7 @@ export default function CaseWorkspaceClient() {
         reloadComplianceState(caseId),
       ]);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to generate legal case PDF"));
+      setError(getErrorMessage(err, txt("Failed to generate legal case PDF", "فشل إنشاء ملف PDF القانوني للحالة")));
     } finally {
       setPdfBusy(false);
     }
@@ -594,7 +619,7 @@ export default function CaseWorkspaceClient() {
       setLegalPackage(pkg);
       await reloadComplianceState(caseId);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to generate legal package"));
+      setError(getErrorMessage(err, txt("Failed to generate legal package", "فشل إنشاء الحزمة القانونية")));
     } finally {
       setLoading(false);
     }
@@ -614,7 +639,7 @@ export default function CaseWorkspaceClient() {
 
       await refreshReadinessAndPackage();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to record presentation"));
+      setError(getErrorMessage(err, txt("Failed to record presentation", "فشل تسجيل العرض الطبي")));
     } finally {
       setLoading(false);
     }
@@ -634,7 +659,7 @@ export default function CaseWorkspaceClient() {
 
       await refreshReadinessAndPackage();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to record signature"));
+      setError(getErrorMessage(err, txt("Failed to record signature", "فشل تسجيل التوقيع")));
     } finally {
       setLoading(false);
     }
@@ -654,7 +679,7 @@ export default function CaseWorkspaceClient() {
 
       await refreshReadinessAndPackage();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to record witness"));
+      setError(getErrorMessage(err, txt("Failed to record witness", "فشل تسجيل الشاهد")));
     } finally {
       setLoading(false);
     }
@@ -684,7 +709,7 @@ export default function CaseWorkspaceClient() {
 
       await refreshReadinessAndPackage();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to record consent"));
+      setError(getErrorMessage(err, txt("Failed to record consent", "فشل تسجيل الموافقة")));
     } finally {
       setLoading(false);
     }
@@ -707,7 +732,7 @@ export default function CaseWorkspaceClient() {
   if (!caseId) {
     return (
       <div className="p-8 text-center text-lg text-red-600">
-        Invalid case route.
+        {txt("Invalid case route.", "مسار الحالة غير صالح.")}
       </div>
     );
   }
@@ -715,7 +740,7 @@ export default function CaseWorkspaceClient() {
   if (pageLoading) {
     return (
       <div className="p-8 text-center text-lg text-slate-500">
-        Loading case...
+        {txt("Loading case...", "جار تحميل الحالة...")}
       </div>
     );
   }
@@ -725,11 +750,11 @@ export default function CaseWorkspaceClient() {
       <div className="mx-auto max-w-2xl p-8">
         <Card>
           <CardHeader>
-            <CardTitle>Case Execution Workspace</CardTitle>
+            <CardTitle>{txt("Case Execution Workspace", "مساحة تنفيذ الحالة")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="mb-2 font-medium text-red-600">
-              {error || "Case could not be loaded."}
+              {error || txt("Case could not be loaded.", "تعذر تحميل الحالة.")}
             </div>
           </CardContent>
         </Card>
@@ -740,12 +765,12 @@ export default function CaseWorkspaceClient() {
   return (
     <AuthGuard>
       <AppShell
-        title="Case Execution Workspace"
+        title={txt("Case Execution Workspace", "مساحة تنفيذ الحالة")}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.push("/cases")}>
               <ArrowLeft className="h-4 w-4" />
-              Back to Cases
+              {txt("Back to Cases", "العودة إلى الحالات")}
             </Button>
           </div>
         }
@@ -792,6 +817,9 @@ export default function CaseWorkspaceClient() {
           onGenerateLegalPackage={handleGenerateLegalPackage}
           onGenerateCasePdf={handleGenerateCasePdf}
         />
+        {deferredDataLoading ? (
+          <div className="mt-3 text-xs text-slate-500">{txt("Loading secondary workspace panels...", "جار تحميل لوحات مساحة العمل الثانوية...")}</div>
+        ) : null}
       </AppShell>
     </AuthGuard>
   );

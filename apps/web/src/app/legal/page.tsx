@@ -5,6 +5,7 @@ import { Button } from "../../components/design-system/button";
 import StepUpVerificationPanel from "../../components/security/StepUpVerificationPanel";
 import AuthGuard from "../../components/AuthGuard";
 import AccessDenied from "../../components/AccessDenied";
+import { useI18n } from "@/i18n/I18nProvider";
 
 interface LegalCase {
     case_id: string;
@@ -33,6 +34,8 @@ const FILTERS = [
 ];
 
 export default function LegalQueuePage() {
+    const { lang } = useI18n();
+    const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
     const [cases, setCases] = useState<LegalCase[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -45,7 +48,7 @@ export default function LegalQueuePage() {
         async function checkRole() {
             try {
                 const res = await fetch("/api/auth/me", { credentials: "include" });
-                if (!res.ok) throw new Error("Session invalid");
+                if (!res.ok) throw new Error(txt("Session invalid", "الجلسة غير صالحة"));
                 const data = await res.json();
                 // Accepts: { roles: ["legal", ...] }
                 setHasRole(Array.isArray(data.roles) && (data.roles.includes("legal") || data.roles.includes("admin")));
@@ -71,7 +74,7 @@ export default function LegalQueuePage() {
             credentials: "include",
         })
             .then((res) => {
-                if (!res.ok) throw new Error("Failed to load data");
+                if (!res.ok) throw new Error(txt("Failed to load data", "تعذر تحميل البيانات"));
                 return res.json();
             })
             .then((data) => setCases(data))
@@ -83,7 +86,7 @@ export default function LegalQueuePage() {
         const res = await fetch(`/api/cases/${caseId}/legal-package/download`, {
             credentials: "include",
         });
-        if (!res.ok) return alert("Failed to download legal package");
+        if (!res.ok) return alert(txt("Failed to download legal package", "تعذر تنزيل الحزمة القانونية"));
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -96,17 +99,17 @@ export default function LegalQueuePage() {
     return (
         <AuthGuard authFailureMode="redirect">
             {!roleChecked ? (
-                <div>Checking permissions...</div>
+                <div>{txt("Checking permissions...", "جارٍ التحقق من الصلاحيات...")}</div>
             ) : !hasRole ? (
-                <AccessDenied resource="Legal Queue" />
+                <AccessDenied resource={txt("Legal Queue", "الطابور القانوني")} />
             ) : (
                 <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Legal Queue</h1>
+                    <h1 className="text-2xl font-bold mb-4">{txt("Legal Queue", "الطابور القانوني")}</h1>
                     <div className="mb-4 max-w-2xl">
                         <StepUpVerificationPanel
                             actionKey="legal_package_export"
-                            title="Legal evidence export verification"
-                            description="Saudi medico-legal package downloads now require a short-lived verified step-up session."
+                            title={txt("Legal evidence export verification", "التحقق من تصدير الأدلة القانونية")}
+                            description={txt("Saudi medico-legal package downloads now require a short-lived verified step-up session.", "تنزيل الحزم الطبية القانونية السعودية يتطلب الآن جلسة تحقق متقدم قصيرة المدة.")}
                         />
                     </div>
                     <div className="mb-4 flex gap-2">
@@ -121,27 +124,27 @@ export default function LegalQueuePage() {
                         ))}
                     </div>
                     {loading ? (
-                        <div>Loading...</div>
+                        <div>{txt("Loading...", "جارٍ التحميل...")}</div>
                     ) : error ? (
                         <div className="text-red-600">{error}</div>
                     ) : cases.length === 0 ? (
-                        <div>No cases found.</div>
+                        <div>{txt("No cases found.", "لم يتم العثور على حالات.")}</div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="min-w-full border">
                                 <thead>
                                     <tr className="bg-gray-100">
-                                        <th className="p-2 border">Case #</th>
+                                        <th className="p-2 border">{txt("Case #", "رقم الحالة")}</th>
                                         <th className="p-2 border">MRN</th>
-                                        <th className="p-2 border">Patient Name</th>
-                                        <th className="p-2 border">Physician</th>
-                                        <th className="p-2 border">Status</th>
-                                        <th className="p-2 border">Legal Package</th>
-                                        <th className="p-2 border">Version</th>
-                                        <th className="p-2 border">Last Generated</th>
-                                        <th className="p-2 border">Pushed to TrakCare</th>
-                                        <th className="p-2 border">Workflow Stage</th>
-                                        <th className="p-2 border">Actions</th>
+                                        <th className="p-2 border">{txt("Patient Name", "اسم المريض")}</th>
+                                        <th className="p-2 border">{txt("Physician", "الطبيب")}</th>
+                                        <th className="p-2 border">{txt("Status", "الحالة")}</th>
+                                        <th className="p-2 border">{txt("Legal Package", "الحزمة القانونية")}</th>
+                                        <th className="p-2 border">{txt("Version", "الإصدار")}</th>
+                                        <th className="p-2 border">{txt("Last Generated", "آخر إنشاء")}</th>
+                                        <th className="p-2 border">{txt("Pushed to TrakCare", "تم الإرسال إلى TrakCare")}</th>
+                                        <th className="p-2 border">{txt("Workflow Stage", "مرحلة سير العمل")}</th>
+                                        <th className="p-2 border">{txt("Actions", "الإجراءات")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -158,18 +161,18 @@ export default function LegalQueuePage() {
                                             </td>
                                             <td className="p-2 border">
                                                 {c.legal_package_generated ? (
-                                                    <Badge variant="success">Yes</Badge>
+                                                    <Badge variant="success">{txt("Yes", "نعم")}</Badge>
                                                 ) : (
-                                                    <Badge variant="secondary">No</Badge>
+                                                    <Badge variant="secondary">{txt("No", "لا")}</Badge>
                                                 )}
                                             </td>
                                             <td className="p-2 border">{c.legal_package_version ?? "-"}</td>
                                             <td className="p-2 border">{c.last_generated_at ? new Date(c.last_generated_at).toLocaleString() : "-"}</td>
                                             <td className="p-2 border">
                                                 {c.pushed_to_trakcare ? (
-                                                    <Badge variant="success">Yes</Badge>
+                                                    <Badge variant="success">{txt("Yes", "نعم")}</Badge>
                                                 ) : (
-                                                    <Badge variant="secondary">No</Badge>
+                                                    <Badge variant="secondary">{txt("No", "لا")}</Badge>
                                                 )}
                                             </td>
                                             <td className="p-2 border">
@@ -178,9 +181,9 @@ export default function LegalQueuePage() {
                                                 </Badge>
                                             </td>
                                             <td className="p-2 border flex gap-2">
-                                                <Button size="sm" variant="outline" onClick={() => window.location.href = `/cases/${c.case_id}`}>View Case</Button>
+                                                <Button size="sm" variant="outline" onClick={() => window.location.href = `/cases/${c.case_id}`}>{txt("View Case", "عرض الحالة")}</Button>
                                                 {c.legal_package_generated && (
-                                                    <Button size="sm" onClick={() => handleDownload(c.case_id)}>Download</Button>
+                                                    <Button size="sm" onClick={() => handleDownload(c.case_id)}>{txt("Download", "تنزيل")}</Button>
                                                 )}
                                             </td>
                                         </tr>

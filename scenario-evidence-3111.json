@@ -1,0 +1,5 @@
+﻿{
+    "blocker":  "Login failed 503: {\"detail\":\"Login service is temporarily unavailable. Please try again shortly\",\"traceId\":\"24384324-60c0-4871-9a4e-5712cd284079\"}",
+    "failedStage":  "login",
+    "baseUrl":  "http://localhost:3111"
+}

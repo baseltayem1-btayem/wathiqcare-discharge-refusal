@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, CreditCard, Plus, RefreshCw, ShieldCheck, Users } from "lucide-react";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetchJson } from "@/utils/api";
 
 type SetupStatus = {
@@ -57,6 +58,9 @@ const BILLING_OPTIONS = ["MONTHLY", "YEARLY"] as const;
 const SUB_STATUS_OPTIONS = ["TRIALING", "ACTIVE", "PAST_DUE", "PAUSED", "CANCELED", "EXPIRED"] as const;
 
 export default function PlatformPage() {
+    const { lang } = useI18n();
+    const txt = useCallback((en: string, ar: string) => (lang === "ar" ? ar : en), [lang]);
+
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
@@ -141,14 +145,14 @@ export default function PlatformPage() {
             setWidgetErrors(nextWidgetErrors);
 
             if (Object.keys(nextWidgetErrors).length > 0 && Object.keys(nextWidgetErrors).length === 4) {
-                setError("Platform widgets failed to load. Try refresh.");
+                setError(txt("Platform widgets failed to load. Try refresh.", "تعذر تحميل عناصر المنصة. حاول التحديث."));
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load platform data");
+            setError(err instanceof Error ? err.message : txt("Failed to load platform data", "تعذر تحميل بيانات المنصة"));
         } finally {
             setRefreshing(false);
         }
-    }, [selectedTenantId]);
+    }, [selectedTenantId, txt]);
 
     useEffect(() => {
         void loadPlatformData();
@@ -166,7 +170,7 @@ export default function PlatformPage() {
 
     async function handleCreateTenant() {
         if (!tenantForm.name.trim() || !tenantForm.ownerEmail.trim()) {
-            setError("Tenant name and tenant admin email are required");
+            setError(txt("Tenant name and tenant admin email are required", "اسم الجهة والبريد الإلكتروني لمسؤول الجهة مطلوبان"));
             return;
         }
 
@@ -203,10 +207,10 @@ export default function PlatformPage() {
                 ownerFullName: "",
                 ownerRole: "tenant_admin",
             });
-            setNotice("Tenant created successfully");
+            setNotice(txt("Tenant created successfully", "تم إنشاء الجهة بنجاح"));
             await loadPlatformData();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to create tenant");
+            setError(err instanceof Error ? err.message : txt("Failed to create tenant", "تعذر إنشاء الجهة"));
         } finally {
             setSavingTenant(false);
         }
@@ -214,7 +218,7 @@ export default function PlatformPage() {
 
     async function handleUpdateSubscription() {
         if (!selectedTenantId) {
-            setError("Select a tenant first");
+            setError(txt("Select a tenant first", "اختر جهة أولاً"));
             return;
         }
 
@@ -231,10 +235,10 @@ export default function PlatformPage() {
                     seatLimit: Number(subscriptionForm.seatLimit),
                 }),
             });
-            setNotice("Subscription and seat license updated");
+            setNotice(txt("Subscription and seat license updated", "تم تحديث الاشتراك وترخيص المقاعد"));
             await loadPlatformData();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to update subscription");
+            setError(err instanceof Error ? err.message : txt("Failed to update subscription", "تعذر تحديث الاشتراك"));
         } finally {
             setSavingSubscription(false);
         }
@@ -244,8 +248,8 @@ export default function PlatformPage() {
         <>
             <div className="mb-4 flex items-center justify-between">
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Platform Overview</h2>
-                    <p className="mt-1 text-sm text-gray-500">System metrics and status dashboard</p>
+                    <h2 className="text-lg font-semibold text-gray-900">{txt("Platform Overview", "نظرة عامة على المنصة")}</h2>
+                    <p className="mt-1 text-sm text-gray-500">{txt("System metrics and status dashboard", "لوحة مؤشرات النظام والحالة")}</p>
                 </div>
                 <button
                     type="button"
@@ -253,75 +257,75 @@ export default function PlatformPage() {
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                     <RefreshCw className="h-4 w-4" />
-                    {refreshing ? "Refreshing..." : "Refresh"}
+                    {refreshing ? txt("Refreshing...", "جاري التحديث...") : txt("Refresh", "تحديث")}
                 </button>
             </div>
 
             {error ? <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
             {notice ? <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
-            {refreshing ? <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Refreshing platform data...</div> : null}
+            {refreshing ? <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{txt("Refreshing platform data...", "جاري تحديث بيانات المنصة...")}</div> : null}
 
             <section className="grid gap-4 md:grid-cols-4">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-slate-500">Tenants</p>
+                        <p className="text-sm text-slate-500">{txt("Tenants", "الجهات")}</p>
                         <Building2 className="h-4 w-4 text-slate-600" />
                     </div>
                     <p className="mt-2 text-2xl font-bold text-slate-900">{tenants.length}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-slate-500">Setup Status</p>
+                        <p className="text-sm text-slate-500">{txt("Setup Status", "حالة الإعداد")}</p>
                         <ShieldCheck className="h-4 w-4 text-slate-600" />
                     </div>
                     <p className={`mt-2 text-xl font-bold ${setupStatus?.initialized ? "text-emerald-700" : "text-amber-700"}`}>
-                        {setupStatus?.initialized ? "Initialized" : "Pending"}
+                        {setupStatus?.initialized ? txt("Initialized", "مكتمل") : txt("Pending", "قيد الانتظار")}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                        Admins: {setupStatus?.platformAdminCount ?? 0} | Users: {setupStatus?.userCount ?? 0}
+                        {txt("Admins", "المسؤولون")}: {setupStatus?.platformAdminCount ?? 0} | {txt("Users", "المستخدمون")}: {setupStatus?.userCount ?? 0}
                     </p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-slate-500">Total Invoiced</p>
+                        <p className="text-sm text-slate-500">{txt("Total Invoiced", "إجمالي الفواتير")}</p>
                         <CreditCard className="h-4 w-4 text-slate-600" />
                     </div>
                     <p className="mt-2 text-2xl font-bold text-slate-900">${(billingTotals.totalInvoiced / 100).toFixed(2)}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-slate-500">Licensed Seats</p>
+                        <p className="text-sm text-slate-500">{txt("Licensed Seats", "المقاعد المرخصة")}</p>
                         <Users className="h-4 w-4 text-slate-600" />
                     </div>
                     <p className="mt-2 text-2xl font-bold text-slate-900">{subscriptionSummary?.totalLicensedSeats ?? 0}</p>
-                    <p className="mt-1 text-xs text-slate-500">Active subscriptions: {subscriptionSummary?.active ?? 0}</p>
+                    <p className="mt-1 text-xs text-slate-500">{txt("Active subscriptions", "الاشتراكات النشطة")}: {subscriptionSummary?.active ?? 0}</p>
                 </div>
             </section>
 
             {(widgetErrors.setup || widgetErrors.tenants || widgetErrors.billing || widgetErrors.subscriptions) ? (
                 <section className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                    <p className="font-semibold">Some widgets could not load, but the page remains usable.</p>
-                    {widgetErrors.setup ? <p className="mt-1">Setup status: {widgetErrors.setup}</p> : null}
-                    {widgetErrors.tenants ? <p className="mt-1">Tenants: {widgetErrors.tenants}</p> : null}
-                    {widgetErrors.billing ? <p className="mt-1">Billing: {widgetErrors.billing}</p> : null}
-                    {widgetErrors.subscriptions ? <p className="mt-1">Subscriptions: {widgetErrors.subscriptions}</p> : null}
+                    <p className="font-semibold">{txt("Some widgets could not load, but the page remains usable.", "تعذر تحميل بعض العناصر، لكن الصفحة ما زالت قابلة للاستخدام.")}</p>
+                    {widgetErrors.setup ? <p className="mt-1">{txt("Setup status", "حالة الإعداد")}: {widgetErrors.setup}</p> : null}
+                    {widgetErrors.tenants ? <p className="mt-1">{txt("Tenants", "الجهات")}: {widgetErrors.tenants}</p> : null}
+                    {widgetErrors.billing ? <p className="mt-1">{txt("Billing", "الفوترة")}: {widgetErrors.billing}</p> : null}
+                    {widgetErrors.subscriptions ? <p className="mt-1">{txt("Subscriptions", "الاشتراكات")}: {widgetErrors.subscriptions}</p> : null}
                 </section>
             ) : null}
 
             <section className="mt-5 grid gap-5 lg:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <h2 className="text-base font-semibold text-slate-900">Create Tenant</h2>
-                    <p className="mt-1 text-sm text-slate-600">Create tenant, initial tenant admin, and default subscription seat license.</p>
+                    <h2 className="text-base font-semibold text-slate-900">{txt("Create Tenant", "إنشاء جهة")}</h2>
+                    <p className="mt-1 text-sm text-slate-600">{txt("Create tenant, initial tenant admin, and default subscription seat license.", "أنشئ جهة جديدة مع مسؤول الجهة الأولي وترخيص المقاعد الافتراضي للاشتراك.")}</p>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Tenant Name" value={tenantForm.name} onChange={(e) => setTenantForm((p) => ({ ...p, name: e.target.value }))} />
-                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Tenant Code (optional)" value={tenantForm.code} onChange={(e) => setTenantForm((p) => ({ ...p, code: e.target.value }))} />
-                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Billing Email" value={tenantForm.billingEmail} onChange={(e) => setTenantForm((p) => ({ ...p, billingEmail: e.target.value }))} />
-                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Tenant Admin Email" value={tenantForm.ownerEmail} onChange={(e) => setTenantForm((p) => ({ ...p, ownerEmail: e.target.value }))} />
-                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Tenant Admin Name" value={tenantForm.ownerFullName} onChange={(e) => setTenantForm((p) => ({ ...p, ownerFullName: e.target.value }))} />
+                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder={txt("Tenant Name", "اسم الجهة")} value={tenantForm.name} onChange={(e) => setTenantForm((p) => ({ ...p, name: e.target.value }))} />
+                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder={txt("Tenant Code (optional)", "رمز الجهة (اختياري)")} value={tenantForm.code} onChange={(e) => setTenantForm((p) => ({ ...p, code: e.target.value }))} />
+                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder={txt("Billing Email", "بريد الفوترة الإلكتروني")} value={tenantForm.billingEmail} onChange={(e) => setTenantForm((p) => ({ ...p, billingEmail: e.target.value }))} />
+                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder={txt("Tenant Admin Email", "بريد مسؤول الجهة الإلكتروني")} value={tenantForm.ownerEmail} onChange={(e) => setTenantForm((p) => ({ ...p, ownerEmail: e.target.value }))} />
+                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder={txt("Tenant Admin Name", "اسم مسؤول الجهة")} value={tenantForm.ownerFullName} onChange={(e) => setTenantForm((p) => ({ ...p, ownerFullName: e.target.value }))} />
                         <select
                             className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                            title="Select tenant admin role"
-                            aria-label="Tenant admin role"
+                            title={txt("Select tenant admin role", "اختر دور مسؤول الجهة")}
+                            aria-label={txt("Tenant admin role", "دور مسؤول الجهة")}
                             value={tenantForm.ownerRole}
                             onChange={(e) => setTenantForm((p) => ({ ...p, ownerRole: e.target.value }))}
                         >
@@ -331,30 +335,30 @@ export default function PlatformPage() {
                     </div>
                     <button type="button" onClick={() => void handleCreateTenant()} disabled={savingTenant} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
                         <Plus className="h-4 w-4" />
-                        {savingTenant ? "Creating..." : "Create Tenant"}
+                        {savingTenant ? txt("Creating...", "جارٍ الإنشاء...") : txt("Create Tenant", "إنشاء جهة")}
                     </button>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <h2 className="text-base font-semibold text-slate-900">Subscription and Seat Licensing</h2>
-                    <p className="mt-1 text-sm text-slate-600">Manage plan, status, and seat limits by tenant.</p>
+                    <h2 className="text-base font-semibold text-slate-900">{txt("Subscription and Seat Licensing", "إدارة الاشتراك وترخيص المقاعد")}</h2>
+                    <p className="mt-1 text-sm text-slate-600">{txt("Manage plan, status, and seat limits by tenant.", "إدارة الخطة والحالة وحدود المقاعد لكل جهة.")}</p>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         <select
                             className="rounded-lg border border-slate-300 px-3 py-2 text-sm sm:col-span-2"
-                            title="Select tenant"
-                            aria-label="Select tenant"
+                            title={txt("Select tenant", "اختر جهة")}
+                            aria-label={txt("Select tenant", "اختر جهة")}
                             value={selectedTenantId}
                             onChange={(e) => setSelectedTenantId(e.target.value)}
                         >
-                            <option value="">Select Tenant</option>
+                            <option value="">{txt("Select Tenant", "اختر جهة")}</option>
                             {tenants.map((tenant) => (
                                 <option key={tenant.id} value={tenant.id}>{tenant.name} ({tenant.code})</option>
                             ))}
                         </select>
                         <select
                             className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                            title="Select plan"
-                            aria-label="Subscription plan"
+                            title={txt("Select plan", "اختر الخطة")}
+                            aria-label={txt("Subscription plan", "خطة الاشتراك")}
                             value={subscriptionForm.planCode}
                             onChange={(e) => setSubscriptionForm((p) => ({ ...p, planCode: e.target.value }))}
                         >
@@ -362,8 +366,8 @@ export default function PlatformPage() {
                         </select>
                         <select
                             className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                            title="Select billing interval"
-                            aria-label="Billing interval"
+                            title={txt("Select billing interval", "اختر دورة الفوترة")}
+                            aria-label={txt("Billing interval", "دورة الفوترة")}
                             value={subscriptionForm.billingInterval}
                             onChange={(e) => setSubscriptionForm((p) => ({ ...p, billingInterval: e.target.value }))}
                         >
@@ -371,8 +375,8 @@ export default function PlatformPage() {
                         </select>
                         <select
                             className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                            title="Select subscription status"
-                            aria-label="Subscription status"
+                            title={txt("Select subscription status", "اختر حالة الاشتراك")}
+                            aria-label={txt("Subscription status", "حالة الاشتراك")}
                             value={subscriptionForm.status}
                             onChange={(e) => setSubscriptionForm((p) => ({ ...p, status: e.target.value }))}
                         >
@@ -381,30 +385,30 @@ export default function PlatformPage() {
                         <input
                             type="number"
                             min={1}
-                            title="Seat limit"
-                            aria-label="Seat limit"
+                            title={txt("Seat limit", "حد المقاعد")}
+                            aria-label={txt("Seat limit", "حد المقاعد")}
                             className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
                             value={subscriptionForm.seatLimit}
                             onChange={(e) => setSubscriptionForm((p) => ({ ...p, seatLimit: Number(e.target.value || 0) }))}
                         />
                     </div>
                     <button type="button" onClick={() => void handleUpdateSubscription()} disabled={savingSubscription} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
-                        {savingSubscription ? "Saving..." : "Update Subscription"}
+                        {savingSubscription ? txt("Saving...", "جارٍ الحفظ...") : txt("Update Subscription", "تحديث الاشتراك")}
                     </button>
                 </div>
             </section>
 
             <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
-                <h2 className="text-base font-semibold text-slate-900">Tenants and Billing Overview</h2>
+                <h2 className="text-base font-semibold text-slate-900">{txt("Tenants and Billing Overview", "نظرة عامة على الجهات والفوترة")}</h2>
                 <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
                     <table className="w-full text-sm">
                         <thead className="bg-slate-50">
                             <tr>
-                                <th className="px-3 py-2 text-left">Tenant</th>
-                                <th className="px-3 py-2 text-left">Plan</th>
-                                <th className="px-3 py-2 text-left">Subscription Status</th>
-                                <th className="px-3 py-2 text-left">Seat Limit</th>
-                                <th className="px-3 py-2 text-left">Users</th>
+                                <th className="px-3 py-2 text-left">{txt("Tenant", "الجهة")}</th>
+                                <th className="px-3 py-2 text-left">{txt("Plan", "الخطة")}</th>
+                                <th className="px-3 py-2 text-left">{txt("Subscription Status", "حالة الاشتراك")}</th>
+                                <th className="px-3 py-2 text-left">{txt("Seat Limit", "حد المقاعد")}</th>
+                                <th className="px-3 py-2 text-left">{txt("Users", "المستخدمون")}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -422,7 +426,7 @@ export default function PlatformPage() {
                             ))}
                             {tenants.length === 0 ? (
                                 <tr>
-                                    <td className="px-3 py-6 text-center text-slate-500" colSpan={5}>No tenants found</td>
+                                    <td className="px-3 py-6 text-center text-slate-500" colSpan={5}>{txt("No tenants found", "لا توجد جهات")}</td>
                                 </tr>
                             ) : null}
                         </tbody>
@@ -431,10 +435,10 @@ export default function PlatformPage() {
                 <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                     <div className="flex items-center gap-2 font-semibold text-slate-800">
                         <Users className="h-4 w-4" />
-                        Billing Summary
+                        {txt("Billing Summary", "ملخص الفوترة")}
                     </div>
-                    <p className="mt-1">Invoices: {billingTotals.invoiceCount} | Total invoiced: ${(billingTotals.totalInvoiced / 100).toFixed(2)} | Outstanding due: ${(billingTotals.totalDue / 100).toFixed(2)}</p>
-                    <p className="mt-1">Subscription summary: total {subscriptionSummary?.total ?? 0}, active {subscriptionSummary?.active ?? 0}, past due {subscriptionSummary?.pastDue ?? 0}</p>
+                    <p className="mt-1">{txt("Invoices", "الفواتير")}: {billingTotals.invoiceCount} | {txt("Total invoiced", "إجمالي الفواتير")}: ${(billingTotals.totalInvoiced / 100).toFixed(2)} | {txt("Outstanding due", "المستحق المتبقي")}: ${(billingTotals.totalDue / 100).toFixed(2)}</p>
+                    <p className="mt-1">{txt("Subscription summary", "ملخص الاشتراكات")}: {txt("total", "الإجمالي")} {subscriptionSummary?.total ?? 0}, {txt("active", "النشطة")} {subscriptionSummary?.active ?? 0}, {txt("past due", "المتأخرة") } {subscriptionSummary?.pastDue ?? 0}</p>
                 </div>
             </section>
         </>

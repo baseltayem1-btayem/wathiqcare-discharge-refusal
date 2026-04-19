@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bell, CheckCheck, ShieldAlert } from "lucide-react";
-import { apiFetch } from "@/utils/api";
+import { useI18n } from "@/i18n/I18nProvider";
+import { apiFetch, fetchAuthMeCached } from "@/utils/api";
 
 type NotificationItem = {
     id: string;
@@ -27,6 +28,9 @@ type LegalAlertItem = {
 };
 
 export default function NotificationBell() {
+    const { lang } = useI18n();
+    const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
+
     const [open, setOpen] = useState(false);
     const [items, setItems] = useState<NotificationItem[]>([]);
     const [unread, setUnread] = useState(0);
@@ -68,7 +72,7 @@ export default function NotificationBell() {
         // Check if user can even access tenant operations
         const checkAccess = async () => {
             try {
-                const me = await apiFetch<{ userType?: string }>("/api/auth/me", { cache: "no-store", authFailureMode: "inline" });
+                const me = await fetchAuthMeCached<{ userType?: string }>({ cache: "no-store", authFailureMode: "inline" });
                 if (me?.userType === "platform_admin") {
                     setCanLoad(false);
                     return;
@@ -110,7 +114,7 @@ export default function NotificationBell() {
                 type="button"
                 onClick={() => setOpen((value) => !value)}
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                aria-label="Open notifications"
+                aria-label={txt("Open notifications", "فتح الإشعارات")}
             >
                 <Bell className="h-4 w-4" />
                 {totalUnread > 0 ? (
@@ -124,8 +128,8 @@ export default function NotificationBell() {
                 <div className="absolute right-0 z-40 mt-2 w-[340px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
                     <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                         <div>
-                            <p className="text-sm font-semibold text-slate-900">Notification Center</p>
-                            <p className="text-xs text-slate-500">Operational updates and legal fallback alerts</p>
+                            <p className="text-sm font-semibold text-slate-900">{txt("Notification Center", "مركز الإشعارات")}</p>
+                            <p className="text-xs text-slate-500">{txt("Operational updates and legal fallback alerts", "تحديثات تشغيلية وتنبيهات قانونية احتياطية")}</p>
                         </div>
                         <button
                             type="button"
@@ -133,7 +137,7 @@ export default function NotificationBell() {
                             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
                         >
                             <CheckCheck className="h-3.5 w-3.5" />
-                            Mark all
+                            {txt("Mark all", "تحديد الكل")}
                         </button>
                     </div>
 
@@ -143,10 +147,10 @@ export default function NotificationBell() {
                                 <div className="mb-2 flex items-center justify-between gap-2">
                                     <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rose-700">
                                         <ShieldAlert className="h-3.5 w-3.5" />
-                                        Legal alerts
+                                        {txt("Legal alerts", "تنبيهات قانونية")}
                                     </div>
                                     <Link href="/legal-alerts" className="text-xs font-medium text-cyan-700 hover:text-cyan-800">
-                                        Open Alert Center
+                                        {txt("Open Alert Center", "فتح مركز التنبيهات")}
                                     </Link>
                                 </div>
                                 <div className="space-y-2">
@@ -164,7 +168,7 @@ export default function NotificationBell() {
                             </div>
                         ) : null}
                         {items.length === 0 ? (
-                            <div className="px-4 py-8 text-center text-sm text-slate-500">No notifications yet.</div>
+                            <div className="px-4 py-8 text-center text-sm text-slate-500">{txt("No notifications yet.", "لا توجد إشعارات حتى الآن.")}</div>
                         ) : (
                             items.map((item) => (
                                 <div

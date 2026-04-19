@@ -64,6 +64,50 @@ function statusTone(status: string): string {
     }
 }
 
+function translateDeliveryStatus(status: string, isArabic: boolean): string {
+    if (!status) {
+        return isArabic ? "غير متوفر" : "Unknown";
+    }
+
+    if (!isArabic) {
+        return status;
+    }
+
+    const normalized = status.trim().toLowerCase().replace(/[\s-]+/g, "_");
+    const labels: Record<string, string> = {
+        sent: "تم الإرسال",
+        pending: "قيد الانتظار",
+        not_configured: "غير مهيأ",
+        failed: "فشل الإرسال",
+        revoked: "تم الإلغاء",
+        delivered: "تم التسليم",
+        opened: "تم الفتح",
+    };
+
+    return labels[normalized] ?? status;
+}
+
+function translateChannel(value: string | null | undefined, isArabic: boolean, fallback: string): string {
+    if (!value) {
+        return fallback;
+    }
+
+    if (!isArabic) {
+        return value;
+    }
+
+    const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+    const labels: Record<string, string> = {
+        email: "البريد الإلكتروني",
+        sms: "الرسائل النصية",
+        whatsapp: "واتساب",
+        manual: "يدوي",
+        secure_link: "رابط آمن",
+    };
+
+    return labels[normalized] ?? value;
+}
+
 export default function PatientCommunicationPanel({
     caseId,
     patientName,
@@ -323,15 +367,15 @@ export default function PatientCommunicationPanel({
                             <p className="mt-1 text-xs text-cyan-800">{text.latestHelp}</p>
                         </div>
                         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(generatedLink.delivery_status)}`}>
-                            {generatedLink.delivery_status}
+                            {translateDeliveryStatus(generatedLink.delivery_status, isArabic)}
                         </span>
                     </div>
                     <input
                         readOnly
                         value={generatedLink.url}
-                        title="Generated secure link"
-                        placeholder="Generated secure link"
-                        aria-label="Generated secure link"
+                        title={isArabic ? "الرابط الآمن الذي تم إنشاؤه" : "Generated secure link"}
+                        placeholder={isArabic ? "الرابط الآمن الذي تم إنشاؤه" : "Generated secure link"}
+                        aria-label={isArabic ? "الرابط الآمن الذي تم إنشاؤه" : "Generated secure link"}
                         className="mt-3 w-full rounded-lg border border-cyan-200 bg-white px-3 py-2 text-sm text-slate-900"
                     />
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -385,11 +429,11 @@ export default function PatientCommunicationPanel({
                                                 <Link2 className="h-4 w-4 text-cyan-700" />
                                                 <span className="font-semibold">{link.recipient_email}</span>
                                                 <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusTone(link.delivery_status)}`}>
-                                                    {link.delivery_status}
+                                                    {translateDeliveryStatus(link.delivery_status, isArabic)}
                                                 </span>
                                                 {link.revoked_at ? (
                                                     <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-700">
-                                                        revoked
+                                                        {isArabic ? "تم الإلغاء" : "revoked"}
                                                     </span>
                                                 ) : null}
                                             </div>
@@ -397,7 +441,7 @@ export default function PatientCommunicationPanel({
                                             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
                                                 <div>
                                                     <p className="text-xs text-slate-500">{text.delivery}</p>
-                                                    <p>{link.sent_via || text.none}</p>
+                                                    <p>{translateChannel(link.sent_via, isArabic, text.none)}</p>
                                                 </div>
                                                 <div>
                                                     <p className="text-xs text-slate-500">{text.created}</p>

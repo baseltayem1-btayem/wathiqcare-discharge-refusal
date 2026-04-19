@@ -7,7 +7,7 @@ import { LogOut, Stethoscope } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationBell from "@/components/operations/NotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
-import { apiFetch, clearToken } from "@/utils/api";
+import { clearToken, fetchAuthMeCached } from "@/utils/api";
 import { TENANT_NAV_ITEMS, CASE_STAGE_NAV_DEF, type TenantNavItem } from "@/config/tenantSidebar";
 
 type TenantBranding = {
@@ -141,7 +141,7 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [tenantBranding, setTenantBranding] = useState<TenantBranding | null>(null);
   useEffect(() => {
-    apiFetch<{ userType?: string; tenant?: TenantBranding | null }>("/api/auth/me", { cache: "no-store" })
+    fetchAuthMeCached<{ userType?: string; tenant?: TenantBranding | null }>({ cache: "no-store" })
       .then((me) => {
         if (me?.userType === "platform_admin") {
           setIsPlatformAdmin(true);

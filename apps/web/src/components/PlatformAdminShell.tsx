@@ -17,6 +17,22 @@ type PlatformAdminShellProps = {
     children: ReactNode;
 };
 
+function platformNavLabel(label: string, isArabic: boolean): string {
+    if (!isArabic) return label;
+    const map: Record<string, string> = {
+        "Platform Overview": "نظرة عامة على المنصة",
+        "Tenant Management": "إدارة الجهات",
+        "Users": "المستخدمون",
+        "Subscription Management": "إدارة الاشتراكات",
+        "Billing Dashboard": "لوحة الفوترة",
+        "System Health": "صحة النظام",
+        "Audit Logs": "سجلات التدقيق",
+        "Support Tools": "أدوات الدعم",
+        "Platform Settings": "إعدادات المنصة",
+    };
+    return map[label] ?? label;
+}
+
 function isActive(pathname: string, href: string): boolean {
     if (href === "/") {
         return pathname === href;
@@ -53,7 +69,8 @@ function NavLink({ href, label, icon, active }: NavLinkProps) {
 export default function PlatformAdminShell({ title, subtitle, actions, children }: PlatformAdminShellProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const { t } = useI18n();
+    const { t, lang } = useI18n();
+    const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
 
     async function handleLogout() {
         try {
@@ -95,9 +112,9 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                             />
                         </div>
                         <p className="mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: "#1f5fa7" }}>
-                            Platform Admin
+                            {txt("Platform Admin", "إدارة المنصة")}
                         </p>
-                        <p className="mt-1 text-center text-[11px] text-slate-500">System Operations</p>
+                        <p className="mt-1 text-center text-[11px] text-slate-500">{txt("System Operations", "عمليات النظام")}</p>
                     </div>
 
                     <nav className="mt-5 flex-1 space-y-1">
@@ -105,7 +122,7 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                             <NavLink
                                 key={item.href}
                                 href={item.href}
-                                label={item.label}
+                                label={platformNavLabel(item.label, lang === "ar")}
                                 icon={item.icon}
                                 active={isActive(pathname, item.href)}
                             />
@@ -118,9 +135,9 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                     >
                         <div className="inline-flex items-center gap-1.5 font-semibold">
                             <Settings className="h-3.5 w-3.5" />
-                            System Mode
+                            {txt("System Mode", "وضع النظام")}
                         </div>
-                        <p className="mt-1 text-slate-600">SaaS management only</p>
+                        <p className="mt-1 text-slate-600">{txt("SaaS management only", "إدارة المنصة فقط")}</p>
                     </div>
 
                     <LanguageSwitcher className="mt-3" />
@@ -187,7 +204,7 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                                     <NavLink
                                         key={`mobile-${item.href}`}
                                         href={item.href}
-                                        label={item.label}
+                                        label={platformNavLabel(item.label, lang === "ar")}
                                         icon={item.icon}
                                         active={isActive(pathname, item.href)}
                                     />

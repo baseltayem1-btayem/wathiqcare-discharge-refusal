@@ -35,6 +35,10 @@ export type WorkspaceGuidanceInput = {
   legalPackageGenerated: boolean;
 };
 
+function tr(locale: "en" | "ar", en: string, ar: string): string {
+  return locale === "ar" ? ar : en;
+}
+
 export function normalizeWorkspaceRole(role: string | null): WorkspaceRole {
   const normalized = (role || "").trim().toLowerCase();
 
@@ -61,151 +65,154 @@ export function normalizeWorkspaceRole(role: string | null): WorkspaceRole {
   return "other";
 }
 
-export function buildWorkspaceGuidance(input: WorkspaceGuidanceInput): WorkspaceSectionGuidance[] {
+export function buildWorkspaceGuidance(
+  input: WorkspaceGuidanceInput,
+  locale: "en" | "ar" = "en",
+): WorkspaceSectionGuidance[] {
   const actorRole = normalizeWorkspaceRole(input.role);
   const decisionIsAccepted = input.patientDecision === "accepted";
   const decisionIsRefused = input.patientDecision === "refused";
 
   const overviewMissing = [] as string[];
   if (!input.presentationRecorded) {
-    overviewMissing.push("Medical explanation is not recorded yet.");
+    overviewMissing.push(tr(locale, "Medical explanation is not recorded yet.", "لم يتم تسجيل الشرح الطبي بعد."));
   }
   if (!input.patientDecision) {
-    overviewMissing.push("Patient decision (accepted/refused) is not recorded yet.");
+    overviewMissing.push(tr(locale, "Patient decision (accepted/refused) is not recorded yet.", "لم يتم تسجيل قرار المريض (قبول/رفض) بعد."));
   }
   if (!input.patientAcknowledged) {
-    overviewMissing.push("Patient acknowledgment (accept/refuse) is not captured.");
+    overviewMissing.push(tr(locale, "Patient acknowledgment (accept/refuse) is not captured.", "لم يتم توثيق إقرار المريض (قبول/رفض)."));
   }
 
   const medicalMissing = [] as string[];
   if (!input.presentationRecorded) {
-    medicalMissing.push("Doctor has not recorded the discharge explanation.");
+    medicalMissing.push(tr(locale, "Doctor has not recorded the discharge explanation.", "لم يقم الطبيب بتسجيل شرح الخروج."));
   }
   if (!input.patientDecision) {
-    medicalMissing.push("Doctor must record patient decision (accepted/refused).");
+    medicalMissing.push(tr(locale, "Doctor must record patient decision (accepted/refused).", "يجب على الطبيب تسجيل قرار المريض (قبول/رفض)."));
   }
   if (!input.patientAcknowledged) {
-    medicalMissing.push("Patient acknowledgment is required after medical decision.");
+    medicalMissing.push(tr(locale, "Patient acknowledgment is required after medical decision.", "إقرار المريض مطلوب بعد القرار الطبي."));
   }
 
   const legalMissing = [] as string[];
   if (!input.patientDecision) {
-    legalMissing.push("Patient decision is not recorded yet.");
+    legalMissing.push(tr(locale, "Patient decision is not recorded yet.", "قرار المريض غير مسجل بعد."));
   }
   if (!input.readinessReadyForLegal) {
-    legalMissing.push(input.readinessReason || "Case is not legally ready yet.");
+    legalMissing.push(input.readinessReason || tr(locale, "Case is not legally ready yet.", "الحالة غير جاهزة قانونيًا بعد."));
   }
   if ((decisionIsRefused || input.refusalScenario) && !input.financialNoticeAvailable) {
-    legalMissing.push("Finance notification is required for refusal scenarios.");
+    legalMissing.push(tr(locale, "Finance notification is required for refusal scenarios.", "الإشعار المالي مطلوب في حالات الرفض."));
   }
 
   const docsMissing = [] as string[];
   if (!input.canGeneratePdf) {
-    docsMissing.push("Your role cannot generate legal PDF documents.");
+    docsMissing.push(tr(locale, "Your role cannot generate legal PDF documents.", "دورك لا يتيح إنشاء مستندات PDF قانونية."));
   }
   if (!input.latestPdfStatus || input.latestPdfStatus === "failed") {
-    docsMissing.push("A valid discharge PDF is not available.");
+    docsMissing.push(tr(locale, "A valid discharge PDF is not available.", "ملف PDF صالح للخروج غير متوفر."));
   }
 
   const bundleMissing = [] as string[];
   if (!input.legalPackageGenerated) {
-    bundleMissing.push("Legal documentation package is not generated.");
+    bundleMissing.push(tr(locale, "Legal documentation package is not generated.", "لم يتم إنشاء حزمة المستندات القانونية."));
   }
   if (!input.canGenerateBundle) {
-    bundleMissing.push("Evidence bundle generation is available to Legal only.");
+    bundleMissing.push(tr(locale, "Evidence bundle generation is available to Legal only.", "إنشاء حزمة الأدلة متاح للقانوني فقط."));
   }
 
   const closureMissing = [] as string[];
   if (!input.patientAcknowledged) {
-    closureMissing.push("Patient acknowledgment is pending.");
+    closureMissing.push(tr(locale, "Patient acknowledgment is pending.", "إقرار المريض قيد الانتظار."));
   }
   if (input.latestPdfStatus !== "final") {
-    closureMissing.push("Final signed PDF must be available before closure.");
+    closureMissing.push(tr(locale, "Final signed PDF must be available before closure.", "يجب توفر PDF نهائي موقّع قبل الإغلاق."));
   }
   if (!input.canLegalApprove) {
-    closureMissing.push("Case closure is restricted to authorized signatory.");
+    closureMissing.push(tr(locale, "Case closure is restricted to authorized signatory.", "إغلاق الحالة محصور بالمفوّض المعتمد."));
   }
 
   return [
     {
       id: "overview",
-      title: "Case Overview",
-      ownerRole: "Care Team",
+      title: tr(locale, "Case Overview", "نظرة عامة على الحالة"),
+      ownerRole: tr(locale, "Care Team", "فريق الرعاية"),
       status: overviewMissing.length === 0 ? "completed" : "in_progress",
       missingItems: overviewMissing,
-      nextAction: overviewMissing.length === 0 ? "Proceed to Medical Decision." : "Complete missing overview checkpoints.",
+      nextAction: overviewMissing.length === 0 ? tr(locale, "Proceed to Medical Decision.", "انتقل إلى القرار الطبي.") : tr(locale, "Complete missing overview checkpoints.", "أكمل نقاط النظرة العامة الناقصة."),
       blockedReason: null,
     },
     {
       id: "medical_decision",
-      title: "Medical Decision",
-      ownerRole: "Doctor",
+      title: tr(locale, "Medical Decision", "القرار الطبي"),
+      ownerRole: tr(locale, "Doctor", "الطبيب"),
       status: medicalMissing.length === 0 ? "completed" : input.canMedicalActions ? "in_progress" : "blocked",
       missingItems: medicalMissing,
       nextAction:
         medicalMissing.length === 0
           ? decisionIsAccepted
-            ? "Proceed to legal documentation and closure readiness checks."
-            : "Escalate refusal path to Legal workflow."
-          : "Doctor must complete decision and acknowledgment evidence.",
-      blockedReason: input.canMedicalActions ? null : "Awaiting Doctor action.",
+            ? tr(locale, "Proceed to legal documentation and closure readiness checks.", "انتقل إلى التوثيق القانوني وفحوصات جاهزية الإغلاق.")
+            : tr(locale, "Escalate refusal path to Legal workflow.", "صعّد مسار الرفض إلى سير العمل القانوني.")
+          : tr(locale, "Doctor must complete decision and acknowledgment evidence.", "يجب على الطبيب استكمال القرار وأدلة الإقرار."),
+      blockedReason: input.canMedicalActions ? null : tr(locale, "Awaiting Doctor action.", "بانتظار إجراء الطبيب."),
     },
     {
       id: "legal_escalation",
-      title: "Legal Escalation",
-      ownerRole: "Legal Admin / Legal Officer",
+      title: tr(locale, "Legal Escalation", "التصعيد القانوني"),
+      ownerRole: tr(locale, "Legal Admin / Legal Officer", "المشرف القانوني / الموظف القانوني"),
       status: legalMissing.length === 0 ? "completed" : input.canLegalApprove ? "in_progress" : "blocked",
       missingItems: legalMissing,
       nextAction:
         legalMissing.length === 0
           ? decisionIsAccepted
-            ? "Proceed with final legal documentation and authorized closure preparation."
-            : "Proceed with refusal risk handling, legal documentation, and PDF issuance."
+            ? tr(locale, "Proceed with final legal documentation and authorized closure preparation.", "تابع التوثيق القانوني النهائي والتحضير للإغلاق المعتمد.")
+            : tr(locale, "Proceed with refusal risk handling, legal documentation, and PDF issuance.", "تابع معالجة مخاطر الرفض والتوثيق القانوني وإصدار PDF.")
           : decisionIsRefused
-            ? "Legal team should review refusal blockers and coordinate with medical and finance teams."
-            : "Legal team should review blockers and coordinate with medical team.",
-      blockedReason: input.canLegalApprove ? null : "Legal owns escalation and documentation.",
+            ? tr(locale, "Legal team should review refusal blockers and coordinate with medical and finance teams.", "يجب على الفريق القانوني مراجعة عوائق الرفض والتنسيق مع الفريق الطبي والمالي.")
+            : tr(locale, "Legal team should review blockers and coordinate with medical team.", "يجب على الفريق القانوني مراجعة العوائق والتنسيق مع الفريق الطبي."),
+      blockedReason: input.canLegalApprove ? null : tr(locale, "Legal owns escalation and documentation.", "التصعيد والتوثيق من اختصاص الفريق القانوني."),
     },
     {
       id: "documents_pdf",
-      title: "Documents / PDF",
-      ownerRole: "Legal",
+      title: tr(locale, "Documents / PDF", "المستندات / PDF"),
+      ownerRole: tr(locale, "Legal", "القانوني"),
       status: docsMissing.length === 0 ? "completed" : input.canGeneratePdf ? "in_progress" : "blocked",
       missingItems: docsMissing,
       nextAction:
         docsMissing.length === 0
-          ? "Validate final PDF for closure eligibility."
-          : "Generate or recover legal PDF artifacts.",
-      blockedReason: input.canGeneratePdf ? null : "Legal documentation is available to Legal roles.",
+          ? tr(locale, "Validate final PDF for closure eligibility.", "تحقق من أهلية PDF النهائي للإغلاق.")
+          : tr(locale, "Generate or recover legal PDF artifacts.", "أنشئ أو استرجع ملفات PDF القانونية."),
+      blockedReason: input.canGeneratePdf ? null : tr(locale, "Legal documentation is available to Legal roles.", "التوثيق القانوني متاح للأدوار القانونية فقط."),
     },
     {
       id: "evidence_bundle",
-      title: "Evidence Bundle",
-      ownerRole: "Legal",
+      title: tr(locale, "Evidence Bundle", "حزمة الأدلة"),
+      ownerRole: tr(locale, "Legal", "القانوني"),
       status: bundleMissing.length === 0 ? "completed" : input.canGenerateBundle ? "in_progress" : "blocked",
       missingItems: bundleMissing,
       nextAction:
         bundleMissing.length === 0
-          ? "Bundle is ready for compliance and legal handoff."
-          : "Generate evidence bundle from legal documents.",
-      blockedReason: input.canGenerateBundle ? null : "Bundle generation is available to Legal only.",
+          ? tr(locale, "Bundle is ready for compliance and legal handoff.", "الحزمة جاهزة للامتثال والتسليم القانوني.")
+          : tr(locale, "Generate evidence bundle from legal documents.", "أنشئ حزمة الأدلة من المستندات القانونية."),
+      blockedReason: input.canGenerateBundle ? null : tr(locale, "Bundle generation is available to Legal only.", "إنشاء الحزمة متاح للقانوني فقط."),
     },
     {
       id: "final_closure",
-      title: "Final Closure",
-      ownerRole: "Authorized Signatory",
+      title: tr(locale, "Final Closure", "الإغلاق النهائي"),
+      ownerRole: tr(locale, "Authorized Signatory", "المفوّض المعتمد"),
       status: closureMissing.length === 0 ? "completed" : input.canLegalApprove ? "in_progress" : "blocked",
       missingItems: closureMissing,
       nextAction:
         closureMissing.length === 0
-          ? "Authorized signatory may close the case."
-          : "Resolve closure blockers in sequence.",
+          ? tr(locale, "Authorized signatory may close the case.", "يمكن للمفوّض المعتمد إغلاق الحالة.")
+          : tr(locale, "Resolve closure blockers in sequence.", "عالج عوائق الإغلاق بالتسلسل."),
       blockedReason:
         closureMissing.length === 0
           ? null
           : actorRole === "signatory" || actorRole === "tenant_admin" || input.canLegalApprove
             ? null
-            : "Case closure is restricted to authorized signatory.",
+            : tr(locale, "Case closure is restricted to authorized signatory.", "إغلاق الحالة محصور بالمفوّض المعتمد."),
     },
   ];
 }

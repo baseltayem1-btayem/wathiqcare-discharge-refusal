@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { apiFetch } from "@/utils/api";
+import { fetchAuthMeCached } from "@/utils/api";
 import {
   can,
   canAccessCase,
@@ -49,7 +49,7 @@ async function fetchAuthContext(): Promise<UiAuthContext> {
   }
 
   if (!authPromise) {
-    authPromise = apiFetch<AuthMeResponse>("/api/auth/me", {
+    authPromise = fetchAuthMeCached<AuthMeResponse>({
       cache: "no-store",
       authFailureMode: "inline",
     })

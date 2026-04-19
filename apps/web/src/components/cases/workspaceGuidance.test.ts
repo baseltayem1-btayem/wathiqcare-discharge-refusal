@@ -85,3 +85,29 @@ test("IMC guidance follows accepted decision path without refusal blockers", () 
   assert.equal(legal?.status, "completed");
   assert.ok(legal?.nextAction.includes("final legal documentation"));
 });
+
+test("IMC guidance supports Arabic text output", () => {
+  const sections = buildWorkspaceGuidance({
+    role: "legal_admin",
+    canMedicalActions: false,
+    canLegalApprove: true,
+    canGeneratePdf: true,
+    canGenerateBundle: true,
+    readinessReadyForLegal: false,
+    readinessReason: undefined,
+    presentationRecorded: false,
+    patientDecision: null,
+    patientAcknowledged: false,
+    refusalScenario: true,
+    financialNoticeAvailable: false,
+    latestPdfStatus: null,
+    legalPackageGenerated: false,
+  }, "ar");
+
+  const overview = sections.find((section) => section.id === "overview");
+  const legal = sections.find((section) => section.id === "legal_escalation");
+
+  assert.equal(overview?.title, "نظرة عامة على الحالة");
+  assert.ok(overview?.missingItems.some((item) => item.includes("قرار المريض")));
+  assert.equal(legal?.ownerRole, "المشرف القانوني / الموظف القانوني");
+});

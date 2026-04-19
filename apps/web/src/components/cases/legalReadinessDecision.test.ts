@@ -18,3 +18,12 @@ test("legal readiness patient decision indicator maps accepted, refused, and mis
   assert.equal(missing.label, "Not Recorded");
   assert.equal(missing.badgeVariant, "warning");
 });
+
+test("legal readiness patient decision indicator supports Arabic labels", () => {
+  const refused = getLegalReadinessDecisionIndicator("refused", "ar");
+  const missing = getLegalReadinessDecisionIndicator(null, "ar");
+
+  assert.equal(refused.label, "رفض");
+  assert.equal(refused.followUpText, "يلزم متابعة قانونية.");
+  assert.equal(missing.label, "غير مسجل");
+});

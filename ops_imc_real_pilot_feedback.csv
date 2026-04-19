@@ -1,0 +1,1 @@
+timestamp_utc,case_id,department,role,user_id,task_completed,verify_result,time_spent_minutes,friction_score_1_to_5,confidence_score_1_to_5,feedback_text,needs_followup,followup_owner\n

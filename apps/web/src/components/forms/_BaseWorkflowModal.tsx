@@ -19,12 +19,13 @@ export default function BaseWorkflowModal({
   title,
   description,
   children,
-  submitLabel = "Submit",
+  submitLabel,
   submitting,
   onClose,
   onSubmit,
 }: BaseWorkflowModalProps) {
   const { t } = useI18n();
+  const effectiveSubmitLabel = submitLabel ?? t("common.submit");
 
   if (!open) {
     return null;
@@ -53,7 +54,7 @@ export default function BaseWorkflowModal({
               disabled={submitting}
               className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
             >
-              {submitting ? t("common.submitting") : submitLabel}
+              {submitting ? t("common.submitting") : effectiveSubmitLabel}
             </button>
           ) : null}
         </div>

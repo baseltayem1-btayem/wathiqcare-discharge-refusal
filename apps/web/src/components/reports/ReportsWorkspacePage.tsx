@@ -8,6 +8,7 @@ import { Badge } from "@/components/design-system/badge";
 import { Button } from "@/components/design-system/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/design-system/card";
 import StepUpVerificationPanel from "@/components/security/StepUpVerificationPanel";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
 type RefusalQualityMetrics = {
@@ -70,18 +71,21 @@ function downloadJson(filename: string, data: unknown) {
   URL.revokeObjectURL(url);
 }
 
-function labelForTarget(targetKey: string) {
+function labelForTarget(targetKey: string, isArabic: boolean) {
   switch (targetKey) {
     case "refusal_quality_report":
-      return "Refusal Quality Report";
+      return isArabic ? "تقرير جودة الرفض" : "Refusal Quality Report";
     case "compliance_dashboard":
-      return "Compliance Dashboard";
+      return isArabic ? "لوحة الامتثال" : "Compliance Dashboard";
     default:
       return targetKey;
   }
 }
 
 export default function ReportsWorkspacePage() {
+  const { lang } = useI18n();
+  const txt = useCallback((en: string, ar: string) => (lang === "ar" ? ar : en), [lang]);
+
   const [metrics, setMetrics] = useState<RefusalQualityMetrics | null>(null);
   const [accessData, setAccessData] = useState<ReportsAccessDashboard | null>(null);
   const [approvals, setApprovals] = useState<ExportApprovalDashboard | null>(null);
@@ -107,11 +111,11 @@ export default function ReportsWorkspacePage() {
       setMetrics(null);
       setAccessData(null);
       setApprovals(null);
-      setError(err instanceof Error ? err.message : "Failed to load reports workspace.");
+      setError(err instanceof Error ? err.message : txt("Failed to load reports workspace.", "تعذر تحميل مساحة عمل التقارير."));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [txt]);
 
   useEffect(() => {
     void load();
@@ -132,10 +136,10 @@ export default function ReportsWorkspacePage() {
         method: "POST",
         body: JSON.stringify({ targetKey, exportFormat: "CSV", reason }),
       });
-      setSuccess(`Export approval requested for ${labelForTarget(targetKey)}.`);
+      setSuccess(`${txt("Export approval requested for", "تم طلب موافقة التصدير لـ")} ${labelForTarget(targetKey, lang === "ar")}.`);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to request export approval.");
+      setError(err instanceof Error ? err.message : txt("Failed to request export approval.", "تعذر طلب موافقة التصدير."));
     } finally {
       setBusyAction("");
     }
@@ -151,13 +155,13 @@ export default function ReportsWorkspacePage() {
         body: JSON.stringify({
           approvalRequestId,
           decision,
-          note: decision === "APPROVED" ? "Approved from reports workspace" : "Rejected from reports workspace",
+          note: decision === "APPROVED" ? txt("Approved from reports workspace", "تمت الموافقة من مساحة عمل التقارير") : txt("Rejected from reports workspace", "تم الرفض من مساحة عمل التقارير"),
         }),
       });
-      setSuccess(`Export request ${decision.toLowerCase()} successfully.`);
+      setSuccess(`${txt("Export request", "طلب التصدير")} ${decision.toLowerCase()} ${txt("successfully.", "بنجاح.")}`);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update export approval request.");
+      setError(err instanceof Error ? err.message : txt("Failed to update export approval request.", "تعذر تحديث طلب موافقة التصدير."));
     } finally {
       setBusyAction("");
     }
@@ -170,7 +174,7 @@ export default function ReportsWorkspacePage() {
         : approvedComplianceExport?.approvalRequestId;
 
     if (!approvalId) {
-      setError(`Request and approve ${labelForTarget(targetKey)} export before downloading.`);
+      setError(`${txt("Request and approve", "اطلب ووافق على")} ${labelForTarget(targetKey, lang === "ar")} ${txt("export before downloading.", "قبل التنزيل.")}`);
       return;
     }
 
@@ -185,19 +189,19 @@ export default function ReportsWorkspacePage() {
   return (
     <AuthGuard>
       <AppShell
-        title="Compliance Reports"
-        subtitle="Phase 6 reporting workspace for controlled exports, approval release, and auditable evidence usage."
+        title={txt("Compliance Reports", "تقارير الامتثال")}
+        subtitle={txt("Phase 6 reporting workspace for controlled exports, approval release, and auditable evidence usage.", "مساحة عمل تقارير المرحلة السادسة للتصدير المنضبط واعتماد الطلبات واستخدام أدلة قابلة للتدقيق.")}
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => void load()} disabled={loading}>
-              <RefreshCw className="h-4 w-4" /> Refresh
+              <RefreshCw className="h-4 w-4" /> {txt("Refresh", "تحديث")}
             </Button>
-            {metrics ? <Button variant="outline" onClick={() => downloadJson("refusal-quality-report.json", metrics)}><Download className="h-4 w-4" /> Export JSON</Button> : null}
+            {metrics ? <Button variant="outline" onClick={() => downloadJson("refusal-quality-report.json", metrics)}><Download className="h-4 w-4" /> {txt("Export JSON", "تصدير JSON")}</Button> : null}
             <Button variant="outline" onClick={() => openApprovedExport("refusal_quality_report")}>
-              <Download className="h-4 w-4" /> Export Refusal CSV
+              <Download className="h-4 w-4" /> {txt("Export Refusal CSV", "تصدير CSV للرفض")}
             </Button>
             <Button variant="outline" onClick={() => openApprovedExport("compliance_dashboard")}>
-              <Download className="h-4 w-4" /> Export Compliance CSV
+              <Download className="h-4 w-4" /> {txt("Export Compliance CSV", "تصدير CSV للامتثال")}
             </Button>
           </div>
         }
@@ -208,100 +212,100 @@ export default function ReportsWorkspacePage() {
         <div className="mb-6">
           <StepUpVerificationPanel
             actionKey="export_approval_decision"
-            description="Approval or rejection of evidence exports requires a verified step-up session."
+            description={txt("Approval or rejection of evidence exports requires a verified step-up session.", "الموافقة أو الرفض على تصدير الأدلة يتطلب جلسة تحقق متقدم مؤكدة.")}
             onVerifiedChange={setStepUpVerified}
           />
         </div>
 
         <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Card><CardHeader><CardTitle className="text-sm text-slate-600">Total refusal cases</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-slate-900">{metrics?.total_refusal_cases ?? 0}</div></CardContent></Card>
-          <Card><CardHeader><CardTitle className="text-sm text-slate-600">Active cases</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-slate-900">{metrics?.active_refusal_cases ?? 0}</div></CardContent></Card>
-          <Card><CardHeader><CardTitle className="text-sm text-slate-600">Escalated after 24h</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-slate-900">{metrics?.cases_escalated_after_24_hours ?? 0}</div></CardContent></Card>
-          <Card><CardHeader><CardTitle className="text-sm text-slate-600">Avg. resolution hours</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-slate-900">{metrics?.average_resolution_time_hours ?? 0}</div></CardContent></Card>
+          <Card><CardHeader><CardTitle className="text-sm text-slate-600">{txt("Total refusal cases", "إجمالي حالات الرفض")}</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-slate-900">{metrics?.total_refusal_cases ?? 0}</div></CardContent></Card>
+          <Card><CardHeader><CardTitle className="text-sm text-slate-600">{txt("Active cases", "الحالات النشطة")}</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-slate-900">{metrics?.active_refusal_cases ?? 0}</div></CardContent></Card>
+          <Card><CardHeader><CardTitle className="text-sm text-slate-600">{txt("Escalated after 24h", "حالات مصعدة بعد 24 ساعة")}</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-slate-900">{metrics?.cases_escalated_after_24_hours ?? 0}</div></CardContent></Card>
+          <Card><CardHeader><CardTitle className="text-sm text-slate-600">{txt("Avg. resolution hours", "متوسط ساعات الحل")}</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-slate-900">{metrics?.average_resolution_time_hours ?? 0}</div></CardContent></Card>
         </div>
 
         <div className="mb-6 grid gap-4 xl:grid-cols-2">
           <Card>
-            <CardHeader><CardTitle>Controlled export approvals</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{txt("Controlled export approvals", "موافقات التصدير المنضبط")}</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">Pending: {approvals?.metrics?.pending ?? 0}</Badge>
-                <Badge variant="outline">Approved: {approvals?.metrics?.approved ?? 0}</Badge>
-                <Badge variant="outline">Rejected: {approvals?.metrics?.rejected ?? 0}</Badge>
+                <Badge variant="outline">{txt("Pending", "قيد الانتظار")}: {approvals?.metrics?.pending ?? 0}</Badge>
+                <Badge variant="outline">{txt("Approved", "تمت الموافقة")}: {approvals?.metrics?.approved ?? 0}</Badge>
+                <Badge variant="outline">{txt("Rejected", "مرفوض")}: {approvals?.metrics?.rejected ?? 0}</Badge>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={() => void requestApproval("refusal_quality_report", "Quarterly refusal quality export")} disabled={busyAction === "request-refusal_quality_report"}>
-                  Request refusal CSV approval
+                  {txt("Request refusal CSV approval", "طلب موافقة تصدير CSV للرفض")}
                 </Button>
                 <Button variant="outline" onClick={() => void requestApproval("compliance_dashboard", "Executive compliance dashboard export")} disabled={busyAction === "request-compliance_dashboard"}>
-                  Request compliance CSV approval
+                  {txt("Request compliance CSV approval", "طلب موافقة تصدير CSV للامتثال")}
                 </Button>
               </div>
               <div className="space-y-2">
                 {approvalItems.slice(0, 6).map((item) => (
                   <div key={item.approvalRequestId} className="rounded-xl border border-slate-200 px-3 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="font-medium text-slate-800">{labelForTarget(item.targetKey)}</div>
+                      <div className="font-medium text-slate-800">{labelForTarget(item.targetKey, lang === "ar")}</div>
                       <Badge variant={item.status === "APPROVED" ? "success" : item.status === "REJECTED" ? "warning" : "outline"}>{item.status}</Badge>
                     </div>
-                    <div className="mt-1 text-slate-500">Requested by {item.requestedByRole || "unknown"} · {new Date(item.requestedAt).toLocaleString()}</div>
-                    <div className="text-slate-500">Reason: {item.reason || "No reason provided."}</div>
+                    <div className="mt-1 text-slate-500">{txt("Requested by", "طُلِب بواسطة")} {item.requestedByRole || txt("unknown", "غير معروف")} · {new Date(item.requestedAt).toLocaleString()}</div>
+                    <div className="text-slate-500">{txt("Reason", "السبب")}: {item.reason || txt("No reason provided.", "لم يتم تقديم سبب.")}</div>
                     {item.status === "PENDING" ? (
                       <div className="mt-2 flex flex-wrap gap-2">
                         <Button variant="outline" onClick={() => void decideApproval(item.approvalRequestId, "APPROVED")} disabled={!stepUpVerified || busyAction === `APPROVED-${item.approvalRequestId}`}>
-                          Approve
+                          {txt("Approve", "موافقة")}
                         </Button>
                         <Button variant="outline" onClick={() => void decideApproval(item.approvalRequestId, "REJECTED")} disabled={!stepUpVerified || busyAction === `REJECTED-${item.approvalRequestId}`}>
-                          Reject
+                          {txt("Reject", "رفض")}
                         </Button>
                       </div>
                     ) : item.decidedAt ? (
-                      <div className="mt-2 text-slate-500">Decision by {item.approverRole || "unknown"} · {new Date(item.decidedAt).toLocaleString()}</div>
+                      <div className="mt-2 text-slate-500">{txt("Decision by", "القرار بواسطة")} {item.approverRole || txt("unknown", "غير معروف")} · {new Date(item.decidedAt).toLocaleString()}</div>
                     ) : null}
                   </div>
                 ))}
-                {approvalItems.length === 0 ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">No export approval requests have been recorded yet.</div> : null}
+                {approvalItems.length === 0 ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">{txt("No export approval requests have been recorded yet.", "لم يتم تسجيل أي طلبات موافقة تصدير حتى الآن.")}</div> : null}
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Top refusal reasons</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{txt("Top refusal reasons", "أبرز أسباب الرفض")}</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
               {topReasons.map(([key, value]) => <div key={key} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2"><span>{key}</span><Badge variant="outline">{value}</Badge></div>)}
-              {topReasons.length === 0 ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">No refusal trends available yet.</div> : null}
+              {topReasons.length === 0 ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">{txt("No refusal trends available yet.", "لا توجد اتجاهات رفض متاحة حتى الآن.")}</div> : null}
             </CardContent>
           </Card>
         </div>
 
         <div className="mb-6 grid gap-4 xl:grid-cols-2">
           <Card>
-            <CardHeader><CardTitle>Cases by department</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{txt("Cases by department", "الحالات حسب القسم")}</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
               {topDepartments.map(([key, value]) => <div key={key} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2"><span>{key}</span><Badge variant="outline">{value}</Badge></div>)}
-              {topDepartments.length === 0 ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">No department metrics available yet.</div> : null}
+              {topDepartments.length === 0 ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">{txt("No department metrics available yet.", "لا توجد مؤشرات أقسام متاحة حتى الآن.")}</div> : null}
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Report access activity</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{txt("Report access activity", "نشاط الوصول للتقارير")}</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">Total events: {accessData?.summary?.totalEvents ?? 0}</Badge>
-                <Badge variant="outline">Exports: {accessData?.summary?.exportEvents ?? 0}</Badge>
-                <Badge variant="outline">Unique viewers: {accessData?.summary?.uniqueUsers ?? 0}</Badge>
-                <Badge variant="outline">Case-linked: {accessData?.summary?.caseLinkedEvents ?? 0}</Badge>
+                <Badge variant="outline">{txt("Total events", "إجمالي الأحداث")}: {accessData?.summary?.totalEvents ?? 0}</Badge>
+                <Badge variant="outline">{txt("Exports", "عمليات التصدير")}: {accessData?.summary?.exportEvents ?? 0}</Badge>
+                <Badge variant="outline">{txt("Unique viewers", "مشاهدون فريدون")}: {accessData?.summary?.uniqueUsers ?? 0}</Badge>
+                <Badge variant="outline">{txt("Case-linked", "مرتبطة بالحالات")}: {accessData?.summary?.caseLinkedEvents ?? 0}</Badge>
               </div>
               {(accessData?.recentLogs ?? []).slice(0, 8).map((item) => (
                 <div key={item.id} className="rounded-xl border border-slate-200 px-3 py-2">
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-medium text-slate-800">{item.reportKey}</span>
-                    <Badge variant="outline">{item.exportFormat || "view"}</Badge>
+                    <Badge variant="outline">{item.exportFormat || txt("view", "عرض")}</Badge>
                   </div>
-                  <div className="text-slate-500">Role: {item.accessedByRole || "unknown"} · {item.accessedAt ? new Date(item.accessedAt).toLocaleString() : "No timestamp"}</div>
+                  <div className="text-slate-500">{txt("Role", "الدور")}: {item.accessedByRole || txt("unknown", "غير معروف")} · {item.accessedAt ? new Date(item.accessedAt).toLocaleString() : txt("No timestamp", "بدون طابع زمني")}</div>
                 </div>
               ))}
-              {(accessData?.recentLogs ?? []).length === 0 ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">No report access activity has been logged yet.</div> : null}
+              {(accessData?.recentLogs ?? []).length === 0 ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">{txt("No report access activity has been logged yet.", "لم يتم تسجيل أي نشاط وصول للتقارير حتى الآن.")}</div> : null}
             </CardContent>
           </Card>
         </div>

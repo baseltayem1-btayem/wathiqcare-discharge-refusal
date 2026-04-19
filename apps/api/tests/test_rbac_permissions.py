@@ -11,6 +11,7 @@ from backend.core.roles import canonicalize_role
 
 
 def test_role_alias_defaults_are_supported():
+    assert canonicalize_role("er_doctor") == "doctor"
     assert canonicalize_role("treating_physician") == "doctor"
     assert canonicalize_role("legal_affairs") == "legal_admin"
     assert canonicalize_role("quality_compliance") == "quality"
@@ -20,6 +21,7 @@ def test_role_alias_defaults_are_supported():
 def test_permission_mapping_for_required_roles():
     platform_admin = {"role": "platform_admin"}
     tenant_admin = {"role": "tenant_admin"}
+    er_doctor = {"role": "er_doctor"}
     physician = {"role": "treating_physician"}
     legal = {"role": "legal_affairs"}
     quality = {"role": "quality_compliance"}
@@ -30,11 +32,13 @@ def test_permission_mapping_for_required_roles():
     assert has_permission(tenant_admin, "cases.read.tenant") is True
     assert has_permission(tenant_admin, "users.manage") is True
 
+    assert has_permission(er_doctor, "cases.create") is True
     assert has_permission(physician, "cases.create") is True
     assert has_permission(physician, "cases.read.assigned") is True
     assert has_permission(physician, "audit.read") is False
 
     assert has_permission(legal, "legal.review") is True
+    assert has_permission(legal, "evidence.generate") is True
     assert has_permission(legal, "documents.generate_pdf") is True
 
     assert has_permission(quality, "compliance.review") is True

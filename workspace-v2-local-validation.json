@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-04-18T13:10:30.465Z",
+  "seededCaseId": "32c13b1d-d79d-4559-b8f2-7ca768efc168",
+  "phase1Runtime": {},
+  "phase2Roles": [
+    {
+      "logicalRole": "doctor",
+      "email": "local.doctor.1776517835287@wathiqcare.online",
+      "created": true,
+      "loginPossible": true,
+      "password": "Admin@Wathiqcare2026!",
+      "roleValue": "doctor"
+    },
+    {
+      "logicalRole": "legal_admin",
+      "email": "local.legal_admin.1776517836464@wathiqcare.online",
+      "created": true,
+      "loginPossible": true,
+      "password": "Admin@Wathiqcare2026!",
+      "roleValue": "legal_admin"
+    },
+    {
+      "logicalRole": "signatory",
+      "email": "local.signatory.1776517837036@wathiqcare.online",
+      "created": true,
+      "loginPossible": true,
+      "password": "Admin@Wathiqcare2026!",
+      "roleValue": "signatory"
+    }
+  ],
+  "phase3Actions": {},
+  "phase4WorkflowReadiness": {},
+  "phase5BuildTest": {},
+  "blockers": [
+    "fatal: spawn EINVAL"
+  ],
+  "overallLocalPass": false
+}

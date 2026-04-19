@@ -1,0 +1,96 @@
+{
+  "startedAt": "2026-04-16T21:10:19.702Z",
+  "tempAccess": {
+    "doctor": {
+      "email": "temp.pilot.doctor.58b957b8@wathiqcare.online",
+      "created": true,
+      "revoked": true
+    },
+    "legal": {
+      "email": "temp.pilot.legal.58b957b8@wathiqcare.online",
+      "created": true,
+      "revoked": true
+    }
+  },
+  "erDepartment": {
+    "checked": true,
+    "active": null
+  },
+  "casesCreated": [
+    {
+      "index": 1,
+      "ok": false,
+      "error": {
+        "message": "Internal server error"
+      }
+    },
+    {
+      "index": 2,
+      "ok": false,
+      "error": {
+        "message": "Internal server error"
+      }
+    },
+    {
+      "index": 3,
+      "ok": false,
+      "error": {
+        "message": "Internal server error"
+      }
+    },
+    {
+      "index": 4,
+      "ok": false,
+      "error": {
+        "message": "Internal server error"
+      }
+    },
+    {
+      "index": 5,
+      "ok": false,
+      "error": {
+        "message": "Internal server error"
+      }
+    },
+    {
+      "index": 6,
+      "ok": false,
+      "error": {
+        "message": "Internal server error"
+      }
+    },
+    {
+      "index": 7,
+      "ok": false,
+      "error": {
+        "message": "Internal server error"
+      }
+    },
+    {
+      "index": 8,
+      "ok": false,
+      "error": {
+        "message": "Internal server error"
+      }
+    },
+    {
+      "index": 9,
+      "ok": false,
+      "error": {
+        "message": "Internal server error"
+      }
+    },
+    {
+      "index": 10,
+      "ok": false,
+      "error": {
+        "message": "Internal server error"
+      }
+    }
+  ],
+  "bundles": [],
+  "passCount": 0,
+  "failCount": 0,
+  "sampleBundleIds": [],
+  "finishedAt": "2026-04-16T21:10:43.856Z"
+}

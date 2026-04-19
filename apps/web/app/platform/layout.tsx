@@ -3,6 +3,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import AccessDenied from "@/components/AccessDenied";
 import PlatformAdminShell from "@/components/PlatformAdminShell";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetchJson } from "@/utils/api";
 
 type AuthMeResponse = {
@@ -29,6 +30,9 @@ type AuthMeResponse = {
 type GateState = "checking" | "allowed" | "forbidden";
 
 export default function PlatformLayout({ children }: { children: ReactNode }) {
+  const { lang } = useI18n();
+  const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
+
   const [state, setState] = useState<GateState>("checking");
 
   const resolveAccess = useCallback(async () => {
@@ -53,11 +57,11 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
 
   if (state === "checking") {
     return (
-      <PlatformAdminShell title="Loading..." subtitle="">
+      <PlatformAdminShell title={txt("Loading...", "جاري التحميل...")} subtitle="">
         <div className="flex items-center justify-center py-16">
           <div className="flex flex-col items-center gap-3 text-slate-500">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-            <span className="text-sm">Verifying access...</span>
+            <span className="text-sm">{txt("Verifying access...", "جاري التحقق من صلاحية الوصول...")}</span>
           </div>
         </div>
       </PlatformAdminShell>
@@ -66,15 +70,15 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
 
   if (state === "forbidden") {
     return (
-      <PlatformAdminShell title="Access Denied" subtitle="">
-        <AccessDenied resource="Platform Admin Portal" />
+      <PlatformAdminShell title={txt("Access Denied", "تم رفض الوصول")} subtitle="">
+        <AccessDenied resource={txt("Platform Admin Portal", "بوابة إدارة المنصة")} />
       </PlatformAdminShell>
     );
   }
 
   // state === "allowed": session confirmed, platform_admin role confirmed.
   return (
-    <PlatformAdminShell title="Platform Admin" subtitle="">
+    <PlatformAdminShell title={txt("Platform Admin", "إدارة المنصة")} subtitle="">
       {children}
     </PlatformAdminShell>
   );

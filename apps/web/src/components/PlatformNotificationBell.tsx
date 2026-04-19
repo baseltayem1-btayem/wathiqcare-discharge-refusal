@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Bell } from "lucide-react";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type PlatformNotification = {
     id: string;
@@ -12,6 +13,8 @@ type PlatformNotification = {
 };
 
 export default function PlatformNotificationBell() {
+    const { lang } = useI18n();
+    const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
     const [open, setOpen] = useState(false);
     // Stub until platform event feed is connected.
     const items: PlatformNotification[] = [];
@@ -23,7 +26,7 @@ export default function PlatformNotificationBell() {
                 type="button"
                 onClick={() => setOpen((o) => !o)}
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                aria-label="Open platform notifications"
+                aria-label={txt("Open platform notifications", "فتح إشعارات المنصة")}
             >
                 <Bell className="h-4 w-4" />
                 {unread > 0 && (
@@ -40,11 +43,11 @@ export default function PlatformNotificationBell() {
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className="border-b border-slate-200 px-4 py-3">
-                        <h3 className="text-sm font-semibold text-slate-900">Platform Notifications</h3>
+                        <h3 className="text-sm font-semibold text-slate-900">{txt("Platform Notifications", "إشعارات المنصة")}</h3>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                         {items.length === 0 ? (
-                            <div className="px-4 py-8 text-center text-sm text-slate-500">No notifications</div>
+                            <div className="px-4 py-8 text-center text-sm text-slate-500">{txt("No notifications", "لا توجد إشعارات")}</div>
                         ) : (
                             items.map((item) => (
                                 <div key={item.id} className="border-b border-slate-100 px-4 py-3 hover:bg-slate-50">

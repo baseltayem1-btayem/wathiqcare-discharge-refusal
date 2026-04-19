@@ -2,6 +2,7 @@
 
 import { ShieldOff } from "lucide-react";
 import Link from "next/link";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type AccessDeniedProps = {
     /** Optional resource name to show in the message, e.g. "Admin Dashboard" */
@@ -22,6 +23,8 @@ export default function AccessDenied({
     backHref = "/dashboard",
     backLabel = "العودة إلى لوحة التحكم",
 }: AccessDeniedProps) {
+    const { lang } = useI18n();
+
     return (
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
@@ -34,7 +37,7 @@ export default function AccessDenied({
                 <p className="text-sm text-slate-600">
                     دورك الحالي غير مخوّل للوصول إلى هذه الصفحة. تواصل مع مسؤول النظام لطلب الصلاحيات المناسبة.
                 </p>
-                <p className="text-xs text-slate-400">HTTP 403 — Insufficient Permissions</p>
+                <p className="text-xs text-slate-400">{lang === "ar" ? "HTTP 403 — صلاحيات غير كافية" : "HTTP 403 — Insufficient Permissions"}</p>
             </div>
             <Link
                 href={backHref}

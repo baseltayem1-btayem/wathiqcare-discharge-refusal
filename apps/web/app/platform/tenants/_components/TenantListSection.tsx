@@ -247,7 +247,7 @@ export default function TenantListSection() {
             {/* Count caption */}
             <div className="border-b border-slate-100 px-5 py-2">
               <span className="text-xs font-medium text-slate-500">
-                {tenants.length} tenant{tenants.length === 1 ? "" : "s"}
+                {tenants.length} {tenants.length === 1 ? "جهة" : "جهات"}
               </span>
             </div>
 
@@ -256,14 +256,14 @@ export default function TenantListSection() {
               <table className="min-w-full divide-y divide-slate-100 text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
                   <tr>
-                    <th className="px-4 py-3 text-left">Tenant</th>
-                    <th className="px-4 py-3 text-left">Domain</th>
-                    <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-left">Subscription</th>
-                    <th className="px-4 py-3 text-left">Login Methods</th>
-                    <th className="px-4 py-3 text-left">Seats</th>
-                    <th className="px-4 py-3 text-left">Cases</th>
-                    <th className="px-4 py-3 text-left">Actions</th>
+                    <th className="px-4 py-3 text-left">الجهة</th>
+                    <th className="px-4 py-3 text-left">النطاق</th>
+                    <th className="px-4 py-3 text-left">الحالة</th>
+                    <th className="px-4 py-3 text-left">الاشتراك</th>
+                    <th className="px-4 py-3 text-left">طرق الدخول</th>
+                    <th className="px-4 py-3 text-left">المقاعد</th>
+                    <th className="px-4 py-3 text-left">الحالات</th>
+                    <th className="px-4 py-3 text-left">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -294,7 +294,7 @@ export default function TenantListSection() {
                                 : "bg-rose-100 text-rose-700"
                             }`}
                           >
-                            {tenant.isActive ? "Active" : "Inactive"}
+                            {tenant.isActive ? "نشطة" : "غير نشطة"}
                           </span>
                         </td>
                         <td className="px-4 py-3">

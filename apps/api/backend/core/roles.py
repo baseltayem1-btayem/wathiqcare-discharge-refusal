@@ -24,6 +24,7 @@ ROLE_ALIASES = {
     "admin": "tenant_admin",
     "billing": "tenant_admin",
     "doctor": "doctor",
+    "er_doctor": "doctor",
     "treating_physician": "doctor",
     "nursing": "nursing",
     "nurse": "nursing",

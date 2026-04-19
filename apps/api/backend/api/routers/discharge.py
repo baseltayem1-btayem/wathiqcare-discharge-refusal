@@ -1057,7 +1057,7 @@ def build_evidence_bundle(
         raise HTTPException(status_code=400, detail="معرف الحالة مطلوب")
 
     try:
-        require_permission(current_user, "legal.approve.readiness")
+        require_permission(current_user, "evidence.generate")
         require_case_access(current_user, normalized_case_id)
         return generate_evidence_bundle(
             normalized_case_id,

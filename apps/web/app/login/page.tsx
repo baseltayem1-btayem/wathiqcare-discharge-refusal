@@ -27,6 +27,7 @@ const DEFAULT_AUTH_CONFIG: TenantAuthConfig = {
 export default function LoginPage() {
   const { t, isRtl } = useI18n();
   const router = useRouter();
+  const txt = (en: string, ar: string) => (isRtl ? ar : en);
 
   function localizeAuthError(err: unknown): string {
     if (err instanceof ApiHttpError) {
@@ -37,44 +38,37 @@ export default function LoginPage() {
       });
 
       if (err.status === 401) {
-        return isRtl
-          ? "البريد الإلكتروني أو كلمة المرور غير صحيحة."
-          : "Invalid email or password.";
+        return t("loginPage.errorInvalidCredentials");
       }
 
       if (err.status === 403 && /password reset required/i.test(err.message || "")) {
-        return isRtl
-          ? "تم طلب إعادة تعيين كلمة المرور لهذا الحساب. يرجى استخدام رابط إعادة التعيين المرسل إلى بريدك الإلكتروني."
-          : "Password reset is required for this account. Use the reset link sent to your email.";
+        return txt(
+          "Password reset is required for this account. Use the reset link sent to your email.",
+          "تم طلب إعادة تعيين كلمة المرور لهذا الحساب. يرجى استخدام رابط إعادة التعيين المرسل إلى بريدك الإلكتروني.",
+        );
       }
 
       if (err.status === 403) {
-        return isRtl
-          ? "ليس لديك صلاحية للوصول إلى هذا الحساب."
-          : "You do not have permission to access this account.";
+        return txt("You do not have permission to access this account.", "ليس لديك صلاحية للوصول إلى هذا الحساب.");
       }
     }
 
     if (!(err instanceof Error)) {
-      return isRtl ? "حدث خطأ غير متوقع. حاول مرة أخرى." : "Something went wrong. Please try again.";
+      return t("loginPage.errorGeneric");
     }
 
     const raw = err.message || "";
     const normalized = raw.replace(/^\d{3}\s*:\s*/, "").trim();
 
     if (/network|failed to fetch|unable to reach|timeout|timed out|server/i.test(raw)) {
-      return isRtl
-        ? "تعذر الاتصال بالخادم. يرجى التحقق من الشبكة والمحاولة مرة أخرى."
-        : "Unable to reach the server. Please check your connection and try again.";
+      return t("loginPage.errorNetwork");
     }
 
     if (/invalid|credentials|unauthorized|auth required|session validation|required/i.test(raw)) {
-      return isRtl
-        ? "البريد الإلكتروني أو كلمة المرور غير صحيحة."
-        : "Invalid email or password.";
+      return t("loginPage.errorInvalidCredentials");
     }
 
-    return normalized || (isRtl ? "حدث خطأ غير متوقع. حاول مرة أخرى." : "Something went wrong. Please try again.");
+    return normalized || t("loginPage.errorGeneric");
   }
 
   const allowDevPrefill =
@@ -151,7 +145,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email }),
       });
 
-      setNotice(response.message || "If your email is registered, a secure login link has been sent.");
+      setNotice(response.message || t("loginPage.noticeGeneric"));
       setEmail("");
     } catch (err) {
       setError(localizeAuthError(err));
@@ -212,7 +206,7 @@ export default function LoginPage() {
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-[var(--primary-soft-border)] hover:bg-[var(--primary-soft)] sm:text-sm"
           >
             <ArrowLeft className="h-4 w-4" />
-            {isRtl ? "الصفحة الرئيسية" : "Home"}
+            {t("loginPage.homeLink")}
           </Link>
           <LanguageSwitcher className="bg-white" />
         </div>
@@ -265,7 +259,7 @@ export default function LoginPage() {
                         : "border-transparent text-slate-500 hover:text-slate-800"
                         }`}
                     >
-                      <span>Microsoft SSO</span>
+                      <span>{t("loginPage.tabMicrosoft")}</span>
                     </button>
                   )}
                   {authConfig.secure_link_enabled && (
@@ -281,7 +275,7 @@ export default function LoginPage() {
                         }`}
                     >
                       <Mail className="h-3.5 w-3.5" />
-                      <span>Secure Link</span>
+                      <span>{t("loginPage.tabMagicLink")}</span>
                     </button>
                   )}
                   {authConfig.password_enabled && (
@@ -297,27 +291,27 @@ export default function LoginPage() {
                         }`}
                     >
                       <Lock className="h-3.5 w-3.5" />
-                      <span>Password</span>
+                      <span>{t("loginPage.tabPassword")}</span>
                     </button>
                   )}
                 </div>
 
                 {enabledModes.length === 0 && (
                   <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                    All sign-in methods are disabled for this tenant.
+                    {txt("All sign-in methods are disabled for this tenant.", "جميع طرق تسجيل الدخول معطلة لهذا المستأجر.")}
                   </div>
                 )}
 
                 {/* Microsoft SSO */}
                 {authConfig.microsoft_sso_enabled && authMode === "microsoft" && (
                   <div className="space-y-4">
-                    <h2 className="text-lg font-bold text-gray-900">Institutional Sign-In</h2>
-                    <p className="text-sm text-gray-600">For hospital and healthcare organization accounts using Microsoft 365</p>
+                    <h2 className="text-lg font-bold text-gray-900">{t("loginPage.microsoftTitle")}</h2>
+                    <p className="text-sm text-gray-600">{t("loginPage.microsoftSubtitle")}</p>
 
                     <div className="space-y-3">
                       <input
                         type="email"
-                        placeholder="your.name@company.com"
+                        placeholder={t("loginPage.microsoftEmailPlaceholder")}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft)]"
@@ -330,7 +324,7 @@ export default function LoginPage() {
                         disabled={loading || !email}
                         className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-50 disabled:opacity-60"
                       >
-                        {loading ? "Signing in..." : "Continue with Microsoft"}
+                        {loading ? t("loginPage.microsoftSigning") : t("loginPage.microsoftBtn")}
                       </button>
                     </div>
                   </div>
@@ -339,12 +333,12 @@ export default function LoginPage() {
                 {/* Magic Link */}
                 {authConfig.secure_link_enabled && authMode === "magic-link" && (
                   <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
-                    <h2 className="text-lg font-bold text-gray-900">Sign In via Secure Link</h2>
-                    <p className="text-sm text-gray-600">Enter your email and receive a one-time sign-in link — no password needed</p>
+                    <h2 className="text-lg font-bold text-gray-900">{t("loginPage.magicTitle")}</h2>
+                    <p className="text-sm text-gray-600">{t("loginPage.magicSubtitle")}</p>
 
                     <div>
                       <label htmlFor="magic-email" className="mb-1 block text-sm font-medium text-gray-700">
-                        Email
+                        {t("loginPage.magicEmailLabel")}
                       </label>
                       <input
                         id="magic-email"
@@ -355,7 +349,7 @@ export default function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={loading}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft)] disabled:bg-slate-100"
-                        placeholder="your.email@domain.com"
+                        placeholder={t("loginPage.magicEmailPlaceholder")}
                       />
                     </div>
 
@@ -369,7 +363,7 @@ export default function LoginPage() {
                       className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] py-2.5 font-semibold text-[var(--primary-pressed)] transition hover:border-[var(--primary)] hover:bg-[#e2edf8] focus:outline-none focus:ring-2 focus:ring-[var(--primary-soft)] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Mail className="h-4 w-4" />
-                      {loading ? "Sending..." : "Send Secure Login Link"}
+                      {loading ? t("loginPage.magicSending") : t("loginPage.magicSendBtn")}
                     </button>
 
                     <div className="flex items-center justify-between text-xs text-slate-600">
@@ -379,11 +373,11 @@ export default function LoginPage() {
                           onClick={() => { setAuthMode("password"); setError(""); setNotice(""); }}
                           className="text-slate-500 transition hover:text-[var(--primary-pressed)]"
                         >
-                          Sign in with password instead
+                          {t("loginPage.magicSwitchToPassword")}
                         </button>
                       )}
                       <Link href="/auth/password-reset" className="text-[var(--primary-pressed)] hover:text-[var(--primary)] font-semibold">
-                        Forgot password?
+                        {t("loginPage.forgotPassword")}
                       </Link>
                     </div>
                   </form>
@@ -392,12 +386,12 @@ export default function LoginPage() {
                 {/* Password Login */}
                 {authConfig.password_enabled && authMode === "password" && (
                   <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                    <h2 className="text-lg font-bold text-gray-900">Sign In with Password</h2>
-                    <p className="text-sm text-gray-600">Enter your email and password. Use <span className="font-medium text-[var(--primary-pressed)]">Secure Link</span> above if you don&apos;t have a password yet.</p>
+                    <h2 className="text-lg font-bold text-gray-900">{t("loginPage.passwordTitle")}</h2>
+                    <p className="text-sm text-gray-600">{t("loginPage.passwordSubtitle")}</p>
 
                     <div>
                       <label htmlFor="password-email" className="mb-1 block text-sm font-medium text-gray-700">
-                        Email
+                        {t("loginPage.passwordEmailLabel")}
                       </label>
                       <input
                         id="password-email"
@@ -408,13 +402,13 @@ export default function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={loading}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft)] disabled:bg-slate-100"
-                        placeholder="your.email@domain.com"
+                        placeholder={t("loginPage.passwordEmailPlaceholder")}
                       />
                     </div>
 
                     <div>
                       <label htmlFor="password-input" className="mb-1 block text-sm font-medium text-gray-700">
-                        Password
+                        {t("loginPage.passwordLabel")}
                       </label>
                       <div className="relative">
                         <input
@@ -425,14 +419,14 @@ export default function LoginPage() {
                           onChange={(e) => setPassword(e.target.value)}
                           disabled={loading}
                           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft)] disabled:bg-slate-100"
-                          placeholder="Enter your password"
+                          placeholder={txt("Enter your password", "أدخل كلمة المرور")}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
                         >
-                          {showPassword ? "Hide" : "Show"}
+                          {showPassword ? t("loginPage.passwordHide") : t("loginPage.passwordShow")}
                         </button>
                       </div>
                     </div>
@@ -445,12 +439,12 @@ export default function LoginPage() {
                       className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] py-2.5 font-semibold text-[var(--primary-pressed)] transition hover:border-[var(--primary)] hover:bg-[#e2edf8] focus:outline-none focus:ring-2 focus:ring-[var(--primary-soft)] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <KeyRound className="h-4 w-4" />
-                      {loading ? "Signing in..." : "Sign in"}
+                      {loading ? t("loginPage.passwordSigning") : t("loginPage.passwordBtn")}
                     </button>
 
                     <div className="flex items-center justify-between text-xs text-slate-600">
                       <Link href="/auth/password-reset" className="text-[var(--primary-pressed)] hover:text-[var(--primary)] font-semibold">
-                        Forgot password?
+                        {t("loginPage.forgotPasswordLink")}
                       </Link>
                       {authConfig.secure_link_enabled && (
                         <button
@@ -458,7 +452,7 @@ export default function LoginPage() {
                           onClick={() => { setAuthMode("magic-link"); setError(""); setNotice(""); }}
                           className="text-slate-500 transition hover:text-[var(--primary-pressed)]"
                         >
-                          Use secure link instead
+                          {t("loginPage.switchToMagicLink")}
                         </button>
                       )}
                     </div>

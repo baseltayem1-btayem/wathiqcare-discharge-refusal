@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, AlertCircle } from "lucide-react";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetchJson } from "@/utils/api";
 
 type TenantInspection = {
@@ -20,6 +21,8 @@ type TenantInspection = {
 };
 
 export default function SupportPage() {
+    const { lang } = useI18n();
+    const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
     const [searchTenantId, setSearchTenantId] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -27,7 +30,7 @@ export default function SupportPage() {
 
     async function handleInspectTenant() {
         if (!searchTenantId.trim()) {
-            setError("Enter a tenant ID or code");
+            setError(txt("Enter a tenant ID or code", "أدخل معرّف الجهة أو رمزها"));
             return;
         }
 
@@ -42,7 +45,7 @@ export default function SupportPage() {
             );
             setTenantInfo(result || null);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to inspect tenant");
+            setError(err instanceof Error ? err.message : txt("Failed to inspect tenant", "تعذر فحص الجهة"));
         } finally {
             setLoading(false);
         }
@@ -51,21 +54,21 @@ export default function SupportPage() {
     return (
         <>
             <div className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Support Tools</h2>
-                <p className="mt-1 text-sm text-gray-500">Read-only inspection of tenant data for support purposes</p>
+                <h2 className="text-lg font-semibold text-gray-900">{txt("Support Tools", "أدوات الدعم")}</h2>
+                <p className="mt-1 text-sm text-gray-500">{txt("Read-only inspection of tenant data for support purposes", "فحص بيانات الجهة للقراءة فقط لأغراض الدعم")}</p>
             </div>
 
             {/* Tenant Inspector */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 mb-4">
                 <div className="flex items-center gap-2 mb-3">
                     <Search className="h-4 w-4" />
-                    <h3 className="text-base font-semibold text-slate-900">Tenant Inspector</h3>
+                    <h3 className="text-base font-semibold text-slate-900">{txt("Tenant Inspector", "فاحص الجهة")}</h3>
                 </div>
 
                 <div className="flex gap-2">
                     <input
                         type="text"
-                        placeholder="Enter tenant ID or code..."
+                        placeholder={txt("Enter tenant ID or code...", "أدخل معرّف الجهة أو رمزها...")}
                         value={searchTenantId}
                         onChange={(e) => setSearchTenantId(e.target.value)}
                         onKeyDown={(e) => {
@@ -81,7 +84,7 @@ export default function SupportPage() {
                         disabled={loading}
                         className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
                     >
-                        {loading ? "Inspecting..." : "Inspect"}
+                        {loading ? txt("Inspecting...", "جارٍ الفحص...") : txt("Inspect", "فحص")}
                     </button>
                 </div>
 
@@ -97,30 +100,30 @@ export default function SupportPage() {
             {tenantInfo && (
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <h3 className="text-base font-semibold text-slate-900 mb-3">Tenant Information</h3>
+                        <h3 className="text-base font-semibold text-slate-900 mb-3">{txt("Tenant Information", "معلومات الجهة")}</h3>
                         <div className="space-y-2 text-sm">
-                            <div><span className="text-slate-600">Name:</span> <span className="font-medium">{tenantInfo.name}</span></div>
-                            <div><span className="text-slate-600">Code:</span> <span className="font-mono text-xs">{tenantInfo.code}</span></div>
+                            <div><span className="text-slate-600">{txt("Name", "الاسم")}:</span> <span className="font-medium">{tenantInfo.name}</span></div>
+                            <div><span className="text-slate-600">{txt("Code", "الرمز")}:</span> <span className="font-mono text-xs">{tenantInfo.code}</span></div>
                             <div><span className="text-slate-600">ID:</span> <span className="font-mono text-xs">{tenantInfo.id}</span></div>
                             <div>
-                                <span className="text-slate-600">Status:</span>{" "}
+                                <span className="text-slate-600">{txt("Status", "الحالة")}:</span>{" "}
                                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${tenantInfo.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"
                                     }`}>
-                                    {tenantInfo.isActive ? "Active" : "Inactive"}
+                                    {tenantInfo.isActive ? txt("Active", "نشطة") : txt("Inactive", "غير نشطة")}
                                 </span>
                             </div>
                         </div>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <h3 className="text-base font-semibold text-slate-900 mb-3">Metrics</h3>
+                        <h3 className="text-base font-semibold text-slate-900 mb-3">{txt("Metrics", "المؤشرات")}</h3>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <p className="text-xs text-slate-500">Users</p>
+                                <p className="text-xs text-slate-500">{txt("Users", "المستخدمون")}</p>
                                 <p className="text-2xl font-bold text-slate-900">{tenantInfo.userCount}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500">Cases</p>
+                                <p className="text-xs text-slate-500">{txt("Cases", "الحالات")}</p>
                                 <p className="text-2xl font-bold text-slate-900">{tenantInfo.caseCount}</p>
                             </div>
                         </div>
@@ -128,13 +131,13 @@ export default function SupportPage() {
 
                     {tenantInfo.subscriptions && tenantInfo.subscriptions.length > 0 && (
                         <div className="rounded-2xl border border-slate-200 bg-white p-4 md:col-span-2">
-                            <h3 className="text-base font-semibold text-slate-900 mb-3">Subscriptions</h3>
+                            <h3 className="text-base font-semibold text-slate-900 mb-3">{txt("Subscriptions", "الاشتراكات")}</h3>
                             <div className="space-y-2">
                                 {tenantInfo.subscriptions.map((sub, idx) => (
                                     <div key={idx} className="flex items-center justify-between rounded-lg border border-slate-100 p-3">
                                         <div>
                                             <p className="font-medium text-slate-900">{sub.planCode}</p>
-                                            <p className="text-xs text-slate-500">Seats: {sub.seatLimit}</p>
+                                            <p className="text-xs text-slate-500">{txt("Seats", "المقاعد")}: {sub.seatLimit}</p>
                                         </div>
                                         <span className={`px-2 py-1 rounded text-xs font-medium ${sub.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" :
                                             sub.status === "TRIALING" ? "bg-blue-100 text-blue-700" :
@@ -154,8 +157,8 @@ export default function SupportPage() {
             <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-3 text-sm text-blue-700 flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                 <div>
-                    <p className="font-medium">Read-Only Access</p>
-                    <p className="mt-1">Use the tenant inspector to view detailed information about any tenant for support and troubleshooting purposes. All access is logged.</p>
+                    <p className="font-medium">{txt("Read-Only Access", "وصول للقراءة فقط")}</p>
+                    <p className="mt-1">{txt("Use the tenant inspector to view detailed information about any tenant for support and troubleshooting purposes. All access is logged.", "استخدم فاحص الجهة لعرض معلومات تفصيلية عن أي جهة لأغراض الدعم واستكشاف الأخطاء. يتم تسجيل جميع عمليات الوصول.")}</p>
                 </div>
             </div>
         </>

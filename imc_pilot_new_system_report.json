@@ -1,0 +1,244 @@
+{
+  "generated_at_utc": "2026-04-16T20:56:36.226949+00:00",
+  "mode": "critical_operation_new_system_only",
+  "new_cases_created": 20,
+  "new_bundles_generated": 20,
+  "pass_count": 20,
+  "fail_count": 0,
+  "sample_bundle_ids": [
+    "evidence_bundle_6a0238b8-45cb-41db-a9f4-f7353717e254",
+    "evidence_bundle_3d952f5a-08ca-464e-ac29-f7f61c0da314",
+    "evidence_bundle_59befa77-7174-47c6-acba-09bdd3f81e00",
+    "evidence_bundle_0598e247-2e04-418e-8209-55e3db461af5",
+    "evidence_bundle_ef3f5c7d-36bf-4aa3-a62a-41b52a2f0fdc"
+  ],
+  "sample_bundle_files": [
+    "evidence_bundle_6a0238b8-45cb-41db-a9f4-f7353717e254.zip",
+    "evidence_bundle_3d952f5a-08ca-464e-ac29-f7f61c0da314.zip",
+    "evidence_bundle_59befa77-7174-47c6-acba-09bdd3f81e00.zip",
+    "evidence_bundle_0598e247-2e04-418e-8209-55e3db461af5.zip",
+    "evidence_bundle_ef3f5c7d-36bf-4aa3-a62a-41b52a2f0fdc.zip"
+  ],
+  "results": [
+    {
+      "index": 1,
+      "case_id": "6a0238b8-45cb-41db-a9f4-f7353717e254",
+      "bundle_id": "evidence_bundle_6a0238b8-45cb-41db-a9f4-f7353717e254",
+      "bundle_file": "evidence_bundle_6a0238b8-45cb-41db-a9f4-f7353717e254.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 2,
+      "case_id": "3d952f5a-08ca-464e-ac29-f7f61c0da314",
+      "bundle_id": "evidence_bundle_3d952f5a-08ca-464e-ac29-f7f61c0da314",
+      "bundle_file": "evidence_bundle_3d952f5a-08ca-464e-ac29-f7f61c0da314.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 3,
+      "case_id": "59befa77-7174-47c6-acba-09bdd3f81e00",
+      "bundle_id": "evidence_bundle_59befa77-7174-47c6-acba-09bdd3f81e00",
+      "bundle_file": "evidence_bundle_59befa77-7174-47c6-acba-09bdd3f81e00.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 4,
+      "case_id": "0598e247-2e04-418e-8209-55e3db461af5",
+      "bundle_id": "evidence_bundle_0598e247-2e04-418e-8209-55e3db461af5",
+      "bundle_file": "evidence_bundle_0598e247-2e04-418e-8209-55e3db461af5.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 5,
+      "case_id": "ef3f5c7d-36bf-4aa3-a62a-41b52a2f0fdc",
+      "bundle_id": "evidence_bundle_ef3f5c7d-36bf-4aa3-a62a-41b52a2f0fdc",
+      "bundle_file": "evidence_bundle_ef3f5c7d-36bf-4aa3-a62a-41b52a2f0fdc.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 6,
+      "case_id": "465ff5c7-ef05-4437-9529-cf52c0ab42d4",
+      "bundle_id": "evidence_bundle_465ff5c7-ef05-4437-9529-cf52c0ab42d4",
+      "bundle_file": "evidence_bundle_465ff5c7-ef05-4437-9529-cf52c0ab42d4.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 7,
+      "case_id": "e1ba1921-9de4-4e44-bd82-bc825ab60ec1",
+      "bundle_id": "evidence_bundle_e1ba1921-9de4-4e44-bd82-bc825ab60ec1",
+      "bundle_file": "evidence_bundle_e1ba1921-9de4-4e44-bd82-bc825ab60ec1.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 8,
+      "case_id": "e9a2ff24-acfe-46d8-8bbd-b42cb39c3d0d",
+      "bundle_id": "evidence_bundle_e9a2ff24-acfe-46d8-8bbd-b42cb39c3d0d",
+      "bundle_file": "evidence_bundle_e9a2ff24-acfe-46d8-8bbd-b42cb39c3d0d.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 9,
+      "case_id": "a75b4b45-6d10-4efd-9db0-38894dca6260",
+      "bundle_id": "evidence_bundle_a75b4b45-6d10-4efd-9db0-38894dca6260",
+      "bundle_file": "evidence_bundle_a75b4b45-6d10-4efd-9db0-38894dca6260.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 10,
+      "case_id": "3f6477fe-2cbc-4211-b82c-fd3b024f9122",
+      "bundle_id": "evidence_bundle_3f6477fe-2cbc-4211-b82c-fd3b024f9122",
+      "bundle_file": "evidence_bundle_3f6477fe-2cbc-4211-b82c-fd3b024f9122.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 11,
+      "case_id": "3c45b67e-e53f-4619-9820-a916904bcbc5",
+      "bundle_id": "evidence_bundle_3c45b67e-e53f-4619-9820-a916904bcbc5",
+      "bundle_file": "evidence_bundle_3c45b67e-e53f-4619-9820-a916904bcbc5.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 12,
+      "case_id": "937afd34-5c77-4e0b-a469-64f84c0da6cf",
+      "bundle_id": "evidence_bundle_937afd34-5c77-4e0b-a469-64f84c0da6cf",
+      "bundle_file": "evidence_bundle_937afd34-5c77-4e0b-a469-64f84c0da6cf.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 13,
+      "case_id": "161af521-6671-42b0-8778-45b240dfbf81",
+      "bundle_id": "evidence_bundle_161af521-6671-42b0-8778-45b240dfbf81",
+      "bundle_file": "evidence_bundle_161af521-6671-42b0-8778-45b240dfbf81.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 14,
+      "case_id": "ef1d2b10-f420-4f83-82ac-e69555e4891b",
+      "bundle_id": "evidence_bundle_ef1d2b10-f420-4f83-82ac-e69555e4891b",
+      "bundle_file": "evidence_bundle_ef1d2b10-f420-4f83-82ac-e69555e4891b.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 15,
+      "case_id": "d91da8da-9559-4fa6-a9fa-0ec334b66960",
+      "bundle_id": "evidence_bundle_d91da8da-9559-4fa6-a9fa-0ec334b66960",
+      "bundle_file": "evidence_bundle_d91da8da-9559-4fa6-a9fa-0ec334b66960.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 16,
+      "case_id": "cb4ecb34-fef3-4358-980e-50994af60ef5",
+      "bundle_id": "evidence_bundle_cb4ecb34-fef3-4358-980e-50994af60ef5",
+      "bundle_file": "evidence_bundle_cb4ecb34-fef3-4358-980e-50994af60ef5.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 17,
+      "case_id": "8c9faca7-a890-4fa1-89aa-d6d4a1f5ada7",
+      "bundle_id": "evidence_bundle_8c9faca7-a890-4fa1-89aa-d6d4a1f5ada7",
+      "bundle_file": "evidence_bundle_8c9faca7-a890-4fa1-89aa-d6d4a1f5ada7.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 18,
+      "case_id": "054a0dc9-b5cd-43ff-b8d2-55dd0bee27a9",
+      "bundle_id": "evidence_bundle_054a0dc9-b5cd-43ff-b8d2-55dd0bee27a9",
+      "bundle_file": "evidence_bundle_054a0dc9-b5cd-43ff-b8d2-55dd0bee27a9.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 19,
+      "case_id": "39ee841a-d5b5-4c41-a3ae-5e3a2bdc17b5",
+      "bundle_id": "evidence_bundle_39ee841a-d5b5-4c41-a3ae-5e3a2bdc17b5",
+      "bundle_file": "evidence_bundle_39ee841a-d5b5-4c41-a3ae-5e3a2bdc17b5.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    },
+    {
+      "index": 20,
+      "case_id": "a1fb9a66-3d02-4049-b3bc-b53ddb2a1e6a",
+      "bundle_id": "evidence_bundle_a1fb9a66-3d02-4049-b3bc-b53ddb2a1e6a",
+      "bundle_file": "evidence_bundle_a1fb9a66-3d02-4049-b3bc-b53ddb2a1e6a.zip",
+      "valid": true,
+      "errors": [],
+      "warnings": [
+        "TSA status is fallback_internal"
+      ]
+    }
+  ]
+}

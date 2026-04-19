@@ -3,8 +3,14 @@ const API_BASE_URL =
 
 const LEGACY_TOKEN_KEYS = ["wathiqcare_access_token", "token"];
 const AUTH_ME_PATH = "/api/auth/me";
+const AUTH_ME_VALIDATION_CACHE_MS = 2500;
+const AUTH_ME_CLIENT_CACHE_MS = 3000;
 
 let sessionValidationPromise: Promise<void> | null = null;
+let authMeValidationPromise: Promise<SessionValidationResult> | null = null;
+let authMeValidationCache: { result: SessionValidationResult; expiresAt: number } | null = null;
+let authMeClientPromise: Promise<unknown> | null = null;
+let authMeClientCache: { value: unknown; expiresAt: number } | null = null;
 
 export type AuthFailureMode = "redirect" | "inline";
 
@@ -83,6 +89,8 @@ export function clearToken(): void {
   for (const key of LEGACY_TOKEN_KEYS) {
     localStorage.removeItem(key);
   }
+
+  authMeClientCache = null;
 }
 
 export function isAuthenticationError(error: unknown): boolean {
@@ -104,34 +112,56 @@ export type SessionValidationOutcome = SessionValidationResult & {
 };
 
 async function checkSessionWithAuthMe(reason: string): Promise<SessionValidationResult> {
+  const now = Date.now();
+  if (authMeValidationCache && authMeValidationCache.expiresAt > now) {
+    return authMeValidationCache.result;
+  }
+
+  if (authMeValidationPromise) {
+    return authMeValidationPromise;
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
 
+  authMeValidationPromise = (async () => {
+    try {
+      const response = await fetch(AUTH_ME_PATH, {
+        method: "GET",
+        cache: "no-store",
+        credentials: "include",
+        signal: controller.signal,
+      });
+
+      if (response.ok) {
+        console.info(`[auth] auth/me passed after ${reason}; no redirect.`);
+        return { valid: true, status: response.status };
+      }
+
+      console.warn(`[auth] auth/me failed after ${reason}; status=${response.status}`);
+      if (response.status === 401 || response.status === 403) {
+        return { valid: false, status: response.status };
+      }
+
+      // Treat transient backend failures as indeterminate so users are not forced-logout.
+      return { valid: null, status: response.status };
+    } catch (error) {
+      console.warn(`[auth] auth/me check errored after ${reason}; preserving current route.`, error);
+      return { valid: null, status: null };
+    } finally {
+      clearTimeout(timeout);
+    }
+  })();
+
   try {
-    const response = await fetch(AUTH_ME_PATH, {
-      method: "GET",
-      cache: "no-store",
-      credentials: "include",
-      signal: controller.signal,
-    });
-
-    if (response.ok) {
-      console.info(`[auth] auth/me passed after ${reason}; no redirect.`);
-      return { valid: true, status: response.status };
-    }
-
-    console.warn(`[auth] auth/me failed after ${reason}; status=${response.status}`);
-    if (response.status === 401 || response.status === 403) {
-      return { valid: false, status: response.status };
-    }
-
-    // Treat transient backend failures as indeterminate so users are not forced-logout.
-    return { valid: null, status: response.status };
-  } catch (error) {
-    console.warn(`[auth] auth/me check errored after ${reason}; preserving current route.`, error);
-    return { valid: null, status: null };
+    const result = await authMeValidationPromise;
+    authMeValidationCache = {
+      result,
+      expiresAt: Date.now() + AUTH_ME_VALIDATION_CACHE_MS,
+    };
+    return result;
   } finally {
-    clearTimeout(timeout);
+    authMeValidationPromise = null;
   }
 }
 
@@ -468,6 +498,38 @@ export async function apiFetch<T>(path: string, init: ApiFetchOptions = {}): Pro
   }
 
   return (await response.text()) as unknown as T;
+}
+
+export async function fetchAuthMeCached<T>(init: ApiFetchOptions = {}): Promise<T> {
+  const method = (init.method || "GET").toUpperCase();
+  if (method !== "GET") {
+    return apiFetch<T>(AUTH_ME_PATH, init);
+  }
+
+  const now = Date.now();
+  if (authMeClientCache && authMeClientCache.expiresAt > now) {
+    return authMeClientCache.value as T;
+  }
+
+  if (!authMeClientPromise) {
+    authMeClientPromise = apiFetch<T>(AUTH_ME_PATH, {
+      cache: "no-store",
+      authFailureMode: "inline",
+      ...init,
+    })
+      .then((value) => {
+        authMeClientCache = {
+          value,
+          expiresAt: Date.now() + AUTH_ME_CLIENT_CACHE_MS,
+        };
+        return value;
+      })
+      .finally(() => {
+        authMeClientPromise = null;
+      });
+  }
+
+  return authMeClientPromise as Promise<T>;
 }
 
 export async function apiFetchJson<T>(path: string, init: ApiFetchOptions = {}): Promise<T> {

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
 type DepartmentPoint = {
@@ -97,6 +98,9 @@ function widthClass(percent: number): string {
 }
 
 export default function DashboardPage() {
+  const { lang } = useI18n();
+  const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
+
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -127,36 +131,36 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <AppShell
-        title="Hospital Operations Command Center"
-        subtitle="Real-time orchestration, SLA monitoring, escalation controls, and executive visibility"
+        title={txt("Hospital Operations Command Center", "مركز قيادة عمليات المستشفى")}
+        subtitle={txt("Real-time orchestration, SLA monitoring, escalation controls, and executive visibility", "تنسيق فوري للعمليات، ومتابعة اتفاقيات مستوى الخدمة، وضوابط التصعيد، ورؤية تنفيذية")}
       >
         {loading ? (
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-            Loading operations dashboard...
+            {txt("Loading operations dashboard...", "جاري تحميل لوحة العمليات...")}
           </div>
         ) : !data ? (
           <div className="rounded-lg border border-[var(--state-error-border)] bg-[var(--state-error-bg)] px-4 py-3 text-sm text-[var(--state-error)]">
-            Unable to load dashboard metrics.
+            {txt("Unable to load dashboard metrics.", "تعذر تحميل مؤشرات لوحة المتابعة.")}
           </div>
         ) : (
           <div className="space-y-5">
             <section className="sticky top-[88px] z-[5] rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Active Cases" value={data.summary.totalActiveCases} icon={<Layers3 className="h-4 w-4" />} />
+                <StatCard label={txt("Active Cases", "الحالات النشطة")} value={data.summary.totalActiveCases} icon={<Layers3 className="h-4 w-4" />} />
                 <StatCard
-                  label="Within SLA"
+                  label={txt("Within SLA", "ضمن مستوى الخدمة")}
                   value={data.summary.withinSlaCases}
                   icon={<CheckCircle2 className="h-4 w-4" />}
                   tone="good"
                 />
                 <StatCard
-                  label="At Risk + Delayed"
+                  label={txt("At Risk + Delayed", "معرضة للخطر + متأخرة")}
                   value={data.summary.atRiskCases + data.summary.delayedCases}
                   icon={<AlertTriangle className="h-4 w-4" />}
                   tone="warn"
                 />
                 <StatCard
-                  label="Escalated"
+                  label={txt("Escalated", "تم تصعيدها")}
                   value={data.summary.escalatedCases}
                   icon={<BellRing className="h-4 w-4" />}
                   tone="danger"
@@ -168,20 +172,21 @@ export default function DashboardPage() {
               <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)] xl:col-span-2">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-sm font-semibold text-slate-900">Department Queue Status</h2>
-                    <p className="text-xs text-slate-500">Transactions currently with each hospital department</p>
+                    <h2 className="text-sm font-semibold text-slate-900">{txt("Department Queue Status", "حالة طوابير الأقسام")}</h2>
+                    <p className="text-xs text-slate-500">{txt("Transactions currently with each hospital department", "المعاملات الحالية لدى كل قسم في المستشفى")}</p>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 cursor-not-allowed" title="Monitoring only">
-                    Monitoring only
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 cursor-not-allowed" title={txt("Monitoring only", "للمتابعة فقط")}>
+                    {txt("Monitoring only", "للمتابعة فقط")}
                   </span>
                 </div>
                 <section className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   <div className="flex items-center gap-2 font-semibold">
                     <AlertTriangle className="h-4 w-4" />
-                    Dashboard is monitoring-only
+                    {txt("Dashboard is monitoring-only", "اللوحة مخصصة للمتابعة فقط")}
                   </div>
                   <p className="mt-1 text-amber-800">
-                    No actions or workflow entry are available here. All execution and case management must be performed in <b>Cases</b>.
+                    {txt("No actions or workflow entry are available here. All execution and case management must be performed in ", "لا تتوفر هنا إجراءات أو إدخال لسير العمل. يجب تنفيذ كل العمليات وإدارة الحالات في ")}
+                    <b>{txt("Cases", "الحالات")}</b>.
                   </p>
                 </section>
                 <div className="space-y-2">
@@ -199,7 +204,7 @@ export default function DashboardPage() {
                         <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
                           <span className="font-semibold text-slate-800">{item.label}</span>
                           <span className="text-slate-600">
-                            {item.count} active, {item.breachCount} breached
+                            {lang === "ar" ? `${item.count} نشطة، ${item.breachCount} متجاوزة` : `${item.count} active, ${item.breachCount} breached`}
                           </span>
                         </div>
                         <div className="h-2 rounded-full bg-slate-200">
@@ -212,32 +217,32 @@ export default function DashboardPage() {
               </article>
 
               <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
-                <h2 className="text-sm font-semibold text-slate-900">Executive Summary</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{txt("Executive Summary", "ملخص تنفيذي")}</h2>
                 <div className="mt-3 space-y-2 text-sm">
                   <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                    <span className="text-slate-500">Completion rate</span>
+                    <span className="text-slate-500">{txt("Completion rate", "معدل الإكمال")}</span>
                     <span className="font-semibold text-slate-900">{data.summary.completionRate}%</span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                    <span className="text-slate-500">Avg discharge time</span>
+                    <span className="text-slate-500">{txt("Avg discharge time", "متوسط وقت الخروج")}</span>
                     <span className="font-semibold text-slate-900">{data.summary.averageDischargeHours}h</span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                    <span className="text-slate-500">Unassigned</span>
+                    <span className="text-slate-500">{txt("Unassigned", "غير مسندة")}</span>
                     <span className="font-semibold text-slate-900">{data.summary.unassignedCases}</span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                    <span className="text-slate-500">Breached SLA</span>
+                    <span className="text-slate-500">{txt("Breached SLA", "تجاوزت مستوى الخدمة")}</span>
                     <span className="font-semibold text-rose-700">{data.summary.delayedCases}</span>
                   </div>
                 </div>
-                <p className="mt-3 text-[11px] text-slate-400">Updated {new Date(data.generatedAt).toLocaleString()}</p>
+                <p className="mt-3 text-[11px] text-slate-400">{txt("Updated", "آخر تحديث")} {new Date(data.generatedAt).toLocaleString()}</p>
               </article>
             </section>
 
             <section className="grid gap-4 lg:grid-cols-2">
               <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
-                <h2 className="text-sm font-semibold text-slate-900">Daily Throughput (7 days)</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{txt("Daily Throughput (7 days)", "الإنتاجية اليومية (7 أيام)")}</h2>
                 <div className="mt-3 space-y-2">
                   {data.throughputTrend.map((point) => {
                     const openedWidth = Math.max(2, Math.round((point.opened / maxThroughput) * 100));
@@ -248,7 +253,7 @@ export default function DashboardPage() {
                       <div key={point.day} className="rounded-xl border border-slate-100 p-2">
                         <div className="mb-1 flex items-center justify-between text-xs">
                           <span className="font-medium text-slate-600">{point.day}</span>
-                          <span className="text-slate-500">Open {point.opened} / Closed {point.closed}</span>
+                          <span className="text-slate-500">{lang === "ar" ? `مفتوح ${point.opened} / مغلق ${point.closed}` : `Open ${point.opened} / Closed ${point.closed}`}</span>
                         </div>
                         <div className="space-y-1">
                           <div className="h-1.5 rounded-full bg-slate-200">
@@ -265,10 +270,10 @@ export default function DashboardPage() {
               </article>
 
               <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
-                <h2 className="text-sm font-semibold text-slate-900">Bottlenecks & Aging</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{txt("Bottlenecks & Aging", "نقاط الاختناق وتقادم الحالات")}</h2>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div className="rounded-xl border border-slate-100 p-3">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Most delayed stages</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{txt("Most delayed stages", "أكثر المراحل تأخيرًا")}</p>
                     <div className="space-y-1.5 text-sm">
                       {data.bottlenecks.length ? (
                         data.bottlenecks.map((item) => (
@@ -278,13 +283,13 @@ export default function DashboardPage() {
                           </div>
                         ))
                       ) : (
-                        <p className="text-xs text-slate-500">No bottlenecks detected.</p>
+                        <p className="text-xs text-slate-500">{txt("No bottlenecks detected.", "لم يتم رصد نقاط اختناق.")}</p>
                       )}
                     </div>
                   </div>
 
                   <div className="rounded-xl border border-slate-100 p-3">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Queue aging</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{txt("Queue aging", "تقادم الطوابير")}</p>
                     <div className="space-y-1.5 text-sm">
                       {data.timelineAging.map((item) => (
                         <div key={item.bucket} className="flex items-center justify-between">
@@ -299,22 +304,24 @@ export default function DashboardPage() {
             </section>
 
             <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-              <StatCard label="Cycle Time" value={data.averageCycleTimeByDepartment[0]?.averageHours ?? 0 + "h"} icon={<Clock3 className="h-4 w-4" />} />
-              <StatCard label="Operations" value={data.summary.totalActiveCases} icon={<Activity className="h-4 w-4" />} />
-              <StatCard label="SLA Watch" value={data.summary.atRiskCases} icon={<Timer className="h-4 w-4" />} tone="warn" />
-              <StatCard label="Escalations" value={data.summary.escalatedCases} icon={<AlertTriangle className="h-4 w-4" />} tone="danger" />
-              <StatCard label="Department Load" value={data.pendingByDepartment.filter((item) => item.count > 0).length} icon={<Building2 className="h-4 w-4" />} />
-              <StatCard label="Operators" value={data.summary.totalActiveCases - data.summary.unassignedCases} icon={<Users className="h-4 w-4" />} />
+              <StatCard label={txt("Cycle Time", "زمن الدورة")} value={data.averageCycleTimeByDepartment[0]?.averageHours ?? 0 + "h"} icon={<Clock3 className="h-4 w-4" />} />
+              <StatCard label={txt("Operations", "العمليات")} value={data.summary.totalActiveCases} icon={<Activity className="h-4 w-4" />} />
+              <StatCard label={txt("SLA Watch", "مراقبة مستوى الخدمة")} value={data.summary.atRiskCases} icon={<Timer className="h-4 w-4" />} tone="warn" />
+              <StatCard label={txt("Escalations", "التصعيدات")} value={data.summary.escalatedCases} icon={<AlertTriangle className="h-4 w-4" />} tone="danger" />
+              <StatCard label={txt("Department Load", "حمولة الأقسام")} value={data.pendingByDepartment.filter((item) => item.count > 0).length} icon={<Building2 className="h-4 w-4" />} />
+              <StatCard label={txt("Operators", "المشغلون")} value={data.summary.totalActiveCases - data.summary.unassignedCases} icon={<Users className="h-4 w-4" />} />
             </section>
 
             <section className="rounded-xl border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] p-4 text-sm text-[var(--primary-pressed)]">
               <div className="flex items-center gap-2 font-semibold">
                 <TrendingUp className="h-4 w-4" />
-                Leadership Insight
+                {txt("Leadership Insight", "رؤية قيادية")}
               </div>
               <p className="mt-1 text-slate-600">
-                The command center is live with real-time department queues, SLA status, bottleneck tracking, and escalation signals.
-                Use Department Inboxes for operational intervention and case-level orchestration actions.
+                {txt(
+                  "The command center is live with real-time department queues, SLA status, bottleneck tracking, and escalation signals. Use Department Inboxes for operational intervention and case-level orchestration actions.",
+                  "مركز القيادة يعمل الآن مع طوابير الأقسام في الوقت الفعلي، وحالة مستوى الخدمة، وتتبع نقاط الاختناق، وإشارات التصعيد. استخدم صناديق وارد الأقسام للتدخل التشغيلي وتنفيذ الإجراءات على مستوى الحالة.",
+                )}
               </p>
             </section>
           </div>

@@ -24,14 +24,68 @@ type CaseItem = {
   created_at?: string;
 };
 
+function translateCaseStatus(status: string, isArabic: boolean): string {
+  if (!status) return "-";
+  if (!isArabic) return status;
+
+  const normalized = status.trim().toLowerCase().replace(/[\s-]+/g, "_");
+
+  const statusMap: Record<string, string> = {
+    open: "مفتوحة",
+    new: "جديدة",
+    pending: "قيد الانتظار",
+    in_progress: "قيد التنفيذ",
+    completed: "مكتملة",
+    closed: "مغلقة",
+    cancelled: "ملغاة",
+    draft: "مسودة",
+    final: "نهائية",
+    approved: "معتمدة",
+    rejected: "مرفوضة",
+    escalated: "مُصعّدة",
+    on_hold: "معلّقة",
+    generated: "تم الإنشاء",
+    failed: "فشلت",
+  };
+
+  return statusMap[normalized] ?? status;
+}
+
+function translateSignerRole(role: string, isArabic: boolean): string {
+  if (!role) return "";
+  if (!isArabic) return role;
+
+  const normalized = role.trim().toLowerCase().replace(/[\s-]+/g, "_");
+
+  const roleMap: Record<string, string> = {
+    patient: "المريض",
+    self: "المريض نفسه",
+    guardian: "الولي",
+    caregiver: "مقدم الرعاية",
+    witness: "الشاهد",
+    doctor: "الطبيب",
+    physician: "الطبيب",
+    legal: "القانوني",
+    legal_admin: "المشرف القانوني",
+    legal_officer: "الموظف القانوني",
+    signatory: "المفوّض بالتوقيع",
+    tenant_admin: "مدير الجهة",
+    family_member: "أحد أفراد الأسرة",
+    representative: "الممثل",
+  };
+
+  return roleMap[normalized] ?? role;
+}
+
 export default function CasesPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const permissions = useUiPermissions();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   const canCreateCase = permissions.can("cases.create");
+  const isArabic = lang === "ar";
 
   useEffect(() => {
     apiFetch<CaseItem[]>("/api/cases")
@@ -114,9 +168,11 @@ export default function CasesPage() {
                   <tr key={item.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/80">
                     <td className="px-4 py-3">{item.medicalRecordNo || item.patient_mrn || "-"}</td>
                     <td className="px-4 py-3">{item.patientName || item.patient_name || "-"}</td>
-                    <td className="px-4 py-3">{item.status || "-"}</td>
+                    <td className="px-4 py-3">{translateCaseStatus(item.status || "", isArabic)}</td>
                     <td className="px-4 py-3 text-slate-700">
-                      {item.signer_name ? `${item.signer_name}${item.signer_role ? ` (${item.signer_role})` : ""}` : "-"}
+                      {item.signer_name
+                        ? `${item.signer_name}${item.signer_role ? ` (${translateSignerRole(item.signer_role, isArabic)})` : ""}`
+                        : "-"}
                     </td>
                     <td className="px-4 py-3">{item.createdAt || item.created_at || "-"}</td>
                     <td className="px-4 py-3">
