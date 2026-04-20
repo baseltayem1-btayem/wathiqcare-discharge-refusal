@@ -224,6 +224,19 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Locale-prefixed dashboard routes are URL aliases; rewrite to concrete app routes.
+  if (
+    locale &&
+    (pathWithoutLocale === "/dashboard" ||
+      pathWithoutLocale === "/dashboards" ||
+      pathWithoutLocale.startsWith("/dashboard/") ||
+      pathWithoutLocale.startsWith("/dashboards/"))
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathWithoutLocale;
+    return NextResponse.rewrite(url);
+  }
+
   if (alreadyLocale) {
     return NextResponse.next();
   }
