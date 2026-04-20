@@ -7,6 +7,7 @@ type TranslateVars = Record<string, string | number>;
 
 type I18nContextValue = {
   lang: Language;
+  language: Language;
   isRtl: boolean;
   locale: string;
   setLang: (next: Language) => void;
@@ -102,6 +103,7 @@ export default function I18nProvider({
   const value = useMemo<I18nContextValue>(
     () => ({
       lang,
+      language: lang,
       isRtl: lang === "ar",
       locale: lang === "ar" ? "ar-SA" : "en-US",
       setLang: setLangState,
