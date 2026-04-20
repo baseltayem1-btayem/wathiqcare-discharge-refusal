@@ -291,19 +291,19 @@ export default function RefusalFormsPage() {
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Case Number</p>
+                  <p className="text-xs font-medium text-slate-500">{txt("Case Number", "رقم الحالة")}</p>
                   <p className="mt-1 text-sm text-slate-900">{selectedForm.caseNumber}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Form Type</p>
+                  <p className="text-xs font-medium text-slate-500">{txt("Form Type", "نوع النموذج")}</p>
                   <p className="mt-1 text-sm text-slate-900">{FORM_TYPE_LABELS[selectedForm.formType]}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Patient Name</p>
+                  <p className="text-xs font-medium text-slate-500">{txt("Patient Name", "اسم المريض")}</p>
                   <p className="mt-1 text-sm text-slate-900">{selectedForm.patientName}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Status</p>
+                  <p className="text-xs font-medium text-slate-500">{txt("Status", "الحالة")}</p>
                   <div className="mt-1">
                     <StatusBadge
                       variant={
@@ -312,27 +312,35 @@ export default function RefusalFormsPage() {
                             selectedForm.status === "completed" ? "completed" :
                               "pending"
                       }
-                      label={selectedForm.status.toUpperCase()}
+                      label={
+                        selectedForm.status === "signed"
+                          ? txt("SIGNED", "موقّع")
+                          : selectedForm.status === "escalated"
+                            ? txt("ESCALATED", "مصعّد")
+                            : selectedForm.status === "completed"
+                              ? txt("COMPLETED", "مكتمل")
+                              : txt("PENDING", "قيد الانتظار")
+                      }
                     />
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500">MRN</p>
+                  <p className="text-xs font-medium text-slate-500">{txt("MRN", "الرقم الطبي (MRN)")}</p>
                   <p className="mt-1 text-sm text-slate-900">{selectedForm.medicalRecordNumber || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Patient ID</p>
+                  <p className="text-xs font-medium text-slate-500">{txt("Patient ID", "هوية المريض")}</p>
                   <p className="mt-1 text-sm text-slate-900">{selectedForm.patientIdNumber || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Generated Date</p>
+                  <p className="text-xs font-medium text-slate-500">{txt("Generated Date", "تاريخ الإنشاء")}</p>
                   <p className="mt-1 text-sm text-slate-900">
                     {new Date(selectedForm.generatedAt).toLocaleString()}
                   </p>
                 </div>
                 {selectedForm.signedAt && (
                   <div>
-                    <p className="text-xs font-medium text-slate-500">Signed Date</p>
+                    <p className="text-xs font-medium text-slate-500">{txt("Signed Date", "تاريخ التوقيع")}</p>
                     <p className="mt-1 text-sm text-emerald-700 font-medium">
                       {new Date(selectedForm.signedAt).toLocaleString()}
                     </p>
@@ -342,28 +350,28 @@ export default function RefusalFormsPage() {
 
               {selectedForm.attendingPhysician && (
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Attending Physician</p>
+                  <p className="text-xs font-medium text-slate-500">{txt("Attending Physician", "الطبيب المعالج")}</p>
                   <p className="mt-1 text-sm text-slate-900">{selectedForm.attendingPhysician}</p>
                 </div>
               )}
 
               {selectedForm.refusalReason && (
                 <div>
-                  <p className="text-xs font-medium text-slate-500">Refusal Reason</p>
+                  <p className="text-xs font-medium text-slate-500">{txt("Refusal Reason", "سبب الرفض")}</p>
                   <p className="mt-1 text-sm text-slate-700">{selectedForm.refusalReason}</p>
                 </div>
               )}
 
               {selectedForm.signerName && (
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                  <p className="text-sm font-medium text-emerald-900">Signature Information</p>
+                  <p className="text-sm font-medium text-emerald-900">{txt("Signature Information", "معلومات التوقيع")}</p>
                   <div className="mt-2 space-y-1">
                     <p className="text-xs text-emerald-800">
-                      Signer: {selectedForm.signerName}
+                      {txt("Signer", "الموقّع")}: {selectedForm.signerName}
                     </p>
                     {selectedForm.witnessName && (
                       <p className="text-xs text-emerald-800">
-                        Witness: {selectedForm.witnessName}
+                        {txt("Witness", "الشاهد")}: {selectedForm.witnessName}
                       </p>
                     )}
                   </div>
@@ -377,7 +385,7 @@ export default function RefusalFormsPage() {
         <Modal
           isOpen={showSignModal}
           onClose={() => setShowSignModal(false)}
-          title="Sign Refusal Form"
+          title={txt("Sign Refusal Form", "توقيع نموذج رفض الخروج")}
           size="md"
           footer={
             <div className="flex gap-3">
@@ -385,7 +393,7 @@ export default function RefusalFormsPage() {
                 variant="outline"
                 onClick={() => setShowSignModal(false)}
               >
-                Cancel
+                {txt("Cancel", "إلغاء")}
               </ActionButton>
               <ActionButton
                 variant="primary"
@@ -393,18 +401,20 @@ export default function RefusalFormsPage() {
                 disabled={submitting}
                 icon={<PenTool className="h-4 w-4" />}
               >
-                {submitting ? "Signing..." : "Sign Form"}
+                {submitting ? txt("Signing...", "جارٍ التوقيع...") : txt("Sign Form", "توقيع النموذج")}
               </ActionButton>
             </div>
           }
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Signer Name *
+              <label htmlFor="signerName" className="block text-sm font-medium text-slate-700">
+                {txt("Signer Name *", "اسم الموقّع *")}
               </label>
               <input
+                id="signerName"
                 type="text"
+                title={txt("Signer Name", "اسم الموقّع")}
                 value={signatureData.signerName}
                 onChange={(e) => setSignatureData({ ...signatureData, signerName: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -413,29 +423,33 @@ export default function RefusalFormsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Relation to Patient *
+              <label htmlFor="signerRelation" className="block text-sm font-medium text-slate-700">
+                {txt("Relation to Patient *", "صلة القرابة بالمريض *")}
               </label>
               <select
+                id="signerRelation"
+                title={txt("Relation to Patient", "صلة القرابة بالمريض")}
                 value={signatureData.signerRelation}
                 onChange={(e) => setSignatureData({ ...signatureData, signerRelation: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
               >
-                <option value="">Select relation</option>
-                <option value="Patient">Patient</option>
-                <option value="Guardian">Legal Guardian</option>
-                <option value="Family">Family Member</option>
-                <option value="Representative">Legal Representative</option>
+                <option value="">{txt("Select relation", "اختر الصلة")}</option>
+                <option value="Patient">{txt("Patient", "المريض")}</option>
+                <option value="Guardian">{txt("Legal Guardian", "الولي القانوني")}</option>
+                <option value="Family">{txt("Family Member", "أحد أفراد العائلة")}</option>
+                <option value="Representative">{txt("Legal Representative", "الممثل القانوني")}</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Witness Name *
+              <label htmlFor="witnessName" className="block text-sm font-medium text-slate-700">
+                {txt("Witness Name *", "اسم الشاهد *")}
               </label>
               <input
+                id="witnessName"
                 type="text"
+                title={txt("Witness Name", "اسم الشاهد")}
                 value={signatureData.witnessName}
                 onChange={(e) => setSignatureData({ ...signatureData, witnessName: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -444,14 +458,16 @@ export default function RefusalFormsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700">
-                Witness Title *
+              <label htmlFor="witnessTitle" className="block text-sm font-medium text-slate-700">
+                {txt("Witness Title *", "صفة الشاهد *")}
               </label>
               <input
+                id="witnessTitle"
                 type="text"
+                title={txt("Witness Title", "صفة الشاهد")}
                 value={signatureData.witnessTitle}
                 onChange={(e) => setSignatureData({ ...signatureData, witnessTitle: e.target.value })}
-                placeholder="e.g., Nurse, Social Worker"
+                placeholder={txt("e.g., Nurse, Social Worker", "مثال: ممرض، أخصائي اجتماعي")}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
               />
@@ -468,7 +484,7 @@ export default function RefusalFormsPage() {
                   required
                 />
                 <label htmlFor="acknowledgeRisks" className="text-sm text-slate-700">
-                  I acknowledge that I have been informed of the medical risks associated with refusing the recommended discharge.
+                  {txt("I acknowledge that I have been informed of the medical risks associated with refusing the recommended discharge.", "أقر بأنني أُبلغت بالمخاطر الطبية المرتبطة برفض الخروج الموصى به.")}
                 </label>
               </div>
 
@@ -482,7 +498,7 @@ export default function RefusalFormsPage() {
                   required
                 />
                 <label htmlFor="acknowledgeFinancial" className="text-sm text-slate-700">
-                  I understand and accept full financial responsibility for any charges incurred beyond the medically necessary period.
+                  {txt("I understand and accept full financial responsibility for any charges incurred beyond the medically necessary period.", "أفهم وأقبل المسؤولية المالية الكاملة عن أي تكاليف تُستحق بعد الفترة الضرورية طبيًا.")}
                 </label>
               </div>
             </div>

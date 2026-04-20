@@ -230,3 +230,16 @@ apps/api/backend/generated/signed_documents/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Runtime/generated artifacts (production-clean policy)
+backend/generated/
+apps/api/backend/generated/
+apps/api/*.sqlite3
+*.sqlite3
+*.sqlite3-journal
+*.pdf
+*.zip
+*.log
+tmp/
+reports/
+coverage/

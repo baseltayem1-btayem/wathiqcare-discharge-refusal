@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertCircle, Lock, X } from "lucide-react";
 import { apiFetchJson } from "@/utils/api";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 import {
-  DEFAULT_AUTH_CONFIG,
   getEnabledAuthMethods,
   normalizeAuthConfig,
   type TenantAuthConfig,
@@ -46,6 +46,8 @@ const AUTH_METHOD_ROWS: {
  * A failure here never affects the tenant list or other modals.
  */
 export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) {
+  const { language } = useI18n();
+  const txt = useMemo(() => (en: string, ar: string) => (language === "ar" ? ar : en), [language]);
   const [form, setForm] = useState<TenantAuthConfig>(() =>
     normalizeAuthConfig(tenant.authConfig),
   );
@@ -56,7 +58,7 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
     const next = { ...form, [key]: value };
 
     if (getEnabledAuthMethods(next).length === 0) {
-      setError("At least one authentication method must be enabled");
+      setError(txt("At least one authentication method must be enabled", "يجب تفعيل طريقة مصادقة واحدة على الأقل"));
       return;
     }
 
@@ -68,7 +70,7 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
         ("tenantId" in meta || "clientId" in meta || "azure" in meta);
       if (!hasAzureConfig) {
         setError(
-          "Microsoft SSO requires valid Azure AD configuration. Please configure it first.",
+          txt("Microsoft SSO requires valid Azure AD configuration. Please configure it first.", "يتطلب تسجيل الدخول الموحد عبر Microsoft إعداد Azure AD صالحًا. يرجى إعداده أولًا."),
         );
         return;
       }
@@ -80,7 +82,7 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
 
   async function handleSave() {
     if (getEnabledAuthMethods(form).length === 0) {
-      setError("At least one authentication method must be enabled");
+      setError(txt("At least one authentication method must be enabled", "يجب تفعيل طريقة مصادقة واحدة على الأقل"));
       return;
     }
     setSaving(true);
@@ -90,12 +92,12 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
         method: "PATCH",
         body: JSON.stringify({ authConfig: form }),
       });
-      toast.success("Login settings updated successfully");
+      toast.success(txt("Login settings updated successfully", "تم تحديث إعدادات الدخول بنجاح"));
       onSaved(tenant.id, form);
       onClose();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to update login settings",
+        err instanceof Error ? err.message : txt("Failed to update login settings", "تعذر تحديث إعدادات الدخول"),
       );
     } finally {
       setSaving(false);
@@ -119,14 +121,14 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
               id="login-settings-title"
               className="text-base font-semibold text-slate-900"
             >
-              Login Settings
+              {txt("Login Settings", "إعدادات تسجيل الدخول")}
             </h3>
-            <p className="mt-0.5 text-xs text-slate-500">For: {tenant.name}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{txt("For", "للجهة")}: {tenant.name}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close dialog"
+            aria-label={txt("Close dialog", "إغلاق النافذة")}
             className="text-slate-400 hover:text-slate-600"
           >
             <X className="h-5 w-5" />
@@ -138,7 +140,7 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
           {/* Active methods summary */}
           <div className="rounded-lg border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] p-3">
             <p className="mb-2 text-xs font-medium text-[var(--primary)]">
-              Active Login Methods
+              {txt("Active Login Methods", "طرق تسجيل الدخول النشطة")}
             </p>
             <div className="flex flex-wrap gap-1">
               {enabledMethods.length > 0 ? (
@@ -152,7 +154,7 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
                   </span>
                 ))
               ) : (
-                <span className="text-xs text-[var(--primary)]">None selected</span>
+                <span className="text-xs text-[var(--primary)]">{txt("None selected", "لم يتم اختيار أي طريقة")}</span>
               )}
             </div>
           </div>
@@ -167,14 +169,26 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
 
           {/* Method toggles */}
           <div className="space-y-3">
-            {AUTH_METHOD_ROWS.map(({ key, label, description }) => (
+            {AUTH_METHOD_ROWS.map(({ key }) => (
               <div
                 key={key}
                 className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50/80 p-3"
               >
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">{label}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+                  <p className="text-sm font-medium text-slate-900">
+                    {key === "password_enabled"
+                      ? txt("Password Login", "تسجيل الدخول بكلمة المرور")
+                      : key === "microsoft_sso_enabled"
+                        ? txt("Microsoft SSO", "تسجيل الدخول الموحد عبر Microsoft")
+                        : txt("Secure Link (Magic Link)", "الرابط الآمن (رابط سحري)")}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {key === "password_enabled"
+                      ? txt("Allow users to sign in with email and password", "السماح للمستخدمين بتسجيل الدخول عبر البريد الإلكتروني وكلمة المرور")
+                      : key === "microsoft_sso_enabled"
+                        ? txt("Allow users to sign in with Microsoft account", "السماح للمستخدمين بتسجيل الدخول بحساب Microsoft")
+                        : txt("Allow users to sign in with email link", "السماح للمستخدمين بتسجيل الدخول عبر رابط البريد الإلكتروني")}
+                  </p>
                 </div>
                 <label className="ml-3 flex items-center gap-2">
                   <input
@@ -183,7 +197,13 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
                     onChange={(e) => handleToggle(key, e.target.checked)}
                     className="rounded border-slate-300"
                   />
-                  <span className="sr-only">Toggle {label}</span>
+                  <span className="sr-only">
+                    {txt("Toggle", "تبديل")} {key === "password_enabled"
+                      ? txt("Password Login", "تسجيل الدخول بكلمة المرور")
+                      : key === "microsoft_sso_enabled"
+                        ? txt("Microsoft SSO", "تسجيل الدخول الموحد عبر Microsoft")
+                        : txt("Secure Link", "الرابط الآمن")}
+                  </span>
                 </label>
               </div>
             ))}
@@ -191,8 +211,7 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
 
           <div className="rounded-lg border border-[var(--primary-soft-border)] bg-slate-50 p-3">
             <p className="text-xs text-slate-600">
-              <strong>Note:</strong> Changes are reflected immediately on the
-              login page for this tenant.
+              <strong>{txt("Note", "ملاحظة")}:</strong> {txt("Changes are reflected immediately on the login page for this tenant.", "تنعكس التغييرات فورًا على صفحة تسجيل الدخول لهذه الجهة.")}
             </p>
           </div>
         </div>
@@ -204,7 +223,7 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
             onClick={onClose}
             className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Cancel
+            {txt("Cancel", "إلغاء")}
           </button>
           <button
             type="button"
@@ -212,7 +231,7 @@ export default function LoginSettingsModal({ tenant, onClose, onSaved }: Props) 
             disabled={saving}
             className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50"
           >
-            {saving ? "Saving…" : "Save Settings"}
+            {saving ? txt("Saving...", "جارٍ الحفظ...") : txt("Save Settings", "حفظ الإعدادات")}
           </button>
         </div>
       </div>

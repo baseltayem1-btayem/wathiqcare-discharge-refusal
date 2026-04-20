@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreditCard, RefreshCw } from "lucide-react";
 import { apiFetchJson } from "@/utils/api";
+import { useI18n } from "@/hooks/useI18n";
 
 type SubscriptionItem = {
     id: string;
@@ -16,6 +17,8 @@ type SubscriptionItem = {
 };
 
 export default function SubscriptionsPage() {
+    const { language } = useI18n();
+    const txt = useMemo(() => (en: string, ar: string) => (language === "ar" ? ar : en), [language]);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
     const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
@@ -29,11 +32,11 @@ export default function SubscriptionsPage() {
             const list = Array.isArray(result) ? result : [];
             setSubscriptions(list);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load subscriptions");
+            setError(err instanceof Error ? err.message : txt("Failed to load subscriptions", "تعذر تحميل الاشتراكات"));
         } finally {
             setRefreshing(false);
         }
-    }, []);
+    }, [txt]);
 
     useEffect(() => {
         void loadSubscriptions();
@@ -43,8 +46,8 @@ export default function SubscriptionsPage() {
         <>
             <div className="mb-4 flex items-center justify-between">
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Subscription Management</h2>
-                    <p className="mt-1 text-sm text-gray-500">Manage tenant subscription plans and seat licenses</p>
+                    <h2 className="text-lg font-semibold text-gray-900">{txt("Subscription Management", "إدارة الاشتراكات")}</h2>
+                    <p className="mt-1 text-sm text-gray-500">{txt("Manage tenant subscription plans and seat licenses", "إدارة خطط اشتراك الجهات وتراخيص المقاعد")}</p>
                 </div>
                 <button
                     type="button"
@@ -52,20 +55,20 @@ export default function SubscriptionsPage() {
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                     <RefreshCw className="h-4 w-4" />
-                    {refreshing ? "Refreshing..." : "Refresh"}
+                    {refreshing ? txt("Refreshing...", "جارٍ التحديث...") : txt("Refresh", "تحديث")}
                 </button>
             </div>
 
             {error ? (
                 <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
-                    <p className="text-sm font-semibold text-rose-800">Unable to load subscriptions</p>
-                    <p className="mt-1 text-sm text-rose-700">Please try again. If the issue persists, check platform API availability.</p>
+                    <p className="text-sm font-semibold text-rose-800">{txt("Unable to load subscriptions", "تعذر تحميل الاشتراكات")}</p>
+                    <p className="mt-1 text-sm text-rose-700">{txt("Please try again. If the issue persists, check platform API availability.", "يرجى إعادة المحاولة. إذا استمرت المشكلة فتحقق من توفر واجهة برمجة المنصة.")}</p>
                     <button
                         type="button"
                         onClick={() => void loadSubscriptions()}
                         className="mt-2 inline-flex items-center rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100"
                     >
-                        Retry
+                        {txt("Retry", "إعادة المحاولة")}
                     </button>
                 </div>
             ) : null}
@@ -73,29 +76,29 @@ export default function SubscriptionsPage() {
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <div className="flex items-center gap-2 mb-3">
                     <CreditCard className="h-4 w-4" />
-                    <h3 className="text-base font-semibold text-slate-900">Subscriptions ({subscriptions.length})</h3>
+                    <h3 className="text-base font-semibold text-slate-900">{txt("Subscriptions", "الاشتراكات")} ({subscriptions.length})</h3>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-slate-200">
-                                <th className="px-3 py-2 text-left font-medium text-slate-600">Tenant</th>
-                                <th className="px-3 py-2 text-left font-medium text-slate-600">Plan</th>
-                                <th className="px-3 py-2 text-left font-medium text-slate-600">Status</th>
-                                <th className="px-3 py-2 text-left font-medium text-slate-600">Billing</th>
-                                <th className="px-3 py-2 text-left font-medium text-slate-600">Seats</th>
+                                <th className="px-3 py-2 text-left font-medium text-slate-600">{txt("Tenant", "الجهة")}</th>
+                                <th className="px-3 py-2 text-left font-medium text-slate-600">{txt("Plan", "الخطة")}</th>
+                                <th className="px-3 py-2 text-left font-medium text-slate-600">{txt("Status", "الحالة")}</th>
+                                <th className="px-3 py-2 text-left font-medium text-slate-600">{txt("Billing", "الفوترة")}</th>
+                                <th className="px-3 py-2 text-left font-medium text-slate-600">{txt("Seats", "المقاعد")}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {subscriptions.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-3 py-4 text-center text-slate-500">No subscriptions found</td>
+                                    <td colSpan={5} className="px-3 py-4 text-center text-slate-500">{txt("No subscriptions found", "لم يتم العثور على اشتراكات")}</td>
                                 </tr>
                             ) : (
                                 subscriptions.map((sub) => (
                                     <tr key={sub.id} className="border-b border-slate-100 hover:bg-slate-50">
-                                        <td className="px-3 py-3">{sub.tenantName || "Unknown"}</td>
+                                        <td className="px-3 py-3">{sub.tenantName || txt("Unknown", "غير معروف")}</td>
                                         <td className="px-3 py-3 font-medium">{sub.planCode}</td>
                                         <td className="px-3 py-3">
                                             <span className={`px-2 py-1 rounded text-xs font-medium ${sub.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" :

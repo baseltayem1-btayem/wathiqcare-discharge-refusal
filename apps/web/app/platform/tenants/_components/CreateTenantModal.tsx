@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertCircle, Building2, X } from "lucide-react";
 import { apiFetchJson } from "@/utils/api";
 import { toast } from "sonner";
 import type { TenantListItem } from "./types";
+import { useI18n } from "@/hooks/useI18n";
 
 const EMPTY_FORM = {
   name: "",
@@ -29,13 +30,15 @@ type Props = {
  * touches the tenant list section.
  */
 export default function CreateTenantModal({ onClose, onCreated }: Props) {
+  const { language } = useI18n();
+  const txt = useMemo(() => (en: string, ar: string) => (language === "ar" ? ar : en), [language]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
     if (!form.name.trim() || !form.ownerEmail.trim()) {
-      setError("Tenant name and admin email are required");
+      setError(txt("Tenant name and admin email are required", "اسم الجهة والبريد الإلكتروني للمشرف مطلوبان"));
       return;
     }
     setSaving(true);
@@ -61,10 +64,10 @@ export default function CreateTenantModal({ onClose, onCreated }: Props) {
           },
         }),
       });
-      toast.success("Tenant created successfully");
+      toast.success(txt("Tenant created successfully", "تم إنشاء الجهة بنجاح"));
       onCreated(tenant);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create tenant");
+      setError(err instanceof Error ? err.message : txt("Failed to create tenant", "تعذر إنشاء الجهة"));
     } finally {
       setSaving(false);
     }
@@ -86,13 +89,13 @@ export default function CreateTenantModal({ onClose, onCreated }: Props) {
               id="create-tenant-title"
               className="text-base font-semibold text-slate-900"
             >
-              Create New Tenant
+              {txt("Create New Tenant", "إنشاء جهة جديدة")}
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close dialog"
+            aria-label={txt("Close dialog", "إغلاق النافذة")}
             className="text-slate-400 hover:text-slate-600"
           >
             <X className="h-5 w-5" />
@@ -110,45 +113,45 @@ export default function CreateTenantModal({ onClose, onCreated }: Props) {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Tenant Name *
+                {txt("Tenant Name", "اسم الجهة")} *
               </label>
               <input
                 className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="e.g. King Faisal Hospital"
+                placeholder={txt("e.g. King Faisal Hospital", "مثال: مستشفى الملك فيصل")}
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Tenant Code
+                {txt("Tenant Code", "رمز الجهة")}
               </label>
               <input
                 className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="Auto-generated if empty"
+                placeholder={txt("Auto-generated if empty", "يُنشأ تلقائيًا عند تركه فارغًا")}
                 value={form.code}
                 onChange={(e) => setForm((p) => ({ ...p, code: e.target.value }))}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Domain
+                {txt("Domain", "النطاق")}
               </label>
               <input
                 className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="e.g. kfh.com"
+                placeholder={txt("e.g. kfh.com", "مثال: kfh.com")}
                 value={form.domain}
                 onChange={(e) => setForm((p) => ({ ...p, domain: e.target.value }))}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Billing Email
+                {txt("Billing Email", "بريد الفوترة")}
               </label>
               <input
                 type="email"
                 className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="billing@hospital.com"
+                placeholder={txt("billing@hospital.com", "billing@hospital.com")}
                 value={form.billingEmail}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, billingEmail: e.target.value }))
@@ -157,12 +160,12 @@ export default function CreateTenantModal({ onClose, onCreated }: Props) {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Admin Email *
+                {txt("Admin Email", "بريد المشرف الإلكتروني")} *
               </label>
               <input
                 type="email"
                 className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="admin@hospital.com"
+                placeholder={txt("admin@hospital.com", "admin@hospital.com")}
                 value={form.ownerEmail}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, ownerEmail: e.target.value }))
@@ -171,11 +174,11 @@ export default function CreateTenantModal({ onClose, onCreated }: Props) {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Admin Full Name
+                {txt("Admin Full Name", "الاسم الكامل للمشرف")}
               </label>
               <input
                 className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="Dr. Mohammed Al-Rashid"
+                placeholder={txt("Dr. Mohammed Al-Rashid", "د. محمد الراشد")}
                 value={form.ownerFullName}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, ownerFullName: e.target.value }))
@@ -184,30 +187,30 @@ export default function CreateTenantModal({ onClose, onCreated }: Props) {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Admin Role
+                {txt("Admin Role", "دور المشرف")}
               </label>
               <select
                 className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                title="Select admin role"
+                title={txt("Select admin role", "اختر دور المشرف")}
                 value={form.ownerRole}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, ownerRole: e.target.value }))
                 }
               >
-                <option value="tenant_admin">tenant_admin</option>
-                <option value="tenant_owner">tenant_owner</option>
+                <option value="tenant_admin">{txt("Tenant admin", "مشرف الجهة")}</option>
+                <option value="tenant_owner">{txt("Tenant owner", "مالك الجهة")}</option>
               </select>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Seat Limit
+                {txt("Seat Limit", "حد المقاعد")}
               </label>
               <input
                 type="number"
                 min="1"
                 max="500"
                 className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-                placeholder="e.g. 10"
+                placeholder={txt("e.g. 10", "مثال: 10")}
                 value={form.seatLimit}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, seatLimit: e.target.value }))
@@ -224,7 +227,7 @@ export default function CreateTenantModal({ onClose, onCreated }: Props) {
             onClick={onClose}
             className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Cancel
+            {txt("Cancel", "إلغاء")}
           </button>
           <button
             type="button"
@@ -232,7 +235,7 @@ export default function CreateTenantModal({ onClose, onCreated }: Props) {
             disabled={saving}
             className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50"
           >
-            {saving ? "Creating…" : "Create Tenant & Send Invite"}
+            {saving ? txt("Creating...", "جارٍ الإنشاء...") : txt("Create Tenant & Send Invite", "إنشاء الجهة وإرسال الدعوة")}
           </button>
         </div>
       </div>

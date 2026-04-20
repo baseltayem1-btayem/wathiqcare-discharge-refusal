@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw, Shield, X } from "lucide-react";
 import { apiFetchJson } from "@/utils/api";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 
 type PlatformUser = {
     id: string;
@@ -30,14 +31,9 @@ const EMPTY_CREATE_FORM = {
     isActive: true,
 };
 
-const ROLE_LABELS: Record<string, string> = {
-    platform_superadmin: "Superadmin",
-    platform_admin: "Platform Admin",
-    platform_operator: "Platform Operator",
-    support_viewer: "Support Viewer",
-};
-
 export default function PlatformUsersPage() {
+    const { language } = useI18n();
+    const txt = useMemo(() => (en: string, ar: string) => (language === "ar" ? ar : en), [language]);
     const [users, setUsers] = useState<PlatformUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -54,12 +50,12 @@ export default function PlatformUsersPage() {
             });
             setUsers(data?.users ?? []);
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to load platform users");
+            toast.error(err instanceof Error ? err.message : txt("Failed to load platform users", "تعذر تحميل مستخدمي المنصة"));
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [txt]);
 
     useEffect(() => {
         void loadUsers();
@@ -67,7 +63,7 @@ export default function PlatformUsersPage() {
 
     async function handleCreateUser() {
         if (!createForm.email.trim() || !createForm.fullName.trim()) {
-            toast.error("Full name and email are required");
+            toast.error(txt("Full name and email are required", "الاسم الكامل والبريد الإلكتروني مطلوبان"));
             return;
         }
         setSaving(true);
@@ -78,10 +74,10 @@ export default function PlatformUsersPage() {
             });
             setCreateForm(EMPTY_CREATE_FORM);
             setShowCreateModal(false);
-            toast.success("Platform user created successfully");
+            toast.success(txt("Platform user created successfully", "تم إنشاء مستخدم المنصة بنجاح"));
             await loadUsers({ silent: true });
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to create platform user");
+            toast.error(err instanceof Error ? err.message : txt("Failed to create platform user", "تعذر إنشاء مستخدم المنصة"));
         } finally {
             setSaving(false);
         }
@@ -89,7 +85,7 @@ export default function PlatformUsersPage() {
 
     async function handleForceResetAllUsers() {
         const confirmed = window.confirm(
-            "Force password reset for all users and invalidate existing sessions?",
+            txt("Force password reset for all users and invalidate existing sessions?", "فرض إعادة تعيين كلمة المرور لجميع المستخدمين وإبطال الجلسات الحالية؟"),
         );
         if (!confirmed) {
             return;
@@ -112,17 +108,24 @@ export default function PlatformUsersPage() {
             });
 
             toast.success(
-                `Forced reset completed: ${result.processed} users, ${result.emailSent} emails sent, ${result.emailFailed} failed`,
+                txt(
+                    `Forced reset completed: ${result.processed} users, ${result.emailSent} emails sent, ${result.emailFailed} failed`,
+                    `اكتملت إعادة التعيين الإلزامية: ${result.processed} مستخدم، ${result.emailSent} رسالة مرسلة، ${result.emailFailed} فشل`,
+                ),
             );
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to force password reset");
+            toast.error(err instanceof Error ? err.message : txt("Failed to force password reset", "تعذر فرض إعادة تعيين كلمة المرور"));
         } finally {
             setForcingReset(false);
         }
     }
 
     function roleLabel(role: string): string {
-        return ROLE_LABELS[role] ?? role;
+        if (role === "platform_superadmin") return txt("Superadmin", "مشرف أعلى");
+        if (role === "platform_admin") return txt("Platform Admin", "مشرف المنصة");
+        if (role === "platform_operator") return txt("Platform Operator", "مشغل المنصة");
+        if (role === "support_viewer") return txt("Support Viewer", "مشاهد الدعم");
+        return role;
     }
 
     function roleBadgeClass(role: string): string {
@@ -138,9 +141,9 @@ export default function PlatformUsersPage() {
             <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <h2 className="text-lg font-semibold text-slate-900">Platform Users</h2>
+                        <h2 className="text-lg font-semibold text-slate-900">{txt("Platform Users", "مستخدمو المنصة")}</h2>
                         <p className="mt-1 text-sm text-slate-500">
-                            Manage platform-level staff — admins, operators, and support viewers
+                            {txt("Manage platform-level staff — admins, operators, and support viewers", "إدارة فرق العمل على مستوى المنصة من المشرفين والمشغلين ومشاهدي الدعم")}
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -151,7 +154,7 @@ export default function PlatformUsersPage() {
                             className="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-60"
                         >
                             <Shield className={`h-4 w-4 ${forcingReset ? "animate-pulse" : ""}`} />
-                            {forcingReset ? "Forcing Reset..." : "Force Reset All Users"}
+                            {forcingReset ? txt("Forcing Reset...", "جارٍ فرض إعادة التعيين...") : txt("Force Reset All Users", "فرض إعادة التعيين لجميع المستخدمين")}
                         </button>
                         <button
                             type="button"
@@ -159,7 +162,7 @@ export default function PlatformUsersPage() {
                             className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                         >
                             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                            Refresh
+                            {txt("Refresh", "تحديث")}
                         </button>
                         <button
                             type="button"
@@ -167,7 +170,7 @@ export default function PlatformUsersPage() {
                             className="inline-flex items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
                         >
                             <Plus className="h-4 w-4" />
-                            Create Platform User
+                            {txt("Create Platform User", "إنشاء مستخدم منصة")}
                         </button>
                     </div>
                 </div>
@@ -175,37 +178,36 @@ export default function PlatformUsersPage() {
 
             <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 <Shield className="mb-0.5 mr-2 inline-block h-4 w-4" />
-                Platform users have <strong>global access</strong> to all tenant data.
-                Only provision platform staff here. Tenant users are managed separately under each tenant.
+                {txt("Platform users have", "مستخدمو المنصة لديهم")} <strong>{txt("global access", "وصول شامل")}</strong> {txt("to all tenant data. Only provision platform staff here. Tenant users are managed separately under each tenant.", "إلى جميع بيانات الجهات. أنشئ هنا فقط حسابات فريق المنصة، أما مستخدمو الجهات فتتم إدارتهم بشكل منفصل داخل كل جهة.")}
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-sm)]">
                 <div className="border-b border-slate-200 px-5 py-4">
-                    <h3 className="text-sm font-semibold text-slate-900">Platform Users ({users.length})</h3>
+                    <h3 className="text-sm font-semibold text-slate-900">{txt("Platform Users", "مستخدمو المنصة")} ({users.length})</h3>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-100 text-sm">
                         <thead className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
                             <tr>
-                                <th className="px-4 py-3 text-left">Name</th>
-                                <th className="px-4 py-3 text-left">Email</th>
-                                <th className="px-4 py-3 text-left">Platform Role</th>
-                                <th className="px-4 py-3 text-left">Status</th>
-                                <th className="px-4 py-3 text-left">Last Login</th>
-                                <th className="px-4 py-3 text-left">Created</th>
+                                <th className="px-4 py-3 text-left">{txt("Name", "الاسم")}</th>
+                                <th className="px-4 py-3 text-left">{txt("Email", "البريد الإلكتروني")}</th>
+                                <th className="px-4 py-3 text-left">{txt("Platform Role", "دور المنصة")}</th>
+                                <th className="px-4 py-3 text-left">{txt("Status", "الحالة")}</th>
+                                <th className="px-4 py-3 text-left">{txt("Last Login", "آخر تسجيل دخول")}</th>
+                                <th className="px-4 py-3 text-left">{txt("Created", "تاريخ الإنشاء")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
                                 <tr>
                                     <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                                        Loading…
+                                        {txt("Loading...", "جارٍ التحميل...")}
                                     </td>
                                 </tr>
                             ) : users.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                                        No platform users found
+                                        {txt("No platform users found", "لا يوجد مستخدمون للمنصة")}
                                     </td>
                                 </tr>
                             ) : (
@@ -220,13 +222,13 @@ export default function PlatformUsersPage() {
                                         </td>
                                         <td className="px-4 py-3">
                                             <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${user.isActive ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
-                                                {user.isActive ? "Active" : "Inactive"}
+                                                {user.isActive ? txt("Active", "نشط") : txt("Inactive", "غير نشط")}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-slate-500">
                                             {user.lastLoginAt
                                                 ? new Date(user.lastLoginAt).toLocaleDateString()
-                                                : "Never"}
+                                                : txt("Never", "أبدًا")}
                                         </td>
                                         <td className="px-4 py-3 text-slate-500">
                                             {new Date(user.createdAt).toLocaleDateString()}
@@ -244,16 +246,16 @@ export default function PlatformUsersPage() {
                     <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-floating)]">
                         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                             <div>
-                                <h3 className="text-base font-semibold text-slate-900">Create Platform User</h3>
+                                <h3 className="text-base font-semibold text-slate-900">{txt("Create Platform User", "إنشاء مستخدم منصة")}</h3>
                                 <p className="mt-0.5 text-xs text-slate-500">
-                                    Platform scope — not associated with any tenant
+                                    {txt("Platform scope — not associated with any tenant", "نطاق المنصة - غير مرتبط بأي جهة")}
                                 </p>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setShowCreateModal(false)}
-                                title="Close create platform user dialog"
-                                aria-label="Close create platform user dialog"
+                                title={txt("Close create platform user dialog", "إغلاق نافذة إنشاء مستخدم منصة")}
+                                aria-label={txt("Close create platform user dialog", "إغلاق نافذة إنشاء مستخدم منصة")}
                                 className="text-slate-400 hover:text-slate-600"
                             >
                                 <X className="h-5 w-5" />
@@ -262,39 +264,39 @@ export default function PlatformUsersPage() {
 
                         <div className="space-y-4 p-5">
                             <div>
-                                <label className="mb-1 block text-xs font-medium text-slate-700">Full Name *</label>
+                                <label className="mb-1 block text-xs font-medium text-slate-700">{txt("Full Name", "الاسم الكامل")} *</label>
                                 <input
                                     className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                                    placeholder="Ahmad Al-Rashidi"
+                                    placeholder={txt("Ahmad Al-Rashidi", "أحمد الراشدي")}
                                     value={createForm.fullName}
                                     onChange={(e) => setCreateForm((p) => ({ ...p, fullName: e.target.value }))}
                                 />
                             </div>
                             <div>
-                                <label className="mb-1 block text-xs font-medium text-slate-700">Email *</label>
+                                <label className="mb-1 block text-xs font-medium text-slate-700">{txt("Email", "البريد الإلكتروني")} *</label>
                                 <input
                                     type="email"
                                     className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                                    placeholder="operator@wathiqcare.online"
+                                    placeholder={txt("operator@wathiqcare.online", "operator@wathiqcare.online")}
                                     value={createForm.email}
                                     onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))}
                                 />
                             </div>
                             <div>
-                                <label className="mb-1 block text-xs font-medium text-slate-700">Platform Role</label>
+                                <label className="mb-1 block text-xs font-medium text-slate-700">{txt("Platform Role", "دور المنصة")}</label>
                                 <select
-                                    title="Select platform role"
-                                    aria-label="Select platform role"
+                                    title={txt("Select platform role", "اختر دور المنصة")}
+                                    aria-label={txt("Select platform role", "اختر دور المنصة")}
                                     className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
                                     value={createForm.role}
                                     onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))}
                                 >
-                                    <option value="platform_admin">Platform Admin</option>
-                                    <option value="platform_operator">Platform Operator</option>
-                                    <option value="support_viewer">Support Viewer</option>
+                                    <option value="platform_admin">{txt("Platform Admin", "مشرف المنصة")}</option>
+                                    <option value="platform_operator">{txt("Platform Operator", "مشغل المنصة")}</option>
+                                    <option value="support_viewer">{txt("Support Viewer", "مشاهد الدعم")}</option>
                                 </select>
                                 <p className="mt-1 text-xs text-slate-500">
-                                    Platform Admin: full access · Operator: operational · Support Viewer: read-only
+                                    {txt("Platform Admin: full access · Operator: operational · Support Viewer: read-only", "مشرف المنصة: وصول كامل · المشغل: تشغيلي · مشاهد الدعم: قراءة فقط")}
                                 </p>
                             </div>
                             <div className="flex items-center gap-4">
@@ -305,7 +307,7 @@ export default function PlatformUsersPage() {
                                         checked={createForm.sendInvite}
                                         onChange={(e) => setCreateForm((p) => ({ ...p, sendInvite: e.target.checked }))}
                                     />
-                                    Send invitation email
+                                    {txt("Send invitation email", "إرسال رسالة دعوة")}
                                 </label>
                                 <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
                                     <input
@@ -314,12 +316,12 @@ export default function PlatformUsersPage() {
                                         checked={createForm.isActive}
                                         onChange={(e) => setCreateForm((p) => ({ ...p, isActive: e.target.checked }))}
                                     />
-                                    Active
+                                    {txt("Active", "نشط")}
                                 </label>
                             </div>
 
                             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                                Platform users have access to all tenants. Only create accounts for trusted staff.
+                                {txt("Platform users have access to all tenants. Only create accounts for trusted staff.", "يمتلك مستخدمو المنصة وصولًا إلى جميع الجهات. أنشئ الحسابات فقط للكوادر الموثوقة.")}
                             </div>
                         </div>
 
@@ -329,7 +331,7 @@ export default function PlatformUsersPage() {
                                 onClick={() => setShowCreateModal(false)}
                                 className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                             >
-                                Cancel
+                                {txt("Cancel", "إلغاء")}
                             </button>
                             <button
                                 type="button"
@@ -337,7 +339,7 @@ export default function PlatformUsersPage() {
                                 disabled={saving}
                                 className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50"
                             >
-                                {saving ? "Creating..." : "Create User"}
+                                {saving ? txt("Creating...", "جارٍ الإنشاء...") : txt("Create User", "إنشاء مستخدم")}
                             </button>
                         </div>
                     </div>

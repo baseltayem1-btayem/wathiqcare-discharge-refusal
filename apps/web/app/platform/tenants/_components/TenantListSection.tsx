@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Building2,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { apiFetchJson } from "@/utils/api";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 import {
   getEnabledAuthMethods,
   normalizeAuthConfig,
@@ -28,9 +29,9 @@ type LoadState = "loading" | "error" | "success";
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
-function TenantListSkeleton() {
+function TenantListSkeleton({ txt }: { txt: (en: string, ar: string) => string }) {
   return (
-    <div className="animate-pulse divide-y divide-slate-100" aria-label="Loading tenants">
+    <div className="animate-pulse divide-y divide-slate-100" aria-label={txt("Loading tenants", "جارٍ تحميل الجهات") }>
       {[1, 2, 3].map((i) => (
         <div key={i} className="flex items-center gap-4 px-4 py-4">
           <div className="flex-1 space-y-2">
@@ -65,6 +66,8 @@ function TenantListSkeleton() {
  * - Desktop: full action table. Mobile: simplified read-only card list.
  */
 export default function TenantListSection() {
+  const { language } = useI18n();
+  const txt = useMemo(() => (en: string, ar: string) => (language === "ar" ? ar : en), [language]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [tenants, setTenants] = useState<TenantListItem[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -91,11 +94,11 @@ export default function TenantListSection() {
       setLoadState("success");
     } catch (err) {
       setLoadError(
-        err instanceof Error ? err.message : "Failed to load tenants",
+        err instanceof Error ? err.message : txt("Failed to load tenants", "تعذر تحميل الجهات"),
       );
       setLoadState("error");
     }
-  }, []);
+  }, [txt]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -113,13 +116,13 @@ export default function TenantListSection() {
         method: "PATCH",
         body: JSON.stringify({ isActive: !currentActive }),
       });
-      toast.success(`Tenant ${currentActive ? "deactivated" : "activated"}`);
+      toast.success(currentActive ? txt("Tenant deactivated", "تم تعطيل الجهة") : txt("Tenant activated", "تم تفعيل الجهة"));
       setTenants((prev) =>
         prev.map((t) => (t.id === id ? { ...t, isActive: !currentActive } : t)),
       );
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to update tenant status",
+        err instanceof Error ? err.message : txt("Failed to update tenant status", "تعذر تحديث حالة الجهة"),
       );
     }
   }
@@ -156,10 +159,10 @@ export default function TenantListSection() {
         <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">
-              Tenant Management
+              {txt("Tenant Management", "إدارة الجهات")}
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">
-              Provision tenants, assign admins, and manage subscriptions
+              {txt("Provision tenants, assign admins, and manage subscriptions", "إنشاء الجهات وتعيين المشرفين وإدارة الاشتراكات")}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -172,7 +175,7 @@ export default function TenantListSection() {
               <RefreshCw
                 className={`h-4 w-4 ${loadState === "loading" ? "animate-spin" : ""}`}
               />
-              Refresh
+              {txt("Refresh", "تحديث")}
             </button>
             {/* Create button — desktop only; mobile users see inline notice */}
             <button
@@ -181,13 +184,13 @@ export default function TenantListSection() {
               className="hidden items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] lg:inline-flex"
             >
               <Plus className="h-4 w-4" />
-              Create Tenant
+              {txt("Create Tenant", "إنشاء جهة")}
             </button>
           </div>
         </div>
 
         {/* ── Loading state ─────────────────────────────────────────────────── */}
-        {loadState === "loading" && <TenantListSkeleton />}
+        {loadState === "loading" && <TenantListSkeleton txt={txt} />}
 
         {/* ── Error state ───────────────────────────────────────────────────── */}
         {loadState === "error" && (
@@ -198,7 +201,7 @@ export default function TenantListSection() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-rose-900">
-                  Failed to load tenants
+                  {txt("Failed to load tenants", "تعذر تحميل الجهات")}
                 </h3>
                 {loadError && (
                   <p className="mt-0.5 text-xs text-rose-700">{loadError}</p>
@@ -209,7 +212,7 @@ export default function TenantListSection() {
                   className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-rose-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-700"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
-                  Retry
+                  {txt("Retry", "إعادة المحاولة")}
                 </button>
               </div>
             </div>
@@ -224,10 +227,10 @@ export default function TenantListSection() {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-slate-700">
-                No tenants yet
+                {txt("No tenants yet", "لا توجد جهات بعد")}
               </h3>
               <p className="mt-1 text-xs text-slate-500">
-                Get started by provisioning the first tenant
+                {txt("Get started by provisioning the first tenant", "ابدأ بإنشاء أول جهة")}
               </p>
             </div>
             <button
@@ -236,7 +239,7 @@ export default function TenantListSection() {
               className="inline-flex items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
             >
               <Plus className="h-4 w-4" />
-              Create First Tenant
+              {txt("Create First Tenant", "إنشاء أول جهة")}
             </button>
           </div>
         )}
@@ -334,7 +337,7 @@ export default function TenantListSection() {
                           </span>
                           <span className="text-slate-400">/{seats.limit}</span>
                           <p className="text-xs text-slate-400">
-                            {seats.available} avail.
+                            {txt(`${seats.available} available`, `${seats.available} متاح`) }
                           </p>
                         </td>
                         <td className="px-4 py-3 text-slate-600">
@@ -345,11 +348,11 @@ export default function TenantListSection() {
                             <button
                               type="button"
                               onClick={() => setLoginTenantId(tenant.id)}
-                              title="Configure login methods"
+                              title={txt("Configure login methods", "تهيئة طرق تسجيل الدخول")}
                               className="inline-flex items-center gap-1 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[#e3eef9]"
                             >
                               <Lock className="h-3 w-3" />
-                              Login Settings
+                              {txt("Login Settings", "إعدادات تسجيل الدخول")}
                             </button>
                             <button
                               type="button"
@@ -357,14 +360,14 @@ export default function TenantListSection() {
                               className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
                             >
                               <Shield className="h-3 w-3" />
-                              Create Admin
+                              {txt("Create Admin", "إنشاء مشرف")}
                             </button>
                             <a
                               href={`/platform/support?tenant=${tenant.id}`}
                               className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
                             >
                               <Users className="h-3 w-3" />
-                              View Users
+                              {txt("View Users", "عرض المستخدمين")}
                             </a>
                             <button
                               type="button"
@@ -380,7 +383,7 @@ export default function TenantListSection() {
                                   : "border-slate-300 bg-white text-[var(--primary)] hover:bg-slate-50"
                               }`}
                             >
-                              {tenant.isActive ? "Deactivate" : "Activate"}
+                              {tenant.isActive ? txt("Deactivate", "تعطيل") : txt("Activate", "تفعيل")}
                             </button>
                           </div>
                         </td>
@@ -414,7 +417,7 @@ export default function TenantListSection() {
                             : "bg-rose-100 text-rose-700"
                         }`}
                       >
-                        {tenant.isActive ? "Active" : "Inactive"}
+                        {tenant.isActive ? txt("Active", "نشطة") : txt("Inactive", "غير نشطة")}
                       </span>
                     </div>
 
@@ -422,13 +425,13 @@ export default function TenantListSection() {
                       {tenant.domain && <span>{tenant.domain}</span>}
                       {sub && (
                         <span>
-                          {sub.plan?.name ?? sub.plan?.code ?? "No plan"} ·{" "}
+                          {sub.plan?.name ?? sub.plan?.code ?? txt("No plan", "بدون خطة")} ·{" "}
                           {sub.status}
                         </span>
                       )}
                       <span>
-                        {tenant._count?.memberships ?? 0} members ·{" "}
-                        {tenant._count?.cases ?? 0} cases
+                        {tenant._count?.memberships ?? 0} {txt("members", "أعضاء")} ·{" "}
+                        {tenant._count?.cases ?? 0} {txt("cases", "حالات")}
                       </span>
                     </div>
 
@@ -452,8 +455,7 @@ export default function TenantListSection() {
               {/* Mobile footer notice */}
               <div className="bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500">
-                  Full tenant management actions are available on a desktop
-                  browser (1024 px+).
+                  {txt("Full tenant management actions are available on a desktop browser (1024 px+).", "إجراءات إدارة الجهات الكاملة متاحة عبر المتصفح على سطح المكتب (1024 بكسل فأكثر).")}
                 </p>
               </div>
             </div>
