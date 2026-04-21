@@ -1230,48 +1230,74 @@ export default function CaseExecutionWorkspaceLayout({
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>{tr("Workflow Steps", "خطوات سير العمل")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {workflowFlow.steps.map((step, index) => {
-              const Icon = stepIcon(step.key);
-              const isSelected = step.key === selectedStep.key;
+        <div className="space-y-4">
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>{tr("Workflow Steps", "خطوات سير العمل")}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {workflowFlow.steps.map((step, index) => {
+                const Icon = stepIcon(step.key);
+                const isSelected = step.key === selectedStep.key;
 
-              return (
-                <button
-                  key={step.key}
-                  type="button"
-                  onClick={() => setSelectedStepKey(step.key)}
-                  className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                    isSelected
-                      ? "border-cyan-300 bg-cyan-50 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isSelected ? "bg-cyan-100 text-cyan-700" : "bg-slate-100 text-slate-600"}`}>
-                        <Icon className="h-4 w-4" />
+                return (
+                  <button
+                    key={step.key}
+                    type="button"
+                    onClick={() => setSelectedStepKey(step.key)}
+                    className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
+                      isSelected
+                        ? "border-cyan-300 bg-cyan-50 shadow-sm"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isSelected ? "bg-cyan-100 text-cyan-700" : "bg-slate-100 text-slate-600"}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Step", "الخطوة")} {index + 1}</div>
+                          <div className="font-semibold text-slate-900">{step.label}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{tr("Step", "الخطوة")} {index + 1}</div>
-                        <div className="font-semibold text-slate-900">{step.label}</div>
-                      </div>
+                      <Badge variant={stepBadgeVariant(step)}>{stepStatusLabel(step, isArabic)}</Badge>
                     </div>
-                    <Badge variant={stepBadgeVariant(step)}>{stepStatusLabel(step, isArabic)}</Badge>
-                  </div>
-                  <div className="text-xs text-slate-500">{tr("Owner", "المالك")}: {step.ownerLabel}</div>
-                  <div className="mt-2 flex items-center text-xs text-slate-600">
-                    {tr("Open step", "فتح الخطوة")}
-                    <ChevronRight className="ml-1 h-3 w-3" />
-                  </div>
-                </button>
-              );
-            })}
-          </CardContent>
-        </Card>
+                    <div className="text-xs text-slate-500">{tr("Owner", "المالك")}: {step.ownerLabel}</div>
+                    <div className="mt-2 flex items-center text-xs text-slate-600">
+                      {tr("Open step", "فتح الخطوة")}
+                      <ChevronRight className="ml-1 h-3 w-3" />
+                    </div>
+                  </button>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>{tr("Side Summary", "ملخص جانبي")}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <div className="text-xs text-slate-500">{tr("Current stage", "المرحلة الحالية")}</div>
+                <div className="mt-1 font-semibold text-slate-900">{selectedStep.label}</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <div className="text-xs text-slate-500">{tr("Owner", "المالك")}</div>
+                <div className="mt-1 font-semibold text-slate-900">{selectedStep.ownerLabel}</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <div className="text-xs text-slate-500">{tr("Open items", "العناصر المفتوحة")}</div>
+                <div className="mt-1 font-semibold text-slate-900">
+                  {selectedStep.missingItems.length === 0
+                    ? tr("None", "لا يوجد")
+                    : tr(`${selectedStep.missingItems.length} item(s)`, `${selectedStep.missingItems.length} عنصر`) }
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="space-y-6">
           <Card>
