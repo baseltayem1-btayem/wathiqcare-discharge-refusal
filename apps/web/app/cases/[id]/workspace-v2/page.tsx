@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/design-system/card";
 import { Button } from "@/components/design-system/button";
+import { SkeletonCard, SkeletonHeader } from "@/components/ui/SkeletonLoading";
 import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { UiCaseAccessContext } from "@/lib/permissions/ui-rbac";
@@ -739,9 +740,17 @@ export default function WorkspaceV2Page() {
 
   if (pageLoading) {
     return (
-      <div className="p-8 text-center text-lg text-slate-500">
-        {txt("Loading case...", "جار تحميل الحالة...")}
-      </div>
+      <AuthGuard>
+        <AppShell title={txt("Case Execution Workspace V2", "مساحة تنفيذ الحالة V2")}>
+          <div className="space-y-4">
+            <SkeletonHeader />
+            <div className="grid gap-4 lg:grid-cols-2">
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          </div>
+        </AppShell>
+      </AuthGuard>
     );
   }
 

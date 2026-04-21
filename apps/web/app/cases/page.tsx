@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, FileText, PlusCircle, RefreshCw } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import { SkeletonHeader, SkeletonTable } from "@/components/ui/SkeletonLoading";
 import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
@@ -141,8 +142,18 @@ export default function CasesPage() {
             </button>
           </>
         }
-      >
-        {loading ? <div className="text-sm text-slate-600">{t("cases.loading")}</div> : null}
+      >(
+          <div className="space-y-4">
+            <SkeletonHeader />
+            <SkeletonTable rows={6} />
+          </div>
+        )
+        {loading ? (
+          <div className="space-y-4">
+            <SkeletonHeader />
+            <SkeletonTable rows={6} />
+          </div>
+        ) : null}
 
         {error ? (
           <div className="rounded-lg border border-[var(--state-error-border)] bg-[var(--state-error-bg)] px-3 py-2 text-sm text-[var(--state-error)]">
