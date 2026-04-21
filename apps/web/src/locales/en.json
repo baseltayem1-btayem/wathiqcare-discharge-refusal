@@ -40,6 +40,18 @@
     "bundles": "Bundles",
     "admin": "Admin"
   },
+  "breadcrumbs": {
+    "ariaLabel": "Breadcrumb",
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "cases": "Cases",
+    "case": "Case",
+    "workspace": "Workspace",
+    "admin": "Admin",
+    "documents": "Documents",
+    "legalPackage": "Legal Package",
+    "settings": "Settings"
+  },
   "home": {
     "title": "WathiqCare Dashboard",
     "subtitle": "Legal-medical discharge refusal management, audit trails, and evidence bundles.",

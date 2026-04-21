@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Stethoscope } from "lucide-react";
+import AppBreadcrumbs from "@/components/AppBreadcrumbs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationBell from "@/components/operations/NotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -22,6 +23,7 @@ type AppShellProps = {
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
+  breadcrumbCaseLabel?: string;
   workflowCaseNav?: {
     caseId: string;
     currentStage?: string | null;
@@ -129,7 +131,14 @@ function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; log
   );
 }
 
-export default function AppShell({ title, subtitle, actions, children, workflowCaseNav }: AppShellProps) {
+export default function AppShell({
+  title,
+  subtitle,
+  actions,
+  children,
+  breadcrumbCaseLabel,
+  workflowCaseNav,
+}: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useI18n();
@@ -266,6 +275,9 @@ export default function AppShell({ title, subtitle, actions, children, workflowC
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">{title}</h1>
                   {subtitle ? <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p> : null}
+                  <div className="mt-2">
+                    <AppBreadcrumbs caseLabel={breadcrumbCaseLabel} />
+                  </div>
                 </div>
                 <div className="inline-flex items-center gap-2">
                   <NotificationBell />

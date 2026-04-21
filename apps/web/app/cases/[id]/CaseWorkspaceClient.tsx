@@ -766,6 +766,7 @@ export default function CaseWorkspaceClient() {
     <AuthGuard>
       <AppShell
         title={txt("Case Execution Workspace", "مساحة تنفيذ الحالة")}
+        breadcrumbCaseLabel={caseData?.mrn ? `${txt("Case", "الحالة")}: ${caseData.mrn}` : undefined}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.push("/cases")}>
