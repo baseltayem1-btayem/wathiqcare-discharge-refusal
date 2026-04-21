@@ -142,12 +142,7 @@ export default function CasesPage() {
             </button>
           </>
         }
-      >(
-          <div className="space-y-4">
-            <SkeletonHeader />
-            <SkeletonTable rows={6} />
-          </div>
-        )
+      >
         {loading ? (
           <div className="space-y-4">
             <SkeletonHeader />
