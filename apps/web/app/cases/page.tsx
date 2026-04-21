@@ -8,6 +8,7 @@ import AuthGuard from "@/components/AuthGuard";
 import { SkeletonHeader, SkeletonTable } from "@/components/ui/SkeletonLoading";
 import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { useI18n } from "@/i18n/I18nProvider";
+import { trackApiError, trackPrimaryAction } from "@/lib/tracking";
 import { apiFetch } from "@/utils/api";
 
 type CaseItem = {
@@ -93,9 +94,10 @@ export default function CasesPage() {
       .then((data) => setCases(data as CaseItem[]))
       .catch((err) => {
         setError(err.message);
+        trackApiError({ operation: "list_cases", surface: "cases_page", role: permissions.auth.role ?? undefined });
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [permissions.auth.role]);
 
   return (
     <AuthGuard>
@@ -110,7 +112,10 @@ export default function CasesPage() {
               onClick={(event) => {
                 if (!canCreateCase) {
                   event.preventDefault();
+                  return;
                 }
+
+                trackPrimaryAction("new_case", { role: permissions.auth.role ?? undefined });
               }}
               title={!canCreateCase ? permissions.deniedMessage : undefined}
               className="inline-flex items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
@@ -122,6 +127,9 @@ export default function CasesPage() {
 
             <Link
               href="/documents"
+              onClick={() => {
+                trackPrimaryAction("open_documents", { role: permissions.auth.role ?? undefined });
+              }}
               className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               <FileText className="h-4 w-4" />
@@ -130,11 +138,15 @@ export default function CasesPage() {
 
             <button
               type="button"
-              onClick={() => void apiFetch<CaseItem[]>("/api/cases")
-                .then((data) => setCases(data as CaseItem[]))
-                .catch((err) => {
-                  setError(err.message);
-                })}
+              onClick={() => {
+                trackPrimaryAction("refresh_cases", { role: permissions.auth.role ?? undefined });
+                void apiFetch<CaseItem[]>("/api/cases")
+                  .then((data) => setCases(data as CaseItem[]))
+                  .catch((err) => {
+                    setError(err.message);
+                    trackApiError({ operation: "refresh_cases", surface: "cases_page", role: permissions.auth.role ?? undefined });
+                  });
+              }}
               className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               <RefreshCw className="h-4 w-4" />
@@ -184,6 +196,9 @@ export default function CasesPage() {
                     <td className="px-4 py-3">
                       <Link
                         href={`/cases/${item.id}`}
+                        onClick={() => {
+                          trackPrimaryAction("open_case_workspace", { role: permissions.auth.role ?? undefined });
+                        }}
                         className="inline-flex items-center gap-1.5 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-1.5 text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
                       >
                         {t("cases.open")}

@@ -1,13 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Stethoscope } from "lucide-react";
 import AppBreadcrumbs from "@/components/AppBreadcrumbs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationBell from "@/components/operations/NotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
+import {
+  beginTrackingForRoute,
+  isTrackingEnabled,
+  trackPageView,
+  trackRouteChange,
+  trackUiError,
+} from "@/lib/tracking";
 import { clearToken, fetchAuthMeCached } from "@/utils/api";
 import { TENANT_NAV_ITEMS, CASE_STAGE_NAV_DEF, type TenantNavItem } from "@/config/tenantSidebar";
 
@@ -149,8 +156,15 @@ export default function AppShell({
   // If a platform_admin somehow reaches AppShell, redirect immediately.
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [tenantBranding, setTenantBranding] = useState<TenantBranding | null>(null);
+  const [viewerRole, setViewerRole] = useState<string | null>(null);
+  const previousPathRef = useRef<string | null>(null);
   useEffect(() => {
-    fetchAuthMeCached<{ userType?: string; tenant?: TenantBranding | null }>({ cache: "no-store" })
+    fetchAuthMeCached<{
+      userType?: string;
+      tenant?: TenantBranding | null;
+      user?: { role?: string | null } | null;
+      claims?: { role?: string | null } | null;
+    }>({ cache: "no-store" })
       .then((me) => {
         if (me?.userType === "platform_admin") {
           setIsPlatformAdmin(true);
@@ -158,9 +172,48 @@ export default function AppShell({
           return;
         }
         setTenantBranding(me?.tenant ?? null);
+        setViewerRole(me?.user?.role ?? me?.claims?.role ?? null);
       })
       .catch(() => { /* ignore — primary enforcement is middleware */ });
   }, [router]);
+
+  useEffect(() => {
+    if (!isTrackingEnabled()) {
+      return;
+    }
+
+    beginTrackingForRoute(pathname);
+    trackPageView({ role: viewerRole ?? undefined });
+
+    const previousPath = previousPathRef.current;
+    if (previousPath && previousPath !== pathname) {
+      trackRouteChange(previousPath, pathname, { role: viewerRole ?? undefined });
+    }
+
+    previousPathRef.current = pathname;
+  }, [pathname, viewerRole]);
+
+  useEffect(() => {
+    if (!isTrackingEnabled()) {
+      return;
+    }
+
+    const onWindowError = () => {
+      trackUiError({ source: "window_error", role: viewerRole ?? undefined });
+    };
+
+    const onUnhandledRejection = () => {
+      trackUiError({ source: "unhandled_rejection", role: viewerRole ?? undefined });
+    };
+
+    window.addEventListener("error", onWindowError);
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+
+    return () => {
+      window.removeEventListener("error", onWindowError);
+      window.removeEventListener("unhandledrejection", onUnhandledRejection);
+    };
+  }, [viewerRole]);
 
   if (isPlatformAdmin) return null;
   // ────────────────────────────────────────────────────────────────────────────

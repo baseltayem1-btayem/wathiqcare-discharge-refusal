@@ -9,6 +9,7 @@
 import {
     AlertTriangle,
     Archive,
+    ChartNoAxesColumn,
     FileSignature,
     FileText,
     FolderKanban,
@@ -34,6 +35,7 @@ export const TENANT_NAV_ITEMS: TenantNavItem[] = [
     { href: "/bundles", label: "Evidence Bundles", icon: <Archive className="h-4 w-4" /> },
     { href: "/documents", label: "Legal Documents", icon: <FileText className="h-4 w-4" /> },
     { href: "/dashboards", label: "Dashboards", icon: <LayoutGrid className="h-4 w-4" /> },
+    { href: "/analytics", label: "Analytics", icon: <ChartNoAxesColumn className="h-4 w-4" /> },
     { href: "/reports", label: "Reports", icon: <Archive className="h-4 w-4" /> },
     { href: "/tenant/users", label: "Users", icon: <Users className="h-4 w-4" /> },
     { href: "/admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" /> },

@@ -18,6 +18,12 @@ import { SkeletonCard, SkeletonHeader } from "@/components/ui/SkeletonLoading";
 import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { UiCaseAccessContext } from "@/lib/permissions/ui-rbac";
+import {
+  trackApiError,
+  trackCaseOpened,
+  trackLegalPackageGenerated,
+  trackPdfGenerated,
+} from "@/lib/tracking";
 
 type ApiErrorPayload = {
   detail?: string;
@@ -541,6 +547,8 @@ export default function WorkspaceV2Page() {
           return;
         }
 
+        trackApiError({ operation: "load_workspace_v2", surface: "workspace_v2", role: permissions.auth.role ?? undefined });
+
         setError(getErrorMessage(err, txt("Failed to load case", "فشل تحميل الحالة")));
         setCaseData(null);
         setReadiness(null);
@@ -566,7 +574,15 @@ export default function WorkspaceV2Page() {
     return () => {
       cancelled = true;
     };
-  }, [caseId, isRtl, txt]);
+  }, [caseId, isRtl, permissions.auth.role, txt]);
+
+  useEffect(() => {
+    if (!caseId || !caseData) {
+      return;
+    }
+
+    trackCaseOpened({ workspace: "v2", role: permissions.auth.role ?? undefined });
+  }, [caseData, caseId, permissions.auth.role]);
 
   async function refreshReadinessAndPackage(): Promise<void> {
     if (!caseId) return;
@@ -599,7 +615,9 @@ export default function WorkspaceV2Page() {
         reloadCasePdfState(caseId),
         reloadComplianceState(caseId),
       ]);
+      trackPdfGenerated({ mode, regenerate, workspace: "v2", role: permissions.auth.role ?? undefined });
     } catch (err: unknown) {
+      trackApiError({ operation: "generate_pdf", surface: "workspace_v2", role: permissions.auth.role ?? undefined });
       setError(getErrorMessage(err, txt("Failed to generate legal case PDF", "فشل إنشاء ملف PDF القانوني للحالة")));
     } finally {
       setPdfBusy(false);
@@ -619,7 +637,9 @@ export default function WorkspaceV2Page() {
       );
       setLegalPackage(pkg);
       await reloadComplianceState(caseId);
+      trackLegalPackageGenerated({ workspace: "v2", role: permissions.auth.role ?? undefined });
     } catch (err: unknown) {
+      trackApiError({ operation: "generate_legal_package", surface: "workspace_v2", role: permissions.auth.role ?? undefined });
       setError(getErrorMessage(err, txt("Failed to generate legal package", "فشل إنشاء الحزمة القانونية")));
     } finally {
       setLoading(false);
@@ -640,6 +660,7 @@ export default function WorkspaceV2Page() {
 
       await refreshReadinessAndPackage();
     } catch (err: unknown) {
+      trackApiError({ operation: "record_presentation", surface: "workspace_v2", role: permissions.auth.role ?? undefined });
       setError(getErrorMessage(err, txt("Failed to record presentation", "فشل تسجيل العرض الطبي")));
     } finally {
       setLoading(false);
@@ -660,6 +681,7 @@ export default function WorkspaceV2Page() {
 
       await refreshReadinessAndPackage();
     } catch (err: unknown) {
+      trackApiError({ operation: "record_signature", surface: "workspace_v2", role: permissions.auth.role ?? undefined });
       setError(getErrorMessage(err, txt("Failed to record signature", "فشل تسجيل التوقيع")));
     } finally {
       setLoading(false);
@@ -680,6 +702,7 @@ export default function WorkspaceV2Page() {
 
       await refreshReadinessAndPackage();
     } catch (err: unknown) {
+      trackApiError({ operation: "record_witness", surface: "workspace_v2", role: permissions.auth.role ?? undefined });
       setError(getErrorMessage(err, txt("Failed to record witness", "فشل تسجيل الشاهد")));
     } finally {
       setLoading(false);
@@ -710,6 +733,7 @@ export default function WorkspaceV2Page() {
 
       await refreshReadinessAndPackage();
     } catch (err: unknown) {
+      trackApiError({ operation: "record_consent", surface: "workspace_v2", role: permissions.auth.role ?? undefined });
       setError(getErrorMessage(err, txt("Failed to record consent", "فشل تسجيل الموافقة")));
     } finally {
       setLoading(false);

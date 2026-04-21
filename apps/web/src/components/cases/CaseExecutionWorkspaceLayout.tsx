@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   ChevronRight,
@@ -44,6 +44,12 @@ import {
 } from "@/components/cases/caseExecutionWorkspaceFlow";
 import { getLegalReadinessDecisionIndicator } from "@/components/cases/legalReadinessDecision";
 import { useI18n } from "@/i18n/I18nProvider";
+import {
+  setDropOffStep,
+  trackPrimaryAction,
+  trackStepCompleted,
+  trackStepViewed,
+} from "@/lib/tracking";
 
 type CaseData = {
   id: string;
@@ -470,6 +476,38 @@ export default function CaseExecutionWorkspaceLayout({
   const progressValue = Math.round((completedSteps / workflowFlow.steps.length) * 100);
   const viewOnlyMode =
     !canMedicalActions && !canLegalApprove && !canGeneratePdf && !canGenerateBundle;
+  const completionStateRef = useRef<Record<string, boolean>>({});
+  const completionTrackingReadyRef = useRef(false);
+
+  useEffect(() => {
+    trackStepViewed(selectedStep.key, { role: role ?? undefined });
+    setDropOffStep(selectedStep.key);
+  }, [role, selectedStep.key]);
+
+  useEffect(() => {
+    const previous = completionStateRef.current;
+    const next: Record<string, boolean> = {};
+
+    if (!completionTrackingReadyRef.current) {
+      for (const step of workflowFlow.steps) {
+        next[step.key] = step.status === "completed";
+      }
+      completionStateRef.current = next;
+      completionTrackingReadyRef.current = true;
+      return;
+    }
+
+    for (const step of workflowFlow.steps) {
+      const isCompleted = step.status === "completed";
+      next[step.key] = isCompleted;
+
+      if (isCompleted && !previous[step.key]) {
+        trackStepCompleted(step.key, { role: role ?? undefined });
+      }
+    }
+
+    completionStateRef.current = next;
+  }, [role, workflowFlow.steps]);
 
   function renderCaseCreationStep() {
     return (
@@ -608,6 +646,7 @@ export default function CaseExecutionWorkspaceLayout({
                   disabled={loading || !canMedicalActions}
                   title={!canMedicalActions ? deniedMessage : undefined}
                   onClick={() => {
+                    trackPrimaryAction("record_medical_decision", { role: role ?? undefined });
                     void onRecordPresentation();
                   }}
                 >
@@ -731,6 +770,7 @@ export default function CaseExecutionWorkspaceLayout({
                   disabled={loading || !canMedicalActions || !signature.patient_decision}
                   title={!canMedicalActions ? deniedMessage : undefined}
                   onClick={() => {
+                    trackPrimaryAction("record_patient_decision", { role: role ?? undefined });
                     void onRecordSignature();
                   }}
                 >
@@ -765,6 +805,7 @@ export default function CaseExecutionWorkspaceLayout({
                   disabled={loading || !canWitnessAction}
                   title={!canWitnessAction ? deniedMessage : undefined}
                   onClick={() => {
+                    trackPrimaryAction("record_witness", { role: role ?? undefined });
                     void onRecordWitness();
                   }}
                 >
@@ -841,6 +882,7 @@ export default function CaseExecutionWorkspaceLayout({
               variant="outline"
               disabled={loading}
               onClick={() => {
+                trackPrimaryAction("record_consent_evidence", { role: role ?? undefined });
                 void onRecordConsent();
               }}
             >
@@ -952,6 +994,7 @@ export default function CaseExecutionWorkspaceLayout({
                 disabled={pdfBusy || !canGeneratePdf}
                 title={!canGeneratePdf ? deniedMessage : undefined}
                 onClick={() => {
+                  trackPrimaryAction("generate_draft_pdf", { role: role ?? undefined });
                   void onGenerateCasePdf("draft", false);
                 }}
               >
@@ -963,6 +1006,7 @@ export default function CaseExecutionWorkspaceLayout({
                 disabled={pdfBusy || !canGeneratePdf || !canLegalApprove}
                 title={!canGeneratePdf || !canLegalApprove ? deniedMessage : undefined}
                 onClick={() => {
+                  trackPrimaryAction("generate_final_pdf", { role: role ?? undefined });
                   void onGenerateCasePdf("final", false);
                 }}
               >
@@ -974,6 +1018,7 @@ export default function CaseExecutionWorkspaceLayout({
                 disabled={pdfBusy || !canGeneratePdf}
                 title={!canGeneratePdf ? deniedMessage : undefined}
                 onClick={() => {
+                  trackPrimaryAction("regenerate_pdf", { role: role ?? undefined });
                   void onGenerateCasePdf("draft", true);
                 }}
               >
@@ -988,6 +1033,7 @@ export default function CaseExecutionWorkspaceLayout({
                 disabled={loading || !canGenerateBundle}
                 title={!canGenerateBundle ? deniedMessage : undefined}
                 onClick={() => {
+                  trackPrimaryAction("generate_legal_package", { role: role ?? undefined });
                   void onGenerateLegalPackage();
                 }}
               >
