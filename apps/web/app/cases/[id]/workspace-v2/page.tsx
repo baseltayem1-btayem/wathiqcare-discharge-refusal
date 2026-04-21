@@ -741,7 +741,7 @@ export default function WorkspaceV2Page() {
   if (pageLoading) {
     return (
       <AuthGuard>
-        <AppShell title={txt("Case Execution Workspace V2", "مساحة تنفيذ الحالة V2")}>
+        <AppShell title={txt("Case Execution Workspace V2", "مساحة تنفيذ الحالة")}>
           <div className="space-y-4">
             <SkeletonHeader />
             <div className="grid gap-4 lg:grid-cols-2">
@@ -759,7 +759,7 @@ export default function WorkspaceV2Page() {
       <div className="mx-auto max-w-2xl p-8">
         <Card>
           <CardHeader>
-            <CardTitle>{txt("Case Execution Workspace V2", "مساحة تنفيذ الحالة V2")}</CardTitle>
+            <CardTitle>{txt("Case Execution Workspace V2", "مساحة تنفيذ الحالة")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="mb-2 font-medium text-red-600">
@@ -774,7 +774,7 @@ export default function WorkspaceV2Page() {
   return (
     <AuthGuard>
       <AppShell
-        title={txt("Case Execution Workspace V2", "مساحة تنفيذ الحالة V2")}
+        title={txt("Case Execution Workspace V2", "مساحة تنفيذ الحالة")}
         breadcrumbCaseLabel={caseData?.mrn ? `${txt("Case", "الحالة")}: ${caseData.mrn}` : undefined}
         actions={
           <div className="flex gap-2">

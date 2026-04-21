@@ -33,7 +33,7 @@ function fallbackArabicLabel(segment: string): string {
   switch (segment) {
     case "dashboard":
     case "dashboards":
-      return "لوحة المعلومات";
+      return "لوحة التحكم";
     case "cases":
       return "الحالات";
     case "admin":
