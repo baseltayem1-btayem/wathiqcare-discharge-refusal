@@ -65,7 +65,7 @@ export default function DemoPage() {
           display: flex;
           align-items: center;
           padding: 80px 0;
-          background-image: url("https://images.openai.com/static-rsc-4/_OH6tiXgjnz6u463kaHp7-VdsbAY-K0rCUNYsmo-VyL1eIsR0aZ-5LJvw9aS5RDLjFEUVQAbXCvFvnqdL9YGejAo7Jbva7uRZjmJv6VBovQhCDBXXv6TRk54ij-EVWkCXK_YUEzJ09Ep9bogw6o4QdVEyCPuuEEjYdwQ4ep-iArYQSdZWUGeE4v9QrswXDwJ?purpose=fullsize");
+          background-image: url("/images/demo-hero.jpg");
           background-size: cover;
           background-position: center;
         }
