@@ -112,9 +112,9 @@ function NavLink({ href, label, icon, active, disabled = false, surface = "sideb
   if (disabled) {
     return (
       <span className={onSidebar
-        ? "inline-flex w-full cursor-not-allowed items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-[var(--sidebar-text-muted)] opacity-60"
+        ? "inline-flex w-full cursor-not-allowed items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-white/50 opacity-60 [&_svg]:text-white/50"
         : "inline-flex w-full cursor-not-allowed items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-slate-400 opacity-60"}>
-        {icon}
+        <span className="shrink-0">{icon}</span>
         {label}
       </span>
     );
@@ -126,14 +126,14 @@ function NavLink({ href, label, icon, active, disabled = false, surface = "sideb
       className={
         active
           ? onSidebar
-            ? "inline-flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200 border-[var(--sidebar-active-border)] bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-text)] shadow-[0_6px_14px_rgba(2,6,23,0.24)]"
+            ? "inline-flex w-full items-center gap-2.5 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/10 [&_svg]:text-white"
             : "inline-flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200 border-[var(--primary-soft-border)] bg-[var(--primary-soft)] text-[var(--primary-pressed)]"
           : onSidebar
-            ? "inline-flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-[var(--sidebar-text)] transition-all duration-200 hover:border-[rgba(159,179,207,0.28)] hover:bg-white/10"
+            ? "inline-flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-white/80 transition-all duration-200 hover:bg-white/5 hover:text-white [&_svg]:text-white/80 hover:[&_svg]:text-white"
             : "inline-flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-slate-600 transition-all duration-200 hover:border-slate-200 hover:bg-slate-50"
       }
     >
-      {icon}
+      <span className="shrink-0">{icon}</span>
       {label}
     </Link>
   );
@@ -279,7 +279,7 @@ export default function AppShell({
       <div className="mx-auto max-w-[1600px] px-3 py-3 md:px-5 md:py-5">
         <div className="wc-shell-grid">
           <aside
-            className="hidden rounded-[24px] border border-[var(--sidebar-border)] bg-[linear-gradient(180deg,var(--sidebar-bg)_0%,var(--sidebar-bg-elevated)_100%)] p-4 shadow-[0_20px_45px_rgba(2,6,23,0.22)] md:flex md:flex-col"
+            className="hidden rounded-[24px] border border-[var(--sidebar-border)] bg-[#0A2540] p-4 text-white shadow-[0_20px_45px_rgba(2,6,23,0.22)] md:flex md:flex-col"
           >
             <div className="rounded-2xl border border-[rgba(159,179,207,0.24)] bg-[rgba(12,25,45,0.55)] p-3">
               <div className="flex justify-center">
@@ -306,7 +306,7 @@ export default function AppShell({
             <nav className="mt-4 flex-1 space-y-4">
               {navGroups.map((group) => (
                 <section key={group.title}>
-                  <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--sidebar-text-muted)]">
+                  <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
                     {group.title}
                   </div>
                   <div className="space-y-1">
@@ -331,26 +331,26 @@ export default function AppShell({
                 <Stethoscope className="h-3.5 w-3.5 text-white" />
                 {t("app.activeWorkspace")}
               </div>
-              <p className="mt-1 text-[var(--sidebar-text-muted)]">{t("app.secureMode")}</p>
+              <p className="mt-1 text-white/70">{t("app.secureMode")}</p>
               <div className="mt-3 rounded-xl border border-[rgba(159,179,207,0.24)] bg-[rgba(10,20,36,0.5)] p-2">
-                <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#d8e6f9]">
-                  <HelpCircle className="h-3 w-3 text-white" />
+                <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-white">
+                  <HelpCircle className="h-3 w-3 text-white/80" />
                   Support
                 </div>
-                <p className="mt-1 text-[11px] leading-relaxed text-[var(--sidebar-text-muted)]">
+                <p className="mt-1 text-[11px] leading-relaxed text-white/70">
                   For urgent legal package blockers, contact the command support channel.
                 </p>
               </div>
             </div>
 
             <div className="mt-3 space-y-2">
-              <LanguageSwitcher />
+              <LanguageSwitcher variant="sidebar" />
               <button
                 type="button"
                 onClick={() => {
                   void handleLogout();
                 }}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(159,179,207,0.24)] bg-[rgba(255,255,255,0.06)] px-3 py-2 text-sm font-medium text-slate-100 transition"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-white/20 [&_svg]:text-white/80"
               >
                 <LogOut className="h-4 w-4" />
                 {t("common.logout")}
