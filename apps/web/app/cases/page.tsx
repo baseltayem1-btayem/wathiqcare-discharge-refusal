@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Activity, ArrowRight, CheckCircle2, Clock3, FileText, PlusCircle, RefreshCw, Zap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Clock3, FileText, PlusCircle, RefreshCw, Zap } from "lucide-react";
 import { toast } from "sonner";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
@@ -28,6 +28,15 @@ type CaseItem = {
   pdf_file?: string;
   createdAt?: string;
   created_at?: string;
+};
+
+type PriorityLevel = "urgent" | "medium" | "low";
+
+type RowDecisionSignal = {
+  item: CaseItem;
+  readinessPercent: number;
+  missingElements: Array<"consent" | "witness" | "physician">;
+  priority: PriorityLevel;
 };
 
 function translateCaseStatus(status: string, isArabic: boolean): string {
@@ -94,6 +103,44 @@ function statusPillClass(status: string): string {
   return "border border-slate-200 bg-slate-50 text-slate-700";
 }
 
+function computeReadinessSignal(item: CaseItem): Omit<RowDecisionSignal, "item"> {
+  const status = (item.status || "").trim().toLowerCase();
+  const signerRole = (item.signer_role || "").trim().toLowerCase();
+
+  const hasConsent = Boolean(item.refusal_reason && item.refusal_reason.trim());
+  const hasWitness = /witness/.test(signerRole);
+  const hasPhysician = /doctor|physician/.test(signerRole) || /completed|closed|final|approved/.test(status);
+
+  const missingElements: Array<"consent" | "witness" | "physician"> = [];
+  if (!hasConsent) missingElements.push("consent");
+  if (!hasWitness) missingElements.push("witness");
+  if (!hasPhysician) missingElements.push("physician");
+
+  const readinessPercent = Math.max(0, 100 - missingElements.length * 34);
+
+  const priority: PriorityLevel =
+    /open|pending|progress|escalated|failed|rejected/.test(status) || readinessPercent < 50
+      ? "urgent"
+      : readinessPercent < 80
+        ? "medium"
+        : "low";
+
+  return { readinessPercent, missingElements, priority };
+}
+
+function priorityPillClass(priority: PriorityLevel): string {
+  if (priority === "urgent") return "border border-rose-200 bg-rose-50 text-rose-700";
+  if (priority === "medium") return "border border-amber-200 bg-amber-50 text-amber-700";
+  return "border border-slate-200 bg-slate-100 text-slate-700";
+}
+
+function deltaMeta(current: number, previous: number): { delta: number; trend: "up" | "down" | "flat" } {
+  const delta = current - previous;
+  if (delta > 0) return { delta, trend: "up" };
+  if (delta < 0) return { delta, trend: "down" };
+  return { delta: 0, trend: "flat" };
+}
+
 export default function CasesPage() {
   const { t, lang } = useI18n();
   const permissions = useUiPermissions();
@@ -125,8 +172,64 @@ export default function CasesPage() {
     void loadCases().finally(() => setLoading(false));
   }, [permissions.auth.role]);
 
-  const inProgressCount = cases.filter((item) => /open|pending|progress/i.test(item.status || "")).length;
-  const readyToCloseCount = cases.filter((item) => /completed|closed|final/i.test(item.status || "")).length;
+  const decisionRows = useMemo<RowDecisionSignal[]>(() => {
+    const ranked = cases.map((item) => ({ item, ...computeReadinessSignal(item) }));
+    const rankOrder: Record<PriorityLevel, number> = { urgent: 0, medium: 1, low: 2 };
+
+    ranked.sort((left, right) => {
+      const priorityDelta = rankOrder[left.priority] - rankOrder[right.priority];
+      if (priorityDelta !== 0) return priorityDelta;
+
+      const leftTs = Date.parse(left.item.createdAt || left.item.created_at || "") || 0;
+      const rightTs = Date.parse(right.item.createdAt || right.item.created_at || "") || 0;
+      return rightTs - leftTs;
+    });
+
+    return ranked;
+  }, [cases]);
+
+  const inProgressCount = decisionRows.filter((row) => /open|pending|progress/i.test(row.item.status || "")).length;
+  const readyToCloseCount = decisionRows.filter((row) => /completed|closed|final/i.test(row.item.status || "")).length;
+  const urgentCount = decisionRows.filter((row) => row.priority === "urgent").length;
+  const blockingIssueCount = decisionRows.reduce((acc, row) => acc + row.missingElements.length, 0);
+
+  const now = Date.now();
+  const last24hStart = now - 24 * 60 * 60 * 1000;
+  const prev24hStart = now - 48 * 60 * 60 * 1000;
+
+  const actionsDailyCurrent = decisionRows.filter((row) => {
+    const ts = Date.parse(row.item.createdAt || row.item.created_at || "") || 0;
+    return ts >= last24hStart;
+  }).length;
+  const actionsDailyPrevious = decisionRows.filter((row) => {
+    const ts = Date.parse(row.item.createdAt || row.item.created_at || "") || 0;
+    return ts >= prev24hStart && ts < last24hStart;
+  }).length;
+
+  const inProgressDailyCurrent = decisionRows.filter((row) => {
+    const ts = Date.parse(row.item.createdAt || row.item.created_at || "") || 0;
+    return /open|pending|progress/i.test(row.item.status || "") && ts >= last24hStart;
+  }).length;
+  const inProgressDailyPrevious = decisionRows.filter((row) => {
+    const ts = Date.parse(row.item.createdAt || row.item.created_at || "") || 0;
+    return /open|pending|progress/i.test(row.item.status || "") && ts >= prev24hStart && ts < last24hStart;
+  }).length;
+
+  const readyCloseDailyCurrent = decisionRows.filter((row) => {
+    const ts = Date.parse(row.item.createdAt || row.item.created_at || "") || 0;
+    return /completed|closed|final/i.test(row.item.status || "") && ts >= last24hStart;
+  }).length;
+  const readyCloseDailyPrevious = decisionRows.filter((row) => {
+    const ts = Date.parse(row.item.createdAt || row.item.created_at || "") || 0;
+    return /completed|closed|final/i.test(row.item.status || "") && ts >= prev24hStart && ts < last24hStart;
+  }).length;
+
+  const actionsDelta = deltaMeta(actionsDailyCurrent, actionsDailyPrevious);
+  const inProgressDelta = deltaMeta(inProgressDailyCurrent, inProgressDailyPrevious);
+  const readyCloseDelta = deltaMeta(readyCloseDailyCurrent, readyCloseDailyPrevious);
+
+  const riskLevel = urgentCount >= 10 ? txt("High", "مرتفع") : urgentCount >= 3 ? txt("Medium", "متوسط") : txt("Low", "منخفض");
+
   const nextAction = inProgressCount > 0
     ? {
         title: isArabic ? "الإجراء التالي: متابعة الحالات النشطة" : "Next action: review active cases",
@@ -241,6 +344,18 @@ export default function CasesPage() {
                     <span className="font-semibold text-white">{isArabic ? "قرار تنفيذي:" : "Executive priority:"}</span>{" "}
                     {nextAction.note}
                   </p>
+                  <div className="mt-3 inline-flex flex-wrap items-center gap-2 text-xs">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-rose-300 bg-rose-500/15 px-2.5 py-1 font-semibold text-rose-100">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      {txt("Urgent", "عاجلة")}: {urgentCount}
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-500/15 px-2.5 py-1 font-semibold text-amber-100">
+                      {txt("Risk", "المخاطر")}: {riskLevel}
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-500/15 px-2.5 py-1 font-semibold text-slate-100">
+                      {txt("Blocking issues", "العوائق")}: {blockingIssueCount}
+                    </span>
+                  </div>
                 </div>
                 <Link
                   href={inProgressCount > 0 ? "/cases" : "/cases/new"}
@@ -262,6 +377,9 @@ export default function CasesPage() {
                 <CardContent>
                   <div className="text-3xl font-bold text-sky-900">{cases.length}</div>
                   <p className="mt-1 text-xs text-sky-700/80">{isArabic ? "إجمالي الحالات في مساحة العمل" : "Total cases in workspace"}</p>
+                  <p className="mt-2 text-xs font-semibold text-sky-700">
+                    {actionsDelta.trend === "up" ? "↑" : actionsDelta.trend === "down" ? "↓" : "→"} {actionsDelta.delta >= 0 ? "+" : ""}{actionsDelta.delta} {txt("vs previous day", "مقارنة باليوم السابق")}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="rounded-2xl border border-amber-200 bg-[linear-gradient(140deg,#fffbeb_0%,#ffffff_100%)] shadow-[0_10px_24px_rgba(245,158,11,0.12)]">
@@ -276,6 +394,9 @@ export default function CasesPage() {
                     {inProgressCount}
                   </div>
                   <p className="mt-1 text-xs text-amber-700/80">{isArabic ? "حالات تحتاج متابعة نشطة" : "Cases requiring active follow-up"}</p>
+                  <p className="mt-2 text-xs font-semibold text-amber-700">
+                    {inProgressDelta.trend === "up" ? "↑" : inProgressDelta.trend === "down" ? "↓" : "→"} {inProgressDelta.delta >= 0 ? "+" : ""}{inProgressDelta.delta} {txt("vs previous day", "مقارنة باليوم السابق")}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="rounded-2xl border border-emerald-200 bg-[linear-gradient(140deg,#ecfdf5_0%,#ffffff_100%)] shadow-[0_10px_24px_rgba(16,185,129,0.12)]">
@@ -290,6 +411,9 @@ export default function CasesPage() {
                     {readyToCloseCount}
                   </div>
                   <p className="mt-1 text-xs text-emerald-700/80">{isArabic ? "استوفت متطلبات الحالة" : "Meeting closure requirements"}</p>
+                  <p className="mt-2 text-xs font-semibold text-emerald-700">
+                    {readyCloseDelta.trend === "up" ? "↑" : readyCloseDelta.trend === "down" ? "↓" : "→"} {readyCloseDelta.delta >= 0 ? "+" : ""}{readyCloseDelta.delta} {txt("vs previous day", "مقارنة باليوم السابق")}
+                  </p>
                 </CardContent>
               </Card>
             </section>
@@ -300,21 +424,43 @@ export default function CasesPage() {
                 <tr>
                   <th className="px-4 py-3 text-left">{t("cases.table.mrn")}</th>
                   <th className="px-4 py-3 text-left">{t("cases.table.patient")}</th>
+                  <th className="px-4 py-3 text-left">{txt("Priority", "الأولوية")}</th>
                   <th className="px-4 py-3 text-left">{t("cases.table.status")}</th>
+                  <th className="px-4 py-3 text-left">{txt("Legal readiness", "الجاهزية القانونية")}</th>
                   <th className="px-4 py-3 text-left">{t("cases.table.signer")}</th>
                   <th className="px-4 py-3 text-left">{t("cases.table.created")}</th>
                   <th className="px-4 py-3 text-left">{t("cases.table.actions")}</th>
                 </tr>
               </thead>
               <tbody>
-                {cases.map((item) => (
-                  <tr key={item.id} className="border-t border-slate-100 transition-all duration-200 ease-in-out hover:bg-slate-50">
-                    <td className="px-4 py-3 font-semibold tracking-wide text-slate-900">{item.medicalRecordNo || item.patient_mrn || "-"}</td>
+                {decisionRows.map((row, index) => {
+                  const item = row.item;
+                  const isFirstUrgentRow = index === 0 && row.priority === "urgent";
+
+                  return (
+                  <tr
+                    key={item.id}
+                    className={`border-t border-slate-100 transition-all duration-200 ease-in-out hover:bg-slate-50 ${isFirstUrgentRow ? "bg-rose-50/60" : ""}`}
+                  >
+                    <td className={`px-4 py-3 font-semibold tracking-wide ${isFirstUrgentRow ? "text-rose-700" : "text-slate-900"}`}>{item.medicalRecordNo || item.patient_mrn || "-"}</td>
                     <td className="px-4 py-3">{item.patientName || item.patient_name || "-"}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${priorityPillClass(row.priority)}`}>
+                        {row.priority === "urgent" ? txt("Urgent", "عاجلة") : row.priority === "medium" ? txt("Medium", "متوسطة") : txt("Low", "منخفضة")}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusPillClass(item.status || "")}`}>
                         {translateCaseStatus(item.status || "", isArabic)}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-xs font-semibold text-slate-800">{row.readinessPercent}%</div>
+                      <div className="mt-1 text-[11px] text-slate-500">
+                        {row.missingElements.length
+                          ? row.missingElements.map((entry) => txt(entry, entry === "consent" ? "موافقة" : entry === "witness" ? "شاهد" : "طبيب")).join(" / ")
+                          : txt("Complete", "مكتملة")}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       {item.signer_name
@@ -335,11 +481,12 @@ export default function CasesPage() {
                       </Link>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
 
-                {cases.length === 0 ? (
+                {decisionRows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
+                    <td colSpan={8} className="px-4 py-6 text-center text-slate-500">
                       <div className="mx-auto max-w-xl">
                         <UXStateCard
                           variant="empty"
