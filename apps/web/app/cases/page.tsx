@@ -227,7 +227,7 @@ export default function CasesPage() {
 
         {!loading && !error ? (
           <div className="space-y-10">
-            <section className="rounded-2xl border border-l-4 border-[#C9A13B] bg-[linear-gradient(135deg,#0A2540_0%,#002B5C_100%)] p-7 shadow-[0_14px_32px_rgba(15,23,42,0.28)]">
+            <section className="rounded-2xl border border-[var(--border-soft)] !border-l-4 !border-l-[#C9A13B] bg-[linear-gradient(135deg,#0A2540_0%,#002B5C_100%)] p-7 shadow-[0_14px_32px_rgba(15,23,42,0.28)]">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h2 className="inline-flex items-center gap-2 text-base font-bold text-white/95">
@@ -328,7 +328,7 @@ export default function CasesPage() {
                         onClick={() => {
                           trackPrimaryAction("open_case_workspace", { role: permissions.auth.role ?? undefined });
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-3 py-2 font-semibold text-white transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] hover:shadow-[0_8px_18px_rgba(15,23,42,0.16)]"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-3 py-2 font-semibold !text-white transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] hover:shadow-[0_8px_18px_rgba(15,23,42,0.16)]"
                       >
                         {t("cases.open")}
                         <ArrowRight className="h-3.5 w-3.5" />
