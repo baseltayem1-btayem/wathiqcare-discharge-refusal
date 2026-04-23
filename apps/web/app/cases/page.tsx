@@ -151,6 +151,7 @@ export default function CasesPage() {
 
   const canCreateCase = permissions.can("cases.create");
   const isArabic = lang === "ar";
+  const txt = (en: string, ar: string) => (isArabic ? ar : en);
 
   async function loadCases(showToast = false): Promise<void> {
     try {
