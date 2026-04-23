@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, FileText, PlusCircle, RefreshCw } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileText, ListChecks, PlusCircle, RefreshCw, Timer, Zap } from "lucide-react";
 import { toast } from "sonner";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
-import { Badge } from "@/components/design-system/badge";
 import { Button } from "@/components/design-system/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/design-system/card";
 import { SkeletonHeader, SkeletonTable } from "@/components/ui/SkeletonLoading";
@@ -84,6 +83,17 @@ function translateSignerRole(role: string, isArabic: boolean): string {
   return roleMap[normalized] ?? role;
 }
 
+function statusPillClass(status: string): string {
+  const normalized = status.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (["open", "new", "pending", "in_progress"].includes(normalized)) {
+    return "border border-sky-200 bg-sky-50 text-sky-700";
+  }
+  if (["closed", "completed", "final"].includes(normalized)) {
+    return "border border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+  return "border border-slate-200 bg-slate-50 text-slate-700";
+}
+
 export default function CasesPage() {
   const { t, lang } = useI18n();
   const permissions = useUiPermissions();
@@ -146,7 +156,7 @@ export default function CasesPage() {
                 trackPrimaryAction("new_case", { role: permissions.auth.role ?? undefined });
               }}
               title={!canCreateCase ? permissions.deniedMessage : undefined}
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--primary-hover)]"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] hover:shadow-[0_10px_22px_rgba(15,23,42,0.18)]"
               style={!canCreateCase ? { opacity: 0.5, pointerEvents: "none" } : undefined}
             >
               <PlusCircle className="h-4 w-4" />
@@ -158,7 +168,7 @@ export default function CasesPage() {
               onClick={() => {
                 trackPrimaryAction("open_documents", { role: permissions.auth.role ?? undefined });
               }}
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-[0_8px_18px_rgba(15,23,42,0.08)]"
             >
               <FileText className="h-4 w-4" />
               {t("bundles.title")}
@@ -175,7 +185,7 @@ export default function CasesPage() {
                   })
                   .finally(() => setRefreshing(false));
               }}
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-[0_8px_18px_rgba(15,23,42,0.08)]"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
               {refreshing ? (isArabic ? "جار التحديث..." : "Refreshing...") : t("common.refresh")}
@@ -216,60 +226,73 @@ export default function CasesPage() {
         ) : null}
 
         {!loading && !error ? (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">{isArabic ? "الإجراء التالي" : "Next Action"}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-8">
+            <section className="rounded-xl border border-l-4 border-[var(--border-soft)] border-l-[#C9A13B] bg-[linear-gradient(135deg,#ffffff_0%,#fcf8ef_100%)] p-6 shadow-[0_12px_28px_rgba(15,23,42,0.1)]">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <div className="text-base font-semibold text-slate-900">{nextAction.title}</div>
-                  <p className="mt-1 text-sm text-slate-600">{nextAction.note}</p>
+                  <h2 className="inline-flex items-center gap-2 text-base font-bold text-slate-900">
+                    <Zap className="h-4 w-4 text-[#C9A13B]" />
+                    {isArabic ? "الإجراء التالي" : "Next Action"}
+                  </h2>
+                  <div className="mt-2 text-xl font-bold tracking-tight text-slate-900">{nextAction.title}</div>
+                  <p className="mt-2 text-sm leading-6 text-slate-700">
+                    <span className="font-semibold text-[var(--primary)]">{isArabic ? "قرار تنفيذي:" : "Executive priority:"}</span>{" "}
+                    {nextAction.note}
+                  </p>
                 </div>
                 <Link
                   href={inProgressCount > 0 ? "/cases" : "/cases/new"}
-                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--primary-hover)]"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] hover:shadow-[0_10px_22px_rgba(15,23,42,0.18)]"
                 >
                   {inProgressCount > 0 ? (isArabic ? "مراجعة الحالات" : "Review Cases") : (isArabic ? "حالة جديدة" : "New Case")}
                 </Link>
-              </CardContent>
-            </Card>
+              </div>
+            </section>
 
-            <section className="grid gap-4 md:grid-cols-3">
-              <Card>
+            <section className="grid gap-5 md:grid-cols-3">
+              <Card className="rounded-xl border border-sky-200 bg-[linear-gradient(140deg,#eff6ff_0%,#ffffff_100%)] shadow-[0_10px_24px_rgba(37,99,235,0.12)]">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">{t("cases.table.actions")}</CardTitle>
+                  <CardTitle className="flex items-center justify-between gap-2 text-sm text-sky-900">
+                    {t("cases.table.actions")}
+                    <ListChecks className="h-4 w-4 text-sky-600" />
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-slate-900">{cases.length}</div>
-                  <p className="mt-1 text-xs text-slate-500">{isArabic ? "إجمالي الحالات في مساحة العمل" : "Total cases in workspace"}</p>
+                  <div className="text-3xl font-bold text-sky-900">{cases.length}</div>
+                  <p className="mt-1 text-xs text-sky-700/80">{isArabic ? "إجمالي الحالات في مساحة العمل" : "Total cases in workspace"}</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="rounded-xl border border-amber-200 bg-[linear-gradient(140deg,#fffbeb_0%,#ffffff_100%)] shadow-[0_10px_24px_rgba(245,158,11,0.12)]">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">{isArabic ? "قيد التنفيذ" : "In progress"}</CardTitle>
+                  <CardTitle className="flex items-center justify-between gap-2 text-sm text-amber-900">
+                    {isArabic ? "قيد التنفيذ" : "In progress"}
+                    <Timer className="h-4 w-4 text-amber-600" />
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-slate-900">
+                  <div className="text-3xl font-bold text-amber-900">
                     {inProgressCount}
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">{isArabic ? "حالات تحتاج متابعة نشطة" : "Cases requiring active follow-up"}</p>
+                  <p className="mt-1 text-xs text-amber-700/80">{isArabic ? "حالات تحتاج متابعة نشطة" : "Cases requiring active follow-up"}</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="rounded-xl border border-emerald-200 bg-[linear-gradient(140deg,#ecfdf5_0%,#ffffff_100%)] shadow-[0_10px_24px_rgba(16,185,129,0.12)]">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">{isArabic ? "جاهزة للإغلاق" : "Ready to close"}</CardTitle>
+                  <CardTitle className="flex items-center justify-between gap-2 text-sm text-emerald-900">
+                    {isArabic ? "جاهزة للإغلاق" : "Ready to close"}
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-slate-900">
+                  <div className="text-3xl font-bold text-emerald-900">
                     {readyToCloseCount}
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">{isArabic ? "استوفت متطلبات الحالة" : "Meeting closure requirements"}</p>
+                  <p className="mt-1 text-xs text-emerald-700/80">{isArabic ? "استوفت متطلبات الحالة" : "Meeting closure requirements"}</p>
                 </CardContent>
               </Card>
             </section>
 
-            <div className="overflow-x-auto rounded-2xl border border-[var(--border-soft)] bg-white shadow-[var(--shadow-sm)]">
+            <div className="overflow-x-auto rounded-xl border border-[var(--border-soft)] bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
                 <tr>
@@ -283,15 +306,13 @@ export default function CasesPage() {
               </thead>
               <tbody>
                 {cases.map((item) => (
-                  <tr key={item.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/80">
-                    <td className="px-4 py-3">{item.medicalRecordNo || item.patient_mrn || "-"}</td>
+                  <tr key={item.id} className="border-t border-slate-100 transition-all duration-200 hover:bg-sky-50/60">
+                    <td className="px-4 py-3 font-semibold tracking-wide text-slate-900">{item.medicalRecordNo || item.patient_mrn || "-"}</td>
                     <td className="px-4 py-3">{item.patientName || item.patient_name || "-"}</td>
                     <td className="px-4 py-3">
-                      <Badge
-                        variant={/completed|closed|final/i.test(item.status || "") ? "success" : /failed|blocked|rejected/i.test(item.status || "") ? "destructive" : "pending"}
-                      >
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusPillClass(item.status || "")}`}>
                         {translateCaseStatus(item.status || "", isArabic)}
-                      </Badge>
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       {item.signer_name
@@ -305,7 +326,7 @@ export default function CasesPage() {
                         onClick={() => {
                           trackPrimaryAction("open_case_workspace", { role: permissions.auth.role ?? undefined });
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-2 font-semibold text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-2 font-semibold text-[var(--primary-pressed)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--primary)] hover:bg-[#e2edf8] hover:shadow-[0_8px_18px_rgba(15,23,42,0.1)]"
                       >
                         {t("cases.open")}
                         <ArrowRight className="h-3.5 w-3.5" />
