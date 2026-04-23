@@ -124,6 +124,11 @@ export default function DemoPage() {
 
           .hero-actions {
             flex-direction: column;
+            align-items: stretch;
+          }
+
+          .hero-actions :global(a) {
+            width: 100%;
           }
         }
       `}</style>
