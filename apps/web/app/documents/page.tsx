@@ -182,14 +182,14 @@ export default function DocumentsPage() {
                 const input = document.getElementById("new-bundle-case-id");
                 input?.focus();
               }}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
             >
               <PackagePlus className="h-4 w-4" />
               {t("bundles.newBundle")}
             </button>
             <Link
               href="/cases"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               <ArrowLeft className="h-4 w-4" />
               {t("common.backToCases")}
@@ -197,7 +197,7 @@ export default function DocumentsPage() {
             <button
               type="button"
               onClick={() => void loadBundles()}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               <RefreshCw className="h-4 w-4" />
               {t("common.refresh")}
@@ -217,12 +217,13 @@ export default function DocumentsPage() {
           </div>
         ) : null}
 
-        <section className="rounded-2xl border border-slate-200 p-5">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-sm)]">
           <h2 className="inline-flex items-center gap-2 text-base font-semibold text-slate-900">
             <FolderArchive className="h-4 w-4" />
             {t("bundles.createTitle")}
           </h2>
-          <form onSubmit={handleCreateBundle} className="mt-3 flex flex-wrap items-end gap-2">
+          <p className="mt-2 text-sm text-slate-600">{t("bundles.subtitle")}</p>
+          <form onSubmit={handleCreateBundle} className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <label className="min-w-72 flex-1">
               <span className="mb-1 block text-sm font-medium text-slate-700">{t("field.dischargeCaseId")}</span>
               <input
@@ -230,26 +231,28 @@ export default function DocumentsPage() {
                 value={newBundleCaseId}
                 onChange={(event) => setNewBundleCaseId(event.target.value)}
                 placeholder={t("bundles.placeholder")}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:bg-white"
               />
             </label>
 
-            <button
-              type="submit"
-              disabled={creatingBundle || !canGenerateBundle}
-              title={!canGenerateBundle ? permissions.deniedMessage : undefined}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
-            >
-              <PackagePlus className="h-4 w-4" />
-              {creatingBundle ? t("bundles.generating") : t("bundles.generate")}
-            </button>
+            <div className="flex items-end gap-2">
+              <button
+                type="submit"
+                disabled={creatingBundle || !canGenerateBundle}
+                title={!canGenerateBundle ? permissions.deniedMessage : undefined}
+                className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100 disabled:opacity-60"
+              >
+                <PackagePlus className="h-4 w-4" />
+                {creatingBundle ? t("bundles.generating") : t("bundles.generate")}
+              </button>
+            </div>
             {!canGenerateBundle ? (
               <span className="text-xs text-amber-700">{permissions.deniedMessage}</span>
             ) : null}
           </form>
         </section>
 
-        <section className="mt-4 rounded-2xl border border-slate-200 p-5">
+        <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-sm)]">
           <h2 className="text-base font-semibold text-slate-900">{t("bundles.availableTitle")}</h2>
 
           {loading ? <p className="mt-3 text-sm text-slate-600">{t("bundles.loading")}</p> : null}
@@ -263,7 +266,7 @@ export default function DocumentsPage() {
               {bundles.map((bundle) => (
                 <li
                   key={bundle.name}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3"
                 >
                   <div>
                     <p className="text-sm font-medium text-slate-900">{bundle.name}</p>

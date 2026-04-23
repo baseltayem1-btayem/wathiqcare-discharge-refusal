@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Activity,
   AlertTriangle,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import UXStateCard from "@/components/ui/UXStateCard";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
@@ -68,14 +70,14 @@ function StatCard(props: {
           : "border-slate-200 bg-white";
 
   return (
-    <article className={`rounded-xl border p-4 ${toneClass}`}>
+    <article className={`rounded-2xl border p-4 shadow-[var(--shadow-sm)] ${toneClass}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{props.label}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{props.value}</p>
           {props.hint ? <p className="mt-1 text-xs text-slate-500">{props.hint}</p> : null}
         </div>
-        <div className="rounded-lg border border-slate-200 bg-white p-2 text-[var(--primary)]">{props.icon}</div>
+        <div className="rounded-xl border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] p-2 text-[var(--primary)]">{props.icon}</div>
       </div>
     </article>
   );
@@ -128,6 +130,46 @@ export default function DashboardPage() {
     return Math.max(...data.throughputTrend.map((item) => Math.max(item.opened, item.closed)), 1);
   }, [data]);
 
+  const nextAction = useMemo(() => {
+    if (!data) {
+      return null;
+    }
+
+    if (data.summary.escalatedCases > 0) {
+      return {
+        title: txt("Prioritize escalated cases", "أولوية متابعة الحالات المصعّدة"),
+        note: txt(
+          `${data.summary.escalatedCases} case(s) are escalated and need immediate legal-ops follow-up.`,
+          `${data.summary.escalatedCases} حالة مصعّدة وتحتاج متابعة قانونية وتشغيلية فورية.`,
+        ),
+        href: "/cases",
+        cta: txt("Open Cases", "فتح الحالات"),
+      };
+    }
+
+    if (data.summary.atRiskCases > 0 || data.summary.delayedCases > 0) {
+      return {
+        title: txt("Review at-risk SLA queue", "مراجعة طابور مستوى الخدمة المعرض للخطر"),
+        note: txt(
+          "At-risk and delayed cases should be triaged before progressing routine work.",
+          "يجب فرز الحالات المعرضة للخطر والمتأخرة قبل متابعة العمل الروتيني.",
+        ),
+        href: "/dashboards/legal-risk",
+        cta: txt("Open Legal Risk", "فتح لوحة المخاطر"),
+      };
+    }
+
+    return {
+      title: txt("Maintain operational cadence", "الحفاظ على الإيقاع التشغيلي"),
+      note: txt(
+        "No critical blockers detected. Continue monitoring throughput and readiness quality.",
+        "لا توجد عوائق حرجة حاليًا. استمر في متابعة الإنتاجية وجودة الجاهزية.",
+      ),
+      href: "/dashboards/legal-operational-overview",
+      cta: txt("Executive Overview", "النظرة التنفيذية"),
+    };
+  }, [data, txt]);
+
   return (
     <AuthGuard>
       <AppShell
@@ -135,16 +177,47 @@ export default function DashboardPage() {
         subtitle={txt("Real-time orchestration, SLA monitoring, escalation controls, and executive visibility", "تنسيق فوري للعمليات، ومتابعة اتفاقيات مستوى الخدمة، وضوابط التصعيد، ورؤية تنفيذية")}
       >
         {loading ? (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-            {txt("Loading operations dashboard...", "جاري تحميل لوحة العمليات...")}
-          </div>
+          <UXStateCard
+            variant="loading"
+            title={txt("Loading operations dashboard", "جاري تحميل لوحة العمليات")}
+            message={txt("Preparing real-time metrics and queue intelligence.", "جار تجهيز المقاييس الفورية وبيانات الطوابير.")}
+          />
         ) : !data ? (
-          <div className="rounded-lg border border-[var(--state-error-border)] bg-[var(--state-error-bg)] px-4 py-3 text-sm text-[var(--state-error)]">
-            {txt("Unable to load dashboard metrics.", "تعذر تحميل مؤشرات لوحة المتابعة.")}
-          </div>
+          <UXStateCard
+            variant="error"
+            title={txt("Unable to load dashboard metrics", "تعذر تحميل مؤشرات لوحة المتابعة")}
+            message={txt("Please refresh to retry fetching operational telemetry.", "يرجى إعادة التحديث لمحاولة جلب القياسات التشغيلية مرة أخرى.")}
+          />
         ) : (
           <div className="space-y-5">
-            <section className="sticky top-[88px] z-[5] rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
+            {nextAction ? (
+              <section className="rounded-2xl border border-[var(--border-soft)] bg-white p-4 shadow-[var(--shadow-sm)]">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-900">{txt("Next Action", "الإجراء التالي")}</h2>
+                    <p className="mt-1 text-base font-semibold text-slate-900">{nextAction.title}</p>
+                    <p className="mt-1 text-sm text-slate-600">{nextAction.note}</p>
+                  </div>
+                  <Link
+                    href={nextAction.href}
+                    className="inline-flex items-center rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--primary-hover)]"
+                  >
+                    {nextAction.cta}
+                  </Link>
+                </div>
+              </section>
+            ) : null}
+
+            <section className="rounded-2xl border border-[var(--border-soft)] bg-[linear-gradient(135deg,#ffffff_0%,#f4f8fd_80%)] p-5 shadow-[var(--shadow-sm)]">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-soft)] bg-white/90 px-4 py-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-900">{txt("Live Operations Summary", "ملخص العمليات المباشر")}</h2>
+                  <p className="text-xs text-slate-500">{txt("Executive monitoring with no workflow mutations", "مراقبة تنفيذية بدون أي تغييرات تشغيلية")}</p>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold wc-status-pending">
+                  {txt("Monitoring only", "للمتابعة فقط")}
+                </div>
+              </div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <StatCard label={txt("Active Cases", "الحالات النشطة")} value={data.summary.totalActiveCases} icon={<Layers3 className="h-4 w-4" />} />
                 <StatCard
@@ -169,17 +242,17 @@ export default function DashboardPage() {
             </section>
 
             <section className="grid gap-4 xl:grid-cols-3">
-              <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)] xl:col-span-2">
+              <article className="rounded-2xl border border-[var(--border-soft)] bg-white p-5 shadow-[var(--shadow-sm)] xl:col-span-2">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-sm font-semibold text-slate-900">{txt("Department Queue Status", "حالة طوابير الأقسام")}</h2>
                     <p className="text-xs text-slate-500">{txt("Transactions currently with each hospital department", "المعاملات الحالية لدى كل قسم في المستشفى")}</p>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 cursor-not-allowed" title={txt("Monitoring only", "للمتابعة فقط")}>
+                  <span className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold text-slate-500" title={txt("Monitoring only", "للمتابعة فقط")}>
                     {txt("Monitoring only", "للمتابعة فقط")}
                   </span>
                 </div>
-                <section className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <section className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   <div className="flex items-center gap-2 font-semibold">
                     <AlertTriangle className="h-4 w-4" />
                     {txt("Dashboard is monitoring-only", "اللوحة مخصصة للمتابعة فقط")}
@@ -200,7 +273,7 @@ export default function DashboardPage() {
                           ? "bg-amber-500"
                           : "bg-emerald-500";
                     return (
-                      <div key={item.department} className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5">
+                      <div key={item.department} className="rounded-xl border border-[var(--border-soft)] bg-slate-50/70 p-3">
                         <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
                           <span className="font-semibold text-slate-800">{item.label}</span>
                           <span className="text-slate-600">
@@ -216,7 +289,7 @@ export default function DashboardPage() {
                 </div>
               </article>
 
-              <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
+              <article className="rounded-2xl border border-[var(--border-soft)] bg-white p-5 shadow-[var(--shadow-sm)]">
                 <h2 className="text-sm font-semibold text-slate-900">{txt("Executive Summary", "ملخص تنفيذي")}</h2>
                 <div className="mt-3 space-y-2 text-sm">
                   <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
@@ -241,7 +314,7 @@ export default function DashboardPage() {
             </section>
 
             <section className="grid gap-4 lg:grid-cols-2">
-              <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
+              <article className="rounded-2xl border border-[var(--border-soft)] bg-white p-5 shadow-[var(--shadow-sm)]">
                 <h2 className="text-sm font-semibold text-slate-900">{txt("Daily Throughput (7 days)", "الإنتاجية اليومية (7 أيام)")}</h2>
                 <div className="mt-3 space-y-2">
                   {data.throughputTrend.map((point) => {
@@ -269,7 +342,7 @@ export default function DashboardPage() {
                 </div>
               </article>
 
-              <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-sm)]">
+              <article className="rounded-2xl border border-[var(--border-soft)] bg-white p-5 shadow-[var(--shadow-sm)]">
                 <h2 className="text-sm font-semibold text-slate-900">{txt("Bottlenecks & Aging", "نقاط الاختناق وتقادم الحالات")}</h2>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div className="rounded-xl border border-slate-100 p-3">
@@ -304,7 +377,7 @@ export default function DashboardPage() {
             </section>
 
             <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-              <StatCard label={txt("Cycle Time", "زمن الدورة")} value={data.averageCycleTimeByDepartment[0]?.averageHours ?? 0 + "h"} icon={<Clock3 className="h-4 w-4" />} />
+              <StatCard label={txt("Cycle Time", "زمن الدورة")} value={`${data.averageCycleTimeByDepartment[0]?.averageHours ?? 0}h`} icon={<Clock3 className="h-4 w-4" />} />
               <StatCard label={txt("Operations", "العمليات")} value={data.summary.totalActiveCases} icon={<Activity className="h-4 w-4" />} />
               <StatCard label={txt("SLA Watch", "مراقبة مستوى الخدمة")} value={data.summary.atRiskCases} icon={<Timer className="h-4 w-4" />} tone="warn" />
               <StatCard label={txt("Escalations", "التصعيدات")} value={data.summary.escalatedCases} icon={<AlertTriangle className="h-4 w-4" />} tone="danger" />

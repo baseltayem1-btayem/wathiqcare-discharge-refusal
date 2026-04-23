@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type SetStateAction } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
@@ -54,6 +54,24 @@ type SignaturePayload = {
   outcome: SignatureOutcome;
   signer_name: string;
   reason: string;
+};
+
+type LayoutWitnessPayload = {
+  witness_id?: string;
+  full_name: string;
+  role: string;
+  role_category: "clinical" | "non_clinical";
+  id_type: string;
+  id_number: string;
+  mobile_number: string;
+  attestation_confirmed: boolean;
+  attestation_language: "en" | "ar";
+  attestation_version: string;
+  signature_type: "DIGITAL_SIGNATURE" | "OTP" | "MANUAL_CONFIRMATION";
+  signature_hash: string;
+  otp_reference: string;
+  verification_status: "VERIFIED" | "PENDING" | "FAILED";
+  manual_fallback_used: boolean;
 };
 
 type WitnessPayload = {
@@ -753,6 +771,65 @@ export default function WorkspaceV2Page() {
   const canDownloadFinalDocs = permissions.canAccessCase(caseAccessContext, "documents.download.final");
   const canReadAudit = permissions.canAccessCase(caseAccessContext, "audit.read");
   const canReadSmsEvidence = permissions.canAccessCase(caseAccessContext, "sms.evidence.read");
+  const witnessForLayout: LayoutWitnessPayload = {
+    witness_id: "legacy-witness-1",
+    full_name: witness.witness_name,
+    role: witness.witness_role,
+    role_category: "non_clinical" as const,
+    id_type: "NATIONAL_ID",
+    id_number: "",
+    mobile_number: "",
+    attestation_confirmed: false,
+    attestation_language: isRtl ? "ar" as const : "en" as const,
+    attestation_version: "1.0",
+    signature_type: "DIGITAL_SIGNATURE" as const,
+    signature_hash: "",
+    otp_reference: "",
+    verification_status: "PENDING" as const,
+    manual_fallback_used: false,
+  };
+  const setWitnessForLayout = (value: SetStateAction<LayoutWitnessPayload>) => {
+    setWitness((previous) => {
+      const previousMapped = {
+        ...witnessForLayout,
+        full_name: previous.witness_name,
+        role: previous.witness_role,
+      };
+      const nextValue = typeof value === "function" ? value(previousMapped) : value;
+
+      return {
+        ...previous,
+        witness_name: nextValue.full_name ?? previous.witness_name,
+        witness_role: nextValue.role ?? previous.witness_role,
+      };
+    });
+  };
+  const witnessRecords = witness.witness_name
+    ? [
+        {
+          witness_id: "legacy-witness-1",
+          full_name: witness.witness_name,
+          role: witness.witness_role,
+          role_category: "non_clinical" as const,
+          id_type: "NATIONAL_ID",
+          id_number: "",
+          mobile_number: "",
+          attestation_confirmed: false,
+          attestation_language: isRtl ? "ar" as const : "en" as const,
+          attestation_version: "1.0",
+          signature_type: "DIGITAL_SIGNATURE" as const,
+          signature_hash: "",
+          otp_reference: "",
+          verification_status: "PENDING" as const,
+          manual_fallback_used: false,
+        },
+      ]
+    : [];
+  const witnessMinimumMet = witnessRecords.length >= 2;
+  const witnessGateMessage = txt(
+    "At least two witnesses must be recorded before proceeding.",
+    "يجب تسجيل شاهدين على الأقل قبل المتابعة",
+  );
 
   if (!caseId) {
     return (
@@ -820,8 +897,11 @@ export default function WorkspaceV2Page() {
           setPresentation={setPresentation}
           signature={signature}
           setSignature={setSignature}
-          witness={witness}
-          setWitness={setWitness}
+          witness={witnessForLayout}
+          setWitness={setWitnessForLayout}
+          witnessRecords={witnessRecords}
+          witnessMinimumMet={witnessMinimumMet}
+          witnessGateMessage={witnessGateMessage}
           consentForm={consentForm}
           setConsentForm={setConsentForm}
           readiness={readiness}

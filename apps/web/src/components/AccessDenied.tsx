@@ -24,18 +24,25 @@ export default function AccessDenied({
     backLabel = "العودة إلى لوحة التحكم",
 }: AccessDeniedProps) {
     const { lang } = useI18n();
+    const title = resource
+        ? (lang === "ar" ? `لا تملك صلاحية الوصول إلى ${resource}` : `You do not have access to ${resource}`)
+        : (lang === "ar" ? "الوصول مرفوض" : "Access Denied");
+    const description = lang === "ar"
+        ? "دورك الحالي غير مخوّل للوصول إلى هذه الصفحة. تواصل مع مسؤول النظام لطلب الصلاحيات المناسبة."
+        : "Your current role is not authorized to access this page. Contact your system administrator to request the required permissions.";
+    const fallbackBackLabel = lang === "ar" ? backLabel : "Back to Dashboard";
 
     return (
-        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
-                <ShieldOff className="h-8 w-8 text-amber-600" />
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-[var(--shadow-sm)]">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
+                <ShieldOff className="h-8 w-8 text-blue-700" />
             </div>
             <div className="max-w-md space-y-2">
                 <h2 className="text-xl font-semibold text-slate-900">
-                    {resource ? `لا تملك صلاحية الوصول إلى ${resource}` : "الوصول مرفوض"}
+                    {title}
                 </h2>
                 <p className="text-sm text-slate-600">
-                    دورك الحالي غير مخوّل للوصول إلى هذه الصفحة. تواصل مع مسؤول النظام لطلب الصلاحيات المناسبة.
+                    {description}
                 </p>
                 <p className="text-xs text-slate-400">{lang === "ar" ? "HTTP 403 — صلاحيات غير كافية" : "HTTP 403 — Insufficient Permissions"}</p>
             </div>
@@ -43,7 +50,7 @@ export default function AccessDenied({
                 href={backHref}
                 className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
-                {backLabel}
+                {fallbackBackLabel}
             </Link>
         </div>
     );

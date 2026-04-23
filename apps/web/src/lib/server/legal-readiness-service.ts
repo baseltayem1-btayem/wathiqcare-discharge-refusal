@@ -4,6 +4,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { asRecord, readBoolean, readNumber, readString } from "@/lib/server/compliance-utils";
 import { verifyAuditChain } from "@/lib/server/audit-chain-service";
+import { evaluateWitnessIntegrity } from "@/lib/server/witness-integrity-service";
 
 const prisma = getPrisma();
 
@@ -41,6 +42,13 @@ export function evaluateLegalReadinessFromSnapshot(input: {
   capacityVerified: boolean;
   witnessRequired: boolean;
   witnessAdded: boolean;
+  witnessIntegrity: {
+    witnessCount: number;
+    minimumWitnessesMet: boolean;
+    identityVerified: boolean;
+    roleCompositionValid: boolean;
+    attestationComplete: boolean;
+  };
   consentRecorded: boolean;
   auditTrailCaptured: boolean;
   signerIdentityVerified: boolean;
@@ -90,11 +98,40 @@ export function evaluateLegalReadinessFromSnapshot(input: {
       reason: input.capacityVerified ? "Verified" : "Capacity/authority verification is missing.",
     },
     {
-      key: "witness_when_required",
-      label: "تم إضافة شاهد عند الحاجة",
-      required: input.witnessRequired,
-      satisfied: !input.witnessRequired || input.witnessAdded,
-      reason: !input.witnessRequired || input.witnessAdded ? "Satisfied" : "Witness is required but not recorded.",
+      key: "minimum_witnesses_requirement",
+      label: "Minimum witnesses requirement not met",
+      required: true,
+      satisfied: input.witnessIntegrity.minimumWitnessesMet,
+      reason: input.witnessIntegrity.minimumWitnessesMet
+        ? `Captured (${input.witnessIntegrity.witnessCount})`
+        : "At least two legally valid witnesses are required.",
+    },
+    {
+      key: "witness_identity_verified",
+      label: "Witness identity not verified",
+      required: true,
+      satisfied: input.witnessIntegrity.identityVerified,
+      reason: input.witnessIntegrity.identityVerified
+        ? "All witness identity checks are verified"
+        : "One or more witnesses have invalid, duplicate, or unverified identity.",
+    },
+    {
+      key: "witness_roles_compliant",
+      label: "Witness roles not compliant",
+      required: true,
+      satisfied: input.witnessIntegrity.roleCompositionValid,
+      reason: input.witnessIntegrity.roleCompositionValid
+        ? "Clinical and non-clinical witness roles are present"
+        : "Witness role composition must include both clinical and non-clinical categories.",
+    },
+    {
+      key: "witness_attestation_complete",
+      label: "Witness attestation incomplete",
+      required: true,
+      satisfied: input.witnessIntegrity.attestationComplete,
+      reason: input.witnessIntegrity.attestationComplete
+        ? "Attestation and verification evidence are complete"
+        : "Witness attestation, signature evidence, or OTP/manual fallback is incomplete.",
     },
     {
       key: "consent_record_saved",
@@ -212,6 +249,7 @@ export async function getLegalReadiness(auth: AuthContext, caseId: string) {
   const presentation = asRecord(metadata?.presentation);
   const signature = asRecord(metadata?.signature);
   const witness = asRecord(metadata?.witness);
+  const witnessIntegrity = evaluateWitnessIntegrity(caseRecord.metadata);
   const legal = asRecord(metadata?.legal);
   const validation = asRecord(metadata?.validation);
   const financial = asRecord(metadata?.financial);
@@ -240,7 +278,14 @@ export async function getLegalReadiness(auth: AuthContext, caseId: string) {
       Boolean(readBoolean(legal, "capacity_verified", "authority_verified")),
     witnessRequired:
       Boolean(readBoolean(legal, "witness_required")) || readString(signature, "outcome") === "refused_to_sign",
-    witnessAdded: Boolean(readString(witness, "witness_name")),
+    witnessAdded: Boolean(readString(witness, "witness_name")) || witnessIntegrity.witnessCount > 0,
+    witnessIntegrity: {
+      witnessCount: witnessIntegrity.witnessCount,
+      minimumWitnessesMet: witnessIntegrity.minimumWitnessesMet,
+      identityVerified: witnessIntegrity.identityVerified,
+      roleCompositionValid: witnessIntegrity.roleCompositionValid,
+      attestationComplete: witnessIntegrity.attestationComplete,
+    },
     consentRecorded: caseRecord.consentRecords.length > 0,
     auditTrailCaptured: caseRecord.auditLogs.length > 0 || caseRecord.auditChainEvents.length > 0,
     signerIdentityVerified:

@@ -18,6 +18,7 @@ import { asRecord, readBoolean, readString } from "@/lib/server/compliance-utils
 import { getTenantBrandingProfile } from "@/lib/server/tenantBrandingStore";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { logReportAccess } from "@/lib/server/report-access-service";
+import { evaluateWitnessIntegrity } from "@/lib/server/witness-integrity-service";
 
 const prisma = getPrisma();
 let sharedPdfBrowserPromise: Promise<Browser> | null = null;
@@ -25,6 +26,8 @@ let sharedPdfBrowserPromise: Promise<Browser> | null = null;
 const PDF_TEMPLATE_VERSION = "1.0.0";
 const CASE_PDF_TEMPLATE_KEY = "legal_case_pdf";
 const SYSTEM_LABEL = "WathiqCare System";
+
+type PdfRuntimeTarget = "local_windows" | "preview" | "production" | "local_other";
 
 type GenerateTrigger =
   | "manual_generate"
@@ -64,6 +67,46 @@ export type CasePdfVersionSummary = {
   recoveryRequired: boolean;
   recoveryMessage: string | null;
 };
+
+function detectPdfRuntimeTarget(): PdfRuntimeTarget {
+  if (process.env.VERCEL === "1") {
+    const vercelEnvironment = (process.env.VERCEL_ENV || process.env.VERCEL_TARGET_ENV || "preview").trim().toLowerCase();
+    return vercelEnvironment === "production" ? "production" : "preview";
+  }
+
+  if (process.platform === "win32") {
+    return "local_windows";
+  }
+
+  return process.env.NODE_ENV === "production" ? "production" : "local_other";
+}
+
+function getConfiguredPuppeteerExecutablePath(runtimeTarget = detectPdfRuntimeTarget()): string | null {
+  const configuredPath = process.env.PUPPETEER_EXECUTABLE_PATH?.trim();
+  if (!configuredPath) {
+    return null;
+  }
+
+  if (runtimeTarget === "preview") {
+    return null;
+  }
+
+  if (runtimeTarget === "production") {
+    if (!path.isAbsolute(configuredPath)) {
+      return null;
+    }
+    if (/^[A-Za-z]:\\/.test(configuredPath)) {
+      return null;
+    }
+    return existsSync(configuredPath) ? configuredPath : null;
+  }
+
+  if (runtimeTarget === "local_windows") {
+    return /^[A-Za-z]:\\/.test(configuredPath) && existsSync(configuredPath) ? configuredPath : null;
+  }
+
+  return path.isAbsolute(configuredPath) && existsSync(configuredPath) ? configuredPath : null;
+}
 
 export type GeneratedCasePdfResult = {
   report: CasePdfVersionSummary;
@@ -416,7 +459,6 @@ function buildValidation(caseRecord: Awaited<ReturnType<typeof getAuthorizedCase
   const workflow = asRecord(metadata?.workflow);
   const presentation = asRecord(metadata?.presentation);
   const signature = asRecord(metadata?.signature);
-  const witness = asRecord(metadata?.witness);
 
   const authoritative = getAuthoritativeCaseFacts(caseRecord);
 
@@ -432,8 +474,7 @@ function buildValidation(caseRecord: Awaited<ReturnType<typeof getAuthorizedCase
     readBoolean(presentation, "risks_explained") ||
     Boolean(readString(workflow, "discussion_summary")) ||
     Boolean(readString(metadata, "discussion_summary"));
-  const witnessName = readString(witness, "witness_name");
-  const noWitnessReason = readString(witness, "reason_no_witness", "no_witness_reason");
+  const witnessIntegrity = evaluateWitnessIntegrity(caseRecord.metadata);
   const hasAuditSummary = caseRecord.auditLogs.length > 0;
 
   const checklist: CasePdfChecklistItem[] = [
@@ -494,11 +535,40 @@ function buildValidation(caseRecord: Awaited<ReturnType<typeof getAuthorizedCase
       reason: riskDisclosure ? "Available" : "Missing risk disclosure record",
     },
     {
-      key: "witness_or_reason",
-      label: "Witness or reason",
+      key: "minimum_witnesses_requirement",
+      label: "Minimum witnesses requirement not met",
       required: true,
-      satisfied: Boolean(witnessName || noWitnessReason),
-      reason: witnessName || noWitnessReason ? "Available" : "Missing witness and no reason provided",
+      satisfied: witnessIntegrity.minimumWitnessesMet,
+      reason: witnessIntegrity.minimumWitnessesMet
+        ? `Captured (${witnessIntegrity.witnessCount})`
+        : "At least two legally valid witnesses are required",
+    },
+    {
+      key: "witness_identity_verified",
+      label: "Witness identity not verified",
+      required: true,
+      satisfied: witnessIntegrity.identityVerified,
+      reason: witnessIntegrity.identityVerified
+        ? "Witness identities are verified"
+        : "Witness identity verification failed",
+    },
+    {
+      key: "witness_roles_compliant",
+      label: "Witness roles not compliant",
+      required: true,
+      satisfied: witnessIntegrity.roleCompositionValid,
+      reason: witnessIntegrity.roleCompositionValid
+        ? "Clinical and non-clinical witnesses are present"
+        : "Witness composition must include one clinical and one non-clinical witness",
+    },
+    {
+      key: "witness_attestation_complete",
+      label: "Witness attestation incomplete",
+      required: true,
+      satisfied: witnessIntegrity.attestationComplete,
+      reason: witnessIntegrity.attestationComplete
+        ? "Attestation evidence is complete"
+        : "Witness attestation evidence is incomplete",
     },
     {
       key: "audit_summary",
@@ -910,6 +980,18 @@ async function launchPdfBrowser(): Promise<Browser> {
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"],
   };
+
+  const configuredExecutablePath = getConfiguredPuppeteerExecutablePath();
+  if (configuredExecutablePath) {
+    try {
+      return await puppeteer.launch({
+        ...defaultLaunchOptions,
+        executablePath: configuredExecutablePath,
+      });
+    } catch (error) {
+      console.warn("Failed to launch with configured Puppeteer executable path:", error);
+    }
+  }
 
   try {
     return await puppeteer.launch(defaultLaunchOptions);
@@ -1707,6 +1789,8 @@ export async function downloadCasePdfVersion(args: {
 export const __casePdfStorageInternals = {
   getPdfBinaryStorageMode,
   getPdfLocalStorageRoot,
+  detectPdfRuntimeTarget,
+  getConfiguredPuppeteerExecutablePath,
   resolveLocalPdfPath,
   getInlinePdfBase64,
   persistPdfBinary,

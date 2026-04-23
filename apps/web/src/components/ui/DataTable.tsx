@@ -21,15 +21,15 @@ export default function DataTable<T extends Record<string, unknown>>({
   onRowClick,
 }: DataTableProps<T>) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-sm)]">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50">
+        <table className="w-full text-sm text-slate-700">
+          <thead className="bg-slate-50/90">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className="px-4 py-3 text-left font-semibold text-slate-700"
+                  className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
                   style={column.width ? { width: column.width } : undefined}
                 >
                   {column.header}
@@ -42,7 +42,7 @@ export default function DataTable<T extends Record<string, unknown>>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-8 text-center text-slate-500"
+                  className="px-4 py-10 text-center text-sm text-slate-500"
                 >
                   {emptyMessage}
                 </td>
@@ -51,13 +51,13 @@ export default function DataTable<T extends Record<string, unknown>>({
               data.map((row, rowIndex) => (
                 <tr
                   key={rowIndex}
-                  className={`border-t border-slate-200 ${
-                    onRowClick ? "cursor-pointer hover:bg-slate-50" : ""
+                  className={`border-t border-slate-100 ${
+                    onRowClick ? "cursor-pointer hover:bg-blue-50/40" : ""
                   }`}
                   onClick={() => onRowClick?.(row)}
                 >
                   {columns.map((column) => (
-                    <td key={column.key} className="px-4 py-3 text-slate-700">
+                    <td key={column.key} className="px-4 py-3.5 align-top text-slate-700">
                       {column.render 
                         ? column.render(row) 
                         : (row[column.key] as ReactNode)}

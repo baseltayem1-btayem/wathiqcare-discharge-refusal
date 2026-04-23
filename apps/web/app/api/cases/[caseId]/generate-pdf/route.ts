@@ -39,7 +39,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
         : [];
       return NextResponse.json(
         {
+          error: error.message,
+          code: error.code ?? null,
+          fields: error.fields ?? null,
           detail: error.message,
+          message: error.message,
           missingRequired,
         },
         { status: error.status },

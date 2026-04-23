@@ -203,7 +203,12 @@ function buildMissingItems(input: BuildCaseWorkspaceFlowInput, isArabic: boolean
     patientDecisionMissing.push(tr("Patient acknowledgment / signer evidence is missing.", "إقرار المريض / دليل الموقّع مفقود."));
   }
   if (!input.witnessRecorded) {
-    patientDecisionMissing.push(tr("Witness details are not recorded yet.", "لم يتم تسجيل تفاصيل الشاهد بعد."));
+    patientDecisionMissing.push(
+      tr(
+        "At least two legally compliant witnesses must be recorded.",
+        "يجب تسجيل شاهدين متوافقين نظاميًا على الأقل.",
+      ),
+    );
   }
   if (!input.consentRecorded) {
     patientDecisionMissing.push(tr("Consent evidence has not been saved.", "لم يتم حفظ أدلة الموافقة."));

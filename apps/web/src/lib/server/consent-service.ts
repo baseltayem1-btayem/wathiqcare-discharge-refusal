@@ -7,6 +7,7 @@ import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { asRecord } from "@/lib/server/compliance-utils";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { assertWitnessIntegrityOrThrow } from "@/lib/server/witness-integrity-service";
 
 const prisma = getPrisma();
 
@@ -224,6 +225,7 @@ export async function recordCaseConsent(
   request?: NextRequest,
 ) {
   const caseRecord = await getAuthorizedCase(auth, caseId);
+  assertWitnessIntegrityOrThrow(caseRecord.metadata);
   const documentHash = hashDocumentVersion(payload.documentSnapshot ?? payload);
 
   const record = await createConsentRecordWithFallback({

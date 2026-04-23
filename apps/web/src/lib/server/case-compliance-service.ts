@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -11,6 +12,14 @@ import { assertDataResidencyCompliance } from "@/lib/server/privacy-service";
 import { logReportAccess } from "@/lib/server/report-access-service";
 import { assertStepUpForSensitiveAction } from "@/lib/server/security-policy-service";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import {
+  assertWitnessIntegrityOrThrow,
+  buildWitnessIdentityHash,
+  extractWitnessesFromMetadata,
+  toWitnessesMetadataValue,
+  type LegalWitnessRecord,
+  type WitnessRoleCategory,
+} from "@/lib/server/witness-integrity-service";
 
 const prisma = getPrisma();
 
@@ -26,6 +35,61 @@ function mergeSection(
       ...patch,
     },
   } as Prisma.InputJsonValue;
+}
+
+function normalizeRoleCategory(value: string | null | undefined): WitnessRoleCategory {
+  const normalized = (value ?? "").trim();
+  if (normalized === "clinical" || normalized === "non_clinical") {
+    return normalized;
+  }
+  return "non_clinical";
+}
+
+function getClientAddress(request?: NextRequest): string | null {
+  const forwarded = request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (forwarded) {
+    return forwarded;
+  }
+  return request?.headers.get("x-real-ip")?.trim() || null;
+}
+
+function hasRequiredWitnessFields(payload: {
+  full_name?: string;
+  role?: string;
+  id_number?: string;
+  mobile_number?: string;
+  signature_hash?: string;
+  signature_type?: string;
+  verification_status?: string;
+  attestation_confirmed?: boolean;
+  otp_reference?: string;
+}): Record<string, string> {
+  const fields: Record<string, string> = {};
+  if (!payload.full_name?.trim()) {
+    fields.full_name = "Witness full name is required";
+  }
+  if (!payload.role?.trim()) {
+    fields.role = "Witness role is required";
+  }
+  if (!payload.id_number?.trim()) {
+    fields.id_number = "Witness ID number is required";
+  }
+  if (!payload.mobile_number?.trim()) {
+    fields.mobile_number = "Witness mobile number is required";
+  }
+  if (!payload.signature_hash?.trim()) {
+    fields.signature_hash = "Witness signature evidence is required";
+  }
+  if (!payload.attestation_confirmed) {
+    fields.attestation_confirmed = "Witness attestation must be confirmed";
+  }
+  if ((payload.verification_status ?? "").trim().toUpperCase() !== "VERIFIED") {
+    fields.verification_status = "Witness identity verification must be VERIFIED";
+  }
+  if ((payload.signature_type ?? "").trim().toUpperCase() === "OTP" && !payload.otp_reference?.trim()) {
+    fields.otp_reference = "OTP reference is required when OTP verification is used";
+  }
+  return fields;
 }
 
 async function getAuthorizedCase(auth: AuthContext, caseId: string) {
@@ -113,6 +177,7 @@ export async function recordCaseSignature(
   request?: NextRequest,
 ) {
   const caseRecord = await getAuthorizedCase(auth, caseId);
+  assertWitnessIntegrityOrThrow(caseRecord.metadata);
   await assertDataResidencyCompliance({
     tenantId: auth.tenant_id!,
     dataType: "PATIENT_SENSITIVE",
@@ -210,24 +275,201 @@ export async function recordCaseWitness(
   auth: AuthContext,
   caseId: string,
   payload: {
+    action?: "add" | "update" | "remove";
+    witness_id?: string;
     witness_name?: string;
     witness_role?: string;
+    full_name?: string;
+    role?: string;
+    role_category?: WitnessRoleCategory;
+    id_type?: string;
+    id_number?: string;
+    mobile_number?: string;
+    attestation_confirmed?: boolean;
+    attestation_language?: "en" | "ar";
+    attestation_version?: string;
+    signature_type?: "DIGITAL_SIGNATURE" | "OTP" | "MANUAL_CONFIRMATION";
+    signature_hash?: string;
+    otp_reference?: string;
+    verification_status?: "VERIFIED" | "PENDING" | "FAILED";
+    manual_fallback_used?: boolean;
+    device_fingerprint?: string;
+    force_unlock?: boolean;
+    unlock_reason?: string;
   },
   request?: NextRequest,
 ) {
   const caseRecord = await getAuthorizedCase(auth, caseId);
+  const metadata = asRecord(caseRecord.metadata);
+  const nowIso = new Date().toISOString();
+  const action = payload.action ?? "add";
+  const isFinalized = String(caseRecord.status ?? "").toUpperCase() === "CLOSED";
+
+  if (isFinalized && !payload.force_unlock) {
+    throw new ApiError(400, "Witness records are locked after finalization", {
+      code: "WITNESS_RECORDS_LOCKED",
+      fields: {
+        case_status: "Case is finalized and witness records are immutable",
+      },
+    });
+  }
+
+  let nextWitnesses = extractWitnessesFromMetadata(caseRecord.metadata);
+
+  if (action === "remove") {
+    const witnessId = payload.witness_id?.trim();
+    if (!witnessId) {
+      throw new ApiError(400, "Witness ID is required for removal", {
+        code: "WITNESS_ID_REQUIRED",
+        fields: {
+          witness_id: "Provide witness_id when removing a witness",
+        },
+      });
+    }
+    nextWitnesses = nextWitnesses.filter((item) => item.witness_id !== witnessId);
+  } else {
+    const fullName = payload.full_name?.trim() || payload.witness_name?.trim() || "";
+    const role = payload.role?.trim() || payload.witness_role?.trim() || "";
+    const idType = payload.id_type?.trim() || "NATIONAL_ID";
+    const idNumber = payload.id_number?.trim() || "";
+    const mobileNumber = payload.mobile_number?.trim() || "";
+    const signatureType = payload.signature_type?.trim().toUpperCase() || "DIGITAL_SIGNATURE";
+    const requiredFields = hasRequiredWitnessFields({
+      full_name: fullName,
+      role,
+      id_number: idNumber,
+      mobile_number: mobileNumber,
+      signature_hash: payload.signature_hash,
+      signature_type: signatureType,
+      verification_status: payload.verification_status,
+      attestation_confirmed: payload.attestation_confirmed,
+      otp_reference: payload.otp_reference,
+    });
+    if (Object.keys(requiredFields).length > 0) {
+      throw new ApiError(400, "Witness attestation incomplete", {
+        code: "WITNESS_ATTESTATION_INCOMPLETE",
+        fields: requiredFields,
+      });
+    }
+
+    const witnessId = payload.witness_id?.trim() || crypto.randomUUID();
+    const existingIndex = nextWitnesses.findIndex((item) => item.witness_id === witnessId);
+    const existingWitness = existingIndex >= 0 ? nextWitnesses[existingIndex] : null;
+
+    const witnessRecord: LegalWitnessRecord = {
+      witness_id: witnessId,
+      full_name: fullName,
+      role,
+      role_category: normalizeRoleCategory(payload.role_category),
+      id_type: idType,
+      id_number: idNumber,
+      mobile_number: mobileNumber,
+      identity_hash: buildWitnessIdentityHash(idType, idNumber, mobileNumber),
+      attestation_confirmed: true,
+      attested_at: nowIso,
+      attestation_language: payload.attestation_language === "ar" ? "ar" : "en",
+      attestation_version: payload.attestation_version?.trim() || "1.0",
+      signature_type:
+        signatureType === "OTP" || signatureType === "MANUAL_CONFIRMATION"
+          ? signatureType
+          : "DIGITAL_SIGNATURE",
+      signature_hash: payload.signature_hash?.trim() || "",
+      otp_reference: payload.otp_reference?.trim() || null,
+      verification_status: "VERIFIED",
+      manual_fallback_used: Boolean(payload.manual_fallback_used),
+      created_at: existingWitness?.created_at || nowIso,
+      created_by: existingWitness?.created_by || auth.sub,
+      updated_at: nowIso,
+      updated_by: auth.sub,
+      ip_address: getClientAddress(request),
+      device_fingerprint: payload.device_fingerprint?.trim() || request?.headers.get("user-agent") || null,
+      locked: false,
+      edit_history: existingWitness
+        ? [
+            ...(existingWitness.edit_history ?? []),
+            {
+              edited_at: nowIso,
+              edited_by: auth.sub,
+              reason: "Witness record updated",
+            },
+          ]
+        : [],
+    };
+
+    if (existingIndex >= 0) {
+      nextWitnesses[existingIndex] = witnessRecord;
+    } else {
+      nextWitnesses.push(witnessRecord);
+    }
+  }
+
+  const identitySet = new Set<string>();
+  for (const witness of nextWitnesses) {
+    const identityKey = `${witness.id_number}|${witness.mobile_number}`.toLowerCase();
+    if (identitySet.has(identityKey)) {
+      throw new ApiError(400, "Witness identity not verified", {
+        code: "WITNESS_IDENTITY_NOT_VERIFIED",
+        fields: {
+          duplicate: "Duplicate witness identity is not allowed",
+        },
+      });
+    }
+    identitySet.add(identityKey);
+  }
+
+  if (nextWitnesses.length >= 2) {
+    const hasClinical = nextWitnesses.some((item) => item.role_category === "clinical");
+    const hasNonClinical = nextWitnesses.some((item) => item.role_category === "non_clinical");
+    if (!hasClinical || !hasNonClinical) {
+      throw new ApiError(400, "Witness roles not compliant", {
+        code: "INVALID_WITNESS_COMPOSITION",
+        fields: {
+          role_category: "At least one clinical and one non-clinical witness are required",
+        },
+      });
+    }
+  }
 
   const updated = await prisma.case.update({
     where: { id: caseId },
     data: {
-      metadata: mergeSection(asRecord(caseRecord.metadata), "witness", {
-        witness_name: payload.witness_name?.trim() || null,
-        witness_role: payload.witness_role?.trim() || null,
-        recorded_at: new Date().toISOString(),
-      }),
+      metadata: {
+        ...(metadata ?? {}),
+        witnesses: toWitnessesMetadataValue(nextWitnesses),
+        witness: nextWitnesses[0]
+          ? {
+              witness_name: nextWitnesses[0].full_name,
+              witness_role: nextWitnesses[0].role,
+              recorded_at: nextWitnesses[0].updated_at,
+            }
+          : null,
+        legal: {
+          ...(asRecord(metadata?.legal) ?? {}),
+          witness_count: nextWitnesses.length,
+          legally_modified: Boolean(isFinalized && payload.force_unlock),
+          witness_unlock_reason:
+            isFinalized && payload.force_unlock ? payload.unlock_reason?.trim() || "forced_unlock" : null,
+        },
+      } as Prisma.InputJsonValue,
       updatedByUserId: auth.sub,
     },
   });
+
+  if (isFinalized && payload.force_unlock) {
+    await writeAuditLog({
+      tenantId: auth.tenant_id!,
+      userId: auth.sub,
+      entityType: "case_witness",
+      entityId: caseId,
+      action: "witness_unlock_forced",
+      details: payload.unlock_reason?.trim() || "Witness records unlocked for legal correction",
+      caseId,
+      metadataJson: {
+        unlock_reason: payload.unlock_reason?.trim() || null,
+      },
+      request,
+    });
+  }
 
   await writeAuditLog({
     tenantId: auth.tenant_id!,
@@ -235,9 +477,13 @@ export async function recordCaseWitness(
     entityType: "case_witness",
     entityId: caseId,
     action: "witness_recorded",
-    details: `Witness recorded: ${payload.witness_name?.trim() || "unknown"}`,
+    details: `Witness record ${action}ed. Total witnesses: ${nextWitnesses.length}`,
     caseId,
-    metadataJson: payload as Prisma.InputJsonValue,
+    metadataJson: {
+      action,
+      witness_id: payload.witness_id ?? null,
+      total_witnesses: nextWitnesses.length,
+    } as Prisma.InputJsonValue,
     request,
   });
 
@@ -247,8 +493,11 @@ export async function recordCaseWitness(
     eventType: "WITNESS_RECORDED",
     actorId: auth.sub,
     actorRole: auth.role ?? null,
-    payloadSummary: `Witness recorded: ${payload.witness_name?.trim() || "unknown"}`,
-    metadataJson: payload,
+    payloadSummary: `Witness ${action}ed. Total witnesses: ${nextWitnesses.length}`,
+    metadataJson: {
+      action,
+      total_witnesses: nextWitnesses.length,
+    },
     request,
   }).catch(() => undefined);
 
@@ -322,6 +571,7 @@ export async function getLegalPackageMetadata(auth: AuthContext, caseId: string)
 
 export async function generateLegalPackageForCase(auth: AuthContext, caseId: string, request: NextRequest) {
   const caseRecord = await getAuthorizedCase(auth, caseId);
+  assertWitnessIntegrityOrThrow(caseRecord.metadata);
   await assertDataResidencyCompliance({
     tenantId: auth.tenant_id!,
     dataType: "PATIENT_SENSITIVE",

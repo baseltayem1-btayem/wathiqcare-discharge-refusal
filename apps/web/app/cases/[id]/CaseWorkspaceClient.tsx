@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
@@ -26,6 +27,9 @@ import {
 } from "@/lib/tracking";
 
 type ApiErrorPayload = {
+  error?: string;
+  code?: string;
+  fields?: Record<string, string>;
   detail?: string;
   message?: string;
 };
@@ -57,8 +61,25 @@ type SignaturePayload = {
 };
 
 type WitnessPayload = {
-  witness_name: string;
-  witness_role: string;
+  witness_id?: string;
+  full_name: string;
+  role: string;
+  role_category: "clinical" | "non_clinical";
+  id_type: string;
+  id_number: string;
+  mobile_number: string;
+  attestation_confirmed: boolean;
+  attestation_language: "en" | "ar";
+  attestation_version: string;
+  signature_type: "DIGITAL_SIGNATURE" | "OTP" | "MANUAL_CONFIRMATION";
+  signature_hash: string;
+  otp_reference: string;
+  verification_status: "VERIFIED" | "PENDING" | "FAILED";
+  manual_fallback_used: boolean;
+};
+
+type WitnessRecord = WitnessPayload & {
+  witness_id: string;
 };
 
 type ConsentFormPayload = {
@@ -221,6 +242,78 @@ function getBoolean(record: Record<string, unknown> | null | undefined, key: str
   return typeof value === "boolean" ? value : fallback;
 }
 
+function parseWitnesses(metadata: Record<string, unknown> | null | undefined): WitnessRecord[] {
+  const witnesses = Array.isArray(metadata?.witnesses) ? metadata.witnesses : [];
+  if (witnesses.length > 0) {
+    return witnesses
+      .map((entry, index) => {
+        const witness = asRecord(entry);
+        if (!witness) {
+          return null;
+        }
+
+        return {
+          witness_id: getString(witness, "witness_id") || `witness-${index + 1}`,
+          full_name: getString(witness, "full_name", "witness_name"),
+          role: getString(witness, "role", "witness_role"),
+          role_category: getString(witness, "role_category") === "clinical" ? "clinical" : "non_clinical",
+          id_type: getString(witness, "id_type") || "NATIONAL_ID",
+          id_number: getString(witness, "id_number"),
+          mobile_number: getString(witness, "mobile_number"),
+          attestation_confirmed: getBoolean(witness, "attestation_confirmed", false),
+          attestation_language: getString(witness, "attestation_language") === "ar" ? "ar" : "en",
+          attestation_version: getString(witness, "attestation_version") || "1.0",
+          signature_type:
+            getString(witness, "signature_type") === "OTP"
+              ? "OTP"
+              : getString(witness, "signature_type") === "MANUAL_CONFIRMATION"
+                ? "MANUAL_CONFIRMATION"
+                : "DIGITAL_SIGNATURE",
+          signature_hash: getString(witness, "signature_hash"),
+          otp_reference: getString(witness, "otp_reference"),
+          verification_status:
+            getString(witness, "verification_status") === "VERIFIED"
+              ? "VERIFIED"
+              : getString(witness, "verification_status") === "FAILED"
+                ? "FAILED"
+                : "PENDING",
+          manual_fallback_used: getBoolean(witness, "manual_fallback_used", false),
+        } satisfies WitnessRecord;
+      })
+      .filter((entry): entry is WitnessRecord => Boolean(entry));
+  }
+
+  const legacyWitness = asRecord(metadata?.witness);
+  const legacyName = getString(legacyWitness, "witness_name");
+  if (!legacyName) {
+    return [];
+  }
+
+  return [
+    {
+      witness_id: "legacy-witness-1",
+      full_name: legacyName,
+      role: getString(legacyWitness, "witness_role"),
+      role_category: "non_clinical",
+      id_type: "NATIONAL_ID",
+      id_number: getString(legacyWitness, "id_number"),
+      mobile_number: getString(legacyWitness, "mobile_number"),
+      attestation_confirmed: getBoolean(legacyWitness, "attestation_confirmed", false),
+      attestation_language: "en",
+      attestation_version: getString(legacyWitness, "attestation_version") || "1.0",
+      signature_type: "DIGITAL_SIGNATURE",
+      signature_hash: getString(legacyWitness, "signature_hash", "signature"),
+      otp_reference: getString(legacyWitness, "otp_reference"),
+      verification_status: "PENDING",
+      manual_fallback_used: false,
+    },
+  ];
+}
+
+function hasMinimumWitnesses(records: WitnessRecord[]): boolean {
+  return records.length >= 2;
+}
+
 function mapCaseRecordToCaseData(record: CaseApiRecord, isArabic: boolean): CaseData {
   const metadata = asRecord(record.metadata);
   const workflow = asRecord(metadata?.workflow);
@@ -301,6 +394,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     }
 
     throw new Error(
+      errorPayload?.error ||
       errorPayload?.detail ||
         errorPayload?.message ||
         `Request failed with status ${response.status}`,
@@ -316,6 +410,24 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 function getErrorMessage(error: unknown, fallback = "An unexpected error occurred."): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+function parseApiErrorDetails(error: unknown): { message: string; details?: string[] } {
+  if (!(error instanceof Error)) {
+    return { message: "Unexpected error" };
+  }
+
+  const raw = error.message || "Unexpected error";
+  try {
+    const payload = JSON.parse(raw) as ApiErrorPayload;
+    const fields = payload?.fields ? Object.values(payload.fields) : [];
+    return {
+      message: payload?.error || payload?.detail || payload?.message || raw,
+      details: fields.length ? fields : undefined,
+    };
+  } catch {
+    return { message: raw };
+  }
 }
 
 export default function CaseWorkspaceClient() {
@@ -340,9 +452,22 @@ export default function CaseWorkspaceClient() {
     reason: "",
   });
   const [witness, setWitness] = useState<WitnessPayload>({
-    witness_name: "",
-    witness_role: "",
+    full_name: "",
+    role: "",
+    role_category: "non_clinical",
+    id_type: "NATIONAL_ID",
+    id_number: "",
+    mobile_number: "",
+    attestation_confirmed: false,
+    attestation_language: isRtl ? "ar" : "en",
+    attestation_version: "1.0",
+    signature_type: "DIGITAL_SIGNATURE",
+    signature_hash: "",
+    otp_reference: "",
+    verification_status: "VERIFIED",
+    manual_fallback_used: false,
   });
+  const [witnessRecords, setWitnessRecords] = useState<WitnessRecord[]>([]);
   const [consentForm, setConsentForm] = useState<ConsentFormPayload>({
     processingPurpose: txt("Discharge refusal medico-legal processing", "المعالجة القانونية الطبية لرفض الخروج"),
     lawfulBasis: txt("PDPL healthcare and legal obligation basis", "أساس الالتزام القانوني والرعاية الصحية وفق نظام حماية البيانات الشخصية"),
@@ -369,6 +494,7 @@ export default function CaseWorkspaceClient() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   async function reloadComplianceState(targetCaseId: string) {
     const [readinessReport, consentList, auditInfo, docs, pkg] = await Promise.all([
@@ -474,6 +600,7 @@ export default function CaseWorkspaceClient() {
         const presentationMeta = asRecord(caseMetadata?.presentation);
         const signatureMeta = asRecord(caseMetadata?.signature);
         const witnessMeta = asRecord(caseMetadata?.witness);
+        const parsedWitnesses = parseWitnesses(caseMetadata);
 
         setPresentation({
           language: getString(presentationMeta, "language"),
@@ -504,11 +631,27 @@ export default function CaseWorkspaceClient() {
           reason: getString(signatureMeta, "reason"),
         });
 
-        const hydratedWitnessName = getString(witnessMeta, "witness_name");
+        const primaryWitness = parsedWitnesses[0];
+        const hydratedWitnessName =
+          primaryWitness?.full_name || getString(witnessMeta, "witness_name");
         setWitness({
-          witness_name: hydratedWitnessName,
-          witness_role: getString(witnessMeta, "witness_role"),
+          witness_id: primaryWitness?.witness_id,
+          full_name: primaryWitness?.full_name || hydratedWitnessName,
+          role: primaryWitness?.role || getString(witnessMeta, "witness_role"),
+          role_category: primaryWitness?.role_category || "non_clinical",
+          id_type: primaryWitness?.id_type || "NATIONAL_ID",
+          id_number: primaryWitness?.id_number || "",
+          mobile_number: primaryWitness?.mobile_number || "",
+          attestation_confirmed: primaryWitness?.attestation_confirmed || false,
+          attestation_language: primaryWitness?.attestation_language || (isRtl ? "ar" : "en"),
+          attestation_version: primaryWitness?.attestation_version || "1.0",
+          signature_type: primaryWitness?.signature_type || "DIGITAL_SIGNATURE",
+          signature_hash: primaryWitness?.signature_hash || "",
+          otp_reference: primaryWitness?.otp_reference || "",
+          verification_status: primaryWitness?.verification_status || "VERIFIED",
+          manual_fallback_used: primaryWitness?.manual_fallback_used || false,
         });
+        setWitnessRecords(parsedWitnesses);
 
         setConsentForm((previous) => ({
           ...previous,
@@ -549,7 +692,9 @@ export default function CaseWorkspaceClient() {
 
         trackApiError({ operation: "load_workspace", surface: "workspace", role: permissions.auth.role ?? undefined });
 
-        setError(getErrorMessage(err, txt("Failed to load case", "فشل تحميل الحالة")));
+        const parsed = parseApiErrorDetails(err);
+        setError(parsed.message || getErrorMessage(err, txt("Failed to load case", "فشل تحميل الحالة")));
+        toast.error(parsed.message || txt("Failed to load case", "فشل تحميل الحالة"));
         setCaseData(null);
         setReadiness(null);
         setLegalReadinessReport(null);
@@ -561,6 +706,7 @@ export default function CaseWorkspaceClient() {
         setPdfLatest(null);
         setPdfValidation(null);
         setPdfVersions([]);
+        setWitnessRecords([]);
         setDeferredDataLoading(false);
       } finally {
         if (!cancelled) {
@@ -593,11 +739,36 @@ export default function CaseWorkspaceClient() {
     ]);
   }
 
+  const witnessGateMessage = txt(
+    "At least two witnesses must be recorded before proceeding.",
+    "يجب تسجيل شاهدين على الأقل قبل المتابعة",
+  );
+  const minimumWitnessesMet = hasMinimumWitnesses(witnessRecords);
+
+  function guardWitnessMinimum(): boolean {
+    if (minimumWitnessesMet) {
+      return true;
+    }
+    setError(witnessGateMessage);
+    setSuccessMessage("");
+    toast.error(witnessGateMessage);
+    return false;
+  }
+
   async function handleGenerateCasePdf(mode: "draft" | "final", regenerate = false): Promise<void> {
     if (!caseId) return;
+    if (mode === "final" && !guardWitnessMinimum()) {
+      return;
+    }
 
     setPdfBusy(true);
     setError("");
+    setSuccessMessage("");
+    const toastId = toast.loading(
+      mode === "final"
+        ? txt("Generating final PDF...", "جار إنشاء PDF النهائي...")
+        : txt("Generating draft PDF...", "جار إنشاء مسودة PDF..."),
+    );
 
     try {
       const generated = await apiFetch<CasePdfGenerateResponse>(`/api/cases/${caseId}/generate-pdf`, {
@@ -615,10 +786,26 @@ export default function CaseWorkspaceClient() {
         reloadCasePdfState(caseId),
         reloadComplianceState(caseId),
       ]);
+      setSuccessMessage(
+        mode === "final"
+          ? txt("Final PDF generated successfully.", "تم إنشاء PDF النهائي بنجاح.")
+          : txt("Draft PDF generated successfully.", "تم إنشاء مسودة PDF بنجاح."),
+      );
+      toast.success(
+        mode === "final"
+          ? txt("Final PDF generated.", "تم إنشاء PDF النهائي.")
+          : txt("Draft PDF generated.", "تم إنشاء مسودة PDF."),
+        { id: toastId },
+      );
       trackPdfGenerated({ mode, regenerate, workspace: "legacy", role: permissions.auth.role ?? undefined });
     } catch (err: unknown) {
       trackApiError({ operation: "generate_pdf", surface: "workspace", role: permissions.auth.role ?? undefined });
-      setError(getErrorMessage(err, txt("Failed to generate legal case PDF", "فشل إنشاء ملف PDF القانوني للحالة")));
+      const parsed = parseApiErrorDetails(err);
+      setError(parsed.message || getErrorMessage(err, txt("Failed to generate legal case PDF", "فشل إنشاء ملف PDF القانوني للحالة")));
+      toast.error(parsed.message || txt("Failed to generate legal case PDF", "فشل إنشاء ملف PDF القانوني للحالة"), {
+        id: toastId,
+        description: parsed.details?.slice(0, 2).join(" | "),
+      });
     } finally {
       setPdfBusy(false);
     }
@@ -626,9 +813,14 @@ export default function CaseWorkspaceClient() {
 
   async function handleGenerateLegalPackage(): Promise<void> {
     if (!caseId) return;
+    if (!guardWitnessMinimum()) {
+      return;
+    }
 
     setLoading(true);
     setError("");
+    setSuccessMessage("");
+    const toastId = toast.loading(txt("Generating legal package...", "جار إنشاء الحزمة القانونية..."));
 
     try {
       const pkg = await apiFetch<LegalPackageMeta>(
@@ -637,10 +829,14 @@ export default function CaseWorkspaceClient() {
       );
       setLegalPackage(pkg);
       await reloadComplianceState(caseId);
+      setSuccessMessage(txt("Legal package generated successfully.", "تم إنشاء الحزمة القانونية بنجاح."));
+      toast.success(txt("Legal package generated.", "تم إنشاء الحزمة القانونية."), { id: toastId });
       trackLegalPackageGenerated({ workspace: "legacy", role: permissions.auth.role ?? undefined });
     } catch (err: unknown) {
       trackApiError({ operation: "generate_legal_package", surface: "workspace", role: permissions.auth.role ?? undefined });
-      setError(getErrorMessage(err, txt("Failed to generate legal package", "فشل إنشاء الحزمة القانونية")));
+      const parsed = parseApiErrorDetails(err);
+      setError(parsed.message || getErrorMessage(err, txt("Failed to generate legal package", "فشل إنشاء الحزمة القانونية")));
+      toast.error(parsed.message || txt("Failed to generate legal package", "فشل إنشاء الحزمة القانونية"), { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -651,6 +847,8 @@ export default function CaseWorkspaceClient() {
 
     setLoading(true);
     setError("");
+    setSuccessMessage("");
+    const toastId = toast.loading(txt("Saving medical decision...", "جار حفظ القرار الطبي..."));
 
     try {
       await apiFetch(`/api/discharge/cases/${caseId}/presentation`, {
@@ -659,9 +857,13 @@ export default function CaseWorkspaceClient() {
       });
 
       await refreshReadinessAndPackage();
+      setSuccessMessage(txt("Medical decision saved.", "تم حفظ القرار الطبي."));
+      toast.success(txt("Medical decision saved.", "تم حفظ القرار الطبي."), { id: toastId });
     } catch (err: unknown) {
       trackApiError({ operation: "record_presentation", surface: "workspace", role: permissions.auth.role ?? undefined });
-      setError(getErrorMessage(err, txt("Failed to record presentation", "فشل تسجيل العرض الطبي")));
+      const parsed = parseApiErrorDetails(err);
+      setError(parsed.message || getErrorMessage(err, txt("Failed to record presentation", "فشل تسجيل العرض الطبي")));
+      toast.error(parsed.message || txt("Failed to record presentation", "فشل تسجيل العرض الطبي"), { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -669,9 +871,14 @@ export default function CaseWorkspaceClient() {
 
   async function handleSignature(): Promise<void> {
     if (!caseId) return;
+    if (!guardWitnessMinimum()) {
+      return;
+    }
 
     setLoading(true);
     setError("");
+    setSuccessMessage("");
+    const toastId = toast.loading(txt("Saving patient decision...", "جار حفظ قرار المريض..."));
 
     try {
       await apiFetch(`/api/discharge/cases/${caseId}/signature`, {
@@ -680,9 +887,13 @@ export default function CaseWorkspaceClient() {
       });
 
       await refreshReadinessAndPackage();
+      setSuccessMessage(txt("Patient decision saved.", "تم حفظ قرار المريض."));
+      toast.success(txt("Patient decision saved.", "تم حفظ قرار المريض."), { id: toastId });
     } catch (err: unknown) {
       trackApiError({ operation: "record_signature", surface: "workspace", role: permissions.auth.role ?? undefined });
-      setError(getErrorMessage(err, txt("Failed to record signature", "فشل تسجيل التوقيع")));
+      const parsed = parseApiErrorDetails(err);
+      setError(parsed.message || getErrorMessage(err, txt("Failed to record signature", "فشل تسجيل التوقيع")));
+      toast.error(parsed.message || txt("Failed to record signature", "فشل تسجيل التوقيع"), { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -693,17 +904,43 @@ export default function CaseWorkspaceClient() {
 
     setLoading(true);
     setError("");
+    setSuccessMessage("");
+    const toastId = toast.loading(txt("Saving witness details...", "جار حفظ بيانات الشاهد..."));
 
     try {
-      await apiFetch(`/api/discharge/cases/${caseId}/witness`, {
+      const updatedCase = await apiFetch<CaseApiRecord>(`/api/discharge/cases/${caseId}/witness`, {
         method: "POST",
-        body: JSON.stringify(witness),
+        body: JSON.stringify({
+          ...witness,
+          action: witness.witness_id ? "update" : "add",
+          witness_id: witness.witness_id,
+        }),
       });
 
+      const refreshedWitnesses = parseWitnesses(asRecord(updatedCase.metadata));
+      setWitnessRecords(refreshedWitnesses);
+      const latestWitness = refreshedWitnesses[0];
+      if (latestWitness) {
+        setWitness((previous) => ({
+          ...previous,
+          witness_id: latestWitness.witness_id,
+          full_name: latestWitness.full_name,
+          role: latestWitness.role,
+          role_category: latestWitness.role_category,
+        }));
+      }
+
       await refreshReadinessAndPackage();
+      setSuccessMessage(txt("Witness details saved.", "تم حفظ بيانات الشاهد."));
+      toast.success(txt("Witness details saved.", "تم حفظ بيانات الشاهد."), { id: toastId });
     } catch (err: unknown) {
       trackApiError({ operation: "record_witness", surface: "workspace", role: permissions.auth.role ?? undefined });
-      setError(getErrorMessage(err, txt("Failed to record witness", "فشل تسجيل الشاهد")));
+      const parsed = parseApiErrorDetails(err);
+      setError(parsed.message || getErrorMessage(err, txt("Failed to record witness", "فشل تسجيل الشاهد")));
+      toast.error(parsed.message || txt("Failed to record witness", "فشل تسجيل الشاهد"), {
+        id: toastId,
+        description: parsed.details?.slice(0, 2).join(" | "),
+      });
     } finally {
       setLoading(false);
     }
@@ -711,16 +948,21 @@ export default function CaseWorkspaceClient() {
 
   async function handleRecordConsent(): Promise<void> {
     if (!caseId) return;
+    if (!guardWitnessMinimum()) {
+      return;
+    }
 
     setLoading(true);
     setError("");
+    setSuccessMessage("");
+    const toastId = toast.loading(txt("Saving consent evidence...", "جار حفظ أدلة الموافقة..."));
 
     try {
       await apiFetch(`/api/discharge/cases/${caseId}/consent`, {
         method: "POST",
         body: JSON.stringify({
           ...consentForm,
-          witnessName: consentForm.witnessName || witness.witness_name || undefined,
+          witnessName: consentForm.witnessName || witness.full_name || undefined,
           otpReference: consentForm.otpReference || undefined,
           documentSnapshot: {
             presentation,
@@ -732,9 +974,13 @@ export default function CaseWorkspaceClient() {
       });
 
       await refreshReadinessAndPackage();
+      setSuccessMessage(txt("Consent evidence saved.", "تم حفظ أدلة الموافقة."));
+      toast.success(txt("Consent evidence saved.", "تم حفظ أدلة الموافقة."), { id: toastId });
     } catch (err: unknown) {
       trackApiError({ operation: "record_consent", surface: "workspace", role: permissions.auth.role ?? undefined });
-      setError(getErrorMessage(err, txt("Failed to record consent", "فشل تسجيل الموافقة")));
+      const parsed = parseApiErrorDetails(err);
+      setError(parsed.message || getErrorMessage(err, txt("Failed to record consent", "فشل تسجيل الموافقة")));
+      toast.error(parsed.message || txt("Failed to record consent", "فشل تسجيل الموافقة"), { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -822,6 +1068,9 @@ export default function CaseWorkspaceClient() {
           setSignature={setSignature}
           witness={witness}
           setWitness={setWitness}
+          witnessRecords={witnessRecords}
+          witnessMinimumMet={minimumWitnessesMet}
+          witnessGateMessage={witnessGateMessage}
           consentForm={consentForm}
           setConsentForm={setConsentForm}
           readiness={readiness}
@@ -844,6 +1093,7 @@ export default function CaseWorkspaceClient() {
           canReadAudit={canReadAudit}
           canReadSmsEvidence={canReadSmsEvidence}
           deniedMessage={permissions.deniedMessage}
+          successMessage={successMessage}
           onRecordPresentation={handlePresentation}
           onRecordSignature={handleSignature}
           onRecordWitness={handleWitness}

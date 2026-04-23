@@ -209,19 +209,9 @@ export function proxy(request: NextRequest) {
   }
 
   if (isLoginPath) {
-    const url = request.nextUrl.clone();
-    const requestedNext = request.nextUrl.searchParams.get("next");
-    if (userType === "platform_admin") {
-      url.pathname = buildLocalizedPath("/platform", locale);
-      url.search = "";
-    } else if (requestedNext && requestedNext.startsWith("/")) {
-      url.pathname = requestedNext;
-      url.search = "";
-    } else {
-      url.pathname = buildLocalizedPath("/dashboard", locale);
-      url.search = "";
-    }
-    return NextResponse.redirect(url);
+    // Keep /login reachable even when a cookie exists.
+    // Client/session checks decide whether to continue or re-authenticate.
+    return NextResponse.next();
   }
 
   // Locale-prefixed dashboard routes are URL aliases; rewrite to concrete app routes.

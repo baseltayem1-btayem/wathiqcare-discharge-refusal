@@ -3,9 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRight, FileText, PlusCircle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
+import { Badge } from "@/components/design-system/badge";
+import { Button } from "@/components/design-system/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/design-system/card";
 import { SkeletonHeader, SkeletonTable } from "@/components/ui/SkeletonLoading";
+import UXStateCard from "@/components/ui/UXStateCard";
 import { useUiPermissions } from "@/hooks/useUiPermissions";
 import { useI18n } from "@/i18n/I18nProvider";
 import { trackApiError, trackPrimaryAction } from "@/lib/tracking";
@@ -85,19 +90,42 @@ export default function CasesPage() {
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const canCreateCase = permissions.can("cases.create");
   const isArabic = lang === "ar";
 
+  async function loadCases(showToast = false): Promise<void> {
+    try {
+      const data = await apiFetch<CaseItem[]>("/api/cases");
+      setCases(data as CaseItem[]);
+      setError("");
+      if (showToast) {
+        toast.success(isArabic ? "تم تحديث الحالات" : "Cases refreshed successfully");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t("common.error");
+      setError(message);
+      toast.error(message);
+      trackApiError({ operation: "list_cases", surface: "cases_page", role: permissions.auth.role ?? undefined });
+    }
+  }
+
   useEffect(() => {
-    apiFetch<CaseItem[]>("/api/cases")
-      .then((data) => setCases(data as CaseItem[]))
-      .catch((err) => {
-        setError(err.message);
-        trackApiError({ operation: "list_cases", surface: "cases_page", role: permissions.auth.role ?? undefined });
-      })
-      .finally(() => setLoading(false));
+    void loadCases().finally(() => setLoading(false));
   }, [permissions.auth.role]);
+
+  const inProgressCount = cases.filter((item) => /open|pending|progress/i.test(item.status || "")).length;
+  const readyToCloseCount = cases.filter((item) => /completed|closed|final/i.test(item.status || "")).length;
+  const nextAction = inProgressCount > 0
+    ? {
+        title: isArabic ? "الإجراء التالي: متابعة الحالات النشطة" : "Next action: review active cases",
+        note: isArabic ? `لديك ${inProgressCount} حالة تحتاج متابعة فورية.` : `${inProgressCount} active case(s) require immediate follow-up.`,
+      }
+    : {
+        title: isArabic ? "الإجراء التالي: إنشاء حالة جديدة" : "Next action: create a new case",
+        note: isArabic ? "لا توجد حالات نشطة حاليًا، ابدأ دورة جديدة عند الحاجة." : "No active cases right now, start a new workflow when needed.",
+      };
 
   return (
     <AuthGuard>
@@ -118,7 +146,7 @@ export default function CasesPage() {
                 trackPrimaryAction("new_case", { role: permissions.auth.role ?? undefined });
               }}
               title={!canCreateCase ? permissions.deniedMessage : undefined}
-              className="inline-flex items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--primary-hover)]"
               style={!canCreateCase ? { opacity: 0.5, pointerEvents: "none" } : undefined}
             >
               <PlusCircle className="h-4 w-4" />
@@ -130,7 +158,7 @@ export default function CasesPage() {
               onClick={() => {
                 trackPrimaryAction("open_documents", { role: permissions.auth.role ?? undefined });
               }}
-              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               <FileText className="h-4 w-4" />
               {t("bundles.title")}
@@ -140,36 +168,108 @@ export default function CasesPage() {
               type="button"
               onClick={() => {
                 trackPrimaryAction("refresh_cases", { role: permissions.auth.role ?? undefined });
-                void apiFetch<CaseItem[]>("/api/cases")
-                  .then((data) => setCases(data as CaseItem[]))
-                  .catch((err) => {
-                    setError(err.message);
+                setRefreshing(true);
+                void loadCases(true)
+                  .catch(() => {
                     trackApiError({ operation: "refresh_cases", surface: "cases_page", role: permissions.auth.role ?? undefined });
-                  });
+                  })
+                  .finally(() => setRefreshing(false));
               }}
-              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
-              <RefreshCw className="h-4 w-4" />
-              {t("common.refresh")}
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? (isArabic ? "جار التحديث..." : "Refreshing...") : t("common.refresh")}
             </button>
           </>
         }
       >
         {loading ? (
           <div className="space-y-4">
+            <UXStateCard
+              variant="loading"
+              title={isArabic ? "جاري تحميل الحالات" : "Loading cases"}
+              message={isArabic ? "يتم الآن تجهيز بيانات الحالات والإجراءات المتاحة." : "Preparing case list and available actions."}
+            />
             <SkeletonHeader />
             <SkeletonTable rows={6} />
           </div>
         ) : null}
 
         {error ? (
-          <div className="rounded-lg border border-[var(--state-error-border)] bg-[var(--state-error-bg)] px-3 py-2 text-sm text-[var(--state-error)]">
-            {error}
-          </div>
+          <UXStateCard
+            variant="error"
+            title={isArabic ? "تعذر تحميل الحالات" : "Unable to load cases"}
+            message={error}
+            action={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setLoading(true);
+                  void loadCases().finally(() => setLoading(false));
+                }}
+              >
+                {isArabic ? "إعادة المحاولة" : "Retry"}
+              </Button>
+            }
+          />
         ) : null}
 
         {!loading && !error ? (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-sm)]">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">{isArabic ? "الإجراء التالي" : "Next Action"}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-base font-semibold text-slate-900">{nextAction.title}</div>
+                  <p className="mt-1 text-sm text-slate-600">{nextAction.note}</p>
+                </div>
+                <Link
+                  href={inProgressCount > 0 ? "/cases" : "/cases/new"}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--primary-hover)]"
+                >
+                  {inProgressCount > 0 ? (isArabic ? "مراجعة الحالات" : "Review Cases") : (isArabic ? "حالة جديدة" : "New Case")}
+                </Link>
+              </CardContent>
+            </Card>
+
+            <section className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">{t("cases.table.actions")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-900">{cases.length}</div>
+                  <p className="mt-1 text-xs text-slate-500">{isArabic ? "إجمالي الحالات في مساحة العمل" : "Total cases in workspace"}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">{isArabic ? "قيد التنفيذ" : "In progress"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {inProgressCount}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{isArabic ? "حالات تحتاج متابعة نشطة" : "Cases requiring active follow-up"}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">{isArabic ? "جاهزة للإغلاق" : "Ready to close"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {readyToCloseCount}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{isArabic ? "استوفت متطلبات الحالة" : "Meeting closure requirements"}</p>
+                </CardContent>
+              </Card>
+            </section>
+
+            <div className="overflow-x-auto rounded-2xl border border-[var(--border-soft)] bg-white shadow-[var(--shadow-sm)]">
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
                 <tr>
@@ -186,7 +286,13 @@ export default function CasesPage() {
                   <tr key={item.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/80">
                     <td className="px-4 py-3">{item.medicalRecordNo || item.patient_mrn || "-"}</td>
                     <td className="px-4 py-3">{item.patientName || item.patient_name || "-"}</td>
-                    <td className="px-4 py-3">{translateCaseStatus(item.status || "", isArabic)}</td>
+                    <td className="px-4 py-3">
+                      <Badge
+                        variant={/completed|closed|final/i.test(item.status || "") ? "success" : /failed|blocked|rejected/i.test(item.status || "") ? "destructive" : "pending"}
+                      >
+                        {translateCaseStatus(item.status || "", isArabic)}
+                      </Badge>
+                    </td>
                     <td className="px-4 py-3 text-slate-700">
                       {item.signer_name
                         ? `${item.signer_name}${item.signer_role ? ` (${translateSignerRole(item.signer_role, isArabic)})` : ""}`
@@ -199,7 +305,7 @@ export default function CasesPage() {
                         onClick={() => {
                           trackPrimaryAction("open_case_workspace", { role: permissions.auth.role ?? undefined });
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-1.5 text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-2 font-semibold text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
                       >
                         {t("cases.open")}
                         <ArrowRight className="h-3.5 w-3.5" />
@@ -211,12 +317,30 @@ export default function CasesPage() {
                 {cases.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
-                      {t("cases.noCases")}
+                      <div className="mx-auto max-w-xl">
+                        <UXStateCard
+                          variant="empty"
+                          title={isArabic ? "لا توجد حالات بعد" : "No cases yet"}
+                          message={t("cases.noCases")}
+                          action={
+                            canCreateCase ? (
+                              <Link
+                                href="/cases/new"
+                                className="inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white"
+                              >
+                                <PlusCircle className="h-3.5 w-3.5" />
+                                {t("cases.newCase")}
+                              </Link>
+                            ) : null
+                          }
+                        />
+                      </div>
                     </td>
                   </tr>
                 ) : null}
               </tbody>
             </table>
+            </div>
           </div>
         ) : null}
       </AppShell>

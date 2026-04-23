@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type BreadcrumbItem = {
@@ -54,6 +54,7 @@ function fallbackArabicLabel(segment: string): string {
 export default function AppBreadcrumbs({ caseLabel }: AppBreadcrumbsProps) {
   const pathname = usePathname();
   const { t, isRtl } = useI18n();
+  const DividerIcon = isRtl ? ChevronRight : ChevronLeft;
 
   const segments = pathname
     .split("/")
@@ -94,7 +95,7 @@ export default function AppBreadcrumbs({ caseLabel }: AppBreadcrumbsProps) {
   return (
     <nav
       aria-label={t("breadcrumbs.ariaLabel")}
-      className="min-h-6 overflow-hidden"
+      className="min-h-6 overflow-hidden rounded-xl border border-[var(--border-soft)] bg-slate-50/70 px-2 py-1.5"
       dir={isRtl ? "rtl" : "ltr"}
     >
       <ol className="flex flex-wrap items-center gap-1 text-xs text-slate-500">
@@ -110,7 +111,7 @@ export default function AppBreadcrumbs({ caseLabel }: AppBreadcrumbsProps) {
                   {item.label}
                 </Link>
               )}
-              {!isLast ? <ChevronLeft className="h-3.5 w-3.5 text-slate-400" /> : null}
+              {!isLast ? <DividerIcon className="h-3.5 w-3.5 text-slate-400" /> : null}
             </li>
           );
         })}

@@ -2,10 +2,21 @@ import { NextResponse } from "next/server";
 
 export class ApiError extends Error {
   status: number;
+  code?: string;
+  fields?: Record<string, string>;
 
-  constructor(status: number, message: string) {
+  constructor(
+    status: number,
+    message: string,
+    options?: {
+      code?: string;
+      fields?: Record<string, string>;
+    },
+  ) {
     super(message);
     this.status = status;
+    this.code = options?.code;
+    this.fields = options?.fields;
   }
 }
 
@@ -21,6 +32,8 @@ type JsonResponseInit = {
   status?: number;
   headers?: HeadersInit;
   traceId?: string;
+  code?: string;
+  fields?: Record<string, string>;
 };
 
 function resolveTraceId(init: JsonResponseInit = {}): string {
@@ -83,6 +96,8 @@ export function jsonSuccess<T>(data: T, init: JsonResponseInit = {}) {
 export function jsonError(status: number, detail: string, init: JsonResponseInit = {}) {
   const traceId = resolveTraceId(init);
   const timestamp = new Date().toISOString();
+  const errorCode = init.code;
+  const fields = init.fields;
 
   return NextResponse.json(
     {
@@ -93,6 +108,8 @@ export function jsonError(status: number, detail: string, init: JsonResponseInit
       timestamp,
       detail,
       message: detail,
+      ...(errorCode ? { code: errorCode } : {}),
+      ...(fields ? { fields } : {}),
     },
     {
       status,
@@ -165,7 +182,11 @@ export function handleApiError(error: unknown) {
       message: error.message,
       error,
     });
-    return jsonError(error.status, error.message, { traceId });
+    return jsonError(error.status, error.message, {
+      traceId,
+      ...(error.code ? { code: error.code } : {}),
+      ...(error.fields ? { fields: error.fields } : {}),
+    });
   }
 
   const prismaCode = readPrismaCode(error);

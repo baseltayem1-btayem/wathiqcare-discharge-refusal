@@ -143,3 +143,58 @@ test("persistPdfBinary: local_file mode is blocked on Vercel runtime", async () 
     }
   }
 });
+
+test("runtime target: detects local Windows when not on Vercel", () => {
+  const previousVercel = process.env.VERCEL;
+  const originalPlatform = process.platform;
+
+  try {
+    delete process.env.VERCEL;
+    Object.defineProperty(process, "platform", { value: "win32" });
+
+    assert.equal(__casePdfStorageInternals.detectPdfRuntimeTarget(), "local_windows");
+  } finally {
+    Object.defineProperty(process, "platform", { value: originalPlatform });
+    if (previousVercel) {
+      process.env.VERCEL = previousVercel;
+    } else {
+      delete process.env.VERCEL;
+    }
+  }
+});
+
+test("configured executable path: ignores Windows path on Vercel production", () => {
+  const previousPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+
+  try {
+    process.env.PUPPETEER_EXECUTABLE_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+
+    assert.equal(__casePdfStorageInternals.getConfiguredPuppeteerExecutablePath("production"), null);
+    assert.equal(__casePdfStorageInternals.getConfiguredPuppeteerExecutablePath("preview"), null);
+  } finally {
+    if (previousPath) {
+      process.env.PUPPETEER_EXECUTABLE_PATH = previousPath;
+    } else {
+      delete process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+  }
+});
+
+test("configured executable path: keeps valid Windows path for local Windows", () => {
+  const previousPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+
+  try {
+    process.env.PUPPETEER_EXECUTABLE_PATH = process.execPath;
+
+    assert.equal(
+      __casePdfStorageInternals.getConfiguredPuppeteerExecutablePath("local_windows"),
+      process.execPath,
+    );
+  } finally {
+    if (previousPath) {
+      process.env.PUPPETEER_EXECUTABLE_PATH = previousPath;
+    } else {
+      delete process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+  }
+});

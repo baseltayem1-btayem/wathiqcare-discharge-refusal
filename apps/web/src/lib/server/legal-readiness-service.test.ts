@@ -13,6 +13,13 @@ test("legal readiness becomes compliant when all medico-legal checks are satisfi
     capacityVerified: true,
     witnessRequired: false,
     witnessAdded: false,
+    witnessIntegrity: {
+      witnessCount: 2,
+      minimumWitnessesMet: true,
+      identityVerified: true,
+      roleCompositionValid: true,
+      attestationComplete: true,
+    },
     consentRecorded: true,
     auditTrailCaptured: true,
     signerIdentityVerified: true,
@@ -40,6 +47,13 @@ test("legal readiness blocks export when required legal evidence is missing", ()
     capacityVerified: true,
     witnessRequired: true,
     witnessAdded: false,
+    witnessIntegrity: {
+      witnessCount: 1,
+      minimumWitnessesMet: false,
+      identityVerified: false,
+      roleCompositionValid: false,
+      attestationComplete: false,
+    },
     consentRecorded: false,
     auditTrailCaptured: true,
     signerIdentityVerified: false,
@@ -53,6 +67,7 @@ test("legal readiness blocks export when required legal evidence is missing", ()
   });
 
   assert.equal(report.readyForLegal, false);
+  assert.ok(report.blockers.some((item) => item.includes("Minimum witnesses requirement not met")));
   assert.ok(report.blockers.some((item) => item.includes("شرح المخاطر")));
   assert.ok(report.blockers.some((item) => item.includes("consent")));
   assert.ok(report.blockers.some((item) => item.includes("validation errors")));

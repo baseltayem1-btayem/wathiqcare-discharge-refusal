@@ -58,6 +58,12 @@ type LegalPackageMeta = {
   download_url?: string | null;
 };
 
+type LegalPanelItem = {
+  label: string;
+  satisfied: boolean;
+  missingReason: string;
+};
+
 // ---------------- CONSTANTS ----------------
 // const REFUSAL_STATES = new Set([
 //   "PATIENT_REFUSED",
@@ -75,6 +81,38 @@ async function generateLegalPackage(caseId: string) {
 
   if (!res.ok) throw new Error("Failed to generate legal package");
   return res.json();
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function buildLegalPanelItems(item: CaseItem): LegalPanelItem[] {
+  const metadata = asRecord(item.metadata);
+  const workflow = asRecord(metadata?.workflow);
+  const signature = asRecord(metadata?.signature);
+  const witness = asRecord(metadata?.witness);
+
+  const hasCaseData = Boolean(item.mrn && item.patientName && (item.attendingPhysician || workflow?.attending_physician));
+  const hasPatientDecision = Boolean(signature?.outcome);
+  const hasRiskExplanation = Boolean(workflow?.discussion_summary);
+  const hasSignature = Boolean(signature?.signer_name || signature?.outcome);
+  const hasWitness = Boolean(witness?.witness_name);
+  const hasTimestamp = Boolean(workflow?.refusal_started_at || workflow?.discharge_decision_at);
+  const hasPdfReady = Boolean(item.pdf_file);
+
+  return [
+    { label: "Case Data Complete", satisfied: hasCaseData, missingReason: "Case profile is incomplete." },
+    { label: "Patient Decision Recorded", satisfied: hasPatientDecision, missingReason: "Patient decision is missing." },
+    { label: "Risk Explanation Present", satisfied: hasRiskExplanation, missingReason: "Risk explanation is missing." },
+    { label: "Signature Captured", satisfied: hasSignature, missingReason: "Signature is not recorded." },
+    { label: "Witness Recorded", satisfied: hasWitness, missingReason: "Witness details are missing." },
+    { label: "Timestamp Complete", satisfied: hasTimestamp, missingReason: "Required legal timestamps are missing." },
+    { label: "PDF Ready", satisfied: hasPdfReady, missingReason: "PDF binary is missing or not ready." },
+  ];
 }
 
 // ---------------- COMPONENT ----------------
@@ -188,7 +226,7 @@ export default function LegalCaseFilePage() {
         actions={
           <button
             onClick={() => void loadData()}
-            className="btn-secondary"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh
@@ -197,7 +235,7 @@ export default function LegalCaseFilePage() {
       >
         {/* Dashboard */}
         {dashboard && (
-          <div className="grid gap-3 xl:grid-cols-4 mb-5">
+          <div className="mb-5 grid gap-3 xl:grid-cols-4">
             <StatCard title="Discharge" value={dashboard.total_discharge_decisions} icon={<ShieldCheck />} />
             <StatCard title="Refused" value={dashboard.total_refused} icon={<ScrollText />} />
             <StatCard title="Promissory" value={dashboard.promissory_notes_generated} icon={<FolderArchive />} />
@@ -209,42 +247,89 @@ export default function LegalCaseFilePage() {
         {rows.map(({ item, workflow }) => {
           const legalPackage = legalPackages[item.id];
           const isBusy = busyCaseId === item.id;
+          const legalPanelItems = buildLegalPanelItems(item);
+          const missingItems = legalPanelItems.filter((panel) => !panel.satisfied);
+          const readyForFinalization = missingItems.length === 0;
 
           return (
-            <div key={item.id} className="card">
+            <div key={item.id} className="mb-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-sm)]">
 
-              <h2>{item.caseNumber || item.id}</h2>
-              <p>Patient: {item.patientName || "-"}</p>
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">{item.caseNumber || item.id}</h2>
+                  <p className="mt-1 text-sm text-slate-600">Patient: <span className="font-medium text-slate-800">{item.patientName || "-"}</span></p>
+                </div>
+                <Link
+                  href={`/cases/${item.id}`}
+                  className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Open Case
+                </Link>
+              </div>
 
               <WorkflowProgress
                 steps={workflow.steps}
                 currentStepId={workflow.currentStepId}
               />
 
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                <div className="mb-2 text-sm font-semibold text-slate-900">Legal Readiness Panel</div>
+                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                  {legalPanelItems.map((panel) => (
+                    <div key={panel.label} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs">
+                      <span className="text-slate-700">{panel.label}</span>
+                      <span className={panel.satisfied ? "font-semibold text-emerald-700" : "font-semibold text-amber-700"}>
+                        {panel.satisfied ? "PASS" : "MISSING"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {readyForFinalization ? (
+                  <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+                    Ready for Legal Finalization
+                  </div>
+                ) : (
+                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    <div className="font-semibold">Final legal approval is blocked.</div>
+                    <ul className="mt-1 space-y-1">
+                      {missingItems.map((missing) => (
+                        <li key={missing.label}>• {missing.missingReason}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
               {/* Legal Package */}
-              <div className="mt-2">
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
                 {legalPackage ? (
-                  <>
-                    <span>Version: {legalPackage.version}</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm text-slate-700">Version: <span className="font-semibold text-slate-900">{legalPackage.version}</span></span>
                     {canDownloadFinal ? (
-                      <a href={legalPackage.download_url || "#"} target="_blank" rel="noopener noreferrer">
-                        Download
+                      <a
+                        href={legalPackage.download_url || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        Download Package
                       </a>
                     ) : (
                       <span className="text-xs text-amber-700">{permissions.deniedMessage}</span>
                     )}
-                  </>
+                  </div>
                 ) : (
-                  <span>No package</span>
+                  <span className="text-sm text-slate-600">No legal package generated yet.</span>
                 )}
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2 mt-3">
+              <div className="mt-4 flex flex-wrap gap-2">
 
                 <button
                   disabled={isBusy || !canLegalApprove}
                   title={!canLegalApprove ? permissions.deniedMessage : undefined}
+                  className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() =>
                     runAction(item.id, () =>
                       generateLegalPackage(item.id),
@@ -258,6 +343,7 @@ export default function LegalCaseFilePage() {
                 <button
                   disabled={isBusy || !canLegalReview}
                   title={!canLegalReview ? permissions.deniedMessage : undefined}
+                  className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() =>
                     runAction(item.id, () =>
                       legalOrchestrationService.quickPrepareLegalEvent(item.id, {})
@@ -266,10 +352,6 @@ export default function LegalCaseFilePage() {
                 >
                   Prepare
                 </button>
-
-                <Link href={`/cases/${item.id}`}>
-                  Open
-                </Link>
               </div>
             </div>
           );

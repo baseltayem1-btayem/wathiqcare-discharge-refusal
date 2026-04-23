@@ -13,6 +13,7 @@ import { extractThirdPartyRiskRegister, summarizeThirdPartyRisk } from "@/lib/se
 import { extractTrainingComplianceRegister, summarizeTrainingCompliance } from "@/lib/server/training-compliance-service";
 import { extractRemediationTracker, summarizeRemediationTracker } from "@/lib/server/remediation-tracker-service";
 import { verifyAuditChain } from "@/lib/server/audit-chain-service";
+import { evaluateWitnessIntegrity } from "@/lib/server/witness-integrity-service";
 
 const prisma = getPrisma();
 
@@ -358,6 +359,7 @@ export async function getComplianceDashboard(auth: AuthContext) {
 
     const documentKeys = new Set(caseRecord.documents.map((item) => item.templateKey));
     const auditVerification = verifyAuditChain(caseRecord.auditChainEvents);
+    const witnessIntegrity = evaluateWitnessIntegrity(caseRecord.metadata);
     const signer = readString(signature, "signer_name") || readString(workflow, "signer_name") || null;
     const pdplEventCount =
       (readNumber(pdpl, "log_count", "event_count") ?? 0) +
@@ -378,6 +380,13 @@ export async function getComplianceDashboard(auth: AuthContext) {
       witnessRequired:
         Boolean(readBoolean(legal, "witness_required")) || readString(signature, "outcome") === "refused_to_sign",
       witnessAdded: Boolean(readString(witness, "witness_name")),
+      witnessIntegrity: {
+        witnessCount: witnessIntegrity.witnessCount,
+        minimumWitnessesMet: witnessIntegrity.minimumWitnessesMet,
+        identityVerified: witnessIntegrity.identityVerified,
+        roleCompositionValid: witnessIntegrity.roleCompositionValid,
+        attestationComplete: witnessIntegrity.attestationComplete,
+      },
       consentRecorded: caseRecord.consentRecords.length > 0,
       auditTrailCaptured: caseRecord.auditLogs.length > 0 || caseRecord.auditChainEvents.length > 0,
       signerIdentityVerified:
