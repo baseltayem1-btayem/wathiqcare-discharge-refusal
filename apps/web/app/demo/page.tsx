@@ -29,6 +29,7 @@ export default function DemoPage() {
               <Link
                 href="/demo/legal-report"
                 className="inline-flex items-center justify-center rounded-xl border border-white bg-transparent px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                 style={{ color: '#ffffff', borderColor: '#ffffff' }}
               >
                 Print View
               </Link>
