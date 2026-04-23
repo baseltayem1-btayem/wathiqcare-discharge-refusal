@@ -328,13 +328,13 @@ export default function AppShell({
 
             <div className="mt-4 rounded-2xl border border-[rgba(159,179,207,0.24)] bg-[rgba(255,255,255,0.05)] p-3 text-xs text-[#cfe0f7]">
               <div className="inline-flex items-center gap-1.5 font-semibold">
-                <Stethoscope className="h-3.5 w-3.5" />
+                <Stethoscope className="h-3.5 w-3.5 text-white" />
                 {t("app.activeWorkspace")}
               </div>
               <p className="mt-1 text-[var(--sidebar-text-muted)]">{t("app.secureMode")}</p>
               <div className="mt-3 rounded-xl border border-[rgba(159,179,207,0.24)] bg-[rgba(10,20,36,0.5)] p-2">
                 <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#d8e6f9]">
-                  <HelpCircle className="h-3 w-3" />
+                  <HelpCircle className="h-3 w-3 text-white" />
                   Support
                 </div>
                 <p className="mt-1 text-[11px] leading-relaxed text-[var(--sidebar-text-muted)]">
