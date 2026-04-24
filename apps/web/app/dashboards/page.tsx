@@ -46,7 +46,7 @@ const REQUIREMENTS: RequirementItem[] = [
     },
     {
         id: 4,
-        title: "التسلسل الزمني مكتمل (Audit Trail)",
+        title: "التسلسل الزمني مكتمل",
         description: "جميع أحداث التدقيق متسلسلة ومتحقق منها",
         status: "مكتمل",
         action: "عرض التفاصيل",
@@ -163,7 +163,6 @@ export default function DashboardsPage() {
                             <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                                 <CardHeader className="pb-2">
                                     <CardTitle className="text-lg text-slate-900">الجاهزية القانونية</CardTitle>
-                                    <div className="text-sm text-slate-500">Legal Readiness</div>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4">
