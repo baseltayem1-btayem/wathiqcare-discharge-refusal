@@ -1,8 +1,8 @@
-import { IBM_Plex_Sans_Arabic, Inter } from "next/font/google";
+import { Almarai, Inter } from "next/font/google";
 
-export const fontArabic = IBM_Plex_Sans_Arabic({
+export const fontArabic = Almarai({
   subsets: ["arabic"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "700", "800"],
   variable: "--font-arabic",
   display: "swap",
 });

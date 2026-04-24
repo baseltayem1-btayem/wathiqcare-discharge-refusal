@@ -92,7 +92,7 @@ function HeroSection({ lang }: { lang: string }) {
 
   return (
     <section
-      className="hero relative overflow-hidden rounded-[32px] border border-slate-200 shadow-[0_24px_60px_rgba(15,23,42,0.24)] mt-16 mx-6 md:mx-auto md:max-w-6xl"
+      className="hero relative overflow-hidden mt-16 w-full"
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div className="hero-content space-y-5 px-8 py-10 md:px-10 md:py-12">
@@ -131,10 +131,11 @@ function HeroSection({ lang }: { lang: string }) {
           min-height: 80vh;
           display: flex;
           align-items: center;
-          padding: 80px 0;
+          padding: 100px 0 80px;
           background-image: url("/images/demo-hero.jpg");
           background-size: cover;
           background-position: center;
+          width: 100%;
         }
 
         .hero::before {
@@ -168,6 +169,8 @@ function HeroSection({ lang }: { lang: string }) {
           position: relative;
           z-index: 3;
           max-width: 700px;
+          width: 100%;
+          padding-inline: 2rem;
         }
 
         .hero-subtext {
@@ -187,6 +190,10 @@ function HeroSection({ lang }: { lang: string }) {
           .hero-content {
             margin: 0 auto;
             text-align: center;
+          }
+
+          .hero {
+            min-height: 70vh;
           }
 
           .hero-actions {

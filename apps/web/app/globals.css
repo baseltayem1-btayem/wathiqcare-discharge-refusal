@@ -1,9 +1,17 @@
 /* WathiqCare Design System
- * English: Inter | Arabic: IBM Plex Sans Arabic
+ * English: Inter | Arabic: Alarabiya Normal (with fallbacks)
  * Phase 1 foundation for a calm, professional medical/legal product UI.
  */
 
 @import "tailwindcss";
+
+@font-face {
+  font-family: "Alarabiya Normal";
+  src: local("Alarabiya Normal"), local("Alarabiya");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
 
 :root {
   --background: #f3f6f8;
@@ -47,7 +55,7 @@
   --shadow-focus: 0 0 0 3px rgba(31, 95, 167, 0.14);
 
   --font-sans-latin: var(--font-english), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-sans-arabic: var(--font-arabic), "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-sans-arabic: "Alarabiya Normal", var(--font-arabic), "Almarai", "Tajawal", "IBM Plex Sans Arabic", "Noto Kufi Arabic", Tahoma, sans-serif;
   --font-sans-primary: var(--font-sans-latin);
   --font-mono-primary: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", Menlo, monospace;
 
@@ -89,7 +97,12 @@ html[dir="rtl"] body {
   direction: rtl;
   font-family: var(--font-sans-arabic), sans-serif;
   letter-spacing: 0;
-  line-height: 1.7;
+  line-height: 1.8;
+  font-weight: 400;
+}
+
+html[lang="ar"] body {
+  font-family: var(--font-sans-arabic), sans-serif;
 }
 
 /* RTL font and alignment for interactive controls in Arabic */
@@ -109,6 +122,21 @@ html[dir="rtl"] h4,
 html[dir="rtl"] h5,
 html[dir="rtl"] h6 {
   font-family: var(--font-sans-arabic), sans-serif;
+}
+
+html[dir="rtl"] h1 {
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+html[dir="rtl"] h2 {
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+html[dir="rtl"] h3 {
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 html[dir="ltr"] h1,

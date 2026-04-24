@@ -180,6 +180,55 @@ function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; log
   );
 }
 
+function SidebarBranding({
+  tenantName,
+  tenantLogoUrl,
+  mobile = false,
+}: {
+  tenantName: string;
+  tenantLogoUrl: string | null;
+  mobile?: boolean;
+}) {
+  const imcLogoSrc = tenantLogoUrl || "/images/imc-logo.png";
+
+  return (
+    <div className={mobile ? "space-y-2.5" : "space-y-3"}>
+      <div className={mobile ? "flex items-center justify-center rounded-lg bg-white/5 px-2.5 py-2" : "flex items-center justify-center rounded-lg bg-white/5 px-3 py-2.5"}>
+        <img
+          src="/images/wathiqcare-logo.png"
+          alt="WathiqCare"
+          width={120}
+          height={32}
+          className={mobile
+            ? "h-[30px] w-auto max-w-[150px] object-contain brightness-0 invert"
+            : "h-[34px] w-auto max-w-[170px] object-contain brightness-0 invert"}
+          loading="eager"
+          decoding="async"
+          style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.35))" }}
+        />
+      </div>
+
+      <div className={mobile
+        ? "rounded-xl border border-white/20 bg-white/95 p-2"
+        : "rounded-xl border border-white/20 bg-white/95 p-2.5"}>
+        <div className="flex items-center justify-center">
+          <img
+            src={imcLogoSrc}
+            alt={tenantName}
+            width={220}
+            height={72}
+            className={mobile
+              ? "h-[62px] w-auto max-w-full object-contain"
+              : "h-[58px] w-auto max-w-full object-contain"}
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AppShell({
   title,
   subtitle,
@@ -285,43 +334,9 @@ export default function AppShell({
           <aside
             className="hidden rounded-[24px] border border-[var(--sidebar-border)] bg-[#0A2540] p-4 text-white shadow-[0_20px_45px_rgba(2,6,23,0.22)] md:flex md:flex-col"
           >
-            {/* WathiqCare Logo */}
-            <div className="mb-4 flex items-center justify-center rounded-lg bg-white/5 px-3 py-3">
-              <img
-                src="/images/wathiqcare-logo.png"
-                alt="WathiqCare"
-                width={140}
-                height={42}
-                className="h-auto w-full max-w-[140px] object-contain brightness-0 invert"
-                loading="eager"
-                decoding="async"
-                style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))" }}
-              />
-            </div>
+            <SidebarBranding tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} />
 
-            <div className="rounded-2xl border border-[rgba(159,179,207,0.24)] bg-[rgba(12,25,45,0.55)] p-3">
-              <div className="flex w-full justify-center">
-                <TenantBrandMark name={tenantName} logoUrl={tenantLogoUrl} />
-              </div>
-              <div className="mt-3 rounded-xl border border-[rgba(159,179,207,0.24)] bg-[rgba(255,255,255,0.04)] px-3 py-2">
-                <div className="flex w-full justify-center">
-                  <img
-                    src="/images/wathiqcare-logo.png"
-                    alt={t("app.name")}
-                    width={180}
-                    height={54}
-                    className="h-auto w-full object-contain"
-                    loading="eager"
-                    decoding="async"
-                  />
-                </div>
-              </div>
-              <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-[#b8cceb]">
-                {tenantName}
-              </p>
-            </div>
-
-            <nav className="mt-4 flex-1 space-y-4">
+            <nav className="mt-3 flex-1 space-y-4">
               {navGroups.map((group) => (
                 <section key={group.title}>
                   <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
@@ -434,10 +449,11 @@ export default function AppShell({
                 </div>
 
                 {mobileNavOpen ? (
-                  <div className="space-y-3 rounded-xl border border-[var(--border)] bg-white p-3 shadow-[var(--shadow-sm)] md:hidden">
+                  <div className="space-y-3 rounded-xl border border-[var(--sidebar-border)] bg-[#0A2540] p-3 text-white shadow-[0_14px_30px_rgba(2,6,23,0.22)] md:hidden">
+                    <SidebarBranding tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} mobile />
                     {navGroups.map((group) => (
                       <section key={`mobile-${group.title}`}>
-                        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{group.title}</div>
+                        <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">{group.title}</div>
                         <div className="space-y-1">
                           {group.items.map((item) => (
                             <div key={`mobile-link-${item.href}`} onClick={() => setMobileNavOpen(false)}>
@@ -447,7 +463,7 @@ export default function AppShell({
                                 icon={item.icon}
                                 active={isActive(pathname, item.href)}
                                 disabled={item.disabled}
-                                surface="light"
+                                surface="sidebar"
                               />
                             </div>
                           ))}
@@ -459,7 +475,7 @@ export default function AppShell({
                       onClick={() => {
                         void handleLogout();
                       }}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm font-medium text-slate-700"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-white/20 [&_svg]:text-white/80"
                     >
                       <LogOut className="h-4 w-4" />
                       {t("common.logout")}
