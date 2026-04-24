@@ -31,6 +31,15 @@ function setCookieLang(lang: Language) {
   document.cookie = `${LANGUAGE_COOKIE_KEY}=${lang};path=/;max-age=31536000;SameSite=Lax`;
 }
 
+function getPathLang(): Language | null {
+  if (typeof window === "undefined") return null;
+  const match = window.location.pathname.match(/^\/(ar|en)(?:\/|$)/);
+  if (match && isSupportedLanguage(match[1])) {
+    return match[1];
+  }
+  return null;
+}
+
 export function useI18n(): I18nContextValue {
   const context = useContext(I18nContext);
   if (!context) {
@@ -54,6 +63,9 @@ export default function I18nProvider({
     if (typeof window === "undefined") {
       return "en";
     }
+
+    const pathLang = getPathLang();
+    if (pathLang) return pathLang;
 
     const cookie = getCookieLang();
     if (cookie) return cookie;

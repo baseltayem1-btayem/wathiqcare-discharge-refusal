@@ -63,21 +63,21 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 type NavGroup = {
-  title: string;
+  titleKey: string;
   items: NavItem[];
 };
 
 type DashboardSidebarItem = {
   key: string;
   href: string;
-  label: string;
+  labelKey: string;
   icon: ReactNode;
 };
 
-const NAV_GROUP_ORDER: Array<{ title: string; hrefs: string[] }> = [
-  { title: "Workflows", hrefs: ["/cases", "/bundles", "/documents"] },
-  { title: "Insights", hrefs: ["/dashboard", "/dashboards", "/analytics", "/reports"] },
-  { title: "Management", hrefs: ["/tenant/users", "/admin", "/settings"] },
+const NAV_GROUP_ORDER: Array<{ titleKey: string; hrefs: string[] }> = [
+  { titleKey: "shell.navGroup.workflows", hrefs: ["/cases", "/bundles", "/documents"] },
+  { titleKey: "shell.navGroup.insights", hrefs: ["/dashboard", "/dashboards", "/analytics", "/reports"] },
+  { titleKey: "shell.navGroup.management", hrefs: ["/tenant/users", "/admin", "/settings"] },
 ];
 
 function groupTenantNavigation(navItems: NavItem[]): NavGroup[] {
@@ -91,14 +91,14 @@ function groupTenantNavigation(navItems: NavItem[]): NavGroup[] {
       .filter((item): item is NavItem => Boolean(item));
 
     if (items.length > 0) {
-      grouped.push({ title: groupDef.title, items });
+      grouped.push({ titleKey: groupDef.titleKey, items });
       items.forEach((item) => seen.add(item.href));
     }
   }
 
   const remainder = navItems.filter((item) => !seen.has(item.href));
   if (remainder.length > 0) {
-    grouped.push({ title: "More", items: remainder });
+    grouped.push({ titleKey: "shell.navGroup.more", items: remainder });
   }
 
   return grouped;
@@ -319,18 +319,18 @@ export default function AppShell({
 
   const navItems = workflowCaseNav ? buildCaseWorkflowNav(workflowCaseNav) : TENANT_NAV_ITEMS;
   const navGroups = workflowCaseNav
-    ? [{ title: t("app.activeWorkspace"), items: navItems }]
+    ? [{ titleKey: "app.activeWorkspace", items: navItems }]
     : groupTenantNavigation(navItems);
   const isDashboardsSidebarMode = pathname.includes("/dashboards");
   const dashboardSidebarItems: DashboardSidebarItem[] = [
-    { key: "dashboard", href: "/dashboard", label: "لوحة التحكم", icon: <LayoutDashboard className="h-4 w-4" /> },
-    { key: "cases", href: "/cases", label: "الحالات", icon: <FolderOpen className="h-4 w-4" /> },
-    { key: "documents", href: "/documents", label: "المستندات", icon: <FileText className="h-4 w-4" /> },
-    { key: "alerts", href: "/legal-alerts", label: "التنبيهات", icon: <Bell className="h-4 w-4" /> },
-    { key: "risk", href: "/legal-escalation", label: "المخاطر والإفصاح", icon: <ShieldAlert className="h-4 w-4" /> },
-    { key: "reports", href: "/reports", label: "التقارير", icon: <BarChart3 className="h-4 w-4" /> },
-    { key: "users", href: "/tenant/users", label: "المستخدمون", icon: <Users className="h-4 w-4" /> },
-    { key: "settings", href: "/settings", label: "الإعدادات", icon: <Settings className="h-4 w-4" /> },
+    { key: "dashboard", href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+    { key: "cases", href: "/cases", labelKey: "nav.cases", icon: <FolderOpen className="h-4 w-4" /> },
+    { key: "documents", href: "/documents", labelKey: "breadcrumbs.documents", icon: <FileText className="h-4 w-4" /> },
+    { key: "alerts", href: "/legal-alerts", labelKey: "dashboards.tabs.alerts", icon: <Bell className="h-4 w-4" /> },
+    { key: "risk", href: "/legal-escalation", labelKey: "dashboards.tabs.legalRisk", icon: <ShieldAlert className="h-4 w-4" /> },
+    { key: "reports", href: "/reports", labelKey: "dashboards.tabs.reports", icon: <BarChart3 className="h-4 w-4" /> },
+    { key: "users", href: "/tenant/users", labelKey: "dashboards.sidebar.users", icon: <Users className="h-4 w-4" /> },
+    { key: "settings", href: "/settings", labelKey: "breadcrumbs.settings", icon: <Settings className="h-4 w-4" /> },
   ];
   const tenantName = tenantBranding?.name?.trim() || t("app.tenantName");
   const tenantLogoUrl = tenantBranding?.logoUrl ?? null;
@@ -360,8 +360,8 @@ export default function AppShell({
                       <Scale className="h-5 w-5" />
                     </div>
                     <div className="space-y-0.5 text-right">
-                      <div className="text-sm font-semibold text-white">منصة إدارة</div>
-                      <div className="text-sm font-semibold text-white/90">الحالات القانونية</div>
+                      <div className="text-sm font-semibold text-white">{t("dashboards.sidebar.platformManagement")}</div>
+                      <div className="text-sm font-semibold text-white/90">{t("dashboards.sidebar.legalCases")}</div>
                     </div>
                   </div>
                 </div>
@@ -379,20 +379,20 @@ export default function AppShell({
                           : "inline-flex w-full items-center gap-2.5 rounded-xl bg-transparent px-3 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/5 hover:text-white"}
                       >
                         <span className={isActiveItem ? "text-white" : "text-slate-300"}>{item.icon}</span>
-                        <span>{item.label}</span>
+                        <span>{t(item.labelKey)}</span>
                       </Link>
                     );
                   })}
                 </nav>
 
                 <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3 text-right">
-                  <div className="text-sm font-semibold text-white">محتاج مساعدة؟</div>
+                  <div className="text-sm font-semibold text-white">{t("dashboards.sidebar.needHelp")}</div>
                   <p className="mt-1 text-xs text-slate-300">{t("supportText")}</p>
                   <button
                     type="button"
                     className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-[#0A2540] transition hover:bg-slate-100"
                   >
-                    تواصل الآن
+                    {t("dashboards.sidebar.contactNow")}
                   </button>
                 </div>
               </>
@@ -402,9 +402,9 @@ export default function AppShell({
 
                 <nav className="mt-3 flex-1 space-y-4">
                   {navGroups.map((group) => (
-                    <section key={group.title}>
+                    <section key={group.titleKey}>
                       <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
-                        {group.title}
+                        {t(group.titleKey)}
                       </div>
                       <div className="space-y-1">
                         {group.items.map((item) => (
@@ -469,7 +469,7 @@ export default function AppShell({
                         type="button"
                         onClick={() => setMobileNavOpen((current) => !current)}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-white text-slate-700"
-                        aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+                        aria-label={mobileNavOpen ? t("shell.closeNavigation") : t("shell.openNavigation")}
                       >
                         {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                       </button>
@@ -501,15 +501,15 @@ export default function AppShell({
 
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-3 py-2 text-xs text-slate-600">
                   <div className="inline-flex items-center gap-2">
-                    <span className="font-semibold text-slate-700">Session:</span>
+                    <span className="font-semibold text-slate-700">{t("shell.session")}</span>
                     <span>{tenantName}</span>
                   </div>
                   <div className="inline-flex items-center gap-2">
-                    <span className="font-semibold text-slate-700">Mode:</span>
+                    <span className="font-semibold text-slate-700">{t("shell.mode")}</span>
                     <span>{t("app.secureMode")}</span>
                   </div>
                   <div className="inline-flex items-center gap-2">
-                    <span className="font-semibold text-slate-700">Route:</span>
+                    <span className="font-semibold text-slate-700">{t("shell.route")}</span>
                     <span className="font-mono text-[11px] text-slate-500">{pathname}</span>
                   </div>
                 </div>
@@ -518,7 +518,7 @@ export default function AppShell({
                   <>
                     <button
                       type="button"
-                      aria-label="Close mobile navigation"
+                      aria-label={t("shell.closeMobileNavigation")}
                       onClick={() => setMobileNavOpen(false)}
                       className="fixed inset-0 z-30 bg-slate-900/35 md:hidden"
                     />
@@ -527,8 +527,8 @@ export default function AppShell({
                     >
                       <SidebarBranding tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} mobile />
                       {navGroups.map((group) => (
-                        <section key={`mobile-${group.title}`}>
-                          <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">{group.title}</div>
+                        <section key={`mobile-${group.titleKey}`}>
+                          <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">{t(group.titleKey)}</div>
                           <div className="space-y-1">
                             {group.items.map((item) => (
                               <div key={`mobile-link-${item.href}`} onClick={() => setMobileNavOpen(false)}>

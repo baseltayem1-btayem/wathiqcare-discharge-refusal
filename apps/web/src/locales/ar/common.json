@@ -3,5 +3,92 @@
   "supportText": "للمشاكل الحرجة في الحزم القانونية، تواصل مع الدعم الفني",
   "legalReadiness": "الجاهزية القانونية",
   "auditTrail": "التسلسل الزمني",
-  "auditTrailCompleted": "التسلسل الزمني مكتمل"
+  "auditTrailCompleted": "التسلسل الزمني مكتمل",
+  "shell": {
+    "navGroup": {
+      "workflows": "سير العمل",
+      "insights": "الرؤى",
+      "management": "الإدارة",
+      "more": "المزيد"
+    },
+    "session": "الجلسة:",
+    "mode": "الوضع:",
+    "route": "المسار:",
+    "openNavigation": "فتح التنقل",
+    "closeNavigation": "إغلاق التنقل",
+    "closeMobileNavigation": "إغلاق قائمة التنقل"
+  },
+  "dashboards": {
+    "title": "لوحة المعلومات",
+    "userSystem": "مستخدم النظام",
+    "notifications": "التنبيهات",
+    "backToBoards": "رجوع إلى اللوحات",
+    "active": "نشطة",
+    "createdAt": "تاريخ الإنشاء",
+    "createdAtValue": "20 مايو 2025 - 10:30 ص",
+    "legalReadiness": "الجاهزية القانونية",
+    "legalReadinessDescription": "الحالة تكون جاهزة قانونياً عند استكمال جميع المتطلبات أدناه ويمكن الدفاع عنها أمام أي جهة رقابية أو قضائية.",
+    "currentStatusLabel": "الحالة الحالية",
+    "currentStatusNotReady": "غير جاهزة قانونياً",
+    "completedRequirementsProgress": "3 من 5 متطلبات مكتملة",
+    "requirementsHeader": "متطلبات الجاهزية القانونية (3/5 مكتملة)",
+    "nextStepsTitle": "ماذا أفعل الآن؟",
+    "nextStepsDescription": "لجعل الحالة جاهزة قانونياً، أكمل المتطلبات الناقصة الموضحة في القائمة.",
+    "completeReadiness": "أكمل الجاهزية",
+    "quickSummary": "ملخص سريع",
+    "totalRequirements": "إجمالي المتطلبات",
+    "completedCount": "المكتملة",
+    "incompleteCount": "غير المكتملة",
+    "completionRate": "نسبة الإنجاز",
+    "help": "مساعدة",
+    "viewReadinessGuide": "عرض دليل الجاهزية",
+    "contactLegalAdvisor": "تواصل مع المستشار القانوني",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "legalRisk": "المخاطر القانونية",
+      "tasks": "المهام",
+      "alerts": "التنبيهات",
+      "reports": "التقارير",
+      "documents": "المستندات"
+    },
+    "status": {
+      "completed": "مكتمل",
+      "incomplete": "غير مكتمل",
+      "notAvailable": "غير متوفر"
+    },
+    "actions": {
+      "viewDetails": "عرض التفاصيل",
+      "addDisclosure": "إضافة الإفصاح",
+      "generateFinalDocument": "توليد المستند النهائي"
+    },
+    "requirements": {
+      "decisionDocumented": {
+        "title": "قرار المريض موثق",
+        "description": "تم توثيق القرار وربطه بملف الحالة"
+      },
+      "riskDisclosure": {
+        "title": "الإفصاح عن المخاطر مكتمل",
+        "description": "يتطلب استكمال الإفصاح عن المخاطر السريرية"
+      },
+      "signatureValid": {
+        "title": "التوقيع صحيح",
+        "description": "التحقق من التوقيع وصحة بيانات الموقّع"
+      },
+      "auditTrailCompleted": {
+        "title": "التسلسل الزمني مكتمل",
+        "description": "جميع أحداث التدقيق متسلسلة ومتحقق منها"
+      },
+      "finalDocumentGenerated": {
+        "title": "المستند النهائي تم توليده",
+        "description": "لم يتم إنشاء الإصدار النهائي بعد"
+      }
+    },
+    "sidebar": {
+      "platformManagement": "منصة إدارة",
+      "legalCases": "الحالات القانونية",
+      "needHelp": "محتاج مساعدة؟",
+      "contactNow": "تواصل الآن",
+      "users": "المستخدمون"
+    }
+  }
 }

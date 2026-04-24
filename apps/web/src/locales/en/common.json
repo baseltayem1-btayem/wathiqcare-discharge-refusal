@@ -3,5 +3,92 @@
   "supportText": "For urgent legal package blockers, contact support",
   "legalReadiness": "Legal Readiness",
   "auditTrail": "Audit Trail",
-  "auditTrailCompleted": "Audit Trail Completed"
+  "auditTrailCompleted": "Audit Trail Completed",
+  "shell": {
+    "navGroup": {
+      "workflows": "Workflows",
+      "insights": "Insights",
+      "management": "Management",
+      "more": "More"
+    },
+    "session": "Session:",
+    "mode": "Mode:",
+    "route": "Route:",
+    "openNavigation": "Open navigation",
+    "closeNavigation": "Close navigation",
+    "closeMobileNavigation": "Close mobile navigation"
+  },
+  "dashboards": {
+    "title": "Dashboard",
+    "userSystem": "System User",
+    "notifications": "Notifications",
+    "backToBoards": "Back to dashboards",
+    "active": "Active",
+    "createdAt": "Created at",
+    "createdAtValue": "May 20, 2025 - 10:30 AM",
+    "legalReadiness": "Legal Readiness",
+    "legalReadinessDescription": "The case becomes legally ready when all requirements below are completed and can be defended before any regulatory or judicial authority.",
+    "currentStatusLabel": "Current status",
+    "currentStatusNotReady": "Not legally ready",
+    "completedRequirementsProgress": "3 of 5 requirements completed",
+    "requirementsHeader": "Legal readiness requirements (3/5 completed)",
+    "nextStepsTitle": "What should I do now?",
+    "nextStepsDescription": "To make this case legally ready, complete the missing requirements shown in the list.",
+    "completeReadiness": "Complete readiness",
+    "quickSummary": "Quick summary",
+    "totalRequirements": "Total requirements",
+    "completedCount": "Completed",
+    "incompleteCount": "Incomplete",
+    "completionRate": "Completion rate",
+    "help": "Help",
+    "viewReadinessGuide": "View readiness guide",
+    "contactLegalAdvisor": "Contact legal advisor",
+    "tabs": {
+      "overview": "Overview",
+      "legalRisk": "Legal risk",
+      "tasks": "Tasks",
+      "alerts": "Alerts",
+      "reports": "Reports",
+      "documents": "Documents"
+    },
+    "status": {
+      "completed": "Completed",
+      "incomplete": "Incomplete",
+      "notAvailable": "Not Available"
+    },
+    "actions": {
+      "viewDetails": "View details",
+      "addDisclosure": "Add disclosure",
+      "generateFinalDocument": "Generate final document"
+    },
+    "requirements": {
+      "decisionDocumented": {
+        "title": "Patient decision documented",
+        "description": "The decision has been documented and linked to the case file"
+      },
+      "riskDisclosure": {
+        "title": "Risk disclosure completed",
+        "description": "Clinical risk disclosure still needs completion"
+      },
+      "signatureValid": {
+        "title": "Signature is valid",
+        "description": "Signature and signer identity verification completed"
+      },
+      "auditTrailCompleted": {
+        "title": "Audit trail completed",
+        "description": "All audit events are sequenced and verified"
+      },
+      "finalDocumentGenerated": {
+        "title": "Final document generated",
+        "description": "The final version has not been generated yet"
+      }
+    },
+    "sidebar": {
+      "platformManagement": "Management Platform",
+      "legalCases": "Legal Cases",
+      "needHelp": "Need help?",
+      "contactNow": "Contact now",
+      "users": "Users"
+    }
+  }
 }
