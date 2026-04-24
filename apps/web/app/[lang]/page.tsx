@@ -92,36 +92,113 @@ function HeroSection({ lang }: { lang: string }) {
 
   return (
     <section
-      className="pt-32 pb-20 px-6 bg-[linear-gradient(135deg,#EAF6FB_0%,#F8FCFE_100%)]"
+      className="hero relative overflow-hidden rounded-[32px] border border-slate-200 shadow-[0_24px_60px_rgba(15,23,42,0.24)] mt-16 mx-6 md:mx-auto md:max-w-6xl"
       dir={isRtl ? "rtl" : "ltr"}
     >
-      <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-6">
-        <span className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-800 text-xs font-semibold px-4 py-1.5 rounded-full border border-cyan-200">
-          <Stethoscope size={14} />
-          {t("landing.hero.badge")}
-        </span>
-        <h1 className="wc-h1 text-brand-navy leading-tight">
+      <div className="hero-content space-y-5 px-8 py-10 md:px-10 md:py-12">
+        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white">
+          <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
+            {t("landing.hero.badge")}
+          </span>
+          <span className="rounded-full border border-[#b89546] bg-[#b89546]/15 px-3 py-1 text-[#f5df9a]">
+            PDPL Compliant
+          </span>
+        </div>
+        <h1 className="font-serif text-4xl font-semibold leading-tight text-white md:text-5xl">
           {t("landing.hero.title")}
         </h1>
-        <p className="wc-body text-neutral-600 max-w-2xl leading-relaxed">
+        <p className="hero-subtext text-base leading-7 text-white md:text-lg">
           {t("landing.hero.subtitle")}
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 mt-2">
+        <div className="hero-actions flex flex-wrap gap-3">
           <Link
             href={`/${lang}/request-demo`}
-            className="wc-button-primary px-8"
+            className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-[#002B5C] shadow-[0_10px_24px_rgba(15,23,42,0.28)] transition hover:bg-slate-100"
           >
             {t("landing.hero.cta1")}
-            <ChevronDir size={18} />
           </Link>
           <Link
             href={`/${lang}/login`}
-            className="wc-button-secondary px-8"
+            className="inline-flex items-center justify-center rounded-xl border border-white bg-transparent px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            style={{ color: '#ffffff', borderColor: '#ffffff' }}
           >
             {t("landing.hero.cta2")}
           </Link>
         </div>
       </div>
+      <style jsx>{`
+        .hero {
+          min-height: 80vh;
+          display: flex;
+          align-items: center;
+          padding: 80px 0;
+          background-image: url("/images/demo-hero.jpg");
+          background-size: cover;
+          background-position: center;
+        }
+
+        .hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            120deg,
+            rgba(0, 43, 92, 0.9) 0%,
+            rgba(0, 43, 92, 0.75) 40%,
+            rgba(0, 43, 92, 0.85) 100%
+          );
+          backdrop-filter: blur(2px);
+          -webkit-backdrop-filter: blur(2px);
+          z-index: 1;
+        }
+
+        .hero::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(
+            circle at 25% 35%,
+            rgba(75, 156, 211, 0.25),
+            transparent 60%
+          );
+          z-index: 2;
+        }
+
+        .hero-content {
+          position: relative;
+          z-index: 3;
+          max-width: 700px;
+        }
+
+        .hero-subtext {
+          opacity: 0.85;
+        }
+
+        @media (max-width: 768px) {
+          .hero::before {
+            background: linear-gradient(
+              120deg,
+              rgba(0, 43, 92, 0.95) 0%,
+              rgba(0, 43, 92, 0.95) 40%,
+              rgba(0, 43, 92, 0.95) 100%
+            );
+          }
+
+          .hero-content {
+            margin: 0 auto;
+            text-align: center;
+          }
+
+          .hero-actions {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .hero-actions :global(a) {
+            width: 100%;
+          }
+        }
+      `}</style>
     </section>
   );
 }
