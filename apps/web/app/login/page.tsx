@@ -226,7 +226,7 @@ export default function LoginPage() {
                 className="mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-sm)] md:p-6"
               >
                 <div className="mb-5 flex justify-center">
-                  <div className="relative w-[160px] sm:w-[190px] md:w-[210px]">
+                  <div className="relative w-full max-w-[320px]">
                     <img
                       src="/images/wathiqcare-logo.png"
                       alt="WathiqCare"

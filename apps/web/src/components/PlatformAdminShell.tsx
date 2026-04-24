@@ -106,7 +106,7 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                                 alt="WathiqCare"
                                 width={180}
                                 height={54}
-                                className="h-auto w-[120px] object-contain"
+                                className="h-auto w-full object-contain"
                                 loading="eager"
                                 decoding="async"
                             />
@@ -179,7 +179,7 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                                             alt="WathiqCare"
                                             width={104}
                                             height={32}
-                                            className="h-auto w-[84px] object-contain"
+                                            className="h-auto w-full min-w-[104px] object-contain"
                                             loading="eager"
                                             decoding="async"
                                         />

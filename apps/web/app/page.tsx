@@ -117,34 +117,107 @@ function NavBar() {
 
 function HeroSection() {
   return (
-    <section className="pt-32 pb-20 px-6 bg-gradient-to-br from-cyan-50 via-white to-slate-100" dir="rtl">
-      <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-6">
-        <span className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-800 text-xs font-semibold px-4 py-1.5 rounded-full border border-cyan-200">
-          <Stethoscope size={14} />
-          متوافق مع نظام PDPL السعودي ومعايير الاعتماد الصحي
-        </span>
-        <h1 className="text-4xl md:text-5xl font-extrabold text-cyan-950 leading-tight">
+    <section className="hero relative overflow-hidden rounded-[32px] border border-slate-200 shadow-[0_24px_60px_rgba(15,23,42,0.24)] mt-16 mx-6 md:mx-auto md:max-w-6xl" dir="rtl">
+      <div className="hero-content space-y-5 px-8 py-10 md:px-10 md:py-12">
+        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white">
+          <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">منصة متكاملة</span>
+          <span className="rounded-full border border-[#b89546] bg-[#b89546]/15 px-3 py-1 text-[#f5df9a]">معتمدة من PDPL</span>
+        </div>
+        <h1 className="font-serif text-4xl font-semibold leading-tight text-white md:text-5xl">
           منصة إدارة رفض الخروج الطبي
         </h1>
-        <p className="text-lg md:text-xl text-slate-600 max-w-2xl leading-relaxed">
+        <p className="hero-subtext text-base leading-7 text-white md:text-lg">
           واثق كير — نظام متكامل يُساعد المنشآت الصحية على توثيق رفض الخروج الطبي، التصعيد القانوني، والامتثال التنظيمي بسرعة وأمان.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 mt-2">
+        <div className="hero-actions flex flex-wrap gap-3">
           <Link
             href="/request-demo"
-            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-cyan-700 text-white text-base font-bold shadow-lg hover:bg-cyan-800 transition"
+            className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-[#002B5C] shadow-[0_10px_24px_rgba(15,23,42,0.28)] transition hover:bg-slate-100"
           >
             طلب نسخة تجريبية مجانية
-            <ChevronLeft size={18} />
           </Link>
           <Link
             href="/login"
-            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white text-cyan-700 text-base font-bold border border-cyan-200 shadow hover:bg-cyan-50 transition"
+            className="inline-flex items-center justify-center rounded-xl border border-white bg-transparent px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            style={{ color: '#ffffff', borderColor: '#ffffff' }}
           >
             دخول المشتركين
           </Link>
         </div>
       </div>
+      <style jsx>{`
+        .hero {
+          min-height: 80vh;
+          display: flex;
+          align-items: center;
+          padding: 80px 0;
+          background-image: url("/images/demo-hero.jpg");
+          background-size: cover;
+          background-position: center;
+        }
+
+        .hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            120deg,
+            rgba(0, 43, 92, 0.9) 0%,
+            rgba(0, 43, 92, 0.75) 40%,
+            rgba(0, 43, 92, 0.85) 100%
+          );
+          backdrop-filter: blur(2px);
+          -webkit-backdrop-filter: blur(2px);
+          z-index: 1;
+        }
+
+        .hero::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(
+            circle at 25% 35%,
+            rgba(75, 156, 211, 0.25),
+            transparent 60%
+          );
+          z-index: 2;
+        }
+
+        .hero-content {
+          position: relative;
+          z-index: 3;
+          max-width: 700px;
+        }
+
+        .hero-subtext {
+          opacity: 0.85;
+        }
+
+        @media (max-width: 768px) {
+          .hero::before {
+            background: linear-gradient(
+              120deg,
+              rgba(0, 43, 92, 0.95) 0%,
+              rgba(0, 43, 92, 0.95) 40%,
+              rgba(0, 43, 92, 0.95) 100%
+            );
+          }
+
+          .hero-content {
+            margin: 0 auto;
+            text-align: center;
+          }
+
+          .hero-actions {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .hero-actions :global(a) {
+            width: 100%;
+          }
+        }
+      `}</style>
     </section>
   );
 }

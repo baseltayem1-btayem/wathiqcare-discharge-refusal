@@ -140,12 +140,18 @@ function NavLink({ href, label, icon, active, disabled = false, surface = "sideb
 }
 
 function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; logoUrl: string | null; compact?: boolean }) {
-  if (logoUrl) {
+  const isImcTenant = /\bIMC\b/i.test(name);
+  const shouldUseImcSidebarMark = !compact && (isImcTenant || !logoUrl);
+  const tenantLogoSrc = shouldUseImcSidebarMark ? "/images/imc-logo-white.png" : logoUrl;
+
+  if (tenantLogoSrc) {
     return (
       <img
-        src={logoUrl}
+        src={tenantLogoSrc}
         alt={name}
-        className={compact ? "h-auto w-[78px] object-contain" : "h-auto w-[150px] object-contain"}
+        className={compact
+          ? "h-auto w-full max-w-[120px] object-contain"
+          : "h-auto w-full max-w-[220px] object-contain bg-transparent"}
       />
     );
   }
@@ -157,15 +163,13 @@ function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; log
     .join("")
     .slice(0, compact ? 2 : 3)
     .toUpperCase();
-  const isImcTenant = /\bIMC\b/i.test(name);
-
   return (
-    <div className={compact ? "flex h-9 w-[78px] items-center justify-center rounded-lg border border-cyan-200 bg-gradient-to-br from-cyan-100 to-cyan-50 text-cyan-700" : "flex h-20 w-[150px] items-center justify-center rounded-xl border border-cyan-200 bg-gradient-to-br from-cyan-100 to-cyan-50 text-cyan-700"}>
+    <div className={compact ? "flex h-9 w-full max-w-[120px] items-center justify-center rounded-lg border border-cyan-200 bg-gradient-to-br from-cyan-100 to-cyan-50 text-cyan-700" : "flex h-20 w-full max-w-[220px] items-center justify-center rounded-xl border border-white/20 bg-transparent text-white"}>
       {isImcTenant ? (
         <img
           src="https://www.imc.med.sa/images/logo.jpg"
           alt="IMC"
-          className="h-8 w-auto object-contain"
+          className={compact ? "h-auto w-full object-contain" : "h-auto w-full object-contain brightness-0 invert"}
           loading="eager"
           decoding="async"
         />
@@ -281,18 +285,32 @@ export default function AppShell({
           <aside
             className="hidden rounded-[24px] border border-[var(--sidebar-border)] bg-[#0A2540] p-4 text-white shadow-[0_20px_45px_rgba(2,6,23,0.22)] md:flex md:flex-col"
           >
+            {/* WathiqCare Logo */}
+            <div className="mb-4 flex items-center justify-center rounded-lg bg-white/5 px-3 py-3">
+              <img
+                src="/images/wathiqcare-logo.png"
+                alt="WathiqCare"
+                width={140}
+                height={42}
+                className="h-auto w-full max-w-[140px] object-contain brightness-0 invert"
+                loading="eager"
+                decoding="async"
+                style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))" }}
+              />
+            </div>
+
             <div className="rounded-2xl border border-[rgba(159,179,207,0.24)] bg-[rgba(12,25,45,0.55)] p-3">
-              <div className="flex justify-center">
+              <div className="flex w-full justify-center">
                 <TenantBrandMark name={tenantName} logoUrl={tenantLogoUrl} />
               </div>
               <div className="mt-3 rounded-xl border border-[rgba(159,179,207,0.24)] bg-[rgba(255,255,255,0.04)] px-3 py-2">
-                <div className="flex justify-center">
+                <div className="flex w-full justify-center">
                   <img
                     src="/images/wathiqcare-logo.png"
                     alt={t("app.name")}
                     width={180}
                     height={54}
-                    className="h-auto w-[114px] object-contain"
+                    className="h-auto w-full object-contain"
                     loading="eager"
                     decoding="async"
                   />

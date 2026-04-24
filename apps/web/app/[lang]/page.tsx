@@ -50,7 +50,7 @@ function NavBar({ lang }: { lang: string }) {
             alt="WathiqCare"
             width={140}
             height={40}
-            className="h-auto object-contain"
+            className="h-auto w-full max-w-[220px] object-contain"
             loading="eager"
             decoding="async"
           />
