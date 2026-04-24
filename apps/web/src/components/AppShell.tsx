@@ -387,7 +387,7 @@ export default function AppShell({
 
                 <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3 text-right">
                   <div className="text-sm font-semibold text-white">محتاج مساعدة؟</div>
-                  <p className="mt-1 text-xs text-slate-300">تواصل مع الدعم الفني</p>
+                  <p className="mt-1 text-xs text-slate-300">{t("supportText")}</p>
                   <button
                     type="button"
                     className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-[#0A2540] transition hover:bg-slate-100"
