@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { HelpCircle, LogOut, Menu, Stethoscope, X } from "lucide-react";
+import { BarChart3, Bell, FileText, FolderOpen, HelpCircle, LayoutDashboard, LogOut, Menu, Scale, Settings, ShieldAlert, Stethoscope, Users, X } from "lucide-react";
 import AppBreadcrumbs from "@/components/AppBreadcrumbs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import NotificationBell from "@/components/operations/NotificationBell";
@@ -65,6 +65,13 @@ function isActive(pathname: string, href: string): boolean {
 type NavGroup = {
   title: string;
   items: NavItem[];
+};
+
+type DashboardSidebarItem = {
+  key: string;
+  href: string;
+  label: string;
+  icon: ReactNode;
 };
 
 const NAV_GROUP_ORDER: Array<{ title: string; hrefs: string[] }> = [
@@ -314,6 +321,17 @@ export default function AppShell({
   const navGroups = workflowCaseNav
     ? [{ title: t("app.activeWorkspace"), items: navItems }]
     : groupTenantNavigation(navItems);
+  const isDashboardsSidebarMode = pathname.includes("/dashboards");
+  const dashboardSidebarItems: DashboardSidebarItem[] = [
+    { key: "dashboard", href: "/dashboard", label: "لوحة التحكم", icon: <LayoutDashboard className="h-4 w-4" /> },
+    { key: "cases", href: "/cases", label: "الحالات", icon: <FolderOpen className="h-4 w-4" /> },
+    { key: "documents", href: "/documents", label: "المستندات", icon: <FileText className="h-4 w-4" /> },
+    { key: "alerts", href: "/legal-alerts", label: "التنبيهات", icon: <Bell className="h-4 w-4" /> },
+    { key: "risk", href: "/legal-escalation", label: "المخاطر والإفصاح", icon: <ShieldAlert className="h-4 w-4" /> },
+    { key: "reports", href: "/reports", label: "التقارير", icon: <BarChart3 className="h-4 w-4" /> },
+    { key: "users", href: "/tenant/users", label: "المستخدمون", icon: <Users className="h-4 w-4" /> },
+    { key: "settings", href: "/settings", label: "الإعدادات", icon: <Settings className="h-4 w-4" /> },
+  ];
   const tenantName = tenantBranding?.name?.trim() || t("app.tenantName");
   const tenantLogoUrl = tenantBranding?.logoUrl ?? null;
 
@@ -332,63 +350,111 @@ export default function AppShell({
       <div className="mx-auto max-w-[1600px] px-3 py-3 md:px-5 md:py-5">
         <div className="wc-shell-grid">
           <aside
-            className="hidden w-[296px] shrink-0 rounded-[24px] border border-[var(--sidebar-border)] bg-[#0A2540] p-4 text-white shadow-[0_20px_45px_rgba(2,6,23,0.22)] md:flex md:flex-col"
+            className={`hidden shrink-0 rounded-[24px] border p-4 text-white shadow-[0_20px_45px_rgba(2,6,23,0.22)] md:flex md:flex-col ${isDashboardsSidebarMode ? "w-[260px] border-[#173454] bg-[#071a33]" : "w-[296px] border-[var(--sidebar-border)] bg-[#0A2540]"}`}
           >
-            <SidebarBranding tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} />
-
-            <nav className="mt-3 flex-1 space-y-4">
-              {navGroups.map((group) => (
-                <section key={group.title}>
-                  <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
-                    {group.title}
+            {isDashboardsSidebarMode ? (
+              <>
+                <div className="mb-5 rounded-2xl border border-white/15 bg-white/5 px-3 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                      <Scale className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-0.5 text-right">
+                      <div className="text-sm font-semibold text-white">منصة إدارة</div>
+                      <div className="text-sm font-semibold text-white/90">الحالات القانونية</div>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    {group.items.map((item) => (
-                      <NavLink
-                        key={item.href}
-                        href={item.href}
-                        label={item.label ?? t(item.labelKey || "")}
-                        icon={item.icon}
-                        active={isActive(pathname, item.href)}
-                        disabled={item.disabled}
-                        surface="sidebar"
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </nav>
-
-            <div className="mt-4 rounded-2xl border border-[rgba(159,179,207,0.24)] bg-[rgba(255,255,255,0.05)] p-3 text-xs text-[#cfe0f7]">
-              <div className="inline-flex items-center gap-1.5 font-semibold">
-                <Stethoscope className="h-3.5 w-3.5 text-white" />
-                {t("app.activeWorkspace")}
-              </div>
-              <p className="mt-1 text-white/70">{t("app.secureMode")}</p>
-              <div className="mt-3 rounded-xl border border-[rgba(159,179,207,0.24)] bg-[rgba(10,20,36,0.5)] p-2">
-                <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-white">
-                  <HelpCircle className="h-3 w-3 text-white/80" />
-                  Support
                 </div>
-                <p className="mt-1 text-[11px] leading-relaxed text-white/70">
-                  For urgent legal package blockers, contact the command support channel.
-                </p>
-              </div>
-            </div>
 
-            <div className="mt-3 space-y-2">
-              <LanguageSwitcher variant="sidebar" />
-              <button
-                type="button"
-                onClick={() => {
-                  void handleLogout();
-                }}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-white/20 [&_svg]:text-white/80"
-              >
-                <LogOut className="h-4 w-4" />
-                {t("common.logout")}
-              </button>
-            </div>
+                <nav className="flex-1 space-y-1.5">
+                  {dashboardSidebarItems.map((item) => {
+                    const isActiveItem = item.key === "cases";
+
+                    return (
+                      <Link
+                        key={item.key}
+                        href={item.href}
+                        className={isActiveItem
+                          ? "inline-flex w-full items-center gap-2.5 rounded-xl bg-[#1E63B5] px-3 py-2.5 text-sm font-semibold text-white"
+                          : "inline-flex w-full items-center gap-2.5 rounded-xl bg-transparent px-3 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/5 hover:text-white"}
+                      >
+                        <span className={isActiveItem ? "text-white" : "text-slate-300"}>{item.icon}</span>
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+
+                <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3 text-right">
+                  <div className="text-sm font-semibold text-white">محتاج مساعدة؟</div>
+                  <p className="mt-1 text-xs text-slate-300">تواصل مع الدعم الفني</p>
+                  <button
+                    type="button"
+                    className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-[#0A2540] transition hover:bg-slate-100"
+                  >
+                    تواصل الآن
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <SidebarBranding tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} />
+
+                <nav className="mt-3 flex-1 space-y-4">
+                  {navGroups.map((group) => (
+                    <section key={group.title}>
+                      <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
+                        {group.title}
+                      </div>
+                      <div className="space-y-1">
+                        {group.items.map((item) => (
+                          <NavLink
+                            key={item.href}
+                            href={item.href}
+                            label={item.label ?? t(item.labelKey || "")}
+                            icon={item.icon}
+                            active={isActive(pathname, item.href)}
+                            disabled={item.disabled}
+                            surface="sidebar"
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </nav>
+
+                <div className="mt-4 rounded-2xl border border-[rgba(159,179,207,0.24)] bg-[rgba(255,255,255,0.05)] p-3 text-xs text-[#cfe0f7]">
+                  <div className="inline-flex items-center gap-1.5 font-semibold">
+                    <Stethoscope className="h-3.5 w-3.5 text-white" />
+                    {t("app.activeWorkspace")}
+                  </div>
+                  <p className="mt-1 text-white/70">{t("app.secureMode")}</p>
+                  <div className="mt-3 rounded-xl border border-[rgba(159,179,207,0.24)] bg-[rgba(10,20,36,0.5)] p-2">
+                    <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-white">
+                      <HelpCircle className="h-3 w-3 text-white/80" />
+                      Support
+                    </div>
+                    <p className="mt-1 text-[11px] leading-relaxed text-white/70">
+                      For urgent legal package blockers, contact the command support channel.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  <LanguageSwitcher variant="sidebar" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleLogout();
+                    }}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-white/20 [&_svg]:text-white/80"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {t("common.logout")}
+                  </button>
+                </div>
+              </>
+            )}
           </aside>
 
           <div className="min-w-0">
