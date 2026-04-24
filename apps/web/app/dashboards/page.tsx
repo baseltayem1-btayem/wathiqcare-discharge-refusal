@@ -7,6 +7,7 @@ import { Bell, CheckCircle2, CircleAlert, FileCheck2, ShieldCheck, UserCircle2 }
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/design-system/card";
 import { Badge } from "@/components/design-system/badge";
 import { Button } from "@/components/design-system/button";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type RequirementTone = "success" | "danger" | "info";
 
@@ -46,7 +47,7 @@ const REQUIREMENTS: RequirementItem[] = [
     },
     {
         id: 4,
-        title: "التسلسل الزمني مكتمل",
+        title: "auditTrailCompleted",
         description: "جميع أحداث التدقيق متسلسلة ومتحقق منها",
         status: "مكتمل",
         action: "عرض التفاصيل",
@@ -97,6 +98,8 @@ function toneClasses(tone: RequirementTone): {
 }
 
 export default function DashboardsPage() {
+    const { t } = useI18n();
+
     return (
         <AuthGuard>
             <AppShell title="لوحة المعلومات" subtitle="" actions={null}>
@@ -162,7 +165,7 @@ export default function DashboardsPage() {
                         <div className="min-w-0 space-y-4">
                             <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                                 <CardHeader className="pb-2">
-                                    <CardTitle className="text-lg text-slate-900">الجاهزية القانونية</CardTitle>
+                                    <CardTitle className="text-lg text-slate-900">{t("legalReadiness")}</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4">
@@ -211,7 +214,7 @@ export default function DashboardsPage() {
                                                 <div className="min-w-0">
                                                     <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
                                                         <Icon className={`h-4 w-4 ${tone.icon}`} />
-                                                        <span className="truncate">{item.title}</span>
+                                                        <span className="truncate">{item.title === "auditTrailCompleted" ? t("auditTrailCompleted") : item.title}</span>
                                                     </div>
                                                     <div className="mt-1 text-xs text-slate-600">{item.description}</div>
                                                     <div className="mt-1 text-xs font-semibold text-slate-700">{item.status}</div>

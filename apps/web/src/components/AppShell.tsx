@@ -432,10 +432,10 @@ export default function AppShell({
                   <div className="mt-3 rounded-xl border border-[rgba(159,179,207,0.24)] bg-[rgba(10,20,36,0.5)] p-2">
                     <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-white">
                       <HelpCircle className="h-3 w-3 text-white/80" />
-                      {isRtl ? "الدعم" : "Support"}
+                      {t("support")}
                     </div>
                     <p className="mt-1 text-[11px] leading-relaxed text-white/70">
-                      {isRtl ? "للمشاكل الحرجة في الحزم القانونية، تواصل مع قناة الدعم." : "For urgent legal package blockers, contact the command support channel."}
+                      {t("supportText")}
                     </p>
                   </div>
                 </div>

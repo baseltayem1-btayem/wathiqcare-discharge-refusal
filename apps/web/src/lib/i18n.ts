@@ -1,5 +1,7 @@
 import ar from "@/locales/ar.json";
 import en from "@/locales/en.json";
+import arCommon from "@/locales/ar/common.json";
+import enCommon from "@/locales/en/common.json";
 
 export type Language = "en" | "ar";
 
@@ -13,8 +15,8 @@ type TranslationTree = {
 type TranslateVars = Record<string, string | number>;
 
 const dictionaries: Record<Language, TranslationTree> = {
-  en: en as TranslationTree,
-  ar: ar as TranslationTree,
+  en: { ...(en as TranslationTree), ...(enCommon as TranslationTree) },
+  ar: { ...(ar as TranslationTree), ...(arCommon as TranslationTree) },
 };
 
 function getNestedValue(tree: TranslationTree, path: string): string | undefined {
