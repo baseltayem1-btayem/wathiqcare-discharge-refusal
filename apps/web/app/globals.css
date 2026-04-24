@@ -251,8 +251,9 @@ h3,
 
   .wc-shell-grid {
     display: grid;
-    grid-template-columns: 296px minmax(0, 1fr);
+    grid-template-columns: minmax(260px, 296px) minmax(0, 1fr);
     gap: 1rem;
+    align-items: start;
   }
 
   @media (max-width: 1023px) {

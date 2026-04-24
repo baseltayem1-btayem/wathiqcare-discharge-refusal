@@ -1109,7 +1109,8 @@ export default function CaseExecutionWorkspaceLayout({
             body { font-family: Arial, sans-serif; margin: 24px; color: #0f172a; }
             h1 { margin: 0 0 8px 0; font-size: 20px; }
             p { margin: 0 0 16px 0; color: #475569; font-size: 13px; }
-            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            .table-wrap { width: 100%; overflow-x: auto; }
+            table { width: 100%; min-width: 780px; border-collapse: collapse; font-size: 12px; }
             th, td { border: 1px solid #cbd5e1; padding: 8px; vertical-align: top; text-align: left; }
             th { background: #f1f5f9; }
           </style>
@@ -1117,7 +1118,7 @@ export default function CaseExecutionWorkspaceLayout({
         <body>
           <h1>${tr("Case Audit Timeline", "الخط الزمني لتدقيق الحالة")}</h1>
           <p>${tr("Case", "الحالة")}: ${caseId} | ${tr("Generated", "تم الإنشاء")}: ${new Date().toLocaleString()}</p>
-          <table>
+          <div class="table-wrap"><table>
             <thead>
               <tr>
                 <th>${tr("When", "متى")}</th>
@@ -1128,7 +1129,7 @@ export default function CaseExecutionWorkspaceLayout({
               </tr>
             </thead>
             <tbody>${printableRows || `<tr><td colspan="5">${tr("No audit events available", "لا توجد أحداث تدقيق متاحة")}</td></tr>`}</tbody>
-          </table>
+          </table></div>
         </body>
       </html>
     `);
@@ -1139,7 +1140,7 @@ export default function CaseExecutionWorkspaceLayout({
 
   function renderLegalReadinessPanel() {
     return (
-      <Card className="h-fit border-slate-200 bg-white xl:sticky xl:top-24">
+      <Card className="h-fit min-w-0 overflow-hidden border-slate-200 bg-white xl:sticky xl:top-24">
         <CardHeader>
           <CardTitle>{tr("Legal Readiness Panel", "لوحة الجاهزية القانونية")}</CardTitle>
         </CardHeader>
@@ -1203,7 +1204,7 @@ export default function CaseExecutionWorkspaceLayout({
 
   function renderCaseCreationStep() {
     return (
-      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>{tr("Executive Legal Summary", "الملخص القانوني التنفيذي")}</CardTitle>
@@ -1269,7 +1270,7 @@ export default function CaseExecutionWorkspaceLayout({
 
   function renderMedicalDecisionStep() {
     return (
-      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>{tr("Record Medical Explanation", "تسجيل الشرح الطبي")}</CardTitle>
@@ -1380,7 +1381,7 @@ export default function CaseExecutionWorkspaceLayout({
 
   function renderPatientDecisionStep() {
     return (
-      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>{tr("Patient Response & Acknowledgment", "استجابة المريض والإقرار")}</CardTitle>
@@ -1711,7 +1712,7 @@ export default function CaseExecutionWorkspaceLayout({
 
   function renderLegalReadinessStep() {
     return (
-      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <Card className="border-[var(--border-soft)]">
           <CardHeader>
             <CardTitle>{tr("Executive Legal Eligibility Summary", "الملخص التنفيذي للأهلية القانونية")}</CardTitle>
@@ -1824,7 +1825,7 @@ export default function CaseExecutionWorkspaceLayout({
 
   function renderDocumentsStep() {
     return (
-      <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>{tr("Generate Legal Documents", "إنشاء المستندات القانونية")}</CardTitle>
@@ -1964,7 +1965,7 @@ export default function CaseExecutionWorkspaceLayout({
 
   function renderClosureStep() {
     return (
-      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>{tr("Closure Readiness", "جاهزية الإغلاق")}</CardTitle>
@@ -2062,7 +2063,7 @@ export default function CaseExecutionWorkspaceLayout({
   }
 
   return (
-    <div className="space-y-6 pb-24 xl:pb-0">
+    <div className="w-full min-w-0 space-y-6 overflow-x-hidden pb-24 xl:pb-0">
       {error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -2140,7 +2141,7 @@ export default function CaseExecutionWorkspaceLayout({
             </div>
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+          <div className="grid min-w-0 gap-4 xl:grid-cols-2">
             <div className="rounded-xl border border-slate-200 px-3 py-3">
               <div className="text-sm font-semibold text-slate-900">{tr("Recommended Legal Direction", "التوجيه القانوني الموصى به")}</div>
               <div className="mt-1 text-sm text-slate-700">{prioritizedAction.title}</div>
@@ -2168,7 +2169,7 @@ export default function CaseExecutionWorkspaceLayout({
             </div>
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+          <div className="grid min-w-0 gap-4 xl:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
               <div className="text-sm font-semibold text-slate-900">{tr("Legal Reasoning", "التسبيب القانوني")}</div>
               <div className="mt-1 text-xs text-slate-500">
@@ -2310,8 +2311,8 @@ export default function CaseExecutionWorkspaceLayout({
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)_20rem]">
-        <div className="space-y-4">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(260px,320px)_minmax(0,1fr)_minmax(260px,340px)]">
+        <div className="min-w-0 space-y-4">
           <Card className="h-fit">
             <CardHeader>
               <CardTitle>{tr("Current + Next", "الحالية + التالية")}</CardTitle>
@@ -2430,7 +2431,7 @@ export default function CaseExecutionWorkspaceLayout({
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -2449,7 +2450,7 @@ export default function CaseExecutionWorkspaceLayout({
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+              <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                   <div className="font-semibold text-slate-900">{tr("Recommended Legal Action", "الإجراء القانوني الموصى به")}</div>
                   <div className="mt-1 font-medium">{prioritizedAction.title}</div>

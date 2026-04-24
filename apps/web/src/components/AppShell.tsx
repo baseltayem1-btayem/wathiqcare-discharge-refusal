@@ -239,7 +239,7 @@ export default function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, isRtl } = useI18n();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // ── HARD ISOLATION GUARD ────────────────────────────────────────────────────
@@ -332,7 +332,7 @@ export default function AppShell({
       <div className="mx-auto max-w-[1600px] px-3 py-3 md:px-5 md:py-5">
         <div className="wc-shell-grid">
           <aside
-            className="hidden rounded-[24px] border border-[var(--sidebar-border)] bg-[#0A2540] p-4 text-white shadow-[0_20px_45px_rgba(2,6,23,0.22)] md:flex md:flex-col"
+            className="hidden w-[296px] shrink-0 rounded-[24px] border border-[var(--sidebar-border)] bg-[#0A2540] p-4 text-white shadow-[0_20px_45px_rgba(2,6,23,0.22)] md:flex md:flex-col"
           >
             <SidebarBranding tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} />
 
@@ -449,38 +449,48 @@ export default function AppShell({
                 </div>
 
                 {mobileNavOpen ? (
-                  <div className="space-y-3 rounded-xl border border-[var(--sidebar-border)] bg-[#0A2540] p-3 text-white shadow-[0_14px_30px_rgba(2,6,23,0.22)] md:hidden">
-                    <SidebarBranding tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} mobile />
-                    {navGroups.map((group) => (
-                      <section key={`mobile-${group.title}`}>
-                        <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">{group.title}</div>
-                        <div className="space-y-1">
-                          {group.items.map((item) => (
-                            <div key={`mobile-link-${item.href}`} onClick={() => setMobileNavOpen(false)}>
-                              <NavLink
-                                href={item.href}
-                                label={item.label ?? t(item.labelKey || "")}
-                                icon={item.icon}
-                                active={isActive(pathname, item.href)}
-                                disabled={item.disabled}
-                                surface="sidebar"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    ))}
+                  <>
                     <button
                       type="button"
-                      onClick={() => {
-                        void handleLogout();
-                      }}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-white/20 [&_svg]:text-white/80"
+                      aria-label="Close mobile navigation"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="fixed inset-0 z-30 bg-slate-900/35 md:hidden"
+                    />
+                    <div
+                      className={`fixed top-20 z-40 w-[85vw] max-w-[320px] max-h-[calc(100vh-6rem)] overflow-y-auto space-y-3 rounded-xl border border-[var(--sidebar-border)] bg-[#0A2540] p-3 text-white shadow-[0_20px_45px_rgba(2,6,23,0.28)] md:hidden ${isRtl ? "right-3" : "left-3"}`}
                     >
-                      <LogOut className="h-4 w-4" />
-                      {t("common.logout")}
-                    </button>
-                  </div>
+                      <SidebarBranding tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} mobile />
+                      {navGroups.map((group) => (
+                        <section key={`mobile-${group.title}`}>
+                          <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">{group.title}</div>
+                          <div className="space-y-1">
+                            {group.items.map((item) => (
+                              <div key={`mobile-link-${item.href}`} onClick={() => setMobileNavOpen(false)}>
+                                <NavLink
+                                  href={item.href}
+                                  label={item.label ?? t(item.labelKey || "")}
+                                  icon={item.icon}
+                                  active={isActive(pathname, item.href)}
+                                  disabled={item.disabled}
+                                  surface="sidebar"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleLogout();
+                        }}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-white/20 [&_svg]:text-white/80"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        {t("common.logout")}
+                      </button>
+                    </div>
+                  </>
                 ) : null}
 
                 {actions ? (
@@ -491,7 +501,7 @@ export default function AppShell({
               </div>
             </header>
 
-            <main className="mt-4 rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-sm)] md:p-6">
+            <main className="mt-4 min-w-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-sm)] md:p-6">
               {children}
             </main>
           </div>
