@@ -1907,12 +1907,15 @@ export default function CaseExecutionWorkspaceLayout({
                 {loading ? tr("Saving...", "جار الحفظ...") : tr("Generate Legal Package", "إنشاء الحزمة القانونية")}
               </Button>
               {legalPackage?.download_url && canDownloadFinalDocs ? (
-                <a href={legalPackage.download_url} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline">
-                    <Download className="h-4 w-4" />
-                    {tr("Download Package", "تنزيل الحزمة")}
-                  </Button>
-                </a>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    window.open(legalPackage.download_url, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                  {tr("Download Package", "تنزيل الحزمة")}
+                </Button>
               ) : null}
             </div>
 
@@ -2006,29 +2009,38 @@ export default function CaseExecutionWorkspaceLayout({
           <CardContent className="space-y-3">
             {pdfLatest ? (
               <div className="flex flex-wrap gap-2">
-                <a href={`/api/cases/${caseId}/pdf/${pdfLatest.version}/preview`} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline">
-                    <Eye className="h-4 w-4" />
-                    {tr("Preview Latest", "معاينة الأحدث")}
-                  </Button>
-                </a>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    window.open(`/api/cases/${caseId}/pdf/${pdfLatest.version}/preview`, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  <Eye className="h-4 w-4" />
+                  {tr("Preview Latest", "معاينة الأحدث")}
+                </Button>
                 {canDownloadFinalDocs ? (
-                  <a href={`/api/cases/${caseId}/pdf/${pdfLatest.version}/download`} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline">
-                      <Download className="h-4 w-4" />
-                      {tr("Download Latest", "تنزيل الأحدث")}
-                    </Button>
-                  </a>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      window.open(`/api/cases/${caseId}/pdf/${pdfLatest.version}/download`, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    {tr("Download Latest", "تنزيل الأحدث")}
+                  </Button>
                 ) : null}
               </div>
             ) : null}
             {legalPackage?.download_url && canDownloadFinalDocs ? (
-              <a href={legalPackage.download_url} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline">
-                  <Package className="h-4 w-4" />
-                  {tr("Download Bundle", "تنزيل الحزمة")}
-                </Button>
-              </a>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  window.open(legalPackage.download_url, "_blank", "noopener,noreferrer");
+                }}
+              >
+                <Package className="h-4 w-4" />
+                {tr("Download Bundle", "تنزيل الحزمة")}
+              </Button>
             ) : null}
             {selectedStep.missingItems.length > 0 ? (
               <ul className="space-y-1 text-sm text-amber-700">
@@ -2613,19 +2625,27 @@ export default function CaseExecutionWorkspaceLayout({
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <Badge variant={statusTone.variant}>{statusLabel}</Badge>
-                                        <a href={`/api/cases/${caseId}/pdf/${version.version}/preview`} target="_blank" rel="noopener noreferrer">
-                                          <Button variant="outline" size="sm">
-                                            <Eye className="h-4 w-4" />
-                                            {tr("Preview", "معاينة")}
-                                          </Button>
-                                        </a>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            window.open(`/api/cases/${caseId}/pdf/${version.version}/preview`, "_blank", "noopener,noreferrer");
+                                          }}
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                          {tr("Preview", "معاينة")}
+                                        </Button>
                                         {canDownloadFinalDocs ? (
-                                          <a href={`/api/cases/${caseId}/pdf/${version.version}/download`} target="_blank" rel="noopener noreferrer">
-                                            <Button variant="outline" size="sm">
-                                              <Download className="h-4 w-4" />
-                                              {tr("Download", "تنزيل")}
-                                            </Button>
-                                          </a>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                              window.open(`/api/cases/${caseId}/pdf/${version.version}/download`, "_blank", "noopener,noreferrer");
+                                            }}
+                                          >
+                                            <Download className="h-4 w-4" />
+                                            {tr("Download", "تنزيل")}
+                                          </Button>
                                         ) : null}
                                       </div>
                                     </div>
@@ -2653,6 +2673,7 @@ export default function CaseExecutionWorkspaceLayout({
                             <Button size="sm" onClick={handleExportLegalReport}>
                               <Download className="h-4 w-4" />
                               {tr("Export", "تصدير")}
+                              title={!previousStep ? tr("No previous step is available.", "لا توجد خطوة سابقة متاحة.") : undefined}
                             </Button>
                           </div>
                         </div>
@@ -2730,6 +2751,7 @@ export default function CaseExecutionWorkspaceLayout({
           </div>
           <Button
             disabled={!prioritizedAction.stepKey}
+            title={!prioritizedAction.stepKey ? tr("No guided next action is currently available.", "لا يوجد إجراء إرشادي تالٍ متاح حاليًا.") : undefined}
             onClick={() => {
               if (prioritizedAction.stepKey) {
                 setSelectedStepKey(prioritizedAction.stepKey);

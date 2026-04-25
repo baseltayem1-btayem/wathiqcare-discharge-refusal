@@ -32,11 +32,31 @@ export type SmartActionKey =
   | "reviewHighRiskItems"
   | "openRiskDashboard";
 
+export type SmartBackendAction = {
+  key?: string;
+  label?: string;
+  href?: string;
+  priority?: number;
+};
+
+export type SmartBackendWorkflowPayload = {
+  status?: string;
+  nextAction?: SmartBackendAction | null;
+  availableActions?: SmartBackendAction[] | null;
+};
+
+export type SmartResolvedAction = {
+  key?: SmartActionKey;
+  label?: string;
+  href?: string;
+};
+
 export type SmartNavigationResolution = {
   moduleKey: SmartModuleKey;
   workflowStageKey: SmartWorkflowStageKey;
-  nextActionKey: SmartActionKey;
-  secondaryActionKeys: SmartActionKey[];
+  source: "backend-driven" | "frontend-fallback";
+  nextAction: SmartResolvedAction;
+  secondaryActions: SmartResolvedAction[];
 };
 
 const MODULE_RULES: Record<SmartModuleKey, { stage: SmartWorkflowStageKey; preferredActions: SmartActionKey[] }> = {
@@ -129,9 +149,114 @@ function uniqueKeys(keys: SmartActionKey[]): SmartActionKey[] {
   });
 }
 
-export function resolveSmartNavigation(pathname: string, availableActionKeys: SmartActionKey[]): SmartNavigationResolution {
+function mapBackendStatusToStage(status: string | undefined, fallback: SmartWorkflowStageKey): SmartWorkflowStageKey {
+  const normalized = String(status || "").trim().toLowerCase();
+  switch (normalized) {
+    case "draft":
+      return "draft";
+    case "pending_review":
+      return "pending_review";
+    case "legal_review":
+      return "legal_review";
+    case "ready_for_package":
+      return "ready_for_package";
+    case "ready_for_approval":
+      return "ready_for_approval";
+    case "completed":
+      return "completed";
+    default:
+      return fallback;
+  }
+}
+
+function mapBackendActionKey(key: string | undefined): SmartActionKey | undefined {
+  const normalized = String(key || "").trim().toLowerCase();
+  switch (normalized) {
+    case "review_case_status":
+      return "reviewCaseStatus";
+    case "upload_missing_document":
+      return "uploadDocument";
+    case "generate_legal_package":
+      return "generateLegalPackage";
+    case "check_legal_readiness":
+      return "legalReadiness";
+    case "send_for_approval":
+      return "sendForApproval";
+    case "link_document_to_case":
+      return "linkDocumentToCase";
+    case "export_report":
+      return "exportReport";
+    default:
+      return undefined;
+  }
+}
+
+function normalizeBackendAction(action: SmartBackendAction): SmartResolvedAction | null {
+  if (!action) return null;
+  const mappedKey = mapBackendActionKey(action.key);
+  const label = typeof action.label === "string" && action.label.trim() ? action.label : undefined;
+  const href = typeof action.href === "string" && action.href.trim() ? action.href : undefined;
+
+  if (!mappedKey && !label && !href) {
+    return null;
+  }
+
+  return {
+    key: mappedKey,
+    label,
+    href,
+  };
+}
+
+function uniqueResolvedActions(actions: SmartResolvedAction[]): SmartResolvedAction[] {
+  const seen = new Set<string>();
+  return actions.filter((action) => {
+    const dedupeKey = action.key || action.href || action.label;
+    if (!dedupeKey) {
+      return false;
+    }
+    if (seen.has(dedupeKey)) {
+      return false;
+    }
+    seen.add(dedupeKey);
+    return true;
+  });
+}
+
+export function resolveSmartNavigation(
+  pathname: string,
+  availableActionKeys: SmartActionKey[],
+  backendWorkflow?: SmartBackendWorkflowPayload | null,
+): SmartNavigationResolution {
   const moduleKey = inferSmartModule(pathname);
   const rule = MODULE_RULES[moduleKey];
+
+  const backendAvailableActions = (backendWorkflow?.availableActions || [])
+    .map((action) => normalizeBackendAction(action))
+    .filter((action): action is SmartResolvedAction => Boolean(action));
+  const backendNextAction = backendWorkflow?.nextAction
+    ? normalizeBackendAction(backendWorkflow.nextAction)
+    : null;
+
+  if (backendNextAction || backendAvailableActions.length > 0) {
+    const resolvedNextAction = backendNextAction || backendAvailableActions[0];
+    const secondaryActions = uniqueResolvedActions(
+      backendAvailableActions.filter((action) => {
+        const nextKey = resolvedNextAction.key || resolvedNextAction.href || resolvedNextAction.label;
+        const actionKey = action.key || action.href || action.label;
+        return Boolean(actionKey && nextKey && actionKey !== nextKey);
+      }),
+    );
+
+    return {
+      moduleKey,
+      workflowStageKey: mapBackendStatusToStage(backendWorkflow?.status, rule.stage),
+      source: "backend-driven",
+      nextAction: resolvedNextAction,
+      secondaryActions,
+    };
+  }
+
   const availableSet = new Set(availableActionKeys);
 
   const relevantAvailable = rule.preferredActions.filter((action) => availableSet.has(action));
@@ -139,12 +264,13 @@ export function resolveSmartNavigation(pathname: string, availableActionKeys: Sm
   const ordered = uniqueKeys([...relevantAvailable, ...availableExtra]);
 
   const nextActionKey = ordered[0] ?? rule.preferredActions[0];
-  const secondaryActionKeys = ordered.filter((key) => key !== nextActionKey);
+  const secondaryActionKeys = ordered.filter((key) => key !== nextActionKey).map((key) => ({ key }));
 
   return {
     moduleKey,
     workflowStageKey: rule.stage,
-    nextActionKey,
-    secondaryActionKeys,
+    source: "frontend-fallback",
+    nextAction: { key: nextActionKey },
+    secondaryActions: secondaryActionKeys,
   };
 }

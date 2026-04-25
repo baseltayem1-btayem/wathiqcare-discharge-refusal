@@ -6,7 +6,7 @@ import { resolveLegalWorkflow } from "@/lib/server/legal-workflow-engine";
 import { generateAiLegalIntelligence } from "@/lib/server/ai-legal-intelligence";
 
 type RouteContext = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ caseId: string }>;
 };
 
 export async function GET(request: NextRequest, context: RouteContext) {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const auth = await requireAuth(request);
     requireTenantOperationalAccess(auth);
     const tenantId = requireTenantId(auth);
-    const { id } = await context.params;
+    const { caseId: id } = await context.params;
 
     const caseItem = await prisma.case.findFirst({
       where: { id, tenantId },

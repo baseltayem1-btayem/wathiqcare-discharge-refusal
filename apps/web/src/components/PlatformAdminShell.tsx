@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, ClipboardCheck, FileSearch, LogOut, Send, Settings, ShieldCheck } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TopNavigation from "@/components/navigation/TopNavigation";
-import { resolveSmartNavigation, type SmartActionKey } from "@/components/navigation/smartNavigation";
+import { resolveSmartNavigation, type SmartActionKey, type SmartResolvedAction } from "@/components/navigation/smartNavigation";
 import PlatformNotificationBell from "@/components/PlatformNotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clearToken } from "@/utils/api";
@@ -113,9 +113,36 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
         "openRiskDashboard",
     ];
     const smartResolution = resolveSmartNavigation(pathname, availableActionKeys);
-    const nextAction = actionCatalog[smartResolution.nextActionKey];
-    const quickActions = smartResolution.secondaryActionKeys
-        .map((key) => actionCatalog[key])
+
+    const resolveAction = (action: SmartResolvedAction): PlatformSmartAction | null => {
+        if (action.key) {
+            const catalogAction = actionCatalog[action.key];
+            if (catalogAction) {
+                return {
+                    ...catalogAction,
+                    href: action.href || catalogAction.href,
+                    label: action.label || catalogAction.label,
+                    ariaLabel: action.label || catalogAction.ariaLabel,
+                };
+            }
+        }
+
+        if (action.href && action.label) {
+            return {
+                key: "reviewCaseStatus",
+                href: action.href,
+                label: action.label,
+                icon: <ClipboardCheck className="h-3.5 w-3.5" />,
+                ariaLabel: action.label,
+            };
+        }
+
+        return null;
+    };
+
+    const nextAction = resolveAction(smartResolution.nextAction);
+    const quickActions = smartResolution.secondaryActions
+        .map((action) => resolveAction(action))
         .filter((action): action is PlatformSmartAction => Boolean(action));
 
     async function handleLogout() {
@@ -163,9 +190,12 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                     icon: action.icon,
                     ariaLabel: action.ariaLabel,
                 }))}
-                nextAction={nextAction}
+                nextAction={nextAction || undefined}
                 currentModuleLabel={t(`shell.smartNavigation.modules.${smartResolution.moduleKey}`)}
                 workflowStageLabel={t(`shell.smartNavigation.stages.${smartResolution.workflowStageKey}`)}
+                workflowSourceLabel={smartResolution.source === "backend-driven"
+                    ? t("shell.smartNavigation.backendWorkflow")
+                    : t("shell.smartNavigation.suggestedWorkflow")}
                 nextActionLabel={t("shell.smartNavigation.nextAction")}
                 quickActionsLabel={txt("Quick actions", "إجراءات سريعة")}
                 secondaryActionsLabel={t("shell.smartNavigation.secondaryActions")}

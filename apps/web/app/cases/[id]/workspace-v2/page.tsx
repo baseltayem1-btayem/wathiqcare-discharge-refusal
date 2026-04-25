@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type SetStateAction } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
@@ -74,9 +74,10 @@ type LayoutWitnessPayload = {
   manual_fallback_used: boolean;
 };
 
-type WitnessPayload = {
-  witness_name: string;
-  witness_role: string;
+type WitnessPayload = LayoutWitnessPayload;
+
+type WitnessRecord = WitnessPayload & {
+  witness_id: string;
 };
 
 type ConsentFormPayload = {
@@ -239,6 +240,78 @@ function getBoolean(record: Record<string, unknown> | null | undefined, key: str
   return typeof value === "boolean" ? value : fallback;
 }
 
+function parseWitnesses(metadata: Record<string, unknown> | null | undefined): WitnessRecord[] {
+  const witnesses = Array.isArray(metadata?.witnesses) ? metadata.witnesses : [];
+  if (witnesses.length > 0) {
+    return witnesses
+      .map((entry, index) => {
+        const witness = asRecord(entry);
+        if (!witness) {
+          return null;
+        }
+
+        return {
+          witness_id: getString(witness, "witness_id") || `witness-${index + 1}`,
+          full_name: getString(witness, "full_name", "witness_name"),
+          role: getString(witness, "role", "witness_role"),
+          role_category: getString(witness, "role_category") === "clinical" ? "clinical" : "non_clinical",
+          id_type: getString(witness, "id_type") || "NATIONAL_ID",
+          id_number: getString(witness, "id_number"),
+          mobile_number: getString(witness, "mobile_number"),
+          attestation_confirmed: getBoolean(witness, "attestation_confirmed", false),
+          attestation_language: getString(witness, "attestation_language") === "ar" ? "ar" : "en",
+          attestation_version: getString(witness, "attestation_version") || "1.0",
+          signature_type:
+            getString(witness, "signature_type") === "OTP"
+              ? "OTP"
+              : getString(witness, "signature_type") === "MANUAL_CONFIRMATION"
+                ? "MANUAL_CONFIRMATION"
+                : "DIGITAL_SIGNATURE",
+          signature_hash: getString(witness, "signature_hash"),
+          otp_reference: getString(witness, "otp_reference"),
+          verification_status:
+            getString(witness, "verification_status") === "VERIFIED"
+              ? "VERIFIED"
+              : getString(witness, "verification_status") === "FAILED"
+                ? "FAILED"
+                : "PENDING",
+          manual_fallback_used: getBoolean(witness, "manual_fallback_used", false),
+        } satisfies WitnessRecord;
+      })
+      .filter((entry): entry is WitnessRecord => Boolean(entry));
+  }
+
+  const legacyWitness = asRecord(metadata?.witness);
+  const legacyName = getString(legacyWitness, "witness_name");
+  if (!legacyName) {
+    return [];
+  }
+
+  return [
+    {
+      witness_id: "legacy-witness-1",
+      full_name: legacyName,
+      role: getString(legacyWitness, "witness_role"),
+      role_category: "non_clinical",
+      id_type: "NATIONAL_ID",
+      id_number: getString(legacyWitness, "id_number"),
+      mobile_number: getString(legacyWitness, "mobile_number"),
+      attestation_confirmed: getBoolean(legacyWitness, "attestation_confirmed", false),
+      attestation_language: "en",
+      attestation_version: getString(legacyWitness, "attestation_version") || "1.0",
+      signature_type: "DIGITAL_SIGNATURE",
+      signature_hash: getString(legacyWitness, "signature_hash", "signature"),
+      otp_reference: getString(legacyWitness, "otp_reference"),
+      verification_status: "PENDING",
+      manual_fallback_used: false,
+    },
+  ];
+}
+
+function hasMinimumWitnesses(records: WitnessRecord[]): boolean {
+  return records.length >= 2;
+}
+
 function mapCaseRecordToCaseData(record: CaseApiRecord, isArabic: boolean): CaseData {
   const metadata = asRecord(record.metadata);
   const workflow = asRecord(metadata?.workflow);
@@ -358,9 +431,22 @@ export default function WorkspaceV2Page() {
     reason: "",
   });
   const [witness, setWitness] = useState<WitnessPayload>({
-    witness_name: "",
-    witness_role: "",
+    full_name: "",
+    role: "",
+    role_category: "non_clinical",
+    id_type: "NATIONAL_ID",
+    id_number: "",
+    mobile_number: "",
+    attestation_confirmed: false,
+    attestation_language: isRtl ? "ar" : "en",
+    attestation_version: "1.0",
+    signature_type: "DIGITAL_SIGNATURE",
+    signature_hash: "",
+    otp_reference: "",
+    verification_status: "PENDING",
+    manual_fallback_used: false,
   });
+  const [witnessRecords, setWitnessRecords] = useState<WitnessRecord[]>([]);
   const [consentForm, setConsentForm] = useState<ConsentFormPayload>({
     processingPurpose: txt("Discharge refusal medico-legal processing", "المعالجة القانونية الطبية لرفض الخروج"),
     lawfulBasis: txt("PDPL healthcare and legal obligation basis", "أساس الالتزام القانوني والرعاية الصحية وفق نظام حماية البيانات الشخصية"),
@@ -523,9 +609,25 @@ export default function WorkspaceV2Page() {
         });
 
         const hydratedWitnessName = getString(witnessMeta, "witness_name");
+        const parsedWitnesses = parseWitnesses(caseMetadata);
+        setWitnessRecords(parsedWitnesses);
+        const primaryWitness = parsedWitnesses[0];
         setWitness({
-          witness_name: hydratedWitnessName,
-          witness_role: getString(witnessMeta, "witness_role"),
+          witness_id: primaryWitness?.witness_id,
+          full_name: primaryWitness?.full_name || hydratedWitnessName,
+          role: primaryWitness?.role || getString(witnessMeta, "witness_role"),
+          role_category: primaryWitness?.role_category || "non_clinical",
+          id_type: primaryWitness?.id_type || "NATIONAL_ID",
+          id_number: primaryWitness?.id_number || "",
+          mobile_number: primaryWitness?.mobile_number || "",
+          attestation_confirmed: primaryWitness?.attestation_confirmed || false,
+          attestation_language: primaryWitness?.attestation_language || (isRtl ? "ar" : "en"),
+          attestation_version: primaryWitness?.attestation_version || "1.0",
+          signature_type: primaryWitness?.signature_type || "DIGITAL_SIGNATURE",
+          signature_hash: primaryWitness?.signature_hash || "",
+          otp_reference: primaryWitness?.otp_reference || "",
+          verification_status: primaryWitness?.verification_status || "PENDING",
+          manual_fallback_used: primaryWitness?.manual_fallback_used || false,
         });
 
         setConsentForm((previous) => ({
@@ -713,10 +815,27 @@ export default function WorkspaceV2Page() {
     setError("");
 
     try {
-      await apiFetch(`/api/discharge/cases/${caseId}/witness`, {
+      const updatedCase = await apiFetch<CaseApiRecord>(`/api/discharge/cases/${caseId}/witness`, {
         method: "POST",
-        body: JSON.stringify(witness),
+        body: JSON.stringify({
+          ...witness,
+          action: witness.witness_id ? "update" : "add",
+          witness_id: witness.witness_id,
+        }),
       });
+
+      const refreshedWitnesses = parseWitnesses(asRecord(updatedCase.metadata));
+      setWitnessRecords(refreshedWitnesses);
+      const latestWitness = refreshedWitnesses[0];
+      if (latestWitness) {
+        setWitness((previous) => ({
+          ...previous,
+          witness_id: latestWitness.witness_id,
+          full_name: latestWitness.full_name,
+          role: latestWitness.role,
+          role_category: latestWitness.role_category,
+        }));
+      }
 
       await refreshReadinessAndPackage();
     } catch (err: unknown) {
@@ -738,7 +857,7 @@ export default function WorkspaceV2Page() {
         method: "POST",
         body: JSON.stringify({
           ...consentForm,
-          witnessName: consentForm.witnessName || witness.witness_name || undefined,
+          witnessName: consentForm.witnessName || witness.full_name || undefined,
           otpReference: consentForm.otpReference || undefined,
           documentSnapshot: {
             presentation,
@@ -771,61 +890,7 @@ export default function WorkspaceV2Page() {
   const canDownloadFinalDocs = permissions.canAccessCase(caseAccessContext, "documents.download.final");
   const canReadAudit = permissions.canAccessCase(caseAccessContext, "audit.read");
   const canReadSmsEvidence = permissions.canAccessCase(caseAccessContext, "sms.evidence.read");
-  const witnessForLayout: LayoutWitnessPayload = {
-    witness_id: "legacy-witness-1",
-    full_name: witness.witness_name,
-    role: witness.witness_role,
-    role_category: "non_clinical" as const,
-    id_type: "NATIONAL_ID",
-    id_number: "",
-    mobile_number: "",
-    attestation_confirmed: false,
-    attestation_language: isRtl ? "ar" as const : "en" as const,
-    attestation_version: "1.0",
-    signature_type: "DIGITAL_SIGNATURE" as const,
-    signature_hash: "",
-    otp_reference: "",
-    verification_status: "PENDING" as const,
-    manual_fallback_used: false,
-  };
-  const setWitnessForLayout = (value: SetStateAction<LayoutWitnessPayload>) => {
-    setWitness((previous) => {
-      const previousMapped = {
-        ...witnessForLayout,
-        full_name: previous.witness_name,
-        role: previous.witness_role,
-      };
-      const nextValue = typeof value === "function" ? value(previousMapped) : value;
-
-      return {
-        ...previous,
-        witness_name: nextValue.full_name ?? previous.witness_name,
-        witness_role: nextValue.role ?? previous.witness_role,
-      };
-    });
-  };
-  const witnessRecords = witness.witness_name
-    ? [
-        {
-          witness_id: "legacy-witness-1",
-          full_name: witness.witness_name,
-          role: witness.witness_role,
-          role_category: "non_clinical" as const,
-          id_type: "NATIONAL_ID",
-          id_number: "",
-          mobile_number: "",
-          attestation_confirmed: false,
-          attestation_language: isRtl ? "ar" as const : "en" as const,
-          attestation_version: "1.0",
-          signature_type: "DIGITAL_SIGNATURE" as const,
-          signature_hash: "",
-          otp_reference: "",
-          verification_status: "PENDING" as const,
-          manual_fallback_used: false,
-        },
-      ]
-    : [];
-  const witnessMinimumMet = witnessRecords.length >= 2;
+  const witnessMinimumMet = hasMinimumWitnesses(witnessRecords);
   const witnessGateMessage = txt(
     "At least two witnesses must be recorded before proceeding.",
     "يجب تسجيل شاهدين على الأقل قبل المتابعة",
@@ -897,8 +962,8 @@ export default function WorkspaceV2Page() {
           setPresentation={setPresentation}
           signature={signature}
           setSignature={setSignature}
-          witness={witnessForLayout}
-          setWitness={setWitnessForLayout}
+          witness={witness}
+          setWitness={setWitness}
           witnessRecords={witnessRecords}
           witnessMinimumMet={witnessMinimumMet}
           witnessGateMessage={witnessGateMessage}

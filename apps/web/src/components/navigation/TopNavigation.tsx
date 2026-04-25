@@ -29,6 +29,7 @@ type TopNavigationProps = {
   quickActionsLabel?: string;
   currentModuleLabel?: string;
   workflowStageLabel?: string;
+  workflowSourceLabel?: string;
   nextAction?: TopNavigationAction;
   nextActionLabel?: string;
   secondaryActionsLabel?: string;
@@ -95,6 +96,7 @@ export default function TopNavigation({
   quickActionsLabel = "Quick actions",
   currentModuleLabel,
   workflowStageLabel,
+  workflowSourceLabel,
   nextAction,
   nextActionLabel = "Next legal action",
   secondaryActionsLabel = "Secondary actions",
@@ -169,6 +171,11 @@ export default function TopNavigation({
                   {workflowStageLabel}
                 </span>
               ) : null}
+              {workflowSourceLabel ? (
+                <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600" aria-label={workflowSourceLabel}>
+                  {workflowSourceLabel}
+                </span>
+              ) : null}
               {resolvedNextAction ? (
                 <>
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{nextActionLabel}</span>
@@ -222,6 +229,11 @@ export default function TopNavigation({
                   {workflowStageLabel ? (
                     <span className="inline-flex items-center rounded-full border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--primary-pressed)]">
                       {workflowStageLabel}
+                    </span>
+                  ) : null}
+                  {workflowSourceLabel ? (
+                    <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                      {workflowSourceLabel}
                     </span>
                   ) : null}
                 </div>
