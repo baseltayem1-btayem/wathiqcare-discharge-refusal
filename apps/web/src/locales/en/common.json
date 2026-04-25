@@ -28,6 +28,8 @@
     "smartNavigation": {
       "nextAction": "Next legal action",
       "secondaryActions": "Secondary actions",
+      "backendWorkflow": "Backend Workflow",
+      "suggestedWorkflow": "Suggested Workflow",
       "modules": {
         "dashboard": "Dashboard",
         "case_management": "Case Management",
@@ -57,6 +59,15 @@
         "reviewHighRiskItems": "Review High-Risk Items",
         "openRiskDashboard": "Open Risk Dashboard"
       }
+    },
+    "aiInsights": {
+      "title": "AI Legal Insight",
+      "sourceAi": "AI-assisted",
+      "sourceUnavailable": "AI unavailable",
+      "loading": "Loading AI insight...",
+      "risk": "Risk",
+      "gaps": "Documentation gaps",
+      "nextStep": "Suggested next step"
     }
   },
   "nav": {

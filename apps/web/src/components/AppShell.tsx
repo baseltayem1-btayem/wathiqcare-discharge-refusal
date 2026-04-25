@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, ClipboardCheck, FileCheck2, FilePlus2, FileSearch, FileUp, LogOut, Send, ShieldCheck, Stethoscope } from "lucide-react";
+import { BarChart3, ClipboardCheck, FileCheck2, FilePlus2, FileSearch, FileUp, LogOut, Send, ShieldCheck, Sparkles, Stethoscope } from "lucide-react";
 import AppBreadcrumbs from "@/components/AppBreadcrumbs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TopNavigation from "@/components/navigation/TopNavigation";
-import { resolveSmartNavigation, type SmartActionKey } from "@/components/navigation/smartNavigation";
+import { resolveSmartNavigation, type SmartActionKey, type SmartResolvedAction } from "@/components/navigation/smartNavigation";
+import { useAiLegalIntelligence } from "@/components/navigation/useAiLegalIntelligence";
+import { useCaseWorkflow } from "@/components/navigation/useCaseWorkflow";
 import NotificationBell from "@/components/operations/NotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -197,6 +199,7 @@ export default function AppShell({
 
   const normalizedRole = (viewerRole || "").toLowerCase();
   const canOperateQuickActions = ["admin", "manager", "owner"].some((role) => normalizedRole.includes(role));
+  const { workflow: backendWorkflow } = useCaseWorkflow(pathname);
 
   const routeCaseId = useMemo(() => {
     if (workflowCaseNav?.caseId) {
@@ -321,11 +324,43 @@ export default function AppShell({
       ...(canOperateQuickActions ? (["generateReport"] as SmartActionKey[]) : []),
     ];
 
-  const smartResolution = resolveSmartNavigation(pathname, baseAvailableActionKeys);
-  const nextAction = actionCatalog[smartResolution.nextActionKey];
-  const quickActions = smartResolution.secondaryActionKeys
-    .map((key) => actionCatalog[key])
-    .filter((action) => Boolean(action));
+  const smartResolution = resolveSmartNavigation(pathname, baseAvailableActionKeys, backendWorkflow);
+
+  const resolveAction = (action: SmartResolvedAction) => {
+    if (action.key) {
+      const catalogAction = actionCatalog[action.key];
+      if (catalogAction) {
+        return {
+          ...catalogAction,
+          href: action.href || catalogAction.href,
+          label: action.label || catalogAction.label,
+          ariaLabel: action.label || catalogAction.ariaLabel,
+        };
+      }
+    }
+
+    if (action.label && action.href) {
+      return {
+        key: `custom-${action.label}`,
+        href: action.href,
+        label: action.label,
+        icon: <ClipboardCheck className="h-3.5 w-3.5" />,
+        ariaLabel: action.label,
+      };
+    }
+
+    return null;
+  };
+
+  const nextAction = resolveAction(smartResolution.nextAction);
+  const quickActions = smartResolution.secondaryActions
+    .map((action) => resolveAction(action))
+    .filter((action): action is NonNullable<ReturnType<typeof resolveAction>> => Boolean(action));
+
+  const { insight: aiInsight, loading: aiInsightLoading } = useAiLegalIntelligence(routeCaseId);
+  const aiGapCount = (aiInsight?.aiAssessment.clinicalDocumentationGaps.length || 0)
+    + (aiInsight?.aiAssessment.legalDocumentationGaps.length || 0);
+  const aiNextStep = aiInsight?.aiAssessment.recommendedNextSteps[0] || null;
 
   const tenantName = tenantBranding?.name?.trim() || t("app.tenantName");
   const tenantLogoUrl = tenantBranding?.logoUrl ?? null;
@@ -379,9 +414,12 @@ export default function AppShell({
           icon: action.icon,
           ariaLabel: action.ariaLabel,
         }))}
-        nextAction={nextAction}
+        nextAction={nextAction || undefined}
         currentModuleLabel={t(`shell.smartNavigation.modules.${smartResolution.moduleKey}`)}
         workflowStageLabel={t(`shell.smartNavigation.stages.${smartResolution.workflowStageKey}`)}
+        workflowSourceLabel={smartResolution.source === "backend-driven"
+          ? t("shell.smartNavigation.backendWorkflow")
+          : t("shell.smartNavigation.suggestedWorkflow")}
         nextActionLabel={t("shell.smartNavigation.nextAction")}
         quickActionsLabel={t("shell.quickActions.title")}
         secondaryActionsLabel={t("shell.smartNavigation.secondaryActions")}
@@ -450,6 +488,36 @@ export default function AppShell({
                   {t("app.secureMode")}
                 </div>
               </div>
+
+              {routeCaseId ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-soft)] bg-white px-3 py-2 text-xs text-slate-600">
+                  <div className="inline-flex items-center gap-2 text-slate-700">
+                    <Sparkles className="h-3.5 w-3.5 text-[var(--primary)]" />
+                    <span className="font-semibold">{t("shell.aiInsights.title")}</span>
+                    <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                      {aiInsight?.source === "ai-assisted" ? t("shell.aiInsights.sourceAi") : t("shell.aiInsights.sourceUnavailable")}
+                    </span>
+                  </div>
+
+                  {aiInsightLoading ? (
+                    <span className="text-[11px] text-slate-500">{t("shell.aiInsights.loading")}</span>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                        {t("shell.aiInsights.risk")}: {aiInsight?.aiAssessment.riskLevel || "UNKNOWN"}
+                      </span>
+                      <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                        {t("shell.aiInsights.gaps")}: {aiGapCount}
+                      </span>
+                      {aiNextStep ? (
+                        <span className="inline-flex items-center rounded-full border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--primary-pressed)]">
+                          {t("shell.aiInsights.nextStep")}: {aiNextStep}
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              ) : null}
 
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-3 py-2 text-xs text-slate-600">
                 <div className="inline-flex items-center gap-2">

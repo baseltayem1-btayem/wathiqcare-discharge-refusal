@@ -28,6 +28,8 @@
     "smartNavigation": {
       "nextAction": "الإجراء القانوني التالي",
       "secondaryActions": "إجراءات ثانوية",
+      "backendWorkflow": "سير عمل من الخادم",
+      "suggestedWorkflow": "سير عمل مقترح",
       "modules": {
         "dashboard": "لوحة المعلومات",
         "case_management": "إدارة الحالات",
@@ -57,6 +59,15 @@
         "reviewHighRiskItems": "مراجعة العناصر عالية المخاطر",
         "openRiskDashboard": "فتح لوحة المخاطر"
       }
+    },
+    "aiInsights": {
+      "title": "رؤية قانونية بالذكاء الاصطناعي",
+      "sourceAi": "مدعوم بالذكاء الاصطناعي",
+      "sourceUnavailable": "الذكاء الاصطناعي غير متاح",
+      "loading": "جار تحميل الرؤية الذكية...",
+      "risk": "مستوى الخطر",
+      "gaps": "فجوات التوثيق",
+      "nextStep": "الخطوة المقترحة"
     }
   },
   "nav": {
