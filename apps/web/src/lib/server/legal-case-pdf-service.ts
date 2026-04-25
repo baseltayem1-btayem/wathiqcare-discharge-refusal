@@ -360,10 +360,6 @@ function escapeHtml(value: string | null | undefined): string {
     .replace(/'/g, "&#39;");
 }
 
-function normalizeLanguage(input: unknown): "en" | "ar" {
-  return String(input || "").trim().toLowerCase() === "ar" ? "ar" : "en";
-}
-
 function renderValue(value: string | null | undefined, fallback = "N/A"): string {
   const normalized = (value || "").trim();
   return normalized || fallback;
@@ -995,7 +991,7 @@ async function launchPdfBrowser(): Promise<Browser> {
 
   try {
     return await puppeteer.launch(defaultLaunchOptions);
-  } catch (error) {
+  } catch {
     // Vercel/serverless runtimes might not have a system Chrome binary.
     const executablePath = await chromium.executablePath();
     return await puppeteer.launch({

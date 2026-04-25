@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>التقرير القانوني الكامل للمحكمة</title>
+  <style>
+    body { font-family: Tahoma, Arial, sans-serif; margin: 24px; color: #111827; line-height: 1.8; }
+    ul { margin: 0; padding-inline-start: 20px; }
+    .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h2>التقرير القانوني الكامل للمحكمة</h2>
+  <p>رقم الحالة: {{case_id}}</p>
+  <p>الاسم: {{patient_full_name}}</p>
+  <p>رقم الملف الطبي: {{medical_record_number}}</p>
+  <p>حالة الحزمة: {{package_status}}</p>
+  <p>بصمة الحزمة: {{package_hash}}</p>
+
+  <div class="box">
+    <h3>Court Evidence Package index</h3>
+    <ul>
+      <li>Case summary</li>
+      <li>Timeline of events</li>
+      <li>Medical discharge decision</li>
+      <li>Refusal declaration</li>
+      <li>Financial undertaking</li>
+      <li>Notification evidence</li>
+      <li>Risk disclosure</li>
+      <li>Witness record</li>
+      <li>SMS delivery log</li>
+      <li>Signature certificate</li>
+      <li>Signed PDF documents</li>
+      <li>Hash verification sheet</li>
+    </ul>
+  </div>
+</body>
+</html>

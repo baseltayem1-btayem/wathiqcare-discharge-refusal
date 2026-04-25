@@ -67,20 +67,16 @@ export default function AnalyticsPage() {
 
   const days = useMemo(() => data?.days.map((item) => item.day) ?? [], [data]);
 
-  useEffect(() => {
-    if (!selectedDay && days.length > 0) {
-      setSelectedDay(days[0]);
-      return;
+  const effectiveSelectedDay = useMemo(() => {
+    if (selectedDay && days.includes(selectedDay)) {
+      return selectedDay;
     }
-
-    if (selectedDay && !days.includes(selectedDay)) {
-      setSelectedDay(days[0] ?? "");
-    }
+    return days[0] ?? "";
   }, [days, selectedDay]);
 
   const selectedDaySummary = useMemo(
-    () => data?.days.find((item) => item.day === selectedDay) ?? null,
-    [data, selectedDay],
+    () => data?.days.find((item) => item.day === effectiveSelectedDay) ?? null,
+    [data, effectiveSelectedDay],
   );
 
   const dailySummary = useMemo(
@@ -144,7 +140,7 @@ export default function AnalyticsPage() {
                   Day
                   <select
                     className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm"
-                    value={selectedDay}
+                    value={effectiveSelectedDay}
                     onChange={(event) => setSelectedDay(event.target.value)}
                   >
                     {days.map((day) => (

@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Bell, FileText, FolderOpen, HelpCircle, LayoutDashboard, LogOut, Menu, Scale, Settings, ShieldAlert, Stethoscope, Users, X } from "lucide-react";
+import { BarChart3, FilePlus2, FileUp, LogOut, ShieldCheck, Stethoscope } from "lucide-react";
 import AppBreadcrumbs from "@/components/AppBreadcrumbs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import TopNavigation from "@/components/navigation/TopNavigation";
 import NotificationBell from "@/components/operations/NotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -55,96 +56,16 @@ function buildCaseWorkflowNav(caseNav: NonNullable<AppShellProps["workflowCaseNa
     }));
 }
 
-function isActive(pathname: string, href: string): boolean {
-  if (href === "/") {
-    return pathname === href;
-  }
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-type NavGroup = {
-  titleKey: string;
-  items: NavItem[];
-};
-
-type DashboardSidebarItem = {
-  key: string;
-  href: string;
-  labelKey: string;
-  icon: ReactNode;
-};
-
-const NAV_GROUP_ORDER: Array<{ titleKey: string; hrefs: string[] }> = [
-  { titleKey: "shell.navGroup.workflows", hrefs: ["/cases", "/bundles", "/documents"] },
-  { titleKey: "shell.navGroup.insights", hrefs: ["/dashboard", "/dashboards", "/analytics", "/reports"] },
-  { titleKey: "shell.navGroup.management", hrefs: ["/tenant/users", "/admin", "/settings"] },
-];
-
-function groupTenantNavigation(navItems: NavItem[]): NavGroup[] {
-  const byHref = new Map(navItems.map((item) => [item.href, item]));
-  const seen = new Set<string>();
-  const grouped: NavGroup[] = [];
-
-  for (const groupDef of NAV_GROUP_ORDER) {
-    const items = groupDef.hrefs
-      .map((href) => byHref.get(href))
-      .filter((item): item is NavItem => Boolean(item));
-
-    if (items.length > 0) {
-      grouped.push({ titleKey: groupDef.titleKey, items });
-      items.forEach((item) => seen.add(item.href));
-    }
-  }
-
-  const remainder = navItems.filter((item) => !seen.has(item.href));
-  if (remainder.length > 0) {
-    grouped.push({ titleKey: "shell.navGroup.more", items: remainder });
-  }
-
-  return grouped;
-}
-
-type NavLinkProps = {
-  href: string;
-  label: string;
-  icon: ReactNode;
-  active: boolean;
-  disabled?: boolean;
-  surface?: "sidebar" | "light";
-};
-
-function NavLink({ href, label, icon, active, disabled = false, surface = "sidebar" }: NavLinkProps) {
-  const onSidebar = surface === "sidebar";
-
-  if (disabled) {
-    return (
-      <span className={onSidebar
-        ? "inline-flex w-full cursor-not-allowed items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-white/50 opacity-60 [&_svg]:text-white/50"
-        : "inline-flex w-full cursor-not-allowed items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-slate-400 opacity-60"}>
-        <span className="shrink-0">{icon}</span>
-        {label}
-      </span>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      className={
-        active
-          ? onSidebar
-            ? "inline-flex w-full items-center gap-2.5 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/10 [&_svg]:text-white"
-            : "inline-flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200 border-[var(--primary-soft-border)] bg-[var(--primary-soft)] text-[var(--primary-pressed)]"
-          : onSidebar
-            ? "inline-flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-white/80 transition-all duration-200 hover:bg-white/5 hover:text-white [&_svg]:text-white/80 hover:[&_svg]:text-white"
-            : "inline-flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-slate-600 transition-all duration-200 hover:border-slate-200 hover:bg-slate-50"
-      }
-    >
-      <span className="shrink-0">{icon}</span>
-      {label}
-    </Link>
-  );
-}
+const PRIMARY_TENANT_HREFS = [
+  "/dashboard",
+  "/cases",
+  "/documents",
+  "/alerts",
+  "/legal-risk",
+  "/reports",
+  "/users",
+  "/settings",
+] as const;
 
 function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; logoUrl: string | null; compact?: boolean }) {
   const isImcTenant = /\bIMC\b/i.test(name);
@@ -153,6 +74,7 @@ function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; log
 
   if (tenantLogoSrc) {
     return (
+      /* eslint-disable-next-line @next/next/no-img-element */
       <img
         src={tenantLogoSrc}
         alt={name}
@@ -173,6 +95,7 @@ function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; log
   return (
     <div className={compact ? "flex h-9 w-full max-w-[120px] items-center justify-center rounded-lg border border-cyan-200 bg-gradient-to-br from-cyan-100 to-cyan-50 text-cyan-700" : "flex h-20 w-full max-w-[220px] items-center justify-center rounded-xl border border-white/20 bg-transparent text-white"}>
       {isImcTenant ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src="https://www.imc.med.sa/images/logo.jpg"
           alt="IMC"
@@ -183,55 +106,6 @@ function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; log
       ) : (
         <span className={compact ? "text-sm font-bold tracking-[0.2em]" : "text-lg font-bold tracking-[0.3em]"}>{initials || "TEN"}</span>
       )}
-    </div>
-  );
-}
-
-function SidebarBranding({
-  tenantName,
-  tenantLogoUrl,
-  mobile = false,
-}: {
-  tenantName: string;
-  tenantLogoUrl: string | null;
-  mobile?: boolean;
-}) {
-  const imcLogoSrc = tenantLogoUrl || "/images/imc-logo.png";
-
-  return (
-    <div className={mobile ? "space-y-2.5" : "space-y-3"}>
-      <div className={mobile ? "flex items-center justify-center rounded-lg bg-white/5 px-2.5 py-2" : "flex items-center justify-center rounded-lg bg-white/5 px-3 py-2.5"}>
-        <img
-          src="/images/wathiqcare-logo.png"
-          alt="WathiqCare"
-          width={120}
-          height={32}
-          className={mobile
-            ? "h-[30px] w-auto max-w-[150px] object-contain brightness-0 invert"
-            : "h-[34px] w-auto max-w-[170px] object-contain brightness-0 invert"}
-          loading="eager"
-          decoding="async"
-          style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.35))" }}
-        />
-      </div>
-
-      <div className={mobile
-        ? "rounded-xl border border-white/20 bg-white/95 p-2"
-        : "rounded-xl border border-white/20 bg-white/95 p-2.5"}>
-        <div className="flex items-center justify-center">
-          <img
-            src={imcLogoSrc}
-            alt={tenantName}
-            width={220}
-            height={72}
-            className={mobile
-              ? "h-[62px] w-auto max-w-full object-contain"
-              : "h-[58px] w-auto max-w-full object-contain"}
-            loading="eager"
-            decoding="async"
-          />
-        </div>
-      </div>
     </div>
   );
 }
@@ -247,7 +121,6 @@ export default function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const { t, isRtl } = useI18n();
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // ── HARD ISOLATION GUARD ────────────────────────────────────────────────────
   // Platform admins must NEVER see the tenant shell.
@@ -318,20 +191,28 @@ export default function AppShell({
   // ────────────────────────────────────────────────────────────────────────────
 
   const navItems = workflowCaseNav ? buildCaseWorkflowNav(workflowCaseNav) : TENANT_NAV_ITEMS;
-  const navGroups = workflowCaseNav
-    ? [{ titleKey: "app.activeWorkspace", items: navItems }]
-    : groupTenantNavigation(navItems);
-  const isDashboardsSidebarMode = pathname.includes("/dashboards");
-  const dashboardSidebarItems: DashboardSidebarItem[] = [
-    { key: "dashboard", href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-    { key: "cases", href: "/cases", labelKey: "nav.cases", icon: <FolderOpen className="h-4 w-4" /> },
-    { key: "documents", href: "/documents", labelKey: "breadcrumbs.documents", icon: <FileText className="h-4 w-4" /> },
-    { key: "alerts", href: "/legal-alerts", labelKey: "dashboards.tabs.alerts", icon: <Bell className="h-4 w-4" /> },
-    { key: "risk", href: "/legal-escalation", labelKey: "dashboards.tabs.legalRisk", icon: <ShieldAlert className="h-4 w-4" /> },
-    { key: "reports", href: "/reports", labelKey: "dashboards.tabs.reports", icon: <BarChart3 className="h-4 w-4" /> },
-    { key: "users", href: "/tenant/users", labelKey: "dashboards.sidebar.users", icon: <Users className="h-4 w-4" /> },
-    { key: "settings", href: "/settings", labelKey: "breadcrumbs.settings", icon: <Settings className="h-4 w-4" /> },
-  ];
+  const primaryNavItems = workflowCaseNav
+    ? navItems
+    : PRIMARY_TENANT_HREFS
+      .map((href) => navItems.find((item) => item.href === href))
+      .filter((item): item is NavItem => Boolean(item));
+
+  const normalizedRole = (viewerRole || "").toLowerCase();
+  const canOperateQuickActions = ["admin", "manager", "owner"].some((role) => normalizedRole.includes(role));
+
+  const quickActions = workflowCaseNav
+    ? [
+      { href: `/cases/${workflowCaseNav.caseId}`, label: t("shell.quickActions.caseWorkspace"), icon: <FilePlus2 className="h-3.5 w-3.5" /> },
+      { href: "/documents", label: t("shell.quickActions.uploadDocument"), icon: <FileUp className="h-3.5 w-3.5" /> },
+      { href: "/dashboards", label: t("shell.quickActions.legalReadiness"), icon: <ShieldCheck className="h-3.5 w-3.5" /> },
+    ]
+    : [
+      { href: "/cases/new", label: t("shell.quickActions.newCase"), icon: <FilePlus2 className="h-3.5 w-3.5" /> },
+      { href: "/documents", label: t("shell.quickActions.uploadDocument"), icon: <FileUp className="h-3.5 w-3.5" /> },
+      ...(canOperateQuickActions ? [{ href: "/reports", label: t("shell.quickActions.generateReport"), icon: <BarChart3 className="h-3.5 w-3.5" /> }] : []),
+      { href: "/dashboards", label: t("shell.quickActions.legalReadiness"), icon: <ShieldCheck className="h-3.5 w-3.5" /> },
+    ];
+
   const tenantName = tenantBranding?.name?.trim() || t("app.tenantName");
   const tenantLogoUrl = tenantBranding?.logoUrl ?? null;
 
@@ -347,230 +228,128 @@ export default function AppShell({
 
   return (
     <div className="min-h-screen bg-transparent">
-      <div className="mx-auto max-w-[1600px] px-3 py-3 md:px-5 md:py-5">
-        <div className="wc-shell-grid">
-          <aside
-            className={`hidden shrink-0 rounded-[24px] border p-4 text-white shadow-[0_20px_45px_rgba(2,6,23,0.22)] md:flex md:flex-col ${isDashboardsSidebarMode ? "w-[260px] border-[#173454] bg-[#071a33]" : "w-[296px] border-[var(--sidebar-border)] bg-[#0A2540]"}`}
-          >
-            {isDashboardsSidebarMode ? (
-              <>
-                <div className="mb-5 rounded-2xl border border-white/15 bg-white/5 px-3 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
-                      <Scale className="h-5 w-5" />
-                    </div>
-                    <div className="space-y-0.5 text-right">
-                      <div className="text-sm font-semibold text-white">{t("dashboards.sidebar.platformManagement")}</div>
-                      <div className="text-sm font-semibold text-white/90">{t("dashboards.sidebar.legalCases")}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <nav className="flex-1 space-y-1.5">
-                  {dashboardSidebarItems.map((item) => {
-                    const isActiveItem = item.key === "cases";
-
-                    return (
-                      <Link
-                        key={item.key}
-                        href={item.href}
-                        className={isActiveItem
-                          ? "inline-flex w-full items-center gap-2.5 rounded-xl bg-[#1E63B5] px-3 py-2.5 text-sm font-semibold text-white"
-                          : "inline-flex w-full items-center gap-2.5 rounded-xl bg-transparent px-3 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/5 hover:text-white"}
-                      >
-                        <span className={isActiveItem ? "text-white" : "text-slate-300"}>{item.icon}</span>
-                        <span>{t(item.labelKey)}</span>
-                      </Link>
-                    );
-                  })}
-                </nav>
-
-                <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3 text-right">
-                  <div className="text-sm font-semibold text-white">{t("dashboards.sidebar.needHelp")}</div>
-                  <p className="mt-1 text-xs text-slate-300">{t("supportText")}</p>
-                  <button
-                    type="button"
-                    className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-[#0A2540] transition hover:bg-slate-100"
-                  >
-                    {t("dashboards.sidebar.contactNow")}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <SidebarBranding tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} />
-
-                <nav className="mt-3 flex-1 space-y-4">
-                  {navGroups.map((group) => (
-                    <section key={group.titleKey}>
-                      <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
-                        {t(group.titleKey)}
-                      </div>
-                      <div className="space-y-1">
-                        {group.items.map((item) => (
-                          <NavLink
-                            key={item.href}
-                            href={item.href}
-                            label={item.label ?? t(item.labelKey || "")}
-                            icon={item.icon}
-                            active={isActive(pathname, item.href)}
-                            disabled={item.disabled}
-                            surface="sidebar"
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  ))}
-                </nav>
-
-                <div className="mt-4 rounded-2xl border border-[rgba(159,179,207,0.24)] bg-[rgba(255,255,255,0.05)] p-3 text-xs text-[#cfe0f7]">
-                  <div className="inline-flex items-center gap-1.5 font-semibold">
-                    <Stethoscope className="h-3.5 w-3.5 text-white" />
-                    {t("app.activeWorkspace")}
-                  </div>
-                  <p className="mt-1 text-white/70">{t("app.secureMode")}</p>
-                  <div className="mt-3 rounded-xl border border-[rgba(159,179,207,0.24)] bg-[rgba(10,20,36,0.5)] p-2">
-                    <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-white">
-                      <HelpCircle className="h-3 w-3 text-white/80" />
-                      {t("support")}
-                    </div>
-                    <p className="mt-1 text-[11px] leading-relaxed text-white/70">
-                      {t("supportText")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-3 space-y-2">
-                  <LanguageSwitcher variant="sidebar" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleLogout();
-                    }}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-white/20 [&_svg]:text-white/80"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    {t("common.logout")}
-                  </button>
-                </div>
-              </>
-            )}
-          </aside>
-
-          <div className="min-w-0">
-            <header
-              className="sticky top-3 z-20 rounded-2xl border border-[var(--border)] bg-white/90 px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur md:px-6"
+      <TopNavigation
+        pathname={pathname}
+        isRtl={isRtl}
+        brand={(
+          <Link href="/dashboard" className="inline-flex items-center gap-2.5 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-2.5 py-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/wathiqcare-logo.png"
+              alt="WathiqCare"
+              width={112}
+              height={30}
+              className="h-7 w-auto object-contain"
+              loading="eager"
+              decoding="async"
+            />
+            <span className="hidden rounded-full border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--primary-pressed)] sm:inline-flex">
+              {tenantName}
+            </span>
+          </Link>
+        )}
+        items={primaryNavItems.map((item) => ({
+          href: item.href,
+          label: t(item.labelKey || ""),
+          icon: item.icon,
+          disabled: item.disabled,
+          ariaLabel: t(item.labelKey || ""),
+        }))}
+        quickActions={quickActions.map((action) => ({
+          href: action.href,
+          label: action.label,
+          icon: action.icon,
+          ariaLabel: action.label,
+        }))}
+        quickActionsLabel={t("shell.quickActions.title")}
+        workspaceStatus={(
+          <span className="inline-flex items-center gap-1 rounded-full border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--primary-pressed)]" aria-label={t("app.activeWorkspace")}>
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            {t("app.activeWorkspace")}
+          </span>
+        )}
+        rightControls={(
+          <>
+            <NotificationBell />
+            <div className="hidden items-center gap-2 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-2.5 py-2 sm:inline-flex" title={tenantName}>
+              <TenantBrandMark name={tenantName} logoUrl={tenantLogoUrl} compact />
+            </div>
+            <LanguageSwitcher className="hidden md:inline-flex" />
+            <button
+              type="button"
+              onClick={() => {
+                void handleLogout();
+              }}
+              className="hidden items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 md:inline-flex"
             >
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-2 flex items-center gap-2 md:hidden">
-                      <button
-                        type="button"
-                        onClick={() => setMobileNavOpen((current) => !current)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-white text-slate-700"
-                        aria-label={mobileNavOpen ? t("shell.closeNavigation") : t("shell.openNavigation")}
-                      >
-                        {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-                      </button>
-                      <div className="rounded-xl border border-[var(--border-soft)] bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
-                        {tenantName}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="text-2xl font-bold leading-tight text-slate-900">{title}</h1>
-                      <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold wc-status-ready">
-                        {t("app.activeWorkspace")}
-                      </span>
-                    </div>
-                    {subtitle ? <p className="mt-1 text-sm text-slate-600">{subtitle}</p> : null}
-                    <div className="mt-3">
-                      <AppBreadcrumbs caseLabel={breadcrumbCaseLabel} />
-                    </div>
-                  </div>
-
-                  <div className="inline-flex items-center gap-2 self-start">
-                    <NotificationBell />
-                    <div className="hidden items-center gap-2 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-2.5 py-2 sm:inline-flex" title={tenantName}>
-                      <TenantBrandMark name={tenantName} logoUrl={tenantLogoUrl} compact />
-                    </div>
-                    <LanguageSwitcher className="md:hidden" />
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-3 py-2 text-xs text-slate-600">
-                  <div className="inline-flex items-center gap-2">
-                    <span className="font-semibold text-slate-700">{t("shell.session")}</span>
-                    <span>{tenantName}</span>
-                  </div>
-                  <div className="inline-flex items-center gap-2">
-                    <span className="font-semibold text-slate-700">{t("shell.mode")}</span>
-                    <span>{t("app.secureMode")}</span>
-                  </div>
-                  <div className="inline-flex items-center gap-2">
-                    <span className="font-semibold text-slate-700">{t("shell.route")}</span>
-                    <span className="font-mono text-[11px] text-slate-500">{pathname}</span>
-                  </div>
-                </div>
-
-                {mobileNavOpen ? (
-                  <>
-                    <button
-                      type="button"
-                      aria-label={t("shell.closeMobileNavigation")}
-                      onClick={() => setMobileNavOpen(false)}
-                      className="fixed inset-0 z-30 bg-slate-900/35 md:hidden"
-                    />
-                    <div
-                      className={`fixed top-20 z-40 w-[85vw] max-w-[320px] max-h-[calc(100vh-6rem)] overflow-y-auto space-y-3 rounded-xl border border-[var(--sidebar-border)] bg-[#0A2540] p-3 text-white shadow-[0_20px_45px_rgba(2,6,23,0.28)] md:hidden ${isRtl ? "right-3" : "left-3"}`}
-                    >
-                      <SidebarBranding tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} mobile />
-                      {navGroups.map((group) => (
-                        <section key={`mobile-${group.titleKey}`}>
-                          <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">{t(group.titleKey)}</div>
-                          <div className="space-y-1">
-                            {group.items.map((item) => (
-                              <div key={`mobile-link-${item.href}`} onClick={() => setMobileNavOpen(false)}>
-                                <NavLink
-                                  href={item.href}
-                                  label={item.label ?? t(item.labelKey || "")}
-                                  icon={item.icon}
-                                  active={isActive(pathname, item.href)}
-                                  disabled={item.disabled}
-                                  surface="sidebar"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </section>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void handleLogout();
-                        }}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-white/20 [&_svg]:text-white/80"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        {t("common.logout")}
-                      </button>
-                    </div>
-                  </>
-                ) : null}
-
-                {actions ? (
-                  <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border-soft)] bg-white p-2.5">
-                    {actions}
-                  </div>
-                ) : null}
-              </div>
-            </header>
-
-            <main className="mt-4 min-w-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-sm)] md:p-6">
-              {children}
-            </main>
+              <LogOut className="h-4 w-4" />
+              {t("common.logout")}
+            </button>
+          </>
+        )}
+        mobileFooter={(
+          <div className="space-y-2">
+            <LanguageSwitcher className="w-full" />
+            <button
+              type="button"
+              onClick={() => {
+                void handleLogout();
+              }}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm font-medium text-slate-700"
+            >
+              <LogOut className="h-4 w-4" />
+              {t("common.logout")}
+            </button>
           </div>
+        )}
+      />
+
+      <div className="mx-auto max-w-[1600px] px-3 py-3 md:px-5 md:py-5">
+        <div className="min-w-0">
+          <header className="rounded-2xl border border-[var(--border)] bg-white/95 px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur md:px-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-2xl font-bold leading-tight text-slate-900">{title}</h1>
+                    <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold wc-status-ready">
+                      {t("app.activeWorkspace")}
+                    </span>
+                  </div>
+                  {subtitle ? <p className="mt-1 text-sm text-slate-600">{subtitle}</p> : null}
+                  <div className="mt-3">
+                    <AppBreadcrumbs caseLabel={breadcrumbCaseLabel} />
+                  </div>
+                </div>
+
+                <div className="inline-flex items-center gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--primary-soft)] px-2.5 py-1.5 text-xs font-semibold text-[var(--primary-pressed)]">
+                  <Stethoscope className="h-3.5 w-3.5" />
+                  {t("app.secureMode")}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-3 py-2 text-xs text-slate-600">
+                <div className="inline-flex items-center gap-2">
+                  <span className="font-semibold text-slate-700">{t("shell.session")}</span>
+                  <span>{tenantName}</span>
+                </div>
+                <div className="inline-flex items-center gap-2">
+                  <span className="font-semibold text-slate-700">{t("shell.route")}</span>
+                  <span className="font-mono text-[11px] text-slate-500">{pathname}</span>
+                </div>
+              </div>
+
+              {actions ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border-soft)] bg-white p-2.5">
+                  {actions}
+                </div>
+              ) : null}
+            </div>
+          </header>
+
+          <main className="mt-4 min-w-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-sm)] md:p-6">
+            {children}
+          </main>
         </div>
       </div>
     </div>

@@ -9,14 +9,18 @@
 import {
     AlertTriangle,
     Archive,
+    BellRing,
     ChartNoAxesColumn,
     FileSignature,
     FileText,
     FolderKanban,
     HandHelping,
+    LayoutDashboard,
     LayoutGrid,
     MessageSquareHeart,
+    Settings,
     ShieldCheck,
+    ShieldAlert,
     Stethoscope,
     Users,
 } from "lucide-react";
@@ -24,21 +28,24 @@ import {
 export type TenantNavItem = {
     href: string;
     labelKey?: string;
-    label?: string;
     icon: React.ReactNode;
     disabled?: boolean;
 };
 
 /** Full tenant operational menu. No /platform routes here. */
 export const TENANT_NAV_ITEMS: TenantNavItem[] = [
-    { href: "/cases", label: "Case Workspace", icon: <FolderKanban className="h-4 w-4" /> },
-    { href: "/bundles", label: "Evidence Bundles", icon: <Archive className="h-4 w-4" /> },
-    { href: "/documents", label: "Legal Documents", icon: <FileText className="h-4 w-4" /> },
-    { href: "/dashboards", label: "Dashboards", icon: <LayoutGrid className="h-4 w-4" /> },
-    { href: "/analytics", label: "Analytics", icon: <ChartNoAxesColumn className="h-4 w-4" /> },
-    { href: "/reports", label: "Reports", icon: <Archive className="h-4 w-4" /> },
-    { href: "/tenant/users", label: "Users", icon: <Users className="h-4 w-4" /> },
-    { href: "/admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" /> },
+    { href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+    { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
+    { href: "/documents", labelKey: "nav.documents", icon: <FileText className="h-4 w-4" /> },
+    { href: "/alerts", labelKey: "nav.alerts", icon: <BellRing className="h-4 w-4" /> },
+    { href: "/legal-risk", labelKey: "nav.legalRisk", icon: <ShieldAlert className="h-4 w-4" /> },
+    { href: "/reports", labelKey: "nav.reports", icon: <ChartNoAxesColumn className="h-4 w-4" /> },
+    { href: "/users", labelKey: "nav.users", icon: <Users className="h-4 w-4" /> },
+    { href: "/settings", labelKey: "nav.settings", icon: <Settings className="h-4 w-4" /> },
+    { href: "/dashboards", labelKey: "nav.dashboards", icon: <LayoutGrid className="h-4 w-4" /> },
+    { href: "/bundles", labelKey: "nav.bundles", icon: <Archive className="h-4 w-4" /> },
+    { href: "/analytics", labelKey: "nav.analytics", icon: <ChartNoAxesColumn className="h-4 w-4" /> },
+    { href: "/admin", labelKey: "nav.admin", icon: <ShieldCheck className="h-4 w-4" /> },
 ];
 
 /** Case workflow stage navigation — used when workflowCaseNav prop is passed to AppShell. */

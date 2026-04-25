@@ -13,8 +13,17 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as zlib from 'zlib';
 import * as crypto from 'crypto';
+
+type UnknownRecord = Record<string, unknown>;
+
+type BundleContents = {
+  manifest: UnknownRecord;
+  signature?: string;
+  certificate?: string;
+  timestamp?: string;
+  manifestHash?: string;
+};
 
 interface VerificationReport {
   bundleId: string;
@@ -208,7 +217,7 @@ async function verifyBundle(
 /**
  * Extract bundle contents
  */
-async function extractBundle(bundlePath: string): Promise<Record<string, any>> {
+async function extractBundle(bundlePath: string): Promise<BundleContents> {
   try {
     // For now, we'll treat the bundle as a simple directory or ZIP
     // In production, use unzipper or similar library
@@ -219,10 +228,15 @@ async function extractBundle(bundlePath: string): Promise<Record<string, any>> {
       };
     } else if (fs.statSync(bundlePath).isDirectory()) {
       // Read from directory structure
+      const manifestRaw = JSON.parse(
+        fs.readFileSync(path.join(bundlePath, 'manifest.json'), 'utf-8')
+      ) as unknown;
+      if (!manifestRaw || typeof manifestRaw !== 'object') {
+        throw new Error('Invalid manifest format');
+      }
+
       return {
-        manifest: JSON.parse(
-          fs.readFileSync(path.join(bundlePath, 'manifest.json'), 'utf-8')
-        ),
+        manifest: manifestRaw as UnknownRecord,
         signature: fs.readFileSync(
           path.join(bundlePath, 'manifest.sig'),
           'utf-8'
@@ -248,7 +262,7 @@ async function extractBundle(bundlePath: string): Promise<Record<string, any>> {
 /**
  * Hash the manifest for integrity verification
  */
-function hashManifest(manifest: any): string {
+function hashManifest(manifest: UnknownRecord): string {
   const canonical = JSON.stringify(manifest, Object.keys(manifest).sort());
   return crypto.createHash('sha256').update(canonical).digest('hex');
 }
@@ -256,7 +270,9 @@ function hashManifest(manifest: any): string {
 /**
  * Verify timestamp validity
  */
-function verifyTimestamp(_timestamp: string, _manifest: any): boolean {
+function verifyTimestamp(_timestamp: string, _manifest: UnknownRecord): boolean {
+  void _timestamp;
+  void _manifest;
   // Placeholder - would verify RFC3161 timestamp
   // In production, parse and validate the timestamp token
   return true;
@@ -266,6 +282,8 @@ function verifyTimestamp(_timestamp: string, _manifest: any): boolean {
  * Verify certificate chain
  */
 function verifyCertificateChain(_cert: string, _trustStore?: string): boolean {
+  void _cert;
+  void _trustStore;
   // Placeholder - would verify against trust store
   // In production, use proper certificate chain validation
   return true;
@@ -307,6 +325,10 @@ function printReport(report: VerificationReport, verbose: boolean) {
   console.log(`${'='.repeat(50)}`);
   console.log(`\nStatus: ${report.verified ? '✅ VERIFIED' : '❌ FAILED'}`);
   console.log(`Timestamp: ${report.timestamp}`);
+
+  if (verbose) {
+    console.log(`Bundle ID: ${report.bundleId}`);
+  }
 
   if (report.signer) {
     console.log(`\n🔑 Signer Information:`);

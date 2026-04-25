@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { Prisma } from "@prisma/client";
 import { __casePdfStorageInternals } from "./legal-case-pdf-service";
 
 test("pdf binary availability: inline payload is available", async () => {
@@ -83,7 +84,7 @@ test("persistPdfBinary: local file write is verified before metadata return", as
 
     const availability = await __casePdfStorageInternals.getDocumentBinaryAvailability({
       storagePath: persisted.storagePath,
-      payloadJson: persisted.payloadJson,
+      payloadJson: persisted.payloadJson as unknown as Prisma.JsonValue,
     });
 
     assert.equal(availability.available, true);

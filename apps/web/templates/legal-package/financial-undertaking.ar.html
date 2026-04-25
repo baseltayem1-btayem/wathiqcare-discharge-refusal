@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>التعهد المالي</title>
+  <style>
+    body { font-family: Tahoma, Arial, sans-serif; margin: 24px; color: #111827; line-height: 1.8; }
+    .field { border-bottom: 1px solid #9ca3af; min-height: 28px; padding: 4px 0; }
+  </style>
+</head>
+<body>
+  <h2>التعهد المالي بتحمل تكاليف البقاء بعد قرار الخروج</h2>
+  <p>الاسم: <span class="field">{{patient_full_name}}</span></p>
+  <p>رقم الهوية: <span class="field">{{patient_id_number}}</span></p>
+  <p>رقم الملف الطبي: <span class="field">{{medical_record_number}}</span></p>
+  <p>أتعهد بتحمل جميع التكاليف المترتبة على بقائي بعد قرار الخروج الطبي الصادر بتاريخ {{discharge_decision_date}}.</p>
+  <p>التوقيع: <span class="field">{{patient_signature}}</span></p>
+  <p>التاريخ: <span class="field">{{acknowledgment_date}}</span></p>
+</body>
+</html>

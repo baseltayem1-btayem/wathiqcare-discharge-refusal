@@ -11,7 +11,7 @@ function isEnabled(): boolean {
   return true;
 }
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const enabled = isEnabled();
     return NextResponse.json({ enabled });

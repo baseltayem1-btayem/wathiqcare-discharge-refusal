@@ -227,6 +227,7 @@ export default function LoginPage() {
               >
                 <div className="mb-5 flex justify-center">
                   <div className="relative w-full max-w-[320px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/images/wathiqcare-logo.png"
                       alt="WathiqCare"

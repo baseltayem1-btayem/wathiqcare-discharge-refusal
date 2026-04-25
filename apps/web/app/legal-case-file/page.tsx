@@ -122,7 +122,7 @@ export default function LegalCaseFilePage() {
   const [dashboard, setDashboard] =
     useState<LegalControlDashboard | null>(null);
 
-  const [summaries, setSummaries] =
+  const [, setSummaries] =
     useState<Record<string, LegalCaseSummary>>({});
 
   const [legalPackages, setLegalPackages] =

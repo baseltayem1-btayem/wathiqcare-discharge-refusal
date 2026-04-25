@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState, useRef } from "react";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { getTranslation, interpolate, isSupportedLanguage, type Language } from "@/lib/i18n";
 
 type TranslateVars = Record<string, string | number>;
@@ -31,9 +32,8 @@ function setCookieLang(lang: Language) {
   document.cookie = `${LANGUAGE_COOKIE_KEY}=${lang};path=/;max-age=31536000;SameSite=Lax`;
 }
 
-function getPathLang(): Language | null {
-  if (typeof window === "undefined") return null;
-  const match = window.location.pathname.match(/^\/(ar|en)(?:\/|$)/);
+function getPathLang(pathname: string): Language | null {
+  const match = pathname.match(/^\/(ar|en)(?:\/|$)/);
   if (match && isSupportedLanguage(match[1])) {
     return match[1];
   }
@@ -55,17 +55,17 @@ export default function I18nProvider({
   children: ReactNode;
   initialLang?: Language;
 }) {
-  const didInit = useRef(false);
-  const [lang, setLangState] = useState<Language>(() => {
-    // Server-seeded lang from URL takes highest priority
+  const pathname = usePathname();
+  const [preferredLang, setPreferredLang] = useState<Language>(() => {
+    const pathLang = typeof window !== "undefined" ? getPathLang(window.location.pathname) : null;
+    if (pathLang) return pathLang;
+
+    // Server-seeded lang is used when pathname is not yet available.
     if (initialLang) return initialLang;
 
     if (typeof window === "undefined") {
       return "en";
     }
-
-    const pathLang = getPathLang();
-    if (pathLang) return pathLang;
 
     const cookie = getCookieLang();
     if (cookie) return cookie;
@@ -81,13 +81,18 @@ export default function I18nProvider({
     return "en";
   });
 
-  // Sync initialLang changes (e.g. navigating /ar → /en)
-  useEffect(() => {
-    if (initialLang && initialLang !== lang) {
-      setLangState(initialLang);
+  const lang = useMemo<Language>(() => {
+    const pathLang = pathname ? getPathLang(pathname) : null;
+    if (pathLang) {
+      return pathLang;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialLang]);
+
+    if (initialLang) {
+      return initialLang;
+    }
+
+    return preferredLang;
+  }, [initialLang, pathname, preferredLang]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -99,6 +104,7 @@ export default function I18nProvider({
     document.documentElement.dir = nextDirection;
 
     if (typeof window !== "undefined") {
+      // Keep persistence aligned with effective locale source.
       window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
       setCookieLang(lang);
     }
@@ -118,7 +124,7 @@ export default function I18nProvider({
       language: lang,
       isRtl: lang === "ar",
       locale: lang === "ar" ? "ar-SA" : "en-US",
-      setLang: setLangState,
+      setLang: setPreferredLang,
       t,
     }),
     [lang, t]

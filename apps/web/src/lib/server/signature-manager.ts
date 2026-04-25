@@ -117,7 +117,7 @@ export class SignatureManager {
         manifest: manifest,
         manifestHash: manifestHash,
         timestamp: timestamp,
-        signedBy: this.extractSubjectCN(certPem),
+        signedBy: this.extractSubjectCN(),
         thumbprint: this.getCertThumbprint(certPem),
       };
 
@@ -155,7 +155,7 @@ export class SignatureManager {
     certPath?: string
   ): VerificationResult {
     try {
-      const certPem = fs.readFileSync(certPath || this.certPath, 'utf-8');
+      fs.readFileSync(certPath || this.certPath, 'utf-8');
 
       // Parse the signature
       const signatureString = Buffer.from(signatureBase64, 'base64').toString(
@@ -189,7 +189,7 @@ export class SignatureManager {
   /**
    * Extract subject CN from certificate
    */
-  private extractSubjectCN(certPem: string): string {
+  private extractSubjectCN(): string {
     try {
       // Parse PEM certificate to extract CN
       // For now, return a placeholder

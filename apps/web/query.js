@@ -1,6 +1,5 @@
-﻿const { PrismaClient } = require("@prisma/client");
-
-async function main() {
+﻿async function main() {
+  const { PrismaClient } = await import("@prisma/client");
   const prisma = new PrismaClient({
     datasources: {
       db: {

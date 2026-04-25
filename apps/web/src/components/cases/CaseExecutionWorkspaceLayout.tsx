@@ -43,6 +43,7 @@ import {
   type CaseWorkspaceStep,
   type CaseWorkspaceStepKey,
 } from "@/components/cases/caseExecutionWorkspaceFlow";
+import LegalPackagePanel from "@/components/cases/legal-package/LegalPackagePanel";
 import { getLegalReadinessDecisionIndicator } from "@/components/cases/legalReadinessDecision";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -1825,8 +1826,11 @@ export default function CaseExecutionWorkspaceLayout({
 
   function renderDocumentsStep() {
     return (
-      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-        <Card>
+      <div className="space-y-4">
+        <LegalPackagePanel caseId={caseId} />
+
+        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+          <Card>
           <CardHeader>
             <CardTitle>{tr("Generate Legal Documents", "إنشاء المستندات القانونية")}</CardTitle>
           </CardHeader>
@@ -1931,7 +1935,7 @@ export default function CaseExecutionWorkspaceLayout({
           </CardContent>
         </Card>
 
-        <Card>
+          <Card>
           <CardHeader>
             <CardTitle>{tr("Readiness for Final Documents", "جاهزية المستندات النهائية")}</CardTitle>
           </CardHeader>
@@ -1958,7 +1962,8 @@ export default function CaseExecutionWorkspaceLayout({
               )}
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
     );
   }

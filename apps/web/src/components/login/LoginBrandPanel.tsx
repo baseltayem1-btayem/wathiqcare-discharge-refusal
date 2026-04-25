@@ -7,6 +7,7 @@ export default function LoginBrandPanel() {
   return (
     <section className="flex h-full flex-col">
       <div className="mb-5 flex justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/wathiqcare-logo.png"
           alt="WathiqCare"

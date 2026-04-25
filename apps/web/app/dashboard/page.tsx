@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -101,7 +101,7 @@ function widthClass(percent: number): string {
 
 export default function DashboardPage() {
   const { lang } = useI18n();
-  const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
+  const txt = useCallback((en: string, ar: string) => (lang === "ar" ? ar : en), [lang]);
 
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);

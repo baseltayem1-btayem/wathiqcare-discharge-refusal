@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Clock3, FileText, PlusCircle, RefreshCw, Zap } from "lucide-react";
 import { toast } from "sonner";
 import AppShell from "@/components/AppShell";
@@ -38,6 +38,8 @@ type RowDecisionSignal = {
   missingElements: Array<"consent" | "witness" | "physician">;
   priority: PriorityLevel;
 };
+
+const CASES_VIEW_TIME_ANCHOR_MS = Date.now();
 
 function translateCaseStatus(status: string, isArabic: boolean): string {
   if (!status) return "-";
@@ -153,7 +155,7 @@ export default function CasesPage() {
   const isArabic = lang === "ar";
   const txt = (en: string, ar: string) => (isArabic ? ar : en);
 
-  async function loadCases(showToast = false): Promise<void> {
+  const loadCases = useCallback(async (showToast = false): Promise<void> => {
     try {
       const data = await apiFetch<CaseItem[]>("/api/cases");
       setCases(data as CaseItem[]);
@@ -166,12 +168,14 @@ export default function CasesPage() {
       setError(message);
       toast.error(message);
       trackApiError({ operation: "list_cases", surface: "cases_page", role: permissions.auth.role ?? undefined });
+    } finally {
+      setLoading(false);
     }
-  }
+  }, [isArabic, permissions.auth.role, t]);
 
   useEffect(() => {
-    void loadCases().finally(() => setLoading(false));
-  }, [permissions.auth.role]);
+    void loadCases();
+  }, [loadCases]);
 
   const decisionRows = useMemo<RowDecisionSignal[]>(() => {
     const ranked = cases.map((item) => ({ item, ...computeReadinessSignal(item) }));
@@ -194,7 +198,7 @@ export default function CasesPage() {
   const urgentCount = decisionRows.filter((row) => row.priority === "urgent").length;
   const blockingIssueCount = decisionRows.reduce((acc, row) => acc + row.missingElements.length, 0);
 
-  const now = Date.now();
+  const now = CASES_VIEW_TIME_ANCHOR_MS;
   const last24hStart = now - 24 * 60 * 60 * 1000;
   const prev24hStart = now - 48 * 60 * 60 * 1000;
 
@@ -320,7 +324,7 @@ export default function CasesPage() {
                 size="sm"
                 onClick={() => {
                   setLoading(true);
-                  void loadCases().finally(() => setLoading(false));
+                  void loadCases();
                 }}
               >
                 {isArabic ? "إعادة المحاولة" : "Retry"}

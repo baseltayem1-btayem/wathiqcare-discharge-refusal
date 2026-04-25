@@ -16,7 +16,33 @@
     "route": "Route:",
     "openNavigation": "Open navigation",
     "closeNavigation": "Close navigation",
-    "closeMobileNavigation": "Close mobile navigation"
+    "closeMobileNavigation": "Close mobile navigation",
+    "quickActions": {
+      "title": "Quick actions",
+      "newCase": "New Case",
+      "uploadDocument": "Upload Document",
+      "generateReport": "Generate Report",
+      "legalReadiness": "Legal Readiness",
+      "caseWorkspace": "Case Workspace"
+    }
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "dashboards": "Dashboards",
+    "cases": "Case Workspace",
+    "bundles": "Evidence Bundles",
+    "documents": "Legal Documents",
+    "alerts": "Alerts",
+    "legalRisk": "Legal Risk",
+    "analytics": "Analytics",
+    "reports": "Reports",
+    "users": "Users",
+    "settings": "Settings",
+    "admin": "Admin"
+  },
+  "breadcrumbs": {
+    "documents": "Documents",
+    "settings": "Settings"
   },
   "dashboards": {
     "title": "Dashboard",

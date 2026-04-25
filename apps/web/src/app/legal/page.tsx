@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Badge } from "../../components/design-system/badge";
 import { Button } from "../../components/design-system/button";
 import StepUpVerificationPanel from "../../components/security/StepUpVerificationPanel";
@@ -35,7 +35,7 @@ const FILTERS = [
 
 export default function LegalQueuePage() {
     const { lang } = useI18n();
-    const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
+    const txt = useCallback((en: string, ar: string) => (lang === "ar" ? ar : en), [lang]);
     const [cases, setCases] = useState<LegalCase[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export default function LegalQueuePage() {
             }
         }
         checkRole();
-    }, []);
+    }, [txt]);
 
     useEffect(() => {
         setLoading(true);
@@ -80,7 +80,7 @@ export default function LegalQueuePage() {
             .then((data) => setCases(data))
             .catch((e) => setError(e.message))
             .finally(() => setLoading(false));
-    }, [filter]);
+    }, [filter, txt]);
 
     const handleDownload = async (caseId: string) => {
         const res = await fetch(`/api/cases/${caseId}/legal-package/download`, {

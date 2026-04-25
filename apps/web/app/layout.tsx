@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import I18nProvider from "@/i18n/I18nProvider";
 import { Toaster } from "@/components/make-ui/sonner";
 import { fontArabic, fontEnglish } from "@/lib/fonts";
@@ -21,15 +20,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const langCookie = cookieStore.get("wathiqcare_lang")?.value;
-  const locale = langCookie === "ar" ? "ar" : "en";
-  const dir = locale === "ar" ? "rtl" : "ltr";
-
   return (
     <html
-      lang={locale}
-      dir={dir}
+      lang="en"
+      dir="ltr"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${fontArabic.variable} ${fontEnglish.variable} scroll-smooth`}

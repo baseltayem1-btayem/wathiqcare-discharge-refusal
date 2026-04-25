@@ -16,7 +16,33 @@
     "route": "المسار:",
     "openNavigation": "فتح التنقل",
     "closeNavigation": "إغلاق التنقل",
-    "closeMobileNavigation": "إغلاق قائمة التنقل"
+    "closeMobileNavigation": "إغلاق قائمة التنقل",
+    "quickActions": {
+      "title": "إجراءات سريعة",
+      "newCase": "حالة جديدة",
+      "uploadDocument": "رفع مستند",
+      "generateReport": "إنشاء تقرير",
+      "legalReadiness": "الجاهزية القانونية",
+      "caseWorkspace": "مساحة الحالة"
+    }
+  },
+  "nav": {
+    "dashboard": "لوحة المعلومات",
+    "dashboards": "اللوحات",
+    "cases": "مساحة الحالة",
+    "bundles": "حزم الأدلة",
+    "documents": "المستندات القانونية",
+    "alerts": "التنبيهات",
+    "legalRisk": "المخاطر القانونية",
+    "analytics": "التحليلات",
+    "reports": "التقارير",
+    "users": "المستخدمون",
+    "settings": "الإعدادات",
+    "admin": "الإدارة"
+  },
+  "breadcrumbs": {
+    "documents": "المستندات",
+    "settings": "الإعدادات"
   },
   "dashboards": {
     "title": "لوحة المعلومات",

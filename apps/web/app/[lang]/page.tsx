@@ -45,6 +45,7 @@ function NavBar({ lang }: { lang: string }) {
         dir={isRtl ? "rtl" : "ltr"}
       >
         <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/wathiqcare-logo.png"
             alt="WathiqCare"
@@ -88,7 +89,6 @@ function NavBar({ lang }: { lang: string }) {
 
 function HeroSection({ lang }: { lang: string }) {
   const { t, isRtl } = useI18n();
-  const ChevronDir = isRtl ? ChevronLeft : ChevronRight;
 
   return (
     <section
@@ -431,6 +431,7 @@ function Footer({ lang }: { lang: string }) {
     <footer className="wc-footer py-10 px-6" dir={isRtl ? "rtl" : "ltr"}>
       <div className="wc-container flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/wathiqcare-logo.png"
             alt="WathiqCare"

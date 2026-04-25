@@ -443,7 +443,8 @@ export function trackEvent(eventName: TrackingEventName, payload: TrackingPayloa
 
     const route = getCurrentRoute();
     const role = typeof payload.role === "string" ? payload.role : null;
-    const { role: _ignoredRole, ...rawPayload } = payload;
+    const rawPayload = { ...payload };
+    delete rawPayload.role;
 
     appendEvent({
       id: generateTrackingId(),

@@ -1,5 +1,5 @@
 import { CaseStatus, DocumentStatus } from "@prisma/client";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { handleApiError, jsonSuccess } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";

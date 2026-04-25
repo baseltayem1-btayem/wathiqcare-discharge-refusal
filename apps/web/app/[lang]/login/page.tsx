@@ -228,6 +228,7 @@ export default function LangLoginPage() {
                 {/* Logo */}
                 <div className="mb-5 flex justify-center">
                   <div className="relative w-[160px] sm:w-[190px] md:w-[210px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/images/wathiqcare-logo.png"
                       alt="WathiqCare"

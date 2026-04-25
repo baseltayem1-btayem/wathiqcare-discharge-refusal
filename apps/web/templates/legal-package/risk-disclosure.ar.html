@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>إفصاح المخاطر</title>
+  <style>
+    body { font-family: Tahoma, Arial, sans-serif; margin: 24px; color: #111827; line-height: 1.8; }
+    .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; min-height: 120px; }
+  </style>
+</head>
+<body>
+  <h2>إفصاح المخاطر</h2>
+  <p>اسم المريض: {{patient_full_name}}</p>
+  <p>رقم الملف الطبي: {{medical_record_number}}</p>
+  <p>تفاصيل شرح المخاطر:</p>
+  <div class="box">{{risk_disclosure_text}}</div>
+  <p>الطبيب المعالج: {{attending_physician_name}}</p>
+  <p>التاريخ: {{document_date}}</p>
+</body>
+</html>

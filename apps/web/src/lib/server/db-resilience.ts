@@ -88,13 +88,10 @@ export async function runDbOperation<T>(operation: () => Promise<T>, options: Db
   const timeoutMs = clampPositiveInteger(options.timeoutMs ?? DEFAULT_DB_TIMEOUT_MS, DEFAULT_DB_TIMEOUT_MS);
   const maxRetries = clampPositiveInteger(options.maxRetries ?? DEFAULT_DB_MAX_RETRIES, DEFAULT_DB_MAX_RETRIES);
 
-  let lastError: unknown = null;
-
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
       return await withTimeout(operation(), timeoutMs, operationName);
     } catch (error) {
-      lastError = error;
       const transient = isDbConnectivityError(error);
       const canRetry = transient && attempt < maxRetries;
 

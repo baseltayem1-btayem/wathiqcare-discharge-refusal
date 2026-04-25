@@ -8,6 +8,7 @@
  */
 
 import * as crypto from 'crypto';
+import * as http from 'http';
 import * as https from 'https';
 
 export interface TimestampRequest {
@@ -112,8 +113,8 @@ export class TSAClient {
       const url = new URL(this.tsaUrl);
       const isHttps = url.protocol === 'https:';
 
-      const transport = isHttps ? https : require('http');
-      const options: any = {
+      const transport = isHttps ? https : http;
+      const options: https.RequestOptions = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/timestamp-query',
@@ -122,10 +123,10 @@ export class TSAClient {
         timeout: this.timeout,
       };
 
-      const req = transport.request(url, options, (res: any) => {
+      const req = transport.request(url, options, (res: http.IncomingMessage) => {
         let data = '';
 
-        res.on('data', (chunk: any) => {
+        res.on('data', (chunk: Buffer) => {
           data += chunk;
         });
 
@@ -155,7 +156,7 @@ export class TSAClient {
         });
       });
 
-      req.on('error', (error: any) => {
+      req.on('error', (error: Error) => {
         reject(new Error(`TSA request failed: ${error.message}`));
       });
 
@@ -177,6 +178,8 @@ export class TSAClient {
     originalHash: string
   ): { valid: boolean; error?: string } {
     try {
+      void originalHash;
+
       if (!token.timeStampToken) {
         return { valid: false, error: 'Missing timestamp token' };
       }
