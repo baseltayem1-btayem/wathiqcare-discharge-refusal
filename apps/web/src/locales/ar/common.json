@@ -24,6 +24,39 @@
       "generateReport": "إنشاء تقرير",
       "legalReadiness": "الجاهزية القانونية",
       "caseWorkspace": "مساحة الحالة"
+    },
+    "smartNavigation": {
+      "nextAction": "الإجراء القانوني التالي",
+      "secondaryActions": "إجراءات ثانوية",
+      "modules": {
+        "dashboard": "لوحة المعلومات",
+        "case_management": "إدارة الحالات",
+        "case_workspace": "مساحة الحالة",
+        "documents": "المستندات",
+        "alerts": "التنبيهات",
+        "legal_risk": "المخاطر القانونية",
+        "reports": "التقارير",
+        "users": "المستخدمون",
+        "settings": "الإعدادات"
+      },
+      "stages": {
+        "draft": "مسودة",
+        "pending_review": "بانتظار المراجعة",
+        "legal_review": "مراجعة قانونية",
+        "ready_for_package": "جاهز للحزمة",
+        "ready_for_approval": "جاهز للاعتماد",
+        "completed": "مكتمل"
+      },
+      "actions": {
+        "reviewCaseStatus": "مراجعة حالة الملف",
+        "linkDocumentToCase": "ربط المستند بالحالة",
+        "reviewDocumentStatus": "مراجعة حالة المستند",
+        "generateLegalPackage": "إنشاء الحزمة القانونية",
+        "sendForApproval": "إرسال للاعتماد",
+        "exportReport": "تصدير التقرير",
+        "reviewHighRiskItems": "مراجعة العناصر عالية المخاطر",
+        "openRiskDashboard": "فتح لوحة المخاطر"
+      }
     }
   },
   "nav": {

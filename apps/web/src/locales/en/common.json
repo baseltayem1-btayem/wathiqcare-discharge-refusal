@@ -24,6 +24,39 @@
       "generateReport": "Generate Report",
       "legalReadiness": "Legal Readiness",
       "caseWorkspace": "Case Workspace"
+    },
+    "smartNavigation": {
+      "nextAction": "Next legal action",
+      "secondaryActions": "Secondary actions",
+      "modules": {
+        "dashboard": "Dashboard",
+        "case_management": "Case Management",
+        "case_workspace": "Case Workspace",
+        "documents": "Documents",
+        "alerts": "Alerts",
+        "legal_risk": "Legal Risk",
+        "reports": "Reports",
+        "users": "Users",
+        "settings": "Settings"
+      },
+      "stages": {
+        "draft": "Draft",
+        "pending_review": "Pending Review",
+        "legal_review": "Legal Review",
+        "ready_for_package": "Ready for Package",
+        "ready_for_approval": "Ready for Approval",
+        "completed": "Completed"
+      },
+      "actions": {
+        "reviewCaseStatus": "Review Case Status",
+        "linkDocumentToCase": "Link Document to Case",
+        "reviewDocumentStatus": "Review Document Status",
+        "generateLegalPackage": "Generate Legal Package",
+        "sendForApproval": "Send for Approval",
+        "exportReport": "Export Report",
+        "reviewHighRiskItems": "Review High-Risk Items",
+        "openRiskDashboard": "Open Risk Dashboard"
+      }
     }
   },
   "nav": {

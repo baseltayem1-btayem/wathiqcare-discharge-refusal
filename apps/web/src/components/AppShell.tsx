@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, FilePlus2, FileUp, LogOut, ShieldCheck, Stethoscope } from "lucide-react";
+import { BarChart3, ClipboardCheck, FileCheck2, FilePlus2, FileSearch, FileUp, LogOut, Send, ShieldCheck, Stethoscope } from "lucide-react";
 import AppBreadcrumbs from "@/components/AppBreadcrumbs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TopNavigation from "@/components/navigation/TopNavigation";
+import { resolveSmartNavigation, type SmartActionKey } from "@/components/navigation/smartNavigation";
 import NotificationBell from "@/components/operations/NotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -187,9 +188,6 @@ export default function AppShell({
     };
   }, [viewerRole]);
 
-  if (isPlatformAdmin) return null;
-  // ────────────────────────────────────────────────────────────────────────────
-
   const navItems = workflowCaseNav ? buildCaseWorkflowNav(workflowCaseNav) : TENANT_NAV_ITEMS;
   const primaryNavItems = workflowCaseNav
     ? navItems
@@ -200,18 +198,134 @@ export default function AppShell({
   const normalizedRole = (viewerRole || "").toLowerCase();
   const canOperateQuickActions = ["admin", "manager", "owner"].some((role) => normalizedRole.includes(role));
 
-  const quickActions = workflowCaseNav
-    ? [
-      { href: `/cases/${workflowCaseNav.caseId}`, label: t("shell.quickActions.caseWorkspace"), icon: <FilePlus2 className="h-3.5 w-3.5" /> },
-      { href: "/documents", label: t("shell.quickActions.uploadDocument"), icon: <FileUp className="h-3.5 w-3.5" /> },
-      { href: "/dashboards", label: t("shell.quickActions.legalReadiness"), icon: <ShieldCheck className="h-3.5 w-3.5" /> },
-    ]
+  const routeCaseId = useMemo(() => {
+    if (workflowCaseNav?.caseId) {
+      return workflowCaseNav.caseId;
+    }
+    const match = pathname.match(/^\/cases\/([^/?#]+)/);
+    return match && match[1] !== "new" ? match[1] : null;
+  }, [pathname, workflowCaseNav?.caseId]);
+
+  const actionCatalog = useMemo(() => {
+    const caseWorkspaceHref = routeCaseId ? `/cases/${routeCaseId}` : "/cases";
+
+    return {
+      newCase: {
+        key: "newCase",
+        href: "/cases/new",
+        label: t("shell.quickActions.newCase"),
+        icon: <FilePlus2 className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.quickActions.newCase"),
+      },
+      caseWorkspace: {
+        key: "caseWorkspace",
+        href: caseWorkspaceHref,
+        label: t("shell.quickActions.caseWorkspace"),
+        icon: <ClipboardCheck className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.quickActions.caseWorkspace"),
+      },
+      reviewCaseStatus: {
+        key: "reviewCaseStatus",
+        href: "/cases",
+        label: t("shell.smartNavigation.actions.reviewCaseStatus"),
+        icon: <ClipboardCheck className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.smartNavigation.actions.reviewCaseStatus"),
+      },
+      uploadDocument: {
+        key: "uploadDocument",
+        href: "/documents",
+        label: t("shell.quickActions.uploadDocument"),
+        icon: <FileUp className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.quickActions.uploadDocument"),
+      },
+      linkDocumentToCase: {
+        key: "linkDocumentToCase",
+        href: "/cases",
+        label: t("shell.smartNavigation.actions.linkDocumentToCase"),
+        icon: <FileCheck2 className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.smartNavigation.actions.linkDocumentToCase"),
+      },
+      reviewDocumentStatus: {
+        key: "reviewDocumentStatus",
+        href: "/documents",
+        label: t("shell.smartNavigation.actions.reviewDocumentStatus"),
+        icon: <FileSearch className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.smartNavigation.actions.reviewDocumentStatus"),
+      },
+      generateLegalPackage: {
+        key: "generateLegalPackage",
+        href: caseWorkspaceHref,
+        label: t("shell.smartNavigation.actions.generateLegalPackage"),
+        icon: <ShieldCheck className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.smartNavigation.actions.generateLegalPackage"),
+      },
+      legalReadiness: {
+        key: "legalReadiness",
+        href: "/dashboards",
+        label: t("shell.quickActions.legalReadiness"),
+        icon: <ShieldCheck className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.quickActions.legalReadiness"),
+      },
+      sendForApproval: {
+        key: "sendForApproval",
+        href: "/alerts",
+        label: t("shell.smartNavigation.actions.sendForApproval"),
+        icon: <Send className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.smartNavigation.actions.sendForApproval"),
+      },
+      generateReport: {
+        key: "generateReport",
+        href: "/reports",
+        label: t("shell.quickActions.generateReport"),
+        icon: <BarChart3 className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.quickActions.generateReport"),
+      },
+      exportReport: {
+        key: "exportReport",
+        href: "/reports",
+        label: t("shell.smartNavigation.actions.exportReport"),
+        icon: <BarChart3 className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.smartNavigation.actions.exportReport"),
+      },
+      reviewHighRiskItems: {
+        key: "reviewHighRiskItems",
+        href: "/legal-risk",
+        label: t("shell.smartNavigation.actions.reviewHighRiskItems"),
+        icon: <ShieldCheck className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.smartNavigation.actions.reviewHighRiskItems"),
+      },
+      openRiskDashboard: {
+        key: "openRiskDashboard",
+        href: "/dashboards",
+        label: t("shell.smartNavigation.actions.openRiskDashboard"),
+        icon: <BarChart3 className="h-3.5 w-3.5" />,
+        ariaLabel: t("shell.smartNavigation.actions.openRiskDashboard"),
+      },
+    } as const;
+  }, [routeCaseId, t]);
+
+  const baseAvailableActionKeys: SmartActionKey[] = workflowCaseNav
+    ? ["caseWorkspace", "uploadDocument", "legalReadiness", "reviewCaseStatus", "generateLegalPackage", "sendForApproval"]
     : [
-      { href: "/cases/new", label: t("shell.quickActions.newCase"), icon: <FilePlus2 className="h-3.5 w-3.5" /> },
-      { href: "/documents", label: t("shell.quickActions.uploadDocument"), icon: <FileUp className="h-3.5 w-3.5" /> },
-      ...(canOperateQuickActions ? [{ href: "/reports", label: t("shell.quickActions.generateReport"), icon: <BarChart3 className="h-3.5 w-3.5" /> }] : []),
-      { href: "/dashboards", label: t("shell.quickActions.legalReadiness"), icon: <ShieldCheck className="h-3.5 w-3.5" /> },
+      "newCase",
+      "uploadDocument",
+      "reviewCaseStatus",
+      "linkDocumentToCase",
+      "reviewDocumentStatus",
+      "generateLegalPackage",
+      "legalReadiness",
+      "sendForApproval",
+      "reviewHighRiskItems",
+      "openRiskDashboard",
+      "exportReport",
+      ...(canOperateQuickActions ? (["generateReport"] as SmartActionKey[]) : []),
     ];
+
+  const smartResolution = resolveSmartNavigation(pathname, baseAvailableActionKeys);
+  const nextAction = actionCatalog[smartResolution.nextActionKey];
+  const quickActions = smartResolution.secondaryActionKeys
+    .map((key) => actionCatalog[key])
+    .filter((action) => Boolean(action));
 
   const tenantName = tenantBranding?.name?.trim() || t("app.tenantName");
   const tenantLogoUrl = tenantBranding?.logoUrl ?? null;
@@ -225,6 +339,9 @@ export default function AppShell({
     clearToken();
     router.replace("/login");
   }
+
+  if (isPlatformAdmin) return null;
+  // ────────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -256,12 +373,18 @@ export default function AppShell({
           ariaLabel: t(item.labelKey || ""),
         }))}
         quickActions={quickActions.map((action) => ({
+          key: action.key,
           href: action.href,
           label: action.label,
           icon: action.icon,
-          ariaLabel: action.label,
+          ariaLabel: action.ariaLabel,
         }))}
+        nextAction={nextAction}
+        currentModuleLabel={t(`shell.smartNavigation.modules.${smartResolution.moduleKey}`)}
+        workflowStageLabel={t(`shell.smartNavigation.stages.${smartResolution.workflowStageKey}`)}
+        nextActionLabel={t("shell.smartNavigation.nextAction")}
         quickActionsLabel={t("shell.quickActions.title")}
+        secondaryActionsLabel={t("shell.smartNavigation.secondaryActions")}
         workspaceStatus={(
           <span className="inline-flex items-center gap-1 rounded-full border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--primary-pressed)]" aria-label={t("app.activeWorkspace")}>
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />

@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Settings } from "lucide-react";
+import { BarChart3, ClipboardCheck, FileSearch, LogOut, Send, Settings, ShieldCheck } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TopNavigation from "@/components/navigation/TopNavigation";
+import { resolveSmartNavigation, type SmartActionKey } from "@/components/navigation/smartNavigation";
 import PlatformNotificationBell from "@/components/PlatformNotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clearToken } from "@/utils/api";
@@ -16,6 +17,14 @@ type PlatformAdminShellProps = {
     subtitle?: string;
     actions?: ReactNode;
     children: ReactNode;
+};
+
+type PlatformSmartAction = {
+    key: SmartActionKey;
+    href: string;
+    label: string;
+    icon: ReactNode;
+    ariaLabel: string;
 };
 
 function platformNavLabel(label: string, isArabic: boolean): string {
@@ -39,6 +48,75 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
     const router = useRouter();
     const { t, lang } = useI18n();
     const txt = (en: string, ar: string) => (lang === "ar" ? ar : en);
+
+    const actionCatalog = useMemo<Partial<Record<SmartActionKey, PlatformSmartAction>>>(() => {
+        return {
+            reviewCaseStatus: {
+                key: "reviewCaseStatus",
+                href: "/cases",
+                label: t("shell.smartNavigation.actions.reviewCaseStatus"),
+                icon: <ClipboardCheck className="h-3.5 w-3.5" />,
+                ariaLabel: t("shell.smartNavigation.actions.reviewCaseStatus"),
+            },
+            reviewDocumentStatus: {
+                key: "reviewDocumentStatus",
+                href: "/documents",
+                label: t("shell.smartNavigation.actions.reviewDocumentStatus"),
+                icon: <FileSearch className="h-3.5 w-3.5" />,
+                ariaLabel: t("shell.smartNavigation.actions.reviewDocumentStatus"),
+            },
+            sendForApproval: {
+                key: "sendForApproval",
+                href: "/alerts",
+                label: t("shell.smartNavigation.actions.sendForApproval"),
+                icon: <Send className="h-3.5 w-3.5" />,
+                ariaLabel: t("shell.smartNavigation.actions.sendForApproval"),
+            },
+            generateReport: {
+                key: "generateReport",
+                href: "/reports",
+                label: t("shell.quickActions.generateReport"),
+                icon: <BarChart3 className="h-3.5 w-3.5" />,
+                ariaLabel: t("shell.quickActions.generateReport"),
+            },
+            exportReport: {
+                key: "exportReport",
+                href: "/reports",
+                label: t("shell.smartNavigation.actions.exportReport"),
+                icon: <BarChart3 className="h-3.5 w-3.5" />,
+                ariaLabel: t("shell.smartNavigation.actions.exportReport"),
+            },
+            reviewHighRiskItems: {
+                key: "reviewHighRiskItems",
+                href: "/legal-risk",
+                label: t("shell.smartNavigation.actions.reviewHighRiskItems"),
+                icon: <ShieldCheck className="h-3.5 w-3.5" />,
+                ariaLabel: t("shell.smartNavigation.actions.reviewHighRiskItems"),
+            },
+            openRiskDashboard: {
+                key: "openRiskDashboard",
+                href: "/dashboards",
+                label: t("shell.smartNavigation.actions.openRiskDashboard"),
+                icon: <BarChart3 className="h-3.5 w-3.5" />,
+                ariaLabel: t("shell.smartNavigation.actions.openRiskDashboard"),
+            },
+        };
+    }, [t]);
+
+    const availableActionKeys: SmartActionKey[] = [
+        "reviewCaseStatus",
+        "reviewDocumentStatus",
+        "sendForApproval",
+        "generateReport",
+        "exportReport",
+        "reviewHighRiskItems",
+        "openRiskDashboard",
+    ];
+    const smartResolution = resolveSmartNavigation(pathname, availableActionKeys);
+    const nextAction = actionCatalog[smartResolution.nextActionKey];
+    const quickActions = smartResolution.secondaryActionKeys
+        .map((key) => actionCatalog[key])
+        .filter((action): action is PlatformSmartAction => Boolean(action));
 
     async function handleLogout() {
         try {
@@ -78,7 +156,19 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
                     icon: item.icon,
                     ariaLabel: platformNavLabel(item.label, lang === "ar"),
                 }))}
+                quickActions={quickActions.map((action) => ({
+                    key: action.key,
+                    href: action.href,
+                    label: action.label,
+                    icon: action.icon,
+                    ariaLabel: action.ariaLabel,
+                }))}
+                nextAction={nextAction}
+                currentModuleLabel={t(`shell.smartNavigation.modules.${smartResolution.moduleKey}`)}
+                workflowStageLabel={t(`shell.smartNavigation.stages.${smartResolution.workflowStageKey}`)}
+                nextActionLabel={t("shell.smartNavigation.nextAction")}
                 quickActionsLabel={txt("Quick actions", "إجراءات سريعة")}
+                secondaryActionsLabel={t("shell.smartNavigation.secondaryActions")}
                 workspaceStatus={(
                     <span
                         className="inline-flex items-center gap-1 rounded-full border border-[#cdddf0] bg-[#edf4fb] px-2.5 py-1 text-xs font-semibold text-[#1f5fa7]"
