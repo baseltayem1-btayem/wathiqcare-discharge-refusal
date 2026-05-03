@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { UserType } from "@prisma/client";
-import { ApiError, handleApiError, jsonSuccess } from "@/lib/server/http";
+import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import {
   buildSessionCookieOptions,
@@ -17,17 +16,11 @@ import {
 } from "@/lib/server/roles";
 import { normalizeEmail } from "@/lib/server/auth-domain-policy";
 import { verifyPassword } from "@/lib/server/password";
-import { normalizeTenantAuthConfig } from "@/lib/server/tenant-auth-config";
-import { getUserResetState } from "@/lib/server/auth-reset";
-import {
-  DatabaseUnavailableError,
-  isDbConnectivityError,
-  runDbOperation,
-} from "@/lib/server/db-resilience";
 
 type PasswordLoginPayload = {
   email?: string;
   password?: string;
+  rememberMe?: boolean;
 };
 
 type RateLimitResult = {
@@ -38,8 +31,6 @@ type RateLimitResult = {
 type FoundUser = {
   id: string;
   email: string;
-  userType: UserType;
-  authConfig: unknown;
   hashedPassword: string | null;
   isActive: boolean;
   lockedUntil: Date | null;
@@ -53,6 +44,7 @@ type PasswordSessionResult = {
   accessToken: string;
   redirectTo: string;
   userType: "platform_admin" | "tenant_admin" | "tenant_user";
+  mustChangePassword: boolean;
 };
 
 const GENERIC_LOGIN_ERROR = "Invalid email or password";
@@ -78,22 +70,8 @@ function isPrismaConnectivityError(error: unknown): boolean {
   return (
     message.includes("Authentication failed against database server") ||
     message.includes("Can't reach database server") ||
-    message.includes("Server has closed the connection") ||
     message.includes("timed out")
   );
-}
-
-function resolveLoginTraceId(request: NextRequest): string {
-  const requestTraceId = request.headers.get("x-trace-id") || request.headers.get("x-request-id");
-  if (requestTraceId && requestTraceId.trim().length > 0) {
-    return requestTraceId.trim();
-  }
-
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-
-  return `trace-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 }
 
 function readClientIp(request: NextRequest): string {
@@ -102,24 +80,18 @@ function readClientIp(request: NextRequest): string {
   return firstForwardedIp || request.headers.get("x-real-ip") || "unknown";
 }
 
-function toSessionUserTypeFromStored(
-  storedUserType: UserType | null | undefined,
-  userRole: string | null | undefined,
-  email: string,
-): "platform_admin" | "tenant_admin" | "tenant_user" {
-  if (storedUserType === UserType.PLATFORM_ADMIN) {
-    return "platform_admin";
-  }
-
-  if (storedUserType === UserType.TENANT_ADMIN) {
-    return "tenant_admin";
-  }
-
-  if (storedUserType === UserType.TENANT_USER) {
-    return "tenant_user";
-  }
-
-  return toSessionUserType(userRole, email);
+function buildRedirectPath(userRole: string | null | undefined, email: string): string {
+  const role = (userRole ?? "").trim();
+  const userType = userTypeForUserRole(role, email);
+  if (userType === "PLATFORM_ADMIN") return "/platform";
+  // Role-based dashboard routes
+  if (role === "doctor") return "/doctor/dashboard";
+  if (role === "nursing" || role === "nurse") return "/nurse/dashboard";
+  if (role === "legal_admin" || role === "legal" || role === "legal_officer") return "/legal/dashboard";
+  if (role === "medical_director") return "/medical-director/dashboard";
+  if (role === "finance_officer" || role === "finance") return "/finance/dashboard";
+  if (role === "tenant_admin" || role === "tenant_owner" || role === "admin" || role === "owner") return "/tenant/dashboard";
+  return "/dashboard";
 }
 
 function toSessionUserType(
@@ -210,7 +182,6 @@ async function findUserByEmailWithDomain(
     select: {
       id: true,
       email: true,
-      userType: true,
       hashedPassword: true,
       isActive: true,
       lockedUntil: true,
@@ -219,7 +190,6 @@ async function findUserByEmailWithDomain(
       primaryTenant: {
         select: {
           isActive: true,
-          authConfig: true,
         },
       },
       memberships: {
@@ -238,8 +208,6 @@ async function findUserByEmailWithDomain(
   return {
     id: user.id,
     email: user.email,
-    userType: user.userType,
-    authConfig: user.primaryTenant?.authConfig,
     hashedPassword: user.hashedPassword,
     isActive: user.isActive,
     lockedUntil: user.lockedUntil,
@@ -256,9 +224,8 @@ async function createSessionForPasswordUser(args: {
   email: string;
   tenantId: string | null;
   role: string | null;
-  userType: UserType;
 }): Promise<PasswordSessionResult> {
-  const { prisma, userId, email, tenantId, role, userType } = args;
+  const { prisma, userId, email, tenantId, role } = args;
 
   const tenant = tenantId
     ? await prisma.tenant.findUnique({
@@ -271,8 +238,7 @@ async function createSessionForPasswordUser(args: {
   const ttlSeconds = getTokenTtlSeconds();
   const now = Math.floor(Date.now() / 1000);
   const exp = now + ttlSeconds;
-  const sessionUserType = toSessionUserTypeFromStored(userType, normalizedRole, email);
-  const redirectTo = sessionUserType === "platform_admin" ? "/platform" : "/dashboard";
+  const sessionUserType = toSessionUserType(normalizedRole, email);
 
   const accessToken = createAccessToken(
     {
@@ -284,7 +250,6 @@ async function createSessionForPasswordUser(args: {
       platform_role: platformRoleForUserRole(normalizedRole),
       tenant_id: tenantId,
       tenant_code: tenant?.code ?? null,
-      iat: now,
       exp,
     },
     getJwtSecret(),
@@ -297,10 +262,18 @@ async function createSessionForPasswordUser(args: {
     WHERE id = ${userId}
   `;
 
+  // Check if password was never changed (mustChangePassword)
+  const userData = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { lastPasswordChangedAt: true },
+  });
+  const mustChangePassword = !userData?.lastPasswordChangedAt;
+
   return {
     accessToken,
-    redirectTo,
+    redirectTo: buildRedirectPath(normalizedRole, email),
     userType: sessionUserType,
+    mustChangePassword,
   };
 }
 
@@ -345,17 +318,15 @@ async function resetFailedPasswordAttempts(
 function buildLoginSuccessResponse(args: {
   accessToken: string;
   redirectTo: string;
-  userType: "platform_admin" | "tenant_admin" | "tenant_user";
   request: NextRequest;
 }): NextResponse {
-  const { accessToken, redirectTo, request, userType } = args;
+  const { accessToken, redirectTo, request } = args;
 
-  const response = jsonSuccess(
+  const response = NextResponse.json(
     {
       ok: true,
       accessToken,
       redirectTo,
-      userType,
     },
     {
       status: 200,
@@ -390,17 +361,35 @@ function buildLoginSuccessResponse(args: {
   return response;
 }
 
+async function resolveUsernameToEmail(
+  prisma: ReturnType<typeof getPrisma>,
+  username: string,
+): Promise<string> {
+  if (!username) return "";
+  // Look up user whose email starts with the username@ pattern
+  const rows = await prisma.$queryRaw<Array<{ email: string }>>`
+    SELECT email FROM users
+    WHERE LOWER(email) LIKE ${username.toLowerCase() + "@%"}
+    LIMIT 1
+  `;
+  return rows[0]?.email ?? `${username}@wathiqcare.local`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const prisma = getPrisma();
-    const traceId = resolveLoginTraceId(request);
 
     const payload = (await request.json().catch(() => null)) as PasswordLoginPayload | null;
     if (!payload) {
       throw new ApiError(400, "Invalid JSON body");
     }
 
-    const email = normalizeEmail(payload.email || "");
+    // Support username (without @) by resolving to email
+    const rawIdentifier = (payload.email || "").trim();
+    const resolvedEmail = rawIdentifier.includes("@")
+      ? rawIdentifier
+      : await resolveUsernameToEmail(getPrisma(), rawIdentifier);
+    const email = normalizeEmail(resolvedEmail);
     const password = payload.password || "";
 
     if (!email || !password) {
@@ -415,18 +404,11 @@ export async function POST(request: NextRequest) {
       throw new ApiError(401, GENERIC_LOGIN_ERROR);
     }
 
-    const rateLimitCheck = await runDbOperation(
-      () =>
-        checkRateLimit({
-          prisma,
-          email,
-          request,
-        }),
-      {
-        traceId,
-        operationName: "login_check_rate_limit",
-      },
-    );
+    const rateLimitCheck = await checkRateLimit({
+      prisma,
+      email,
+      request,
+    });
 
     if (rateLimitCheck.limited) {
       await recordLoginAttempt({
@@ -440,10 +422,7 @@ export async function POST(request: NextRequest) {
       throw new ApiError(429, TOO_MANY_ATTEMPTS_ERROR);
     }
 
-    const user = await runDbOperation(() => findUserByEmailWithDomain(prisma, email), {
-      traceId,
-      operationName: "login_find_user",
-    });
+    const user = await findUserByEmailWithDomain(prisma, email);
 
     if (!user) {
       await recordLoginAttempt({
@@ -455,18 +434,6 @@ export async function POST(request: NextRequest) {
       });
 
       throw new ApiError(401, GENERIC_LOGIN_ERROR);
-    }
-
-    const authConfig = normalizeTenantAuthConfig(user.authConfig);
-    if (!authConfig.password_enabled) {
-      await recordLoginAttempt({
-        prisma,
-        email,
-        success: false,
-        reason: "PASSWORD_LOGIN_DISABLED",
-        request,
-      });
-      throw new ApiError(403, "Password login is disabled for this tenant");
     }
 
     if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
@@ -540,43 +507,15 @@ export async function POST(request: NextRequest) {
       throw new ApiError(401, GENERIC_LOGIN_ERROR);
     }
 
-    const resetState = await runDbOperation(() => getUserResetState(prisma, user.id), {
-      traceId,
-      operationName: "login_get_reset_state",
-      timeoutMs: 20000,
-      maxRetries: 0,
-    });
-    if (resetState.passwordResetRequired) {
-      await recordLoginAttempt({
-        prisma,
-        email,
-        success: false,
-        reason: "PASSWORD_RESET_REQUIRED",
-        request,
-      });
-      throw new ApiError(403, "Password reset required. Please reset your password using the secure link sent to your email.");
-    }
+    await resetFailedPasswordAttempts(prisma, user.id);
 
-    await runDbOperation(() => resetFailedPasswordAttempts(prisma, user.id), {
-      traceId,
-      operationName: "login_reset_failed_attempts",
+    const session = await createSessionForPasswordUser({
+      prisma,
+      userId: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
+      role: user.role,
     });
-
-    const session = await runDbOperation(
-      () =>
-        createSessionForPasswordUser({
-          prisma,
-          userId: user.id,
-          email: user.email,
-          tenantId: user.tenantId,
-          role: user.role,
-          userType: user.userType,
-        }),
-      {
-        traceId,
-        operationName: "login_create_session",
-      },
-    );
 
     await recordLoginAttempt({
       prisma,
@@ -597,27 +536,33 @@ export async function POST(request: NextRequest) {
       redirectTo: session.redirectTo,
     });
 
-    return buildLoginSuccessResponse({
+    const successResponse = buildLoginSuccessResponse({
       accessToken: session.accessToken,
       redirectTo: session.redirectTo,
-      userType: session.userType,
       request,
     });
+
+    // Inject mustChangePassword into response body
+    if (session.mustChangePassword) {
+      const body = { ok: true, accessToken: session.accessToken, redirectTo: session.redirectTo, mustChangePassword: true };
+      const newResponse = NextResponse.json(body, { status: 200, headers: { "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate", Pragma: "no-cache", Expires: "0" } });
+      const cookieName = getSessionCookieName();
+      const ttl = getTokenTtlSeconds();
+      newResponse.cookies.set(cookieName, session.accessToken, buildSessionCookieOptions(ttl, request));
+      return newResponse;
+    }
+
+    return successResponse;
   } catch (error) {
-    if (error instanceof DatabaseUnavailableError || isDbConnectivityError(error) || isPrismaConnectivityError(error)) {
-      const traceId = error instanceof DatabaseUnavailableError ? error.traceId : resolveLoginTraceId(request);
-      console.error("LOGIN_DATABASE_UNAVAILABLE", {
-        traceId,
-        error,
-      });
+    if (isPrismaConnectivityError(error)) {
+      console.error("LOGIN_DATABASE_UNAVAILABLE", error);
       return NextResponse.json(
-        { detail: AUTH_SERVICE_UNAVAILABLE_ERROR, traceId },
+        { detail: AUTH_SERVICE_UNAVAILABLE_ERROR },
         {
           status: 503,
           headers: {
             "Cache-Control": "no-store",
             "Retry-After": "60",
-            "x-trace-id": traceId,
           },
         },
       );
