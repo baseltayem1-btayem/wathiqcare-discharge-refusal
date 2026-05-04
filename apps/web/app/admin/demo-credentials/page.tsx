@@ -109,7 +109,7 @@ export default function DemoCredentialsPage() {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-slate-50">
-        <div style={{ height: "3px", background: "linear-gradient(90deg, #7c3aed, #0891b2, #7c3aed)" }} />
+        <div className="h-[3px] bg-[linear-gradient(90deg,#7c3aed,#0891b2,#7c3aed)]" />
 
         <header className="border-b border-slate-200 bg-white px-4 py-3">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">

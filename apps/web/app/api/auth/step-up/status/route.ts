@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireAuth(request);
     const tenantId = auth.tenant_id ?? "platform";
-    const status = getStepUpStatusFromRequest({ request, auth, tenantId });
+    const status = await getStepUpStatusFromRequest({ request, auth, tenantId });
 
     return NextResponse.json({
       verified: status.verified,

@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     const platformRole =
       auth.platform_role ??
       (user.userType === "PLATFORM_ADMIN" ? platformRoleForUserRole(user.role) ?? "platform_admin" : platformRoleForUserRole(user.role));
-    const stepUp = getStepUpStatusFromRequest({
+    const stepUp = await getStepUpStatusFromRequest({
       request,
       auth,
       tenantId: effectiveTenantId ?? "platform",

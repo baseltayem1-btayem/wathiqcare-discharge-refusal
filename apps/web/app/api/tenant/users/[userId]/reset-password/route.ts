@@ -1,15 +1,21 @@
 import { randomUUID, createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
+import { setUserPasswordByAdmin } from "@/lib/server/admin-password-reset";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { buildWathiqCareEmailHtml, buildWathiqCareEmailText, sendEmailWithDiagnostics } from "@/lib/server/email-provider";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 export const runtime = "nodejs";
+
+type DirectResetPayload = {
+    password?: string;
+};
+
 /**
  * POST /api/tenant/users/[userId]/reset-password
- * Sends password reset email to a user (admin/tenant admin initiated)
+ * Sends password reset email or sets a password directly for a tenant user.
  */
 export async function POST(
     request: NextRequest,
@@ -44,6 +50,35 @@ export async function POST(
 
         if (!user) {
             throw new ApiError(404, "User not found in this tenant");
+        }
+
+        const rawBody = await request.text();
+        const payload = rawBody
+            ? (JSON.parse(rawBody) as DirectResetPayload)
+            : null;
+
+        if (payload?.password) {
+            await setUserPasswordByAdmin(prisma, user.id, payload.password);
+
+            await writeAuditLog({
+                tenantId,
+                userId: auth.sub,
+                entityType: "USER",
+                entityId: userId,
+                action: "PASSWORD_RESET_SET_BY_ADMIN",
+                details: `Password set directly by tenant admin for ${user.email}`,
+                metadataJson: {
+                    mode: "direct",
+                    email: user.email,
+                },
+                request,
+            });
+
+            return NextResponse.json({
+                success: true,
+                message: "Password updated successfully",
+                email: user.email,
+            });
         }
 
         const rawToken = randomUUID();

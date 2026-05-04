@@ -38,9 +38,13 @@ export default function PlatformUsersPage() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [resetUser, setResetUser] = useState<PlatformUser | null>(null);
+    const [resetForm, setResetForm] = useState({ password: "", confirmPassword: "" });
     const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
     const [saving, setSaving] = useState(false);
     const [forcingReset, setForcingReset] = useState(false);
+    const [resettingUserId, setResettingUserId] = useState<string | null>(null);
+    const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
     const loadUsers = useCallback(async (opts?: { silent?: boolean }) => {
         if (!opts?.silent) setRefreshing(true);
@@ -120,6 +124,83 @@ export default function PlatformUsersPage() {
         }
     }
 
+    async function handleDirectPasswordReset() {
+        if (!resetUser) {
+            return;
+        }
+        if (!resetForm.password) {
+            toast.error(txt("New password is required", "كلمة المرور الجديدة مطلوبة"));
+            return;
+        }
+        if (resetForm.password !== resetForm.confirmPassword) {
+            toast.error(txt("Passwords do not match", "كلمتا المرور غير متطابقتين"));
+            return;
+        }
+
+        setResettingUserId(resetUser.id);
+        try {
+            await apiFetchJson(`/api/platform/users/${resetUser.id}/reset-password`, {
+                method: "POST",
+                body: JSON.stringify({ password: resetForm.password }),
+            });
+            toast.success(txt("Password updated successfully", "تم تحديث كلمة المرور بنجاح"));
+            setResetUser(null);
+            setResetForm({ password: "", confirmPassword: "" });
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : txt("Failed to update password", "تعذر تحديث كلمة المرور"));
+        } finally {
+            setResettingUserId(null);
+        }
+    }
+
+    async function handleForceLogout(user: PlatformUser) {
+        const confirmed = window.confirm(
+            txt(
+                `Force logout ${user.fullName} and revoke all active sessions?`,
+                `فرض تسجيل الخروج على ${user.fullName} وإبطال جميع الجلسات النشطة؟`,
+            ),
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        setActionLoading((prev) => ({ ...prev, [`logout_${user.id}`]: true }));
+        try {
+            await apiFetchJson(`/api/platform/users/${user.id}/force-logout`, {
+                method: "POST",
+            });
+            toast.success(txt("User sessions revoked", "تم إبطال جلسات المستخدم"));
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : txt("Failed to force logout user", "تعذر فرض تسجيل خروج المستخدم"));
+        } finally {
+            setActionLoading((prev) => ({ ...prev, [`logout_${user.id}`]: false }));
+        }
+    }
+
+    async function handleResetMfa(user: PlatformUser) {
+        const confirmed = window.confirm(
+            txt(
+                `Reset MFA for ${user.fullName}? This clears active step-up verification and requires fresh MFA verification on the next privileged action.`,
+                `إعادة ضبط MFA للمستخدم ${user.fullName}؟ سيؤدي هذا إلى مسح التحقق المعزز النشط وطلب تحقق MFA جديد عند الإجراء الحساس التالي.`,
+            ),
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        setActionLoading((prev) => ({ ...prev, [`mfa_${user.id}`]: true }));
+        try {
+            await apiFetchJson(`/api/platform/users/${user.id}/reset-mfa`, {
+                method: "POST",
+            });
+            toast.success(txt("User MFA reset", "تمت إعادة ضبط MFA للمستخدم"));
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : txt("Failed to reset MFA", "تعذر إعادة ضبط MFA"));
+        } finally {
+            setActionLoading((prev) => ({ ...prev, [`mfa_${user.id}`]: false }));
+        }
+    }
+
     function roleLabel(role: string): string {
         if (role === "platform_superadmin") return txt("Superadmin", "مشرف أعلى");
         if (role === "platform_admin") return txt("Platform Admin", "مشرف المنصة");
@@ -195,18 +276,19 @@ export default function PlatformUsersPage() {
                                 <th className="px-4 py-3 text-left">{txt("Status", "الحالة")}</th>
                                 <th className="px-4 py-3 text-left">{txt("Last Login", "آخر تسجيل دخول")}</th>
                                 <th className="px-4 py-3 text-left">{txt("Created", "تاريخ الإنشاء")}</th>
+                                <th className="px-4 py-3 text-left">{txt("Actions", "الإجراءات")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                                    <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
                                         {txt("Loading...", "جارٍ التحميل...")}
                                     </td>
                                 </tr>
                             ) : users.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                                    <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
                                         {txt("No platform users found", "لا يوجد مستخدمون للمنصة")}
                                     </td>
                                 </tr>
@@ -232,6 +314,37 @@ export default function PlatformUsersPage() {
                                         </td>
                                         <td className="px-4 py-3 text-slate-500">
                                             {new Date(user.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-wrap gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setResetUser(user);
+                                                        setResetForm({ password: "", confirmPassword: "" });
+                                                    }}
+                                                    disabled={resettingUserId === user.id}
+                                                    className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-1.5 text-xs font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50"
+                                                >
+                                                    {resettingUserId === user.id ? txt("Saving...", "جارٍ الحفظ...") : txt("Set Password", "تعيين كلمة المرور")}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void handleForceLogout(user)}
+                                                    disabled={!!actionLoading[`logout_${user.id}`]}
+                                                    className="rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                                                >
+                                                    {actionLoading[`logout_${user.id}`] ? txt("Revoking...", "جارٍ الإبطال...") : txt("Force Logout", "فرض تسجيل الخروج")}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void handleResetMfa(user)}
+                                                    disabled={!!actionLoading[`mfa_${user.id}`]}
+                                                    className="rounded-md border border-violet-300 bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-100 disabled:opacity-50"
+                                                >
+                                                    {actionLoading[`mfa_${user.id}`] ? txt("Resetting...", "جارٍ إعادة الضبط...") : txt("Reset MFA", "إعادة ضبط MFA")}
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -340,6 +453,90 @@ export default function PlatformUsersPage() {
                                 className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50"
                             >
                                 {saving ? txt("Creating...", "جارٍ الإنشاء...") : txt("Create User", "إنشاء مستخدم")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {resetUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-floating)]">
+                        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                            <div>
+                                <h3 className="text-base font-semibold text-slate-900">{txt("Set Platform User Password", "تعيين كلمة مرور مستخدم المنصة")}</h3>
+                                <p className="mt-0.5 text-xs text-slate-500">
+                                    {txt("This updates the password directly and revokes active sessions without changing active status.", "يحدّث هذا كلمة المرور مباشرةً ويلغي الجلسات النشطة دون تغيير حالة النشاط.")}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setResetUser(null);
+                                    setResetForm({ password: "", confirmPassword: "" });
+                                }}
+                                title={txt("Close password reset dialog", "إغلاق نافذة تعيين كلمة المرور")}
+                                aria-label={txt("Close password reset dialog", "إغلاق نافذة تعيين كلمة المرور")}
+                                className="text-slate-400 hover:text-slate-600"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 p-5">
+                            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                                <strong className="text-slate-900">{resetUser.fullName}</strong>
+                                <div className="mt-1 text-xs text-slate-500">{resetUser.email}</div>
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-xs font-medium text-slate-700">{txt("New Password", "كلمة المرور الجديدة")}</label>
+                                <input
+                                    type="password"
+                                    autoComplete="new-password"
+                                    title={txt("Enter new password", "أدخل كلمة المرور الجديدة")}
+                                    aria-label={txt("Enter new password", "أدخل كلمة المرور الجديدة")}
+                                    placeholder={txt("Strong password", "كلمة مرور قوية")}
+                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                                    value={resetForm.password}
+                                    onChange={(e) => setResetForm((p) => ({ ...p, password: e.target.value }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-xs font-medium text-slate-700">{txt("Confirm Password", "تأكيد كلمة المرور")}</label>
+                                <input
+                                    type="password"
+                                    autoComplete="new-password"
+                                    title={txt("Confirm new password", "أكد كلمة المرور الجديدة")}
+                                    aria-label={txt("Confirm new password", "أكد كلمة المرور الجديدة")}
+                                    placeholder={txt("Repeat password", "أعد إدخال كلمة المرور")}
+                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                                    value={resetForm.confirmPassword}
+                                    onChange={(e) => setResetForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+                                />
+                            </div>
+                            <p className="text-xs text-slate-500">
+                                {txt("Password must be at least 12 characters and include uppercase, lowercase, a number, and a special character.", "يجب أن تتكون كلمة المرور من 12 حرفًا على الأقل وأن تحتوي على حرف كبير وحرف صغير ورقم ورمز خاص.")}
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setResetUser(null);
+                                    setResetForm({ password: "", confirmPassword: "" });
+                                }}
+                                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                                {txt("Cancel", "إلغاء")}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => void handleDirectPasswordReset()}
+                                disabled={resettingUserId === resetUser.id}
+                                className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50"
+                            >
+                                {resettingUserId === resetUser.id ? txt("Saving...", "جارٍ الحفظ...") : txt("Update Password", "تحديث كلمة المرور")}
                             </button>
                         </div>
                     </div>

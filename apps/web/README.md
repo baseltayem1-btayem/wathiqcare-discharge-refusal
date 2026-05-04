@@ -1,3 +1,5 @@
+# WathiqCare Web App
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Admin Operations
@@ -35,8 +37,8 @@ Example JSON file:
 
 ```json
 [
-	{ "identifier": "imc.admin", "password": "Welcome@123" },
-	{ "identifier": "imc.legal", "password": "Legal@123" }
+  { "identifier": "imc.admin", "password": "Welcome@123" },
+  { "identifier": "imc.legal", "password": "Legal@123" }
 ]
 ```
 
