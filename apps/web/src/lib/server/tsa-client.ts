@@ -126,8 +126,8 @@ export class TSAClient {
       const req = transport.request(url, options, (res: http.IncomingMessage) => {
         let data = '';
 
-        res.on('data', (chunk: Buffer) => {
-          data += chunk;
+        res.on('data', (chunk: Buffer | string) => {
+          data += chunk.toString();
         });
 
         res.on('end', () => {
