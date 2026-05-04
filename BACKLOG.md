@@ -38,6 +38,18 @@ low         → P2 priority (backlog)
 
 ## 🚀 EPIC 1: Legal Closure (PKI + TSA + Verifier)
 
+### Security Follow-Up: Track upstream Next.js bundled PostCSS advisory
+
+**Priority:** MEDIUM  
+**Labels:** task, security, ops, medium  
+**Status:** OPEN  
+**Owner:** Platform / Frontend
+
+- [ ] Monitor published `next` releases for a stable version that no longer ships `postcss < 8.5.10`
+- [ ] Upgrade `next` immediately once upstream resolves the bundled dependency
+- [ ] Re-run `npm audit --omit=dev` and production build after the upgrade
+- [ ] Close residual advisory note in [docs/security-advisories-2026-05-04.md](docs/security-advisories-2026-05-04.md)
+
 **Priority:** HIGH  
 **Milestone:** M1  
 **Labels:** epic, legal, security, high  
