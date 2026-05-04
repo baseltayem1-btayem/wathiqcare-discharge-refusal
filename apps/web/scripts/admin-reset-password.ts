@@ -1,7 +1,10 @@
 import "dotenv/config";
 
+import fs from "node:fs/promises";
+import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { ensurePasswordResetSchema } from "../src/lib/server/auth-reset";
+import { appendAuditChainEvent } from "../src/lib/server/audit-chain-service";
 import { hashPassword, verifyPassword } from "../src/lib/server/password";
 
 type ResetTarget = {
@@ -9,8 +12,17 @@ type ResetTarget = {
   password: string;
 };
 
+type ParsedArgs = {
+  apply: boolean;
+  audit: boolean;
+  actorIdentifier: string | null;
+  filePath: string | null;
+  targets: ResetTarget[];
+};
+
 type UserRow = {
   id: string;
+  tenant_id: string;
   email: string;
   is_active: boolean;
   status: string | null;
@@ -25,15 +37,75 @@ function printUsage(): void {
     "Usage:",
     "  npm run admin:reset-password -- --username <username-or-email> --password <newPassword>",
     "  npm run admin:reset-password -- --target <username-or-email=password> [--target <username-or-email=password>]",
+    "  npm run admin:reset-password -- --file <resets.json|resets.csv>",
     "",
     "Options:",
+    "  --file <path>   Load reset targets from JSON or CSV.",
+    "  --audit         Write audit_logs entries and an audit-chain event for each password reset.",
+    "  --actor <id>    Username or email of the admin/operator performing the reset. Required with --audit.",
     "  --apply   Execute the update. Without this flag the script runs in dry-run mode.",
     "  --help    Show this help.",
   ].join("\n"));
 }
 
-function parseArgs(argv: string[]): { apply: boolean; targets: ResetTarget[] } {
+async function loadTargetsFromFile(filePath: string): Promise<ResetTarget[]> {
+  const absolutePath = path.resolve(filePath);
+  const extension = path.extname(absolutePath).toLowerCase();
+  const raw = await fs.readFile(absolutePath, "utf8");
+
+  if (extension === ".json") {
+    const parsed = JSON.parse(raw) as Array<Record<string, unknown>>;
+    if (!Array.isArray(parsed)) {
+      throw new Error("JSON reset file must contain an array of objects");
+    }
+
+    return parsed.map((entry, index) => {
+      const identifier = String(entry.identifier ?? entry.username ?? entry.email ?? "").trim();
+      const password = String(entry.password ?? "");
+      if (!identifier || !password) {
+        throw new Error(`Invalid JSON entry at index ${index}: identifier and password are required`);
+      }
+      return { identifier, password };
+    });
+  }
+
+  if (extension === ".csv") {
+    const lines = raw
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) {
+      throw new Error("CSV reset file is empty");
+    }
+
+    const header = lines[0].split(",").map((part) => part.trim().toLowerCase());
+    const identifierIndex = header.findIndex((key) => ["identifier", "username", "email"].includes(key));
+    const passwordIndex = header.findIndex((key) => key === "password");
+
+    if (identifierIndex < 0 || passwordIndex < 0) {
+      throw new Error("CSV reset file must contain identifier/username/email and password columns");
+    }
+
+    return lines.slice(1).map((line, rowIndex) => {
+      const columns = line.split(",");
+      const identifier = (columns[identifierIndex] ?? "").trim();
+      const password = columns[passwordIndex] ?? "";
+      if (!identifier || !password) {
+        throw new Error(`Invalid CSV entry at row ${rowIndex + 2}: identifier and password are required`);
+      }
+      return { identifier, password };
+    });
+  }
+
+  throw new Error(`Unsupported file type: ${extension}. Use .json or .csv`);
+}
+
+async function parseArgs(argv: string[]): Promise<ParsedArgs> {
   let apply = false;
+  let audit = false;
+  let actorIdentifier: string | null = null;
+  let filePath: string | null = null;
   let username: string | null = null;
   let password: string | null = null;
   const targets: ResetTarget[] = [];
@@ -48,6 +120,23 @@ function parseArgs(argv: string[]): { apply: boolean; targets: ResetTarget[] } {
 
     if (arg === "--apply") {
       apply = true;
+      continue;
+    }
+
+    if (arg === "--audit") {
+      audit = true;
+      continue;
+    }
+
+    if (arg === "--actor") {
+      actorIdentifier = argv[index + 1]?.trim() || null;
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--file") {
+      filePath = argv[index + 1]?.trim() || null;
+      index += 1;
       continue;
     }
 
@@ -91,24 +180,32 @@ function parseArgs(argv: string[]): { apply: boolean; targets: ResetTarget[] } {
     targets.push({ identifier: username, password });
   }
 
+  if (filePath) {
+    targets.push(...await loadTargetsFromFile(filePath));
+  }
+
   if (targets.length === 0) {
     throw new Error("No reset targets provided");
   }
 
-  return { apply, targets };
+  if (audit && !actorIdentifier) {
+    throw new Error("--actor is required when --audit is used");
+  }
+
+  return { apply, audit, actorIdentifier, filePath, targets };
 }
 
 async function findUser(identifier: string): Promise<UserRow> {
   const normalized = identifier.trim().toLowerCase();
   const rows = normalized.includes("@")
     ? await prisma.$queryRaw<UserRow[]>`
-        SELECT id, email, is_active, status, COALESCE(password_reset_required, FALSE) AS password_reset_required, hashed_password
+        SELECT id, tenant_id, email, is_active, status, COALESCE(password_reset_required, FALSE) AS password_reset_required, hashed_password
         FROM users
         WHERE LOWER(email) = ${normalized}
         LIMIT 2
       `
     : await prisma.$queryRaw<UserRow[]>`
-        SELECT id, email, is_active, status, COALESCE(password_reset_required, FALSE) AS password_reset_required, hashed_password
+        SELECT id, tenant_id, email, is_active, status, COALESCE(password_reset_required, FALSE) AS password_reset_required, hashed_password
         FROM users
         WHERE LOWER(email) LIKE ${`${normalized}@%`}
         ORDER BY created_at ASC
@@ -124,6 +221,44 @@ async function findUser(identifier: string): Promise<UserRow> {
   }
 
   return rows[0];
+}
+
+async function writePasswordResetAudit(args: {
+  actor: UserRow;
+  target: UserRow;
+  sourceIdentifier: string;
+}): Promise<void> {
+  await prisma.auditLog.create({
+    data: {
+      tenantId: args.target.tenant_id,
+      userId: args.actor.id,
+      entityType: "USER_ACCOUNT",
+      entityId: args.target.id,
+      action: "ADMIN_PASSWORD_RESET_APPLIED",
+      details: `identifier=${args.sourceIdentifier} email=${args.target.email}`,
+      metadataJson: {
+        sourceIdentifier: args.sourceIdentifier,
+        targetEmail: args.target.email,
+        script: "admin-reset-password",
+      },
+    },
+  });
+
+  try {
+    await appendAuditChainEvent({
+      tenantId: args.target.tenant_id,
+      eventType: "ADMIN_PASSWORD_RESET_APPLIED",
+      actorId: args.actor.id,
+      payloadSummary: `Password reset applied for ${args.target.email}`,
+      metadataJson: {
+        sourceIdentifier: args.sourceIdentifier,
+        targetUserId: args.target.id,
+        script: "admin-reset-password",
+      },
+    });
+  } catch (auditChainError) {
+    console.error("admin reset audit-chain append failed", auditChainError);
+  }
 }
 
 async function updateUserPassword(user: UserRow, password: string): Promise<{ passwordMatches: boolean; target: UserRow }> {
@@ -143,7 +278,7 @@ async function updateUserPassword(user: UserRow, password: string): Promise<{ pa
   `;
 
   const verificationRows = await prisma.$queryRaw<UserRow[]>`
-    SELECT id, email, is_active, status, COALESCE(password_reset_required, FALSE) AS password_reset_required, hashed_password
+    SELECT id, tenant_id, email, is_active, status, COALESCE(password_reset_required, FALSE) AS password_reset_required, hashed_password
     FROM users
     WHERE id = ${user.id}
     LIMIT 1
@@ -161,9 +296,11 @@ async function updateUserPassword(user: UserRow, password: string): Promise<{ pa
 }
 
 async function main() {
-  const { apply, targets } = parseArgs(process.argv.slice(2));
+  const { apply, audit, actorIdentifier, filePath, targets } = await parseArgs(process.argv.slice(2));
 
   await ensurePasswordResetSchema(prisma);
+
+  const actor = actorIdentifier ? await findUser(actorIdentifier) : null;
 
   const resolved = await Promise.all(targets.map(async (target) => ({
     input: target,
@@ -173,6 +310,9 @@ async function main() {
   if (!apply) {
     console.log(JSON.stringify({
       mode: "dry-run",
+      filePath,
+      audit,
+      actor: actor ? actor.email : null,
       targets: resolved.map(({ input, user }) => ({
         identifier: input.identifier,
         email: user.email,
@@ -193,6 +333,15 @@ async function main() {
   const results = [];
   for (const entry of resolved) {
     const result = await updateUserPassword(entry.user, entry.input.password);
+
+    if (audit && actor) {
+      await writePasswordResetAudit({
+        actor,
+        target: result.target,
+        sourceIdentifier: entry.input.identifier,
+      });
+    }
+
     results.push({
       identifier: entry.input.identifier,
       email: result.target.email,
@@ -205,6 +354,9 @@ async function main() {
 
   console.log(JSON.stringify({
     mode: "apply",
+    filePath,
+    audit,
+    actor: actor ? actor.email : null,
     results,
   }, null, 2));
 }

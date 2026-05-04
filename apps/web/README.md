@@ -1,5 +1,61 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Admin Operations
+
+### Reset passwords safely
+
+The web app includes a built-in admin script that uses the same `hashPassword()` logic as the live authentication flow.
+
+Dry-run a single reset:
+
+```bash
+npm run admin:reset-password -- --username imc.jeddah.doctor1 --password Doctor@123
+```
+
+Apply a single reset:
+
+```bash
+npm run admin:reset-password -- --username imc.jeddah.doctor1 --password Doctor@123 --apply
+```
+
+Apply multiple resets inline:
+
+```bash
+npm run admin:reset-password -- --target imc.admin=Welcome@123 --target imc.legal=Legal@123 --apply
+```
+
+Load resets from a file:
+
+```bash
+npm run admin:reset-password -- --file ./scripts/reset-batch.json
+npm run admin:reset-password -- --file ./scripts/reset-batch.csv --apply
+```
+
+Example JSON file:
+
+```json
+[
+	{ "identifier": "imc.admin", "password": "Welcome@123" },
+	{ "identifier": "imc.legal", "password": "Legal@123" }
+]
+```
+
+Example CSV file:
+
+```csv
+identifier,password
+imc.admin,Welcome@123
+imc.legal,Legal@123
+```
+
+Optional audit logging:
+
+```bash
+npm run admin:reset-password -- --target imc.admin=Welcome@123 --actor superadmin --audit --apply
+```
+
+When `--audit` is enabled, the script writes an `audit_logs` entry for each reset and attempts to append a matching audit-chain event. Use `--actor` with an existing admin username or email so the operation is attributable.
+
 ## Getting Started
 
 First, run the development server:
