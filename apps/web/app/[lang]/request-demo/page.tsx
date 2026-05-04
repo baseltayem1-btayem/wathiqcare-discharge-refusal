@@ -135,11 +135,15 @@ export default function RequestDemoPage() {
             <div className="wc-card-soft border-cyan-100 bg-cyan-50 p-5">
               <div className="flex items-center gap-3 mb-3">
                 <Mail className="h-5 w-5 text-cyan-700" />
-                <span className="text-sm font-semibold text-cyan-800">demo@wathiqcare.online</span>
+                <a href="mailto:demo@wathiqcare.online" className="text-sm font-semibold text-cyan-800 hover:underline">
+                  demo@wathiqcare.online
+                </a>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-cyan-700" />
-                <span className="text-sm font-semibold text-cyan-800">+966 XX XXX XXXX</span>
+                <a href="tel:+966543587772" className="text-sm font-semibold text-cyan-800 hover:underline" dir="ltr">
+                  +966 543587772
+                </a>
               </div>
             </div>
           </div>
