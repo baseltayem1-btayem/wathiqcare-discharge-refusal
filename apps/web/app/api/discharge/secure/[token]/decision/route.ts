@@ -19,7 +19,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       typed_name: body?.typed_name ?? "",
       refusal_acknowledged: body?.refusal_acknowledged,
       signature_data: body?.signature_data,
-    });
+    }, request);
 
     return NextResponse.json(response);
   } catch (error) {

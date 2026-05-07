@@ -135,20 +135,26 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#eff7fa]">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="orb-login-1 absolute -left-24 top-[-140px] h-[340px] w-[340px] rounded-full" />
-        <div className="orb-login-2 absolute -right-24 top-[12%] h-[360px] w-[360px] rounded-full" />
-        <div className="orb-login-3 absolute bottom-[-150px] left-1/2 h-[380px] w-[380px] -translate-x-1/2 rounded-full" />
+    <main className="min-h-screen bg-[var(--background)]">
+      <div className="border-b border-[#224566] bg-[var(--primary)] px-4 py-2 text-white">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[0.04em]">
+          <div className="flex items-center gap-3">
+            <span>WathiqCare System</span>
+            <span className="hidden md:inline">International Medical Center (IMC)</span>
+            <span className="hidden md:inline">Clinical Discharge Refusal &amp; Legal Evidence Module</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="wc-system-indicator !border-white/25 !bg-white/10">CR: 4030143596</span>
+            <span className="wc-system-indicator !border-white/25 !bg-white/10">Version: 7.2.4</span>
+          </div>
+        </div>
       </div>
 
-      <div className="login-top-bar" />
-
-      <div className="relative mx-auto w-full max-w-6xl px-4 py-8 md:px-8 md:py-12">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6 md:py-8">
         <div className="mb-4 flex items-center justify-between gap-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/80 bg-white/75 px-3 py-2 text-xs font-semibold text-slate-700 backdrop-blur transition hover:border-cyan-200 hover:bg-cyan-50 sm:text-sm"
+            className="toolbar-btn toolbar-btn-secondary"
           >
             <ArrowLeft className="h-4 w-4" />
             {isRtl ? "الصفحة الرئيسية" : "Home"}
@@ -156,14 +162,14 @@ export default function LoginPage() {
           <LanguageSwitcher className="bg-white/95" />
         </div>
 
-        <section className="login-shell overflow-hidden rounded-[28px] border border-white/70 bg-white/80 backdrop-blur-xl">
+        <section className="overflow-hidden border border-[var(--border-strong)] bg-white shadow-[var(--shadow-floating)]">
           <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="login-brand-panel relative border-b p-5 md:p-7 lg:border-b-0 lg:border-e">
+            <div className="border-b border-[var(--border)] bg-[#f7f9fb] p-5 md:p-6 lg:border-b-0 lg:border-e">
               <LoginBrandPanel />
             </div>
 
             <div className="p-5 md:p-7 lg:p-9" dir={isRtl ? "rtl" : "ltr"}>
-              <div className="mx-auto w-full max-w-xl rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] md:p-6">
+              <div className="mx-auto w-full max-w-xl border border-[var(--border)] bg-white p-4 md:p-5">
                 <div className="mb-5 flex justify-center">
                   <div className="relative w-[160px] sm:w-[190px] md:w-[210px]">
                     <Image
@@ -178,30 +184,30 @@ export default function LoginPage() {
                 </div>
 
                 <div className="mb-4 flex justify-center">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-700">
+                  <span className="wc-module-pill">
                     {t("login.badge")}
                   </span>
                 </div>
 
                 {/* Auth Mode Tabs */}
-                <div className="mb-6 flex gap-1 border-b border-slate-200">
+                <div className="mb-4 flex flex-wrap gap-1 border-b border-[var(--border)] pb-2">
                   <button
                     onClick={() => { setAuthMode("password"); setError(""); setNotice(""); }}
-                    className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "password" ? "border-cyan-600 text-cyan-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+                    className={`toolbar-btn ${authMode === "password" ? "toolbar-btn-primary" : "toolbar-btn-secondary"}`}
                   >
                     <Lock className="h-3.5 w-3.5" />
                     <span>{isRtl ? "كلمة المرور" : "Password"}</span>
                   </button>
                   <button
                     onClick={() => { setAuthMode("magic-link"); setError(""); setNotice(""); }}
-                    className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "magic-link" ? "border-cyan-600 text-cyan-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+                    className={`toolbar-btn ${authMode === "magic-link" ? "toolbar-btn-primary" : "toolbar-btn-secondary"}`}
                   >
                     <Mail className="h-3.5 w-3.5" />
                     <span>{isRtl ? "رابط آمن" : "Secure Link"}</span>
                   </button>
                   <button
                     onClick={() => { setAuthMode("microsoft"); setError(""); setNotice(""); }}
-                    className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${authMode === "microsoft" ? "border-cyan-600 text-cyan-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+                    className={`toolbar-btn ${authMode === "microsoft" ? "toolbar-btn-primary" : "toolbar-btn-secondary"}`}
                   >
                     <span>Microsoft SSO</span>
                   </button>
@@ -218,13 +224,13 @@ export default function LoginPage() {
                         placeholder={isRtl ? "اسم المستخدم أو البريد الإلكتروني" : "Username or email"}
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100"
+                        className="wc-form-input"
                       />
-                      {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+                      {error && <div role="alert" className="wc-panel text-[12px] text-red-700">{error}</div>}
                       <button
                         onClick={handleMicrosoftSSO}
                         disabled={loading || !identifier}
-                        className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-50 disabled:opacity-60"
+                        className="toolbar-btn toolbar-btn-primary w-full justify-center"
                       >
                         {loading ? (isRtl ? "جاري التسجيل..." : "Signing in...") : (isRtl ? "المتابعة مع Microsoft" : "Continue with Microsoft")}
                       </button>
@@ -239,7 +245,7 @@ export default function LoginPage() {
                     <p className="text-sm text-gray-600">{isRtl ? "أدخل بريدك الإلكتروني وستصلك رابط دخول مؤقتة" : "Enter your email and receive a one-time sign-in link — no password needed"}</p>
 
                     <div>
-                      <label htmlFor="magic-identifier" className="mb-1 block text-sm font-medium text-gray-700">
+                      <label htmlFor="magic-identifier" className="wc-form-label mb-1 block">
                         {isRtl ? "البريد الإلكتروني" : "Email"}
                       </label>
                       <input
@@ -250,18 +256,18 @@ export default function LoginPage() {
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
                         disabled={loading}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                        className="wc-form-input"
                         placeholder={isRtl ? "your.email@domain.com" : "your.email@domain.com"}
                       />
                     </div>
 
-                    {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-                    {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</div>}
+                    {error && <div role="alert" className="wc-panel text-[12px] text-red-700">{error}</div>}
+                    {notice && <div role="status" className="wc-panel text-[12px] text-emerald-800">{notice}</div>}
 
                     <button
                       type="submit"
                       disabled={loading}
-                      className="login-submit-btn inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="toolbar-btn toolbar-btn-primary w-full justify-center py-2"
                     >
                       <Mail className="h-4 w-4" />
                       {loading ? (isRtl ? "جاري الإرسال..." : "Sending...") : (isRtl ? "إرسال رابط الدخول" : "Send Secure Login Link")}
@@ -284,7 +290,7 @@ export default function LoginPage() {
                     <h2 className="text-lg font-bold text-gray-900">{isRtl ? "تسجيل الدخول" : "Sign In"}</h2>
 
                     <div>
-                      <label htmlFor="login-identifier" className="mb-1 block text-sm font-medium text-gray-700">
+                      <label htmlFor="login-identifier" className="wc-form-label mb-1 block">
                         {isRtl ? "اسم المستخدم أو البريد الإلكتروني" : "Username or Email"}
                       </label>
                       <input
@@ -296,13 +302,13 @@ export default function LoginPage() {
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
                         disabled={loading}
-                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                        className="wc-form-input"
                         placeholder={isRtl ? "اسم المستخدم أو البريد الإلكتروني" : "username or email@domain.com"}
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="login-password" className="mb-1 block text-sm font-medium text-gray-700">
+                      <label htmlFor="login-password" className="wc-form-label mb-1 block">
                         {isRtl ? "كلمة المرور" : "Password"}
                       </label>
                       <div className="relative">
@@ -314,7 +320,7 @@ export default function LoginPage() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           disabled={loading}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 pe-10 text-sm text-slate-900 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                          className="wc-form-input pe-10"
                           placeholder={isRtl ? "كلمة المرور" : "Enter your password"}
                         />
                         <button
@@ -342,12 +348,12 @@ export default function LoginPage() {
                       </label>
                     </div>
 
-                    {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+                    {error && <div role="alert" className="wc-panel text-[12px] text-red-700">{error}</div>}
 
                     <button
                       type="submit"
                       disabled={loading}
-                      className="login-submit-btn inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-semibold text-white transition hover:translate-y-[-1px] hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="toolbar-btn toolbar-btn-primary w-full justify-center py-2"
                     >
                       <KeyRound className="h-4 w-4" />
                       {loading ? (isRtl ? "جاري التسجيل..." : t("login.submitting")) : (isRtl ? "تسجيل الدخول" : t("login.submit"))}
@@ -369,7 +375,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowDemoAccounts(!showDemoAccounts)}
-                    className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+                    className="wc-panel w-full justify-between text-[12px] font-bold text-slate-600"
                   >
                     <span>{isRtl ? "حسابات تجريبية" : "Demo Accounts"}</span>
                     {showDemoAccounts ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -382,7 +388,7 @@ export default function LoginPage() {
                           key={acc.username}
                           type="button"
                           onClick={() => handleDemoLogin(acc.username, acc.password)}
-                          className="rounded-xl border border-cyan-100 bg-cyan-50 px-2 py-1.5 text-center text-[11px] font-semibold text-cyan-800 transition hover:border-cyan-300 hover:bg-cyan-100"
+                          className="toolbar-btn toolbar-btn-secondary justify-center"
                         >
                           {isRtl ? acc.labelAr : acc.label}
                         </button>
@@ -396,58 +402,6 @@ export default function LoginPage() {
         </section>
       </div>
 
-      <style jsx>{`
-        .orb-login-1,
-        .orb-login-2,
-        .orb-login-3 {
-          filter: blur(56px);
-        }
-
-        .orb-login-1 {
-          background: rgba(8, 145, 178, 0.24);
-          animation: driftLogin 10s ease-in-out infinite;
-        }
-
-        .orb-login-2 {
-          background: rgba(13, 148, 136, 0.18);
-          animation: driftLogin 12s ease-in-out infinite reverse;
-        }
-
-        .orb-login-3 {
-          background: rgba(34, 211, 238, 0.2);
-          animation: driftLogin 14s ease-in-out infinite;
-        }
-
-        @keyframes driftLogin {
-          0%,
-          100% {
-            transform: translateY(0) translateX(0);
-          }
-          50% {
-            transform: translateY(-14px) translateX(9px);
-          }
-        }
-
-        .login-top-bar {
-          height: 3px;
-          background: linear-gradient(90deg, #0f766e, #0891b2, #0f766e);
-        }
-
-        .login-shell {
-          box-shadow: 0 18px 48px rgba(12, 74, 110, 0.16);
-        }
-
-        .login-brand-panel {
-          background: radial-gradient(90% 130% at 18% 20%, rgba(34, 211, 238, 0.17) 0%, rgba(15, 23, 42, 0.03) 75%),
-            linear-gradient(165deg, #ecfeff 0%, #f8fafc 55%, #e6f6fb 100%);
-          border-color: #dbeafe;
-        }
-
-        .login-submit-btn {
-          background: linear-gradient(120deg, #0f766e, #0891b2, #06b6d4);
-          box-shadow: 0 8px 20px rgba(8, 145, 178, 0.28);
-        }
-      `}</style>
     </main>
   );
 }

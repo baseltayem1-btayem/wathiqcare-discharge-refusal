@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import zipfile
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -106,6 +107,7 @@ def workflow_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "tenant_id": tenant_id,
         "case_id": "case-1",
         "user": {"id": user_id, "email": user_email, "tenant_id": tenant_id},
+        "otp_dir": otp_dir,
     }
 
 
@@ -357,6 +359,89 @@ def test_cover_page_tamper_detection(workflow_env: dict[str, object], tmp_path: 
     assert result["valid"] is False
     assert result["cover_page_valid"] is False
     assert any("00_evidence_cover_certificate.pdf" in error for error in result["errors"])
+
+
+def test_otp_enforces_expiry_replay_and_resend_controls(workflow_env: dict[str, object]):
+    _run_core_flow(workflow_env)
+
+    service = FormsEngineService()
+    document = service.generate_form(
+        tenant_id=str(workflow_env["tenant_id"]),
+        case_id=str(workflow_env["case_id"]),
+        form_type="discharge_refusal_form",
+        payload={
+            **_decision_payload(),
+            "witness1_name": "Witness One",
+            "witness2_name": "Witness Two",
+        },
+        current_user=workflow_env["user"],
+    )["document"]
+
+    sent = service.send_document_otp(
+        tenant_id=str(workflow_env["tenant_id"]),
+        document_id=str(document["id"]),
+        payload={"phoneNumber": "+966500000000"},
+        current_user=workflow_env["user"],
+    )
+
+    with pytest.raises(ValueError, match="temporarily blocked"):
+        service.send_document_otp(
+            tenant_id=str(workflow_env["tenant_id"]),
+            document_id=str(document["id"]),
+            payload={"phoneNumber": "+966500000000"},
+            current_user=workflow_env["user"],
+        )
+
+    otp_state_path = Path(workflow_env["otp_dir"]) / f"{document['id']}.json"
+
+    otp_state = json.loads(otp_state_path.read_text(encoding="utf-8"))
+    otp_state["resendAvailableAt"] = (datetime.utcnow() - timedelta(seconds=1)).isoformat()
+    otp_state_path.write_text(json.dumps(otp_state, ensure_ascii=True, indent=2), encoding="utf-8")
+
+    verified = service.verify_document_otp(
+        tenant_id=str(workflow_env["tenant_id"]),
+        document_id=str(document["id"]),
+        payload={"otpCode": sent["otpDebugCode"]},
+        current_user=workflow_env["user"],
+    )
+    assert verified["verified"] is True
+
+    with pytest.raises(ValueError, match="already used"):
+        service.verify_document_otp(
+            tenant_id=str(workflow_env["tenant_id"]),
+            document_id=str(document["id"]),
+            payload={"otpCode": sent["otpDebugCode"]},
+            current_user=workflow_env["user"],
+        )
+
+    resent = service.send_document_otp(
+        tenant_id=str(workflow_env["tenant_id"]),
+        document_id=str(document["id"]),
+        payload={"phoneNumber": "+966500000000"},
+        current_user=workflow_env["user"],
+    )
+
+    otp_state = json.loads(otp_state_path.read_text(encoding="utf-8"))
+    otp_state["expiresAt"] = (datetime.utcnow() - timedelta(seconds=1)).isoformat()
+    otp_state["resendAvailableAt"] = (datetime.utcnow() - timedelta(seconds=1)).isoformat()
+    otp_state_path.write_text(json.dumps(otp_state, ensure_ascii=True, indent=2), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="OTP expired"):
+        service.verify_document_otp(
+            tenant_id=str(workflow_env["tenant_id"]),
+            document_id=str(document["id"]),
+            payload={"otpCode": resent["otpDebugCode"]},
+            current_user=workflow_env["user"],
+        )
+
+    logs = list_audit_logs_for_case(str(workflow_env["tenant_id"]), str(workflow_env["case_id"]))
+    assert logs is not None
+    actions = {item["action"] for item in logs}
+    assert "document_otp_issued" in actions
+    assert "document_otp_resend_blocked" in actions
+    assert "document_otp_verified" in actions
+    assert "document_otp_replay_blocked" in actions
+    assert "document_otp_expired" in actions
 
 
 def test_bundle_verifier_detects_tampered_file(workflow_env: dict[str, object], tmp_path: Path):

@@ -5,23 +5,20 @@ type ProgressProps = {
   value?: number;
   max?: number;
   className?: string;
+  title?: string;
 };
 
-export function Progress({ value = 0, max = 100, className }: ProgressProps) {
-  const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
+export function Progress({ value = 0, max = 100, className, title = "Progress" }: ProgressProps) {
+  const normalizedValue = Math.min(Math.max(value, 0), max);
 
   return (
-    <div
-      className={cn("relative h-2.5 w-full overflow-hidden rounded-full bg-slate-200/80", className)}
-      role="progressbar"
-      aria-valuemin={0}
-      aria-valuemax={max}
-      aria-valuenow={value}
+    <progress
+      title={title}
+      className={cn("relative h-2 w-full overflow-hidden border border-[var(--border)] bg-[#eef3f8]", className)}
+      value={normalizedValue}
+      max={max}
     >
-      <div
-        className="h-full bg-[linear-gradient(90deg,#1f5fa7_0%,#2f6fb7_100%)] transition-all duration-300 ease-in-out"
-        style={{ width: `${percentage}%` }}
-      />
-    </div>
+      {normalizedValue}
+    </progress>
   );
 }

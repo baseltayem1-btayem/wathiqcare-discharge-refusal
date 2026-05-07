@@ -265,15 +265,15 @@ export default function PlatformPage() {
             {notice ? <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
             {refreshing ? <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{txt("Refreshing platform data...", "جاري تحديث بيانات المنصة...")}</div> : null}
 
-            <section className="grid gap-4 md:grid-cols-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <section className="grid gap-3 md:grid-cols-4">
+                <div className="wc-panel">
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-slate-500">{txt("Tenants", "الجهات")}</p>
                         <Building2 className="h-4 w-4 text-slate-600" />
                     </div>
                     <p className="mt-2 text-2xl font-bold text-slate-900">{tenants.length}</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="wc-panel">
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-slate-500">{txt("Setup Status", "حالة الإعداد")}</p>
                         <ShieldCheck className="h-4 w-4 text-slate-600" />
@@ -285,14 +285,14 @@ export default function PlatformPage() {
                         {txt("Admins", "المسؤولون")}: {setupStatus?.platformAdminCount ?? 0} | {txt("Users", "المستخدمون")}: {setupStatus?.userCount ?? 0}
                     </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="wc-panel">
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-slate-500">{txt("Total Invoiced", "إجمالي الفواتير")}</p>
                         <CreditCard className="h-4 w-4 text-slate-600" />
                     </div>
                     <p className="mt-2 text-2xl font-bold text-slate-900">${(billingTotals.totalInvoiced / 100).toFixed(2)}</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="wc-panel">
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-slate-500">{txt("Licensed Seats", "المقاعد المرخصة")}</p>
                         <Users className="h-4 w-4 text-slate-600" />
@@ -303,7 +303,7 @@ export default function PlatformPage() {
             </section>
 
             {(widgetErrors.setup || widgetErrors.tenants || widgetErrors.billing || widgetErrors.subscriptions) ? (
-                <section className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                <section className="wc-panel mt-4 text-[12px] text-amber-800">
                     <p className="font-semibold">{txt("Some widgets could not load, but the page remains usable.", "تعذر تحميل بعض العناصر، لكن الصفحة ما زالت قابلة للاستخدام.")}</p>
                     {widgetErrors.setup ? <p className="mt-1">{txt("Setup status", "حالة الإعداد")}: {widgetErrors.setup}</p> : null}
                     {widgetErrors.tenants ? <p className="mt-1">{txt("Tenants", "الجهات")}: {widgetErrors.tenants}</p> : null}
@@ -312,18 +312,18 @@ export default function PlatformPage() {
                 </section>
             ) : null}
 
-            <section className="mt-5 grid gap-5 lg:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <h2 className="text-base font-semibold text-slate-900">{txt("Create Tenant", "إنشاء جهة")}</h2>
-                    <p className="mt-1 text-sm text-slate-600">{txt("Create tenant, initial tenant admin, and default subscription seat license.", "أنشئ جهة جديدة مع مسؤول الجهة الأولي وترخيص المقاعد الافتراضي للاشتراك.")}</p>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder={txt("Tenant Name", "اسم الجهة")} value={tenantForm.name} onChange={(e) => setTenantForm((p) => ({ ...p, name: e.target.value }))} />
-                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder={txt("Tenant Code (optional)", "رمز الجهة (اختياري)")} value={tenantForm.code} onChange={(e) => setTenantForm((p) => ({ ...p, code: e.target.value }))} />
-                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder={txt("Billing Email", "بريد الفوترة الإلكتروني")} value={tenantForm.billingEmail} onChange={(e) => setTenantForm((p) => ({ ...p, billingEmail: e.target.value }))} />
-                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder={txt("Tenant Admin Email", "بريد مسؤول الجهة الإلكتروني")} value={tenantForm.ownerEmail} onChange={(e) => setTenantForm((p) => ({ ...p, ownerEmail: e.target.value }))} />
-                        <input className="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder={txt("Tenant Admin Name", "اسم مسؤول الجهة")} value={tenantForm.ownerFullName} onChange={(e) => setTenantForm((p) => ({ ...p, ownerFullName: e.target.value }))} />
+            <section className="mt-5 grid gap-4 lg:grid-cols-2">
+                <div className="wc-form-panel">
+                    <h2 className="wc-panel-heading">{txt("Create Tenant", "إنشاء جهة")}</h2>
+                    <p className="mt-1 text-[12px] text-slate-600">{txt("Create tenant, initial tenant admin, and default subscription seat license.", "أنشئ جهة جديدة مع مسؤول الجهة الأولي وترخيص المقاعد الافتراضي للاشتراك.")}</p>
+                    <div className="wc-form-grid mt-3">
+                        <input className="wc-form-input" placeholder={txt("Tenant Name", "اسم الجهة")} value={tenantForm.name} onChange={(e) => setTenantForm((p) => ({ ...p, name: e.target.value }))} />
+                        <input className="wc-form-input" placeholder={txt("Tenant Code (optional)", "رمز الجهة (اختياري)")} value={tenantForm.code} onChange={(e) => setTenantForm((p) => ({ ...p, code: e.target.value }))} />
+                        <input className="wc-form-input" placeholder={txt("Billing Email", "بريد الفوترة الإلكتروني")} value={tenantForm.billingEmail} onChange={(e) => setTenantForm((p) => ({ ...p, billingEmail: e.target.value }))} />
+                        <input className="wc-form-input" placeholder={txt("Tenant Admin Email", "بريد مسؤول الجهة الإلكتروني")} value={tenantForm.ownerEmail} onChange={(e) => setTenantForm((p) => ({ ...p, ownerEmail: e.target.value }))} />
+                        <input className="wc-form-input" placeholder={txt("Tenant Admin Name", "اسم مسؤول الجهة")} value={tenantForm.ownerFullName} onChange={(e) => setTenantForm((p) => ({ ...p, ownerFullName: e.target.value }))} />
                         <select
-                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            className="wc-form-select"
                             title={txt("Select tenant admin role", "اختر دور مسؤول الجهة")}
                             aria-label={txt("Tenant admin role", "دور مسؤول الجهة")}
                             value={tenantForm.ownerRole}
@@ -333,18 +333,18 @@ export default function PlatformPage() {
                             <option value="tenant_owner">tenant_owner</option>
                         </select>
                     </div>
-                    <button type="button" onClick={() => void handleCreateTenant()} disabled={savingTenant} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                    <button type="button" onClick={() => void handleCreateTenant()} disabled={savingTenant} className="toolbar-btn toolbar-btn-primary mt-3">
                         <Plus className="h-4 w-4" />
                         {savingTenant ? txt("Creating...", "جارٍ الإنشاء...") : txt("Create Tenant", "إنشاء جهة")}
                     </button>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <h2 className="text-base font-semibold text-slate-900">{txt("Subscription and Seat Licensing", "إدارة الاشتراك وترخيص المقاعد")}</h2>
-                    <p className="mt-1 text-sm text-slate-600">{txt("Manage plan, status, and seat limits by tenant.", "إدارة الخطة والحالة وحدود المقاعد لكل جهة.")}</p>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <div className="wc-form-panel">
+                    <h2 className="wc-panel-heading">{txt("Subscription and Seat Licensing", "إدارة الاشتراك وترخيص المقاعد")}</h2>
+                    <p className="mt-1 text-[12px] text-slate-600">{txt("Manage plan, status, and seat limits by tenant.", "إدارة الخطة والحالة وحدود المقاعد لكل جهة.")}</p>
+                    <div className="wc-form-grid mt-3">
                         <select
-                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm sm:col-span-2"
+                            className="wc-form-select sm:col-span-2"
                             title={txt("Select tenant", "اختر جهة")}
                             aria-label={txt("Select tenant", "اختر جهة")}
                             value={selectedTenantId}
@@ -356,7 +356,7 @@ export default function PlatformPage() {
                             ))}
                         </select>
                         <select
-                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            className="wc-form-select"
                             title={txt("Select plan", "اختر الخطة")}
                             aria-label={txt("Subscription plan", "خطة الاشتراك")}
                             value={subscriptionForm.planCode}
@@ -365,7 +365,7 @@ export default function PlatformPage() {
                             {PLAN_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
                         </select>
                         <select
-                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            className="wc-form-select"
                             title={txt("Select billing interval", "اختر دورة الفوترة")}
                             aria-label={txt("Billing interval", "دورة الفوترة")}
                             value={subscriptionForm.billingInterval}
@@ -374,7 +374,7 @@ export default function PlatformPage() {
                             {BILLING_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
                         </select>
                         <select
-                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            className="wc-form-select"
                             title={txt("Select subscription status", "اختر حالة الاشتراك")}
                             aria-label={txt("Subscription status", "حالة الاشتراك")}
                             value={subscriptionForm.status}
@@ -387,22 +387,22 @@ export default function PlatformPage() {
                             min={1}
                             title={txt("Seat limit", "حد المقاعد")}
                             aria-label={txt("Seat limit", "حد المقاعد")}
-                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            className="wc-form-input"
                             value={subscriptionForm.seatLimit}
                             onChange={(e) => setSubscriptionForm((p) => ({ ...p, seatLimit: Number(e.target.value || 0) }))}
                         />
                     </div>
-                    <button type="button" onClick={() => void handleUpdateSubscription()} disabled={savingSubscription} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                    <button type="button" onClick={() => void handleUpdateSubscription()} disabled={savingSubscription} className="toolbar-btn toolbar-btn-primary mt-3">
                         {savingSubscription ? txt("Saving...", "جارٍ الحفظ...") : txt("Update Subscription", "تحديث الاشتراك")}
                     </button>
                 </div>
             </section>
 
-            <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
-                <h2 className="text-base font-semibold text-slate-900">{txt("Tenants and Billing Overview", "نظرة عامة على الجهات والفوترة")}</h2>
-                <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
-                    <table className="w-full text-sm">
-                        <thead className="bg-slate-50">
+            <section className="wc-form-panel mt-5">
+                <h2 className="wc-panel-heading">{txt("Tenants and Billing Overview", "نظرة عامة على الجهات والفوترة")}</h2>
+                <div className="mt-3 overflow-x-auto">
+                    <table className="wc-grid-table">
+                        <thead>
                             <tr>
                                 <th className="px-3 py-2 text-left">{txt("Tenant", "الجهة")}</th>
                                 <th className="px-3 py-2 text-left">{txt("Plan", "الخطة")}</th>
@@ -413,7 +413,7 @@ export default function PlatformPage() {
                         </thead>
                         <tbody>
                             {tenants.map((tenant) => (
-                                <tr key={tenant.id} className="border-t border-slate-100">
+                                <tr key={tenant.id}>
                                     <td className="px-3 py-2">
                                         <p className="font-medium text-slate-900">{tenant.name}</p>
                                         <p className="text-xs text-slate-500">{tenant.code}</p>
@@ -432,7 +432,7 @@ export default function PlatformPage() {
                         </tbody>
                     </table>
                 </div>
-                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                <div className="wc-panel mt-4 text-[12px] text-slate-700">
                     <div className="flex items-center gap-2 font-semibold text-slate-800">
                         <Users className="h-4 w-4" />
                         {txt("Billing Summary", "ملخص الفوترة")}

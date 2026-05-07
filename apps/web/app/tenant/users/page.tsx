@@ -152,43 +152,43 @@ export default function TenantUsersPage() {
                         </div>
                     ) : null}
 
-                    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <section className="wc-panel">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                            <h2 className="text-sm font-semibold text-slate-900">License Usage</h2>
-                            <span className="rounded-lg bg-white px-3 py-1 text-xs font-medium text-slate-700">
+                            <h2 className="wc-panel-heading !mb-0">License Usage</h2>
+                            <span className="wc-module-pill">
                                 {payload ? licenseText : "Loading..."}
                             </span>
                         </div>
                     </section>
 
-                    <section className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <h2 className="text-sm font-semibold text-slate-900">Create User</h2>
-                        <form className="mt-3 grid gap-3 md:grid-cols-2" onSubmit={onCreateUser}>
-                            <label className="text-sm text-slate-600">
-                                Full name
+                    <section className="wc-form-panel">
+                        <h2 className="wc-panel-heading">Create User</h2>
+                        <form className="wc-form-grid mt-3" onSubmit={onCreateUser}>
+                            <label className="wc-form-field">
+                                <span className="wc-form-label">Full name <span className="wc-form-required">*</span></span>
                                 <input
-                                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    className="wc-form-input"
                                     value={form.fullName}
                                     onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
                                     required
                                 />
                             </label>
 
-                            <label className="text-sm text-slate-600">
-                                Email
+                            <label className="wc-form-field">
+                                <span className="wc-form-label">Email <span className="wc-form-required">*</span></span>
                                 <input
                                     type="email"
-                                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    className="wc-form-input"
                                     value={form.email}
                                     onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                                     required
                                 />
                             </label>
 
-                            <label className="text-sm text-slate-600">
-                                Role
+                            <label className="wc-form-field">
+                                <span className="wc-form-label">Role</span>
                                 <select
-                                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    className="wc-form-select"
                                     value={form.role}
                                     onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
                                 >
@@ -198,10 +198,10 @@ export default function TenantUsersPage() {
                                 </select>
                             </label>
 
-                            <label className="text-sm text-slate-600">
-                                Department (optional)
+                            <label className="wc-form-field">
+                                <span className="wc-form-label">Department</span>
                                 <input
-                                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    className="wc-form-input"
                                     value={form.department}
                                     onChange={(e) => setForm((prev) => ({ ...prev, department: e.target.value }))}
                                 />
@@ -212,7 +212,7 @@ export default function TenantUsersPage() {
                                     type="submit"
                                     disabled={submitting || !canManageUsers}
                                     title={!canManageUsers ? permissions.deniedMessage : undefined}
-                                    className="inline-flex items-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="toolbar-btn toolbar-btn-primary"
                                 >
                                     {submitting ? "Creating..." : "Create and Invite User"}
                                 </button>
@@ -223,14 +223,14 @@ export default function TenantUsersPage() {
                         </form>
                     </section>
 
-                    <section className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <h2 className="text-sm font-semibold text-slate-900">Users</h2>
+                    <section className="wc-form-panel">
+                        <h2 className="wc-panel-heading">Users</h2>
                         {loading ? (
                             <p className="mt-3 text-sm text-slate-500">Loading users...</p>
                         ) : (
                             <div className="mt-3 overflow-x-auto">
-                                <table className="min-w-full divide-y divide-slate-200 text-sm">
-                                    <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                                <table className="wc-grid-table">
+                                    <thead>
                                         <tr>
                                             <th className="px-3 py-2">Name</th>
                                             <th className="px-3 py-2">Email</th>
@@ -240,7 +240,7 @@ export default function TenantUsersPage() {
                                             <th className="px-3 py-2">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody>
                                         {(payload?.users || []).map((user) => (
                                             <tr key={user.id}>
                                                 <td className="px-3 py-2 font-medium text-slate-900">{user.fullName}</td>
@@ -258,7 +258,7 @@ export default function TenantUsersPage() {
                                                                 disabled={!!actionLoading[`resend_${user.id}`] || !canManageUsers}
                                                                 title={!canManageUsers ? permissions.deniedMessage : undefined}
                                                                 onClick={() => void onResendInvite(user.id)}
-                                                                className="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                                                className="toolbar-btn toolbar-btn-secondary"
                                                             >
                                                                 {actionLoading[`resend_${user.id}`] ? "Sending…" : "Resend Invite"}
                                                             </button>
@@ -268,7 +268,7 @@ export default function TenantUsersPage() {
                                                             disabled={!!actionLoading[`reset_${user.id}`] || !canManageUsers}
                                                             title={!canManageUsers ? permissions.deniedMessage : undefined}
                                                             onClick={() => void onResetPassword(user.id)}
-                                                            className="rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                                            className="toolbar-btn toolbar-btn-secondary"
                                                         >
                                                             {actionLoading[`reset_${user.id}`] ? "Sending…" : "Reset Password"}
                                                         </button>

@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
+import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import {
@@ -102,6 +103,12 @@ type DecisionInput = {
   typed_name: string;
   refusal_acknowledged?: boolean;
   signature_data?: string;
+};
+
+type PublicDecisionAuditAction = {
+  action: string;
+  details: string;
+  eventType: string;
 };
 
 type CaseContext = Prisma.CaseGetPayload<{
@@ -233,6 +240,83 @@ function computeTokenHash(token: string): string {
 
 function computeSignatureHash(input: string): string {
   return crypto.createHash("sha256").update(input).digest("hex");
+}
+
+async function appendPublicDecisionAudit(args: {
+  document: StoredSecureLinkDocument;
+  token: string;
+  payload: SecureLinkPayload;
+  typedName: string;
+  decision: "accept" | "refuse";
+  submittedAt: string;
+  signatureProvided: boolean;
+  refusalAcknowledged: boolean;
+  request?: NextRequest;
+}): Promise<void> {
+  const baseMetadata = {
+    submitted_at: args.submittedAt,
+    secure_link_id: args.payload.link_id,
+    secure_token_hash: computeTokenHash(args.token),
+    typed_name: args.typedName,
+    decision_type: args.decision,
+    refusal_acknowledged: args.refusalAcknowledged,
+    signature_provided: args.signatureProvided,
+    public_submission: true,
+  } as const;
+
+  const auditActions: PublicDecisionAuditAction[] = [
+    {
+      action: args.decision === "refuse" ? "public_secure_refusal_submitted" : "public_secure_acceptance_submitted",
+      details:
+        args.decision === "refuse"
+          ? `Public secure refusal submitted by ${args.typedName}`
+          : `Public secure acceptance submitted by ${args.typedName}`,
+      eventType: args.decision === "refuse" ? "PUBLIC_SECURE_REFUSAL_SUBMITTED" : "PUBLIC_SECURE_ACCEPTANCE_SUBMITTED",
+    },
+    {
+      action: "public_secure_patient_acknowledged",
+      details: `Patient acknowledgment recorded via secure link for ${args.typedName}`,
+      eventType: "PUBLIC_SECURE_PATIENT_ACKNOWLEDGED",
+    },
+    {
+      action: "public_secure_signature_submitted",
+      details: args.signatureProvided
+        ? `Signature submitted via public secure link by ${args.typedName}`
+        : `Typed-name attestation recorded via public secure link by ${args.typedName}`,
+      eventType: "PUBLIC_SECURE_SIGNATURE_SUBMITTED",
+    },
+    {
+      action: "public_secure_decision_recorded",
+      details: `Secure link decision recorded as ${args.decision} for ${args.typedName}`,
+      eventType: "PUBLIC_SECURE_DECISION_RECORDED",
+    },
+  ];
+
+  for (const auditAction of auditActions) {
+    await writeAuditLog({
+      tenantId: args.payload.tenant_id,
+        userId: args.document.generatedByUserId ?? args.payload.case_id,
+      entityType: "secure_link",
+      entityId: args.document.id,
+      action: auditAction.action,
+      details: auditAction.details,
+      caseId: args.payload.case_id,
+      documentId: args.document.id,
+      metadataJson: baseMetadata,
+      request: args.request,
+    });
+
+    await appendAuditChainEvent({
+      tenantId: args.payload.tenant_id,
+      caseId: args.payload.case_id,
+      eventType: auditAction.eventType,
+      actorId: null,
+      actorRole: "public_secure_party",
+      payloadSummary: auditAction.details,
+      metadataJson: baseMetadata,
+      request: args.request,
+    }).catch(() => undefined);
+  }
 }
 
 function isMissingTableError(error: unknown): boolean {
@@ -636,7 +720,7 @@ export async function getPublicSecureLink(token: string): Promise<PublicSecureCa
   return mapPublicCase(payload);
 }
 
-export async function submitPublicSecureLinkDecision(token: string, input: DecisionInput): Promise<SubmitDecisionResponse> {
+export async function submitPublicSecureLinkDecision(token: string, input: DecisionInput, request?: NextRequest): Promise<SubmitDecisionResponse> {
   const document = await getStoredSecureLinkByToken(token);
   const payload = parseSecureLinkPayload(document);
   ensureLinkActive(payload);
@@ -694,6 +778,18 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
       signedAt: new Date(submittedAt),
       sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
     },
+  });
+
+  await appendPublicDecisionAudit({
+    document,
+    token,
+    payload: updatedPayload,
+    typedName,
+    decision,
+    submittedAt,
+    signatureProvided: updatedPayload.signature_provided ?? false,
+    refusalAcknowledged,
+    request,
   });
 
   try {

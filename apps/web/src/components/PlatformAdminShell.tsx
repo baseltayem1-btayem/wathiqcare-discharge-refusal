@@ -5,7 +5,7 @@ import { ReactNode, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, ClipboardCheck, FileSearch, LogOut, Send, Settings, ShieldCheck } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import TopNavigation from "@/components/navigation/TopNavigation";
+import WathiqCareShell from "@/components/WathiqCareShell";
 import { resolveSmartNavigation, type SmartActionKey, type SmartResolvedAction } from "@/components/navigation/smartNavigation";
 import PlatformNotificationBell from "@/components/PlatformNotificationBell";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -156,115 +156,78 @@ export default function PlatformAdminShell({ title, subtitle, actions, children 
     }
 
     return (
-        <div className="min-h-screen bg-[var(--background)]">
-            <TopNavigation
-                pathname={pathname}
-                isRtl={lang === "ar"}
-                brand={(
-                    <Link href="/platform" className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-2.5 py-1.5">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            src="/images/wathiqcare-logo.png"
-                            alt="WathiqCare"
-                            width={112}
-                            height={30}
-                            className="h-7 w-auto object-contain"
-                            loading="eager"
-                            decoding="async"
-                        />
-                        <span className="hidden rounded-full border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--primary-pressed)] sm:inline-flex">
-                            {txt("Platform", "المنصة")}
-                        </span>
-                    </Link>
-                )}
-                items={PLATFORM_NAV_ITEMS.map((item) => ({
-                    href: item.href,
-                    label: platformNavLabel(item.label, lang === "ar"),
-                    icon: item.icon,
-                    ariaLabel: platformNavLabel(item.label, lang === "ar"),
-                }))}
-                quickActions={quickActions.map((action) => ({
-                    key: action.key,
-                    href: action.href,
-                    label: action.label,
-                    icon: action.icon,
-                    ariaLabel: action.ariaLabel,
-                }))}
-                nextAction={nextAction || undefined}
-                currentModuleLabel={t(`shell.smartNavigation.modules.${smartResolution.moduleKey}`)}
-                workflowStageLabel={t(`shell.smartNavigation.stages.${smartResolution.workflowStageKey}`)}
-                workflowSourceLabel={smartResolution.source === "backend-driven"
-                    ? t("shell.smartNavigation.backendWorkflow")
-                    : t("shell.smartNavigation.suggestedWorkflow")}
-                nextActionLabel={t("shell.smartNavigation.nextAction")}
-                quickActionsLabel={txt("Quick actions", "إجراءات سريعة")}
-                secondaryActionsLabel={t("shell.smartNavigation.secondaryActions")}
-                workspaceStatus={(
-                    <span
-                        className="inline-flex items-center gap-1 rounded-full border border-[#cdddf0] bg-[#edf4fb] px-2.5 py-1 text-xs font-semibold text-[#1f5fa7]"
-                        aria-label={txt("Platform system mode", "وضع المنصة")}
-                    >
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        {txt("System Mode", "وضع النظام")}
-                    </span>
-                )}
-                rightControls={(
-                    <>
-                        <PlatformNotificationBell />
-                        <LanguageSwitcher className="hidden md:inline-flex" />
-                        <button
-                            type="button"
-                            onClick={() => { void handleLogout(); }}
-                            className="hidden items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 md:inline-flex"
-                        >
-                            <LogOut className="h-4 w-4" />
-                            {t("common.logout")}
-                        </button>
-                    </>
-                )}
-                mobileFooter={(
-                    <div className="space-y-2">
-                        <LanguageSwitcher className="w-full" />
-                        <button
-                            type="button"
-                            onClick={() => { void handleLogout(); }}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm font-medium text-slate-700"
-                        >
-                            <LogOut className="h-4 w-4" />
-                            {t("common.logout")}
-                        </button>
+        <WathiqCareShell
+            title={title}
+            subtitle={subtitle}
+            pathname={pathname}
+            isRtl={lang === "ar"}
+            brand={(
+                <Link href="/platform" className="wc-brand-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src="/images/wathiqcare-logo.png"
+                        alt="WathiqCare"
+                        width={120}
+                        height={32}
+                        className="h-7 w-auto object-contain"
+                        loading="eager"
+                        decoding="async"
+                    />
+                    <div className="wc-brand-copy">
+                        <div className="wc-brand-title">WathiqCare System</div>
+                        <div className="wc-brand-subtitle">{txt("Platform Administration", "إدارة المنصة")}</div>
                     </div>
-                )}
-            />
-
-            <div className="mx-auto w-full max-w-[1600px] px-3 py-3 md:px-5 md:py-5">
-                <div className="min-w-0 flex-1">
-                    <header className="rounded-xl border border-[var(--border)] bg-white/90 px-4 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] backdrop-blur md:px-5">
-                        <div className="flex flex-col gap-3">
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                <div>
-                                    <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
-                                    {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
-                                </div>
-                                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#cdddf0] bg-[#edf4fb] px-3 py-1 text-xs font-semibold text-[#1f5fa7]">
-                                    <Settings className="h-3.5 w-3.5" />
-                                    {txt("System Mode", "وضع النظام")}
-                                </div>
-                            </div>
-
-                            {actions ? (
-                                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[#d6dde5] bg-[#f8fafc] p-2">
-                                    {actions}
-                                </div>
-                            ) : null}
-                        </div>
-                    </header>
-
-                    <main className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-sm)]">
-                        {children}
-                    </main>
+                </Link>
+            )}
+            menuItems={PLATFORM_NAV_ITEMS.map((item) => ({
+                href: item.href,
+                label: platformNavLabel(item.label, lang === "ar"),
+                icon: item.icon,
+                active: pathname === item.href || pathname.startsWith(`${item.href}/`),
+                ariaLabel: platformNavLabel(item.label, lang === "ar"),
+            }))}
+            moduleMeta={(
+                <>
+                    <span className="wc-module-pill">{t(`shell.smartNavigation.modules.${smartResolution.moduleKey}`)}</span>
+                    <span className="wc-module-pill">{t(`shell.smartNavigation.stages.${smartResolution.workflowStageKey}`)}</span>
+                    <span className="wc-module-pill">
+                        <Settings className="h-3 w-3" />
+                        <span>{txt("System Mode", "وضع النظام")}</span>
+                    </span>
+                </>
+            )}
+            nextAction={nextAction ? { href: nextAction.href, label: nextAction.label, icon: nextAction.icon, ariaLabel: nextAction.ariaLabel, variant: "primary" } : null}
+            quickActions={quickActions.map((action) => ({
+                href: action.href,
+                label: action.label,
+                icon: action.icon,
+                ariaLabel: action.ariaLabel,
+                variant: "secondary",
+            }))}
+            utilityControls={(
+                <>
+                    <PlatformNotificationBell />
+                    <LanguageSwitcher className="hidden md:inline-flex" />
+                    <button
+                        type="button"
+                        onClick={() => { void handleLogout(); }}
+                        className="toolbar-btn toolbar-btn-secondary"
+                    >
+                        <LogOut className="h-3.5 w-3.5" />
+                        <span>{t("common.logout")}</span>
+                    </button>
+                </>
+            )}
+            headerExtras={(
+                <div className="wc-panel wc-panel-inline text-[11px]">
+                    <span><strong>{txt("Workspace", "مساحة العمل")}:</strong> {txt("Platform Control Center", "مركز التحكم بالمنصة")}</span>
+                    <span><strong>{txt("Workflow", "سير العمل")}:</strong> {smartResolution.source === "backend-driven" ? t("shell.smartNavigation.backendWorkflow") : t("shell.smartNavigation.suggestedWorkflow")}</span>
+                    <span><strong>{txt("Route", "المسار")}:</strong> <span className="font-mono">{pathname}</span></span>
                 </div>
-            </div>
-        </div>
+            )}
+            toolbarExtras={actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+        >
+            {children}
+        </WathiqCareShell>
     );
 }

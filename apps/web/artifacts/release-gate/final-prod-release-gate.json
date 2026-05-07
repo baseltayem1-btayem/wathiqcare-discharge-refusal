@@ -1,0 +1,276 @@
+{
+  "name": "WathiqCare Production Release Gate",
+  "baseUrl": "http://127.0.0.1:3113",
+  "startedAt": "2026-05-07T18:55:47.001Z",
+  "steps": [
+    {
+      "name": "Platform login",
+      "ok": true,
+      "durationMs": 572,
+      "data": {
+        "redirectTo": "/platform",
+        "cookie": {
+          "raw": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmNWI1ZThkYS0yZTNhLTQxNjUtYWE1NC05M2Y1ZjkxOTVmNDMiLCJ1c2VyX2lkIjoiZjViNWU4ZGEtMmUzYS00MTY1LWFhNTQtOTNmNWY5MTk1ZjQzIiwiZW1haWwiOiJhZG1pbkB3YXRoaXFjYXJlLm9ubGluZSIsInJvbGUiOiJwbGF0Zm9ybV9zdXBlcmFkbWluIiwidXNlcl90eXBlIjoicGxhdGZvcm1fYWRtaW4iLCJwbGF0Zm9ybV9yb2xlIjoicGxhdGZvcm1fc3VwZXJhZG1pbiIsInRlbmFudF9pZCI6Ijc2MmE4YWE5LWE3MDgtNDM3Yi1iNTFkLTA4ZjJjNTM2MWM4ZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE4Mzc0NywiaWF0IjoxNzc4MTgwMTQ3LCJpc3MiOiJ3YXRoaXFjYXJlIn0.HMn77xZpyFv22FCnz4GSztUSezM1JI-dnW3joeYbL4I",
+          "name": "wathiqcare_access_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmNWI1ZThkYS0yZTNhLTQxNjUtYWE1NC05M2Y1ZjkxOTVmNDMiLCJ1c2VyX2lkIjoiZjViNWU4ZGEtMmUzYS00MTY1LWFhNTQtOTNmNWY5MTk1ZjQzIiwiZW1haWwiOiJhZG1pbkB3YXRoaXFjYXJlLm9ubGluZSIsInJvbGUiOiJwbGF0Zm9ybV9zdXBlcmFkbWluIiwidXNlcl90eXBlIjoicGxhdGZvcm1fYWRtaW4iLCJwbGF0Zm9ybV9yb2xlIjoicGxhdGZvcm1fc3VwZXJhZG1pbiIsInRlbmFudF9pZCI6Ijc2MmE4YWE5LWE3MDgtNDM3Yi1iNTFkLTA4ZjJjNTM2MWM4ZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE4Mzc0NywiaWF0IjoxNzc4MTgwMTQ3LCJpc3MiOiJ3YXRoaXFjYXJlIn0.HMn77xZpyFv22FCnz4GSztUSezM1JI-dnW3joeYbL4I"
+        }
+      },
+      "error": null
+    },
+    {
+      "name": "Public login page stability",
+      "ok": true,
+      "durationMs": 4011,
+      "data": {
+        "checked": "/login"
+      },
+      "error": null
+    },
+    {
+      "name": "Ensure tenant role users",
+      "ok": true,
+      "durationMs": 573,
+      "data": {
+        "tenantAdmin": {
+          "key": "tenantAdmin",
+          "email": "tenant.admin@wathiqcare.online",
+          "fullName": "Tenant Admin Release Gate",
+          "role": "tenant_admin",
+          "userType": "TENANT_ADMIN",
+          "membershipRole": "ADMIN",
+          "expectedRedirect": "/tenant/dashboard",
+          "id": "37f3f027-8691-40b8-826b-1e78cfbfee3f",
+          "tenantId": "762a8aa9-a708-437b-b51d-08f2c5361c8d"
+        },
+        "doctor": {
+          "key": "doctor",
+          "email": "doctor.release@wathiqcare.online",
+          "fullName": "Doctor Release Gate",
+          "role": "doctor",
+          "userType": "TENANT_USER",
+          "membershipRole": "MEMBER",
+          "expectedRedirect": "/doctor/dashboard",
+          "id": "5659867b-08c7-4d0c-873b-f680c0272123",
+          "tenantId": "762a8aa9-a708-437b-b51d-08f2c5361c8d"
+        },
+        "nurse": {
+          "key": "nurse",
+          "email": "nurse.release@wathiqcare.online",
+          "fullName": "Nurse Release Gate",
+          "role": "nursing",
+          "userType": "TENANT_USER",
+          "membershipRole": "MEMBER",
+          "expectedRedirect": "/nurse/dashboard",
+          "id": "37166920-7c72-4ce2-b645-f41c95c0c411",
+          "tenantId": "762a8aa9-a708-437b-b51d-08f2c5361c8d"
+        },
+        "legal": {
+          "key": "legal",
+          "email": "legal.release@wathiqcare.online",
+          "fullName": "Legal Release Gate",
+          "role": "legal_admin",
+          "userType": "TENANT_ADMIN",
+          "membershipRole": "ADMIN",
+          "expectedRedirect": "/legal/dashboard",
+          "id": "39fb2cfe-dc21-4be9-b07d-a3def44042da",
+          "tenantId": "762a8aa9-a708-437b-b51d-08f2c5361c8d"
+        },
+        "medicalDirector": {
+          "key": "medicalDirector",
+          "email": "medical.director.release@wathiqcare.online",
+          "fullName": "Medical Director Release Gate",
+          "role": "medical_director",
+          "userType": "TENANT_USER",
+          "membershipRole": "MEMBER",
+          "expectedRedirect": "/medical-director/dashboard",
+          "id": "0008a563-d230-4a43-8e55-75bded49b1b6",
+          "tenantId": "762a8aa9-a708-437b-b51d-08f2c5361c8d"
+        }
+      },
+      "error": null
+    },
+    {
+      "name": "Role dashboard routing",
+      "ok": true,
+      "durationMs": 2650,
+      "data": {
+        "tenantAdmin": {
+          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzN2YzZjAyNy04NjkxLTQwYjgtODI2Yi0xZTc4Y2ZiZmVlM2YiLCJ1c2VyX2lkIjoiMzdmM2YwMjctODY5MS00MGI4LTgyNmItMWU3OGNmYmZlZTNmIiwiZW1haWwiOiJ0ZW5hbnQuYWRtaW5Ad2F0aGlxY2FyZS5vbmxpbmUiLCJyb2xlIjoidGVuYW50X2FkbWluIiwidXNlcl90eXBlIjoidGVuYW50X2FkbWluIiwicGxhdGZvcm1fcm9sZSI6bnVsbCwidGVuYW50X2lkIjoiNzYyYThhYTktYTcwOC00MzdiLWI1MWQtMDhmMmM1MzYxYzhkIiwidGVuYW50X2NvZGUiOiJ3YXRoaXFjYXJlIiwiZXhwIjoxNzc4MTgzNzUyLCJpYXQiOjE3NzgxODAxNTIsImlzcyI6IndhdGhpcWNhcmUifQ.l0yKPa-pEnltTYLCVikbmv37fRPaenOpGI8-Hk7g55g",
+          "redirectTo": "/tenant/dashboard",
+          "email": "tenant.admin@wathiqcare.online"
+        },
+        "doctor": {
+          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NjU5ODY3Yi0wOGM3LTRkMGMtODczYi1mNjgwYzAyNzIxMjMiLCJ1c2VyX2lkIjoiNTY1OTg2N2ItMDhjNy00ZDBjLTg3M2ItZjY4MGMwMjcyMTIzIiwiZW1haWwiOiJkb2N0b3IucmVsZWFzZUB3YXRoaXFjYXJlLm9ubGluZSIsInJvbGUiOiJkb2N0b3IiLCJ1c2VyX3R5cGUiOiJ0ZW5hbnRfdXNlciIsInBsYXRmb3JtX3JvbGUiOm51bGwsInRlbmFudF9pZCI6Ijc2MmE4YWE5LWE3MDgtNDM3Yi1iNTFkLTA4ZjJjNTM2MWM4ZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE4Mzc1MywiaWF0IjoxNzc4MTgwMTUzLCJpc3MiOiJ3YXRoaXFjYXJlIn0.CknQukSKwtk1QMBdHHD4ct27I3GlGZXUaaVRkm3gUZA",
+          "redirectTo": "/doctor/dashboard",
+          "email": "doctor.release@wathiqcare.online"
+        },
+        "nurse": {
+          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzNzE2NjkyMC03YzcyLTRjZTItYjY0NS1mNDFjOTVjMGM0MTEiLCJ1c2VyX2lkIjoiMzcxNjY5MjAtN2M3Mi00Y2UyLWI2NDUtZjQxYzk1YzBjNDExIiwiZW1haWwiOiJudXJzZS5yZWxlYXNlQHdhdGhpcWNhcmUub25saW5lIiwicm9sZSI6Im51cnNpbmciLCJ1c2VyX3R5cGUiOiJ0ZW5hbnRfdXNlciIsInBsYXRmb3JtX3JvbGUiOm51bGwsInRlbmFudF9pZCI6Ijc2MmE4YWE5LWE3MDgtNDM3Yi1iNTFkLTA4ZjJjNTM2MWM4ZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE4Mzc1MywiaWF0IjoxNzc4MTgwMTUzLCJpc3MiOiJ3YXRoaXFjYXJlIn0.L46I1jGznoR0HLjny5fm_TseH1LLCYZu5-GSX-jg-1M",
+          "redirectTo": "/nurse/dashboard",
+          "email": "nurse.release@wathiqcare.online"
+        },
+        "legal": {
+          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWZiMmNmZS1kYzIxLTRiZTktYjA3ZC1hM2RlZjQ0MDQyZGEiLCJ1c2VyX2lkIjoiMzlmYjJjZmUtZGMyMS00YmU5LWIwN2QtYTNkZWY0NDA0MmRhIiwiZW1haWwiOiJsZWdhbC5yZWxlYXNlQHdhdGhpcWNhcmUub25saW5lIiwicm9sZSI6ImxlZ2FsX2FkbWluIiwidXNlcl90eXBlIjoidGVuYW50X2FkbWluIiwicGxhdGZvcm1fcm9sZSI6bnVsbCwidGVuYW50X2lkIjoiNzYyYThhYTktYTcwOC00MzdiLWI1MWQtMDhmMmM1MzYxYzhkIiwidGVuYW50X2NvZGUiOiJ3YXRoaXFjYXJlIiwiZXhwIjoxNzc4MTgzNzU0LCJpYXQiOjE3NzgxODAxNTQsImlzcyI6IndhdGhpcWNhcmUifQ.3QADEMGt1Obl_QvHmQ0vTBp_A9P48MUs5SQ_EVBgwn4",
+          "redirectTo": "/legal/dashboard",
+          "email": "legal.release@wathiqcare.online"
+        },
+        "medicalDirector": {
+          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDA4YTU2My1kMjMwLTRhNDMtOGU1NS03NWJkZWQ0OWIxYjYiLCJ1c2VyX2lkIjoiMDAwOGE1NjMtZDIzMC00YTQzLThlNTUtNzViZGVkNDliMWI2IiwiZW1haWwiOiJtZWRpY2FsLmRpcmVjdG9yLnJlbGVhc2VAd2F0aGlxY2FyZS5vbmxpbmUiLCJyb2xlIjoibWVkaWNhbF9kaXJlY3RvciIsInVzZXJfdHlwZSI6InRlbmFudF91c2VyIiwicGxhdGZvcm1fcm9sZSI6bnVsbCwidGVuYW50X2lkIjoiNzYyYThhYTktYTcwOC00MzdiLWI1MWQtMDhmMmM1MzYxYzhkIiwidGVuYW50X2NvZGUiOiJ3YXRoaXFjYXJlIiwiZXhwIjoxNzc4MTgzNzU1LCJpYXQiOjE3NzgxODAxNTUsImlzcyI6IndhdGhpcWNhcmUifQ.cqV0pl5oxU-fW8UR0JprubYq9hjxxKalLE94Cr3JQ1Q",
+          "redirectTo": "/medical-director/dashboard",
+          "email": "medical.director.release@wathiqcare.online"
+        }
+      },
+      "error": null
+    },
+    {
+      "name": "Case creation and workspace interaction",
+      "ok": true,
+      "durationMs": 5635,
+      "data": {
+        "caseId": "b3c50e75-cac1-4d47-a58a-d9ab4433833f"
+      },
+      "error": null
+    },
+    {
+      "name": "OTP lifecycle",
+      "ok": true,
+      "durationMs": 162,
+      "data": {
+        "sessionId": "daeb6bf7-6485-4ee1-bf86-46a91dd63f5d"
+      },
+      "error": null
+    },
+    {
+      "name": "Secure link and public refusal flow",
+      "ok": true,
+      "durationMs": 3300,
+      "data": {
+        "secureUrl": "http://127.0.0.1:3113/secure/h1_i-RBBJ9Iyud3YF473MZ5nSrNNB9UFDjXVmK3kOaw"
+      },
+      "error": null
+    },
+    {
+      "name": "Signature and audit persistence",
+      "ok": true,
+      "durationMs": 19,
+      "data": {
+        "auditActions": [
+          "case_created",
+          "acknowledgment_session_started",
+          "acknowledgment_verified",
+          "secure_link_created",
+          "public_secure_refusal_submitted",
+          "public_secure_patient_acknowledged",
+          "public_secure_signature_submitted",
+          "public_secure_decision_recorded"
+        ],
+        "chainEvents": [
+          "CASE_CREATED",
+          "ACKNOWLEDGMENT_SESSION_STARTED",
+          "ACKNOWLEDGMENT_VERIFIED",
+          "SECURE_LINK_CREATED",
+          "PUBLIC_SECURE_REFUSAL_SUBMITTED",
+          "PUBLIC_SECURE_REFUSAL_SUBMITTED",
+          "PUBLIC_SECURE_PATIENT_ACKNOWLEDGED",
+          "PUBLIC_SECURE_PATIENT_ACKNOWLEDGED",
+          "PUBLIC_SECURE_SIGNATURE_SUBMITTED",
+          "PUBLIC_SECURE_SIGNATURE_SUBMITTED",
+          "PUBLIC_SECURE_DECISION_RECORDED",
+          "PUBLIC_SECURE_DECISION_RECORDED"
+        ],
+        "signatureMethod": "TABLET_SIGNATURE"
+      },
+      "error": null
+    },
+    {
+      "name": "Arabic and English PDF generation and download",
+      "ok": true,
+      "durationMs": 4396,
+      "data": {
+        "englishVersion": 1,
+        "arabicVersion": 2,
+        "englishBytes": 173870,
+        "arabicBytes": 178732
+      },
+      "error": null
+    },
+    {
+      "name": "Legal package generation and download metadata",
+      "ok": true,
+      "durationMs": 183,
+      "data": {
+        "packageStatus": "GENERATED",
+        "documents": 6
+      },
+      "error": null
+    },
+    {
+      "name": "Forced password reset",
+      "ok": true,
+      "durationMs": 2314,
+      "data": {
+        "processed": 8,
+        "emailFailed": 8
+      },
+      "error": null
+    },
+    {
+      "name": "Logout and session cleanup",
+      "ok": true,
+      "durationMs": 18,
+      "data": {
+        "tenantLogout": true,
+        "platformLogout": true
+      },
+      "error": null
+    }
+  ],
+  "warnings": [],
+  "browserFindings": [],
+  "apiFailures": [],
+  "artifacts": {
+    "caseId": "b3c50e75-cac1-4d47-a58a-d9ab4433833f",
+    "secureUrl": "http://127.0.0.1:3113/secure/h1_i-RBBJ9Iyud3YF473MZ5nSrNNB9UFDjXVmK3kOaw",
+    "otpSessionId": "daeb6bf7-6485-4ee1-bf86-46a91dd63f5d",
+    "audit": {
+      "auditActions": [
+        "case_created",
+        "acknowledgment_session_started",
+        "acknowledgment_verified",
+        "secure_link_created",
+        "public_secure_refusal_submitted",
+        "public_secure_patient_acknowledged",
+        "public_secure_signature_submitted",
+        "public_secure_decision_recorded"
+      ],
+      "chainEvents": [
+        "CASE_CREATED",
+        "ACKNOWLEDGMENT_SESSION_STARTED",
+        "ACKNOWLEDGMENT_VERIFIED",
+        "SECURE_LINK_CREATED",
+        "PUBLIC_SECURE_REFUSAL_SUBMITTED",
+        "PUBLIC_SECURE_REFUSAL_SUBMITTED",
+        "PUBLIC_SECURE_PATIENT_ACKNOWLEDGED",
+        "PUBLIC_SECURE_PATIENT_ACKNOWLEDGED",
+        "PUBLIC_SECURE_SIGNATURE_SUBMITTED",
+        "PUBLIC_SECURE_SIGNATURE_SUBMITTED",
+        "PUBLIC_SECURE_DECISION_RECORDED",
+        "PUBLIC_SECURE_DECISION_RECORDED"
+      ],
+      "signatureMethod": "TABLET_SIGNATURE"
+    },
+    "pdf": {
+      "englishVersion": 1,
+      "arabicVersion": 2,
+      "englishBytes": 173870,
+      "arabicBytes": 178732
+    },
+    "legalPackage": {
+      "packageStatus": "GENERATED",
+      "documents": 6
+    }
+  },
+  "finishedAt": "2026-05-07T18:56:11.061Z",
+  "success": true,
+  "summary": "Production-like release gate passed"
+}

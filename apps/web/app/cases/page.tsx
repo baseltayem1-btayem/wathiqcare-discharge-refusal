@@ -335,36 +335,36 @@ export default function CasesPage() {
 
         {!loading && !error ? (
           <div className="space-y-10">
-            <section className="rounded-2xl border border-[var(--border-soft)] !border-l-4 !border-l-[#C9A13B] bg-[linear-gradient(135deg,#0A2540_0%,#002B5C_100%)] p-7 shadow-[0_14px_32px_rgba(15,23,42,0.28)]">
+            <section className="wc-panel border-[var(--primary)] bg-[#f7f9fb] p-4 shadow-none">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h2 className="inline-flex items-center gap-2 text-base font-bold text-white/95">
-                    <Zap className="h-4 w-4 text-[#C9A13B]" />
+                  <h2 className="inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.03em] text-[var(--primary-pressed)]">
+                    <Zap className="h-4 w-4 text-[var(--primary)]" />
                     {isArabic ? "الإجراء التالي" : "Next Action"}
                   </h2>
-                  <div className="mt-2 text-2xl font-bold tracking-tight text-white">
+                  <div className="mt-2 text-lg font-bold tracking-tight text-slate-900">
                     {isArabic ? "الإجراء التالي: متابعة الحالات النشطة" : "Next action: review active cases"}
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-sky-100">
-                    <span className="font-semibold text-white">{isArabic ? "قرار تنفيذي:" : "Executive priority:"}</span>{" "}
+                  <p className="mt-2 text-[12px] leading-5 text-slate-600">
+                    <span className="font-semibold text-slate-900">{isArabic ? "قرار تنفيذي:" : "Executive priority:"}</span>{" "}
                     {nextAction.note}
                   </p>
                   <div className="mt-3 inline-flex flex-wrap items-center gap-2 text-xs">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-rose-300 bg-rose-500/15 px-2.5 py-1 font-semibold text-rose-100">
+                    <span className="wc-status-badge wc-status-badge--refused inline-flex items-center gap-1">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       {txt("Urgent", "عاجلة")}: {urgentCount}
                     </span>
-                    <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-500/15 px-2.5 py-1 font-semibold text-amber-100">
+                    <span className="wc-status-badge inline-flex items-center gap-1 bg-[#fff8e8] text-[#b45309]">
                       {txt("Risk", "المخاطر")}: {riskLevel}
                     </span>
-                    <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-500/15 px-2.5 py-1 font-semibold text-slate-100">
+                    <span className="wc-status-badge wc-status-badge--pending inline-flex items-center gap-1">
                       {txt("Blocking issues", "العوائق")}: {blockingIssueCount}
                     </span>
                   </div>
                 </div>
                 <Link
                   href={inProgressCount > 0 ? "/cases" : "/cases/new"}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white bg-white px-4 py-2 text-sm font-semibold text-[#002B5C] shadow-[0_10px_24px_rgba(15,23,42,0.3)] transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-[0_12px_26px_rgba(15,23,42,0.34)]"
+                  className="toolbar-btn toolbar-btn-primary"
                 >
                   {inProgressCount > 0 ? (isArabic ? "مراجعة الحالات" : "Review Cases") : (isArabic ? "حالة جديدة" : "New Case")}
                 </Link>
@@ -423,9 +423,9 @@ export default function CasesPage() {
               </Card>
             </section>
 
-            <div className="overflow-x-auto rounded-2xl border border-[var(--border-soft)] bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
+            <div className="overflow-x-auto border border-[var(--border)] bg-white">
+            <table className="wc-grid-table min-w-[640px]">
+              <thead>
                 <tr>
                   <th className="px-4 py-3 text-left">{t("cases.table.mrn")}</th>
                   <th className="px-4 py-3 text-left">{t("cases.table.patient")}</th>
@@ -445,17 +445,17 @@ export default function CasesPage() {
                   return (
                   <tr
                     key={item.id}
-                    className={`border-t border-slate-100 transition-all duration-200 ease-in-out hover:bg-slate-50 ${isFirstUrgentRow ? "bg-rose-50/60" : ""}`}
+                    className={isFirstUrgentRow ? "wc-grid-row-selected" : undefined}
                   >
                     <td className={`px-4 py-3 font-semibold tracking-wide ${isFirstUrgentRow ? "text-rose-700" : "text-slate-900"}`}>{item.medicalRecordNo || item.patient_mrn || "-"}</td>
                     <td className="px-4 py-3">{item.patientName || item.patient_name || "-"}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${priorityPillClass(row.priority)}`}>
+                      <span className={`wc-status-badge ${priorityPillClass(row.priority)}`}>
                         {row.priority === "urgent" ? txt("Urgent", "عاجلة") : row.priority === "medium" ? txt("Medium", "متوسطة") : txt("Low", "منخفضة")}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusPillClass(item.status || "")}`}>
+                      <span className={`wc-status-badge ${statusPillClass(item.status || "")}`}>
                         {translateCaseStatus(item.status || "", isArabic)}
                       </span>
                     </td>
@@ -479,7 +479,7 @@ export default function CasesPage() {
                         onClick={() => {
                           trackPrimaryAction("open_case_workspace", { role: permissions.auth.role ?? undefined });
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--primary)] bg-[var(--primary)] px-3 py-2 font-semibold !text-white transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] hover:shadow-[0_8px_18px_rgba(15,23,42,0.16)]"
+                        className="toolbar-btn toolbar-btn-primary"
                       >
                         {t("cases.open")}
                         <ArrowRight className="h-3.5 w-3.5" />

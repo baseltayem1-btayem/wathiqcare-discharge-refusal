@@ -56,30 +56,7 @@ export default function I18nProvider({
   initialLang?: Language;
 }) {
   const pathname = usePathname();
-  const [preferredLang, setPreferredLang] = useState<Language>(() => {
-    const pathLang = typeof window !== "undefined" ? getPathLang(window.location.pathname) : null;
-    if (pathLang) return pathLang;
-
-    // Server-seeded lang is used when pathname is not yet available.
-    if (initialLang) return initialLang;
-
-    if (typeof window === "undefined") {
-      return "en";
-    }
-
-    const cookie = getCookieLang();
-    if (cookie) return cookie;
-
-    const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    if (isSupportedLanguage(stored)) return stored;
-
-    const browserLanguage = window.navigator.language.toLowerCase();
-    if (browserLanguage.startsWith("ar")) {
-      return "ar";
-    }
-
-    return "en";
-  });
+  const [preferredLang, setPreferredLang] = useState<Language>(initialLang ?? "en");
 
   const lang = useMemo<Language>(() => {
     const pathLang = pathname ? getPathLang(pathname) : null;
@@ -93,6 +70,34 @@ export default function I18nProvider({
 
     return preferredLang;
   }, [initialLang, pathname, preferredLang]);
+
+  useEffect(() => {
+    const pathLang = pathname ? getPathLang(pathname) : null;
+    if (pathLang || initialLang) {
+      return;
+    }
+
+    const cookie = getCookieLang();
+    if (cookie) {
+      setPreferredLang(cookie);
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (isSupportedLanguage(stored)) {
+      setPreferredLang(stored);
+      return;
+    }
+
+    const browserLanguage = window.navigator.language.toLowerCase();
+    if (browserLanguage.startsWith("ar")) {
+      setPreferredLang("ar");
+    }
+  }, [initialLang, pathname]);
 
   useEffect(() => {
     if (typeof document === "undefined") {

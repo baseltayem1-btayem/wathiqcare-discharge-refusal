@@ -42,11 +42,9 @@ export function RadioGroupItem({ value: itemValue, className, ...props }: RadioG
   return (
     <button
       type="button"
-      role="radio"
-      aria-checked={isChecked}
       onClick={() => ctx.onValueChange(itemValue)}
       className={cn(
-        "flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors",
+        "flex h-4 w-4 items-center justify-center rounded-full border transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
         isChecked ? "border-emerald-600 bg-emerald-600" : "border-slate-300",
         className
@@ -63,7 +61,7 @@ export function RadioGroupItem({ value: itemValue, className, ...props }: RadioG
 export function RadioGroupLabel({ className, ...props }: React.ComponentProps<"label">) {
   return (
     <label
-      className={cn("flex items-center gap-2 text-sm text-slate-700 cursor-pointer", className)}
+      className={cn("flex cursor-pointer items-center gap-2 text-[12px] text-slate-700", className)}
       {...props}
     />
   );

@@ -5,7 +5,7 @@ import json
 import os
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -35,6 +35,8 @@ OTP_DIR = Path("backend/generated/document_otp")
 OTP_DIR.mkdir(parents=True, exist_ok=True)
 
 OTP_MAX_RETRIES = max(1, int(os.getenv("DOCUMENT_OTP_MAX_RETRIES", "3")))
+OTP_TTL_SECONDS = max(30, int(os.getenv("DOCUMENT_OTP_TTL_SECONDS", "300")))
+OTP_RESEND_COOLDOWN_SECONDS = max(1, int(os.getenv("DOCUMENT_OTP_RESEND_COOLDOWN_SECONDS", "60")))
 EXPOSE_DEBUG_OTP = (os.getenv("EXPOSE_DEBUG_OTP") or "false").strip().lower() == "true"
 _APP_ENV = (os.getenv("APP_ENV") or os.getenv("ENVIRONMENT") or "production").strip().lower()
 logger = logging.getLogger(__name__)
@@ -120,6 +122,34 @@ def _load_json(path: Path) -> Dict[str, Any]:
 
 def _write_json(path: Path, payload: Dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+
+
+def _parse_iso(value: Any) -> Optional[datetime]:
+    if not value or not isinstance(value, str):
+        return None
+
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is not None:
+        return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+
+    return parsed
+
+
+def _normalize_phone_number(phone_number: str) -> str:
+    normalized = "".join(ch for ch in phone_number if ch.isdigit() or ch == "+")
+    digits_only = "".join(ch for ch in normalized if ch.isdigit())
+    if len(digits_only) < 8 or len(digits_only) > 15:
+        raise ValueError("phoneNumber must be a valid mobile number")
+    return normalized
+
+
+def _otp_is_expired(otp_state: Dict[str, Any], *, now: datetime) -> bool:
+    expires_at = _parse_iso(otp_state.get("expiresAt"))
+    return bool(expires_at and expires_at <= now)
 
 
 def _normalize_form_type(form_type: str) -> str:
@@ -497,15 +527,35 @@ class FormsEngineService:
             if not document:
                 raise ValueError("Document not found")
 
-            phone_number = str(payload.get("phoneNumber") or payload.get("phone_number") or "").strip()
-            if not phone_number:
+            raw_phone_number = str(payload.get("phoneNumber") or payload.get("phone_number") or "").strip()
+            if not raw_phone_number:
                 raise ValueError("phoneNumber is required")
+            phone_number = _normalize_phone_number(raw_phone_number)
+
+            otp_path = _otp_path(document_id)
+            existing_state = _load_json(otp_path)
+            now = _now()
+            resend_available_at = _parse_iso(existing_state.get("resendAvailableAt"))
+            if resend_available_at and resend_available_at > now:
+                _write_audit(
+                    db,
+                    tenant_id=tenant_id,
+                    user_id=current_user["id"],
+                    case_id=document.case_id,
+                    action="document_otp_resend_blocked",
+                    details=f"OTP resend blocked for document {document_id} ({document.template_key})",
+                )
+                db.commit()
+                raise ValueError("OTP resend is temporarily blocked. Please wait before requesting a new code.")
 
             dispatch = self.sms_provider.send_otp(
                 phone_number,
                 case_id=document.case_id,
                 document_type=document.template_key,
             )
+
+            expires_at = (_parse_iso(dispatch.otp_sent_at) or now) + timedelta(seconds=OTP_TTL_SECONDS)
+            resend_available_at = (_parse_iso(dispatch.otp_sent_at) or now) + timedelta(seconds=OTP_RESEND_COOLDOWN_SECONDS)
 
             otp_payload = {
                 "documentId": document_id,
@@ -515,19 +565,32 @@ class FormsEngineService:
                 "stubMode": dispatch.stub_mode,
                 "maskedPhone": self.sms_provider.mask_phone_number(phone_number),
                 "sentAt": dispatch.otp_sent_at,
+                "expiresAt": _iso(expires_at),
+                "resendAvailableAt": _iso(resend_available_at),
                 "sentBy": {
                     "userId": current_user["id"],
                     "userRole": current_user.get("role"),
                 },
                 "otpCodeHash": self.sms_provider.hash_code(dispatch.otp_debug_code or ""),
                 "verified": False,
+                "verifiedAt": None,
                 "attemptCount": 0,
                 "maxRetries": OTP_MAX_RETRIES,
                 "locked": False,
                 "lockedAt": None,
+                "invalidatedAt": None,
+                "invalidationReason": None,
             }
-            _write_json(_otp_path(document_id), otp_payload)
+            _write_json(otp_path, otp_payload)
 
+            _write_audit(
+                db,
+                tenant_id=tenant_id,
+                user_id=current_user["id"],
+                case_id=document.case_id,
+                action="document_otp_issued",
+                details=f"OTP issued for document {document_id} ({document.template_key}) challenge {dispatch.challenge_id}",
+            )
             _write_audit(
                 db,
                 tenant_id=tenant_id,
@@ -574,17 +637,53 @@ class FormsEngineService:
             if not document:
                 raise ValueError("Document not found")
 
-            otp_state = _load_json(_otp_path(document_id))
+            otp_path = _otp_path(document_id)
+            otp_state = _load_json(otp_path)
             submitted = str(payload.get("otpCode") or payload.get("otp_code") or "").strip()
             if not submitted:
                 raise ValueError("otpCode is required")
+            if not submitted.isdigit() or len(submitted) != 6:
+                raise ValueError("otpCode must be a 6-digit code")
+
+            if not otp_state or not otp_state.get("otpCodeHash"):
+                raise ValueError("OTP challenge not found. Please request a new OTP.")
+
+            now = _now()
+            if _otp_is_expired(otp_state, now=now):
+                otp_state["locked"] = True
+                otp_state["lockedAt"] = otp_state.get("lockedAt") or _iso(now)
+                otp_state["invalidatedAt"] = otp_state.get("invalidatedAt") or _iso(now)
+                otp_state["invalidationReason"] = "expired"
+                _write_json(otp_path, otp_state)
+                _write_audit(
+                    db,
+                    tenant_id=tenant_id,
+                    user_id=current_user["id"],
+                    case_id=document.case_id,
+                    action="document_otp_expired",
+                    details=f"Expired OTP rejected for document {document_id} ({document.template_key})",
+                )
+                db.commit()
+                raise ValueError("OTP expired. Please request a new OTP.")
+
+            if bool(otp_state.get("verified")) or bool(otp_state.get("invalidatedAt")):
+                _write_audit(
+                    db,
+                    tenant_id=tenant_id,
+                    user_id=current_user["id"],
+                    case_id=document.case_id,
+                    action="document_otp_replay_blocked",
+                    details=f"OTP replay blocked for document {document_id} ({document.template_key})",
+                )
+                db.commit()
+                raise ValueError("OTP already used. Please request a new OTP.")
 
             max_retries = int(otp_state.get("maxRetries") or OTP_MAX_RETRIES)
             attempt_count = int(otp_state.get("attemptCount") or 0)
             if bool(otp_state.get("locked")) or attempt_count >= max_retries:
                 otp_state["locked"] = True
                 otp_state["lockedAt"] = otp_state.get("lockedAt") or _iso(_now())
-                _write_json(_otp_path(document_id), otp_state)
+                _write_json(otp_path, otp_state)
                 raise ValueError("OTP attempts exceeded. Please request a new OTP.")
 
             expected_hash = str(otp_state.get("otpCodeHash") or "")
@@ -601,10 +700,12 @@ class FormsEngineService:
                     otp_state["lockedAt"] = _iso(_now())
             else:
                 otp_state["attemptCount"] = attempt_count
+                otp_state["invalidatedAt"] = _iso(now)
+                otp_state["invalidationReason"] = "verified"
 
             otp_state["verified"] = verified
-            otp_state["verifiedAt"] = _iso(_now()) if verified else None
-            _write_json(_otp_path(document_id), otp_state)
+            otp_state["verifiedAt"] = _iso(now) if verified else None
+            _write_json(otp_path, otp_state)
 
             signature_payload = _load_json(_signature_path(document_id))
             signature_payload["otpVerified"] = verified

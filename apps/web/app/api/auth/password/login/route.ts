@@ -5,6 +5,7 @@ import {
   buildSessionCookieOptions,
   getSessionCookieName,
 } from "@/lib/server/sessionCookie";
+import { getUserResetState } from "@/lib/server/auth-reset";
 import {
   createAccessToken,
   getJwtSecret,
@@ -267,7 +268,8 @@ async function createSessionForPasswordUser(args: {
     where: { id: userId },
     select: { lastPasswordChangedAt: true },
   });
-  const mustChangePassword = !userData?.lastPasswordChangedAt;
+  const resetState = await getUserResetState(prisma, userId);
+  const mustChangePassword = !userData?.lastPasswordChangedAt || resetState.passwordResetRequired;
 
   return {
     accessToken,

@@ -4,7 +4,7 @@ import { Suspense } from "react";
  * /reset-password?token=xxx — alias for /auth/password-reset?token=xxx
  * Renders the same PasswordResetClient component.
  */
-import PasswordResetClient from "@/app/auth/password-reset/reset-client";
+import PasswordResetClient from "../auth/password-reset/reset-client";
 
 export default function ResetPasswordPage() {
   return (

@@ -1,16 +1,8 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
+import { PASSWORD_REQUIREMENTS } from "@/lib/password-policy";
 
 const PASSWORD_HASH_ROUNDS = 12;
-
-// Password validation rules
-export const PASSWORD_REQUIREMENTS = {
-    minLength: 12,
-    requireUppercase: true,
-    requireLowercase: true,
-    requireNumbers: true,
-    requireSpecialChars: true,
-};
 
 /**
  * Validate password against security requirements

@@ -31,7 +31,7 @@ export function TabsList({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       className={cn(
-        "inline-flex min-h-11 flex-wrap items-center justify-start gap-1 rounded-xl border border-[var(--border-soft)] bg-slate-100/70 p-1 text-slate-600",
+        "inline-flex min-h-8 flex-wrap items-center justify-start gap-1 border border-[var(--border)] bg-[#eef3f8] p-1 text-slate-600",
         className
       )}
       {...props}
@@ -52,15 +52,13 @@ export function TabsTrigger({ value, className, ...props }: TabsTriggerProps) {
   return (
     <button
       type="button"
-      role="tab"
-      aria-selected={isActive}
       onClick={() => ctx.onValueChange(value)}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium",
+        "inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.03em]",
         "ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/20",
         "disabled:pointer-events-none disabled:opacity-50",
         isActive
-          ? "border border-[var(--primary-soft-border)] bg-white text-[var(--primary)] shadow-[var(--shadow-sm)]"
+          ? "border border-[var(--primary)] bg-white text-[var(--primary-pressed)] shadow-[var(--shadow-sm)]"
           : "border border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900",
         className
       )}

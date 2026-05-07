@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, ClipboardCheck, FileCheck2, FilePlus2, FileSearch, FileUp, LogOut, Send, ShieldCheck, Sparkles, Stethoscope } from "lucide-react";
 import AppBreadcrumbs from "@/components/AppBreadcrumbs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import TopNavigation from "@/components/navigation/TopNavigation";
+import WathiqCareShell from "@/components/WathiqCareShell";
 import { resolveSmartNavigation, type SmartActionKey, type SmartResolvedAction } from "@/components/navigation/smartNavigation";
 import { useAiLegalIntelligence } from "@/components/navigation/useAiLegalIntelligence";
 import { useCaseWorkflow } from "@/components/navigation/useCaseWorkflow";
@@ -379,170 +379,105 @@ export default function AppShell({
   // ────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-transparent">
-      <TopNavigation
-        pathname={pathname}
-        isRtl={isRtl}
-        brand={(
-          <Link href="/dashboard" className="inline-flex items-center gap-2.5 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-2.5 py-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/wathiqcare-logo.png"
-              alt="WathiqCare"
-              width={112}
-              height={30}
-              className="h-7 w-auto object-contain"
-              loading="eager"
-              decoding="async"
-            />
-            <span className="hidden rounded-full border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--primary-pressed)] sm:inline-flex">
-              {tenantName}
-            </span>
-          </Link>
-        )}
-        items={primaryNavItems.map((item) => ({
-          href: item.href,
-          label: t(item.labelKey || ""),
-          icon: item.icon,
-          disabled: item.disabled,
-          ariaLabel: t(item.labelKey || ""),
-        }))}
-        quickActions={quickActions.map((action) => ({
-          key: action.key,
-          href: action.href,
-          label: action.label,
-          icon: action.icon,
-          ariaLabel: action.ariaLabel,
-        }))}
-        nextAction={nextAction || undefined}
-        currentModuleLabel={t(`shell.smartNavigation.modules.${smartResolution.moduleKey}`)}
-        workflowStageLabel={t(`shell.smartNavigation.stages.${smartResolution.workflowStageKey}`)}
-        workflowSourceLabel={smartResolution.source === "backend-driven"
-          ? t("shell.smartNavigation.backendWorkflow")
-          : t("shell.smartNavigation.suggestedWorkflow")}
-        nextActionLabel={t("shell.smartNavigation.nextAction")}
-        quickActionsLabel={t("shell.quickActions.title")}
-        secondaryActionsLabel={t("shell.smartNavigation.secondaryActions")}
-        workspaceStatus={(
-          <span className="inline-flex items-center gap-1 rounded-full border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--primary-pressed)]" aria-label={t("app.activeWorkspace")}>
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            {t("app.activeWorkspace")}
-          </span>
-        )}
-        rightControls={(
-          <>
-            <NotificationBell />
-            <div className="hidden items-center gap-2 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-2.5 py-2 sm:inline-flex" title={tenantName}>
-              <TenantBrandMark name={tenantName} logoUrl={tenantLogoUrl} compact />
-            </div>
-            <LanguageSwitcher className="hidden md:inline-flex" />
-            <button
-              type="button"
-              onClick={() => {
-                void handleLogout();
-              }}
-              className="hidden items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 md:inline-flex"
-            >
-              <LogOut className="h-4 w-4" />
-              {t("common.logout")}
-            </button>
-          </>
-        )}
-        mobileFooter={(
-          <div className="space-y-2">
-            <LanguageSwitcher className="w-full" />
-            <button
-              type="button"
-              onClick={() => {
-                void handleLogout();
-              }}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm font-medium text-slate-700"
-            >
-              <LogOut className="h-4 w-4" />
-              {t("common.logout")}
-            </button>
+    <WathiqCareShell
+      title={title}
+      subtitle={subtitle}
+      pathname={pathname}
+      isRtl={isRtl}
+      brand={(
+        <Link href="/dashboard" className="wc-brand-block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/wathiqcare-logo.png"
+            alt="WathiqCare"
+            width={120}
+            height={32}
+            className="h-7 w-auto object-contain"
+            loading="eager"
+            decoding="async"
+          />
+          <div className="wc-brand-copy">
+            <div className="wc-brand-title">WathiqCare System</div>
+            <div className="wc-brand-subtitle">{tenantName}</div>
           </div>
-        )}
-      />
-
-      <div className="mx-auto max-w-[1600px] px-3 py-3 md:px-5 md:py-5">
-        <div className="min-w-0">
-          <header className="rounded-2xl border border-[var(--border)] bg-white/95 px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur md:px-6">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-2xl font-bold leading-tight text-slate-900">{title}</h1>
-                    <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold wc-status-ready">
-                      {t("app.activeWorkspace")}
-                    </span>
-                  </div>
-                  {subtitle ? <p className="mt-1 text-sm text-slate-600">{subtitle}</p> : null}
-                  <div className="mt-3">
-                    <AppBreadcrumbs caseLabel={breadcrumbCaseLabel} />
-                  </div>
-                </div>
-
-                <div className="inline-flex items-center gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--primary-soft)] px-2.5 py-1.5 text-xs font-semibold text-[var(--primary-pressed)]">
-                  <Stethoscope className="h-3.5 w-3.5" />
-                  {t("app.secureMode")}
-                </div>
+        </Link>
+      )}
+      menuItems={primaryNavItems.map((item) => ({
+        href: item.href,
+        label: t(item.labelKey || ""),
+        icon: item.icon,
+        disabled: item.disabled,
+        active: pathname === item.href || pathname.startsWith(`${item.href}/`),
+        ariaLabel: t(item.labelKey || ""),
+      }))}
+      moduleMeta={(
+        <>
+          <span className="wc-module-pill">{t(`shell.smartNavigation.modules.${smartResolution.moduleKey}`)}</span>
+          <span className="wc-module-pill">{t(`shell.smartNavigation.stages.${smartResolution.workflowStageKey}`)}</span>
+          <span className="wc-module-pill">{smartResolution.source === "backend-driven" ? t("shell.smartNavigation.backendWorkflow") : t("shell.smartNavigation.suggestedWorkflow")}</span>
+          <span className="wc-module-pill">
+            <Stethoscope className="h-3 w-3" />
+            <span>{t("app.secureMode")}</span>
+          </span>
+        </>
+      )}
+      nextAction={nextAction ? { href: nextAction.href, label: nextAction.label, icon: nextAction.icon, ariaLabel: nextAction.ariaLabel, variant: "primary" } : null}
+      quickActions={quickActions.map((action) => ({
+        href: action.href,
+        label: action.label,
+        icon: action.icon,
+        ariaLabel: action.ariaLabel,
+        variant: "secondary",
+      }))}
+      utilityControls={(
+        <>
+          <NotificationBell />
+          <div className="hidden md:flex" title={tenantName}>
+            <TenantBrandMark name={tenantName} logoUrl={tenantLogoUrl} compact />
+          </div>
+          <LanguageSwitcher className="hidden md:inline-flex" />
+          <button
+            type="button"
+            onClick={() => {
+              void handleLogout();
+            }}
+            className="toolbar-btn toolbar-btn-secondary"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span>{t("common.logout")}</span>
+          </button>
+        </>
+      )}
+      headerExtras={(
+        <div className="space-y-2">
+          <div className="wc-panel">
+            <AppBreadcrumbs caseLabel={breadcrumbCaseLabel} />
+          </div>
+          {routeCaseId ? (
+            <div className="wc-panel wc-panel-inline">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-700">
+                <Sparkles className="h-3.5 w-3.5 text-[var(--primary)]" />
+                <span className="font-semibold">{t("shell.aiInsights.title")}</span>
+                <span className="wc-module-pill">{aiInsight?.source === "ai-assisted" ? t("shell.aiInsights.sourceAi") : t("shell.aiInsights.sourceUnavailable")}</span>
               </div>
-
-              {routeCaseId ? (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-soft)] bg-white px-3 py-2 text-xs text-slate-600">
-                  <div className="inline-flex items-center gap-2 text-slate-700">
-                    <Sparkles className="h-3.5 w-3.5 text-[var(--primary)]" />
-                    <span className="font-semibold">{t("shell.aiInsights.title")}</span>
-                    <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
-                      {aiInsight?.source === "ai-assisted" ? t("shell.aiInsights.sourceAi") : t("shell.aiInsights.sourceUnavailable")}
-                    </span>
-                  </div>
-
-                  {aiInsightLoading ? (
-                    <span className="text-[11px] text-slate-500">{t("shell.aiInsights.loading")}</span>
-                  ) : (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                        {t("shell.aiInsights.risk")}: {aiInsight?.aiAssessment.riskLevel || "UNKNOWN"}
-                      </span>
-                      <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                        {t("shell.aiInsights.gaps")}: {aiGapCount}
-                      </span>
-                      {aiNextStep ? (
-                        <span className="inline-flex items-center rounded-full border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--primary-pressed)]">
-                          {t("shell.aiInsights.nextStep")}: {aiNextStep}
-                        </span>
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-              ) : null}
-
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-soft)] bg-slate-50/80 px-3 py-2 text-xs text-slate-600">
-                <div className="inline-flex items-center gap-2">
-                  <span className="font-semibold text-slate-700">{t("shell.session")}</span>
-                  <span>{tenantName}</span>
-                </div>
-                <div className="inline-flex items-center gap-2">
-                  <span className="font-semibold text-slate-700">{t("shell.route")}</span>
-                  <span className="font-mono text-[11px] text-slate-500">{pathname}</span>
-                </div>
+              <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                {aiInsightLoading ? <span>{t("shell.aiInsights.loading")}</span> : null}
+                {!aiInsightLoading ? <span className="wc-module-pill">{t("shell.aiInsights.risk")}: {aiInsight?.aiAssessment.riskLevel || "UNKNOWN"}</span> : null}
+                {!aiInsightLoading ? <span className="wc-module-pill">{t("shell.aiInsights.gaps")}: {aiGapCount}</span> : null}
+                {!aiInsightLoading && aiNextStep ? <span className="wc-module-pill">{t("shell.aiInsights.nextStep")}: {aiNextStep}</span> : null}
               </div>
-
-              {actions ? (
-                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border-soft)] bg-white p-2.5">
-                  {actions}
-                </div>
-              ) : null}
             </div>
-          </header>
-
-          <main className="mt-4 min-w-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-sm)] md:p-6">
-            {children}
-          </main>
+          ) : null}
+          <div className="wc-panel wc-panel-inline">
+            <span><strong>{t("shell.session")}:</strong> {tenantName}</span>
+            <span><strong>{t("shell.route")}:</strong> <span className="font-mono">{pathname}</span></span>
+            <span><strong>{t("app.activeWorkspace")}:</strong> IMC</span>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+      toolbarExtras={actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+    >
+      {children}
+    </WathiqCareShell>
   );
 }

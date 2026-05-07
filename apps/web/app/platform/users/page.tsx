@@ -138,11 +138,11 @@ export default function PlatformUsersPage() {
 
     return (
         <>
-            <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4">
+            <div className="wc-panel">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <h2 className="text-lg font-semibold text-slate-900">{txt("Platform Users", "مستخدمو المنصة")}</h2>
-                        <p className="mt-1 text-sm text-slate-500">
+                        <h2 className="wc-panel-heading !mb-1">{txt("Platform Users", "مستخدمو المنصة")}</h2>
+                        <p className="text-[12px] text-slate-500">
                             {txt("Manage platform-level staff — admins, operators, and support viewers", "إدارة فرق العمل على مستوى المنصة من المشرفين والمشغلين ومشاهدي الدعم")}
                         </p>
                     </div>
@@ -151,7 +151,7 @@ export default function PlatformUsersPage() {
                             type="button"
                             onClick={() => void handleForceResetAllUsers()}
                             disabled={forcingReset}
-                            className="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+                            className="toolbar-btn toolbar-btn-danger"
                         >
                             <Shield className={`h-4 w-4 ${forcingReset ? "animate-pulse" : ""}`} />
                             {forcingReset ? txt("Forcing Reset...", "جارٍ فرض إعادة التعيين...") : txt("Force Reset All Users", "فرض إعادة التعيين لجميع المستخدمين")}
@@ -159,7 +159,7 @@ export default function PlatformUsersPage() {
                         <button
                             type="button"
                             onClick={() => void loadUsers()}
-                            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            className="toolbar-btn toolbar-btn-secondary"
                         >
                             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
                             {txt("Refresh", "تحديث")}
@@ -167,7 +167,7 @@ export default function PlatformUsersPage() {
                         <button
                             type="button"
                             onClick={() => setShowCreateModal(true)}
-                            className="inline-flex items-center gap-2 rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-3 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8]"
+                            className="toolbar-btn toolbar-btn-primary"
                         >
                             <Plus className="h-4 w-4" />
                             {txt("Create Platform User", "إنشاء مستخدم منصة")}
@@ -176,18 +176,18 @@ export default function PlatformUsersPage() {
                 </div>
             </div>
 
-            <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="wc-panel text-[12px] text-amber-800">
                 <Shield className="mb-0.5 mr-2 inline-block h-4 w-4" />
                 {txt("Platform users have", "مستخدمو المنصة لديهم")} <strong>{txt("global access", "وصول شامل")}</strong> {txt("to all tenant data. Only provision platform staff here. Tenant users are managed separately under each tenant.", "إلى جميع بيانات الجهات. أنشئ هنا فقط حسابات فريق المنصة، أما مستخدمو الجهات فتتم إدارتهم بشكل منفصل داخل كل جهة.")}
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-sm)]">
-                <div className="border-b border-slate-200 px-5 py-4">
-                    <h3 className="text-sm font-semibold text-slate-900">{txt("Platform Users", "مستخدمو المنصة")} ({users.length})</h3>
+            <div className="wc-form-panel">
+                <div className="border-b border-[var(--border)] px-1 pb-2">
+                    <h3 className="wc-panel-heading !mb-0">{txt("Platform Users", "مستخدمو المنصة")} ({users.length})</h3>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-100 text-sm">
-                        <thead className="bg-slate-50 text-xs uppercase tracking-[0.04em] text-slate-500">
+                    <table className="wc-grid-table">
+                        <thead>
                             <tr>
                                 <th className="px-4 py-3 text-left">{txt("Name", "الاسم")}</th>
                                 <th className="px-4 py-3 text-left">{txt("Email", "البريد الإلكتروني")}</th>
@@ -197,7 +197,7 @@ export default function PlatformUsersPage() {
                                 <th className="px-4 py-3 text-left">{txt("Created", "تاريخ الإنشاء")}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody>
                             {loading ? (
                                 <tr>
                                     <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
@@ -212,16 +212,16 @@ export default function PlatformUsersPage() {
                                 </tr>
                             ) : (
                                 users.map((user) => (
-                                    <tr key={user.id} className="hover:bg-slate-50/80">
+                                    <tr key={user.id}>
                                         <td className="px-4 py-3 font-medium text-slate-900">{user.fullName}</td>
                                         <td className="px-4 py-3 text-slate-600">{user.email}</td>
                                         <td className="px-4 py-3">
-                                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${roleBadgeClass(user.role)}`}>
+                                            <span className={`wc-status-badge ${roleBadgeClass(user.role)}`}>
                                                 {roleLabel(user.role)}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${user.isActive ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                                            <span className={`wc-status-badge ${user.isActive ? "wc-status-badge--signed" : "wc-status-badge--locked"}`}>
                                                 {user.isActive ? txt("Active", "نشط") : txt("Inactive", "غير نشط")}
                                             </span>
                                         </td>
@@ -243,8 +243,8 @@ export default function PlatformUsersPage() {
 
             {showCreateModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-[var(--shadow-floating)]">
-                        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                    <div className="w-full max-w-md border border-[var(--border-strong)] bg-white shadow-[var(--shadow-floating)]">
+                        <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
                             <div>
                                 <h3 className="text-base font-semibold text-slate-900">{txt("Create Platform User", "إنشاء مستخدم منصة")}</h3>
                                 <p className="mt-0.5 text-xs text-slate-500">
@@ -262,32 +262,32 @@ export default function PlatformUsersPage() {
                             </button>
                         </div>
 
-                        <div className="space-y-4 p-5">
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-slate-700">{txt("Full Name", "الاسم الكامل")} *</label>
+                        <div className="space-y-3 p-4">
+                            <div className="wc-form-field">
+                                <label className="wc-form-label">{txt("Full Name", "الاسم الكامل")} <span className="wc-form-required">*</span></label>
                                 <input
-                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                                    className="wc-form-input"
                                     placeholder={txt("Ahmad Al-Rashidi", "أحمد الراشدي")}
                                     value={createForm.fullName}
                                     onChange={(e) => setCreateForm((p) => ({ ...p, fullName: e.target.value }))}
                                 />
                             </div>
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-slate-700">{txt("Email", "البريد الإلكتروني")} *</label>
+                            <div className="wc-form-field">
+                                <label className="wc-form-label">{txt("Email", "البريد الإلكتروني")} <span className="wc-form-required">*</span></label>
                                 <input
                                     type="email"
-                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                                    className="wc-form-input"
                                     placeholder={txt("operator@wathiqcare.online", "operator@wathiqcare.online")}
                                     value={createForm.email}
                                     onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))}
                                 />
                             </div>
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-slate-700">{txt("Platform Role", "دور المنصة")}</label>
+                            <div className="wc-form-field">
+                                <label className="wc-form-label">{txt("Platform Role", "دور المنصة")}</label>
                                 <select
                                     title={txt("Select platform role", "اختر دور المنصة")}
                                     aria-label={txt("Select platform role", "اختر دور المنصة")}
-                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                                    className="wc-form-select"
                                     value={createForm.role}
                                     onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))}
                                 >
@@ -299,8 +299,8 @@ export default function PlatformUsersPage() {
                                     {txt("Platform Admin: full access · Operator: operational · Support Viewer: read-only", "مشرف المنصة: وصول كامل · المشغل: تشغيلي · مشاهد الدعم: قراءة فقط")}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                            <div className="flex items-center gap-4 text-[12px]">
+                                <label className="flex cursor-pointer items-center gap-2 text-slate-700">
                                     <input
                                         type="checkbox"
                                         className="rounded border-slate-300"
@@ -309,7 +309,7 @@ export default function PlatformUsersPage() {
                                     />
                                     {txt("Send invitation email", "إرسال رسالة دعوة")}
                                 </label>
-                                <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                                <label className="flex cursor-pointer items-center gap-2 text-slate-700">
                                     <input
                                         type="checkbox"
                                         className="rounded border-slate-300"
@@ -320,16 +320,16 @@ export default function PlatformUsersPage() {
                                 </label>
                             </div>
 
-                            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                            <div className="wc-panel text-[11px] text-amber-800">
                                 {txt("Platform users have access to all tenants. Only create accounts for trusted staff.", "يمتلك مستخدمو المنصة وصولًا إلى جميع الجهات. أنشئ الحسابات فقط للكوادر الموثوقة.")}
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
+                        <div className="flex justify-end gap-2 border-t border-[var(--border)] px-4 py-3">
                             <button
                                 type="button"
                                 onClick={() => setShowCreateModal(false)}
-                                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                                className="toolbar-btn toolbar-btn-secondary"
                             >
                                 {txt("Cancel", "إلغاء")}
                             </button>
@@ -337,7 +337,7 @@ export default function PlatformUsersPage() {
                                 type="button"
                                 onClick={() => void handleCreateUser()}
                                 disabled={saving}
-                                className="rounded-md border border-[var(--primary-soft-border)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-pressed)] hover:border-[var(--primary)] hover:bg-[#e2edf8] disabled:opacity-50"
+                                className="toolbar-btn toolbar-btn-primary"
                             >
                                 {saving ? txt("Creating...", "جارٍ الإنشاء...") : txt("Create User", "إنشاء مستخدم")}
                             </button>

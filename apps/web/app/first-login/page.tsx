@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Eye, EyeOff, KeyRound, ShieldCheck } from "lucide-react";
 import { apiFetch, clearToken } from "@/utils/api";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { PASSWORD_REQUIREMENTS } from "@/lib/password-policy";
 
 export default function FirstLoginPage() {
   const router = useRouter();
@@ -19,6 +20,10 @@ export default function FirstLoginPage() {
   const [loading, setLoading] = useState(false);
   const [isRtl, setIsRtl] = useState(false);
 
+  const passwordPolicyHint = isRtl
+    ? `${PASSWORD_REQUIREMENTS.minLength} أحرف على الأقل مع حرف كبير وحرف صغير ورقم ورمز`
+    : `Min. ${PASSWORD_REQUIREMENTS.minLength} chars with uppercase, lowercase, number & symbol`;
+
   useEffect(() => {
     const lang = typeof window !== "undefined" ? document.documentElement.lang : "en";
     setIsRtl(lang === "ar");
@@ -28,8 +33,12 @@ export default function FirstLoginPage() {
     e.preventDefault();
     setError("");
 
-    if (newPassword.length < 8) {
-      setError(isRtl ? "كلمة المرور يجب أن تكون 8 أحرف على الأقل" : "Password must be at least 8 characters");
+    if (newPassword.length < PASSWORD_REQUIREMENTS.minLength) {
+      setError(
+        isRtl
+          ? `كلمة المرور يجب أن تكون ${PASSWORD_REQUIREMENTS.minLength} حرفًا على الأقل`
+          : `Password must be at least ${PASSWORD_REQUIREMENTS.minLength} characters long`,
+      );
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -129,6 +138,7 @@ export default function FirstLoginPage() {
                   id="new-password"
                   type={showNew ? "text" : "password"}
                   required
+                  minLength={PASSWORD_REQUIREMENTS.minLength}
                   autoFocus
                   autoComplete="new-password"
                   value={newPassword}
@@ -142,7 +152,7 @@ export default function FirstLoginPage() {
                 </button>
               </div>
               <p className="mt-1 text-xs text-slate-400">
-                {isRtl ? "8 أحرف على الأقل مع حرف كبير ورقم ورمز" : "Min. 8 chars with uppercase, number & symbol"}
+                {passwordPolicyHint}
               </p>
             </div>
 
@@ -155,6 +165,7 @@ export default function FirstLoginPage() {
                   id="confirm-password"
                   type={showConfirm ? "text" : "password"}
                   required
+                  minLength={PASSWORD_REQUIREMENTS.minLength}
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
