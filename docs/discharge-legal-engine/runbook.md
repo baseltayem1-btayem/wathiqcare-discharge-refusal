@@ -84,6 +84,17 @@ uvicorn backend.main:app --host 0.0.0.0 --port $PORT
 
 Set `DATABASE_URL`, `REDIS_URL`, and all secrets as environment variables on the host.
 
+### Controlled Rollout
+
+Controlled rollout artifacts are maintained under `docs/governance/`.
+
+- `phased-rollout-plan.md` defines the three-phase rollout path
+- `controlled-uat-execution-record.md` is the execution record for the UAT environment
+- `limited-rollout-execution-record.md` is the execution record for the limited rollout wave
+- `full-production-activation-checklist.md` is the final activation gate
+
+For UAT and limited rollout environments, onboarding must be invite-only. Do not expose public self-registration during controlled rollout. The repository contains a password-signup route, so ingress or edge controls must block public use of `POST /api/auth/password/signup` in controlled environments.
+
 ---
 
 ## Common Issues
@@ -121,6 +132,8 @@ Set `DATABASE_URL`, `REDIS_URL`, and all secrets as environment variables on the
 - Structured JSON logs emitted to stdout; collect with your log aggregator.
 - Failed SMS, PDF, payment events surface in the admin notification/payment logs.
 - Critical errors raise `500` with a sanitised message (no stack traces to client).
+- For the validated rollout baseline, monitor authentication failures, OTP failures, OTP replay attempts, secure-link failures, PDF generation failures, legal-package generation failures, audit write failures, storage failures, and API 500 errors.
+- Web log access should be retained through the frontend hosting log console, API log access through the backend hosting log console, and both surfaces should be searchable by timestamp, route, event name, tenant, and case where available.
 
 ---
 
@@ -154,3 +167,22 @@ Expected log events:
 - Signed PDFs: permanent in S3 (legal archive).
 - Notification message bodies: retain 90 days, then truncate.
 - Session tokens (hash only): purge after 30 days post-completion.
+
+## UAT Database Checks
+
+Use a real UTF-8 PostgreSQL database for controlled UAT.
+
+Encoding check:
+
+```sql
+SELECT current_database() AS database_name, pg_encoding_to_char(encoding) AS encoding
+FROM pg_database
+WHERE datname = current_database();
+```
+
+Backup and restore drill example:
+
+```bash
+pg_dump --format=custom --no-owner --dbname="$DATABASE_URL" --file="wathiqcare-uat-YYYYMMDD.dump"
+pg_restore --clean --if-exists --no-owner --dbname="$RESTORE_DATABASE_URL" "wathiqcare-uat-YYYYMMDD.dump"
+```
