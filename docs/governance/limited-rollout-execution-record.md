@@ -3,20 +3,20 @@
 ## Status
 
 - Phase: Limited Rollout
-- Entry condition met from Phase 1: Yes / No
-- Observation owner: ____________________
-- Start date: ____________________
-- End date: ____________________
+- Entry condition met from Phase 1: No
+- Observation owner: Pending successful controlled UAT completion
+- Start date: Not started
+- End date: Not started
 
 ## Limited Rollout Users
 
 | User | Email | Role | Expected Dashboard | Status |
 | --- | --- | --- | --- | --- |
-| Legal Affairs | ____________________ | `legal_admin` | `/legal/dashboard` | Pending |
-| Selected Physician 1 | ____________________ | `doctor` | `/doctor/dashboard` | Pending |
-| Selected Physician 2 | ____________________ | `doctor` | `/doctor/dashboard` | Pending |
-| Medical Director | ____________________ | `medical_director` | `/medical-director/dashboard` | Pending |
-| Quality/Compliance | ____________________ | `compliance` or `quality` | `/compliance` and allowed reporting surfaces | Pending |
+| Legal Affairs | Pending named invite | `legal_admin` | `/legal/dashboard` | Blocked until Phase 1 passes |
+| Selected Physician 1 | Pending named invite | `doctor` | `/doctor/dashboard` | Blocked until Phase 1 passes |
+| Selected Physician 2 | Pending named invite | `doctor` | `/doctor/dashboard` | Blocked until Phase 1 passes |
+| Medical Director | Pending named invite | `medical_director` | `/medical-director/dashboard` | Blocked until Phase 1 passes |
+| Quality/Compliance | Pending named invite | `compliance` or `quality` | `/compliance` and allowed reporting surfaces | Blocked until Phase 1 passes |
 
 ## Role Mapping
 
@@ -39,10 +39,10 @@ Validation results:
 
 | Role | Dashboard Access | Unauthorized Route Blocked | Audit Visible | Secure-Link Logging Visible | PDF/Legal Package Pass |
 | --- | --- | --- | --- | --- | --- |
-| `legal_admin` | Pending | Pending | Pending | Pending | Pending |
-| `doctor` | Pending | Pending | Pending | Pending | Pending |
-| `medical_director` | Pending | Pending | Pending | Pending | Pending |
-| `quality` / `compliance` | Pending | Pending | Pending | Pending | Pending |
+| `legal_admin` | Blocked pending invited account | Blocked pending invited account | Blocked pending Phase 1 | Blocked pending Phase 1 | Blocked pending Phase 1 |
+| `doctor` | Blocked pending invited account | Blocked pending invited account | Blocked pending Phase 1 | Blocked pending Phase 1 | Blocked pending Phase 1 |
+| `medical_director` | Blocked pending invited account | Blocked pending invited account | Blocked pending Phase 1 | Blocked pending Phase 1 | Blocked pending Phase 1 |
+| `quality` / `compliance` | Blocked pending invited account | Blocked pending invited account | Blocked pending Phase 1 | Blocked pending Phase 1 | Blocked pending Phase 1 |
 
 ## User Onboarding Instructions
 
@@ -54,11 +54,11 @@ Validation results:
 
 ## Operational Support Contacts
 
-- IT support owner: ____________________
-- Clinical workflow owner: ____________________
-- Legal Affairs owner: ____________________
-- Compliance owner: ____________________
-- Escalation path: ____________________
+- IT support owner: Pending named owner from hospital operations
+- Clinical workflow owner: Pending named owner from clinical leadership
+- Legal Affairs owner: Pending named owner from Legal Affairs
+- Compliance owner: Pending named owner from Quality/Compliance
+- Escalation path: Use `docs/governance/incident-log-template.md` and `docs/governance/operational-observation-checklist.md`; named on-call path still required before rollout start
 
 ## First-Use Monitoring Checklist
 
@@ -72,8 +72,8 @@ Validation results:
 
 ## Phase 2 Output Summary
 
-- Limited rollout users: ____________________
-- Role mapping: ____________________
-- Access validation results: ____________________
-- Operational support contacts: ____________________
-- First-use monitoring checklist status: ____________________
+- Limited rollout users: Not yet provisioned
+- Role mapping: Prepared, not yet exercised live
+- Access validation results: Blocked pending successful Phase 1 controlled UAT
+- Operational support contacts: Framework prepared, named contacts pending
+- First-use monitoring checklist status: Prepared, not started
