@@ -5,9 +5,9 @@ import { tmpdir } from "node:os";
 import crypto from "node:crypto";
 import { expect, test } from "@playwright/test";
 
-const appRoot = process.cwd().endsWith("apps\\web")
+const appRoot = process.cwd().endsWith(join("apps", "web"))
   ? process.cwd()
-  : `${process.cwd()}\\apps\\web`;
+  : join(process.cwd(), "apps", "web");
 
 const DEMO_ACCOUNTS = [
   {
@@ -114,7 +114,7 @@ async function login(page: import("@playwright/test").Page, email: string, passw
   await page.fill("#login-identifier", email);
   await page.fill("#login-password", password);
   await Promise.all([
-    page.waitForURL(/\/(first-login|modules|platform)(\?.*)?$/, { timeout: 30000 }),
+    page.waitForURL(/\/(first-login|modules)(\?.*)?$/, { timeout: 30000 }),
     page.locator("form").filter({ has: page.locator("#login-password") }).locator('button[type="submit"]').click(),
   ]);
 }
@@ -130,7 +130,7 @@ async function rotatePasswordIfRequired(page: import("@playwright/test").Page, n
   await page.waitForURL(/\/modules$/);
 }
 
-test.describe.serial("controlled demo module access", () => {
+test.describe.serial("controlled pilot module access", () => {
   test.describe.configure({ timeout: 180000 });
 
   for (const account of DEMO_ACCOUNTS) {
