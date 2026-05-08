@@ -127,8 +127,13 @@ async function verifyBundle(
     };
 
     // 2. Verify manifest integrity
-    const manifestHash = hashManifest(bundleContents.manifest);
-    const expectedHash = bundleContents.manifestHash || manifestHash;
+    const manifestHash = hashManifest(
+      bundleContents.manifest as Record<string, unknown>
+    );
+    const expectedHash =
+      typeof bundleContents.manifestHash === 'string'
+        ? bundleContents.manifestHash
+        : manifestHash;
 
     if (manifestHash === expectedHash) {
       report.checks.manifestHash = {
@@ -145,14 +150,15 @@ async function verifyBundle(
 
     // 3. Verify signature
     if (bundleContents.signature && bundleContents.certificate) {
+      const certificatePem = String(bundleContents.certificate);
       report.checks.signatureValid = {
         passed: true,
         details: 'PKCS#7 signature verified',
       };
 
       report.signer = {
-        subject: extractCertificateSubject(bundleContents.certificate),
-        thumbprint: getCertificateThumbprint(bundleContents.certificate),
+        subject: extractCertificateSubject(certificatePem),
+        thumbprint: getCertificateThumbprint(certificatePem),
         issued: 'N/A',
         expires: 'N/A',
       };
@@ -167,8 +173,8 @@ async function verifyBundle(
     // 4. Verify timestamp (if present)
     if (bundleContents.timestamp) {
       const tsValid = verifyTimestamp(
-        bundleContents.timestamp,
-        bundleContents.manifest
+        String(bundleContents.timestamp),
+        bundleContents.manifest as Record<string, unknown>
       );
       report.checks.timestampValid = {
         passed: tsValid,
@@ -187,7 +193,7 @@ async function verifyBundle(
     // 5. Verify certificate chain
     if (bundleContents.certificate) {
       const chainValid = verifyCertificateChain(
-        bundleContents.certificate,
+        String(bundleContents.certificate),
         options.trustStorePath
       );
       report.checks.certificateChain = {

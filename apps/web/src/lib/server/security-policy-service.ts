@@ -31,6 +31,10 @@ const STEP_UP_SECRET =
   process.env.JWT_SECRET ||
   "wathiqcare-step-up-dev-secret";
 
+type RawStepUpRevocationRow = {
+  step_up_revoked_at: Date | null;
+};
+
 type SignedStepUpPayload = {
   kind: "challenge" | "session";
   sub: string;
@@ -161,6 +165,7 @@ export function isStepUpSessionTokenValid(args: {
   userId: string;
   tenantId: string;
   now?: Date;
+  revokedAt?: Date | null;
 }) {
   const payload = readSignedStepUpPayload(args.sessionToken);
   const now = args.now ?? new Date();
@@ -173,10 +178,36 @@ export function isStepUpSessionTokenValid(args: {
     return false;
   }
 
+   if (args.revokedAt && new Date(payload.iat).getTime() <= args.revokedAt.getTime()) {
+    return false;
+  }
+
   return new Date(payload.exp).getTime() >= now.getTime();
 }
 
-export function getStepUpStatusFromRequest(args: {
+async function ensureStepUpRevocationSchema(): Promise<void> {
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS step_up_revoked_at TIMESTAMPTZ NULL
+  `);
+}
+
+async function getUserStepUpRevokedAt(userId: string): Promise<Date | null> {
+  try {
+    await ensureStepUpRevocationSchema();
+    const rows = await prisma.$queryRaw<RawStepUpRevocationRow[]>`
+      SELECT step_up_revoked_at
+      FROM users
+      WHERE id = ${userId}
+      LIMIT 1
+    `;
+    return rows[0]?.step_up_revoked_at ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getStepUpStatusFromRequest(args: {
   request: NextRequest;
   auth: AuthContext;
   tenantId: string;
@@ -187,10 +218,12 @@ export function getStepUpStatusFromRequest(args: {
     args.request.headers.get("x-wathiq-step-up-token") ??
     null;
   const cookiePayload = readSignedStepUpPayload(sessionToken);
+  const revokedAt = await getUserStepUpRevokedAt(args.auth.sub);
   const cookieVerified = isStepUpSessionTokenValid({
     sessionToken,
     userId: args.auth.sub,
     tenantId: args.tenantId,
+    revokedAt,
   });
   const headerVerified =
     args.request.headers.get("x-wathiq-step-up") === "verified" ||
@@ -304,7 +337,7 @@ export async function assertStepUpForSensitiveAction(args: {
   caseId?: string | null;
 }) {
   const settings = await getTenantSecuritySettings(args.tenantId);
-  const stepUp = getStepUpStatusFromRequest({
+  const stepUp = await getStepUpStatusFromRequest({
     request: args.request,
     auth: args.auth,
     tenantId: args.tenantId,

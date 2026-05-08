@@ -48,6 +48,8 @@ export default function TenantUsersPage() {
         role: "user",
         department: "",
     });
+    const [resetDialog, setResetDialog] = useState<{ id: string; fullName: string; email: string } | null>(null);
+    const [resetForm, setResetForm] = useState({ password: "", confirmPassword: "" });
 
     const canManageUsers = permissions.can("users.manage");
 
@@ -131,6 +133,93 @@ export default function TenantUsersPage() {
             toast.error(message);
         } finally {
             setActionLoading((prev) => ({ ...prev, [`reset_${userId}`]: false }));
+        }
+    }
+
+    async function onSetPasswordDirectly() {
+        if (!resetDialog) {
+            return;
+        }
+
+        if (!canManageUsers) {
+            toast.error(permissions.deniedMessage);
+            return;
+        }
+
+        if (!resetForm.password) {
+            toast.error("New password is required");
+            return;
+        }
+
+        if (resetForm.password !== resetForm.confirmPassword) {
+            toast.error("Passwords do not match");
+            return;
+        }
+
+        setActionLoading((prev) => ({ ...prev, [`direct_${resetDialog.id}`]: true }));
+        try {
+            await apiFetch<{ success: boolean; message: string }>(`/api/tenant/users/${resetDialog.id}/reset-password`, {
+                method: "POST",
+                body: JSON.stringify({ password: resetForm.password }),
+            });
+            toast.success("Password updated successfully");
+            setResetDialog(null);
+            setResetForm({ password: "", confirmPassword: "" });
+        } catch (err) {
+            const message = err instanceof ApiHttpError ? err.message : "Failed to update password";
+            toast.error(message);
+        } finally {
+            setActionLoading((prev) => ({ ...prev, [`direct_${resetDialog.id}`]: false }));
+        }
+    }
+
+    async function onForceLogout(user: TenantUser) {
+        if (!canManageUsers) {
+            toast.error(permissions.deniedMessage);
+            return;
+        }
+
+        const confirmed = window.confirm(`Force logout ${user.fullName} and revoke all active sessions?`);
+        if (!confirmed) {
+            return;
+        }
+
+        setActionLoading((prev) => ({ ...prev, [`logout_${user.id}`]: true }));
+        try {
+            await apiFetch<{ success: boolean; message: string }>(`/api/tenant/users/${user.id}/force-logout`, {
+                method: "POST",
+            });
+            toast.success("User sessions revoked");
+        } catch (err) {
+            const message = err instanceof ApiHttpError ? err.message : "Failed to force logout user";
+            toast.error(message);
+        } finally {
+            setActionLoading((prev) => ({ ...prev, [`logout_${user.id}`]: false }));
+        }
+    }
+
+    async function onResetMfa(user: TenantUser) {
+        if (!canManageUsers) {
+            toast.error(permissions.deniedMessage);
+            return;
+        }
+
+        const confirmed = window.confirm(`Reset MFA for ${user.fullName}? This clears active step-up verification and requires fresh MFA verification on the next privileged action.`);
+        if (!confirmed) {
+            return;
+        }
+
+        setActionLoading((prev) => ({ ...prev, [`mfa_${user.id}`]: true }));
+        try {
+            await apiFetch<{ success: boolean; message: string }>(`/api/tenant/users/${user.id}/reset-mfa`, {
+                method: "POST",
+            });
+            toast.success("User MFA reset");
+        } catch (err) {
+            const message = err instanceof ApiHttpError ? err.message : "Failed to reset MFA";
+            toast.error(message);
+        } finally {
+            setActionLoading((prev) => ({ ...prev, [`mfa_${user.id}`]: false }));
         }
     }
 
@@ -270,7 +359,37 @@ export default function TenantUsersPage() {
                                                             onClick={() => void onResetPassword(user.id)}
                                                             className="toolbar-btn toolbar-btn-secondary"
                                                         >
-                                                            {actionLoading[`reset_${user.id}`] ? "Sending…" : "Reset Password"}
+                                                            {actionLoading[`reset_${user.id}`] ? "Sending…" : "Send Reset Email"}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={!!actionLoading[`direct_${user.id}`] || !canManageUsers}
+                                                            title={!canManageUsers ? permissions.deniedMessage : undefined}
+                                                            onClick={() => {
+                                                                setResetDialog({ id: user.id, fullName: user.fullName, email: user.email });
+                                                                setResetForm({ password: "", confirmPassword: "" });
+                                                            }}
+                                                            className="rounded border border-cyan-300 bg-cyan-50 px-2 py-0.5 text-xs font-medium text-cyan-700 hover:bg-cyan-100 disabled:opacity-50"
+                                                        >
+                                                            {actionLoading[`direct_${user.id}`] ? "Saving…" : "Set Password"}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={!!actionLoading[`logout_${user.id}`] || !canManageUsers}
+                                                            title={!canManageUsers ? permissions.deniedMessage : undefined}
+                                                            onClick={() => void onForceLogout(user)}
+                                                            className="rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                                                        >
+                                                            {actionLoading[`logout_${user.id}`] ? "Revoking…" : "Force Logout"}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={!!actionLoading[`mfa_${user.id}`] || !canManageUsers}
+                                                            title={!canManageUsers ? permissions.deniedMessage : undefined}
+                                                            onClick={() => void onResetMfa(user)}
+                                                            className="rounded border border-violet-300 bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700 hover:bg-violet-100 disabled:opacity-50"
+                                                        >
+                                                            {actionLoading[`mfa_${user.id}`] ? "Resetting…" : "Reset MFA"}
                                                         </button>
                                                     </div>
                                                 </td>
@@ -282,6 +401,68 @@ export default function TenantUsersPage() {
                         )}
                     </section>
                 </div>
+
+                {resetDialog ? (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+                        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+                            <div className="space-y-1">
+                                <h2 className="text-base font-semibold text-slate-900">Set User Password</h2>
+                                <p className="text-sm text-slate-500">
+                                    Set a new password directly for <strong>{resetDialog.fullName}</strong> ({resetDialog.email}). This clears lockouts and revokes active sessions, but does not change the account's active status.
+                                </p>
+                            </div>
+
+                            <div className="mt-4 space-y-3">
+                                <label className="block text-sm text-slate-600">
+                                    New password
+                                    <input
+                                        type="password"
+                                        autoComplete="new-password"
+                                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                        value={resetForm.password}
+                                        onChange={(e) => setResetForm((prev) => ({ ...prev, password: e.target.value }))}
+                                    />
+                                </label>
+
+                                <label className="block text-sm text-slate-600">
+                                    Confirm password
+                                    <input
+                                        type="password"
+                                        autoComplete="new-password"
+                                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                        value={resetForm.confirmPassword}
+                                        onChange={(e) => setResetForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                                    />
+                                </label>
+
+                                <p className="text-xs text-slate-500">
+                                    Password must be at least 12 characters and include uppercase, lowercase, a number, and a special character.
+                                </p>
+                            </div>
+
+                            <div className="mt-5 flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setResetDialog(null);
+                                        setResetForm({ password: "", confirmPassword: "" });
+                                    }}
+                                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => void onSetPasswordDirectly()}
+                                    disabled={!!actionLoading[`direct_${resetDialog.id}`] || !canManageUsers}
+                                    className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {actionLoading[`direct_${resetDialog.id}`] ? "Saving..." : "Update Password"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : null}
             </AppShell>
         </AuthGuard>
     );

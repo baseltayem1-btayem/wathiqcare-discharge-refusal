@@ -8,7 +8,7 @@
 
 ## 📋 Labels (Priority + Scope)
 
-```
+```text
 epic        → Epic-level initiative
 story       → User story
 task        → Implementation task
@@ -27,7 +27,7 @@ low         → P2 priority (backlog)
 ## 🎯 Milestones
 
 | Milestone | Duration | Focus |
-|---|---|---|
+| --- | --- | --- |
 | **M1: Legal Closure** | Weeks 1–2 | PKI, TSA, Verifier |
 | **M2: UX Simplification** | Weeks 3–4 | 3-step flow, templates, autofill |
 | **M3: IMC Pilot** | Weeks 5–6 | ER/IPD deployment, metrics |
@@ -38,12 +38,25 @@ low         → P2 priority (backlog)
 
 ## 🚀 EPIC 1: Legal Closure (PKI + TSA + Verifier)
 
+### Security Follow-Up: Track upstream Next.js bundled PostCSS advisory
+
+**Priority:** MEDIUM  
+**Labels:** task, security, ops, medium  
+**Status:** OPEN  
+**Owner:** Platform / Frontend
+
+- [ ] Monitor published `next` releases for a stable version that no longer ships `postcss < 8.5.10`
+- [ ] Upgrade `next` immediately once upstream resolves the bundled dependency
+- [ ] Re-run `npm audit --omit=dev` and production build after the upgrade
+- [ ] Close residual advisory note in [docs/security-advisories-2026-05-04.md](docs/security-advisories-2026-05-04.md)
+
 **Priority:** HIGH  
 **Milestone:** M1  
 **Labels:** epic, legal, security, high  
 **Business Value:** Enable medico-legal evidence integrity verification for court acceptance and non-repudiation compliance.
 
 ### Acceptance Criteria
+
 - [ ] PKCS#7 manifest signatures generated and validated
 - [ ] RFC3161 TSA timestamps integrated and verified
 - [ ] Verifier CLI tool functional for local verification
@@ -58,6 +71,7 @@ low         → P2 priority (backlog)
 **Priority:** HIGH  
 **Labels:** story, legal, security, high  
 **Acceptance Criteria:**
+
 - [ ] `jsrsasign` or equivalent signing library integrated
 - [ ] Manifest JSON serialization + canonical ordering implemented
 - [ ] Signature file (manifest.sig) generated and attached to bundle
@@ -66,7 +80,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1.1.1 | Add signing library (jsrsasign/node-jose) to package.json | Backend | TODO |
 | 1.1.2 | Create SignatureManager class for manifest signing | Backend | TODO |
 | 1.1.3 | Generate canonical JSON + PKCS#7 signature | Backend | TODO |
@@ -80,6 +94,7 @@ low         → P2 priority (backlog)
 **Priority:** HIGH  
 **Labels:** story, legal, security, high  
 **Acceptance Criteria:**
+
 - [ ] TSA client configured and tested against test/production servers
 - [ ] Timestamp token (.tsr) generated and validated
 - [ ] Token attached to bundle with metadata
@@ -88,7 +103,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1.2.1 | Integrate RFC3161 TSA library | Backend | TODO |
 | 1.2.2 | Configure TSA endpoint (test + production) | DevOps | TODO |
 | 1.2.3 | Implement timestamp request/response cycle | Backend | TODO |
@@ -102,6 +117,7 @@ low         → P2 priority (backlog)
 **Priority:** HIGH  
 **Labels:** story, legal, security  
 **Acceptance Criteria:**
+
 - [ ] CLI tool: `wathiq-verify bundle.zip → valid/invalid + details`
 - [ ] API endpoint: `GET /api/verify?bundleId=xxx → { valid, signature, timestamp, metadata }`
 - [ ] Both report signature status, TSA chain, and manifest integrity
@@ -110,7 +126,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1.3.1 | Create verifier CLI entry point | Backend | TODO |
 | 1.3.2 | Implement signature validation logic | Backend | TODO |
 | 1.3.3 | Implement TSA token validation logic | Backend | TODO |
@@ -134,6 +150,7 @@ low         → P2 priority (backlog)
 **Priority:** HIGH  
 **Labels:** story, ux, high  
 **Acceptance Criteria:**
+
 - [ ] Case creation reduced to: 1) Patient Info, 2) Medical Evidence, 3) Witness/Consent
 - [ ] Progress indicator shows step 1/3, 2/3, 3/3
 - [ ] Auto-save at each step
@@ -142,7 +159,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 2.1.1 | Redesign case creation flow (3 steps) | Frontend | TODO |
 | 2.1.2 | Implement step 1: Patient demographics | Frontend | TODO |
 | 2.1.3 | Implement step 2: Evidence upload + medical data | Frontend | TODO |
@@ -157,6 +174,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, ux, medium  
 **Acceptance Criteria:**
+
 - [ ] Template library for common discharge scenarios
 - [ ] Autofill fields from EMR/previous cases
 - [ ] Template selection on step 1 pre-populates forms
@@ -165,7 +183,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 2.2.1 | Design template data model | Backend | TODO |
 | 2.2.2 | Build template library screen | Frontend | TODO |
 | 2.2.3 | Implement autofill from EMR data | Backend | TODO |
@@ -178,6 +196,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, ux, medium  
 **Acceptance Criteria:**
+
 - [ ] All validation errors inline with clear Arabic/English messaging
 - [ ] Loading states for async operations
 - [ ] Timeout error recovery with retry logic
@@ -186,7 +205,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 2.3.1 | Audit current validation + errors | Frontend | TODO |
 | 2.3.2 | Implement inline validation with messaging | Frontend | TODO |
 | 2.3.3 | Add loading + spinner states | Frontend | TODO |
@@ -208,6 +227,7 @@ low         → P2 priority (backlog)
 **Priority:** HIGH  
 **Labels:** story, ops, high  
 **Acceptance Criteria:**
+
 - [ ] Feature flag controls IMC pilot access
 - [ ] ER and IPD departments onboarded with training
 - [ ] All data isolated to IMC tenant
@@ -216,7 +236,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 3.1.1 | Create feature flag for IMC pilot | DevOps | TODO |
 | 3.1.2 | Deploy to staging environment | DevOps | TODO |
 | 3.1.3 | Execute ER department pre-go-live checklist | Ops | TODO |
@@ -230,6 +250,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, ops, medium  
 **Acceptance Criteria:**
+
 - [ ] Case creation time tracked (baseline: 15 min → target: 3 min)
 - [ ] Evidence upload success rate monitored
 - [ ] Error rate < 0.5%
@@ -238,7 +259,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 3.2.1 | Instrument case creation timing | Backend | TODO |
 | 3.2.2 | Add event tracking to analytics | Frontend | TODO |
 | 3.2.3 | Build on-dashboard metrics | Frontend | TODO |
@@ -251,6 +272,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, ops, medium  
 **Acceptance Criteria:**
+
 - [ ] Weekly report: conversion rate, drop-off, error types
 - [ ] Qualitative feedback summary
 - [ ] Rollout recommendation (go/no-go)
@@ -258,7 +280,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 3.3.1 | Compile metrics report template | Ops | TODO |
 | 3.3.2 | Analyze week 1 data | Analytics | TODO |
 | 3.3.3 | Summarize user feedback | Ops | TODO |
@@ -280,6 +302,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, legal  
 **Acceptance Criteria:**
+
 - [ ] Cover page includes case summary, timestamps, signatures
 - [ ] QR code links to public verifier
 - [ ] Professional layout matching court requirements
@@ -287,7 +310,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 4.1.1 | Design court-compliant cover page | Legal | TODO |
 | 4.1.2 | Implement PDF generation with metadata | Backend | TODO |
 | 4.1.3 | Add QR code linking to verifier | Backend | TODO |
@@ -299,6 +322,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, legal  
 **Acceptance Criteria:**
+
 - [ ] Automated chronology of all case actions and decisions
 - [ ] Includes timestamps, actor names, action descriptions
 - [ ] Part of exportable bundle
@@ -306,7 +330,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 4.2.1 | Extract audit log into timeline format | Backend | TODO |
 | 4.2.2 | Format timeline for PDF rendering | Backend | TODO |
 | 4.2.3 | Include in court bundle export | Backend | TODO |
@@ -318,6 +342,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, legal, ux  
 **Acceptance Criteria:**
+
 - [ ] Button: "Export Court Bundle"
 - [ ] Bundle includes: cover page, timeline, all evidence, signatures, manifest.sig, .tsr token
 - [ ] Single ZIP or PDF archive
@@ -326,7 +351,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 4.3.1 | Create bundle assembly logic | Backend | TODO |
 | 4.3.2 | Add export button to UI | Frontend | TODO |
 | 4.3.3 | Generate ZIP with all artifacts | Backend | TODO |
@@ -348,6 +373,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, integration  
 **Acceptance Criteria:**
+
 - [ ] Patient demographics auto-populated from EMR
 - [ ] Discharge diagnosis/medications synced
 - [ ] Integration using HL7 FHIR or hospital-specific API
@@ -355,7 +381,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 5.1.1 | Design EMR integration webhook | Backend | TODO |
 | 5.1.2 | Implement patient data sync | Backend | TODO |
 | 5.1.3 | Add EMR authentication/tokens | Backend | TODO |
@@ -368,6 +394,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, integration  
 **Acceptance Criteria:**
+
 - [ ] SMS sent to family members with discharge summary + consent link
 - [ ] Family responses recorded as evidence layer
 - [ ] Thread-safe SMS state management
@@ -375,7 +402,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 5.2.1 | Design SMS template + content model | Backend | TODO |
 | 5.2.2 | Integrate Twilio/SMS provider | Backend | TODO |
 | 5.2.3 | Handle SMS responses as evidence | Backend | TODO |
@@ -388,6 +415,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, integration  
 **Acceptance Criteria:**
+
 - [ ] Doctor/witness can e-sign via provider (DocuSign, Adobe Sign, etc.)
 - [ ] Digital signature attached to bundle
 - [ ] Verifier validates e-signature chain
@@ -395,7 +423,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 5.3.1 | Select e-signature provider | PM | TODO |
 | 5.3.2 | Implement e-sign API integration | Backend | TODO |
 | 5.3.3 | Add signature status tracking | Frontend | TODO |
@@ -417,6 +445,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, security  
 **Acceptance Criteria:**
+
 - [ ] Role-based access control enforced at API level
 - [ ] Audit log records all access decisions
 - [ ] No privilege escalation paths
@@ -424,7 +453,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 6.1.1 | Audit existing RBAC implementation | Security | TODO |
 | 6.1.2 | Close any found privilege escalation paths | Backend | TODO |
 | 6.1.3 | Add API-level access checks | Backend | TODO |
@@ -436,6 +465,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, security, legal  
 **Acceptance Criteria:**
+
 - [ ] Data retention policy enforced (delete after X days)
 - [ ] Consent recorded for all personal data processing
 - [ ] User download/deletion rights implemented
@@ -443,7 +473,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 6.2.1 | Implement data retention scheduler | Backend | TODO |
 | 6.2.2 | Add consent tracking | Backend | TODO |
 | 6.2.3 | User data download / right-to-be-forgotten | Backend | TODO |
@@ -455,6 +485,7 @@ low         → P2 priority (backlog)
 **Priority:** MEDIUM  
 **Labels:** story, security  
 **Acceptance Criteria:**
+
 - [ ] Audit logs tamper-proofed (immutable storage)
 - [ ] Timestamp and signature on each entry
 - [ ] Retention policy prevents deletion
@@ -462,7 +493,7 @@ low         → P2 priority (backlog)
 **Tasks:**
 
 | # | Task | Assigned | Status |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 6.3.1 | Migrate audit logs to append-only storage | Backend | TODO |
 | 6.3.2 | Add signature + timestamp to each log entry | Backend | TODO |
 | 6.3.3 | Implement read-only audit log API | Backend | TODO |
@@ -471,11 +502,12 @@ low         → P2 priority (backlog)
 
 ## 📊 Project Board Columns
 
-```
+```text
 Backlog  →  Ready  →  In Progress  →  Review  →  Done
 ```
 
 **Initial In-Progress Tasks (First Sprint):**
+
 1. Task 1.1.1: Add signing library
 2. Task 1.2.1: Integrate RFC3161 TSA library
 3. Task 1.3.1: Create verifier CLI entry point
@@ -485,7 +517,7 @@ Backlog  →  Ready  →  In Progress  →  Review  →  Done
 ## 📈 Metrics & KPIs
 
 | Metric | Target | Status |
-|---|---|---|
+| --- | --- | --- |
 | Case creation time | 3 min | Baseline 15 min |
 | Evidence upload success rate | >99% | TBD |
 | Verifier accuracy | 100% | TBD |
@@ -497,9 +529,9 @@ Backlog  →  Ready  →  In Progress  →  Review  →  Done
 
 ## 🔗 Links & References
 
-- **Repository:** https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal
-- **Issues Board:** https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/issues
-- **Project:** https://github.com/orgs/wathiqcare/projects/1 (to be created)
+- **Repository:** <https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal>
+- **Issues Board:** <https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/issues>
+- **Project:** <https://github.com/orgs/wathiqcare/projects/1> (to be created)
 - **Roadmap:** Investment-readiness timeline (12 weeks)
 
 ---
@@ -507,4 +539,3 @@ Backlog  →  Ready  →  In Progress  →  Review  →  Done
 **Last Updated:** 2026-04-16  
 **Created By:** Engineering Management + DevOps  
 **Status:** ACTIVE
-
