@@ -93,7 +93,16 @@ function isTruthyEnvFlag(value: string | undefined, fallback: boolean): boolean 
 
 const prisma = getPrisma();
 
-export async function requireAuth(request: NextRequest): Promise<AuthContext> {
+export type RequireAuthOptions = {
+  /**
+   * When true, allows sessions where password_reset_required = true to pass
+   * through the auth guard. Use only on the endpoint that performs the
+   * first-login / forced password-change itself.
+   */
+  allowPasswordResetRequired?: boolean;
+};
+
+export async function requireAuth(request: NextRequest, options: RequireAuthOptions = {}): Promise<AuthContext> {
   const token = readToken(request);
   if (!token) {
     throw new ApiError(401, "Missing access token");
@@ -137,7 +146,21 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
   }
 
   const resetState = await getUserResetState(prisma, user.id);
-  if (resetState.passwordResetRequired) {
+
+  console.info("AUTH_GUARD_CHECK", {
+    userId: user.id,
+    endpoint: request.nextUrl.pathname,
+    passwordResetRequired: resetState.passwordResetRequired,
+    sessionRevokedAt: resetState.sessionRevokedAt?.toISOString() ?? null,
+    allowPasswordResetRequired: options.allowPasswordResetRequired ?? false,
+  });
+
+  if (resetState.passwordResetRequired && !options.allowPasswordResetRequired) {
+    console.warn("AUTH_GUARD_REJECTED", {
+      reason: "password_reset_required",
+      userId: user.id,
+      endpoint: request.nextUrl.pathname,
+    });
     throw new ApiError(403, "Password reset required");
   }
 
