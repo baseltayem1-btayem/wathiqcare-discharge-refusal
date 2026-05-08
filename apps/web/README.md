@@ -11,19 +11,19 @@ The web app includes a built-in admin script that uses the same `hashPassword()`
 Dry-run a single reset:
 
 ```bash
-npm run admin:reset-password -- --username imc.jeddah.doctor1 --password Doctor@123
+npm run admin:reset-password -- --username imc.jeddah.doctor1 --password '<secure-password>'
 ```
 
 Apply a single reset:
 
 ```bash
-npm run admin:reset-password -- --username imc.jeddah.doctor1 --password Doctor@123 --apply
+npm run admin:reset-password -- --username imc.jeddah.doctor1 --password '<secure-password>' --apply
 ```
 
 Apply multiple resets inline:
 
 ```bash
-npm run admin:reset-password -- --target imc.admin=Welcome@123 --target imc.legal=Legal@123 --apply
+npm run admin:reset-password -- --target 'imc.admin=<secure-password>' --target 'imc.legal=<secure-password>' --apply
 ```
 
 Load resets from a file:
@@ -37,8 +37,8 @@ Example JSON file:
 
 ```json
 [
-  { "identifier": "imc.admin", "password": "Welcome@123" },
-  { "identifier": "imc.legal", "password": "Legal@123" }
+  { "identifier": "imc.admin", "password": "<secure-password>" },
+  { "identifier": "imc.legal", "password": "<secure-password>" }
 ]
 ```
 
@@ -46,14 +46,14 @@ Example CSV file:
 
 ```csv
 identifier,password
-imc.admin,Welcome@123
-imc.legal,Legal@123
+imc.admin,<secure-password>
+imc.legal,<secure-password>
 ```
 
 Optional audit logging:
 
 ```bash
-npm run admin:reset-password -- --target imc.admin=Welcome@123 --actor superadmin --audit --apply
+npm run admin:reset-password -- --target 'imc.admin=<secure-password>' --actor superadmin --audit --apply
 ```
 
 When `--audit` is enabled, the script writes an `audit_logs` entry for each reset and attempts to append a matching audit-chain event. Use `--actor` with an existing admin username or email so the operation is attributable.

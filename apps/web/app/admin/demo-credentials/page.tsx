@@ -104,7 +104,7 @@ export default function DemoCredentialsPage() {
                 Platform
               </Link>
               <span className="text-slate-300">|</span>
-              <span className="text-sm font-semibold text-slate-800">Demo Credentials</span>
+               <span className="text-sm font-semibold text-slate-800">Pilot Account Directory</span>
             </div>
             <div className="flex items-center gap-2">
               <LanguageSwitcher />
@@ -125,7 +125,7 @@ export default function DemoCredentialsPage() {
             <div>
               <p className="text-sm font-semibold text-amber-900">Super Admin — Restricted Access</p>
               <p className="text-xs text-amber-700 mt-0.5">
-                These identifiers are provisioned for controlled testing only. Passwords are delivered through a secure channel,
+                These identifiers are provisioned for controlled pilot testing only. Passwords are delivered through a secure channel,
                 and no real patient data may be used.
               </p>
             </div>
@@ -149,8 +149,8 @@ export default function DemoCredentialsPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
             <div className="border-b border-slate-100 px-5 py-4">
-              <h1 className="text-lg font-bold text-slate-900">WathiqCare Demo Accounts</h1>
-              <p className="text-sm text-slate-500 mt-0.5">All demo users are invite-only, tenant-scoped where applicable, and use email-based sign-in on /login.</p>
+              <h1 className="text-lg font-bold text-slate-900">WathiqCare Pilot Accounts</h1>
+              <p className="text-sm text-slate-500 mt-0.5">All pilot users are invite-only, tenant-scoped where applicable, and use email-based sign-in on /login.</p>
             </div>
 
             <div className="overflow-x-auto">

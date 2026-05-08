@@ -15,10 +15,10 @@ test("password login policy normalizes identifiers and distinguishes email input
   assert.equal(isEmailLoginIdentifier("demo.user"), false);
 });
 
-test("password login policy routes platform users to /platform and tenant users to /modules", () => {
-  assert.equal(buildPostLoginRedirect("platform_admin", "admin@wathiqcare.med.sa"), "/platform");
-  assert.equal(buildPostLoginRedirect("doctor", "doctor.demo@demo-imc.local"), "/modules");
-  assert.equal(buildPostLoginRedirect("finance_officer", "finance.demo@demo-imc.local"), "/modules");
+test("password login policy routes all authenticated users to /modules", () => {
+  assert.equal(buildPostLoginRedirect("platform_admin", "platform.admin@wathiqcare.online"), "/modules");
+  assert.equal(buildPostLoginRedirect("doctor", "doctor@pilot.imc.wathiqcare.online"), "/modules");
+  assert.equal(buildPostLoginRedirect("finance_officer", "finance.admin@pilot.imc.wathiqcare.online"), "/modules");
 });
 
 test("user type is derived from role rather than a hard-coded admin email alias", () => {

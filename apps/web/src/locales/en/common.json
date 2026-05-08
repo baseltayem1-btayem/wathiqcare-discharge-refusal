@@ -1,6 +1,29 @@
 {
   "support": "Support",
   "supportText": "For urgent legal package blockers, contact support",
+  "app": {
+    "activeWorkspace": "Active Workspace",
+    "secureMode": "Tenant-scoped secure mode enabled."
+  },
+  "login": {
+    "badge": "Medico-Legal Platform Access",
+    "brandTitle": "WathiqCare",
+    "brandSubtitle": "Medico-Legal Compliance & Governance Platform",
+    "brandDescription": "WathiqCare is a comprehensive medico-legal workflow platform for healthcare organizations, providing automated legal compliance, patient acknowledgment, digital evidence, and governance workflows.",
+    "footer": "WathiqCare Medico-Legal Compliance & Governance Platform",
+    "workspaceTitle": "Unified Enterprise Workspace",
+    "workspaceSubtitle": "Pilot access remains tenant-scoped, audited, and governed by role-based controls.",
+    "headerSystem": "WathiqCare System",
+    "headerOrganization": "International Medical Center (IMC)",
+    "headerDescriptor": "Medico-Legal Compliance & Governance Platform",
+    "accessNote": "Pilot access is provisioned by authorized administrators only. Password delivery remains restricted to the secure internal channel."
+  },
+  "loginPage": {
+    "badge": "Secure Enterprise Access",
+    "platformTitle": "WathiqCare",
+    "platformSubtitle": "Medico-Legal Compliance & Governance Platform",
+    "platformDescription": "An enterprise platform for managing informed consents, electronic promissory notes, and discharge refusal through secure, auditable workflows."
+  },
   "legalReadiness": "Legal Readiness",
   "auditTrail": "Audit Trail",
   "auditTrailCompleted": "Audit Trail Completed",

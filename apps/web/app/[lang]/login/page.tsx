@@ -244,9 +244,21 @@ export default function LangLoginPage() {
     setNotice("");
   }
 
-  return (
+    return (
     <main className="wc-page relative overflow-x-hidden" dir={isRtl ? "rtl" : "ltr"}>
-      <div className="login-top-bar" />
+      <div className="border-b border-[#224566] bg-[var(--primary)] px-4 py-2 text-white">
+        <div className="wc-container flex flex-wrap items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[0.04em]">
+          <div className="flex items-center gap-3">
+            <span>{t("login.headerSystem")}</span>
+            <span className="hidden md:inline">{t("login.headerOrganization")}</span>
+            <span className="hidden md:inline">{t("login.headerDescriptor")}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="wc-system-indicator !border-white/25 !bg-white/10">CR: 4030143596</span>
+            <span className="wc-system-indicator !border-white/25 !bg-white/10">Version: 7.2.4</span>
+          </div>
+        </div>
+      </div>
 
       <div className="wc-container relative py-8 md:py-12">
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -260,7 +272,7 @@ export default function LangLoginPage() {
           <LanguageSwitcher className="bg-white" />
         </div>
 
-        <section className="login-shell overflow-hidden rounded-[24px] border border-border bg-white">
+        <section className="login-shell overflow-hidden border border-border bg-white">
           <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
             <div
               className={`login-brand-panel relative border-b p-5 md:p-7 lg:border-b-0 ${isRtl ? "lg:order-1 lg:border-r" : "lg:order-2 lg:border-l"}`}
@@ -291,6 +303,12 @@ export default function LangLoginPage() {
                   <span className="wc-badge gap-2 border border-slate-200 bg-slate-50 text-[11px] uppercase tracking-[0.12em] text-slate-700">
                     {t("loginPage.badge")}
                   </span>
+                </div>
+
+                <div className="mb-5 border border-slate-200 bg-slate-50 px-4 py-3 text-center">
+                  <h1 className="text-lg font-bold text-slate-900 md:text-xl">{t("loginPage.platformTitle")}</h1>
+                  <p className="mt-1 text-sm font-semibold text-slate-700">{t("loginPage.platformSubtitle")}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{t("loginPage.platformDescription")}</p>
                 </div>
 
                 {/* Auth Mode Tabs */}
@@ -494,6 +512,12 @@ export default function LangLoginPage() {
                     </div>
                   </form>
                 )}
+
+                <div className="mt-5 border-t border-slate-100 pt-4">
+                  <div className="wc-panel text-[12px] text-slate-600">
+                    {t("login.accessNote")}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -501,7 +525,6 @@ export default function LangLoginPage() {
       </div>
 
       <style jsx>{`
-        .login-top-bar { height: 3px; background: var(--primary); }
         .login-shell { box-shadow: var(--shadow-lg); }
         .login-brand-panel {
           background: linear-gradient(180deg, #f8fbff 0%, #f8fafc 100%);
@@ -511,4 +534,3 @@ export default function LangLoginPage() {
     </main>
   );
 }
-

@@ -56,6 +56,7 @@ loadEnvFile(path.join(repoRoot, "apps", "web", ".env.local"));
 const prisma = new PrismaClient();
 
 const BCRYPT_ROUNDS = 12;
+const PILOT_PASSWORD_FILE_ENV = "WATHIQCARE_PILOT_PASSWORD_FILE";
 
 async function hashPassword(password) {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
@@ -63,76 +64,102 @@ async function hashPassword(password) {
 
 const DEMO_PLATFORM_TENANT = {
   code: "wathiqcare-demo-platform",
-  domain: "wathiqcare.local",
-  name: "WathiqCare DEMO Platform",
+  domain: "wathiqcare.online",
+  name: "WathiqCare Pilot Platform",
 };
 
 const DEMO_IMC_TENANT = {
   code: "demo-imc",
-  domain: "demo-imc.local",
-  name: "DEMO IMC Tenant",
+  domain: "pilot.imc.wathiqcare.online",
+  name: "Pilot IMC Tenant",
 };
+
+function loadPilotPasswords() {
+  const filePath = process.env[PILOT_PASSWORD_FILE_ENV];
+  if (!filePath) {
+    throw new Error(`Missing ${PILOT_PASSWORD_FILE_ENV}. Provide a secure JSON file with pilot account passwords.`);
+  }
+
+  const raw = fs.readFileSync(filePath, "utf8");
+  const parsed = JSON.parse(raw);
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error(`${PILOT_PASSWORD_FILE_ENV} must point to a JSON object keyed by pilot account role.`);
+  }
+
+  return parsed;
+}
+
+const pilotPasswords = loadPilotPasswords();
+
+function requirePilotPassword(key) {
+  const password = pilotPasswords[key];
+  if (typeof password !== "string" || password.length < 16) {
+    throw new Error(`Missing secure password for pilot account '${key}'.`);
+  }
+  return password;
+}
 
 const DEMO_USERS = [
   {
-    email: "demo.platform.admin@wathiqcare.local",
-    fullName: "DEMO Platform Admin",
-    password: "DemoPlatformAdmin@2026!",
+    key: "platform-admin",
+    email: "platform.admin@wathiqcare.online",
+    fullName: "Platform Admin",
     label: "Platform Admin",
     role: "platform_admin",
     userType: "PLATFORM_ADMIN",
     tenantCode: DEMO_PLATFORM_TENANT.code,
   },
   {
-    email: "demo.legal.affairs@demo-imc.local",
-    fullName: "DEMO Legal Affairs User",
-    password: "DemoLegalAffairs@2026!",
-    label: "Legal Affairs User",
+    key: "legal-affairs",
+    email: "legal.affairs@pilot.imc.wathiqcare.online",
+    fullName: "Legal Affairs",
+    label: "Legal Affairs",
     role: "legal_admin",
     userType: "TENANT_ADMIN",
     tenantCode: DEMO_IMC_TENANT.code,
   },
   {
-    email: "demo.doctor@demo-imc.local",
-    fullName: "DEMO Doctor User",
-    password: "DemoDoctor@2026!",
-    label: "Doctor User",
+    key: "doctor",
+    email: "doctor@pilot.imc.wathiqcare.online",
+    fullName: "Doctor",
+    label: "Doctor",
     role: "doctor",
     userType: "TENANT_USER",
     tenantCode: DEMO_IMC_TENANT.code,
   },
   {
-    email: "demo.nurse@demo-imc.local",
-    fullName: "DEMO Nurse User",
-    password: "DemoNurse@2026!",
-    label: "Nurse User",
+    key: "nurse",
+    email: "nurse@pilot.imc.wathiqcare.online",
+    fullName: "Nurse",
+    label: "Nurse",
     role: "nursing",
     userType: "TENANT_USER",
     tenantCode: DEMO_IMC_TENANT.code,
   },
   {
-    email: "demo.medical.director@demo-imc.local",
-    fullName: "DEMO Medical Director User",
-    password: "DemoMedicalDirector@2026!",
-    label: "Medical Director User",
+    key: "medical-director",
+    email: "medical.director@pilot.imc.wathiqcare.online",
+    fullName: "Medical Director",
+    label: "Medical Director",
     role: "medical_director",
     userType: "TENANT_USER",
     tenantCode: DEMO_IMC_TENANT.code,
   },
   {
-    email: "demo.compliance@demo-imc.local",
-    fullName: "DEMO Quality Compliance User",
-    password: "DemoCompliance@2026!",
-    label: "Quality / Compliance User",
+    key: "quality-compliance",
+    email: "quality.compliance@pilot.imc.wathiqcare.online",
+    fullName: "Quality / Compliance",
+    label: "Quality / Compliance",
     role: "compliance",
     userType: "TENANT_USER",
     tenantCode: DEMO_IMC_TENANT.code,
   },
   {
-    email: "demo.finance@demo-imc.local",
-    fullName: "DEMO Finance Admin User",
-    password: "DemoFinance@2026!",
-    label: "Finance / Authorized Admin User",
+    key: "finance-admin",
+    email: "finance.admin@pilot.imc.wathiqcare.online",
+    fullName: "Finance / Authorized Admin",
+    label: "Finance / Authorized Admin",
     role: "finance_officer",
     userType: "TENANT_USER",
     tenantCode: DEMO_IMC_TENANT.code,
@@ -192,7 +219,7 @@ function toMembershipRole(appRole) {
 }
 
 async function seedUser(userDef, tenantId) {
-  const hashedPassword = await hashPassword(userDef.password);
+  const hashedPassword = await hashPassword(requirePilotPassword(userDef.key));
 
   const existing = await prisma.user.findUnique({
     where: { email: userDef.email },
@@ -212,15 +239,15 @@ async function seedUser(userDef, tenantId) {
         emailVerified: true,
         hashedPassword,
         authProvider: "local_password",
-        lastPasswordChangedAt: new Date(),
+        lastPasswordChangedAt: null,
         failedLoginAttempts: 0,
         lockedUntil: null,
       },
     });
     await prisma.$executeRaw`
       UPDATE users
-      SET password_reset_required = FALSE,
-          session_revoked_at = NULL
+      SET password_reset_required = TRUE,
+          session_revoked_at = NOW()
       WHERE id = ${existing.id}
     `;
     await prisma.tenantMembership.upsert({
@@ -242,17 +269,17 @@ async function seedUser(userDef, tenantId) {
       role: userDef.role,
       userType: userDef.userType,
       isActive: true,
-      emailVerified: true,
-      hashedPassword,
-      authProvider: "local_password",
-      lastPasswordChangedAt: new Date(),
-    },
-  });
+        emailVerified: true,
+        hashedPassword,
+        authProvider: "local_password",
+        lastPasswordChangedAt: null,
+      },
+    });
 
   await prisma.$executeRaw`
     UPDATE users
-    SET password_reset_required = FALSE,
-        session_revoked_at = NULL
+    SET password_reset_required = TRUE,
+        session_revoked_at = NOW()
     WHERE id = ${userId}
   `;
 
@@ -474,7 +501,7 @@ async function ensureDemoModuleData(tenantId, actorUserId) {
 }
 
 async function main() {
-  console.log("[demo-seed] Provisioning controlled demo accounts and demo module records...\n");
+  console.log("[pilot-seed] Provisioning controlled pilot accounts and module validation records...\n");
 
   await ensurePasswordResetSchema();
 
@@ -496,13 +523,12 @@ async function main() {
 
   await ensureDemoModuleData(demoImcTenantId, demoActorUserId);
 
-  console.log("\n[demo-seed] Demo accounts provisioned successfully.");
-  console.log("[demo-seed] Canonical login identifiers:");
+  console.log("\n[pilot-seed] Pilot accounts provisioned successfully.");
+  console.log("[pilot-seed] Canonical login identifiers:");
   for (const u of DEMO_USERS) {
     console.log(`  - ${u.email} (${u.label})`);
   }
-  console.log("[demo-seed] Demo accounts are provisioned with controlled credentials and ready for module validation.");
-  console.log("[demo-seed] Rotate the credentials through your normal operational process if you re-purpose them.");
+  console.log("[pilot-seed] Password delivery remains outside source control and must follow the secure internal channel.");
 }
 
 main()

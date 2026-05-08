@@ -1,4 +1,8 @@
 import { execSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import crypto from "node:crypto";
 import { expect, test } from "@playwright/test";
 
 const appRoot = process.cwd().endsWith("apps\\web")
@@ -8,61 +12,63 @@ const appRoot = process.cwd().endsWith("apps\\web")
 const DEMO_ACCOUNTS = [
   {
     label: "Platform Admin",
-    email: "demo.platform.admin@wathiqcare.local",
-    password: "DemoPlatformAdmin@2026!",
-    nextPassword: "RotatedPlatformDemo@2026!",
+    key: "platform-admin",
+    email: "platform.admin@wathiqcare.online",
     expectedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
     blockedModules: [],
   },
   {
-    label: "Legal Affairs User",
-    email: "demo.legal.affairs@demo-imc.local",
-    password: "DemoLegalAffairs@2026!",
-    nextPassword: "RotatedLegalDemo@2026!",
+    label: "Legal Affairs",
+    key: "legal-affairs",
+    email: "legal.affairs@pilot.imc.wathiqcare.online",
     expectedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
     blockedModules: [],
   },
   {
-    label: "Doctor User",
-    email: "demo.doctor@demo-imc.local",
-    password: "DemoDoctor@2026!",
-    nextPassword: "RotatedDoctorDemo@2026!",
+    label: "Doctor",
+    key: "doctor",
+    email: "doctor@pilot.imc.wathiqcare.online",
     expectedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
     blockedModules: ["/modules/promissory-notes"],
   },
   {
-    label: "Nurse User",
-    email: "demo.nurse@demo-imc.local",
-    password: "DemoNurse@2026!",
-    nextPassword: "RotatedNurseDemo@2026!",
+    label: "Nurse",
+    key: "nurse",
+    email: "nurse@pilot.imc.wathiqcare.online",
     expectedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
     blockedModules: ["/modules/promissory-notes"],
   },
   {
-    label: "Medical Director User",
-    email: "demo.medical.director@demo-imc.local",
-    password: "DemoMedicalDirector@2026!",
-    nextPassword: "RotatedMedicalDirectorDemo@2026!",
+    label: "Medical Director",
+    key: "medical-director",
+    email: "medical.director@pilot.imc.wathiqcare.online",
     expectedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
     blockedModules: ["/modules/promissory-notes"],
   },
   {
-    label: "Quality Compliance User",
-    email: "demo.compliance@demo-imc.local",
-    password: "DemoCompliance@2026!",
-    nextPassword: "RotatedComplianceDemo@2026!",
+    label: "Quality / Compliance",
+    key: "quality-compliance",
+    email: "quality.compliance@pilot.imc.wathiqcare.online",
     expectedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
     blockedModules: [],
   },
   {
-    label: "Finance Authorized Admin User",
-    email: "demo.finance@demo-imc.local",
-    password: "DemoFinance@2026!",
-    nextPassword: "RotatedFinanceDemo@2026!",
+    label: "Finance / Authorized Admin",
+    key: "finance-admin",
+    email: "finance.admin@pilot.imc.wathiqcare.online",
     expectedModules: ["/modules/promissory-notes"],
     blockedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
   },
 ] as const;
+
+function randomPassword() {
+  return `Pilot-${crypto.randomBytes(12).toString("base64url")}!A1`;
+}
+
+const pilotPasswordFile = join(mkdtempSync(join(tmpdir(), "wathiqcare-pilot-")), "passwords.json");
+const seedPasswords = Object.fromEntries(DEMO_ACCOUNTS.map((account) => [account.key, randomPassword()]));
+const rotatedPasswords = Object.fromEntries(DEMO_ACCOUNTS.map((account) => [account.key, randomPassword()]));
+writeFileSync(pilotPasswordFile, JSON.stringify(seedPasswords), { mode: 0o600 });
 
 const ALLOWED_SUBROUTES: Record<string, string[]> = {
   "/modules/informed-consents": [
@@ -91,7 +97,14 @@ const ROUTE_REDIRECT_TARGETS: Record<string, string[]> = {
 };
 
 test.beforeAll(() => {
-  execSync("npm run demo:seed", { cwd: appRoot, stdio: "pipe" });
+  execSync("npm run demo:seed", {
+    cwd: appRoot,
+    stdio: "pipe",
+    env: {
+      ...process.env,
+      WATHIQCARE_PILOT_PASSWORD_FILE: pilotPasswordFile,
+    },
+  });
 });
 
 async function login(page: import("@playwright/test").Page, email: string, password: string) {
@@ -122,38 +135,35 @@ test.describe.serial("controlled demo module access", () => {
 
   for (const account of DEMO_ACCOUNTS) {
     test(`${account.label} sees only allowed modules and blocked routes are denied`, async ({ page, context }) => {
-      await login(page, account.email, account.password);
-      await rotatePasswordIfRequired(page, account.nextPassword);
+      await login(page, account.email, seedPasswords[account.key]);
+      await expect(page).toHaveURL(/\/first-login(\?.*)?$/);
+      await rotatePasswordIfRequired(page, rotatedPasswords[account.key]);
 
-      const landingRoute = account.label === "Platform Admin" ? "/platform" : "/modules";
-
-      if (!page.url().includes(landingRoute)) {
-        await page.goto(landingRoute);
+      if (!page.url().includes("/modules")) {
+        await page.goto("/modules");
       }
 
-      await expect(page).toHaveURL(landingRoute === "/platform" ? /\/platform(\?.*)?$/ : /\/modules(\?.*)?$/);
+      await expect(page).toHaveURL(/\/modules(\?.*)?$/);
 
-      if (landingRoute === "/modules") {
-        for (const moduleHref of account.expectedModules) {
-          await expect(page.locator(`a[href="${moduleHref}"]`).first()).toBeVisible();
-        }
+      for (const moduleHref of account.expectedModules) {
+        await expect(page.locator(`a[href="${moduleHref}"]`).first()).toBeVisible();
+      }
 
-        for (const moduleHref of account.expectedModules) {
-          for (const route of ALLOWED_SUBROUTES[moduleHref]) {
-            await page.goto(route);
-            const currentPath = new URL(page.url()).pathname;
-            const acceptedTargets = [route, ...(ROUTE_REDIRECT_TARGETS[route] ?? [])];
-            expect(acceptedTargets).toContain(currentPath);
-          }
+      for (const moduleHref of account.expectedModules) {
+        for (const route of ALLOWED_SUBROUTES[moduleHref]) {
+          await page.goto(route);
+          const currentPath = new URL(page.url()).pathname;
+          const acceptedTargets = [route, ...(ROUTE_REDIRECT_TARGETS[route] ?? [])];
+          expect(acceptedTargets).toContain(currentPath);
         }
+      }
 
-        for (const moduleHref of account.blockedModules) {
-          await page.goto("/modules");
-          await expect(page.locator(`a[href="${moduleHref}"]`)).toHaveCount(0);
-          await page.goto(moduleHref);
-          await page.waitForLoadState("networkidle");
-          await expect(page.url().includes(moduleHref)).toBe(false);
-        }
+      for (const moduleHref of account.blockedModules) {
+        await page.goto("/modules");
+        await expect(page.locator(`a[href="${moduleHref}"]`)).toHaveCount(0);
+        await page.goto(moduleHref);
+        await page.waitForLoadState("networkidle");
+        await expect(page.url().includes(moduleHref)).toBe(false);
       }
 
       await page.goto("/modules");
