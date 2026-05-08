@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
         : user.userType === "TENANT_ADMIN"
           ? "tenant_admin"
           : "tenant_user";
-    const homePath = userType === "platform_admin" ? "/platform" : "/modules";
+    const homePath = "/modules";
 
     return jsonSuccess(
       toJsonSafe({

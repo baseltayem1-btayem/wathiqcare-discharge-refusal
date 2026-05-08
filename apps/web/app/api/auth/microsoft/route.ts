@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
             authenticated: true,
             provider: "microsoft",
             autoProvisioned: false,
-            redirectTo: userType === "PLATFORM_ADMIN" ? "/platform" : "/dashboard",
+            redirectTo: "/modules",
             userType:
                 userType === "PLATFORM_ADMIN"
                     ? "platform_admin"

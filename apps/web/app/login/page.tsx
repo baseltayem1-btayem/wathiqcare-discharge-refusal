@@ -14,6 +14,32 @@ import { apiFetch } from "@/utils/api";
 
 type AuthMode = "microsoft" | "magic-link" | "password";
 
+function normalizePostLoginDestination(nextCandidate: string | null, fallbackPath: string): string {
+  const fallback = fallbackPath.trim() || "/modules";
+  if (!nextCandidate) {
+    return fallback;
+  }
+
+  const candidate = nextCandidate.trim();
+  if (!candidate.startsWith("/") || candidate.startsWith("//")) {
+    return fallback;
+  }
+
+  if (candidate === "/" || candidate === "/login" || candidate === "/platform") {
+    return "/modules";
+  }
+
+  if (candidate === "/dashboard" || candidate === "/dashboards") {
+    return "/modules/discharge-refusal/dashboard";
+  }
+
+  if (candidate === "/cases" || candidate.startsWith("/cases/")) {
+    return candidate.replace(/^\/cases/, "/modules/discharge-refusal/cases");
+  }
+
+  return candidate;
+}
+
 export default function LoginPage() {
   const { t, isRtl } = useI18n();
   const router = useRouter();
@@ -79,10 +105,12 @@ export default function LoginPage() {
         return;
       }
 
-      const nextPath = typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("next") || result.redirectTo
-        : result.redirectTo;
-      router.push(nextPath);
+      const fallback = result.redirectTo || "/modules";
+      const requestedNext =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("next")
+          : null;
+      router.push(normalizePostLoginDestination(requestedNext, fallback));
     } catch (err) {
       setError(err instanceof Error ? err.message : isRtl ? "بيانات الدخول غير صحيحة" : "Invalid username or password");
     } finally {

@@ -173,7 +173,7 @@ export function proxy(request: NextRequest) {
       const nextPath = `${pathname}${request.nextUrl.search}`;
       loginUrl.pathname = buildLocalizedPath("/login", locale);
       loginUrl.search = "";
-      loginUrl.searchParams.set("next", nextPath || "/dashboard");
+      loginUrl.searchParams.set("next", nextPath || "/modules");
       return NextResponse.redirect(loginUrl);
     }
 
@@ -183,7 +183,7 @@ export function proxy(request: NextRequest) {
   if (userType === "platform_admin") {
     if (isLoginPath) {
       const url = request.nextUrl.clone();
-      url.pathname = buildLocalizedPath("/platform", locale);
+      url.pathname = "/modules";
       url.search = "";
       return NextResponse.redirect(url);
     }
@@ -196,7 +196,7 @@ export function proxy(request: NextRequest) {
       }
 
       const url = request.nextUrl.clone();
-      url.pathname = buildLocalizedPath("/platform", locale);
+      url.pathname = "/modules";
       url.search = "";
       return NextResponse.redirect(url);
     }
@@ -204,7 +204,7 @@ export function proxy(request: NextRequest) {
 
   if (userType !== "platform_admin" && isPlatformOnlyPath) {
     const url = request.nextUrl.clone();
-    url.pathname = buildLocalizedPath("/dashboard", locale);
+    url.pathname = "/modules";
     url.search = "";
     return NextResponse.redirect(url);
   }

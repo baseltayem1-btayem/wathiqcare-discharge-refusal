@@ -27,9 +27,9 @@ export default function AuthGuard({ children, authFailureMode = "redirect", bloc
 
       try {
         const session = await validateSessionForRoute(
-          `AuthGuard route check (${pathname || "/dashboard"})`,
+          `AuthGuard route check (${pathname || "/modules"})`,
           {
-            nextPath: pathname || "/dashboard",
+            nextPath: pathname || "/modules",
             authFailureMode,
           },
         );

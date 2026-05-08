@@ -108,7 +108,7 @@ function MagicVerifyPageContent() {
 
                 if (result.authenticated) {
                     setVerified(true);
-                    router.replace(result.redirectTo || "/dashboard");
+                    router.replace(result.redirectTo || "/modules");
                     return;
                 }
 

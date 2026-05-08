@@ -24,6 +24,51 @@ const DEFAULT_AUTH_CONFIG: TenantAuthConfig = {
   secure_link_enabled: false,
 };
 
+function normalizePostLoginDestination(nextCandidate: string | null, fallbackPath: string): string {
+  const fallback = fallbackPath.trim() || "/modules";
+  if (!nextCandidate) {
+    return fallback;
+  }
+
+  const candidate = nextCandidate.trim();
+  if (!candidate.startsWith("/") || candidate.startsWith("//")) {
+    return fallback;
+  }
+
+  if (
+    candidate === "/" ||
+    candidate === "/login" ||
+    candidate === "/platform" ||
+    candidate === "/ar/login" ||
+    candidate === "/en/login" ||
+    candidate === "/ar/platform" ||
+    candidate === "/en/platform"
+  ) {
+    return "/modules";
+  }
+
+  if (
+    candidate === "/dashboard" ||
+    candidate === "/dashboards" ||
+    candidate === "/ar/dashboard" ||
+    candidate === "/en/dashboard" ||
+    candidate === "/ar/dashboards" ||
+    candidate === "/en/dashboards"
+  ) {
+    return "/modules/discharge-refusal/dashboard";
+  }
+
+  if (candidate === "/cases" || candidate.startsWith("/cases/")) {
+    return candidate.replace(/^\/cases/, "/modules/discharge-refusal/cases");
+  }
+
+  if (candidate.startsWith("/ar/cases") || candidate.startsWith("/en/cases")) {
+    return candidate.replace(/^\/(ar|en)\/cases/, "/modules/discharge-refusal/cases");
+  }
+
+  return candidate;
+}
+
 export default function LangLoginPage() {
   const { t, isRtl, lang } = useI18n();
   const router = useRouter();
@@ -169,12 +214,12 @@ export default function LangLoginPage() {
       });
       const safeRedirect = typeof result?.redirectTo === "string" && result.redirectTo.trim()
         ? result.redirectTo
-        : `/${lang}`;
-      const nextPath =
+        : "/modules";
+      const requestedNext =
         typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("next") || safeRedirect
-          : safeRedirect;
-      router.push(nextPath);
+          ? new URLSearchParams(window.location.search).get("next")
+          : null;
+      router.push(normalizePostLoginDestination(requestedNext, safeRedirect));
     } catch (err) {
       setError(localizeAuthError(err));
     } finally {
