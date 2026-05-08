@@ -29,6 +29,7 @@ type WathiqCareShellProps = {
   title: string;
   subtitle?: string;
   pathname?: string;
+  headerEyebrow?: string;
   brand?: ReactNode;
   menuItems?: WathiqCareShellNavItem[];
   statusItems?: ReactNode;
@@ -153,6 +154,7 @@ export default function WathiqCareShell({
   title,
   subtitle,
   pathname,
+  headerEyebrow = "Clinical Discharge Refusal & Legal Evidence Module",
   brand,
   menuItems = [],
   statusItems,
@@ -195,7 +197,7 @@ export default function WathiqCareShell({
 
       <section className="wc-module-header">
         <div>
-          <div className="wc-module-header__eyebrow">Clinical Discharge Refusal &amp; Legal Evidence Module</div>
+          <div className="wc-module-header__eyebrow">{headerEyebrow}</div>
           <h1 className="wc-module-header__title">{title}</h1>
           {subtitle ? <p className="wc-module-header__subtitle">{subtitle}</p> : null}
           {pathname ? <div className="wc-module-header__path">{pathname}</div> : null}

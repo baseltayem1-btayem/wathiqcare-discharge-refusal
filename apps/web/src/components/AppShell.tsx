@@ -60,6 +60,7 @@ function buildCaseWorkflowNav(caseNav: NonNullable<AppShellProps["workflowCaseNa
 }
 
 const PRIMARY_TENANT_HREFS = [
+  "/modules",
   "/dashboard",
   "/cases",
   "/documents",
@@ -412,6 +413,7 @@ export default function AppShell({
       }))}
       moduleMeta={(
         <>
+          <span className="wc-module-pill">{isRtl ? "منصة رفض الخروج" : "Discharge Refusal Platform"}</span>
           <span className="wc-module-pill">{t(`shell.smartNavigation.modules.${smartResolution.moduleKey}`)}</span>
           <span className="wc-module-pill">{t(`shell.smartNavigation.stages.${smartResolution.workflowStageKey}`)}</span>
           <span className="wc-module-pill">{smartResolution.source === "backend-driven" ? t("shell.smartNavigation.backendWorkflow") : t("shell.smartNavigation.suggestedWorkflow")}</span>

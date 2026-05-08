@@ -17,6 +17,7 @@ import {
     HandHelping,
     LayoutDashboard,
     LayoutGrid,
+    Layers3,
     MessageSquareHeart,
     Settings,
     ShieldCheck,
@@ -34,6 +35,7 @@ export type TenantNavItem = {
 
 /** Full tenant operational menu. No /platform routes here. */
 export const TENANT_NAV_ITEMS: TenantNavItem[] = [
+    { href: "/modules", labelKey: "nav.modules", icon: <Layers3 className="h-4 w-4" /> },
     { href: "/dashboard", labelKey: "nav.dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
     { href: "/cases", labelKey: "nav.cases", icon: <FolderKanban className="h-4 w-4" /> },
     { href: "/documents", labelKey: "nav.documents", icon: <FileText className="h-4 w-4" /> },

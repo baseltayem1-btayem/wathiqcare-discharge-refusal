@@ -6,7 +6,7 @@
  * Import this ONLY in PlatformAdminShell.
  */
 
-import { Activity, Building2, ClipboardList, CreditCard, LayoutGrid, LifeBuoy, Settings, Users } from "lucide-react";
+import { Activity, Building2, ClipboardList, CreditCard, Layers3, LayoutGrid, LifeBuoy, Settings, Users } from "lucide-react";
 
 export type PlatformNavItem = {
     href: string;
@@ -16,6 +16,7 @@ export type PlatformNavItem = {
 
 /** Strict set of platform-only navigation entries. No tenant routes here. */
 export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
+    { href: "/modules", label: "Modules", icon: <Layers3 className="h-4 w-4" /> },
     { href: "/platform", label: "Platform Overview", icon: <LayoutGrid className="h-4 w-4" /> },
     { href: "/platform/tenants", label: "Tenant Management", icon: <Building2 className="h-4 w-4" /> },
     { href: "/platform/users", label: "Users", icon: <Users className="h-4 w-4" /> },

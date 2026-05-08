@@ -71,6 +71,7 @@
     }
   },
   "nav": {
+    "modules": "Modules",
     "dashboard": "Dashboard",
     "dashboards": "Dashboards",
     "cases": "Case Workspace",
@@ -85,6 +86,14 @@
     "admin": "Admin"
   },
   "breadcrumbs": {
+    "platform": "Platform",
+    "modules": "Modules",
+    "informedConsents": "Informed Consents",
+    "promissoryNotes": "Promissory Notes",
+    "dischargeRefusal": "Discharge Refusal",
+    "templates": "Templates",
+    "signatures": "Signatures",
+    "archive": "Archive",
     "documents": "Documents",
     "settings": "Settings"
   },

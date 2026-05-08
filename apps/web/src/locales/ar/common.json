@@ -71,6 +71,7 @@
     }
   },
   "nav": {
+    "modules": "الوحدات",
     "dashboard": "لوحة المعلومات",
     "dashboards": "اللوحات",
     "cases": "مساحة الحالة",
@@ -85,6 +86,14 @@
     "admin": "الإدارة"
   },
   "breadcrumbs": {
+    "platform": "المنصة",
+    "modules": "الوحدات",
+    "informedConsents": "الموافقات المستنيرة",
+    "promissoryNotes": "السندات لأمر الإلكترونية",
+    "dischargeRefusal": "رفض الخروج",
+    "templates": "القوالب",
+    "signatures": "التوقيع",
+    "archive": "الأرشيف",
     "documents": "المستندات",
     "settings": "الإعدادات"
   },
