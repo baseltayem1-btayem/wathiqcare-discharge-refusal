@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
             throw new ApiError(403, "Unauthorized Microsoft domain");
         }
 
-        const expectedUserType = userTypeForUserRole(user.role, user.email);
+        const expectedUserType = userTypeForUserRole(user.role);
 
         if (!user.fullName || user.fullName === user.email) {
             await prisma.user.update({
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
         const now = Math.floor(Date.now() / 1000);
         const exp = now + getTokenTtlSeconds();
 
-        const userType = userTypeForUserRole(user.role, user.email);
+        const userType = userTypeForUserRole(user.role);
         const platformRole = platformRoleForUserRole(user.role);
         const accessToken = createAccessToken(
             {

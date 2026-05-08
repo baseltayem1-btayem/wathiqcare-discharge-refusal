@@ -1,7 +1,7 @@
 import { userTypeForUserRole } from "@/lib/server/roles";
 
 export function buildPostLoginRedirect(userRole: string | null | undefined, email?: string | null): string {
-  const userType = userTypeForUserRole(userRole ?? "", email);
+  const userType = userTypeForUserRole(userRole ?? "");
   return userType === "PLATFORM_ADMIN" ? "/platform" : "/modules";
 }
 

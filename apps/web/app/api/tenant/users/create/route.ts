@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
                     email,
                     fullName,
                     role: userRole,
-                    userType: userTypeForUserRole(userRole, email),
+                    userType: userTypeForUserRole(userRole),
                     status: "invited",
                     isActive: false,
                     hashedPassword: null,

@@ -87,7 +87,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                     email,
                     fullName,
                     role,
-                    userType: userTypeForUserRole(role, email),
+                    userType: userTypeForUserRole(role),
                     status: "active",
                     isActive,
                     hashedPassword: null,

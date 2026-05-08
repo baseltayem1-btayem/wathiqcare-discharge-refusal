@@ -366,7 +366,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       update: {
         fullName,
         role: canonicalUserRole,
-        userType: userTypeForUserRole(canonicalUserRole, email),
+        userType: userTypeForUserRole(canonicalUserRole),
         isActive: activateNow,
         ...(platformAccess && allowCrossTenantReassignment
           ? { tenantId }
@@ -377,7 +377,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         email,
         fullName,
         role: canonicalUserRole,
-        userType: userTypeForUserRole(canonicalUserRole, email),
+        userType: userTypeForUserRole(canonicalUserRole),
         isActive: activateNow,
         hashedPassword: null,
       },
