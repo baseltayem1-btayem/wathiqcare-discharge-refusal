@@ -93,7 +93,10 @@ function isTruthyEnvFlag(value: string | undefined, fallback: boolean): boolean 
 
 const prisma = getPrisma();
 
-export async function requireAuth(request: NextRequest): Promise<AuthContext> {
+export async function requireAuth(
+  request: NextRequest,
+  options?: { allowPasswordResetRequired?: boolean },
+): Promise<AuthContext> {
   const token = readToken(request);
   if (!token) {
     throw new ApiError(401, "Missing access token");
@@ -137,7 +140,7 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
   }
 
   const resetState = await getUserResetState(prisma, user.id);
-  if (resetState.passwordResetRequired) {
+  if (resetState.passwordResetRequired && !options?.allowPasswordResetRequired) {
     throw new ApiError(403, "Password reset required");
   }
 
