@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
             SET hashed_password         = ${passwordHash},
                 auth_provider           = 'local_password',
                 last_password_changed_at = NOW(),
+                password_reset_required = FALSE,
+                session_revoked_at      = NULL,
                 failed_login_attempts   = 0,
                 locked_until            = NULL
             WHERE id = ${auth.sub}

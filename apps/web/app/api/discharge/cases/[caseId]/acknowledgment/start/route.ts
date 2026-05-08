@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
+import { logAcknowledgmentOtpDispatch } from "@/lib/server/acknowledgment-telemetry";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import {
@@ -331,6 +332,26 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 generatedByUserId: auth.sub,
             },
         });
+        const providerResult =
+            sessionState.provider_result &&
+                typeof sessionState.provider_result === "object" &&
+                !Array.isArray(sessionState.provider_result)
+                ? (sessionState.provider_result as Record<string, unknown>)
+                : null;
+        if (safe(sessionState.otp_code_hash)) {
+            logAcknowledgmentOtpDispatch({
+                tenantId,
+                caseId,
+                sessionId: doc.id,
+                documentType: templateKey,
+                acknowledgmentMethod: method,
+                challengeId: safe(providerResult?.challenge_id),
+                deliveryStatus: safe(providerResult?.delivery_status) || "linked_pending",
+                provider: safe(providerResult?.provider) || "local_stub",
+                stubMode: providerResult?.stub_mode === undefined ? true : Boolean(providerResult.stub_mode),
+                phoneNumberMasked: safe(sessionState.phone_number_masked),
+            });
+        }
         // Write audit log
         await writeAuditLog({
             tenantId,

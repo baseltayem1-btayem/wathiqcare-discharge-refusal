@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
+import { canAccessModule, resolveModuleKeyFromPath } from "@/lib/modules/catalog";
 
 const FALLBACK_COOKIE_NAMES = ["wathiqcare_access_token", "token"] as const;
 
@@ -47,7 +48,23 @@ export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promis
   }
 
   try {
-    return verifyAndDecodeJwt(token) as PageAuthClaims;
+    const claims = verifyAndDecodeJwt(token) as PageAuthClaims;
+
+    if (nextPath) {
+      const moduleKey = resolveModuleKeyFromPath(nextPath);
+      if (moduleKey) {
+        const allowed = canAccessModule(moduleKey, {
+          role: claims.role ?? null,
+          platformRole: claims.platform_role ?? null,
+        });
+
+        if (!allowed) {
+          redirect("/modules");
+        }
+      }
+    }
+
+    return claims;
   } catch {
     const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : "";
     redirect(`/login${nextQuery}`);

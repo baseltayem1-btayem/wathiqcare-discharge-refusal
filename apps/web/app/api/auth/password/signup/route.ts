@@ -11,9 +11,17 @@ type PasswordSignupPayload = {
     fullName?: string;
 };
 
+function isPublicPasswordSignupEnabled(): boolean {
+    return String(process.env.ENABLE_PUBLIC_PASSWORD_SIGNUP || "false").trim().toLowerCase() === "true";
+}
+
 
 export async function POST(request: NextRequest) {
     try {
+        if (!isPublicPasswordSignupEnabled()) {
+            throw new ApiError(403, "Public signup is disabled. Accounts must be provisioned by an authorized administrator.");
+        }
+
         const prisma = getPrisma();
         const payload = (await request.json().catch(() => null)) as PasswordSignupPayload | null;
         if (!payload) {

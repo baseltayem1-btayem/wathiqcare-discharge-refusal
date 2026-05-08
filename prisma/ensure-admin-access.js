@@ -61,13 +61,30 @@ const PLATFORM_ADMIN_EMAIL = "admin@wathiqcare.med.sa";
 const DEFAULT_SUPERADMIN_PASSWORD = "Admin@Wathiqcare2026!";
 const DEFAULT_PLATFORM_ADMIN_PASSWORD = "Platform@Wathiqcare2026!";
 
+async function clearResetEnforcement(userId) {
+  try {
+    await prisma.$executeRaw`
+      UPDATE users
+      SET password_reset_required = FALSE,
+          session_revoked_at = NULL
+      WHERE id = ${userId}
+    `;
+  } catch (error) {
+    if (error && typeof error === "object" && (error.code === "P2022" || error.code === "P2010" || error.code === "P2021")) {
+      console.warn("[ensure-admin-access] WARN: password reset enforcement columns missing; skipped reset flag clear.");
+      return;
+    }
+    throw error;
+  }
+}
+
 function getPassword(envName, fallback) {
   const value = (process.env[envName] || "").trim();
   if (value) {
     return value;
   }
 
-  console.warn(`[ensure-admin-access] WARN: ${envName} not set; using fallback temporary password.`);
+  console.warn(`[ensure-admin-access] WARN: ${envName} not set; using fallback temporary password internally.`);
   return fallback;
 }
 
@@ -190,6 +207,8 @@ async function ensureUser({
     },
   });
 
+
+  await clearResetEnforcement(user.id);
   return user;
 }
 
@@ -221,12 +240,10 @@ async function main() {
   });
 
   console.log("[ensure-admin-access] Completed successfully.");
-  console.log(`[ensure-admin-access] Superadmin: ${SUPERADMIN_EMAIL}`);
-  console.log(`[ensure-admin-access] Platform admin: ${PLATFORM_ADMIN_EMAIL}`);
-  console.log("[ensure-admin-access] If env passwords were not provided, temporary defaults were used:");
-  console.log(`  - ${SUPERADMIN_EMAIL}: ${DEFAULT_SUPERADMIN_PASSWORD}`);
-  console.log(`  - ${PLATFORM_ADMIN_EMAIL}: ${DEFAULT_PLATFORM_ADMIN_PASSWORD}`);
-  console.log("[ensure-admin-access] Rotate passwords after first login.");
+  console.log(`[ensure-admin-access] Bootstrap superadmin login identifier: ${SUPERADMIN_EMAIL}`);
+  console.log(`[ensure-admin-access] Bootstrap platform admin login identifier: ${PLATFORM_ADMIN_EMAIL}`);
+  console.log("[ensure-admin-access] Bootstrap accounts are internal operational accounts, not demo accounts.");
+  console.log("[ensure-admin-access] Password values are not printed. Rotate bootstrap credentials through the managed reset flow.");
 }
 
 main()

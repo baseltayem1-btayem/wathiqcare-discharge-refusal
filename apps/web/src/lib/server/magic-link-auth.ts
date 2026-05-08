@@ -144,7 +144,7 @@ function buildMagicLinkSession(args: {
   const now = Math.floor(Date.now() / 1000);
   const exp = now + ttlSeconds;
   const sessionUserType = toSessionUserTypeFromStored(args.userType, args.role, args.email);
-  const redirectTo = sessionUserType === "platform_admin" ? "/platform" : "/dashboard";
+  const redirectTo = sessionUserType === "platform_admin" ? "/platform" : "/modules";
 
   return {
     accessToken: createAccessToken(

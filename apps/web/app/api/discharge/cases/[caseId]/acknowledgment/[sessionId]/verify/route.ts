@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
+import { logAcknowledgmentOtpVerify } from "@/lib/server/acknowledgment-telemetry";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -101,6 +102,21 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 signedByUserId: verified ? auth.sub : null,
             },
         });
+        if (method === "SMS_OTP" || (method === "TABLET_SIGNATURE" && safe(session.otp_code_hash))) {
+            logAcknowledgmentOtpVerify({
+                tenantId,
+                caseId,
+                sessionId,
+                documentType: safe(session.document_type),
+                acknowledgmentMethod: method,
+                challengeId: safe(providerResult?.challenge_id),
+                deliveryStatus: safe(providerResult?.delivery_status) || null,
+                provider: safe(providerResult?.provider) || null,
+                stubMode: providerResult?.stub_mode === undefined ? null : Boolean(providerResult.stub_mode),
+                phoneNumberMasked: safe(session.phone_number_masked),
+                outcome: verified ? "verified" : "failed",
+            });
+        }
 
         // If verified, upsert a DischargeRefusalCase record and write audit log.
         // These are secondary operations; wrap in try-catch so a missing table or

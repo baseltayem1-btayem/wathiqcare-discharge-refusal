@@ -7,6 +7,7 @@
 - Observation owner: Pending successful controlled UAT completion
 - Start date: Not started
 - End date: Not started
+- Current gating note: public-signup blocking is prepared in code and locally validated, but limited rollout remains blocked until that control is deployed and externally verified on the live host alongside controlled UAT account provisioning
 
 ## Limited Rollout Users
 
@@ -77,3 +78,4 @@ Validation results:
 - Access validation results: Blocked pending successful Phase 1 controlled UAT
 - Operational support contacts: Framework prepared, named contacts pending
 - First-use monitoring checklist status: Prepared, not started
+- Remaining Phase 1 blockers: live platform access unavailable due to credential/rate-limit failures, signup hardening not yet externally verified, and DB/backup/log access not provided

@@ -171,7 +171,7 @@ test("magic-link verify flow returns success payload and cookie metadata", async
                     },
                     session: {
                         accessToken: "jwt-token",
-                        redirectTo: "/dashboard",
+                        redirectTo: "/modules",
                         userType: "tenant_admin",
                     },
                 };
@@ -192,7 +192,7 @@ test("magic-link verify flow returns success payload and cookie metadata", async
     assert.deepEqual(result.body, {
         authenticated: true,
         provider: "local_magic",
-        redirectTo: "/dashboard",
+        redirectTo: "/modules",
         userType: "tenant_admin",
     });
     assert.deepEqual(result.cookie, {

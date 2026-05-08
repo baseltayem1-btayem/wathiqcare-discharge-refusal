@@ -9,18 +9,10 @@ import { ArrowLeft, Mail, Lock, KeyRound, Eye, EyeOff, ChevronDown, ChevronUp } 
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LoginBrandPanel from "@/components/login/LoginBrandPanel";
 import { useI18n } from "@/i18n/I18nProvider";
+import { DEMO_ACCOUNT_PROFILES } from "@/lib/demo-access";
 import { apiFetch } from "@/utils/api";
 
 type AuthMode = "microsoft" | "magic-link" | "password";
-
-const DEMO_ACCOUNTS = [
-  { label: "Super Admin", labelAr: "مدير النظام", username: "superadmin", password: "Admin@12345", role: "platform_superadmin" },
-  { label: "IMC Admin", labelAr: "مدير المستشفى", username: "imc.admin", password: "Welcome@123", role: "tenant_admin" },
-  { label: "Doctor", labelAr: "طبيب", username: "imc.jeddah.doctor1", password: "Doctor@123", role: "doctor" },
-  { label: "Nurse", labelAr: "ممرض/ة", username: "imc.jeddah.nurse1", password: "Nurse@123", role: "nursing" },
-  { label: "Legal", labelAr: "مستشار قانوني", username: "imc.legal", password: "Legal@123", role: "legal_admin" },
-  { label: "Medical Director", labelAr: "المدير الطبي", username: "imc.medicaldirector", password: "Medical@123", role: "medical_director" },
-] as const;
 
 export default function LoginPage() {
   const { t, isRtl } = useI18n();
@@ -42,22 +34,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showDemoAccounts, setShowDemoAccounts] = useState(false);
 
-  // Resolve username to email format for login
-  function resolveIdentifier(input: string): string {
-    const trimmed = input.trim();
-    if (trimmed.includes("@")) return trimmed;
-    // Map known username aliases to email domains
-    const knownDomains: Record<string, string> = {
-      superadmin: "wathiqcare.local",
-      "imc.admin": "imc.local",
-      "imc.jeddah.doctor1": "imc.local",
-      "imc.jeddah.nurse1": "imc.local",
-      "imc.legal": "imc.local",
-      "imc.medicaldirector": "imc.local",
-      "imc.finance": "imc.local",
-    };
-    const domain = knownDomains[trimmed] ?? "wathiqcare.local";
-    return `${trimmed}@${domain}`;
+  function normalizeIdentifier(input: string): string {
+    return input.trim().toLowerCase();
   }
 
   async function handleMagicLinkSubmit(e: React.FormEvent) {
@@ -67,7 +45,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const email = resolveIdentifier(identifier);
+      const email = normalizeIdentifier(identifier);
       const response = await apiFetch<{ message?: string }>("/api/auth/magic-link/request", {
         method: "POST",
         body: JSON.stringify({ email }),
@@ -89,7 +67,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const email = resolveIdentifier(identifier);
+      const email = normalizeIdentifier(identifier);
       const result = await apiFetch<{ redirectTo: string; mustChangePassword?: boolean }>("/api/auth/password/login", {
         method: "POST",
         body: JSON.stringify({ email, password, rememberMe }),
@@ -117,7 +95,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const redirectUrl = `/api/auth/microsoft/login?email=${encodeURIComponent(resolveIdentifier(identifier))}`;
+      const redirectUrl = `/api/auth/microsoft/login?email=${encodeURIComponent(normalizeIdentifier(identifier))}`;
       window.location.href = redirectUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Microsoft login failed");
@@ -125,9 +103,9 @@ export default function LoginPage() {
     }
   }
 
-  function handleDemoLogin(username: string, pwd: string) {
-    setIdentifier(username);
-    setPassword(pwd);
+  function handleDemoLogin(email: string) {
+    setIdentifier(email);
+    setPassword("");
     setAuthMode("password");
     setError("");
     setNotice("");
@@ -217,11 +195,11 @@ export default function LoginPage() {
                 {authMode === "microsoft" && (
                   <div className="space-y-4">
                     <h2 className="text-lg font-bold text-gray-900">{isRtl ? "تسجيل الدخول المؤسسي" : "Institutional Sign-In"}</h2>
-                    <p className="text-sm text-gray-600">{isRtl ? "للمستشفيات والمؤسسات الصحية التي تستخدم Microsoft 365" : "For hospital and healthcare organization accounts using Microsoft 365"}</p>
+                    <p className="text-sm text-gray-600">{isRtl ? "للمستشفيات والمؤسسات الصحية التي تستخدم Microsoft 365 مع البريد الإلكتروني المؤسسي" : "For hospital and healthcare organization accounts using Microsoft 365 with institutional email login"}</p>
                     <div className="space-y-3">
                       <input
                         type="text"
-                        placeholder={isRtl ? "اسم المستخدم أو البريد الإلكتروني" : "Username or email"}
+                        placeholder={isRtl ? "البريد الإلكتروني المؤسسي" : "email@domain.com"}
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
                         className="wc-form-input"
@@ -291,20 +269,25 @@ export default function LoginPage() {
 
                     <div>
                       <label htmlFor="login-identifier" className="wc-form-label mb-1 block">
-                        {isRtl ? "اسم المستخدم أو البريد الإلكتروني" : "Username or Email"}
+                        {isRtl ? "البريد الإلكتروني لتسجيل الدخول" : "Login Email"}
                       </label>
                       <input
                         id="login-identifier"
                         type="text"
                         required
                         autoFocus
-                        autoComplete="username"
+                        autoComplete="email"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
                         disabled={loading}
                         className="wc-form-input"
-                        placeholder={isRtl ? "اسم المستخدم أو البريد الإلكتروني" : "username or email@domain.com"}
+                        placeholder={isRtl ? "demo.user@tenant.local" : "demo.user@tenant.local"}
                       />
+                      <p className="mt-1 text-xs text-slate-400">
+                        {isRtl
+                          ? "المعرف المعتمد هو البريد الإلكتروني. تظل الأسماء القديمة مدعومة فقط للتوافق الداخلي."
+                          : "Canonical sign-in uses email. Legacy username aliases remain supported only for internal compatibility."}
+                      </p>
                     </div>
 
                     <div>
@@ -377,17 +360,17 @@ export default function LoginPage() {
                     onClick={() => setShowDemoAccounts(!showDemoAccounts)}
                     className="wc-panel w-full justify-between text-[12px] font-bold text-slate-600"
                   >
-                    <span>{isRtl ? "حسابات تجريبية" : "Demo Accounts"}</span>
+                    <span>{isRtl ? "معرفات تسجيل الدخول التجريبية" : "Demo Login IDs"}</span>
                     {showDemoAccounts ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
 
                   {showDemoAccounts && (
                     <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                      {DEMO_ACCOUNTS.map((acc) => (
+                      {DEMO_ACCOUNT_PROFILES.map((acc) => (
                         <button
-                          key={acc.username}
+                          key={acc.email}
                           type="button"
-                          onClick={() => handleDemoLogin(acc.username, acc.password)}
+                          onClick={() => handleDemoLogin(acc.email)}
                           className="toolbar-btn toolbar-btn-secondary justify-center"
                         >
                           {isRtl ? acc.labelAr : acc.label}

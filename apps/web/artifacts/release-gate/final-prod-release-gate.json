@@ -1,18 +1,18 @@
 {
   "name": "WathiqCare Production Release Gate",
-  "baseUrl": "http://127.0.0.1:3113",
-  "startedAt": "2026-05-07T18:55:47.001Z",
+  "baseUrl": "https://wathiqcare.online",
+  "startedAt": "2026-05-07T22:46:33.338Z",
   "steps": [
     {
       "name": "Platform login",
       "ok": true,
-      "durationMs": 572,
+      "durationMs": 5228,
       "data": {
         "redirectTo": "/platform",
         "cookie": {
-          "raw": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmNWI1ZThkYS0yZTNhLTQxNjUtYWE1NC05M2Y1ZjkxOTVmNDMiLCJ1c2VyX2lkIjoiZjViNWU4ZGEtMmUzYS00MTY1LWFhNTQtOTNmNWY5MTk1ZjQzIiwiZW1haWwiOiJhZG1pbkB3YXRoaXFjYXJlLm9ubGluZSIsInJvbGUiOiJwbGF0Zm9ybV9zdXBlcmFkbWluIiwidXNlcl90eXBlIjoicGxhdGZvcm1fYWRtaW4iLCJwbGF0Zm9ybV9yb2xlIjoicGxhdGZvcm1fc3VwZXJhZG1pbiIsInRlbmFudF9pZCI6Ijc2MmE4YWE5LWE3MDgtNDM3Yi1iNTFkLTA4ZjJjNTM2MWM4ZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE4Mzc0NywiaWF0IjoxNzc4MTgwMTQ3LCJpc3MiOiJ3YXRoaXFjYXJlIn0.HMn77xZpyFv22FCnz4GSztUSezM1JI-dnW3joeYbL4I",
+          "raw": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmNjk0OWY1NS02ZjRlLTQwYjktYWVlNC1lNDRjZTQ2MjExNDAiLCJ1c2VyX2lkIjoiZjY5NDlmNTUtNmY0ZS00MGI5LWFlZTQtZTQ0Y2U0NjIxMTQwIiwiZW1haWwiOiJhZG1pbkB3YXRoaXFjYXJlLm9ubGluZSIsInJvbGUiOiJwbGF0Zm9ybV9zdXBlcmFkbWluIiwidXNlcl90eXBlIjoicGxhdGZvcm1fYWRtaW4iLCJwbGF0Zm9ybV9yb2xlIjoicGxhdGZvcm1fc3VwZXJhZG1pbiIsInRlbmFudF9pZCI6ImYyZTY1YzVkLTNjMDAtNGM4MC1hODQ1LTgwNmY5NGNkZDJkZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE5NzU5NSwiaWF0IjoxNzc4MTkzOTk1LCJpc3MiOiJ3YXRoaXFjYXJlIn0.jIXMsvoaIOQ9SHZOlmJfLdGS2A2ETDyNDf07BlDFC8Y",
           "name": "wathiqcare_access_token",
-          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmNWI1ZThkYS0yZTNhLTQxNjUtYWE1NC05M2Y1ZjkxOTVmNDMiLCJ1c2VyX2lkIjoiZjViNWU4ZGEtMmUzYS00MTY1LWFhNTQtOTNmNWY5MTk1ZjQzIiwiZW1haWwiOiJhZG1pbkB3YXRoaXFjYXJlLm9ubGluZSIsInJvbGUiOiJwbGF0Zm9ybV9zdXBlcmFkbWluIiwidXNlcl90eXBlIjoicGxhdGZvcm1fYWRtaW4iLCJwbGF0Zm9ybV9yb2xlIjoicGxhdGZvcm1fc3VwZXJhZG1pbiIsInRlbmFudF9pZCI6Ijc2MmE4YWE5LWE3MDgtNDM3Yi1iNTFkLTA4ZjJjNTM2MWM4ZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE4Mzc0NywiaWF0IjoxNzc4MTgwMTQ3LCJpc3MiOiJ3YXRoaXFjYXJlIn0.HMn77xZpyFv22FCnz4GSztUSezM1JI-dnW3joeYbL4I"
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmNjk0OWY1NS02ZjRlLTQwYjktYWVlNC1lNDRjZTQ2MjExNDAiLCJ1c2VyX2lkIjoiZjY5NDlmNTUtNmY0ZS00MGI5LWFlZTQtZTQ0Y2U0NjIxMTQwIiwiZW1haWwiOiJhZG1pbkB3YXRoaXFjYXJlLm9ubGluZSIsInJvbGUiOiJwbGF0Zm9ybV9zdXBlcmFkbWluIiwidXNlcl90eXBlIjoicGxhdGZvcm1fYWRtaW4iLCJwbGF0Zm9ybV9yb2xlIjoicGxhdGZvcm1fc3VwZXJhZG1pbiIsInRlbmFudF9pZCI6ImYyZTY1YzVkLTNjMDAtNGM4MC1hODQ1LTgwNmY5NGNkZDJkZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE5NzU5NSwiaWF0IjoxNzc4MTkzOTk1LCJpc3MiOiJ3YXRoaXFjYXJlIn0.jIXMsvoaIOQ9SHZOlmJfLdGS2A2ETDyNDf07BlDFC8Y"
         }
       },
       "error": null
@@ -20,7 +20,7 @@
     {
       "name": "Public login page stability",
       "ok": true,
-      "durationMs": 4011,
+      "durationMs": 4515,
       "data": {
         "checked": "/login"
       },
@@ -29,7 +29,7 @@
     {
       "name": "Ensure tenant role users",
       "ok": true,
-      "durationMs": 573,
+      "durationMs": 2893,
       "data": {
         "tenantAdmin": {
           "key": "tenantAdmin",
@@ -39,8 +39,8 @@
           "userType": "TENANT_ADMIN",
           "membershipRole": "ADMIN",
           "expectedRedirect": "/tenant/dashboard",
-          "id": "37f3f027-8691-40b8-826b-1e78cfbfee3f",
-          "tenantId": "762a8aa9-a708-437b-b51d-08f2c5361c8d"
+          "id": "b1c71d68-de6b-4cf7-8cc2-cdc73e784373",
+          "tenantId": "f2e65c5d-3c00-4c80-a845-806f94cdd2dd"
         },
         "doctor": {
           "key": "doctor",
@@ -50,8 +50,8 @@
           "userType": "TENANT_USER",
           "membershipRole": "MEMBER",
           "expectedRedirect": "/doctor/dashboard",
-          "id": "5659867b-08c7-4d0c-873b-f680c0272123",
-          "tenantId": "762a8aa9-a708-437b-b51d-08f2c5361c8d"
+          "id": "b7b07c69-7c4a-4ead-830f-31a08e0279db",
+          "tenantId": "f2e65c5d-3c00-4c80-a845-806f94cdd2dd"
         },
         "nurse": {
           "key": "nurse",
@@ -61,8 +61,8 @@
           "userType": "TENANT_USER",
           "membershipRole": "MEMBER",
           "expectedRedirect": "/nurse/dashboard",
-          "id": "37166920-7c72-4ce2-b645-f41c95c0c411",
-          "tenantId": "762a8aa9-a708-437b-b51d-08f2c5361c8d"
+          "id": "4787c9c3-81ac-47ab-9422-7147df1f7990",
+          "tenantId": "f2e65c5d-3c00-4c80-a845-806f94cdd2dd"
         },
         "legal": {
           "key": "legal",
@@ -72,8 +72,8 @@
           "userType": "TENANT_ADMIN",
           "membershipRole": "ADMIN",
           "expectedRedirect": "/legal/dashboard",
-          "id": "39fb2cfe-dc21-4be9-b07d-a3def44042da",
-          "tenantId": "762a8aa9-a708-437b-b51d-08f2c5361c8d"
+          "id": "3ef099ac-eea6-43a3-82c2-2e50a09a24c3",
+          "tenantId": "f2e65c5d-3c00-4c80-a845-806f94cdd2dd"
         },
         "medicalDirector": {
           "key": "medicalDirector",
@@ -83,8 +83,8 @@
           "userType": "TENANT_USER",
           "membershipRole": "MEMBER",
           "expectedRedirect": "/medical-director/dashboard",
-          "id": "0008a563-d230-4a43-8e55-75bded49b1b6",
-          "tenantId": "762a8aa9-a708-437b-b51d-08f2c5361c8d"
+          "id": "22543713-72c6-4b96-9e9e-b17abbc462d3",
+          "tenantId": "f2e65c5d-3c00-4c80-a845-806f94cdd2dd"
         }
       },
       "error": null
@@ -92,30 +92,30 @@
     {
       "name": "Role dashboard routing",
       "ok": true,
-      "durationMs": 2650,
+      "durationMs": 25421,
       "data": {
         "tenantAdmin": {
-          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzN2YzZjAyNy04NjkxLTQwYjgtODI2Yi0xZTc4Y2ZiZmVlM2YiLCJ1c2VyX2lkIjoiMzdmM2YwMjctODY5MS00MGI4LTgyNmItMWU3OGNmYmZlZTNmIiwiZW1haWwiOiJ0ZW5hbnQuYWRtaW5Ad2F0aGlxY2FyZS5vbmxpbmUiLCJyb2xlIjoidGVuYW50X2FkbWluIiwidXNlcl90eXBlIjoidGVuYW50X2FkbWluIiwicGxhdGZvcm1fcm9sZSI6bnVsbCwidGVuYW50X2lkIjoiNzYyYThhYTktYTcwOC00MzdiLWI1MWQtMDhmMmM1MzYxYzhkIiwidGVuYW50X2NvZGUiOiJ3YXRoaXFjYXJlIiwiZXhwIjoxNzc4MTgzNzUyLCJpYXQiOjE3NzgxODAxNTIsImlzcyI6IndhdGhpcWNhcmUifQ.l0yKPa-pEnltTYLCVikbmv37fRPaenOpGI8-Hk7g55g",
+          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMWM3MWQ2OC1kZTZiLTRjZjctOGNjMi1jZGM3M2U3ODQzNzMiLCJ1c2VyX2lkIjoiYjFjNzFkNjgtZGU2Yi00Y2Y3LThjYzItY2RjNzNlNzg0MzczIiwiZW1haWwiOiJ0ZW5hbnQuYWRtaW5Ad2F0aGlxY2FyZS5vbmxpbmUiLCJyb2xlIjoidGVuYW50X2FkbWluIiwidXNlcl90eXBlIjoidGVuYW50X2FkbWluIiwicGxhdGZvcm1fcm9sZSI6bnVsbCwidGVuYW50X2lkIjoiZjJlNjVjNWQtM2MwMC00YzgwLWE4NDUtODA2Zjk0Y2RkMmRkIiwidGVuYW50X2NvZGUiOiJ3YXRoaXFjYXJlIiwiZXhwIjoxNzc4MTk3NjA3LCJpYXQiOjE3NzgxOTQwMDcsImlzcyI6IndhdGhpcWNhcmUifQ.XyzpaAnuhuhHT3cYXqXYnzEfJFTuLNbw34QQ2KO9SeU",
           "redirectTo": "/tenant/dashboard",
           "email": "tenant.admin@wathiqcare.online"
         },
         "doctor": {
-          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NjU5ODY3Yi0wOGM3LTRkMGMtODczYi1mNjgwYzAyNzIxMjMiLCJ1c2VyX2lkIjoiNTY1OTg2N2ItMDhjNy00ZDBjLTg3M2ItZjY4MGMwMjcyMTIzIiwiZW1haWwiOiJkb2N0b3IucmVsZWFzZUB3YXRoaXFjYXJlLm9ubGluZSIsInJvbGUiOiJkb2N0b3IiLCJ1c2VyX3R5cGUiOiJ0ZW5hbnRfdXNlciIsInBsYXRmb3JtX3JvbGUiOm51bGwsInRlbmFudF9pZCI6Ijc2MmE4YWE5LWE3MDgtNDM3Yi1iNTFkLTA4ZjJjNTM2MWM4ZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE4Mzc1MywiaWF0IjoxNzc4MTgwMTUzLCJpc3MiOiJ3YXRoaXFjYXJlIn0.CknQukSKwtk1QMBdHHD4ct27I3GlGZXUaaVRkm3gUZA",
+          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiN2IwN2M2OS03YzRhLTRlYWQtODMwZi0zMWEwOGUwMjc5ZGIiLCJ1c2VyX2lkIjoiYjdiMDdjNjktN2M0YS00ZWFkLTgzMGYtMzFhMDhlMDI3OWRiIiwiZW1haWwiOiJkb2N0b3IucmVsZWFzZUB3YXRoaXFjYXJlLm9ubGluZSIsInJvbGUiOiJkb2N0b3IiLCJ1c2VyX3R5cGUiOiJ0ZW5hbnRfdXNlciIsInBsYXRmb3JtX3JvbGUiOm51bGwsInRlbmFudF9pZCI6ImYyZTY1YzVkLTNjMDAtNGM4MC1hODQ1LTgwNmY5NGNkZDJkZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE5NzYxMiwiaWF0IjoxNzc4MTk0MDEyLCJpc3MiOiJ3YXRoaXFjYXJlIn0.ajMXvsfQNyEPpdbZSiM8LlanFCnD424QAD2B-ePgK6E",
           "redirectTo": "/doctor/dashboard",
           "email": "doctor.release@wathiqcare.online"
         },
         "nurse": {
-          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzNzE2NjkyMC03YzcyLTRjZTItYjY0NS1mNDFjOTVjMGM0MTEiLCJ1c2VyX2lkIjoiMzcxNjY5MjAtN2M3Mi00Y2UyLWI2NDUtZjQxYzk1YzBjNDExIiwiZW1haWwiOiJudXJzZS5yZWxlYXNlQHdhdGhpcWNhcmUub25saW5lIiwicm9sZSI6Im51cnNpbmciLCJ1c2VyX3R5cGUiOiJ0ZW5hbnRfdXNlciIsInBsYXRmb3JtX3JvbGUiOm51bGwsInRlbmFudF9pZCI6Ijc2MmE4YWE5LWE3MDgtNDM3Yi1iNTFkLTA4ZjJjNTM2MWM4ZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE4Mzc1MywiaWF0IjoxNzc4MTgwMTUzLCJpc3MiOiJ3YXRoaXFjYXJlIn0.L46I1jGznoR0HLjny5fm_TseH1LLCYZu5-GSX-jg-1M",
+          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0Nzg3YzljMy04MWFjLTQ3YWItOTQyMi03MTQ3ZGYxZjc5OTAiLCJ1c2VyX2lkIjoiNDc4N2M5YzMtODFhYy00N2FiLTk0MjItNzE0N2RmMWY3OTkwIiwiZW1haWwiOiJudXJzZS5yZWxlYXNlQHdhdGhpcWNhcmUub25saW5lIiwicm9sZSI6Im51cnNpbmciLCJ1c2VyX3R5cGUiOiJ0ZW5hbnRfdXNlciIsInBsYXRmb3JtX3JvbGUiOm51bGwsInRlbmFudF9pZCI6ImYyZTY1YzVkLTNjMDAtNGM4MC1hODQ1LTgwNmY5NGNkZDJkZCIsInRlbmFudF9jb2RlIjoid2F0aGlxY2FyZSIsImV4cCI6MTc3ODE5NzYxNywiaWF0IjoxNzc4MTk0MDE3LCJpc3MiOiJ3YXRoaXFjYXJlIn0.gd8NVppmCa8dtxgGrTkOabtqb0QtCHib5upL7ibLCEs",
           "redirectTo": "/nurse/dashboard",
           "email": "nurse.release@wathiqcare.online"
         },
         "legal": {
-          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzOWZiMmNmZS1kYzIxLTRiZTktYjA3ZC1hM2RlZjQ0MDQyZGEiLCJ1c2VyX2lkIjoiMzlmYjJjZmUtZGMyMS00YmU5LWIwN2QtYTNkZWY0NDA0MmRhIiwiZW1haWwiOiJsZWdhbC5yZWxlYXNlQHdhdGhpcWNhcmUub25saW5lIiwicm9sZSI6ImxlZ2FsX2FkbWluIiwidXNlcl90eXBlIjoidGVuYW50X2FkbWluIiwicGxhdGZvcm1fcm9sZSI6bnVsbCwidGVuYW50X2lkIjoiNzYyYThhYTktYTcwOC00MzdiLWI1MWQtMDhmMmM1MzYxYzhkIiwidGVuYW50X2NvZGUiOiJ3YXRoaXFjYXJlIiwiZXhwIjoxNzc4MTgzNzU0LCJpYXQiOjE3NzgxODAxNTQsImlzcyI6IndhdGhpcWNhcmUifQ.3QADEMGt1Obl_QvHmQ0vTBp_A9P48MUs5SQ_EVBgwn4",
+          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzZWYwOTlhYy1lZWE2LTQzYTMtODJjMi0yZTUwYTA5YTI0YzMiLCJ1c2VyX2lkIjoiM2VmMDk5YWMtZWVhNi00M2EzLTgyYzItMmU1MGEwOWEyNGMzIiwiZW1haWwiOiJsZWdhbC5yZWxlYXNlQHdhdGhpcWNhcmUub25saW5lIiwicm9sZSI6ImxlZ2FsX2FkbWluIiwidXNlcl90eXBlIjoidGVuYW50X2FkbWluIiwicGxhdGZvcm1fcm9sZSI6bnVsbCwidGVuYW50X2lkIjoiZjJlNjVjNWQtM2MwMC00YzgwLWE4NDUtODA2Zjk0Y2RkMmRkIiwidGVuYW50X2NvZGUiOiJ3YXRoaXFjYXJlIiwiZXhwIjoxNzc4MTk3NjIyLCJpYXQiOjE3NzgxOTQwMjIsImlzcyI6IndhdGhpcWNhcmUifQ.e1dpP2oVjsuIfkzW1uqcc9rZJfrS4W-y5xyDu0S5nEM",
           "redirectTo": "/legal/dashboard",
           "email": "legal.release@wathiqcare.online"
         },
         "medicalDirector": {
-          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDA4YTU2My1kMjMwLTRhNDMtOGU1NS03NWJkZWQ0OWIxYjYiLCJ1c2VyX2lkIjoiMDAwOGE1NjMtZDIzMC00YTQzLThlNTUtNzViZGVkNDliMWI2IiwiZW1haWwiOiJtZWRpY2FsLmRpcmVjdG9yLnJlbGVhc2VAd2F0aGlxY2FyZS5vbmxpbmUiLCJyb2xlIjoibWVkaWNhbF9kaXJlY3RvciIsInVzZXJfdHlwZSI6InRlbmFudF91c2VyIiwicGxhdGZvcm1fcm9sZSI6bnVsbCwidGVuYW50X2lkIjoiNzYyYThhYTktYTcwOC00MzdiLWI1MWQtMDhmMmM1MzYxYzhkIiwidGVuYW50X2NvZGUiOiJ3YXRoaXFjYXJlIiwiZXhwIjoxNzc4MTgzNzU1LCJpYXQiOjE3NzgxODAxNTUsImlzcyI6IndhdGhpcWNhcmUifQ.cqV0pl5oxU-fW8UR0JprubYq9hjxxKalLE94Cr3JQ1Q",
+          "cookie": "wathiqcare_access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMjU0MzcxMy03MmM2LTRiOTYtOWU5ZS1iMTdhYmJjNDYyZDMiLCJ1c2VyX2lkIjoiMjI1NDM3MTMtNzJjNi00Yjk2LTllOWUtYjE3YWJiYzQ2MmQzIiwiZW1haWwiOiJtZWRpY2FsLmRpcmVjdG9yLnJlbGVhc2VAd2F0aGlxY2FyZS5vbmxpbmUiLCJyb2xlIjoibWVkaWNhbF9kaXJlY3RvciIsInVzZXJfdHlwZSI6InRlbmFudF91c2VyIiwicGxhdGZvcm1fcm9sZSI6bnVsbCwidGVuYW50X2lkIjoiZjJlNjVjNWQtM2MwMC00YzgwLWE4NDUtODA2Zjk0Y2RkMmRkIiwidGVuYW50X2NvZGUiOiJ3YXRoaXFjYXJlIiwiZXhwIjoxNzc4MTk3NjI4LCJpYXQiOjE3NzgxOTQwMjgsImlzcyI6IndhdGhpcWNhcmUifQ.T12IKd-Wj8Qx2e7lNPEnKVCOOHNdAuWmmm0Wz1uEIo8",
           "redirectTo": "/medical-director/dashboard",
           "email": "medical.director.release@wathiqcare.online"
         }
@@ -125,34 +125,34 @@
     {
       "name": "Case creation and workspace interaction",
       "ok": true,
-      "durationMs": 5635,
+      "durationMs": 37535,
       "data": {
-        "caseId": "b3c50e75-cac1-4d47-a58a-d9ab4433833f"
+        "caseId": "e1142032-c1ff-4ff7-af20-ea96c9e220bc"
       },
       "error": null
     },
     {
       "name": "OTP lifecycle",
       "ok": true,
-      "durationMs": 162,
+      "durationMs": 12491,
       "data": {
-        "sessionId": "daeb6bf7-6485-4ee1-bf86-46a91dd63f5d"
+        "sessionId": "d4e97f30-5039-4338-bfef-7643de6c6c45"
       },
       "error": null
     },
     {
       "name": "Secure link and public refusal flow",
       "ok": true,
-      "durationMs": 3300,
+      "durationMs": 23594,
       "data": {
-        "secureUrl": "http://127.0.0.1:3113/secure/h1_i-RBBJ9Iyud3YF473MZ5nSrNNB9UFDjXVmK3kOaw"
+        "secureUrl": "https://wathiqcare.online/secure/bLEvpdFk6gsmelBlUfzQ1wNfCC2n3RTs0LAkNSag7bE"
       },
       "error": null
     },
     {
       "name": "Signature and audit persistence",
       "ok": true,
-      "durationMs": 19,
+      "durationMs": 718,
       "data": {
         "auditActions": [
           "case_created",
@@ -185,19 +185,19 @@
     {
       "name": "Arabic and English PDF generation and download",
       "ok": true,
-      "durationMs": 4396,
+      "durationMs": 34647,
       "data": {
         "englishVersion": 1,
         "arabicVersion": 2,
-        "englishBytes": 173870,
-        "arabicBytes": 178732
+        "englishBytes": 157411,
+        "arabicBytes": 162273
       },
       "error": null
     },
     {
       "name": "Legal package generation and download metadata",
       "ok": true,
-      "durationMs": 183,
+      "durationMs": 15204,
       "data": {
         "packageStatus": "GENERATED",
         "documents": 6
@@ -207,17 +207,17 @@
     {
       "name": "Forced password reset",
       "ok": true,
-      "durationMs": 2314,
+      "durationMs": 172374,
       "data": {
-        "processed": 8,
-        "emailFailed": 8
+        "processed": 19,
+        "emailFailed": 0
       },
       "error": null
     },
     {
       "name": "Logout and session cleanup",
       "ok": true,
-      "durationMs": 18,
+      "durationMs": 1249,
       "data": {
         "tenantLogout": true,
         "platformLogout": true
@@ -229,9 +229,9 @@
   "browserFindings": [],
   "apiFailures": [],
   "artifacts": {
-    "caseId": "b3c50e75-cac1-4d47-a58a-d9ab4433833f",
-    "secureUrl": "http://127.0.0.1:3113/secure/h1_i-RBBJ9Iyud3YF473MZ5nSrNNB9UFDjXVmK3kOaw",
-    "otpSessionId": "daeb6bf7-6485-4ee1-bf86-46a91dd63f5d",
+    "caseId": "e1142032-c1ff-4ff7-af20-ea96c9e220bc",
+    "secureUrl": "https://wathiqcare.online/secure/bLEvpdFk6gsmelBlUfzQ1wNfCC2n3RTs0LAkNSag7bE",
+    "otpSessionId": "d4e97f30-5039-4338-bfef-7643de6c6c45",
     "audit": {
       "auditActions": [
         "case_created",
@@ -262,15 +262,15 @@
     "pdf": {
       "englishVersion": 1,
       "arabicVersion": 2,
-      "englishBytes": 173870,
-      "arabicBytes": 178732
+      "englishBytes": 157411,
+      "arabicBytes": 162273
     },
     "legalPackage": {
       "packageStatus": "GENERATED",
       "documents": 6
     }
   },
-  "finishedAt": "2026-05-07T18:56:11.061Z",
+  "finishedAt": "2026-05-07T22:52:10.957Z",
   "success": true,
   "summary": "Production-like release gate passed"
 }

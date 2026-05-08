@@ -242,6 +242,15 @@ function computeSignatureHash(input: string): string {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
+function logSecureLinkPublicEvent(event: string, data: Record<string, unknown>): void {
+  console.warn(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    component: "secure_link",
+    event,
+    ...data,
+  }));
+}
+
 async function appendPublicDecisionAudit(args: {
   document: StoredSecureLinkDocument;
   token: string;
@@ -505,6 +514,10 @@ async function getStoredSecureLinkByToken(token: string): Promise<StoredSecureLi
   });
 
   if (!document) {
+    logSecureLinkPublicEvent("public_secure_link_lookup_failed", {
+      reason: "not_found",
+      secure_token_hash: tokenHash,
+    });
     throw new ApiError(404, "الرابط الآمن غير موجود");
   }
 
@@ -700,164 +713,176 @@ export async function revokeSecureLink(args: {
 }
 
 export async function getPublicSecureLink(token: string): Promise<PublicSecureCase> {
-  const document = await getStoredSecureLinkByToken(token);
-  const payload = parseSecureLinkPayload(document);
-  ensureLinkActive(payload);
+  try {
+    const document = await getStoredSecureLinkByToken(token);
+    const payload = parseSecureLinkPayload(document);
+    ensureLinkActive(payload);
 
-  if (!payload.accessed_at) {
-    const accessedAt = new Date().toISOString();
-    const updatedPayload: SecureLinkPayload = { ...payload, accessed_at: accessedAt };
-    await prisma.document.update({
-      where: { id: document.id },
-      data: {
-        payloadJson: updatedPayload as unknown as Prisma.InputJsonValue,
-        sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
-      },
-    });
-    return mapPublicCase(updatedPayload);
+    if (!payload.accessed_at) {
+      const accessedAt = new Date().toISOString();
+      const updatedPayload: SecureLinkPayload = { ...payload, accessed_at: accessedAt };
+      await prisma.document.update({
+        where: { id: document.id },
+        data: {
+          payloadJson: updatedPayload as unknown as Prisma.InputJsonValue,
+          sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
+        },
+      });
+      return mapPublicCase(updatedPayload);
+    }
+
+    return mapPublicCase(payload);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      logSecureLinkPublicEvent("public_secure_link_access_rejected", {
+        status: error.status,
+        reason: error.message,
+        secure_token_hash: computeTokenHash(token),
+      });
+    }
+    throw error;
   }
-
-  return mapPublicCase(payload);
 }
 
 export async function submitPublicSecureLinkDecision(token: string, input: DecisionInput, request?: NextRequest): Promise<SubmitDecisionResponse> {
-  const document = await getStoredSecureLinkByToken(token);
-  const payload = parseSecureLinkPayload(document);
-  ensureLinkActive(payload);
-
-  if (payload.decision_type && payload.decision_submitted_at) {
-    return {
-      hospital_name: payload.hospital_name,
-      case_id: payload.case_id,
-      case_reference: payload.case_reference,
-      decision_type: payload.decision_type,
-      typed_name: payload.decision_name || payload.patient_name || "",
-      submitted_at: payload.decision_submitted_at,
-      confirmation_message:
-        payload.decision_type === "accept"
-          ? "تم تسجيل موافقتكم على الخروج مسبقًا."
-          : "تم تسجيل رفضكم للخروج مسبقًا وتوثيق الإقرار القانوني.",
-    };
-  }
-
-  const decision = input.decision;
-  if (decision !== "accept" && decision !== "refuse") {
-    throw new ApiError(400, "decision must be accept or refuse");
-  }
-
-  const typedName = input.typed_name.trim();
-  if (typedName.length < 3) {
-    throw new ApiError(400, "typed_name is required");
-  }
-
-  const refusalAcknowledged = Boolean(input.refusal_acknowledged);
-  if (decision === "refuse" && !refusalAcknowledged) {
-    throw new ApiError(400, "refusal_acknowledged must be true for refusal decisions");
-  }
-
-  const submittedAt = new Date().toISOString();
-  const signatureSource = safeString(input.signature_data)
-    || `${document.id}:${typedName}:${decision}:${submittedAt}`;
-  const signatureHash = computeSignatureHash(signatureSource);
-  const updatedPayload: SecureLinkPayload = {
-    ...payload,
-    decision_type: decision,
-    decision_name: typedName,
-    decision_submitted_at: submittedAt,
-    refusal_acknowledged: refusalAcknowledged,
-    signature_hash: signatureHash,
-    signature_provided: Boolean(safeString(input.signature_data)),
-    accessed_at: payload.accessed_at ?? submittedAt,
-  };
-
-  await prisma.document.update({
-    where: { id: document.id },
-    data: {
-      status: DocumentStatus.SIGNED,
-      payloadJson: updatedPayload as unknown as Prisma.InputJsonValue,
-      signedAt: new Date(submittedAt),
-      sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
-    },
-  });
-
-  await appendPublicDecisionAudit({
-    document,
-    token,
-    payload: updatedPayload,
-    typedName,
-    decision,
-    submittedAt,
-    signatureProvided: updatedPayload.signature_provided ?? false,
-    refusalAcknowledged,
-    request,
-  });
-
   try {
-    await prisma.dischargeRefusalCase.upsert({
-      where: {
-        id: document.id,
-      },
-      update: {
-        dischargeStatus: decision === "accept" ? "accepted_via_secure_link" : "refused_via_secure_link",
-        signatureMethod: "SECURE_LINK",
-        signatureTimestamp: new Date(submittedAt),
-        signatureHash,
-        signatureDevice: updatedPayload.signature_provided ? "PUBLIC_SECURE_LINK_SIGNATURE" : "PUBLIC_SECURE_LINK_NO_CANVAS",
-        signatureIpAddress: null,
-      },
-      create: {
-        id: document.id,
-        tenantId: payload.tenant_id,
-        caseId: payload.case_id,
-        dischargeStatus: decision === "accept" ? "accepted_via_secure_link" : "refused_via_secure_link",
-        signatureMethod: "SECURE_LINK",
-        signatureTimestamp: new Date(submittedAt),
-        signatureHash,
-        signatureDevice: updatedPayload.signature_provided ? "PUBLIC_SECURE_LINK_SIGNATURE" : "PUBLIC_SECURE_LINK_NO_CANVAS",
-        signatureIpAddress: null,
+    const document = await getStoredSecureLinkByToken(token);
+    const payload = parseSecureLinkPayload(document);
+    ensureLinkActive(payload);
+
+    if (payload.decision_type && payload.decision_submitted_at) {
+      return {
+        hospital_name: payload.hospital_name,
+        case_id: payload.case_id,
+        case_reference: payload.case_reference,
+        decision_type: payload.decision_type,
+        typed_name: payload.decision_name || payload.patient_name || "",
+        submitted_at: payload.decision_submitted_at,
+        confirmation_message:
+          payload.decision_type === "accept"
+            ? "تم تسجيل موافقتكم على الخروج مسبقًا."
+            : "تم تسجيل رفضكم للخروج مسبقًا وتوثيق الإقرار القانوني.",
+      };
+    }
+
+    const decision = input.decision;
+    if (decision !== "accept" && decision !== "refuse") {
+      throw new ApiError(400, "decision must be accept or refuse");
+    }
+
+    const typedName = input.typed_name.trim();
+    if (typedName.length < 3) {
+      throw new ApiError(400, "typed_name is required");
+    }
+
+    const refusalAcknowledged = Boolean(input.refusal_acknowledged);
+    if (decision === "refuse" && !refusalAcknowledged) {
+      throw new ApiError(400, "refusal_acknowledged must be true for refusal decisions");
+    }
+
+    const submittedAt = new Date().toISOString();
+    const signatureSource = safeString(input.signature_data)
+      || `${document.id}:${typedName}:${decision}:${submittedAt}`;
+    const signatureHash = computeSignatureHash(signatureSource);
+    const updatedPayload: SecureLinkPayload = {
+      ...payload,
+      decision_type: decision,
+      decision_name: typedName,
+      decision_submitted_at: submittedAt,
+      refusal_acknowledged: refusalAcknowledged,
+      signature_hash: signatureHash,
+      signature_provided: Boolean(safeString(input.signature_data)),
+      accessed_at: payload.accessed_at ?? submittedAt,
+    };
+
+    await prisma.document.update({
+      where: { id: document.id },
+      data: {
+        status: DocumentStatus.SIGNED,
+        payloadJson: updatedPayload as unknown as Prisma.InputJsonValue,
+        signedAt: new Date(submittedAt),
+        sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
       },
     });
-  } catch (error) {
-    if (isMissingTableError(error)) {
-      console.warn("secure-link: discharge_refusal_cases table missing; skipping signature mirror");
-    } else {
-      const existing = await prisma.dischargeRefusalCase.findFirst({
+
+    await appendPublicDecisionAudit({
+      document,
+      token,
+      payload: updatedPayload,
+      typedName,
+      decision,
+      submittedAt,
+      signatureProvided: updatedPayload.signature_provided ?? false,
+      refusalAcknowledged,
+      request,
+    });
+
+    try {
+      await prisma.dischargeRefusalCase.upsert({
         where: {
+          id: document.id,
+        },
+        update: {
+          dischargeStatus: decision === "accept" ? "accepted_via_secure_link" : "refused_via_secure_link",
+          signatureMethod: "SECURE_LINK",
+          signatureTimestamp: new Date(submittedAt),
+          signatureHash,
+          signatureDevice: updatedPayload.signature_provided ? "PUBLIC_SECURE_LINK_SIGNATURE" : "PUBLIC_SECURE_LINK_NO_CANVAS",
+          signatureIpAddress: null,
+        },
+        create: {
+          id: document.id,
           tenantId: payload.tenant_id,
           caseId: payload.case_id,
+          dischargeStatus: decision === "accept" ? "accepted_via_secure_link" : "refused_via_secure_link",
+          signatureMethod: "SECURE_LINK",
+          signatureTimestamp: new Date(submittedAt),
+          signatureHash,
+          signatureDevice: updatedPayload.signature_provided ? "PUBLIC_SECURE_LINK_SIGNATURE" : "PUBLIC_SECURE_LINK_NO_CANVAS",
+          signatureIpAddress: null,
         },
-        select: { id: true },
-      }).catch((findError) => {
-        if (isMissingTableError(findError)) {
-          console.warn("secure-link: discharge_refusal_cases lookup skipped; table missing");
-          return null;
-        }
-        throw findError;
       });
-
-      if (existing) {
-        await prisma.dischargeRefusalCase.update({
-          where: { id: existing.id },
-          data: {
-            dischargeStatus: decision === "accept" ? "accepted_via_secure_link" : "refused_via_secure_link",
-            signatureMethod: "SECURE_LINK",
-            signatureTimestamp: new Date(submittedAt),
-            signatureHash,
-            signatureDevice: updatedPayload.signature_provided ? "PUBLIC_SECURE_LINK_SIGNATURE" : "PUBLIC_SECURE_LINK_NO_CANVAS",
-            signatureIpAddress: null,
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        console.warn("secure-link: discharge_refusal_cases table missing; skipping signature mirror");
+      } else {
+        const existing = await prisma.dischargeRefusalCase.findFirst({
+          where: {
+            tenantId: payload.tenant_id,
+            caseId: payload.case_id,
           },
-        }).catch((updateError) => {
-          if (isMissingTableError(updateError)) {
-            console.warn("secure-link: discharge_refusal_cases update skipped; table missing");
+          select: { id: true },
+        }).catch((findError) => {
+          if (isMissingTableError(findError)) {
+            console.warn("secure-link: discharge_refusal_cases lookup skipped; table missing");
             return null;
           }
-          throw updateError;
+          throw findError;
         });
+
+        if (existing) {
+          await prisma.dischargeRefusalCase.update({
+            where: { id: existing.id },
+            data: {
+              dischargeStatus: decision === "accept" ? "accepted_via_secure_link" : "refused_via_secure_link",
+              signatureMethod: "SECURE_LINK",
+              signatureTimestamp: new Date(submittedAt),
+              signatureHash,
+              signatureDevice: updatedPayload.signature_provided ? "PUBLIC_SECURE_LINK_SIGNATURE" : "PUBLIC_SECURE_LINK_NO_CANVAS",
+              signatureIpAddress: null,
+            },
+          }).catch((updateError) => {
+            if (isMissingTableError(updateError)) {
+              console.warn("secure-link: discharge_refusal_cases update skipped; table missing");
+              return null;
+            }
+            throw updateError;
+          });
+        }
       }
     }
-  }
 
-  return {
+    return {
     hospital_name: payload.hospital_name,
     case_id: payload.case_id,
     case_reference: payload.case_reference,
@@ -868,5 +893,16 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
       decision === "accept"
         ? "تم تسجيل موافقتكم على الخروج بنجاح."
         : "تم تسجيل رفضكم للخروج وتوثيق الإقرار القانوني بنجاح.",
-  };
+    };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      logSecureLinkPublicEvent("public_secure_link_decision_rejected", {
+        status: error.status,
+        reason: error.message,
+        secure_token_hash: computeTokenHash(token),
+        decision: input.decision,
+      });
+    }
+    throw error;
+  }
 }

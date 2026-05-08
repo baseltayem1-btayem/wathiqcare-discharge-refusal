@@ -119,13 +119,15 @@ Approved UAT accounts only:
 Control confirmation:
 
 - invite-only onboarding used: Not verified
-- `POST /api/auth/password/signup` blocked from public use: No
+- `POST /api/auth/password/signup` blocked from public use: Locally yes; live deployment not yet verified
 - open registration disabled at ingress or routing layer: Not verified
 
 Observed evidence:
 
-- `POST https://wathiqcare.online/api/auth/password/signup` returned `400` with validation error on empty payload, proving the route is publicly reachable
-- invite-only enforcement therefore remains incomplete until ingress, edge, or runtime controls block or disable public signup for the UAT environment
+- Earlier live probe: `POST https://wathiqcare.online/api/auth/password/signup` returned `400` with validation error on empty payload, proving the route was publicly reachable on the currently deployed host at time of execution
+- Local control change implemented after that probe: `apps/web/app/api/auth/password/signup/route.ts` now rejects unauthenticated public self-registration by default unless `ENABLE_PUBLIC_PASSWORD_SIGNUP=true`
+- Local validation passed: `npx tsx --test src/lib/server/password-signup-route.test.ts` returned `403` with the expected message when public signup is disabled
+- Live external verification is still pending because the hardening change has not been confirmed deployed to `https://wathiqcare.online`
 
 ## UAT Validation Result
 
@@ -154,19 +156,19 @@ Result:
 
 - UAT validation result: Fail
 - Report artifact: `apps/web/artifacts/release-gate/final-prod-release-gate.json`
-- Blockers, if any: exact command `npm run validate:prod-release -w apps/web` failed against `https://wathiqcare.online` at the first authenticated step because `admin@wathiqcare.online` returned `401 Invalid email or password`; the live environment is not provisioned with the seeded release-gate identities used by the workspace harness
+- Blockers, if any: exact command `npm run validate:prod-release -w apps/web` failed against `https://wathiqcare.online` at the first authenticated step because `admin@wathiqcare.online` returned `401 Invalid email or password`; subsequent direct probes of documented platform-admin credentials on both `admin@wathiqcare.online` and `admin@wathiqcare.med.sa` returned `429 Too many login attempts`, so platform access could not be used to provision controlled UAT users or re-run the gate from this workspace session
 
 Observed issues:
 
 - real HTTPS host is live, but controlled UAT accounts required by the gate were not available to the live environment
-- public signup route is still reachable, so invite-only enforcement is not proven
+- public signup exposure was confirmed on the deployed host earlier in the session; a narrow runtime guard is now implemented and locally tested, but invite-only enforcement is still not proven on the live host until deployment and external verification occur
 - live PostgreSQL UTF-8 verification was not possible because no database access was provided
 - live backup, restore, and monitoring console access were not provided
 
 Mitigations required before rerun:
 
 - provision dedicated invite-only UAT accounts that match the release-gate workflow or provide an approved credential set for the live UAT tenant
-- block or disable public access to `POST /api/auth/password/signup` for the UAT environment
+- deploy and externally verify the runtime guard that blocks public access to `POST /api/auth/password/signup` for the UAT environment
 - provide live PostgreSQL read access for UTF-8 verification and Arabic insert/retrieval validation
 - provide backup console or database access for one backup and one restore drill
 - provide Vercel/Railway or equivalent log access to verify timestamping, searchability, and retention
@@ -183,4 +185,4 @@ Recommendation:
 - Monitoring/logging summary: Live log access not provided; only application instrumentation and one 401 trace were directly observed
 - Controlled users list: Not provisioned in execution evidence
 - UAT validation result: Fail
-- Blockers: release-gate users unavailable on live host, public signup still reachable, and no live DB/backup/log access
+- Blockers: release-gate users unavailable on live host, documented platform-admin credentials now rate-limited on the live host, public-signup hardening not yet externally verified after local implementation, and no live DB/backup/log access

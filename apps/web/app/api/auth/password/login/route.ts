@@ -17,6 +17,11 @@ import {
 } from "@/lib/server/roles";
 import { normalizeEmail } from "@/lib/server/auth-domain-policy";
 import { verifyPassword } from "@/lib/server/password";
+import {
+  buildPostLoginRedirect,
+  isEmailLoginIdentifier,
+  normalizeLoginIdentifier,
+} from "@/lib/server/password-login-policy";
 
 type PasswordLoginPayload = {
   email?: string;
@@ -82,17 +87,7 @@ function readClientIp(request: NextRequest): string {
 }
 
 function buildRedirectPath(userRole: string | null | undefined, email: string): string {
-  const role = (userRole ?? "").trim();
-  const userType = userTypeForUserRole(role, email);
-  if (userType === "PLATFORM_ADMIN") return "/platform";
-  // Role-based dashboard routes
-  if (role === "doctor") return "/doctor/dashboard";
-  if (role === "nursing" || role === "nurse") return "/nurse/dashboard";
-  if (role === "legal_admin" || role === "legal" || role === "legal_officer") return "/legal/dashboard";
-  if (role === "medical_director") return "/medical-director/dashboard";
-  if (role === "finance_officer" || role === "finance") return "/finance/dashboard";
-  if (role === "tenant_admin" || role === "tenant_owner" || role === "admin" || role === "owner") return "/tenant/dashboard";
-  return "/dashboard";
+  return buildPostLoginRedirect(userRole, email);
 }
 
 function toSessionUserType(
@@ -366,15 +361,18 @@ function buildLoginSuccessResponse(args: {
 async function resolveUsernameToEmail(
   prisma: ReturnType<typeof getPrisma>,
   username: string,
-): Promise<string> {
-  if (!username) return "";
-  // Look up user whose email starts with the username@ pattern
+): Promise<string | null> {
+  const normalizedUsername = normalizeLoginIdentifier(username);
+  if (!normalizedUsername) return null;
+
   const rows = await prisma.$queryRaw<Array<{ email: string }>>`
     SELECT email FROM users
-    WHERE LOWER(email) LIKE ${username.toLowerCase() + "@%"}
-    LIMIT 1
+    WHERE SPLIT_PART(LOWER(email), '@', 1) = ${normalizedUsername}
+    ORDER BY email ASC
+    LIMIT 2
   `;
-  return rows[0]?.email ?? `${username}@wathiqcare.local`;
+
+  return rows.length === 1 ? rows[0]?.email ?? null : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -387,10 +385,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Support username (without @) by resolving to email
-    const rawIdentifier = (payload.email || "").trim();
-    const resolvedEmail = rawIdentifier.includes("@")
+    const rawIdentifier = normalizeLoginIdentifier(payload.email || "");
+    const resolvedEmail = isEmailLoginIdentifier(rawIdentifier)
       ? rawIdentifier
-      : await resolveUsernameToEmail(getPrisma(), rawIdentifier);
+      : await resolveUsernameToEmail(prisma, rawIdentifier);
     const email = normalizeEmail(resolvedEmail);
     const password = payload.password || "";
 

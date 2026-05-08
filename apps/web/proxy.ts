@@ -6,6 +6,7 @@ const SUPPORTED_LOCALES = ["ar", "en"] as const;
 type Locale = (typeof SUPPORTED_LOCALES)[number];
 const DEFAULT_LOCALE: Locale = "ar";
 const EDGE_PROTECTED_PREFIXES = [
+  "/modules",
   "/dashboard",
   "/platform",
   "/cases",

@@ -157,12 +157,7 @@ export function platformRoleForUserRole(role: string | null | undefined): Platfo
     return null;
 }
 
-export function userTypeForUserRole(role: string | null | undefined, email?: string | null): UserType {
-    const normalizedEmail = (email || "").trim().toLowerCase();
-    if (normalizedEmail === "admin@wathiqcare.online") {
-        return UserType.PLATFORM_ADMIN;
-    }
-
+export function userTypeForUserRole(role: string | null | undefined): UserType {
     const normalized = canonicalizeUserRole(role);
     if (normalized === "platform_superadmin" || normalized === "platform_admin") {
         return UserType.PLATFORM_ADMIN;

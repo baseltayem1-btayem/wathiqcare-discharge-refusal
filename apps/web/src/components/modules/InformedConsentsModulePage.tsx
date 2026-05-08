@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { FileCheck2, FileWarning, RefreshCw } from "lucide-react";
 import ModuleShell from "@/components/ModuleShell";
@@ -102,7 +102,7 @@ export default function InformedConsentsModulePage({
     [],
   );
 
-  async function loadInitialData() {
+  const loadInitialData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -129,7 +129,7 @@ export default function InformedConsentsModulePage({
     } finally {
       setLoading(false);
     }
-  }
+  }, [isTemplatesView]);
 
   async function refreshRecords() {
     setRefreshing(true);
@@ -146,7 +146,7 @@ export default function InformedConsentsModulePage({
 
   useEffect(() => {
     void loadInitialData();
-  }, []);
+  }, [loadInitialData]);
 
   async function handleCreateConsent() {
     if (!form.caseId) {

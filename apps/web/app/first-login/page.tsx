@@ -54,9 +54,9 @@ export default function FirstLoginPage() {
         authFailureMode: "inline",
       });
       setSuccess(true);
-      // Redirect to dashboard after brief delay
+      // Redirect to the mounted module portal after brief delay.
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/modules");
       }, 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : (isRtl ? "فشل تحديث كلمة المرور" : "Failed to update password. Please try again."));
