@@ -179,6 +179,14 @@ enum ConsentMethod {
   WRITTEN
 }
 
+enum PromissoryNoteStatus {
+  DRAFT
+  ACTIVE
+  SETTLED
+  VOID
+  OVERDUE
+}
+
 enum DsrRequestType {
   ACCESS
   CORRECTION
@@ -293,6 +301,7 @@ model Tenant {
   dataResidencyRules          DataResidencyRule[]
   tenantSecuritySettings      TenantSecuritySetting?
   privilegedAccessLogs        PrivilegedAccessLog[]
+  promissoryNotes             PromissoryNote[]
 
   @@map("tenants")
 }
@@ -605,10 +614,39 @@ model Case {
   securityIncidents   SecurityIncident[]
   reportAccessLogs    ReportAccessLog[]
   privilegedAccessLogs PrivilegedAccessLog[]
+  promissoryNotes     PromissoryNote[]
 
   @@unique([tenantId, caseNumber])
   @@index([tenantId, status])
   @@map("cases")
+}
+
+model PromissoryNote {
+  id               String              @id @default(uuid())
+  tenantId         String              @map("tenant_id")
+  caseId           String              @map("case_id")
+  noteNumber       String              @map("note_number")
+  debtorName       String              @map("debtor_name")
+  debtorIdNumber   String?             @map("debtor_id_number")
+  issuerName       String?             @map("issuer_name")
+  amount           Decimal             @db.Decimal(12, 2)
+  currency         String              @default("SAR")
+  dueDate          DateTime            @map("due_date")
+  status           PromissoryNoteStatus @default(DRAFT)
+  signedAt         DateTime?           @map("signed_at")
+  documentVersion  String?             @map("document_version")
+  documentHash     String?             @map("document_hash")
+  metadata         Json?
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+  tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case             Case                @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, noteNumber])
+  @@index([tenantId, caseId, createdAt])
+  @@index([tenantId, status, dueDate])
+  @@map("promissory_notes")
 }
 
 model DischargeRefusalCase {

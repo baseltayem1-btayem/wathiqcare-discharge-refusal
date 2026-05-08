@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getModuleDefinition, resolveModuleKeyFromPath } from "@/lib/modules/catalog";
 
 type BreadcrumbItem = {
   href: string;
@@ -15,6 +16,7 @@ type AppBreadcrumbsProps = {
 };
 
 const SEGMENT_KEY_MAP: Record<string, string> = {
+  modules: "breadcrumbs.modules",
   dashboard: "breadcrumbs.dashboard",
   dashboards: "breadcrumbs.dashboard",
   cases: "breadcrumbs.cases",
@@ -23,6 +25,12 @@ const SEGMENT_KEY_MAP: Record<string, string> = {
   documents: "breadcrumbs.documents",
   "legal-package": "breadcrumbs.legalPackage",
   settings: "breadcrumbs.settings",
+  "informed-consents": "breadcrumbs.informedConsents",
+  "promissory-notes": "breadcrumbs.promissoryNotes",
+  "discharge-refusal": "breadcrumbs.dischargeRefusal",
+  templates: "breadcrumbs.templates",
+  signatures: "breadcrumbs.signatures",
+  archive: "breadcrumbs.archive",
 };
 
 function looksLikeCaseId(value: string): boolean {
@@ -46,6 +54,20 @@ function fallbackArabicLabel(segment: string): string {
       return "الحزمة القانونية";
     case "settings":
       return "الإعدادات";
+    case "modules":
+      return "المنصة";
+    case "informed-consents":
+      return "الموافقات المستنيرة";
+    case "promissory-notes":
+      return "السندات لأمر الإلكترونية";
+    case "discharge-refusal":
+      return "رفض الخروج";
+    case "templates":
+      return "القوالب";
+    case "signatures":
+      return "التوقيع";
+    case "archive":
+      return "الأرشيف";
     default:
       return decodeURIComponent(segment).replace(/[-_]/g, " ");
   }
@@ -60,20 +82,37 @@ export default function AppBreadcrumbs({ caseLabel }: AppBreadcrumbsProps) {
     .split("/")
     .filter(Boolean)
     .filter((segment) => segment !== "ar" && segment !== "en");
+  const moduleKey = resolveModuleKeyFromPath(pathname);
+  const moduleDefinition = moduleKey ? getModuleDefinition(moduleKey) : null;
+  const normalizedSegments = [...segments];
+
+  if (normalizedSegments[0] === "modules") {
+    normalizedSegments.shift();
+    if (moduleDefinition && normalizedSegments[0] === `${moduleDefinition.slug}`) {
+      normalizedSegments.shift();
+    }
+  }
 
   const items: BreadcrumbItem[] = [
     {
-      href: "/dashboard",
-      label: t("breadcrumbs.home"),
+      href: "/modules",
+      label: t("breadcrumbs.platform"),
     },
   ];
 
+  if (moduleDefinition) {
+    items.push({
+      href: moduleDefinition.href,
+      label: isRtl ? moduleDefinition.arabicTitle : moduleDefinition.englishTitle,
+    });
+  }
+
   let cumulativePath = "";
 
-  segments.forEach((segment, index) => {
+  normalizedSegments.forEach((segment, index) => {
     cumulativePath += `/${segment}`;
 
-    const previous = segments[index - 1] || "";
+    const previous = normalizedSegments[index - 1] || "";
     let label = "";
     const key = SEGMENT_KEY_MAP[segment];
     if (key) {
@@ -89,7 +128,11 @@ export default function AppBreadcrumbs({ caseLabel }: AppBreadcrumbsProps) {
       }
     }
 
-    items.push({ href: cumulativePath, label });
+    const href = moduleDefinition
+      ? `${moduleDefinition.href}${cumulativePath}`
+      : cumulativePath;
+
+    items.push({ href, label });
   });
 
   return (
