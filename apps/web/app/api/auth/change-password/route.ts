@@ -11,7 +11,7 @@ import { hashPassword, validatePasswordStrength } from "@/lib/server/password";
  */
 export async function POST(request: NextRequest) {
     try {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, { allowPasswordResetRequired: true });
         const prisma = getPrisma();
 
         const payload = (await request.json().catch(() => null)) as { password?: string } | null;
@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
             SET hashed_password         = ${passwordHash},
                 auth_provider           = 'local_password',
                 last_password_changed_at = NOW(),
+                password_reset_required = FALSE,
+                session_revoked_at      = NOW(),
                 failed_login_attempts   = 0,
                 locked_until            = NULL
             WHERE id = ${auth.sub}
