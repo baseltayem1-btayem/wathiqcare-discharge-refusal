@@ -15,7 +15,7 @@ import { hashPassword, validatePasswordStrength } from "@/lib/server/password";
  * the auth guard would return 403 before the user could ever clear the flag — a catch-22.
  */
 export async function POST(request: NextRequest) {
-    const endpoint = "/api/auth/change-password";
+    const endpoint = request.nextUrl.pathname;
     console.info("CHANGE_PASSWORD_ROUTE_HIT", { endpoint });
 
     try {
@@ -68,9 +68,11 @@ export async function POST(request: NextRequest) {
         console.info("CHANGE_PASSWORD_SUCCESS", { endpoint, userId: auth.sub });
         return NextResponse.json({ ok: true, message: "Password updated successfully" });
     } catch (error) {
+        const isApiError = error instanceof ApiError;
         console.error("CHANGE_PASSWORD_REJECTED", {
             endpoint,
-            reason: error instanceof Error ? error.message : String(error),
+            errorType: isApiError ? "ApiError" : (error instanceof Error ? error.constructor.name : "UnknownError"),
+            statusCode: isApiError ? error.status : null,
         });
         return handleApiError(error);
     }
