@@ -245,8 +245,11 @@ function StatsBar() {
 function ModulesSection() {
   const { t, isRtl } = useI18n();
 
-  const MODULE_ICONS = [ClipboardList, Receipt, LogOut];
-  const MODULE_KEYS = ["consents", "promissory", "discharge"] as const;
+  const MODULES = [
+    { key: "consents", Icon: ClipboardList },
+    { key: "promissory", Icon: Receipt },
+    { key: "discharge", Icon: LogOut },
+  ] as const;
 
   return (
     <section className="py-16 px-6 bg-slate-50" dir={isRtl ? "rtl" : "ltr"}>
@@ -258,25 +261,22 @@ function ModulesSection() {
           <p className="text-slate-500 text-lg">{t("landing.modules.subtitle")}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {MODULE_KEYS.map((key, i) => {
-            const Icon = MODULE_ICONS[i];
-            return (
-              <div
-                key={key}
-                className="wc-card-soft text-center hover:shadow-card hover:border-cyan-300 transition group"
-              >
-                <div className="w-14 h-14 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4 group-hover:bg-cyan-700 transition">
-                  <Icon size={26} className="text-cyan-700 group-hover:text-white transition" />
-                </div>
-                <h3 className="font-bold text-cyan-900 text-lg mb-2">
-                  {t(`landing.modules.${key}.title`)}
-                </h3>
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  {t(`landing.modules.${key}.desc`)}
-                </p>
+          {MODULES.map(({ key, Icon }) => (
+            <div
+              key={key}
+              className="wc-card-soft text-center hover:shadow-card hover:border-cyan-300 transition group"
+            >
+              <div className="w-14 h-14 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4 group-hover:bg-cyan-700 transition">
+                <Icon size={26} className="text-cyan-700 group-hover:text-white transition" />
               </div>
-            );
-          })}
+              <h3 className="font-bold text-cyan-900 text-lg mb-2">
+                {t(`landing.modules.${key}.title`)}
+              </h3>
+              <p className="text-slate-500 text-sm leading-relaxed">
+                {t(`landing.modules.${key}.desc`)}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
