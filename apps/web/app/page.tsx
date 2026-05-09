@@ -14,6 +14,9 @@ import {
   Building2,
   Lock,
   Stethoscope,
+  ClipboardList,
+  Receipt,
+  LogOut,
 } from "lucide-react";
 
 // ─── Data ───────────────────────────────────────────────────────────────────
@@ -124,10 +127,12 @@ function HeroSection() {
           <span className="rounded-full border border-[#b89546] bg-[#b89546]/15 px-3 py-1 text-[#f5df9a]">معتمدة من PDPL</span>
         </div>
         <h1 className="font-serif text-4xl font-semibold leading-tight text-white md:text-5xl">
-          منصة إدارة رفض الخروج الطبي
+          واثق كير
+          <br />
+          منصة الامتثال والحوكمة الطبية القانونية
         </h1>
         <p className="hero-subtext text-base leading-7 text-white md:text-lg">
-          واثق كير — نظام متكامل يُساعد المنشآت الصحية على توثيق رفض الخروج الطبي، التصعيد القانوني، والامتثال التنظيمي بسرعة وأمان.
+          منصة مؤسسية شاملة لإدارة الموافقات المستنيرة، السندات لأمر الإلكترونية، ورفض الخروج من خلال سير عمل آمن وقابل للتدقيق.
         </p>
         <div className="hero-actions flex flex-wrap gap-3">
           <Link
@@ -244,6 +249,47 @@ function StatsBar() {
   );
 }
 
+function ModulesSection() {
+  const modules = [
+    {
+      icon: ClipboardList,
+      title: "الموافقات المستنيرة",
+      desc: "توثيق وإدارة نماذج الموافقة المستنيرة إلكترونياً وفق المتطلبات التنظيمية.",
+    },
+    {
+      icon: Receipt,
+      title: "السندات لأمر الإلكترونية",
+      desc: "إصدار ومتابعة السندات المالية الطبية بتوقيع إلكتروني موثّق وقابل للتدقيق.",
+    },
+    {
+      icon: LogOut,
+      title: "رفض الخروج",
+      desc: "توثيق رفض الخروج الطبي والتصعيد القانوني الآلي وفق بروتوكولات المستشفى.",
+    },
+  ];
+  return (
+    <section className="py-16 px-6 bg-slate-50" dir="rtl">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-extrabold text-cyan-950 mb-3">وحدات المنصة</h2>
+          <p className="text-slate-500 text-lg">ثلاث وحدات متكاملة في منظومة واحدة</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {modules.map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="p-7 rounded-2xl bg-white border border-cyan-100 shadow-sm hover:shadow-md hover:border-cyan-300 transition group text-center">
+              <div className="w-14 h-14 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4 group-hover:bg-cyan-700 transition">
+                <Icon size={26} className="text-cyan-700 group-hover:text-white transition" />
+              </div>
+              <h3 className="font-bold text-cyan-900 text-lg mb-2">{title}</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FeaturesSection() {
   return (
     <section id="features" className="py-20 px-6 bg-white" dir="rtl">
@@ -251,7 +297,7 @@ function FeaturesSection() {
         <div className="text-center mb-14">
           <h2 className="text-3xl font-extrabold text-cyan-950 mb-3">مميزات المنصة</h2>
           <p className="text-slate-500 text-lg max-w-xl mx-auto">
-            كل ما تحتاجه المنشأة الصحية لإدارة حالات رفض الخروج بشكل قانوني وموثّق
+            كل ما تحتاجه المنشأة الصحية لإدارة الموافقات، السندات، ورفض الخروج بشكل قانوني وموثّق
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -418,6 +464,7 @@ export default function LandingPage() {
       <NavBar />
       <HeroSection />
       <StatsBar />
+      <ModulesSection />
       <FeaturesSection />
       <HowItWorksSection />
       <WhoIsItForSection />

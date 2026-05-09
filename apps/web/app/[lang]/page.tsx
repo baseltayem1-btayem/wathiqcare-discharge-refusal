@@ -14,6 +14,9 @@ import {
   Building2,
   Lock,
   Stethoscope,
+  ClipboardList,
+  Receipt,
+  LogOut,
 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -105,7 +108,12 @@ function HeroSection({ lang }: { lang: string }) {
           </span>
         </div>
         <h1 className="font-serif text-4xl font-semibold leading-tight text-white md:text-5xl">
-          {t("landing.hero.title")}
+          {t("landing.hero.title").split("\n").map((line, i) => (
+            <span key={i}>
+              {line}
+              {i === 0 && <br />}
+            </span>
+          ))}
         </h1>
         <p className="hero-subtext text-base leading-7 text-white md:text-lg">
           {t("landing.hero.subtitle")}
@@ -229,6 +237,47 @@ function StatsBar() {
             <div className="text-sky-100 text-sm mt-1">{s.label}</div>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function ModulesSection() {
+  const { t, isRtl } = useI18n();
+
+  const MODULE_ICONS = [ClipboardList, Receipt, LogOut];
+  const MODULE_KEYS = ["consents", "promissory", "discharge"] as const;
+
+  return (
+    <section className="py-16 px-6 bg-slate-50" dir={isRtl ? "rtl" : "ltr"}>
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="wc-h2 text-brand-navy mb-3">
+            {t("landing.modules.title")}
+          </h2>
+          <p className="text-slate-500 text-lg">{t("landing.modules.subtitle")}</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {MODULE_KEYS.map((key, i) => {
+            const Icon = MODULE_ICONS[i];
+            return (
+              <div
+                key={key}
+                className="wc-card-soft text-center hover:shadow-card hover:border-cyan-300 transition group"
+              >
+                <div className="w-14 h-14 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4 group-hover:bg-cyan-700 transition">
+                  <Icon size={26} className="text-cyan-700 group-hover:text-white transition" />
+                </div>
+                <h3 className="font-bold text-cyan-900 text-lg mb-2">
+                  {t(`landing.modules.${key}.title`)}
+                </h3>
+                <p className="text-slate-500 text-sm leading-relaxed">
+                  {t(`landing.modules.${key}.desc`)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
@@ -488,6 +537,7 @@ function LandingPageInner() {
       <NavBar lang={lang} />
       <HeroSection lang={lang} />
       <StatsBar />
+      <ModulesSection />
       <FeaturesSection />
       <HowItWorksSection />
       <WhoIsItForSection />
