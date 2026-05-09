@@ -1,0 +1,353 @@
+/* ═══════════════════════════════════════════════════════════════
+   Promissory Note Document Styles
+   A4 print-ready layout for bilingual (AR/EN) legal document
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Web fonts for Arabic */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&display=swap');
+
+/* ── Document wrapper ─────────────────────────────────────────── */
+.promissory-document {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 20mm 18mm;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 11pt;
+  line-height: 1.75;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.promissory-document.ar-doc {
+  font-family: 'Noto Naskh Arabic', 'Amiri', 'Arabic Typesetting', serif;
+}
+
+.promissory-document.en-doc {
+  font-family: 'Times New Roman', Times, serif;
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+.doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8mm;
+  gap: 12mm;
+}
+
+.ar-doc .doc-header {
+  flex-direction: row-reverse;
+}
+
+.doc-org-name {
+  font-size: 14pt;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.doc-org-sub {
+  font-size: 9pt;
+  color: #5a6a7a;
+  margin-top: 2px;
+}
+
+.doc-title-block {
+  text-align: center;
+}
+
+.ar-doc .doc-title-block {
+  text-align: right;
+}
+
+.en-doc .doc-title-block {
+  text-align: left;
+}
+
+.doc-title-ar {
+  font-size: 22pt;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.doc-title-en {
+  font-size: 18pt;
+  font-weight: 700;
+  color: #1e3a5f;
+  letter-spacing: 2px;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.doc-note-ref {
+  font-size: 9.5pt;
+  color: #4a5568;
+  text-align: center;
+}
+
+/* ── Separator ────────────────────────────────────────────────── */
+.doc-separator {
+  border: none;
+  border-top: 1.5px solid #c7d2dc;
+  margin: 5mm 0;
+}
+
+/* ── QR code ──────────────────────────────────────────────────── */
+.doc-qr-block {
+  float: left;
+  margin: 0 0 4mm 0;
+  text-align: center;
+}
+
+.doc-qr-ltr {
+  float: right;
+}
+
+.ar-doc .doc-qr-block {
+  float: right;
+}
+
+.doc-qr-img {
+  width: 28mm;
+  height: 28mm;
+  display: block;
+}
+
+.doc-qr-ref {
+  font-size: 7pt;
+  color: #5a6a7a;
+  margin-top: 2px;
+  word-break: break-all;
+  max-width: 32mm;
+}
+
+/* ── Body sections ────────────────────────────────────────────── */
+.doc-section {
+  margin: 4mm 0;
+  clear: both;
+}
+
+.doc-body-text {
+  margin: 0 0 2mm;
+  font-size: 11pt;
+}
+
+.doc-mt {
+  margin-top: 4mm !important;
+}
+
+.doc-field-value {
+  border-bottom: 1px solid #94a3b8;
+  padding: 1mm 2mm;
+  margin: 1mm 0 3mm;
+  min-height: 7mm;
+  font-weight: 600;
+  font-size: 11pt;
+  background: #f8fafc;
+}
+
+/* ── Amount block ─────────────────────────────────────────────── */
+.doc-amount-block {
+  border: 2px solid #1e3a5f;
+  border-radius: 4px;
+  padding: 3mm 5mm;
+  margin: 3mm 0 4mm;
+  background: #f0f6ff;
+}
+
+.doc-amount-numeric {
+  font-size: 16pt;
+  font-weight: 700;
+  color: #1e3a5f;
+  letter-spacing: 0.5px;
+}
+
+.doc-amount-words {
+  font-size: 10pt;
+  color: #374151;
+  margin-top: 2px;
+}
+
+/* ── Legal clause ─────────────────────────────────────────────── */
+.doc-legal-clause {
+  border-right: 3px solid #1e3a5f;
+  padding-right: 4mm;
+  font-size: 10.5pt;
+  color: #374151;
+}
+
+.en-doc .doc-legal-clause {
+  border-right: none;
+  border-left: 3px solid #1e3a5f;
+  padding-right: 0;
+  padding-left: 4mm;
+}
+
+/* ── Parties grid ─────────────────────────────────────────────── */
+.doc-parties-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6mm;
+  margin: 4mm 0;
+}
+
+.doc-party-block {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 4mm;
+}
+
+.doc-party-heading {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 3mm;
+  padding-bottom: 1.5mm;
+  border-bottom: 1px solid #cbd5e0;
+}
+
+/* ── Info table ───────────────────────────────────────────────── */
+.doc-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+.doc-info-table td {
+  padding: 1mm 2mm;
+  vertical-align: top;
+}
+
+.doc-label {
+  color: #5a6a7a;
+  white-space: nowrap;
+  font-weight: 600;
+  width: 40%;
+}
+
+.doc-value {
+  color: #1a1a1a;
+  word-break: break-word;
+}
+
+/* ── Metadata grid ────────────────────────────────────────────── */
+.doc-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4mm;
+  margin: 3mm 0;
+}
+
+.doc-meta-item {
+  display: flex;
+  gap: 2mm;
+  align-items: baseline;
+  font-size: 10pt;
+  min-width: 40%;
+}
+
+/* ── Signature block ──────────────────────────────────────────── */
+.doc-signatures-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6mm;
+  margin-top: 8mm;
+}
+
+.doc-sig-block {
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  padding: 4mm;
+  min-height: 28mm;
+  background: #fafbfc;
+}
+
+.doc-sig-label {
+  font-size: 9.5pt;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 3mm;
+}
+
+.doc-sig-line {
+  border-bottom: 1px solid #374151;
+  margin: 6mm 0 2mm;
+}
+
+.doc-sig-name {
+  font-size: 9pt;
+  color: #5a6a7a;
+}
+
+.doc-sig-status {
+  font-size: 10pt;
+  font-weight: 600;
+  color: #c05621;
+  margin-top: 4mm;
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.doc-footer {
+  margin-top: 8mm;
+  padding-top: 3mm;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 8pt;
+  color: #94a3b8;
+}
+
+.ar-doc .doc-footer {
+  flex-direction: row-reverse;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PRINT STYLES — A4 optimised
+   ══════════════════════════════════════════════════════════════ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .promissory-document {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 15mm 16mm;
+    margin: 0;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  .doc-signatures-grid {
+    page-break-inside: avoid;
+  }
+
+  .doc-footer {
+    page-break-inside: avoid;
+  }
+
+  .doc-amount-block {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .doc-party-block {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

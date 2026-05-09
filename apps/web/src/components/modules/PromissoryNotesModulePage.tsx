@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { FileWarning, Landmark, RefreshCw } from "lucide-react";
 import ModuleShell from "@/components/ModuleShell";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -344,6 +345,7 @@ export default function PromissoryNotesModulePage({
                       <th className="px-3 py-2 text-left">Amount</th>
                       <th className="px-3 py-2 text-left">Due Date</th>
                       <th className="px-3 py-2 text-left">Status</th>
+                      <th className="px-3 py-2 text-left">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -361,6 +363,24 @@ export default function PromissoryNotesModulePage({
                         <td className="px-3 py-2">{record.amount + " " + record.currency}</td>
                         <td className="px-3 py-2">{new Date(record.dueDate).toLocaleDateString()}</td>
                         <td className="px-3 py-2">{record.status}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <Link
+                              href={`/modules/promissory-notes/${record.id}/preview`}
+                              className="rounded px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                            >
+                              Preview
+                            </Link>
+                            <a
+                              href={`/api/modules/promissory-notes/${record.id}/pdf?lang=ar`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                            >
+                              PDF
+                            </a>
+                          </div>
+                        </td>
                       </tr>
                     ))}
 
@@ -371,7 +391,7 @@ export default function PromissoryNotesModulePage({
                         }).length === 0
                       : records.length === 0) ? (
                       <tr>
-                        <td colSpan={6} className="px-3 py-6 text-center text-slate-500">
+                        <td colSpan={7} className="px-3 py-6 text-center text-slate-500">
                           <span className="inline-flex items-center gap-1.5">
                             <FileWarning className="h-4 w-4" />
                             {view === "archive"
