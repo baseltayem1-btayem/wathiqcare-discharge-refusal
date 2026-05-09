@@ -118,8 +118,8 @@ async function upsertPilotUser(tenant, def) {
   if (rawPassword.length < 8) {
     throw new Error(`Environment variable ${def.passwordEnv} must be at least 8 characters for user ${def.email}`);
   }
-  const complexity = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
-  if (!complexity.test(rawPassword)) {
+  const passwordComplexityPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
+  if (!passwordComplexityPattern.test(rawPassword)) {
     throw new Error(
       `Environment variable ${def.passwordEnv} must include uppercase, lowercase, number, and symbol for user ${def.email}`,
     );
