@@ -118,6 +118,7 @@ async function upsertPilotUser(tenant, def) {
   if (rawPassword.length < 8) {
     throw new Error(`Environment variable ${def.passwordEnv} must be at least 8 characters for user ${def.email}`);
   }
+  // Requires at least one lowercase letter, one uppercase letter, one digit, and one non-alphanumeric symbol.
   const passwordComplexityPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
   if (!passwordComplexityPattern.test(rawPassword)) {
     throw new Error(
@@ -125,6 +126,7 @@ async function upsertPilotUser(tenant, def) {
     );
   }
   const hashedPassword = await bcrypt.hash(rawPassword, BCRYPT_ROUNDS);
+  const now = new Date();
   const data = {
     tenantId: tenant.id,
     email: def.email.toLowerCase(),
@@ -134,10 +136,10 @@ async function upsertPilotUser(tenant, def) {
     status: "active",
     isActive: true,
     emailVerified: true,
-    emailVerifiedAt: new Date(),
+    emailVerifiedAt: now,
     hashedPassword,
     authProvider: "local_password",
-    lastPasswordChangedAt: new Date(),
+    lastPasswordChangedAt: now,
     failedLoginAttempts: 0,
     lockedUntil: null,
   };
