@@ -38,7 +38,7 @@ function ModuleCard({ moduleItem, isRtl }: { moduleItem: ModuleDefinition; isRtl
         </div>
       </div>
       <div className="flex items-center justify-end border-t border-slate-200 pt-3">
-        <Link href={moduleItem.href} className="toolbar-btn toolbar-btn-primary">
+        <Link href={moduleItem.href} className="toolbar-btn toolbar-btn-primary text-white">
           {isRtl ? "فتح الوحدة" : "Open Module"}
         </Link>
       </div>

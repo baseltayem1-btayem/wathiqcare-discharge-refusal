@@ -662,7 +662,21 @@ h3,
   .toolbar-btn-primary {
     border-color: var(--primary);
     background: var(--primary);
-    color: #ffffff;
+    color: #ffffff !important;
+  }
+
+  .toolbar-btn-primary,
+  .toolbar-btn-primary:visited,
+  .toolbar-btn-primary:hover,
+  .toolbar-btn-primary:focus-visible,
+  .toolbar-btn-primary:active {
+    color: #ffffff !important;
+  }
+
+  .toolbar-btn-primary .toolbar-btn__icon,
+  .toolbar-btn-primary span,
+  .toolbar-btn-primary svg {
+    color: inherit;
   }
 
   .toolbar-btn-secondary {
