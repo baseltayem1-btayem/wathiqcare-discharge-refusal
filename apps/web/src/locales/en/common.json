@@ -169,5 +169,82 @@
       "contactNow": "Contact now",
       "users": "Users"
     }
+  },
+  "modules": {
+    "portal": {
+      "heading": "Platform Modules",
+      "actionButton": "Open Module",
+      "overview": "Module Overview"
+    },
+    "informedConsents": {
+      "title": "Informed Consents",
+      "overview": "This module centralizes informed-consent capture, consent method traceability, and audit-ready record retention for clinical and legal workflows.",
+      "console": "Consent Console",
+      "list": "Consent List",
+      "create": "Create Consent",
+      "archive": "Archive",
+      "templates": "Templates",
+      "heading": "Create Consent",
+      "templateHeading": "Consent Templates",
+      "templatesLabel": "templates"
+    },
+    "promissoryNotes": {
+      "title": "Electronic Promissory Notes",
+      "overview": "This module manages electronic promissory-note issuance, due-date tracking, and financial commitment records with defensible audit history.",
+      "heading": "Create Promissory Note",
+      "openCaseRegistry": "Open Case Registry"
+    },
+    "dischargeRefusal": {
+      "title": "Discharge Refusal Platform",
+      "overview": "This module governs discharge-refusal workflows, including refusal capture, case progression, and legally auditable evidence preparation.",
+      "dashboard": "Module Dashboard",
+      "caseDashboard": "Case Dashboard",
+      "caseRegistry": "Case Registry"
+    }
+  },
+  "forms": {
+    "labels": {
+      "case": "Case",
+      "debtorName": "Debtor Name",
+      "debtorIdNumber": "Debtor ID Number",
+      "amount": "Amount",
+      "currency": "Currency",
+      "dueDate": "Due Date",
+      "issuerName": "Issuer Name",
+      "documentVersion": "Document Version",
+      "witnessName": "Witness Name",
+      "processingPurpose": "Processing Purpose",
+      "lawfulBasis": "Lawful Basis",
+      "consentType": "Consent Type",
+      "consentMethod": "Consent Method",
+      "type": "Type",
+      "name": "Name",
+      "language": "Language",
+      "status": "Status",
+      "updated": "Updated"
+    }
+  },
+  "buttons": {
+    "refresh": "Refresh",
+    "refreshing": "Refreshing",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit"
+  },
+  "messages": {
+    "errors": {
+      "selectCase": "Please select a case.",
+      "loadInformedConsents": "Failed to load informed consents data",
+      "refreshInformedConsents": "Failed to refresh records",
+      "createConsent": "Failed to create consent record",
+      "loadPromissoryNotes": "Failed to load promissory data",
+      "refreshPromissoryNotes": "Failed to refresh promissory notes",
+      "createPromissoryNote": "Failed to create promissory note"
+    },
+    "success": {
+      "saved": "Successfully saved",
+      "created": "Successfully created"
+    }
   }
 }

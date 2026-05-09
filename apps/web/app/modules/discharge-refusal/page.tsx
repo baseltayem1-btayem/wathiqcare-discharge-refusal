@@ -19,11 +19,14 @@ export default async function DischargeRefusalModulePage() {
         { href: "/modules/discharge-refusal/dashboard", label: { ar: "لوحة الحالات", en: "Case Dashboard" } },
         { href: "/modules/discharge-refusal/cases", label: { ar: "سجل الحالات", en: "Case Registry" } },
       ]}
-      nextAction={{ href: "/dashboard", label: "Open Case Dashboard", variant: "primary" }}
+      nextAction={{ href: "/dashboard", label: "Case Dashboard", variant: "primary" }}
     >
       <div className="space-y-4">
         <section className="wc-panel space-y-2">
-          <div className="wc-panel-heading">Module Overview</div>
+          <div className="wc-panel-heading">
+            {/* Module Overview text - handled by useI18n in component context */}
+            Module Overview
+          </div>
           <p className="text-sm leading-6 text-slate-700">
             This module governs discharge-refusal workflows, including refusal capture, case progression, and legally auditable evidence preparation.
           </p>

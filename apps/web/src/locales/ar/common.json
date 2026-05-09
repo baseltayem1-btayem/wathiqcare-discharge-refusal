@@ -169,5 +169,82 @@
       "contactNow": "تواصل الآن",
       "users": "المستخدمون"
     }
+  },
+  "modules": {
+    "portal": {
+      "heading": "وحدات المنصة",
+      "actionButton": "فتح الوحدة",
+      "overview": "نظرة عامة على الوحدة"
+    },
+    "informedConsents": {
+      "title": "الموافقات المستنيرة",
+      "overview": "هذه الوحدة تركز على إدارة الموافقات المستنيرة وإقرار المريض مع حفظ رقمي قابل للتدقيق.",
+      "console": "لوحة الموافقات",
+      "list": "قائمة الموافقات",
+      "create": "إنشاء موافقة",
+      "archive": "الأرشيف",
+      "templates": "القوالب",
+      "heading": "إنشاء موافقة جديدة",
+      "templateHeading": "قوالب الموافقات",
+      "templatesLabel": "قالب"
+    },
+    "promissoryNotes": {
+      "title": "السندات لأمر الإلكترونية",
+      "overview": "هذه الوحدة تدير السندات لأمر الرقمية والتعهدات المالية مع سجل تدقيق قابل للدفاع.",
+      "heading": "إنشاء سند لأمر جديد",
+      "openCaseRegistry": "فتح سجل الحالات"
+    },
+    "dischargeRefusal": {
+      "title": "منصة رفض الخروج",
+      "overview": "هذه الوحدة تدير مسارات رفض الخروج، بما في ذلك التقاط الرفض وتطور الحالة وإعداد الأدلة القابلة للتدقيق.",
+      "dashboard": "لوحة الوحدة",
+      "caseDashboard": "لوحة الحالات",
+      "caseRegistry": "سجل الحالات"
+    }
+  },
+  "forms": {
+    "labels": {
+      "case": "الحالة",
+      "debtorName": "اسم المدين",
+      "debtorIdNumber": "رقم هوية المدين",
+      "amount": "المبلغ",
+      "currency": "العملة",
+      "dueDate": "تاريخ الاستحقاق",
+      "issuerName": "اسم المُصدر",
+      "documentVersion": "إصدار المستند",
+      "witnessName": "اسم الشاهد",
+      "processingPurpose": "الغرض من المعالجة",
+      "lawfulBasis": "الأساس القانوني",
+      "consentType": "نوع الموافقة",
+      "consentMethod": "طريقة الموافقة",
+      "type": "النوع",
+      "name": "الاسم",
+      "language": "اللغة",
+      "status": "الحالة",
+      "updated": "آخر تحديث"
+    }
+  },
+  "buttons": {
+    "refresh": "تحديث",
+    "refreshing": "جاري التحديث",
+    "create": "إنشاء",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "submit": "إرسال"
+  },
+  "messages": {
+    "errors": {
+      "selectCase": "يرجى اختيار حالة.",
+      "loadInformedConsents": "فشل تحميل بيانات الموافقات المستنيرة",
+      "refreshInformedConsents": "فشل تحديث السجلات",
+      "createConsent": "فشل إنشاء سجل الموافقة",
+      "loadPromissoryNotes": "فشل تحميل بيانات السندات لأمر",
+      "refreshPromissoryNotes": "فشل تحديث السندات لأمر",
+      "createPromissoryNote": "فشل إنشاء سند لأمر جديد"
+    },
+    "success": {
+      "saved": "تم الحفظ بنجاح",
+      "created": "تم الإنشاء بنجاح"
+    }
   }
 }

@@ -24,6 +24,7 @@ function ModuleIcon({ moduleKey }: { moduleKey: ModuleKey }) {
 }
 
 function ModuleCard({ moduleItem, isRtl }: { moduleItem: ModuleDefinition; isRtl: boolean }) {
+  const { t } = useI18n();
   return (
     <div className="wc-panel space-y-4">
       <div className="flex items-start justify-between gap-4">
@@ -39,7 +40,7 @@ function ModuleCard({ moduleItem, isRtl }: { moduleItem: ModuleDefinition; isRtl
       </div>
       <div className="flex items-center justify-end border-t border-slate-200 pt-3">
         <Link href={moduleItem.href} className="toolbar-btn toolbar-btn-primary text-white">
-          {isRtl ? "فتح الوحدة" : "Open Module"}
+          {t("modules.portal.actionButton")}
         </Link>
       </div>
     </div>
@@ -47,7 +48,7 @@ function ModuleCard({ moduleItem, isRtl }: { moduleItem: ModuleDefinition; isRtl
 }
 
 export default function ModulePortalPage({ auth }: { auth: PortalAuth }) {
-  const { isRtl } = useI18n();
+  const { isRtl, t } = useI18n();
   const availableModules = getAccessibleModules({ role: auth.role, platformRole: auth.platform_role });
 
   return (
@@ -68,7 +69,7 @@ export default function ModulePortalPage({ auth }: { auth: PortalAuth }) {
     >
       <div className="space-y-3">
         <section className="space-y-3">
-          <div className="wc-panel-heading">{isRtl ? "وحدات المنصة" : "Platform Modules"}</div>
+          <div className="wc-panel-heading">{t("modules.portal.heading")}</div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {availableModules.map((moduleItem) => (
               <ModuleCard key={moduleItem.key} moduleItem={moduleItem} isRtl={isRtl} />

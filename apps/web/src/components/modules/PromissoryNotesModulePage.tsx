@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileWarning, Landmark, RefreshCw } from "lucide-react";
 import ModuleShell from "@/components/ModuleShell";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
 type ModuleAuth = {
@@ -74,6 +75,7 @@ export default function PromissoryNotesModulePage({
   auth: ModuleAuth;
   view?: PromissoryNotesView;
 }) {
+  const { t } = useI18n();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [records, setRecords] = useState<PromissoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,7 +118,7 @@ export default function PromissoryNotesModulePage({
         return { ...current, caseId: selectedCaseId };
       });
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load promissory data");
+      setError(loadError instanceof Error ? loadError.message : t("messages.errors.loadPromissoryNotes"));
     } finally {
       setLoading(false);
     }
@@ -129,7 +131,7 @@ export default function PromissoryNotesModulePage({
       const notes = await apiFetch<PromissoryItem[]>("/api/modules/promissory-notes?limit=100");
       setRecords(Array.isArray(notes) ? notes : []);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to refresh promissory notes");
+      setError(loadError instanceof Error ? loadError.message : t("messages.errors.refreshPromissoryNotes"));
     } finally {
       setRefreshing(false);
     }
@@ -141,7 +143,7 @@ export default function PromissoryNotesModulePage({
 
   async function handleCreateNote() {
     if (!form.caseId) {
-      setError("Please select a case.");
+      setError(t("messages.errors.selectCase"));
       return;
     }
 
@@ -169,7 +171,7 @@ export default function PromissoryNotesModulePage({
       await refreshRecords();
       setForm(defaultForm(form.caseId));
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create promissory note");
+      setError(createError instanceof Error ? createError.message : t("messages.errors.createPromissoryNote"));
     } finally {
       setSaving(false);
     }
@@ -185,7 +187,7 @@ export default function PromissoryNotesModulePage({
         en: "Production-grade module for electronic promissory notes and financial undertakings.",
       }}
       menuItems={menuItems}
-      nextAction={{ href: "/cases", label: "Open Case Registry", variant: "secondary" }}
+      nextAction={{ href: "/cases", label: t("modules.promissoryNotes.openCaseRegistry"), variant: "secondary" }}
       toolbarExtras={
         <button
           type="button"
@@ -196,15 +198,15 @@ export default function PromissoryNotesModulePage({
           disabled={refreshing || loading}
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-          <span>{refreshing ? "Refreshing" : "Refresh"}</span>
+          <span>{refreshing ? t("buttons.refreshing") : t("buttons.refresh")}</span>
         </button>
       }
     >
       <div className="space-y-4">
         <section className="wc-panel space-y-2">
-          <div className="wc-panel-heading">Module Overview</div>
+          <div className="wc-panel-heading">{t("modules.portal.overview")}</div>
           <p className="text-sm leading-6 text-slate-700">
-            This module manages electronic promissory-note issuance, due-date tracking, and financial commitment records with defensible audit history.
+            {t("modules.promissoryNotes.overview")}
           </p>
         </section>
 
@@ -215,9 +217,9 @@ export default function PromissoryNotesModulePage({
         <section className="grid gap-4 xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.25fr)]">
           {showCreatePane ? (
           <div className="wc-panel space-y-3">
-            <div className="wc-panel-heading">Create Promissory Note</div>
+            <div className="wc-panel-heading">{t("modules.promissoryNotes.heading")}</div>
 
-            <label htmlFor="promissory-case" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Case</label>
+            <label htmlFor="promissory-case" className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t("forms.labels.case")}</label>
             <select
               id="promissory-case"
               value={form.caseId}
@@ -233,7 +235,7 @@ export default function PromissoryNotesModulePage({
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1">
-                <label htmlFor="promissory-debtor-name" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Debtor Name</label>
+                <label htmlFor="promissory-debtor-name" className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t("forms.labels.debtorName")}</label>
                 <input
                   id="promissory-debtor-name"
                   value={form.debtorName}
@@ -242,7 +244,7 @@ export default function PromissoryNotesModulePage({
                 />
               </div>
               <div className="space-y-1">
-                <label htmlFor="promissory-debtor-id" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Debtor ID Number</label>
+                <label htmlFor="promissory-debtor-id" className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t("forms.labels.debtorIdNumber")}</label>
                 <input
                   id="promissory-debtor-id"
                   value={form.debtorIdNumber}
@@ -254,7 +256,7 @@ export default function PromissoryNotesModulePage({
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1">
-                <label htmlFor="promissory-amount" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Amount</label>
+                <label htmlFor="promissory-amount" className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t("forms.labels.amount")}</label>
                 <input
                   id="promissory-amount"
                   type="number"
@@ -266,7 +268,7 @@ export default function PromissoryNotesModulePage({
                 />
               </div>
               <div className="space-y-1">
-                <label htmlFor="promissory-currency" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Currency</label>
+                <label htmlFor="promissory-currency" className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t("forms.labels.currency")}</label>
                 <input
                   id="promissory-currency"
                   value={form.currency}
@@ -278,7 +280,7 @@ export default function PromissoryNotesModulePage({
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1">
-                <label htmlFor="promissory-due-date" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Due Date</label>
+                <label htmlFor="promissory-due-date" className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t("forms.labels.dueDate")}</label>
                 <input
                   id="promissory-due-date"
                   type="date"
@@ -288,7 +290,7 @@ export default function PromissoryNotesModulePage({
                 />
               </div>
               <div className="space-y-1">
-                <label htmlFor="promissory-issuer-name" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Issuer Name</label>
+                <label htmlFor="promissory-issuer-name" className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t("forms.labels.issuerName")}</label>
                 <input
                   id="promissory-issuer-name"
                   value={form.issuerName}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FileCheck2, FileWarning, RefreshCw } from "lucide-react";
 import ModuleShell from "@/components/ModuleShell";
 import { apiFetch } from "@/utils/api";
+import { useI18n } from "@/i18n/I18nProvider";
 
 type ModuleAuth = {
   role?: string | null;
@@ -77,6 +78,7 @@ export default function InformedConsentsModulePage({
   auth: ModuleAuth;
   view?: InformedConsentsView;
 }) {
+  const { t } = useI18n();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [records, setRecords] = useState<ConsentItem[]>([]);
   const [templates, setTemplates] = useState<FormTemplateItem[]>([]);
@@ -125,11 +127,11 @@ export default function InformedConsentsModulePage({
         caseId: current.caseId || normalizedCases[0]?.id || "",
       }));
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to load informed consents data");
+      setError(loadError instanceof Error ? loadError.message : t("messages.errors.loadInformedConsents"));
     } finally {
       setLoading(false);
     }
-  }, [isTemplatesView]);
+  }, [isTemplatesView, t]);
 
   async function refreshRecords() {
     setRefreshing(true);
@@ -138,7 +140,7 @@ export default function InformedConsentsModulePage({
       const consentList = await apiFetch<ConsentItem[]>("/api/modules/informed-consents?limit=100");
       setRecords(Array.isArray(consentList) ? consentList : []);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Failed to refresh records");
+      setError(loadError instanceof Error ? loadError.message : t("messages.errors.refreshInformedConsents"));
     } finally {
       setRefreshing(false);
     }
@@ -150,7 +152,7 @@ export default function InformedConsentsModulePage({
 
   async function handleCreateConsent() {
     if (!form.caseId) {
-      setError("Please select a case.");
+      setError(t("messages.errors.selectCase"));
       return;
     }
 
@@ -186,7 +188,7 @@ export default function InformedConsentsModulePage({
         caseId: current.caseId,
       }));
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Failed to create consent record");
+      setError(createError instanceof Error ? createError.message : t("messages.errors.createConsent"));
     } finally {
       setSaving(false);
     }
@@ -216,15 +218,15 @@ export default function InformedConsentsModulePage({
           disabled={refreshing || loading}
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-          <span>{refreshing ? "Refreshing" : "Refresh"}</span>
+          <span>{refreshing ? t("buttons.refreshing") : t("buttons.refresh")}</span>
         </button>
       }
     >
       <div className="space-y-4">
         <section className="wc-panel space-y-2">
-          <div className="wc-panel-heading">Module Overview</div>
+          <div className="wc-panel-heading">{t("modules.portal.overview")}</div>
           <p className="text-sm leading-6 text-slate-700">
-            This module centralizes informed-consent capture, consent method traceability, and audit-ready record retention for clinical and legal workflows.
+            {t("modules.informedConsents.overview")}
           </p>
         </section>
 
@@ -235,19 +237,19 @@ export default function InformedConsentsModulePage({
         {isTemplatesView ? (
           <section className="wc-panel space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <div className="wc-panel-heading">Consent Templates</div>
-              <span className="wc-module-pill">{templates.length} templates</span>
+              <div className="wc-panel-heading">{t("modules.informedConsents.templateHeading")}</div>
+              <span className="wc-module-pill">{templates.length} {t("modules.informedConsents.templatesLabel")}</span>
             </div>
             {!loading ? (
               <div className="overflow-x-auto rounded-xl border border-slate-200">
                 <table className="w-full min-w-[720px] text-sm">
                   <thead className="bg-slate-50 text-slate-700">
                     <tr>
-                      <th className="px-3 py-2 text-left">Type</th>
-                      <th className="px-3 py-2 text-left">Name</th>
-                      <th className="px-3 py-2 text-left">Language</th>
-                      <th className="px-3 py-2 text-left">Status</th>
-                      <th className="px-3 py-2 text-left">Updated</th>
+                      <th className="px-3 py-2 text-left">{t("forms.labels.type")}</th>
+                      <th className="px-3 py-2 text-left">{t("forms.labels.name")}</th>
+                      <th className="px-3 py-2 text-left">{t("forms.labels.language")}</th>
+                      <th className="px-3 py-2 text-left">{t("forms.labels.status")}</th>
+                      <th className="px-3 py-2 text-left">{t("forms.labels.updated")}</th>
                     </tr>
                   </thead>
                   <tbody>
