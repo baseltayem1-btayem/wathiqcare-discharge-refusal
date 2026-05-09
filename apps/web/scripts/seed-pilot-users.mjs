@@ -44,6 +44,7 @@ function loadEnvFile(filePath) {
     if (!trimmed || trimmed.startsWith("#")) continue;
     const idx = trimmed.indexOf("=");
     if (idx < 0) continue;
+    // Explicitly reject empty keys in malformed lines like "=value".
     if (idx === 0) continue;
 
     const key = trimmed.slice(0, idx).trim();
@@ -110,6 +111,9 @@ async function upsertPilotUser(tenant, def) {
   const rawPassword = process.env[def.passwordEnv]?.trim();
   if (!rawPassword) {
     throw new Error(`Environment variable ${def.passwordEnv} is missing or empty for user ${def.email}`);
+  }
+  if (rawPassword.length < 8) {
+    throw new Error(`Environment variable ${def.passwordEnv} must be at least 8 characters for user ${def.email}`);
   }
   const hashedPassword = await bcrypt.hash(rawPassword, BCRYPT_ROUNDS);
   const data = {
