@@ -23,7 +23,7 @@ const PILOT_USERS = [
     role: "legal_admin",
     userType: "TENANT_ADMIN",
     membershipRole: "ADMIN",
-    password: process.env.PILOT_LEGAL_ADMIN_PASSWORD || "LegalAdmin@2026!",
+    passwordEnv: "PILOT_LEGAL_ADMIN_PASSWORD",
   },
   {
     email: "doctor.er@imc.med.sa",
@@ -31,7 +31,7 @@ const PILOT_USERS = [
     role: "doctor",
     userType: "TENANT_USER",
     membershipRole: "MEMBER",
-    password: process.env.PILOT_DOCTOR_PASSWORD || "DoctorER@2026!",
+    passwordEnv: "PILOT_DOCTOR_PASSWORD",
   },
 ];
 
@@ -102,7 +102,11 @@ async function upsertPilotUser(tenant, def) {
     return { created: 0, updated: 0 };
   }
 
-  const hashedPassword = await bcrypt.hash(def.password, BCRYPT_ROUNDS);
+  const rawPassword = process.env[def.passwordEnv]?.trim();
+  if (!rawPassword) {
+    throw new Error(`Missing required environment variable: ${def.passwordEnv}`);
+  }
+  const hashedPassword = await bcrypt.hash(rawPassword, BCRYPT_ROUNDS);
   const data = {
     tenantId: tenant.id,
     email: def.email.toLowerCase(),
@@ -170,6 +174,7 @@ async function main() {
   console.log(`[pilot-seed] created=${created}, updated=${updated}, total=${PILOT_USERS.length}`);
   if (!APPLY) {
     console.log("[pilot-seed] Re-run with --apply to persist changes.");
+    console.log("[pilot-seed] Apply mode requires PILOT_LEGAL_ADMIN_PASSWORD and PILOT_DOCTOR_PASSWORD.");
   }
 }
 
