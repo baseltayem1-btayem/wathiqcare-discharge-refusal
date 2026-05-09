@@ -48,9 +48,11 @@ The following pilot roles resolve to canonical system roles via the `canonicaliz
 | medical_director | medical_director | informed-consents, discharge-refusal |
 | doctor | doctor | informed-consents, discharge-refusal |
 | nurse | nursing | informed-consents, discharge-refusal |
-| quality_compliance | compliance | informed-consents, promissory-notes, discharge-refusal |
+| quality_compliance | compliance | informed-consents, promissory-notes, discharge-refusal, audit-review† |
 | finance_admin | finance_officer | promissory-notes |
 | executive_viewer | viewer | read-only (no standard module tiles) |
+
+> † `audit-review` is provisioned as an intended access right for the Quality Compliance role. It is not a currently catalogued module tile and will not appear as a module card until the audit-review module is activated in the platform module catalog.
 
 ---
 

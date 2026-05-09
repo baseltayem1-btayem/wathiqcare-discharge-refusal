@@ -9,7 +9,11 @@
  * Security:
  *   - All pilot users are provisioned with password_reset_required = TRUE.
  *   - Passwords are bcrypt-hashed at 12 rounds. No plaintext is stored.
- *   - No demo/fake patient data is created.
+ *   - Temporary passwords are defined here for controlled one-time provisioning;
+ *     users are forced to reset on first login so the window of exposure is minimal.
+ *     For stricter environments, replace password values with environment variable
+ *     lookups (process.env.PILOT_PASSWORD_<ROLE>) before running against production.
+ *   - No fake or demo patient data is created.
  *   - Audit logging is preserved (session_revoked_at is not set on provision).
  *
  * Usage (from apps/web):
