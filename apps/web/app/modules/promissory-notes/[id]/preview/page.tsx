@@ -93,10 +93,9 @@ export default function PromissoryNotePreviewPage() {
       debtorName: n.debtorName,
       debtorId: n.debtorIdNumber ?? undefined,
       creditorName:
-        n.issuerName ||
-        (langOverride === "ar"
+        langOverride === "ar"
           ? "شركة المركز الطبي الدولي مساهمة مقفلة"
-          : "International Medical Center (IMC)"),
+          : "International Medical Center (IMC)",
       creditorCR: readMetaStr(meta, "creditor_cr", "creditorCR") || undefined,
       reason: readMetaStr(meta, "reason") || undefined,
       referenceNumber: n.case?.caseNumber ?? undefined,

@@ -10,7 +10,7 @@ import { ApiError } from "@/lib/server/http";
 import { toArabicWords, toEnglishWords, formatAmountNumeric } from "@/lib/amount-to-words";
 
 const prisma = getPrisma();
-const IMC_LOGO_URL = "https://imc.med.sa/images/logo.jpg";
+const IMC_LOGO_URL = "https://www.imc.med.sa/images/logo.jpg";
 
 async function launchBrowser(): Promise<Browser> {
   const defaultArgs = ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"];
@@ -442,12 +442,8 @@ export async function GET(
     const paymentCity = readMetaStr(meta, "payment_city", "paymentCity") || issueCity;
     const reason = readMetaStr(meta, "reason");
     const creditorCR = readMetaStr(meta, "creditor_cr", "creditorCR");
-    const creditorNameAr =
-      readMetaStr(meta, "creditor_name_ar", "creditorNameAr") ||
-      "شركة المركز الطبي الدولي مساهمة مقفلة";
-    const creditorNameEn =
-      readMetaStr(meta, "creditor_name_en", "creditorNameEn") ||
-      "International Medical Center (IMC)";
+    const creditorNameAr = "شركة المركز الطبي الدولي مساهمة مقفلة";
+    const creditorNameEn = "International Medical Center (IMC)";
 
     const verificationUrl =
       `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/verify/pn/${note.id}`;

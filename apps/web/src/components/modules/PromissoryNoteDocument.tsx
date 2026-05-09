@@ -67,7 +67,7 @@ function ArabicDocument({ data }: { data: PromissoryNoteData }) {
       <header className="pn-header">
         <div className="pn-logo-box">
           <img
-            src="https://imc.med.sa/images/logo.jpg"
+            src="https://www.imc.med.sa/images/logo.jpg"
             alt="International Medical Center"
             className="pn-logo"
             loading="eager"
@@ -162,7 +162,7 @@ function EnglishDocument({ data }: { data: PromissoryNoteData }) {
     <div dir="ltr" lang="en" className="promissory-document en-doc nafith-doc">
       <header className="pn-header">
         <div className="pn-logo-box">
-          <img src="https://imc.med.sa/images/logo.jpg" alt="International Medical Center" className="pn-logo" />
+          <img src="https://www.imc.med.sa/images/logo.jpg" alt="International Medical Center" className="pn-logo" />
         </div>
         <div className="pn-title-wrap">
           <h1 className="pn-title">Promissory Note</h1>
