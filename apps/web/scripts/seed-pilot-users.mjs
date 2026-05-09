@@ -43,8 +43,8 @@ function loadEnvFile(filePath) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
     const idx = trimmed.indexOf("=");
-    // Skip malformed entries and lines with empty keys.
-    if (idx <= 0) continue;
+    if (idx < 0) continue;
+    if (idx === 0) continue;
 
     const key = trimmed.slice(0, idx).trim();
     let value = trimmed.slice(idx + 1).trim();
