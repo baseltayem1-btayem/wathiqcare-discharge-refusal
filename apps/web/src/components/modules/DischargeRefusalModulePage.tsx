@@ -17,7 +17,7 @@ export default function DischargeRefusalModulePage({ auth }: { auth: ModuleAuth 
     <ModuleShell
       auth={auth}
       moduleKey="discharge-refusal"
-      title={{ ar: "منصة رفض الخروج", en: "Discharge Refusal Platform" }}
+      title={{ ar: "رفض الخروج", en: "Discharge Refusal" }}
       subtitle={{
         ar: "وحدة تشغيلية لإدارة حالات رفض الخروج مع التوثيق والتصعيد القانوني.",
         en: "Operational module for discharge-refusal cases, documentation, and legal escalation.",
