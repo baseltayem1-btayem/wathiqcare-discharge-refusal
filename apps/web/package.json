@@ -12,6 +12,8 @@
     "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts",
     "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",
     "admin:reset-password": "tsx -r dotenv/config scripts/admin-reset-password.ts",
+    "pilot:seed": "tsx -r dotenv/config scripts/seed-pilot-users.ts",
+    "pilot:seed:apply": "tsx -r dotenv/config scripts/seed-pilot-users.ts --apply",
     "db:probe:runtime": "node scripts/db-probe-runtime.cjs",
     "db:probe:migration": "node scripts/db-probe-migration.cjs",
     "validate:live:3111": "node scripts/live-validation-3111.cjs",

@@ -129,10 +129,10 @@ function HeroSection() {
         <h1 className="font-serif text-4xl font-semibold leading-tight text-white md:text-5xl">
           واثق كير
           <br />
-          منصة الامتثال والحوكمة الطبية القانونية
+          منصة الهندسة الطبية القانونية المتكاملة
         </h1>
         <p className="hero-subtext text-base leading-7 text-white md:text-lg">
-          منصة مؤسسية شاملة لإدارة الموافقات المستنيرة، السندات لأمر الإلكترونية، ورفض الخروج من خلال سير عمل آمن وقابل للتدقيق.
+          منصة مؤسسية متكاملة لأتمتة الامتثال الرعاية الصحية — تشمل الموافقات المستنيرة، السندات لأمر الإلكترونية، ورفض الخروج، ضمن منظومة واحدة آمنة وقابلة للتدقيق.
         </p>
         <div className="hero-actions flex flex-wrap gap-3">
           <Link
@@ -272,7 +272,7 @@ function ModulesSection() {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-extrabold text-cyan-950 mb-3">وحدات المنصة</h2>
-          <p className="text-slate-500 text-lg">ثلاث وحدات متكاملة في منظومة واحدة</p>
+          <p className="text-slate-500 text-lg">ثلاث وحدات متكاملة في منصة هندسة طبية قانونية واحدة</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {modules.map(({ icon: Icon, title, desc }) => (
@@ -297,7 +297,7 @@ function FeaturesSection() {
         <div className="text-center mb-14">
           <h2 className="text-3xl font-extrabold text-cyan-950 mb-3">مميزات المنصة</h2>
           <p className="text-slate-500 text-lg max-w-xl mx-auto">
-            كل ما تحتاجه المنشأة الصحية لإدارة الموافقات، السندات، ورفض الخروج بشكل قانوني وموثّق
+            كل ما تحتاجه المنشأة الصحية لأتمتة الامتثال عبر الموافقات المستنيرة، السندات لأمر، ورفض الخروج — بشكل قانوني وموثّق
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

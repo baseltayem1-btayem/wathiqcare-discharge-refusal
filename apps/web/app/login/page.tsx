@@ -5,11 +5,10 @@ import type React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Lock, KeyRound, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Mail, Lock, KeyRound, Eye, EyeOff } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LoginBrandPanel from "@/components/login/LoginBrandPanel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { DEMO_ACCOUNT_PROFILES } from "@/lib/demo-access";
 import { apiFetch } from "@/utils/api";
 
 type AuthMode = "microsoft" | "magic-link" | "password";
@@ -58,7 +57,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showDemoAccounts, setShowDemoAccounts] = useState(false);
 
   function normalizeIdentifier(input: string): string {
     return input.trim().toLowerCase();
@@ -131,15 +129,6 @@ export default function LoginPage() {
     }
   }
 
-  function handleDemoLogin(email: string) {
-    setIdentifier(email);
-    setPassword("");
-    setAuthMode("password");
-    setError("");
-    setNotice("");
-    setShowDemoAccounts(false);
-  }
-
   return (
     <main className="min-h-screen bg-[var(--background)]">
       <div className="border-b border-[#224566] bg-[var(--primary)] px-4 py-2 text-white">
@@ -147,7 +136,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-3">
             <span>WathiqCare System</span>
             <span className="hidden md:inline">International Medical Center (IMC)</span>
-            <span className="hidden md:inline">Clinical Discharge Refusal &amp; Legal Evidence Module</span>
+            <span className="hidden md:inline">Integrated Medico-Legal Engineering Platform</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="wc-system-indicator !border-white/25 !bg-white/10">CR: 4030143596</span>
@@ -380,33 +369,6 @@ export default function LoginPage() {
                     </div>
                   </form>
                 )}
-
-                {/* Demo Accounts */}
-                <div className="mt-5 border-t border-slate-100 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowDemoAccounts(!showDemoAccounts)}
-                    className="wc-panel w-full justify-between text-[12px] font-bold text-slate-600"
-                  >
-                    <span>{isRtl ? "معرفات تسجيل الدخول التجريبية" : "Demo Login IDs"}</span>
-                    {showDemoAccounts ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                  </button>
-
-                  {showDemoAccounts && (
-                    <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                      {DEMO_ACCOUNT_PROFILES.map((acc) => (
-                        <button
-                          key={acc.email}
-                          type="button"
-                          onClick={() => handleDemoLogin(acc.email)}
-                          className="toolbar-btn toolbar-btn-secondary justify-center"
-                        >
-                          {isRtl ? acc.labelAr : acc.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
