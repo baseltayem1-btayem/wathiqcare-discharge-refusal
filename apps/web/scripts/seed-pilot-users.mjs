@@ -77,6 +77,10 @@ async function resolveTenant() {
 
   if (imcTenant) return imcTenant;
 
+  if (APPLY) {
+    throw new Error("IMC tenant not found. Refusing to run --apply against a fallback tenant.");
+  }
+
   const fallback = await prisma.tenant.findFirst({
     where: { isActive: true },
     orderBy: { createdAt: "asc" },
