@@ -5,11 +5,10 @@ import type React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Lock, KeyRound, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Mail, Lock, KeyRound, Eye, EyeOff } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LoginBrandPanel from "@/components/login/LoginBrandPanel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { DEMO_ACCOUNT_PROFILES } from "@/lib/demo-access";
 import { apiFetch } from "@/utils/api";
 
 type AuthMode = "microsoft" | "magic-link" | "password";
@@ -58,7 +57,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showDemoAccounts, setShowDemoAccounts] = useState(false);
 
   function normalizeIdentifier(input: string): string {
     return input.trim().toLowerCase();
@@ -129,15 +127,6 @@ export default function LoginPage() {
       setError(err instanceof Error ? err.message : "Microsoft login failed");
       setLoading(false);
     }
-  }
-
-  function handleDemoLogin(email: string) {
-    setIdentifier(email);
-    setPassword("");
-    setAuthMode("password");
-    setError("");
-    setNotice("");
-    setShowDemoAccounts(false);
   }
 
   return (
@@ -309,7 +298,7 @@ export default function LoginPage() {
                         onChange={(e) => setIdentifier(e.target.value)}
                         disabled={loading}
                         className="wc-form-input"
-                        placeholder={isRtl ? "demo.user@tenant.local" : "demo.user@tenant.local"}
+                        placeholder={isRtl ? "user@imc.wathiqcare.online" : "user@imc.wathiqcare.online"}
                       />
                       <p className="mt-1 text-xs text-slate-400">
                         {isRtl
@@ -380,33 +369,6 @@ export default function LoginPage() {
                     </div>
                   </form>
                 )}
-
-                {/* Demo Accounts */}
-                <div className="mt-5 border-t border-slate-100 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowDemoAccounts(!showDemoAccounts)}
-                    className="wc-panel w-full justify-between text-[12px] font-bold text-slate-600"
-                  >
-                    <span>{isRtl ? "معرفات تسجيل الدخول التجريبية" : "Demo Login IDs"}</span>
-                    {showDemoAccounts ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                  </button>
-
-                  {showDemoAccounts && (
-                    <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                      {DEMO_ACCOUNT_PROFILES.map((acc) => (
-                        <button
-                          key={acc.email}
-                          type="button"
-                          onClick={() => handleDemoLogin(acc.email)}
-                          className="toolbar-btn toolbar-btn-secondary justify-center"
-                        >
-                          {isRtl ? acc.labelAr : acc.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>

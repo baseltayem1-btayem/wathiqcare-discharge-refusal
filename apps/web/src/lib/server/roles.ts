@@ -87,6 +87,11 @@ const USER_ROLE_ALIASES: Record<string, CanonicalUserRole> = {
     read_only: "read_only_manager",
     viewer: "viewer",
     member: "viewer",
+    // Pilot role aliases
+    legal_director: "legal_admin",
+    quality_compliance: "compliance",
+    finance_admin: "finance_officer",
+    executive_viewer: "viewer",
 };
 
 export function canonicalizeUserRole(input: string | null | undefined): CanonicalUserRole {
