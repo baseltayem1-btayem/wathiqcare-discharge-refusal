@@ -275,7 +275,9 @@ async function seedUser(prisma, userDef, tenantId) {
       status: "ACTIVE",
     },
   }).catch((err) => {
-    console.warn(`  ⚠ Membership skipped for ${userDef.email}: ${err.message}`);
+    // Membership creation failure is a blocking error in apply mode:
+    // without an active membership the user cannot log in.
+    throw new Error(`Failed to create membership for ${userDef.email}: ${err.message}`);
   });
 
   console.log(`  ✓ Created pilot account: ${userDef.email} (${userDef.label}) — hash confirmed, membership ACTIVE`);
