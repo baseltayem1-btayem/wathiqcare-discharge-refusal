@@ -11,8 +11,8 @@ export default async function DischargeRefusalModulePage() {
       moduleKey="discharge-refusal"
       title={{ ar: "منصة رفض الخروج", en: "Discharge Refusal Platform" }}
       subtitle={{
-        ar: "نقطة دخول توافقية للمسارات التشغيلية المعتمدة لرفض الخروج.",
-        en: "Compatibility entry point for the approved discharge refusal operations stack.",
+        ar: "وحدة تشغيلية لإدارة حالات رفض الخروج مع التوثيق والتصعيد القانوني.",
+        en: "Operational module for discharge-refusal cases, documentation, and legal escalation.",
       }}
       menuItems={[
         { href: "/modules/discharge-refusal", label: { ar: "لوحة الوحدة", en: "Module Dashboard" } },
@@ -21,13 +21,25 @@ export default async function DischargeRefusalModulePage() {
       ]}
       nextAction={{ href: "/dashboard", label: "Open Case Dashboard", variant: "primary" }}
     >
-      <div className="grid gap-3 md:grid-cols-2">
-        <Link href="/dashboard" className="wc-link-card">
-          <span>Case Dashboard</span>
-        </Link>
-        <Link href="/cases" className="wc-link-card">
-          <span>Case Registry</span>
-        </Link>
+      <div className="space-y-4">
+        <section className="wc-panel space-y-3">
+          <div className="wc-panel-heading">Module Summary / ملخص الوحدة</div>
+          <ul className="grid gap-2 text-sm text-slate-700 md:grid-cols-2">
+            <li className="wc-panel wc-panel-inline">Purpose / الغرض: manage discharge-refusal decisions with legally traceable records.</li>
+            <li className="wc-panel wc-panel-inline">Workflow / سير العمل: case capture, patient acknowledgment, escalation, and closure evidence.</li>
+            <li className="wc-panel wc-panel-inline">Key Functions / الوظائف: refusal forms, witness capture, document packaging, and dashboard monitoring.</li>
+            <li className="wc-panel wc-panel-inline">Controls / الضوابط: role-scoped operations, audit timeline, and evidence readiness.</li>
+          </ul>
+        </section>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <Link href="/dashboard" className="wc-link-card">
+            <span>Case Dashboard</span>
+          </Link>
+          <Link href="/cases" className="wc-link-card">
+            <span>Case Registry</span>
+          </Link>
+        </div>
       </div>
     </ModuleShell>
   );

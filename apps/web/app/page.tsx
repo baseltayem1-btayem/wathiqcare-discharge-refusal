@@ -254,17 +254,14 @@ function ModulesSection() {
     {
       icon: ClipboardList,
       title: "الموافقات المستنيرة",
-      desc: "توثيق وإدارة نماذج الموافقة المستنيرة إلكترونياً وفق المتطلبات التنظيمية.",
     },
     {
       icon: Receipt,
       title: "السندات لأمر الإلكترونية",
-      desc: "إصدار ومتابعة السندات المالية الطبية بتوقيع إلكتروني موثّق وقابل للتدقيق.",
     },
     {
       icon: LogOut,
       title: "رفض الخروج",
-      desc: "توثيق رفض الخروج الطبي والتصعيد القانوني الآلي وفق بروتوكولات المستشفى.",
     },
   ];
   return (
@@ -272,16 +269,14 @@ function ModulesSection() {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-extrabold text-cyan-950 mb-3">وحدات المنصة</h2>
-          <p className="text-slate-500 text-lg">ثلاث وحدات متكاملة في منظومة واحدة</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {modules.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="p-7 rounded-2xl bg-white border border-cyan-100 shadow-sm hover:shadow-md hover:border-cyan-300 transition group text-center">
-              <div className="w-14 h-14 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4 group-hover:bg-cyan-700 transition">
-                <Icon size={26} className="text-cyan-700 group-hover:text-white transition" />
+          {modules.map(({ icon: Icon, title }) => (
+            <div key={title} className="p-7 rounded-xl bg-white border border-slate-200 shadow-sm text-center">
+              <div className="w-14 h-14 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4">
+                <Icon size={26} className="text-cyan-700" />
               </div>
-              <h3 className="font-bold text-cyan-900 text-lg mb-2">{title}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+              <h3 className="font-bold text-cyan-900 text-lg">{title}</h3>
             </div>
           ))}
         </div>
