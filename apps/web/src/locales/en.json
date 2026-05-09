@@ -1064,8 +1064,7 @@
       "buildFinalPackage": "Build final evidence package",
       "caseComplete": "Case complete"
     }
-  }
-  ,
+  },
   "landing": {
     "nav": {
       "home": "Home",
@@ -1079,8 +1078,8 @@
     },
     "hero": {
       "badge": "PDPL Compliant · CBAHI Accreditation Ready",
-      "title": "Medical Discharge Refusal Management Platform",
-      "subtitle": "WathiqCare — an integrated system that helps healthcare facilities document discharge refusals, manage legal escalation, and ensure regulatory compliance with speed and security.",
+      "title": "WathiqCare\nMedico-Legal Compliance & Governance Platform",
+      "subtitle": "A comprehensive enterprise platform for managing informed consents, electronic promissory notes, and discharge refusal through secure, auditable medico-legal workflows.",
       "cta1": "Request Free Demo",
       "cta2": "Subscriber Login"
     },
@@ -1096,7 +1095,7 @@
     },
     "features": {
       "title": "Platform Features",
-      "subtitle": "Everything a healthcare facility needs to manage discharge refusal cases legally and with full documentation",
+      "subtitle": "Everything a healthcare facility needs to manage informed consents, promissory notes, and discharge refusals — legally and with full documentation",
       "workflow": {
         "title": "Clinical Workflow Management",
         "desc": "Record medical discharge orders, track patient refusals, and validate ICD-11 codes in real time."
@@ -1186,6 +1185,22 @@
       "privacy": "Privacy Policy",
       "terms": "Terms of Use",
       "rights": "All rights reserved."
+    },
+    "modules": {
+      "title": "Platform Modules",
+      "subtitle": "Three integrated modules in one unified system",
+      "consents": {
+        "title": "Informed Consents",
+        "desc": "Electronically document and manage informed consent forms per regulatory requirements."
+      },
+      "promissory": {
+        "title": "Electronic Promissory Notes",
+        "desc": "Issue and track medical financial promissory notes with documented, auditable electronic signatures."
+      },
+      "discharge": {
+        "title": "Discharge Refusal",
+        "desc": "Document medical discharge refusals with automated legal escalation per hospital protocols."
+      }
     }
   },
   "loginPage": {
