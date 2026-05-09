@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { FileCheck2, FileWarning, RefreshCw } from "lucide-react";
 import ModuleShell from "@/components/ModuleShell";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
 type ModuleAuth = {
@@ -77,6 +78,7 @@ export default function InformedConsentsModulePage({
   auth: ModuleAuth;
   view?: InformedConsentsView;
 }) {
+  const { isRtl } = useI18n();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [records, setRecords] = useState<ConsentItem[]>([]);
   const [templates, setTemplates] = useState<FormTemplateItem[]>([]);
@@ -221,6 +223,16 @@ export default function InformedConsentsModulePage({
       }
     >
       <div className="space-y-4">
+        <section className="wc-panel space-y-3">
+          <div className="wc-panel-heading">{isRtl ? "ملخص الوحدة" : "Module Summary"}</div>
+          <ul className="grid gap-2 text-sm text-slate-700 md:grid-cols-2">
+            <li className="wc-panel wc-panel-inline">{isRtl ? "الغرض: إدارة الموافقات المستنيرة وإقرار المريض بشكل موثق." : "Purpose: manage informed consents and patient acknowledgment in a documented flow."}</li>
+            <li className="wc-panel wc-panel-inline">{isRtl ? "سير العمل: إنشاء الموافقة، التوثيق، الأرشفة، والمتابعة." : "Workflow: create consent, record evidence, archive, and follow up."}</li>
+            <li className="wc-panel wc-panel-inline">{isRtl ? "الوظائف الأساسية: القوالب، التسجيل، التوقيع، وسجل الموافقات." : "Key functions: templates, capture, signature method tracking, and consent register."}</li>
+            <li className="wc-panel wc-panel-inline">{isRtl ? "الضوابط: امتثال PDPL، أدوار معتمدة، وتسلسل تدقيقي." : "Controls: PDPL-aware processing, role-based access, and audit sequence."}</li>
+          </ul>
+        </section>
+
         {error ? (
           <div className="wc-panel border-rose-200 bg-rose-50 text-sm text-rose-800">{error}</div>
         ) : null}

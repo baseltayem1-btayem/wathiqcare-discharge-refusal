@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileWarning, Landmark, RefreshCw } from "lucide-react";
 import ModuleShell from "@/components/ModuleShell";
+import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
 type ModuleAuth = {
@@ -74,6 +75,7 @@ export default function PromissoryNotesModulePage({
   auth: ModuleAuth;
   view?: PromissoryNotesView;
 }) {
+  const { isRtl } = useI18n();
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [records, setRecords] = useState<PromissoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -201,6 +203,16 @@ export default function PromissoryNotesModulePage({
       }
     >
       <div className="space-y-4">
+        <section className="wc-panel space-y-3">
+          <div className="wc-panel-heading">{isRtl ? "ملخص الوحدة" : "Module Summary"}</div>
+          <ul className="grid gap-2 text-sm text-slate-700 md:grid-cols-2">
+            <li className="wc-panel wc-panel-inline">{isRtl ? "الغرض: إدارة السندات لأمر الإلكترونية والالتزامات المالية المرتبطة بالحالات." : "Purpose: manage electronic promissory notes and case-linked financial undertakings."}</li>
+            <li className="wc-panel wc-panel-inline">{isRtl ? "سير العمل: إصدار السند، التتبع، المتابعة، والأرشفة." : "Workflow: issue note, track status, follow collection lifecycle, and archive."}</li>
+            <li className="wc-panel wc-panel-inline">{isRtl ? "الوظائف الأساسية: تسجيل المدين، المبلغ، تاريخ الاستحقاق، والإصدار الموثق." : "Key functions: debtor details, amount/currency capture, due-date control, and issuance record."}</li>
+            <li className="wc-panel wc-panel-inline">{isRtl ? "الضوابط: حوكمة مالية، ضوابط قانونية، وأدلة قابلة للتدقيق." : "Controls: financial governance, legal controls, and auditable evidence records."}</li>
+          </ul>
+        </section>
+
         {error ? (
           <div className="wc-panel border-rose-200 bg-rose-50 text-sm text-rose-800">{error}</div>
         ) : null}

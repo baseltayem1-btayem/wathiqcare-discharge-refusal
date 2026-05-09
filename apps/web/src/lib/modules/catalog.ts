@@ -44,7 +44,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
   {
     key: "informed-consents",
     slug: "informed-consents",
-    arabicTitle: "تطبيق الموافقات المستنيرة",
+    arabicTitle: "الموافقات المستنيرة",
     englishTitle: "Informed Consents",
     shortDescription: {
       ar: "إدارة نماذج الموافقة المستنيرة، مسارات الإقرار، التوقيع، والأرشفة الطبية القانونية.",
@@ -61,7 +61,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
   {
     key: "promissory-notes",
     slug: "promissory-notes",
-    arabicTitle: "تطبيق السندات لأمر الإلكترونية",
+    arabicTitle: "السندات لأمر الإلكترونية",
     englishTitle: "Electronic Promissory Notes",
     shortDescription: {
       ar: "إدارة السندات لأمر الإلكترونية، التعهدات المالية، الإقرارات الرقمية، والأرشفة النظامية الداعمة.",
@@ -78,8 +78,8 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
   {
     key: "discharge-refusal",
     slug: "discharge-refusal",
-    arabicTitle: "منصة رفض الخروج",
-    englishTitle: "Discharge Refusal Platform",
+    arabicTitle: "رفض الخروج",
+    englishTitle: "Discharge Refusal",
     shortDescription: {
       ar: "إدارة حالات رفض الخروج، إقرار المريض، مسارات التدقيق، وتوليد الحزم القانونية.",
       en: "Manage discharge refusal cases, secure patient acknowledgment, audit trails, and legal package generation.",
