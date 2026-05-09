@@ -105,7 +105,7 @@ async function upsertPilotUser(tenant, def) {
 
   const rawPassword = process.env[def.passwordEnv]?.trim();
   if (!rawPassword) {
-    throw new Error(`Missing required environment variable ${def.passwordEnv} for user ${def.email}`);
+    throw new Error(`Environment variable ${def.passwordEnv} is missing or empty for user ${def.email}`);
   }
   const hashedPassword = await bcrypt.hash(rawPassword, BCRYPT_ROUNDS);
   const data = {
