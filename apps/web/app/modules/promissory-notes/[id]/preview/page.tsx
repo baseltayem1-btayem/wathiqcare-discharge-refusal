@@ -92,20 +92,15 @@ export default function PromissoryNotePreviewPage() {
       paymentCity: readMetaStr(meta, "payment_city", "paymentCity"),
       debtorName: n.debtorName,
       debtorId: n.debtorIdNumber ?? undefined,
-      debtorAddress: readMetaStr(meta, "debtor_address", "debtorAddress") || undefined,
-      debtorMobile: readMetaStr(meta, "debtor_mobile", "debtorMobile") || undefined,
-      debtorEmail: readMetaStr(meta, "debtor_email", "debtorEmail") || undefined,
-      creditorName: n.issuerName ?? undefined,
+      creditorName:
+        n.issuerName ||
+        (langOverride === "ar"
+          ? "شركة المركز الطبي الدولي مساهمة مقفلة"
+          : "International Medical Center (IMC)"),
       creditorCR: readMetaStr(meta, "creditor_cr", "creditorCR") || undefined,
       reason: readMetaStr(meta, "reason") || undefined,
       referenceNumber: n.case?.caseNumber ?? undefined,
-      generatedAt: new Date().toISOString(),
-      signatureStatus:
-        n.status === "SETTLED"
-          ? (langOverride === "ar" ? "موقع إلكترونياً" : "Electronically Signed")
-          : n.status === "VOID"
-            ? (langOverride === "ar" ? "ملغى" : "Voided")
-            : (langOverride === "ar" ? "في انتظار التوقيع" : "Pending Signature"),
+      statusCode: n.status,
       qrDataUrl: qrDataUrl || undefined,
       verificationUrl: `/verify/pn/${n.id}`,
       language: langOverride,

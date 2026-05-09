@@ -1,353 +1,279 @@
-/* ═══════════════════════════════════════════════════════════════
-   Promissory Note Document Styles
-   A4 print-ready layout for bilingual (AR/EN) legal document
-   ═══════════════════════════════════════════════════════════════ */
-
-/* Web fonts for Arabic */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&display=swap');
-
-/* ── Document wrapper ─────────────────────────────────────────── */
-.promissory-document {
+.promissory-document.nafith-doc {
   width: 210mm;
   min-height: 297mm;
   margin: 0 auto;
-  padding: 20mm 18mm;
-  background: #ffffff;
-  color: #1a1a1a;
-  font-size: 11pt;
-  line-height: 1.75;
+  padding: 12mm;
+  background: #fff;
+  color: #0f172a;
   box-sizing: border-box;
-  position: relative;
+  font-size: 10.5pt;
+  line-height: 1.45;
 }
 
-.promissory-document.ar-doc {
-  font-family: 'Noto Naskh Arabic', 'Amiri', 'Arabic Typesetting', serif;
+.ar-doc.nafith-doc {
+  direction: rtl;
+  text-align: right;
+  font-family: "Noto Naskh Arabic", "Tahoma", serif;
 }
 
-.promissory-document.en-doc {
-  font-family: 'Times New Roman', Times, serif;
+.en-doc.nafith-doc {
+  direction: ltr;
+  text-align: left;
+  font-family: "Times New Roman", Times, serif;
 }
 
-/* ── Header ───────────────────────────────────────────────────── */
-.doc-header {
+.pn-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 8mm;
-  gap: 12mm;
+  border: 1px solid #cfd8dc;
+  padding: 3mm 4mm;
+  margin-bottom: 3mm;
 }
 
-.ar-doc .doc-header {
-  flex-direction: row-reverse;
+.pn-logo-box {
+  width: 44mm;
+  min-height: 18mm;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
-.doc-org-name {
-  font-size: 14pt;
-  font-weight: 700;
-  color: #1e3a5f;
+.pn-logo {
+  max-width: 40mm;
+  max-height: 16mm;
+  object-fit: contain;
 }
 
-.doc-org-sub {
-  font-size: 9pt;
-  color: #5a6a7a;
-  margin-top: 2px;
+.pn-title-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
 }
 
-.doc-title-block {
-  text-align: center;
+.en-doc .pn-title-wrap {
+  align-items: flex-start;
 }
 
-.ar-doc .doc-title-block {
-  text-align: right;
-}
-
-.en-doc .doc-title-block {
-  text-align: left;
-}
-
-.doc-title-ar {
-  font-size: 22pt;
-  font-weight: 700;
-  color: #1e3a5f;
-  margin: 0 0 4px;
-  text-align: center;
-}
-
-.doc-title-en {
+.pn-title {
+  margin: 0;
   font-size: 18pt;
   font-weight: 700;
-  color: #1e3a5f;
-  letter-spacing: 2px;
-  margin: 0 0 4px;
-  text-align: center;
+  line-height: 1.1;
 }
 
-.doc-note-ref {
-  font-size: 9.5pt;
-  color: #4a5568;
-  text-align: center;
-}
-
-/* ── Separator ────────────────────────────────────────────────── */
-.doc-separator {
-  border: none;
-  border-top: 1.5px solid #c7d2dc;
-  margin: 5mm 0;
-}
-
-/* ── QR code ──────────────────────────────────────────────────── */
-.doc-qr-block {
-  float: left;
-  margin: 0 0 4mm 0;
-  text-align: center;
-}
-
-.doc-qr-ltr {
-  float: right;
-}
-
-.ar-doc .doc-qr-block {
-  float: right;
-}
-
-.doc-qr-img {
-  width: 28mm;
-  height: 28mm;
-  display: block;
-}
-
-.doc-qr-ref {
-  font-size: 7pt;
-  color: #5a6a7a;
-  margin-top: 2px;
-  word-break: break-all;
-  max-width: 32mm;
-}
-
-/* ── Body sections ────────────────────────────────────────────── */
-.doc-section {
-  margin: 4mm 0;
-  clear: both;
-}
-
-.doc-body-text {
-  margin: 0 0 2mm;
-  font-size: 11pt;
-}
-
-.doc-mt {
-  margin-top: 4mm !important;
-}
-
-.doc-field-value {
-  border-bottom: 1px solid #94a3b8;
-  padding: 1mm 2mm;
-  margin: 1mm 0 3mm;
-  min-height: 7mm;
-  font-weight: 600;
-  font-size: 11pt;
-  background: #f8fafc;
-}
-
-/* ── Amount block ─────────────────────────────────────────────── */
-.doc-amount-block {
-  border: 2px solid #1e3a5f;
-  border-radius: 4px;
-  padding: 3mm 5mm;
-  margin: 3mm 0 4mm;
-  background: #f0f6ff;
-}
-
-.doc-amount-numeric {
-  font-size: 16pt;
-  font-weight: 700;
-  color: #1e3a5f;
-  letter-spacing: 0.5px;
-}
-
-.doc-amount-words {
+.pn-note-number {
+  margin-top: 1.5mm;
   font-size: 10pt;
-  color: #374151;
-  margin-top: 2px;
 }
 
-/* ── Legal clause ─────────────────────────────────────────────── */
-.doc-legal-clause {
-  border-right: 3px solid #1e3a5f;
-  padding-right: 4mm;
-  font-size: 10.5pt;
-  color: #374151;
-}
-
-.en-doc .doc-legal-clause {
-  border-right: none;
-  border-left: 3px solid #1e3a5f;
-  padding-right: 0;
-  padding-left: 4mm;
-}
-
-/* ── Parties grid ─────────────────────────────────────────────── */
-.doc-parties-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6mm;
-  margin: 4mm 0;
-}
-
-.doc-party-block {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  padding: 4mm;
-}
-
-.doc-party-heading {
-  font-size: 11pt;
-  font-weight: 700;
-  color: #1e3a5f;
+.pn-status-row {
+  border: 1px solid #cfd8dc;
+  background: #f7f9f8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2.2mm 3mm;
   margin-bottom: 3mm;
-  padding-bottom: 1.5mm;
-  border-bottom: 1px solid #cbd5e0;
 }
 
-/* ── Info table ───────────────────────────────────────────────── */
-.doc-info-table {
+.pn-status-label {
+  font-weight: 700;
+}
+
+.pn-status-badge {
+  border: 1px solid #93a1a1;
+  background: #edf3ee;
+  border-radius: 2px;
+  padding: 0.8mm 2.4mm;
+  font-size: 9pt;
+  font-weight: 700;
+}
+
+.pn-main-panel {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 3mm;
+  margin-bottom: 3mm;
+}
+
+.en-main-panel {
+  grid-template-columns: 2fr 1fr;
+}
+
+.pn-main-right,
+.pn-main-left {
+  border: 1px solid #cfd8dc;
+  background: #f3f6f5;
+}
+
+.pn-band-title {
+  background: #dde8df;
+  border-bottom: 1px solid #c4d1c7;
+  padding: 1.8mm 3mm;
+  font-size: 10pt;
+  font-weight: 700;
+}
+
+.pn-details-table,
+.pn-party-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 10pt;
 }
 
-.doc-info-table td {
-  padding: 1mm 2mm;
+.pn-details-table td,
+.pn-party-table td {
+  border-top: 1px solid #d7e0dc;
+  padding: 1.8mm 3mm;
   vertical-align: top;
 }
 
-.doc-label {
-  color: #5a6a7a;
-  white-space: nowrap;
-  font-weight: 600;
+.pn-details-table tr:first-child td,
+.pn-party-table tr:first-child td {
+  border-top: 0;
+}
+
+.pn-details-table td:first-child,
+.pn-party-table td:first-child {
   width: 40%;
+  color: #334155;
+  font-weight: 600;
 }
 
-.doc-value {
-  color: #1a1a1a;
-  word-break: break-word;
+.pn-amount-card {
+  padding: 3mm;
 }
 
-/* ── Metadata grid ────────────────────────────────────────────── */
-.doc-meta-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4mm;
-  margin: 3mm 0;
-}
-
-.doc-meta-item {
-  display: flex;
-  gap: 2mm;
-  align-items: baseline;
-  font-size: 10pt;
-  min-width: 40%;
-}
-
-/* ── Signature block ──────────────────────────────────────────── */
-.doc-signatures-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6mm;
-  margin-top: 8mm;
-}
-
-.doc-sig-block {
-  border: 1px solid #cbd5e0;
-  border-radius: 4px;
-  padding: 4mm;
-  min-height: 28mm;
-  background: #fafbfc;
-}
-
-.doc-sig-label {
-  font-size: 9.5pt;
+.pn-amount-label {
+  font-size: 9pt;
+  color: #334155;
   font-weight: 700;
-  color: #1e3a5f;
+}
+
+.pn-amount-number {
+  margin-top: 1.4mm;
+  margin-bottom: 2.4mm;
+  font-size: 16pt;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.pn-amount-label-words {
+  margin-top: 1.2mm;
+}
+
+.pn-amount-words {
+  margin-top: 1mm;
+  font-size: 9.2pt;
+  line-height: 1.45;
+}
+
+.pn-party-section {
+  border: 1px solid #cfd8dc;
+  background: #f7f9f8;
   margin-bottom: 3mm;
 }
 
-.doc-sig-line {
-  border-bottom: 1px solid #374151;
-  margin: 6mm 0 2mm;
+.pn-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 3mm;
+  margin-top: 1.5mm;
 }
 
-.doc-sig-name {
-  font-size: 9pt;
-  color: #5a6a7a;
+.en-bottom-grid {
+  grid-template-columns: 1.45fr 1fr;
 }
 
-.doc-sig-status {
-  font-size: 10pt;
-  font-weight: 600;
-  color: #c05621;
-  margin-top: 4mm;
+.pn-legal-box,
+.pn-qr-box {
+  border: 1px solid #cfd8dc;
+  background: #fff;
+  padding: 3mm;
+  min-height: 54mm;
 }
 
-/* ── Footer ───────────────────────────────────────────────────── */
-.doc-footer {
-  margin-top: 8mm;
-  padding-top: 3mm;
-  border-top: 1px solid #e2e8f0;
+.pn-legal-box p {
+  margin: 0;
+}
+
+.pn-legal-line {
+  margin-top: 1.8mm !important;
+}
+
+.pn-qr-box {
   display: flex;
-  justify-content: space-between;
-  font-size: 8pt;
-  color: #94a3b8;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-.ar-doc .doc-footer {
-  flex-direction: row-reverse;
+.pn-qr-img {
+  width: 27mm;
+  height: 27mm;
+  object-fit: contain;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   PRINT STYLES — A4 optimised
-   ══════════════════════════════════════════════════════════════ */
+.pn-qr-text {
+  margin-top: 2mm;
+  font-size: 8.2pt;
+  line-height: 1.4;
+}
+
+.pn-qr-ref {
+  margin-top: 1.5mm;
+  font-size: 7.5pt;
+  color: #334155;
+  word-break: break-word;
+}
+
+@media (max-width: 900px) {
+  .promissory-document.nafith-doc {
+    width: 100%;
+    min-height: auto;
+    padding: 10px;
+  }
+
+  .pn-main-panel,
+  .pn-bottom-grid,
+  .en-main-panel,
+  .en-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media print {
   @page {
     size: A4 portrait;
-    margin: 0;
+    margin: 8mm;
   }
 
-  html, body {
+  html,
+  body {
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .no-print {
     display: none !important;
   }
 
-  .promissory-document {
-    width: 210mm;
-    min-height: 297mm;
-    padding: 15mm 16mm;
+  .promissory-document.nafith-doc {
+    width: auto;
+    min-height: auto;
+    padding: 0;
     margin: 0;
-    box-shadow: none !important;
+  }
+
+  .pn-bottom-grid,
+  .pn-main-panel,
+  .pn-party-section,
+  .pn-legal-box,
+  .pn-qr-box {
     page-break-inside: avoid;
-  }
-
-  .doc-signatures-grid {
-    page-break-inside: avoid;
-  }
-
-  .doc-footer {
-    page-break-inside: avoid;
-  }
-
-  .doc-amount-block {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .doc-party-block {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
   }
 }

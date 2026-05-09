@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { existsSync } from "node:fs";
-import path from "node:path";
 import puppeteer from "puppeteer";
 import chromium from "@sparticuz/chromium";
 import type { Browser, LaunchOptions } from "puppeteer";
@@ -11,16 +10,7 @@ import { ApiError } from "@/lib/server/http";
 import { toArabicWords, toEnglishWords, formatAmountNumeric } from "@/lib/amount-to-words";
 
 const prisma = getPrisma();
-
-// ── Browser launch (mirrors legal-case-pdf-service.ts pattern) ───────────────
-
-function detectRuntimeTarget() {
-  if (typeof window !== "undefined") return "browser";
-  if (process.platform === "win32") return "local_windows";
-  if (process.env.VERCEL_ENV === "preview") return "preview";
-  if (process.env.NODE_ENV === "production") return "production";
-  return "local_other";
-}
+const IMC_LOGO_URL = "https://imc.med.sa/images/logo.jpg";
 
 async function launchBrowser(): Promise<Browser> {
   const defaultArgs = ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"];
@@ -31,7 +21,7 @@ async function launchBrowser(): Promise<Browser> {
     try {
       return await puppeteer.launch({ ...defaultOptions, executablePath: configuredPath });
     } catch {
-      // fall through
+      // Fall back to bundled/runtime executable.
     }
   }
 
@@ -47,38 +37,26 @@ async function launchBrowser(): Promise<Browser> {
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function asRecord(v: unknown): Record<string, unknown> {
-  if (v && typeof v === "object" && !Array.isArray(v)) {
-    return v as Record<string, unknown>;
+function asRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
   }
   return {};
 }
 
 function readMetaStr(meta: Record<string, unknown>, ...keys: string[]): string {
   for (const key of keys) {
-    const val = meta[key];
-    if (typeof val === "string" && val.trim()) return val.trim();
+    const raw = meta[key];
+    if (typeof raw === "string" && raw.trim()) {
+      return raw.trim();
+    }
   }
   return "";
 }
 
-function formatDate(dateStr: string, locale: "ar" | "en" = "en"): string {
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", {
-      year: "numeric", month: "long", day: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function escapeHtml(str: string | null | undefined): string {
-  if (!str) return "";
-  return str
+function escapeHtml(value: string | null | undefined): string {
+  if (!value) return "";
+  return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -86,252 +64,355 @@ function escapeHtml(str: string | null | undefined): string {
     .replace(/'/g, "&#39;");
 }
 
-// ── HTML builder ──────────────────────────────────────────────────────────────
+function formatDate(dateStr: string, locale: "ar" | "en"): string {
+  try {
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
 
-function buildPromissoryNoteHtml(args: {
-  noteNumber: string;
-  amount: number;
-  currency: string;
-  dueDate: string;
-  issueDate: string;
-  issueCity: string;
-  paymentCity: string;
-  debtorName: string;
-  debtorId: string;
-  debtorAddress: string;
-  debtorMobile: string;
-  debtorEmail: string;
-  creditorName: string;
-  creditorCR: string;
-  reason: string;
-  referenceNumber: string;
-  generatedAt: string;
-  signatureStatus: string;
-  qrDataUrl: string;
-  verificationUrl: string;
-  language: "ar" | "en";
-}) {
-  const isAr = args.language === "ar";
-  const dir = isAr ? "rtl" : "ltr";
-  const textAlign = isAr ? "right" : "left";
-  const amountNumeric = formatAmountNumeric(args.amount);
-  const amountWords = isAr
-    ? toArabicWords(args.amount, args.currency)
-    : toEnglishWords(args.amount, args.currency);
-  const dueDate = formatDate(args.dueDate, args.language);
-  const issueDate = formatDate(args.issueDate, args.language);
-  const generatedAt = formatDate(args.generatedAt, args.language);
+function statusLabelAr(statusCode: string): string {
+  const normalized = statusCode.toUpperCase();
+  if (normalized === "SETTLED") return "مغلق";
+  if (normalized === "ACTIVE") return "نشط";
+  if (normalized === "VOID") return "ملغى";
+  if (normalized === "OVERDUE") return "متأخر";
+  return "مسودة";
+}
 
-  const title = isAr ? "سند لأمر" : "PROMISSORY NOTE";
-  const orgNameAr = "شركة المركز الطبي الدولي";
-  const orgNameEn = "International Medical Center (IMC)";
+function statusLabelEn(statusCode: string): string {
+  const normalized = statusCode.toUpperCase();
+  if (normalized === "SETTLED") return "Closed";
+  if (normalized === "ACTIVE") return "Active";
+  if (normalized === "VOID") return "Voided";
+  if (normalized === "OVERDUE") return "Overdue";
+  return "Draft";
+}
 
-  const qrBlock = args.qrDataUrl
-    ? `<div style="float:${isAr ? "right" : "left"};margin:0 0 8mm ${isAr ? "8mm" : "0"};text-align:center">
-        <img src="${args.qrDataUrl}" alt="QR" style="width:28mm;height:28mm;display:block" />
-        ${args.verificationUrl ? `<div style="font-size:7pt;color:#5a6a7a;max-width:32mm;word-break:break-all;margin-top:2px">${escapeHtml(args.verificationUrl)}</div>` : ""}
-      </div>`
-    : "";
+async function resolveImcLogoSource(): Promise<string> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500);
+    const response = await fetch(IMC_LOGO_URL, {
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    clearTimeout(timer);
 
-  const partiesTable = isAr
-    ? `<table style="width:100%;border-collapse:collapse">
-        <tr>
-          <td style="width:50%;vertical-align:top;padding:3mm;background:#f8fafc;border:1px solid #e2e8f0">
-            <strong style="color:#1e3a5f">بيانات المدين</strong><br/>
-            <table style="width:100%;font-size:10pt;margin-top:2mm">
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">الاسم:</td><td style="padding:1mm 2mm">${escapeHtml(args.debtorName)}</td></tr>
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">الهوية / الإقامة:</td><td style="padding:1mm 2mm">${escapeHtml(args.debtorId || "—")}</td></tr>
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">الجوال:</td><td style="padding:1mm 2mm">${escapeHtml(args.debtorMobile || "—")}</td></tr>
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">البريد:</td><td style="padding:1mm 2mm">${escapeHtml(args.debtorEmail || "—")}</td></tr>
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">العنوان:</td><td style="padding:1mm 2mm">${escapeHtml(args.debtorAddress || "—")}</td></tr>
-            </table>
-          </td>
-          <td style="width:50%;vertical-align:top;padding:3mm;background:#f8fafc;border:1px solid #e2e8f0">
-            <strong style="color:#1e3a5f">بيانات الدائن</strong><br/>
-            <table style="width:100%;font-size:10pt;margin-top:2mm">
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">الجهة:</td><td style="padding:1mm 2mm">${escapeHtml(orgNameAr)}</td></tr>
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">السجل التجاري:</td><td style="padding:1mm 2mm">${escapeHtml(args.creditorCR || "—")}</td></tr>
-            </table>
-          </td>
-        </tr>
-      </table>`
-    : `<table style="width:100%;border-collapse:collapse">
-        <tr>
-          <td style="width:50%;vertical-align:top;padding:3mm;background:#f8fafc;border:1px solid #e2e8f0">
-            <strong style="color:#1e3a5f">Debtor Information</strong><br/>
-            <table style="width:100%;font-size:10pt;margin-top:2mm">
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">Name:</td><td style="padding:1mm 2mm">${escapeHtml(args.debtorName)}</td></tr>
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">National ID / Iqama:</td><td style="padding:1mm 2mm">${escapeHtml(args.debtorId || "—")}</td></tr>
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">Mobile:</td><td style="padding:1mm 2mm">${escapeHtml(args.debtorMobile || "—")}</td></tr>
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">Email:</td><td style="padding:1mm 2mm">${escapeHtml(args.debtorEmail || "—")}</td></tr>
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">Address:</td><td style="padding:1mm 2mm">${escapeHtml(args.debtorAddress || "—")}</td></tr>
-            </table>
-          </td>
-          <td style="width:50%;vertical-align:top;padding:3mm;background:#f8fafc;border:1px solid #e2e8f0">
-            <strong style="color:#1e3a5f">Creditor Information</strong><br/>
-            <table style="width:100%;font-size:10pt;margin-top:2mm">
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">Organization:</td><td style="padding:1mm 2mm">${escapeHtml(orgNameEn)}</td></tr>
-              <tr><td style="color:#5a6a7a;padding:1mm 2mm">Commercial Reg. No.:</td><td style="padding:1mm 2mm">${escapeHtml(args.creditorCR || "—")}</td></tr>
-            </table>
-          </td>
-        </tr>
-      </table>`;
+    if (!response.ok) {
+      return IMC_LOGO_URL;
+    }
 
-  const bodyText = isAr
-    ? `
-      <p>${qrBlock}أتعهد أنا الموقع أدناه / <strong>${escapeHtml(args.debtorName)}</strong></p>
-      <p>هوية / إقامة رقم: <strong>${escapeHtml(args.debtorId || "—")}</strong></p>
-      <p style="margin-top:4mm">بأن أدفع لأمر <strong>${escapeHtml(orgNameAr)}</strong> أو لأمرها مبلغاً وقدره:</p>
-      <div style="border:2px solid #1e3a5f;border-radius:4px;padding:3mm 5mm;background:#f0f6ff;margin:3mm 0">
-        <div style="font-size:16pt;font-weight:700;color:#1e3a5f">${escapeHtml(amountNumeric)} ${escapeHtml(args.currency)}</div>
-        <div style="font-size:10pt;color:#374151;margin-top:2px">فقط: ${escapeHtml(amountWords)}</div>
-      </div>
-      <p>وذلك بتاريخ الاستحقاق: <strong>${escapeHtml(dueDate)}</strong></p>
-      <p>مدينة الإصدار: <strong>${escapeHtml(args.issueCity || "الرياض")}</strong> — مدينة الوفاء: <strong>${escapeHtml(args.paymentCity || args.issueCity || "الرياض")}</strong></p>
-      ${args.reason ? `<p>وذلك مقابل: <strong>${escapeHtml(args.reason)}</strong></p>` : ""}
-      <div style="border-right:3px solid #1e3a5f;padding-right:4mm;margin:4mm 0;font-size:10.5pt;color:#374151">
-        <p>ويعد هذا السند التزاماً نهائياً وغير مشروط وقابلاً للتنفيذ وفق الأنظمة واللوائح المعمول بها في المملكة العربية السعودية، ولا يحق لي الاعتراض أو الامتناع عن السداد عند حلول تاريخ الاستحقاق.</p>
-        <p>كما أقر بصحة جميع البيانات الواردة في هذا السند، وأتحمل كامل المسؤولية القانونية والمالية المترتبة عليه.</p>
-      </div>`
-    : `
-      <p>${qrBlock}I, the undersigned: <strong>${escapeHtml(args.debtorName)}</strong></p>
-      <p>National ID / Iqama No.: <strong>${escapeHtml(args.debtorId || "—")}</strong></p>
-      <p style="margin-top:4mm">Hereby unconditionally undertake and promise to pay to the order of <strong>${escapeHtml(orgNameEn)}</strong> the amount of:</p>
-      <div style="border:2px solid #1e3a5f;border-radius:4px;padding:3mm 5mm;background:#f0f6ff;margin:3mm 0">
-        <div style="font-size:16pt;font-weight:700;color:#1e3a5f">${escapeHtml(amountNumeric)} ${escapeHtml(args.currency)}</div>
-        <div style="font-size:10pt;color:#374151;margin-top:2px">Amount in words: ${escapeHtml(amountWords)}</div>
-      </div>
-      <p>On due date: <strong>${escapeHtml(dueDate)}</strong></p>
-      <p>Issue city: <strong>${escapeHtml(args.issueCity || "Riyadh")}</strong> — Payment city: <strong>${escapeHtml(args.paymentCity || args.issueCity || "Riyadh")}</strong></p>
-      ${args.reason ? `<p>Reason: <strong>${escapeHtml(args.reason)}</strong></p>` : ""}
-      <div style="border-left:3px solid #1e3a5f;padding-left:4mm;margin:4mm 0;font-size:10.5pt;color:#374151">
-        <p>This promissory note constitutes a final, binding, and unconditional financial obligation enforceable in accordance with the laws and regulations applicable in the Kingdom of Saudi Arabia.</p>
-        <p>I acknowledge the correctness of all information contained herein and accept full legal and financial responsibility arising from this document.</p>
-      </div>`;
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (!buffer.length) {
+      return IMC_LOGO_URL;
+    }
 
-  const signaturesHtml = isAr
-    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin-top:8mm;page-break-inside:avoid">
-        <div style="border:1px solid #cbd5e0;border-radius:4px;padding:4mm;min-height:28mm;background:#fafbfc">
-          <div style="font-size:9.5pt;font-weight:700;color:#1e3a5f;margin-bottom:3mm">توقيع المدين</div>
-          <div style="border-bottom:1px solid #374151;margin:6mm 0 2mm"></div>
-          <div style="font-size:9pt;color:#5a6a7a">${escapeHtml(args.debtorName)}</div>
-        </div>
-        <div style="border:1px solid #cbd5e0;border-radius:4px;padding:4mm;min-height:28mm;background:#fafbfc">
-          <div style="font-size:9.5pt;font-weight:700;color:#1e3a5f;margin-bottom:3mm">توقيع ممثل المركز الطبي الدولي</div>
-          <div style="border-bottom:1px solid #374151;margin:6mm 0 2mm"></div>
-          <div style="font-size:9pt;color:#5a6a7a">المفوّض بالتوقيع</div>
-        </div>
-        <div style="border:1px solid #cbd5e0;border-radius:4px;padding:4mm;min-height:28mm;background:#fafbfc">
-          <div style="font-size:9.5pt;font-weight:700;color:#1e3a5f;margin-bottom:3mm">تاريخ التوقيع</div>
-          <div style="border-bottom:1px solid #374151;margin:6mm 0 2mm"></div>
-        </div>
-        <div style="border:1px solid #cbd5e0;border-radius:4px;padding:4mm;min-height:28mm;background:#fafbfc">
-          <div style="font-size:9.5pt;font-weight:700;color:#1e3a5f;margin-bottom:3mm">حالة التوقيع الإلكتروني</div>
-          <div style="font-size:10pt;font-weight:600;color:#c05621;margin-top:4mm">${escapeHtml(args.signatureStatus || "في انتظار التوقيع")}</div>
-        </div>
-      </div>`
-    : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin-top:8mm;page-break-inside:avoid">
-        <div style="border:1px solid #cbd5e0;border-radius:4px;padding:4mm;min-height:28mm;background:#fafbfc">
-          <div style="font-size:9.5pt;font-weight:700;color:#1e3a5f;margin-bottom:3mm">Debtor Signature</div>
-          <div style="border-bottom:1px solid #374151;margin:6mm 0 2mm"></div>
-          <div style="font-size:9pt;color:#5a6a7a">${escapeHtml(args.debtorName)}</div>
-        </div>
-        <div style="border:1px solid #cbd5e0;border-radius:4px;padding:4mm;min-height:28mm;background:#fafbfc">
-          <div style="font-size:9.5pt;font-weight:700;color:#1e3a5f;margin-bottom:3mm">IMC Authorized Representative Signature</div>
-          <div style="border-bottom:1px solid #374151;margin:6mm 0 2mm"></div>
-          <div style="font-size:9pt;color:#5a6a7a">Authorized Signatory</div>
-        </div>
-        <div style="border:1px solid #cbd5e0;border-radius:4px;padding:4mm;min-height:28mm;background:#fafbfc">
-          <div style="font-size:9.5pt;font-weight:700;color:#1e3a5f;margin-bottom:3mm">Signature Date</div>
-          <div style="border-bottom:1px solid #374151;margin:6mm 0 2mm"></div>
-        </div>
-        <div style="border:1px solid #cbd5e0;border-radius:4px;padding:4mm;min-height:28mm;background:#fafbfc">
-          <div style="font-size:9.5pt;font-weight:700;color:#1e3a5f;margin-bottom:3mm">Electronic Signature Status</div>
-          <div style="font-size:10pt;font-weight:600;color:#c05621;margin-top:4mm">${escapeHtml(args.signatureStatus || "Pending Signature")}</div>
-        </div>
-      </div>`;
+    return `data:${contentType};base64,${buffer.toString("base64")}`;
+  } catch {
+    return IMC_LOGO_URL;
+  }
+}
 
-  const footerText = isAr
-    ? `هذا المستند تم إنشاؤه إلكترونياً بواسطة منصة وثيق كير — WathiqCare`
-    : `This document was electronically generated by WathiqCare Platform — منصة وثيق كير`;
-
-  return `<!DOCTYPE html>
-<html lang="${isAr ? "ar" : "en"}" dir="${dir}">
-<head>
-  <meta charset="utf-8" />
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&display=swap');
-    @page { size: A4 portrait; margin: 20mm 18mm; }
+function documentCss(isAr: boolean): string {
+  return `
+    @page { size: A4 portrait; margin: 8mm; }
     * { box-sizing: border-box; }
     body {
-      font-family: ${isAr ? "'Noto Naskh Arabic', 'Amiri', serif" : "'Times New Roman', Times, serif"};
-      direction: ${dir};
-      text-align: ${textAlign};
-      color: #1a1a1a;
-      font-size: 11pt;
-      line-height: 1.75;
       margin: 0;
       padding: 0;
       background: #fff;
+      color: #0f172a;
+      font-size: 10.5pt;
+      line-height: 1.45;
+      direction: ${isAr ? "rtl" : "ltr"};
+      text-align: ${isAr ? "right" : "left"};
+      font-family: ${isAr ? "'Noto Naskh Arabic','Tahoma',serif" : "'Times New Roman',Times,serif"};
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
-    h1 { margin: 0 0 4px; }
-    p { margin: 0 0 2mm; }
-    .separator { border: none; border-top: 1.5px solid #c7d2dc; margin: 5mm 0; }
-    .clearfix::after { content: ""; display: table; clear: both; }
-  </style>
-</head>
-<body>
-  <!-- Header -->
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8mm;gap:12mm;${isAr ? "flex-direction:row-reverse" : ""}">
-    <div>
-      <div style="font-size:14pt;font-weight:700;color:#1e3a5f">${isAr ? orgNameAr : orgNameEn}</div>
-      <div style="font-size:9pt;color:#5a6a7a">${isAr ? orgNameEn : orgNameAr}</div>
-    </div>
-    <div style="text-align:center">
-      <h1 style="font-size:${isAr ? "22" : "18"}pt;font-weight:700;color:#1e3a5f;letter-spacing:${isAr ? "0" : "2"}px">${title}</h1>
-      <div style="font-size:9.5pt;color:#4a5568">${isAr ? "رقم السند:" : "Note No.:"} <strong>${escapeHtml(args.noteNumber)}</strong></div>
-    </div>
-  </div>
-
-  <hr class="separator" />
-
-  <!-- Body with QR -->
-  <div class="clearfix" style="margin:4mm 0">
-    ${bodyText}
-  </div>
-
-  <hr class="separator" />
-
-  <!-- Parties -->
-  <div style="margin:4mm 0">
-    ${partiesTable}
-  </div>
-
-  <hr class="separator" />
-
-  <!-- Metadata -->
-  <div style="display:flex;flex-wrap:wrap;gap:4mm;margin:3mm 0;font-size:10pt">
-    <div><span style="color:#5a6a7a;font-weight:600">${isAr ? "رقم السند:" : "Note Number:"}</span> <strong>${escapeHtml(args.noteNumber)}</strong></div>
-    ${args.referenceNumber ? `<div><span style="color:#5a6a7a;font-weight:600">${isAr ? "الرقم المرجعي:" : "Reference Number:"}</span> <strong>${escapeHtml(args.referenceNumber)}</strong></div>` : ""}
-    <div><span style="color:#5a6a7a;font-weight:600">${isAr ? "تاريخ الإصدار:" : "Issue Date:"}</span> <strong>${escapeHtml(issueDate)}</strong></div>
-    <div><span style="color:#5a6a7a;font-weight:600">${isAr ? "تاريخ التوليد:" : "Generated At:"}</span> <strong>${escapeHtml(generatedAt)}</strong></div>
-  </div>
-
-  <hr class="separator" />
-
-  <!-- Signatures -->
-  ${signaturesHtml}
-
-  <!-- Footer -->
-  <div style="margin-top:8mm;padding-top:3mm;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:8pt;color:#94a3b8;${isAr ? "flex-direction:row-reverse" : ""}">
-    <span>${footerText}</span>
-    <span>${escapeHtml(generatedAt)}</span>
-  </div>
-</body>
-</html>`;
+    .pn-doc { width: 100%; }
+    .pn-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border: 1px solid #cfd8dc;
+      padding: 3mm 4mm;
+      margin-bottom: 3mm;
+    }
+    .pn-logo-box {
+      width: 44mm;
+      min-height: 18mm;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .pn-logo { max-width: 40mm; max-height: 16mm; object-fit: contain; }
+    .pn-title-wrap { display: flex; flex-direction: column; align-items: ${isAr ? "flex-end" : "flex-start"}; }
+    .pn-title { margin: 0; font-size: 18pt; font-weight: 700; line-height: 1.1; }
+    .pn-note-number { margin-top: 1.5mm; font-size: 10pt; }
+    .pn-status-row {
+      border: 1px solid #cfd8dc;
+      background: #f7f9f8;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2.2mm 3mm;
+      margin-bottom: 3mm;
+    }
+    .pn-status-label { font-weight: 700; }
+    .pn-status-badge {
+      border: 1px solid #93a1a1;
+      background: #edf3ee;
+      border-radius: 2px;
+      padding: 0.8mm 2.4mm;
+      font-size: 9pt;
+      font-weight: 700;
+    }
+    .pn-main-panel {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 3mm;
+      margin-bottom: 3mm;
+      direction: ${isAr ? "rtl" : "ltr"};
+    }
+    .pn-main-right,
+    .pn-main-left { border: 1px solid #cfd8dc; background: #f3f6f5; }
+    .pn-band-title {
+      background: #dde8df;
+      border-bottom: 1px solid #c4d1c7;
+      padding: 1.8mm 3mm;
+      font-size: 10pt;
+      font-weight: 700;
+    }
+    .pn-details-table,
+    .pn-party-table { width: 100%; border-collapse: collapse; }
+    .pn-details-table td,
+    .pn-party-table td { border-top: 1px solid #d7e0dc; padding: 1.8mm 3mm; vertical-align: top; }
+    .pn-details-table tr:first-child td,
+    .pn-party-table tr:first-child td { border-top: 0; }
+    .pn-details-table td:first-child,
+    .pn-party-table td:first-child { width: 40%; color: #334155; font-weight: 600; }
+    .pn-amount-card { padding: 3mm; }
+    .pn-amount-label { font-size: 9pt; color: #334155; font-weight: 700; }
+    .pn-amount-number { margin-top: 1.4mm; margin-bottom: 2.4mm; font-size: 16pt; line-height: 1.2; font-weight: 700; }
+    .pn-amount-label-words { margin-top: 1.2mm; }
+    .pn-amount-words { margin-top: 1mm; font-size: 9.2pt; line-height: 1.45; }
+    .pn-party-section { border: 1px solid #cfd8dc; background: #f7f9f8; margin-bottom: 3mm; }
+    .pn-bottom-grid {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 3mm;
+      margin-top: 1.5mm;
+      direction: ${isAr ? "rtl" : "ltr"};
+      page-break-inside: avoid;
+    }
+    .pn-legal-box,
+    .pn-qr-box { border: 1px solid #cfd8dc; background: #fff; padding: 3mm; min-height: 54mm; }
+    .pn-legal-box p { margin: 0; }
+    .pn-legal-line { margin-top: 1.8mm !important; }
+    .pn-qr-box { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .pn-qr-img { width: 27mm; height: 27mm; object-fit: contain; }
+    .pn-qr-text { margin-top: 2mm; font-size: 8.2pt; line-height: 1.4; }
+    .pn-qr-ref { margin-top: 1.5mm; font-size: 7.5pt; color: #334155; word-break: break-word; }
+  `;
 }
 
-// ── GET /api/modules/promissory-notes/[id]/pdf ────────────────────────────────
+function buildPromissoryNoteHtml(args: {
+  language: "ar" | "en";
+  logoSrc: string;
+  noteNumber: string;
+  statusCode: string;
+  amount: number;
+  currency: string;
+  amountWordsAr: string;
+  amountWordsEn: string;
+  issueDateAr: string;
+  issueDateEn: string;
+  dueDateAr: string;
+  dueDateEn: string;
+  issueCity: string;
+  paymentCity: string;
+  reason: string;
+  creditorNameAr: string;
+  creditorNameEn: string;
+  creditorCR: string;
+  debtorName: string;
+  debtorId: string;
+  qrDataUrl: string;
+  verificationUrl: string;
+}): string {
+  const isAr = args.language === "ar";
+  const amountNumeric = formatAmountNumeric(args.amount);
+
+  const bodyAr = `
+    <div class="pn-doc" dir="rtl" lang="ar">
+      <header class="pn-header">
+        <div class="pn-logo-box"><img src="${args.logoSrc}" alt="International Medical Center" class="pn-logo" /></div>
+        <div class="pn-title-wrap">
+          <h1 class="pn-title">سند لأمر</h1>
+          <div class="pn-note-number">رقم السند: <strong>${escapeHtml(args.noteNumber)}</strong></div>
+        </div>
+      </header>
+
+      <div class="pn-status-row">
+        <span class="pn-status-label">حالة السند</span>
+        <span class="pn-status-badge">${statusLabelAr(args.statusCode)}</span>
+      </div>
+
+      <section class="pn-main-panel">
+        <div class="pn-main-right">
+          <div class="pn-band-title">تفاصيل السند</div>
+          <table class="pn-details-table">
+            <tbody>
+              <tr><td>تاريخ الإنشاء</td><td>${escapeHtml(args.issueDateAr)}</td></tr>
+              <tr><td>تاريخ الاستحقاق</td><td>${escapeHtml(args.dueDateAr)}</td></tr>
+              <tr><td>مدينة الإصدار</td><td>${escapeHtml(args.issueCity)}</td></tr>
+              <tr><td>مدينة الوفاء</td><td>${escapeHtml(args.paymentCity)}</td></tr>
+              <tr><td>سبب إنشاء السند</td><td>${escapeHtml(args.reason || "—")}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pn-main-left">
+          <div class="pn-amount-card">
+            <div class="pn-amount-label">قيمة السند رقماً</div>
+            <div class="pn-amount-number">${escapeHtml(amountNumeric)} ${escapeHtml(args.currency)}</div>
+            <div class="pn-amount-label pn-amount-label-words">قيمة السند كتابة</div>
+            <div class="pn-amount-words">${escapeHtml(args.amountWordsAr)}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="pn-party-section">
+        <div class="pn-band-title">تفاصيل الدائن</div>
+        <table class="pn-party-table">
+          <tbody>
+            <tr><td>الاسم</td><td>${escapeHtml(args.creditorNameAr)}</td></tr>
+            <tr><td>الرقم الوطني الموحد / السجل التجاري</td><td>${escapeHtml(args.creditorCR || "—")}</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="pn-party-section">
+        <div class="pn-band-title">تفاصيل المدين</div>
+        <table class="pn-party-table">
+          <tbody>
+            <tr><td>الاسم</td><td>${escapeHtml(args.debtorName)}</td></tr>
+            <tr><td>رقم الهوية</td><td>${escapeHtml(args.debtorId || "—")}</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="pn-bottom-grid">
+        <div class="pn-legal-box">
+          <p>أتعهد بأن أدفع لأمر ${escapeHtml(args.creditorNameAr)} مبلغاً وقدره (${escapeHtml(amountNumeric)}) ${escapeHtml(args.currency)}، ${escapeHtml(args.amountWordsAr)}، وفق البيانات المذكورة أعلاه، ولحامل هذا السند حق الرجوع دون مصروفات أو احتجاج بعدم الوفاء.</p>
+          <p class="pn-legal-line">اسم المدين: ${escapeHtml(args.debtorName)}</p>
+          <p class="pn-legal-line">رقم الهوية: ${escapeHtml(args.debtorId || "—")}</p>
+          <p class="pn-legal-line">تاريخ الإصدار: ${escapeHtml(args.issueDateAr)}</p>
+          <p class="pn-legal-line">ولحامل هذا السند حق الرجوع دون مصروفات أو احتجاج بعدم الوفاء.</p>
+        </div>
+        <div class="pn-qr-box">
+          <img src="${args.qrDataUrl}" alt="QR" class="pn-qr-img" />
+          <div class="pn-qr-text">هذا السند لأمر صادر من خلال منصة واثق كير الإلكترونية، وقد تم إنشاؤه والمصادقة عليه إلكترونياً وفق البيانات المسجلة في المنصة، ويمكن التحقق منه من خلال رمز التحقق أو الرقم المرجعي.</div>
+          <div class="pn-qr-ref">${escapeHtml(args.verificationUrl || args.noteNumber)}</div>
+        </div>
+      </section>
+    </div>
+  `;
+
+  const bodyEn = `
+    <div class="pn-doc" dir="ltr" lang="en">
+      <header class="pn-header">
+        <div class="pn-logo-box"><img src="${args.logoSrc}" alt="International Medical Center" class="pn-logo" /></div>
+        <div class="pn-title-wrap">
+          <h1 class="pn-title">Promissory Note</h1>
+          <div class="pn-note-number">Note No.: <strong>${escapeHtml(args.noteNumber)}</strong></div>
+        </div>
+      </header>
+
+      <div class="pn-status-row">
+        <span class="pn-status-label">Note Status</span>
+        <span class="pn-status-badge">${statusLabelEn(args.statusCode)}</span>
+      </div>
+
+      <section class="pn-main-panel">
+        <div class="pn-main-right">
+          <div class="pn-band-title">Note Details</div>
+          <table class="pn-details-table">
+            <tbody>
+              <tr><td>Issue Date</td><td>${escapeHtml(args.issueDateEn)}</td></tr>
+              <tr><td>Due Date</td><td>${escapeHtml(args.dueDateEn)}</td></tr>
+              <tr><td>Issue City</td><td>${escapeHtml(args.issueCity)}</td></tr>
+              <tr><td>Payment City</td><td>${escapeHtml(args.paymentCity)}</td></tr>
+              <tr><td>Reason</td><td>${escapeHtml(args.reason || "—")}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pn-main-left">
+          <div class="pn-amount-card">
+            <div class="pn-amount-label">Amount (Numeric)</div>
+            <div class="pn-amount-number">${escapeHtml(amountNumeric)} ${escapeHtml(args.currency)}</div>
+            <div class="pn-amount-label pn-amount-label-words">Amount (In Words)</div>
+            <div class="pn-amount-words">${escapeHtml(args.amountWordsEn)}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="pn-party-section">
+        <div class="pn-band-title">Creditor Details</div>
+        <table class="pn-party-table">
+          <tbody>
+            <tr><td>Name</td><td>${escapeHtml(args.creditorNameEn)}</td></tr>
+            <tr><td>Unified ID / Commercial Registration</td><td>${escapeHtml(args.creditorCR || "—")}</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="pn-party-section">
+        <div class="pn-band-title">Debtor Details</div>
+        <table class="pn-party-table">
+          <tbody>
+            <tr><td>Name</td><td>${escapeHtml(args.debtorName)}</td></tr>
+            <tr><td>ID Number</td><td>${escapeHtml(args.debtorId || "—")}</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="pn-bottom-grid">
+        <div class="pn-legal-box">
+          <p>I undertake to pay to the order of ${escapeHtml(args.creditorNameEn)} an amount of (${escapeHtml(amountNumeric)}) ${escapeHtml(args.currency)}, ${escapeHtml(args.amountWordsEn)}, according to the details above.</p>
+          <p class="pn-legal-line">Debtor Name: ${escapeHtml(args.debtorName)}</p>
+          <p class="pn-legal-line">Debtor ID: ${escapeHtml(args.debtorId || "—")}</p>
+          <p class="pn-legal-line">Issue Date: ${escapeHtml(args.issueDateEn)}</p>
+        </div>
+        <div class="pn-qr-box">
+          <img src="${args.qrDataUrl}" alt="QR" class="pn-qr-img" />
+          <div class="pn-qr-text">Issued through WathiqCare electronic platform. Verification is available using the QR code or reference number.</div>
+          <div class="pn-qr-ref">${escapeHtml(args.verificationUrl || args.noteNumber)}</div>
+        </div>
+      </section>
+    </div>
+  `;
+
+  return `<!doctype html>
+<html lang="${isAr ? "ar" : "en"}" dir="${isAr ? "rtl" : "ltr"}">
+  <head>
+    <meta charset="utf-8" />
+    <style>${documentCss(isAr)}</style>
+  </head>
+  <body>
+    ${isAr ? bodyAr : bodyEn}
+  </body>
+</html>`;
+}
 
 export async function GET(
   request: NextRequest,
@@ -357,65 +438,75 @@ export async function GET(
     }
 
     const meta = asRecord(note.metadata);
-    const generatedAt = new Date().toISOString();
+    const issueCity = readMetaStr(meta, "issue_city", "issueCity") || (lang === "ar" ? "الرياض" : "Riyadh");
+    const paymentCity = readMetaStr(meta, "payment_city", "paymentCity") || issueCity;
+    const reason = readMetaStr(meta, "reason");
+    const creditorCR = readMetaStr(meta, "creditor_cr", "creditorCR");
+    const creditorNameAr =
+      readMetaStr(meta, "creditor_name_ar", "creditorNameAr") ||
+      "شركة المركز الطبي الدولي مساهمة مقفلة";
+    const creditorNameEn =
+      readMetaStr(meta, "creditor_name_en", "creditorNameEn") ||
+      "International Medical Center (IMC)";
 
-    // Build QR code content
+    const verificationUrl =
+      `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/verify/pn/${note.id}`;
+
     const qrPayload = [
       `NOTE:${note.noteNumber}`,
+      `CREDITOR:${lang === "ar" ? creditorNameAr : creditorNameEn}`,
       `DEBTOR:${note.debtorName}`,
-      `AMOUNT:${note.amount.toString()} ${note.currency}`,
+      `AMOUNT:${Number(note.amount)} ${note.currency}`,
       `DUE:${note.dueDate.toISOString().slice(0, 10)}`,
-      note.id,
+      `VERIFY:${verificationUrl}`,
     ].join("|");
 
     const qrDataUrl = await QRCode.toDataURL(qrPayload, {
       errorCorrectionLevel: "M",
       margin: 1,
-      width: 120,
+      width: 180,
     });
 
+    const logoSrc = await resolveImcLogoSource();
     const html = buildPromissoryNoteHtml({
+      language: lang,
+      logoSrc,
       noteNumber: note.noteNumber,
+      statusCode: note.status,
       amount: Number(note.amount),
       currency: note.currency,
-      dueDate: note.dueDate.toISOString(),
-      issueDate: note.createdAt.toISOString(),
-      issueCity: readMetaStr(meta, "issue_city", "issueCity") || (lang === "ar" ? "الرياض" : "Riyadh"),
-      paymentCity: readMetaStr(meta, "payment_city", "paymentCity"),
+      amountWordsAr: toArabicWords(Number(note.amount), note.currency),
+      amountWordsEn: toEnglishWords(Number(note.amount), note.currency),
+      issueDateAr: formatDate(note.createdAt.toISOString(), "ar"),
+      issueDateEn: formatDate(note.createdAt.toISOString(), "en"),
+      dueDateAr: formatDate(note.dueDate.toISOString(), "ar"),
+      dueDateEn: formatDate(note.dueDate.toISOString(), "en"),
+      issueCity,
+      paymentCity,
+      reason,
+      creditorNameAr,
+      creditorNameEn,
+      creditorCR,
       debtorName: note.debtorName,
       debtorId: note.debtorIdNumber ?? "",
-      debtorAddress: readMetaStr(meta, "debtor_address", "debtorAddress"),
-      debtorMobile: readMetaStr(meta, "debtor_mobile", "debtorMobile"),
-      debtorEmail: readMetaStr(meta, "debtor_email", "debtorEmail"),
-      creditorName: note.issuerName ?? (lang === "ar" ? "شركة المركز الطبي الدولي" : "International Medical Center"),
-      creditorCR: readMetaStr(meta, "creditor_cr", "creditorCR"),
-      reason: readMetaStr(meta, "reason"),
-      referenceNumber: readMetaStr(meta, "reference_number", "referenceNumber"),
-      generatedAt,
-      signatureStatus: note.status === "SETTLED"
-        ? (lang === "ar" ? "موقع إلكترونياً" : "Electronically Signed")
-        : note.status === "VOID"
-          ? (lang === "ar" ? "ملغى" : "Voided")
-          : (lang === "ar" ? "في انتظار التوقيع" : "Pending Signature"),
       qrDataUrl,
-      verificationUrl: `${process.env.NEXT_PUBLIC_APP_URL || ""}/verify/pn/${note.id}`,
-      language: lang,
+      verificationUrl,
     });
 
-    // Render PDF
     browser = await launchBrowser();
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
-    const pdfBuffer = await page.pdf({
+
+    const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
       margin: { top: "0", right: "0", bottom: "0", left: "0" },
     });
+
     await page.close();
 
     const safeNoteNumber = note.noteNumber.replace(/[^a-zA-Z0-9_-]/g, "_");
-      const responseBody = Buffer.from(pdfBuffer);
-      return new NextResponse(responseBody, {
+    return new NextResponse(Buffer.from(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
@@ -427,11 +518,16 @@ export async function GET(
     if (err instanceof ApiError) {
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
+
     console.error("GET /api/modules/promissory-notes/[id]/pdf", err);
     return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
   } finally {
     if (browser) {
-      try { await browser.close(); } catch { /* ignore */ }
+      try {
+        await browser.close();
+      } catch {
+        // no-op
+      }
     }
   }
 }
