@@ -43,6 +43,7 @@ function loadEnvFile(filePath) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
     const idx = trimmed.indexOf("=");
+    // Skip malformed entries and lines with empty keys.
     if (idx <= 0) continue;
 
     const key = trimmed.slice(0, idx).trim();
@@ -104,7 +105,7 @@ async function upsertPilotUser(tenant, def) {
 
   const rawPassword = process.env[def.passwordEnv]?.trim();
   if (!rawPassword) {
-    throw new Error(`Missing required environment variable: ${def.passwordEnv}`);
+    throw new Error(`Missing required environment variable ${def.passwordEnv} for user ${def.email}`);
   }
   const hashedPassword = await bcrypt.hash(rawPassword, BCRYPT_ROUNDS);
   const data = {
