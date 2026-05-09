@@ -301,7 +301,7 @@ async function upsertPilotUser(
   await prisma.$executeRaw`
     UPDATE users
     SET password_reset_required = TRUE,
-        session_revoked_at = NULL
+        session_revoked_at = NOW()
     WHERE id = ${userId}
   `;
 
