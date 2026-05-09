@@ -21,13 +21,22 @@ export default async function DischargeRefusalModulePage() {
       ]}
       nextAction={{ href: "/dashboard", label: "Open Case Dashboard", variant: "primary" }}
     >
-      <div className="grid gap-3 md:grid-cols-2">
-        <Link href="/dashboard" className="wc-link-card">
-          <span>Case Dashboard</span>
-        </Link>
-        <Link href="/cases" className="wc-link-card">
-          <span>Case Registry</span>
-        </Link>
+      <div className="space-y-4">
+        <section className="wc-panel space-y-2">
+          <div className="wc-panel-heading">Module Overview</div>
+          <p className="text-sm leading-6 text-slate-700">
+            This module governs discharge-refusal workflows, including refusal capture, case progression, and legally auditable evidence preparation.
+          </p>
+        </section>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <Link href="/dashboard" className="wc-link-card">
+            <span>Case Dashboard</span>
+          </Link>
+          <Link href="/cases" className="wc-link-card">
+            <span>Case Registry</span>
+          </Link>
+        </div>
       </div>
     </ModuleShell>
   );

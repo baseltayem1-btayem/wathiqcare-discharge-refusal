@@ -269,12 +269,9 @@ function ModulesSection() {
               <div className="w-14 h-14 rounded-full bg-cyan-100 flex items-center justify-center mx-auto mb-4 group-hover:bg-cyan-700 transition">
                 <Icon size={26} className="text-cyan-700 group-hover:text-white transition" />
               </div>
-              <h3 className="font-bold text-cyan-900 text-lg mb-2">
+              <h3 className="font-bold text-cyan-900 text-lg">
                 {t(`landing.modules.${key}.title`)}
               </h3>
-              <p className="text-slate-500 text-sm leading-relaxed">
-                {t(`landing.modules.${key}.desc`)}
-              </p>
             </div>
           ))}
         </div>

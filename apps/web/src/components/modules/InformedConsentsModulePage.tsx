@@ -221,6 +221,13 @@ export default function InformedConsentsModulePage({
       }
     >
       <div className="space-y-4">
+        <section className="wc-panel space-y-2">
+          <div className="wc-panel-heading">Module Overview</div>
+          <p className="text-sm leading-6 text-slate-700">
+            This module centralizes informed-consent capture, consent method traceability, and audit-ready record retention for clinical and legal workflows.
+          </p>
+        </section>
+
         {error ? (
           <div className="wc-panel border-rose-200 bg-rose-50 text-sm text-rose-800">{error}</div>
         ) : null}
