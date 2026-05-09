@@ -4,6 +4,16 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Admin Operations
 
+### Seed pilot module accounts
+
+Apply the modular pilot seed used for release validation:
+
+```bash
+npm run pilot:seed:apply
+```
+
+The command provisions 7 controlled pilot accounts and representative records for informed consents, electronic promissory notes, and discharge refusal.
+
 ### Reset passwords safely
 
 The web app includes a built-in admin script that uses the same `hashPassword()` logic as the live authentication flow.

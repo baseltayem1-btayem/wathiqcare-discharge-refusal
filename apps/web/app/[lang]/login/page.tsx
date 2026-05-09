@@ -208,10 +208,14 @@ export default function LangLoginPage() {
     setNotice("");
     setLoading(true);
     try {
-      const result = await apiFetch<{ redirectTo: string }>("/api/auth/password/login", {
+      const result = await apiFetch<{ redirectTo: string; mustChangePassword?: boolean }>("/api/auth/password/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
+      if (result.mustChangePassword) {
+        router.push("/first-login");
+        return;
+      }
       const safeRedirect = typeof result?.redirectTo === "string" && result.redirectTo.trim()
         ? result.redirectTo
         : "/modules";
@@ -511,4 +515,3 @@ export default function LangLoginPage() {
     </main>
   );
 }
-

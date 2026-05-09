@@ -27,7 +27,8 @@ const roleFixtures = [
     role: "tenant_admin",
     userType: UserType.TENANT_ADMIN,
     membershipRole: MembershipRole.ADMIN,
-    expectedRedirect: "/tenant/dashboard",
+    expectedRedirect: "/modules",
+    allowedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
   },
   {
     key: "doctor",
@@ -36,7 +37,8 @@ const roleFixtures = [
     role: "doctor",
     userType: UserType.TENANT_USER,
     membershipRole: MembershipRole.MEMBER,
-    expectedRedirect: "/doctor/dashboard",
+    expectedRedirect: "/modules",
+    allowedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
   },
   {
     key: "nurse",
@@ -45,7 +47,8 @@ const roleFixtures = [
     role: "nursing",
     userType: UserType.TENANT_USER,
     membershipRole: MembershipRole.MEMBER,
-    expectedRedirect: "/nurse/dashboard",
+    expectedRedirect: "/modules",
+    allowedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
   },
   {
     key: "legal",
@@ -54,7 +57,8 @@ const roleFixtures = [
     role: "legal_admin",
     userType: UserType.TENANT_ADMIN,
     membershipRole: MembershipRole.ADMIN,
-    expectedRedirect: "/legal/dashboard",
+    expectedRedirect: "/modules",
+    allowedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
   },
   {
     key: "medicalDirector",
@@ -63,7 +67,28 @@ const roleFixtures = [
     role: "medical_director",
     userType: UserType.TENANT_USER,
     membershipRole: MembershipRole.MEMBER,
-    expectedRedirect: "/medical-director/dashboard",
+    expectedRedirect: "/modules",
+    allowedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
+  },
+  {
+    key: "compliance",
+    email: "compliance.release@wathiqcare.online",
+    fullName: "Compliance Release Gate",
+    role: "compliance",
+    userType: UserType.TENANT_USER,
+    membershipRole: MembershipRole.VIEWER,
+    expectedRedirect: "/modules",
+    allowedModules: ["/modules/discharge-refusal"],
+  },
+  {
+    key: "finance",
+    email: "finance.release@wathiqcare.online",
+    fullName: "Finance Release Gate",
+    role: "finance_officer",
+    userType: UserType.TENANT_USER,
+    membershipRole: MembershipRole.ADMIN,
+    expectedRedirect: "/modules",
+    allowedModules: ["/modules/promissory-notes"],
   },
 ];
 
@@ -76,6 +101,32 @@ const report = {
   browserFindings: [],
   apiFailures: [],
   artifacts: {},
+};
+
+const ALL_MODULE_ROUTES = [
+  "/modules/informed-consents",
+  "/modules/promissory-notes",
+  "/modules/discharge-refusal",
+];
+
+const MODULE_ROUTE_COVERAGE = {
+  "/modules/informed-consents": [
+    "/modules/informed-consents",
+    "/modules/informed-consents/create",
+    "/modules/informed-consents/list",
+    "/modules/informed-consents/archive",
+  ],
+  "/modules/promissory-notes": [
+    "/modules/promissory-notes",
+    "/modules/promissory-notes/create",
+    "/modules/promissory-notes/list",
+    "/modules/promissory-notes/archive",
+  ],
+  "/modules/discharge-refusal": [
+    "/modules/discharge-refusal",
+    "/modules/discharge-refusal/dashboard",
+    "/modules/discharge-refusal/cases",
+  ],
 };
 
 function loadEnvFile(filePath) {
@@ -138,7 +189,7 @@ function parseCookie(setCookie) {
   return { raw, name: name || SESSION_COOKIE_NAME, value: rest.join("=") };
 }
 
-async function apiJson(method, url, { body, cookie } = {}) {
+async function apiJson(method, url, { body, cookie, redirect = "follow" } = {}) {
   const headers = {};
   if (body !== undefined) headers["content-type"] = "application/json";
   if (cookie) headers.cookie = cookie;
@@ -146,6 +197,7 @@ async function apiJson(method, url, { body, cookie } = {}) {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
+    redirect,
   });
   const text = await response.text();
   let json = null;
@@ -164,6 +216,20 @@ async function apiJson(method, url, { body, cookie } = {}) {
     json,
     headers: response.headers,
     setCookie: response.headers.get("set-cookie") || null,
+  };
+}
+
+async function fetchText(url, { cookie, redirect = "follow" } = {}) {
+  const headers = {};
+  if (cookie) headers.cookie = cookie;
+  const response = await fetch(url, { headers, redirect });
+  const text = await response.text();
+  return {
+    status: response.status,
+    text,
+    headers: response.headers,
+    redirected: response.redirected,
+    url: response.url,
   };
 }
 
@@ -359,10 +425,14 @@ function buildCompleteCasePayload() {
   };
 }
 
-async function captureBrowserFindings(label, url, cookie) {
+async function captureBrowserFindings(label, url, cookie, options = {}) {
   const browser = await chromium.launch({ headless: true });
   const findings = [];
-  const context = await browser.newContext();
+  const context = await browser.newContext({
+    viewport: options.viewport,
+    isMobile: Boolean(options.isMobile),
+    userAgent: options.userAgent,
+  });
   if (cookie?.value) {
     await context.addCookies([
       {
@@ -408,6 +478,39 @@ async function captureBrowserFindings(label, url, cookie) {
   return findings;
 }
 
+async function assertMobileLayout(label, url, cookie) {
+  const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+  });
+  if (cookie?.value) {
+    await context.addCookies([
+      {
+        name: cookie.name || SESSION_COOKIE_NAME,
+        value: cookie.value,
+        url: BASE_URL,
+        httpOnly: true,
+        sameSite: "Lax",
+      },
+    ]);
+  }
+  const page = await context.newPage();
+  await page.goto(url, { waitUntil: "networkidle", timeout: 45000 });
+  const metrics = await page.evaluate(() => ({
+    innerWidth: window.innerWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    bodyScrollWidth: document.body?.scrollWidth ?? 0,
+  }));
+  await context.close();
+  await browser.close();
+  assert(
+    metrics.scrollWidth <= metrics.innerWidth + 4 && metrics.bodyScrollWidth <= metrics.innerWidth + 4,
+    `mobile overflow detected for ${label}: ${JSON.stringify(metrics)}`,
+  );
+  return metrics;
+}
+
 async function main() {
   loadEnv();
   fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
@@ -415,9 +518,34 @@ async function main() {
   try {
     await clearForcedResetState("admin@wathiqcare.online");
 
+    await step("Landing page branding and bilingual rendering", async () => {
+      const englishLanding = await fetchText(`${BASE_URL}/en`);
+      assert(englishLanding.status === 200, `english landing failed: ${englishLanding.status}`);
+      assert(
+        englishLanding.text.includes("Integrated Medico-Legal Engineering Platform for Healthcare Compliance Automation"),
+        "english landing branding missing",
+      );
+      assert(englishLanding.text.includes("Informed Consents"), "english landing modules missing");
+
+      const arabicLanding = await fetchText(`${BASE_URL}/ar`);
+      assert(arabicLanding.status === 200, `arabic landing failed: ${arabicLanding.status}`);
+      assert(arabicLanding.text.includes("منصة هندسة طبية قانونية متكاملة لأتمتة الامتثال الصحي"), "arabic landing branding missing");
+      assert(arabicLanding.text.includes("الموافقات المستنيرة"), "arabic landing modules missing");
+
+      const englishLogin = await fetchText(`${BASE_URL}/en/login`);
+      const arabicLogin = await fetchText(`${BASE_URL}/ar/login`);
+      assert(englishLogin.status === 200 && arabicLogin.status === 200, "localized login pages unavailable");
+      return {
+        englishLanding: true,
+        arabicLanding: true,
+        englishLogin: true,
+        arabicLogin: true,
+      };
+    });
+
     const platform = await step("Platform login", async () => {
       const loginResult = await login("admin@wathiqcare.online", DEFAULT_PASSWORD);
-      assert(loginResult.response.json?.redirectTo === "/platform", `expected /platform redirect, got ${loginResult.response.text}`);
+      assert(loginResult.response.json?.redirectTo === "/modules", `expected /modules redirect, got ${loginResult.response.text}`);
       return { redirectTo: loginResult.response.json?.redirectTo, cookie: loginResult.cookie };
     });
 
@@ -429,7 +557,7 @@ async function main() {
 
     const users = await step("Ensure tenant role users", async () => ensureRoleUsers());
 
-    const roleSessions = await step("Role dashboard routing", async () => {
+    const roleSessions = await step("Role module routing and RBAC", async () => {
       const sessions = {};
       for (const fixture of roleFixtures) {
         const session = await login(fixture.email, DEFAULT_PASSWORD);
@@ -437,11 +565,48 @@ async function main() {
           session.response.json?.redirectTo === fixture.expectedRedirect,
           `expected ${fixture.expectedRedirect} for ${fixture.email}, got ${session.response.text}`,
         );
-        const pageResponse = await apiJson("GET", `${BASE_URL}${fixture.expectedRedirect}`, { cookie: session.cookie.raw });
-        assert(pageResponse.status === 200, `dashboard page failed for ${fixture.email}: ${pageResponse.status}`);
-        sessions[fixture.key] = { cookie: session.cookie.raw, redirectTo: fixture.expectedRedirect, email: fixture.email };
+        const pageResponse = await fetchText(`${BASE_URL}${fixture.expectedRedirect}`, { cookie: session.cookie.raw });
+        assert(pageResponse.status === 200, `module portal failed for ${fixture.email}: ${pageResponse.status}`);
+        for (const allowedRoute of fixture.allowedModules) {
+          for (const route of MODULE_ROUTE_COVERAGE[allowedRoute]) {
+            const routeResponse = await fetchText(`${BASE_URL}${route}`, { cookie: session.cookie.raw });
+            assert(routeResponse.status === 200, `allowed route failed for ${fixture.email}: ${route} => ${routeResponse.status}`);
+          }
+        }
+        for (const forbiddenRoute of ALL_MODULE_ROUTES.filter((route) => !fixture.allowedModules.includes(route))) {
+          const deniedResponse = await fetchText(`${BASE_URL}${forbiddenRoute}`, {
+            cookie: session.cookie.raw,
+            redirect: "manual",
+          });
+          assert(
+            deniedResponse.status >= 300 && deniedResponse.status < 400,
+            `forbidden route did not redirect for ${fixture.email}: ${forbiddenRoute} => ${deniedResponse.status}`,
+          );
+          assert(
+            /\/modules$/.test(deniedResponse.headers.get("location") || ""),
+            `forbidden route redirect target mismatch for ${fixture.email}: ${forbiddenRoute} => ${deniedResponse.headers.get("location")}`,
+          );
+        }
+        sessions[fixture.key] = {
+          cookie: session.cookie.raw,
+          redirectTo: fixture.expectedRedirect,
+          email: fixture.email,
+          allowedModules: fixture.allowedModules,
+        };
+      }
+      const platformPortal = await fetchText(`${BASE_URL}/modules`, { cookie: platform.cookie.raw });
+      assert(platformPortal.status === 200, `platform module portal failed: ${platformPortal.status}`);
+      for (const route of ALL_MODULE_ROUTES) {
+        const routeResponse = await fetchText(`${BASE_URL}${route}`, { cookie: platform.cookie.raw });
+        assert(routeResponse.status === 200, `platform route failed: ${route} => ${routeResponse.status}`);
       }
       return sessions;
+    });
+
+    await step("Mobile responsiveness", async () => {
+      const loginMetrics = await assertMobileLayout("login-mobile", `${BASE_URL}/en/login`);
+      const portalMetrics = await assertMobileLayout("modules-mobile", `${BASE_URL}/modules`, platform.cookie);
+      return { login: loginMetrics, modules: portalMetrics };
     });
 
     const caseFlow = await step("Case creation and workspace interaction", async () => {
@@ -654,6 +819,10 @@ async function main() {
       });
       assert(flaggedLogin.status === 200, `forced reset login did not return success envelope: ${flaggedLogin.status} ${flaggedLogin.text}`);
       assert(flaggedLogin.json?.mustChangePassword === true, `mustChangePassword not set: ${flaggedLogin.text}`);
+      const firstLoginCookie = parseCookie(flaggedLogin.setCookie);
+      const firstLoginPage = await fetchText(`${BASE_URL}/first-login`, { cookie: firstLoginCookie.raw });
+      assert(firstLoginPage.status === 200, `first login page failed: ${firstLoginPage.status}`);
+      assert(/Set Your Password|تغيير كلمة المرور الأولي/.test(firstLoginPage.text), "first login page copy missing");
 
       const resetToken = await createResetToken(users.doctor.id);
       const confirmReset = await apiJson("POST", `${BASE_URL}/api/auth/password/reset-confirm`, {
@@ -666,6 +835,7 @@ async function main() {
       return {
         processed: forceReset.json?.processed || null,
         emailFailed: forceReset.json?.emailFailed || 0,
+        firstLoginPage: true,
       };
     });
 

@@ -129,10 +129,10 @@ function HeroSection() {
         <h1 className="font-serif text-4xl font-semibold leading-tight text-white md:text-5xl">
           واثق كير
           <br />
-          منصة الامتثال والحوكمة الطبية القانونية
+          منصة هندسة طبية قانونية متكاملة لأتمتة الامتثال الصحي
         </h1>
         <p className="hero-subtext text-base leading-7 text-white md:text-lg">
-          منصة مؤسسية شاملة لإدارة الموافقات المستنيرة، السندات لأمر الإلكترونية، ورفض الخروج من خلال سير عمل آمن وقابل للتدقيق.
+          منصة صحية مؤسسية موحدة ومستوحاة من TrackCare لإدارة الموافقات المستنيرة، السندات لأمر الإلكترونية، ورفض الخروج عبر مسارات آمنة وقابلة للتدقيق.
         </p>
         <div className="hero-actions flex flex-wrap gap-3">
           <Link
@@ -297,7 +297,7 @@ function FeaturesSection() {
         <div className="text-center mb-14">
           <h2 className="text-3xl font-extrabold text-cyan-950 mb-3">مميزات المنصة</h2>
           <p className="text-slate-500 text-lg max-w-xl mx-auto">
-            كل ما تحتاجه المنشأة الصحية لإدارة الموافقات، السندات، ورفض الخروج بشكل قانوني وموثّق
+            كل ما تحتاجه المنشأة الصحية لإدارة الموافقات المستنيرة والسندات لأمر ورفض الخروج ضمن تصميم موحد بدرجة مؤسسية
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

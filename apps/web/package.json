@@ -8,6 +8,7 @@
     "start": "next start",
     "validate:prod-release": "node scripts/prod-release-gate.cjs",
     "demo:seed": "node scripts/seed-demo-users.mjs",
+    "pilot:seed:apply": "node scripts/seed-demo-users.mjs --mode=pilot",
     "lint": "eslint",
     "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts",
     "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",

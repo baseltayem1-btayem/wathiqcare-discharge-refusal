@@ -54,6 +54,8 @@ loadEnvFile(path.join(repoRoot, "apps", "web", ".env"));
 loadEnvFile(path.join(repoRoot, "apps", "web", ".env.local"));
 
 const prisma = new PrismaClient();
+const seedMode = process.argv.includes("--mode=pilot") ? "pilot" : "demo";
+const seedLabel = seedMode === "pilot" ? "pilot-seed" : "demo-seed";
 
 const BCRYPT_ROUNDS = 12;
 
@@ -474,7 +476,7 @@ async function ensureDemoModuleData(tenantId, actorUserId) {
 }
 
 async function main() {
-  console.log("[demo-seed] Provisioning controlled demo accounts and demo module records...\n");
+  console.log(`[${seedLabel}] Provisioning controlled ${seedMode} accounts and module records...\n`);
 
   await ensurePasswordResetSchema();
 
@@ -496,13 +498,19 @@ async function main() {
 
   await ensureDemoModuleData(demoImcTenantId, demoActorUserId);
 
-  console.log("\n[demo-seed] Demo accounts provisioned successfully.");
-  console.log("[demo-seed] Canonical login identifiers:");
+  console.log(`\n[${seedLabel}] ${seedMode === "pilot" ? "Pilot" : "Demo"} accounts provisioned successfully.`);
+  console.log(`[${seedLabel}] Canonical login identifiers:`);
   for (const u of DEMO_USERS) {
     console.log(`  - ${u.email} (${u.label})`);
   }
-  console.log("[demo-seed] Demo accounts are provisioned with controlled credentials and ready for module validation.");
-  console.log("[demo-seed] Rotate the credentials through your normal operational process if you re-purpose them.");
+  console.log(`[${seedLabel}] Accounts are provisioned with controlled credentials and ready for module validation.`);
+  console.log(`[${seedLabel}] Rotate the credentials through your normal operational process if you re-purpose them.`);
+  console.log(JSON.stringify({
+    seedMode,
+    seededAccountsCount: DEMO_USERS.length,
+    tenantCodes: [DEMO_PLATFORM_TENANT.code, DEMO_IMC_TENANT.code],
+    moduleSlugs: ["informed-consents", "promissory-notes", "discharge-refusal"],
+  }, null, 2));
 }
 
 main()
