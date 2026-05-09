@@ -49,7 +49,10 @@ function loadEnvFile(filePath) {
 
     const key = trimmed.slice(0, idx).trim();
     let value = trimmed.slice(idx + 1).trim();
-    if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      value.length >= 2 &&
+      ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'")))
+    ) {
       value = value.slice(1, -1);
     }
     if (typeof process.env[key] === "undefined") {
@@ -114,6 +117,12 @@ async function upsertPilotUser(tenant, def) {
   }
   if (rawPassword.length < 8) {
     throw new Error(`Environment variable ${def.passwordEnv} must be at least 8 characters for user ${def.email}`);
+  }
+  const complexity = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
+  if (!complexity.test(rawPassword)) {
+    throw new Error(
+      `Environment variable ${def.passwordEnv} must include uppercase, lowercase, number, and symbol for user ${def.email}`,
+    );
   }
   const hashedPassword = await bcrypt.hash(rawPassword, BCRYPT_ROUNDS);
   const data = {
