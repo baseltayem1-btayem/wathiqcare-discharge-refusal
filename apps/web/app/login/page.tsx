@@ -10,6 +10,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LoginBrandPanel from "@/components/login/LoginBrandPanel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { DEMO_ACCOUNT_PROFILES } from "@/lib/demo-access";
+import { getLoginPlatformBranding } from "@/lib/config/login-platform-branding";
 import { apiFetch } from "@/utils/api";
 
 type AuthMode = "microsoft" | "magic-link" | "password";
@@ -43,6 +44,7 @@ function normalizePostLoginDestination(nextCandidate: string | null, fallbackPat
 export default function LoginPage() {
   const { t, isRtl } = useI18n();
   const router = useRouter();
+  const branding = getLoginPlatformBranding(isRtl);
   const allowDevPrefill =
     process.env.NODE_ENV === "development" &&
     process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN_PREFILL === "true";
@@ -145,13 +147,12 @@ export default function LoginPage() {
       <div className="border-b border-[#224566] bg-[var(--primary)] px-4 py-2 text-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[0.04em]">
           <div className="flex items-center gap-3">
-            <span>WathiqCare System</span>
-            <span className="hidden md:inline">International Medical Center (IMC)</span>
-            <span className="hidden md:inline">Clinical Discharge Refusal &amp; Legal Evidence Module</span>
+            <span>{branding.platformName}</span>
+            <span className="hidden md:inline">{branding.platformTitle}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="wc-system-indicator !border-white/25 !bg-white/10">CR: 4030143596</span>
-            <span className="wc-system-indicator !border-white/25 !bg-white/10">Version: 7.2.4</span>
+            <span className="wc-system-indicator !border-white/25 !bg-white/10">{branding.licensedSubscriberLabel}: {branding.licensedSubscriberValue}</span>
+            <span className="wc-system-indicator !border-white/25 !bg-white/10">{branding.versionLabel}: {branding.versionValue}</span>
           </div>
         </div>
       </div>
