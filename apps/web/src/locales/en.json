@@ -16,8 +16,8 @@
   },
   "app": {
     "name": "WathiqCare",
-    "moduleName": "Discharge Refusal",
-    "moduleTagline": "Compliance-focused legal-medical workflow.",
+    "moduleName": "Integrated Compliance Workspace",
+    "moduleTagline": "Integrated Medico-Legal Engineering Platform for Healthcare Compliance Automation.",
     "activeWorkspace": "Active Workspace",
     "secureMode": "Tenant-scoped secure mode enabled.",
     "tenantName": "Tenant Workspace"
@@ -54,17 +54,17 @@
   },
   "home": {
     "title": "WathiqCare Dashboard",
-    "subtitle": "Legal-medical discharge refusal management, audit trails, and evidence bundles.",
+    "subtitle": "Integrated medico-legal engineering across informed consents, promissory notes, and discharge refusal workflows.",
     "login": "Login",
     "cases": "Cases"
   },
   "login": {
     "badge": "Secure Access",
     "title": "WathiqCare Login",
-    "subtitle": "Sign in to access the legal-medical dashboard.",
-    "brandTitle": "Discharge Refusal",
-    "brandSubtitle": "Legal-Medical Workflow",
-    "brandDescription": "A platform to manage discharge refusal cases, documentation, and legal escalation in a structured, secure way.",
+    "subtitle": "Sign in to access the integrated medico-legal workspace.",
+    "brandTitle": "Integrated Medico-Legal Engineering",
+    "brandSubtitle": "Platform for Healthcare Compliance Automation",
+    "brandDescription": "WathiqCare unifies informed consents, electronic promissory notes, and discharge refusal workflows in a secure, TrackCare-inspired enterprise healthcare workspace.",
     "formTitle": "Sign In",
     "formSubtitle": "Enter your credentials to access the system.",
     "email": "Email",
@@ -73,7 +73,7 @@
     "hidePassword": "Hide",
     "rememberMe": "Remember me",
     "errorInline": "Unable to sign in. Please verify your credentials and try again.",
-    "footer": "WathiqCare Medico-Legal Workflow Platform",
+    "footer": "Integrated Medico-Legal Engineering Platform for Healthcare Compliance Automation",
     "submit": "Login",
     "submitting": "Signing in...",
     "failed": "Login failed"
@@ -1078,8 +1078,8 @@
     },
     "hero": {
       "badge": "PDPL Compliant · CBAHI Accreditation Ready",
-      "title": "WathiqCare\nMedico-Legal Compliance & Governance Platform",
-      "subtitle": "A comprehensive enterprise platform for managing informed consents, electronic promissory notes, and discharge refusal through secure, auditable medico-legal workflows.",
+      "title": "WathiqCare\nIntegrated Medico-Legal Engineering Platform for Healthcare Compliance Automation",
+      "subtitle": "A TrackCare-inspired enterprise healthcare platform for informed consents, electronic promissory notes, and discharge refusal through secure, auditable, unified module workflows.",
       "cta1": "Request Free Demo",
       "cta2": "Subscriber Login"
     },

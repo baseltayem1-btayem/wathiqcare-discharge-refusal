@@ -147,7 +147,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-3">
             <span>WathiqCare System</span>
             <span className="hidden md:inline">International Medical Center (IMC)</span>
-            <span className="hidden md:inline">Clinical Discharge Refusal &amp; Legal Evidence Module</span>
+            <span className="hidden md:inline">Integrated Medico-Legal Engineering Platform</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="wc-system-indicator !border-white/25 !bg-white/10">CR: 4030143596</span>
