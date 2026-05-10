@@ -44,17 +44,17 @@ function NavBar({ lang }: { lang: string }) {
   return (
     <header className="wc-nav-shell fixed top-0 inset-x-0 z-50">
       <div
-        className="wc-container h-16 flex items-center justify-between"
+        className="wc-container min-h-[78px] md:min-h-[88px] flex items-center justify-between gap-4 py-2"
         dir={isRtl ? "rtl" : "ltr"}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center h-12 md:h-14 w-[138px] md:w-[186px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/wathiqcare-logo.png"
             alt="WathiqCare"
             width={140}
             height={40}
-            className="h-auto w-full max-w-[220px] object-contain"
+            className="h-full w-auto max-w-full object-contain"
             loading="eager"
             decoding="async"
           />
@@ -74,13 +74,14 @@ function NavBar({ lang }: { lang: string }) {
           <LanguageSwitcher />
           <Link
             href={`/${lang}/login`}
-            className="wc-button-ghost h-10 px-4 text-sm"
+            className="wc-button-ghost h-10 px-4 text-sm inline-flex items-center"
           >
             {t("landing.nav.login")}
           </Link>
           <Link
             href={`/${lang}/request-demo`}
-            className="wc-button-primary hidden sm:inline-flex h-10 px-4 text-sm"
+            className="wc-button-primary hidden sm:inline-flex h-10 px-4 text-sm items-center text-white"
+            style={{ color: "#ffffff" }}
           >
             {t("landing.nav.demo")}
           </Link>
@@ -95,7 +96,7 @@ function HeroSection({ lang }: { lang: string }) {
 
   return (
     <section
-      className="hero relative overflow-hidden mt-16 w-full"
+      className="hero relative overflow-hidden mt-[78px] md:mt-[88px] w-full"
       dir={isRtl ? "rtl" : "ltr"}
     >
       <div className="hero-content space-y-5 px-8 py-10 md:px-10 md:py-12">
