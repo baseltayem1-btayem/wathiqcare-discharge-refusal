@@ -19,6 +19,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { hasInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
 const prisma = getPrisma();
 
@@ -2881,6 +2882,11 @@ export async function upsertConsentEmrMapping(
     allergiesSnapshot?: unknown;
     medicationsSnapshot?: unknown;
     consentHistoryRef?: string;
+    sourceSystem?: string;
+    sourceTransactionId?: string;
+    sourceSnapshot?: unknown;
+    isManualOverride?: boolean;
+    overrideReason?: string;
   },
   request?: NextRequest,
 ) {
@@ -2891,7 +2897,22 @@ export async function upsertConsentEmrMapping(
     throw new ApiError(404, "Consent document not found");
   }
 
-  const adapterKey = (payload.adapterKey || "default-emr-adapter").trim();
+  const adapterKey = (payload.adapterKey || "trakcare").trim();
+  const isManualOverride = payload.isManualOverride === true;
+  const overrideReason = payload.overrideReason?.trim() || null;
+  const sourceSystem = payload.sourceSystem?.trim() || "TRAKCARE";
+  const sourceTransactionId = payload.sourceTransactionId?.trim() || null;
+
+  if (isManualOverride) {
+    if (!overrideReason) {
+      throw new ApiError(400, "Manual override reason is required");
+    }
+
+    if (!hasInformedConsentPermission(auth, "consent:approve")) {
+      throw new ApiError(403, "Manual override requires consent approval permission");
+    }
+  }
+
   const allergiesSnapshot =
     payload.allergiesSnapshot === undefined
       ? undefined
@@ -2917,6 +2938,18 @@ export async function upsertConsentEmrMapping(
       allergiesSnapshot,
       medicationsSnapshot,
       consentHistoryRef: payload.consentHistoryRef?.trim() || null,
+      metadata: {
+        sourceSystem,
+        sourceTransactionId,
+        isManualOverride,
+        overrideReason,
+      } as Prisma.InputJsonValue,
+      externalPayload:
+        payload.sourceSnapshot === undefined
+          ? undefined
+          : payload.sourceSnapshot === null
+            ? Prisma.JsonNull
+            : (payload.sourceSnapshot as Prisma.InputJsonValue),
     },
     create: {
       id: `${tenantId}:${consentDocumentId}:${adapterKey}`,
@@ -2930,6 +2963,57 @@ export async function upsertConsentEmrMapping(
       allergiesSnapshot,
       medicationsSnapshot,
       consentHistoryRef: payload.consentHistoryRef?.trim() || null,
+      metadata: {
+        sourceSystem,
+        sourceTransactionId,
+        isManualOverride,
+        overrideReason,
+      } as Prisma.InputJsonValue,
+      externalPayload:
+        payload.sourceSnapshot === undefined
+          ? undefined
+          : payload.sourceSnapshot === null
+            ? Prisma.JsonNull
+            : (payload.sourceSnapshot as Prisma.InputJsonValue),
+    },
+  });
+
+  if (payload.sourceSnapshot !== undefined) {
+    await prisma.consentSourceSnapshot.create({
+      data: {
+        tenantId,
+        consentDocumentId,
+        sourceSystem,
+        sourceType: isManualOverride ? "MANUAL_OVERRIDE" : "TRAKCARE_LIVE",
+        sourceTransactionId,
+        capturedByUserId: auth.sub,
+        isManualOverride,
+        overrideReason,
+        snapshot:
+          payload.sourceSnapshot === null
+            ? ({ value: null } as Prisma.InputJsonValue)
+            : ((payload.sourceSnapshot as Prisma.InputJsonValue) || ({ value: null } as Prisma.InputJsonValue)),
+        metadata: {
+          adapterKey,
+        } as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  await prisma.consentDocument.update({
+    where: { id: consentDocumentId },
+    data: {
+      metadata: {
+        ...(asRecord(doc.metadata) || {}),
+        sourceOfTruth: {
+          system: sourceSystem,
+          sourceTransactionId,
+          isManualOverride,
+          overrideReason,
+          capturedAt: new Date().toISOString(),
+          capturedByUserId: auth.sub,
+        },
+      } as Prisma.InputJsonValue,
     },
   });
 
@@ -2941,7 +3025,14 @@ export async function upsertConsentEmrMapping(
     source: "integration",
     consentDocumentId,
     caseId: doc.caseId,
-    metadata: { adapterKey, mappingId: mapping.id },
+    metadata: {
+      adapterKey,
+      mappingId: mapping.id,
+      sourceSystem,
+      sourceTransactionId,
+      isManualOverride,
+      overrideReason,
+    },
     request,
   });
 
