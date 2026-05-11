@@ -99,6 +99,7 @@ export default function InformedConsentsModulePage({
       { href: "/modules/informed-consents/create", label: { ar: "إنشاء موافقة", en: "Create Consent" } },
       { href: "/modules/informed-consents/archive", label: { ar: "الأرشيف", en: "Archive" } },
       { href: "/modules/informed-consents/templates", label: { ar: "القوالب", en: "Templates" } },
+      { href: "/modules/informed-consents/governance", label: { ar: "الحوكمة", en: "Governance" } },
       { href: "/modules/discharge-refusal", label: { ar: "منصة رفض الخروج", en: "Discharge Refusal" } },
     ],
     [],
