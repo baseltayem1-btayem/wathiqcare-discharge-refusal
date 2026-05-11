@@ -1,7 +1,11 @@
+<<<<<<< Updated upstream
 import type { NextRequest } from "next/server";
 import { requireAuth, requireTenantOperationalAccess } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { userRoleAllows } from "@/lib/server/roles";
+=======
+import { requireModuleOperationalAccess } from "@/lib/server/auth";
+>>>>>>> Stashed changes
 import {
   createInformedConsentsRouteHandlers,
 } from "@/lib/server/module-api-route-handlers";
@@ -12,8 +16,8 @@ import {
 import { INFORMED_CONSENTS_ALLOWED_ROLES, isInformedConsentsEnabled } from "@/lib/modules/informed-consents-release";
 
 const handlers = createInformedConsentsRouteHandlers({
-  requireAuthFn: requireAuth,
-  requireTenantOperationalAccessFn: requireTenantOperationalAccess,
+  requireAuthFn: (request) => requireModuleOperationalAccess(request, "informed-consents"),
+  requireTenantOperationalAccessFn: () => undefined,
   listTenantConsentRecordsFn: listTenantConsentRecords,
   createTenantConsentRecordFn: createTenantConsentRecord,
 });

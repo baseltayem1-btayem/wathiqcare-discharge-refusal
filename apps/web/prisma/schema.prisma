@@ -115,6 +115,12 @@ enum SubscriptionEventType {
   PAYMENT_SUCCEEDED
 }
 
+enum FeatureFlagScope {
+  GLOBAL
+  TENANT
+  MODULE
+}
+
 enum OperationDepartment {
   PHARMACY
   NURSING
@@ -177,6 +183,86 @@ enum ConsentMethod {
   OTP
   WITNESS_ACKNOWLEDGMENT
   WRITTEN
+}
+
+enum ConsentTemplateStatus {
+  DRAFT
+  UNDER_REVIEW
+  APPROVED
+  ACTIVE
+  RETIRED
+  ARCHIVED
+}
+
+enum ConsentDocumentStatus {
+  DRAFT
+  AI_DRAFT
+  PHYSICIAN_REVIEW
+  APPROVED
+  READY_FOR_SIGNATURE
+  SIGNED
+  FINALIZED
+  ARCHIVED
+  VOID
+}
+
+enum ConsentSectionKind {
+  FIXED_LEGAL
+  DYNAMIC_MEDICAL
+  AUTO_POPULATED
+  SIGNATURE
+  WITNESS
+  INTERPRETER
+}
+
+enum ConsentSignatureRole {
+  PATIENT
+  PHYSICIAN
+  WITNESS
+  INTERPRETER
+  GUARDIAN
+}
+
+enum ConsentRiskClass {
+  COMMON
+  LESS_COMMON
+  RARE
+  SERIOUS
+  LIFE_THREATENING
+}
+
+enum ConsentRiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ConsentAlertLevel {
+  INFO
+  WARNING
+  HIGH_ALERT
+  LEGAL_CRITICAL
+}
+
+enum ConsentCommitteeType {
+  LEGAL
+  MEDICAL
+  QUALITY
+  COMPLIANCE
+}
+
+enum ConsentReviewDecision {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+}
+
+enum ConsentEvidenceCopyType {
+  PATIENT_COPY
+  MEDICAL_RECORD_COPY
+  LEGAL_ARCHIVE_COPY
 }
 
 enum PromissoryNoteStatus {
@@ -244,6 +330,13 @@ enum BackupJobStatus {
   VERIFIED
 }
 
+enum SubscriberModuleAccessStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  TRIAL
+}
+
 model Tenant {
   id                 String              @id @default(uuid())
   name               String
@@ -274,6 +367,7 @@ model Tenant {
   usageRecords       UsageRecord[]
   invoices           Invoice[]
   subscriptionEvents SubscriptionEvent[]
+  subscriberModuleAccesses SubscriberModuleAccess[]
   caseOperationStates CaseOperationState[]
   caseAssignmentHistory CaseAssignmentHistory[]
   caseStepEvents      CaseStepEvent[]
@@ -302,8 +396,74 @@ model Tenant {
   tenantSecuritySettings      TenantSecuritySetting?
   privilegedAccessLogs        PrivilegedAccessLog[]
   promissoryNotes             PromissoryNote[]
+  consentCategories           ConsentCategory[]
+  consentTemplates            ConsentTemplate[]
+  consentTemplateVersions     ConsentTemplateVersion[]
+  consentTemplateSections     ConsentTemplateSection[]
+  consentAIPrompts            ConsentAIPrompt[]
+  consentDocuments            ConsentDocument[]
+  consentDocumentSections     ConsentDocumentSection[]
+  consentDocumentSignatures   ConsentDocumentSignature[]
+  consentAuditEvents          ConsentAuditEvent[]
+  consentPromptRegistry       ConsentPromptRegistry[]
+  consentWordingRepository    ConsentWordingRepository[]
+  consentProcedureCatalog     ConsentProcedureCatalog[]
+  consentProcedureRiskItems   ConsentProcedureRiskItem[]
+  consentProcedureAlternatives ConsentProcedureAlternative[]
+  consentProcedureRefusalConsequences ConsentProcedureRefusalConsequence[]
+  consentProcedureOutcomes    ConsentProcedureOutcome[]
+  consentDocumentRisks        ConsentDocumentRisk[]
+  consentGeneratedParagraphs  ConsentGeneratedParagraph[]
+  consentTimelineEvents       ConsentTimelineEvent[]
+  consentCommitteeReviews     ConsentCommitteeReview[]
+  consentEvidencePackages     ConsentEvidencePackage[]
+  consentEmrMappings          ConsentEmrMapping[]
+  featureFlagOverrides        FeatureFlagOverride[]
 
   @@map("tenants")
+}
+
+model FeatureFlagOverride {
+  id        String           @id @default(uuid())
+  scope     FeatureFlagScope
+  scopeRef  String           @map("scope_ref")
+  key       String
+  value     Boolean
+  tenantId  String?          @map("tenant_id")
+  moduleKey String?          @map("module_key")
+  updatedBy String?          @map("updated_by")
+  metadata  Json?
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  tenant    Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([scope, scopeRef, key])
+  @@index([tenantId, moduleKey, key])
+  @@map("feature_flag_overrides")
+}
+
+model SubscriberModuleAccess {
+  id               String                     @id @default(uuid())
+  subscriberId     String                     @map("subscriber_id")
+  moduleKey        String                     @map("module_key")
+  status           SubscriberModuleAccessStatus @default(INACTIVE)
+  activatedBy      String?                    @map("activated_by")
+  activatedAt      DateTime?                  @map("activated_at")
+  deactivatedBy    String?                    @map("deactivated_by")
+  deactivatedAt    DateTime?                  @map("deactivated_at")
+  subscriptionPlan String?                    @map("subscription_plan")
+  expiryDate       DateTime?                  @map("expiry_date")
+  notes            String?
+  createdAt        DateTime                   @default(now()) @map("created_at")
+  updatedAt        DateTime                   @updatedAt @map("updated_at")
+
+  subscriber       Tenant                     @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriberId, moduleKey], map: "uq_subscriber_module_access_subscriber_module")
+  @@index([subscriberId, status], map: "idx_subscriber_module_access_subscriber_status")
+  @@index([moduleKey, status], map: "idx_subscriber_module_access_module_status")
+  @@map("subscriber_module_access")
 }
 
 model TenantBranding {
@@ -615,6 +775,7 @@ model Case {
   reportAccessLogs    ReportAccessLog[]
   privilegedAccessLogs PrivilegedAccessLog[]
   promissoryNotes     PromissoryNote[]
+  consentDocuments    ConsentDocument[]
 
   @@unique([tenantId, caseNumber])
   @@index([tenantId, status])
@@ -1394,9 +1555,577 @@ model PrivilegedAccessLog {
   @@map("privileged_access_logs")
 }
 
+<<<<<<< Updated upstream
 // TODO(informed-consents-release): add dedicated schema models and migrations for:
 // - consent_cases
 // - consent_signatures
 // - consent_audit_logs
 // - consent_templates
 // - consent_generated_pdfs
+=======
+model ConsentCategory {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  code          String
+  nameAr        String   @map("name_ar")
+  nameEn        String   @map("name_en")
+  descriptionAr String?  @map("description_ar")
+  descriptionEn String?  @map("description_en")
+  isActive      Boolean  @default(true) @map("is_active")
+  sortOrder     Int      @default(100) @map("sort_order")
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  templates     ConsentTemplate[]
+
+  @@unique([tenantId, code], map: "uq_consent_categories_tenant_code")
+  @@map("consent_categories")
+}
+
+model ConsentTemplate {
+  id                String               @id @default(uuid())
+  tenantId          String               @map("tenant_id")
+  categoryId        String?              @map("category_id")
+  templateCode      String               @map("template_code")
+  consentType       String               @map("consent_type")
+  specialty         String
+  department        String?
+  status            ConsentTemplateStatus @default(DRAFT)
+  currentVersionId  String?              @map("current_version_id")
+  titleAr           String               @map("title_ar")
+  titleEn           String               @map("title_en")
+  summaryAr         String?              @map("summary_ar")
+  summaryEn         String?              @map("summary_en")
+  isAiAssistEnabled Boolean              @default(true) @map("is_ai_assist_enabled")
+  isSystemTemplate  Boolean              @default(false) @map("is_system_template")
+  metadata          Json?
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+
+  tenant            Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category          ConsentCategory?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  versions          ConsentTemplateVersion[]
+  documents         ConsentDocument[]
+  auditEvents       ConsentAuditEvent[]
+  committeeReviews  ConsentCommitteeReview[]
+
+  @@unique([tenantId, templateCode], map: "uq_consent_templates_tenant_template_code")
+  @@map("consent_templates")
+}
+
+model ConsentTemplateVersion {
+  id               String               @id @default(uuid())
+  tenantId         String               @map("tenant_id")
+  templateId       String               @map("template_id")
+  versionLabel     String               @map("version_label")
+  versionNumber    Int                  @default(1) @map("version_number")
+  status           ConsentTemplateStatus @default(DRAFT)
+  legalTextAr      String               @map("legal_text_ar")
+  legalTextEn      String               @map("legal_text_en")
+  pdplTextAr       String               @map("pdpl_text_ar")
+  pdplTextEn       String               @map("pdpl_text_en")
+  witnessDeclAr    String               @map("witness_decl_ar")
+  witnessDeclEn    String               @map("witness_decl_en")
+  physicianCertAr  String               @map("physician_cert_ar")
+  physicianCertEn  String               @map("physician_cert_en")
+  aiWarningAr      String               @map("ai_warning_ar")
+  aiWarningEn      String               @map("ai_warning_en")
+  createdByUserId  String?              @map("created_by_user_id")
+  approvedByUserId String?              @map("approved_by_user_id")
+  approvedAt       DateTime?            @map("approved_at")
+  effectiveFrom    DateTime?            @map("effective_from")
+  effectiveTo      DateTime?            @map("effective_to")
+  metadata         Json?
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+
+  tenant           Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template         ConsentTemplate         @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  sections         ConsentTemplateSection[]
+  documents        ConsentDocument[]
+  auditEvents      ConsentAuditEvent[]
+  committeeReviews ConsentCommitteeReview[]
+
+  @@unique([templateId, versionNumber], map: "uq_consent_template_versions_template_version")
+  @@map("consent_template_versions")
+}
+
+model ConsentTemplateSection {
+  id                    String             @id @default(uuid())
+  tenantId              String             @map("tenant_id")
+  templateVersionId     String             @map("template_version_id")
+  sectionKey            String             @map("section_key")
+  sectionKind           ConsentSectionKind @map("section_kind")
+  titleAr               String             @map("title_ar")
+  titleEn               String             @map("title_en")
+  contentAr             String             @map("content_ar")
+  contentEn             String             @map("content_en")
+  isRequired            Boolean            @default(true) @map("is_required")
+  isEditableByPhysician Boolean            @default(false) @map("is_editable_by_physician")
+  sortOrder             Int                @default(100) @map("sort_order")
+  metadata              Json?
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  templateVersion       ConsentTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([templateVersionId, sectionKey], map: "uq_consent_template_sections_version_key")
+  @@map("consent_template_sections")
+}
+
+model ConsentAIPrompt {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  specialty    String
+  consentType  String   @map("consent_type")
+  promptAr     String   @map("prompt_ar")
+  promptEn     String   @map("prompt_en")
+  versionLabel String?  @map("version_label")
+  isActive     Boolean  @default(true) @map("is_active")
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("consent_ai_prompts")
+}
+
+model ConsentDocument {
+  id                  String                @id @default(uuid())
+  tenantId            String                @map("tenant_id")
+  caseId              String                @map("case_id")
+  templateId          String                @map("template_id")
+  templateVersionId   String                @map("template_version_id")
+  consentReference    String                @map("consent_reference")
+  status              ConsentDocumentStatus @default(DRAFT)
+  language            String                @default("bilingual")
+  patientName         String                @map("patient_name")
+  mrn                 String?
+  dob                 String?
+  gender              String?
+  physicianName       String                @map("physician_name")
+  physicianLicense    String?               @map("physician_license")
+  physicianSpecialty  String                @map("physician_specialty")
+  department          String?
+  diagnosis           String?
+  plannedProcedure    String?               @map("planned_procedure")
+  admissionDetails    String?               @map("admission_details")
+  procedureDetails    String?               @map("procedure_details")
+  risksAr             String?               @map("risks_ar")
+  risksEn             String?               @map("risks_en")
+  sideEffectsAr       String?               @map("side_effects_ar")
+  sideEffectsEn       String?               @map("side_effects_en")
+  alternativesAr      String?               @map("alternatives_ar")
+  alternativesEn      String?               @map("alternatives_en")
+  refusalRisksAr      String?               @map("refusal_risks_ar")
+  refusalRisksEn      String?               @map("refusal_risks_en")
+  expectedOutcomesAr  String?               @map("expected_outcomes_ar")
+  expectedOutcomesEn  String?               @map("expected_outcomes_en")
+  physicianNotesAr    String?               @map("physician_notes_ar")
+  physicianNotesEn    String?               @map("physician_notes_en")
+  legalTextAr         String                @map("legal_text_ar")
+  legalTextEn         String                @map("legal_text_en")
+  pdplTextAr          String                @map("pdpl_text_ar")
+  pdplTextEn          String                @map("pdpl_text_en")
+  witnessDeclAr       String                @map("witness_decl_ar")
+  witnessDeclEn       String                @map("witness_decl_en")
+  physicianCertAr     String                @map("physician_cert_ar")
+  physicianCertEn     String                @map("physician_cert_en")
+  aiWarningAr         String                @map("ai_warning_ar")
+  aiWarningEn         String                @map("ai_warning_en")
+  aiGeneratedAt       DateTime?             @map("ai_generated_at")
+  aiGeneratedByUserId String?               @map("ai_generated_by_user_id")
+  aiValidatedAt       DateTime?             @map("ai_validated_at")
+  aiValidatedByUserId String?               @map("ai_validated_by_user_id")
+  approvedAt          DateTime?             @map("approved_at")
+  approvedByUserId    String?               @map("approved_by_user_id")
+  finalizedAt         DateTime?             @map("finalized_at")
+  finalizedByUserId   String?               @map("finalized_by_user_id")
+  immutablePdfUrl     String?               @map("immutable_pdf_url")
+  immutablePdfHash    String?               @map("immutable_pdf_hash")
+  qrPayload           String?               @map("qr_payload")
+  documentVersion     String?               @map("document_version")
+  auditChecksum       String?               @map("audit_checksum")
+  generatedByModel    String?               @map("generated_by_model")
+  legalHold           Boolean               @default(false) @map("legal_hold")
+  legalHoldReason     String?               @map("legal_hold_reason")
+  retentionUntil      DateTime?             @map("retention_until")
+  metadata            Json?
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+
+  tenant              Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case                Case                     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  template            ConsentTemplate          @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateVersion     ConsentTemplateVersion   @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
+  sections            ConsentDocumentSection[]
+  signatures          ConsentDocumentSignature[]
+  auditEvents         ConsentAuditEvent[]
+  documentRisks       ConsentDocumentRisk[]
+  generatedParagraphs ConsentGeneratedParagraph[]
+  timelineEvents      ConsentTimelineEvent[]
+  committeeReviews    ConsentCommitteeReview[]
+  evidencePackages    ConsentEvidencePackage[]
+  emrMappings         ConsentEmrMapping[]
+
+  @@unique([tenantId, consentReference], map: "uq_consent_documents_tenant_reference")
+  @@index([tenantId, caseId, status, createdAt], map: "idx_consent_documents_tenant_case_status_created")
+  @@index([tenantId, templateId, templateVersionId], map: "idx_consent_documents_tenant_template_version")
+  @@map("consent_documents")
+}
+
+model ConsentDocumentSection {
+  id                    String             @id @default(uuid())
+  tenantId              String             @map("tenant_id")
+  consentDocumentId     String             @map("consent_document_id")
+  sourceTemplateSectionId String?          @map("source_template_section_id")
+  sectionKey            String             @map("section_key")
+  sectionKind           ConsentSectionKind @map("section_kind")
+  titleAr               String             @map("title_ar")
+  titleEn               String             @map("title_en")
+  contentAr             String             @map("content_ar")
+  contentEn             String             @map("content_en")
+  isEditableByPhysician Boolean            @default(false) @map("is_editable_by_physician")
+  sortOrder             Int                @default(100) @map("sort_order")
+  metadata              Json?
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  tenant                Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument       ConsentDocument    @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+
+  @@map("consent_document_sections")
+}
+
+model ConsentDocumentSignature {
+  id               String             @id @default(uuid())
+  tenantId         String             @map("tenant_id")
+  consentDocumentId String            @map("consent_document_id")
+  role             ConsentSignatureRole
+  signerName       String             @map("signer_name")
+  signerIdNumber   String?            @map("signer_id_number")
+  signerLicense    String?            @map("signer_license")
+  signatureMethod  ConsentMethod      @map("signature_method")
+  signedAt         DateTime           @default(now()) @map("signed_at")
+  ipAddress        String?            @map("ip_address")
+  userAgent        String?            @map("user_agent")
+  metadata         Json?
+  createdAt        DateTime           @default(now()) @map("created_at")
+
+  tenant           Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument  ConsentDocument    @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+
+  @@map("consent_document_signatures")
+}
+
+model ConsentAuditEvent {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  consentDocumentId String?  @map("consent_document_id")
+  templateId        String?  @map("template_id")
+  templateVersionId String?  @map("template_version_id")
+  action            String
+  source            String?
+  actorUserId       String?  @map("actor_user_id")
+  actorRole         String?  @map("actor_role")
+  summary           String
+  metadata          Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  tenant            Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument   ConsentDocument?        @relation(fields: [consentDocumentId], references: [id], onDelete: SetNull)
+  template          ConsentTemplate?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateVersion   ConsentTemplateVersion? @relation(fields: [templateVersionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, consentDocumentId, createdAt], map: "idx_consent_audit_events_doc_created")
+  @@index([tenantId, action, createdAt], map: "idx_consent_audit_events_action_created")
+  @@map("consent_audit_events")
+}
+
+model ConsentPromptRegistry {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  specialty     String
+  consentType   String   @map("consent_type")
+  procedureKey  String?  @map("procedure_key")
+  promptAr      String   @map("prompt_ar")
+  promptEn      String   @map("prompt_en")
+  promptVersion String   @default("1.0") @map("prompt_version")
+  generatorModel String  @default("gpt-5.3-codex") @map("generator_model")
+  isActive      Boolean  @default(true) @map("is_active")
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, specialty, consentType, procedureKey], map: "idx_consent_prompt_registry_lookup")
+  @@map("consent_prompt_registry")
+}
+
+model ConsentWordingRepository {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  specialty        String
+  consentType      String   @map("consent_type")
+  procedureKey     String?  @map("procedure_key")
+  wordingType      String   @map("wording_type")
+  wordingAr        String   @map("wording_ar")
+  wordingEn        String   @map("wording_en")
+  approvedByUserId String?  @map("approved_by_user_id")
+  approvedAt       DateTime? @map("approved_at")
+  isActive         Boolean  @default(true) @map("is_active")
+  metadata         Json?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, specialty, consentType, procedureKey, wordingType], map: "idx_consent_wording_repository_lookup")
+  @@map("consent_wording_repository")
+}
+
+model ConsentProcedureCatalog {
+  id                     String                        @id @default(uuid())
+  tenantId               String                        @map("tenant_id")
+  specialty              String
+  procedureCode          String                        @map("procedure_code")
+  cptCode                String?                       @map("cpt_code")
+  nameAr                 String                        @map("name_ar")
+  nameEn                 String                        @map("name_en")
+  anesthesiaImplicationsAr String?                     @map("anesthesia_implications_ar")
+  anesthesiaImplicationsEn String?                     @map("anesthesia_implications_en")
+  postProcedureAr        String?                       @map("post_procedure_ar")
+  postProcedureEn        String?                       @map("post_procedure_en")
+  isActive               Boolean                       @default(true) @map("is_active")
+  metadata               Json?
+  createdAt              DateTime                      @default(now()) @map("created_at")
+  updatedAt              DateTime                      @updatedAt @map("updated_at")
+
+  tenant                 Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  riskItems              ConsentProcedureRiskItem[]
+  alternatives           ConsentProcedureAlternative[]
+  refusalConsequences    ConsentProcedureRefusalConsequence[]
+  expectedOutcomes       ConsentProcedureOutcome[]
+
+  @@unique([tenantId, procedureCode], map: "uq_consent_procedure_catalog_tenant_code")
+  @@map("consent_procedure_catalog")
+}
+
+model ConsentProcedureRiskItem {
+  id                    String             @id @default(uuid())
+  tenantId              String             @map("tenant_id")
+  procedureId           String             @map("procedure_id")
+  riskKey               String             @map("risk_key")
+  riskClass             ConsentRiskClass   @map("risk_class")
+  severity              ConsentRiskSeverity
+  alertLevel            ConsentAlertLevel  @default(INFO) @map("alert_level")
+  probabilityIndicator  Decimal?           @map("probability_indicator") @db.Decimal(5, 2)
+  isMandatoryDisclosure Boolean            @default(false) @map("is_mandatory_disclosure")
+  sortOrder             Int                @default(100) @map("sort_order")
+  wordingAr             String             @map("wording_ar")
+  wordingEn             String             @map("wording_en")
+  metadata              Json?
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedure             ConsentProcedureCatalog @relation(fields: [procedureId], references: [id], onDelete: Cascade)
+  documentRisks         ConsentDocumentRisk[]
+
+  @@unique([procedureId, riskKey], map: "uq_consent_procedure_risk_items_procedure_risk_key")
+  @@map("consent_procedure_risk_items")
+}
+
+model ConsentProcedureAlternative {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  procedureId String   @map("procedure_id")
+  sortOrder   Int      @default(100) @map("sort_order")
+  wordingAr   String   @map("wording_ar")
+  wordingEn   String   @map("wording_en")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant      Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedure   ConsentProcedureCatalog @relation(fields: [procedureId], references: [id], onDelete: Cascade)
+
+  @@map("consent_procedure_alternatives")
+}
+
+model ConsentProcedureRefusalConsequence {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  procedureId       String   @map("procedure_id")
+  sortOrder         Int      @default(100) @map("sort_order")
+  wordingAr         String   @map("wording_ar")
+  wordingEn         String   @map("wording_en")
+  isLegallyCritical Boolean  @default(false) @map("is_legally_critical")
+  metadata          Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  tenant            Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedure         ConsentProcedureCatalog @relation(fields: [procedureId], references: [id], onDelete: Cascade)
+
+  @@map("consent_procedure_refusal_consequences")
+}
+
+model ConsentProcedureOutcome {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  procedureId String   @map("procedure_id")
+  sortOrder   Int      @default(100) @map("sort_order")
+  wordingAr   String   @map("wording_ar")
+  wordingEn   String   @map("wording_en")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant      Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedure   ConsentProcedureCatalog @relation(fields: [procedureId], references: [id], onDelete: Cascade)
+
+  @@map("consent_procedure_outcomes")
+}
+
+model ConsentDocumentRisk {
+  id                    String             @id @default(uuid())
+  tenantId              String             @map("tenant_id")
+  consentDocumentId     String             @map("consent_document_id")
+  sourceProcedureRiskId String?            @map("source_procedure_risk_id")
+  riskClass             ConsentRiskClass   @map("risk_class")
+  severity              ConsentRiskSeverity
+  alertLevel            ConsentAlertLevel  @default(INFO) @map("alert_level")
+  probabilityIndicator  Decimal?           @map("probability_indicator") @db.Decimal(5, 2)
+  isMandatoryDisclosure Boolean            @default(false) @map("is_mandatory_disclosure")
+  sortOrder             Int                @default(100) @map("sort_order")
+  wordingAr             String             @map("wording_ar")
+  wordingEn             String             @map("wording_en")
+  metadata              Json?
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  tenant                Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument       ConsentDocument           @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+  sourceProcedureRisk   ConsentProcedureRiskItem? @relation(fields: [sourceProcedureRiskId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, consentDocumentId], map: "idx_consent_document_risks_doc")
+  @@map("consent_document_risks")
+}
+
+model ConsentGeneratedParagraph {
+  id                      String   @id @default(uuid())
+  tenantId                String   @map("tenant_id")
+  consentDocumentId       String   @map("consent_document_id")
+  sectionKey              String   @map("section_key")
+  source                  String
+  specialty               String
+  promptVersion           String   @map("prompt_version")
+  generatorModel          String   @map("generator_model")
+  generatedAt             DateTime @default(now()) @map("generated_at")
+  physicianApprovalStatus String   @default("PENDING") @map("physician_approval_status")
+  contentAr               String?  @map("content_ar")
+  contentEn               String?  @map("content_en")
+  metadata                Json?
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  tenant                  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument         ConsentDocument @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, consentDocumentId], map: "idx_consent_generated_paragraphs_doc")
+  @@map("consent_generated_paragraphs")
+}
+
+model ConsentTimelineEvent {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  consentDocumentId String   @map("consent_document_id")
+  action            String
+  actorUserId       String?  @map("actor_user_id")
+  actorRole         String?  @map("actor_role")
+  deviceInfo        String?  @map("device_info")
+  ipAddress         String?  @map("ip_address")
+  userAgent         String?  @map("user_agent")
+  metadata          Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  tenant            Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument   ConsentDocument @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, consentDocumentId, createdAt], map: "idx_consent_timeline_events_doc_created")
+  @@map("consent_timeline_events")
+}
+
+model ConsentCommitteeReview {
+  id                String                @id @default(uuid())
+  tenantId          String                @map("tenant_id")
+  consentDocumentId String?               @map("consent_document_id")
+  templateId        String?               @map("template_id")
+  templateVersionId String?               @map("template_version_id")
+  committeeType     ConsentCommitteeType  @map("committee_type")
+  decision          ConsentReviewDecision @default(PENDING)
+  reviewerUserId    String?               @map("reviewer_user_id")
+  commentsAr        String?               @map("comments_ar")
+  commentsEn        String?               @map("comments_en")
+  reviewedAt        DateTime?             @map("reviewed_at")
+  metadata          Json?
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  tenant            Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument   ConsentDocument?        @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+  template          ConsentTemplate?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateVersion   ConsentTemplateVersion? @relation(fields: [templateVersionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, committeeType, createdAt], map: "idx_consent_committee_reviews_tenant_type")
+  @@map("consent_committee_reviews")
+}
+
+model ConsentEvidencePackage {
+  id                String                @id @default(uuid())
+  tenantId          String                @map("tenant_id")
+  consentDocumentId String                @map("consent_document_id")
+  copyType          ConsentEvidenceCopyType @map("copy_type")
+  fileName          String                @map("file_name")
+  storagePath       String?               @map("storage_path")
+  checksumHash      String                @map("checksum_hash")
+  generatedBy       String?               @map("generated_by")
+  generatedAt       DateTime              @default(now()) @map("generated_at")
+  metadata          Json?
+
+  tenant            Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument   ConsentDocument @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, consentDocumentId, copyType], map: "idx_consent_evidence_packages_doc_type")
+  @@map("consent_evidence_packages")
+}
+
+model ConsentEmrMapping {
+  id                 String   @id @default(uuid())
+  tenantId           String   @map("tenant_id")
+  consentDocumentId  String   @map("consent_document_id")
+  adapterKey         String   @map("adapter_key")
+  diagnosisCode      String?  @map("diagnosis_code")
+  procedureCode      String?  @map("procedure_code")
+  physicianIdentifier String? @map("physician_identifier")
+  encounterIdentifier String? @map("encounter_identifier")
+  allergiesSnapshot  Json?    @map("allergies_snapshot")
+  medicationsSnapshot Json?   @map("medications_snapshot")
+  consentHistoryRef  String?  @map("consent_history_ref")
+  externalPayload    Json?    @map("external_payload")
+  metadata           Json?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument    ConsentDocument @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, consentDocumentId, adapterKey], map: "idx_consent_emr_mappings_doc_adapter")
+  @@map("consent_emr_mappings")
+}
+>>>>>>> Stashed changes

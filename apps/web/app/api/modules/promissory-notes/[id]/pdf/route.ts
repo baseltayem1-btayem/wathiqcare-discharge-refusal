@@ -4,7 +4,7 @@ import puppeteer from "puppeteer";
 import chromium from "@sparticuz/chromium";
 import type { Browser, LaunchOptions } from "puppeteer";
 import QRCode from "qrcode";
-import { requireAuth } from "@/lib/server/auth";
+import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { toArabicWords, toEnglishWords, formatAmountNumeric } from "@/lib/amount-to-words";
@@ -421,7 +421,7 @@ export async function GET(
   let browser: Browser | null = null;
 
   try {
-    const auth = await requireAuth(request);
+    const auth = await requireModuleOperationalAccess(request, "promissory-notes");
     const { id } = await params;
     const lang = (request.nextUrl.searchParams.get("lang") ?? "ar") as "ar" | "en";
 

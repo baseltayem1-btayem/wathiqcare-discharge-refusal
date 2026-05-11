@@ -19,8 +19,9 @@
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const os = require('os');
 
-const SCHEMA_PATH = path.resolve(__dirname, '..', 'prisma', 'schema.prisma');
 const MIGRATIONS_DIR = path.resolve(__dirname, '..', 'prisma', 'migrations');
 
 /** Use the direct (unpooled) URL for DDL; fall back to regular DATABASE_URL. */
@@ -63,22 +64,61 @@ let warnings = 0;
 
 for (const file of migrationFiles) {
   const filePath = path.join(MIGRATIONS_DIR, file);
+  const sqlBody = fs.readFileSync(filePath, 'utf8');
+  const checksum = crypto.createHash('sha256').update(sqlBody).digest('hex');
+  const safeFileName = file.replace(/'/g, "''");
+  const safeChecksum = checksum.replace(/'/g, "''");
+  const wrappedSql = `
+CREATE TABLE IF NOT EXISTS schema_migration_registry (
+  filename TEXT PRIMARY KEY,
+  checksum TEXT NOT NULL,
+  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DO $$
+DECLARE
+  existing_checksum TEXT;
+BEGIN
+  SELECT checksum INTO existing_checksum
+  FROM schema_migration_registry
+  WHERE filename = '${safeFileName}';
+
+  IF existing_checksum IS NOT NULL AND existing_checksum <> '${safeChecksum}' THEN
+    RAISE EXCEPTION 'Checksum mismatch for migration % (existing %, incoming %)', '${safeFileName}', existing_checksum, '${safeChecksum}';
+  END IF;
+END $$;
+
+${sqlBody}
+
+INSERT INTO schema_migration_registry (filename, checksum, applied_at)
+VALUES ('${safeFileName}', '${safeChecksum}', NOW())
+ON CONFLICT (filename)
+DO UPDATE SET
+  checksum = EXCLUDED.checksum,
+  applied_at = schema_migration_registry.applied_at;
+`;
+  const tempFile = path.join(os.tmpdir(), `wathiqcare-migration-${Date.now()}-${file}`);
+  fs.writeFileSync(tempFile, wrappedSql, 'utf8');
+
   process.stdout.write(`[sql-migrations]   ${file} ... `);
 
   try {
-    execSync(
-      `npx prisma db execute --schema="${SCHEMA_PATH}" --file="${filePath}" --url="${directUrl}"`,
-      {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        cwd: path.resolve(__dirname, '..'),
-      },
-    );
+    execSync(`npx prisma db execute --file="${tempFile}" --url="${directUrl}"`, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      cwd: path.resolve(__dirname, '..'),
+    });
     process.stdout.write('OK\n');
   } catch (err) {
     const stderr = err.stderr ? err.stderr.toString() : '';
     const msg = (stderr || err.message || '').trim().replace(/\n/g, ' ').slice(0, 300);
     process.stdout.write(`WARN: ${msg}\n`);
     warnings++;
+  } finally {
+    try {
+      fs.unlinkSync(tempFile);
+    } catch {
+      // no-op
+    }
   }
 }
 

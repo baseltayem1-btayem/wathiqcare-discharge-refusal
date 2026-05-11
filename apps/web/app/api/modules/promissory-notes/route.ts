@@ -1,4 +1,4 @@
-import { requireAuth, requireTenantOperationalAccess } from "@/lib/server/auth";
+import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import {
   createPromissoryNotesRouteHandlers,
 } from "@/lib/server/module-api-route-handlers";
@@ -8,8 +8,8 @@ import {
 } from "@/lib/server/promissory-note-service";
 
 const handlers = createPromissoryNotesRouteHandlers({
-  requireAuthFn: requireAuth,
-  requireTenantOperationalAccessFn: requireTenantOperationalAccess,
+  requireAuthFn: (request) => requireModuleOperationalAccess(request, "promissory-notes"),
+  requireTenantOperationalAccessFn: () => undefined,
   listTenantPromissoryNotesFn: listTenantPromissoryNotes,
   createTenantPromissoryNoteFn: createTenantPromissoryNote,
 });

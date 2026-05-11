@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { isPlatformRole, platformRoleForUserRole } from "@/lib/server/roles";
+import { canAccessModule, type ModuleKey } from "@/lib/modules/catalog";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
@@ -369,6 +370,23 @@ export function requireTenantOperationalAccess(auth: AuthContext): void {
   if (auth.user_type === "platform_admin") {
     throw new ApiError(403, "Platform admins cannot operate tenant clinical workflows");
   }
+}
+
+export async function requireModuleOperationalAccess(
+  request: NextRequest,
+  moduleKey: ModuleKey,
+): Promise<AuthContext> {
+  const auth = await requireAuth(request);
+
+  if (!auth.platform_role) {
+    requireTenantOperationalAccess(auth);
+  }
+
+  if (!canAccessModule(moduleKey, { role: auth.role, platformRole: auth.platform_role })) {
+    throw new ApiError(403, "Module access denied");
+  }
+
+  return auth;
 }
 
 export function requireRole(auth: AuthContext, allowedRoles: string[]): void {

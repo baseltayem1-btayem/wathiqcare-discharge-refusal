@@ -308,6 +308,9 @@ type AuditArgs = {
   details?: string;
   caseId?: string | null;
   documentId?: string | null;
+  moduleKey?: string | null;
+  requestId?: string | null;
+  correlationId?: string | null;
   metadataJson?: Prisma.InputJsonValue;
   request?: NextRequest;
 };
@@ -345,6 +348,9 @@ export async function writeAuditLog(args: AuditArgs): Promise<void> {
       metadataJson: {
         entityType: args.entityType,
         entityId: args.entityId,
+        moduleKey: args.moduleKey ?? null,
+        requestId: args.requestId ?? null,
+        correlationId: args.correlationId ?? null,
         documentId: args.documentId ?? null,
         metadata: args.metadataJson ?? null,
       },

@@ -1,0 +1,256 @@
+:root {
+  --consent-royal: #002b5c;
+  --consent-gold: #c9a13b;
+  --consent-border: #cdd6df;
+  --consent-bg-soft: #f6f9fc;
+  --consent-text: #0f172a;
+}
+
+.consent-bilingual-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 1200px) {
+  .consent-bilingual-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.consent-pane {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 10mm;
+  background: #fff;
+  color: var(--consent-text);
+  border: 1px solid var(--consent-border);
+  box-shadow: 0 10px 32px rgba(2, 31, 65, 0.12);
+  box-sizing: border-box;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.consent-pane h1,
+.consent-pane h3 {
+  margin: 0;
+}
+
+.consent-header {
+  border: 1px solid var(--consent-border);
+  border-top: 5px solid var(--consent-royal);
+  border-bottom: 3px solid var(--consent-gold);
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.consent-header h1 {
+  color: var(--consent-royal);
+  font-size: 20px;
+  letter-spacing: 0.2px;
+}
+
+.consent-header p {
+  margin: 4px 0 0;
+  color: #334155;
+  font-size: 13px;
+}
+
+.consent-brand {
+  text-align: right;
+  color: var(--consent-royal);
+}
+
+.consent-brand strong {
+  color: var(--consent-gold);
+  font-size: 20px;
+}
+
+[dir="rtl"] .consent-brand {
+  text-align: left;
+}
+
+.consent-meta-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.consent-meta-grid > div {
+  border: 1px solid var(--consent-border);
+  background: var(--consent-bg-soft);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.consent-meta-grid span {
+  color: #475569;
+  font-size: 11px;
+}
+
+.consent-meta-grid strong {
+  color: var(--consent-royal);
+  font-size: 12px;
+}
+
+.consent-warning {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px dashed #b08929;
+  background: #fff8e8;
+  color: #7a5a0b;
+  font-weight: 700;
+}
+
+.consent-governance-info {
+  background: #eef9ff;
+  border-color: #7dd3fc;
+  color: #075985;
+}
+
+.consent-governance-warning {
+  background: #fff1f2;
+  border-color: #fda4af;
+  color: #9f1239;
+}
+
+.consent-grid.two {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.consent-card {
+  border: 1px solid var(--consent-border);
+  background: #fff;
+  padding: 8px;
+}
+
+.consent-card h3 {
+  color: var(--consent-royal);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.consent-card p {
+  margin: 2px 0;
+}
+
+.consent-card pre {
+  margin: 2px 0 6px;
+  white-space: pre-wrap;
+  font-family: inherit;
+  background: var(--consent-bg-soft);
+  border: 1px solid var(--consent-border);
+  padding: 6px;
+}
+
+.consent-card.full {
+  margin-top: 8px;
+}
+
+.legal-block {
+  border-left: 4px solid var(--consent-gold);
+}
+
+[dir="rtl"] .legal-block {
+  border-left: 1px solid var(--consent-border);
+  border-right: 4px solid var(--consent-gold);
+}
+
+.consent-signatures {
+  margin-top: 10px;
+  border: 1px solid var(--consent-border);
+  background: var(--consent-bg-soft);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.consent-signatures > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.consent-signatures strong {
+  color: var(--consent-royal);
+  font-size: 11px;
+}
+
+.qr-block {
+  align-items: center;
+}
+
+.qr-block img {
+  width: 82px;
+  height: 82px;
+  border: 1px solid var(--consent-border);
+  background: #fff;
+}
+
+.qr-block small {
+  font-size: 10px;
+  word-break: break-all;
+}
+
+@media (max-width: 1024px) {
+  .consent-pane {
+    width: 100%;
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .consent-grid.two,
+  .consent-signatures,
+  .consent-meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .consent-bilingual-grid {
+    display: block;
+  }
+
+  .consent-pane {
+    width: auto;
+    min-height: 0;
+    box-shadow: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    page-break-after: always;
+  }
+
+  .consent-pane:last-child {
+    page-break-after: auto;
+  }
+}

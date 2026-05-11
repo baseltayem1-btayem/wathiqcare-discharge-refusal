@@ -1,0 +1,44 @@
+
+> @wathiqcare/web@0.1.1 build
+> npm run prisma:generate && node scripts/run-sql-migrations.cjs && next build --webpack && node scripts/write-deterministic-routes-manifest.cjs
+
+
+> @wathiqcare/web@0.1.1 prisma:generate
+> npx prisma generate --schema=./prisma/schema.prisma
+
+Prisma schema loaded from prisma\schema.prisma
+
+ظ£¤ Generated Prisma Client (v6.19.2) to .\..\..\node_modules\@prisma\client in 1.47s
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+
+[sql-migrations] Skipping ظ¤ local/placeholder DB URL detected.
+ظû▓ Next.js 16.2.1 (webpack)
+- Environments: .env.production.local, .env.local
+
+  Creating an optimized production build ...
+ظ£ô Compiled successfully in 29.4s
+  Running TypeScript ...
+Failed to type check.
+
+./src/lib/core/wording-repository-service.ts:92:7
+Type error: Type 'ApprovedWordingTemplate | null' is not assignable to type 'ApprovedWordingTemplate | undefined'.
+  Type 'null' is not assignable to type 'ApprovedWordingTemplate | undefined'.
+
+  90 |     return {
+  91 |       coreConsent: wordingMap['core_consent']!,
+> 92 |       imagingConsent: wordingMap['medical_imaging'],
+     |       ^
+  93 |       interpreterClause: wordingMap['interpreter'],
+  94 |       guardianClause: wordingMap['guardian'],
+  95 |       physicianCertification: wordingMap['physician_certification']!,
+Next.js build worker exited with code: 1 and signal: null
+npm error Lifecycle script `build` failed with error:
+npm error code 1
+npm error path C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web
+npm error workspace @wathiqcare/web@0.1.1
+npm error location C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c npm run prisma:generate && node scripts/run-sql-migrations.cjs && next build --webpack && node scripts/write-deterministic-routes-manifest.cjs

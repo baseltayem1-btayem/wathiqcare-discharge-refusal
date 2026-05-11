@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/auth";
+import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 
@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const auth = await requireAuth(request);
+    const auth = await requireModuleOperationalAccess(request, "promissory-notes");
     const { id } = await params;
 
     if (!auth.tenant_id) {
