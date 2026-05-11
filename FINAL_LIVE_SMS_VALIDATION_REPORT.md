@@ -66,10 +66,36 @@ Required flow:
 Result:
 - **NOT EXECUTED / BLOCKED** — requires live production access, valid test case data, and Taqnyat delivery visibility not available in this sandbox.
 
+## 7) External re-validation attempt (latest)
+Timestamp (UTC): 2026-05-11T22:47:02Z
+
+Attempted from sandbox:
+- `curl https://wathiqcare.online`
+- `curl https://wathiqcare.online/api/discharge/cases/testcase/secure-signing-link`
+- `curl https://wathiqcare.online/api/modules/informed-consents/documents/testid/secure-signing`
+- `curl https://wathiqcare.online/api/cases/testcase/legal-package/secure-signing`
+- `curl https://wathiqcare.online/api/sign/testtoken/request-otp`
+- `curl https://wathiqcare.online/api/sign/testtoken/verify-otp`
+
+Result:
+- **BLOCKED** — DNS resolution failure in sandbox: `Could not resolve host: wathiqcare.online`
+- HTTP status observed: `000` for all probes
+
+## 8) External proof package (to be completed from production-accessible environment)
+- [ ] Production deployment proof (deployment URL + timestamp + environment)
+- [ ] Route response proof for all secure-signing endpoints (status/body + timestamp)
+- [ ] Secure signing link generation proof (request + response payload)
+- [ ] SMS proof from Taqnyat (delivery receipt/screenshot + timestamp)
+- [ ] OTP request and verification proof (request/response + timestamp)
+- [ ] Signing page proof (`/sign/[token]`) screenshot
+- [ ] Signed PDF proof (download/preview screenshot + hash or metadata)
+- [ ] Audit trail proof (event timeline screenshot/export)
+- [ ] Token invalidation proof (post-sign verification response)
+
 ## Final required status
-- Production deployment: **BLOCKED (not completed from this environment)**
-- Secure signing routes: **NOT VERIFIED LIVE**
-- SMS delivery: **NOT VERIFIED**
-- OTP flow: **NOT VERIFIED**
-- Signing workflow: **NOT VERIFIED**
-- Audit trail: **NOT VERIFIED**
+- Production deployment: **PENDING EXTERNAL VERIFICATION**
+- Secure signing routes: **PENDING EXTERNAL VERIFICATION**
+- SMS delivery: **PENDING EXTERNAL VERIFICATION**
+- OTP flow: **PENDING EXTERNAL VERIFICATION**
+- Signing workflow: **PENDING EXTERNAL VERIFICATION**
+- Audit trail: **PENDING EXTERNAL VERIFICATION**
