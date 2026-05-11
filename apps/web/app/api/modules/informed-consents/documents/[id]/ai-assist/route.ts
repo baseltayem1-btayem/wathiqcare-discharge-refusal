@@ -4,6 +4,7 @@ import { generateAIAssistDraft } from "@/lib/server/consent-library-service";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { resolveFeatureFlag } from "@/lib/server/tenant-flag-service";
+import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
 export async function POST(
   request: NextRequest,
@@ -11,6 +12,7 @@ export async function POST(
 ) {
   try {
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
+    requireInformedConsentPermission(auth, "consent:review");
     const { id } = await params;
 
     const aiFlag = await resolveFeatureFlag(

@@ -3,6 +3,7 @@ import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { addConsentSignature } from "@/lib/server/consent-library-service";
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
+import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
 export async function POST(
   request: NextRequest,
@@ -10,6 +11,7 @@ export async function POST(
 ) {
   try {
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
+    requireInformedConsentPermission(auth, "consent:send_signature");
     const { id } = await params;
 
     const payload = (await request.json().catch(() => null)) as Record<string, unknown> | null;
