@@ -100,6 +100,8 @@ export default function InformedConsentsModulePage({
       { href: "/modules/informed-consents/archive", label: { ar: "الأرشيف", en: "Archive" } },
       { href: "/modules/informed-consents/templates", label: { ar: "القوالب", en: "Templates" } },
       { href: "/modules/informed-consents/governance", label: { ar: "الحوكمة", en: "Governance" } },
+      { href: "/modules/informed-consents/wording-governance", label: { ar: "حوكمة النصوص", en: "Wording Governance" } },
+      { href: "/modules/informed-consents/governance-reports", label: { ar: "تقارير الحوكمة", en: "Governance Reports" } },
       { href: "/modules/discharge-refusal", label: { ar: "منصة رفض الخروج", en: "Discharge Refusal" } },
     ],
     [],
