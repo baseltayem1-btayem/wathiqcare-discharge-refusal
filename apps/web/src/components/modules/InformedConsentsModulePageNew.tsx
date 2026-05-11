@@ -98,10 +98,15 @@ interface ConsentDraft {
 }
 
 interface TrakCareSync {
-  status: "synced" | "syncing" | "error" | "not_attempted";
+  status: "NOT_SYNCED" | "SYNCING" | "SYNCED" | "PARTIAL" | "FAILED" | "STALE";
+  sourceSystem?: string;
   lastSyncTime?: string;
   syncError?: string;
   importedFields: string[];
+  failedFields?: string[];
+  manualOverride?: boolean;
+  correlationId?: string;
+  importedPayload?: Record<string, unknown>;
 }
 
 const WORKFLOW_STEPS: { id: WorkflowStep; labelAr: string; labelEn: string }[] = [
@@ -125,9 +130,13 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
   const [specialty, setSpecialty] = useState<string>("");
   const [draftConsent, setDraftConsent] = useState<ConsentDraft | null>(null);
   const [trakCareSync, setTrakCareSync] = useState<TrakCareSync>({
-    status: "not_attempted",
+    status: "NOT_SYNCED",
     importedFields: [],
+    failedFields: [],
+    manualOverride: false,
   });
+  const [encounterContextLocked, setEncounterContextLocked] = useState(false);
+  const [showImportedData, setShowImportedData] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
@@ -176,6 +185,7 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
       ).catch(() => []);
 
       setEncounterList(Array.isArray(encounters) ? encounters : []);
+      setEncounterContextLocked(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load encounters");
     } finally {
@@ -223,43 +233,75 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
       return;
     }
 
-    setTrakCareSync({ ...trakCareSync, status: "syncing" });
+    setTrakCareSync((prev) => ({ ...prev, status: "SYNCING" }));
     setError("");
 
     try {
-      const syncResult = await apiFetch<{ status: string; importedFields: string[]; error?: string }>(
+      const syncResult = await apiFetch<{
+        status: TrakCareSync["status"];
+        sourceSystem?: string;
+        importedFields: string[];
+        failedFields?: string[];
+        manualOverride?: boolean;
+        correlationId?: string;
+        syncTime?: string;
+        payload?: Record<string, unknown>;
+        error?: string;
+      }>(
         `/api/modules/informed-consents/patients/${patientData.id}/encounters/${encounterData.id}/sync-trakcare`,
         { method: "POST" }
       );
 
       if (syncResult.error) {
         setTrakCareSync({
-          status: "error",
+          status: syncResult.status || "FAILED",
+          sourceSystem: syncResult.sourceSystem,
           syncError: syncResult.error,
           importedFields: syncResult.importedFields || [],
+          failedFields: syncResult.failedFields || [],
+          manualOverride: Boolean(syncResult.manualOverride),
+          correlationId: syncResult.correlationId,
+          importedPayload: syncResult.payload,
         });
       } else {
         setTrakCareSync({
-          status: "synced",
-          lastSyncTime: new Date().toISOString(),
+          status: syncResult.status || "SYNCED",
+          sourceSystem: syncResult.sourceSystem,
+          lastSyncTime: syncResult.syncTime || new Date().toISOString(),
           importedFields: syncResult.importedFields || [],
+          failedFields: syncResult.failedFields || [],
+          manualOverride: Boolean(syncResult.manualOverride),
+          correlationId: syncResult.correlationId,
+          importedPayload: syncResult.payload,
         });
         // Update encounter data with synced information
         setSuccess("TrakCare data synced successfully");
       }
     } catch (err) {
       setTrakCareSync({
-        status: "error",
+        status: "FAILED",
         syncError: err instanceof Error ? err.message : "Sync failed",
         importedFields: [],
+        failedFields: ["Encounter Number", "Diagnosis", "Procedure Order"],
+        manualOverride: false,
       });
     }
-  }, [patientData, encounterData, trakCareSync]);
+  }, [patientData, encounterData]);
 
   // Generate Draft Consent
   const generateDraftConsent = useCallback(async () => {
     if (!patientData || !encounterData || !selectedTemplate) {
       setError("All required fields must be completed");
+      return;
+    }
+
+    if (!encounterData.physician || !encounterData.physicianLicense) {
+      setError("Missing physician context (name/license)");
+      return;
+    }
+
+    if (!encounterContextLocked) {
+      setError("Encounter context must be locked before draft generation");
       return;
     }
 
@@ -287,7 +329,7 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
     } finally {
       setLoading(false);
     }
-  }, [patientData, encounterData, selectedTemplate]);
+  }, [patientData, encounterData, selectedTemplate, encounterContextLocked]);
 
   // Render Stepper
   const renderStepper = () => (
@@ -319,6 +361,78 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
       ))}
     </div>
   );
+
+  const renderContextPanel = () => {
+    if (!patientData && !encounterData) {
+      return null;
+    }
+
+    return (
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-slate-900">
+            {locale === "ar" ? "سياق المريض والزيارة" : "Patient & Encounter Context"}
+          </h3>
+          <span className={`rounded px-2 py-1 text-xs font-semibold ${encounterContextLocked ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+            {encounterContextLocked ? (locale === "ar" ? "مقفل" : "Locked") : (locale === "ar" ? "غير مقفل" : "Unlocked")}
+          </span>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 text-sm">
+          <div className="rounded border border-slate-200 bg-white p-3">
+            <div className="font-semibold mb-2">{locale === "ar" ? "المريض" : "Patient"}</div>
+            <div>{locale === "ar" ? "الاسم" : "Name"}: {patientData?.name || "-"}</div>
+            <div>MRN: {patientData?.mrn || "-"}</div>
+            <div>DOB: {patientData?.dateOfBirth || "-"}</div>
+            <div>{locale === "ar" ? "الجنس" : "Gender"}: {patientData?.gender || "-"}</div>
+            <div>{locale === "ar" ? "الهوية/الإقامة" : "National ID/Iqama"}: {patientData?.nationalId || patientData?.iqamaNumber || "-"}</div>
+            <div>{locale === "ar" ? "الجوال" : "Mobile"}: {patientData?.mobileNumber || "-"}</div>
+          </div>
+
+          <div className="rounded border border-slate-200 bg-white p-3">
+            <div className="font-semibold mb-2">{locale === "ar" ? "الزيارة" : "Encounter"}</div>
+            <div>{locale === "ar" ? "رقم الزيارة" : "Encounter No."}: {encounterData?.encounterId || "-"}</div>
+            <div>{locale === "ar" ? "تاريخ الزيارة" : "Visit Date"}: {encounterData?.admissionDate ? new Date(encounterData.admissionDate).toLocaleString() : "-"}</div>
+            <div>{locale === "ar" ? "القسم" : "Department"}: {encounterData?.department || "-"}</div>
+            <div>{locale === "ar" ? "الطبيب المعالج" : "Treating Physician"}: {encounterData?.physician || "-"}</div>
+            <div>{locale === "ar" ? "التشخيص" : "Diagnosis"}: {encounterData?.diagnosis || "-"}</div>
+            <div>{locale === "ar" ? "الإجراء" : "Procedure"}: {encounterData?.procedure || "-"}</div>
+            <div>{locale === "ar" ? "الحساسية" : "Allergies"}: {encounterData?.allergies || "-"}</div>
+            <div>{locale === "ar" ? "الأدوية" : "Medications"}: {encounterData?.currentMedications || "-"}</div>
+            <div>{locale === "ar" ? "حالة المزامنة" : "Sync Status"}: {trakCareSync.status}</div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={syncWithTrakCare} disabled={!patientData || !encounterData || trakCareSync.status === "SYNCING"} className="rounded border border-blue-300 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 disabled:opacity-50">
+            {locale === "ar" ? "مزامنة من TrakCare" : "Sync from TrakCare"}
+          </button>
+          <button type="button" onClick={() => { if (patientData?.id) { void loadEncounters(patientData.id); } }} disabled={!patientData} className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+            {locale === "ar" ? "تحديث الزيارة" : "Refresh Encounter"}
+          </button>
+          <button type="button" onClick={() => setShowImportedData((prev) => !prev)} className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
+            {locale === "ar" ? "عرض البيانات المستوردة" : "View Imported Data"}
+          </button>
+          <button type="button" onClick={() => { setEncounterContextLocked(false); setTrakCareSync((prev) => ({ ...prev, manualOverride: true })); }} className="rounded border border-amber-300 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50">
+            {locale === "ar" ? "تصحيح يدوي" : "Manual Correction"}
+          </button>
+          <button type="button" onClick={() => setEncounterContextLocked(true)} disabled={!patientData || !encounterData || !encounterData.physician} className="rounded border border-emerald-300 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">
+            {locale === "ar" ? "قفل سياق الزيارة" : "Lock Encounter Context"}
+          </button>
+        </div>
+
+        {showImportedData ? (
+          <div className="rounded border border-slate-200 bg-white p-3 text-xs space-y-1">
+            <div><span className="font-semibold">Source:</span> {trakCareSync.sourceSystem || "-"}</div>
+            <div><span className="font-semibold">Imported:</span> {(trakCareSync.importedFields || []).join(", ") || "-"}</div>
+            <div><span className="font-semibold">Failed:</span> {(trakCareSync.failedFields || []).join(", ") || "-"}</div>
+            <div><span className="font-semibold">Manual Override:</span> {String(Boolean(trakCareSync.manualOverride))}</div>
+            <div><span className="font-semibold">CorrelationId:</span> {trakCareSync.correlationId || "-"}</div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   // Render Step Content
   const renderStepContent = () => {
@@ -627,14 +741,14 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
             </span>
             <span
               className={`px-2 py-1 rounded text-xs font-semibold ${
-                trakCareSync.status === "synced"
+                trakCareSync.status === "SYNCED"
                   ? "bg-green-100 text-green-700"
-                  : trakCareSync.status === "error"
+                  : trakCareSync.status === "FAILED"
                     ? "bg-red-100 text-red-700"
                     : "bg-yellow-100 text-yellow-700"
               }`}
             >
-              {trakCareSync.status.toUpperCase()}
+              {trakCareSync.status}
             </span>
           </div>
 
@@ -653,10 +767,10 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
 
           <button
             onClick={syncWithTrakCare}
-            disabled={trakCareSync.status === "syncing"}
+            disabled={trakCareSync.status === "SYNCING"}
             className="mt-2 flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-400"
           >
-            <RefreshCw className={`w-4 h-4 ${trakCareSync.status === "syncing" ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${trakCareSync.status === "SYNCING" ? "animate-spin" : ""}`} />
             {locale === "ar" ? "مزامنة الآن" : "Sync Now"}
           </button>
         </div>
@@ -917,6 +1031,9 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
             setEncounterData(null);
             setSelectedTemplate(null);
             setDraftConsent(null);
+            setEncounterContextLocked(false);
+            setShowImportedData(false);
+            setTrakCareSync({ status: "NOT_SYNCED", importedFields: [], failedFields: [], manualOverride: false });
             localStorage.removeItem("wathiqcare.informed-consents.selected-template");
           }}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
@@ -957,6 +1074,8 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
         )}
 
         {renderStepper()}
+
+        {renderContextPanel()}
 
         <div className="bg-white border border-gray-200 rounded-lg p-6">{renderStepContent()}</div>
       </div>
