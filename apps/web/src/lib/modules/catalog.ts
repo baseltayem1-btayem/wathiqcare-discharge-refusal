@@ -44,7 +44,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
   {
     key: "informed-consents",
     slug: "informed-consents",
-    arabicTitle: "تطبيق الموافقات المستنيرة",
+    arabicTitle: "الموافقات المستنيرة",
     englishTitle: "Informed Consents",
     shortDescription: {
       ar: "إدارة نماذج الموافقة المستنيرة، مسارات الإقرار، التوقيع، والأرشفة الطبية القانونية.",
