@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import InformedConsentsModulePage from "@/components/modules/InformedConsentsModulePage";
+import InformedConsentIssuancePage from "@/components/modules/informed-consent-issuance/InformedConsentIssuancePage";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
@@ -10,5 +10,5 @@ export default async function InformedConsentsCreatePage() {
     redirect("/dashboard");
   }
 
-  return <InformedConsentsModulePage auth={auth} view="create" />;
+  return <InformedConsentIssuancePage auth={auth} />;
 }
