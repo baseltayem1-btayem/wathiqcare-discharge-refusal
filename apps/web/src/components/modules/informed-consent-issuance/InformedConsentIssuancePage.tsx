@@ -75,6 +75,19 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
     !signatures.pdfFillerSelected ? "Select PDF filler signing option before final legal PDF." : "",
   ].filter(Boolean);
 
+  const complianceSummary = (
+    <div className="grid gap-2 md:grid-cols-2">
+      <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+        <p className="font-semibold text-slate-800">PDPL & audit requirements</p>
+        <p className="mt-1 text-[11px] text-slate-600">Enforce immutable PDF, full audit trail, and role-scoped issuance actions.</p>
+      </div>
+      <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+        <p className="font-semibold text-slate-800">Bilingual legal output</p>
+        <p className="mt-1 text-[11px] text-slate-600">Generate Arabic/English consent package with versioned legal archive.</p>
+      </div>
+    </div>
+  );
+
   function showActionToast(action: string) {
     // TODO: Connect action buttons to backend workflow APIs (save/submit/generate/archive/print).
     const message = `Action executed: ${action}`;
@@ -128,7 +141,7 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
             </button>
           </div>
 
-          {activeTab === "workflow" ? <WorkflowStepper steps={WORKFLOW_STEPS} /> : <LegalReadinessCard checks={readinessChecks} />}
+          {activeTab === "workflow" ? <WorkflowStepper steps={WORKFLOW_STEPS} /> : complianceSummary}
         </div>
 
         <MedicalExplanationForm
