@@ -26,6 +26,15 @@ const MedicalExplanationForm = dynamic(() => import("./MedicalExplanationForm"))
 const SignaturePanel = dynamic(() => import("./SignaturePanel"));
 const LegalReadinessCard = dynamic(() => import("./LegalReadinessCard"));
 
+function formatAuditTimestamp(date: Date): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+    hour12: false,
+    timeZone: "Asia/Riyadh",
+  }).format(date);
+}
+
 type ModuleAuth = {
   role?: string | null;
   platform_role?: string | null;
@@ -54,7 +63,7 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
-      setRuntimeTimestamp(new Date().toLocaleString("en-SA", { hour12: false }));
+      setRuntimeTimestamp(formatAuditTimestamp(new Date()));
     }, 0);
     return () => window.clearTimeout(handle);
   }, []);
