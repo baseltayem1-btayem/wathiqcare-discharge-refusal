@@ -1,6 +1,6 @@
 import type { EmrAdapter, EmrSyncContext, EmrSyncResult } from "@/lib/integrations/emr/emr-adapter";
-import { MockEmrAdapter } from "@/lib/integrations/emr/mock-emr-adapter";
 import { TrakCareAdapter } from "@/lib/integrations/emr/trakcare-adapter";
+import { ApiError } from "@/lib/server/http";
 
 function resolveAdapter(key?: string): EmrAdapter {
   const normalized = (key || process.env.EMR_ADAPTER || "trakcare").trim().toLowerCase();
@@ -9,7 +9,7 @@ function resolveAdapter(key?: string): EmrAdapter {
     return new TrakCareAdapter();
   }
 
-  return new MockEmrAdapter();
+  throw new ApiError(400, `Unsupported EMR adapter: ${normalized}`);
 }
 
 function createCorrelationId(input: Pick<EmrSyncContext, "tenantId" | "patientId" | "encounterId">): string {

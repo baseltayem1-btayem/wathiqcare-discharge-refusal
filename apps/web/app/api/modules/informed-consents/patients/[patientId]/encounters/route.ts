@@ -1,58 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
+import { handleApiError } from "@/lib/server/http";
+import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
+import { buildTrakCareRequestContext } from "@/lib/server/trakcare/request-context";
+import { getEncountersByMrn } from "@/lib/server/trakcare/service";
 
 /**
  * GET /api/modules/informed-consents/patients/[patientId]/encounters
- * Get encounters/visits for a specific patient
+ * Uses patientId as MRN and loads live encounter context from TrakCare.
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ patientId: string }> }
 ) {
-  await requireModuleOperationalAccess(request, "informed-consents");
-
-  const { patientId } = await params;
-
-  if (!patientId) {
-    return NextResponse.json({ error: "Patient ID required" }, { status: 400 });
-  }
-
   try {
-    // Mock encounters - in production, integrate with EHR/TrakCare
-    const mockEncounters = [
-      {
-        id: `enc_${Date.now()}_1`,
-        encounterId: "ENC-2024-001",
-        admissionDate: "2024-05-08T14:30:00Z",
-        department: "General Surgery",
-        physician: "Dr. Sarah Al-Mazrouei",
-        physicianLicense: "LIC-2024-0542",
-        diagnosis: "Appendicitis",
-        procedure: "Appendectomy",
-        allergies: "Penicillin",
-        currentMedications: "Paracetamol, Ibuprofen",
-        physicianSpecialty: "SURGICAL",
-      },
-      {
-        id: `enc_${Date.now()}_2`,
-        encounterId: "ENC-2024-002",
-        admissionDate: "2024-05-09T08:15:00Z",
-        department: "Orthopedic Surgery",
-        physician: "Dr. Hassan Al-Otaibi",
-        physicianLicense: "LIC-2024-0543",
-        diagnosis: "Fractured femur",
-        procedure: "Open reduction and internal fixation",
-        allergies: "None",
-        currentMedications: "Morphine, Antibiotics",
-        physicianSpecialty: "ORTHOPEDIC",
-      },
-    ];
+    const auth = await requireModuleOperationalAccess(request, "informed-consents");
+    requireInformedConsentPermission(auth, "consent:create");
 
-    return NextResponse.json(mockEncounters);
-  } catch (error) {
+    const { patientId } = await params;
+
+    if (!patientId) {
+      return NextResponse.json({ error: "Patient ID required" }, { status: 400 });
+    }
+
+    const context = buildTrakCareRequestContext(request, auth);
+    const result = await getEncountersByMrn(context, patientId);
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch encounters" },
-      { status: 500 }
+      result.data.map((encounter) => ({
+        id: encounter.id || encounter.encounterId,
+        encounterId: encounter.encounterId,
+        admissionDate: encounter.admissionDate,
+        department: encounter.department,
+        physician: encounter.physician,
+        physicianLicense: encounter.physicianLicense,
+        physicianId: encounter.physicianId,
+        diagnosis: encounter.diagnosis,
+        procedure: encounter.procedure,
+        allergies: encounter.allergies,
+        currentMedications: encounter.currentMedications,
+        physicianSpecialty: encounter.physicianSpecialty,
+        sourceTransactionId: result.sourceTransactionId,
+      })),
     );
+  } catch (error) {
+    return handleApiError(error);
   }
 }

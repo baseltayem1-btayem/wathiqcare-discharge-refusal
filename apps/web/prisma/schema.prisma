@@ -418,6 +418,10 @@ model Tenant {
   consentCommitteeReviews             ConsentCommitteeReview[]
   consentEvidencePackages             ConsentEvidencePackage[]
   consentEmrMappings                  ConsentEmrMapping[]
+  trakCareIntegrationLogs             TrakCareIntegrationLog[]
+  patientExternalReferences           PatientExternalReference[]
+  encounterExternalReferences         EncounterExternalReference[]
+  consentSourceSnapshots              ConsentSourceSnapshot[]
   featureFlagOverrides                FeatureFlagOverride[]
 
   @@map("tenants")
@@ -776,6 +780,9 @@ model Case {
   privilegedAccessLogs        PrivilegedAccessLog[]
   promissoryNotes             PromissoryNote[]
   consentDocuments            ConsentDocument[]
+  patientExternalReferences   PatientExternalReference[]
+  encounterExternalReferences EncounterExternalReference[]
+  trakCareIntegrationLogs     TrakCareIntegrationLog[]
 
   @@unique([tenantId, caseNumber])
   @@index([tenantId, status])
@@ -1797,6 +1804,7 @@ model ConsentDocument {
   committeeReviews    ConsentCommitteeReview[]
   evidencePackages    ConsentEvidencePackage[]
   emrMappings         ConsentEmrMapping[]
+  sourceSnapshots     ConsentSourceSnapshot[]
 
   @@unique([tenantId, consentReference], map: "uq_consent_documents_tenant_reference")
   @@index([tenantId, caseId, status, createdAt], map: "idx_consent_documents_tenant_case_status_created")
@@ -2153,4 +2161,110 @@ model ConsentEmrMapping {
 
   @@index([tenantId, consentDocumentId, adapterKey], map: "idx_consent_emr_mappings_doc_adapter")
   @@map("consent_emr_mappings")
+}
+
+model TrakCareIntegrationLog {
+  id                  String   @id @default(uuid())
+  tenantId            String   @map("tenant_id")
+  caseId              String?  @map("case_id")
+  userId              String?  @map("user_id")
+  endpoint            String
+  method              String
+  requestId           String?  @map("request_id")
+  correlationId       String?  @map("correlation_id")
+  mrn                 String?
+  externalEncounterId String?  @map("external_encounter_id")
+  sourceTransactionId String?  @map("source_transaction_id")
+  statusCode          Int?     @map("status_code")
+  outcome             String
+  errorCode           String?  @map("error_code")
+  errorMessage        String?  @map("error_message")
+  retryCount          Int      @default(0) @map("retry_count")
+  durationMs          Int?     @map("duration_ms")
+  requestPayload      Json?    @map("request_payload")
+  responsePayload     Json?    @map("response_payload")
+  redactedPayload     Json?    @map("redacted_payload")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case   Case?  @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt], map: "idx_trakcare_integration_logs_tenant_created")
+  @@index([tenantId, mrn, createdAt], map: "idx_trakcare_integration_logs_tenant_mrn_created")
+  @@map("trakcare_integration_logs")
+}
+
+model PatientExternalReference {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  caseId            String?  @map("case_id")
+  patientMrn        String   @map("patient_mrn")
+  externalSystem    String   @default("TRAKCARE") @map("external_system")
+  externalPatientId String   @map("external_patient_id")
+  nationalId        String?  @map("national_id")
+  iqamaNumber       String?  @map("iqama_number")
+  sourceTransactionId String? @map("source_transaction_id")
+  lastSyncedAt      DateTime @default(now()) @map("last_synced_at")
+  metadata          Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  tenant     Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case       Case?                       @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  encounters EncounterExternalReference[]
+
+  @@unique([tenantId, externalSystem, externalPatientId], map: "uq_patient_external_refs_external")
+  @@unique([tenantId, externalSystem, patientMrn], map: "uq_patient_external_refs_mrn")
+  @@index([tenantId, patientMrn], map: "idx_patient_external_refs_tenant_mrn")
+  @@map("patient_external_references")
+}
+
+model EncounterExternalReference {
+  id                         String    @id @default(uuid())
+  tenantId                   String    @map("tenant_id")
+  caseId                     String?   @map("case_id")
+  patientExternalReferenceId String?   @map("patient_external_reference_id")
+  externalSystem             String    @default("TRAKCARE") @map("external_system")
+  externalEncounterId        String    @map("external_encounter_id")
+  encounterNumber            String?   @map("encounter_number")
+  externalPractitionerId     String?   @map("external_practitioner_id")
+  department                 String?
+  admissionDate              DateTime? @map("admission_date")
+  sourceTransactionId        String?   @map("source_transaction_id")
+  lastSyncedAt               DateTime  @default(now()) @map("last_synced_at")
+  metadata                   Json?
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
+
+  tenant      Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case        Case?                     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  patientRef  PatientExternalReference? @relation(fields: [patientExternalReferenceId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, externalSystem, externalEncounterId], map: "uq_encounter_external_refs_external")
+  @@index([tenantId, encounterNumber], map: "idx_encounter_external_refs_tenant_number")
+  @@index([tenantId, sourceTransactionId], map: "idx_encounter_external_refs_tenant_tx")
+  @@map("encounter_external_references")
+}
+
+model ConsentSourceSnapshot {
+  id                  String   @id @default(uuid())
+  tenantId            String   @map("tenant_id")
+  consentDocumentId   String   @map("consent_document_id")
+  sourceSystem        String   @default("TRAKCARE") @map("source_system")
+  sourceType          String   @map("source_type")
+  sourceTransactionId String?  @map("source_transaction_id")
+  capturedByUserId    String?  @map("captured_by_user_id")
+  capturedAt          DateTime @default(now()) @map("captured_at")
+  isManualOverride    Boolean  @default(false) @map("is_manual_override")
+  overrideReason      String?  @map("override_reason")
+  snapshot            Json
+  metadata            Json?
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  consentDocument ConsentDocument @relation(fields: [consentDocumentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, consentDocumentId, createdAt], map: "idx_consent_source_snapshots_doc_created")
+  @@index([tenantId, sourceTransactionId], map: "idx_consent_source_snapshots_tenant_tx")
+  @@map("consent_source_snapshots")
 }
