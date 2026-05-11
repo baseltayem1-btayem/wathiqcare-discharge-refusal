@@ -38,7 +38,7 @@ Command:
 - `vercel --prod`
 
 Result:
-- **BLOCKED** — cannot execute deployment from this sandbox due Vercel network/auth restriction (`ENOTFOUND vercel.com`).
+- **BLOCKED** — cannot execute deployment from this sandbox due to Vercel network/auth restriction (`ENOTFOUND vercel.com`).
 
 ## 5) Route verification against production
 Attempted probes:
