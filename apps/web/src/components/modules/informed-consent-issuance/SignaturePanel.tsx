@@ -72,7 +72,7 @@ export default function SignaturePanel({ value, onChange, timestamp }: Signature
         <button
           type="button"
           onClick={() => {
-            // TODO: Integrate PDF filler signing provider callback.
+            // TODO: Integrate digital signature API provider callback and signer certificate validation.
             onChange({ ...value, pdfFillerSelected: !value.pdfFillerSelected });
           }}
           className="toolbar-btn toolbar-btn-secondary"
@@ -86,6 +86,12 @@ export default function SignaturePanel({ value, onChange, timestamp }: Signature
         <div className="flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" /> Date/time auto-stamp: {timestamp}</div>
         <div className="flex items-center gap-1"><MonitorSmartphone className="h-3.5 w-3.5" /> Device/IP placeholder: 10.0.0.1 / Chrome 136</div>
         <div className="flex items-center gap-1"><UserRoundCog className="h-3.5 w-3.5" /> Audit trail placeholder: Consent issuance log chain</div>
+      </div>
+      <div className="mt-2 grid gap-2 rounded border border-slate-200 bg-white p-3 text-[11px] text-slate-600 sm:grid-cols-2">
+        <div><strong>Audit Event ID:</strong> EVT-IC-2026-000784</div>
+        <div><strong>Legal Package ID:</strong> LPG-IC-889201</div>
+        <div><strong>Immutable PDF Reference:</strong> IPFS://consent/legal/sha256-placeholder</div>
+        <div><strong>Signer IP Placeholder:</strong> 10.0.0.1</div>
       </div>
     </section>
   );

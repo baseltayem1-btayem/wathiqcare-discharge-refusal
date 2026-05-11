@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileSignature, Landmark, ShieldCheck } from "lucide-react";
+import { ClipboardCheck, FileSignature, Landmark, ShieldCheck } from "lucide-react";
 
 import ModuleShell from "@/components/ModuleShell";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -14,6 +14,9 @@ type PortalAuth = {
 };
 
 function ModuleIcon({ moduleKey }: { moduleKey: ModuleKey }) {
+  if (moduleKey === "informed-consents") {
+    return <ClipboardCheck className="h-5 w-5 text-[var(--primary)]" />;
+  }
   if (moduleKey === "promissory-notes") {
     return <Landmark className="h-5 w-5 text-[var(--primary)]" />;
   }

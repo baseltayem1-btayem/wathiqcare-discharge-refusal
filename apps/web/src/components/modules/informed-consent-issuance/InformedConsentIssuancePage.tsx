@@ -1,15 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, ClipboardList } from "lucide-react";
 import ModuleShell from "@/components/ModuleShell";
 import Header from "./Header";
 import PatientInfoCard from "./PatientInfoCard";
 import ConsentTypeSelector from "./ConsentTypeSelector";
-import WorkflowStepper from "./WorkflowStepper";
-import MedicalExplanationForm from "./MedicalExplanationForm";
-import SignaturePanel from "./SignaturePanel";
-import LegalReadinessCard from "./LegalReadinessCard";
 import ActionBar from "./ActionBar";
 import {
   CONSENT_TYPES,
@@ -21,6 +18,13 @@ import {
   type LegalReadinessCheck,
   type UserRole,
 } from "./types";
+
+const WorkflowStepper = dynamic(() => import("./WorkflowStepper"), {
+  loading: () => <div className="rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">Loading workflow panel…</div>,
+});
+const MedicalExplanationForm = dynamic(() => import("./MedicalExplanationForm"));
+const SignaturePanel = dynamic(() => import("./SignaturePanel"));
+const LegalReadinessCard = dynamic(() => import("./LegalReadinessCard"));
 
 type ModuleAuth = {
   role?: string | null;
@@ -46,8 +50,18 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
   const [medicalCollapsed, setMedicalCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<"workflow" | "compliance">("workflow");
   const [toastMessage, setToastMessage] = useState<string>("");
+  const [runtimeTimestamp, setRuntimeTimestamp] = useState("--");
 
-  const timestamp = useMemo(() => new Date().toLocaleString("en-SA", { hour12: false }), []);
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setRuntimeTimestamp(new Date().toLocaleString("en-SA", { hour12: false }));
+    }, 0);
+    return () => window.clearTimeout(handle);
+  }, []);
+
+  useEffect(() => {
+    // TODO: Integrate consent template API to load role/department specific templates for the selected consent type.
+  }, [selectedConsentTypeId]);
 
   const legalChecks = useMemo<LegalReadinessCheck[]>(() => {
     const witnessRequired = selectedConsentTypeId === "high-risk" || selectedConsentTypeId === "ama";
@@ -89,7 +103,8 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
   );
 
   function showActionToast(action: string) {
-    // TODO: Connect action buttons to backend workflow APIs (save/submit/generate/archive/print).
+    // TODO: Integrate PDF generation API for draft/final legal outputs.
+    // TODO: Integrate audit logging API for every user action and status transition.
     const message = `Action executed: ${action}`;
     setToastMessage(message);
     setTimeout(() => setToastMessage(""), 2500);
@@ -103,7 +118,7 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
       subtitle={{ ar: "واجهة إصدار الموافقات المستنيرة المتوافقة مع الاستخدام الطبي والقانوني", en: "Production-informed consent issuance interface for clinical and legal workflows" }}
       menuItems={MENU_ITEMS}
     >
-      <div className="space-y-4" dir="rtl">
+      <div className="space-y-4" dir="rtl" lang="ar">
         {toastMessage ? (
           <div className="wc-alert-success flex items-center gap-2 text-xs"><CheckCircle2 className="h-3.5 w-3.5" /> {toastMessage}</div>
         ) : null}
@@ -121,7 +136,7 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
           mrnQuery={mrnQuery}
           onMrnQueryChange={(value) => {
             setMrnQuery(value);
-            // TODO: Integrate MRN search API and update patient card payload.
+            // TODO: Integrate patient lookup API and update patient card payload from canonical patient service.
           }}
           selectedRole={selectedRole}
           onRoleChange={setSelectedRole}
@@ -133,10 +148,10 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
 
         <div className="wc-panel border-slate-200 bg-white">
           <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">
-            <button type="button" onClick={() => setActiveTab("workflow")} className={`wc-tab ${activeTab === "workflow" ? "wc-tab-active" : ""}`}>
+            <button type="button" onClick={() => setActiveTab("workflow")} className={`wc-tab ${activeTab === "workflow" ? "wc-tab-active" : ""}`} aria-label="Show workflow tab">
               <ClipboardList className="h-3.5 w-3.5" /> Workflow
             </button>
-            <button type="button" onClick={() => setActiveTab("compliance")} className={`wc-tab ${activeTab === "compliance" ? "wc-tab-active" : ""}`}>
+            <button type="button" onClick={() => setActiveTab("compliance")} className={`wc-tab ${activeTab === "compliance" ? "wc-tab-active" : ""}`} aria-label="Show compliance tab">
               <CheckCircle2 className="h-3.5 w-3.5" /> Compliance
             </button>
           </div>
@@ -151,7 +166,14 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
           onToggle={() => setMedicalCollapsed((prev) => !prev)}
         />
 
-        <SignaturePanel value={signatures} onChange={setSignatures} timestamp={timestamp} />
+        <SignaturePanel value={signatures} onChange={setSignatures} timestamp={runtimeTimestamp} />
+        <section className="wc-panel border-slate-200 bg-white text-[11px] text-slate-600">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div><strong>Timestamp Placeholder:</strong> {runtimeTimestamp}</div>
+            <div><strong>Audit Event Stream:</strong> pending backend integration</div>
+            <div><strong>Legal Package Link:</strong> pending backend integration</div>
+          </div>
+        </section>
         <LegalReadinessCard checks={readinessChecks} />
         <ActionBar onAction={showActionToast} />
       </div>

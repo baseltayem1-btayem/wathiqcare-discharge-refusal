@@ -37,19 +37,20 @@ export default function Header({ mrnQuery, onMrnQueryChange, selectedRole, onRol
         <label className="wc-form-field">
           <span className="wc-form-label">بحث برقم الملف الطبي | Patient MRN Search</span>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+            <Search className="pointer-events-none absolute start-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
             <input
               className="wc-form-input ps-7"
               value={mrnQuery}
               onChange={(event) => onMrnQueryChange(event.target.value)}
               placeholder="MRN-2026-000741"
+              aria-label="Patient MRN search"
             />
           </div>
         </label>
 
         <label className="wc-form-field">
           <span className="wc-form-label">User Role</span>
-          <select className="wc-form-select" value={selectedRole} onChange={(event) => onRoleChange(event.target.value as UserRole)}>
+          <select className="wc-form-select" value={selectedRole} onChange={(event) => onRoleChange(event.target.value as UserRole)} aria-label="Select current user role">
             {roleOptions.map((role) => (
               <option key={role} value={role}>{role}</option>
             ))}

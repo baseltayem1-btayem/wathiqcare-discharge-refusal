@@ -23,7 +23,7 @@ export default function ActionBar({ onAction }: ActionBarProps) {
         {ACTIONS.map((action) => {
           const Icon = action.icon;
           return (
-            <button key={action.key} type="button" className={action.className} onClick={() => onAction(action.key)}>
+            <button key={action.key} type="button" className={action.className} onClick={() => onAction(action.key)} aria-label={action.label}>
               <Icon className="h-3.5 w-3.5" />
               <span>{action.label}</span>
             </button>

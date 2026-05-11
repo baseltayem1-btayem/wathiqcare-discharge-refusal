@@ -54,8 +54,8 @@
   --shadow-floating: 0 10px 24px rgba(23, 35, 48, 0.12);
   --shadow-focus: 0 0 0 2px rgba(46, 92, 138, 0.18);
 
-  --font-sans-latin: Arial, Helvetica, var(--font-english), sans-serif;
-  --font-sans-arabic: "Alarabiya Normal", var(--font-arabic), "Almarai", "Tajawal", "IBM Plex Sans Arabic", "Noto Kufi Arabic", Tahoma, sans-serif;
+  --font-sans-latin: "Inter", "DM Sans", system-ui, sans-serif;
+  --font-sans-arabic: "Inter", "DM Sans", system-ui, sans-serif;
   --font-sans-primary: var(--font-sans-latin);
   --font-mono-primary: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", Menlo, monospace;
 
