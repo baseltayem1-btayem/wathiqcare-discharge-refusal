@@ -1,4 +1,5 @@
 import { canonicalizeUserRole } from "@/lib/server/roles";
+import { INFORMED_CONSENTS_ALLOWED_ROLES } from "@/lib/modules/informed-consents-release";
 
 export type ModuleKey = "informed-consents" | "promissory-notes" | "discharge-refusal";
 
@@ -56,7 +57,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
     },
     status: "live",
     href: "/modules/informed-consents",
-    allowedRoles: HEALTHCARE_WORKFLOW_ROLES,
+    allowedRoles: INFORMED_CONSENTS_ALLOWED_ROLES,
   },
   {
     key: "promissory-notes",

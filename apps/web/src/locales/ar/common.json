@@ -70,9 +70,10 @@
       "nextStep": "الخطوة المقترحة"
     }
   },
-  "nav": {
-    "modules": "الوحدات",
-    "dashboard": "لوحة المعلومات",
+    "nav": {
+      "modules": "الوحدات",
+      "informedConsents": "الموافقات المستنيرة",
+      "dashboard": "لوحة المعلومات",
     "dashboards": "اللوحات",
     "cases": "مساحة الحالة",
     "bundles": "حزم الأدلة",

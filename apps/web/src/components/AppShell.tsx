@@ -61,6 +61,7 @@ function buildCaseWorkflowNav(caseNav: NonNullable<AppShellProps["workflowCaseNa
 
 const PRIMARY_TENANT_HREFS = [
   "/modules",
+  "/modules/informed-consents",
   "/dashboard",
   "/cases",
   "/documents",

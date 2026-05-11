@@ -1393,3 +1393,10 @@ model PrivilegedAccessLog {
   @@index([tenantId, actorUserId, createdAt])
   @@map("privileged_access_logs")
 }
+
+// TODO(informed-consents-release): add dedicated schema models and migrations for:
+// - consent_cases
+// - consent_signatures
+// - consent_audit_logs
+// - consent_templates
+// - consent_generated_pdfs

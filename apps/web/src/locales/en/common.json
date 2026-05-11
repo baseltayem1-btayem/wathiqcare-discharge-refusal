@@ -70,9 +70,10 @@
       "nextStep": "Suggested next step"
     }
   },
-  "nav": {
-    "modules": "Modules",
-    "dashboard": "Dashboard",
+    "nav": {
+      "modules": "Modules",
+      "informedConsents": "Informed Consents",
+      "dashboard": "Dashboard",
     "dashboards": "Dashboards",
     "cases": "Case Workspace",
     "bundles": "Evidence Bundles",
