@@ -1588,6 +1588,11 @@ model ConsentTemplate {
   tenantId          String                @map("tenant_id")
   categoryId        String?               @map("category_id")
   templateCode      String                @map("template_code")
+  riskLevel         String                @default("MEDIUM") @map("risk_level")
+  requiresWitness   Boolean               @default(false) @map("requires_witness")
+  requiresGuardian  Boolean               @default(false) @map("requires_guardian")
+  requiresInterpreter Boolean             @default(false) @map("requires_interpreter")
+  requiresSeparateConsent Boolean         @default(false) @map("requires_separate_consent")
   consentType       String                @map("consent_type")
   specialty         String
   department        String?
@@ -1634,6 +1639,8 @@ model ConsentTemplateVersion {
   createdByUserId  String?               @map("created_by_user_id")
   approvedByUserId String?               @map("approved_by_user_id")
   approvedAt       DateTime?             @map("approved_at")
+  legalHash        String?               @map("legal_hash")
+  isImmutable      Boolean               @default(false) @map("is_immutable")
   effectiveFrom    DateTime?             @map("effective_from")
   effectiveTo      DateTime?             @map("effective_to")
   metadata         Json?
@@ -1643,12 +1650,32 @@ model ConsentTemplateVersion {
   tenant           Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   template         ConsentTemplate          @relation(fields: [templateId], references: [id], onDelete: Cascade)
   sections         ConsentTemplateSection[]
+  localizations    ConsentTemplateLocalization[]
   documents        ConsentDocument[]
   auditEvents      ConsentAuditEvent[]
   committeeReviews ConsentCommitteeReview[]
 
   @@unique([templateId, versionNumber], map: "uq_consent_template_versions_template_version")
   @@map("consent_template_versions")
+}
+
+model ConsentTemplateLocalization {
+  id                String   @id @default(uuid())
+  tenantId          String   @map("tenant_id")
+  templateVersionId String   @map("template_version_id")
+  language          String
+  direction         String
+  title             String
+  fullBody          String   @map("full_body")
+  sectionsJson      Json?    @map("sections_json")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  templateVersion ConsentTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([templateVersionId, language], map: "uq_consent_template_localizations_version_language")
+  @@index([tenantId, language], map: "idx_consent_template_localizations_tenant_language")
+  @@map("consent_template_localizations")
 }
 
 model ConsentTemplateSection {

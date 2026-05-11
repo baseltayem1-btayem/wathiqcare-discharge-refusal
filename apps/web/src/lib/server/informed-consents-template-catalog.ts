@@ -1,7 +1,15 @@
 import { ConsentSectionKind, ConsentTemplateStatus, Prisma } from "@prisma/client";
+import crypto from "node:crypto";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
+import {
+  SAUDI_ENTERPRISE_TEMPLATES,
+  buildSaudiTemplateBodyAr,
+  buildSaudiTemplateBodyEn,
+  buildSaudiTemplateSections,
+  type SaudiEnterpriseTemplateSeed,
+} from "@/lib/server/informed-consents-saudi-template-library";
 
 const prisma = getPrisma();
 
@@ -28,19 +36,7 @@ type RuntimeTemplateFilter = {
   department?: string;
 };
 
-type DefaultTemplateSeed = {
-  categoryCode: string;
-  categoryNameAr: string;
-  categoryNameEn: string;
-  templateCode: string;
-  consentType: string;
-  specialty: string;
-  department: string;
-  titleAr: string;
-  titleEn: string;
-  summaryAr: string;
-  summaryEn: string;
-};
+type DefaultTemplateSeed = SaudiEnterpriseTemplateSeed;
 
 const FIXED_LEGAL_TITLE_AR = "الموافقة المستنيرة الطبية";
 const FIXED_LEGAL_TITLE_EN = "Medical Informed Consent";
@@ -98,7 +94,7 @@ const ELECTRONIC_SIGNATURE_EN = "Electronic Signature: Electronic signatures or 
 const PDPL_AR = "أوافق على استخدام ومعالجة معلوماتي الصحية الشخصية بالقدر اللازم لأغراض العلاج والرعاية الصحية والتوثيق الطبي والالتزام بالأنظمة واللوائح الصحية المعمول بها، وفقًا لنظام حماية البيانات الشخصية والأنظمة ذات العلاقة في المملكة العربية السعودية.";
 const PDPL_EN = "I consent to the use and processing of my personal health information to the extent necessary for treatment, healthcare operations, medical documentation, and compliance with applicable healthcare laws and regulations, in accordance with the Personal Data Protection Law (PDPL) and related regulations of the Kingdom of Saudi Arabia.";
 
-const FIXED_DEFAULT_TEMPLATES: DefaultTemplateSeed[] = [
+const LEGACY_DEFAULT_TEMPLATES: Array<Record<string, unknown>> = [
   {
     categoryCode: "GENERAL_CONSENT",
     categoryNameAr: "الموافقة العامة",
@@ -165,6 +161,8 @@ const FIXED_DEFAULT_TEMPLATES: DefaultTemplateSeed[] = [
     summaryEn: "Refusal of treatment acknowledgment with refusal risks and alternatives.",
   },
 ];
+
+const FIXED_DEFAULT_TEMPLATES: DefaultTemplateSeed[] = SAUDI_ENTERPRISE_TEMPLATES;
 
 function requireTenantId(auth: AuthContext): string {
   const tenantId = (auth.tenant_id || "").trim();
@@ -414,17 +412,6 @@ function buildDefaultSections(): Array<{
 }
 
 async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): Promise<void> {
-  const existingActiveCount = await prisma.consentTemplate.count({
-    where: {
-      tenantId,
-      status: { in: [ConsentTemplateStatus.ACTIVE, ConsentTemplateStatus.APPROVED] },
-    },
-  });
-
-  if (existingActiveCount > 0) {
-    return;
-  }
-
   const now = new Date();
 
   for (const seed of FIXED_DEFAULT_TEMPLATES) {
@@ -458,6 +445,11 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       },
       update: {
         categoryId: category.id,
+        riskLevel: seed.riskLevel,
+        requiresWitness: seed.requiresWitness,
+        requiresGuardian: seed.requiresGuardian,
+        requiresInterpreter: seed.requiresInterpreter,
+        requiresSeparateConsent: seed.requiresSeparateConsent,
         consentType: seed.consentType,
         specialty: seed.specialty,
         department: seed.department,
@@ -471,6 +463,11 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
         tenantId,
         categoryId: category.id,
         templateCode: seed.templateCode,
+        riskLevel: seed.riskLevel,
+        requiresWitness: seed.requiresWitness,
+        requiresGuardian: seed.requiresGuardian,
+        requiresInterpreter: seed.requiresInterpreter,
+        requiresSeparateConsent: seed.requiresSeparateConsent,
         consentType: seed.consentType,
         specialty: seed.specialty,
         department: seed.department,
@@ -488,11 +485,16 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       orderBy: { versionNumber: "desc" },
     });
 
+    const arBody = buildSaudiTemplateBodyAr(seed);
+    const enBody = buildSaudiTemplateBodyEn(seed);
+    const legalHash = crypto.createHash("sha256").update(`${seed.templateCode}:${arBody}:${enBody}`).digest("hex");
+
     const hasActiveVersion = await prisma.consentTemplateVersion.findFirst({
       where: {
         tenantId,
         templateId: template.id,
         status: { in: [ConsentTemplateStatus.ACTIVE, ConsentTemplateStatus.APPROVED] },
+        legalHash,
       },
       orderBy: { versionNumber: "desc" },
     });
@@ -509,25 +511,27 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
     }
 
     const versionNumber = (latestVersion?.versionNumber || 0) + 1;
-    const sections = buildDefaultSections();
+    const sections = buildSaudiTemplateSections(seed);
 
     const version = await prisma.consentTemplateVersion.create({
       data: {
         tenantId,
         templateId: template.id,
-        versionLabel: `v${versionNumber}.0`,
+        versionLabel: `v${versionNumber}.0-saudi-2019`,
         versionNumber,
         status: ConsentTemplateStatus.ACTIVE,
-        legalTextAr: `${FIXED_LEGAL_TITLE_AR}\n\n${FIXED_MAIN_AR}`,
-        legalTextEn: `${FIXED_LEGAL_TITLE_EN}\n\n${FIXED_MAIN_EN}`,
+        legalTextAr: arBody,
+        legalTextEn: enBody,
         pdplTextAr: PDPL_AR,
         pdplTextEn: PDPL_EN,
-        witnessDeclAr: INTERPRETER_ACK_AR,
-        witnessDeclEn: INTERPRETER_ACK_EN,
+        witnessDeclAr: sections.find((s) => s.sectionKey === "19_witness_clause")?.contentAr || INTERPRETER_ACK_AR,
+        witnessDeclEn: sections.find((s) => s.sectionKey === "19_witness_clause")?.contentEn || INTERPRETER_ACK_EN,
         physicianCertAr: PHYSICIAN_CERT_AR,
         physicianCertEn: PHYSICIAN_CERT_EN,
         aiWarningAr: "AI-assisted draft pending physician validation.",
         aiWarningEn: "AI-assisted draft pending physician validation.",
+        legalHash,
+        isImmutable: true,
         createdByUserId: actorUserId || null,
         approvedByUserId: actorUserId || null,
         approvedAt: now,
@@ -538,6 +542,14 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
             medicalApprovalStatus: "APPROVED",
             immutableFixedWording: true,
             moduleKey: "informed-consents",
+            saudiMedicalConsentGuide: "MOH 2019",
+          },
+          templateProfile: {
+            riskLevel: seed.riskLevel,
+            requiresWitness: seed.requiresWitness,
+            requiresGuardian: seed.requiresGuardian,
+            requiresInterpreter: seed.requiresInterpreter,
+            requiresSeparateConsent: seed.requiresSeparateConsent,
           },
         } as Prisma.InputJsonValue,
       },
@@ -564,6 +576,78 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       data: {
         status: ConsentTemplateStatus.ACTIVE,
         currentVersionId: version.id,
+      },
+    });
+
+    await prisma.consentTemplateLocalization.upsert({
+      where: {
+        templateVersionId_language: {
+          templateVersionId: version.id,
+          language: "AR",
+        },
+      },
+      update: {
+        direction: "RTL",
+        title: seed.titleAr,
+        fullBody: arBody,
+        sectionsJson: sections.map((s) => ({
+          sectionKey: s.sectionKey,
+          sectionKind: s.sectionKind,
+          title: s.titleAr,
+          content: s.contentAr,
+          isRequired: s.isRequired,
+        })) as Prisma.InputJsonValue,
+      },
+      create: {
+        tenantId,
+        templateVersionId: version.id,
+        language: "AR",
+        direction: "RTL",
+        title: seed.titleAr,
+        fullBody: arBody,
+        sectionsJson: sections.map((s) => ({
+          sectionKey: s.sectionKey,
+          sectionKind: s.sectionKind,
+          title: s.titleAr,
+          content: s.contentAr,
+          isRequired: s.isRequired,
+        })) as Prisma.InputJsonValue,
+      },
+    });
+
+    await prisma.consentTemplateLocalization.upsert({
+      where: {
+        templateVersionId_language: {
+          templateVersionId: version.id,
+          language: "EN",
+        },
+      },
+      update: {
+        direction: "LTR",
+        title: seed.titleEn,
+        fullBody: enBody,
+        sectionsJson: sections.map((s) => ({
+          sectionKey: s.sectionKey,
+          sectionKind: s.sectionKind,
+          title: s.titleEn,
+          content: s.contentEn,
+          isRequired: s.isRequired,
+        })) as Prisma.InputJsonValue,
+      },
+      create: {
+        tenantId,
+        templateVersionId: version.id,
+        language: "EN",
+        direction: "LTR",
+        title: seed.titleEn,
+        fullBody: enBody,
+        sectionsJson: sections.map((s) => ({
+          sectionKey: s.sectionKey,
+          sectionKind: s.sectionKind,
+          title: s.titleEn,
+          content: s.contentEn,
+          isRequired: s.isRequired,
+        })) as Prisma.InputJsonValue,
       },
     });
   }

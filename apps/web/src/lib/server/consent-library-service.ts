@@ -1930,7 +1930,7 @@ export async function finalizeConsentDocument(
   const tenantId = requireTenantId(auth);
   const doc = await prisma.consentDocument.findFirst({
     where: { tenantId, id },
-    include: { signatures: true, templateVersion: true },
+    include: { signatures: true, templateVersion: true, template: true },
   });
 
   if (!doc) {
@@ -1948,6 +1948,73 @@ export async function finalizeConsentDocument(
   const hasPhysician = doc.signatures.some((item) => item.role === ConsentSignatureRole.PHYSICIAN);
   if (!hasPhysician) {
     throw new ApiError(409, "Physician signature is mandatory before finalization");
+  }
+
+  const blockers: string[] = [];
+  if (!normalizeText(doc.patientName)) {
+    blockers.push("Patient identity is missing");
+  }
+  if (!normalizeText(doc.mrn) && !normalizeText(doc.dob)) {
+    blockers.push("MRN or date of birth is required");
+  }
+  if (!normalizeText(doc.plannedProcedure)) {
+    blockers.push("Procedure name is missing");
+  }
+  if (!normalizeText(doc.physicianName)) {
+    blockers.push("Physician information is missing");
+  }
+  if (!normalizeText(doc.risksAr) || !normalizeText(doc.risksEn)) {
+    blockers.push("Risks section is incomplete");
+  }
+  if (!normalizeText(doc.alternativesAr) || !normalizeText(doc.alternativesEn)) {
+    blockers.push("Alternatives section is incomplete");
+  }
+  if (!normalizeText(doc.refusalRisksAr) || !normalizeText(doc.refusalRisksEn)) {
+    blockers.push("Consequences of refusal section is incomplete");
+  }
+
+  const hasWitness = doc.signatures.some((item) => item.role === ConsentSignatureRole.WITNESS);
+  const hasGuardian = doc.signatures.some((item) => item.role === ConsentSignatureRole.GUARDIAN);
+  const hasInterpreter = doc.signatures.some((item) => item.role === ConsentSignatureRole.INTERPRETER);
+  const metadata = asRecord(doc.metadata) || {};
+  const signatureSecurity = asRecord(metadata.signatureSecurity) || {};
+  const orchestration = asRecord(metadata.signatureOrchestration) || {};
+
+  if (doc.template.requiresGuardian && !hasGuardian) {
+    blockers.push("Guardian signature is required for this template");
+  }
+
+  const highRiskTemplate = ["HIGH", "CRITICAL"].includes(String(doc.template.riskLevel || "").toUpperCase());
+  if ((doc.template.requiresWitness || highRiskTemplate) && !hasWitness) {
+    blockers.push("Witness signature is required for high-risk or witness-mandatory templates");
+  }
+
+  const interpreterRequired = doc.template.requiresInterpreter || signatureSecurity.interpreterRequired === true;
+  if (interpreterRequired && !hasInterpreter) {
+    blockers.push("Interpreter confirmation is required");
+  }
+
+  const otpRequired = signatureSecurity.otpRequired === true || doc.signatures.some((item) => item.signatureMethod === ConsentMethod.OTP);
+  const otpVerified = signatureSecurity.otpVerified === true || orchestration.otpVerified === true;
+  if (otpRequired && !otpVerified) {
+    blockers.push("OTP verification is required before final signature");
+  }
+
+  const versionApproved = (
+    doc.templateVersion.status === ConsentTemplateStatus.ACTIVE
+    || doc.templateVersion.status === ConsentTemplateStatus.APPROVED
+  ) && Boolean(doc.templateVersion.approvedAt);
+  if (!versionApproved) {
+    blockers.push("Template version is not approved");
+  }
+
+  const fixedClauseChecksum = computeFixedClauseChecksum(doc as unknown as Record<string, unknown>);
+  if (doc.templateVersion.legalHash && doc.templateVersion.legalHash !== fixedClauseChecksum) {
+    blockers.push("Legal hash mismatch detected");
+  }
+
+  if (blockers.length > 0) {
+    throw new ApiError(409, `Final signature validation failed: ${blockers.join("; ")}`);
   }
 
   const syncIssues = validateBilingualSync({
@@ -1971,7 +2038,6 @@ export async function finalizeConsentDocument(
     throw new ApiError(409, `Bilingual synchronization failed: ${syncIssues.map((item) => item.message).join("; ")}`);
   }
 
-  const fixedClauseChecksum = computeFixedClauseChecksum(doc as unknown as Record<string, unknown>);
   const wordingSnapshot = buildDocumentWordingSnapshot({
     doc: {
       legalTextAr: doc.legalTextAr,
