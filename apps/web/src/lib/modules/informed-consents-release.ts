@@ -1,13 +1,17 @@
 export const INFORMED_CONSENTS_ROLE_ACCESS_CONFIG = [
-  { key: "doctor", label: "Doctor", canonicalRole: "doctor" },
-  { key: "nurse", label: "Nurse", canonicalRole: "nursing" },
-  { key: "legal-affairs", label: "Legal Affairs", canonicalRole: "legal_admin" },
-  { key: "admin", label: "Admin", canonicalRole: "tenant_admin" },
-  { key: "compliance-officer", label: "Compliance Officer", canonicalRole: "compliance" },
+  { key: "doctor", label: "Doctor", canonicalRole: "doctor", aliases: ["doctor"] },
+  { key: "nurse", label: "Nurse", canonicalRole: "nursing", aliases: ["nursing", "nurse"] },
+  { key: "legal-affairs", label: "Legal Affairs", canonicalRole: "legal_admin", aliases: ["legal_admin", "legal_affairs", "legal_officer"] },
+  { key: "admin", label: "Admin", canonicalRole: "tenant_admin", aliases: ["tenant_admin", "tenant_owner", "admin"] },
+  { key: "compliance-officer", label: "Compliance Officer", canonicalRole: "compliance", aliases: ["compliance", "compliance_officer"] },
 ] as const;
 
-export const INFORMED_CONSENTS_ALLOWED_ROLES = INFORMED_CONSENTS_ROLE_ACCESS_CONFIG.map(
-  (item) => item.canonicalRole,
+export const INFORMED_CONSENTS_ALLOWED_ROLES = Array.from(
+  new Set(INFORMED_CONSENTS_ROLE_ACCESS_CONFIG.map((item) => item.canonicalRole)),
+);
+
+export const INFORMED_CONSENTS_ALLOWED_ROLE_ALIASES = Array.from(
+  new Set(INFORMED_CONSENTS_ROLE_ACCESS_CONFIG.flatMap((item) => item.aliases)),
 );
 
 function normalizeFlag(value: string | undefined, fallback: boolean): boolean {
@@ -17,5 +21,5 @@ function normalizeFlag(value: string | undefined, fallback: boolean): boolean {
 }
 
 export function isInformedConsentsEnabled(): boolean {
-  return normalizeFlag(process.env.ENABLE_INFORMED_CONSENTS, true);
+  return normalizeFlag(process.env.ENABLE_INFORMED_CONSENTS, false);
 }

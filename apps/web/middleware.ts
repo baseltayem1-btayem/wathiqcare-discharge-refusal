@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { INFORMED_CONSENTS_ALLOWED_ROLE_ALIASES } from "@/lib/modules/informed-consents-release";
 
 const DEFAULT_SESSION_COOKIE_NAME = "wathiqcare_access_token";
 const FALLBACK_COOKIE_NAMES = [DEFAULT_SESSION_COOKIE_NAME, "token"] as const;
-const ALLOWED_ROLE_ALIASES = new Set([
-  "doctor",
-  "nurse",
-  "nursing",
-  "legal_affairs",
-  "legal_admin",
-  "admin",
-  "tenant_admin",
-  "tenant_owner",
-  "compliance_officer",
-  "compliance",
-]);
+const ALLOWED_ROLE_ALIASES: ReadonlySet<string> = new Set(INFORMED_CONSENTS_ALLOWED_ROLE_ALIASES);
 
 function isTruthyEnvFlag(value: string | undefined, fallback: boolean): boolean {
   if (value == null) return fallback;
@@ -22,9 +12,14 @@ function isTruthyEnvFlag(value: string | undefined, fallback: boolean): boolean 
 }
 
 function getSessionToken(request: NextRequest): string | null {
-  const configuredCookieName = process.env.AUTH_COOKIE_NAME?.trim() || DEFAULT_SESSION_COOKIE_NAME;
-  const configuredToken = request.cookies.get(configuredCookieName)?.value?.trim();
+  const configuredCookieName = process.env.AUTH_COOKIE_NAME?.trim();
+  const primaryCookieName = configuredCookieName || DEFAULT_SESSION_COOKIE_NAME;
+  const configuredToken = request.cookies.get(primaryCookieName)?.value?.trim();
   if (configuredToken) return configuredToken;
+
+  if (configuredCookieName) {
+    return null;
+  }
 
   for (const cookieName of FALLBACK_COOKIE_NAMES) {
     const token = request.cookies.get(cookieName)?.value?.trim();
@@ -68,7 +63,7 @@ function isApiPath(pathname: string): boolean {
 }
 
 export function middleware(request: NextRequest) {
-  const enabled = isTruthyEnvFlag(process.env.ENABLE_INFORMED_CONSENTS, true);
+  const enabled = isTruthyEnvFlag(process.env.ENABLE_INFORMED_CONSENTS, false);
   const pathname = request.nextUrl.pathname;
   const apiPath = isApiPath(pathname);
 

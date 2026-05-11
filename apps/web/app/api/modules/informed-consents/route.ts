@@ -18,7 +18,7 @@ const handlers = createInformedConsentsRouteHandlers({
   createTenantConsentRecordFn: createTenantConsentRecord,
 });
 
-async function enforceReleaseGate(request: NextRequest): Promise<Response | null> {
+async function enforceInformedConsentsAccess(request: NextRequest): Promise<Response | null> {
   if (!isInformedConsentsEnabled()) {
     return Response.json({ ok: false, error: "Informed Consents module is disabled by release flag." }, { status: 503 });
   }
@@ -41,13 +41,13 @@ async function enforceReleaseGate(request: NextRequest): Promise<Response | null
 }
 
 export async function GET(request: NextRequest) {
-  const blocked = await enforceReleaseGate(request);
+  const blocked = await enforceInformedConsentsAccess(request);
   if (blocked) return blocked;
   return handlers.GET(request);
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = await enforceReleaseGate(request);
+  const blocked = await enforceInformedConsentsAccess(request);
   if (blocked) return blocked;
   return handlers.POST(request);
 }
