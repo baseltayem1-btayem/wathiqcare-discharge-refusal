@@ -162,7 +162,7 @@ export class WordingRepositoryService {
     for (const readOnlyField of consentDoc.readOnlyFields) {
       if (allowedEditableFields.includes(readOnlyField)) {
         // This is a fixed field; it should not be in dynamic updates
-        if ((consentDoc.dynamicFields as Record<string, any>)[readOnlyField] === undefined) {
+        if (((consentDoc.dynamicFields as unknown) as Record<string, unknown>)[readOnlyField] === undefined) {
           warnings.push(`Read-only field ${readOnlyField} is expected but not provided`);
         }
       }

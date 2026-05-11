@@ -19,6 +19,7 @@ import {
   ApprovedWordingTemplate,
   ConsentDynamicFieldsSpecification,
   StructuredConsentDocument,
+  WordingSection,
   WordingValidationError,
 } from './wording-types';
 
@@ -172,7 +173,7 @@ test('WordingRepositoryService — AI Content Restrictions', async (t) => {
 });
 
 test('WordingRepositoryService — Consent Document Validation', async (t) => {
-  const createMockTemplate = (section: string): ApprovedWordingTemplate => ({
+  const createMockTemplate = (section: WordingSection): ApprovedWordingTemplate => ({
     id: `wording-${section}`,
     tenantId: 'tenant-1',
     wordingKey: `core.${section}`,
@@ -181,7 +182,7 @@ test('WordingRepositoryService — Consent Document Validation', async (t) => {
     isFixedLegalClause: true,
     contentAr: `Fixed Arabic ${section}`,
     contentEn: `Fixed English ${section}`,
-    section: section as any,
+    section,
     description: `${section} clause`,
     legalReviewStatus: 'APPROVED',
     medicalReviewStatus: 'APPROVED',

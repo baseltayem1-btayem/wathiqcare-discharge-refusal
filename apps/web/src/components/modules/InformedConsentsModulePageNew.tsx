@@ -71,12 +71,19 @@ interface EncounterData {
 
 interface ConsentTemplate {
   id: string;
+  templateVersionId: string;
   titleAr: string;
   titleEn: string;
   consentType: string;
   specialty: string;
+  department?: string | null;
   version: string;
+  status: string;
   language: "ar" | "en" | "bilingual";
+  summaryAr?: string | null;
+  summaryEn?: string | null;
+  previewAr?: string;
+  previewEn?: string;
 }
 
 interface ConsentDraft {
@@ -181,17 +188,33 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
     setLoading(true);
     setError("");
     try {
+      const departmentVal = encounterData?.department?.trim() || "";
       const tmpl = await apiFetch<ConsentTemplate[]>(
-        `/api/modules/informed-consents/templates?type=${consentTypeVal}&specialty=${specialtyVal}`
+        `/api/modules/informed-consents/templates?type=${encodeURIComponent(consentTypeVal)}&specialty=${encodeURIComponent(specialtyVal)}&department=${encodeURIComponent(departmentVal)}`
       ).catch(() => []);
 
       setTemplates(Array.isArray(tmpl) ? tmpl : []);
+      setSelectedTemplate(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load templates");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [encounterData?.department]);
+
+  useEffect(() => {
+    if (!selectedTemplate) {
+      return;
+    }
+
+    const snapshot = {
+      consentType,
+      specialty,
+      template: selectedTemplate,
+      timestamp: new Date().toISOString(),
+    };
+    localStorage.setItem("wathiqcare.informed-consents.selected-template", JSON.stringify(snapshot));
+  }, [consentType, specialty, selectedTemplate]);
 
   // TrakCare Sync
   const syncWithTrakCare = useCallback(async () => {
@@ -486,7 +509,6 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
               key={template.id}
               onClick={() => {
                 setSelectedTemplate(template);
-                setCurrentStep("draft_generation");
               }}
               className={`w-full text-left p-4 border-2 rounded-lg transition-all ${
                 selectedTemplate?.id === template.id
@@ -498,7 +520,7 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
                 {locale === "ar" ? template.titleAr : template.titleEn}
               </div>
               <div className="text-sm text-gray-600">
-                v{template.version} • {template.language}
+                {template.version} • {template.language} • {template.status}
               </div>
             </button>
           ))
@@ -508,6 +530,29 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
           </div>
         )}
       </div>
+
+      {selectedTemplate && (
+        <div className="border border-blue-200 bg-blue-50 rounded-lg p-4 space-y-3">
+          <div className="font-semibold text-blue-900">
+            {locale === "ar" ? "معاينة القالب المحدد" : "Selected Template Preview"}
+          </div>
+          <div className="text-sm text-blue-800">
+            {locale === "ar" ? selectedTemplate.summaryAr : selectedTemplate.summaryEn}
+          </div>
+          <div className="text-xs text-blue-900 whitespace-pre-wrap max-h-40 overflow-y-auto border border-blue-200 bg-white rounded p-3">
+            {(locale === "ar" ? selectedTemplate.previewAr : selectedTemplate.previewEn) ||
+              (locale === "ar"
+                ? "لا توجد معاينة تفصيلية متاحة"
+                : "No detailed preview is available")}
+          </div>
+          <button
+            onClick={() => setCurrentStep("draft_generation")}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all"
+          >
+            {locale === "ar" ? "اعتماد هذا القالب والمتابعة" : "Use This Template and Continue"}
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -872,6 +917,7 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
             setEncounterData(null);
             setSelectedTemplate(null);
             setDraftConsent(null);
+            localStorage.removeItem("wathiqcare.informed-consents.selected-template");
           }}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
         >

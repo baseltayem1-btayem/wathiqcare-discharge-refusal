@@ -408,7 +408,7 @@ export default function TenantUsersPage() {
                             <div className="space-y-1">
                                 <h2 className="text-base font-semibold text-slate-900">Set User Password</h2>
                                 <p className="text-sm text-slate-500">
-                                    Set a new password directly for <strong>{resetDialog.fullName}</strong> ({resetDialog.email}). This clears lockouts and revokes active sessions, but does not change the account's active status.
+                                    Set a new password directly for <strong>{resetDialog.fullName}</strong> ({resetDialog.email}). This clears lockouts and revokes active sessions, but does not change the account&apos;s active status.
                                 </p>
                             </div>
 

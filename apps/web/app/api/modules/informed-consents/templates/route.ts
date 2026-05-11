@@ -1,60 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
+import { handleApiError } from "@/lib/server/http";
+import { toJsonSafe } from "@/lib/server/json";
+import { listRuntimeConsentTemplates } from "@/lib/server/informed-consents-template-catalog";
 
 /**
  * GET /api/modules/informed-consents/templates
  * Get available consent templates filtered by type and specialty
  */
 export async function GET(request: NextRequest) {
-  await requireModuleOperationalAccess(request, "informed-consents");
-
-  const { searchParams } = new URL(request.url);
-  const consentType = searchParams.get("type") || "";
-  const specialty = searchParams.get("specialty") || "";
-
   try {
-    // Mock templates - in production, fetch from database
-    const mockTemplates = [
-      {
-        id: "tmpl_001",
-        titleAr: "نموذج الموافقة على الجراحة",
-        titleEn: "Surgical Consent Form",
-        consentType: "SURGICAL_CONSENT",
-        specialty: "SURGICAL",
-        version: "1.0",
-        language: "bilingual",
-      },
-      {
-        id: "tmpl_002",
-        titleAr: "نموذج موافقة على التخدير",
-        titleEn: "Anesthesia Consent Form",
-        consentType: "ANESTHESIA_CONSENT",
-        specialty: "ANESTHESIA",
-        version: "1.0",
-        language: "bilingual",
-      },
-      {
-        id: "tmpl_003",
-        titleAr: "نموذج موافقة عام",
-        titleEn: "General Consent Form",
-        consentType: "GENERAL_CONSENT",
-        specialty: "GENERAL_MEDICINE",
-        version: "1.0",
-        language: "bilingual",
-      },
-    ];
+    const auth = await requireModuleOperationalAccess(request, "informed-consents");
+    const { searchParams } = new URL(request.url);
+    const templates = await listRuntimeConsentTemplates(auth, {
+      consentType: searchParams.get("type") || undefined,
+      specialty: searchParams.get("specialty") || undefined,
+      department: searchParams.get("department") || undefined,
+    });
 
-    const filtered = mockTemplates.filter(
-      (t) =>
-        (consentType ? t.consentType === consentType : true) &&
-        (specialty ? t.specialty === specialty : true)
-    );
-
-    return NextResponse.json(filtered);
+    return NextResponse.json(toJsonSafe(templates));
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch templates" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
