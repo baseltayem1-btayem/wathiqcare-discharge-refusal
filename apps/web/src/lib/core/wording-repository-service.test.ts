@@ -291,7 +291,7 @@ test('WordingRepositoryService — Consent Document Validation', async (t) => {
       dynamicFields: mockDynamicFields,
       language: 'bilingual',
       arContent: 'Arabic content...',
-      // enContent is MISSING — bilingual document incomplete
+      enContent: '',
       approvalStatus: 'DRAFT',
       readOnlyFields: [],
       auditTrail: [],

@@ -243,24 +243,7 @@ test.describe("Module Portal - Authenticated Browser Smoke Tests", () => {
     await page.goto(`${BASE_URL}/modules/informed-consents`);
     await page.waitForLoadState("networkidle");
 
-    // Intercept API calls
-    let apiCallSucceeded = false;
-
-    page.on("response", (response) => {
-      if (
-        response.url().includes("/api/modules/informed-consents") &&
-        response.status() === 200
-      ) {
-        apiCallSucceeded = true;
-      }
-    });
-
     // Wait for potential API call
     await page.waitForTimeout(1000);
-
-    // If API was called, verify it succeeded
-    if (apiCallSucceeded) {
-      expect(apiCallSucceeded).toBe(true);
-    }
   });
 });
