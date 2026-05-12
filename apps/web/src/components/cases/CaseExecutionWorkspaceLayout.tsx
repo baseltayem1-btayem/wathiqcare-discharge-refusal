@@ -464,7 +464,7 @@ function ProgressRing({ value, label }: { value: number; label: string }) {
 function mapLegalAction(itemKey: string, tr: (en: string, ar: string) => string): GuidedLegalAction {
   switch (itemKey) {
     case "case_data_complete":
-      return { label: tr("Complete case profile", "استكمال ملف الحالة"), stepKey: "case_creation" };
+      return { label: tr("Complete case profile", "استكمال ملف الحالة"), stepKey: "medical_decision" };
     case "patient_decision_recorded":
     case "signature_captured":
     case "witness_recorded":
@@ -472,11 +472,11 @@ function mapLegalAction(itemKey: string, tr: (en: string, ar: string) => string)
     case "risk_explanation_present":
       return { label: tr("Record clinical risk explanation", "تسجيل شرح المخاطر السريرية"), stepKey: "medical_decision" };
     case "timestamp_complete":
-      return { label: tr("Refresh legal readiness evidence", "تحديث أدلة الجاهزية القانونية"), stepKey: "legal_readiness" };
+      return { label: tr("Refresh legal readiness evidence", "تحديث أدلة الجاهزية القانونية"), stepKey: "closure" };
     case "pdf_ready":
-      return { label: tr("Generate final legal PDF", "إنشاء PDF القانوني النهائي"), stepKey: "legal_documents_bundle" };
+      return { label: tr("Generate final legal PDF", "إنشاء PDF القانوني النهائي"), stepKey: "closure" };
     default:
-      return { label: tr("Review legal requirements", "مراجعة المتطلبات القانونية"), stepKey: "legal_readiness" };
+      return { label: tr("Review legal requirements", "مراجعة المتطلبات القانونية"), stepKey: "closure" };
   }
 }
 
@@ -710,6 +710,7 @@ export default function CaseExecutionWorkspaceLayout({
   ) * 100);
   const canProceedLegally = Boolean(readiness?.ready_for_legal) && legalReadyForFinalization && witnessMinimumMet;
   const roleKey = String(role || "").trim().toLowerCase();
+  const hasLegalDetailAccess = /legal|tenant_admin|platform_admin|admin/.test(roleKey);
   const blockerCount = missingLegalItems.length + (!witnessMinimumMet ? 1 : 0);
   const legalRiskLevel: "LOW" | "MEDIUM" | "HIGH" =
     blockerCount >= 3 || !witnessMinimumMet
@@ -757,7 +758,7 @@ export default function CaseExecutionWorkspaceLayout({
         reason: hasCoreRefusalDocument
           ? tr("Required refusal form is available.", "نموذج رفض الخروج المطلوب متوفر.")
           : tr("Refusal form is not generated yet.", "لم يتم إنشاء نموذج رفض الخروج بعد."),
-        stepKey: "legal_documents_bundle",
+        stepKey: "closure",
       },
       {
         id: "RULE-DOC-002",
@@ -767,7 +768,7 @@ export default function CaseExecutionWorkspaceLayout({
         reason: pdfValidation?.canFinalize
           ? tr("PDF validation confirms legal completeness.", "تحقق PDF يؤكد الاكتمال القانوني.")
           : tr("PDF checklist still has legal gaps.", "قائمة تحقق PDF لا تزال تحتوي فجوات قانونية."),
-        stepKey: "legal_documents_bundle",
+        stepKey: "closure",
       },
       {
         id: "RULE-CNS-001",
@@ -798,7 +799,7 @@ export default function CaseExecutionWorkspaceLayout({
           missingLegalItems.length === 0
             ? tr("All readiness controls are satisfied.", "جميع ضوابط الجاهزية مستوفاة.")
             : tr("One or more readiness controls are still missing.", "لا تزال بعض ضوابط الجاهزية غير مكتملة."),
-        stepKey: "legal_readiness",
+        stepKey: "closure",
       },
       {
         id: "RULE-CMP-002",
@@ -808,7 +809,7 @@ export default function CaseExecutionWorkspaceLayout({
         reason: auditVerified
           ? tr("Audit chain verification is valid.", "التحقق من سلسلة التدقيق صالح.")
           : tr("Audit chain verification is pending or unavailable.", "التحقق من سلسلة التدقيق قيد الانتظار أو غير متوفر."),
-        stepKey: "legal_readiness",
+        stepKey: "closure",
       },
     ];
   }, [
@@ -864,7 +865,7 @@ export default function CaseExecutionWorkspaceLayout({
       return {
         title: tr("Issue the final legal package and conclude the record", "إصدار الحزمة القانونية النهائية وإقفال السجل"),
         detail: tr("The present record is legally eligible to proceed with finalization and formal output issuance.", "السجل الحالي مستوفٍ قانونيًا للمضي في الاعتماد النهائي وإصدار المخرجات الرسمية."),
-        stepKey: "legal_documents_bundle" as CaseWorkspaceStepKey,
+        stepKey: "closure" as CaseWorkspaceStepKey,
       };
     }
 
@@ -896,7 +897,7 @@ export default function CaseExecutionWorkspaceLayout({
       return {
         title: tr("Remediate outstanding legal deficiencies", "معالجة أوجه النقص القانونية القائمة"),
         detail: tr("Outstanding legal deficiencies must be resolved before final authorization may be given.", "يجب معالجة أوجه النقص القانونية القائمة قبل منح الاعتماد النهائي."),
-        stepKey: "legal_readiness" as CaseWorkspaceStepKey,
+        stepKey: "closure" as CaseWorkspaceStepKey,
       };
     }
 
@@ -1153,7 +1154,7 @@ export default function CaseExecutionWorkspaceLayout({
             <Badge variant={legalRiskBadge}>{tr("Risk", "المخاطر")}: {legalRiskLevel}</Badge>
           </div>
 
-          {legalReadinessItems.map((item) => {
+          {hasLegalDetailAccess ? legalReadinessItems.map((item) => {
             const guided = mapLegalAction(item.key, tr);
 
             return (
@@ -1181,7 +1182,14 @@ export default function CaseExecutionWorkspaceLayout({
                 </div>
               </div>
             );
-          })}
+          }) : (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
+              {tr(
+                "Detailed legal controls are evaluated in the background and shown to Legal/Admin users only.",
+                "يتم تقييم الضوابط القانونية التفصيلية في الخلفية وتظهر فقط للمستخدمين القانونيين/الإداريين.",
+              )}
+            </div>
+          )}
 
           {legalReadyForFinalization ? (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
@@ -1787,33 +1795,42 @@ export default function CaseExecutionWorkspaceLayout({
                     {tr("Consent", "الموافقة")}: {legalReadinessReport.evidence?.consentCount ?? 0} • {tr("Documents", "المستندات")}: {legalReadinessReport.evidence?.documentCount ?? 0}
                   </span>
                 </div>
-                <div className="space-y-2">
-                  {legalReadinessReport.checklist.map((item) => (
-                    <div key={item.key} className="flex items-start justify-between gap-3 rounded-xl border border-[var(--border-soft)] px-3 py-3 text-sm">
-                      <div className="flex items-start gap-2">
-                        {item.satisfied ? <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" /> : <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" />}
-                        <div>
-                          <div className="font-medium text-slate-800">{item.label}</div>
-                          <div className="text-slate-500">{item.reason}</div>
+                {hasLegalDetailAccess ? (
+                  <div className="space-y-2">
+                    {legalReadinessReport.checklist.map((item) => (
+                      <div key={item.key} className="flex items-start justify-between gap-3 rounded-xl border border-[var(--border-soft)] px-3 py-3 text-sm">
+                        <div className="flex items-start gap-2">
+                          {item.satisfied ? <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" /> : <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600" />}
+                          <div>
+                            <div className="font-medium text-slate-800">{item.label}</div>
+                            <div className="text-slate-500">{item.reason}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={item.satisfied ? "success" : item.required ? "warning" : "pending"}>
+                            {item.satisfied ? tr("Compliant", "متوافق") : item.required ? tr("Legally Restricted", "مقيد قانونيًا") : tr("Optional", "اختياري")}
+                          </Badge>
+                          {!item.satisfied ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedStepKey(mapLegalAction(item.key, tr).stepKey)}
+                            >
+                              {tr("Review", "مراجعة")}
+                            </Button>
+                          ) : null}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={item.satisfied ? "success" : item.required ? "warning" : "pending"}>
-                          {item.satisfied ? tr("Compliant", "متوافق") : item.required ? tr("Legally Restricted", "مقيد قانونيًا") : tr("Optional", "اختياري")}
-                        </Badge>
-                        {!item.satisfied ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedStepKey(mapLegalAction(item.key, tr).stepKey)}
-                          >
-                            {tr("Review", "مراجعة")}
-                          </Button>
-                        ) : null}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
+                    {tr(
+                      "Checklist details are available to Legal/Admin. Clinical users see summarized readiness only.",
+                      "تفاصيل قائمة التحقق متاحة للقانوني/الإداري. يظهر للمستخدم السريري ملخص الجاهزية فقط.",
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               renderMissingState(tr("No readiness checklist has been evaluated yet.", "لم يتم تقييم قائمة تحقق الجاهزية بعد."))
@@ -2075,7 +2092,13 @@ export default function CaseExecutionWorkspaceLayout({
       case "legal_documents_bundle":
         return renderDocumentsStep();
       case "closure":
-        return renderClosureStep();
+        return (
+          <div className="space-y-4">
+            {renderLegalReadinessStep()}
+            {renderDocumentsStep()}
+            {renderClosureStep()}
+          </div>
+        );
     }
   }
 
@@ -2186,53 +2209,62 @@ export default function CaseExecutionWorkspaceLayout({
             </div>
           </div>
 
-          <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-              <div className="text-sm font-semibold text-slate-900">{tr("Legal Reasoning", "التسبيب القانوني")}</div>
-              <div className="mt-1 text-xs text-slate-500">
-                {canProceedLegally
-                  ? tr("No presently identified legal deficiency prevents the record from proceeding to finalization.", "لا يوجد في الوقت الراهن نقص قانوني يمنع إحالة الملف إلى الاعتماد النهائي.")
-                  : tr("Finalization is presently withheld because one or more adverse legal findings remain unresolved.", "الاعتماد النهائي محجوب حاليًا لوجود نتيجة قانونية سلبية واحدة أو أكثر لم تتم معالجتها.")}
-              </div>
-              <div className="mt-3 space-y-2">
-                {triggeredLegalRules.length > 0 ? (
-                  triggeredLegalRules.slice(0, 5).map((rule) => (
-                    <div key={rule.id} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                      <div className="font-semibold">{rule.id} • {translateRiskCategory(rule.category)}</div>
-                      <div className="text-xs">{rule.reason}</div>
-                      <Button
-                        className="mt-2"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedStepKey(rule.stepKey)}
-                      >
-                        {tr("Open Related Step", "فتح الخطوة المرتبطة")}
-                      </Button>
+          {hasLegalDetailAccess ? (
+            <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                <div className="text-sm font-semibold text-slate-900">{tr("Legal Reasoning", "التسبيب القانوني")}</div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {canProceedLegally
+                    ? tr("No presently identified legal deficiency prevents the record from proceeding to finalization.", "لا يوجد في الوقت الراهن نقص قانوني يمنع إحالة الملف إلى الاعتماد النهائي.")
+                    : tr("Finalization is presently withheld because one or more adverse legal findings remain unresolved.", "الاعتماد النهائي محجوب حاليًا لوجود نتيجة قانونية سلبية واحدة أو أكثر لم تتم معالجتها.")}
+                </div>
+                <div className="mt-3 space-y-2">
+                  {triggeredLegalRules.length > 0 ? (
+                    triggeredLegalRules.slice(0, 5).map((rule) => (
+                      <div key={rule.id} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                        <div className="font-semibold">{rule.id} • {translateRiskCategory(rule.category)}</div>
+                        <div className="text-xs">{rule.reason}</div>
+                        <Button
+                          className="mt-2"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedStepKey(rule.stepKey)}
+                        >
+                          {tr("Open Related Step", "فتح الخطوة المرتبطة")}
+                        </Button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                      {tr("No adverse legal findings are presently triggered.", "لا توجد نتائج قانونية سلبية مفعلة في الوقت الراهن.")}
                     </div>
-                  ))
-                ) : (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                    {tr("No adverse legal findings are presently triggered.", "لا توجد نتائج قانونية سلبية مفعلة في الوقت الراهن.")}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-              <div className="text-sm font-semibold text-slate-900">{tr("Risk Breakdown by Category", "تفصيل المخاطر حسب الفئة")}</div>
-              <div className="mt-2 space-y-2 text-sm">
-                {riskBreakdown.map((item) => (
-                  <div key={item.category} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-                    <span className="text-slate-700">{translateRiskCategory(item.category)}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">{item.failed}/{item.total}</span>
-                      <Badge variant={item.badgeVariant}>{item.status}</Badge>
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                <div className="text-sm font-semibold text-slate-900">{tr("Risk Breakdown by Category", "تفصيل المخاطر حسب الفئة")}</div>
+                <div className="mt-2 space-y-2 text-sm">
+                  {riskBreakdown.map((item) => (
+                    <div key={item.category} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
+                      <span className="text-slate-700">{translateRiskCategory(item.category)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500">{item.failed}/{item.total}</span>
+                        <Badge variant={item.badgeVariant}>{item.status}</Badge>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">
+              {tr(
+                "Detailed legal findings are hidden for this role. Legal readiness and document controls still run in the background.",
+                "تم إخفاء النتائج القانونية التفصيلية لهذا الدور. تستمر ضوابط الجاهزية القانونية والمستندات في العمل بالخلفية.",
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

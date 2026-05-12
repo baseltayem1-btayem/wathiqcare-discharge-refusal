@@ -51,21 +51,12 @@ const STEP_META: Array<
   Omit<CaseWorkspaceStep, "status" | "missingItems" | "nextAction">
 > = [
   {
-    key: "case_creation",
-    label: "Case Creation",
-    shortLabel: "Create",
-    description: "Confirm the case record is complete before clinical and legal actions start.",
-    ownerLabel: "Case coordinator / Operations",
-    includedSections: ["Case Summary", "Assignments & SLA"],
-    recommendedVisibleRoles: ["Doctor", "Nursing", "Operations", "Tenant Admin", "Legal"],
-  },
-  {
     key: "medical_decision",
     label: "Medical Decision",
     shortLabel: "Medical",
     description: "Record the physician-led explanation and medical rationale for the discharge path.",
     ownerLabel: "Doctor",
-    includedSections: ["Presentation / Proof of Notice", "Physician and diagnosis context"],
+    includedSections: ["Case Summary", "Presentation / Proof of Notice", "Physician and diagnosis context"],
     recommendedVisibleRoles: ["Doctor", "Nursing", "Tenant Admin", "Read-only reviewers"],
   },
   {
@@ -78,31 +69,13 @@ const STEP_META: Array<
     recommendedVisibleRoles: ["Doctor", "Operations", "Witness-capable staff", "Tenant Admin", "Legal"],
   },
   {
-    key: "legal_readiness",
-    label: "Legal Readiness",
-    shortLabel: "Readiness",
-    description: "Evaluate blockers, compliance requirements, and escalation readiness before document issuance.",
-    ownerLabel: "Legal Admin / Legal Officer",
-    includedSections: ["Legal Readiness", "Legal Readiness Checklist", "Decision follow-up"],
-    recommendedVisibleRoles: ["Legal", "Tenant Admin", "Doctor", "Read-only reviewers"],
-  },
-  {
-    key: "legal_documents_bundle",
-    label: "Legal Documents & Bundle",
-    shortLabel: "Documents",
-    description: "Generate the legal package, PDFs, and supporting evidence bundle.",
-    ownerLabel: "Legal",
-    includedSections: ["Legal Package", "Legal Case PDF Reports", "Documents"],
-    recommendedVisibleRoles: ["Legal", "Authorized Signatory", "Tenant Admin", "Read-only reviewers"],
-  },
-  {
     key: "closure",
-    label: "Closure",
-    shortLabel: "Closure",
-    description: "Verify final artifacts and confirm the case is ready for authorized closure.",
-    ownerLabel: "Authorized Signatory",
-    includedSections: ["Final closure checklist", "Latest final PDF", "Download package"],
-    recommendedVisibleRoles: ["Authorized Signatory", "Legal", "Tenant Admin", "Auditor"],
+    label: "Finalize Case",
+    shortLabel: "Finalize",
+    description: "Run legal readiness controls in the background, generate required legal outputs, and complete closure.",
+    ownerLabel: "Legal / Authorized Signatory",
+    includedSections: ["Legal Readiness", "Legal Documents & Bundle", "Final closure checklist"],
+    recommendedVisibleRoles: ["Doctor", "Legal", "Authorized Signatory", "Tenant Admin", "Auditor"],
   },
 ];
 
@@ -115,21 +88,12 @@ function getStepMeta(isArabic: boolean): Array<
 
   return [
     {
-      key: "case_creation",
-      label: "إنشاء الحالة",
-      shortLabel: "إنشاء",
-      description: "تأكيد اكتمال سجل الحالة قبل بدء الإجراءات السريرية والقانونية.",
-      ownerLabel: "منسق الحالة / العمليات",
-      includedSections: ["ملخص الحالة", "التكليفات واتفاقية مستوى الخدمة"],
-      recommendedVisibleRoles: ["الطبيب", "التمريض", "العمليات", "مدير الجهة", "القانوني"],
-    },
-    {
       key: "medical_decision",
       label: "القرار الطبي",
       shortLabel: "طبي",
       description: "تسجيل الشرح الطبي بقيادة الطبيب والمبرر الطبي لمسار الخروج.",
       ownerLabel: "الطبيب",
-      includedSections: ["العرض / إثبات الإبلاغ", "سياق الطبيب والتشخيص"],
+      includedSections: ["ملخص الحالة", "العرض / إثبات الإبلاغ", "سياق الطبيب والتشخيص"],
       recommendedVisibleRoles: ["الطبيب", "التمريض", "مدير الجهة", "مراجعون للقراءة فقط"],
     },
     {
@@ -142,31 +106,13 @@ function getStepMeta(isArabic: boolean): Array<
       recommendedVisibleRoles: ["الطبيب", "العمليات", "طاقم قادر على الشهادة", "مدير الجهة", "القانوني"],
     },
     {
-      key: "legal_readiness",
-      label: "الجاهزية القانونية",
-      shortLabel: "الجاهزية",
-      description: "تقييم العوائق ومتطلبات الامتثال وجاهزية التصعيد قبل إصدار المستندات.",
-      ownerLabel: "المشرف القانوني / الموظف القانوني",
-      includedSections: ["الجاهزية القانونية", "قائمة تحقق الجاهزية القانونية", "متابعة القرار"],
-      recommendedVisibleRoles: ["القانوني", "مدير الجهة", "الطبيب", "مراجعون للقراءة فقط"],
-    },
-    {
-      key: "legal_documents_bundle",
-      label: "المستندات والحزمة القانونية",
-      shortLabel: "المستندات",
-      description: "إنشاء الحزمة القانونية وملفات PDF وحزمة الأدلة الداعمة.",
-      ownerLabel: "القانوني",
-      includedSections: ["الحزمة القانونية", "تقارير PDF القانونية للحالة", "المستندات"],
-      recommendedVisibleRoles: ["القانوني", "المفوّض المعتمد", "مدير الجهة", "مراجعون للقراءة فقط"],
-    },
-    {
       key: "closure",
-      label: "الإغلاق",
-      shortLabel: "إغلاق",
-      description: "التحقق من المخرجات النهائية والتأكد من جاهزية الحالة للإغلاق المعتمد.",
-      ownerLabel: "المفوّض المعتمد",
-      includedSections: ["قائمة تحقق الإغلاق النهائي", "أحدث PDF نهائي", "تنزيل الحزمة"],
-      recommendedVisibleRoles: ["المفوّض المعتمد", "القانوني", "مدير الجهة", "المدقق"],
+      label: "إنهاء الحالة",
+      shortLabel: "إنهاء",
+      description: "تشغيل ضوابط الجاهزية القانونية في الخلفية وإنشاء المخرجات المطلوبة وإكمال الإغلاق.",
+      ownerLabel: "القانوني / المفوّض المعتمد",
+      includedSections: ["الجاهزية القانونية", "المستندات والحزمة القانونية", "قائمة تحقق الإغلاق النهائي"],
+      recommendedVisibleRoles: ["الطبيب", "القانوني", "المفوّض المعتمد", "مدير الجهة", "المدقق"],
     },
   ];
 }
@@ -251,6 +197,14 @@ function buildMissingItems(input: BuildCaseWorkspaceFlowInput, isArabic: boolean
   if (String(input.caseStatus || "").toUpperCase() !== "CLOSED") {
     closureMissing.push(tr("Case status is still open.", "حالة الملف لا تزال مفتوحة."));
   }
+  const finalizeMissing = Array.from(
+    new Set([
+      ...caseCreationMissing,
+      ...legalReadinessMissing,
+      ...documentMissing,
+      ...closureMissing,
+    ]),
+  );
 
   return {
     case_creation: caseCreationMissing,
@@ -258,7 +212,7 @@ function buildMissingItems(input: BuildCaseWorkspaceFlowInput, isArabic: boolean
     patient_decision: patientDecisionMissing,
     legal_readiness: legalReadinessMissing,
     legal_documents_bundle: documentMissing,
-    closure: closureMissing,
+    closure: finalizeMissing,
   };
 }
 
