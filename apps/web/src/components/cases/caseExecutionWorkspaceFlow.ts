@@ -197,9 +197,8 @@ function buildMissingItems(input: BuildCaseWorkspaceFlowInput, isArabic: boolean
   if (String(input.caseStatus || "").toUpperCase() !== "CLOSED") {
     closureMissing.push(tr("Case status is still open.", "حالة الملف لا تزال مفتوحة."));
   }
-  const finalizeMissing = Array.from(
+  const finalizeCaseMissing = Array.from(
     new Set([
-      ...caseCreationMissing,
       ...legalReadinessMissing,
       ...documentMissing,
       ...closureMissing,
@@ -212,7 +211,7 @@ function buildMissingItems(input: BuildCaseWorkspaceFlowInput, isArabic: boolean
     patient_decision: patientDecisionMissing,
     legal_readiness: legalReadinessMissing,
     legal_documents_bundle: documentMissing,
-    closure: finalizeMissing,
+    closure: finalizeCaseMissing,
   };
 }
 

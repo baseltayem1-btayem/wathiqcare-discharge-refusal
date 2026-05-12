@@ -149,6 +149,7 @@ Dead/silent-click audit status: **PASS** for actions present in module code (act
 1. Full authenticated manual E2E validation (step-by-step data persistence, AR/EN same-case runtime checks, full PDF content assertions) could not be completed in this environment due missing authenticated runtime session/data.
 2. Pre-existing repository TypeScript/test issues remain outside this task scope.
 3. Explicit UI actions for `Send for approval`, `Upload missing document`, and `Close case` are not currently exposed as distinct actions in the Discharge Refusal workspace.
+   - Clarification: these were **not removed by this change**; they are absent in the existing baseline implementation and remain a follow-up gap if required by product/operations policy.
 
 ## 14) Overall status
 - Discharge Refusal 3-step UX simplification + safe legal-detail gating: **PASS**

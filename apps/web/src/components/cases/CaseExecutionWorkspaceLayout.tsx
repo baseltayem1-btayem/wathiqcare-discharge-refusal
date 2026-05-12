@@ -258,6 +258,13 @@ type GuidedLegalAction = {
   stepKey: CaseWorkspaceStepKey;
 };
 
+const LEGAL_DETAIL_ROLES = ["legal", "legal_admin", "legal_officer", "tenant_admin", "platform_admin", "admin"];
+
+function hasLegalDetailRole(role: string): boolean {
+  const normalizedRole = String(role || "").trim().toLowerCase();
+  return LEGAL_DETAIL_ROLES.includes(normalizedRole);
+}
+
 type LegalRiskCategory = "documentation" | "consent" | "witness" | "compliance";
 
 type LegalRuleEvaluation = {
@@ -710,7 +717,7 @@ export default function CaseExecutionWorkspaceLayout({
   ) * 100);
   const canProceedLegally = Boolean(readiness?.ready_for_legal) && legalReadyForFinalization && witnessMinimumMet;
   const roleKey = String(role || "").trim().toLowerCase();
-  const hasLegalDetailAccess = /legal|tenant_admin|platform_admin|admin/.test(roleKey);
+  const hasLegalDetailAccess = hasLegalDetailRole(roleKey);
   const blockerCount = missingLegalItems.length + (!witnessMinimumMet ? 1 : 0);
   const legalRiskLevel: "LOW" | "MEDIUM" | "HIGH" =
     blockerCount >= 3 || !witnessMinimumMet

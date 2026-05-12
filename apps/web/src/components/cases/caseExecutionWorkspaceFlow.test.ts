@@ -34,6 +34,9 @@ test("case workspace flow recommends the first incomplete step", () => {
   assert.equal(flow.steps[0]?.key, "medical_decision");
   assert.equal(flow.steps[1]?.key, "patient_decision");
   assert.equal(flow.steps[2]?.key, "closure");
+  assert.equal(flow.steps.some((step) => step.key === "case_creation"), false);
+  assert.equal(flow.steps.some((step) => step.key === "legal_readiness"), false);
+  assert.equal(flow.steps.some((step) => step.key === "legal_documents_bundle"), false);
   assert.equal(flow.steps.find((step) => step.key === "medical_decision")?.status, "completed");
   assert.equal(flow.steps.find((step) => step.key === "patient_decision")?.status, "current");
 });
@@ -66,6 +69,9 @@ test("case workspace flow marks closure current when prior steps are complete", 
   assert.equal(flow.recommendedStepKey, "closure");
   assert.equal(flow.currentStep.key, "closure");
   assert.equal(flow.steps.length, 3);
+  assert.equal(flow.steps.some((step) => step.key === "case_creation"), false);
+  assert.equal(flow.steps.some((step) => step.key === "legal_readiness"), false);
+  assert.equal(flow.steps.some((step) => step.key === "legal_documents_bundle"), false);
   assert.equal(flow.steps.find((step) => step.key === "patient_decision")?.status, "completed");
   assert.ok(
     flow.steps
