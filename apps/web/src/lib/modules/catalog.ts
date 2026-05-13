@@ -228,6 +228,9 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
   },
 ];
 
+const MODULE_BY_HREF = new Map(MODULE_DEFINITIONS.map((moduleDefinition) => [moduleDefinition.href, moduleDefinition] as const));
+const MODULE_HREF_PREFIXES = Array.from(MODULE_BY_HREF.keys()).sort((left, right) => right.length - left.length);
+
 export function isModuleKey(value: string): value is ModuleKey {
   return (ALL_MODULE_KEYS as readonly string[]).includes(value);
 }
@@ -266,14 +269,13 @@ export function getAccessibleModules(access: ModuleAccessContext): ModuleDefinit
 }
 
 export function resolveModuleKeyFromPath(pathname: string): ModuleKey | null {
-  const matchedModule = MODULE_DEFINITIONS.find((moduleDefinition) =>
-    pathname === moduleDefinition.href || pathname.startsWith(`${moduleDefinition.href}/`),
-  );
-
-  if (matchedModule) {
-    return matchedModule.key;
+  for (const href of MODULE_HREF_PREFIXES) {
+    if (pathname === href || pathname.startsWith(`${href}/`)) {
+      return MODULE_BY_HREF.get(href)?.key || null;
+    }
   }
 
+  // Legacy discharge-refusal routes remain mounted outside /modules and still need module resolution.
   if (
     pathname === "/dashboard"
     || pathname.startsWith("/cases")

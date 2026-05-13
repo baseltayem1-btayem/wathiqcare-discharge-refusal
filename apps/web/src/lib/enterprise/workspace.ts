@@ -152,6 +152,9 @@ const SECTION_LABELS: Record<EnterpriseSectionKey, string> = {
   "risk-analysis": "Risk Analysis",
 };
 
+// Timeline event IDs use a short module prefix to keep audit tokens compact but still readable across modules.
+const MODULE_PREFIX_LENGTH = 4;
+
 const ROLE_LABELS: Record<CanonicalUserRole, string> = {
   platform_superadmin: "Platform Super Admin",
   platform_admin: "Platform Admin",
@@ -544,7 +547,7 @@ const MODULE_SCENARIOS: Record<ModuleKey, ModuleScenario> = {
 };
 
 function roleLabel(role: CanonicalUserRole): string {
-  return ROLE_LABELS[role] || "Read-Only Auditor";
+  return ROLE_LABELS[role] || "Unknown Role";
 }
 
 function isRoleAllowed(action: EnterpriseActionDefinition, role: CanonicalUserRole, moduleKey: ModuleKey): boolean {
@@ -624,7 +627,7 @@ function buildWorkflowSteps(state: EnterpriseWorkflowState): EnterpriseWorkflowS
 }
 
 function buildTimeline(moduleKey: ModuleKey, state: EnterpriseWorkflowState): EnterpriseTimelineEvent[] {
-  const prefix = moduleKey.toUpperCase().slice(0, 4);
+  const prefix = moduleKey.toUpperCase().slice(0, MODULE_PREFIX_LENGTH);
 
   return [
     {

@@ -109,7 +109,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
 
 export function getExpectedHiddenModules(profile: DemoAccountProfile): ModuleKey[] {
   const allowed = new Set(profile.expectedModules);
-  return [...ALL_MODULE_KEYS].filter(
+  return ALL_MODULE_KEYS.filter(
     (moduleKey) => !allowed.has(moduleKey as ModuleKey),
   ) as ModuleKey[];
 }

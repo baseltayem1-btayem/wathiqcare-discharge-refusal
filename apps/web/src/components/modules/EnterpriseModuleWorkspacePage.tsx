@@ -173,7 +173,7 @@ export default function EnterpriseModuleWorkspacePage({
                 <label className="relative mt-2 block">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
-                    aria-label="Global search"
+                    aria-label="Search enterprise records"
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder={workspace.searchPlaceholder}
