@@ -286,6 +286,7 @@ function toMembershipRole(appRole) {
 }
 
 function buildStableHash(input) {
+  // Deterministic sandbox fixture hash only; do not treat this helper as a production credential or signature primitive.
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
