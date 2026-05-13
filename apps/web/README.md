@@ -62,7 +62,7 @@ When `--audit` is enabled, the script writes an `audit_logs` entry for each rese
 
 Use the built-in demo seed to prepare a production-like staging tenant for authenticated UAT and workflow certification.
 
-1. Copy `/home/runner/work/wathiqcare-discharge-refusal/wathiqcare-discharge-refusal/.env.example` into your staging runtime env files.
+1. Copy the repository root `.env.example` into your staging runtime env files.
 2. Point `DATABASE_URL`, `DATABASE_URL_POOLED`, and `DATABASE_URL_UNPOOLED` to the dedicated staging database.
 3. Keep delivery safe for UAT by setting:
    - `EMAIL_DELIVERY_MODE=mock`
