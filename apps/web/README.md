@@ -80,6 +80,14 @@ npm run demo:seed -w apps/web
 
 The seed now provisions authenticated enterprise demo accounts for platform administration, legal affairs, physician, nurse, medical director, compliance, finance, external reviewer, read-only auditor, quality manager, and risk officer, plus multilingual workflow data for informed consent, discharge refusal, promissory note, and legal review scenarios.
 
+Run the operational hardening/certification report against staging:
+
+```bash
+npm run validate:enterprise-hardening -w apps/web
+```
+
+The command writes JSON and Markdown artifacts to `artifacts/enterprise-hardening/` and exits non-zero when the final recommendation is `NO_GO`.
+
 ## Getting Started
 
 First, run the development server:
