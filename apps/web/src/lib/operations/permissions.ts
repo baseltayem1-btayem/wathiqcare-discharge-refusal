@@ -7,6 +7,12 @@ const ROLE_ALIASES: Record<string, string> = {
     patient_relations: "patient_affairs",
     social_services: "patient_affairs",
     legal_officer: "legal_admin",
+    legal_affairs: "legal_admin",
+    quality_manager: "quality",
+    risk_officer: "risk_manager",
+    external_reviewer: "external_reviewer",
+    reviewer: "external_reviewer",
+    readonly_auditor: "read_only_auditor",
     member: "viewer",
 };
 

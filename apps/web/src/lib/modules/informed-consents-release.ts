@@ -4,7 +4,7 @@ export const INFORMED_CONSENTS_ROLE_ACCESS_CONFIG = [
   { key: "legal-affairs", label: "Legal Affairs", canonicalRole: "legal_admin", aliases: ["legal_admin", "legal_affairs", "legal_officer"] },
   { key: "admin", label: "Admin", canonicalRole: "tenant_admin", aliases: ["tenant_admin", "tenant_owner", "admin"] },
   { key: "compliance-officer", label: "Compliance Officer", canonicalRole: "compliance", aliases: ["compliance", "compliance_officer"] },
-  { key: "quality", label: "Quality", canonicalRole: "quality", aliases: ["quality"] },
+  { key: "quality", label: "Quality", canonicalRole: "quality", aliases: ["quality", "quality_manager", "quality_lead"] },
   { key: "medical-director", label: "Medical Director", canonicalRole: "medical_director", aliases: ["medical_director"] },
   { key: "patient-relations", label: "Patient Relations", canonicalRole: "patient_affairs", aliases: ["patient_affairs", "patient_relations"] },
   { key: "external-reviewer", label: "External Reviewer", canonicalRole: "external_reviewer", aliases: ["external_reviewer"] },

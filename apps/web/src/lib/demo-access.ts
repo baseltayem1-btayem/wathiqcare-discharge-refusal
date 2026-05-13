@@ -7,8 +7,12 @@ export type DemoAccountProfile = {
     | "doctor"
     | "nurse"
     | "medical-director"
-    | "quality-compliance"
-    | "finance-admin";
+    | "compliance"
+    | "finance-admin"
+    | "external-reviewer"
+    | "read-only-auditor"
+    | "quality-manager"
+    | "risk-officer";
   label: string;
   labelAr: string;
   email: string;
@@ -82,14 +86,14 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     expectedModules: ["informed-consents", "discharge-refusal", "legal-cases", "legal-documents", "incident-reports", "risk-management", "approvals"],
   },
   {
-    key: "quality-compliance",
-    label: "Quality / Compliance User",
-    labelAr: "مستخدم الجودة والامتثال",
+    key: "compliance",
+    label: "Compliance User",
+    labelAr: "مستخدم الامتثال",
     email: "demo.compliance@demo-imc.local",
     role: "compliance",
     tenantCode: "demo-imc",
-    scopeLabel: "Audit and governance review",
-    scopeLabelAr: "مراجعة التدقيق والحوكمة",
+    scopeLabel: "Enterprise compliance and audit review",
+    scopeLabelAr: "مراجعة الامتثال والتدقيق المؤسسي",
     mustChangePassword: false,
     expectedModules: ALL_MODULE_KEYS,
   },
@@ -104,6 +108,54 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabelAr: "مسارات التعهدات المالية",
     mustChangePassword: false,
     expectedModules: ["promissory-notes", "legal-documents", "approvals"],
+  },
+  {
+    key: "external-reviewer",
+    label: "External Reviewer",
+    labelAr: "المراجع الخارجي",
+    email: "demo.external.reviewer@demo-imc.local",
+    role: "external_reviewer",
+    tenantCode: "demo-imc",
+    scopeLabel: "External review and delegated approval access",
+    scopeLabelAr: "وصول المراجعة الخارجية والاعتماد المفوض",
+    mustChangePassword: false,
+    expectedModules: ["informed-consents", "discharge-refusal", "legal-cases", "legal-documents", "incident-reports", "risk-management", "approvals"],
+  },
+  {
+    key: "read-only-auditor",
+    label: "Read-Only Auditor",
+    labelAr: "المدقق للقراءة فقط",
+    email: "demo.readonly.auditor@demo-imc.local",
+    role: "read_only_auditor",
+    tenantCode: "demo-imc",
+    scopeLabel: "Read-only audit, evidence, and reporting access",
+    scopeLabelAr: "وصول تدقيقي للقراءة فقط على الأدلة والتقارير",
+    mustChangePassword: false,
+    expectedModules: ["informed-consents", "discharge-refusal", "promissory-notes", "legal-cases", "legal-documents", "incident-reports", "risk-management", "approvals"],
+  },
+  {
+    key: "quality-manager",
+    label: "Quality Manager",
+    labelAr: "مدير الجودة",
+    email: "demo.quality.manager@demo-imc.local",
+    role: "quality",
+    tenantCode: "demo-imc",
+    scopeLabel: "Quality governance and approval visibility",
+    scopeLabelAr: "حوكمة الجودة ورؤية الاعتمادات",
+    mustChangePassword: false,
+    expectedModules: ALL_MODULE_KEYS,
+  },
+  {
+    key: "risk-officer",
+    label: "Risk Officer",
+    labelAr: "مسؤول المخاطر",
+    email: "demo.risk.officer@demo-imc.local",
+    role: "risk_manager",
+    tenantCode: "demo-imc",
+    scopeLabel: "Risk escalation and legal workflow oversight",
+    scopeLabelAr: "إشراف تصعيد المخاطر ومسارات العمل القانونية",
+    mustChangePassword: false,
+    expectedModules: ["discharge-refusal", "legal-cases", "legal-documents", "incident-reports", "risk-management", "approvals"],
   },
 ] as const;
 

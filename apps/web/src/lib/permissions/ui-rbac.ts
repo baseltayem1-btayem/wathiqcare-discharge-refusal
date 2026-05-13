@@ -60,12 +60,17 @@ const ROLE_ALIASES: Record<string, string> = {
   treating_physician: "doctor",
   nurse_coordinator: "nursing",
   quality_compliance: "quality",
+  quality_manager: "quality",
+  quality_lead: "quality",
   risk_manager: "risk_manager",
+  risk_officer: "risk_manager",
   front_desk: "reception",
   patient_relations: "patient_affairs",
   social_services: "patient_affairs",
   external_reviewer: "external_reviewer",
+  reviewer: "external_reviewer",
   read_only_auditor: "read_only_auditor",
+  readonly_auditor: "read_only_auditor",
   member: "viewer",
 };
 
