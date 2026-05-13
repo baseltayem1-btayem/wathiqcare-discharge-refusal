@@ -55,7 +55,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Tenant-scoped clinical access",
     scopeLabelAr: "وصول سريري ضمن المستأجر",
     mustChangePassword: false,
-    expectedModules: ["informed-consents", "discharge-refusal"],
+    expectedModules: ["informed-consents", "discharge-refusal", "incident-reports"],
   },
   {
     key: "nurse",
@@ -79,7 +79,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Clinical governance oversight",
     scopeLabelAr: "إشراف الحوكمة السريرية",
     mustChangePassword: false,
-    expectedModules: ["informed-consents", "discharge-refusal", "legal-cases", "incident-reports", "risk-management", "approvals"],
+    expectedModules: ["informed-consents", "discharge-refusal", "legal-cases", "legal-documents", "incident-reports", "risk-management", "approvals"],
   },
   {
     key: "quality-compliance",

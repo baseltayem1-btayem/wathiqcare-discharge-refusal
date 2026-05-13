@@ -423,6 +423,14 @@ model Tenant {
   encounterExternalReferences         EncounterExternalReference[]
   consentSourceSnapshots              ConsentSourceSnapshot[]
   featureFlagOverrides                FeatureFlagOverride[]
+  workflowStates                      WorkflowState[]
+  workflowTransitions                 WorkflowTransition[]
+  approvalChains                      ApprovalChain[]
+  approvalActions                     ApprovalAction[]
+  permissionRoles                     PermissionRole[]
+  permissionPolicies                  PermissionPolicy[]
+  auditEvents                         AuditEvent[]
+  delegationRules                     DelegationRule[]
 
   @@map("tenants")
 }
