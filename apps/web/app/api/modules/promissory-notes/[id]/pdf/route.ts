@@ -101,10 +101,24 @@ export async function GET(
     }
 
     const noteData = buildPromissoryNoteDocumentData({
-      ...note,
+      id: note.id,
+      noteNumber: note.noteNumber,
+      debtorName: note.debtorName,
+      debtorIdNumber: note.debtorIdNumber,
+      issuerName: note.issuerName,
+      amount: Number(note.amount),
+      currency: note.currency,
       dueDate: note.dueDate.toISOString(),
       createdAt: note.createdAt.toISOString(),
+      status: note.status,
       metadata: (note.metadata as Record<string, unknown> | null) ?? null,
+      case: note.case
+        ? {
+          id: note.case.id,
+          caseNumber: note.case.caseNumber ?? "",
+          patientName: note.case.patientName ?? "",
+        }
+        : null,
     }, {
       language: lang,
       verificationBaseUrl: process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin,

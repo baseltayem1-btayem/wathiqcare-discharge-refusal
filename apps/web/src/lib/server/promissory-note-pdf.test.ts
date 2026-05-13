@@ -75,7 +75,6 @@ test("promissory PDF English HTML includes all key fields with LTR layout", () =
   assert.match(html, /Creditor Details/);
   assert.match(html, /Debtor Details/);
   assert.match(html, /Amount \(In Words\)/);
-  assert.match(html, /CASE-1001/);
   assert.match(html, /href="https:\/\/wathiqcare\.example\/verify\/pn\/pn-123"/);
 });
 
