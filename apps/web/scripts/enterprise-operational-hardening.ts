@@ -118,6 +118,21 @@ function parseJson(text: string): unknown {
   }
 }
 
+function extractCookieHeader(setCookie: string | null): string | null {
+  const header = (setCookie ?? "").trim();
+  if (!header) {
+    return null;
+  }
+
+  const firstCookie = header.split(",")[0]?.trim() ?? "";
+  if (!firstCookie) {
+    return null;
+  }
+
+  const cookiePair = firstCookie.split(";")[0]?.trim() ?? "";
+  return cookiePair || null;
+}
+
 async function apiRequest(
   baseUrl: string,
   method: string,
@@ -157,14 +172,12 @@ async function login(baseUrl: string, email: string, password: string): Promise<
     body: JSON.stringify({ email, password }),
   });
   const text = await response.text();
-  const setCookie = response.headers.get("set-cookie") ?? "";
-  const cookie = (((setCookie.split(",")[0] ?? "").split(";")[0]) || null);
 
   return {
     ok: response.ok,
     status: response.status,
     latencyMs: Math.round(performance.now() - started),
-    cookie,
+    cookie: extractCookieHeader(response.headers.get("set-cookie")),
     body: parseJson(text),
   };
 }

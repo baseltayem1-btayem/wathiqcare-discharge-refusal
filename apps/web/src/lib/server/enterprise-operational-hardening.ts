@@ -3,7 +3,7 @@ import {
   type DemoAccountProfile,
   getVisibleModulesForRole,
 } from "@/lib/demo-access";
-import { can, type UiPermissionKey } from "@/lib/permissions/ui-rbac";
+import { can } from "@/lib/permissions/ui-rbac";
 
 export type ValidationStatus = "pass" | "warn" | "fail" | "skip";
 
@@ -437,12 +437,3 @@ export function expectedAuthorityForProfile(profileKey: DemoAccountProfile["key"
 } {
   return AUTHORITY_EXPECTATIONS[profileKey];
 }
-
-export const ENTERPRISE_OPERATIONAL_HARDENING_PERMISSION_KEYS: readonly UiPermissionKey[] = [
-  "workflow.submit",
-  "workflow.escalate",
-  "workflow.sign",
-  "approval.approve",
-  "approval.delegate",
-  "audit.read",
-] as const;
