@@ -102,7 +102,10 @@ function getConfiguredPuppeteerExecutablePath(runtimeTarget = detectPdfRuntimeTa
   }
 
   if (runtimeTarget === "local_windows") {
-    return /^[A-Za-z]:\\/.test(configuredPath) && existsSync(configuredPath) ? configuredPath : null;
+    if (/^[A-Za-z]:\\/.test(configuredPath) && existsSync(configuredPath)) {
+      return configuredPath;
+    }
+    return path.isAbsolute(configuredPath) && existsSync(configuredPath) ? configuredPath : null;
   }
 
   return path.isAbsolute(configuredPath) && existsSync(configuredPath) ? configuredPath : null;

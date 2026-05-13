@@ -13,7 +13,6 @@ import {
   StructuredConsentDocument,
   WordingValidationResult,
   WordingValidationError,
-  WordingReviewStatus,
   WordingSection,
   WordingLanguage,
   RetrieveWordingOptions,
@@ -314,7 +313,7 @@ export class WordingRepositoryService {
   ): WordingValidationError[] {
     const errors: WordingValidationError[] = [];
 
-    for (const [fieldKey, value] of Object.entries(aiOutput)) {
+    for (const [fieldKey] of Object.entries(aiOutput)) {
       if (!allowedDynamicFields.includes(fieldKey)) {
         errors.push({
           code: 'FIXED_CLAUSE_MODIFIED',
@@ -370,6 +369,7 @@ export class WordingRepositoryService {
     proposedContentAr?: string;
     proposedContentEn?: string;
   }): Promise<{ proposalId: string; status: 'PENDING_LEGAL_REVIEW' }> {
+    void params;
     // In production, creates a wording_change_proposal record
     // Returns proposal ID for tracking through governance workflow
     return {
@@ -384,6 +384,7 @@ export class WordingRepositoryService {
   static async queryWordingRepository(
     options: WordingRepositoryQueryOptions
   ): Promise<ApprovedWordingTemplate[]> {
+    void options;
     // In production, queries approved_wording_templates table
     // Returns matching templates
     return [];

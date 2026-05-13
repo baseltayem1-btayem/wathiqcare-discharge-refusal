@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { FileWarning, Landmark, RefreshCw } from "lucide-react";
 import ModuleShell from "@/components/ModuleShell";
@@ -99,7 +99,7 @@ export default function PromissoryNotesModulePage({
     [],
   );
 
-  async function loadInitialData() {
+  const loadInitialData = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -123,7 +123,7 @@ export default function PromissoryNotesModulePage({
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
 
   async function refreshRecords() {
     setRefreshing(true);
@@ -140,7 +140,7 @@ export default function PromissoryNotesModulePage({
 
   useEffect(() => {
     void loadInitialData();
-  }, []);
+  }, [loadInitialData]);
 
   async function handleCreateNote() {
     if (!form.caseId) {

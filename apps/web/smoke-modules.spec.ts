@@ -1,266 +1,148 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-// Test configuration - runs authenticated tests for module portal
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000";
 
-// Platform admin credentials (update to match your test setup)
-const PLATFORM_ADMIN_CREDENTIALS = {
-  email: "admin@wathiqcare.test",
-  password: "Test@Secure123!",
+const TENANT_ADMIN_CREDENTIALS = {
+  email: process.env.PLAYWRIGHT_TENANT_EMAIL || "demo.legal.affairs@demo-imc.local",
+  password: process.env.PLAYWRIGHT_TENANT_PASSWORD || "DemoLegalAffairs@2026!",
 };
 
-test.describe("Module Portal - Authenticated Browser Smoke Tests", () => {
+const ENTERPRISE_MODULES = [
+  "informed-consents",
+  "discharge-refusal",
+  "promissory-notes",
+  "legal-cases",
+  "legal-documents",
+  "incident-reports",
+  "risk-management",
+  "approvals",
+] as const;
+
+const WORKSPACE_SECTIONS = [
+  "workflow",
+  "documents",
+  "audit-trail",
+  "signatures",
+  "timeline",
+  "risk-analysis",
+] as const;
+
+async function loginAsTenantAdmin(page: import("@playwright/test").Page) {
+  await page.goto(`${BASE_URL}/login`);
+  await page.fill('input[type="email"]', TENANT_ADMIN_CREDENTIALS.email);
+  await page.fill('input[type="password"]', TENANT_ADMIN_CREDENTIALS.password);
+  await page.click('button[type="submit"]');
+  await page.waitForURL((url) =>
+    url.pathname.includes("/modules") || url.pathname.includes("/dashboard"),
+  );
+}
+
+test.describe("Enterprise Module Portal Smoke Tests", () => {
   test.beforeEach(async ({ page }) => {
-    // Login before each test
-    await page.goto(`${BASE_URL}/login`);
-
-    // Fill login form
-    await page.fill('input[type="email"]', PLATFORM_ADMIN_CREDENTIALS.email);
-    await page.fill('input[type="password"]', PLATFORM_ADMIN_CREDENTIALS.password);
-
-    // Submit login
-    await page.click('button[type="submit"]');
-
-    // Wait for navigation to complete
-    await page.waitForURL((url) =>
-      url.pathname.includes("/modules") || url.pathname.includes("/dashboard")
-    );
+    await loginAsTenantAdmin(page);
   });
 
-  test("Module portal renders with all accessible module cards", async ({
-    page,
-  }) => {
-    // Navigate to modules portal
+  test("module portal renders with enterprise module cards", async ({ page }) => {
     await page.goto(`${BASE_URL}/modules`);
-
-    // Verify page loaded
     await expect(page).toHaveURL(/\/modules$/);
+    await expect(page.getByTestId("module-shell")).toBeVisible();
 
-    // Check for module shell container
-    const moduleShell = page.locator('[data-testid="module-shell"]');
-    await expect(moduleShell).toBeVisible();
-
-    // Verify main module portal heading/title exists
-    const heading = page.locator("h1, h2").first();
-    await expect(heading).toBeVisible();
-
-    // Check that page is not showing unauthorized message
-    const unauthorizedText = page.locator("text=/not authorized|permission denied/i");
-    await expect(unauthorizedText).not.toBeVisible();
+    for (const moduleKey of ENTERPRISE_MODULES) {
+      await expect(page.getByTestId(`module-card-${moduleKey}`)).toBeVisible();
+    }
   });
 
-  test("Platform admin sees all accessible modules on portal", async ({
-    page,
-  }) => {
+  test("enterprise module routes render without unauthorized or not-found states", async ({ page }) => {
+    for (const moduleKey of ENTERPRISE_MODULES) {
+      await page.goto(`${BASE_URL}/modules/${moduleKey}`);
+      await page.waitForLoadState("networkidle");
+
+      const body = page.locator("body");
+      await expect(body).not.toContainText(/not found|unauthorized|permission denied/i);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    }
+  });
+
+  test("enterprise workspace subroutes render for governed modules", async ({ page }) => {
+    for (const moduleKey of ["informed-consents", "promissory-notes", "legal-cases", "legal-documents"] as const) {
+      for (const section of WORKSPACE_SECTIONS) {
+        await page.goto(`${BASE_URL}/modules/${moduleKey}/${section}`);
+        await page.waitForLoadState("networkidle");
+
+        await expect(page.locator("body")).not.toContainText(/not found|unauthorized|permission denied/i);
+        await expect(page.getByTestId("module-shell")).toBeVisible();
+      }
+    }
+  });
+
+  test("legacy discharge refusal routes still resolve", async ({ page }) => {
+    for (const route of [
+      "/modules/discharge-refusal",
+      "/modules/discharge-refusal/dashboard",
+      "/modules/discharge-refusal/cases",
+      "/dashboard",
+      "/cases",
+      "/documents",
+      "/reports",
+      "/alerts",
+    ]) {
+      await page.goto(`${BASE_URL}${route}`);
+      await page.waitForLoadState("networkidle");
+      await expect(page.locator("body")).not.toContainText(/not found|unauthorized|permission denied/i);
+    }
+  });
+
+  test("arabic localization applies rtl layout on module portal", async ({ page, context }) => {
+    await context.addCookies([{ name: "wathiqcare_lang", value: "ar", url: BASE_URL }]);
     await page.goto(`${BASE_URL}/modules`);
-
-    // Wait for module cards to load
     await page.waitForLoadState("networkidle");
 
-    // Check for informed-consents module accessibility
-    const informedConsentsLink = page.locator(
-      'a[href*="/modules/informed-consents"], button:has-text("Informed Consents")'
-    );
-    await expect(informedConsentsLink).toBeVisible();
-
-    // Check for promissory-notes module accessibility
-    const promissoryNotesLink = page.locator(
-      'a[href*="/modules/promissory-notes"], button:has-text("Promissory Notes")'
-    );
-    await expect(promissoryNotesLink).toBeVisible();
-
-    // Check for discharge-refusal module accessibility
-    const dischargeRefusalLink = page.locator(
-      'a[href*="/modules/discharge-refusal"], button:has-text("Discharge Refusal")'
-    );
-    await expect(dischargeRefusalLink).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+    await expect(page.locator("html")).toHaveAttribute("lang", "ar");
   });
 
-  test("Informed Consents module subroutes render correctly", async ({
-    page,
-  }) => {
-    // Test list view
-    await page.goto(`${BASE_URL}/modules/informed-consents/list`);
-    await expect(page).toHaveURL(/\/modules\/informed-consents\/list/);
+  test("module portal remains accessible in mobile viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(`${BASE_URL}/modules`);
     await page.waitForLoadState("networkidle");
-    let content = page.locator("body");
-    await expect(content).not.toContainText(/not found|unauthorized/i);
 
-    // Test create view
-    await page.goto(`${BASE_URL}/modules/informed-consents/create`);
-    await expect(page).toHaveURL(/\/modules\/informed-consents\/create/);
-    await page.waitForLoadState("networkidle");
-    content = page.locator("body");
-    await expect(content).not.toContainText(/not found|unauthorized/i);
-
-    // Test archive view
-    await page.goto(`${BASE_URL}/modules/informed-consents/archive`);
-    await expect(page).toHaveURL(/\/modules\/informed-consents\/archive/);
-    await page.waitForLoadState("networkidle");
-    content = page.locator("body");
-    await expect(content).not.toContainText(/not found|unauthorized/i);
-
-    // Test templates view
-    await page.goto(`${BASE_URL}/modules/informed-consents/templates`);
-    await expect(page).toHaveURL(/\/modules\/informed-consents\/templates/);
-    await page.waitForLoadState("networkidle");
-    content = page.locator("body");
-    await expect(content).not.toContainText(/not found|unauthorized/i);
+    await expect(page.getByTestId("module-shell")).toBeVisible();
+    await expect(page.locator("main")).toBeVisible();
   });
 
-  test("Promissory Notes module subroutes render correctly", async ({
-    page,
-  }) => {
-    // Test list view
-    await page.goto(`${BASE_URL}/modules/promissory-notes/list`);
-    await expect(page).toHaveURL(/\/modules\/promissory-notes\/list/);
-    await page.waitForLoadState("networkidle");
-    let content = page.locator("body");
-    await expect(content).not.toContainText(/not found|unauthorized/i);
-
-    // Test create view
-    await page.goto(`${BASE_URL}/modules/promissory-notes/create`);
-    await expect(page).toHaveURL(/\/modules\/promissory-notes\/create/);
-    await page.waitForLoadState("networkidle");
-    content = page.locator("body");
-    await expect(content).not.toContainText(/not found|unauthorized/i);
-
-    // Test archive view
-    await page.goto(`${BASE_URL}/modules/promissory-notes/archive`);
-    await expect(page).toHaveURL(/\/modules\/promissory-notes\/archive/);
-    await page.waitForLoadState("networkidle");
-    content = page.locator("body");
-    await expect(content).not.toContainText(/not found|unauthorized/i);
+  test("restricted module routes redirect to login when session is cleared", async ({ page, context }) => {
+    await context.clearCookies();
+    await page.goto(`${BASE_URL}/modules/informed-consents/workflow`);
+    await page.waitForURL((url) => url.pathname.includes("/login"));
+    await expect(page).toHaveURL(/\/login/);
   });
 
-  test("Discharge Refusal compatibility routes still work", async ({
-    page,
-  }) => {
-    // Test discharge-refusal root
-    await page.goto(`${BASE_URL}/modules/discharge-refusal`);
-    await expect(page).toHaveURL(/\/modules\/discharge-refusal/);
-    await page.waitForLoadState("networkidle");
-    let content = page.locator("body");
-    await expect(content).not.toContainText(/not found|unauthorized/i);
+  test("module pages do not emit module API failures in console or network", async ({ page }) => {
+    const consoleErrors: string[] = [];
+    const failedModuleResponses: string[] = [];
 
-    // Test dashboard redirect
-    await page.goto(`${BASE_URL}/modules/discharge-refusal/dashboard`);
-    await page.waitForLoadState("networkidle");
-    content = page.locator("body");
-    await expect(content).not.toContainText(/not found|unauthorized/i);
-
-    // Test cases redirect
-    await page.goto(`${BASE_URL}/modules/discharge-refusal/cases`);
-    await page.waitForLoadState("networkidle");
-    content = page.locator("body");
-    await expect(content).not.toContainText(/not found|unauthorized/i);
-  });
-
-  test("Module pages render without console errors", async ({ page }) => {
-    const errors: string[] = [];
-
-    // Capture console errors
     page.on("console", (msg) => {
       if (msg.type() === "error") {
-        errors.push(msg.text());
+        consoleErrors.push(msg.text());
       }
     });
 
-    // Navigate to modules
-    await page.goto(`${BASE_URL}/modules`);
-    await page.waitForLoadState("networkidle");
+    page.on("response", (response) => {
+      if (response.url().includes("/api/modules/") && response.status() >= 400) {
+        failedModuleResponses.push(`${response.status()} ${response.url()}`);
+      }
+    });
 
-    // Check for no critical errors
-    const criticalErrors = errors.filter(
-      (e) =>
-        !e.includes("Non-Error promise rejection detected") &&
-        !e.includes("ResizeObserver loop limit exceeded")
-    );
-    expect(criticalErrors.length).toBe(0);
-  });
-
-  test("Arabic/RTL strings render correctly on module pages", async ({
-    page,
-  }) => {
-    // Navigate to Arabic version if locale cookie exists
-    await page.context().addCookies([
-      { name: "wathiqcare_lang", value: "ar", url: BASE_URL },
-    ]);
-
-    await page.goto(`${BASE_URL}/modules`);
-    await page.waitForLoadState("networkidle");
-
-    // Check that HTML dir is set to rtl
-    const htmlDir = await page.locator("html").getAttribute("dir");
-    expect(htmlDir).toBe("rtl");
-
-    // Check that Arabic content is present
-    const htmlLang = await page.locator("html").getAttribute("lang");
-    expect(htmlLang).toBe("ar");
-  });
-
-  test("Module portal has no visual regressions in layout", async ({
-    page,
-  }) => {
-    await page.goto(`${BASE_URL}/modules`);
-    await page.waitForLoadState("networkidle");
-
-    // Verify key layout elements are visible
-    const mainContent = page.locator("main");
-    await expect(mainContent).toBeVisible();
-
-    // Check that modules are properly organized
-    const moduleCards = page.locator('[data-testid*="module-card"], [class*="module"][class*="card"]');
-    const cardCount = await moduleCards.count();
-    
-    // Should have at least the three new modules
-    expect(cardCount).toBeGreaterThanOrEqual(1);
-
-    // Verify responsive design
-    await page.setViewportSize({ width: 375, height: 667 }); // Mobile
-    await page.reload();
-    await page.waitForLoadState("networkidle");
-    
-    // Content should still be accessible
-    await expect(mainContent).toBeVisible();
-  });
-
-  test("Unauthorized access is blocked for restricted modules", async ({
-    page,
-  }) => {
-    // Clear session to test unauthorized access
-    await page.context().clearCookies();
-
-    // Try to access protected module route
-    await page.goto(`${BASE_URL}/modules/informed-consents/list`);
-
-    // Should redirect to login
-    await page.waitForURL((url) => url.pathname.includes("/login"));
-    expect(page.url()).toContain("/login");
-  });
-
-  test("Module API endpoints return valid responses", async ({ page }) => {
     await page.goto(`${BASE_URL}/modules/informed-consents`);
     await page.waitForLoadState("networkidle");
 
-    // Intercept API calls
-    let apiCallSucceeded = false;
+    const criticalConsoleErrors = consoleErrors.filter(
+      (message) =>
+        !message.includes("Non-Error promise rejection detected")
+        && !message.includes("ResizeObserver loop limit exceeded"),
+    );
 
-    page.on("response", (response) => {
-      if (
-        response.url().includes("/api/modules/informed-consents") &&
-        response.status() === 200
-      ) {
-        apiCallSucceeded = true;
-      }
-    });
-
-    // Wait for potential API call
-    await page.waitForTimeout(1000);
-
-    // If API was called, verify it succeeded
-    if (apiCallSucceeded) {
-      expect(apiCallSucceeded).toBe(true);
-    }
+    expect(criticalConsoleErrors).toEqual([]);
+    expect(failedModuleResponses).toEqual([]);
   });
 });

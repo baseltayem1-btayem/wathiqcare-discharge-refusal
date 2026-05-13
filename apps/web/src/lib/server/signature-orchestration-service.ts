@@ -21,7 +21,6 @@ import {
   SignatureExpiredError,
 } from "@/lib/core/signature-core";
 import { assertSignaturesEnabled } from "@/lib/core/signature-core";
-import { buildTimelineEntry } from "@/lib/core/audit-core";
 import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
 
 const prisma = getPrisma();
@@ -82,7 +81,7 @@ export async function createSigningSession(
   }
 
   // Persist session
-  const session = await prisma.$executeRawUnsafe(
+  await prisma.$executeRawUnsafe(
     `INSERT INTO signing_sessions
        (tenant_id, document_id, module_type, provider_key, status,
         required_signers, completed_signers, signer_links, expires_at, initiated_by_id)

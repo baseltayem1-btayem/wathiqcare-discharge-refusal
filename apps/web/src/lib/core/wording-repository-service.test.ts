@@ -20,7 +20,6 @@ import {
   ConsentDynamicFieldsSpecification,
   StructuredConsentDocument,
   WordingSection,
-  WordingValidationError,
 } from './wording-types';
 
 test('WordingRepositoryService — Fixed Clause Immutability', async (t) => {
@@ -291,7 +290,7 @@ test('WordingRepositoryService — Consent Document Validation', async (t) => {
       dynamicFields: mockDynamicFields,
       language: 'bilingual',
       arContent: 'Arabic content...',
-      // enContent is MISSING — bilingual document incomplete
+      enContent: '',
       approvalStatus: 'DRAFT',
       readOnlyFields: [],
       auditTrail: [],

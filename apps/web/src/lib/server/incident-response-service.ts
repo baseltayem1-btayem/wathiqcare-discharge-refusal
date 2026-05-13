@@ -1,4 +1,4 @@
-import { IncidentSeverity, IncidentStatus } from "@prisma/client";
+import type { IncidentSeverity, IncidentStatus } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -6,27 +6,43 @@ import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
 const prisma = getPrisma();
+const INCIDENT_SEVERITY = {
+  CRITICAL: "CRITICAL" as IncidentSeverity,
+  HIGH: "HIGH" as IncidentSeverity,
+  MEDIUM: "MEDIUM" as IncidentSeverity,
+  LOW: "LOW" as IncidentSeverity,
+} as const;
+
+const INCIDENT_STATUS = {
+  DETECTED: "DETECTED" as IncidentStatus,
+  TRIAGED: "TRIAGED" as IncidentStatus,
+  CONTAINED: "CONTAINED" as IncidentStatus,
+  REMEDIATED: "REMEDIATED" as IncidentStatus,
+  RECOVERED: "RECOVERED" as IncidentStatus,
+  CLOSED: "CLOSED" as IncidentStatus,
+} as const;
 
 function parseSeverity(value: string | null | undefined): IncidentSeverity {
   const normalized = (value ?? "").trim().toUpperCase();
   switch (normalized) {
     case "HIGH":
-      return IncidentSeverity.HIGH;
+      return INCIDENT_SEVERITY.HIGH;
     case "MEDIUM":
-      return IncidentSeverity.MEDIUM;
+      return INCIDENT_SEVERITY.MEDIUM;
     case "LOW":
-      return IncidentSeverity.LOW;
+      return INCIDENT_SEVERITY.LOW;
     default:
-      return IncidentSeverity.CRITICAL;
+      return INCIDENT_SEVERITY.CRITICAL;
   }
 }
 
 function parseStatus(value: string | null | undefined): IncidentStatus {
   const normalized = (value ?? "").trim().toUpperCase();
-  if (normalized in IncidentStatus) {
-    return IncidentStatus[normalized as keyof typeof IncidentStatus];
+  const allowedStatuses = new Set<string>(Object.values(INCIDENT_STATUS));
+  if (allowedStatuses.has(normalized)) {
+    return normalized as IncidentStatus;
   }
-  return IncidentStatus.DETECTED;
+  return INCIDENT_STATUS.DETECTED;
 }
 
 export function buildIncidentSla(severity: IncidentSeverity, detectedAt = new Date()) {
@@ -35,7 +51,7 @@ export function buildIncidentSla(severity: IncidentSeverity, detectedAt = new Da
   return {
     internalEscalationDueAt: new Date(base + oneHour),
     clientNotificationDueAt: new Date(base + 48 * oneHour),
-    regulatorNotificationDueAt: severity === IncidentSeverity.LOW ? null : new Date(base + 72 * oneHour),
+    regulatorNotificationDueAt: severity === INCIDENT_SEVERITY.LOW ? null : new Date(base + 72 * oneHour),
   };
 }
 

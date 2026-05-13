@@ -41,7 +41,7 @@ function ModuleIcon({ moduleKey }: { moduleKey: ModuleKey }) {
 function ModuleCard({ moduleItem, isRtl }: { moduleItem: ModuleDefinition; isRtl: boolean }) {
   const { t } = useI18n();
   return (
-    <div className="wc-panel space-y-4">
+    <div className="wc-panel space-y-4" data-testid={`module-card-${moduleItem.key}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
