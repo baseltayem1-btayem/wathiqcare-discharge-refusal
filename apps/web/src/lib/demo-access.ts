@@ -1,4 +1,4 @@
-import { getAccessibleModules, type ModuleKey } from "@/lib/modules/catalog";
+import { ALL_MODULE_KEYS, getAccessibleModules, type ModuleKey } from "@/lib/modules/catalog";
 
 export type DemoAccountProfile = {
   key:
@@ -31,7 +31,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Platform-wide access",
     scopeLabelAr: "صلاحية على مستوى المنصة",
     mustChangePassword: false,
-    expectedModules: ["informed-consents", "promissory-notes", "discharge-refusal"],
+    expectedModules: ALL_MODULE_KEYS,
   },
   {
     key: "legal-affairs",
@@ -43,7 +43,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Tenant-scoped medico-legal access",
     scopeLabelAr: "وصول طبي قانوني ضمن المستأجر",
     mustChangePassword: false,
-    expectedModules: ["informed-consents", "promissory-notes", "discharge-refusal"],
+    expectedModules: ALL_MODULE_KEYS,
   },
   {
     key: "doctor",
@@ -67,7 +67,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Tenant-scoped nursing access",
     scopeLabelAr: "وصول تمريضي ضمن المستأجر",
     mustChangePassword: false,
-    expectedModules: ["informed-consents", "discharge-refusal"],
+    expectedModules: ["informed-consents", "discharge-refusal", "incident-reports"],
   },
   {
     key: "medical-director",
@@ -79,7 +79,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Clinical governance oversight",
     scopeLabelAr: "إشراف الحوكمة السريرية",
     mustChangePassword: false,
-    expectedModules: ["informed-consents", "discharge-refusal"],
+    expectedModules: ["informed-consents", "discharge-refusal", "legal-cases", "incident-reports", "risk-management", "approvals"],
   },
   {
     key: "quality-compliance",
@@ -91,7 +91,7 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Audit and governance review",
     scopeLabelAr: "مراجعة التدقيق والحوكمة",
     mustChangePassword: false,
-    expectedModules: ["informed-consents", "promissory-notes", "discharge-refusal"],
+    expectedModules: ALL_MODULE_KEYS,
   },
   {
     key: "finance-admin",
@@ -103,13 +103,13 @@ export const DEMO_ACCOUNT_PROFILES: readonly DemoAccountProfile[] = [
     scopeLabel: "Financial undertaking workflows",
     scopeLabelAr: "مسارات التعهدات المالية",
     mustChangePassword: false,
-    expectedModules: ["promissory-notes"],
+    expectedModules: ["promissory-notes", "legal-documents", "approvals"],
   },
 ] as const;
 
 export function getExpectedHiddenModules(profile: DemoAccountProfile): ModuleKey[] {
   const allowed = new Set(profile.expectedModules);
-  return ["informed-consents", "promissory-notes", "discharge-refusal"].filter(
+  return [...ALL_MODULE_KEYS].filter(
     (moduleKey) => !allowed.has(moduleKey as ModuleKey),
   ) as ModuleKey[];
 }

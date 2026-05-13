@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ClipboardCheck, FileSignature, Landmark, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, FileSignature, FileText, Landmark, Scale, ShieldAlert, ShieldCheck } from "lucide-react";
 
 import ModuleShell from "@/components/ModuleShell";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -22,6 +22,18 @@ function ModuleIcon({ moduleKey }: { moduleKey: ModuleKey }) {
   }
   if (moduleKey === "discharge-refusal") {
     return <ShieldCheck className="h-5 w-5 text-[var(--primary)]" />;
+  }
+  if (moduleKey === "legal-cases") {
+    return <Scale className="h-5 w-5 text-[var(--primary)]" />;
+  }
+  if (moduleKey === "legal-documents") {
+    return <FileText className="h-5 w-5 text-[var(--primary)]" />;
+  }
+  if (moduleKey === "incident-reports") {
+    return <AlertTriangle className="h-5 w-5 text-[var(--primary)]" />;
+  }
+  if (moduleKey === "risk-management") {
+    return <ShieldAlert className="h-5 w-5 text-[var(--primary)]" />;
   }
   return <FileSignature className="h-5 w-5 text-[var(--primary)]" />;
 }

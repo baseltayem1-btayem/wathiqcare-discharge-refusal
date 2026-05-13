@@ -16,10 +16,13 @@ export const OPERATIONAL_ROLES = [
     "quality",
     "compliance",
     "legal_admin",
+    "risk_manager",
+    "external_reviewer",
     "it_admin",
     "medical_director",
     "bed_manager",
     "auditor",
+    "read_only_auditor",
     "read_only_manager",
     "viewer",
 ] as const;
@@ -79,10 +82,15 @@ const USER_ROLE_ALIASES: Record<string, CanonicalUserRole> = {
     legal_admin: "legal_admin",
     legal: "legal_admin",
     legal_officer: "legal_admin",
+    legal_affairs: "legal_admin",
+    risk_manager: "risk_manager",
+    risk: "risk_manager",
+    external_reviewer: "external_reviewer",
     it_admin: "it_admin",
     medical_director: "medical_director",
     bed_manager: "bed_manager",
     auditor: "auditor",
+    read_only_auditor: "read_only_auditor",
     read_only_manager: "read_only_manager",
     read_only: "read_only_manager",
     viewer: "viewer",
@@ -134,7 +142,10 @@ export function membershipRoleForUserRole(role: CanonicalUserRole): MembershipRo
         case "social_services":
         case "quality":
         case "compliance":
+        case "risk_manager":
         case "auditor":
+        case "external_reviewer":
+        case "read_only_auditor":
         case "read_only_manager":
         case "viewer":
             return MembershipRole.VIEWER;
