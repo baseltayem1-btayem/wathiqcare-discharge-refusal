@@ -1872,6 +1872,10 @@ async function ensureDemoModuleData(tenantId, userIds) {
 async function main() {
   console.log("[demo-seed] Provisioning controlled demo accounts and demo module records...\n");
 
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PRODUCTION_DEMO_SEED !== "true") {
+    throw new Error("Refusing to run demo sandbox seed in production without ALLOW_PRODUCTION_DEMO_SEED=true");
+  }
+
   await ensurePasswordResetSchema();
 
   const platformTenantId = await ensureTenant(DEMO_PLATFORM_TENANT);
