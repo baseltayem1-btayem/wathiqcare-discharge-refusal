@@ -1,51 +1,28 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useI18n } from "@/i18n/I18nProvider";
 import PromissoryNoteDocument, { type PromissoryNoteData } from "@/components/modules/PromissoryNoteDocument";
+import {
+  buildPromissoryNoteDocumentData,
+  buildPromissoryNoteQrPayload,
+  buildPromissoryPdfFilename,
+  type PromissoryNoteApiRecord,
+} from "@/lib/promissory-note-document-data";
 import "@/styles/promissory-note.css";
-
-type NoteApiResponse = {
-  id: string;
-  noteNumber: string;
-  debtorName: string;
-  debtorIdNumber: string | null;
-  issuerName: string | null;
-  amount: string | number;
-  currency: string;
-  dueDate: string;
-  createdAt: string;
-  status: string;
-  metadata: Record<string, unknown> | null;
-  case?: {
-    id: string;
-    caseNumber: string;
-    patientName: string;
-  } | null;
-};
-
-function readMetaStr(meta: Record<string, unknown> | null | undefined, ...keys: string[]): string {
-  if (!meta) return "";
-  for (const key of keys) {
-    const val = meta[key];
-    if (typeof val === "string" && val.trim()) return val.trim();
-  }
-  return "";
-}
 
 export default function PromissoryNotePreviewPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { lang, isRtl, t } = useI18n();
+  const { lang, isRtl } = useI18n();
 
-  const [note, setNote] = useState<NoteApiResponse | null>(null);
+  const [note, setNote] = useState<PromissoryNoteApiRecord | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
-  const printFrameRef = useRef<HTMLIFrameElement | null>(null);
 
   // Allow ?lang=ar or ?lang=en override
   const langOverride = (searchParams.get("lang") as "ar" | "en") ?? lang;
@@ -56,19 +33,16 @@ export default function PromissoryNotePreviewPage() {
     fetch(`/api/modules/promissory-notes/${id}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
-        return res.json() as Promise<NoteApiResponse>;
+        return res.json() as Promise<PromissoryNoteApiRecord>;
       })
       .then(async (data) => {
         setNote(data);
-        // Generate QR code client-side
+        const noteDataForQr = buildPromissoryNoteDocumentData(data, {
+          language: langOverride,
+          verificationBaseUrl: window.location.origin,
+        });
         const { default: QRCode } = await import("qrcode");
-        const qrPayload = [
-          `NOTE:${data.noteNumber}`,
-          `DEBTOR:${data.debtorName}`,
-          `AMOUNT:${data.amount} ${data.currency}`,
-          `DUE:${data.dueDate.slice(0, 10)}`,
-          data.id,
-        ].join("|");
+        const qrPayload = buildPromissoryNoteQrPayload(noteDataForQr);
         const url = await QRCode.toDataURL(qrPayload, {
           errorCorrectionLevel: "M",
           margin: 1,
@@ -78,33 +52,7 @@ export default function PromissoryNotePreviewPage() {
       })
       .catch((err) => setError(String(err)))
       .finally(() => setLoading(false));
-  }, [id]);
-
-  function buildNoteData(n: NoteApiResponse): PromissoryNoteData {
-    const meta = n.metadata ?? {};
-    return {
-      noteNumber: n.noteNumber,
-      amount: Number(n.amount),
-      currency: n.currency,
-      dueDate: n.dueDate,
-      issueDate: n.createdAt,
-      issueCity: readMetaStr(meta, "issue_city", "issueCity") || (langOverride === "ar" ? "الرياض" : "Riyadh"),
-      paymentCity: readMetaStr(meta, "payment_city", "paymentCity"),
-      debtorName: n.debtorName,
-      debtorId: n.debtorIdNumber ?? undefined,
-      creditorName:
-        langOverride === "ar"
-          ? "شركة المركز الطبي الدولي مساهمة مقفلة"
-          : "International Medical Center (IMC)",
-      creditorCR: readMetaStr(meta, "creditor_cr", "creditorCR") || undefined,
-      reason: readMetaStr(meta, "reason") || undefined,
-      referenceNumber: n.case?.caseNumber ?? undefined,
-      statusCode: n.status,
-      qrDataUrl: qrDataUrl || undefined,
-      verificationUrl: `/verify/pn/${n.id}`,
-      language: langOverride,
-    };
-  }
+  }, [id, langOverride]);
 
   async function handleDownloadPdf() {
     if (!id) return;
@@ -116,7 +64,7 @@ export default function PromissoryNotePreviewPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `PN-${note?.noteNumber ?? id}-${langOverride}.pdf`;
+      a.download = buildPromissoryPdfFilename(note?.noteNumber ?? "", id, langOverride);
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -148,7 +96,11 @@ export default function PromissoryNotePreviewPage() {
     );
   }
 
-  const noteData = buildNoteData(note);
+  const noteData: PromissoryNoteData = buildPromissoryNoteDocumentData(note, {
+    language: langOverride,
+    qrDataUrl: qrDataUrl || undefined,
+    verificationBaseUrl: window.location.origin,
+  });
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"}>
