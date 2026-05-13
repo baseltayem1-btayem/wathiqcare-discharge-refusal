@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import AccessDenied from "@/components/AccessDenied";
 import EnterpriseModuleWorkspacePage from "@/components/modules/EnterpriseModuleWorkspacePage";
-import { normalizeEnterpriseSectionKey } from "@/lib/enterprise/workspace";
+import { isValidEnterpriseSectionKey } from "@/lib/enterprise/workspace";
 import { canAccessModule, isModuleKey } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
@@ -13,7 +13,7 @@ export default async function EnterpriseModuleSectionPage({
 }) {
   const { module, section } = await params;
 
-  if (!isModuleKey(module) || normalizeEnterpriseSectionKey(section) !== section) {
+  if (!isModuleKey(module) || !isValidEnterpriseSectionKey(section)) {
     notFound();
   }
 

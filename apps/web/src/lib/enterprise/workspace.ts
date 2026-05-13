@@ -153,10 +153,10 @@ const SECTION_LABELS: Record<EnterpriseSectionKey, string> = {
 };
 
 const ROLE_LABELS: Record<CanonicalUserRole, string> = {
-  platform_superadmin: "Super Admin",
-  platform_admin: "Super Admin",
-  tenant_owner: "Super Admin",
-  tenant_admin: "Super Admin",
+  platform_superadmin: "Platform Super Admin",
+  platform_admin: "Platform Admin",
+  tenant_owner: "Tenant Owner",
+  tenant_admin: "Tenant Admin",
   legal_admin: "Legal Affairs",
   medical_director: "Medical Director",
   doctor: "Physician",
@@ -168,15 +168,15 @@ const ROLE_LABELS: Record<CanonicalUserRole, string> = {
   patient_affairs: "Patient Relations",
   external_reviewer: "External Reviewer",
   read_only_auditor: "Read-Only Auditor",
-  auditor: "Read-Only Auditor",
-  social_services: "Patient Relations",
-  lab_tech: "External Reviewer",
-  pharmacist: "External Reviewer",
-  reception: "Patient Relations",
-  it_admin: "Super Admin",
-  bed_manager: "Medical Director",
-  read_only_manager: "Read-Only Auditor",
-  viewer: "Read-Only Auditor",
+  auditor: "Auditor",
+  social_services: "Social Services",
+  lab_tech: "Lab Tech",
+  pharmacist: "Pharmacist",
+  reception: "Reception",
+  it_admin: "IT Admin",
+  bed_manager: "Bed Manager",
+  read_only_manager: "Read-Only Manager",
+  viewer: "Viewer",
 };
 
 const ACTION_DEFINITIONS: EnterpriseActionDefinition[] = [
@@ -784,6 +784,10 @@ export function normalizeEnterpriseSectionKey(section?: string | null): Enterpri
     return "overview";
   }
   return (ENTERPRISE_SECTION_KEYS as readonly string[]).includes(section) ? (section as EnterpriseSectionKey) : "overview";
+}
+
+export function isValidEnterpriseSectionKey(section?: string | null): section is EnterpriseSectionKey {
+  return Boolean(section && normalizeEnterpriseSectionKey(section) === section);
 }
 
 export function buildEnterpriseWorkspaceView(

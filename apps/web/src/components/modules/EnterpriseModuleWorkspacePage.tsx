@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowUpRight, CheckCircle2, Clock3, FileSearch, Lock, Ro
 import ModuleShell from "@/components/ModuleShell";
 import {
   buildEnterpriseWorkspaceView,
+  getEnterpriseRoleLabel,
   type EnterpriseSectionKey,
   type EnterpriseWorkflowStep,
 } from "@/lib/enterprise/workspace";
@@ -83,10 +84,11 @@ export default function EnterpriseModuleWorkspacePage({
     role: auth.role,
     platformRole: auth.platform_role,
   }, section);
-  const [query, setQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const viewerRoleLabel = getEnterpriseRoleLabel({ role: auth.role, platformRole: auth.platform_role });
 
   const filteredSearch = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = searchQuery.trim().toLowerCase();
     if (!normalized) {
       return workspace.searchRecords;
     }
@@ -94,7 +96,7 @@ export default function EnterpriseModuleWorkspacePage({
     return workspace.searchRecords.filter((item) =>
       [item.id, item.label, item.meta].some((value) => value.toLowerCase().includes(normalized)),
     );
-  }, [query, workspace.searchRecords]);
+  }, [searchQuery, workspace.searchRecords]);
 
   return (
     <ModuleShell
@@ -172,8 +174,8 @@ export default function EnterpriseModuleWorkspacePage({
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     aria-label="Global search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder={workspace.searchPlaceholder}
                     className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-900"
                   />
@@ -208,7 +210,7 @@ export default function EnterpriseModuleWorkspacePage({
                 <span className="wc-module-pill"><Workflow className="h-3 w-3" /> {workspace.workspaceLabel}</span>
                 <span className="wc-module-pill"><Route className="h-3 w-3" /> {workspace.approvalMode}</span>
                 <span className="wc-module-pill"><TimerReset className="h-3 w-3" /> State: {workspace.activeState}</span>
-                <span className="wc-module-pill"><ShieldCheck className="h-3 w-3" /> Viewer role: {workspace.viewerRole}</span>
+                <span className="wc-module-pill"><ShieldCheck className="h-3 w-3" /> Viewer role: {viewerRoleLabel}</span>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {workspace.sectionTabs.map((item) => (

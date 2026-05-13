@@ -1,5 +1,9 @@
 import { MembershipRole, type UserType } from "@prisma/client";
 
+const PLATFORM_ADMIN_USER_TYPE = "PLATFORM_ADMIN" as UserType;
+const TENANT_ADMIN_USER_TYPE = "TENANT_ADMIN" as UserType;
+const TENANT_USER_TYPE = "TENANT_USER" as UserType;
+
 export const PLATFORM_ROLES = ["platform_superadmin", "platform_admin"] as const;
 export type PlatformRole = (typeof PLATFORM_ROLES)[number];
 
@@ -168,16 +172,16 @@ export function platformRoleForUserRole(role: string | null | undefined): Platfo
     return null;
 }
 
-export function userTypeForUserRole(role: string | null | undefined, email?: string | null): UserType {
-    void email;
+export function userTypeForUserRole(role: string | null | undefined, _email?: string | null): UserType {
+    void _email;
     const normalized = canonicalizeUserRole(role);
     if (normalized === "platform_superadmin" || normalized === "platform_admin") {
-        return "PLATFORM_ADMIN" as UserType;
+        return PLATFORM_ADMIN_USER_TYPE;
     }
 
     if (normalized === "tenant_owner" || normalized === "tenant_admin" || normalized === "legal_admin") {
-        return "TENANT_ADMIN" as UserType;
+        return TENANT_ADMIN_USER_TYPE;
     }
 
-    return "TENANT_USER" as UserType;
+    return TENANT_USER_TYPE;
 }

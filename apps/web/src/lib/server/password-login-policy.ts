@@ -1,8 +1,7 @@
 import { userTypeForUserRole } from "@/lib/server/roles";
 
 export function buildPostLoginRedirect(userRole: string | null | undefined, email?: string | null): string {
-  void email;
-  return userTypeForUserRole(userRole ?? "") === "PLATFORM_ADMIN" ? "/platform" : "/modules";
+  return userTypeForUserRole(userRole ?? "", email) === "PLATFORM_ADMIN" ? "/platform" : "/modules";
 }
 
 export function normalizeLoginIdentifier(input: string | null | undefined): string {
