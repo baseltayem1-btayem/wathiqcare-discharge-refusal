@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ClipboardCheck, FileSignature, Landmark, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, FileSignature, FileText, Landmark, Scale, ShieldAlert, ShieldCheck } from "lucide-react";
 
 import ModuleShell from "@/components/ModuleShell";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -23,13 +23,25 @@ function ModuleIcon({ moduleKey }: { moduleKey: ModuleKey }) {
   if (moduleKey === "discharge-refusal") {
     return <ShieldCheck className="h-5 w-5 text-[var(--primary)]" />;
   }
+  if (moduleKey === "legal-cases") {
+    return <Scale className="h-5 w-5 text-[var(--primary)]" />;
+  }
+  if (moduleKey === "legal-documents") {
+    return <FileText className="h-5 w-5 text-[var(--primary)]" />;
+  }
+  if (moduleKey === "incident-reports") {
+    return <AlertTriangle className="h-5 w-5 text-[var(--primary)]" />;
+  }
+  if (moduleKey === "risk-management") {
+    return <ShieldAlert className="h-5 w-5 text-[var(--primary)]" />;
+  }
   return <FileSignature className="h-5 w-5 text-[var(--primary)]" />;
 }
 
 function ModuleCard({ moduleItem, isRtl }: { moduleItem: ModuleDefinition; isRtl: boolean }) {
   const { t } = useI18n();
   return (
-    <div className="wc-panel space-y-4">
+    <div className="wc-panel space-y-4" data-testid={`module-card-${moduleItem.key}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">

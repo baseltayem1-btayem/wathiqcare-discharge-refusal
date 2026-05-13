@@ -1,4 +1,8 @@
-import { MembershipRole, UserType } from "@prisma/client";
+import { MembershipRole, type UserType } from "@prisma/client";
+
+export const PLATFORM_ADMIN_USER_TYPE = "PLATFORM_ADMIN" as UserType;
+export const TENANT_ADMIN_USER_TYPE = "TENANT_ADMIN" as UserType;
+export const TENANT_USER_TYPE = "TENANT_USER" as UserType;
 
 export const PLATFORM_ROLES = ["platform_superadmin", "platform_admin"] as const;
 export type PlatformRole = (typeof PLATFORM_ROLES)[number];
@@ -16,10 +20,13 @@ export const OPERATIONAL_ROLES = [
     "quality",
     "compliance",
     "legal_admin",
+    "risk_manager",
+    "external_reviewer",
     "it_admin",
     "medical_director",
     "bed_manager",
     "auditor",
+    "read_only_auditor",
     "read_only_manager",
     "viewer",
 ] as const;
@@ -75,14 +82,24 @@ const USER_ROLE_ALIASES: Record<string, CanonicalUserRole> = {
     patient_relations: "patient_affairs",
     social_services: "social_services",
     quality: "quality",
+    quality_manager: "quality",
+    quality_lead: "quality",
     compliance: "compliance",
     legal_admin: "legal_admin",
     legal: "legal_admin",
     legal_officer: "legal_admin",
+    legal_affairs: "legal_admin",
+    risk_manager: "risk_manager",
+    risk: "risk_manager",
+    risk_officer: "risk_manager",
+    external_reviewer: "external_reviewer",
+    reviewer: "external_reviewer",
     it_admin: "it_admin",
     medical_director: "medical_director",
     bed_manager: "bed_manager",
     auditor: "auditor",
+    read_only_auditor: "read_only_auditor",
+    readonly_auditor: "read_only_auditor",
     read_only_manager: "read_only_manager",
     read_only: "read_only_manager",
     viewer: "viewer",
@@ -134,7 +151,10 @@ export function membershipRoleForUserRole(role: CanonicalUserRole): MembershipRo
         case "social_services":
         case "quality":
         case "compliance":
+        case "risk_manager":
         case "auditor":
+        case "external_reviewer":
+        case "read_only_auditor":
         case "read_only_manager":
         case "viewer":
             return MembershipRole.VIEWER;
@@ -157,15 +177,17 @@ export function platformRoleForUserRole(role: string | null | undefined): Platfo
     return null;
 }
 
-export function userTypeForUserRole(role: string | null | undefined): UserType {
+export function userTypeForUserRole(role: string | null | undefined, _email?: string | null): UserType {
+    // Preserve the legacy second argument so existing callers and tests remain compatible until those call sites are simplified.
+    void _email;
     const normalized = canonicalizeUserRole(role);
     if (normalized === "platform_superadmin" || normalized === "platform_admin") {
-        return UserType.PLATFORM_ADMIN;
+        return PLATFORM_ADMIN_USER_TYPE;
     }
 
     if (normalized === "tenant_owner" || normalized === "tenant_admin" || normalized === "legal_admin") {
-        return UserType.TENANT_ADMIN;
+        return TENANT_ADMIN_USER_TYPE;
     }
 
-    return UserType.TENANT_USER;
+    return TENANT_USER_TYPE;
 }

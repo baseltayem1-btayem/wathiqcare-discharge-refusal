@@ -423,6 +423,14 @@ model Tenant {
   encounterExternalReferences         EncounterExternalReference[]
   consentSourceSnapshots              ConsentSourceSnapshot[]
   featureFlagOverrides                FeatureFlagOverride[]
+  workflowStates                      WorkflowState[]
+  workflowTransitions                 WorkflowTransition[]
+  approvalChains                      ApprovalChain[]
+  approvalActions                     ApprovalAction[]
+  permissionRoles                     PermissionRole[]
+  permissionPolicies                  PermissionPolicy[]
+  auditEvents                         AuditEvent[]
+  delegationRules                     DelegationRule[]
 
   @@map("tenants")
 }
@@ -1442,6 +1450,196 @@ model AuditChainEvent {
   @@index([tenantId, caseId, createdAt])
   @@index([tenantId, eventType, createdAt])
   @@map("audit_chain_events")
+}
+
+model WorkflowState {
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  moduleCode     String   @map("module_code")
+  recordType     String   @map("record_type")
+  recordId       String   @map("record_id")
+  workflowCode   String   @map("workflow_code")
+  currentState   String   @map("current_state")
+  previousState  String?  @map("previous_state")
+  isLocked       Boolean  @default(false) @map("is_locked")
+  lockedAt       DateTime? @map("locked_at")
+  expiresAt      DateTime? @map("expires_at")
+  slaDeadline    DateTime? @map("sla_deadline")
+  escalatedAt    DateTime? @map("escalated_at")
+  metadataJson   Json?    @map("metadata_json")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  transitions       WorkflowTransition[]
+  approvalChains    ApprovalChain[]
+  auditEvents       AuditEvent[]
+
+  @@unique([tenantId, moduleCode, recordType, recordId])
+  @@index([tenantId, currentState, slaDeadline])
+  @@map("workflow_states")
+}
+
+model WorkflowTransition {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  workflowStateId  String   @map("workflow_state_id")
+  transitionKey    String   @map("transition_key")
+  fromState        String   @map("from_state")
+  toState          String   @map("to_state")
+  actorUserId      String?  @map("actor_user_id")
+  actorRole        String?  @map("actor_role")
+  comments         String?
+  metadataJson     Json?    @map("metadata_json")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflowState WorkflowState @relation(fields: [workflowStateId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, workflowStateId, createdAt])
+  @@index([tenantId, fromState, toState])
+  @@map("workflow_transitions")
+}
+
+model ApprovalChain {
+  id                  String   @id @default(uuid())
+  tenantId            String   @map("tenant_id")
+  workflowStateId     String?  @map("workflow_state_id")
+  moduleCode          String   @map("module_code")
+  recordId            String   @map("record_id")
+  chainCode           String   @map("chain_code")
+  status              String
+  routingMode         String   @map("routing_mode")
+  currentLevel        Int      @default(0) @map("current_level")
+  delegatedFromUserId String?  @map("delegated_from_user_id")
+  delegatedToUserId   String?  @map("delegated_to_user_id")
+  escalatedAt         DateTime? @map("escalated_at")
+  slaDeadline         DateTime? @map("sla_deadline")
+  metadataJson        Json?    @map("metadata_json")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflowState WorkflowState? @relation(fields: [workflowStateId], references: [id], onDelete: SetNull)
+  actions       ApprovalAction[]
+  auditEvents   AuditEvent[]
+  delegations   DelegationRule[]
+
+  @@index([tenantId, moduleCode, status])
+  @@index([tenantId, recordId, slaDeadline])
+  @@map("approval_chains")
+}
+
+model ApprovalAction {
+  id                  String   @id @default(uuid())
+  tenantId            String   @map("tenant_id")
+  approvalChainId     String   @map("approval_chain_id")
+  action              String
+  decision            String?
+  actorUserId         String?  @map("actor_user_id")
+  actorRole           String?  @map("actor_role")
+  comments            String?
+  delegatedFromUserId String?  @map("delegated_from_user_id")
+  delegatedToUserId   String?  @map("delegated_to_user_id")
+  metadataJson        Json?    @map("metadata_json")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  approvalChain ApprovalChain @relation(fields: [approvalChainId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, approvalChainId, createdAt])
+  @@index([tenantId, decision, createdAt])
+  @@map("approval_actions")
+}
+
+model PermissionRole {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  code        String
+  name        String
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  policies PermissionPolicy[]
+  delegations DelegationRule[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isSystem])
+  @@map("permission_roles")
+}
+
+model PermissionPolicy {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  permissionRoleId String   @map("permission_role_id")
+  moduleCode       String   @map("module_code")
+  resourceType     String   @map("resource_type")
+  actionKey        String   @map("action_key")
+  effect           String   @default("allow")
+  conditionJson    Json?    @map("condition_json")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  permissionRole PermissionRole @relation(fields: [permissionRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, permissionRoleId, moduleCode, resourceType, actionKey])
+  @@index([tenantId, moduleCode, effect])
+  @@map("permission_policies")
+}
+
+model AuditEvent {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  workflowStateId String?  @map("workflow_state_id")
+  approvalChainId String?  @map("approval_chain_id")
+  moduleCode      String   @map("module_code")
+  recordId        String   @map("record_id")
+  eventType       String   @map("event_type")
+  actorUserId     String?  @map("actor_user_id")
+  actorRole       String?  @map("actor_role")
+  ipAddress       String?  @map("ip_address")
+  deviceInfo      String?  @map("device_info")
+  sessionInfo     String?  @map("session_info")
+  changeSetJson   Json?    @map("change_set_json")
+  metadataJson    Json?    @map("metadata_json")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflowState WorkflowState? @relation(fields: [workflowStateId], references: [id], onDelete: SetNull)
+  approvalChain ApprovalChain? @relation(fields: [approvalChainId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, moduleCode, createdAt])
+  @@index([tenantId, eventType, createdAt])
+  @@map("audit_events")
+}
+
+model DelegationRule {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  permissionRoleId String?  @map("permission_role_id")
+  approvalChainId  String?  @map("approval_chain_id")
+  moduleCode       String   @map("module_code")
+  delegatorUserId  String   @map("delegator_user_id")
+  delegateUserId   String   @map("delegate_user_id")
+  backupUserId     String?  @map("backup_user_id")
+  startsAt         DateTime @map("starts_at")
+  endsAt           DateTime? @map("ends_at")
+  reason           String?
+  isAuto           Boolean  @default(false) @map("is_auto")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  permissionRole PermissionRole? @relation(fields: [permissionRoleId], references: [id], onDelete: SetNull)
+  approvalChain  ApprovalChain?  @relation(fields: [approvalChainId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, moduleCode, startsAt, endsAt])
+  @@index([tenantId, delegateUserId, isAuto])
+  @@map("delegation_rules")
 }
 
 model SecurityIncident {

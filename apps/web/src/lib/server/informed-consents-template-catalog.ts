@@ -411,6 +411,15 @@ function buildDefaultSections(): Array<{
   ];
 }
 
+void [
+  FIXED_LEGAL_TITLE_AR,
+  FIXED_LEGAL_TITLE_EN,
+  FIXED_MAIN_AR,
+  FIXED_MAIN_EN,
+  LEGACY_DEFAULT_TEMPLATES,
+  buildDefaultSections,
+];
+
 async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): Promise<void> {
   const now = new Date();
 

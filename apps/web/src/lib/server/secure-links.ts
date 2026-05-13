@@ -8,6 +8,7 @@ import { writeAuditLog } from "@/lib/server/saas-services";
 import {
   buildWathiqCareEmailHtml,
   buildWathiqCareEmailText,
+  isMockEmailDeliveryEnabled,
   sendEmailWithDiagnostics,
 } from "@/lib/server/email-provider";
 
@@ -384,7 +385,7 @@ async function sendSecureLinkEmail(args: {
     throw new ApiError(400, "Invalid recipient email");
   }
 
-  if (!(process.env.SMTP_PASS?.trim() || process.env.RESEND_API_KEY?.trim())) {
+  if (!(process.env.SMTP_PASS?.trim() || process.env.RESEND_API_KEY?.trim()) && !isMockEmailDeliveryEnabled()) {
     return {
       deliveryStatus: "not_configured",
       deliveryChannel: "manual_share",

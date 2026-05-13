@@ -1,4 +1,4 @@
-import { LegalReadinessStatus } from "@prisma/client";
+import type { LegalReadinessStatus } from "@prisma/client";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
@@ -7,6 +7,10 @@ import { verifyAuditChain } from "@/lib/server/audit-chain-service";
 import { evaluateWitnessIntegrity } from "@/lib/server/witness-integrity-service";
 
 const prisma = getPrisma();
+const LEGAL_READINESS_STATUS = {
+  COMPLIANT: "COMPLIANT" as LegalReadinessStatus,
+  BLOCKED: "BLOCKED" as LegalReadinessStatus,
+} as const;
 
 export type LegalReadinessItem = {
   key: string;
@@ -192,7 +196,7 @@ export function evaluateLegalReadinessFromSnapshot(input: {
 
   const satisfied = checklist.filter((item) => !item.required || item.satisfied).length;
   const readyForLegal = blockers.length === 0;
-  const status = readyForLegal ? LegalReadinessStatus.COMPLIANT : LegalReadinessStatus.BLOCKED;
+  const status = readyForLegal ? LEGAL_READINESS_STATUS.COMPLIANT : LEGAL_READINESS_STATUS.BLOCKED;
 
   return {
     caseId: input.caseId,

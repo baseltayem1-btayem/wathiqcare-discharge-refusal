@@ -149,6 +149,29 @@ function smtpConfigured(): boolean {
     return !!pass;
 }
 
+export function isMockEmailDeliveryEnabled(): boolean {
+    return String(process.env.EMAIL_DELIVERY_MODE || "")
+        .trim()
+        .toLowerCase() === "mock";
+}
+
+function buildMockDiagnostics(args: SendEmailArgs): EmailDiagnostics {
+    const slug = Buffer.from(`${args.to}:${args.subject}`)
+        .toString("base64")
+        .replace(/[^a-z0-9]/gi, "")
+        .slice(0, 24)
+        .toLowerCase();
+
+    return {
+        provider: "smtp",
+        smtpVerifyOk: true,
+        messageId: `mock-${slug || "message"}`,
+        smtpAccepted: [args.to],
+        smtpRejected: [],
+        smtpSendResponse: "250 OK: queued in mock delivery mode",
+    };
+}
+
 async function sendViaSmtp(args: SendEmailArgs): Promise<EmailDiagnostics> {
     const host = process.env.SMTP_HOST?.trim() || "smtp.resend.com";
     const port = Number(process.env.SMTP_PORT || "587");
@@ -195,6 +218,9 @@ async function sendViaSmtp(args: SendEmailArgs): Promise<EmailDiagnostics> {
 }
 
 export async function sendEmailWithDiagnostics(args: SendEmailArgs): Promise<EmailDiagnostics> {
+    if (isMockEmailDeliveryEnabled()) {
+        return buildMockDiagnostics(args);
+    }
     if (!smtpConfigured()) {
         throw new Error("SMTP email configuration is missing: SMTP_PASS or RESEND_API_KEY must be set");
     }

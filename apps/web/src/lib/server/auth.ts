@@ -59,10 +59,16 @@ const ROLE_ALIASES: Record<string, string> = {
   patient_affairs: "VIEWER",
   social_services: "VIEWER",
   quality: "VIEWER",
+  quality_manager: "VIEWER",
   compliance: "VIEWER",
+  risk_manager: "VIEWER",
+  risk_officer: "VIEWER",
+  external_reviewer: "VIEWER",
+  read_only_auditor: "VIEWER",
   auditor: "VIEWER",
   read_only_manager: "VIEWER",
   legal_officer: "ADMIN",
+  legal_affairs: "ADMIN",
   viewer: "VIEWER",
 };
 

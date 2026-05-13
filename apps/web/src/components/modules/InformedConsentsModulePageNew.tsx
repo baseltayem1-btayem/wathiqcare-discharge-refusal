@@ -12,7 +12,6 @@ import {
   Send,
   Archive,
   Stethoscope,
-  Shield,
   Zap,
   Clock,
   User,
@@ -121,7 +120,7 @@ const WORKFLOW_STEPS: { id: WorkflowStep; labelAr: string; labelEn: string }[] =
 ];
 
 export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAuth }) {
-  const { t, locale } = useI18n();
+  const { locale } = useI18n();
   const [currentStep, setCurrentStep] = useState<WorkflowStep>("patient_search");
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [encounterData, setEncounterData] = useState<EncounterData | null>(null);

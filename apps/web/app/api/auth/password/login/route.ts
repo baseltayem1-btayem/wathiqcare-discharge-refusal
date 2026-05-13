@@ -94,7 +94,7 @@ function toSessionUserType(
   userRole: string | null | undefined,
   email: string,
 ): "platform_admin" | "tenant_admin" | "tenant_user" {
-  const computedUserType = userTypeForUserRole(userRole ?? "");
+  const computedUserType = userTypeForUserRole(userRole ?? "", email);
 
   if (computedUserType === "PLATFORM_ADMIN") {
     return "platform_admin";

@@ -1,0 +1,301 @@
+{
+  "generatedAt": "2026-05-13T09:14:14.174Z",
+  "environment": "staging",
+  "baseUrl": null,
+  "sections": [
+    {
+      "key": "staging-deployment",
+      "title": "Staging Deployment",
+      "checks": [
+        {
+          "key": "runtime-db",
+          "title": "Runtime database URL",
+          "status": "fail",
+          "summary": "Runtime DATABASE_URL is missing or still points to a placeholder/local endpoint."
+        },
+        {
+          "key": "migration-db",
+          "title": "Migration database URL",
+          "status": "fail",
+          "summary": "DATABASE_URL_UNPOOLED is missing or still points to a placeholder/local endpoint."
+        },
+        {
+          "key": "env-secrets",
+          "title": "Environment-safe secrets",
+          "status": "fail",
+          "summary": "One or more auth/session secrets are missing or still use placeholder values."
+        },
+        {
+          "key": "persistent-storage",
+          "title": "Persistent document storage",
+          "status": "fail",
+          "summary": "Persistent storage is not fully configured; expected local_file mode with a storage root.",
+          "details": {
+            "storageMode": null,
+            "storageRootConfigured": false
+          }
+        },
+        {
+          "key": "notification-mocks",
+          "title": "Staging-safe notification delivery",
+          "status": "warn",
+          "summary": "Email/SMS delivery is not fully mocked; staging may still require additional delivery safeguards.",
+          "details": {
+            "emailDeliveryMode": null,
+            "smsProvider": null,
+            "smsEnabled": null
+          }
+        }
+      ]
+    },
+    {
+      "key": "role-provisioning",
+      "title": "Role Provisioning",
+      "checks": [
+        {
+          "key": "seeded-enterprise-users",
+          "title": "Seeded enterprise users",
+          "status": "fail",
+          "summary": "Missing seeded enterprise users: Platform Admin, Legal Affairs User, Doctor User, Nurse User, Medical Director User, Compliance User, Finance / Authorized Admin User, External Reviewer, Read-Only Auditor, Quality Manager, Risk Officer."
+        },
+        {
+          "key": "role-mappings",
+          "title": "Role, membership, and tenant mappings",
+          "status": "pass",
+          "summary": "Seeded enterprise users have matching tenant, role, membership, and role-assignment state."
+        },
+        {
+          "key": "navigation-visibility",
+          "title": "Navigation visibility",
+          "status": "pass",
+          "summary": "Each enterprise role resolves to the expected module navigation surface."
+        },
+        {
+          "key": "workflow-authority",
+          "title": "Workflow / approval / audit authority",
+          "status": "fail",
+          "summary": "Authority mismatches detected for: Medical Director User, Finance / Authorized Admin User."
+        }
+      ]
+    },
+    {
+      "key": "enterprise-seed-data",
+      "title": "Enterprise Seed Data",
+      "checks": [
+        {
+          "key": "workflow-seed-cases",
+          "title": "Enterprise workflow cases",
+          "status": "fail",
+          "summary": "Expected at least four seeded enterprise workflow cases.",
+          "details": {
+            "caseCount": 0
+          }
+        },
+        {
+          "key": "workflow-states",
+          "title": "Workflow states and approvals",
+          "status": "fail",
+          "summary": "Workflow state or approval coverage is incomplete for seeded enterprise flows.",
+          "details": {
+            "workflowStateCount": 0,
+            "approvalChainCount": 0,
+            "approvalActionCount": 0
+          }
+        },
+        {
+          "key": "delegation-escalation",
+          "title": "Delegation and escalation scenarios",
+          "status": "fail",
+          "summary": "Delegation scenarios are missing from the enterprise seed data.",
+          "details": {
+            "delegationRuleCount": 0
+          }
+        },
+        {
+          "key": "audit-document-notification-evidence",
+          "title": "Audit, document, and notification evidence",
+          "status": "fail",
+          "summary": "Seeded audit, document, or notification evidence is incomplete.",
+          "details": {
+            "auditEventCount": 0,
+            "auditChainEventCount": 0,
+            "documentCount": 0,
+            "notificationCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "key": "authenticated-uat",
+      "title": "Authenticated Enterprise UAT",
+      "checks": [
+        {
+          "key": "base-url",
+          "title": "Validation base URL",
+          "status": "skip",
+          "summary": "No VALIDATION_BASE_URL or APP_BASE_URL was configured for live UAT checks."
+        }
+      ]
+    },
+    {
+      "key": "live-database-certification",
+      "title": "Live Database Certification",
+      "checks": [
+        {
+          "key": "database-connectivity",
+          "title": "Foreign key / relationship connectivity probe",
+          "status": "fail",
+          "summary": "Runtime or migration database probes failed; controlled staging deployment should remain blocked."
+        },
+        {
+          "key": "workflow-persistence",
+          "title": "Workflow / approval persistence",
+          "status": "fail",
+          "summary": "Workflow states or approval relationships are incomplete in the staging database."
+        },
+        {
+          "key": "audit-integrity",
+          "title": "Audit event integrity",
+          "status": "fail",
+          "summary": "Audit event integrity checks failed for the seeded enterprise dataset.",
+          "details": {
+            "auditEventCount": 0,
+            "auditChainCount": 0,
+            "auditChainUniqueCount": 0
+          }
+        },
+        {
+          "key": "tenant-isolation",
+          "title": "Tenant isolation and permission mappings",
+          "status": "pass",
+          "summary": "Seeded enterprise users remain isolated to their intended tenants with role assignments in place."
+        },
+        {
+          "key": "soft-delete",
+          "title": "Soft delete behavior",
+          "status": "warn",
+          "summary": "Soft delete markers were not detected in the sampled enterprise workflow tables; confirm operational policy before rollout."
+        }
+      ]
+    },
+    {
+      "key": "mobile-enterprise-qa",
+      "title": "Mobile Enterprise QA",
+      "checks": [
+        {
+          "key": "mobile-base-url",
+          "title": "Mobile QA target",
+          "status": "skip",
+          "summary": "Mobile QA checks were skipped because no live base URL was configured."
+        }
+      ]
+    },
+    {
+      "key": "legal-evidence-validation",
+      "title": "Legal Evidence Validation",
+      "checks": [
+        {
+          "key": "immutable-documents",
+          "title": "Immutable finalized documents",
+          "status": "fail",
+          "summary": "Immutable finalized document coverage is insufficient for legal evidence certification.",
+          "details": {
+            "immutableDocumentCount": 0
+          }
+        },
+        {
+          "key": "qr-validation",
+          "title": "QR and evidence package references",
+          "status": "fail",
+          "summary": "QR reference coverage is incomplete in the seeded legal evidence packages.",
+          "details": {
+            "qrReferenceCount": 0
+          }
+        },
+        {
+          "key": "signature-evidence",
+          "title": "Signature and timestamp evidence",
+          "status": "fail",
+          "summary": "Signature evidence is incomplete for the seeded enterprise documents.",
+          "details": {
+            "signedDocumentCount": 0
+          }
+        },
+        {
+          "key": "audit-defensibility",
+          "title": "Audit defensibility",
+          "status": "fail",
+          "summary": "Document or audit-chain coverage is incomplete for legal evidence defensibility."
+        }
+      ]
+    },
+    {
+      "key": "performance-hardening",
+      "title": "Performance Hardening",
+      "checks": [
+        {
+          "key": "db-latency",
+          "title": "Database query performance",
+          "status": "skip",
+          "summary": "Database latency was not measured because the staging database was unavailable.",
+          "details": {
+            "dbLatencyMs": null
+          }
+        },
+        {
+          "key": "login-latency",
+          "title": "Workflow / session latency",
+          "status": "skip",
+          "summary": "Authenticated login latency was not measured because live UAT checks were skipped.",
+          "details": {
+            "averageLoginLatencyMs": null
+          }
+        },
+        {
+          "key": "pdf-latency",
+          "title": "PDF generation speed",
+          "status": "skip",
+          "summary": "PDF generation latency was not measured during the current validation run.",
+          "details": {
+            "pdfLatencyMs": null
+          }
+        },
+        {
+          "key": "dashboard-latency",
+          "title": "Dashboard rendering readiness",
+          "status": "skip",
+          "summary": "Dashboard/module route latency was not measured during the current validation run.",
+          "details": {
+            "modulesLatencyMs": null
+          }
+        }
+      ]
+    }
+  ],
+  "finalRecommendation": {
+    "decision": "NO_GO",
+    "blockers": [
+      "Staging Deployment: Runtime DATABASE_URL is missing or still points to a placeholder/local endpoint.",
+      "Staging Deployment: DATABASE_URL_UNPOOLED is missing or still points to a placeholder/local endpoint.",
+      "Staging Deployment: One or more auth/session secrets are missing or still use placeholder values.",
+      "Staging Deployment: Persistent storage is not fully configured; expected local_file mode with a storage root.",
+      "Role Provisioning: Missing seeded enterprise users: Platform Admin, Legal Affairs User, Doctor User, Nurse User, Medical Director User, Compliance User, Finance / Authorized Admin User, External Reviewer, Read-Only Auditor, Quality Manager, Risk Officer.",
+      "Role Provisioning: Authority mismatches detected for: Medical Director User, Finance / Authorized Admin User.",
+      "Enterprise Seed Data: Expected at least four seeded enterprise workflow cases.",
+      "Enterprise Seed Data: Workflow state or approval coverage is incomplete for seeded enterprise flows.",
+      "Enterprise Seed Data: Delegation scenarios are missing from the enterprise seed data.",
+      "Enterprise Seed Data: Seeded audit, document, or notification evidence is incomplete.",
+      "Live Database Certification: Runtime or migration database probes failed; controlled staging deployment should remain blocked.",
+      "Live Database Certification: Workflow states or approval relationships are incomplete in the staging database.",
+      "Live Database Certification: Audit event integrity checks failed for the seeded enterprise dataset.",
+      "Legal Evidence Validation: Immutable finalized document coverage is insufficient for legal evidence certification.",
+      "Legal Evidence Validation: QR reference coverage is incomplete in the seeded legal evidence packages.",
+      "Legal Evidence Validation: Signature evidence is incomplete for the seeded enterprise documents.",
+      "Legal Evidence Validation: Document or audit-chain coverage is incomplete for legal evidence defensibility."
+    ],
+    "warnings": [
+      "Staging Deployment: Email/SMS delivery is not fully mocked; staging may still require additional delivery safeguards.",
+      "Live Database Certification: Soft delete markers were not detected in the sampled enterprise workflow tables; confirm operational policy before rollout."
+    ]
+  }
+}

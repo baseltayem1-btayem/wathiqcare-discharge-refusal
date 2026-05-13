@@ -58,6 +58,36 @@ npm run admin:reset-password -- --target imc.admin=Welcome@123 --actor superadmi
 
 When `--audit` is enabled, the script writes an `audit_logs` entry for each reset and attempts to append a matching audit-chain event. Use `--actor` with an existing admin username or email so the operation is attributable.
 
+## Enterprise sandbox staging
+
+Use the built-in demo seed to prepare a production-like staging tenant for authenticated UAT and workflow certification.
+
+1. Copy the repository root `.env.example` into your staging runtime env files.
+2. Point `DATABASE_URL`, `DATABASE_URL_POOLED`, and `DATABASE_URL_UNPOOLED` to the dedicated staging database.
+3. Keep delivery safe for UAT by setting:
+   - `EMAIL_DELIVERY_MODE=mock`
+   - `SMS_PROVIDER=mock`
+   - `SMS_ENABLED=false`
+4. Use persistent document storage in staging:
+   - `PDF_BINARY_STORAGE_MODE=local_file`
+   - `PDF_STORAGE_ROOT=/var/lib/wathiqcare/staging-documents`
+5. Generate the Prisma client and seed enterprise demo data:
+
+```bash
+npm run prisma:generate -w apps/web
+npm run demo:seed -w apps/web
+```
+
+The seed now provisions authenticated enterprise demo accounts for platform administration, legal affairs, physician, nurse, medical director, compliance, finance, external reviewer, read-only auditor, quality manager, and risk officer, plus multilingual workflow data for informed consent, discharge refusal, promissory note, and legal review scenarios.
+
+Run the operational hardening/certification report against staging:
+
+```bash
+npm run validate:enterprise-hardening -w apps/web
+```
+
+The command writes JSON and Markdown artifacts to `artifacts/enterprise-hardening/` and exits non-zero when the final recommendation is `NO_GO`.
+
 ## Getting Started
 
 First, run the development server:

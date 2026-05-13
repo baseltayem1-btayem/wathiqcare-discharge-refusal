@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useI18n } from "@/i18n/I18nProvider";
 import PromissoryNoteDocument, { type PromissoryNoteData } from "@/components/modules/PromissoryNoteDocument";
@@ -38,15 +38,13 @@ export default function PromissoryNotePreviewPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { lang, isRtl, t } = useI18n();
+  const { lang, isRtl } = useI18n();
 
   const [note, setNote] = useState<NoteApiResponse | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
-  const printFrameRef = useRef<HTMLIFrameElement | null>(null);
-
   // Allow ?lang=ar or ?lang=en override
   const langOverride = (searchParams.get("lang") as "ar" | "en") ?? lang;
 

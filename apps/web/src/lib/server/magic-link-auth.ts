@@ -124,7 +124,7 @@ function toSessionUserTypeFromStored(
     return "tenant_user";
   }
 
-  const computedUserType = userTypeForUserRole(userRole);
+  const computedUserType = userTypeForUserRole(userRole, email);
   return computedUserType === "PLATFORM_ADMIN"
     ? "platform_admin"
     : computedUserType === "TENANT_ADMIN"

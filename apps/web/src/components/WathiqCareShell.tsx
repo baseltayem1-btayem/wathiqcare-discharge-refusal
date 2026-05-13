@@ -170,7 +170,7 @@ export default function WathiqCareShell({
   contentClassName,
 }: WathiqCareShellProps) {
   return (
-    <div className="wc-clinical-shell" dir={isRtl ? "rtl" : "ltr"}>
+    <div className="wc-clinical-shell" dir={isRtl ? "rtl" : "ltr"} data-testid="module-shell">
       <header className="wc-topbar">
         <div className="wc-topbar__brand">{brand || <DefaultBrand />}</div>
         <div className="wc-topbar__status">
