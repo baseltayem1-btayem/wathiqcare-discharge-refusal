@@ -95,32 +95,28 @@ export default function LangLoginPage() {
   return (
     <div
       dir={isRtl ? "rtl" : "ltr"}
-      className="wc-auth-bg min-h-screen flex flex-col"
-      style={{ background: "#002B5C" }}
+      className="wc-auth-bg min-h-screen flex flex-col bg-[#002B5C]"
     >
       <div className="flex flex-1 flex-col lg:flex-row">
         {/* LEFT: Brand Experience */}
         <aside className="wc-auth-left hidden lg:flex flex-col justify-between w-1/2 min-h-screen p-12 bg-gradient-to-br from-[#002B5C] via-[#193A6A] to-[#274B7A] relative">
           {/* Overlay for subtle geometry/lighting */}
-          <div className="absolute inset-0 z-0" style={{
-            background: "radial-gradient(ellipse 80% 60% at 60% 30%, rgba(75,156,211,0.10) 0%, transparent 100%)"
-          }} />
+          <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_80%_60%_at_60%_30%,rgba(75,156,211,0.10)_0%,transparent_100%)]" />
           <div className="relative z-10 flex flex-col gap-12">
             {/* Logo Area */}
             <div className="flex flex-col items-center mt-8 mb-8">
               <img
                 src="/images/wathiqcare-logo.png"
                 alt="WathiqCare Logo"
-                className="w-[260px] h-auto mb-8 drop-shadow-xl"
-                style={{ maxWidth: 340 }}
+                className="w-[260px] h-auto max-w-[340px] mb-8 drop-shadow-xl"
                 draggable={false}
                 loading="eager"
                 decoding="async"
               />
-              <h2 className="text-2xl font-bold text-white mb-2 tracking-tight" style={{ fontFamily: 'IBM Plex Sans Arabic, DIN Next Arabic, Inter, Segoe UI, sans-serif' }}>
+              <h2 className="text-2xl font-bold text-white mb-2 tracking-tight font-sans">
                 منصة الرعاية الصحية القانونية
               </h2>
-              <div className="text-base text-blue-100 mb-4 max-w-md text-center" style={{ fontWeight: 400 }}>
+              <div className="text-base text-blue-100 mb-4 max-w-md text-center font-normal">
                 ذكاء قانوني متكامل لدعم الامتثال، إدارة المخاطر، وحماية البيانات.
               </div>
             </div>
@@ -172,23 +168,21 @@ export default function LangLoginPage() {
           <div className="absolute top-8 end-8 z-20">
             <div className="flex items-center gap-2 bg-white rounded-full border border-gray-200 shadow-sm px-2 py-1">
               <button
-                className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${isRtl ? "text-gray-400" : "text-[#002B5C] bg-blue-50"}`}
-                style={{ fontFamily: 'IBM Plex Sans Arabic, DIN Next Arabic, Inter, Segoe UI, sans-serif' }}
+                className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors font-sans ${isRtl ? "text-gray-400" : "text-[#002B5C] bg-blue-50"}`}
                 disabled={isRtl}
               >العربية</button>
               <span className="w-px h-5 bg-gray-200 mx-1" />
               <button
-                className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${!isRtl ? "text-gray-400" : "text-[#002B5C] bg-blue-50"}`}
-                style={{ fontFamily: 'Inter, Segoe UI, IBM Plex Sans Arabic, sans-serif' }}
+                className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors font-sans ${!isRtl ? "text-gray-400" : "text-[#002B5C] bg-blue-50"}`}
                 disabled={!isRtl}
               >EN</button>
             </div>
           </div>
 
           {/* Login Card */}
-          <section className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col gap-6 border border-gray-100" style={{ minWidth: 340 }}>
+          <section className="w-full min-w-[340px] max-w-md bg-white rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col gap-6 border border-gray-100">
             <div className="mb-2">
-              <h1 className="text-2xl md:text-3xl font-bold text-[#002B5C] mb-2" style={{ fontFamily: 'IBM Plex Sans Arabic, DIN Next Arabic, Inter, Segoe UI, sans-serif' }}>
+              <h1 className="text-2xl md:text-3xl font-bold text-[#002B5C] mb-2 font-sans">
                 مرحباً بك في واثق كير
               </h1>
               <div className="text-gray-600 text-base mb-2">سجل الدخول للوصول إلى المنصة</div>
@@ -204,7 +198,7 @@ export default function LangLoginPage() {
                     required
                     autoComplete="username"
                     className="w-full h-14 pl-12 pr-4 rounded-xl border border-gray-200 bg-blue-50 text-gray-900 text-base focus:outline-none focus:ring-2 focus:ring-[#4B9CD3] focus:border-[#4B9CD3] transition placeholder:text-gray-400"
-                    style={{ direction: isRtl ? "rtl" : "ltr" }}
+                    dir={isRtl ? "rtl" : "ltr"}
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="name@example.com"
@@ -222,7 +216,7 @@ export default function LangLoginPage() {
                     required
                     autoComplete="current-password"
                     className="w-full h-14 pl-12 pr-12 rounded-xl border border-gray-200 bg-blue-50 text-gray-900 text-base focus:outline-none focus:ring-2 focus:ring-[#4B9CD3] focus:border-[#4B9CD3] transition placeholder:text-gray-400"
-                    style={{ direction: isRtl ? "rtl" : "ltr" }}
+                    dir={isRtl ? "rtl" : "ltr"}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -270,7 +264,7 @@ export default function LangLoginPage() {
                 className="w-full h-14 mt-2 rounded-xl border-2 border-[#C9A13B] text-[#C9A13B] text-lg font-bold shadow-none flex flex-col items-center justify-center opacity-60 cursor-not-allowed"
                 disabled
                 tabIndex={-1}
-                style={{ background: "#fff" }}
+                aria-disabled="true"
               >
                 الدخول بحساب IMC
                 <span className="text-xs font-normal mt-1">سيتم تفعيله قريباً</span>
@@ -297,16 +291,15 @@ export default function LangLoginPage() {
           <img
             src="/images/wathiqcare-logo.png"
             alt="WathiqCare Logo"
-            className="w-[180px] h-auto mb-6 drop-shadow-xl"
-            style={{ maxWidth: 240 }}
+            className="w-[180px] h-auto max-w-[240px] mb-6 drop-shadow-xl"
             draggable={false}
             loading="eager"
             decoding="async"
           />
-          <h2 className="text-xl font-bold text-white mb-2 tracking-tight" style={{ fontFamily: 'IBM Plex Sans Arabic, DIN Next Arabic, Inter, Segoe UI, sans-serif' }}>
+          <h2 className="text-xl font-bold text-white mb-2 tracking-tight font-sans">
             منصة الرعاية الصحية القانونية
           </h2>
-          <div className="text-sm text-blue-100 mb-2 max-w-xs text-center" style={{ fontWeight: 400 }}>
+          <div className="text-sm text-blue-100 mb-2 max-w-xs text-center font-normal">
             ذكاء قانوني متكامل لدعم الامتثال، إدارة المخاطر، وحماية البيانات.
           </div>
         </div>
