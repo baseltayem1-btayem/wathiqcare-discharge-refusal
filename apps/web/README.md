@@ -74,6 +74,22 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Promissory Note PDF validation
+
+Use the isolated promissory pipeline when validating legal-document rendering changes:
+
+```bash
+npm run test:promissory-pdf
+```
+
+From repo root, run the full isolated promissory validation bundle:
+
+```bash
+npm run validate:promissory-pdf
+```
+
+This intentionally reports only promissory PDF checks plus lint/build. Broader workspace test failures (for example demo account, password policy, or legal-case storage tests) are tracked separately and are out of scope for promissory-only rendering validation.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

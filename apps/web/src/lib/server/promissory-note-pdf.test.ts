@@ -94,6 +94,13 @@ test("promissory filename normalization avoids duplicated PN prefix", () => {
     buildPromissoryPdfFilename("", "", "ar"),
     "PN-UNKNOWN-ar.pdf",
   );
+
+  const sanitized = buildPromissoryPdfFilename("PN-2026\r\n\"x\";../evil", "", "en");
+  assert.match(sanitized, /^[A-Za-z0-9_.-]+$/);
+  assert.ok(!sanitized.includes("\r"));
+  assert.ok(!sanitized.includes("\n"));
+  assert.ok(!sanitized.includes("\""));
+  assert.ok(!sanitized.includes(";"));
 });
 
 test("shared promissory data builder keeps preview and PDF field mapping identical", () => {

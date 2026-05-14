@@ -16,6 +16,17 @@ import { buildPromissoryPdfHtml, getEmbeddedArabicFontCss } from "@/lib/server/p
 
 const prisma = getPrisma();
 const IMC_LOGO_URL = "https://www.imc.med.sa/images/logo.jpg";
+const ASCII_FILENAME_SAFE = /[^a-zA-Z0-9._-]/g;
+
+function buildAttachmentHeader(filename: string): string {
+  const trimmed = filename.trim();
+  const normalized = (trimmed || "promissory-note.pdf")
+    .replace(/[\r\n"]/g, "_")
+    .replace(ASCII_FILENAME_SAFE, "_")
+    .slice(0, 160);
+  const encoded = encodeURIComponent(normalized);
+  return `attachment; filename="${normalized}"; filename*=UTF-8''${encoded}`;
+}
 
 async function launchBrowser(): Promise<Browser> {
   const defaultArgs = ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"];
@@ -77,7 +88,8 @@ export async function GET(
   try {
     const auth = await requireModuleOperationalAccess(request, "promissory-notes");
     const { id } = await params;
-    const lang = (request.nextUrl.searchParams.get("lang") ?? "ar") as "ar" | "en";
+    const requestedLang = request.nextUrl.searchParams.get("lang");
+    const lang: "ar" | "en" = requestedLang === "en" ? "en" : "ar";
 
     if (!auth.tenant_id) {
       return NextResponse.json({ error: "Tenant context required" }, { status: 403 });
@@ -121,7 +133,7 @@ export async function GET(
         : null,
     }, {
       language: lang,
-      verificationBaseUrl: process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin,
+      verificationBaseUrl: process.env.NEXT_PUBLIC_APP_URL || undefined,
     });
 
     const qrPayload = buildPromissoryNoteQrPayload(noteData);
@@ -158,7 +170,7 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Disposition": buildAttachmentHeader(filename),
         "Cache-Control": "no-store",
       },
     });
