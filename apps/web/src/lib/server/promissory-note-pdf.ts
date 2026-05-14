@@ -67,7 +67,7 @@ function documentCss(isAr: boolean): string {
       line-height: 1.45;
       text-align: ${isAr ? "right" : "left"};
       font-family: ${isAr
-    ? "'WathiqArabicPdf','IBM Plex Sans Arabic','Noto Naskh Arabic','Tahoma',serif"
+    ? "'WathiqArabicPdfPrimary','WathiqArabicPdfFallback','IBM Plex Sans Arabic','Noto Sans Arabic','Noto Naskh Arabic','Tahoma',serif"
     : "'Times New Roman',Times,serif"};
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
@@ -340,52 +340,93 @@ async function readFontAsDataUri(fontPath: string, mimeType: string): Promise<st
   return `data:${mimeType};base64,${fontBytes.toString("base64")}`;
 }
 
+async function buildEmbeddedFontFaceCss(config: {
+  family: string;
+  arabicPath: string;
+  latinPath?: string;
+}): Promise<string> {
+  const arabicDataUri = await readFontAsDataUri(config.arabicPath, "font/woff2");
+  const latinDataUri = config.latinPath
+    ? await readFontAsDataUri(config.latinPath, "font/woff2").catch(() => "")
+    : "";
+
+  const arabicFace = `
+    @font-face {
+      font-family: '${config.family}';
+      font-style: normal;
+      font-weight: 400;
+      font-display: block;
+      src: url(${arabicDataUri}) format('woff2');
+      unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FEFC;
+    }
+  `;
+
+  if (!latinDataUri) {
+    return arabicFace;
+  }
+
+  const latinFace = `
+    @font-face {
+      font-family: '${config.family}';
+      font-style: normal;
+      font-weight: 400;
+      font-display: block;
+      src: url(${latinDataUri}) format('woff2');
+      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122,U+FEFF,U+FFFD;
+    }
+  `;
+
+  return `${arabicFace}${latinFace}`;
+}
+
 async function loadEmbeddedArabicFontCss(): Promise<string> {
   const root = process.cwd();
-  const arabicRegularPath = join(
-    root,
-    "node_modules",
-    "@fontsource",
-    "ibm-plex-sans-arabic",
-    "files",
-    "ibm-plex-sans-arabic-arabic-400-normal.woff2",
-  );
-  const latinRegularPath = join(
-    root,
-    "node_modules",
-    "@fontsource",
-    "ibm-plex-sans-arabic",
-    "files",
-    "ibm-plex-sans-arabic-latin-400-normal.woff2",
+  const candidates = [
+    {
+      family: "WathiqArabicPdfPrimary",
+      arabicPath: join(
+        root,
+        "node_modules",
+        "@fontsource",
+        "ibm-plex-sans-arabic",
+        "files",
+        "ibm-plex-sans-arabic-arabic-400-normal.woff2",
+      ),
+      latinPath: join(
+        root,
+        "node_modules",
+        "@fontsource",
+        "ibm-plex-sans-arabic",
+        "files",
+        "ibm-plex-sans-arabic-latin-400-normal.woff2",
+      ),
+    },
+    {
+      family: "WathiqArabicPdfFallback",
+      arabicPath: join(
+        root,
+        "node_modules",
+        "@fontsource",
+        "tajawal",
+        "files",
+        "tajawal-arabic-400-normal.woff2",
+      ),
+      latinPath: join(
+        root,
+        "node_modules",
+        "@fontsource",
+        "tajawal",
+        "files",
+        "tajawal-latin-400-normal.woff2",
+      ),
+    },
+  ] as const;
+
+  const loadedCss = await Promise.all(
+    candidates.map((candidate) => buildEmbeddedFontFaceCss(candidate).catch(() => "")),
   );
 
-  try {
-    const [arabicDataUri, latinDataUri] = await Promise.all([
-      readFontAsDataUri(arabicRegularPath, "font/woff2"),
-      readFontAsDataUri(latinRegularPath, "font/woff2"),
-    ]);
-
-    return `
-      @font-face {
-        font-family: 'WathiqArabicPdf';
-        font-style: normal;
-        font-weight: 400;
-        font-display: block;
-        src: url(${arabicDataUri}) format('woff2');
-        unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FEFC;
-      }
-      @font-face {
-        font-family: 'WathiqArabicPdf';
-        font-style: normal;
-        font-weight: 400;
-        font-display: block;
-        src: url(${latinDataUri}) format('woff2');
-        unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122,U+FEFF,U+FFFD;
-      }
-    `;
-  } catch {
-    return "";
-  }
+  return loadedCss.join("");
 }
 
 export async function getEmbeddedArabicFontCss(): Promise<string> {

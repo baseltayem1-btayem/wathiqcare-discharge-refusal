@@ -43,11 +43,14 @@ test("promissory PDF Arabic HTML includes all key fields with RTL layout", () =>
   const html = buildPromissoryPdfHtml({
     logoSrc: "https://example.com/logo.jpg",
     noteData,
-    embeddedArabicFontCss: "@font-face { font-family: 'WathiqArabicPdf'; src: local('Arial'); }",
+    embeddedArabicFontCss: [
+      "@font-face { font-family: 'WathiqArabicPdfPrimary'; src: local('Arial'); }",
+      "@font-face { font-family: 'WathiqArabicPdfFallback'; src: local('Arial'); }",
+    ].join(""),
   });
 
   assert.match(html, /dir="rtl"/);
-  assert.match(html, /font-family:\s*'WathiqArabicPdf'/);
+  assert.match(html, /font-family:\s*'WathiqArabicPdfPrimary','WathiqArabicPdfFallback'/);
   assert.match(html, /سند لأمر/);
   assert.match(html, /تفاصيل الدائن/);
   assert.match(html, /تفاصيل المدين/);
@@ -86,6 +89,10 @@ test("promissory filename normalization avoids duplicated PN prefix", () => {
   assert.equal(
     buildPromissoryPdfFilename("20260513-AB12CD", "pn-123", "en"),
     "PN-20260513-AB12CD-en.pdf",
+  );
+  assert.equal(
+    buildPromissoryPdfFilename("", "", "ar"),
+    "PN-UNKNOWN-ar.pdf",
   );
 });
 
