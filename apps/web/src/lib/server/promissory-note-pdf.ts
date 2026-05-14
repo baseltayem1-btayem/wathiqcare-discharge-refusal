@@ -347,7 +347,10 @@ async function buildEmbeddedFontFaceCss(config: {
 }): Promise<string> {
   const arabicDataUri = await readFontAsDataUri(config.arabicPath, "font/woff2");
   const latinDataUri = config.latinPath
-    ? await readFontAsDataUri(config.latinPath, "font/woff2").catch(() => "")
+    ? await readFontAsDataUri(config.latinPath, "font/woff2").catch((error: unknown) => {
+      console.warn("Failed to load embedded Latin font for promissory PDF", error);
+      return "";
+    })
     : "";
 
   const arabicFace = `
@@ -423,7 +426,13 @@ async function loadEmbeddedArabicFontCss(): Promise<string> {
   ] as const;
 
   const loadedCss = await Promise.all(
-    candidates.map((candidate) => buildEmbeddedFontFaceCss(candidate).catch(() => "")),
+    candidates.map((candidate) => buildEmbeddedFontFaceCss(candidate).catch((error: unknown) => {
+      console.warn("Failed to load embedded Arabic font for promissory PDF", {
+        family: candidate.family,
+        error,
+      });
+      return "";
+    })),
   );
 
   return loadedCss.join("");

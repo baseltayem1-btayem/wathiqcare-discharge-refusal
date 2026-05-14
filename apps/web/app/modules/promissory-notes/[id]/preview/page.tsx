@@ -67,7 +67,8 @@ export default function PromissoryNotePreviewPage() {
       }
     };
 
-    void renderQr().catch(() => {
+    void renderQr().catch((err: unknown) => {
+      console.warn("Promissory note preview QR generation failed", err);
       if (!abortController.signal.aborted) {
         setQrDataUrl("");
       }

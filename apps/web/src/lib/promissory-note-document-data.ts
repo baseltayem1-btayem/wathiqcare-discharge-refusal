@@ -106,7 +106,10 @@ export function buildPromissoryPdfFilename(noteNumber: string, noteId: string, l
     .map((value) => value.trim())
     .find((value) => value.length > 0)
     || "UNKNOWN";
-  const sanitized = rawValue.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const sanitized = rawValue
+    .replace(/[\\/]/g, "_")
+    .replace(/\.\.+/g, "_")
+    .replace(/[^a-zA-Z0-9_-]/g, "_");
   const normalizedPrefix = /^PN-/i.test(sanitized)
     ? sanitized.replace(/^pn-/i, "PN-")
     : `PN-${sanitized}`;

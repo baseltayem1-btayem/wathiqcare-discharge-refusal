@@ -24,6 +24,7 @@ function buildAttachmentHeader(filename: string): string {
     .replace(/[;\\]/g, "_")
     .replace(/\.\.+/g, ".")
     .replace(/^\.+/, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
     .slice(0, 160);
   const safeFilename = normalized || "promissory-note.pdf";
   const encoded = encodeURIComponent(safeFilename);
