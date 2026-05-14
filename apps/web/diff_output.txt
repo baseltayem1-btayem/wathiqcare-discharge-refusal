@@ -1,0 +1,1595 @@
+commit df4912e23ffe7dab65ac5de613ec708d84e27958
+Author: Copilot <198982749+Copilot@users.noreply.github.com>
+Date:   Thu May 14 04:02:11 2026 +0300
+
+    Fixing Arabic PDF generation for WathiqCare (#43)
+    
+    * Refactor promissory preview/PDF data mapping and embed Arabic font
+    
+    Agent-Logs-Url: https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/sessions/462579b3-68a5-41ac-9352-ebc279e12da1
+    
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+    
+    * Fix promissory PDF typing and stabilize regression assertions
+    
+    Agent-Logs-Url: https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/sessions/462579b3-68a5-41ac-9352-ebc279e12da1
+    
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+    
+    * Address review feedback on promissory PDF links and filename normalization
+    
+    Agent-Logs-Url: https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/sessions/462579b3-68a5-41ac-9352-ebc279e12da1
+    
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+    
+    * Harden promissory QR payload date handling and preview QR effect flow
+    
+    Agent-Logs-Url: https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/sessions/462579b3-68a5-41ac-9352-ebc279e12da1
+    
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+    
+    * Improve promissory filename fallback and QR-link accessibility labels
+    
+    Agent-Logs-Url: https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/sessions/462579b3-68a5-41ac-9352-ebc279e12da1
+    
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+    
+    * Add embedded Arabic fallback font support and extend promissory PDF targeted tests
+    
+    Agent-Logs-Url: https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/sessions/969434a3-ebab-413c-ad02-fd7438125327
+    
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+    
+    * Harden promissory PDF pre-PR validation and route security boundaries
+    
+    Agent-Logs-Url: https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/sessions/990c2ae2-a637-4697-98fe-64538e871846
+    
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+    
+    * Refine verification URL base resolution for promissory PDF links
+    
+    Agent-Logs-Url: https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/sessions/990c2ae2-a637-4697-98fe-64538e871846
+    
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+    
+    * Harden attachment filename header sanitization for promissory PDF downloads
+    
+    Agent-Logs-Url: https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/sessions/990c2ae2-a637-4697-98fe-64538e871846
+    
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+    
+    * Address review feedback on promissory filename and fallback observability hardening
+    
+    Agent-Logs-Url: https://github.com/baseltayem1-btayem/wathiqcare-discharge-refusal/sessions/990c2ae2-a637-4697-98fe-64538e871846
+    
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+    
+    ---------
+    
+    Co-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+    Co-authored-by: baseltayem1-btayem <259617222+baseltayem1-btayem@users.noreply.github.com>
+
+diff --git a/.gitignore b/.gitignore
+index 53cffbb..b51d69c 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -243,3 +243,7 @@ apps/api/*.sqlite3
+ tmp/
+ reports/
+ coverage/
++
++# Promissory PDF validation evidence artifacts (screenshots, generated PDFs, reports)
++artifacts/promissory-evidence/
++apps/web/artifacts/promissory-evidence/
+diff --git a/apps/web/.gitignore b/apps/web/.gitignore
+index dee3077..9ea56e2 100644
+--- a/apps/web/.gitignore
++++ b/apps/web/.gitignore
+@@ -43,3 +43,6 @@ next-env.d.ts
+ 
+ .vercel
+ .env*.local
++
++# Promissory PDF validation evidence artifacts (screenshots, generated PDFs, reports)
++/artifacts/promissory-evidence/
+diff --git a/apps/web/README.md b/apps/web/README.md
+index 3a5b671..0e6ce2c 100644
+--- a/apps/web/README.md
++++ b/apps/web/README.md
+@@ -74,6 +74,22 @@ bun dev
+ 
+ Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ 
++## Promissory Note PDF validation
++
++Use the isolated promissory pipeline when validating legal-document rendering changes:
++
++```bash
++npm run test:promissory-pdf
++```
++
++From repo root, run the full isolated promissory validation bundle:
++
++```bash
++npm run validate:promissory-pdf
++```
++
++This intentionally reports only promissory PDF checks plus lint/build. Broader workspace test failures (for example demo account, password policy, or legal-case storage tests) are tracked separately and are out of scope for promissory-only rendering validation.
++
+ You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+ 
+ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+diff --git a/apps/web/app/api/modules/promissory-notes/[id]/pdf/route.ts b/apps/web/app/api/modules/promissory-notes/[id]/pdf/route.ts
+index 1b5b419..33e7e29 100644
+--- a/apps/web/app/api/modules/promissory-notes/[id]/pdf/route.ts
++++ b/apps/web/app/api/modules/promissory-notes/[id]/pdf/route.ts
+@@ -7,11 +7,55 @@ import QRCode from "qrcode";
+ import { requireModuleOperationalAccess } from "@/lib/server/auth";
+ import { getPrisma } from "@/lib/server/prisma";
+ import { ApiError } from "@/lib/server/http";
+-import { toArabicWords, toEnglishWords, formatAmountNumeric } from "@/lib/amount-to-words";
++import {
++  buildPromissoryNoteDocumentData,
++  buildPromissoryNoteQrPayload,
++  buildPromissoryPdfFilename,
++} from "@/lib/promissory-note-document-data";
++import { buildPromissoryPdfHtml, getEmbeddedArabicFontCss } from "@/lib/server/promissory-note-pdf";
+ 
+ const prisma = getPrisma();
+ const IMC_LOGO_URL = "https://www.imc.med.sa/images/logo.jpg";
+ 
++function buildAttachmentHeader(filename: string): string {
++  const trimmed = filename.trim();
++  const normalized = (trimmed || "promissory-note.pdf")
++    .replace(/[\r\n"]/g, "_")
++    .replace(/[;\\]/g, "_")
++    .replace(/\.\.+/g, ".")
++    .replace(/^\.+/, "")
++    .replace(/[^a-zA-Z0-9._-]/g, "_")
++    .slice(0, 160);
++  const safeFilename = normalized || "promissory-note.pdf";
++  const encoded = encodeURIComponent(safeFilename);
++  return `attachment; filename="${safeFilename}"; filename*=UTF-8''${encoded}`;
++}
++
++function resolveVerificationBaseUrl(request: NextRequest): string | undefined {
++  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
++  if (configured) {
++    try {
++      const parsed = new URL(configured);
++      if (parsed.protocol === "https:" || parsed.protocol === "http:") {
++        return parsed.origin;
++      }
++    } catch {
++      // Ignore invalid environment value and fall back to request origin.
++    }
++  }
++
++  try {
++    const parsed = new URL(request.nextUrl.origin);
++    if (parsed.protocol === "https:" || parsed.protocol === "http:") {
++      return parsed.origin;
++    }
++  } catch {
++    // no-op
++  }
++
++  return undefined;
++}
++
+ async function launchBrowser(): Promise<Browser> {
+   const defaultArgs = ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"];
+   const defaultOptions: LaunchOptions = { headless: true, args: defaultArgs };
+@@ -37,65 +81,6 @@ async function launchBrowser(): Promise<Browser> {
+   }
+ }
+ 
+-function asRecord(value: unknown): Record<string, unknown> {
+-  if (value && typeof value === "object" && !Array.isArray(value)) {
+-    return value as Record<string, unknown>;
+-  }
+-  return {};
+-}
+-
+-function readMetaStr(meta: Record<string, unknown>, ...keys: string[]): string {
+-  for (const key of keys) {
+-    const raw = meta[key];
+-    if (typeof raw === "string" && raw.trim()) {
+-      return raw.trim();
+-    }
+-  }
+-  return "";
+-}
+-
+-function escapeHtml(value: string | null | undefined): string {
+-  if (!value) return "";
+-  return value
+-    .replace(/&/g, "&amp;")
+-    .replace(/</g, "&lt;")
+-    .replace(/>/g, "&gt;")
+-    .replace(/"/g, "&quot;")
+-    .replace(/'/g, "&#39;");
+-}
+-
+-function formatDate(dateStr: string, locale: "ar" | "en"): string {
+-  try {
+-    const d = new Date(dateStr);
+-    if (Number.isNaN(d.getTime())) return dateStr;
+-    return d.toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", {
+-      year: "numeric",
+-      month: "long",
+-      day: "numeric",
+-    });
+-  } catch {
+-    return dateStr;
+-  }
+-}
+-
+-function statusLabelAr(statusCode: string): string {
+-  const normalized = statusCode.toUpperCase();
+-  if (normalized === "SETTLED") return "مغلق";
+-  if (normalized === "ACTIVE") return "نشط";
+-  if (normalized === "VOID") return "ملغى";
+-  if (normalized === "OVERDUE") return "متأخر";
+-  return "مسودة";
+-}
+-
+-function statusLabelEn(statusCode: string): string {
+-  const normalized = statusCode.toUpperCase();
+-  if (normalized === "SETTLED") return "Closed";
+-  if (normalized === "ACTIVE") return "Active";
+-  if (normalized === "VOID") return "Voided";
+-  if (normalized === "OVERDUE") return "Overdue";
+-  return "Draft";
+-}
+-
+ async function resolveImcLogoSource(): Promise<string> {
+   try {
+     const controller = new AbortController();
+@@ -122,298 +107,6 @@ async function resolveImcLogoSource(): Promise<string> {
+   }
+ }
+ 
+-function documentCss(isAr: boolean): string {
+-  return `
+-    @page { size: A4 portrait; margin: 8mm; }
+-    * { box-sizing: border-box; }
+-    body {
+-      margin: 0;
+-      padding: 0;
+-      background: #fff;
+-      color: #0f172a;
+-      font-size: 10.5pt;
+-      line-height: 1.45;
+-      direction: ${isAr ? "rtl" : "ltr"};
+-      text-align: ${isAr ? "right" : "left"};
+-      font-family: ${isAr ? "'Noto Naskh Arabic','Tahoma',serif" : "'Times New Roman',Times,serif"};
+-      -webkit-print-color-adjust: exact;
+-      print-color-adjust: exact;
+-    }
+-    .pn-doc { width: 100%; }
+-    .pn-header {
+-      display: flex;
+-      justify-content: space-between;
+-      align-items: flex-start;
+-      border: 1px solid #cfd8dc;
+-      padding: 3mm 4mm;
+-      margin-bottom: 3mm;
+-    }
+-    .pn-logo-box {
+-      width: 44mm;
+-      min-height: 18mm;
+-      display: flex;
+-      align-items: center;
+-      justify-content: flex-start;
+-    }
+-    .pn-logo { max-width: 40mm; max-height: 16mm; object-fit: contain; }
+-    .pn-title-wrap { display: flex; flex-direction: column; align-items: ${isAr ? "flex-end" : "flex-start"}; }
+-    .pn-title { margin: 0; font-size: 18pt; font-weight: 700; line-height: 1.1; }
+-    .pn-note-number { margin-top: 1.5mm; font-size: 10pt; }
+-    .pn-status-row {
+-      border: 1px solid #cfd8dc;
+-      background: #f7f9f8;
+-      display: flex;
+-      align-items: center;
+-      justify-content: space-between;
+-      padding: 2.2mm 3mm;
+-      margin-bottom: 3mm;
+-    }
+-    .pn-status-label { font-weight: 700; }
+-    .pn-status-badge {
+-      border: 1px solid #93a1a1;
+-      background: #edf3ee;
+-      border-radius: 2px;
+-      padding: 0.8mm 2.4mm;
+-      font-size: 9pt;
+-      font-weight: 700;
+-    }
+-    .pn-main-panel {
+-      display: grid;
+-      grid-template-columns: 2fr 1fr;
+-      gap: 3mm;
+-      margin-bottom: 3mm;
+-      direction: ${isAr ? "rtl" : "ltr"};
+-    }
+-    .pn-main-right,
+-    .pn-main-left { border: 1px solid #cfd8dc; background: #f3f6f5; }
+-    .pn-band-title {
+-      background: #dde8df;
+-      border-bottom: 1px solid #c4d1c7;
+-      padding: 1.8mm 3mm;
+-      font-size: 10pt;
+-      font-weight: 700;
+-    }
+-    .pn-details-table,
+-    .pn-party-table { width: 100%; border-collapse: collapse; }
+-    .pn-details-table td,
+-    .pn-party-table td { border-top: 1px solid #d7e0dc; padding: 1.8mm 3mm; vertical-align: top; }
+-    .pn-details-table tr:first-child td,
+-    .pn-party-table tr:first-child td { border-top: 0; }
+-    .pn-details-table td:first-child,
+-    .pn-party-table td:first-child { width: 40%; color: #334155; font-weight: 600; }
+-    .pn-amount-card { padding: 3mm; }
+-    .pn-amount-label { font-size: 9pt; color: #334155; font-weight: 700; }
+-    .pn-amount-number { margin-top: 1.4mm; margin-bottom: 2.4mm; font-size: 16pt; line-height: 1.2; font-weight: 700; }
+-    .pn-amount-label-words { margin-top: 1.2mm; }
+-    .pn-amount-words { margin-top: 1mm; font-size: 9.2pt; line-height: 1.45; }
+-    .pn-party-section { border: 1px solid #cfd8dc; background: #f7f9f8; margin-bottom: 3mm; }
+-    .pn-bottom-grid {
+-      display: grid;
+-      grid-template-columns: 1.45fr 1fr;
+-      gap: 3mm;
+-      margin-top: 1.5mm;
+-      direction: ${isAr ? "rtl" : "ltr"};
+-      page-break-inside: avoid;
+-    }
+-    .pn-legal-box,
+-    .pn-qr-box { border: 1px solid #cfd8dc; background: #fff; padding: 3mm; min-height: 54mm; }
+-    .pn-legal-box p { margin: 0; }
+-    .pn-legal-line { margin-top: 1.8mm !important; }
+-    .pn-qr-box { display: flex; flex-direction: column; align-items: center; text-align: center; }
+-    .pn-qr-img { width: 27mm; height: 27mm; object-fit: contain; }
+-    .pn-qr-text { margin-top: 2mm; font-size: 8.2pt; line-height: 1.4; }
+-    .pn-qr-ref { margin-top: 1.5mm; font-size: 7.5pt; color: #334155; word-break: break-word; }
+-  `;
+-}
+-
+-function buildPromissoryNoteHtml(args: {
+-  language: "ar" | "en";
+-  logoSrc: string;
+-  noteNumber: string;
+-  statusCode: string;
+-  amount: number;
+-  currency: string;
+-  amountWordsAr: string;
+-  amountWordsEn: string;
+-  issueDateAr: string;
+-  issueDateEn: string;
+-  dueDateAr: string;
+-  dueDateEn: string;
+-  issueCity: string;
+-  paymentCity: string;
+-  reason: string;
+-  creditorNameAr: string;
+-  creditorNameEn: string;
+-  creditorCR: string;
+-  debtorName: string;
+-  debtorId: string;
+-  qrDataUrl: string;
+-  verificationUrl: string;
+-}): string {
+-  const isAr = args.language === "ar";
+-  const amountNumeric = formatAmountNumeric(args.amount);
+-
+-  const bodyAr = `
+-    <div class="pn-doc" dir="rtl" lang="ar">
+-      <header class="pn-header">
+-        <div class="pn-logo-box"><img src="${args.logoSrc}" alt="International Medical Center" class="pn-logo" /></div>
+-        <div class="pn-title-wrap">
+-          <h1 class="pn-title">سند لأمر</h1>
+-          <div class="pn-note-number">رقم السند: <strong>${escapeHtml(args.noteNumber)}</strong></div>
+-        </div>
+-      </header>
+-
+-      <div class="pn-status-row">
+-        <span class="pn-status-label">حالة السند</span>
+-        <span class="pn-status-badge">${statusLabelAr(args.statusCode)}</span>
+-      </div>
+-
+-      <section class="pn-main-panel">
+-        <div class="pn-main-right">
+-          <div class="pn-band-title">تفاصيل السند</div>
+-          <table class="pn-details-table">
+-            <tbody>
+-              <tr><td>تاريخ الإنشاء</td><td>${escapeHtml(args.issueDateAr)}</td></tr>
+-              <tr><td>تاريخ الاستحقاق</td><td>${escapeHtml(args.dueDateAr)}</td></tr>
+-              <tr><td>مدينة الإصدار</td><td>${escapeHtml(args.issueCity)}</td></tr>
+-              <tr><td>مدينة الوفاء</td><td>${escapeHtml(args.paymentCity)}</td></tr>
+-              <tr><td>سبب إنشاء السند</td><td>${escapeHtml(args.reason || "—")}</td></tr>
+-            </tbody>
+-          </table>
+-        </div>
+-        <div class="pn-main-left">
+-          <div class="pn-amount-card">
+-            <div class="pn-amount-label">قيمة السند رقماً</div>
+-            <div class="pn-amount-number">${escapeHtml(amountNumeric)} ${escapeHtml(args.currency)}</div>
+-            <div class="pn-amount-label pn-amount-label-words">قيمة السند كتابة</div>
+-            <div class="pn-amount-words">${escapeHtml(args.amountWordsAr)}</div>
+-          </div>
+-        </div>
+-      </section>
+-
+-      <section class="pn-party-section">
+-        <div class="pn-band-title">تفاصيل الدائن</div>
+-        <table class="pn-party-table">
+-          <tbody>
+-            <tr><td>الاسم</td><td>${escapeHtml(args.creditorNameAr)}</td></tr>
+-            <tr><td>الرقم الوطني الموحد / السجل التجاري</td><td>${escapeHtml(args.creditorCR || "—")}</td></tr>
+-          </tbody>
+-        </table>
+-      </section>
+-
+-      <section class="pn-party-section">
+-        <div class="pn-band-title">تفاصيل المدين</div>
+-        <table class="pn-party-table">
+-          <tbody>
+-            <tr><td>الاسم</td><td>${escapeHtml(args.debtorName)}</td></tr>
+-            <tr><td>رقم الهوية</td><td>${escapeHtml(args.debtorId || "—")}</td></tr>
+-          </tbody>
+-        </table>
+-      </section>
+-
+-      <section class="pn-bottom-grid">
+-        <div class="pn-legal-box">
+-          <p>أتعهد بأن أدفع لأمر ${escapeHtml(args.creditorNameAr)} مبلغاً وقدره (${escapeHtml(amountNumeric)}) ${escapeHtml(args.currency)}، ${escapeHtml(args.amountWordsAr)}، وفق البيانات المذكورة أعلاه، ولحامل هذا السند حق الرجوع دون مصروفات أو احتجاج بعدم الوفاء.</p>
+-          <p class="pn-legal-line">اسم المدين: ${escapeHtml(args.debtorName)}</p>
+-          <p class="pn-legal-line">رقم الهوية: ${escapeHtml(args.debtorId || "—")}</p>
+-          <p class="pn-legal-line">تاريخ الإصدار: ${escapeHtml(args.issueDateAr)}</p>
+-          <p class="pn-legal-line">ولحامل هذا السند حق الرجوع دون مصروفات أو احتجاج بعدم الوفاء.</p>
+-        </div>
+-        <div class="pn-qr-box">
+-          <img src="${args.qrDataUrl}" alt="QR" class="pn-qr-img" />
+-          <div class="pn-qr-text">هذا السند لأمر صادر من خلال منصة واثق كير الإلكترونية، وقد تم إنشاؤه والمصادقة عليه إلكترونياً وفق البيانات المسجلة في المنصة، ويمكن التحقق منه من خلال رمز التحقق أو الرقم المرجعي.</div>
+-          <div class="pn-qr-ref">${escapeHtml(args.verificationUrl || args.noteNumber)}</div>
+-        </div>
+-      </section>
+-    </div>
+-  `;
+-
+-  const bodyEn = `
+-    <div class="pn-doc" dir="ltr" lang="en">
+-      <header class="pn-header">
+-        <div class="pn-logo-box"><img src="${args.logoSrc}" alt="International Medical Center" class="pn-logo" /></div>
+-        <div class="pn-title-wrap">
+-          <h1 class="pn-title">Promissory Note</h1>
+-          <div class="pn-note-number">Note No.: <strong>${escapeHtml(args.noteNumber)}</strong></div>
+-        </div>
+-      </header>
+-
+-      <div class="pn-status-row">
+-        <span class="pn-status-label">Note Status</span>
+-        <span class="pn-status-badge">${statusLabelEn(args.statusCode)}</span>
+-      </div>
+-
+-      <section class="pn-main-panel">
+-        <div class="pn-main-right">
+-          <div class="pn-band-title">Note Details</div>
+-          <table class="pn-details-table">
+-            <tbody>
+-              <tr><td>Issue Date</td><td>${escapeHtml(args.issueDateEn)}</td></tr>
+-              <tr><td>Due Date</td><td>${escapeHtml(args.dueDateEn)}</td></tr>
+-              <tr><td>Issue City</td><td>${escapeHtml(args.issueCity)}</td></tr>
+-              <tr><td>Payment City</td><td>${escapeHtml(args.paymentCity)}</td></tr>
+-              <tr><td>Reason</td><td>${escapeHtml(args.reason || "—")}</td></tr>
+-            </tbody>
+-          </table>
+-        </div>
+-        <div class="pn-main-left">
+-          <div class="pn-amount-card">
+-            <div class="pn-amount-label">Amount (Numeric)</div>
+-            <div class="pn-amount-number">${escapeHtml(amountNumeric)} ${escapeHtml(args.currency)}</div>
+-            <div class="pn-amount-label pn-amount-label-words">Amount (In Words)</div>
+-            <div class="pn-amount-words">${escapeHtml(args.amountWordsEn)}</div>
+-          </div>
+-        </div>
+-      </section>
+-
+-      <section class="pn-party-section">
+-        <div class="pn-band-title">Creditor Details</div>
+-        <table class="pn-party-table">
+-          <tbody>
+-            <tr><td>Name</td><td>${escapeHtml(args.creditorNameEn)}</td></tr>
+-            <tr><td>Unified ID / Commercial Registration</td><td>${escapeHtml(args.creditorCR || "—")}</td></tr>
+-          </tbody>
+-        </table>
+-      </section>
+-
+-      <section class="pn-party-section">
+-        <div class="pn-band-title">Debtor Details</div>
+-        <table class="pn-party-table">
+-          <tbody>
+-            <tr><td>Name</td><td>${escapeHtml(args.debtorName)}</td></tr>
+-            <tr><td>ID Number</td><td>${escapeHtml(args.debtorId || "—")}</td></tr>
+-          </tbody>
+-        </table>
+-      </section>
+-
+-      <section class="pn-bottom-grid">
+-        <div class="pn-legal-box">
+-          <p>I undertake to pay to the order of ${escapeHtml(args.creditorNameEn)} an amount of (${escapeHtml(amountNumeric)}) ${escapeHtml(args.currency)}, ${escapeHtml(args.amountWordsEn)}, according to the details above.</p>
+-          <p class="pn-legal-line">Debtor Name: ${escapeHtml(args.debtorName)}</p>
+-          <p class="pn-legal-line">Debtor ID: ${escapeHtml(args.debtorId || "—")}</p>
+-          <p class="pn-legal-line">Issue Date: ${escapeHtml(args.issueDateEn)}</p>
+-        </div>
+-        <div class="pn-qr-box">
+-          <img src="${args.qrDataUrl}" alt="QR" class="pn-qr-img" />
+-          <div class="pn-qr-text">Issued through WathiqCare electronic platform. Verification is available using the QR code or reference number.</div>
+-          <div class="pn-qr-ref">${escapeHtml(args.verificationUrl || args.noteNumber)}</div>
+-        </div>
+-      </section>
+-    </div>
+-  `;
+-
+-  return `<!doctype html>
+-<html lang="${isAr ? "ar" : "en"}" dir="${isAr ? "rtl" : "ltr"}">
+-  <head>
+-    <meta charset="utf-8" />
+-    <style>${documentCss(isAr)}</style>
+-  </head>
+-  <body>
+-    ${isAr ? bodyAr : bodyEn}
+-  </body>
+-</html>`;
+-}
+-
+ export async function GET(
+   request: NextRequest,
+   { params }: { params: Promise<{ id: string }> },
+@@ -423,7 +116,8 @@ export async function GET(
+   try {
+     const auth = await requireModuleOperationalAccess(request, "promissory-notes");
+     const { id } = await params;
+-    const lang = (request.nextUrl.searchParams.get("lang") ?? "ar") as "ar" | "en";
++    const requestedLang = request.nextUrl.searchParams.get("lang");
++    const lang: "ar" | "en" = requestedLang === "en" ? "en" : "ar";
+ 
+     if (!auth.tenant_id) {
+       return NextResponse.json({ error: "Tenant context required" }, { status: 403 });
+@@ -431,62 +125,60 @@ export async function GET(
+ 
+     const note = await prisma.promissoryNote.findFirst({
+       where: { id, tenantId: auth.tenant_id },
++      include: {
++        case: {
++          select: {
++            id: true,
++            caseNumber: true,
++            patientName: true,
++          },
++        },
++      },
+     });
+ 
+     if (!note) {
+       return NextResponse.json({ error: "Promissory note not found" }, { status: 404 });
+     }
+ 
+-    const meta = asRecord(note.metadata);
+-    const issueCity = readMetaStr(meta, "issue_city", "issueCity") || (lang === "ar" ? "الرياض" : "Riyadh");
+-    const paymentCity = readMetaStr(meta, "payment_city", "paymentCity") || issueCity;
+-    const reason = readMetaStr(meta, "reason");
+-    const creditorCR = readMetaStr(meta, "creditor_cr", "creditorCR");
+-    const creditorNameAr = "شركة المركز الطبي الدولي مساهمة مقفلة";
+-    const creditorNameEn = "International Medical Center (IMC)";
+-
+-    const verificationUrl =
+-      `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/verify/pn/${note.id}`;
+-
+-    const qrPayload = [
+-      `NOTE:${note.noteNumber}`,
+-      `CREDITOR:${lang === "ar" ? creditorNameAr : creditorNameEn}`,
+-      `DEBTOR:${note.debtorName}`,
+-      `AMOUNT:${Number(note.amount)} ${note.currency}`,
+-      `DUE:${note.dueDate.toISOString().slice(0, 10)}`,
+-      `VERIFY:${verificationUrl}`,
+-    ].join("|");
++    const noteData = buildPromissoryNoteDocumentData({
++      id: note.id,
++      noteNumber: note.noteNumber,
++      debtorName: note.debtorName,
++      debtorIdNumber: note.debtorIdNumber,
++      issuerName: note.issuerName,
++      amount: Number(note.amount),
++      currency: note.currency,
++      dueDate: note.dueDate.toISOString(),
++      createdAt: note.createdAt.toISOString(),
++      status: note.status,
++      metadata: (note.metadata as Record<string, unknown> | null) ?? null,
++      case: note.case
++        ? {
++          id: note.case.id,
++          caseNumber: note.case.caseNumber,
++          patientName: note.case.patientName,
++        }
++        : null,
++    }, {
++      language: lang,
++      verificationBaseUrl: resolveVerificationBaseUrl(request),
++    });
+ 
++    const qrPayload = buildPromissoryNoteQrPayload(noteData);
+     const qrDataUrl = await QRCode.toDataURL(qrPayload, {
+       errorCorrectionLevel: "M",
+       margin: 1,
+       width: 180,
+     });
+ 
++    noteData.qrDataUrl = qrDataUrl;
++
+     const logoSrc = await resolveImcLogoSource();
+-    const html = buildPromissoryNoteHtml({
+-      language: lang,
++    const embeddedArabicFontCss = await getEmbeddedArabicFontCss();
++    const html = buildPromissoryPdfHtml({
+       logoSrc,
+-      noteNumber: note.noteNumber,
+-      statusCode: note.status,
+-      amount: Number(note.amount),
+-      currency: note.currency,
+-      amountWordsAr: toArabicWords(Number(note.amount), note.currency),
+-      amountWordsEn: toEnglishWords(Number(note.amount), note.currency),
+-      issueDateAr: formatDate(note.createdAt.toISOString(), "ar"),
+-      issueDateEn: formatDate(note.createdAt.toISOString(), "en"),
+-      dueDateAr: formatDate(note.dueDate.toISOString(), "ar"),
+-      dueDateEn: formatDate(note.dueDate.toISOString(), "en"),
+-      issueCity,
+-      paymentCity,
+-      reason,
+-      creditorNameAr,
+-      creditorNameEn,
+-      creditorCR,
+-      debtorName: note.debtorName,
+-      debtorId: note.debtorIdNumber ?? "",
+-      qrDataUrl,
+-      verificationUrl,
++      noteData,
++      embeddedArabicFontCss,
+     });
+ 
+     browser = await launchBrowser();
+@@ -501,12 +193,12 @@ export async function GET(
+ 
+     await page.close();
+ 
+-    const safeNoteNumber = note.noteNumber.replace(/[^a-zA-Z0-9_-]/g, "_");
++    const filename = buildPromissoryPdfFilename(note.noteNumber, note.id, lang);
+     return new NextResponse(Buffer.from(pdf), {
+       status: 200,
+       headers: {
+         "Content-Type": "application/pdf",
+-        "Content-Disposition": `attachment; filename="PN-${safeNoteNumber}-${lang}.pdf"`,
++        "Content-Disposition": buildAttachmentHeader(filename),
+         "Cache-Control": "no-store",
+       },
+     });
+diff --git a/apps/web/app/modules/promissory-notes/[id]/preview/page.tsx b/apps/web/app/modules/promissory-notes/[id]/preview/page.tsx
+index 6ff2071..df3e6bf 100644
+--- a/apps/web/app/modules/promissory-notes/[id]/preview/page.tsx
++++ b/apps/web/app/modules/promissory-notes/[id]/preview/page.tsx
+@@ -1,51 +1,28 @@
+ "use client";
+ 
+-import React, { useEffect, useRef, useState } from "react";
++import React, { useEffect, useState } from "react";
+ import { useParams, useRouter, useSearchParams } from "next/navigation";
+ import { useI18n } from "@/i18n/I18nProvider";
+ import PromissoryNoteDocument, { type PromissoryNoteData } from "@/components/modules/PromissoryNoteDocument";
++import {
++  buildPromissoryNoteDocumentData,
++  buildPromissoryNoteQrPayload,
++  buildPromissoryPdfFilename,
++  type PromissoryNoteApiRecord,
++} from "@/lib/promissory-note-document-data";
+ import "@/styles/promissory-note.css";
+ 
+-type NoteApiResponse = {
+-  id: string;
+-  noteNumber: string;
+-  debtorName: string;
+-  debtorIdNumber: string | null;
+-  issuerName: string | null;
+-  amount: string | number;
+-  currency: string;
+-  dueDate: string;
+-  createdAt: string;
+-  status: string;
+-  metadata: Record<string, unknown> | null;
+-  case?: {
+-    id: string;
+-    caseNumber: string;
+-    patientName: string;
+-  } | null;
+-};
+-
+-function readMetaStr(meta: Record<string, unknown> | null | undefined, ...keys: string[]): string {
+-  if (!meta) return "";
+-  for (const key of keys) {
+-    const val = meta[key];
+-    if (typeof val === "string" && val.trim()) return val.trim();
+-  }
+-  return "";
+-}
+-
+ export default function PromissoryNotePreviewPage() {
+   const { id } = useParams<{ id: string }>();
+   const searchParams = useSearchParams();
+   const router = useRouter();
+-  const { lang, isRtl, t } = useI18n();
++  const { lang, isRtl } = useI18n();
+ 
+-  const [note, setNote] = useState<NoteApiResponse | null>(null);
++  const [note, setNote] = useState<PromissoryNoteApiRecord | null>(null);
+   const [qrDataUrl, setQrDataUrl] = useState<string>("");
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
+   const [downloading, setDownloading] = useState(false);
+-  const printFrameRef = useRef<HTMLIFrameElement | null>(null);
+ 
+   // Allow ?lang=ar or ?lang=en override
+   const langOverride = (searchParams.get("lang") as "ar" | "en") ?? lang;
+@@ -53,58 +30,54 @@ export default function PromissoryNotePreviewPage() {
+   useEffect(() => {
+     if (!id) return;
+     setLoading(true);
++    setError(null);
+     fetch(`/api/modules/promissory-notes/${id}`)
+       .then(async (res) => {
+         if (!res.ok) throw new Error(await res.text());
+-        return res.json() as Promise<NoteApiResponse>;
++        return res.json() as Promise<PromissoryNoteApiRecord>;
+       })
+-      .then(async (data) => {
++      .then((data) => {
+         setNote(data);
+-        // Generate QR code client-side
+-        const { default: QRCode } = await import("qrcode");
+-        const qrPayload = [
+-          `NOTE:${data.noteNumber}`,
+-          `DEBTOR:${data.debtorName}`,
+-          `AMOUNT:${data.amount} ${data.currency}`,
+-          `DUE:${data.dueDate.slice(0, 10)}`,
+-          data.id,
+-        ].join("|");
+-        const url = await QRCode.toDataURL(qrPayload, {
+-          errorCorrectionLevel: "M",
+-          margin: 1,
+-          width: 120,
+-        });
+-        setQrDataUrl(url);
+       })
+       .catch((err) => setError(String(err)))
+       .finally(() => setLoading(false));
+   }, [id]);
+ 
+-  function buildNoteData(n: NoteApiResponse): PromissoryNoteData {
+-    const meta = n.metadata ?? {};
+-    return {
+-      noteNumber: n.noteNumber,
+-      amount: Number(n.amount),
+-      currency: n.currency,
+-      dueDate: n.dueDate,
+-      issueDate: n.createdAt,
+-      issueCity: readMetaStr(meta, "issue_city", "issueCity") || (langOverride === "ar" ? "الرياض" : "Riyadh"),
+-      paymentCity: readMetaStr(meta, "payment_city", "paymentCity"),
+-      debtorName: n.debtorName,
+-      debtorId: n.debtorIdNumber ?? undefined,
+-      creditorName:
+-        langOverride === "ar"
+-          ? "شركة المركز الطبي الدولي مساهمة مقفلة"
+-          : "International Medical Center (IMC)",
+-      creditorCR: readMetaStr(meta, "creditor_cr", "creditorCR") || undefined,
+-      reason: readMetaStr(meta, "reason") || undefined,
+-      referenceNumber: n.case?.caseNumber ?? undefined,
+-      statusCode: n.status,
+-      qrDataUrl: qrDataUrl || undefined,
+-      verificationUrl: `/verify/pn/${n.id}`,
+-      language: langOverride,
++  useEffect(() => {
++    if (!note) {
++      setQrDataUrl("");
++      return;
++    }
++
++    const abortController = new AbortController();
++    const renderQr = async () => {
++      const noteDataForQr = buildPromissoryNoteDocumentData(note, {
++        language: langOverride,
++        verificationBaseUrl: window.location.origin,
++      });
++      const { default: QRCode } = await import("qrcode");
++      const qrPayload = buildPromissoryNoteQrPayload(noteDataForQr);
++      const url = await QRCode.toDataURL(qrPayload, {
++        errorCorrectionLevel: "M",
++        margin: 1,
++        width: 120,
++      });
++      if (!abortController.signal.aborted) {
++        setQrDataUrl(url);
++      }
+     };
+-  }
++
++    void renderQr().catch((err: unknown) => {
++      console.warn("Promissory note preview QR generation failed", err);
++      if (!abortController.signal.aborted) {
++        setQrDataUrl("");
++      }
++    });
++
++    return () => {
++      abortController.abort();
++    };
++  }, [note, langOverride]);
+ 
+   async function handleDownloadPdf() {
+     if (!id) return;
+@@ -116,7 +89,7 @@ export default function PromissoryNotePreviewPage() {
+       const url = URL.createObjectURL(blob);
+       const a = document.createElement("a");
+       a.href = url;
+-      a.download = `PN-${note?.noteNumber ?? id}-${langOverride}.pdf`;
++      a.download = buildPromissoryPdfFilename(note?.noteNumber ?? "", id, langOverride);
+       document.body.appendChild(a);
+       a.click();
+       a.remove();
+@@ -148,7 +121,11 @@ export default function PromissoryNotePreviewPage() {
+     );
+   }
+ 
+-  const noteData = buildNoteData(note);
++  const noteData: PromissoryNoteData = buildPromissoryNoteDocumentData(note, {
++    language: langOverride,
++    qrDataUrl: qrDataUrl || undefined,
++    verificationBaseUrl: window.location.origin,
++  });
+ 
+   return (
+     <div dir={isRtl ? "rtl" : "ltr"}>
+diff --git a/apps/web/package.json b/apps/web/package.json
+index 56115fb..ee1a80b 100644
+--- a/apps/web/package.json
++++ b/apps/web/package.json
+@@ -10,6 +10,7 @@
+     "demo:seed": "node scripts/seed-demo-users.mjs",
+     "lint": "eslint",
+     "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts",
++    "test:promissory-pdf": "tsx --tsconfig tsconfig.json --test src/lib/server/promissory-note-pdf.test.ts",
+     "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+     "admin:reset-password": "tsx -r dotenv/config scripts/admin-reset-password.ts",
+     "db:probe:runtime": "node scripts/db-probe-runtime.cjs",
+diff --git a/apps/web/src/lib/promissory-note-document-data.ts b/apps/web/src/lib/promissory-note-document-data.ts
+new file mode 100644
+index 0000000..af30d1b
+--- /dev/null
++++ b/apps/web/src/lib/promissory-note-document-data.ts
+@@ -0,0 +1,117 @@
++import type { PromissoryNoteData } from "@/components/modules/PromissoryNoteDocument";
++
++export type PromissoryNoteApiRecord = {
++  id: string;
++  noteNumber: string;
++  debtorName: string;
++  debtorIdNumber: string | null;
++  issuerName: string | null;
++  amount: string | number;
++  currency: string;
++  dueDate: string;
++  createdAt: string;
++  status: string;
++  metadata: Record<string, unknown> | null;
++  case?: {
++    id: string;
++    caseNumber: string | null;
++    patientName: string | null;
++  } | null;
++};
++
++type BuildPromissoryNoteDataOptions = {
++  language: "ar" | "en";
++  qrDataUrl?: string;
++  verificationBaseUrl?: string;
++};
++
++const DEFAULT_CREDITOR_NAME_AR = "شركة المركز الطبي الدولي مساهمة مقفلة";
++const DEFAULT_CREDITOR_NAME_EN = "International Medical Center (IMC)";
++
++function readMetaStr(meta: Record<string, unknown> | null | undefined, ...keys: string[]): string {
++  if (!meta) return "";
++  for (const key of keys) {
++    const val = meta[key];
++    if (typeof val === "string" && val.trim()) return val.trim();
++  }
++  return "";
++}
++
++function resolveVerificationUrl(noteId: string, baseUrl?: string): string {
++  const path = `/verify/pn/${noteId}`;
++  if (!baseUrl) {
++    return path;
++  }
++
++  try {
++    return new URL(path, baseUrl).toString();
++  } catch {
++    return path;
++  }
++}
++
++export function buildPromissoryNoteDocumentData(
++  note: PromissoryNoteApiRecord,
++  options: BuildPromissoryNoteDataOptions,
++): PromissoryNoteData {
++  const meta = note.metadata ?? {};
++  const issueCity = readMetaStr(meta, "issue_city", "issueCity")
++    || (options.language === "ar" ? "الرياض" : "Riyadh");
++
++  return {
++    noteNumber: note.noteNumber,
++    amount: Number(note.amount),
++    currency: note.currency,
++    dueDate: note.dueDate,
++    issueDate: note.createdAt,
++    issueCity,
++    paymentCity: readMetaStr(meta, "payment_city", "paymentCity") || issueCity,
++    debtorName: note.debtorName,
++    debtorId: note.debtorIdNumber ?? undefined,
++    creditorName: options.language === "ar" ? DEFAULT_CREDITOR_NAME_AR : DEFAULT_CREDITOR_NAME_EN,
++    creditorCR: readMetaStr(meta, "creditor_cr", "creditorCR") || undefined,
++    reason: readMetaStr(meta, "reason") || undefined,
++    referenceNumber: note.case?.caseNumber ?? undefined,
++    statusCode: note.status,
++    qrDataUrl: options.qrDataUrl || undefined,
++    verificationUrl: resolveVerificationUrl(note.id, options.verificationBaseUrl),
++    language: options.language,
++  };
++}
++
++export function buildPromissoryNoteQrPayload(data: PromissoryNoteData): string {
++  const dueDatePart = (() => {
++    const parsed = new Date(data.dueDate);
++    if (Number.isNaN(parsed.getTime())) {
++      return data.dueDate;
++    }
++    const year = parsed.getUTCFullYear();
++    const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
++    const day = String(parsed.getUTCDate()).padStart(2, "0");
++    return `${year}-${month}-${day}`;
++  })();
++
++  return [
++    `NOTE:${data.noteNumber}`,
++    `CREDITOR:${data.creditorName ?? ""}`,
++    `DEBTOR:${data.debtorName}`,
++    `AMOUNT:${data.amount} ${data.currency}`,
++    `DUE:${dueDatePart}`,
++    `VERIFY:${data.verificationUrl || data.referenceNumber || data.noteNumber}`,
++  ].join("|");
++}
++
++export function buildPromissoryPdfFilename(noteNumber: string, noteId: string, language: "ar" | "en"): string {
++  const rawValue = [noteNumber, noteId]
++    .map((value) => value.trim())
++    .find((value) => value.length > 0)
++    || "UNKNOWN";
++  const sanitized = rawValue
++    .replace(/[\\/]/g, "_")
++    .replace(/\.\.+/g, "_")
++    .replace(/[^a-zA-Z0-9_-]/g, "_");
++  const normalizedPrefix = /^PN-/i.test(sanitized)
++    ? sanitized.replace(/^pn-/i, "PN-")
++    : `PN-${sanitized}`;
++  return `${normalizedPrefix}-${language}.pdf`;
++}
+diff --git a/apps/web/src/lib/server/promissory-note-pdf.test.ts b/apps/web/src/lib/server/promissory-note-pdf.test.ts
+new file mode 100644
+index 0000000..33b416d
+--- /dev/null
++++ b/apps/web/src/lib/server/promissory-note-pdf.test.ts
+@@ -0,0 +1,126 @@
++import assert from "node:assert/strict";
++import { readFile } from "node:fs/promises";
++import test from "node:test";
++import { join } from "node:path";
++import {
++  buildPromissoryNoteDocumentData,
++  buildPromissoryPdfFilename,
++  type PromissoryNoteApiRecord,
++} from "@/lib/promissory-note-document-data";
++import { buildPromissoryPdfHtml } from "@/lib/server/promissory-note-pdf";
++
++const sampleRecord: PromissoryNoteApiRecord = {
++  id: "pn-123",
++  noteNumber: "PN-20260513-AB12CD",
++  debtorName: "أحمد خالد",
++  debtorIdNumber: "1010101010",
++  issuerName: null,
++  amount: "12000.5",
++  currency: "SAR",
++  dueDate: "2026-07-01T00:00:00.000Z",
++  createdAt: "2026-05-13T09:00:00.000Z",
++  status: "ACTIVE",
++  metadata: {
++    issue_city: "جدة",
++    payment_city: "الرياض",
++    reason: "رسوم طبية",
++    creditor_cr: "4030001111",
++  },
++  case: {
++    id: "case-1",
++    caseNumber: "CASE-1001",
++    patientName: "Ahmed",
++  },
++};
++
++test("promissory PDF Arabic HTML includes all key fields with RTL layout", () => {
++  const noteData = buildPromissoryNoteDocumentData(sampleRecord, {
++    language: "ar",
++    qrDataUrl: "data:image/png;base64,AAAA",
++    verificationBaseUrl: "https://wathiqcare.example",
++  });
++
++  const html = buildPromissoryPdfHtml({
++    logoSrc: "https://example.com/logo.jpg",
++    noteData,
++    embeddedArabicFontCss: [
++      "@font-face { font-family: 'WathiqArabicPdfPrimary'; src: local('Arial'); }",
++      "@font-face { font-family: 'WathiqArabicPdfFallback'; src: local('Arial'); }",
++    ].join(""),
++  });
++
++  assert.match(html, /dir="rtl"/);
++  assert.match(html, /font-family:\s*'WathiqArabicPdfPrimary','WathiqArabicPdfFallback'/);
++  assert.match(html, /سند لأمر/);
++  assert.match(html, /تفاصيل الدائن/);
++  assert.match(html, /تفاصيل المدين/);
++  assert.match(html, /أحمد خالد/);
++  assert.match(html, /رسوم طبية/);
++  assert.match(html, /href="https:\/\/wathiqcare\.example\/verify\/pn\/pn-123"/);
++  assert.match(html, /PN-20260513-AB12CD/);
++});
++
++test("promissory PDF English HTML includes all key fields with LTR layout", () => {
++  const noteData = buildPromissoryNoteDocumentData(sampleRecord, {
++    language: "en",
++    qrDataUrl: "data:image/png;base64,AAAA",
++    verificationBaseUrl: "https://wathiqcare.example",
++  });
++
++  const html = buildPromissoryPdfHtml({
++    logoSrc: "https://example.com/logo.jpg",
++    noteData,
++    embeddedArabicFontCss: "",
++  });
++
++  assert.match(html, /dir="ltr"/);
++  assert.match(html, /Promissory Note/);
++  assert.match(html, /Creditor Details/);
++  assert.match(html, /Debtor Details/);
++  assert.match(html, /Amount \(In Words\)/);
++  assert.match(html, /href="https:\/\/wathiqcare\.example\/verify\/pn\/pn-123"/);
++});
++
++test("promissory filename normalization avoids duplicated PN prefix", () => {
++  assert.equal(
++    buildPromissoryPdfFilename("PN-20260513-AB12CD", "pn-123", "ar"),
++    "PN-20260513-AB12CD-ar.pdf",
++  );
++  assert.equal(
++    buildPromissoryPdfFilename("20260513-AB12CD", "pn-123", "en"),
++    "PN-20260513-AB12CD-en.pdf",
++  );
++  assert.equal(
++    buildPromissoryPdfFilename("", "", "ar"),
++    "PN-UNKNOWN-ar.pdf",
++  );
++
++  const sanitized = buildPromissoryPdfFilename("PN-2026\r\n\"x\";../evil", "", "en");
++  assert.match(sanitized, /^[A-Za-z0-9_.-]+$/);
++  assert.ok(!sanitized.includes("\r"));
++  assert.ok(!sanitized.includes("\n"));
++  assert.ok(!sanitized.includes("\""));
++  assert.ok(!sanitized.includes(";"));
++});
++
++test("shared promissory data builder keeps preview and PDF field mapping identical", () => {
++  const previewData = buildPromissoryNoteDocumentData(sampleRecord, {
++    language: "ar",
++    verificationBaseUrl: "https://wathiqcare.example",
++  });
++  const pdfData = buildPromissoryNoteDocumentData(sampleRecord, {
++    language: "ar",
++    verificationBaseUrl: "https://wathiqcare.example",
++  });
++
++  assert.deepEqual(pdfData, previewData);
++});
++
++test("promissory print stylesheet keeps print controls and page-break protection", async () => {
++  const cssPath = join(process.cwd(), "src", "styles", "promissory-note.css");
++  const css = await readFile(cssPath, "utf8");
++
++  assert.match(css, /@media print/);
++  assert.match(css, /\.no-print\s*\{/);
++  assert.match(css, /page-break-inside:\s*avoid/);
++});
+diff --git a/apps/web/src/lib/server/promissory-note-pdf.ts b/apps/web/src/lib/server/promissory-note-pdf.ts
+new file mode 100644
+index 0000000..3a4d471
+--- /dev/null
++++ b/apps/web/src/lib/server/promissory-note-pdf.ts
+@@ -0,0 +1,446 @@
++import { readFile } from "node:fs/promises";
++import { join } from "node:path";
++import { formatAmountNumeric, toArabicWords, toEnglishWords } from "@/lib/amount-to-words";
++import type { PromissoryNoteData } from "@/components/modules/PromissoryNoteDocument";
++
++type BuildPromissoryPdfHtmlArgs = {
++  logoSrc: string;
++  noteData: PromissoryNoteData;
++  embeddedArabicFontCss: string;
++};
++
++let embeddedArabicFontCssPromise: Promise<string> | null = null;
++
++function escapeHtml(value: string | null | undefined): string {
++  if (!value) return "";
++  return value
++    .replace(/&/g, "&amp;")
++    .replace(/</g, "&lt;")
++    .replace(/>/g, "&gt;")
++    .replace(/"/g, "&quot;")
++    .replace(/'/g, "&#39;");
++}
++
++function formatDate(dateStr: string, locale: "ar" | "en"): string {
++  try {
++    const d = new Date(dateStr);
++    if (Number.isNaN(d.getTime())) return dateStr;
++    return d.toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", {
++      year: "numeric",
++      month: "long",
++      day: "numeric",
++    });
++  } catch {
++    return dateStr;
++  }
++}
++
++function statusLabelAr(statusCode?: string): string {
++  const normalized = (statusCode || "").toUpperCase();
++  if (normalized === "SETTLED") return "مغلق";
++  if (normalized === "ACTIVE") return "نشط";
++  if (normalized === "VOID") return "ملغى";
++  if (normalized === "OVERDUE") return "متأخر";
++  return "مسودة";
++}
++
++function statusLabelEn(statusCode?: string): string {
++  const normalized = (statusCode || "").toUpperCase();
++  if (normalized === "SETTLED") return "Closed";
++  if (normalized === "ACTIVE") return "Active";
++  if (normalized === "VOID") return "Voided";
++  if (normalized === "OVERDUE") return "Overdue";
++  return "Draft";
++}
++
++function documentCss(isAr: boolean): string {
++  return `
++    @page { size: A4 portrait; margin: 8mm; }
++    * { box-sizing: border-box; }
++    html, body { direction: ${isAr ? "rtl" : "ltr"}; }
++    body {
++      margin: 0;
++      padding: 0;
++      background: #fff;
++      color: #0f172a;
++      font-size: 10.5pt;
++      line-height: 1.45;
++      text-align: ${isAr ? "right" : "left"};
++      font-family: ${isAr
++    ? "'WathiqArabicPdfPrimary','WathiqArabicPdfFallback','IBM Plex Sans Arabic','Noto Sans Arabic','Noto Naskh Arabic','Tahoma',serif"
++    : "'Times New Roman',Times,serif"};
++      -webkit-print-color-adjust: exact;
++      print-color-adjust: exact;
++    }
++    .pn-doc { width: 100%; }
++    .pn-header {
++      display: flex;
++      justify-content: space-between;
++      align-items: flex-start;
++      border: 1px solid #cfd8dc;
++      padding: 3mm 4mm;
++      margin-bottom: 3mm;
++    }
++    .pn-logo-box {
++      width: 44mm;
++      min-height: 18mm;
++      display: flex;
++      align-items: center;
++      justify-content: flex-start;
++    }
++    .pn-logo { max-width: 40mm; max-height: 16mm; object-fit: contain; }
++    .pn-title-wrap { display: flex; flex-direction: column; align-items: ${isAr ? "flex-end" : "flex-start"}; }
++    .pn-title { margin: 0; font-size: 18pt; font-weight: 700; line-height: 1.1; }
++    .pn-note-number { margin-top: 1.5mm; font-size: 10pt; }
++    .pn-status-row {
++      border: 1px solid #cfd8dc;
++      background: #f7f9f8;
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      padding: 2.2mm 3mm;
++      margin-bottom: 3mm;
++    }
++    .pn-status-label { font-weight: 700; }
++    .pn-status-badge {
++      border: 1px solid #93a1a1;
++      background: #edf3ee;
++      border-radius: 2px;
++      padding: 0.8mm 2.4mm;
++      font-size: 9pt;
++      font-weight: 700;
++    }
++    .pn-main-panel {
++      display: grid;
++      grid-template-columns: 2fr 1fr;
++      gap: 3mm;
++      margin-bottom: 3mm;
++      direction: ${isAr ? "rtl" : "ltr"};
++    }
++    .pn-main-right,
++    .pn-main-left { border: 1px solid #cfd8dc; background: #f3f6f5; }
++    .pn-band-title {
++      background: #dde8df;
++      border-bottom: 1px solid #c4d1c7;
++      padding: 1.8mm 3mm;
++      font-size: 10pt;
++      font-weight: 700;
++    }
++    .pn-details-table,
++    .pn-party-table { width: 100%; border-collapse: collapse; }
++    .pn-details-table td,
++    .pn-party-table td { border-top: 1px solid #d7e0dc; padding: 1.8mm 3mm; vertical-align: top; }
++    .pn-details-table tr:first-child td,
++    .pn-party-table tr:first-child td { border-top: 0; }
++    .pn-details-table td:first-child,
++    .pn-party-table td:first-child { width: 40%; color: #334155; font-weight: 600; }
++    .pn-amount-card { padding: 3mm; }
++    .pn-amount-label { font-size: 9pt; color: #334155; font-weight: 700; }
++    .pn-amount-number { margin-top: 1.4mm; margin-bottom: 2.4mm; font-size: 16pt; line-height: 1.2; font-weight: 700; }
++    .pn-amount-label-words { margin-top: 1.2mm; }
++    .pn-amount-words { margin-top: 1mm; font-size: 9.2pt; line-height: 1.45; }
++    .pn-party-section { border: 1px solid #cfd8dc; background: #f7f9f8; margin-bottom: 3mm; }
++    .pn-bottom-grid {
++      display: grid;
++      grid-template-columns: 1.45fr 1fr;
++      gap: 3mm;
++      margin-top: 1.5mm;
++      direction: ${isAr ? "rtl" : "ltr"};
++      page-break-inside: avoid;
++    }
++    .pn-legal-box,
++    .pn-qr-box { border: 1px solid #cfd8dc; background: #fff; padding: 3mm; min-height: 54mm; }
++    .pn-legal-box p { margin: 0; }
++    .pn-legal-line { margin-top: 1.8mm !important; }
++    .pn-qr-box { display: flex; flex-direction: column; align-items: center; text-align: center; }
++    .pn-qr-img { width: 27mm; height: 27mm; object-fit: contain; }
++    .pn-qr-text { margin-top: 2mm; font-size: 8.2pt; line-height: 1.4; }
++    .pn-qr-ref {
++      margin-top: 1.5mm;
++      font-size: 7.5pt;
++      color: #0f172a;
++      text-decoration: underline;
++      word-break: break-word;
++    }
++  `;
++}
++
++export function buildPromissoryPdfHtml({
++  logoSrc,
++  noteData,
++  embeddedArabicFontCss,
++}: BuildPromissoryPdfHtmlArgs): string {
++  const isAr = noteData.language === "ar";
++  const amountFormatted = formatAmountNumeric(noteData.amount);
++  const amountWords = isAr
++    ? toArabicWords(noteData.amount, noteData.currency)
++    : toEnglishWords(noteData.amount, noteData.currency);
++  const issueDate = formatDate(noteData.issueDate, noteData.language);
++  const dueDate = formatDate(noteData.dueDate, noteData.language);
++  const statusLabel = isAr ? statusLabelAr(noteData.statusCode) : statusLabelEn(noteData.statusCode);
++  const creditorName = noteData.creditorName || (isAr ? "شركة المركز الطبي الدولي مساهمة مقفلة" : "International Medical Center (IMC)");
++  const issueCity = noteData.issueCity || (isAr ? "الرياض" : "Riyadh");
++  const paymentCity = noteData.paymentCity || issueCity;
++  const reason = noteData.reason || "—";
++  const verificationValue = noteData.verificationUrl || noteData.referenceNumber || noteData.noteNumber;
++
++  const bodyAr = `
++    <div class="pn-doc" dir="rtl" lang="ar">
++      <header class="pn-header">
++        <div class="pn-logo-box"><img src="${logoSrc}" alt="International Medical Center" class="pn-logo" /></div>
++        <div class="pn-title-wrap">
++          <h1 class="pn-title">سند لأمر</h1>
++          <div class="pn-note-number">رقم السند: <strong>${escapeHtml(noteData.noteNumber)}</strong></div>
++        </div>
++      </header>
++      <div class="pn-status-row">
++        <span class="pn-status-label">حالة السند</span>
++        <span class="pn-status-badge">${statusLabel}</span>
++      </div>
++      <section class="pn-main-panel">
++        <div class="pn-main-right">
++          <div class="pn-band-title">تفاصيل السند</div>
++          <table class="pn-details-table">
++            <tbody>
++              <tr><td>تاريخ الإنشاء</td><td>${escapeHtml(issueDate)}</td></tr>
++              <tr><td>تاريخ الاستحقاق</td><td>${escapeHtml(dueDate)}</td></tr>
++              <tr><td>مدينة الإصدار</td><td>${escapeHtml(issueCity)}</td></tr>
++              <tr><td>مدينة الوفاء</td><td>${escapeHtml(paymentCity)}</td></tr>
++              <tr><td>سبب إنشاء السند</td><td>${escapeHtml(reason)}</td></tr>
++            </tbody>
++          </table>
++        </div>
++        <div class="pn-main-left">
++          <div class="pn-amount-card">
++            <div class="pn-amount-label">قيمة السند رقماً</div>
++            <div class="pn-amount-number">${escapeHtml(amountFormatted)} ${escapeHtml(noteData.currency)}</div>
++            <div class="pn-amount-label pn-amount-label-words">قيمة السند كتابة</div>
++            <div class="pn-amount-words">${escapeHtml(amountWords)}</div>
++          </div>
++        </div>
++      </section>
++      <section class="pn-party-section">
++        <div class="pn-band-title">تفاصيل الدائن</div>
++        <table class="pn-party-table">
++          <tbody>
++            <tr><td>الاسم</td><td>${escapeHtml(creditorName)}</td></tr>
++            <tr><td>الرقم الوطني الموحد / السجل التجاري</td><td>${escapeHtml(noteData.creditorCR || "—")}</td></tr>
++          </tbody>
++        </table>
++      </section>
++      <section class="pn-party-section">
++        <div class="pn-band-title">تفاصيل المدين</div>
++        <table class="pn-party-table">
++          <tbody>
++            <tr><td>الاسم</td><td>${escapeHtml(noteData.debtorName)}</td></tr>
++            <tr><td>رقم الهوية</td><td>${escapeHtml(noteData.debtorId || "—")}</td></tr>
++          </tbody>
++        </table>
++      </section>
++      <section class="pn-bottom-grid">
++        <div class="pn-legal-box">
++          <p>أتعهد بأن أدفع لأمر ${escapeHtml(creditorName)} مبلغاً وقدره (${escapeHtml(amountFormatted)}) ${escapeHtml(noteData.currency)}، ${escapeHtml(amountWords)}، وفق البيانات المذكورة أعلاه، ولحامل هذا السند حق الرجوع دون مصروفات أو احتجاج بعدم الوفاء.</p>
++          <p class="pn-legal-line">اسم المدين: ${escapeHtml(noteData.debtorName)}</p>
++          <p class="pn-legal-line">رقم الهوية: ${escapeHtml(noteData.debtorId || "—")}</p>
++          <p class="pn-legal-line">تاريخ الإصدار: ${escapeHtml(issueDate)}</p>
++          <p class="pn-legal-line">ولحامل هذا السند حق الرجوع دون مصروفات أو احتجاج بعدم الوفاء.</p>
++        </div>
++        <div class="pn-qr-box">
++          <img src="${escapeHtml(noteData.qrDataUrl || "")}" alt="QR" class="pn-qr-img" />
++          <div class="pn-qr-text">هذا السند لأمر صادر من خلال منصة واثق كير الإلكترونية، وقد تم إنشاؤه والمصادقة عليه إلكترونياً وفق البيانات المسجلة في المنصة، ويمكن التحقق منه من خلال رمز التحقق أو الرقم المرجعي.</div>
++          <a class="pn-qr-ref" href="${escapeHtml(verificationValue)}" target="_blank" rel="noopener noreferrer" aria-label="التحقق من السند (يفتح في نافذة جديدة)">${escapeHtml(verificationValue)}</a>
++        </div>
++      </section>
++    </div>
++  `;
++
++  const bodyEn = `
++    <div class="pn-doc" dir="ltr" lang="en">
++      <header class="pn-header">
++        <div class="pn-logo-box"><img src="${logoSrc}" alt="International Medical Center" class="pn-logo" /></div>
++        <div class="pn-title-wrap">
++          <h1 class="pn-title">Promissory Note</h1>
++          <div class="pn-note-number">Note No.: <strong>${escapeHtml(noteData.noteNumber)}</strong></div>
++        </div>
++      </header>
++      <div class="pn-status-row">
++        <span class="pn-status-label">Note Status</span>
++        <span class="pn-status-badge">${statusLabel}</span>
++      </div>
++      <section class="pn-main-panel">
++        <div class="pn-main-right">
++          <div class="pn-band-title">Note Details</div>
++          <table class="pn-details-table">
++            <tbody>
++              <tr><td>Issue Date</td><td>${escapeHtml(issueDate)}</td></tr>
++              <tr><td>Due Date</td><td>${escapeHtml(dueDate)}</td></tr>
++              <tr><td>Issue City</td><td>${escapeHtml(issueCity)}</td></tr>
++              <tr><td>Payment City</td><td>${escapeHtml(paymentCity)}</td></tr>
++              <tr><td>Reason</td><td>${escapeHtml(reason)}</td></tr>
++            </tbody>
++          </table>
++        </div>
++        <div class="pn-main-left">
++          <div class="pn-amount-card">
++            <div class="pn-amount-label">Amount (Numeric)</div>
++            <div class="pn-amount-number">${escapeHtml(amountFormatted)} ${escapeHtml(noteData.currency)}</div>
++            <div class="pn-amount-label pn-amount-label-words">Amount (In Words)</div>
++            <div class="pn-amount-words">${escapeHtml(amountWords)}</div>
++          </div>
++        </div>
++      </section>
++      <section class="pn-party-section">
++        <div class="pn-band-title">Creditor Details</div>
++        <table class="pn-party-table">
++          <tbody>
++            <tr><td>Name</td><td>${escapeHtml(creditorName)}</td></tr>
++            <tr><td>Unified ID / Commercial Registration</td><td>${escapeHtml(noteData.creditorCR || "—")}</td></tr>
++          </tbody>
++        </table>
++      </section>
++      <section class="pn-party-section">
++        <div class="pn-band-title">Debtor Details</div>
++        <table class="pn-party-table">
++          <tbody>
++            <tr><td>Name</td><td>${escapeHtml(noteData.debtorName)}</td></tr>
++            <tr><td>ID Number</td><td>${escapeHtml(noteData.debtorId || "—")}</td></tr>
++          </tbody>
++        </table>
++      </section>
++      <section class="pn-bottom-grid">
++        <div class="pn-legal-box">
++          <p>I undertake to pay to the order of ${escapeHtml(creditorName)} an amount of (${escapeHtml(amountFormatted)}) ${escapeHtml(noteData.currency)}, ${escapeHtml(amountWords)}, according to the details above.</p>
++          <p class="pn-legal-line">Debtor Name: ${escapeHtml(noteData.debtorName)}</p>
++          <p class="pn-legal-line">Debtor ID: ${escapeHtml(noteData.debtorId || "—")}</p>
++          <p class="pn-legal-line">Issue Date: ${escapeHtml(issueDate)}</p>
++        </div>
++        <div class="pn-qr-box">
++          <img src="${escapeHtml(noteData.qrDataUrl || "")}" alt="QR" class="pn-qr-img" />
++          <div class="pn-qr-text">Issued through WathiqCare electronic platform. Verification is available using the QR code or reference number.</div>
++          <a class="pn-qr-ref" href="${escapeHtml(verificationValue)}" target="_blank" rel="noopener noreferrer" aria-label="Verify promissory note (opens in new window)">${escapeHtml(verificationValue)}</a>
++        </div>
++      </section>
++    </div>
++  `;
++
++  return `<!doctype html>
++<html lang="${isAr ? "ar" : "en"}" dir="${isAr ? "rtl" : "ltr"}">
++  <head>
++    <meta charset="utf-8" />
++    <style>${embeddedArabicFontCss}${documentCss(isAr)}</style>
++  </head>
++  <body>
++    ${isAr ? bodyAr : bodyEn}
++  </body>
++</html>`;
++}
++
++async function readFontAsDataUri(fontPath: string, mimeType: string): Promise<string> {
++  const fontBytes = await readFile(fontPath);
++  return `data:${mimeType};base64,${fontBytes.toString("base64")}`;
++}
++
++async function buildEmbeddedFontFaceCss(config: {
++  family: string;
++  arabicPath: string;
++  latinPath?: string;
++}): Promise<string> {
++  const arabicDataUri = await readFontAsDataUri(config.arabicPath, "font/woff2");
++  const latinDataUri = config.latinPath
++    ? await readFontAsDataUri(config.latinPath, "font/woff2").catch((error: unknown) => {
++      console.warn("Failed to load embedded Latin font for promissory PDF", error);
++      return "";
++    })
++    : "";
++
++  const arabicFace = `
++    @font-face {
++      font-family: '${config.family}';
++      font-style: normal;
++      font-weight: 400;
++      font-display: block;
++      src: url(${arabicDataUri}) format('woff2');
++      unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FEFC;
++    }
++  `;
++
++  if (!latinDataUri) {
++    return arabicFace;
++  }
++
++  const latinFace = `
++    @font-face {
++      font-family: '${config.family}';
++      font-style: normal;
++      font-weight: 400;
++      font-display: block;
++      src: url(${latinDataUri}) format('woff2');
++      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122,U+FEFF,U+FFFD;
++    }
++  `;
++
++  return `${arabicFace}${latinFace}`;
++}
++
++async function loadEmbeddedArabicFontCss(): Promise<string> {
++  const root = process.cwd();
++  const candidates = [
++    {
++      family: "WathiqArabicPdfPrimary",
++      arabicPath: join(
++        root,
++        "node_modules",
++        "@fontsource",
++        "ibm-plex-sans-arabic",
++        "files",
++        "ibm-plex-sans-arabic-arabic-400-normal.woff2",
++      ),
++      latinPath: join(
++        root,
++        "node_modules",
++        "@fontsource",
++        "ibm-plex-sans-arabic",
++        "files",
++        "ibm-plex-sans-arabic-latin-400-normal.woff2",
++      ),
++    },
++    {
++      family: "WathiqArabicPdfFallback",
++      arabicPath: join(
++        root,
++        "node_modules",
++        "@fontsource",
++        "tajawal",
++        "files",
++        "tajawal-arabic-400-normal.woff2",
++      ),
++      latinPath: join(
++        root,
++        "node_modules",
++        "@fontsource",
++        "tajawal",
++        "files",
++        "tajawal-latin-400-normal.woff2",
++      ),
++    },
++  ] as const;
++
++  const loadedCss = await Promise.all(
++    candidates.map((candidate) => buildEmbeddedFontFaceCss(candidate).catch((error: unknown) => {
++      console.warn("Failed to load embedded Arabic font for promissory PDF", {
++        family: candidate.family,
++        error,
++      });
++      return "";
++    })),
++  );
++
++  return loadedCss.join("");
++}
++
++export async function getEmbeddedArabicFontCss(): Promise<string> {
++  if (!embeddedArabicFontCssPromise) {
++    embeddedArabicFontCssPromise = loadEmbeddedArabicFontCss();
++  }
++  return embeddedArabicFontCssPromise;
++}
+diff --git a/package.json b/package.json
+index a06a9eb..15641a7 100644
+--- a/package.json
++++ b/package.json
+@@ -18,6 +18,7 @@
+     "build": "npm run build -w apps/web",
+     "start": "npm run start -w apps/web",
+     "lint": "npm run lint -w apps/web",
++    "validate:promissory-pdf": "npm run test:promissory-pdf -w apps/web && npm run lint -w apps/web && npm run build -w apps/web",
+     "prisma:generate": "npm run prisma:generate -w apps/web",
+     "admins:ensure": "node prisma/ensure-admin-access.js"
+   },
+@@ -29,4 +30,4 @@
+     "prisma": "^6.19.2",
+     "tailwindcss": "^4.2.2"
+   }
+-}
+\ No newline at end of file
++}

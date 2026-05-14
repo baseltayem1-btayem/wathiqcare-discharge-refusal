@@ -1,0 +1,2 @@
+Create a controlled pilot patient seeding system for WathiqCare Online.
+Generate demo MRNs and fake Saudi patient data for UAT/testing only.

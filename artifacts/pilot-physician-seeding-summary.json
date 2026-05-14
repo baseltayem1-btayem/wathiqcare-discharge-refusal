@@ -1,0 +1,231 @@
+{
+  "timestamp": "2026-05-14T02:39:12.721Z",
+  "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+  "tenantName": "IMC Hospital",
+  "physicianId": "23c54c07-295c-4822-9077-829391ab4b34",
+  "physicianEmail": "dr.ahmed@wathiqcare.med.sa",
+  "physicianName": "Dr. Ahmed Al-Salmi",
+  "physicianNameAr": "د. أحمد السالمي",
+  "physicianRole": "PHYSICIAN",
+  "physicianSpecialty": "Internal Medicine / Emergency Medicine",
+  "physicianStatus": "active",
+  "authentication": {
+    "authProvider": "local_password",
+    "credentialsSet": true,
+    "passwordHashed": true,
+    "emailVerified": true,
+    "uatEnvironmentOnly": true,
+    "hashAlgorithm": "bcryptjs",
+    "hashRounds": 12
+  },
+  "totalCasesAssigned": 25,
+  "assignedMrns": [
+    {
+      "mrn": "IMC-2026-02000",
+      "caseNumber": "CASE-2026-0001",
+      "patientName": "Najib الفلاح",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02001",
+      "caseNumber": "CASE-2026-0002",
+      "patientName": "Najib الجمعة",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02002",
+      "caseNumber": "CASE-2026-0003",
+      "patientName": "Noor الجمعة",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02003",
+      "caseNumber": "CASE-2026-0004",
+      "patientName": "Najib العنزي",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02004",
+      "caseNumber": "CASE-2026-0005",
+      "patientName": "Noor الزهراني",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02005",
+      "caseNumber": "CASE-2026-0006",
+      "patientName": "Ali الدوسري",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02006",
+      "caseNumber": "CASE-2026-0007",
+      "patientName": "Ali السويلم",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02007",
+      "caseNumber": "CASE-2026-0008",
+      "patientName": "Raqia العريفي",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02008",
+      "caseNumber": "CASE-2026-0009",
+      "patientName": "Noor الدخيل",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02009",
+      "caseNumber": "CASE-2026-0010",
+      "patientName": "Layla الشرقاوي",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02010",
+      "caseNumber": "CASE-2026-0011",
+      "patientName": "Noor القحطاني",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02011",
+      "caseNumber": "CASE-2026-0012",
+      "patientName": "Reda الراشد",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02012",
+      "caseNumber": "CASE-2026-0013",
+      "patientName": "Aisha الدخيل",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02013",
+      "caseNumber": "CASE-2026-0014",
+      "patientName": "Sarah الدوسري",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02014",
+      "caseNumber": "CASE-2026-0015",
+      "patientName": "Yasir الزهراني",
+      "caseType": "DISCHARGE_REFUSAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02015",
+      "caseNumber": "CASE-2026-0016",
+      "patientName": "Ibrahim المطيري",
+      "caseType": "GENERAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02016",
+      "caseNumber": "CASE-2026-0017",
+      "patientName": "Umar الخثلان",
+      "caseType": "GENERAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02017",
+      "caseNumber": "CASE-2026-0018",
+      "patientName": "Kamal العريفي",
+      "caseType": "GENERAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02018",
+      "caseNumber": "CASE-2026-0019",
+      "patientName": "Raqia الحربي",
+      "caseType": "GENERAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02019",
+      "caseNumber": "CASE-2026-0020",
+      "patientName": "Aisha الحويطي",
+      "caseType": "GENERAL",
+      "status": "OPEN"
+    },
+    {
+      "mrn": "IMC-2026-02020",
+      "caseNumber": "CASE-2026-0021",
+      "patientName": "Kamal الشمري",
+      "caseType": "GENERAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02021",
+      "caseNumber": "CASE-2026-0022",
+      "patientName": "Yasir الشهري",
+      "caseType": "GENERAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02022",
+      "caseNumber": "CASE-2026-0023",
+      "patientName": "Fatima الشهري",
+      "caseType": "GENERAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02023",
+      "caseNumber": "CASE-2026-0024",
+      "patientName": "Nadia الحمادي",
+      "caseType": "GENERAL",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "mrn": "IMC-2026-02024",
+      "caseNumber": "CASE-2026-0025",
+      "patientName": "Hana المطيري",
+      "caseType": "GENERAL",
+      "status": "IN_PROGRESS"
+    }
+  ],
+  "metadata": {
+    "uatTestData": true,
+    "dataClassification": "TESTING_ONLY",
+    "environment": "UAT",
+    "source": "create-pilot-physician"
+  },
+  "setupDetails": {
+    "capabilities": [
+      "Can login with password credentials",
+      "Can create informed consent documents",
+      "Can appear in PDF outputs",
+      "Can sign discharge refusal forms",
+      "Can approve workflow steps",
+      "Integrated into secure signing flow",
+      "Full audit trail support"
+    ],
+    "integrations": [
+      "Password authentication (bcrypt)",
+      "Informed Consent preview",
+      "Discharge Refusal workflow",
+      "PDF output",
+      "Secure Signing flow",
+      "Audit trail"
+    ],
+    "securityFeatures": [
+      "Password hashed with bcryptjs (12 rounds)",
+      "Email verified",
+      "UAT data classification",
+      "Production environment safeguards",
+      "No credentials exposed in logs"
+    ]
+  }
+}

@@ -84,6 +84,11 @@ const ROLE_PERMISSIONS: Record<string, InformedConsentPermission[]> = {
     ...BASE_PERMISSIONS,
     "consent:approve",
   ],
+  // Backward-compatible alias for existing tenant users stored as PHYSICIAN.
+  physician: [
+    ...BASE_PERMISSIONS,
+    "consent:approve",
+  ],
   consent_legal_reviewer: [
     "template:approve_legal",
     "wording:review",

@@ -1,0 +1,529 @@
+
+> @wathiqcare/web@0.1.1 build
+> npm run prisma:generate && node scripts/run-sql-migrations.cjs && next build && node scripts/write-deterministic-routes-manifest.cjs
+
+
+> @wathiqcare/web@0.1.1 prisma:generate
+> npx prisma generate --schema=./prisma/schema.prisma
+
+Prisma schema loaded from prisma\schema.prisma
+
+ظ£¤ Generated Prisma Client (v6.19.2) to .\..\..\node_modules\@prisma\client in 2.85s
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+
+[sql-migrations] Running 25 SQL migration file(s)...
+[sql-migrations]   0001_discharge_refusal_cases.sql ... WARN: Exit code null
+[sql-migrations]   0002_saas_license_tenant_admin.sql ... WARN: Exit code null
+[sql-migrations]   0003_user_type_platform_split.sql ... WARN: Exit code null
+[sql-migrations]   0004_magic_link_auth.sql ... WARN: Exit code null
+[sql-migrations]   0005_tenant_allowed_domains.sql ... WARN: Exit code null
+[sql-migrations]   0006_platform_api_access_logs.sql ... WARN: Exit code null
+[sql-migrations]   0007_password_auth.sql ... WARN: Exit code null
+[sql-migrations]   0008_tenant_branding.sql ... WARN: Exit code null
+[sql-migrations]   0009_discharge_case_legal_artifact.sql ... WARN: Exit code null
+[sql-migrations]   0010_notification_fallback_system.sql ... WARN: Exit code null
+[sql-migrations]   0011_saudi_compliance_foundation.sql ... WARN: Exit code null
+[sql-migrations]   0012_platform_tenant_bootstrap.sql ... WARN: Exit code null
+[sql-migrations]   0013_tenant_auth_config.sql ... WARN: Exit code null
+[sql-migrations]   0014_production_backfill_missing_tables.sql ... WARN: Exit code null
+[sql-migrations]   0015_non_destructive_operational_tables.sql ... WARN: Exit code null
+[sql-migrations]   0016_promissory_notes_module.sql ... WARN: Exit code null
+[sql-migrations]   0017_medical_consent_library_engine.sql ... WARN: Exit code null
+[sql-migrations]   0018_phase2_medico_legal_consent_intelligence.sql ... WARN: Exit code null
+[sql-migrations]   0019_enterprise_specialty_knowledge_signatures.sql ... WARN: Exit code null
+[sql-migrations]   0020_approved_wording_governance.sql ... WARN: Exit code null
+[sql-migrations]   0021_subscriber_module_access.sql ... WARN: Exit code null
+[sql-migrations]   0022_feature_flag_overrides.sql ... WARN: Exit code null
+[sql-migrations]   0023_module_usage_events.sql ... WARN: Exit code null
+[sql-migrations]   0024_enterprise_consent_templates.sql ... WARN: Exit code null
+[sql-migrations]   0025_trakcare_real_integration_foundation.sql ... WARN: Exit code null
+[sql-migrations] Completed with 25 warning(s). Warnings are expected for tables/columns that already exist.
+ظû▓ Next.js 16.2.4 (Turbopack)
+- Environments: .env.production.local, .env.local
+
+  Creating an optimized production build ...
+Turbopack build encountered 1 warnings:
+./apps/web/next.config.js
+Encountered unexpected file in NFT list
+A file was traced that indicates that the whole project was traced unintentionally. Somewhere in the import trace below, there are:
+- filesystem operations (like path.join, path.resolve or fs.readFile), or
+- very dynamic requires (like require('./' + foo)).
+To resolve this, you can
+- remove them if possible, or
+- only use them in development, or
+- make sure they are statically scoped to some subfolder: path.join(process.cwd(), 'data', bar), or
+- add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
+
+Import trace:
+  App Route:
+    ./apps/web/next.config.js
+    ./apps/web/src/lib/server/legal-case-pdf-service.ts
+    ./apps/web/app/api/cases/[caseId]/pdf/[version]/preview/route.ts
+
+
+ظ£ô Compiled successfully in 43s
+  Running TypeScript ...
+  Finished TypeScript in 83s ...
+  Collecting page data using 7 workers ...
+[prisma] environment validation status: DATABASE_URL=set, DATABASE_URL_POOLED=set, DATABASE_URL_UNPOOLED=set, NEXTAUTH_SECRET=set, JWT_SECRET_KEY=set, BASE_URL=set, APP_URL=set, STORAGE_PROVIDER=set, STORAGE_BUCKET=set
+[prisma] environment validation status: DATABASE_URL=set, DATABASE_URL_POOLED=set, DATABASE_URL_UNPOOLED=set, NEXTAUTH_SECRET=set, JWT_SECRET_KEY=set, BASE_URL=set, APP_URL=set, STORAGE_PROVIDER=set, STORAGE_BUCKET=set
+[prisma] environment validation status: DATABASE_URL=set, DATABASE_URL_POOLED=set, DATABASE_URL_UNPOOLED=set, NEXTAUTH_SECRET=set, JWT_SECRET_KEY=set, BASE_URL=set, APP_URL=set, STORAGE_PROVIDER=set, STORAGE_BUCKET=set
+[prisma] environment validation status: DATABASE_URL=set, DATABASE_URL_POOLED=set, DATABASE_URL_UNPOOLED=set, NEXTAUTH_SECRET=set, JWT_SECRET_KEY=set, BASE_URL=set, APP_URL=set, STORAGE_PROVIDER=set, STORAGE_BUCKET=set
+[prisma] environment validation status: DATABASE_URL=set, DATABASE_URL_POOLED=set, DATABASE_URL_UNPOOLED=set, NEXTAUTH_SECRET=set, JWT_SECRET_KEY=set, BASE_URL=set, APP_URL=set, STORAGE_PROVIDER=set, STORAGE_BUCKET=set
+[prisma] environment validation status: DATABASE_URL=set, DATABASE_URL_POOLED=set, DATABASE_URL_UNPOOLED=set, NEXTAUTH_SECRET=set, JWT_SECRET_KEY=set, BASE_URL=set, APP_URL=set, STORAGE_PROVIDER=set, STORAGE_BUCKET=set
+[prisma] environment validation status: DATABASE_URL=set, DATABASE_URL_POOLED=set, DATABASE_URL_UNPOOLED=set, NEXTAUTH_SECRET=set, JWT_SECRET_KEY=set, BASE_URL=set, APP_URL=set, STORAGE_PROVIDER=set, STORAGE_BUCKET=set
+  Generating static pages using 7 workers (0/121) ...
+  Generating static pages using 7 workers (30/121) 
+  Generating static pages using 7 workers (60/121) 
+  Generating static pages using 7 workers (90/121) 
+ظ£ô Generating static pages using 7 workers (121/121) in 1802ms
+  Finalizing page optimization ...
+
+Route (app)
+ظ¤î ╞ْ /
+ظ¤£ ╞ْ /_not-found
+ظ¤£ ╞ْ /[lang]
+ظ¤£ ╞ْ /[lang]/contact
+ظ¤£ ╞ْ /[lang]/login
+ظ¤£ ╞ْ /[lang]/privacy
+ظ¤£ ╞ْ /[lang]/request-demo
+ظ¤£ ╞ْ /[lang]/terms
+ظ¤£ ╞ْ /admin
+ظ¤£ ╞ْ /admin/backups
+ظ¤£ ╞ْ /admin/data-residency
+ظ¤£ ╞ْ /admin/demo-credentials
+ظ¤£ ╞ْ /admin/incidents
+ظ¤£ ╞ْ /admin/make-import
+ظ¤£ ╞ْ /admin/policy-attestations
+ظ¤£ ╞ْ /admin/privacy
+ظ¤£ ╞ْ /admin/remediation-tracker
+ظ¤£ ╞ْ /admin/reports-access
+ظ¤£ ╞ْ /admin/retention
+ظ¤£ ╞ْ /admin/security
+ظ¤£ ╞ْ /admin/third-party-risk
+ظ¤£ ╞ْ /admin/training-compliance
+ظ¤£ ╞ْ /admin/ui-showcase
+ظ¤£ ╞ْ /alerts
+ظ¤£ ╞ْ /analytics
+ظ¤£ ╞ْ /api/acknowledgment/cases/[caseId]/[sessionId]/verify
+ظ¤£ ╞ْ /api/admin/backups
+ظ¤£ ╞ْ /api/admin/data-residency
+ظ¤£ ╞ْ /api/admin/export-approvals
+ظ¤£ ╞ْ /api/admin/incidents
+ظ¤£ ╞ْ /api/admin/policy-attestations
+ظ¤£ ╞ْ /api/admin/privacy
+ظ¤£ ╞ْ /api/admin/remediation-tracker
+ظ¤£ ╞ْ /api/admin/reports-access
+ظ¤£ ╞ْ /api/admin/retention
+ظ¤£ ╞ْ /api/admin/security
+ظ¤£ ╞ْ /api/admin/setup/bootstrap
+ظ¤£ ╞ْ /api/admin/setup/status
+ظ¤£ ╞ْ /api/admin/third-party-risk
+ظ¤£ ╞ْ /api/admin/training-compliance
+ظ¤£ ╞ْ /api/analytics/events
+ظ¤£ ╞ْ /api/audit-log
+ظ¤£ ╞ْ /api/auth/change-password
+ظ¤£ ╞ْ /api/auth/config
+ظ¤£ ╞ْ /api/auth/email/verify-confirm
+ظ¤£ ╞ْ /api/auth/email/verify-request
+ظ¤£ ╞ْ /api/auth/forgot-password
+ظ¤£ ╞ْ /api/auth/login
+ظ¤£ ╞ْ /api/auth/logout
+ظ¤£ ╞ْ /api/auth/magic-link/request
+ظ¤£ ╞ْ /api/auth/magic-link/verify
+ظ¤£ ╞ْ /api/auth/me
+ظ¤£ ╞ْ /api/auth/microsoft
+ظ¤£ ╞ْ /api/auth/password/login
+ظ¤£ ╞ْ /api/auth/password/reset-confirm
+ظ¤£ ╞ْ /api/auth/password/reset-request
+ظ¤£ ╞ْ /api/auth/password/signup
+ظ¤£ ╞ْ /api/auth/reset-confirm
+ظ¤£ ╞ْ /api/auth/reset-password
+ظ¤£ ╞ْ /api/auth/reset-request
+ظ¤£ ╞ْ /api/auth/set-password
+ظ¤£ ╞ْ /api/auth/step-up/challenge
+ظ¤£ ╞ْ /api/auth/step-up/status
+ظ¤£ ╞ْ /api/auth/step-up/verify
+ظ¤£ ╞ْ /api/billing/invoices
+ظ¤£ ╞ْ /api/billing/plans
+ظ¤£ ╞ْ /api/cases
+ظ¤£ ╞ْ /api/cases/[caseId]
+ظ¤£ ╞ْ /api/cases/[caseId]/ai-legal-intelligence
+ظ¤£ ╞ْ /api/cases/[caseId]/audit-log
+ظ¤£ ╞ْ /api/cases/[caseId]/documents
+ظ¤£ ╞ْ /api/cases/[caseId]/forms/[formType]/generate
+ظ¤£ ╞ْ /api/cases/[caseId]/generate-pdf
+ظ¤£ ╞ْ /api/cases/[caseId]/legal-package
+ظ¤£ ╞ْ /api/cases/[caseId]/legal-package/court-bundle
+ظ¤£ ╞ْ /api/cases/[caseId]/legal-package/download
+ظ¤£ ╞ْ /api/cases/[caseId]/legal-package/generate
+ظ¤£ ╞ْ /api/cases/[caseId]/legal-package/secure-signing
+ظ¤£ ╞ْ /api/cases/[caseId]/legal-package/send-signature
+ظ¤£ ╞ْ /api/cases/[caseId]/legal-package/signature-status
+ظ¤£ ╞ْ /api/cases/[caseId]/legal-readiness
+ظ¤£ ╞ْ /api/cases/[caseId]/pdf
+ظ¤£ ╞ْ /api/cases/[caseId]/pdf/[version]/download
+ظ¤£ ╞ْ /api/cases/[caseId]/pdf/[version]/preview
+ظ¤£ ╞ْ /api/cases/[caseId]/pdf/versions
+ظ¤£ ╞ْ /api/cases/[caseId]/workflow
+ظ¤£ ╞ْ /api/demo-request
+ظ¤£ ╞ْ /api/discharge/[...path]
+ظ¤£ ╞ْ /api/discharge/audit/[caseId]
+ظ¤£ ╞ْ /api/discharge/cases
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/acknowledgment/[sessionId]/verify
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/acknowledgment/methods
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/acknowledgment/start
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/audit-chain
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/consent
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/documents
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/home-healthcare-agreement/preview
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/legal-escalation
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/legal-escalation/notes
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/legal-escalation/priority
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/legal-escalation/resolve
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/legal-package
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/legal-readiness
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/post-discharge-care-model
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/post-discharge-care-models
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/presentation
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/readiness
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/secure-link
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/secure-link/diagnostics
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/secure-links
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/secure-links/[linkId]
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/secure-signing-link
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/signature
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/witness
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/workflow
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/workflow/actions
+ظ¤£ ╞ْ /api/discharge/cases/[caseId]/workflow/preview
+ظ¤£ ╞ْ /api/discharge/cases/legal-escalation
+ظ¤£ ╞ْ /api/discharge/forms-library/medical-legal/templates
+ظ¤£ ╞ْ /api/discharge/reports/compliance-dashboard
+ظ¤£ ╞ْ /api/discharge/reports/legal-risk-dashboard
+ظ¤£ ╞ْ /api/discharge/reports/refusal-quality
+ظ¤£ ╞ْ /api/discharge/secure/[token]
+ظ¤£ ╞ْ /api/discharge/secure/[token]/decision
+ظ¤£ ╞ْ /api/discharge/verify
+ظ¤£ ╞ْ /api/documents/[documentId]
+ظ¤£ ╞ْ /api/documents/[documentId]/download
+ظ¤£ ╞ْ /api/documents/[documentId]/preview
+ظ¤£ ╞ْ /api/documents/[documentId]/send-otp
+ظ¤£ ╞ْ /api/documents/[documentId]/sign
+ظ¤£ ╞ْ /api/documents/[documentId]/verify-otp
+ظ¤£ ╞ْ /api/documents/[documentId]/view
+ظ¤£ ╞ْ /api/documents/[documentId]/witness-sign
+ظ¤£ ╞ْ /api/emails/[...path]
+ظ¤£ ╞ْ /api/emails/send
+ظ¤£ ╞ْ /api/emails/send-workflow-notification
+ظ¤£ ╞ْ /api/forms/templates
+ظ¤£ ╞ْ /api/forms/templates/[formType]
+ظ¤£ ╞ْ /api/health
+ظ¤£ ╞ْ /api/informed-consents/audit
+ظ¤£ ╞ْ /api/informed-consents/patient
+ظ¤£ ╞ْ /api/informed-consents/pdf
+ظ¤£ ╞ْ /api/informed-consents/signatures
+ظ¤£ ╞ْ /api/informed-consents/templates
+ظ¤£ ╞ْ /api/integrations/[connector]/health
+ظ¤£ ╞ْ /api/integrations/[connector]/history
+ظ¤£ ╞ْ /api/integrations/[connector]/sync
+ظ¤£ ╞ْ /api/integrations/alerts
+ظ¤£ ╞ْ /api/integrations/runs
+ظ¤£ ╞ْ /api/integrations/scheduler/debug
+ظ¤£ ╞ْ /api/integrations/sla/status
+ظ¤£ ╞ْ /api/integrations/status
+ظ¤£ ╞ْ /api/integrations/trakcare/status
+ظ¤£ ╞ْ /api/launch/status
+ظ¤£ ╞ْ /api/legal/alerts
+ظ¤£ ╞ْ /api/legal/alerts/[alertId]/acknowledge
+ظ¤£ ╞ْ /api/legal/notifications/settings
+ظ¤£ ╞ْ /api/modules/informed-consents
+ظ¤£ ╞ْ /api/modules/informed-consents/documents
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/ai-assist
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/approve
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/emr-mapping
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/evidence-package
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/finalize
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/intelligence
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/pdf
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/secure-signing
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/sign
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/signature-orchestration
+ظ¤£ ╞ْ /api/modules/informed-consents/documents/[id]/timeline
+ظ¤£ ╞ْ /api/modules/informed-consents/evidence/verify/[token]
+ظ¤£ ╞ْ /api/modules/informed-consents/generate-draft
+ظ¤£ ╞ْ /api/modules/informed-consents/library
+ظ¤£ ╞ْ /api/modules/informed-consents/patients/[patientId]/encounters
+ظ¤£ ╞ْ /api/modules/informed-consents/patients/[patientId]/encounters/[encounterId]/sync-trakcare
+ظ¤£ ╞ْ /api/modules/informed-consents/patients/search
+ظ¤£ ╞ْ /api/modules/informed-consents/procedures
+ظ¤£ ╞ْ /api/modules/informed-consents/reports/governance
+ظ¤£ ╞ْ /api/modules/informed-consents/templates
+ظ¤£ ╞ْ /api/modules/informed-consents/wording-governance
+ظ¤£ ╞ْ /api/modules/promissory-notes
+ظ¤£ ╞ْ /api/modules/promissory-notes/[id]
+ظ¤£ ╞ْ /api/modules/promissory-notes/[id]/pdf
+ظ¤£ ╞ْ /api/operations/cases/[caseId]/assign
+ظ¤£ ╞ْ /api/operations/cases/[caseId]/step
+ظ¤£ ╞ْ /api/operations/cases/[caseId]/tracker
+ظ¤£ ╞ْ /api/operations/dashboard
+ظ¤£ ╞ْ /api/operations/inbox/[department]
+ظ¤£ ╞ْ /api/operations/members
+ظ¤£ ╞ْ /api/operations/notifications
+ظ¤£ ╞ْ /api/operations/notifications/read
+ظ¤£ ╞ْ /api/platform/bootstrap
+ظ¤£ ╞ْ /api/platform/overview
+ظ¤£ ╞ْ /api/platform/setup/status
+ظ¤£ ╞ْ /api/platform/tenants
+ظ¤£ ╞ْ /api/platform/tenants/[tenantId]/admins/create
+ظ¤£ ╞ْ /api/platform/tenants/[tenantId]/feature-flags
+ظ¤£ ╞ْ /api/platform/tenants/[tenantId]/module-access
+ظ¤£ ╞ْ /api/platform/tenants/[tenantId]/status
+ظ¤£ ╞ْ /api/platform/tenants/[tenantId]/subscription
+ظ¤£ ╞ْ /api/platform/users
+ظ¤£ ╞ْ /api/platform/users/[userId]/force-logout
+ظ¤£ ╞ْ /api/platform/users/[userId]/reset-mfa
+ظ¤£ ╞ْ /api/platform/users/[userId]/reset-password
+ظ¤£ ╞ْ /api/platform/users/create
+ظ¤£ ╞ْ /api/platform/users/force-password-reset-all
+ظ¤£ ╞ْ /api/privacy/dsr
+ظ¤£ ╞ْ /api/privacy/dsr/[requestId]
+ظ¤£ ╞ْ /api/shc-compliance
+ظ¤£ ╞ْ /api/sign/[token]/context
+ظ¤£ ╞ْ /api/sign/[token]/request-otp
+ظ¤£ ╞ْ /api/sign/[token]/verify-otp
+ظ¤£ ╞ْ /api/subscription
+ظ¤£ ╞ْ /api/subscription/summary
+ظ¤£ ╞ْ /api/subscriptions
+ظ¤£ ╞ْ /api/system/inspect
+ظ¤£ ╞ْ /api/tenant/branding
+ظ¤£ ╞ْ /api/tenant/branding/logo
+ظ¤£ ╞ْ /api/tenant/roles
+ظ¤£ ╞ْ /api/tenant/users
+ظ¤£ ╞ْ /api/tenant/users/[userId]/force-logout
+ظ¤£ ╞ْ /api/tenant/users/[userId]/resend-invite
+ظ¤£ ╞ْ /api/tenant/users/[userId]/reset-mfa
+ظ¤£ ╞ْ /api/tenant/users/[userId]/reset-password
+ظ¤£ ╞ْ /api/tenant/users/create
+ظ¤£ ╞ْ /api/tenants
+ظ¤£ ╞ْ /api/tenants/[tenantId]
+ظ¤£ ╞ْ /api/tenants/[tenantId]/allowed-domains
+ظ¤£ ╞ْ /api/tenants/[tenantId]/departments
+ظ¤£ ╞ْ /api/tenants/[tenantId]/feature-flags
+ظ¤£ ╞ْ /api/tenants/[tenantId]/members
+ظ¤£ ╞ْ /api/tenants/[tenantId]/module-access
+ظ¤£ ╞ْ /api/tenants/[tenantId]/roles
+ظ¤£ ╞ْ /api/tenants/[tenantId]/roles/[roleId]
+ظ¤£ ╞ْ /api/tenants/[tenantId]/roles/[roleId]/permissions
+ظ¤£ ╞ْ /api/tenants/[tenantId]/subscription
+ظ¤£ ╞ْ /api/tenants/[tenantId]/usage
+ظ¤£ ╞ْ /api/test-email
+ظ¤£ ╞ْ /api/trakcare/encounters/[encounterId]/allergies
+ظ¤£ ╞ْ /api/trakcare/encounters/[encounterId]/conditions
+ظ¤£ ╞ْ /api/trakcare/encounters/[encounterId]/medications
+ظ¤£ ╞ْ /api/trakcare/encounters/[encounterId]/observations
+ظ¤£ ╞ْ /api/trakcare/patient/[mrn]
+ظ¤£ ╞ْ /api/trakcare/patient/[mrn]/encounters
+ظ¤£ ╞ْ /api/trakcare/practitioners/[practitionerId]
+ظ¤£ ╞ْ /api/webhooks/pdffiller/signature-completed
+ظ¤£ ╞ْ /api/workflow/config
+ظ¤£ ظùï /apple-icon.png
+ظ¤£ ╞ْ /archive
+ظ¤£ ╞ْ /audit-log
+ظ¤£ ╞ْ /auth/magic
+ظ¤£ ╞ْ /auth/password-reset
+ظ¤£ ╞ْ /bundles
+ظ¤£ ╞ْ /cases
+ظ¤£ ╞ْ /cases/[id]
+ظ¤£ ╞ْ /cases/[id]/financial-notice
+ظ¤£ ╞ْ /cases/[id]/home-healthcare-agreement
+ظ¤£ ╞ْ /cases/[id]/informed-consent
+ظ¤£ ╞ْ /cases/[id]/refusal-form
+ظ¤£ ╞ْ /cases/[id]/workspace-v2
+ظ¤£ ╞ْ /cases/new
+ظ¤£ ╞ْ /compliance
+ظ¤£ ╞ْ /consents
+ظ¤£ ╞ْ /consents/new
+ظ¤£ ╞ْ /dashboard
+ظ¤£ ╞ْ /dashboards
+ظ¤£ ╞ْ /dashboards/legal-operational-overview
+ظ¤£ ╞ْ /dashboards/legal-risk
+ظ¤£ ╞ْ /demo
+ظ¤£ ╞ْ /demo/enterprise-legal-review
+ظ¤£ ╞ْ /demo/legal-report
+ظ¤£ ╞ْ /discharge/secure/[token]
+ظ¤£ ╞ْ /doctor/dashboard
+ظ¤£ ╞ْ /documents
+ظ¤£ ╞ْ /emr-integration
+ظ¤£ ╞ْ /escalation-timeline
+ظ¤£ ╞ْ /finance/dashboard
+ظ¤£ ╞ْ /first-login
+ظ¤£ ╞ْ /forgot-password
+ظ¤£ ╞ْ /health
+ظ¤£ ╞ْ /icd11-validator
+ظ¤£ ظùï /icon.png
+ظ¤£ ╞ْ /launch-status
+ظ¤£ ╞ْ /legal-alerts
+ظ¤£ ╞ْ /legal-case-file
+ظ¤£ ╞ْ /legal-escalation
+ظ¤£ ╞ْ /legal-risk
+ظ¤£ ╞ْ /legal/dashboard
+ظ¤£ ╞ْ /login
+ظ¤£ ظùï /manifest.webmanifest
+ظ¤£ ╞ْ /medical-director/dashboard
+ظ¤£ ╞ْ /modules
+ظ¤£ ╞ْ /modules/discharge-refusal
+ظ¤£ ╞ْ /modules/discharge-refusal/cases
+ظ¤£ ╞ْ /modules/discharge-refusal/dashboard
+ظ¤£ ╞ْ /modules/informed-consents
+ظ¤£ ╞ْ /modules/informed-consents/[id]/evidence-package-export
+ظ¤£ ╞ْ /modules/informed-consents/[id]/final-pdf-viewer
+ظ¤£ ╞ْ /modules/informed-consents/[id]/interpreter-confirmation
+ظ¤£ ╞ْ /modules/informed-consents/[id]/legal-audit-trail
+ظ¤£ ╞ْ /modules/informed-consents/[id]/patient-review
+ظ¤£ ╞ْ /modules/informed-consents/[id]/preview
+ظ¤£ ╞ْ /modules/informed-consents/[id]/preview-ar
+ظ¤£ ╞ْ /modules/informed-consents/[id]/preview-en
+ظ¤£ ╞ْ /modules/informed-consents/[id]/signature
+ظ¤£ ╞ْ /modules/informed-consents/[id]/witness-confirmation
+ظ¤£ ╞ْ /modules/informed-consents/archive
+ظ¤£ ╞ْ /modules/informed-consents/consent-creation-workflow
+ظ¤£ ╞ْ /modules/informed-consents/create
+ظ¤£ ╞ْ /modules/informed-consents/evidence-verify/[token]
+ظ¤£ ╞ْ /modules/informed-consents/governance
+ظ¤£ ╞ْ /modules/informed-consents/governance-reports
+ظ¤£ ╞ْ /modules/informed-consents/list
+ظ¤£ ╞ْ /modules/informed-consents/template-builder
+ظ¤£ ╞ْ /modules/informed-consents/template-registry
+ظ¤£ ╞ْ /modules/informed-consents/templates
+ظ¤£ ╞ْ /modules/informed-consents/wording-governance
+ظ¤£ ╞ْ /modules/promissory-notes
+ظ¤£ ╞ْ /modules/promissory-notes/[id]/preview
+ظ¤£ ╞ْ /modules/promissory-notes/archive
+ظ¤£ ╞ْ /modules/promissory-notes/create
+ظ¤£ ╞ْ /modules/promissory-notes/list
+ظ¤£ ╞ْ /nurse/dashboard
+ظ¤£ ╞ْ /operations
+ظ¤£ ╞ْ /operations/inboxes
+ظ¤£ ╞ْ /platform
+ظ¤£ ╞ْ /platform/audit
+ظ¤£ ╞ْ /platform/billing
+ظ¤£ ╞ْ /platform/health
+ظ¤£ ╞ْ /platform/settings
+ظ¤£ ╞ْ /platform/subscriptions
+ظ¤£ ╞ْ /platform/support
+ظ¤£ ╞ْ /platform/tenants
+ظ¤£ ╞ْ /platform/users
+ظ¤£ ╞ْ /refusal-forms
+ظ¤£ ╞ْ /reports
+ظ¤£ ╞ْ /request-demo
+ظ¤£ ╞ْ /reset-password
+ظ¤£ ╞ْ /secure/[token]
+ظ¤£ ╞ْ /settings
+ظ¤£ ╞ْ /sign/[token]
+ظ¤£ ╞ْ /super-admin
+ظ¤£ ╞ْ /tenant/dashboard
+ظ¤£ ╞ْ /tenant/security
+ظ¤£ ╞ْ /tenant/users
+ظ¤£ ╞ْ /uat/consent-demo-results
+ظ¤¤ ╞ْ /users
+
+
+╞ْ Proxy (Middleware)
+
+ظùï  (Static)   prerendered as static content
+╞ْ  (Dynamic)  server-rendered on demand
+
+[routes-manifest] wrote C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.next\routes-manifest-deterministic.json
+[routes-manifest] wrote /vercel/path0/.next/routes-manifest-deterministic.json
+[routes-manifest] wrote /vercel/path0/vercel/path0/.next/routes-manifest-deterministic.json
+[routes-manifest] wrote /vercel/path1/.next/routes-manifest-deterministic.json
+[routes-manifest] wrote /vercel/path1/vercel/path1/.next/routes-manifest-deterministic.json
+[routes-manifest] wrote /vercel/path0/etc/os-release
+[routes-manifest] wrote /vercel/path0/usr/lib/os-release
+[routes-manifest] wrote /vercel/path1/etc/os-release
+[routes-manifest] wrote /vercel/path1/usr/lib/os-release
+[routes-manifest] wrote /vercel/path1/vercel/path1/package.json
+[routes-manifest] wrote /vercel/path0/vercel/path0/package.json
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.next -> /vercel/path0/vercel/path0/.next (.next copy (/vercel/path0/vercel/path0))
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.next -> /vercel/path1/vercel/path1/.next (.next copy (/vercel/path1/vercel/path1))
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.env.local -> /vercel/path0/vercel/path0/.env.local (app root mirror (/vercel/path0/vercel/path0): .env.local)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.env.local -> /vercel/path1/vercel/path1/.env.local (app root mirror (/vercel/path1/vercel/path1): .env.local)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.env.prod.temp -> /vercel/path0/vercel/path0/.env.prod.temp (app root mirror (/vercel/path0/vercel/path0): .env.prod.temp)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.env.prod.temp -> /vercel/path1/vercel/path1/.env.prod.temp (app root mirror (/vercel/path1/vercel/path1): .env.prod.temp)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.env.production.local -> /vercel/path0/vercel/path0/.env.production.local (app root mirror (/vercel/path0/vercel/path0): .env.production.local)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.env.production.local -> /vercel/path1/vercel/path1/.env.production.local (app root mirror (/vercel/path1/vercel/path1): .env.production.local)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.gitignore -> /vercel/path0/vercel/path0/.gitignore (app root mirror (/vercel/path0/vercel/path0): .gitignore)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.gitignore -> /vercel/path1/vercel/path1/.gitignore (app root mirror (/vercel/path1/vercel/path1): .gitignore)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.tsconfig.json.swp -> /vercel/path0/vercel/path0/.tsconfig.json.swp (app root mirror (/vercel/path0/vercel/path0): .tsconfig.json.swp)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.tsconfig.json.swp -> /vercel/path1/vercel/path1/.tsconfig.json.swp (app root mirror (/vercel/path1/vercel/path1): .tsconfig.json.swp)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.vercel -> /vercel/path0/vercel/path0/.vercel (app root mirror (/vercel/path0/vercel/path0): .vercel)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\.vercel -> /vercel/path1/vercel/path1/.vercel (app root mirror (/vercel/path1/vercel/path1): .vercel)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\app -> /vercel/path0/vercel/path0/app (app root mirror (/vercel/path0/vercel/path0): app)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\app -> /vercel/path1/vercel/path1/app (app root mirror (/vercel/path1/vercel/path1): app)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\artifacts -> /vercel/path0/vercel/path0/artifacts (app root mirror (/vercel/path0/vercel/path0): artifacts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\artifacts -> /vercel/path1/vercel/path1/artifacts (app root mirror (/vercel/path1/vercel/path1): artifacts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\build-output.txt -> /vercel/path0/vercel/path0/build-output.txt (app root mirror (/vercel/path0/vercel/path0): build-output.txt)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\build-output.txt -> /vercel/path1/vercel/path1/build-output.txt (app root mirror (/vercel/path1/vercel/path1): build-output.txt)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\contracts -> /vercel/path0/vercel/path0/contracts (app root mirror (/vercel/path0/vercel/path0): contracts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\contracts -> /vercel/path1/vercel/path1/contracts (app root mirror (/vercel/path1/vercel/path1): contracts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\DESIGN_SYSTEM.md -> /vercel/path0/vercel/path0/DESIGN_SYSTEM.md (app root mirror (/vercel/path0/vercel/path0): DESIGN_SYSTEM.md)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\DESIGN_SYSTEM.md -> /vercel/path1/vercel/path1/DESIGN_SYSTEM.md (app root mirror (/vercel/path1/vercel/path1): DESIGN_SYSTEM.md)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\diff_output.txt -> /vercel/path0/vercel/path0/diff_output.txt (app root mirror (/vercel/path0/vercel/path0): diff_output.txt)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\diff_output.txt -> /vercel/path1/vercel/path1/diff_output.txt (app root mirror (/vercel/path1/vercel/path1): diff_output.txt)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\eslint.config.mjs -> /vercel/path0/vercel/path0/eslint.config.mjs (app root mirror (/vercel/path0/vercel/path0): eslint.config.mjs)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\eslint.config.mjs -> /vercel/path1/vercel/path1/eslint.config.mjs (app root mirror (/vercel/path1/vercel/path1): eslint.config.mjs)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\INFORMED_CONSENT_WORDING_GOVERNANCE.md -> /vercel/path0/vercel/path0/INFORMED_CONSENT_WORDING_GOVERNANCE.md (app root mirror (/vercel/path0/vercel/path0): INFORMED_CONSENT_WORDING_GOVERNANCE.md)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\INFORMED_CONSENT_WORDING_GOVERNANCE.md -> /vercel/path1/vercel/path1/INFORMED_CONSENT_WORDING_GOVERNANCE.md (app root mirror (/vercel/path1/vercel/path1): INFORMED_CONSENT_WORDING_GOVERNANCE.md)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\module-access.spec.ts -> /vercel/path0/vercel/path0/module-access.spec.ts (app root mirror (/vercel/path0/vercel/path0): module-access.spec.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\module-access.spec.ts -> /vercel/path1/vercel/path1/module-access.spec.ts (app root mirror (/vercel/path1/vercel/path1): module-access.spec.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\next-env.d.ts -> /vercel/path0/vercel/path0/next-env.d.ts (app root mirror (/vercel/path0/vercel/path0): next-env.d.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\next-env.d.ts -> /vercel/path1/vercel/path1/next-env.d.ts (app root mirror (/vercel/path1/vercel/path1): next-env.d.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\next.config.js -> /vercel/path0/vercel/path0/next.config.js (app root mirror (/vercel/path0/vercel/path0): next.config.js)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\next.config.js -> /vercel/path1/vercel/path1/next.config.js (app root mirror (/vercel/path1/vercel/path1): next.config.js)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\next.config.ts.bak -> /vercel/path0/vercel/path0/next.config.ts.bak (app root mirror (/vercel/path0/vercel/path0): next.config.ts.bak)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\next.config.ts.bak -> /vercel/path1/vercel/path1/next.config.ts.bak (app root mirror (/vercel/path1/vercel/path1): next.config.ts.bak)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\package.json -> /vercel/path0/vercel/path0/package.json (app root mirror (/vercel/path0/vercel/path0): package.json)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\package.json -> /vercel/path1/vercel/path1/package.json (app root mirror (/vercel/path1/vercel/path1): package.json)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\postcss.config.mjs -> /vercel/path0/vercel/path0/postcss.config.mjs (app root mirror (/vercel/path0/vercel/path0): postcss.config.mjs)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\postcss.config.mjs -> /vercel/path1/vercel/path1/postcss.config.mjs (app root mirror (/vercel/path1/vercel/path1): postcss.config.mjs)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\prisma -> /vercel/path0/vercel/path0/prisma (app root mirror (/vercel/path0/vercel/path0): prisma)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\prisma -> /vercel/path1/vercel/path1/prisma (app root mirror (/vercel/path1/vercel/path1): prisma)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\proxy.ts -> /vercel/path0/vercel/path0/proxy.ts (app root mirror (/vercel/path0/vercel/path0): proxy.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\proxy.ts -> /vercel/path1/vercel/path1/proxy.ts (app root mirror (/vercel/path1/vercel/path1): proxy.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\public -> /vercel/path0/vercel/path0/public (app root mirror (/vercel/path0/vercel/path0): public)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\public -> /vercel/path1/vercel/path1/public (app root mirror (/vercel/path1/vercel/path1): public)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\query.js -> /vercel/path0/vercel/path0/query.js (app root mirror (/vercel/path0/vercel/path0): query.js)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\query.js -> /vercel/path1/vercel/path1/query.js (app root mirror (/vercel/path1/vercel/path1): query.js)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\railway_logs.txt -> /vercel/path0/vercel/path0/railway_logs.txt (app root mirror (/vercel/path0/vercel/path0): railway_logs.txt)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\railway_logs.txt -> /vercel/path1/vercel/path1/railway_logs.txt (app root mirror (/vercel/path1/vercel/path1): railway_logs.txt)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\README.md -> /vercel/path0/vercel/path0/README.md (app root mirror (/vercel/path0/vercel/path0): README.md)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\README.md -> /vercel/path1/vercel/path1/README.md (app root mirror (/vercel/path1/vercel/path1): README.md)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\scripts -> /vercel/path0/vercel/path0/scripts (app root mirror (/vercel/path0/vercel/path0): scripts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\scripts -> /vercel/path1/vercel/path1/scripts (app root mirror (/vercel/path1/vercel/path1): scripts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\smoke-modules.spec.ts -> /vercel/path0/vercel/path0/smoke-modules.spec.ts (app root mirror (/vercel/path0/vercel/path0): smoke-modules.spec.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\smoke-modules.spec.ts -> /vercel/path1/vercel/path1/smoke-modules.spec.ts (app root mirror (/vercel/path1/vercel/path1): smoke-modules.spec.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\smoke.spec.ts -> /vercel/path0/vercel/path0/smoke.spec.ts (app root mirror (/vercel/path0/vercel/path0): smoke.spec.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\smoke.spec.ts -> /vercel/path1/vercel/path1/smoke.spec.ts (app root mirror (/vercel/path1/vercel/path1): smoke.spec.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\src -> /vercel/path0/vercel/path0/src (app root mirror (/vercel/path0/vercel/path0): src)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\src -> /vercel/path1/vercel/path1/src (app root mirror (/vercel/path1/vercel/path1): src)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\tailwind.config.ts -> /vercel/path0/vercel/path0/tailwind.config.ts (app root mirror (/vercel/path0/vercel/path0): tailwind.config.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\tailwind.config.ts -> /vercel/path1/vercel/path1/tailwind.config.ts (app root mirror (/vercel/path1/vercel/path1): tailwind.config.ts)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\templates -> /vercel/path0/vercel/path0/templates (app root mirror (/vercel/path0/vercel/path0): templates)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\templates -> /vercel/path1/vercel/path1/templates (app root mirror (/vercel/path1/vercel/path1): templates)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\test-results -> /vercel/path0/vercel/path0/test-results (app root mirror (/vercel/path0/vercel/path0): test-results)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\test-results -> /vercel/path1/vercel/path1/test-results (app root mirror (/vercel/path1/vercel/path1): test-results)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\tests -> /vercel/path0/vercel/path0/tests (app root mirror (/vercel/path0/vercel/path0): tests)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\tests -> /vercel/path1/vercel/path1/tests (app root mirror (/vercel/path1/vercel/path1): tests)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\tmp-generate-reset-links.mjs -> /vercel/path0/vercel/path0/tmp-generate-reset-links.mjs (app root mirror (/vercel/path0/vercel/path0): tmp-generate-reset-links.mjs)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\tmp-generate-reset-links.mjs -> /vercel/path1/vercel/path1/tmp-generate-reset-links.mjs (app root mirror (/vercel/path1/vercel/path1): tmp-generate-reset-links.mjs)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\tsconfig.json -> /vercel/path0/vercel/path0/tsconfig.json (app root mirror (/vercel/path0/vercel/path0): tsconfig.json)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\tsconfig.json -> /vercel/path1/vercel/path1/tsconfig.json (app root mirror (/vercel/path1/vercel/path1): tsconfig.json)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\vercel.json -> /vercel/path0/vercel/path0/vercel.json (app root mirror (/vercel/path0/vercel/path0): vercel.json)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\vercel.json -> /vercel/path1/vercel/path1/vercel.json (app root mirror (/vercel/path1/vercel/path1): vercel.json)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\vercel_logs.txt -> /vercel/path0/vercel/path0/vercel_logs.txt (app root mirror (/vercel/path0/vercel/path0): vercel_logs.txt)
+[routes-manifest] copied C:\Users\pc\Documents\GitHub\wathiqcare-discharge-refusal\apps\web\vercel_logs.txt -> /vercel/path1/vercel/path1/vercel_logs.txt (app root mirror (/vercel/path1/vercel/path1): vercel_logs.txt)

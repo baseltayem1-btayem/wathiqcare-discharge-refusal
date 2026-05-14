@@ -46,6 +46,7 @@ type WorkflowStep =
 
 interface PatientData {
   id: string;
+  patientName?: string;
   caseId?: string;
   caseNumber?: string;
   caseType?: string;
@@ -178,9 +179,41 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
           `/api/modules/informed-consents/patients/search?q=${encodeURIComponent(query)}`
         ).catch(() => []);
 
-        setPatientSearchResults(Array.isArray(results) ? results : []);
+        const normalized = Array.isArray(results)
+          ? results
+              .filter((item): item is PatientData => Boolean(item && typeof item === "object"))
+              .map((item) => {
+                const mrn = item.mrn ?? item.medicalRecordNo ?? "";
+                const name = item.name ?? item.patientName ?? "";
+                return {
+                  id: item.id ?? mrn ?? "",
+                  caseId: item.caseId ?? "",
+                  caseNumber: item.caseNumber ?? "",
+                  caseType: item.caseType ?? "",
+                  department: item.department ?? "",
+                  diagnosis: item.diagnosis ?? "",
+                  assignedPhysicianNameEn: item.assignedPhysicianNameEn ?? "",
+                  assignedPhysicianNameAr: item.assignedPhysicianNameAr ?? "",
+                  assignedPhysicianEmail: item.assignedPhysicianEmail ?? "",
+                  medicalRecordNo: item.medicalRecordNo ?? mrn,
+                  mrn,
+                  name,
+                  dateOfBirth: item.dateOfBirth ?? "",
+                  gender: item.gender ?? "",
+                  nationalId: item.nationalId ?? "",
+                  iqamaNumber: item.iqamaNumber ?? "",
+                  mobileNumber: item.mobileNumber ?? "",
+                  emergencyContact: item.emergencyContact ?? "",
+                  emergencyContactPhone: item.emergencyContactPhone ?? "",
+                };
+              })
+              .filter((item) => Boolean(item.mrn || item.name))
+          : [];
+
+        setPatientSearchResults(normalized);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to search patients");
+        setPatientSearchResults([]);
       } finally {
         setLoading(false);
       }
@@ -491,9 +524,9 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
 
       <div className="space-y-2">
         {patientSearchResults.length > 0 ? (
-          patientSearchResults.map((patient) => (
+          patientSearchResults.map((patient, idx) => (
             <button
-              key={patient.id}
+              key={patient.id || patient.caseId || patient.mrn || `patient-${idx}`}
               onClick={() => {
                 setPatientData(patient);
                 loadEncounters(patient.mrn || patient.medicalRecordNo || patient.id);
@@ -501,11 +534,11 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
               }}
               className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all"
             >
-              <div className="font-semibold">{patient.name}</div>
-              <div className="text-sm text-gray-600">MRN: {patient.mrn}</div>
-              {patient.caseNumber ? <div className="text-sm text-gray-600">Case: {patient.caseNumber}</div> : null}
+              <div className="font-semibold">{patient.name || patient.patientName || "-"}</div>
+              <div className="text-sm text-gray-600">MRN: {patient.mrn || patient.medicalRecordNo || "-"}</div>
+              {patient.caseNumber ? <div className="text-sm text-gray-600">Case: {patient.caseNumber ?? ""}</div> : null}
               {patient.assignedPhysicianNameEn ? (
-                <div className="text-sm text-gray-600">Physician: {patient.assignedPhysicianNameEn}</div>
+                <div className="text-sm text-gray-600">Physician: {patient.assignedPhysicianNameEn ?? ""}</div>
               ) : null}
               {patient.dateOfBirth && <div className="text-sm text-gray-500">DOB: {patient.dateOfBirth}</div>}
             </button>
