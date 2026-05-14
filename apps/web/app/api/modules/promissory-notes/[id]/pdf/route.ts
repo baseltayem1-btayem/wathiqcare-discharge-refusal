@@ -115,8 +115,8 @@ export async function GET(
       case: note.case
         ? {
           id: note.case.id,
-          caseNumber: note.case.caseNumber ?? "",
-          patientName: note.case.patientName ?? "",
+          caseNumber: note.case.caseNumber,
+          patientName: note.case.patientName,
         }
         : null,
     }, {

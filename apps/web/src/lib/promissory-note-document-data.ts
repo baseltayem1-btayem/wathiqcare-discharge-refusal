@@ -14,8 +14,8 @@ export type PromissoryNoteApiRecord = {
   metadata: Record<string, unknown> | null;
   case?: {
     id: string;
-    caseNumber: string;
-    patientName: string;
+    caseNumber: string | null;
+    patientName: string | null;
   } | null;
 };
 
@@ -93,6 +93,8 @@ export function buildPromissoryNoteQrPayload(data: PromissoryNoteData): string {
 export function buildPromissoryPdfFilename(noteNumber: string, noteId: string, language: "ar" | "en"): string {
   const rawValue = (noteNumber || noteId).trim() || noteId;
   const sanitized = rawValue.replace(/[^a-zA-Z0-9_-]/g, "_");
-  const normalizedPrefix = /^PN-/i.test(sanitized) ? sanitized : `PN-${sanitized}`;
+  const normalizedPrefix = /^PN-/i.test(sanitized)
+    ? sanitized.replace(/^pn-/i, "PN-")
+    : `PN-${sanitized}`;
   return `${normalizedPrefix}-${language}.pdf`;
 }

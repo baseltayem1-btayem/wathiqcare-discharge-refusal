@@ -248,7 +248,7 @@ export function buildPromissoryPdfHtml({
         <div class="pn-qr-box">
           <img src="${escapeHtml(noteData.qrDataUrl || "")}" alt="QR" class="pn-qr-img" />
           <div class="pn-qr-text">هذا السند لأمر صادر من خلال منصة واثق كير الإلكترونية، وقد تم إنشاؤه والمصادقة عليه إلكترونياً وفق البيانات المسجلة في المنصة، ويمكن التحقق منه من خلال رمز التحقق أو الرقم المرجعي.</div>
-          <a class="pn-qr-ref" href="${escapeHtml(verificationValue)}" target="_blank" rel="noopener noreferrer">${escapeHtml(verificationValue)}</a>
+          <a class="pn-qr-ref" href="${escapeHtml(verificationValue)}" target="_blank" rel="noopener noreferrer" aria-label="التحقق من السند">${escapeHtml(verificationValue)}</a>
         </div>
       </section>
     </div>
@@ -317,7 +317,7 @@ export function buildPromissoryPdfHtml({
         <div class="pn-qr-box">
           <img src="${escapeHtml(noteData.qrDataUrl || "")}" alt="QR" class="pn-qr-img" />
           <div class="pn-qr-text">Issued through WathiqCare electronic platform. Verification is available using the QR code or reference number.</div>
-          <a class="pn-qr-ref" href="${escapeHtml(verificationValue)}" target="_blank" rel="noopener noreferrer">${escapeHtml(verificationValue)}</a>
+          <a class="pn-qr-ref" href="${escapeHtml(verificationValue)}" target="_blank" rel="noopener noreferrer" aria-label="Verify promissory note">${escapeHtml(verificationValue)}</a>
         </div>
       </section>
     </div>
