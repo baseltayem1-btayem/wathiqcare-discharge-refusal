@@ -28,6 +28,31 @@ function buildAttachmentHeader(filename: string): string {
   return `attachment; filename="${normalized}"; filename*=UTF-8''${encoded}`;
 }
 
+function resolveVerificationBaseUrl(request: NextRequest): string | undefined {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) {
+    try {
+      const parsed = new URL(configured);
+      if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+        return parsed.origin;
+      }
+    } catch {
+      // Ignore invalid environment value and fall back to request origin.
+    }
+  }
+
+  try {
+    const parsed = new URL(request.nextUrl.origin);
+    if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+      return parsed.origin;
+    }
+  } catch {
+    // no-op
+  }
+
+  return undefined;
+}
+
 async function launchBrowser(): Promise<Browser> {
   const defaultArgs = ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"];
   const defaultOptions: LaunchOptions = { headless: true, args: defaultArgs };
@@ -133,7 +158,7 @@ export async function GET(
         : null,
     }, {
       language: lang,
-      verificationBaseUrl: process.env.NEXT_PUBLIC_APP_URL || undefined,
+      verificationBaseUrl: resolveVerificationBaseUrl(request),
     });
 
     const qrPayload = buildPromissoryNoteQrPayload(noteData);
