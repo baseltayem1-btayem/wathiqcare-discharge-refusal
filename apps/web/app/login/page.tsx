@@ -48,6 +48,7 @@ export default function LoginPage() {
   const allowDevPrefill =
     process.env.NODE_ENV === "development" &&
     process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN_PREFILL === "true";
+  const showPublicDemoLoginIds = process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN_IDS === "true";
   const devEmailPrefill = process.env.NEXT_PUBLIC_DEV_LOGIN_EMAIL ?? "";
   const devPasswordPrefill = process.env.NEXT_PUBLIC_DEV_LOGIN_PASSWORD ?? "";
 
@@ -382,32 +383,33 @@ export default function LoginPage() {
                   </form>
                 )}
 
-                {/* Demo Accounts */}
-                <div className="mt-5 border-t border-slate-100 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowDemoAccounts(!showDemoAccounts)}
-                    className="wc-panel w-full justify-between text-[12px] font-bold text-slate-600"
-                  >
-                    <span>{isRtl ? "معرفات تسجيل الدخول التجريبية" : "Demo Login IDs"}</span>
-                    {showDemoAccounts ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                  </button>
+                {showPublicDemoLoginIds && (
+                  <div className="mt-5 border-t border-slate-100 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowDemoAccounts(!showDemoAccounts)}
+                      className="wc-panel w-full justify-between text-[12px] font-bold text-slate-600"
+                    >
+                      <span>{isRtl ? "معرفات تسجيل الدخول التجريبية" : "Demo Login IDs"}</span>
+                      {showDemoAccounts ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    </button>
 
-                  {showDemoAccounts && (
-                    <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                      {DEMO_ACCOUNT_PROFILES.map((acc) => (
-                        <button
-                          key={acc.email}
-                          type="button"
-                          onClick={() => handleDemoLogin(acc.email)}
-                          className="toolbar-btn toolbar-btn-secondary justify-center"
-                        >
-                          {isRtl ? acc.labelAr : acc.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                    {showDemoAccounts && (
+                      <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                        {DEMO_ACCOUNT_PROFILES.map((acc) => (
+                          <button
+                            key={acc.email}
+                            type="button"
+                            onClick={() => handleDemoLogin(acc.email)}
+                            className="toolbar-btn toolbar-btn-secondary justify-center"
+                          >
+                            {isRtl ? acc.labelAr : acc.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
