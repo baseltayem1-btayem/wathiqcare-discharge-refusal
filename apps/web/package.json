@@ -10,6 +10,7 @@
     "demo:seed": "node scripts/seed-demo-users.mjs",
     "lint": "eslint",
     "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts",
+    "test:promissory-pdf": "tsx --tsconfig tsconfig.json --test src/lib/server/promissory-note-pdf.test.ts",
     "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma",
     "admin:reset-password": "tsx -r dotenv/config scripts/admin-reset-password.ts",
     "db:probe:runtime": "node scripts/db-probe-runtime.cjs",

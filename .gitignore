@@ -243,3 +243,7 @@ apps/api/*.sqlite3
 tmp/
 reports/
 coverage/
+
+# Promissory PDF validation evidence artifacts (screenshots, generated PDFs, reports)
+artifacts/promissory-evidence/
+apps/web/artifacts/promissory-evidence/

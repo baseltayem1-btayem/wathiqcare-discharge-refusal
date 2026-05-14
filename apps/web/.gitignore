@@ -43,3 +43,6 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# Promissory PDF validation evidence artifacts (screenshots, generated PDFs, reports)
+/artifacts/promissory-evidence/
