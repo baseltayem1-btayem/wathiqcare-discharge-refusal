@@ -30,29 +30,53 @@ export default function PromissoryNotePreviewPage() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
+    setError(null);
     fetch(`/api/modules/promissory-notes/${id}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
         return res.json() as Promise<PromissoryNoteApiRecord>;
       })
-      .then(async (data) => {
+      .then((data) => {
         setNote(data);
-        const noteDataForQr = buildPromissoryNoteDocumentData(data, {
-          language: langOverride,
-          verificationBaseUrl: window.location.origin,
-        });
-        const { default: QRCode } = await import("qrcode");
-        const qrPayload = buildPromissoryNoteQrPayload(noteDataForQr);
-        const url = await QRCode.toDataURL(qrPayload, {
-          errorCorrectionLevel: "M",
-          margin: 1,
-          width: 120,
-        });
-        setQrDataUrl(url);
       })
       .catch((err) => setError(String(err)))
       .finally(() => setLoading(false));
-  }, [id, langOverride]);
+  }, [id]);
+
+  useEffect(() => {
+    if (!note) {
+      setQrDataUrl("");
+      return;
+    }
+
+    const abortController = new AbortController();
+    const renderQr = async () => {
+      const noteDataForQr = buildPromissoryNoteDocumentData(note, {
+        language: langOverride,
+        verificationBaseUrl: window.location.origin,
+      });
+      const { default: QRCode } = await import("qrcode");
+      const qrPayload = buildPromissoryNoteQrPayload(noteDataForQr);
+      const url = await QRCode.toDataURL(qrPayload, {
+        errorCorrectionLevel: "M",
+        margin: 1,
+        width: 120,
+      });
+      if (!abortController.signal.aborted) {
+        setQrDataUrl(url);
+      }
+    };
+
+    void renderQr().catch(() => {
+      if (!abortController.signal.aborted) {
+        setQrDataUrl("");
+      }
+    });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [note, langOverride]);
 
   async function handleDownloadPdf() {
     if (!id) return;
