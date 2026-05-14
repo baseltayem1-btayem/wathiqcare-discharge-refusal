@@ -1,0 +1,17 @@
+{
+  "mrns_found": 25,
+  "missing_mrns": [],
+  "duplicate_mrns": [],
+  "physician_linked": 25,
+  "testing_only_confirmed": 25,
+  "informedConsentModel": "ConsentDocument",
+  "dischargeRefusalCompatible": true,
+  "dischargeRefusalCompatibilityDetails": {
+    "targetMrns": 15,
+    "caseMatches": 15,
+    "detailMatches": 15
+  },
+  "ui_search_mapping_fixed": false,
+  "verification_script": "PASS",
+  "timestamp": "2026-05-14T04:51:10.501Z"
+}

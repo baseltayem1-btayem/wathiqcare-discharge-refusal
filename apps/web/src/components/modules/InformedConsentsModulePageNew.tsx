@@ -46,6 +46,15 @@ type WorkflowStep =
 
 interface PatientData {
   id: string;
+  caseId?: string;
+  caseNumber?: string;
+  caseType?: string;
+  department?: string;
+  diagnosis?: string;
+  assignedPhysicianNameEn?: string;
+  assignedPhysicianNameAr?: string;
+  assignedPhysicianEmail?: string;
+  medicalRecordNo?: string;
   mrn: string;
   name: string;
   dateOfBirth?: string;
@@ -487,13 +496,17 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
               key={patient.id}
               onClick={() => {
                 setPatientData(patient);
-                loadEncounters(patient.id);
+                loadEncounters(patient.mrn || patient.medicalRecordNo || patient.id);
                 setCurrentStep("encounter_selection");
               }}
               className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all"
             >
               <div className="font-semibold">{patient.name}</div>
               <div className="text-sm text-gray-600">MRN: {patient.mrn}</div>
+              {patient.caseNumber ? <div className="text-sm text-gray-600">Case: {patient.caseNumber}</div> : null}
+              {patient.assignedPhysicianNameEn ? (
+                <div className="text-sm text-gray-600">Physician: {patient.assignedPhysicianNameEn}</div>
+              ) : null}
               {patient.dateOfBirth && <div className="text-sm text-gray-500">DOB: {patient.dateOfBirth}</div>}
             </button>
           ))
