@@ -20,7 +20,9 @@
     "lint": "npm run lint -w apps/web",
     "validate:promissory-pdf": "npm run test:promissory-pdf -w apps/web && npm run lint -w apps/web && npm run build -w apps/web",
     "prisma:generate": "npm run prisma:generate -w apps/web",
-    "admins:ensure": "node prisma/ensure-admin-access.js"
+    "admins:ensure": "node prisma/ensure-admin-access.js",
+    "pilot:seed": "npm run pilot:seed -w apps/web",
+    "pilot:seed:apply": "npm run pilot:seed:apply -w apps/web"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
