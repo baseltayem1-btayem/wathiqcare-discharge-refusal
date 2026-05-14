@@ -1,0 +1,118 @@
+{
+  "markerEn": "TEST CASE - NOT A REAL PATIENT",
+  "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+  "caseCode": "ANESTHESIA_CONSENT",
+  "scenario": {
+    "id": 3,
+    "code": "ANESTHESIA_CONSENT",
+    "slug": "03-anesthesia-consent",
+    "titleEn": "Anesthesia Consent",
+    "titleAr": "موافقة التخدير",
+    "scenarioEn": "General anesthesia for laparoscopic surgery.",
+    "scenarioAr": "تخدير عام لجراحة بالمنظار.",
+    "diagnosisEn": "Pre-op anesthesia risk evaluation",
+    "diagnosisAr": "تقييم مخاطر التخدير قبل العملية",
+    "procedureEn": "General anesthesia induction and maintenance",
+    "procedureAr": "تحريض التخدير العام والمحافظة عليه",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "requiresInterpreter": false
+  },
+  "patient": {
+    "markerEn": "TEST CASE - NOT A REAL PATIENT",
+    "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+    "nameAr": "أحمد محمد السالم",
+    "nameEn": "Ahmed Mohammed Al-Salem",
+    "mrn": "TEST-000001",
+    "nationalId": "1000000001",
+    "dob": "1985-05-15",
+    "genderEn": "Male",
+    "genderAr": "ذكر",
+    "nationalityEn": "Saudi",
+    "nationalityAr": "سعودي",
+    "mobile": "0500000000",
+    "language": "Arabic and English",
+    "encounter": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "encounter": {
+    "id": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "diagnosis": {
+    "ar": "تقييم مخاطر التخدير قبل العملية",
+    "en": "Pre-op anesthesia risk evaluation"
+  },
+  "procedure": {
+    "ar": "تحريض التخدير العام والمحافظة عليه",
+    "en": "General anesthesia induction and maintenance"
+  },
+  "benefits": {
+    "ar": "تحسين الحالة وتقليل المضاعفات ورفع الأمان العلاجي.",
+    "en": "Improved outcomes, fewer complications, and safer treatment."
+  },
+  "risks": {
+    "ar": "ألم، نزف، عدوى، تفاعل دوائي، ومضاعفات متوقعة حسب الحالة.",
+    "en": "Pain, bleeding, infection, medication reaction, and expected clinical risks."
+  },
+  "complications": {
+    "ar": "احتمال تدهور الحالة أو الحاجة إلى تدخل إضافي.",
+    "en": "Possible deterioration or need for additional intervention."
+  },
+  "alternatives": {
+    "ar": "العلاج التحفظي أو التأجيل أو إجراء بديل بعد شرح طبي.",
+    "en": "Conservative care, postponement, or suitable alternative procedure."
+  },
+  "refusalConsequences": {
+    "ar": "استمرار الأعراض وتدهور الحالة وزيادة المخاطر.",
+    "en": "Persistent symptoms, deterioration, and increased risk."
+  },
+  "declarations": {
+    "questionsAnswered": true,
+    "voluntaryConsent": true,
+    "physicianDeclaration": true,
+    "witnessAdded": true,
+    "guardianAdded": false,
+    "interpreterAdded": false
+  },
+  "signatures": [
+    {
+      "role": "PATIENT",
+      "name": "Ahmed Mohammed Al-Salem",
+      "signedAt": "2026-05-12T19:24:32.175Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "PHYSICIAN",
+      "name": "Dr. Omar Al-Harbi",
+      "signedAt": "2026-05-12T19:25:32.175Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "WITNESS",
+      "name": "Nurse Aisha Al-Qahtani",
+      "signedAt": "2026-05-12T19:26:32.175Z",
+      "method": "WITNESS_ACKNOWLEDGMENT"
+    }
+  ],
+  "workflowStatus": "SEALED",
+  "legalSealHash": "41de2cd4eb0075d0b1806c337abfa0fb44ea23e464594d31d795777731269361",
+  "qrVerification": {
+    "status": "VALID",
+    "token": "259b08b04800cedc88ee",
+    "verifyUrl": "/uat/verify/03-anesthesia-consent/259b08b04800cedc88ee"
+  },
+  "generatedAt": "2026-05-12T18:44:32.175Z"
+}

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { assertRuntimeEnv, resolveRuntimeDatabaseUrl } from "../config/env-validation";
 
 declare global {
   var __wathiqcarePrisma__: PrismaClient | undefined;
@@ -46,11 +47,12 @@ function normalizeDatabaseUrl(rawUrl: string | undefined): string | undefined {
 }
 
 function resolveApplicationDatabaseUrl(): string | undefined {
-  return process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
+  return resolveRuntimeDatabaseUrl();
 }
 
 export function getPrisma(): PrismaClient {
   if (!prisma) {
+    assertRuntimeEnv({ context: "prisma" });
     prisma =
       global.__wathiqcarePrisma__ ??
       new PrismaClient({

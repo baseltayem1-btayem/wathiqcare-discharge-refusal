@@ -1,0 +1,112 @@
+{
+  "markerEn": "TEST CASE - NOT A REAL PATIENT",
+  "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+  "caseCode": "GENERAL_TREATMENT_CONSENT",
+  "scenario": {
+    "id": 1,
+    "code": "GENERAL_TREATMENT_CONSENT",
+    "slug": "01-general-treatment",
+    "titleEn": "General Treatment Consent",
+    "titleAr": "الموافقة العامة للعلاج",
+    "scenarioEn": "Routine admission and general medical treatment.",
+    "scenarioAr": "تنويم روتيني وعلاج طبي عام.",
+    "diagnosisEn": "Acute appendicitis under evaluation",
+    "diagnosisAr": "اشتباه التهاب زائدة دودية حاد",
+    "procedureEn": "General medical assessment and stabilization",
+    "procedureAr": "تقييم طبي عام وتثبيت الحالة",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "requiresInterpreter": false
+  },
+  "patient": {
+    "markerEn": "TEST CASE - NOT A REAL PATIENT",
+    "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+    "nameAr": "أحمد محمد السالم",
+    "nameEn": "Ahmed Mohammed Al-Salem",
+    "mrn": "TEST-000001",
+    "nationalId": "1000000001",
+    "dob": "1985-05-15",
+    "genderEn": "Male",
+    "genderAr": "ذكر",
+    "nationalityEn": "Saudi",
+    "nationalityAr": "سعودي",
+    "mobile": "0500000000",
+    "language": "Arabic and English",
+    "encounter": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "encounter": {
+    "id": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "diagnosis": {
+    "ar": "اشتباه التهاب زائدة دودية حاد",
+    "en": "Acute appendicitis under evaluation"
+  },
+  "procedure": {
+    "ar": "تقييم طبي عام وتثبيت الحالة",
+    "en": "General medical assessment and stabilization"
+  },
+  "benefits": {
+    "ar": "تحسين الحالة وتقليل المضاعفات ورفع الأمان العلاجي.",
+    "en": "Improved outcomes, fewer complications, and safer treatment."
+  },
+  "risks": {
+    "ar": "ألم، نزف، عدوى، تفاعل دوائي، ومضاعفات متوقعة حسب الحالة.",
+    "en": "Pain, bleeding, infection, medication reaction, and expected clinical risks."
+  },
+  "complications": {
+    "ar": "احتمال تدهور الحالة أو الحاجة إلى تدخل إضافي.",
+    "en": "Possible deterioration or need for additional intervention."
+  },
+  "alternatives": {
+    "ar": "العلاج التحفظي أو التأجيل أو إجراء بديل بعد شرح طبي.",
+    "en": "Conservative care, postponement, or suitable alternative procedure."
+  },
+  "refusalConsequences": {
+    "ar": "استمرار الأعراض وتدهور الحالة وزيادة المخاطر.",
+    "en": "Persistent symptoms, deterioration, and increased risk."
+  },
+  "declarations": {
+    "questionsAnswered": true,
+    "voluntaryConsent": true,
+    "physicianDeclaration": true,
+    "witnessAdded": false,
+    "guardianAdded": false,
+    "interpreterAdded": false
+  },
+  "signatures": [
+    {
+      "role": "PATIENT",
+      "name": "Ahmed Mohammed Al-Salem",
+      "signedAt": "2026-05-12T19:24:22.414Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "PHYSICIAN",
+      "name": "Dr. Omar Al-Harbi",
+      "signedAt": "2026-05-12T19:25:22.414Z",
+      "method": "ELECTRONIC"
+    }
+  ],
+  "workflowStatus": "SEALED",
+  "legalSealHash": "684da43cce5e4ba6f58d4bd3190822a3cf975b1acc855c57a7036d8b46a1d78f",
+  "qrVerification": {
+    "status": "VALID",
+    "token": "8240877c081d1fe22f1b",
+    "verifyUrl": "/uat/verify/01-general-treatment/8240877c081d1fe22f1b"
+  },
+  "generatedAt": "2026-05-12T18:44:22.414Z"
+}

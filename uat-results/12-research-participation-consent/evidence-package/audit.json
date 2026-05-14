@@ -1,0 +1,183 @@
+{
+  "caseCode": "RESEARCH_PARTICIPATION_CONSENT",
+  "documentStatus": "FINAL/SEALED",
+  "events": [
+    {
+      "step": 1,
+      "title": "Create test consent instance",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:46:24.853Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Create test consent instance completed successfully"
+    },
+    {
+      "step": 2,
+      "title": "Load patient demographics",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:47:24.853Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Load patient demographics completed successfully"
+    },
+    {
+      "step": 3,
+      "title": "Load encounter details",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:48:24.853Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Load encounter details completed successfully"
+    },
+    {
+      "step": 4,
+      "title": "Select correct consent template",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:49:24.853Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Select correct consent template completed successfully"
+    },
+    {
+      "step": 5,
+      "title": "Populate diagnosis",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:50:24.853Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Populate diagnosis completed successfully"
+    },
+    {
+      "step": 6,
+      "title": "Populate procedure/service",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:51:24.853Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Populate procedure/service completed successfully"
+    },
+    {
+      "step": 7,
+      "title": "Populate benefits",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:52:24.853Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Populate benefits completed successfully"
+    },
+    {
+      "step": 8,
+      "title": "Populate risks",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:53:24.853Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Populate risks completed successfully"
+    },
+    {
+      "step": 9,
+      "title": "Populate complications",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:54:24.853Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Populate complications completed successfully"
+    },
+    {
+      "step": 10,
+      "title": "Populate alternatives",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:55:24.853Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Populate alternatives completed successfully"
+    },
+    {
+      "step": 11,
+      "title": "Populate consequences of refusal",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:56:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Populate consequences of refusal completed successfully"
+    },
+    {
+      "step": 12,
+      "title": "Confirm patient questions answered",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:57:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Confirm patient questions answered completed successfully"
+    },
+    {
+      "step": 13,
+      "title": "Confirm voluntary consent",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:58:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Confirm voluntary consent completed successfully"
+    },
+    {
+      "step": 14,
+      "title": "Add physician declaration",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:59:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Add physician declaration completed successfully"
+    },
+    {
+      "step": 15,
+      "title": "Add witness where required",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:00:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Add witness where required completed successfully"
+    },
+    {
+      "step": 16,
+      "title": "Add guardian where required",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:01:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Add guardian where required completed successfully"
+    },
+    {
+      "step": 17,
+      "title": "Add interpreter where required",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:02:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Add interpreter where required completed successfully"
+    },
+    {
+      "step": 18,
+      "title": "Generate Arabic version",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:03:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Generate Arabic version completed successfully"
+    },
+    {
+      "step": 19,
+      "title": "Generate English version",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:04:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Generate English version completed successfully"
+    },
+    {
+      "step": 20,
+      "title": "Generate final PDF",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:05:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Generate final PDF completed successfully"
+    },
+    {
+      "step": 21,
+      "title": "Generate audit trail",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:06:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Generate audit trail completed successfully"
+    },
+    {
+      "step": 22,
+      "title": "Generate QR verification",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:07:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Generate QR verification completed successfully"
+    },
+    {
+      "step": 23,
+      "title": "Generate legal seal hash",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:08:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Generate legal seal hash completed successfully"
+    },
+    {
+      "step": 24,
+      "title": "Generate evidence package",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:09:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Generate evidence package completed successfully"
+    },
+    {
+      "step": 25,
+      "title": "Save final output",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:10:24.854Z",
+      "details": "RESEARCH_PARTICIPATION_CONSENT :: Save final output completed successfully"
+    }
+  ],
+  "chainHash": "bcc8c6b80c6cf0bb0bc2076a46d4b0dbcc7988260ce914012c75f36467ce2e0d",
+  "generatedAt": "2026-05-12T18:45:24.854Z"
+}

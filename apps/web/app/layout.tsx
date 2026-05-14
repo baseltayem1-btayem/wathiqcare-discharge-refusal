@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import I18nProvider from "@/i18n/I18nProvider";
 import { Toaster } from "@/components/make-ui/sonner";
 import "./globals.css";
 
 const CANONICAL_ORIGIN = "https://wathiqcare.online";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "WathiqCare",
@@ -42,10 +43,8 @@ export default async function RootLayout({
       className="scroll-smooth"
     >
       <body className="antialiased">
-        <I18nProvider>
-          {children}
-          <Toaster />
-        </I18nProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   );

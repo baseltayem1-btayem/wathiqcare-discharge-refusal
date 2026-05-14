@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, ClipboardCheck, Download, FileCheck2, Globe2, RefreshCw, ShieldCheck } from "lucide-react";
 import AppShell from "@/components/AppShell";

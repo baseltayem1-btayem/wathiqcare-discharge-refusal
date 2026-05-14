@@ -1,0 +1,112 @@
+{
+  "markerEn": "TEST CASE - NOT A REAL PATIENT",
+  "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+  "caseCode": "PROCEDURAL_SEDATION_CONSENT",
+  "scenario": {
+    "id": 6,
+    "code": "PROCEDURAL_SEDATION_CONSENT",
+    "slug": "06-procedural-sedation-consent",
+    "titleEn": "Procedural Sedation Consent",
+    "titleAr": "موافقة التهدئة الإجرائية",
+    "scenarioEn": "Endoscopy under procedural sedation.",
+    "scenarioAr": "منظار مع تهدئة إجرائية.",
+    "diagnosisEn": "Upper GI symptoms requiring endoscopy",
+    "diagnosisAr": "أعراض جهاز هضمي علوي تتطلب منظار",
+    "procedureEn": "Endoscopy with procedural sedation",
+    "procedureAr": "منظار هضمي مع تهدئة إجرائية",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "requiresInterpreter": false
+  },
+  "patient": {
+    "markerEn": "TEST CASE - NOT A REAL PATIENT",
+    "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+    "nameAr": "أحمد محمد السالم",
+    "nameEn": "Ahmed Mohammed Al-Salem",
+    "mrn": "TEST-000001",
+    "nationalId": "1000000001",
+    "dob": "1985-05-15",
+    "genderEn": "Male",
+    "genderAr": "ذكر",
+    "nationalityEn": "Saudi",
+    "nationalityAr": "سعودي",
+    "mobile": "0500000000",
+    "language": "Arabic and English",
+    "encounter": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "encounter": {
+    "id": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "diagnosis": {
+    "ar": "أعراض جهاز هضمي علوي تتطلب منظار",
+    "en": "Upper GI symptoms requiring endoscopy"
+  },
+  "procedure": {
+    "ar": "منظار هضمي مع تهدئة إجرائية",
+    "en": "Endoscopy with procedural sedation"
+  },
+  "benefits": {
+    "ar": "تحسين الحالة وتقليل المضاعفات ورفع الأمان العلاجي.",
+    "en": "Improved outcomes, fewer complications, and safer treatment."
+  },
+  "risks": {
+    "ar": "ألم، نزف، عدوى، تفاعل دوائي، ومضاعفات متوقعة حسب الحالة.",
+    "en": "Pain, bleeding, infection, medication reaction, and expected clinical risks."
+  },
+  "complications": {
+    "ar": "احتمال تدهور الحالة أو الحاجة إلى تدخل إضافي.",
+    "en": "Possible deterioration or need for additional intervention."
+  },
+  "alternatives": {
+    "ar": "العلاج التحفظي أو التأجيل أو إجراء بديل بعد شرح طبي.",
+    "en": "Conservative care, postponement, or suitable alternative procedure."
+  },
+  "refusalConsequences": {
+    "ar": "استمرار الأعراض وتدهور الحالة وزيادة المخاطر.",
+    "en": "Persistent symptoms, deterioration, and increased risk."
+  },
+  "declarations": {
+    "questionsAnswered": true,
+    "voluntaryConsent": true,
+    "physicianDeclaration": true,
+    "witnessAdded": false,
+    "guardianAdded": false,
+    "interpreterAdded": false
+  },
+  "signatures": [
+    {
+      "role": "PATIENT",
+      "name": "Ahmed Mohammed Al-Salem",
+      "signedAt": "2026-05-12T19:24:48.146Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "PHYSICIAN",
+      "name": "Dr. Omar Al-Harbi",
+      "signedAt": "2026-05-12T19:25:48.146Z",
+      "method": "ELECTRONIC"
+    }
+  ],
+  "workflowStatus": "SEALED",
+  "legalSealHash": "f3abab918fb947e9c2d0f72ffcb735178cf7776beb7e50fbd42f76a1c2f12c8a",
+  "qrVerification": {
+    "status": "VALID",
+    "token": "07a065236955988bfacd",
+    "verifyUrl": "/uat/verify/06-procedural-sedation-consent/07a065236955988bfacd"
+  },
+  "generatedAt": "2026-05-12T18:44:48.146Z"
+}

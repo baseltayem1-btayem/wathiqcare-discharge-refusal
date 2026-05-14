@@ -1350,5 +1350,20 @@
         "body": "These Terms are governed by the laws of the Kingdom of Saudi Arabia. Any disputes will be subject to the jurisdiction of Saudi courts."
       }
     ]
+  },
+  "adminError": {
+    "title": "Admin section is temporarily unavailable",
+    "subtitle": "A runtime issue occurred while loading this section. Retry without leaving the current session.",
+    "retry": "Retry section",
+    "openAdmin": "Open admin overview"
+  },
+  "adminDataResidency": {
+    "title": "Data Residency",
+    "subtitle": "Track where regulated data is hosted and whether each class remains KSA-compliant.",
+    "highlights": {
+      "patientData": "Patient-sensitive data is enforced as KSA-only.",
+      "analytics": "Analytics exports require anonymization before non-KSA transfer.",
+      "validation": "Deployment validation blocks unsafe patient-data hosting regions."
+    }
   }
 }

@@ -1,0 +1,183 @@
+{
+  "caseCode": "TELEMEDICINE_CONSENT",
+  "documentStatus": "FINAL/SEALED",
+  "events": [
+    {
+      "step": 1,
+      "title": "Create test consent instance",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:46:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Create test consent instance completed successfully"
+    },
+    {
+      "step": 2,
+      "title": "Load patient demographics",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:47:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Load patient demographics completed successfully"
+    },
+    {
+      "step": 3,
+      "title": "Load encounter details",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:48:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Load encounter details completed successfully"
+    },
+    {
+      "step": 4,
+      "title": "Select correct consent template",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:49:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Select correct consent template completed successfully"
+    },
+    {
+      "step": 5,
+      "title": "Populate diagnosis",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:50:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Populate diagnosis completed successfully"
+    },
+    {
+      "step": 6,
+      "title": "Populate procedure/service",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:51:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Populate procedure/service completed successfully"
+    },
+    {
+      "step": 7,
+      "title": "Populate benefits",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:52:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Populate benefits completed successfully"
+    },
+    {
+      "step": 8,
+      "title": "Populate risks",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:53:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Populate risks completed successfully"
+    },
+    {
+      "step": 9,
+      "title": "Populate complications",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:54:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Populate complications completed successfully"
+    },
+    {
+      "step": 10,
+      "title": "Populate alternatives",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:55:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Populate alternatives completed successfully"
+    },
+    {
+      "step": 11,
+      "title": "Populate consequences of refusal",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:56:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Populate consequences of refusal completed successfully"
+    },
+    {
+      "step": 12,
+      "title": "Confirm patient questions answered",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:57:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Confirm patient questions answered completed successfully"
+    },
+    {
+      "step": 13,
+      "title": "Confirm voluntary consent",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:58:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Confirm voluntary consent completed successfully"
+    },
+    {
+      "step": 14,
+      "title": "Add physician declaration",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T18:59:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Add physician declaration completed successfully"
+    },
+    {
+      "step": 15,
+      "title": "Add witness where required",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:00:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Add witness where required completed successfully"
+    },
+    {
+      "step": 16,
+      "title": "Add guardian where required",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:01:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Add guardian where required completed successfully"
+    },
+    {
+      "step": 17,
+      "title": "Add interpreter where required",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:02:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Add interpreter where required completed successfully"
+    },
+    {
+      "step": 18,
+      "title": "Generate Arabic version",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:03:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Generate Arabic version completed successfully"
+    },
+    {
+      "step": 19,
+      "title": "Generate English version",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:04:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Generate English version completed successfully"
+    },
+    {
+      "step": 20,
+      "title": "Generate final PDF",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:05:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Generate final PDF completed successfully"
+    },
+    {
+      "step": 21,
+      "title": "Generate audit trail",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:06:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Generate audit trail completed successfully"
+    },
+    {
+      "step": 22,
+      "title": "Generate QR verification",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:07:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Generate QR verification completed successfully"
+    },
+    {
+      "step": 23,
+      "title": "Generate legal seal hash",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:08:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Generate legal seal hash completed successfully"
+    },
+    {
+      "step": 24,
+      "title": "Generate evidence package",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:09:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Generate evidence package completed successfully"
+    },
+    {
+      "step": 25,
+      "title": "Save final output",
+      "status": "COMPLETED",
+      "occurredAt": "2026-05-12T19:10:08.342Z",
+      "details": "TELEMEDICINE_CONSENT :: Save final output completed successfully"
+    }
+  ],
+  "chainHash": "7341610f82459a55865ada37665a24f80da5535d53160632f755f2b12addca72",
+  "generatedAt": "2026-05-12T18:45:08.342Z"
+}

@@ -1,0 +1,118 @@
+{
+  "markerEn": "TEST CASE - NOT A REAL PATIENT",
+  "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+  "caseCode": "SURGICAL_PROCEDURE_CONSENT",
+  "scenario": {
+    "id": 2,
+    "code": "SURGICAL_PROCEDURE_CONSENT",
+    "slug": "02-surgical-consent",
+    "titleEn": "Surgical Consent",
+    "titleAr": "موافقة جراحية",
+    "scenarioEn": "Laparoscopic appendectomy.",
+    "scenarioAr": "استئصال الزائدة بالمنظار.",
+    "diagnosisEn": "Confirmed acute appendicitis",
+    "diagnosisAr": "التهاب زائدة دودية مؤكد",
+    "procedureEn": "Laparoscopic appendectomy",
+    "procedureAr": "استئصال الزائدة الدودية بالمنظار",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "requiresInterpreter": false
+  },
+  "patient": {
+    "markerEn": "TEST CASE - NOT A REAL PATIENT",
+    "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+    "nameAr": "أحمد محمد السالم",
+    "nameEn": "Ahmed Mohammed Al-Salem",
+    "mrn": "TEST-000001",
+    "nationalId": "1000000001",
+    "dob": "1985-05-15",
+    "genderEn": "Male",
+    "genderAr": "ذكر",
+    "nationalityEn": "Saudi",
+    "nationalityAr": "سعودي",
+    "mobile": "0500000000",
+    "language": "Arabic and English",
+    "encounter": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "encounter": {
+    "id": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "diagnosis": {
+    "ar": "التهاب زائدة دودية مؤكد",
+    "en": "Confirmed acute appendicitis"
+  },
+  "procedure": {
+    "ar": "استئصال الزائدة الدودية بالمنظار",
+    "en": "Laparoscopic appendectomy"
+  },
+  "benefits": {
+    "ar": "تحسين الحالة وتقليل المضاعفات ورفع الأمان العلاجي.",
+    "en": "Improved outcomes, fewer complications, and safer treatment."
+  },
+  "risks": {
+    "ar": "ألم، نزف، عدوى، تفاعل دوائي، ومضاعفات متوقعة حسب الحالة.",
+    "en": "Pain, bleeding, infection, medication reaction, and expected clinical risks."
+  },
+  "complications": {
+    "ar": "احتمال تدهور الحالة أو الحاجة إلى تدخل إضافي.",
+    "en": "Possible deterioration or need for additional intervention."
+  },
+  "alternatives": {
+    "ar": "العلاج التحفظي أو التأجيل أو إجراء بديل بعد شرح طبي.",
+    "en": "Conservative care, postponement, or suitable alternative procedure."
+  },
+  "refusalConsequences": {
+    "ar": "استمرار الأعراض وتدهور الحالة وزيادة المخاطر.",
+    "en": "Persistent symptoms, deterioration, and increased risk."
+  },
+  "declarations": {
+    "questionsAnswered": true,
+    "voluntaryConsent": true,
+    "physicianDeclaration": true,
+    "witnessAdded": true,
+    "guardianAdded": false,
+    "interpreterAdded": false
+  },
+  "signatures": [
+    {
+      "role": "PATIENT",
+      "name": "Ahmed Mohammed Al-Salem",
+      "signedAt": "2026-05-12T19:24:27.003Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "PHYSICIAN",
+      "name": "Dr. Omar Al-Harbi",
+      "signedAt": "2026-05-12T19:25:27.003Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "WITNESS",
+      "name": "Nurse Aisha Al-Qahtani",
+      "signedAt": "2026-05-12T19:26:27.003Z",
+      "method": "WITNESS_ACKNOWLEDGMENT"
+    }
+  ],
+  "workflowStatus": "SEALED",
+  "legalSealHash": "24e5529ed0ee7f9cb46e3291d0ae65947398fb0b1f818e3bdb89bd5076757abf",
+  "qrVerification": {
+    "status": "VALID",
+    "token": "bb6bd9c92eac64975f85",
+    "verifyUrl": "/uat/verify/02-surgical-consent/bb6bd9c92eac64975f85"
+  },
+  "generatedAt": "2026-05-12T18:44:27.003Z"
+}

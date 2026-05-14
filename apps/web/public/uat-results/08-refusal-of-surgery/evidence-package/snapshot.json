@@ -1,0 +1,118 @@
+{
+  "markerEn": "TEST CASE - NOT A REAL PATIENT",
+  "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+  "caseCode": "SURGERY_REFUSAL_CONSENT",
+  "scenario": {
+    "id": 8,
+    "code": "SURGERY_REFUSAL_CONSENT",
+    "slug": "08-refusal-of-surgery",
+    "titleEn": "Refusal of Surgery",
+    "titleAr": "رفض الجراحة",
+    "scenarioEn": "Patient refuses urgent surgical intervention.",
+    "scenarioAr": "المريض يرفض التدخل الجراحي العاجل.",
+    "diagnosisEn": "Acute surgical abdomen",
+    "diagnosisAr": "بطن جراحي حاد",
+    "procedureEn": "Urgent abdominal surgery",
+    "procedureAr": "جراحة بطن عاجلة",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "requiresInterpreter": false
+  },
+  "patient": {
+    "markerEn": "TEST CASE - NOT A REAL PATIENT",
+    "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+    "nameAr": "أحمد محمد السالم",
+    "nameEn": "Ahmed Mohammed Al-Salem",
+    "mrn": "TEST-000001",
+    "nationalId": "1000000001",
+    "dob": "1985-05-15",
+    "genderEn": "Male",
+    "genderAr": "ذكر",
+    "nationalityEn": "Saudi",
+    "nationalityAr": "سعودي",
+    "mobile": "0500000000",
+    "language": "Arabic and English",
+    "encounter": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "encounter": {
+    "id": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "diagnosis": {
+    "ar": "بطن جراحي حاد",
+    "en": "Acute surgical abdomen"
+  },
+  "procedure": {
+    "ar": "جراحة بطن عاجلة",
+    "en": "Urgent abdominal surgery"
+  },
+  "benefits": {
+    "ar": "تحسين الحالة وتقليل المضاعفات ورفع الأمان العلاجي.",
+    "en": "Improved outcomes, fewer complications, and safer treatment."
+  },
+  "risks": {
+    "ar": "ألم، نزف، عدوى، تفاعل دوائي، ومضاعفات متوقعة حسب الحالة.",
+    "en": "Pain, bleeding, infection, medication reaction, and expected clinical risks."
+  },
+  "complications": {
+    "ar": "احتمال تدهور الحالة أو الحاجة إلى تدخل إضافي.",
+    "en": "Possible deterioration or need for additional intervention."
+  },
+  "alternatives": {
+    "ar": "العلاج التحفظي أو التأجيل أو إجراء بديل بعد شرح طبي.",
+    "en": "Conservative care, postponement, or suitable alternative procedure."
+  },
+  "refusalConsequences": {
+    "ar": "استمرار الأعراض وتدهور الحالة وزيادة المخاطر.",
+    "en": "Persistent symptoms, deterioration, and increased risk."
+  },
+  "declarations": {
+    "questionsAnswered": true,
+    "voluntaryConsent": true,
+    "physicianDeclaration": true,
+    "witnessAdded": true,
+    "guardianAdded": false,
+    "interpreterAdded": false
+  },
+  "signatures": [
+    {
+      "role": "PATIENT",
+      "name": "Ahmed Mohammed Al-Salem",
+      "signedAt": "2026-05-12T19:25:02.747Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "PHYSICIAN",
+      "name": "Dr. Omar Al-Harbi",
+      "signedAt": "2026-05-12T19:26:02.747Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "WITNESS",
+      "name": "Nurse Aisha Al-Qahtani",
+      "signedAt": "2026-05-12T19:27:02.747Z",
+      "method": "WITNESS_ACKNOWLEDGMENT"
+    }
+  ],
+  "workflowStatus": "SEALED",
+  "legalSealHash": "9cc0627efdb8748b875a9411af224667fe202876b36d1ad28b2ab2fb6594db05",
+  "qrVerification": {
+    "status": "VALID",
+    "token": "b1ea00369a96880f06f8",
+    "verifyUrl": "/uat/verify/08-refusal-of-surgery/b1ea00369a96880f06f8"
+  },
+  "generatedAt": "2026-05-12T18:45:02.747Z"
+}

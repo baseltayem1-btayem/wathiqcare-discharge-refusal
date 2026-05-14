@@ -1,0 +1,124 @@
+{
+  "markerEn": "TEST CASE - NOT A REAL PATIENT",
+  "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+  "caseCode": "MINOR_GUARDIAN_CONSENT",
+  "scenario": {
+    "id": 19,
+    "code": "MINOR_GUARDIAN_CONSENT",
+    "slug": "19-minor-guardian-consent",
+    "titleEn": "Minor / Guardian Consent",
+    "titleAr": "موافقة ولي الأمر للقاصر",
+    "scenarioEn": "Guardian consent for minor patient procedure.",
+    "scenarioAr": "موافقة ولي الأمر على إجراء للمريض القاصر.",
+    "diagnosisEn": "Minor patient elective procedure",
+    "diagnosisAr": "إجراء اختياري لمريض قاصر",
+    "procedureEn": "Guardian-authorized minor procedure",
+    "procedureAr": "إجراء للقاصر بموافقة ولي الأمر",
+    "requiresWitness": true,
+    "requiresGuardian": true,
+    "requiresInterpreter": false
+  },
+  "patient": {
+    "markerEn": "TEST CASE - NOT A REAL PATIENT",
+    "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+    "nameAr": "أحمد محمد السالم",
+    "nameEn": "Ahmed Mohammed Al-Salem",
+    "mrn": "TEST-000001",
+    "nationalId": "1000000001",
+    "dob": "1985-05-15",
+    "genderEn": "Male",
+    "genderAr": "ذكر",
+    "nationalityEn": "Saudi",
+    "nationalityAr": "سعودي",
+    "mobile": "0500000000",
+    "language": "Arabic and English",
+    "encounter": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "encounter": {
+    "id": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "diagnosis": {
+    "ar": "إجراء اختياري لمريض قاصر",
+    "en": "Minor patient elective procedure"
+  },
+  "procedure": {
+    "ar": "إجراء للقاصر بموافقة ولي الأمر",
+    "en": "Guardian-authorized minor procedure"
+  },
+  "benefits": {
+    "ar": "تحسين الحالة وتقليل المضاعفات ورفع الأمان العلاجي.",
+    "en": "Improved outcomes, fewer complications, and safer treatment."
+  },
+  "risks": {
+    "ar": "ألم، نزف، عدوى، تفاعل دوائي، ومضاعفات متوقعة حسب الحالة.",
+    "en": "Pain, bleeding, infection, medication reaction, and expected clinical risks."
+  },
+  "complications": {
+    "ar": "احتمال تدهور الحالة أو الحاجة إلى تدخل إضافي.",
+    "en": "Possible deterioration or need for additional intervention."
+  },
+  "alternatives": {
+    "ar": "العلاج التحفظي أو التأجيل أو إجراء بديل بعد شرح طبي.",
+    "en": "Conservative care, postponement, or suitable alternative procedure."
+  },
+  "refusalConsequences": {
+    "ar": "استمرار الأعراض وتدهور الحالة وزيادة المخاطر.",
+    "en": "Persistent symptoms, deterioration, and increased risk."
+  },
+  "declarations": {
+    "questionsAnswered": true,
+    "voluntaryConsent": true,
+    "physicianDeclaration": true,
+    "witnessAdded": true,
+    "guardianAdded": true,
+    "interpreterAdded": false
+  },
+  "signatures": [
+    {
+      "role": "PATIENT",
+      "name": "Ahmed Mohammed Al-Salem",
+      "signedAt": "2026-05-12T19:26:01.130Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "PHYSICIAN",
+      "name": "Dr. Omar Al-Harbi",
+      "signedAt": "2026-05-12T19:27:01.130Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "WITNESS",
+      "name": "Nurse Aisha Al-Qahtani",
+      "signedAt": "2026-05-12T19:28:01.130Z",
+      "method": "WITNESS_ACKNOWLEDGMENT"
+    },
+    {
+      "role": "GUARDIAN",
+      "name": "Mohammed Al-Salem (Guardian)",
+      "signedAt": "2026-05-12T19:29:01.130Z",
+      "method": "ELECTRONIC"
+    }
+  ],
+  "workflowStatus": "SEALED",
+  "legalSealHash": "01c4eaf59f1681ea1f3dde616a9a184c212c9f0cd01ef015cb519207dbeeae7a",
+  "qrVerification": {
+    "status": "VALID",
+    "token": "bce8cb4002d317c28711",
+    "verifyUrl": "/uat/verify/19-minor-guardian-consent/bce8cb4002d317c28711"
+  },
+  "generatedAt": "2026-05-12T18:46:01.130Z"
+}

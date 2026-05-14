@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw, Shield, X } from "lucide-react";
 import { apiFetchJson } from "@/utils/api";

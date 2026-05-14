@@ -1,0 +1,306 @@
+[
+  {
+    "template": "01-general-treatment",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=7af2987d5360c39078e7; verifyUrl=/uat/verify/01-general-treatment/7af2987d5360c39078e7; checksum=152e062418b1cff7b0e6a743a14fe9fecd6bb3dd6578831dade2c1ae58a10d17}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "02-surgical-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=f29b336500f1901fec1e; verifyUrl=/uat/verify/02-surgical-consent/f29b336500f1901fec1e; checksum=12969013dfae8143efd9726ad25874f49113de2a8d15d8eb582c362a7a922667}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "03-anesthesia-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=a696c0507de2dd702870; verifyUrl=/uat/verify/03-anesthesia-consent/a696c0507de2dd702870; checksum=3756b32d39926143e7d246e61f2f0692f691e1dba545d84646105ae44e487f10}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "04-blood-transfusion-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=331c327105201a8b1962; verifyUrl=/uat/verify/04-blood-transfusion-consent/331c327105201a8b1962; checksum=871dfd960ddc0b9535e21f3e8ece8f893342f0834eecbb8fafbeb27add5cf18d}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "05-high-risk-procedure-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=9d3507c23f8f32c52d6d; verifyUrl=/uat/verify/05-high-risk-procedure-consent/9d3507c23f8f32c52d6d; checksum=1ce5394b3703e5871c3d7067d12ce2d3741d9ef2fcee5d0c89dd284d435c4ea3}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "06-procedural-sedation-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=5e51da8bfe22d750c14c; verifyUrl=/uat/verify/06-procedural-sedation-consent/5e51da8bfe22d750c14c; checksum=aa469b2c9ad4f0184ed478ee79d9c02c34cbaf2ce042a1a3955b283f10cc4a9d}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "07-dama-refusal-of-treatment",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=3eff4c94817c96c844d5; verifyUrl=/uat/verify/07-dama-refusal-of-treatment/3eff4c94817c96c844d5; checksum=21c3ccf5c32eb2b67ae5de2b067c342b3a3e17cf43692d7b11ebc30006cd2d55}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "08-refusal-of-surgery",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=9f60c2b964039490191b; verifyUrl=/uat/verify/08-refusal-of-surgery/9f60c2b964039490191b; checksum=bdefba887d825a78700a72adfbebe90f83a43ac6c51f1b7de1a89d7ecf9235c4}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "09-telemedicine-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=c45c48228cf19ef790f9; verifyUrl=/uat/verify/09-telemedicine-consent/c45c48228cf19ef790f9; checksum=63aa89db7c848368b109b2dd8708b055c17c832488b97ef9c165bcb423c67631}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "10-photography-media-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=534e2daed52d42fe4a13; verifyUrl=/uat/verify/10-photography-media-consent/534e2daed52d42fe4a13; checksum=d6a5d47ab69159649b40bc1fd17653869b6e345bc7a92bac708f65a1367478c8}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "11-pdpl-data-processing-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=140aedd3e41ee54b7edb; verifyUrl=/uat/verify/11-pdpl-data-processing-consent/140aedd3e41ee54b7edb; checksum=b4e373aeef265e9448fa611a3a0c0f7cfb00c213b368dd296aaa36f25a691ee1}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "12-research-participation-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=c7f3078632aacc072eef; verifyUrl=/uat/verify/12-research-participation-consent/c7f3078632aacc072eef; checksum=d9a92dae3e54f849177e64e13de90a5548920ff45e89230bf94dd0174aa44862}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "13-chemotherapy-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=a0db8a456a2e09faca7b; verifyUrl=/uat/verify/13-chemotherapy-consent/a0db8a456a2e09faca7b; checksum=52aff833a19c18596ec57fdce6920fbcc50d846708d3ca81f75a139bb9cb8d1d}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "14-radiotherapy-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=6450af7e34c9e5f6b010; verifyUrl=/uat/verify/14-radiotherapy-consent/6450af7e34c9e5f6b010; checksum=b934b173df486184e4e3c61f6d019834f852bff76fd39268eeb20800db6d6560}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "15-contrast-media-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=62af812c4a06a5b9ed5c; verifyUrl=/uat/verify/15-contrast-media-consent/62af812c4a06a5b9ed5c; checksum=1b0f2b6760411da8423daa3b4ccc7361c3d95a3257b5286c9fcb4ed10a815145}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "16-icu-critical-care-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=b2392c15eddad5fcb64c; verifyUrl=/uat/verify/16-icu-critical-care-consent/b2392c15eddad5fcb64c; checksum=b7bb82246a5b09a64c0d14eee80df746c27163c57ed67c57519b4f538a30553f}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "17-home-healthcare-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=f012057b8beb655e91c0; verifyUrl=/uat/verify/17-home-healthcare-consent/f012057b8beb655e91c0; checksum=f919e3bc3a01aa83bf4ac950895e06ba5c90258ead991f1934400d1d8e2f23c2}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "18-special-interventional-procedure-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=6a3c4a830cd5c836ecb7; verifyUrl=/uat/verify/18-special-interventional-procedure-consent/6a3c4a830cd5c836ecb7; checksum=898fcec5e78c4b2d750e663c6d9bc8441e62d3e560fd01cd50acc3151d639a9d}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  },
+  {
+    "template": "19-minor-guardian-consent",
+    "arabicPdf": true,
+    "englishPdf": true,
+    "snap": true,
+    "audit": true,
+    "ep": true,
+    "qr": [
+      "@{status=VALID; token=313beb0eb92b5533dc58; verifyUrl=/uat/verify/19-minor-guardian-consent/313beb0eb92b5533dc58; checksum=aaeb80996d5cc32713d67977cf2246958d1f718a215821f9614620be02dac5bc}",
+      true
+    ],
+    "legalSeal": true,
+    "sigs": true,
+    "sections": true,
+    "overall": "PASS"
+  }
+]

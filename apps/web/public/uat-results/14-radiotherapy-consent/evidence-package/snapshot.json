@@ -1,0 +1,118 @@
+{
+  "markerEn": "TEST CASE - NOT A REAL PATIENT",
+  "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+  "caseCode": "RADIOTHERAPY_CONSENT",
+  "scenario": {
+    "id": 14,
+    "code": "RADIOTHERAPY_CONSENT",
+    "slug": "14-radiotherapy-consent",
+    "titleEn": "Radiotherapy Consent",
+    "titleAr": "موافقة العلاج الإشعاعي",
+    "scenarioEn": "Radiotherapy treatment session.",
+    "scenarioAr": "جلسة علاج إشعاعي.",
+    "diagnosisEn": "Oncology radiotherapy planning",
+    "diagnosisAr": "تخطيط علاج إشعاعي للأورام",
+    "procedureEn": "Targeted radiotherapy session",
+    "procedureAr": "جلسة علاج إشعاعي موجه",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "requiresInterpreter": false
+  },
+  "patient": {
+    "markerEn": "TEST CASE - NOT A REAL PATIENT",
+    "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+    "nameAr": "أحمد محمد السالم",
+    "nameEn": "Ahmed Mohammed Al-Salem",
+    "mrn": "TEST-000001",
+    "nationalId": "1000000001",
+    "dob": "1985-05-15",
+    "genderEn": "Male",
+    "genderAr": "ذكر",
+    "nationalityEn": "Saudi",
+    "nationalityAr": "سعودي",
+    "mobile": "0500000000",
+    "language": "Arabic and English",
+    "encounter": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "encounter": {
+    "id": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "diagnosis": {
+    "ar": "تخطيط علاج إشعاعي للأورام",
+    "en": "Oncology radiotherapy planning"
+  },
+  "procedure": {
+    "ar": "جلسة علاج إشعاعي موجه",
+    "en": "Targeted radiotherapy session"
+  },
+  "benefits": {
+    "ar": "تحسين الحالة وتقليل المضاعفات ورفع الأمان العلاجي.",
+    "en": "Improved outcomes, fewer complications, and safer treatment."
+  },
+  "risks": {
+    "ar": "ألم، نزف، عدوى، تفاعل دوائي، ومضاعفات متوقعة حسب الحالة.",
+    "en": "Pain, bleeding, infection, medication reaction, and expected clinical risks."
+  },
+  "complications": {
+    "ar": "احتمال تدهور الحالة أو الحاجة إلى تدخل إضافي.",
+    "en": "Possible deterioration or need for additional intervention."
+  },
+  "alternatives": {
+    "ar": "العلاج التحفظي أو التأجيل أو إجراء بديل بعد شرح طبي.",
+    "en": "Conservative care, postponement, or suitable alternative procedure."
+  },
+  "refusalConsequences": {
+    "ar": "استمرار الأعراض وتدهور الحالة وزيادة المخاطر.",
+    "en": "Persistent symptoms, deterioration, and increased risk."
+  },
+  "declarations": {
+    "questionsAnswered": true,
+    "voluntaryConsent": true,
+    "physicianDeclaration": true,
+    "witnessAdded": true,
+    "guardianAdded": false,
+    "interpreterAdded": false
+  },
+  "signatures": [
+    {
+      "role": "PATIENT",
+      "name": "Ahmed Mohammed Al-Salem",
+      "signedAt": "2026-05-12T19:25:35.746Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "PHYSICIAN",
+      "name": "Dr. Omar Al-Harbi",
+      "signedAt": "2026-05-12T19:26:35.746Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "WITNESS",
+      "name": "Nurse Aisha Al-Qahtani",
+      "signedAt": "2026-05-12T19:27:35.746Z",
+      "method": "WITNESS_ACKNOWLEDGMENT"
+    }
+  ],
+  "workflowStatus": "SEALED",
+  "legalSealHash": "590f40ae1a02ae35ad48b40565efdc01a9a086ca74d20e4217ac8b35cc92e46b",
+  "qrVerification": {
+    "status": "VALID",
+    "token": "fd7bc4972be9d9f7ce9f",
+    "verifyUrl": "/uat/verify/14-radiotherapy-consent/fd7bc4972be9d9f7ce9f"
+  },
+  "generatedAt": "2026-05-12T18:45:35.746Z"
+}

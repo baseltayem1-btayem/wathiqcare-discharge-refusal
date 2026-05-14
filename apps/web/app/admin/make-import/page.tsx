@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import AppShell from "@/components/AppShell";
 import AuthGuard from "@/components/AuthGuard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/make-ui/tabs";

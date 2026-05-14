@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import { Search, AlertCircle } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";

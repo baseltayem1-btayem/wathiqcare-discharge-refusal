@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 
 type LoginErrorProps = {
   error: Error & { digest?: string };
@@ -32,12 +31,12 @@ export default function LoginError({ error, reset }: LoginErrorProps) {
           >
             إعادة المحاولة
           </button>
-          <Link
+          <a
             href="/"
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
             الرئيسية
-          </Link>
+          </a>
         </div>
       </section>
     </main>

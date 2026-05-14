@@ -24,6 +24,8 @@ import {
 import { useI18n } from "@/i18n/I18nProvider";
 import ModuleShell from "@/components/ModuleShell";
 import { apiFetch } from "@/utils/api";
+import SecureSigningStatusBadges from "@/components/signing/SecureSigningStatusBadges";
+import type { SecureSigningWorkflow } from "@/lib/server/module-secure-signing-service";
 
 type ModuleAuth = {
   role?: string | null;
@@ -144,6 +146,8 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [patientSearchResults, setPatientSearchResults] = useState<PatientData[]>([]);
   const [encounterList, setEncounterList] = useState<EncounterData[]>([]);
+  const [secureSigningWorkflow, setSecureSigningWorkflow] = useState<SecureSigningWorkflow | null>(null);
+  const [signatureMobile, setSignatureMobile] = useState<string>("");
 
   // Get step index for progress tracking
   const currentStepIndex = WORKFLOW_STEPS.findIndex((s) => s.id === currentStep);
@@ -932,30 +936,77 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-2">
+          <label htmlFor="secure-signing-mobile" className="block text-sm font-semibold mb-2">
             {locale === "ar" ? "رقم الهاتف المحمول" : "Mobile Number"}
           </label>
           <input
+            id="secure-signing-mobile"
             type="tel"
-            defaultValue={patientData?.mobileNumber || ""}
+            value={signatureMobile || patientData?.mobileNumber || ""}
+            onChange={(event) => setSignatureMobile(event.target.value)}
+            placeholder={locale === "ar" ? "05xxxxxxxx" : "05xxxxxxxx"}
+            title={locale === "ar" ? "رقم الهاتف المحمول" : "Mobile Number"}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-2">
+          <label htmlFor="secure-signing-email" className="block text-sm font-semibold mb-2">
             {locale === "ar" ? "البريد الإلكتروني" : "Email"}
           </label>
-          <input type="email" placeholder="patient@example.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input
+            id="secure-signing-email"
+            type="email"
+            placeholder="patient@example.com"
+            title={locale === "ar" ? "البريد الإلكتروني" : "Email"}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         <button
-          onClick={() => setCurrentStep("finalization")}
+          onClick={() => {
+            if (!draftConsent?.id) {
+              setError(locale === "ar" ? "يجب إنشاء المسودة أولاً" : "Generate a consent draft first");
+              return;
+            }
+
+            setLoading(true);
+            setError("");
+            setSuccess("");
+
+            void apiFetch<{ workflow: SecureSigningWorkflow }>(
+              `/api/modules/informed-consents/documents/${encodeURIComponent(draftConsent.id)}/secure-signing`,
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  mobileNumber: signatureMobile || patientData?.mobileNumber || "",
+                }),
+              },
+            )
+              .then((result) => {
+                setSecureSigningWorkflow(result.workflow);
+                setSuccess(locale === "ar" ? "تم إرسال رابط التوقيع الآمن" : "Secure signing link sent");
+                setCurrentStep("finalization");
+              })
+              .catch((err: unknown) => {
+                setError(err instanceof Error ? err.message : "Failed to send secure signing link");
+              })
+              .finally(() => {
+                setLoading(false);
+              });
+          }}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
         >
           <Send className="w-4 h-4" />
-          {locale === "ar" ? "إرسال رابط التوقيع" : "Send Signature Link"}
+          {locale === "ar" ? "إرسال رابط التوقيع الآمن" : "Send Secure Signing Link"}
         </button>
+
+        {secureSigningWorkflow ? (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+            <SecureSigningStatusBadges status={secureSigningWorkflow.status} />
+            <div className="text-xs text-slate-600 break-all">{secureSigningWorkflow.signingUrl}</div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -979,21 +1030,21 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
           <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center p-2 bg-white rounded border border-gray-200">
               <span>{locale === "ar" ? "ملف PDF النهائي" : "Final PDF"}</span>
-              <button className="text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              <button title={locale === "ar" ? "تنزيل ملف PDF النهائي" : "Download final PDF"} className="text-blue-600 hover:text-blue-700 flex items-center gap-1">
                 <Download className="w-4 h-4" />
               </button>
             </div>
 
             <div className="flex justify-between items-center p-2 bg-white rounded border border-gray-200">
               <span>{locale === "ar" ? "شهادة التوقيع" : "Signature Certificate"}</span>
-              <button className="text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              <button title={locale === "ar" ? "تنزيل شهادة التوقيع" : "Download signature certificate"} className="text-blue-600 hover:text-blue-700 flex items-center gap-1">
                 <Download className="w-4 h-4" />
               </button>
             </div>
 
             <div className="flex justify-between items-center p-2 bg-white rounded border border-gray-200">
               <span>{locale === "ar" ? "كود QR للتحقق" : "QR Verification Code"}</span>
-              <button className="text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              <button title={locale === "ar" ? "تنزيل رمز QR" : "Download QR code"} className="text-blue-600 hover:text-blue-700 flex items-center gap-1">
                 <Download className="w-4 h-4" />
               </button>
             </div>

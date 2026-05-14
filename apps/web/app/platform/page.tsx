@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, CreditCard, Plus, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";

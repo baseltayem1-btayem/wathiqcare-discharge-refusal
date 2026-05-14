@@ -44,8 +44,10 @@ import {
   type CaseWorkspaceStepKey,
 } from "@/components/cases/caseExecutionWorkspaceFlow";
 import LegalPackagePanel from "@/components/cases/legal-package/LegalPackagePanel";
+import SecureSigningStatusBadges from "@/components/signing/SecureSigningStatusBadges";
 import { getLegalReadinessDecisionIndicator } from "@/components/cases/legalReadinessDecision";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { SecureSigningWorkflow } from "@/lib/server/module-secure-signing-service";
 import {
   setDropOffStep,
   trackPrimaryAction,
@@ -535,8 +537,51 @@ export default function CaseExecutionWorkspaceLayout({
   const [detailTab, setDetailTab] = useState<DetailTab>("supporting");
   const [patientFormStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [expandedStepKey, setExpandedStepKey] = useState<CaseWorkspaceStepKey | null>(null);
+  const [secureSigningWorkflow, setSecureSigningWorkflow] = useState<SecureSigningWorkflow | null>(null);
+  const [secureSigningBusy, setSecureSigningBusy] = useState(false);
   const signerInputRef = useRef<HTMLInputElement | null>(null);
   const witnessInputRef = useRef<HTMLInputElement | null>(null);
+
+  const loadSecureSigning = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/discharge/cases/${encodeURIComponent(caseId)}/secure-signing-link`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+      const payload = (await response.json()) as { workflow?: SecureSigningWorkflow | null };
+      setSecureSigningWorkflow(payload.workflow || null);
+    } catch {
+      setSecureSigningWorkflow(null);
+    }
+  }, [caseId]);
+
+  useEffect(() => {
+    void loadSecureSigning();
+  }, [loadSecureSigning]);
+
+  const sendSecureSigning = useCallback(async () => {
+    setSecureSigningBusy(true);
+    try {
+      const response = await fetch(`/api/discharge/cases/${encodeURIComponent(caseId)}/secure-signing-link`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send secure signing link");
+      }
+
+      const payload = (await response.json()) as { workflow?: SecureSigningWorkflow | null };
+      setSecureSigningWorkflow(payload.workflow || null);
+    } finally {
+      setSecureSigningBusy(false);
+    }
+  }, [caseId]);
 
   const refusalScenario =
     signature.patient_decision === "refused" ||
@@ -1906,6 +1951,16 @@ export default function CaseExecutionWorkspaceLayout({
                 <Package className="h-4 w-4" />
                 {loading ? tr("Saving...", "جار الحفظ...") : tr("Generate Legal Package", "إنشاء الحزمة القانونية")}
               </Button>
+              <Button
+                variant="outline"
+                disabled={secureSigningBusy}
+                onClick={() => {
+                  void sendSecureSigning();
+                }}
+              >
+                <ShieldCheck className="h-4 w-4" />
+                {tr("Send Secure Signing Link", "إرسال رابط التوقيع الآمن")}
+              </Button>
               {legalPackage?.download_url && canDownloadFinalDocs ? (
                 <Button
                   variant="outline"
@@ -1918,6 +1973,13 @@ export default function CaseExecutionWorkspaceLayout({
                 </Button>
               ) : null}
             </div>
+
+            {secureSigningWorkflow ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <SecureSigningStatusBadges status={secureSigningWorkflow.status} />
+                <div className="text-xs text-slate-600 break-all">{secureSigningWorkflow.signingUrl}</div>
+              </div>
+            ) : null}
 
             {pdfLatest ? (
               <div className="rounded-2xl border border-slate-200 p-4 text-sm">

@@ -18,11 +18,11 @@ import {
   computeSigningExpiry,
   verifyWebhookSignature,
   SignatureProviderError,
-  SignatureExpiredError,
 } from "@/lib/core/signature-core";
 import { assertSignaturesEnabled } from "@/lib/core/signature-core";
 import { buildTimelineEntry } from "@/lib/core/audit-core";
 import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
+import { ApiError } from "@/lib/server/http";
 
 const prisma = getPrisma();
 
@@ -167,6 +167,11 @@ export async function validateSigningToken(
   signerRole: string;
   tenantId: string;
 }> {
+  const normalizedToken = token.trim();
+  if (!normalizedToken) {
+    throw new ApiError(400, "Invalid or expired signing token");
+  }
+
   const rows = await prisma.$queryRawUnsafe<
     Array<{
       id: string;
@@ -186,15 +191,17 @@ export async function validateSigningToken(
      JOIN signing_sessions s ON s.id = t.session_id
      WHERE t.token = $1
      LIMIT 1`,
-    token
+    normalizedToken
   );
 
   const row = rows[0];
-  if (!row) throw new SignatureExpiredError("Invalid signing token.");
-  if (row.used_at) throw new SignatureExpiredError("Signing token already used.");
-  if (row.revoked_at) throw new SignatureExpiredError("Signing token has been revoked.");
+  if (!row || !row.session_id || !row.document_id || !row.module_type || !row.tenant_id || !row.signer_role) {
+    throw new ApiError(404, "Invalid or expired signing token");
+  }
+  if (row.used_at) throw new ApiError(404, "Invalid or expired signing token");
+  if (row.revoked_at) throw new ApiError(404, "Invalid or expired signing token");
   if (new Date(row.expires_at) < new Date()) {
-    throw new SignatureExpiredError("Signing token has expired.");
+    throw new ApiError(404, "Invalid or expired signing token");
   }
 
   return {

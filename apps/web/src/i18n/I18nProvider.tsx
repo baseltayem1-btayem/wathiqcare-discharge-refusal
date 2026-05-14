@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
 import { getTranslation, interpolate, isSupportedLanguage, type Language } from "@/lib/i18n";
 
 type TranslateVars = Record<string, string | number>;
@@ -74,10 +73,17 @@ export default function I18nProvider({
   children: ReactNode;
   initialLang?: Language;
 }) {
-  const pathname = usePathname();
+  const [pathname, setPathname] = useState<string>("");
   const [preferredLang, setPreferredLang] = useState<Language>(() =>
     initializePreferredLang(initialLang)
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    setPathname(window.location.pathname || "");
+  }, []);
 
   const lang = useMemo<Language>(() => {
     const pathLang = pathname ? getPathLang(pathname) : null;

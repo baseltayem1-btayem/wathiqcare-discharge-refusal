@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/utils/api";
 
+export const dynamic = "force-dynamic";
+
 type VerifyResponse = {
     authenticated: boolean;
     redirectTo?: string;

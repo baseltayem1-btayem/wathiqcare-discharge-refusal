@@ -16,13 +16,21 @@
  */
 'use strict';
 
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const os = require('os');
 
 const MIGRATIONS_DIR = path.resolve(__dirname, '..', 'prisma', 'migrations');
+
+function resolveBinary(command) {
+  if (process.platform === 'win32') {
+    if (command === 'npx') return 'npx.cmd';
+    if (command === 'npm') return 'npm.cmd';
+  }
+  return command;
+}
 
 /** Use the direct (unpooled) URL for DDL; fall back to regular DATABASE_URL. */
 const directUrl =
@@ -103,14 +111,18 @@ DO UPDATE SET
   process.stdout.write(`[sql-migrations]   ${file} ... `);
 
   try {
-    execSync(`npx prisma db execute --file="${tempFile}" --url="${directUrl}"`, {
+    const result = spawnSync(resolveBinary('npx'), ['prisma', 'db', 'execute', `--file=${tempFile}`, `--url=${directUrl}`], {
       stdio: ['pipe', 'pipe', 'pipe'],
       cwd: path.resolve(__dirname, '..'),
     });
+
+    if (result.status !== 0) {
+      throw new Error((result.stderr || '').toString() || `Exit code ${result.status}`);
+    }
+
     process.stdout.write('OK\n');
   } catch (err) {
-    const stderr = err.stderr ? err.stderr.toString() : '';
-    const msg = (stderr || err.message || '').trim().replace(/\n/g, ' ').slice(0, 300);
+    const msg = (err.message || '').trim().replace(/\n/g, ' ').slice(0, 300);
     process.stdout.write(`WARN: ${msg}\n`);
     warnings++;
   } finally {

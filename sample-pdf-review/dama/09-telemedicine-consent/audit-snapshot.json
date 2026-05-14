@@ -1,0 +1,112 @@
+{
+  "markerEn": "TEST CASE - NOT A REAL PATIENT",
+  "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+  "caseCode": "TELEMEDICINE_CONSENT",
+  "scenario": {
+    "id": 9,
+    "code": "TELEMEDICINE_CONSENT",
+    "slug": "09-telemedicine-consent",
+    "titleEn": "Telemedicine Consent",
+    "titleAr": "موافقة الطب الاتصالي",
+    "scenarioEn": "Remote follow-up consultation.",
+    "scenarioAr": "استشارة متابعة عن بعد.",
+    "diagnosisEn": "Post-op tele-follow-up",
+    "diagnosisAr": "متابعة بعد العملية عن بعد",
+    "procedureEn": "Telemedicine consultation and documentation",
+    "procedureAr": "استشارة طب اتصالي وتوثيق",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "requiresInterpreter": false
+  },
+  "patient": {
+    "markerEn": "TEST CASE - NOT A REAL PATIENT",
+    "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+    "nameAr": "أحمد محمد السالم",
+    "nameEn": "Ahmed Mohammed Al-Salem",
+    "mrn": "TEST-000001",
+    "nationalId": "1000000001",
+    "dob": "1985-05-15",
+    "genderEn": "Male",
+    "genderAr": "ذكر",
+    "nationalityEn": "Saudi",
+    "nationalityAr": "سعودي",
+    "mobile": "0500000000",
+    "language": "Arabic and English",
+    "encounter": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "encounter": {
+    "id": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "diagnosis": {
+    "ar": "متابعة بعد العملية عن بعد",
+    "en": "Post-op tele-follow-up"
+  },
+  "procedure": {
+    "ar": "استشارة طب اتصالي وتوثيق",
+    "en": "Telemedicine consultation and documentation"
+  },
+  "benefits": {
+    "ar": "تحسين الحالة وتقليل المضاعفات ورفع الأمان العلاجي.",
+    "en": "Improved outcomes, fewer complications, and safer treatment."
+  },
+  "risks": {
+    "ar": "ألم، نزف، عدوى، تفاعل دوائي، ومضاعفات متوقعة حسب الحالة.",
+    "en": "Pain, bleeding, infection, medication reaction, and expected clinical risks."
+  },
+  "complications": {
+    "ar": "احتمال تدهور الحالة أو الحاجة إلى تدخل إضافي.",
+    "en": "Possible deterioration or need for additional intervention."
+  },
+  "alternatives": {
+    "ar": "العلاج التحفظي أو التأجيل أو إجراء بديل بعد شرح طبي.",
+    "en": "Conservative care, postponement, or suitable alternative procedure."
+  },
+  "refusalConsequences": {
+    "ar": "استمرار الأعراض وتدهور الحالة وزيادة المخاطر.",
+    "en": "Persistent symptoms, deterioration, and increased risk."
+  },
+  "declarations": {
+    "questionsAnswered": true,
+    "voluntaryConsent": true,
+    "physicianDeclaration": true,
+    "witnessAdded": false,
+    "guardianAdded": false,
+    "interpreterAdded": false
+  },
+  "signatures": [
+    {
+      "role": "PATIENT",
+      "name": "Ahmed Mohammed Al-Salem",
+      "signedAt": "2026-05-12T19:25:08.342Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "PHYSICIAN",
+      "name": "Dr. Omar Al-Harbi",
+      "signedAt": "2026-05-12T19:26:08.342Z",
+      "method": "ELECTRONIC"
+    }
+  ],
+  "workflowStatus": "SEALED",
+  "legalSealHash": "79f0d80a871b7d00ff868994bcf046bd2a47e704caee6bde8b8afbd69fbb9cfb",
+  "qrVerification": {
+    "status": "VALID",
+    "token": "bca5c4dac9314881a0d0",
+    "verifyUrl": "/uat/verify/09-telemedicine-consent/bca5c4dac9314881a0d0"
+  },
+  "generatedAt": "2026-05-12T18:45:08.342Z"
+}

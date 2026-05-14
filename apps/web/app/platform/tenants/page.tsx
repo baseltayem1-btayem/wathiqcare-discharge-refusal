@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import SectionErrorBoundary from "./_components/SectionErrorBoundary";
 import TenantListSection from "./_components/TenantListSection";
 

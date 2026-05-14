@@ -163,6 +163,15 @@ function readPrismaCode(error: unknown): string | null {
   return typeof code === "string" && code.length > 0 ? code : null;
 }
 
+function readErrorCode(error: unknown): string | null {
+  if (!error || typeof error !== "object") {
+    return null;
+  }
+
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" && code.length > 0 ? code : null;
+}
+
 function readPrismaMeta(error: unknown): Record<string, unknown> | null {
   if (!error || typeof error !== "object") {
     return null;
@@ -187,6 +196,13 @@ export function handleApiError(error: unknown) {
       ...(error.code ? { code: error.code } : {}),
       ...(error.fields ? { fields: error.fields } : {}),
     });
+  }
+
+  const domainCode = readErrorCode(error);
+  if (domainCode === "SIGNATURE_EXPIRED") {
+    const message = "Invalid or expired signing token";
+    logApiFailure({ traceId, status: 404, message, error, code: domainCode });
+    return jsonError(404, message, { traceId, code: domainCode });
   }
 
   const prismaCode = readPrismaCode(error);

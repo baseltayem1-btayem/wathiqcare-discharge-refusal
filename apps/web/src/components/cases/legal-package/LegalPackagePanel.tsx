@@ -8,6 +8,8 @@ import LegalPackageActions from "@/components/cases/legal-package/LegalPackageAc
 import LegalPackageDocumentsList from "@/components/cases/legal-package/LegalPackageDocumentsList";
 import SignatureStatusCard from "@/components/cases/legal-package/SignatureStatusCard";
 import CourtBundleSummary from "@/components/cases/legal-package/CourtBundleSummary";
+import SecureSigningStatusBadges from "@/components/signing/SecureSigningStatusBadges";
+import type { SecureSigningWorkflow } from "@/lib/server/module-secure-signing-service";
 
 type ValidationItem = {
   key: string;
@@ -56,11 +58,17 @@ export default function LegalPackagePanel({ caseId }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [data, setData] = useState<PackageResponse | null>(null);
+  const [secureSigning, setSecureSigning] = useState<SecureSigningWorkflow | null>(null);
 
   const load = useCallback(async () => {
-    const response = await fetch(`/api/cases/${caseId}/legal-package`, {
-      credentials: "include",
-    });
+    const [response, secureResponse] = await Promise.all([
+      fetch(`/api/cases/${caseId}/legal-package`, {
+        credentials: "include",
+      }),
+      fetch(`/api/cases/${caseId}/legal-package/secure-signing`, {
+        credentials: "include",
+      }).catch(() => null),
+    ]);
 
     if (!response.ok) {
       throw new Error(`Failed to load legal package: ${response.status}`);
@@ -68,6 +76,11 @@ export default function LegalPackagePanel({ caseId }: Props) {
 
     const json = (await response.json()) as PackageResponse;
     setData(json);
+
+    if (secureResponse?.ok) {
+      const secureJson = (await secureResponse.json()) as { workflow?: SecureSigningWorkflow | null };
+      setSecureSigning(secureJson.workflow || null);
+    }
   }, [caseId]);
 
   useEffect(() => {
@@ -131,6 +144,30 @@ export default function LegalPackagePanel({ caseId }: Props) {
             window.open(`/api/cases/${caseId}/legal-package/court-bundle`, "_blank", "noopener,noreferrer");
           }}
         />
+
+        <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-slate-900">Secure Signing Workflow</h3>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                void runAction(`/api/cases/${caseId}/legal-package/secure-signing`, "POST");
+              }}
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100 disabled:opacity-60"
+            >
+              Send Secure Signing Link / إرسال رابط التوقيع الآمن
+            </button>
+          </div>
+          {secureSigning ? (
+            <>
+              <SecureSigningStatusBadges status={secureSigning.status} />
+              <div className="text-xs text-slate-600 break-all">{secureSigning.signingUrl}</div>
+            </>
+          ) : (
+            <div className="text-sm text-slate-600">No secure signing link has been created yet.</div>
+          )}
+        </section>
 
         <SignatureStatusCard
           packageStatus={data?.package_status || "DRAFT"}

@@ -1,0 +1,124 @@
+{
+  "markerEn": "TEST CASE - NOT A REAL PATIENT",
+  "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+  "caseCode": "ICU_CRITICAL_CARE_CONSENT",
+  "scenario": {
+    "id": 16,
+    "code": "ICU_CRITICAL_CARE_CONSENT",
+    "slug": "16-icu-critical-care-consent",
+    "titleEn": "ICU / Critical Care Consent",
+    "titleAr": "موافقة العناية المركزة",
+    "scenarioEn": "ICU admission with possible mechanical ventilation.",
+    "scenarioAr": "دخول العناية المركزة مع احتمال التهوية الميكانيكية.",
+    "diagnosisEn": "Post-op respiratory compromise risk",
+    "diagnosisAr": "خطر قصور تنفسي بعد العملية",
+    "procedureEn": "ICU admission and critical support",
+    "procedureAr": "دخول العناية المركزة ودعم حرج",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "requiresInterpreter": true
+  },
+  "patient": {
+    "markerEn": "TEST CASE - NOT A REAL PATIENT",
+    "markerAr": "حالة اختبارية - ليست لمريض حقيقي",
+    "nameAr": "أحمد محمد السالم",
+    "nameEn": "Ahmed Mohammed Al-Salem",
+    "mrn": "TEST-000001",
+    "nationalId": "1000000001",
+    "dob": "1985-05-15",
+    "genderEn": "Male",
+    "genderAr": "ذكر",
+    "nationalityEn": "Saudi",
+    "nationalityAr": "سعودي",
+    "mobile": "0500000000",
+    "language": "Arabic and English",
+    "encounter": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "encounter": {
+    "id": "TEST-ENC-0001",
+    "departmentEn": "Surgery",
+    "departmentAr": "الجراحة",
+    "physicianEn": "Dr. Omar Al-Harbi",
+    "physicianAr": "د. عمر الحربي",
+    "specialtyEn": "General Surgery",
+    "specialtyAr": "الجراحة العامة",
+    "facility": "International Medical Center - Jeddah"
+  },
+  "diagnosis": {
+    "ar": "خطر قصور تنفسي بعد العملية",
+    "en": "Post-op respiratory compromise risk"
+  },
+  "procedure": {
+    "ar": "دخول العناية المركزة ودعم حرج",
+    "en": "ICU admission and critical support"
+  },
+  "benefits": {
+    "ar": "تحسين الحالة وتقليل المضاعفات ورفع الأمان العلاجي.",
+    "en": "Improved outcomes, fewer complications, and safer treatment."
+  },
+  "risks": {
+    "ar": "ألم، نزف، عدوى، تفاعل دوائي، ومضاعفات متوقعة حسب الحالة.",
+    "en": "Pain, bleeding, infection, medication reaction, and expected clinical risks."
+  },
+  "complications": {
+    "ar": "احتمال تدهور الحالة أو الحاجة إلى تدخل إضافي.",
+    "en": "Possible deterioration or need for additional intervention."
+  },
+  "alternatives": {
+    "ar": "العلاج التحفظي أو التأجيل أو إجراء بديل بعد شرح طبي.",
+    "en": "Conservative care, postponement, or suitable alternative procedure."
+  },
+  "refusalConsequences": {
+    "ar": "استمرار الأعراض وتدهور الحالة وزيادة المخاطر.",
+    "en": "Persistent symptoms, deterioration, and increased risk."
+  },
+  "declarations": {
+    "questionsAnswered": true,
+    "voluntaryConsent": true,
+    "physicianDeclaration": true,
+    "witnessAdded": true,
+    "guardianAdded": false,
+    "interpreterAdded": true
+  },
+  "signatures": [
+    {
+      "role": "PATIENT",
+      "name": "Ahmed Mohammed Al-Salem",
+      "signedAt": "2026-05-12T19:25:46.005Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "PHYSICIAN",
+      "name": "Dr. Omar Al-Harbi",
+      "signedAt": "2026-05-12T19:26:46.005Z",
+      "method": "ELECTRONIC"
+    },
+    {
+      "role": "WITNESS",
+      "name": "Nurse Aisha Al-Qahtani",
+      "signedAt": "2026-05-12T19:27:46.005Z",
+      "method": "WITNESS_ACKNOWLEDGMENT"
+    },
+    {
+      "role": "INTERPRETER",
+      "name": "Hassan Al-Mutairi",
+      "signedAt": "2026-05-12T19:29:46.005Z",
+      "method": "ELECTRONIC"
+    }
+  ],
+  "workflowStatus": "SEALED",
+  "legalSealHash": "1321a42ef2d2346af68452f3a7e0c3f61364c52f83f7a5c19416c80d4d5be4c8",
+  "qrVerification": {
+    "status": "VALID",
+    "token": "9e00c720a361cdd062a5",
+    "verifyUrl": "/uat/verify/16-icu-critical-care-consent/9e00c720a361cdd062a5"
+  },
+  "generatedAt": "2026-05-12T18:45:46.005Z"
+}

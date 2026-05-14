@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { Settings, ShieldCheck, Mail, Palette, Wrench } from "lucide-react";
 
 const sections = [

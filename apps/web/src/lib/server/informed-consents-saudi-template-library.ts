@@ -1,4 +1,6 @@
 import { ConsentSectionKind } from "@prisma/client";
+import { AR_CONSENT_TEXT } from "@/lib/server/consent.ar";
+import { EN_CONSENT_TEXT } from "@/lib/server/consent.en";
 
 export type SaudiEnterpriseTemplateSeed = {
   categoryCode: string;
@@ -33,112 +35,31 @@ type SectionSeed = {
   sortOrder: number;
 };
 
-const AR_INTRO = "أقر أنا الموقع أدناه / أو أقر بصفتي ولياً أو ممثلاً نظامياً للمريض، بأن الطبيب المعالج أو الممارس الصحي المختص قد شرح لي بلغة واضحة ومفهومة طبيعة الإجراء / الخدمة / العلاج المقترح، وسبب الحاجة إليه، والغرض الطبي منه، والمنافع المتوقعة، والبدائل الممكنة، والمخاطر والمضاعفات المحتملة، ونتائج رفض الإجراء أو تأجيله.";
-const AR_INTRO_2 = "وقد أُتيحت لي الفرصة الكافية لطرح الأسئلة والاستفسارات، وتمت الإجابة عنها بصورة واضحة ومفهومة، كما أفهم أن الموافقة الطبية لا تعني ضمان نتيجة علاجية محددة، وأن الممارسة الطبية قد تنطوي على مخاطر ومضاعفات رغم اتباع الأصول والقواعد المهنية المعتمدة.";
+const {
+  AR_INTRO,
+  AR_INTRO_2,
+  AR_PDPL,
+  AR_VOLUNTARY,
+  AR_NO_GUARANTEE,
+  AR_STANDARD_BENEFITS,
+  AR_STANDARD_RISKS,
+  AR_STANDARD_SERIOUS,
+  AR_STANDARD_ALTERNATIVES,
+  AR_STANDARD_REFUSAL,
+} = AR_CONSENT_TEXT;
 
-const EN_INTRO = "I, the undersigned patient, or the legal guardian / authorized representative of the patient, acknowledge that the treating physician or competent healthcare practitioner has explained to me in a clear and understandable language the nature of the proposed procedure / service / treatment, the medical indication, expected benefits, available alternatives, potential risks and complications, and the consequences of refusal or delay.";
-const EN_INTRO_2 = "I confirm that I have been given sufficient opportunity to ask questions, and that all my questions have been answered clearly and adequately. I understand that medical consent does not constitute a guarantee of any specific outcome, and that medical practice may involve risks and complications despite compliance with accepted professional standards.";
-
-const AR_PDPL = "أوافق على معالجة بياناتي الشخصية والصحية واستخدامها ومشاركتها داخل المنشأة الصحية ومع الجهات المختصة عند الحاجة، وذلك لأغراض تقديم الرعاية الصحية، التوثيق الطبي، الجودة، سلامة المرضى، المطالبات، الامتثال النظامي، وحفظ الحقوق، وفقاً لنظام حماية البيانات الشخصية السعودي والأنظمة الصحية المعمول بها.";
-const EN_PDPL = "I consent to the processing, use, and sharing of my personal and health data within the healthcare facility and with competent authorities where required, for purposes of healthcare delivery, medical documentation, quality, patient safety, claims, regulatory compliance, and protection of rights, in accordance with the Saudi Personal Data Protection Law and applicable healthcare regulations.";
-
-const AR_VOLUNTARY = "أوافق على الإجراء / العلاج / الخدمة الموضحة أعلاه بمحض إرادتي ودون إكراه، وأقر بأنني أملك الأهلية النظامية لإعطاء هذه الموافقة، أو أنني أوقع بصفتي ولياً / ممثلاً نظامياً للمريض.";
-const EN_VOLUNTARY = "I voluntarily consent to the procedure / treatment / service described above without coercion, and I confirm that I have the legal capacity to provide this consent, or that I am signing as the legal guardian / authorized representative of the patient.";
-
-const AR_NO_GUARANTEE = "أفهم وأقر بأنه لا توجد أي ضمانات مطلقة بشأن نتيجة علاجية محددة، وأن النتائج قد تختلف بحسب طبيعة المرض والحالة السريرية والاستجابة للعلاج.";
-const EN_NO_GUARANTEE = "I understand and acknowledge that no absolute guarantee can be given for a specific treatment outcome, and that outcomes vary based on the disease nature, clinical status, and treatment response.";
-
-const AR_STANDARD_BENEFITS = [
-  "تحسين الحالة الصحية.",
-  "تشخيص المرض أو تحديد درجته.",
-  "علاج المرض أو الحد من تطوره.",
-  "تخفيف الألم أو الأعراض.",
-  "منع حدوث مضاعفات مستقبلية.",
-  "المحافظة على الحياة أو الوظائف الحيوية عند الحاجة.",
-].join("\n- ");
-
-const EN_STANDARD_BENEFITS = [
-  "Improvement of my health condition.",
-  "Diagnosis or staging of disease.",
-  "Treatment or control of disease progression.",
-  "Relief of pain or symptoms.",
-  "Prevention of future complications.",
-  "Preservation of life or vital functions when required.",
-].join("\n- ");
-
-const AR_STANDARD_RISKS = [
-  "الألم أو عدم الارتياح.",
-  "النزيف.",
-  "العدوى.",
-  "الحساسية للأدوية أو المواد المستخدمة.",
-  "فشل الإجراء في تحقيق النتيجة المرجوة.",
-  "الحاجة إلى إجراء إضافي أو علاج بديل.",
-  "تدهور الحالة الصحية.",
-  "مضاعفات غير متوقعة.",
-].join("\n- ");
-
-const EN_STANDARD_RISKS = [
-  "Pain or discomfort.",
-  "Bleeding.",
-  "Infection.",
-  "Allergic reaction to medication or materials.",
-  "Failure to achieve the intended outcome.",
-  "Need for additional procedure or alternative treatment.",
-  "Deterioration of health condition.",
-  "Unforeseen complications.",
-].join("\n- ");
-
-const AR_STANDARD_SERIOUS = [
-  "فقدان عضو أو منفعة عضو.",
-  "عجز مؤقت أو دائم.",
-  "فشل عضوي.",
-  "الحاجة إلى العناية المركزة.",
-  "مضاعفات قلبية أو تنفسية أو عصبية.",
-  "الوفاة لا قدر الله.",
-].join("\n- ");
-
-const EN_STANDARD_SERIOUS = [
-  "Loss of organ or organ function.",
-  "Temporary or permanent disability.",
-  "Organ failure.",
-  "Need for intensive care.",
-  "Cardiac, respiratory, or neurological complications.",
-  "Death.",
-].join("\n- ");
-
-const AR_STANDARD_ALTERNATIVES = [
-  "العلاج الدوائي.",
-  "المتابعة والمراقبة.",
-  "إجراء طبي أو جراحي بديل.",
-  "الإحالة إلى تخصص آخر.",
-  "عدم إجراء التدخل الطبي مع تحمل النتائج الطبية المحتملة.",
-].join("\n- ");
-
-const EN_STANDARD_ALTERNATIVES = [
-  "Medication treatment.",
-  "Observation and monitoring.",
-  "Alternative medical or surgical procedure.",
-  "Referral to another specialty.",
-  "No intervention, with acceptance of possible medical consequences.",
-].join("\n- ");
-
-const AR_STANDARD_REFUSAL = [
-  "استمرار الأعراض.",
-  "تدهور الحالة الصحية.",
-  "صعوبة العلاج لاحقاً.",
-  "زيادة المضاعفات.",
-  "فقدان فرصة علاجية مناسبة.",
-  "العجز أو الوفاة في الحالات الخطرة لا قدر الله.",
-].join("\n- ");
-
-const EN_STANDARD_REFUSAL = [
-  "Persistence of symptoms.",
-  "Deterioration of medical condition.",
-  "Increased difficulty of future treatment.",
-  "Increased risk of complications.",
-  "Loss of suitable treatment opportunity.",
-  "Disability or death in high-risk cases.",
-].join("\n- ");
+const {
+  EN_INTRO,
+  EN_INTRO_2,
+  EN_PDPL,
+  EN_VOLUNTARY,
+  EN_NO_GUARANTEE,
+  EN_STANDARD_BENEFITS,
+  EN_STANDARD_RISKS,
+  EN_STANDARD_SERIOUS,
+  EN_STANDARD_ALTERNATIVES,
+  EN_STANDARD_REFUSAL,
+} = EN_CONSENT_TEXT;
 
 export const SAUDI_ENTERPRISE_TEMPLATES: SaudiEnterpriseTemplateSeed[] = [
   {
