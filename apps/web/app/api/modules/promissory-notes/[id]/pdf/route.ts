@@ -16,16 +16,18 @@ import { buildPromissoryPdfHtml, getEmbeddedArabicFontCss } from "@/lib/server/p
 
 const prisma = getPrisma();
 const IMC_LOGO_URL = "https://www.imc.med.sa/images/logo.jpg";
-const ASCII_FILENAME_SAFE = /[^a-zA-Z0-9._-]/g;
 
 function buildAttachmentHeader(filename: string): string {
   const trimmed = filename.trim();
   const normalized = (trimmed || "promissory-note.pdf")
     .replace(/[\r\n"]/g, "_")
-    .replace(ASCII_FILENAME_SAFE, "_")
+    .replace(/[;\\]/g, "_")
+    .replace(/\.\.+/g, ".")
+    .replace(/^\.+/, "")
     .slice(0, 160);
-  const encoded = encodeURIComponent(normalized);
-  return `attachment; filename="${normalized}"; filename*=UTF-8''${encoded}`;
+  const safeFilename = normalized || "promissory-note.pdf";
+  const encoded = encodeURIComponent(safeFilename);
+  return `attachment; filename="${safeFilename}"; filename*=UTF-8''${encoded}`;
 }
 
 function resolveVerificationBaseUrl(request: NextRequest): string | undefined {
