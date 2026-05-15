@@ -305,10 +305,12 @@ export default function LoginPage() {
             linear-gradient(0deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
           background-size: 100% 100%, 46px 46px, 46px 46px;
           opacity: 0.42;
+          pointer-events: none;
         }
 
         .auth-orb {
           filter: blur(0.6px);
+          pointer-events: none;
         }
 
         .auth-orb-a {
@@ -353,6 +355,8 @@ export default function LoginPage() {
         }
 
         .auth-card {
+          position: relative;
+          z-index: 1;
           box-shadow: 0 30px 70px rgba(17, 47, 81, 0.16);
         }
 
@@ -368,6 +372,8 @@ export default function LoginPage() {
           font-weight: 600;
           color: #1f4a7b;
           box-shadow: 0 8px 24px rgba(27, 56, 93, 0.08);
+          position: relative;
+          z-index: 2;
         }
 
         .auth-input-wrap {
@@ -379,7 +385,14 @@ export default function LoginPage() {
           border: 1px solid #d2ddea;
           background: #f9fbfe;
           padding-inline: 1rem;
+          position: relative;
+          z-index: 2;
           transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+        }
+
+        .auth-input-wrap > :global(svg) {
+          flex-shrink: 0;
+          pointer-events: none;
         }
 
         .auth-input-wrap:focus-within {
@@ -395,6 +408,9 @@ export default function LoginPage() {
           background: transparent;
           color: #1e334d;
           font-size: 1rem;
+          position: relative;
+          z-index: 3;
+          pointer-events: auto;
         }
 
         .auth-input::placeholder {
@@ -403,6 +419,9 @@ export default function LoginPage() {
 
         .auth-eye-btn {
           color: #6f87a4;
+          position: relative;
+          z-index: 3;
+          pointer-events: auto;
           transition: color 180ms ease;
         }
 
@@ -419,6 +438,9 @@ export default function LoginPage() {
           color: #ffffff;
           font-size: 1rem;
           font-weight: 700;
+          position: relative;
+          z-index: 3;
+          pointer-events: auto;
           box-shadow: 0 14px 30px rgba(14, 56, 105, 0.28);
           transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
         }
@@ -437,6 +459,12 @@ export default function LoginPage() {
           .auth-grid {
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
           }
+        }
+
+        .auth-form-wrap {
+          position: relative;
+          z-index: 1;
+          isolation: isolate;
         }
 
         .auth-secondary-btn {

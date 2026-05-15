@@ -685,7 +685,7 @@ export async function listRuntimeConsentTemplates(
     take: 100,
   });
 
-  const mapped = templates
+  return templates
     .map((template) => {
       const version = template.versions[0];
       if (!version) return null;
@@ -708,6 +708,4 @@ export async function listRuntimeConsentTemplates(
       };
     })
     .filter((item): item is RuntimeConsentTemplate => item !== null);
-
-  return mapped;
 }

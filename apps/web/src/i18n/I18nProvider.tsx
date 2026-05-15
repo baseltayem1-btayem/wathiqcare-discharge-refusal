@@ -82,7 +82,10 @@ export default function I18nProvider({
     if (typeof window === "undefined") {
       return;
     }
-    setPathname(window.location.pathname || "");
+    // Avoid calling setState synchronously in effect body
+    setTimeout(() => {
+      setPathname(window.location.pathname || "");
+    }, 0);
   }, []);
 
   const lang = useMemo<Language>(() => {

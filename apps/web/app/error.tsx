@@ -1,4 +1,7 @@
+
+
 "use client";
+import Link from "next/link";
 
 type AppErrorProps = {
   error: Error & { digest?: string };
@@ -22,12 +25,12 @@ export default function AppError({ error, reset }: AppErrorProps) {
           >
             Retry
           </button>
-          <a
+          <Link
             href="/dashboard"
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
           >
             Open dashboard
-          </a>
+          </Link>
         </div>
       </section>
     </main>

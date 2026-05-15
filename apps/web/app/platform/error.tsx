@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
+import Link from "next/link";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type PlatformErrorProps = {
@@ -29,12 +30,12 @@ export default function PlatformError({ reset }: PlatformErrorProps) {
         >
           {txt("Retry section", "إعادة المحاولة")}
         </button>
-        <a
+        <Link
           href="/platform"
           className="rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100"
         >
           {txt("Open platform overview", "فتح نظرة عامة على المنصة")}
-        </a>
+        </Link>
       </div>
     </div>
   );

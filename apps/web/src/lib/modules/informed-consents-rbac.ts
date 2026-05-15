@@ -130,8 +130,14 @@ const ROLE_PERMISSIONS: Record<string, InformedConsentPermission[]> = {
   ],
 };
 
+const ROLE_ALIASES: Record<string, string> = {
+  physician: "consent_physician",
+  doctor: "consent_physician",
+};
+
 function normalizeRole(role: string | null | undefined): string {
-  return (role || "").trim().toLowerCase();
+  const normalized = (role || "").trim().toLowerCase();
+  return ROLE_ALIASES[normalized] || normalized;
 }
 
 export function listInformedConsentPermissions(auth: AuthContext): Set<InformedConsentPermission> {

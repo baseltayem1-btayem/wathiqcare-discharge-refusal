@@ -12,8 +12,6 @@ export {
   getEnvironmentConfig,
   useEnvironmentConfig,
   resetEnvironmentConfig,
-  assertEnvironment,
-  isProductionSafeEnvironment,
 } from "./environment";
 
 // Role-based access control

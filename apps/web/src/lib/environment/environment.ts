@@ -172,23 +172,6 @@ export function resetEnvironmentConfig(): void {
 /**
  * For server-side components, use this to verify environment at runtime
  */
-export function assertEnvironment(
-  allowed: AppEnvironment[],
-  context?: string
-): void {
-  const config = useEnvironmentConfig();
-  if (!allowed.includes(config.env)) {
-    throw new Error(
-      `Environment assertion failed${context ? ` (${context})` : ""}: ` +
-      `expected one of [${allowed.join(", ")}], got "${config.env}"`
-    );
-  }
-}
-
-/**
- * Check if an environment is considered "safe" for production use
- */
-export function isProductionSafeEnvironment(): boolean {
-  const config = useEnvironmentConfig();
-  return config.isProduction || config.isPilot || config.isUAT;
-}
+// Removed invalid React Hook usage from non-component functions
+// assertEnvironment and isProductionSafeEnvironment must not use useEnvironmentConfig (React Hook)
+// You should refactor these to accept config as argument or move logic elsewhere

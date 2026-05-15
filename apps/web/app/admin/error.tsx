@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
+import Link from "next/link";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type AdminErrorProps = {
@@ -28,12 +29,12 @@ export default function AdminError({ reset }: AdminErrorProps) {
         >
           {t("adminError.retry")}
         </button>
-        <a
+        <Link
           href="/admin"
           className="rounded-lg border border-rose-300 bg-white px-4 py-2 text-sm font-medium text-rose-800 hover:bg-rose-100"
         >
           {t("adminError.openAdmin")}
-        </a>
+        </Link>
       </div>
     </div>
   );
