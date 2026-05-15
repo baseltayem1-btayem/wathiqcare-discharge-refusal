@@ -24,6 +24,11 @@ const nextConfig = {
     turbopack: {
         root: monorepoRoot,
     },
+    experimental: {
+        // Limit parallel build workers to 1 for Codespaces/low-memory stability.
+        // Prevents OOM kills when available heap is constrained (<4 GB free).
+        cpus: 1,
+    },
     images: {
         remotePatterns: [
             {
