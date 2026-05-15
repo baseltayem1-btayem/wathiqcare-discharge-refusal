@@ -248,7 +248,7 @@ export async function renderHtmlToPdf(
 
       try {
         const page = await browser.newPage();
-        await page.setContent(finalHtml, { waitUntil: "networkidle0" });
+        await page.setContent(finalHtml, { waitUntil: "domcontentloaded" });
         const raw = await page.pdf({
           format: PDF_CONFIG.format,
           margin: {
