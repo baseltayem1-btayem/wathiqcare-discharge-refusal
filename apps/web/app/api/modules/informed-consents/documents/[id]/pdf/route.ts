@@ -554,7 +554,7 @@ export async function GET(
 
     browser = await launchBrowser();
     const page = await browser.newPage();
-    await page.setContent(output, { waitUntil: "networkidle0" });
+    await page.setContent(output, { waitUntil: "domcontentloaded" });
 
     const pdf = await page.pdf({
       format: "A4",
