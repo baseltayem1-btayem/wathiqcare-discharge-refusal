@@ -45,6 +45,8 @@ type SecureLinkPayload = {
   signature_hash?: string | null;
   signature_provided?: boolean;
   provider_result?: Record<string, unknown> | null;
+  otp_hash?: string | null;
+  otp_expires_at?: string | null;
 };
 
 type CreateSecureLinkResult = {
@@ -905,4 +907,113 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
     }
     throw error;
   }
+}
+
+export async function downloadPublicSecureLinkArtifact(
+  token: string,
+  kind: string,
+): Promise<{ data: Buffer; mimeType: string; fileName: string }> {
+  const document = await getStoredSecureLinkByToken(token);
+  const payload = parseSecureLinkPayload(document);
+  ensureLinkActive(payload);
+
+  const documentType =
+    kind === "refusal_acknowledgement" ? "DISCHARGE_REFUSAL_FORM" : "CASE_FILE";
+
+  const pdfDoc = await prisma.document.findFirst({
+    where: {
+      caseId: payload.case_id,
+      tenantId: payload.tenant_id,
+      mimeType: "application/pdf",
+      documentType: documentType as import("@prisma/client").DocumentType,
+    },
+    orderBy: { createdAt: "desc" },
+    select: { storagePath: true, mimeType: true, fileName: true },
+  });
+
+  if (!pdfDoc?.storagePath) {
+    throw new ApiError(404, "المستند غير متوفر حالياً");
+  }
+
+  try {
+    const { readFile } = await import("node:fs/promises");
+    const data = await readFile(pdfDoc.storagePath);
+    return { data, mimeType: pdfDoc.mimeType, fileName: pdfDoc.fileName };
+  } catch {
+    throw new ApiError(503, "تعذر الوصول إلى الملف");
+  }
+}
+
+export async function requestPublicSecureLinkOtp(
+  token: string,
+): Promise<{ success: boolean; message: string; masked_email: string }> {
+  const document = await getStoredSecureLinkByToken(token);
+  const payload = parseSecureLinkPayload(document);
+  ensureLinkActive(payload);
+
+  const otpBytes = crypto.randomBytes(3);
+  const otpNum = ((otpBytes[0]! << 16) | (otpBytes[1]! << 8) | otpBytes[2]!) % 900000;
+  const otpCode = String(otpNum + 100000);
+  const otpHash = computeSignatureHash(otpCode);
+  const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+  const updatedPayload: SecureLinkPayload = { ...payload, otp_hash: otpHash, otp_expires_at: otpExpiresAt };
+  await prisma.document.update({
+    where: { id: document.id },
+    data: { payloadJson: updatedPayload as unknown as Prisma.InputJsonValue },
+  });
+
+  const email = payload.recipient_email;
+  const atIdx = email.indexOf("@");
+  const maskedEmail =
+    atIdx > 2 ? `${email.slice(0, 2)}***@${email.slice(atIdx + 1)}` : `***@${email.slice(atIdx + 1)}`;
+
+  logSecureLinkPublicEvent("public_secure_link_otp_requested", {
+    secure_token_hash: computeTokenHash(token),
+  });
+
+  return { success: true, message: "تم إرسال رمز التحقق إلى بريدك الإلكتروني", masked_email: maskedEmail };
+}
+
+export async function verifyPublicSecureLinkOtp(
+  token: string,
+  otpCode: string,
+  context: { ip: string | null; userAgent: string | null },
+): Promise<{ success: boolean; verified: boolean }> {
+  const document = await getStoredSecureLinkByToken(token);
+  const payload = parseSecureLinkPayload(document);
+  ensureLinkActive(payload);
+
+  const storedHash = payload.otp_hash;
+  const expiresAt = payload.otp_expires_at;
+
+  if (!storedHash || !expiresAt) {
+    throw new ApiError(400, "لم يتم طلب رمز التحقق");
+  }
+
+  if (new Date(expiresAt).getTime() <= Date.now()) {
+    throw new ApiError(410, "انتهت صلاحية رمز التحقق");
+  }
+
+  const submittedHash = computeSignatureHash(otpCode);
+  if (submittedHash !== storedHash) {
+    logSecureLinkPublicEvent("public_secure_link_otp_rejected", {
+      secure_token_hash: computeTokenHash(token),
+      ip: context.ip,
+    });
+    throw new ApiError(401, "رمز التحقق غير صحيح");
+  }
+
+  const updatedPayload: SecureLinkPayload = { ...payload, otp_hash: null, otp_expires_at: null };
+  await prisma.document.update({
+    where: { id: document.id },
+    data: { payloadJson: updatedPayload as unknown as Prisma.InputJsonValue },
+  });
+
+  logSecureLinkPublicEvent("public_secure_link_otp_verified", {
+    secure_token_hash: computeTokenHash(token),
+    ip: context.ip,
+  });
+
+  return { success: true, verified: true };
 }
