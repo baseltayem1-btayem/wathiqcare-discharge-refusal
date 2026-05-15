@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-12T18:46:01.147Z",
-  "commitHash": "29e85ea2d71b39811a066e37d187174825968699",
+  "generatedAt": "2026-05-15T18:07:13.785Z",
+  "commitHash": "UNKNOWN",
   "environment": "local/demo",
   "totalModules": 19,
   "passed": 19,
@@ -13,7 +13,7 @@
       "titleAr": "الموافقة العامة للعلاج",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "684da43cce5e4ba6f58d4bd3190822a3cf975b1acc855c57a7036d8b46a1d78f",
+      "legalSealHash": "69108b3138148f935d35ecd1e157dac01f46e2b1adb4490f6bd8e3c1862731df",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -40,7 +40,7 @@
       "titleAr": "موافقة جراحية",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "24e5529ed0ee7f9cb46e3291d0ae65947398fb0b1f818e3bdb89bd5076757abf",
+      "legalSealHash": "2f726e4d081c8b317e41152e9f835903757f06d48d710c8dbe3a7eaeadb167c1",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -67,7 +67,7 @@
       "titleAr": "موافقة التخدير",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "41de2cd4eb0075d0b1806c337abfa0fb44ea23e464594d31d795777731269361",
+      "legalSealHash": "4e4eebd85d4f221f9474a55a13b91a687812035532fe563e9e0a8e49c84ddff5",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -94,7 +94,7 @@
       "titleAr": "موافقة نقل الدم",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "59dc22133b6d5290a750eba2111def79f0bba7ce3a0e48e9b507db4b233d0b7b",
+      "legalSealHash": "8d5609510492367346a7134fb5822829436cde4254904801961c1d4868812203",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -121,7 +121,7 @@
       "titleAr": "موافقة إجراء عالي الخطورة",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "0b6262cbdc68a852bf2ca55f01f9095f0d4a65b08a46fcbc6aaaacad3f759ffc",
+      "legalSealHash": "25b792b09d6e4bfed724dd292a95ca0ff8bed8d5610df11f9adaaced20aa378b",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -148,7 +148,7 @@
       "titleAr": "موافقة التهدئة الإجرائية",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "f3abab918fb947e9c2d0f72ffcb735178cf7776beb7e50fbd42f76a1c2f12c8a",
+      "legalSealHash": "e5f3986e48ce17e5677f7c4e56f6f6cc2e830277106df8fc4a64223a0e984215",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -175,7 +175,7 @@
       "titleAr": "رفض العلاج والخروج ضد النصيحة",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "dab0871c8314d87d692fcace5d392a566cd5f688d20c96ecf338e68c4c9acfae",
+      "legalSealHash": "3fc611815ea72e9922350af33458d70a094b4b512d25a75d504aad91c8475025",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -202,7 +202,7 @@
       "titleAr": "رفض الجراحة",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "9cc0627efdb8748b875a9411af224667fe202876b36d1ad28b2ab2fb6594db05",
+      "legalSealHash": "46997df4125736b0c5c25e29a78ce49ea43c929a587463bca03e6f18aae1c521",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -229,7 +229,7 @@
       "titleAr": "موافقة الطب الاتصالي",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "79f0d80a871b7d00ff868994bcf046bd2a47e704caee6bde8b8afbd69fbb9cfb",
+      "legalSealHash": "4d7addb65c462e22cbbb6375abb8e5efd2b10531e30708167ecdd4b8005bb638",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -256,7 +256,7 @@
       "titleAr": "موافقة التصوير الطبي",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "4b134006a21fea8ceb71eae6ac4f3a27d9d708621ac6393a6a65fcc6a62b65bc",
+      "legalSealHash": "a58810d44cf4fd2668cc829eb93e35a5de07b4c019412f65762c8ad3b81e301c",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -283,7 +283,7 @@
       "titleAr": "موافقة معالجة البيانات",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "2532d39903f6040a1e7b5ce2196e50b14fc02d6b2f9883073850f0466bbe4d12",
+      "legalSealHash": "700006934375034897b15b906f2664b245d9b0da87a44604a4e650ab0abc7f1a",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -310,7 +310,7 @@
       "titleAr": "موافقة المشاركة البحثية",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "4c5bb30bd67cc00109818019871e3ae13a6154acf80a6d2c19ee1f48710535e8",
+      "legalSealHash": "0e51f7f3bf01e1ba1d77c5e5893d665df80bdb4ba47890c6eaa23c2053b3bf03",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -337,7 +337,7 @@
       "titleAr": "موافقة العلاج الكيميائي",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "01daab9a51ef0bd4a6b3d7f37ff6f4bca1ebe09590a81aef9af6a0e5cff9c339",
+      "legalSealHash": "77f6f2c6b513e6ad568f28b01e5e811d2d8a70fd65c1e663c5821302603933d7",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -364,7 +364,7 @@
       "titleAr": "موافقة العلاج الإشعاعي",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "590f40ae1a02ae35ad48b40565efdc01a9a086ca74d20e4217ac8b35cc92e46b",
+      "legalSealHash": "d20a860ab06210ddb5fe864e3f40a6406e3819d19c70dfff11af7b1ea80fb38f",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -391,7 +391,7 @@
       "titleAr": "موافقة مادة التباين",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "8cb7ec1303e6dbb430c264c90be1d1c3e7f22db3829f0b38b561d203a28ff43e",
+      "legalSealHash": "97073227e4c82175c9b9f85e6e6d2c3f2f1577c4a01dc2bb9142af03e7492303",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -418,7 +418,7 @@
       "titleAr": "موافقة العناية المركزة",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "1321a42ef2d2346af68452f3a7e0c3f61364c52f83f7a5c19416c80d4d5be4c8",
+      "legalSealHash": "21335886b8c0a31059ceb18008fd3de6eda3c0764698f6eb93f8173fb32d6fb6",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -445,7 +445,7 @@
       "titleAr": "موافقة الرعاية المنزلية",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "f62ba0d6e073380c29da5f727dbe0eaea18df1df41d12a0dec0059eb40640f34",
+      "legalSealHash": "581385963048787bd8d394b10dcbdf2a3c6fefa8ceb731c84355c31f5ba39dab",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -472,7 +472,7 @@
       "titleAr": "موافقة إجراء تداخلي خاص",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "090f7c15c689568db34e8d918e3954edb9c3517f3144b541435320d1cc929f9d",
+      "legalSealHash": "5dff00af437b51eab41c8586175328c756ae3ae4a855aa8caabc15982edfc837",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
@@ -499,7 +499,7 @@
       "titleAr": "موافقة ولي الأمر للقاصر",
       "status": "PASS",
       "workflowStatus": "SEALED",
-      "legalSealHash": "01c4eaf59f1681ea1f3dde616a9a184c212c9f0cd01ef015cb519207dbeeae7a",
+      "legalSealHash": "07168fb1c6386c943fd1ef7b9a6e3db7c9cd20ef46c4401e62e5024b2924dc90",
       "qrVerificationStatus": "VALID",
       "missingMandatoryFields": [],
       "languageIsolation": {
