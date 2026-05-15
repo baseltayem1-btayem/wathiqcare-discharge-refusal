@@ -15,11 +15,10 @@ import {
   Scale,
   ShieldCheck,
 } from "lucide-react";
-import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
 export default function LoginPage() {
-  const { isRtl } = useI18n();
+  const isRtl = false;
   const router = useRouter();
 
   const [identifier, setIdentifier] = useState("");
