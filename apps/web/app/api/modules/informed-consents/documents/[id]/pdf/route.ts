@@ -9,7 +9,9 @@ import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 
-const prisma = getPrisma();
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 async function launchBrowser(): Promise<Browser> {
   const defaultArgs = ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"];
@@ -425,6 +427,7 @@ export async function GET(
   let browser: Browser | null = null;
 
   try {
+    const prisma = getPrisma();
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
     const { id } = await params;
 

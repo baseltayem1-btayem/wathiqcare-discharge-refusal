@@ -5,7 +5,7 @@ import { getPrisma } from "@/lib/server/prisma";
 import { canonicalizeUserRole } from "@/lib/server/roles";
 import { asRecord, readBoolean, readNumber, readString, toIsoString } from "@/lib/server/compliance-utils";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 const ALLOWED_ROLES = new Set([
   "tenant_owner",
@@ -469,7 +469,7 @@ export async function getLegalRiskDashboard(
     throw new ApiError(403, "Insufficient role for legal risk dashboard");
   }
 
-  const rawCases = await prisma.case.findMany({
+  const rawCases = await prisma().case.findMany({
     where: {
       tenantId,
       caseType: CaseType.DISCHARGE_REFUSAL,

@@ -4,7 +4,7 @@ import { getPrisma } from "@/lib/server/prisma";
 import { getTrakCareConfig, getTrakCareReadiness, type TrakCareConfig } from "@/lib/server/trakcare/config";
 import type { TrakCareRequestContext } from "@/lib/server/trakcare/types";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 type CachedToken = {
   token: string;
@@ -259,7 +259,7 @@ export async function callTrakCare<T>(args: {
         throw new ApiError(response.status, "TrakCare upstream request failed");
       }
 
-      await prisma.trakCareIntegrationLog.create({
+      await prisma().trakCareIntegrationLog.create({
         data: {
           tenantId: args.context.tenantId,
           caseId: args.caseId || null,
@@ -299,7 +299,7 @@ export async function callTrakCare<T>(args: {
 
   const apiError = finalError instanceof ApiError ? finalError : new ApiError(502, "TrakCare request failed");
 
-  await prisma.trakCareIntegrationLog.create({
+  await prisma().trakCareIntegrationLog.create({
     data: {
       tenantId: args.context.tenantId,
       caseId: args.caseId || null,

@@ -5,7 +5,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 type SignatureStatus = "NOT_SENT" | "SENT" | "OPENED" | "PARTIALLY_SIGNED" | "SIGNED" | "FAILED" | "EXPIRED" | "REVOKED";
 
@@ -42,7 +42,7 @@ function getSignatureRequests(metadata: unknown): Array<Record<string, unknown>>
 
 export async function ensureSignatureOrchestrationComplete(auth: AuthContext, documentId: string): Promise<void> {
   const tenantId = requireTenantId(auth);
-  const doc = await prisma.consentDocument.findFirst({
+  const doc = await prisma().consentDocument.findFirst({
     where: { tenantId, id: documentId },
     include: { signatures: true },
   });
@@ -87,7 +87,7 @@ export async function buildImmutableEvidencePackage(
 }> {
   const tenantId = requireTenantId(auth);
 
-  const doc = await prisma.consentDocument.findFirst({
+  const doc = await prisma().consentDocument.findFirst({
     where: { tenantId, id: documentId },
     include: {
       case: true,
@@ -185,7 +185,7 @@ export async function buildImmutableEvidencePackage(
     .digest("hex")
     .slice(0, 48);
 
-  await prisma.consentDocument.update({
+  await prisma().consentDocument.update({
     where: { id: doc.id },
     data: {
       metadata: {
@@ -218,7 +218,7 @@ export async function buildImmutableEvidencePackage(
     },
   });
 
-  await prisma.consentEvidencePackage.updateMany({
+  await prisma().consentEvidencePackage.updateMany({
     where: { tenantId, consentDocumentId: doc.id },
     data: {
       storagePath,
@@ -282,7 +282,7 @@ export async function verifyEvidenceToken(token: string): Promise<{
   const normalized = (token || "").trim();
   if (!normalized) throw new ApiError(400, "Verification token is required");
 
-  const docs = await prisma.consentDocument.findMany({
+  const docs = await prisma().consentDocument.findMany({
     where: { status: "FINALIZED" },
     include: { signatures: true },
     take: 500,

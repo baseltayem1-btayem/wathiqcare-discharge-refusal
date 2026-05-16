@@ -4,6 +4,10 @@ import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { resolveLegalWorkflow } from "@/lib/server/legal-workflow-engine";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type RouteContext = {
   params: Promise<{ caseId: string }>;
 };

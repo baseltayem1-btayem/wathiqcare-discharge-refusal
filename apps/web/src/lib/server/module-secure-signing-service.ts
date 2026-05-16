@@ -6,7 +6,7 @@ import { buildSecureSigningLinkSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
 import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 const OTP_PROVIDER_KEY = "public_signing_otp";
 const OTP_REQUESTED_EVENT = "OTP_REQUESTED";
@@ -169,7 +169,7 @@ async function loadBadgeFlags(args: {
   tenantId: string;
   smsDeliveryStatus: "sent" | "failed";
 }): Promise<SecureSigningBadgeFlags> {
-  const tokenRows = await prisma.$queryRawUnsafe<TokenRow[]>(
+  const tokenRows = await prisma().$queryRawUnsafe<TokenRow[]>(
     `SELECT expires_at, used_at
      FROM signing_secure_tokens
      WHERE session_id = $1
@@ -181,7 +181,7 @@ async function loadBadgeFlags(args: {
   const token = tokenRows[0];
   const expiresAt = toDate(token?.expires_at);
 
-  const otpRows = await prisma.$queryRawUnsafe<Array<{ event_type: string; count: number }>>(
+  const otpRows = await prisma().$queryRawUnsafe<Array<{ event_type: string; count: number }>>(
     `SELECT event_type, COUNT(*)::int AS count
      FROM webhook_events
      WHERE provider_key = $1

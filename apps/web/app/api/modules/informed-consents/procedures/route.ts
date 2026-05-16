@@ -4,6 +4,10 @@ import { listConsentLibrary, upsertProcedureCatalog } from "@/lib/server/consent
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireModuleOperationalAccess(request, "informed-consents");

@@ -24,7 +24,7 @@ import { buildTimelineEntry } from "@/lib/core/audit-core";
 import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
 import { ApiError } from "@/lib/server/http";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 // ---------------------------------------------------------------------------
 // Provider Registry
@@ -82,7 +82,7 @@ export async function createSigningSession(
   }
 
   // Persist session
-  const session = await prisma.$executeRawUnsafe(
+  const session = await prisma().$executeRawUnsafe(
     `INSERT INTO signing_sessions
        (tenant_id, document_id, module_type, provider_key, status,
         required_signers, completed_signers, signer_links, expires_at, initiated_by_id)
@@ -99,7 +99,7 @@ export async function createSigningSession(
   );
 
   // Get the created session ID
-  const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+  const rows = await prisma().$queryRawUnsafe<Array<{ id: string }>>(
     `SELECT id FROM signing_sessions
      WHERE tenant_id = $1 AND document_id = $2
      ORDER BY created_at DESC LIMIT 1`,
@@ -112,7 +112,7 @@ export async function createSigningSession(
 
   // Persist secure tokens
   for (const t of tokenRows) {
-    await prisma.$executeRawUnsafe(
+    await prisma().$executeRawUnsafe(
       `INSERT INTO signing_secure_tokens (session_id, tenant_id, signer_role, token, expires_at)
        VALUES ($1, $2, $3, $4, $5)`,
       sessionId,
@@ -131,7 +131,7 @@ export async function createSigningSession(
     const result = await provider.submitForSigning(input, signerLinks as Record<SignerRole, string>);
     providerSessionId = result.providerSessionId;
 
-    await prisma.$executeRawUnsafe(
+    await prisma().$executeRawUnsafe(
       `UPDATE signing_sessions SET provider_session_id = $1, status = 'SENT', updated_at = NOW()
        WHERE id = $2`,
       providerSessionId,
@@ -172,7 +172,7 @@ export async function validateSigningToken(
     throw new ApiError(400, "Invalid or expired signing token");
   }
 
-  const rows = await prisma.$queryRawUnsafe<
+  const rows = await prisma().$queryRawUnsafe<
     Array<{
       id: string;
       session_id: string;
@@ -218,7 +218,7 @@ export async function validateSigningToken(
 // ---------------------------------------------------------------------------
 
 export async function markTokenUsed(token: string, ipAddress?: string): Promise<void> {
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `UPDATE signing_secure_tokens SET used_at = NOW(), ip_on_use = $1 WHERE token = $2`,
     ipAddress ?? null,
     token
@@ -243,7 +243,7 @@ export async function processSigningWebhook(
   const payload = JSON.parse(rawBody) as SigningWebhookPayload;
 
   // Log raw event
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `INSERT INTO webhook_events (provider_key, event_type, raw_payload, hmac_verified)
      VALUES ($1, $2, $3::jsonb, TRUE)`,
     providerKey,
@@ -252,7 +252,7 @@ export async function processSigningWebhook(
   );
 
   // Find session
-  const sessions = await prisma.$queryRawUnsafe<Array<{ id: string; tenant_id: string; document_id: string }>>(
+  const sessions = await prisma().$queryRawUnsafe<Array<{ id: string; tenant_id: string; document_id: string }>>(
     `SELECT id, tenant_id, document_id FROM signing_sessions WHERE provider_session_id = $1 LIMIT 1`,
     payload.providerSessionId
   );
@@ -266,7 +266,7 @@ export async function processSigningWebhook(
   else if (payload.event === "session.expired") newStatus = "EXPIRED";
 
   if (newStatus) {
-    await prisma.$executeRawUnsafe(
+    await prisma().$executeRawUnsafe(
       `UPDATE signing_sessions SET status = $1, updated_at = NOW(),
         completed_at = CASE WHEN $1 = 'COMPLETED' THEN NOW() ELSE completed_at END
        WHERE id = $2`,
@@ -277,7 +277,7 @@ export async function processSigningWebhook(
 
   // Track signer completion
   if (payload.event === "signer.signed" && payload.signerRole) {
-    await prisma.$executeRawUnsafe(
+    await prisma().$executeRawUnsafe(
       `UPDATE signing_sessions
        SET completed_signers = completed_signers || $1::jsonb, updated_at = NOW()
        WHERE id = $2`,
@@ -289,7 +289,7 @@ export async function processSigningWebhook(
   await logSigningEvent(sess.id, sess.tenant_id, providerKey, payload.event, payload.signerRole, payload.metadata);
 
   // Mark webhook as processed
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `UPDATE webhook_events SET processed = TRUE, processed_at = NOW()
      WHERE provider_key = $1 AND event_type = $2 AND raw_payload::text = $3
      AND processed = FALSE`,
@@ -310,7 +310,7 @@ export async function resendSigningLink(
 ): Promise<void> {
   assertSignaturesEnabled();
 
-  const sessions = await prisma.$queryRawUnsafe<
+  const sessions = await prisma().$queryRawUnsafe<
     Array<{ provider_session_id: string; provider_key: string; resend_count: number }>
   >(
     `SELECT provider_session_id, provider_key, resend_count FROM signing_sessions
@@ -328,7 +328,7 @@ export async function resendSigningLink(
   const provider = getProvider(sess.provider_key);
   await provider.resendToSigner(sess.provider_session_id, signerRole);
 
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `UPDATE signing_sessions SET resend_count = resend_count + 1, last_resent_at = NOW(), updated_at = NOW()
      WHERE id = $1`,
     sessionId
@@ -346,7 +346,7 @@ export async function revokeSigningSession(
 ): Promise<void> {
   assertSignaturesEnabled();
 
-  const sessions = await prisma.$queryRawUnsafe<
+  const sessions = await prisma().$queryRawUnsafe<
     Array<{ provider_session_id: string; provider_key: string }>
   >(
     `SELECT provider_session_id, provider_key FROM signing_sessions
@@ -361,7 +361,7 @@ export async function revokeSigningSession(
   const provider = getProvider(sess.provider_key);
   await provider.revokeSession(sess.provider_session_id);
 
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `UPDATE signing_sessions
      SET status = 'REVOKED', revoked_at = NOW(), revoked_reason = $1, updated_at = NOW()
      WHERE id = $2`,
@@ -370,7 +370,7 @@ export async function revokeSigningSession(
   );
 
   // Revoke all pending tokens
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `UPDATE signing_secure_tokens SET revoked_at = NOW()
      WHERE session_id = $1 AND used_at IS NULL AND revoked_at IS NULL`,
     sessionId
@@ -387,7 +387,7 @@ export async function retrieveSignedPdf(
 ): Promise<Buffer> {
   assertSignaturesEnabled();
 
-  const sessions = await prisma.$queryRawUnsafe<
+  const sessions = await prisma().$queryRawUnsafe<
     Array<{ provider_session_id: string; provider_key: string; status: string }>
   >(
     `SELECT provider_session_id, provider_key, status FROM signing_sessions
@@ -419,7 +419,7 @@ async function logSigningEvent(
   signerRole?: string,
   metadata?: Record<string, unknown>
 ): Promise<void> {
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `INSERT INTO signing_events (session_id, tenant_id, event_type, signer_role, provider_key, payload)
      VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
     sessionId,

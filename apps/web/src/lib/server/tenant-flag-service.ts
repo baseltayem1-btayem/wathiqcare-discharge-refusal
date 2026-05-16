@@ -3,7 +3,7 @@ import { FEATURE_FLAGS, type FeatureFlag } from "@/lib/config/feature-flags";
 import { getPrisma } from "@/lib/server/prisma";
 import type { ModuleKey } from "@/lib/modules/catalog";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type TenantFlagRecord = {
   key: string;
@@ -64,7 +64,7 @@ function buildScopeRef(scope: FeatureFlagScope, tenantId?: string | null, module
 async function upsertFlag(args: UpsertArgs): Promise<TenantFlagRecord> {
   const scopeRef = buildScopeRef(args.scope, args.tenantId, args.moduleKey);
 
-  const record = await prisma.featureFlagOverride.upsert({
+  const record = await prisma().featureFlagOverride.upsert({
     where: {
       scope_scopeRef_key: {
         scope: args.scope,
@@ -134,7 +134,7 @@ export async function setModuleFeatureFlag(tenantId: string, moduleKey: ModuleKe
 
 async function readOverride(scope: FeatureFlagScope, key: FeatureFlag, tenantId?: string | null, moduleKey?: ModuleKey | null): Promise<boolean | null> {
   const scopeRef = buildScopeRef(scope, tenantId, moduleKey);
-  const record = await prisma.featureFlagOverride.findUnique({
+  const record = await prisma().featureFlagOverride.findUnique({
     where: {
       scope_scopeRef_key: {
         scope,
@@ -170,7 +170,7 @@ export async function resolveFeatureFlag(key: FeatureFlag | string, tenantId?: s
 }
 
 export async function listTenantFeatureFlagOverrides(tenantId: string): Promise<TenantFlagRecord[]> {
-  const rows = await prisma.featureFlagOverride.findMany({
+  const rows = await prisma().featureFlagOverride.findMany({
     where: {
       OR: [
         { scope: FeatureFlagScope.GLOBAL },

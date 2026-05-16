@@ -10,7 +10,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 type SubscriptionWithPlan = Prisma.SubscriptionGetPayload<{
   include: { plan: true };
@@ -74,7 +74,7 @@ function usageMetricToPlanKey(metric: UsageMetric): string | null {
 async function createDefaultTrialSubscription(
   tenantId: string,
 ): Promise<SubscriptionWithPlan> {
-  const starterPlan = await prisma.plan.findFirst({
+  const starterPlan = await prisma().plan.findFirst({
     where: {
       isActive: true,
       code: PlanCode.STARTER,
@@ -83,7 +83,7 @@ async function createDefaultTrialSubscription(
 
   const fallbackPlan =
     starterPlan ??
-    (await prisma.plan.findFirst({
+    (await prisma().plan.findFirst({
       where: { isActive: true },
       orderBy: { createdAt: "asc" },
     }));
@@ -96,7 +96,7 @@ async function createDefaultTrialSubscription(
   const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   const currentPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-  return prisma.subscription.create({
+  return prisma().subscription.create({
     data: {
       tenantId,
       planId: fallbackPlan.id,
@@ -114,7 +114,7 @@ async function createDefaultTrialSubscription(
 export async function getTenantSubscription(
   tenantId: string,
 ): Promise<SubscriptionWithPlan> {
-  const existing = await prisma.subscription.findFirst({
+  const existing = await prisma().subscription.findFirst({
     where: { tenantId },
     include: { plan: true },
     orderBy: { createdAt: "desc" },
@@ -165,7 +165,7 @@ export async function enforcePlanUsage(
 
   const currentMonthStart = startOfUtcMonth();
 
-  const aggregate = await prisma.usageRecord.aggregate({
+  const aggregate = await prisma().usageRecord.aggregate({
     where: {
       tenantId,
       metric,
@@ -192,7 +192,7 @@ export async function recordUsage(
 ): Promise<void> {
   const periodDate = startOfUtcDay();
 
-  await prisma.usageRecord.upsert({
+  await prisma().usageRecord.upsert({
     where: {
       tenantId_metric_periodDate: {
         tenantId,
@@ -221,7 +221,7 @@ export async function syncActiveUserUsage(
   const activeUsers = await countActiveSeatUsers(tenantId);
   const periodDate = startOfUtcDay();
 
-  await prisma.usageRecord.upsert({
+  await prisma().usageRecord.upsert({
     where: {
       tenantId_metric_periodDate: {
         tenantId,
@@ -245,7 +245,7 @@ export async function syncActiveUserUsage(
 export async function countActiveSeatUsers(
   tenantId: string,
 ): Promise<number> {
-  return prisma.tenantMembership.count({
+  return prisma().tenantMembership.count({
     where: {
       tenantId,
       status: "ACTIVE",
@@ -257,7 +257,7 @@ export async function countActiveSeatUsers(
 export async function countPendingSeatUsers(
   tenantId: string,
 ): Promise<number> {
-  return prisma.tenantMembership.count({
+  return prisma().tenantMembership.count({
     where: {
       tenantId,
       OR: [
@@ -322,7 +322,7 @@ export async function writeAuditLog(args: AuditArgs): Promise<void> {
 
   const userAgent = args.request?.headers.get("user-agent") ?? null;
 
-  await prisma.auditLog.create({
+  await prisma().auditLog.create({
     data: {
       tenantId: args.tenantId,
       userId: args.userId,

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, requireTenantOperationalAccess } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
-import { getDataResidencyDashboard } from "@/lib/server/privacy-service";
+
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
+    const { requireAuth, requireTenantOperationalAccess } = await import("@/lib/server/auth");
+    const { getDataResidencyDashboard } = await import("@/lib/server/privacy-service");
     const auth = await requireAuth(request);
     requireTenantOperationalAccess(auth);
     if (!auth.tenant_id) {

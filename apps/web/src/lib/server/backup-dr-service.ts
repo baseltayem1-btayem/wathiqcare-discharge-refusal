@@ -6,7 +6,7 @@ import { getPrisma } from "@/lib/server/prisma";
 import { assertDataResidencyCompliance } from "@/lib/server/privacy-service";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 function parseBackupStatus(value: string | null | undefined): BackupJobStatus {
   const normalized = (value ?? "").trim().toUpperCase();
@@ -48,8 +48,8 @@ export function summarizeBackupReadiness(
 
 export async function getBackupDashboard(tenantId: string) {
   const [jobs, restoreTests] = await Promise.all([
-    prisma.backupJob.findMany({ where: { tenantId }, orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []),
-    prisma.backupRestoreTest.findMany({ where: { tenantId }, orderBy: { executedAt: "desc" }, take: 50 }).catch(() => []),
+    prisma().backupJob.findMany({ where: { tenantId }, orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []),
+    prisma().backupRestoreTest.findMany({ where: { tenantId }, orderBy: { executedAt: "desc" }, take: 50 }).catch(() => []),
   ]);
 
   const summary = summarizeBackupReadiness(jobs, restoreTests);
@@ -99,7 +99,7 @@ export async function createBackupJob(
     destinationRegion: payload.region,
   });
 
-  const job = await prisma.backupJob.create({
+  const job = await prisma().backupJob.create({
     data: {
       tenantId: auth.tenant_id,
       classification: DataClassification.BACKUP,
@@ -115,7 +115,7 @@ export async function createBackupJob(
   });
 
   if (payload.restoreResultStatus?.trim()) {
-    await prisma.backupRestoreTest.create({
+    await prisma().backupRestoreTest.create({
       data: {
         tenantId: auth.tenant_id,
         backupJobId: job.id,

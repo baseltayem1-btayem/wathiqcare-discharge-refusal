@@ -3,6 +3,10 @@ import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { generateCasePdfReport } from "@/lib/server/legal-case-pdf-service";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type RouteContext = {
   params: Promise<{ caseId: string }>;
 };

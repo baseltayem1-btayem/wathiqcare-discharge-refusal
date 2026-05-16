@@ -5,6 +5,10 @@ import { getPrisma } from "@/lib/server/prisma";
 import { resolveLegalWorkflow } from "@/lib/server/legal-workflow-engine";
 import { generateAiLegalIntelligence } from "@/lib/server/ai-legal-intelligence";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type RouteContext = {
   params: Promise<{ caseId: string }>;
 };

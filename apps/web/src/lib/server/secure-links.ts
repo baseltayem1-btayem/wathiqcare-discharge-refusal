@@ -11,7 +11,7 @@ import {
   sendEmailWithDiagnostics,
 } from "@/lib/server/email-provider";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 const SECURE_LINK_TEMPLATE_KEY = "secure_discharge_link";
 const SECURE_LINK_CODE_PREFIX = "SECURE-LINK:";
@@ -348,7 +348,7 @@ function parseSecureLinkPayload(document: { payloadJson: unknown }): SecureLinkP
 }
 
 async function getTenantCaseOrThrow(tenantId: string, caseId: string): Promise<CaseContext> {
-  const caseRecord = await prisma.case.findFirst({
+  const caseRecord = await prisma().case.findFirst({
     where: { id: caseId, tenantId },
     select: {
       id: true,
@@ -492,7 +492,7 @@ function ensureLinkActive(payload: SecureLinkPayload): void {
 
 async function getStoredSecureLinkByToken(token: string): Promise<StoredSecureLinkDocument> {
   const tokenHash = computeTokenHash(token);
-  const document = await prisma.document.findFirst({
+  const document = await prisma().document.findFirst({
     where: {
       templateKey: SECURE_LINK_TEMPLATE_KEY,
       documentCode: `${SECURE_LINK_CODE_PREFIX}${tokenHash}`,
@@ -585,7 +585,7 @@ export async function createSecureLink(args: {
     provider_result: delivery.providerResult,
   };
 
-  await prisma.document.create({
+  await prisma().document.create({
     data: {
       id: linkId,
       tenantId: args.tenantId,
@@ -639,7 +639,7 @@ export async function createSecureLink(args: {
 export async function listSecureLinks(tenantId: string, caseId: string): Promise<SecureLinkRecord[]> {
   await getTenantCaseOrThrow(tenantId, caseId);
 
-  const documents = await prisma.document.findMany({
+  const documents = await prisma().document.findMany({
     where: {
       tenantId,
       caseId,
@@ -668,7 +668,7 @@ export async function revokeSecureLink(args: {
   userId: string;
   request?: NextRequest;
 }): Promise<void> {
-  const document = await prisma.document.findFirst({
+  const document = await prisma().document.findFirst({
     where: {
       id: args.linkId,
       tenantId: args.tenantId,
@@ -692,7 +692,7 @@ export async function revokeSecureLink(args: {
     delivery_status: payload.delivery_status === "sent" ? "revoked" : payload.delivery_status,
   };
 
-  await prisma.document.update({
+  await prisma().document.update({
     where: { id: document.id },
     data: {
       status: DocumentStatus.ARCHIVED,
@@ -723,7 +723,7 @@ export async function getPublicSecureLink(token: string): Promise<PublicSecureCa
     if (!payload.accessed_at) {
       const accessedAt = new Date().toISOString();
       const updatedPayload: SecureLinkPayload = { ...payload, accessed_at: accessedAt };
-      await prisma.document.update({
+      await prisma().document.update({
         where: { id: document.id },
         data: {
           payloadJson: updatedPayload as unknown as Prisma.InputJsonValue,
@@ -797,7 +797,7 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
       accessed_at: payload.accessed_at ?? submittedAt,
     };
 
-    await prisma.document.update({
+    await prisma().document.update({
       where: { id: document.id },
       data: {
         status: DocumentStatus.SIGNED,
@@ -820,7 +820,7 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
     });
 
     try {
-      await prisma.dischargeRefusalCase.upsert({
+      await prisma().dischargeRefusalCase.upsert({
         where: {
           id: document.id,
         },
@@ -848,7 +848,7 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
       if (isMissingTableError(error)) {
         console.warn("secure-link: discharge_refusal_cases table missing; skipping signature mirror");
       } else {
-        const existing = await prisma.dischargeRefusalCase.findFirst({
+        const existing = await prisma().dischargeRefusalCase.findFirst({
           where: {
             tenantId: payload.tenant_id,
             caseId: payload.case_id,
@@ -863,7 +863,7 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
         });
 
         if (existing) {
-          await prisma.dischargeRefusalCase.update({
+          await prisma().dischargeRefusalCase.update({
             where: { id: existing.id },
             data: {
               dischargeStatus: decision === "accept" ? "accepted_via_secure_link" : "refused_via_secure_link",
@@ -920,7 +920,7 @@ export async function downloadPublicSecureLinkArtifact(
   const documentType =
     kind === "refusal_acknowledgement" ? "DISCHARGE_REFUSAL_FORM" : "CASE_FILE";
 
-  const pdfDoc = await prisma.document.findFirst({
+  const pdfDoc = await prisma().document.findFirst({
     where: {
       caseId: payload.case_id,
       tenantId: payload.tenant_id,
@@ -958,7 +958,7 @@ export async function requestPublicSecureLinkOtp(
   const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
   const updatedPayload: SecureLinkPayload = { ...payload, otp_hash: otpHash, otp_expires_at: otpExpiresAt };
-  await prisma.document.update({
+  await prisma().document.update({
     where: { id: document.id },
     data: { payloadJson: updatedPayload as unknown as Prisma.InputJsonValue },
   });
@@ -1005,7 +1005,7 @@ export async function verifyPublicSecureLinkOtp(
   }
 
   const updatedPayload: SecureLinkPayload = { ...payload, otp_hash: null, otp_expires_at: null };
-  await prisma.document.update({
+  await prisma().document.update({
     where: { id: document.id },
     data: { payloadJson: updatedPayload as unknown as Prisma.InputJsonValue },
   });

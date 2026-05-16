@@ -7,7 +7,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type RemediationCategory = "legal" | "privacy" | "security" | "resilience" | "third_party" | "workforce" | "operations";
 export type RemediationSeverity = "standard" | "high" | "critical";
@@ -308,7 +308,7 @@ export async function listRemediationTrackerDashboard(auth: AuthContext) {
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const tenant = await prisma.tenant.findUnique({
+  const tenant = await prisma().tenant.findUnique({
     where: { id: auth.tenant_id },
     select: { metadata: true },
   });
@@ -339,7 +339,7 @@ export async function saveRemediationTrackerEntry(
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const tenant = await prisma.tenant.findUnique({
+  const tenant = await prisma().tenant.findUnique({
     where: { id: auth.tenant_id },
     select: { id: true, metadata: true },
   });
@@ -360,7 +360,7 @@ export async function saveRemediationTrackerEntry(
     remediationTracker: result.items,
   } as Prisma.InputJsonValue;
 
-  await prisma.tenant.update({
+  await prisma().tenant.update({
     where: { id: auth.tenant_id },
     data: { metadata: nextMetadata },
   });

@@ -5,7 +5,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { toIsoString } from "@/lib/server/compliance-utils";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 type AuditChainEventDelegate = {
   findFirst: (args: unknown) => Promise<{ currentHash?: string | null } | null>;

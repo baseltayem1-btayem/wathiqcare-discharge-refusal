@@ -5,6 +5,10 @@ import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },

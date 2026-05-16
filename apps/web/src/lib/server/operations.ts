@@ -11,7 +11,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export const DEPARTMENT_LABELS: Record<OperationDepartment, string> = {
   PHARMACY: "Pharmacy",
@@ -132,7 +132,7 @@ async function resolveSlaDeadline(args: {
   stepCode: string;
   now: Date;
 }): Promise<Date> {
-  const config = await prisma.departmentSlaConfig.findUnique({
+  const config = await prisma().departmentSlaConfig.findUnique({
     where: {
       tenantId_department_stepCode: {
         tenantId: args.tenantId,
@@ -174,7 +174,7 @@ export async function ensureOperationStateForCase(args: {
     now,
   });
 
-  await prisma.caseOperationState.upsert({
+  await prisma().caseOperationState.upsert({
     where: { caseId: args.caseId },
     update: {
       lastActionAt: now,
@@ -247,7 +247,7 @@ export async function createOperationNotification(args: {
     });
   }
 
-  await prisma.operationNotification.createMany({ data });
+  await prisma().operationNotification.createMany({ data });
 }
 
 export async function assignCaseOperation(args: {
@@ -262,7 +262,7 @@ export async function assignCaseOperation(args: {
 }): Promise<void> {
   const now = new Date();
 
-  const currentState = await prisma.caseOperationState.findUnique({
+  const currentState = await prisma().caseOperationState.findUnique({
     where: { caseId: args.caseId },
   });
 
@@ -277,7 +277,7 @@ export async function assignCaseOperation(args: {
     now,
   });
 
-  const nextState = await prisma.caseOperationState.update({
+  const nextState = await prisma().caseOperationState.update({
     where: { caseId: args.caseId },
     data: {
       assignedToUserId: args.toUserId ?? null,
@@ -292,7 +292,7 @@ export async function assignCaseOperation(args: {
     },
   });
 
-  await prisma.caseAssignmentHistory.create({
+  await prisma().caseAssignmentHistory.create({
     data: {
       tenantId: args.tenantId,
       caseId: args.caseId,
@@ -362,7 +362,7 @@ export async function recordCaseStepAction(args: {
 }): Promise<void> {
   const now = new Date();
 
-  const state = await prisma.caseOperationState.findUnique({
+  const state = await prisma().caseOperationState.findUnique({
     where: { caseId: args.caseId },
   });
 
@@ -396,7 +396,7 @@ export async function recordCaseStepAction(args: {
         ? SlaState.AT_RISK
         : slaStateFromDeadline(slaDeadline, now);
 
-  await prisma.caseOperationState.update({
+  await prisma().caseOperationState.update({
     where: { caseId: args.caseId },
     data: {
       currentStage: args.stageCode,
@@ -413,7 +413,7 @@ export async function recordCaseStepAction(args: {
     },
   });
 
-  await prisma.caseStepEvent.create({
+  await prisma().caseStepEvent.create({
     data: {
       tenantId: args.tenantId,
       caseId: args.caseId,
@@ -458,7 +458,7 @@ export async function recordCaseStepAction(args: {
   });
 
   if (args.action === "sla_breached" || args.action === "escalation_triggered") {
-    const recipients = await prisma.user.findMany({
+    const recipients = await prisma().user.findMany({
       where: {
         tenantId: args.tenantId,
         isActive: true,
@@ -504,7 +504,7 @@ export async function runSlaSweepForTenant(
 ): Promise<{ atRisk: number; breached: number }> {
   const now = new Date();
 
-  const states = await prisma.caseOperationState.findMany({
+  const states = await prisma().caseOperationState.findMany({
     where: {
       tenantId,
       status: { not: "CLOSED" },
@@ -533,7 +533,7 @@ export async function runSlaSweepForTenant(
       continue;
     }
 
-    await prisma.caseOperationState.update({
+    await prisma().caseOperationState.update({
       where: { caseId: state.caseId },
       data: {
         slaState: nextState,

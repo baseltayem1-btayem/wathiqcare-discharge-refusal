@@ -7,7 +7,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type ThirdPartyRiskTier = "low" | "medium" | "high" | "critical";
 export type ThirdPartyRiskStatus = "PENDING_REVIEW" | "APPROVED" | "RESTRICTED" | "REJECTED";
@@ -341,7 +341,7 @@ export async function listThirdPartyRiskDashboard(auth: AuthContext) {
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const tenant = await prisma.tenant.findUnique({
+  const tenant = await prisma().tenant.findUnique({
     where: { id: auth.tenant_id },
     select: { metadata: true },
   });
@@ -372,7 +372,7 @@ export async function saveThirdPartyRiskEntry(
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const tenant = await prisma.tenant.findUnique({
+  const tenant = await prisma().tenant.findUnique({
     where: { id: auth.tenant_id },
     select: { id: true, metadata: true },
   });
@@ -393,7 +393,7 @@ export async function saveThirdPartyRiskEntry(
     thirdPartyRiskRegister: result.items,
   } as Prisma.InputJsonValue;
 
-  await prisma.tenant.update({
+  await prisma().tenant.update({
     where: { id: auth.tenant_id },
     data: { metadata: nextMetadata },
   });

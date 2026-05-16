@@ -5,9 +5,13 @@ import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 import {
+
   buildImmutableEvidencePackage,
   ensureSignatureOrchestrationComplete,
 } from "@/lib/server/informed-consents-evidence-vault-service";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function POST(
   request: NextRequest,

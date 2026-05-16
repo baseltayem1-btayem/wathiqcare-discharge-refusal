@@ -3,9 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
 import {
+
   generateLegalPackageModule,
   getLegalPackageModule,
 } from "@/lib/server/legal-package-module-service";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type RouteContext = {
   params: Promise<{ caseId: string }>;

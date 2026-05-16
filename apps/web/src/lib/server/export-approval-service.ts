@@ -8,7 +8,7 @@ import { getTenantSecuritySettings } from "@/lib/server/security-policy-service"
 import { logReportAccess } from "@/lib/server/report-access-service";
 import { getPrisma } from "@/lib/server/prisma";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 const EXPORT_APPROVAL_REQUEST_KEY = "export_approval_request";
 const EXPORT_APPROVAL_DECISION_KEY = "export_approval_decision";
@@ -147,7 +147,7 @@ export function isExportApprovalSatisfied(args: {
 }
 
 export async function listExportApprovalRequests(tenantId: string) {
-  const logs = await prisma.reportAccessLog.findMany({
+  const logs = await prisma().reportAccessLog.findMany({
     where: {
       tenantId,
       reportKey: {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import {
+
   buildImmutableEvidencePackage,
 } from "@/lib/server/informed-consents-evidence-vault-service";
 import { handleApiError } from "@/lib/server/http";
@@ -8,13 +9,15 @@ import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
-const prisma = getPrisma();
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const prisma = getPrisma();
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
     requireInformedConsentPermission(auth, "consent:view_evidence");
     const { id } = await params;

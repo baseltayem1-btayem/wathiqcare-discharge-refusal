@@ -5,7 +5,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 function parseSeverity(value: string | null | undefined): IncidentSeverity {
   const normalized = (value ?? "").trim().toUpperCase();
@@ -81,7 +81,7 @@ export function summarizeSecurityIncidents(
 }
 
 export async function listSecurityIncidents(tenantId: string) {
-  const incidents = await prisma.securityIncident.findMany({
+  const incidents = await prisma().securityIncident.findMany({
     where: { tenantId },
     orderBy: { detectedAt: "desc" },
     take: 100,
@@ -118,7 +118,7 @@ export async function createSecurityIncident(
 
   const severity = parseSeverity(payload.severity);
   const sla = buildIncidentSla(severity);
-  const incident = await prisma.securityIncident.create({
+  const incident = await prisma().securityIncident.create({
     data: {
       tenantId: auth.tenant_id,
       caseId: payload.caseId?.trim() || null,

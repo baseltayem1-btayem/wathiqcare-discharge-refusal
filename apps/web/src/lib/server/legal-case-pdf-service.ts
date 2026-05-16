@@ -20,7 +20,7 @@ import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { logReportAccess } from "@/lib/server/report-access-service";
 import { evaluateWitnessIntegrity } from "@/lib/server/witness-integrity-service";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 let sharedPdfBrowserPromise: Promise<Browser> | null = null;
 
 const PDF_TEMPLATE_VERSION = "1.0.0";
@@ -380,7 +380,7 @@ async function getAuthorizedCase(auth: AuthContext, caseId: string) {
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const caseRecord = await prisma.case.findFirst({
+  const caseRecord = await prisma().case.findFirst({
     where: { id: caseId, tenantId: auth.tenant_id },
     include: {
       tenant: {
@@ -1109,7 +1109,7 @@ function toReportSummary(document: {
 }
 
 async function listPdfDocumentsInternal(tenantId: string, caseId: string) {
-  return prisma.document.findMany({
+  return prisma().document.findMany({
     where: {
       tenantId,
       caseId,
@@ -1200,7 +1200,7 @@ async function createFailedRecord(args: {
   };
 
   const failed = args.existingDocumentId
-    ? await prisma.document.update({
+    ? await prisma().document.update({
         where: { id: args.existingDocumentId },
         data: {
           status: DocumentStatus.DRAFT,
@@ -1215,7 +1215,7 @@ async function createFailedRecord(args: {
           metadata,
         },
       })
-    : await prisma.document.create({
+    : await prisma().document.create({
         data: {
           tenantId: args.tenantId,
           caseId: args.caseId,
@@ -1414,7 +1414,7 @@ export async function generateCasePdfReport(args: {
 
     let document;
     try {
-      document = await prisma.document.create({
+      document = await prisma().document.create({
         data: {
           tenantId: caseRecord.tenantId,
           caseId: args.caseId,
@@ -1585,7 +1585,7 @@ async function getCasePdfDocumentByVersion(auth: AuthContext, caseId: string, ve
   const caseRecord = await getAuthorizedCase(auth, caseId);
   ensureCasePdfAccess(auth, caseRecord);
 
-  const document = await prisma.document.findFirst({
+  const document = await prisma().document.findFirst({
     where: {
       tenantId: caseRecord.tenantId,
       caseId,
@@ -1618,7 +1618,7 @@ async function markDocumentAsBinaryMissing(args: {
   const previousMetadata = asRecord(args.metadata);
   const previousPayload = asRecord(args.payloadJson);
 
-  await prisma.document.update({
+  await prisma().document.update({
     where: { id: args.documentId },
     data: {
       status: DocumentStatus.DRAFT,
@@ -1834,13 +1834,13 @@ export async function maybeAutoGenerateCasePdf(args: {
     bypassAccessCheck: true,
   });
 
-  await prisma.document.update({
+  await prisma().document.update({
     where: { id: result.report.id },
     data: {
       metadata: {
         ...(asRecord(
           (
-            await prisma.document.findUnique({
+            await prisma().document.findUnique({
               where: { id: result.report.id },
               select: { metadata: true },
             })

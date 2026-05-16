@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 /**
  * POST /api/modules/informed-consents/generate-draft
  * Generate a draft consent document from patient, encounter, and template

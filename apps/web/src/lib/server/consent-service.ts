@@ -9,7 +9,7 @@ import { asRecord } from "@/lib/server/compliance-utils";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { assertWitnessIntegrityOrThrow } from "@/lib/server/witness-integrity-service";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 function normalizeConsentMethod(value: string | null | undefined): ConsentMethod {
   const normalized = (value ?? "").trim().toUpperCase();
@@ -74,7 +74,7 @@ async function createConsentRecordWithFallback(args: {
   };
 
   try {
-    return await prisma.consentRecord.create({ data: createData });
+    return await prisma().consentRecord.create({ data: createData });
   } catch (error) {
     if (!isMissingConsentMethodEnumError(error)) {
       throw error;
@@ -82,7 +82,7 @@ async function createConsentRecordWithFallback(args: {
 
     const generatedId = crypto.randomUUID();
 
-    const inserted = await prisma.$queryRaw<Array<{
+    const inserted = await prisma().$queryRaw<Array<{
       id: string;
       tenant_id: string;
       case_id: string;
@@ -189,7 +189,7 @@ async function getAuthorizedCase(auth: AuthContext, caseId: string) {
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const caseRecord = await prisma.case.findFirst({
+  const caseRecord = await prisma().case.findFirst({
     where: { id: caseId, tenantId: auth.tenant_id },
   });
 
@@ -203,7 +203,7 @@ async function getAuthorizedCase(auth: AuthContext, caseId: string) {
 export async function listCaseConsentRecords(auth: AuthContext, caseId: string) {
   await getAuthorizedCase(auth, caseId);
 
-  return prisma.consentRecord.findMany({
+  return prisma().consentRecord.findMany({
     where: { tenantId: auth.tenant_id!, caseId },
     orderBy: { consentedAt: "desc" },
   });
@@ -236,7 +236,7 @@ export async function recordCaseConsent(
   });
 
   const metadata = asRecord(caseRecord.metadata);
-  await prisma.case.update({
+  await prisma().case.update({
     where: { id: caseId },
     data: {
       metadata: {
@@ -285,7 +285,7 @@ export async function recordCaseConsent(
 }
 
 export async function getConsentSummary(tenantId: string) {
-  const records = await prisma.consentRecord.findMany({
+  const records = await prisma().consentRecord.findMany({
     where: { tenantId },
     orderBy: { consentedAt: "desc" },
     take: 50,

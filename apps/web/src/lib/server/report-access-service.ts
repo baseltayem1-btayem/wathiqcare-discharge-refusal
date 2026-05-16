@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { getPrisma } from "@/lib/server/prisma";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type ReportAccessLike = {
   reportKey: string;
@@ -52,7 +52,7 @@ export async function logReportAccess(args: {
 }) {
   const sourceIp = args.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
-  return prisma.reportAccessLog.create({
+  return prisma().reportAccessLog.create({
     data: {
       tenantId: args.tenantId,
       caseId: args.caseId ?? null,
@@ -74,14 +74,14 @@ export async function logReportAccess(args: {
 
 export async function getReportAccessDashboard(tenantId: string) {
   const [recentLogs, totalCases, blockedLegalChecks, dsrCount] = await Promise.all([
-    prisma.reportAccessLog.findMany({
+    prisma().reportAccessLog.findMany({
       where: { tenantId },
       orderBy: { accessedAt: "desc" },
       take: 100,
     }).catch(() => []),
-    prisma.case.count({ where: { tenantId, caseType: "DISCHARGE_REFUSAL" } }).catch(() => 0),
-    prisma.legalReadinessCheck.count({ where: { tenantId, status: "BLOCKED" } }).catch(() => 0),
-    prisma.dataSubjectRequest.count({ where: { tenantId } }).catch(() => 0),
+    prisma().case.count({ where: { tenantId, caseType: "DISCHARGE_REFUSAL" } }).catch(() => 0),
+    prisma().legalReadinessCheck.count({ where: { tenantId, status: "BLOCKED" } }).catch(() => 0),
+    prisma().dataSubjectRequest.count({ where: { tenantId } }).catch(() => 0),
   ]);
 
   const summary = summarizeReportAccessActivity(recentLogs);

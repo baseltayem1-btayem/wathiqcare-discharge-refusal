@@ -4,13 +4,15 @@ import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { handleApiError, ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import {
+
   refreshModuleSecureSigningStatus,
   sendModuleSecureSigningLink,
   type SecureSigningWorkflow,
 } from "@/lib/server/module-secure-signing-service";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
-const prisma = getPrisma();
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function asRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
@@ -35,6 +37,7 @@ function getPatientMobile(metadata: Record<string, unknown>): string {
 
 async function persistWorkflow(documentId: string, metadata: Prisma.JsonValue | null | undefined, workflow: SecureSigningWorkflow) {
   const root = asRecord(metadata);
+  const prisma = getPrisma();
   await prisma.consentDocument.update({
     where: { id: documentId },
     data: {
@@ -50,6 +53,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
+    const prisma = getPrisma();
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
     requireInformedConsentPermission(auth, "consent:send_signature");
     const { id } = await params;
@@ -82,6 +86,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
+    const prisma = getPrisma();
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
     requireInformedConsentPermission(auth, "consent:send_signature");
     const { id } = await params;

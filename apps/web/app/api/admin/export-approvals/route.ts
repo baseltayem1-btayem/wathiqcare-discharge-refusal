@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantOperationalAccess } from "@/lib/server/auth";
 import {
+
   createExportApprovalRequest,
   decideExportApprovalRequest,
   listExportApprovalRequests,
 } from "@/lib/server/export-approval-service";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { assertStepUpForSensitiveAction } from "@/lib/server/security-policy-service";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {

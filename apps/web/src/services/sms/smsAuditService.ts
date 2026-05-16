@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type SmsAuditArgs = {
   tenantId: string;
@@ -15,7 +15,7 @@ export type SmsAuditArgs = {
 };
 
 export async function recordSmsAuditAttempt(args: SmsAuditArgs): Promise<void> {
-  await prisma.notificationDeliveryAttempt.create({
+  await prisma().notificationDeliveryAttempt.create({
     data: {
       tenantId: args.tenantId,
       caseId: args.caseId ?? null,

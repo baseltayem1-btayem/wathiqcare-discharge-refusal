@@ -12,6 +12,10 @@ import { requireTenantOperationalAccess, requireTenantId } from "@/lib/server/au
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { maybeAutoGenerateCasePdf } from "@/lib/server/legal-case-pdf-service";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 function parseCaseStatus(value: string | null | undefined): CaseStatus | null {
   if (!value) return null;
   const normalized = value.toUpperCase();

@@ -25,7 +25,7 @@ type CreatePromissoryPayload = {
   metadata?: Record<string, unknown>;
 };
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 function requireTenantId(auth: AuthContext): string {
   if (!auth.tenant_id) {
@@ -91,7 +91,7 @@ export async function listTenantPromissoryNotes(auth: AuthContext, args: ListPro
 
   const take = Math.min(Math.max(args.limit ?? 50, 1), 200);
 
-  return prisma.promissoryNote.findMany({
+  return prisma().promissoryNote.findMany({
     where: {
       tenantId,
       ...(args.caseId ? { caseId: args.caseId } : {}),
@@ -129,7 +129,7 @@ export async function createTenantPromissoryNote(
     throw new ApiError(400, "debtorName is required");
   }
 
-  const caseRecord = await prisma.case.findFirst({
+  const caseRecord = await prisma().case.findFirst({
     where: { id: caseId, tenantId },
     select: {
       id: true,
@@ -158,7 +158,7 @@ export async function createTenantPromissoryNote(
     metadata: payload.metadata ?? null,
   };
 
-  const created = await prisma.promissoryNote.create({
+  const created = await prisma().promissoryNote.create({
     data: {
       tenantId,
       caseId,

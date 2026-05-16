@@ -7,11 +7,15 @@ import { getPrisma } from "@/lib/server/prisma";
 import { CASE_CREATOR_ROLES, userRoleAllows } from "@/lib/server/roles";
 import { ensureOperationStateForCase } from "@/lib/server/operations";
 import {
+
   enforcePlanUsage,
   recordUsage,
   writeAuditLog,
 } from "@/lib/server/saas-services";
 import { assertDataResidencyCompliance } from "@/lib/server/privacy-service";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function parseCaseStatus(value: string | null | undefined): CaseStatus | null {
   if (!value) return null;

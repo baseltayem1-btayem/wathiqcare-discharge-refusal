@@ -3,6 +3,10 @@ import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { verifyEvidenceToken } from "@/lib/server/informed-consents-evidence-vault-service";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ token: string }> },

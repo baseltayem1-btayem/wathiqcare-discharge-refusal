@@ -3,7 +3,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { MODULE_DEFINITIONS, type ModuleKey } from "@/lib/modules/catalog";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export const MODULE_KEYS = MODULE_DEFINITIONS.map((item) => item.key);
 
@@ -39,7 +39,7 @@ export function normalizeModuleKey(value: string | null | undefined): ModuleKey 
 }
 
 export async function listSubscriberModuleAccess(subscriberId: string) {
-  return prisma.subscriberModuleAccess.findMany({
+  return prisma().subscriberModuleAccess.findMany({
     where: { subscriberId },
     orderBy: [{ moduleKey: "asc" }],
   });
@@ -49,7 +49,7 @@ export async function suspendAllSubscriberModules(subscriberId: string, actorId?
   const now = new Date();
   const notePrefix = reason?.trim() ? `Emergency suspension: ${reason.trim()}` : "Emergency suspension triggered";
 
-  const result = await prisma.subscriberModuleAccess.updateMany({
+  const result = await prisma().subscriberModuleAccess.updateMany({
     where: {
       subscriberId,
       status: {
@@ -83,14 +83,14 @@ export async function getSubscriberModuleAccessDashboard(
 
   const [accessRows, activeUsersCount, recentAccessAuditEvents] = await Promise.all([
     listSubscriberModuleAccess(subscriberId),
-    prisma.tenantMembership.count({
+    prisma().tenantMembership.count({
       where: {
         tenantId: subscriberId,
         status: "ACTIVE",
         user: { isActive: true },
       },
     }),
-    prisma.auditLog.findMany({
+    prisma().auditLog.findMany({
       where: {
         tenantId: subscriberId,
         entityType: "subscriber_module_access",
@@ -103,7 +103,7 @@ export async function getSubscriberModuleAccessDashboard(
   const modules = await Promise.all(
     accessRows.map(async (row) => {
       const [moduleUsageEvents, moduleAuditEvents] = await Promise.all([
-        prisma.auditLog.count({
+        prisma().auditLog.count({
           where: {
             tenantId: subscriberId,
             createdAt: { gte: lookbackStart },
@@ -113,7 +113,7 @@ export async function getSubscriberModuleAccessDashboard(
             },
           },
         }),
-        prisma.auditLog.findMany({
+        prisma().auditLog.findMany({
           where: {
             tenantId: subscriberId,
             entityType: "subscriber_module_access",
@@ -188,7 +188,7 @@ export async function getSubscriberModuleAccessDashboard(
 export async function upsertSubscriberModuleAccess(input: SubscriberModuleAccessInput) {
   const isActivating = input.status === SubscriberModuleAccessStatus.ACTIVE || input.status === SubscriberModuleAccessStatus.TRIAL;
 
-  return prisma.subscriberModuleAccess.upsert({
+  return prisma().subscriberModuleAccess.upsert({
     where: {
       subscriberId_moduleKey: {
         subscriberId: input.subscriberId,
@@ -223,7 +223,7 @@ export async function upsertSubscriberModuleAccess(input: SubscriberModuleAccess
 export async function bootstrapSubscriberModuleAccess(subscriberId: string) {
   try {
     for (const moduleKey of MODULE_KEYS) {
-      await prisma.subscriberModuleAccess.upsert({
+       await prisma().subscriberModuleAccess.upsert({
         where: {
           subscriberId_moduleKey: {
             subscriberId,
@@ -252,7 +252,7 @@ export async function assertSubscriberModuleAccess(args: {
   subscriberId: string;
   moduleKey: ModuleKey;
 }) {
-  const subscriber = await prisma.tenant.findUnique({
+  const subscriber = await prisma().tenant.findUnique({
     where: { id: args.subscriberId },
     select: { id: true, isActive: true },
   });
@@ -265,7 +265,7 @@ export async function assertSubscriberModuleAccess(args: {
     throw new ApiError(403, "Subscriber is inactive");
   }
 
-  const moduleAccess = await prisma.subscriberModuleAccess.findUnique({
+  const moduleAccess = await prisma().subscriberModuleAccess.findUnique({
     where: {
       subscriberId_moduleKey: {
         subscriberId: args.subscriberId,

@@ -4,6 +4,10 @@ import { requireAuth, requireTenantId, requireTenantOperationalAccess } from "@/
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type RouteContext = {
     params: Promise<{ caseId: string }>;
 };

@@ -5,6 +5,10 @@ import { getSetupStatus, ensureImcBootstrap } from "@/lib/server/admin-bootstrap
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { toJsonSafe } from "@/lib/server/json";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type BootstrapPayload = {
     adminEmail?: string;
     adminFullName?: string;

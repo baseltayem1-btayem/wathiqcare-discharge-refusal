@@ -5,7 +5,8 @@ import { ApiError, handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 
-const prisma = getPrisma();
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function parsePlanCode(value: unknown): PlanCode {
     if (typeof value !== "string") {
@@ -22,6 +23,7 @@ function parsePlanCode(value: unknown): PlanCode {
 
 export async function GET(request: NextRequest) {
     try {
+        const prisma = getPrisma();
         await requirePlatformAccess(request);
         const plans = await prisma.plan.findMany({
             orderBy: { createdAt: "asc" },
@@ -34,6 +36,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        const prisma = getPrisma();
         await requirePlatformAccess(request);
         const payload = (await request.json().catch(() => null)) as
             | {

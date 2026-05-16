@@ -20,7 +20,7 @@ import {
 } from "@/lib/server/integrations/pdffiller";
 import { buildArabicSigningSms, isTaqnyatConfigured, sendTaqnyatSms } from "@/lib/server/integrations/taqnyat";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type LegalPackageStatus =
   | "DRAFT"
@@ -228,7 +228,7 @@ async function getAuthorizedCase(auth: AuthContext, caseId: string) {
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const caseRecord = await prisma.case.findUnique({
+  const caseRecord = await prisma().case.findUnique({
     where: { id: caseId },
     include: {
       documents: true,
@@ -380,7 +380,7 @@ async function createDocumentRecord(args: {
 }): Promise<LegalPackageDocumentRecord> {
   const bytes = Buffer.from(args.html, "utf8");
   const hash = sha256(bytes);
-  const version = await prisma.document.count({
+  const version = await prisma().document.count({
     where: {
       tenantId: args.auth.tenant_id!,
       caseId: args.caseId,
@@ -388,7 +388,7 @@ async function createDocumentRecord(args: {
     },
   }) + 1;
 
-  const created = await prisma.document.create({
+  const created = await prisma().document.create({
     data: {
       tenantId: args.auth.tenant_id!,
       caseId: args.caseId,
@@ -472,7 +472,7 @@ async function persistState(args: {
   currentMetadata: Prisma.JsonValue | null;
   state: LegalPackageState;
 }): Promise<void> {
-  await prisma.case.update({
+  await prisma().case.update({
     where: { id: args.caseId },
     data: {
       metadata: mergePackageMetadata(args.currentMetadata, args.state),
@@ -798,7 +798,7 @@ export async function refreshLegalPackageSignatureStatus(auth: AuthContext, case
   const signedHash = sha256(signedPdfBuffer);
   const certificateHash = sha256(certificateBuffer);
 
-  const signedDoc = await prisma.document.create({
+  const signedDoc = await prisma().document.create({
     data: {
       tenantId: auth.tenant_id!,
       caseId,
@@ -825,7 +825,7 @@ export async function refreshLegalPackageSignatureStatus(auth: AuthContext, case
     },
   });
 
-  const certDoc = await prisma.document.create({
+  const certDoc = await prisma().document.create({
     data: {
       tenantId: auth.tenant_id!,
       caseId,
@@ -969,7 +969,7 @@ export async function generateCourtBundle(auth: AuthContext, caseId: string, req
 }
 
 async function getDocumentById(auth: AuthContext, caseId: string, documentId: string) {
-  const document = await prisma.document.findFirst({
+  const document = await prisma().document.findFirst({
     where: {
       id: documentId,
       tenantId: auth.tenant_id!,
@@ -1056,7 +1056,7 @@ export async function processPdfFillerSignatureWebhook(payload: Record<string, u
     tenant_id: undefined,
   };
 
-  const caseRecord = await prisma.case.findUnique({
+  const caseRecord = await prisma().case.findUnique({
     where: { id: caseId },
     include: { documents: true, auditLogs: true, auditChainEvents: true },
   });
