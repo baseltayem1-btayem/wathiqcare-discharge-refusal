@@ -7,6 +7,10 @@ import { getPrivacyDashboard } from "@/lib/server/privacy-service";
 import { logReportAccess } from "@/lib/server/report-access-service";
 import { getRetentionDashboard } from "@/lib/server/retention-service";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireAuth(request);

@@ -4,6 +4,10 @@ import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { listRuntimeConsentTemplates } from "@/lib/server/informed-consents-template-catalog";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 /**
  * GET /api/modules/informed-consents/templates
  * Get available consent templates filtered by type and specialty

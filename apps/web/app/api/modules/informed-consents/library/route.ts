@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import {
+
   createConsentTemplate,
   createTemplateVersion,
   listConsentLibrary,
@@ -13,6 +14,9 @@ import {
 } from "@/lib/server/consent-library-service";
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {

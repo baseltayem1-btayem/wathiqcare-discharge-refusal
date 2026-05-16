@@ -5,6 +5,10 @@ import { requireInformedConsentPermission } from "@/lib/modules/informed-consent
 import { buildTrakCareRequestContext } from "@/lib/server/trakcare/request-context";
 import { getEncountersByMrn } from "@/lib/server/trakcare/service";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 /**
  * GET /api/modules/informed-consents/patients/[patientId]/encounters
  * Uses patientId as MRN and loads live encounter context from TrakCare.

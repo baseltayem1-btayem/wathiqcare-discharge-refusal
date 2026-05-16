@@ -6,7 +6,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 type WordingLifecycleStatus =
   | "DRAFT"
@@ -154,7 +154,7 @@ async function appendAudit(args: {
 
 export async function listWordingGovernance(auth: AuthContext): Promise<{ rows: WordingGovernanceRecord[] }> {
   const tenantId = requireTenantId(auth);
-  const rows = await prisma.consentWordingRepository.findMany({
+  const rows = await prisma().consentWordingRepository.findMany({
     where: { tenantId },
     orderBy: [{ updatedAt: "desc" }],
     take: 500,
@@ -224,7 +224,7 @@ export async function createWordingDraft(
     comments: [],
   };
 
-  const row = await prisma.consentWordingRepository.create({
+  const row = await prisma().consentWordingRepository.create({
     data: {
       tenantId,
       specialty: normalizeText(payload.specialty || "GENERAL_MEDICINE").toUpperCase(),
@@ -281,7 +281,7 @@ export async function progressWordingReview(
     throw new ApiError(400, "wordingId, stage and decision are required");
   }
 
-  const row = await prisma.consentWordingRepository.findFirst({ where: { id: wordingId, tenantId } });
+  const row = await prisma().consentWordingRepository.findFirst({ where: { id: wordingId, tenantId } });
   if (!row) throw new ApiError(404, "Wording entry not found");
 
   const metadata = asRecord(row.metadata);
@@ -322,7 +322,7 @@ export async function progressWordingReview(
     timestamp: now,
   });
 
-  const updated = await prisma.consentWordingRepository.update({
+  const updated = await prisma().consentWordingRepository.update({
     where: { id: wordingId },
     data: {
       metadata: {
@@ -367,7 +367,7 @@ export async function activateWordingVersion(
   const wordingId = normalizeText(payload.wordingId);
   if (!wordingId) throw new ApiError(400, "wordingId is required");
 
-  const row = await prisma.consentWordingRepository.findFirst({ where: { id: wordingId, tenantId } });
+  const row = await prisma().consentWordingRepository.findFirst({ where: { id: wordingId, tenantId } });
   if (!row) throw new ApiError(404, "Wording entry not found");
 
   const metadata = asRecord(row.metadata);
@@ -376,7 +376,7 @@ export async function activateWordingVersion(
     throw new ApiError(409, "Cannot activate wording without legal, medical, and compliance approvals");
   }
 
-  await prisma.consentWordingRepository.updateMany({
+  await prisma().consentWordingRepository.updateMany({
     where: {
       tenantId,
       wordingType: row.wordingType,
@@ -398,7 +398,7 @@ export async function activateWordingVersion(
     },
   });
 
-  const updated = await prisma.consentWordingRepository.update({
+  const updated = await prisma().consentWordingRepository.update({
     where: { id: wordingId },
     data: {
       isActive: true,
@@ -448,11 +448,11 @@ export async function retireWordingVersion(
   const wordingId = normalizeText(payload.wordingId);
   if (!wordingId) throw new ApiError(400, "wordingId is required");
 
-  const row = await prisma.consentWordingRepository.findFirst({ where: { id: wordingId, tenantId } });
+  const row = await prisma().consentWordingRepository.findFirst({ where: { id: wordingId, tenantId } });
   if (!row) throw new ApiError(404, "Wording entry not found");
 
   const metadata = asRecord(row.metadata);
-  const updated = await prisma.consentWordingRepository.update({
+  const updated = await prisma().consentWordingRepository.update({
     where: { id: wordingId },
     data: {
       isActive: false,
@@ -508,8 +508,8 @@ export async function compareWordingVersions(
   }
 
   const [previousRow, nextRow] = await Promise.all([
-    prisma.consentWordingRepository.findFirst({ where: { id: previousId, tenantId } }),
-    prisma.consentWordingRepository.findFirst({ where: { id: nextId, tenantId } }),
+    prisma().consentWordingRepository.findFirst({ where: { id: previousId, tenantId } }),
+    prisma().consentWordingRepository.findFirst({ where: { id: nextId, tenantId } }),
   ]);
 
   if (!previousRow || !nextRow) {

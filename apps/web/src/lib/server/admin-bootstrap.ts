@@ -72,17 +72,17 @@ function asObject(value: Prisma.JsonValue | null | undefined): Record<string, un
 }
 
 export async function getSetupStatus() {
-  const prisma = getPrisma();
+  const prisma = () => getPrisma();
   const [tenantCount, userCount, platformAdminCount, subscriptionCount] = await Promise.all([
-    prisma.tenant.count(),
-    prisma.user.count(),
-    prisma.user.count({
+    prisma().tenant.count(),
+    prisma().user.count(),
+    prisma().user.count({
       where: {
         userType: "PLATFORM_ADMIN",
         isActive: true,
       },
     }),
-    prisma.subscription.count(),
+    prisma().subscription.count(),
   ]);
 
   return {
@@ -125,9 +125,9 @@ export async function ensureBasePlans() {
     },
   ] as const;
 
-  const prisma = getPrisma();
+  const prisma = () => getPrisma();
   for (const plan of defaults) {
-    await prisma.plan.upsert({
+    await prisma().plan.upsert({
       where: { code: plan.code },
       update: {
         name: plan.name,
@@ -162,11 +162,11 @@ export async function ensureImcBootstrap(input: {
     throw new ApiError(409, "setup_password_hash_missing");
   }
 
-  const prisma = getPrisma();
+  const prisma = () => getPrisma();
   await ensureBasePlans();
   await getPlatformTenant();
 
-  const tenant = await prisma.tenant.upsert({
+  const tenant = await prisma().tenant.upsert({
     where: { code: "IMC" },
     update: {
       name: "International Medical Center",
@@ -199,7 +199,7 @@ export async function ensureImcBootstrap(input: {
     },
   });
 
-  const superAdmin = await prisma.user.upsert({
+  const superAdmin = await prisma().user.upsert({
     where: { email: input.adminEmail.toLowerCase() },
     update: {
       fullName: input.adminFullName,
@@ -220,7 +220,7 @@ export async function ensureImcBootstrap(input: {
     },
   });
 
-  await prisma.user.upsert({
+  await prisma().user.upsert({
     where: { email: "admin@wathiqcare.online" },
     update: {
       tenantId: tenant.id,
@@ -240,7 +240,7 @@ export async function ensureImcBootstrap(input: {
     },
   });
 
-  await prisma.tenantMembership.upsert({
+  await prisma().tenantMembership.upsert({
     where: {
       tenantId_userId: {
         tenantId: tenant.id,
@@ -259,12 +259,12 @@ export async function ensureImcBootstrap(input: {
     },
   });
 
-  const starterPlan = await prisma.plan.findUnique({ where: { code: PlanCode.ENTERPRISE } });
+  const starterPlan = await prisma().plan.findUnique({ where: { code: PlanCode.ENTERPRISE } });
   if (!starterPlan) {
     throw new ApiError(409, "enterprise_plan_missing");
   }
 
-  const subscription = await prisma.subscription.findFirst({
+  const subscription = await prisma().subscription.findFirst({
     where: { tenantId: tenant.id },
     orderBy: { createdAt: "desc" },
   });
@@ -273,7 +273,7 @@ export async function ensureImcBootstrap(input: {
   const periodEnd = new Date(periodStart.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   const ensuredSubscription = subscription
-    ? await prisma.subscription.update({
+    ? await prisma().subscription.update({
       where: { id: subscription.id },
       data: {
         planId: starterPlan.id,
@@ -290,7 +290,7 @@ export async function ensureImcBootstrap(input: {
         },
       },
     })
-    : await prisma.subscription.create({
+    : await prisma().subscription.create({
       data: {
         tenantId: tenant.id,
         planId: starterPlan.id,
@@ -307,7 +307,7 @@ export async function ensureImcBootstrap(input: {
       },
     });
 
-  await prisma.subscriptionEvent.create({
+  await prisma().subscriptionEvent.create({
     data: {
       tenantId: tenant.id,
       subscriptionId: ensuredSubscription.id,
@@ -336,8 +336,8 @@ export async function ensureImcBootstrap(input: {
 }
 
 export async function getTenantAdminConfig(tenantId: string) {
-  const prisma = getPrisma();
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { metadata: true } });
+  const prisma = () => getPrisma();
+  const tenant = await prisma().tenant.findUnique({ where: { id: tenantId }, select: { metadata: true } });
   if (!tenant) {
     throw new ApiError(404, "Tenant not found");
   }
@@ -379,8 +379,8 @@ export async function setTenantAdminConfig(
     bootstrapComplete?: boolean;
   },
 ) {
-  const prisma = getPrisma();
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { metadata: true } });
+  const prisma = () => getPrisma();
+  const tenant = await prisma().tenant.findUnique({ where: { id: tenantId }, select: { metadata: true } });
   if (!tenant) {
     throw new ApiError(404, "Tenant not found");
   }
@@ -422,7 +422,7 @@ export async function setTenantAdminConfig(
     adminConfig: mergedAdminConfig,
   };
 
-  await prisma.tenant.update({
+  await prisma().tenant.update({
     where: { id: tenantId },
     data: {
       metadata: nextMetadata as Prisma.InputJsonValue,

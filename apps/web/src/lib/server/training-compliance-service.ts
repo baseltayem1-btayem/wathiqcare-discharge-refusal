@@ -7,7 +7,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type TrainingCriticality = "standard" | "high" | "critical";
 export type TrainingStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "EXEMPTED";
@@ -266,7 +266,7 @@ export async function listTrainingComplianceDashboard(auth: AuthContext) {
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const tenant = await prisma.tenant.findUnique({
+  const tenant = await prisma().tenant.findUnique({
     where: { id: auth.tenant_id },
     select: { metadata: true },
   });
@@ -296,7 +296,7 @@ export async function saveTrainingComplianceEntry(
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const tenant = await prisma.tenant.findUnique({
+  const tenant = await prisma().tenant.findUnique({
     where: { id: auth.tenant_id },
     select: { id: true, metadata: true },
   });
@@ -317,7 +317,7 @@ export async function saveTrainingComplianceEntry(
     trainingComplianceRegister: result.items,
   } as Prisma.InputJsonValue;
 
-  await prisma.tenant.update({
+  await prisma().tenant.update({
     where: { id: auth.tenant_id },
     data: { metadata: nextMetadata },
   });

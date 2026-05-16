@@ -92,7 +92,7 @@ function isTruthyEnvFlag(value: string | undefined, fallback: boolean): boolean 
   return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
 }
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export async function requireAuth(request: NextRequest): Promise<AuthContext> {
   const token = readToken(request);
@@ -110,7 +110,7 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     throw new ApiError(401, "Invalid access token");
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await prisma().user.findUnique({
     where: { id: parsedPayload.sub },
     include: {
       primaryTenant: {
@@ -137,7 +137,7 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     throw new ApiError(401, "Authenticated user is inactive");
   }
 
-  const resetState = await getUserResetState(prisma, user.id);
+  const resetState = await getUserResetState(prisma(), user.id);
   if (resetState.passwordResetRequired) {
     throw new ApiError(403, "Password reset required");
   }
@@ -256,7 +256,7 @@ async function writePlatformApiAccessAttempt(args: {
   const role = args.auth?.platform_role ?? args.auth?.role ?? null;
 
   try {
-  await prisma.$executeRaw`
+  await prisma().$executeRaw`
       INSERT INTO platform_api_access_logs (
         user_id,
         email,
@@ -399,7 +399,7 @@ export function requireRole(auth: AuthContext, allowedRoles: string[]): void {
 }
 
 export async function getUserTenantPermissionKeys(userId: string, tenantId: string): Promise<Set<string>> {
-  const assignments = await prisma.userRoleAssignment.findMany({
+  const assignments = await prisma().userRoleAssignment.findMany({
     where: {
       tenantId,
       userId,

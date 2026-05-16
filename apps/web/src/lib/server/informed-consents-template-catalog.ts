@@ -11,7 +11,7 @@ import {
   type SaudiEnterpriseTemplateSeed,
 } from "@/lib/server/informed-consents-saudi-template-library";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type RuntimeConsentTemplate = {
   id: string;
@@ -415,7 +415,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
   const now = new Date();
 
   for (const seed of FIXED_DEFAULT_TEMPLATES) {
-    const category = await prisma.consentCategory.upsert({
+    const category = await prisma().consentCategory.upsert({
       where: {
         tenantId_code: {
           tenantId,
@@ -436,7 +436,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       },
     });
 
-    const template = await prisma.consentTemplate.upsert({
+    const template = await prisma().consentTemplate.upsert({
       where: {
         tenantId_templateCode: {
           tenantId,
@@ -480,7 +480,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       },
     });
 
-    const latestVersion = await prisma.consentTemplateVersion.findFirst({
+    const latestVersion = await prisma().consentTemplateVersion.findFirst({
       where: { tenantId, templateId: template.id },
       orderBy: { versionNumber: "desc" },
     });
@@ -489,7 +489,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
     const enBody = buildSaudiTemplateBodyEn(seed);
     const legalHash = crypto.createHash("sha256").update(`${seed.templateCode}:${arBody}:${enBody}`).digest("hex");
 
-    const hasActiveVersion = await prisma.consentTemplateVersion.findFirst({
+    const hasActiveVersion = await prisma().consentTemplateVersion.findFirst({
       where: {
         tenantId,
         templateId: template.id,
@@ -500,7 +500,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
     });
 
     if (hasActiveVersion) {
-      await prisma.consentTemplate.update({
+      await prisma().consentTemplate.update({
         where: { id: template.id },
         data: {
           status: ConsentTemplateStatus.ACTIVE,
@@ -513,7 +513,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
     const versionNumber = (latestVersion?.versionNumber || 0) + 1;
     const sections = buildSaudiTemplateSections(seed);
 
-    const version = await prisma.consentTemplateVersion.create({
+    const version = await prisma().consentTemplateVersion.create({
       data: {
         tenantId,
         templateId: template.id,
@@ -555,7 +555,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       },
     });
 
-    await prisma.consentTemplateSection.createMany({
+    await prisma().consentTemplateSection.createMany({
       data: sections.map((section) => ({
         tenantId,
         templateVersionId: version.id,
@@ -571,7 +571,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       })),
     });
 
-    await prisma.consentTemplate.update({
+    await prisma().consentTemplate.update({
       where: { id: template.id },
       data: {
         status: ConsentTemplateStatus.ACTIVE,
@@ -579,7 +579,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       },
     });
 
-    await prisma.consentTemplateLocalization.upsert({
+    await prisma().consentTemplateLocalization.upsert({
       where: {
         templateVersionId_language: {
           templateVersionId: version.id,
@@ -615,7 +615,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       },
     });
 
-    await prisma.consentTemplateLocalization.upsert({
+    await prisma().consentTemplateLocalization.upsert({
       where: {
         templateVersionId_language: {
           templateVersionId: version.id,
@@ -664,7 +664,7 @@ export async function listRuntimeConsentTemplates(
 
   await ensureDefaultTemplates(tenantId, auth.sub);
 
-  const templates = await prisma.consentTemplate.findMany({
+  const templates = await prisma().consentTemplate.findMany({
     where: {
       tenantId,
       ...(consentType ? { consentType } : {}),

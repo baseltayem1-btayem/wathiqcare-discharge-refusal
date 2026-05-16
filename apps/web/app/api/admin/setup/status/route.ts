@@ -3,6 +3,10 @@ import { requirePlatformAccess } from "@/lib/server/auth";
 import { handleApiError, jsonSuccess } from "@/lib/server/http";
 import { getSetupStatus } from "@/lib/server/admin-bootstrap";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(request: NextRequest) {
   try {
     await requirePlatformAccess(request);

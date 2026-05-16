@@ -5,6 +5,7 @@ import { handleApiError } from "@/lib/server/http";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 import { buildTrakCareRequestContext } from "@/lib/server/trakcare/request-context";
 import {
+
   getEncounterAllergies,
   getEncounterConditions,
   getEncounterMedications,
@@ -12,6 +13,9 @@ import {
   getEncountersByMrn,
   getPatientByMrn,
 } from "@/lib/server/trakcare/service";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 /**
  * POST /api/modules/informed-consents/patients/[patientId]/encounters/[encounterId]/sync-trakcare

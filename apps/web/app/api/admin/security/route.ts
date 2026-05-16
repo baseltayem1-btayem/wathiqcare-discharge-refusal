@@ -4,6 +4,10 @@ import { handleApiError } from "@/lib/server/http";
 import { logReportAccess } from "@/lib/server/report-access-service";
 import { getSecurityDashboard } from "@/lib/server/security-policy-service";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireAuth(request);

@@ -5,6 +5,7 @@ import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 

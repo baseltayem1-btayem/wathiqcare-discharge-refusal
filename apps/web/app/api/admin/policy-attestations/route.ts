@@ -5,6 +5,10 @@ import { logReportAccess } from "@/lib/server/report-access-service";
 import { assertStepUpForSensitiveAction } from "@/lib/server/security-policy-service";
 import { listPolicyAttestationDashboard, savePolicyAttestationEntry } from "@/lib/server/policy-attestation-service";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireAuth(request);

@@ -7,7 +7,9 @@ import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
-const prisma = getPrisma();
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type SignatureDeliveryMethod = "PDF_FILLER_LINK" | "SMS_TAQNIAT" | "EMAIL";
 type SignatureStatus = "NOT_SENT" | "SENT" | "OPENED" | "PARTIALLY_SIGNED" | "SIGNED" | "FAILED" | "EXPIRED" | "REVOKED";
@@ -30,6 +32,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const prisma = getPrisma();
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
     requireInformedConsentPermission(auth, "consent:send_signature");
     const { id } = await params;
@@ -58,6 +61,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const prisma = getPrisma();
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
     requireInformedConsentPermission(auth, "consent:send_signature");
     const { id } = await params;

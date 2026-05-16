@@ -6,7 +6,7 @@ import { asRecord, readBoolean, readNumber, readString } from "@/lib/server/comp
 import { verifyAuditChain } from "@/lib/server/audit-chain-service";
 import { evaluateWitnessIntegrity } from "@/lib/server/witness-integrity-service";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type LegalReadinessItem = {
   key: string;
@@ -218,7 +218,7 @@ async function getAuthorizedCase(auth: AuthContext, caseId: string) {
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const caseRecord = await prisma.case.findFirst({
+  const caseRecord = await prisma().case.findFirst({
     where: { id: caseId, tenantId: auth.tenant_id },
     include: {
       documents: true,
@@ -301,7 +301,7 @@ export async function getLegalReadiness(auth: AuthContext, caseId: string) {
     documentCount: caseRecord.documents.length,
   });
 
-  await prisma.legalReadinessCheck.create({
+  await prisma().legalReadinessCheck.create({
     data: {
       tenantId: auth.tenant_id!,
       caseId,

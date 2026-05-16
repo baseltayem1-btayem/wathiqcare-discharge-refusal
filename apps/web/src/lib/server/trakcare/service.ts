@@ -12,7 +12,7 @@ import type {
   TrakCareStatus,
 } from "@/lib/server/trakcare/types";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 function createSearchParams(entries: Array<[string, string | null | undefined]>): URLSearchParams {
   const params = new URLSearchParams();
@@ -84,7 +84,7 @@ export async function getPatientByMrn(
     patient.mrn = trimmedMrn;
   }
 
-  await prisma.patientExternalReference.upsert({
+  await prisma().patientExternalReference.upsert({
     where: {
       tenantId_externalSystem_patientMrn: {
         tenantId: context.tenantId,
@@ -142,7 +142,7 @@ export async function getEncountersByMrn(
 
   const encounters = listPayload(payload).map((record) => mapEncounter(record));
 
-  const patientRef = await prisma.patientExternalReference.findUnique({
+  const patientRef = await prisma().patientExternalReference.findUnique({
     where: {
       tenantId_externalSystem_patientMrn: {
         tenantId: context.tenantId,
@@ -158,7 +158,7 @@ export async function getEncountersByMrn(
       continue;
     }
 
-    await prisma.encounterExternalReference.upsert({
+    await prisma().encounterExternalReference.upsert({
       where: {
         tenantId_externalSystem_externalEncounterId: {
           tenantId: context.tenantId,

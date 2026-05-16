@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
-const prisma = getPrisma();
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function toDate(value: string | null): Date | null {
   if (!value) return null;
@@ -32,6 +32,9 @@ function toCsv(rows: Array<Record<string, string | number | null>>): string {
 
 export async function GET(request: NextRequest) {
   try {
+    const { requireModuleOperationalAccess } = await import("@/lib/server/auth");
+    const { requireInformedConsentPermission } = await import("@/lib/modules/informed-consents-rbac");
+    const prisma = getPrisma();
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
     requireInformedConsentPermission(auth, "governance:view");
 

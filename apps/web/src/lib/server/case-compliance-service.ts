@@ -21,7 +21,7 @@ import {
   type WitnessRoleCategory,
 } from "@/lib/server/witness-integrity-service";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 function mergeSection(
   currentMetadata: Record<string, unknown> | null,
@@ -97,7 +97,7 @@ async function getAuthorizedCase(auth: AuthContext, caseId: string) {
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const caseRecord = await prisma.case.findFirst({
+  const caseRecord = await prisma().case.findFirst({
     where: { id: caseId, tenantId: auth.tenant_id },
     include: {
       documents: true,
@@ -125,7 +125,7 @@ export async function recordCasePresentation(
     operation: "case_presentation_capture",
   });
 
-  const updated = await prisma.case.update({
+  const updated = await prisma().case.update({
     where: { id: caseId },
     data: {
       metadata: mergeSection(asRecord(caseRecord.metadata), "presentation", {
@@ -193,7 +193,7 @@ export async function recordCaseSignature(
         ? "accepted"
         : "refused";
 
-  const updated = await prisma.case.update({
+  const updated = await prisma().case.update({
     where: { id: caseId },
     data: {
       metadata: {
@@ -220,7 +220,7 @@ export async function recordCaseSignature(
   });
 
   if (payload.signer_name?.trim()) {
-    const existingConsentCount = await prisma.consentRecord.count({
+    const existingConsentCount = await prisma().consentRecord.count({
       where: { tenantId: auth.tenant_id!, caseId },
     }).catch(() => 0);
 
@@ -430,7 +430,7 @@ export async function recordCaseWitness(
     }
   }
 
-  const updated = await prisma.case.update({
+  const updated = await prisma().case.update({
     where: { id: caseId },
     data: {
       metadata: {
@@ -591,7 +591,7 @@ export async function generateLegalPackageForCase(auth: AuthContext, caseId: str
   const version =
     caseRecord.documents.filter((item) => item.templateKey === "legal_package").length + 1;
 
-  const doc = await prisma.document.create({
+  const doc = await prisma().document.create({
     data: {
       tenantId: auth.tenant_id!,
       caseId,

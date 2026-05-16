@@ -15,7 +15,7 @@ import { extractRemediationTracker, summarizeRemediationTracker } from "@/lib/se
 import { verifyAuditChain } from "@/lib/server/audit-chain-service";
 import { evaluateWitnessIntegrity } from "@/lib/server/witness-integrity-service";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 type ComplianceCaseInput = {
   id: string;
@@ -320,7 +320,7 @@ export async function getComplianceDashboard(auth: AuthContext) {
   const tenantId = requireTenantId(auth);
 
   const [cases, incidents, backupJobs, restoreTests, dsrRequests, privilegedAccess, reportAccess, tenant] = await Promise.all([
-    prisma.case.findMany({
+    prisma().case.findMany({
       where: {
         tenantId,
         OR: [
@@ -337,13 +337,13 @@ export async function getComplianceDashboard(auth: AuthContext) {
       orderBy: { createdAt: "desc" },
       take: 100,
     }).catch(() => []),
-    prisma.securityIncident.findMany({ where: { tenantId }, orderBy: { detectedAt: "desc" }, take: 100 }).catch(() => []),
-    prisma.backupJob.findMany({ where: { tenantId }, orderBy: { createdAt: "desc" }, take: 100 }).catch(() => []),
-    prisma.backupRestoreTest.findMany({ where: { tenantId }, orderBy: { executedAt: "desc" }, take: 100 }).catch(() => []),
-    prisma.dataSubjectRequest.findMany({ where: { tenantId }, orderBy: { requestedAt: "desc" }, take: 200 }).catch(() => []),
-    prisma.privilegedAccessLog.findMany({ where: { tenantId }, orderBy: { createdAt: "desc" }, take: 100 }).catch(() => []),
-    prisma.reportAccessLog.findMany({ where: { tenantId }, orderBy: { accessedAt: "desc" }, take: 100 }).catch(() => []),
-    prisma.tenant.findUnique({ where: { id: tenantId }, select: { metadata: true } }).catch(() => null),
+    prisma().securityIncident.findMany({ where: { tenantId }, orderBy: { detectedAt: "desc" }, take: 100 }).catch(() => []),
+    prisma().backupJob.findMany({ where: { tenantId }, orderBy: { createdAt: "desc" }, take: 100 }).catch(() => []),
+    prisma().backupRestoreTest.findMany({ where: { tenantId }, orderBy: { executedAt: "desc" }, take: 100 }).catch(() => []),
+    prisma().dataSubjectRequest.findMany({ where: { tenantId }, orderBy: { requestedAt: "desc" }, take: 200 }).catch(() => []),
+    prisma().privilegedAccessLog.findMany({ where: { tenantId }, orderBy: { createdAt: "desc" }, take: 100 }).catch(() => []),
+    prisma().reportAccessLog.findMany({ where: { tenantId }, orderBy: { accessedAt: "desc" }, take: 100 }).catch(() => []),
+    prisma().tenant.findUnique({ where: { id: tenantId }, select: { metadata: true } }).catch(() => null),
   ]);
 
   const complianceCases: ComplianceCaseInput[] = cases.map((caseRecord) => {

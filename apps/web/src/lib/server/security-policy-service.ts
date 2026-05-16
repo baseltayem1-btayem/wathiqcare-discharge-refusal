@@ -7,7 +7,7 @@ import { canonicalizeUserRole } from "@/lib/server/roles";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 const PRIVILEGED_ROLE_SET = new Set([
   "platform_superadmin",
@@ -186,7 +186,7 @@ export function isStepUpSessionTokenValid(args: {
 }
 
 async function ensureStepUpRevocationSchema(): Promise<void> {
-  await prisma.$executeRawUnsafe(`
+  await prisma().$executeRawUnsafe(`
     ALTER TABLE users
       ADD COLUMN IF NOT EXISTS step_up_revoked_at TIMESTAMPTZ NULL
   `);
@@ -195,7 +195,7 @@ async function ensureStepUpRevocationSchema(): Promise<void> {
 async function getUserStepUpRevokedAt(userId: string): Promise<Date | null> {
   try {
     await ensureStepUpRevocationSchema();
-    const rows = await prisma.$queryRaw<RawStepUpRevocationRow[]>`
+    const rows = await prisma().$queryRaw<RawStepUpRevocationRow[]>`
       SELECT step_up_revoked_at
       FROM users
       WHERE id = ${userId}
@@ -263,7 +263,7 @@ export async function getTenantSecuritySettings(tenantId: string) {
   };
 
   try {
-    const current = await prisma.tenantSecuritySetting.findUnique({ where: { tenantId } });
+    const current = await prisma().tenantSecuritySetting.findUnique({ where: { tenantId } });
     return current ?? defaults;
   } catch {
     return defaults;
@@ -285,7 +285,7 @@ export async function logPrivilegedAccess(args: {
   const ipAddress = args.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
   try {
-    await prisma.privilegedAccessLog.create({
+    await prisma().privilegedAccessLog.create({
       data: {
         tenantId: args.tenantId,
         caseId: args.caseId ?? null,
@@ -390,13 +390,13 @@ export async function assertStepUpForSensitiveAction(args: {
 
 export async function getSecurityDashboard(tenantId: string) {
   const settings = await getTenantSecuritySettings(tenantId);
-  const recentPrivilegedAccess = await prisma.privilegedAccessLog.findMany({
+  const recentPrivilegedAccess = await prisma().privilegedAccessLog.findMany({
     where: { tenantId },
     orderBy: { createdAt: "desc" },
     take: 25,
   }).catch(() => []);
 
-  const recentAuditExports = await prisma.reportAccessLog.findMany({
+  const recentAuditExports = await prisma().reportAccessLog.findMany({
     where: {
       tenantId,
       OR: [

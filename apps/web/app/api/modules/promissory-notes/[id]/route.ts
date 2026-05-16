@@ -3,13 +3,16 @@ import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 
-const prisma = getPrisma();
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const prisma = getPrisma();
     const auth = await requireModuleOperationalAccess(request, "promissory-notes");
     const { id } = await params;
 

@@ -1,7 +1,7 @@
 import type { ModuleKey } from "@/lib/modules/catalog";
 import { getPrisma } from "@/lib/server/prisma";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type ModuleUsageEventInput = {
   tenantId: string;
@@ -38,7 +38,7 @@ function monthStart(date: Date): Date {
 }
 
 export async function trackModuleUsageEvent(input: ModuleUsageEventInput): Promise<void> {
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `INSERT INTO module_usage_events (
       tenant_id,
       module_key,
@@ -69,7 +69,7 @@ export async function getTenantModuleUsage(
 ): Promise<Array<{ day: string; actionType: string; total: number }>> {
   const safeDays = Math.max(1, Math.min(365, Math.floor(days || 30)));
 
-  const rows = await prisma.$queryRawUnsafe<Array<{ day: string; action_type: string; total: bigint | number }>>(
+  const rows = await prisma().$queryRawUnsafe<Array<{ day: string; action_type: string; total: bigint | number }>>(
     `SELECT occurred_at::date::text AS day, action_type, COUNT(*) AS total
      FROM module_usage_events
      WHERE tenant_id = $1
@@ -97,7 +97,7 @@ export async function getModuleActivitySummary(
   const safeDays = Math.max(1, Math.min(365, Math.floor(days || 30)));
 
   const [aggregateRows, actionRows] = await Promise.all([
-    prisma.$queryRawUnsafe<Array<{ total_events: bigint | number; active_users: bigint | number; unique_documents: bigint | number }>>(
+    prisma().$queryRawUnsafe<Array<{ total_events: bigint | number; active_users: bigint | number; unique_documents: bigint | number }>>(
       `SELECT
          COUNT(*) AS total_events,
          COUNT(DISTINCT user_id) AS active_users,
@@ -110,7 +110,7 @@ export async function getModuleActivitySummary(
       moduleKey,
       safeDays.toString(),
     ),
-    prisma.$queryRawUnsafe<Array<{ module_key: string; action_type: string; total: bigint | number }>>(
+    prisma().$queryRawUnsafe<Array<{ module_key: string; action_type: string; total: bigint | number }>>(
       `SELECT module_key, action_type, COUNT(*) AS total
        FROM module_usage_events
        WHERE tenant_id = $1
@@ -144,7 +144,7 @@ export async function getSubscriberUsageByModule(
 ): Promise<Array<{ moduleKey: string; totalEvents: number; activeUsers: number; uniqueDocuments: number }>> {
   const safeDays = Math.max(1, Math.min(365, Math.floor(days || 30)));
 
-  const rows = await prisma.$queryRawUnsafe<Array<{ module_key: string; total_events: bigint | number; active_users: bigint | number; unique_documents: bigint | number }>>(
+  const rows = await prisma().$queryRawUnsafe<Array<{ module_key: string; total_events: bigint | number; active_users: bigint | number; unique_documents: bigint | number }>>(
     `SELECT
        module_key,
        COUNT(*) AS total_events,
@@ -174,7 +174,7 @@ export async function getModuleActiveUsers(
 ): Promise<Array<{ userId: string; totalEvents: number; lastEventAt: string }>> {
   const safeDays = Math.max(1, Math.min(365, Math.floor(days || 30)));
 
-  const rows = await prisma.$queryRawUnsafe<Array<{ user_id: string; total_events: bigint | number; last_event_at: Date }>>(
+  const rows = await prisma().$queryRawUnsafe<Array<{ user_id: string; total_events: bigint | number; last_event_at: Date }>>(
     `SELECT
        user_id,
        COUNT(*) AS total_events,
@@ -205,7 +205,7 @@ export async function getMonthlyUsageByModule(
   const fromDate = monthStart(new Date());
   fromDate.setUTCMonth(fromDate.getUTCMonth() - (safeMonths - 1));
 
-  const rows = await prisma.$queryRawUnsafe<Array<{ month: string; module_key: string; total_events: bigint | number }>>(
+  const rows = await prisma().$queryRawUnsafe<Array<{ month: string; module_key: string; total_events: bigint | number }>>(
     `SELECT
        to_char(date_trunc('month', occurred_at), 'YYYY-MM') AS month,
        module_key,

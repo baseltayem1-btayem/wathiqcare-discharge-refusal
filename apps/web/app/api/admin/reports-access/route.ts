@@ -3,6 +3,10 @@ import { requireAuth, requireTenantOperationalAccess } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
 import { getReportAccessDashboard, logReportAccess } from "@/lib/server/report-access-service";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireAuth(request);

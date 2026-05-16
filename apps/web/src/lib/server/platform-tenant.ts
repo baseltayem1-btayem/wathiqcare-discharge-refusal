@@ -10,10 +10,10 @@ export type PlatformTenant = {
 };
 
 export async function getPlatformTenant(): Promise<PlatformTenant> {
-    const prisma = getPrisma();
+    const prisma = () => getPrisma();
 
     try {
-        return await prisma.tenant.upsert({
+        return await prisma().tenant.upsert({
             where: { code: PLATFORM_TENANT_CODE },
             update: { isPlatform: true },
             create: {
@@ -30,7 +30,7 @@ export async function getPlatformTenant(): Promise<PlatformTenant> {
         console.warn("getPlatformTenant: primary bootstrap path failed, trying compatibility path", primaryError);
 
         try {
-            return await prisma.tenant.upsert({
+            return await prisma().tenant.upsert({
                 where: { code: PLATFORM_TENANT_CODE },
                 update: { isActive: true },
                 create: {

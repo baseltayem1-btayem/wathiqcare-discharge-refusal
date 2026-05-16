@@ -44,8 +44,8 @@ export async function addLegalEscalationNote(args: {
 		throw new ApiError(400, "note is required");
 	}
 	const metadata = asRecord(caseRecord.metadata);
-	const prisma = getPrisma();
-	await prisma.case.update({
+	const prisma = () => getPrisma();
+	await prisma().case.update({
 		where: { id: caseRecord.id },
 		data: {
 			metadata: buildLegalMetadata(metadata, { updated_at: nowIso() }),
@@ -89,8 +89,8 @@ export async function updateLegalEscalationPriority(args: {
 	const caseRecord = await getAuthorizedRefusalCase(args.auth, args.caseId);
 	const priority = toPriority(args.priority);
 	const metadata = asRecord(caseRecord.metadata);
-	const prisma = getPrisma();
-	await prisma.case.update({
+	const prisma = () => getPrisma();
+	await prisma().case.update({
 		where: { id: caseRecord.id },
 		data: {
 			metadata: buildLegalMetadata(metadata, {
@@ -129,8 +129,8 @@ export async function resolveLegalEscalation(args: {
 		throw new ApiError(400, "resolution_notes is required");
 	}
 	const metadata = asRecord(caseRecord.metadata);
-	const prisma = getPrisma();
-	await prisma.case.update({
+	const prisma = () => getPrisma();
+	await prisma().case.update({
 		where: { id: caseRecord.id },
 		data: {
 			status: args.closeCase ? CaseStatus.CLOSED : caseRecord.status,
@@ -216,8 +216,8 @@ function mapLegalEscalationCase(caseRecord: CaseWithAuditLogs): LegalEscalationC
 }
 
 async function getAuthorizedRefusalCase(auth: AuthContext, caseId: string): Promise<CaseWithAuditLogs> {
-	const prisma = getPrisma();
-	const caseRecord = await prisma.case.findUnique({
+	const prisma = () => getPrisma();
+	const caseRecord = await prisma().case.findUnique({
 		where: { id: caseId },
 		include: {
 			auditLogs: {
@@ -323,8 +323,8 @@ export async function getRefusalQualityMetrics(auth: AuthContext): Promise<Refus
 	};
 }
 async function findRefusalCases(tenantId: string, limit = 200) {
-	const prisma = getPrisma();
-	const cases = await prisma.case.findMany({
+	const prisma = () => getPrisma();
+	const cases = await prisma().case.findMany({
 		where: { tenantId },
 		include: {
 			auditLogs: {

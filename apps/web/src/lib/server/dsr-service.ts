@@ -6,7 +6,7 @@ import { getPrisma } from "@/lib/server/prisma";
 import { nowPlusDays } from "@/lib/server/compliance-utils";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export function calculateDsrDueDates(requestedAt = new Date()) {
   return {
@@ -94,7 +94,7 @@ function parseStatus(value: string | null | undefined): DsrRequestStatus {
 }
 
 export async function listDataSubjectRequests(tenantId: string) {
-  const requests = await prisma.dataSubjectRequest.findMany({
+  const requests = await prisma().dataSubjectRequest.findMany({
     where: { tenantId },
     orderBy: { requestedAt: "desc" },
     take: 200,
@@ -125,7 +125,7 @@ export async function createDataSubjectRequest(
   }
 
   const dueDates = calculateDsrDueDates();
-  const created = await prisma.dataSubjectRequest.create({
+  const created = await prisma().dataSubjectRequest.create({
     data: {
       tenantId: auth.tenant_id,
       caseId: payload.caseId?.trim() || null,
@@ -172,7 +172,7 @@ export async function updateDataSubjectRequest(
     throw new ApiError(403, "Tenant context is required");
   }
 
-  const existing = await prisma.dataSubjectRequest.findFirst({
+  const existing = await prisma().dataSubjectRequest.findFirst({
     where: { id: requestId, tenantId: auth.tenant_id },
   });
 
@@ -190,7 +190,7 @@ export async function updateDataSubjectRequest(
     extendedDueAt = proposed > limit ? limit : proposed;
   }
 
-  const updated = await prisma.dataSubjectRequest.update({
+  const updated = await prisma().dataSubjectRequest.update({
     where: { id: existing.id },
     data: {
       status: payload.status ? parseStatus(payload.status) : existing.status,

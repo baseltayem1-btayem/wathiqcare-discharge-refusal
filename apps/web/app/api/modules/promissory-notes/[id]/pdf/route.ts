@@ -8,13 +8,16 @@ import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import {
+
   buildPromissoryNoteDocumentData,
   buildPromissoryNoteQrPayload,
   buildPromissoryPdfFilename,
 } from "@/lib/promissory-note-document-data";
 import { buildPromissoryPdfHtml, getEmbeddedArabicFontCss } from "@/lib/server/promissory-note-pdf";
 
-const prisma = getPrisma();
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 const IMC_LOGO_URL = "https://www.imc.med.sa/images/logo.jpg";
 
 function buildAttachmentHeader(filename: string): string {
@@ -114,6 +117,7 @@ export async function GET(
   let browser: Browser | null = null;
 
   try {
+    const prisma = getPrisma();
     const auth = await requireModuleOperationalAccess(request, "promissory-notes");
     const { id } = await params;
     const requestedLang = request.nextUrl.searchParams.get("lang");

@@ -5,7 +5,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export function calculateRetentionDueDate(createdAt: Date | string, retentionYears: number) {
   const source = new Date(createdAt);
@@ -15,7 +15,7 @@ export function calculateRetentionDueDate(createdAt: Date | string, retentionYea
 }
 
 export async function ensureDefaultRetentionPolicy(tenantId: string) {
-  return prisma.retentionPolicy.upsert({
+  return prisma().retentionPolicy.upsert({
     where: {
       tenantId_recordCategory: {
         tenantId,
@@ -47,8 +47,8 @@ export async function getRetentionDashboard(tenantId: string) {
   await ensureDefaultRetentionPolicy(tenantId);
 
   const [policies, actions] = await Promise.all([
-    prisma.retentionPolicy.findMany({ where: { tenantId }, orderBy: { recordCategory: "asc" } }).catch(() => []),
-    prisma.retentionAction.findMany({ where: { tenantId }, orderBy: { scheduledFor: "asc" }, take: 100 }).catch(() => []),
+    prisma().retentionPolicy.findMany({ where: { tenantId }, orderBy: { recordCategory: "asc" } }).catch(() => []),
+    prisma().retentionAction.findMany({ where: { tenantId }, orderBy: { scheduledFor: "asc" }, take: 100 }).catch(() => []),
   ]);
 
   const upcomingActions = actions.filter((item) => item.status === RetentionActionStatus.PENDING);
@@ -85,7 +85,7 @@ export async function createRetentionEntry(
   }
 
   if (payload.recordCategory?.trim()) {
-    const policy = await prisma.retentionPolicy.upsert({
+    const policy = await prisma().retentionPolicy.upsert({
       where: {
         tenantId_recordCategory: {
           tenantId: auth.tenant_id,
@@ -124,7 +124,7 @@ export async function createRetentionEntry(
   }
 
   const policy = await ensureDefaultRetentionPolicy(auth.tenant_id);
-  const action = await prisma.retentionAction.create({
+  const action = await prisma().retentionAction.create({
     data: {
       tenantId: auth.tenant_id,
       caseId: payload.caseId?.trim() || null,

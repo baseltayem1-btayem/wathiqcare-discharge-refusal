@@ -5,6 +5,10 @@ import { requireInformedConsentPermission } from "@/lib/modules/informed-consent
 import { buildTrakCareRequestContext } from "@/lib/server/trakcare/request-context";
 import { searchPatients } from "@/lib/server/trakcare/service";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 /**
  * GET /api/modules/informed-consents/patients/search
  * Search patients from live TrakCare by MRN/name/identifier.

@@ -22,7 +22,7 @@ type CreateConsentPayload = {
   documentSnapshot?: Record<string, unknown>;
 };
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 function requireTenantId(auth: AuthContext): string {
   if (!auth.tenant_id) {
@@ -35,7 +35,7 @@ export async function listTenantConsentRecords(auth: AuthContext, args: ListCons
   const tenantId = requireTenantId(auth);
   const take = Math.min(Math.max(args.limit ?? 50, 1), 200);
 
-  return prisma.consentRecord.findMany({
+  return prisma().consentRecord.findMany({
     where: {
       tenantId,
       ...(args.caseId ? { caseId: args.caseId } : {}),
@@ -69,7 +69,7 @@ export async function createTenantConsentRecord(
     throw new ApiError(400, "caseId is required");
   }
 
-  const caseRecord = await prisma.case.findFirst({
+  const caseRecord = await prisma().case.findFirst({
     where: {
       id: caseId,
       tenantId,

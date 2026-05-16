@@ -9,7 +9,8 @@ import {
   type SecureSigningWorkflow,
 } from "@/lib/server/module-secure-signing-service";
 
-const prisma = getPrisma();
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function asRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
@@ -36,6 +37,7 @@ function getWorkflow(metadata: Prisma.JsonValue | null | undefined): SecureSigni
 async function persistWorkflow(caseId: string, metadata: Prisma.JsonValue | null | undefined, workflow: SecureSigningWorkflow) {
   const root = asRecord(metadata);
   const secureSigning = asRecord(root.secureSigning);
+  const prisma = getPrisma();
   await prisma.case.update({
     where: { id: caseId },
     data: {
@@ -54,6 +56,7 @@ type RouteContext = { params: Promise<{ caseId: string }> };
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
+    const prisma = getPrisma();
     const auth = await requireAuth(request);
     const tenantId = requireTenantId(auth);
     const { caseId } = await params;
@@ -83,6 +86,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
+    const prisma = getPrisma();
     const auth = await requireAuth(request);
     const tenantId = requireTenantId(auth);
     const { caseId } = await params;

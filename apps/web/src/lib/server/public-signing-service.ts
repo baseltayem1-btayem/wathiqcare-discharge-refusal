@@ -8,7 +8,7 @@ import { buildSigningOtpSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
 import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 const OTP_PROVIDER_KEY = "public_signing_otp";
 const OTP_REQUESTED_EVENT = "OTP_REQUESTED";
@@ -150,7 +150,7 @@ export async function getSigningTokenContext(token: string): Promise<SigningToke
 }
 
 async function getLatestActiveOtpChallenge(token: string): Promise<{ rowId: string; payload: OtpChallengePayload; createdAt: Date } | null> {
-  const rows = await prisma.$queryRawUnsafe<OtpEventRow[]>(
+  const rows = await prisma().$queryRawUnsafe<OtpEventRow[]>(
     `SELECT id, raw_payload, created_at
      FROM webhook_events
      WHERE provider_key = $1
@@ -178,7 +178,7 @@ async function getLatestActiveOtpChallenge(token: string): Promise<{ rowId: stri
 }
 
 async function getFailedAttemptCount(challengeId: string): Promise<number> {
-  const rows = await prisma.$queryRawUnsafe<Array<{ count: string | number }>>(
+  const rows = await prisma().$queryRawUnsafe<Array<{ count: string | number }>>(
     `SELECT COUNT(*)::int AS count
      FROM webhook_events
      WHERE provider_key = $1
@@ -194,7 +194,7 @@ async function getFailedAttemptCount(challengeId: string): Promise<number> {
 }
 
 async function insertOtpEvent(eventType: string, payload: Record<string, unknown>, processed = false): Promise<void> {
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `INSERT INTO webhook_events (provider_key, event_type, raw_payload, hmac_verified, processed)
      VALUES ($1, $2, $3::jsonb, TRUE, $4)`,
     OTP_PROVIDER_KEY,
@@ -205,7 +205,7 @@ async function insertOtpEvent(eventType: string, payload: Record<string, unknown
 }
 
 async function markOtpChallengeProcessed(rowId: string): Promise<void> {
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `UPDATE webhook_events
      SET processed = TRUE, processed_at = NOW()
      WHERE id = $1`,

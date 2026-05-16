@@ -8,7 +8,7 @@ import {
   isKsaRegion,
 } from "@/config/data-residency-policy";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 function shouldEnforceRuntimeResidency(): boolean {
   const raw = process.env.ENFORCE_DATA_RESIDENCY_AT_RUNTIME;
@@ -60,7 +60,7 @@ export async function ensureDefaultResidencyRules(tenantId: string) {
 
   await Promise.all(
     defaults.map(([dataType, rule]) =>
-      prisma.dataResidencyRule.upsert({
+      prisma().dataResidencyRule.upsert({
         where: {
           tenantId_dataType: {
             tenantId,
@@ -127,11 +127,11 @@ export async function getDataResidencyDashboard(tenantId: string) {
   await ensureDefaultResidencyRules(tenantId);
 
   const deployment = validateSaudiResidencyDeployment();
-  const rules = await prisma.dataResidencyRule.findMany({
+  const rules = await prisma().dataResidencyRule.findMany({
     where: { tenantId },
     orderBy: { dataType: "asc" },
   }).catch(() => []);
-  const securitySettings = await prisma.tenantSecuritySetting.findUnique({ where: { tenantId } }).catch(() => null);
+  const securitySettings = await prisma().tenantSecuritySetting.findUnique({ where: { tenantId } }).catch(() => null);
 
   const items = (Object.entries(dataClassificationPolicy) as Array<
     [DataClassificationKey, (typeof dataClassificationPolicy)[DataClassificationKey]]
@@ -164,9 +164,9 @@ export async function getDataResidencyDashboard(tenantId: string) {
 export async function getPrivacyDashboard(tenantId: string) {
   const [residency, consentCount, dsrCount, pendingRetentionActions] = await Promise.all([
     getDataResidencyDashboard(tenantId),
-    prisma.consentRecord.count({ where: { tenantId } }).catch(() => 0),
-    prisma.dataSubjectRequest.count({ where: { tenantId } }).catch(() => 0),
-    prisma.retentionAction.count({ where: { tenantId, status: "PENDING" } }).catch(() => 0),
+    prisma().consentRecord.count({ where: { tenantId } }).catch(() => 0),
+    prisma().dataSubjectRequest.count({ where: { tenantId } }).catch(() => 0),
+    prisma().retentionAction.count({ where: { tenantId, status: "PENDING" } }).catch(() => 0),
   ]);
 
   return {

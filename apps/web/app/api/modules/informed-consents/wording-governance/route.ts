@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import {
+
   activateWordingVersion,
   compareWordingVersions,
   createWordingDraft,
@@ -11,6 +12,9 @@ import {
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {

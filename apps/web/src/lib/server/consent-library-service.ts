@@ -21,7 +21,7 @@ import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { hasInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export const CONSENT_TYPE_OPTIONS = [
   "GENERAL_CONSENT",
@@ -505,7 +505,7 @@ async function writeConsentAudit(args: {
   metadata?: Record<string, unknown>;
   request?: NextRequest;
 }) {
-  await prisma.consentAuditEvent.create({
+  await prisma().consentAuditEvent.create({
     data: {
       tenantId: args.tenantId,
       consentDocumentId: args.consentDocumentId,
@@ -556,7 +556,7 @@ async function writeConsentAudit(args: {
   }).catch(() => undefined);
 
   if (args.consentDocumentId) {
-    await prisma.consentTimelineEvent.create({
+    await prisma().consentTimelineEvent.create({
       data: {
         tenantId: args.tenantId,
         consentDocumentId: args.consentDocumentId,
@@ -611,11 +611,11 @@ export async function listConsentLibrary(auth: AuthContext) {
   const tenantId = requireTenantId(auth);
 
   const [categories, templates, prompts, promptRegistry, wordingRepository, procedures] = await Promise.all([
-    prisma.consentCategory.findMany({
+    prisma().consentCategory.findMany({
       where: { tenantId },
       orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }],
     }),
-    prisma.consentTemplate.findMany({
+    prisma().consentTemplate.findMany({
       where: { tenantId },
       include: {
         category: true,
@@ -626,21 +626,21 @@ export async function listConsentLibrary(auth: AuthContext) {
       },
       orderBy: [{ updatedAt: "desc" }],
     }),
-    prisma.consentAIPrompt.findMany({
+    prisma().consentAIPrompt.findMany({
       where: { tenantId },
       orderBy: [{ updatedAt: "desc" }],
     }),
-    prisma.consentPromptRegistry.findMany({
+    prisma().consentPromptRegistry.findMany({
       where: { tenantId, isActive: true },
       orderBy: [{ updatedAt: "desc" }],
       take: 200,
     }),
-    prisma.consentWordingRepository.findMany({
+    prisma().consentWordingRepository.findMany({
       where: { tenantId, isActive: true },
       orderBy: [{ updatedAt: "desc" }],
       take: 200,
     }),
-    prisma.consentProcedureCatalog.findMany({
+    prisma().consentProcedureCatalog.findMany({
       where: { tenantId, isActive: true },
       orderBy: [{ specialty: "asc" }, { nameEn: "asc" }],
       include: {
@@ -722,7 +722,7 @@ export async function createConsentTemplate(
     throw new ApiError(400, "specialty is required");
   }
 
-  const category = await prisma.consentCategory.upsert({
+  const category = await prisma().consentCategory.upsert({
     where: {
       tenantId_code: {
         tenantId,
@@ -742,7 +742,7 @@ export async function createConsentTemplate(
     },
   });
 
-  const created = await prisma.$transaction(async (tx) => {
+  const created = await prisma().$transaction(async (tx) => {
     const template = await tx.consentTemplate.create({
       data: {
         tenantId,
@@ -884,7 +884,7 @@ export async function createTemplateVersion(
     throw new ApiError(400, "templateId is required");
   }
 
-  const template = await prisma.consentTemplate.findFirst({
+  const template = await prisma().consentTemplate.findFirst({
     where: { id: templateId, tenantId },
     include: { versions: { orderBy: { versionNumber: "desc" }, take: 1 } },
   });
@@ -900,7 +900,7 @@ export async function createTemplateVersion(
 
   const sourceVersionId = payload.cloneFromVersionId?.trim() || latest.id;
 
-  const sourceVersion = await prisma.consentTemplateVersion.findFirst({
+  const sourceVersion = await prisma().consentTemplateVersion.findFirst({
     where: { id: sourceVersionId, tenantId, templateId },
   });
 
@@ -908,7 +908,7 @@ export async function createTemplateVersion(
     throw new ApiError(404, "Source version not found");
   }
 
-  const sourceSections = await prisma.consentTemplateSection.findMany({
+  const sourceSections = await prisma().consentTemplateSection.findMany({
     where: { tenantId, templateVersionId: sourceVersion.id },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
   });
@@ -941,7 +941,7 @@ export async function createTemplateVersion(
     throw new ApiError(400, `Bilingual synchronization failed: ${syncIssues.map((item) => item.message).join("; ")}`);
   }
 
-  const created = await prisma.$transaction(async (tx) => {
+  const created = await prisma().$transaction(async (tx) => {
     const version = await tx.consentTemplateVersion.create({
       data: {
         tenantId,
@@ -1042,7 +1042,7 @@ export async function setTemplateVersionStatus(
 
   const status = statusRaw as ConsentTemplateStatus;
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma().$transaction(async (tx) => {
     const existingVersion = await tx.consentTemplateVersion.findFirst({
       where: { id: templateVersionId, templateId, tenantId },
     });
@@ -1178,16 +1178,16 @@ export async function upsertConsentAIPrompt(
   };
 
   const record = payload.id?.trim()
-    ? await prisma.consentAIPrompt.updateMany({
+    ? await prisma().consentAIPrompt.updateMany({
         where: { id: payload.id.trim(), tenantId },
         data,
       }).then(async (result) => {
         if (result.count === 0) {
           throw new ApiError(404, "AI prompt not found");
         }
-        return prisma.consentAIPrompt.findFirst({ where: { id: payload.id!.trim(), tenantId } });
+        return prisma().consentAIPrompt.findFirst({ where: { id: payload.id!.trim(), tenantId } });
       })
-    : await prisma.consentAIPrompt.create({
+    : await prisma().consentAIPrompt.create({
         data: {
           tenantId,
           ...data,
@@ -1223,7 +1223,7 @@ export async function listConsentDocuments(
   const take = Math.min(Math.max(args.limit || 50, 1), 200);
   const status = (args.status || "").trim().toUpperCase();
 
-  return prisma.consentDocument.findMany({
+  return prisma().consentDocument.findMany({
     where: {
       tenantId,
       ...(args.caseId ? { caseId: args.caseId } : {}),
@@ -1261,7 +1261,7 @@ export async function listConsentDocuments(
 
 export async function getConsentDocument(auth: AuthContext, id: string) {
   const tenantId = requireTenantId(auth);
-  const document = await prisma.consentDocument.findFirst({
+  const document = await prisma().consentDocument.findFirst({
     where: { tenantId, id },
     include: {
       case: true,
@@ -1311,7 +1311,7 @@ export async function createConsentDocument(
     throw new ApiError(400, "caseId and templateId are required");
   }
 
-  const caseRecord = await prisma.case.findFirst({
+  const caseRecord = await prisma().case.findFirst({
     where: { id: caseId, tenantId },
     select: {
       id: true,
@@ -1327,7 +1327,7 @@ export async function createConsentDocument(
     throw new ApiError(404, "Case not found");
   }
 
-  const template = await prisma.consentTemplate.findFirst({
+  const template = await prisma().consentTemplate.findFirst({
     where: { id: templateId, tenantId },
   });
 
@@ -1340,7 +1340,7 @@ export async function createConsentDocument(
     throw new ApiError(400, "Template has no active version");
   }
 
-  const version = await prisma.consentTemplateVersion.findFirst({
+  const version = await prisma().consentTemplateVersion.findFirst({
     where: {
       id: templateVersionId,
       tenantId,
@@ -1363,7 +1363,7 @@ export async function createConsentDocument(
     throw new ApiError(409, `Template bilingual synchronization failed: ${creationSyncIssues.map((item) => item.message).join("; ")}`);
   }
 
-  const versionSections = await prisma.consentTemplateSection.findMany({
+  const versionSections = await prisma().consentTemplateSection.findMany({
     where: {
       tenantId,
       templateVersionId: version.id,
@@ -1373,7 +1373,7 @@ export async function createConsentDocument(
 
   const emrMeta = (caseRecord.metadata || {}) as Record<string, unknown>;
 
-  const created = await prisma.$transaction(async (tx) => {
+  const created = await prisma().$transaction(async (tx) => {
     const consentDocument = await tx.consentDocument.create({
       data: {
         tenantId,
@@ -1527,7 +1527,7 @@ export async function updateConsentDocument(
 ) {
   const tenantId = requireTenantId(auth);
 
-  const existing = await prisma.consentDocument.findFirst({
+  const existing = await prisma().consentDocument.findFirst({
     where: { id, tenantId },
   });
 
@@ -1611,7 +1611,7 @@ export async function updateConsentDocument(
     throw new ApiError(409, `Bilingual synchronization failed: ${editSyncIssues.map((item) => item.message).join("; ")}`);
   }
 
-  await prisma.$transaction(async (tx) => {
+  await prisma().$transaction(async (tx) => {
     await tx.consentDocument.update({
       where: { id },
       data: {
@@ -1748,7 +1748,7 @@ export async function approveConsentDocument(
 ) {
   const tenantId = requireTenantId(auth);
 
-  const doc = await prisma.consentDocument.findFirst({
+  const doc = await prisma().consentDocument.findFirst({
     where: { tenantId, id },
   });
 
@@ -1777,7 +1777,7 @@ export async function approveConsentDocument(
 
   const fixedClauseChecksum = computeFixedClauseChecksum(doc as unknown as Record<string, unknown>);
 
-  const updated = await prisma.consentDocument.update({
+  const updated = await prisma().consentDocument.update({
     where: { id },
     data: {
       physicianName: payload.physicianName?.trim() || doc.physicianName,
@@ -1837,7 +1837,7 @@ export async function addConsentSignature(
 ) {
   const tenantId = requireTenantId(auth);
 
-  const doc = await prisma.consentDocument.findFirst({
+  const doc = await prisma().consentDocument.findFirst({
     where: { tenantId, id },
     include: { signatures: true },
   });
@@ -1867,7 +1867,7 @@ export async function addConsentSignature(
     throw new ApiError(400, "signerName is required");
   }
 
-  const signature = await prisma.consentDocumentSignature.create({
+  const signature = await prisma().consentDocumentSignature.create({
     data: {
       tenantId,
       consentDocumentId: id,
@@ -1892,7 +1892,7 @@ export async function addConsentSignature(
     ? ConsentDocumentStatus.SIGNED
     : ConsentDocumentStatus.READY_FOR_SIGNATURE;
 
-  await prisma.consentDocument.update({
+  await prisma().consentDocument.update({
     where: { id },
     data: {
       status: nextStatus,
@@ -1929,7 +1929,7 @@ export async function finalizeConsentDocument(
   request?: NextRequest,
 ) {
   const tenantId = requireTenantId(auth);
-  const doc = await prisma.consentDocument.findFirst({
+  const doc = await prisma().consentDocument.findFirst({
     where: { tenantId, id },
     include: { signatures: true, templateVersion: true, template: true },
   });
@@ -2087,7 +2087,7 @@ export async function finalizeConsentDocument(
     `HASH:${immutablePdfHash}`,
   ].join("|");
 
-  const updated = await prisma.consentDocument.update({
+  const updated = await prisma().consentDocument.update({
     where: { id },
     data: {
       status: ConsentDocumentStatus.FINALIZED,
@@ -2116,7 +2116,7 @@ export async function finalizeConsentDocument(
     },
   });
 
-  await prisma.consentEvidencePackage.createMany({
+  await prisma().consentEvidencePackage.createMany({
     data: [
       {
         tenantId,
@@ -2202,8 +2202,8 @@ export async function upsertPromptRegistry(
   };
 
   const prompt = payload.id?.trim()
-    ? await prisma.consentPromptRegistry.update({ where: { id: payload.id.trim() }, data })
-    : await prisma.consentPromptRegistry.create({ data: { tenantId, ...data } });
+    ? await prisma().consentPromptRegistry.update({ where: { id: payload.id.trim() }, data })
+    : await prisma().consentPromptRegistry.create({ data: { tenantId, ...data } });
 
   await writeConsentAudit({
     tenantId,
@@ -2296,8 +2296,8 @@ export async function upsertWordingRepository(
   };
 
   const wording = payload.id?.trim()
-    ? await prisma.consentWordingRepository.update({ where: { id: payload.id.trim() }, data })
-    : await prisma.consentWordingRepository.create({ data: { tenantId, ...data } });
+    ? await prisma().consentWordingRepository.update({ where: { id: payload.id.trim() }, data })
+    : await prisma().consentWordingRepository.create({ data: { tenantId, ...data } });
 
   await writeConsentAudit({
     tenantId,
@@ -2356,7 +2356,7 @@ export async function upsertProcedureCatalog(
     throw new ApiError(400, "specialty, procedureCode, nameAr and nameEn are required");
   }
 
-  const record = await prisma.$transaction(async (tx) => {
+  const record = await prisma().$transaction(async (tx) => {
     const catalog = payload.id?.trim()
       ? await tx.consentProcedureCatalog.update({
           where: { id: payload.id.trim() },
@@ -2464,7 +2464,7 @@ export async function upsertProcedureCatalog(
     request,
   });
 
-  return prisma.consentProcedureCatalog.findFirst({
+  return prisma().consentProcedureCatalog.findFirst({
     where: { id: record.id, tenantId },
     include: {
       riskItems: { orderBy: [{ sortOrder: "asc" }] },
@@ -2486,7 +2486,7 @@ export async function generateProcedureAwareContent(
   request?: NextRequest,
 ) {
   const tenantId = requireTenantId(auth);
-  const doc = await prisma.consentDocument.findFirst({ where: { tenantId, id }, include: { template: true } });
+  const doc = await prisma().consentDocument.findFirst({ where: { tenantId, id }, include: { template: true } });
   if (!doc) {
     throw new ApiError(404, "Consent document not found");
   }
@@ -2547,7 +2547,7 @@ export async function generateProcedureAwareContent(
   const specialty = (payload.specialty || doc.physicianSpecialty || doc.template.specialty || "GENERAL_MEDICINE").trim().toUpperCase();
   const procedureCode = (payload.procedureCode || doc.plannedProcedure || "").trim().toUpperCase();
 
-  const procedure = await prisma.consentProcedureCatalog.findFirst({
+  const procedure = await prisma().consentProcedureCatalog.findFirst({
     where: {
       tenantId,
       specialty,
@@ -2562,7 +2562,7 @@ export async function generateProcedureAwareContent(
     },
   });
 
-  const prompt = await prisma.consentPromptRegistry.findFirst({
+  const prompt = await prisma().consentPromptRegistry.findFirst({
     where: { tenantId, specialty, consentType: doc.template.consentType, isActive: true },
     orderBy: [{ updatedAt: "desc" }],
   });
@@ -2619,7 +2619,7 @@ export async function generateProcedureAwareContent(
     throw new ApiError(409, "AI output rejected due to hallucination signal");
   }
 
-  await prisma.$transaction(async (tx) => {
+  await prisma().$transaction(async (tx) => {
     await tx.consentDocumentRisk.deleteMany({ where: { tenantId, consentDocumentId: id } });
 
     if ((procedure?.riskItems.length || 0) > 0) {
@@ -2737,12 +2737,12 @@ export async function generateProcedureAwareContent(
 
 export async function listConsentTimeline(auth: AuthContext, id: string) {
   const tenantId = requireTenantId(auth);
-  const doc = await prisma.consentDocument.findFirst({ where: { id, tenantId }, select: { id: true } });
+  const doc = await prisma().consentDocument.findFirst({ where: { id, tenantId }, select: { id: true } });
   if (!doc) {
     throw new ApiError(404, "Consent document not found");
   }
 
-  return prisma.consentTimelineEvent.findMany({
+  return prisma().consentTimelineEvent.findMany({
     where: { tenantId, consentDocumentId: id },
     orderBy: [{ createdAt: "asc" }],
   });
@@ -2772,7 +2772,7 @@ export async function submitCommitteeReview(
     throw new ApiError(400, "Invalid review decision");
   }
 
-  const review = await prisma.consentCommitteeReview.create({
+  const review = await prisma().consentCommitteeReview.create({
     data: {
       tenantId,
       consentDocumentId: payload.consentDocumentId?.trim() || null,
@@ -2789,7 +2789,7 @@ export async function submitCommitteeReview(
 
   if (payload.templateVersionId?.trim()) {
     const versionId = payload.templateVersionId.trim();
-    const target = await prisma.consentTemplateVersion.findFirst({ where: { id: versionId, tenantId } });
+    const target = await prisma().consentTemplateVersion.findFirst({ where: { id: versionId, tenantId } });
     if (!target) {
       throw new ApiError(404, "Template version not found");
     }
@@ -2807,7 +2807,7 @@ export async function submitCommitteeReview(
         ? ConsentTemplateStatus.APPROVED
         : ConsentTemplateStatus.UNDER_REVIEW;
 
-    await prisma.consentTemplateVersion.update({
+    await prisma().consentTemplateVersion.update({
       where: { id: versionId },
       data: {
         status,
@@ -2858,7 +2858,7 @@ export async function listCommitteeReviews(
 ) {
   const tenantId = requireTenantId(auth);
 
-  return prisma.consentCommitteeReview.findMany({
+  return prisma().consentCommitteeReview.findMany({
     where: {
       tenantId,
       ...(args.consentDocumentId ? { consentDocumentId: args.consentDocumentId } : {}),
@@ -2892,7 +2892,7 @@ export async function upsertConsentEmrMapping(
 ) {
   const tenantId = requireTenantId(auth);
 
-  const doc = await prisma.consentDocument.findFirst({ where: { tenantId, id: consentDocumentId } });
+  const doc = await prisma().consentDocument.findFirst({ where: { tenantId, id: consentDocumentId } });
   if (!doc) {
     throw new ApiError(404, "Consent document not found");
   }
@@ -2926,7 +2926,7 @@ export async function upsertConsentEmrMapping(
         ? Prisma.JsonNull
         : (payload.medicationsSnapshot as Prisma.InputJsonValue);
 
-  const mapping = await prisma.consentEmrMapping.upsert({
+  const mapping = await prisma().consentEmrMapping.upsert({
     where: {
       id: `${tenantId}:${consentDocumentId}:${adapterKey}`,
     },
@@ -2979,7 +2979,7 @@ export async function upsertConsentEmrMapping(
   });
 
   if (payload.sourceSnapshot !== undefined) {
-    await prisma.consentSourceSnapshot.create({
+    await prisma().consentSourceSnapshot.create({
       data: {
         tenantId,
         consentDocumentId,
@@ -3000,7 +3000,7 @@ export async function upsertConsentEmrMapping(
     });
   }
 
-  await prisma.consentDocument.update({
+  await prisma().consentDocument.update({
     where: { id: consentDocumentId },
     data: {
       metadata: {

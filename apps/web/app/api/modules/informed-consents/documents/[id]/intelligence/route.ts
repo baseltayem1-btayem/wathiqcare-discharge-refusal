@@ -4,6 +4,10 @@ import { generateProcedureAwareContent } from "@/lib/server/consent-library-serv
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },

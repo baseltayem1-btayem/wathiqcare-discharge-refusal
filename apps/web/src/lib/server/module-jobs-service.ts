@@ -5,7 +5,7 @@ import { writeAuditLog } from "@/lib/server/saas-services";
 import { trackModuleUsageEvent } from "@/lib/server/module-analytics-service";
 import { resolveFeatureFlag } from "@/lib/server/tenant-flag-service";
 
-const prisma = getPrisma();
+const prisma = () => getPrisma();
 
 export type ModuleJobType =
   | "expired_signature_link_cleanup"
@@ -34,7 +34,7 @@ export async function runScopedModuleJob(payload: ModuleJobPayload): Promise<{ j
   const jobId = crypto.randomUUID();
   const dedupeKey = (payload.idempotencyKey || `${payload.tenantId}:${payload.moduleKey}:${payload.jobType}:${payload.documentId || "none"}`).trim();
 
-  const inserted = await prisma.$queryRawUnsafe<Array<{ inserted: boolean }>>(
+  const inserted = await prisma().$queryRawUnsafe<Array<{ inserted: boolean }>>(
     `WITH dedupe AS (
        INSERT INTO webhook_events (tenant_id, provider_key, event_type, raw_payload, hmac_verified, processed, processed_at)
        VALUES ($1, 'internal-job-runner', $2, $3::jsonb, TRUE, FALSE, NULL)
@@ -89,7 +89,7 @@ export async function runScopedModuleJob(payload: ModuleJobPayload): Promise<{ j
     },
   }).catch(() => undefined);
 
-  await prisma.$executeRawUnsafe(
+  await prisma().$executeRawUnsafe(
     `UPDATE webhook_events
      SET processed = TRUE,
          processed_at = NOW()
