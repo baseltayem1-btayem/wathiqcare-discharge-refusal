@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/make-ui/sonner";
+import I18nProvider from "@/i18n/I18nProvider";
 import "./globals.css";
 
 const CANONICAL_ORIGIN = "https://wathiqcare.online";
@@ -43,8 +44,10 @@ export default async function RootLayout({
       className="scroll-smooth"
     >
       <body className="antialiased">
-        {children}
-        <Toaster />
+        <I18nProvider>
+          {children}
+          <Toaster />
+        </I18nProvider>
       </body>
     </html>
   );
