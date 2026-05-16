@@ -442,6 +442,11 @@ export async function POST(request: NextRequest) {
     const user = await findUserByEmailWithDomain(prisma, email);
 
     if (!user) {
+      console.warn("AUTH_USER_NOT_FOUND", {
+        route: "/api/auth/password/login",
+        email,
+      });
+
       await recordLoginAttempt({
         prisma,
         email,
@@ -512,6 +517,12 @@ export async function POST(request: NextRequest) {
     const passwordValid = await verifyPassword(password, user.hashedPassword);
 
     if (!passwordValid) {
+      console.warn("AUTH_PASSWORD_MISMATCH", {
+        route: "/api/auth/password/login",
+        userId: user.id,
+        email: user.email,
+      });
+
       await recordLoginAttempt({
         prisma,
         email,
@@ -532,6 +543,15 @@ export async function POST(request: NextRequest) {
       email: user.email,
       tenantId: user.tenantId,
       role: user.role,
+    });
+
+    console.info("AUTH_SESSION_CREATED", {
+      route: "/api/auth/password/login",
+      userId: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
+      redirectTo: session.redirectTo,
+      mustChangePassword: session.mustChangePassword,
     });
 
     await recordLoginAttempt({

@@ -58,6 +58,29 @@ npm run admin:reset-password -- --target imc.admin=Welcome@123 --actor superadmi
 
 When `--audit` is enabled, the script writes an `audit_logs` entry for each reset and attempts to append a matching audit-chain event. Use `--actor` with an existing admin username or email so the operation is attributable.
 
+### Ensure production auth user safely
+
+Use the remediation script below to verify/create a login user, enforce an active membership, and reactivate module access without logging any password value.
+
+Dry-run diagnostics (no writes):
+
+```bash
+npm run auth:ensure-user -- --email dr.ahmed@wathiqcare.med.sa --tenant-code IMC
+```
+
+Apply remediation (writes enabled):
+
+```bash
+npm run auth:ensure-user -- --email dr.ahmed@wathiqcare.med.sa --tenant-code IMC --password 'REPLACE_WITH_SECURE_PASSWORD' --apply
+```
+
+This script validates:
+- `users` record presence and active state
+- `auth_accounts` linkage (if the legacy table exists)
+- password hash generation/verification using the same `hashPassword()` + `verifyPassword()` logic as runtime login
+- tenant membership activation (`tenant_memberships`)
+- subscriber module activation (`subscriber_module_access`) including `informed-consents`
+
 ## Getting Started
 
 First, run the development server:
