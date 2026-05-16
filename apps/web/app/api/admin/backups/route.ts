@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, requireTenantOperationalAccess } from "@/lib/server/auth";
-import { handleApiError } from "@/lib/server/http";
-import { createBackupJob, getBackupDashboard } from "@/lib/server/backup-dr-service";
-import { logReportAccess } from "@/lib/server/report-access-service";
-import { assertStepUpForSensitiveAction } from "@/lib/server/security-policy-service";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
+    const [{ requireAuth, requireTenantOperationalAccess }, { getBackupDashboard }, { logReportAccess }] =
+      await Promise.all([
+        import("@/lib/server/auth"),
+        import("@/lib/server/backup-dr-service"),
+        import("@/lib/server/report-access-service"),
+      ]);
     const auth = await requireAuth(request);
     requireTenantOperationalAccess(auth);
     if (!auth.tenant_id) {
@@ -22,12 +26,22 @@ export async function GET(request: NextRequest) {
     }).catch(() => undefined);
     return NextResponse.json(dashboard);
   } catch (error) {
+    const { handleApiError } = await import("@/lib/server/http");
     return handleApiError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const [
+      { requireAuth, requireTenantOperationalAccess },
+      { assertStepUpForSensitiveAction },
+      { createBackupJob },
+    ] = await Promise.all([
+      import("@/lib/server/auth"),
+      import("@/lib/server/security-policy-service"),
+      import("@/lib/server/backup-dr-service"),
+    ]);
     const auth = await requireAuth(request);
     requireTenantOperationalAccess(auth);
     if (!auth.tenant_id) {
@@ -52,6 +66,7 @@ export async function POST(request: NextRequest) {
     const result = await createBackupJob(auth, payload, request);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
+    const { handleApiError } = await import("@/lib/server/http");
     return handleApiError(error);
   }
 }
