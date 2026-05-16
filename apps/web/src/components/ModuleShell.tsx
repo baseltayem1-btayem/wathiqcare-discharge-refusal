@@ -109,7 +109,10 @@ export default function ModuleShell({
   useEffect(() => {
     fetchAuthMeCached<{ tenant?: TenantBranding | null }>({ cache: "no-store", authFailureMode: "inline" })
       .then((me) => setTenantBranding(me?.tenant ?? null))
-      .catch(() => setTenantBranding(null));
+      .catch((error) => {
+        console.error("MODULE_SHELL_AUTH_ME_RUNTIME_ERROR", error);
+        setTenantBranding(null);
+      });
   }, []);
 
   const moduleDefinition = moduleKey ? getModuleDefinition(moduleKey) : null;

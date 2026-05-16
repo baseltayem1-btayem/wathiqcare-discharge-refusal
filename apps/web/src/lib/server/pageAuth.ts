@@ -39,8 +39,16 @@ export async function requirePageSessionOrRedirect(nextPath?: string): Promise<v
 }
 
 export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promise<PageAuthClaims> {
-  const cookieStore = await cookies();
-  const token = readSessionTokenFromCookies(cookieStore);
+  let token: string | null = null;
+
+  try {
+    const cookieStore = await cookies();
+    token = readSessionTokenFromCookies(cookieStore);
+  } catch (error) {
+    console.error("PAGE_AUTH_COOKIE_READ_ERROR", { nextPath, error });
+    const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : "";
+    redirect(`/login${nextQuery}`);
+  }
 
   if (!token) {
     const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : "";
@@ -65,7 +73,8 @@ export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promis
     }
 
     return claims;
-  } catch {
+  } catch (error) {
+    console.error("PAGE_AUTH_RUNTIME_ERROR", { nextPath, error });
     const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : "";
     redirect(`/login${nextQuery}`);
   }
