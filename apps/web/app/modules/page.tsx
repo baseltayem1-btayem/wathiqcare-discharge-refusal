@@ -14,6 +14,11 @@ export default async function ModulesPage() {
           <p className="mt-2 text-center text-sm text-slate-600">
             A runtime guard prevented a full crash. Please retry shortly or open dashboard.
           </p>
+          {error instanceof Error && error.message ? (
+            <p className="mt-2 rounded-lg border border-amber-100 bg-amber-50 p-2 text-center font-mono text-xs text-amber-800">
+              {error.message}
+            </p>
+          ) : null}
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <a
               href="/modules"
