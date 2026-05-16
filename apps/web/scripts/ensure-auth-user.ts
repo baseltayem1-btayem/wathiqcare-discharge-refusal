@@ -193,9 +193,9 @@ async function inspectAuthAccounts(email: string, userId: string | null) {
 
   return {
     hasTable,
-    rowCountByUserId: Number(byUserId[0]?.count ?? 0n),
-    rowCountByEmail: Number(byEmail[0]?.count ?? 0n),
-    passwordHashPresent: Number(passwordHashRows[0]?.count ?? 0n) > 0,
+    rowCountByUserId: Number(byUserId[0]?.count ?? 0),
+    rowCountByEmail: Number(byEmail[0]?.count ?? 0),
+    passwordHashPresent: Number(passwordHashRows[0]?.count ?? 0) > 0,
   };
 }
 
