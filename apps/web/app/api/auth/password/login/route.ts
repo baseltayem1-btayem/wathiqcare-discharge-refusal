@@ -23,6 +23,9 @@ import {
   normalizeLoginIdentifier,
 } from "@/lib/server/password-login-policy";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type PasswordLoginPayload = {
   email?: string;
   password?: string;
@@ -265,10 +268,24 @@ async function createSessionForPasswordUser(args: {
   });
   const resetState = await getUserResetState(prisma, userId);
   const mustChangePassword = !userData?.lastPasswordChangedAt || resetState.passwordResetRequired;
+  let redirectTo = "/modules";
+  try {
+    redirectTo = buildRedirectPath(normalizedRole, email);
+  } catch (error) {
+    console.error("POST_LOGIN_REDIRECT_ERROR", {
+      route: "/api/auth/password/login",
+      userId,
+      email,
+      role: normalizedRole || null,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message : String(error),
+      stackFile: error instanceof Error ? error.stack?.split("\n")[1]?.trim() || null : null,
+    });
+  }
 
   return {
     accessToken,
-    redirectTo: buildRedirectPath(normalizedRole, email),
+    redirectTo,
     userType: sessionUserType,
     mustChangePassword,
   };
@@ -555,7 +572,12 @@ export async function POST(request: NextRequest) {
     return successResponse;
   } catch (error) {
     if (isPrismaConnectivityError(error)) {
-      console.error("LOGIN_DATABASE_UNAVAILABLE", error);
+      console.error("LOGIN_PRISMA_ERROR", {
+        route: "/api/auth/password/login",
+        errorName: error instanceof Error ? error.name : "UnknownError",
+        errorMessage: error instanceof Error ? error.message : String(error),
+        stackFile: error instanceof Error ? error.stack?.split("\n")[1]?.trim() || null : null,
+      });
       return NextResponse.json(
         { detail: AUTH_SERVICE_UNAVAILABLE_ERROR },
         {
@@ -568,6 +590,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.error("LOGIN_RUNTIME_ERROR", {
+      route: "/api/auth/password/login",
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message : String(error),
+      stackFile: error instanceof Error ? error.stack?.split("\n")[1]?.trim() || null : null,
+    });
     return handleApiError(error);
   }
 }
