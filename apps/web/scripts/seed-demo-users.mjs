@@ -73,6 +73,15 @@ const DEMO_IMC_TENANT = {
   name: "DEMO IMC Tenant",
 };
 
+const PILOT_IMC_TENANT = {
+  code: "pilot-imc",
+  domain: "wathiqcare.med.sa",
+  name: "WathiqCare IMC Pilot Tenant",
+  allowedDomains: ["wathiqcare.med.sa", "wathiqcare.online"],
+};
+
+const PILOT_PASSWORD = "WathiqCare@2026";
+
 const DEMO_USERS = [
   {
     email: "demo.platform.admin@wathiqcare.local",
@@ -139,6 +148,157 @@ const DEMO_USERS = [
   },
 ];
 
+const PILOT_USERS = [
+  {
+    email: "dr.ahmed@wathiqcare.med.sa",
+    fullName: "Dr. Ahmed Pilot Physician",
+    password: PILOT_PASSWORD,
+    label: "Pilot Physician",
+    role: "doctor",
+    userType: "TENANT_USER",
+    tenantCode: PILOT_IMC_TENANT.code,
+  },
+  {
+    email: "medicaldirector@wathiqcare.med.sa",
+    fullName: "Pilot Medical Director",
+    password: PILOT_PASSWORD,
+    label: "Medical Director",
+    role: "medical_director",
+    userType: "TENANT_USER",
+    tenantCode: PILOT_IMC_TENANT.code,
+  },
+  {
+    email: "nursingsupervisor@wathiqcare.med.sa",
+    fullName: "Pilot Nursing Supervisor",
+    password: PILOT_PASSWORD,
+    label: "Nursing Supervisor",
+    role: "nursing",
+    userType: "TENANT_USER",
+    tenantCode: PILOT_IMC_TENANT.code,
+  },
+  {
+    email: "legalreviewer@wathiqcare.med.sa",
+    fullName: "Pilot Legal Reviewer",
+    password: PILOT_PASSWORD,
+    label: "Legal Reviewer",
+    role: "legal_admin",
+    userType: "TENANT_USER",
+    tenantCode: PILOT_IMC_TENANT.code,
+  },
+  {
+    email: "compliance@wathiqcare.med.sa",
+    fullName: "Pilot Compliance Reviewer",
+    password: PILOT_PASSWORD,
+    label: "Compliance Reviewer",
+    role: "compliance",
+    userType: "TENANT_USER",
+    tenantCode: PILOT_IMC_TENANT.code,
+  },
+];
+
+const PILOT_MRN_CASES = [
+  {
+    caseNumber: "IMC-UAT-02000",
+    medicalRecordNo: "IMC-2026-02000",
+    patientIdNumber: "PILOT-NID-02000",
+    patientName: "أحمد خالد العتيبي | Ahmed Khalid Al-Otaibi",
+    title: "Pilot Informed Consent Case 1",
+    caseType: CaseType.GENERAL,
+    status: CaseStatus.IN_PROGRESS,
+    module: "informed-consents",
+  },
+  {
+    caseNumber: "IMC-UAT-02001",
+    medicalRecordNo: "IMC-2026-02001",
+    patientIdNumber: "PILOT-NID-02001",
+    patientName: "فاطمة علي الحربي | Fatimah Ali Al-Harbi",
+    title: "Pilot Informed Consent Case 2",
+    caseType: CaseType.GENERAL,
+    status: CaseStatus.IN_PROGRESS,
+    module: "informed-consents",
+  },
+  {
+    caseNumber: "IMC-UAT-02002",
+    medicalRecordNo: "IMC-2026-02002",
+    patientIdNumber: "PILOT-NID-02002",
+    patientName: "محمد سعد الدوسري | Mohammed Saad Al-Dosari",
+    title: "Pilot Informed Consent Case 3",
+    caseType: CaseType.GENERAL,
+    status: CaseStatus.IN_PROGRESS,
+    module: "informed-consents",
+  },
+  {
+    caseNumber: "IMC-UAT-02003",
+    medicalRecordNo: "IMC-2026-02003",
+    patientIdNumber: "PILOT-NID-02003",
+    patientName: "لولوة ناصر القحطاني | Lolwah Nasser Al-Qahtani",
+    title: "Pilot Discharge Refusal Case 1",
+    caseType: CaseType.DISCHARGE_REFUSAL,
+    status: CaseStatus.IN_PROGRESS,
+    module: "discharge-refusal",
+  },
+  {
+    caseNumber: "IMC-UAT-02004",
+    medicalRecordNo: "IMC-2026-02004",
+    patientIdNumber: "PILOT-NID-02004",
+    patientName: "عبدالرحمن يوسف الشهري | Abdulrahman Yousif Al-Shahri",
+    title: "Pilot Discharge Refusal Case 2",
+    caseType: CaseType.DISCHARGE_REFUSAL,
+    status: CaseStatus.IN_PROGRESS,
+    module: "discharge-refusal",
+  },
+  {
+    caseNumber: "IMC-UAT-02005",
+    medicalRecordNo: "IMC-2026-02005",
+    patientIdNumber: "PILOT-NID-02005",
+    patientName: "نورة إبراهيم العمري | Noura Ibrahim Al-Amri",
+    title: "Pilot Discharge Refusal Case 3",
+    caseType: CaseType.DISCHARGE_REFUSAL,
+    status: CaseStatus.IN_PROGRESS,
+    module: "discharge-refusal",
+  },
+  {
+    caseNumber: "IMC-UAT-02010",
+    medicalRecordNo: "IMC-2026-02010",
+    patientIdNumber: "PILOT-NID-02010",
+    patientName: "تركي منصور الدهام | Turki Mansour Al-Daham",
+    title: "Pilot Promissory Note Case 1",
+    caseType: CaseType.GENERAL,
+    status: CaseStatus.OPEN,
+    module: "promissory-notes",
+  },
+  {
+    caseNumber: "IMC-UAT-02015",
+    medicalRecordNo: "IMC-2026-02015",
+    patientIdNumber: "PILOT-NID-02015",
+    patientName: "سارة عبدالله العنزي | Sarah Abdullah Al-Anzi",
+    title: "Pilot Promissory Note Case 2",
+    caseType: CaseType.GENERAL,
+    status: CaseStatus.OPEN,
+    module: "promissory-notes",
+  },
+  {
+    caseNumber: "IMC-UAT-02020",
+    medicalRecordNo: "IMC-2026-02020",
+    patientIdNumber: "PILOT-NID-02020",
+    patientName: "مازن فهد السبيعي | Mazen Fahad Al-Subaie",
+    title: "Pilot Promissory Note Case 3",
+    caseType: CaseType.GENERAL,
+    status: CaseStatus.OPEN,
+    module: "promissory-notes",
+  },
+  {
+    caseNumber: "IMC-UAT-02024",
+    medicalRecordNo: "IMC-2026-02024",
+    patientIdNumber: "PILOT-NID-02024",
+    patientName: "ريم عادل الشمري | Reem Adel Al-Shammari",
+    title: "Pilot Governance Validation Case",
+    caseType: CaseType.GENERAL,
+    status: CaseStatus.IN_PROGRESS,
+    module: "governance",
+  },
+];
+
 async function ensurePasswordResetSchema() {
   await prisma.$executeRawUnsafe(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_required BOOLEAN NOT NULL DEFAULT FALSE`);
   await prisma.$executeRawUnsafe(`ALTER TABLE users ADD COLUMN IF NOT EXISTS session_revoked_at TIMESTAMPTZ NULL`);
@@ -171,7 +331,14 @@ async function ensureTenant(tenantDef) {
     },
   });
 
-  await ensureAllowedDomain(tenant.id, tenantDef.domain);
+  const allowedDomains = [tenantDef.domain, ...(tenantDef.allowedDomains ?? [])]
+    .map((domain) => (domain || "").trim().toLowerCase())
+    .filter(Boolean);
+
+  for (const domain of Array.from(new Set(allowedDomains))) {
+    await ensureAllowedDomain(tenant.id, domain);
+  }
+
   return tenant.id;
 }
 
@@ -473,6 +640,90 @@ async function ensureDemoModuleData(tenantId, actorUserId) {
   }
 }
 
+async function ensurePilotUatData(tenantId, actorUserId) {
+  const seededCases = [];
+  for (const seed of PILOT_MRN_CASES) {
+    const pilotCase = await ensureCase(tenantId, actorUserId, {
+      caseNumber: seed.caseNumber,
+      caseType: seed.caseType,
+      status: seed.status,
+      title: seed.title,
+      patientName: seed.patientName,
+      patientIdNumber: seed.patientIdNumber,
+      medicalRecordNo: seed.medicalRecordNo,
+      metadata: {
+        pilotRecord: true,
+        module: seed.module,
+        patientNameAr: seed.patientName.split("|")[0]?.trim() ?? "",
+        patientNameEn: seed.patientName.split("|")[1]?.trim() ?? seed.patientName,
+      },
+    });
+    seededCases.push({ seed, pilotCase });
+  }
+
+  if (await tableExists("consent_records")) {
+    for (const seeded of seededCases.filter((entry) => entry.seed.module === "informed-consents")) {
+      await ensureConsentRecord(tenantId, seeded.pilotCase.id, "signed", {
+        consentMethod: ConsentMethod.ELECTRONIC_SIGNATURE,
+        documentVersion: `pilot-${seeded.seed.medicalRecordNo}`,
+        witnessName: "Pilot Witness",
+        procedure: "Pilot informed consent workflow validation",
+      });
+    }
+  } else {
+    console.log("  ! Skipping pilot informed consent records: table public.consent_records is not available.");
+  }
+
+  if (await tableExists("discharge_refusal_cases")) {
+    for (const seeded of seededCases.filter((entry) => entry.seed.module === "discharge-refusal")) {
+      const exists = await prisma.dischargeRefusalCase.findFirst({
+        where: { tenantId, caseId: seeded.pilotCase.id },
+        select: { id: true },
+      });
+      if (!exists) {
+        await prisma.dischargeRefusalCase.create({
+          data: {
+            id: crypto.randomUUID(),
+            tenantId,
+            caseId: seeded.pilotCase.id,
+            dischargeStatus: "pilot_refusal_recorded",
+            dischargeAlternative: "PILOT_HOME_CARE",
+            signatureMethod: "pilot_secure_acknowledgment",
+          },
+        });
+      }
+    }
+  } else {
+    console.log("  ! Skipping pilot discharge refusal records: table public.discharge_refusal_cases is not available.");
+  }
+
+  if (await tableExists("promissory_notes")) {
+    for (const seeded of seededCases.filter((entry) => entry.seed.module === "promissory-notes")) {
+      await ensurePromissoryNote(
+        tenantId,
+        seeded.pilotCase.id,
+        `PN-${seeded.seed.medicalRecordNo}`,
+        PromissoryNoteStatus.ACTIVE,
+        {
+          debtorName: seeded.seed.patientName.split("|")[1]?.trim() ?? seeded.seed.patientName,
+          debtorIdNumber: seeded.seed.patientIdNumber,
+          issuerName: "WathiqCare Pilot Finance",
+          amount: 2500,
+          dueDate: new Date("2026-12-31T00:00:00.000Z"),
+          metadata: {
+            pilotRecord: true,
+            medicalRecordNo: seeded.seed.medicalRecordNo,
+            demoDisplayStatus: "Pending Signature",
+          },
+          documentVersion: `pilot-${seeded.seed.medicalRecordNo}`,
+        },
+      );
+    }
+  } else {
+    console.log("  ! Skipping pilot promissory records: table public.promissory_notes is not available.");
+  }
+}
+
 async function main() {
   console.log("[demo-seed] Provisioning controlled demo accounts and demo module records...\n");
 
@@ -480,8 +731,10 @@ async function main() {
 
   const platformTenantId = await ensureTenant(DEMO_PLATFORM_TENANT);
   const demoImcTenantId = await ensureTenant(DEMO_IMC_TENANT);
+  const pilotImcTenantId = await ensureTenant(PILOT_IMC_TENANT);
 
   let demoActorUserId = null;
+  let pilotActorUserId = null;
 
   for (const userDef of DEMO_USERS) {
     const tenantId = userDef.tenantCode === DEMO_IMC_TENANT.code
@@ -494,11 +747,23 @@ async function main() {
     }
   }
 
+  for (const userDef of PILOT_USERS) {
+    const userId = await seedUser(userDef, pilotImcTenantId);
+    if (userDef.role === "legal_admin") {
+      pilotActorUserId = userId;
+    }
+  }
+
   await ensureDemoModuleData(demoImcTenantId, demoActorUserId);
+  await ensurePilotUatData(pilotImcTenantId, pilotActorUserId ?? demoActorUserId);
 
   console.log("\n[demo-seed] Demo accounts provisioned successfully.");
   console.log("[demo-seed] Canonical login identifiers:");
   for (const u of DEMO_USERS) {
+    console.log(`  - ${u.email} (${u.label})`);
+  }
+  console.log("[demo-seed] Canonical pilot UAT login identifiers:");
+  for (const u of PILOT_USERS) {
     console.log(`  - ${u.email} (${u.label})`);
   }
   console.log("[demo-seed] Demo accounts are provisioned with controlled credentials and ready for module validation.");
