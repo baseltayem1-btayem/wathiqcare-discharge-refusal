@@ -4,13 +4,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
-import { writeAuditLog } from "@/lib/server/saas-services";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type RouteContext = {
   params: Promise<{ caseId: string; sessionId: string }>;
 };
 
-const prisma = getPrisma();
 const DEFAULT_MAX_OTP_RETRIES = 3;
 
 function safe(value: unknown): string {
@@ -61,6 +62,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const auth = await requireAuth(request);
     const tenantId = requireTenantId(auth);
     const { caseId, sessionId } = await params;
+
+    const prisma = getPrisma();
+    const { writeAuditLog } = await import("@/lib/server/saas-services");
 
     const doc = await prisma.document.findFirst({
       where: {
