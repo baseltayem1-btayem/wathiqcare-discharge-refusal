@@ -101,15 +101,32 @@ async function main() {
   fs.mkdirSync(artifactsDir, { recursive: true });
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
 
-  if (!process.env.DATABASE_URL) {
+  const resolvedDbUrl =
+    process.env.DATABASE_URL?.trim() ||
+    process.env.DATABASE_URL_POOLED?.trim() ||
+    process.env.DATABASE_URL_UNPOOLED?.trim() ||
+    process.env.POSTGRES_PRISMA_URL?.trim() ||
+    process.env.POSTGRES_URL?.trim() ||
+    process.env.POSTGRES_URL_NON_POOLING?.trim();
+
+  if (!resolvedDbUrl) {
     report.summary.totalChecks = 0;
     report.summary.blocked = 1;
-    report.blocker = "DATABASE_URL is missing. Set a pilot DB connection to run validation.";
+    report.blocker =
+      "No database URL found. Set DATABASE_URL, POSTGRES_PRISMA_URL, POSTGRES_URL, or POSTGRES_URL_NON_POOLING to run validation.";
     const outJson = path.join(artifactsDir, `pilot-validation-${ts}.json`);
     fs.writeFileSync(outJson, JSON.stringify(report, null, 2), "utf8");
     console.log(`[pilot-validation] Report written: ${outJson}`);
-    console.error("[pilot-validation] BLOCKED: DATABASE_URL is not configured.");
+    console.error(
+      "[pilot-validation] BLOCKED: No database URL is configured. " +
+        "Checked: DATABASE_URL, DATABASE_URL_POOLED, DATABASE_URL_UNPOOLED, " +
+        "POSTGRES_PRISMA_URL, POSTGRES_URL, POSTGRES_URL_NON_POOLING.",
+    );
     process.exit(1);
+  }
+
+  if (!process.env.DATABASE_URL) {
+    process.env.DATABASE_URL = resolvedDbUrl;
   }
 
   const prisma = new PrismaClient();
