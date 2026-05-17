@@ -1,11 +1,31 @@
+import Link from "next/link";
 import ModulePortalPage from "@/components/ModulePortalPage";
-import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
+import { type PageAuthClaims, requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
+
+/**
+ * Returns true for Next.js internal errors (redirect, not-found) that must
+ * propagate to the framework — never swallowed by a try/catch.
+ */
+function isNextInternalError(error: unknown): boolean {
+  const digest = (error as { digest?: string } | null)?.digest;
+  return (
+    typeof digest === "string" &&
+    (digest.startsWith("NEXT_REDIRECT") || digest === "NEXT_NOT_FOUND")
+  );
+}
 
 export default async function ModulesPage() {
+  let auth: PageAuthClaims;
+
   try {
-    const auth = await requirePageAuthClaimsOrRedirect("/modules");
-    return <ModulePortalPage auth={auth} />;
+    auth = await requirePageAuthClaimsOrRedirect("/modules");
   } catch (error) {
+    // Re-throw Next.js redirect / not-found errors so the framework can
+    // handle them (redirect to /login). Swallowing them would show the
+    // error UI to unauthenticated users instead of redirecting them.
+    if (isNextInternalError(error)) {
+      throw error;
+    }
     console.error("MODULES_PAGE_RUNTIME_ERROR", error);
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
@@ -20,21 +40,23 @@ export default async function ModulesPage() {
             </p>
           ) : null}
           <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <a
+            <Link
               href="/modules"
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
             >
               Retry modules
-            </a>
-            <a
+            </Link>
+            <Link
               href="/dashboard"
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
             >
               Open dashboard
-            </a>
+            </Link>
           </div>
         </section>
       </main>
     );
   }
+
+  return <ModulePortalPage auth={auth} />;
 }
