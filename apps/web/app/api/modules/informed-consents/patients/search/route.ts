@@ -1,7 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 import {
   requireModuleOperationalAccess,
   requireTenantId,
@@ -145,8 +144,8 @@ export async function GET(request: NextRequest) {
       request,
       "informed-consents",
     );
-
-    requireInformedConsentPermission(auth, "consent:create");
+    // Patient lookup is read/search access. Consent creation remains protected
+    // in draft generation and consent creation endpoints.
 
     const tenantId = requireTenantId(auth);
     const { searchParams } = new URL(request.url);
