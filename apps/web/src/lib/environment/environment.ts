@@ -176,7 +176,7 @@ export function assertEnvironment(
   allowed: AppEnvironment[],
   context?: string
 ): void {
-  const config = useEnvironmentConfig();
+  const config = getEnvironmentConfig();
   if (!allowed.includes(config.env)) {
     throw new Error(
       `Environment assertion failed${context ? ` (${context})` : ""}: ` +
@@ -189,6 +189,6 @@ export function assertEnvironment(
  * Check if an environment is considered "safe" for production use
  */
 export function isProductionSafeEnvironment(): boolean {
-  const config = useEnvironmentConfig();
+  const config = getEnvironmentConfig();
   return config.isProduction || config.isPilot || config.isUAT;
 }
