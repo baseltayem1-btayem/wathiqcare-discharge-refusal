@@ -19,6 +19,18 @@ const LANGUAGE_STORAGE_KEY = "wathiqcare_lang";
 const LANGUAGE_COOKIE_KEY = "wathiqcare_lang";
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined);
+const FALLBACK_LANG: Language = "en";
+
+const FALLBACK_I18N_CONTEXT: I18nContextValue = {
+  lang: FALLBACK_LANG,
+  language: FALLBACK_LANG,
+  isRtl: false,
+  locale: "en-US",
+  setLang: () => {
+    // No-op fallback when provider context is unavailable.
+  },
+  t: (key, vars) => interpolate(getTranslation(FALLBACK_LANG, key), vars),
+};
 
 function getCookieLang(): Language | null {
   if (typeof document === "undefined") return null;
@@ -43,7 +55,10 @@ function getPathLang(pathname: string): Language | null {
 export function useI18n(): I18nContextValue {
   const context = useContext(I18nContext);
   if (!context) {
-    throw new Error("useI18n must be used within I18nProvider");
+    if (typeof console !== "undefined") {
+      console.warn("useI18n provider missing; applying safe fallback locale context.");
+    }
+    return FALLBACK_I18N_CONTEXT;
   }
   return context;
 }
