@@ -4,6 +4,8 @@ export const INFORMED_CONSENTS_ROLE_ACCESS_CONFIG = [
   { key: "legal-affairs", label: "Legal Affairs", canonicalRole: "legal_admin", aliases: ["legal_admin", "legal_affairs", "legal_officer"] },
   { key: "admin", label: "Admin", canonicalRole: "tenant_admin", aliases: ["tenant_admin", "tenant_owner", "admin"] },
   { key: "compliance-officer", label: "Compliance Officer", canonicalRole: "compliance", aliases: ["compliance", "compliance_officer"] },
+  { key: "medical-director", label: "Medical Director", canonicalRole: "medical_director", aliases: ["medical_director"] },
+  { key: "quality", label: "Quality", canonicalRole: "quality", aliases: ["quality"] },
 ] as const;
 
 export const INFORMED_CONSENTS_ALLOWED_ROLES = Array.from(
