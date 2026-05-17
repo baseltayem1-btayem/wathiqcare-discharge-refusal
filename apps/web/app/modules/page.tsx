@@ -26,7 +26,12 @@ export default async function ModulesPage() {
     if (isNextInternalError(error)) {
       throw error;
     }
-    console.error("MODULES_PAGE_RUNTIME_ERROR", error);
+    console.error("MODULES_RUNTIME_ERROR", {
+      route: "/modules",
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message : String(error),
+      stackFile: error instanceof Error ? error.stack?.split("\n")[1]?.trim() || null : null,
+    });
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
         <section className="w-full max-w-lg rounded-2xl border border-amber-200 bg-white p-6 shadow-sm">

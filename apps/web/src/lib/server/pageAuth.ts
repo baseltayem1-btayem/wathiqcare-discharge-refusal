@@ -34,6 +34,15 @@ function readSessionTokenFromCookies(cookieStore: Awaited<ReturnType<typeof cook
   return null;
 }
 
+function redirectToLogin(nextPath: string | undefined, reason: string): never {
+  const params = new URLSearchParams();
+  if (nextPath) {
+    params.set("next", nextPath);
+  }
+  params.set("reason", reason);
+  redirect(`/login?${params.toString()}`);
+}
+
 export async function requirePageSessionOrRedirect(nextPath?: string): Promise<void> {
   await requirePageAuthClaimsOrRedirect(nextPath);
 }
@@ -45,14 +54,21 @@ export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promis
     const cookieStore = await cookies();
     token = readSessionTokenFromCookies(cookieStore);
   } catch (error) {
-    console.error("PAGE_AUTH_COOKIE_READ_ERROR", { nextPath, error });
-    const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : "";
-    redirect(`/login${nextQuery}`);
+    console.error("SESSION_RUNTIME_ERROR", {
+      reason: "cookie_read_failed",
+      nextPath: nextPath ?? null,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    redirectToLogin(nextPath, "session_cookie_error");
   }
 
   if (!token) {
-    const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : "";
-    redirect(`/login${nextQuery}`);
+    console.error("SESSION_RUNTIME_ERROR", {
+      reason: "session_cookie_missing",
+      nextPath: nextPath ?? null,
+    });
+    redirectToLogin(nextPath, "session_missing");
   }
 
   try {
@@ -74,8 +90,12 @@ export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promis
 
     return claims;
   } catch (error) {
-    console.error("PAGE_AUTH_RUNTIME_ERROR", { nextPath, error });
-    const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : "";
-    redirect(`/login${nextQuery}`);
+    console.error("SESSION_RUNTIME_ERROR", {
+      reason: "session_invalid",
+      nextPath: nextPath ?? null,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    redirectToLogin(nextPath, "session_invalid");
   }
 }
