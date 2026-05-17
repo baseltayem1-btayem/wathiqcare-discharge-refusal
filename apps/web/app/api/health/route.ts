@@ -15,6 +15,7 @@ export async function GET() {
         db: "/api/health/db",
         auth: "/api/health/auth",
         runtime: "/api/health/runtime",
+        dashboard: "/api/health/dashboard",
       },
       database: {
         status: "ok",
@@ -31,6 +32,7 @@ export async function GET() {
           db: "/api/health/db",
           auth: "/api/health/auth",
           runtime: "/api/health/runtime",
+          dashboard: "/api/health/dashboard",
         },
         database: {
           status: "unavailable",

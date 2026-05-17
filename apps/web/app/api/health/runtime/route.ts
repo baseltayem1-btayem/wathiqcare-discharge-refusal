@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildRuntimeFingerprint, getRuntimeEnvPresence } from "@/lib/server/runtime-health";
+import { buildRuntimeFingerprint, getRuntimeDiagnosticsSnapshot, getRuntimeEnvPresence } from "@/lib/server/runtime-health";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -7,10 +7,13 @@ export const runtime = "nodejs";
 export async function GET() {
   const envPresence = getRuntimeEnvPresence();
   const missing = envPresence.filter((item) => !item.present).map((item) => item.key);
+  const diagnostics = getRuntimeDiagnosticsSnapshot();
+  const hasOperationalMode = diagnostics.modes.maintenanceMode || diagnostics.modes.degradedMode || diagnostics.modes.readonlyMode;
+  const degraded = missing.length > 0 || hasOperationalMode;
 
   return NextResponse.json(
     {
-      status: missing.length === 0 ? "ok" : "degraded",
+      status: degraded ? "degraded" : "ok",
       deployment: {
         vercelEnv: process.env.VERCEL_ENV ?? null,
         vercelUrl: process.env.VERCEL_URL ?? null,
@@ -24,8 +27,11 @@ export async function GET() {
       },
       diagnostics: {
         missingRequiredKeys: missing,
+        modes: diagnostics.modes,
+        metrics: diagnostics.metrics,
+        pdfEngine: diagnostics.pdfEngine,
       },
     },
-    { status: missing.length === 0 ? 200 : 503 },
+    { status: degraded ? 503 : 200 },
   );
 }

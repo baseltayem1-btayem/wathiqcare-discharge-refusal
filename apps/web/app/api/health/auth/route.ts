@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
+import { getRuntimeModes } from "@/lib/server/runtime-modes";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -10,6 +11,7 @@ function hasValue(value: string | undefined): boolean {
 }
 
 export async function GET(request: NextRequest) {
+  const runtimeModes = getRuntimeModes();
   const token = request.cookies.get(getSessionCookieName())?.value?.trim() ?? "";
   const trustHost = (process.env.AUTH_TRUST_HOST ?? "").trim().toLowerCase();
 
@@ -34,6 +36,7 @@ export async function GET(request: NextRequest) {
         name: getSessionCookieName(),
         state: sessionStatus,
       },
+      runtimeModes,
     },
   };
 

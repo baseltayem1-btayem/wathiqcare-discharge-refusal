@@ -22,6 +22,8 @@ import {
   isEmailLoginIdentifier,
   normalizeLoginIdentifier,
 } from "@/lib/server/password-login-policy";
+import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
+import { assertRuntimeWriteAllowed } from "@/lib/server/runtime-modes";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -393,7 +395,9 @@ async function resolveUsernameToEmail(
 }
 
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
   try {
+    assertRuntimeWriteAllowed();
     const prisma = getPrisma();
 
     const payload = (await request.json().catch(() => null)) as PasswordLoginPayload | null;
@@ -592,6 +596,15 @@ export async function POST(request: NextRequest) {
     return successResponse;
   } catch (error) {
     if (isPrismaConnectivityError(error)) {
+      logRuntimeIncident({
+        request,
+        module: "auth",
+        type: "DB_FAILURE",
+        error,
+        details: {
+          route: "/api/auth/password/login",
+        },
+      });
       console.error("LOGIN_PRISMA_ERROR", {
         route: "/api/auth/password/login",
         errorName: error instanceof Error ? error.name : "UnknownError",
@@ -610,6 +623,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    logRuntimeIncident({
+      request,
+      module: "auth",
+      type: "AUTH_FAILURE",
+      error,
+      details: {
+        route: "/api/auth/password/login",
+      },
+    });
     console.error("LOGIN_RUNTIME_ERROR", {
       route: "/api/auth/password/login",
       errorName: error instanceof Error ? error.name : "UnknownError",
@@ -617,5 +639,7 @@ export async function POST(request: NextRequest) {
       stackFile: error instanceof Error ? error.stack?.split("\n")[1]?.trim() || null : null,
     });
     return handleApiError(error);
+  } finally {
+    recordRuntimeMetric("response_time_ms", Date.now() - startedAt);
   }
 }

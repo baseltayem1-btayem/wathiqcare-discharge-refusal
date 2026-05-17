@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { canAccessModule, resolveModuleKeyFromPath } from "@/lib/modules/catalog";
+import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
 
 const FALLBACK_COOKIE_NAMES = ["wathiqcare_access_token", "token"] as const;
 
@@ -48,25 +49,33 @@ export async function requirePageSessionOrRedirect(nextPath?: string): Promise<v
 }
 
 export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promise<PageAuthClaims> {
+  const startedAt = Date.now();
   let token: string | null = null;
 
   try {
     const cookieStore = await cookies();
     token = readSessionTokenFromCookies(cookieStore);
   } catch (error) {
-    console.error("SESSION_RUNTIME_ERROR", {
-      reason: "cookie_read_failed",
-      nextPath: nextPath ?? null,
-      errorName: error instanceof Error ? error.name : "UnknownError",
-      errorMessage: error instanceof Error ? error.message : String(error),
+    logRuntimeIncident({
+      module: "session",
+      type: "AUTH_FAILURE",
+      error,
+      details: {
+        reason: "cookie_read_failed",
+        nextPath: nextPath ?? null,
+      },
     });
     redirectToLogin(nextPath, "session_cookie_error");
   }
 
   if (!token) {
-    console.error("SESSION_RUNTIME_ERROR", {
-      reason: "session_cookie_missing",
-      nextPath: nextPath ?? null,
+    logRuntimeIncident({
+      module: "session",
+      type: "AUTH_FAILURE",
+      details: {
+        reason: "session_cookie_missing",
+        nextPath: nextPath ?? null,
+      },
     });
     redirectToLogin(nextPath, "session_missing");
   }
@@ -88,13 +97,17 @@ export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promis
       }
     }
 
+    recordRuntimeMetric("session_validation_duration_ms", Date.now() - startedAt);
     return claims;
   } catch (error) {
-    console.error("SESSION_RUNTIME_ERROR", {
-      reason: "session_invalid",
-      nextPath: nextPath ?? null,
-      errorName: error instanceof Error ? error.name : "UnknownError",
-      errorMessage: error instanceof Error ? error.message : String(error),
+    logRuntimeIncident({
+      module: "session",
+      type: "AUTH_FAILURE",
+      error,
+      details: {
+        reason: "session_invalid",
+        nextPath: nextPath ?? null,
+      },
     });
     redirectToLogin(nextPath, "session_invalid");
   }

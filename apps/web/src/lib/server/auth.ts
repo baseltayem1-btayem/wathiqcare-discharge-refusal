@@ -8,6 +8,7 @@ import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
 import { getUserResetState } from "@/lib/server/auth-reset";
 import { DatabaseUnavailableError, runDbOperation } from "@/lib/server/db-resilience";
+import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
 
 export type AuthContext = {
   sub: string;
@@ -96,8 +97,15 @@ function isTruthyEnvFlag(value: string | undefined, fallback: boolean): boolean 
 const prisma = () => getPrisma();
 
 export async function requireAuth(request: NextRequest): Promise<AuthContext> {
+  const startedAt = Date.now();
   const token = readToken(request);
   if (!token) {
+    logRuntimeIncident({
+      request,
+      module: "auth",
+      type: "AUTH_FAILURE",
+      details: { reason: "missing_access_token" },
+    });
     throw new ApiError(401, "Missing access token");
   }
 
@@ -105,6 +113,13 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
   try {
     parsedPayload = verifyAndDecodeJwt(token) as AuthContext;
   } catch (error) {
+    logRuntimeIncident({
+      request,
+      module: "auth",
+      type: "AUTH_FAILURE",
+      error,
+      details: { reason: "invalid_access_token" },
+    });
     if (error instanceof Error) {
       throw new ApiError(401, error.message);
     }
@@ -139,6 +154,13 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
       );
     } catch (error) {
       if (error instanceof DatabaseUnavailableError) {
+        logRuntimeIncident({
+          request,
+          module: "auth",
+          type: "AUTH_FAILURE",
+          error,
+          details: { reason: "auth_user_lookup_db_unavailable" },
+        });
         throw new ApiError(503, "Authentication service temporarily unavailable");
       }
       throw error;
@@ -163,6 +185,13 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
       );
     } catch (error) {
       if (error instanceof DatabaseUnavailableError) {
+        logRuntimeIncident({
+          request,
+          module: "auth",
+          type: "AUTH_FAILURE",
+          error,
+          details: { reason: "auth_reset_state_db_unavailable" },
+        });
         throw new ApiError(503, "Authentication service temporarily unavailable");
       }
       throw error;
@@ -243,7 +272,7 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     }
   }
 
-  return {
+  const authContext = {
     sub: user.id,
     email: user.email,
     role: user.role,
@@ -258,6 +287,8 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     platform_role: platformRole,
     exp: parsedPayload.exp,
   };
+  recordRuntimeMetric("session_validation_duration_ms", Date.now() - startedAt);
+  return authContext;
 }
 
 export function hasPlatformAccess(auth: AuthContext): boolean {

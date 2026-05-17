@@ -19,6 +19,7 @@ import { getTenantBrandingProfile } from "@/lib/server/tenantBrandingStore";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { logReportAccess } from "@/lib/server/report-access-service";
 import { evaluateWitnessIntegrity } from "@/lib/server/witness-integrity-service";
+import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
 
 const prisma = () => getPrisma();
 let sharedPdfBrowserPromise: Promise<Browser> | null = null;
@@ -1276,6 +1277,7 @@ export async function generateCasePdfReport(args: {
   language?: "en" | "ar";
   bypassAccessCheck?: boolean;
 }): Promise<GeneratedCasePdfResult> {
+  const startedAt = Date.now();
   const caseRecord = await getAuthorizedCase(args.auth, args.caseId);
   if (!args.bypassAccessCheck) {
     ensureCasePdfAccess(args.auth, caseRecord);
@@ -1374,6 +1376,7 @@ export async function generateCasePdfReport(args: {
     });
 
     const binaryHash = hashSha256(pdfBuffer);
+    const verificationChecksum = hashSha256(`${contentHash}:${binaryHash}:${version}:${generatedAt}`);
 
     const persisted = await persistPdfBinary({
       tenantId: caseRecord.tenantId,
@@ -1414,6 +1417,13 @@ export async function generateCasePdfReport(args: {
         language,
         sha256_hash: contentHash,
         sha256_binary_hash: binaryHash,
+        verification_checksum: verificationChecksum,
+        tamper_evidence: {
+          algorithm: "sha256",
+          checksum_input: "content_hash:binary_hash:version:generated_at",
+          generated_at: generatedAt,
+          immutable_expected: allowFinal,
+        },
         can_finalize: validation.canFinalize,
         missing_required: validation.missingRequired,
         immutable: allowFinal,
@@ -1478,7 +1488,7 @@ export async function generateCasePdfReport(args: {
       request: args.request,
     });
 
-    await appendAuditChainEvent({
+    const auditChainEvent = await appendAuditChainEvent({
       tenantId: caseRecord.tenantId,
       caseId: args.caseId,
       eventType: "PDF_GENERATED",
@@ -1489,9 +1499,25 @@ export async function generateCasePdfReport(args: {
       metadataJson: {
         documentId: document.id,
         status: allowFinal ? "final" : "draft",
+        verification_checksum: verificationChecksum,
       },
       request: args.request,
-    }).catch(() => undefined);
+    }).catch(() => null);
+
+    if (auditChainEvent && typeof auditChainEvent === "object" && "currentHash" in auditChainEvent) {
+      const currentHash = (auditChainEvent as { currentHash?: unknown }).currentHash;
+      if (typeof currentHash === "string" && currentHash) {
+        await prisma().document.update({
+          where: { id: document.id },
+          data: {
+            metadata: {
+              ...(sharedDocumentData.metadata as Prisma.InputJsonObject),
+              immutable_audit_reference: currentHash,
+            },
+          },
+        }).catch(() => undefined);
+      }
+    }
 
     const summary = toReportSummary(
       document,
@@ -1509,6 +1535,7 @@ export async function generateCasePdfReport(args: {
       binaryAvailable: summary.binaryAvailable,
       recoveryRequired: summary.recoveryRequired,
     });
+    recordRuntimeMetric("pdf_generation_duration_ms", Date.now() - startedAt);
 
     return {
       report: summary,
@@ -1518,6 +1545,17 @@ export async function generateCasePdfReport(args: {
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown PDF generation error";
+    logRuntimeIncident({
+      request: args.request,
+      auth: { sub: args.auth.sub },
+      module: "legal_case_pdf",
+      type: "PDF_FAILURE",
+      error,
+      details: {
+        caseId: args.caseId,
+        trigger: args.trigger,
+      },
+    });
     logCasePdfLifecycle("generation_failed", {
       ...lifecycleContext,
       version,
@@ -1538,6 +1576,8 @@ export async function generateCasePdfReport(args: {
       500,
       "PDF generation failed. Please review missing case fields or template rendering errors.",
     );
+  } finally {
+    recordRuntimeMetric("response_time_ms", Date.now() - startedAt);
   }
 }
 

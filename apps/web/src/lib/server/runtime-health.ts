@@ -1,6 +1,8 @@
 import { createHash } from "crypto";
 import { getPrisma } from "@/lib/server/prisma";
 import { runDbOperation } from "@/lib/server/db-resilience";
+import { getRuntimeMetricsSnapshot } from "@/lib/server/runtime-observability";
+import { getRuntimeModes } from "@/lib/server/runtime-modes";
 
 export const PRODUCTION_RUNTIME_ENV_KEYS = [
   "DATABASE_URL",
@@ -97,4 +99,16 @@ export async function probePrismaConnectivity(timeoutMs = 2500) {
 export function buildRuntimeFingerprint() {
   const payload = PRODUCTION_RUNTIME_ENV_KEYS.map((key) => `${key}=${process.env[key] ?? ""}`).join("|");
   return createHash("sha256").update(payload).digest("hex").slice(0, 16);
+}
+
+export function getRuntimeDiagnosticsSnapshot() {
+  return {
+    modes: getRuntimeModes(),
+    metrics: getRuntimeMetricsSnapshot(),
+    pdfEngine: {
+      mode: process.env.PDF_BINARY_STORAGE_MODE?.trim() || "db_inline",
+      executableConfigured: Boolean(process.env.PUPPETEER_EXECUTABLE_PATH?.trim()),
+      chromiumFallbackEnabled: true,
+    },
+  };
 }
