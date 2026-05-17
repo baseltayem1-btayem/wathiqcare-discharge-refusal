@@ -272,7 +272,7 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     }
   }
 
-  const authContext = {
+  const authContext: AuthContext = {
     sub: user.id,
     email: user.email,
     role: user.role,
