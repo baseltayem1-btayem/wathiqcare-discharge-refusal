@@ -122,6 +122,7 @@ export default function ModulePortalPage({ auth }: { auth: PortalAuth }) {
       }));
     }
   })();
+  const hasActiveModuleCards = moduleCards.some((card) => !card.unavailable);
 
   return (
     <ModuleShell
@@ -155,6 +156,18 @@ export default function ModulePortalPage({ auth }: { auth: PortalAuth }) {
 
         <section className="space-y-3">
           <div className="wc-panel-heading">{t("modules.portal.heading")}</div>
+          {hasAnyRole && !hasActiveModuleCards ? (
+            <div className="wc-panel space-y-2 border-slate-200 bg-slate-50">
+              <div className="text-sm font-semibold text-slate-900">
+                {isRtl ? "لا توجد وحدات مفعّلة لهذا الحساب" : "No active modules are assigned to this account"}
+              </div>
+              <p className="text-xs text-slate-700">
+                {isRtl
+                  ? "تم تسجيل الدخول بنجاح، لكن لا توجد صلاحيات وحدات حالياً. يرجى التواصل مع مدير النظام لتفعيل الوحدة المطلوبة."
+                  : "Login is successful, but no module permissions are currently assigned. Contact your administrator to activate required modules."}
+              </p>
+            </div>
+          ) : null}
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {moduleCards.map(({ moduleItem, unavailable }) => (
               <ModuleCardErrorBoundary key={moduleItem.key} moduleItem={moduleItem} isRtl={isRtl}>
