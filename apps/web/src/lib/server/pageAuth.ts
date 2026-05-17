@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { canAccessModule, resolveModuleKeyFromPath } from "@/lib/modules/catalog";
+import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
 
 const FALLBACK_COOKIE_NAMES = ["wathiqcare_access_token", "token"] as const;
 
@@ -34,25 +35,49 @@ function readSessionTokenFromCookies(cookieStore: Awaited<ReturnType<typeof cook
   return null;
 }
 
+function redirectToLogin(nextPath: string | undefined, reason: string): never {
+  const params = new URLSearchParams();
+  if (nextPath) {
+    params.set("next", nextPath);
+  }
+  params.set("reason", reason);
+  redirect(`/login?${params.toString()}`);
+}
+
 export async function requirePageSessionOrRedirect(nextPath?: string): Promise<void> {
   await requirePageAuthClaimsOrRedirect(nextPath);
 }
 
 export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promise<PageAuthClaims> {
+  const startedAt = Date.now();
   let token: string | null = null;
 
   try {
     const cookieStore = await cookies();
     token = readSessionTokenFromCookies(cookieStore);
   } catch (error) {
-    console.error("PAGE_AUTH_COOKIE_READ_ERROR", { nextPath, error });
-    const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : "";
-    redirect(`/login${nextQuery}`);
+    logRuntimeIncident({
+      module: "session",
+      type: "AUTH_FAILURE",
+      error,
+      details: {
+        reason: "cookie_read_failed",
+        nextPath: nextPath ?? null,
+      },
+    });
+    redirectToLogin(nextPath, "session_cookie_error");
   }
 
   if (!token) {
-    const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : "";
-    redirect(`/login${nextQuery}`);
+    logRuntimeIncident({
+      module: "session",
+      type: "AUTH_FAILURE",
+      details: {
+        reason: "session_cookie_missing",
+        nextPath: nextPath ?? null,
+      },
+    });
+    redirectToLogin(nextPath, "session_missing");
   }
 
   try {
@@ -72,10 +97,18 @@ export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promis
       }
     }
 
+    recordRuntimeMetric("session_validation_duration_ms", Date.now() - startedAt);
     return claims;
   } catch (error) {
-    console.error("PAGE_AUTH_RUNTIME_ERROR", { nextPath, error });
-    const nextQuery = nextPath ? `?next=${encodeURIComponent(nextPath)}` : "";
-    redirect(`/login${nextQuery}`);
+    logRuntimeIncident({
+      module: "session",
+      type: "AUTH_FAILURE",
+      error,
+      details: {
+        reason: "session_invalid",
+        nextPath: nextPath ?? null,
+      },
+    });
+    redirectToLogin(nextPath, "session_invalid");
   }
 }

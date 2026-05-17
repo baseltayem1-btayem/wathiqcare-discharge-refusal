@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
+import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
+import { assertRuntimeWriteAllowed } from "@/lib/server/runtime-modes";
 
 
 export const dynamic = "force-dynamic";
@@ -59,7 +61,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
+  const startedAt = Date.now();
   try {
+    assertRuntimeWriteAllowed();
     const auth = await requireAuth(request);
     const tenantId = requireTenantId(auth);
     const { caseId, sessionId } = await params;
@@ -145,6 +149,18 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       const isValid = sha256(submitted) === expectedHash;
 
       if (!isValid) {
+        logRuntimeIncident({
+          request,
+          auth,
+          module: "acknowledgment_verification",
+          type: "OTP_FAILURE",
+          details: {
+            sessionId,
+            caseId,
+            attemptCount: attemptCount + 1,
+            maxRetries,
+          },
+        });
         attemptCount += 1;
 
         if (attemptCount >= maxRetries) {
@@ -352,6 +368,17 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         : null,
     });
   } catch (error) {
+    logRuntimeIncident({
+      request,
+      module: "acknowledgment_verification",
+      type: "AUTH_FAILURE",
+      error,
+      details: {
+        route: "/api/acknowledgment/cases/[caseId]/[sessionId]/verify",
+      },
+    });
     return handleApiError(error);
+  } finally {
+    recordRuntimeMetric("response_time_ms", Date.now() - startedAt);
   }
 }

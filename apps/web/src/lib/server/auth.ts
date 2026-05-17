@@ -7,6 +7,8 @@ import { writeAuditLog } from "@/lib/server/saas-services";
 import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
 import { getUserResetState } from "@/lib/server/auth-reset";
+import { DatabaseUnavailableError, runDbOperation } from "@/lib/server/db-resilience";
+import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
 
 export type AuthContext = {
   sub: string;
@@ -95,8 +97,15 @@ function isTruthyEnvFlag(value: string | undefined, fallback: boolean): boolean 
 const prisma = () => getPrisma();
 
 export async function requireAuth(request: NextRequest): Promise<AuthContext> {
+  const startedAt = Date.now();
   const token = readToken(request);
   if (!token) {
+    logRuntimeIncident({
+      request,
+      module: "auth",
+      type: "AUTH_FAILURE",
+      details: { reason: "missing_access_token" },
+    });
     throw new ApiError(401, "Missing access token");
   }
 
@@ -104,30 +113,59 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
   try {
     parsedPayload = verifyAndDecodeJwt(token) as AuthContext;
   } catch (error) {
+    logRuntimeIncident({
+      request,
+      module: "auth",
+      type: "AUTH_FAILURE",
+      error,
+      details: { reason: "invalid_access_token" },
+    });
     if (error instanceof Error) {
       throw new ApiError(401, error.message);
     }
     throw new ApiError(401, "Invalid access token");
   }
 
-  const user = await prisma().user.findUnique({
-    where: { id: parsedPayload.sub },
-    include: {
-      primaryTenant: {
-        select: {
-          id: true,
-          code: true,
-          isActive: true,
+  const user = await (async () => {
+    try {
+      return await runDbOperation(
+        () =>
+          prisma().user.findUnique({
+            where: { id: parsedPayload.sub },
+            include: {
+              primaryTenant: {
+                select: {
+                  id: true,
+                  code: true,
+                  isActive: true,
+                },
+              },
+              memberships: {
+                where: { status: "ACTIVE" },
+                select: {
+                  tenantId: true,
+                },
+              },
+            },
+          }),
+        {
+          operationName: "require_auth_user_lookup",
         },
-      },
-      memberships: {
-        where: { status: "ACTIVE" },
-        select: {
-          tenantId: true,
-        },
-      },
-    },
-  });
+      );
+    } catch (error) {
+      if (error instanceof DatabaseUnavailableError) {
+        logRuntimeIncident({
+          request,
+          module: "auth",
+          type: "AUTH_FAILURE",
+          error,
+          details: { reason: "auth_user_lookup_db_unavailable" },
+        });
+        throw new ApiError(503, "Authentication service temporarily unavailable");
+      }
+      throw error;
+    }
+  })();
 
   if (!user) {
     throw new ApiError(401, "Authenticated user no longer exists");
@@ -137,7 +175,28 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     throw new ApiError(401, "Authenticated user is inactive");
   }
 
-  const resetState = await getUserResetState(prisma(), user.id);
+  const resetState = await (async () => {
+    try {
+      return await runDbOperation(
+        () => getUserResetState(prisma(), user.id),
+        {
+          operationName: "require_auth_reset_state",
+        },
+      );
+    } catch (error) {
+      if (error instanceof DatabaseUnavailableError) {
+        logRuntimeIncident({
+          request,
+          module: "auth",
+          type: "AUTH_FAILURE",
+          error,
+          details: { reason: "auth_reset_state_db_unavailable" },
+        });
+        throw new ApiError(503, "Authentication service temporarily unavailable");
+      }
+      throw error;
+    }
+  })();
   if (resetState.passwordResetRequired) {
     throw new ApiError(403, "Password reset required");
   }
@@ -213,7 +272,7 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     }
   }
 
-  return {
+  const authContext: AuthContext = {
     sub: user.id,
     email: user.email,
     role: user.role,
@@ -228,6 +287,8 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
     platform_role: platformRole,
     exp: parsedPayload.exp,
   };
+  recordRuntimeMetric("session_validation_duration_ms", Date.now() - startedAt);
+  return authContext;
 }
 
 export function hasPlatformAccess(auth: AuthContext): boolean {

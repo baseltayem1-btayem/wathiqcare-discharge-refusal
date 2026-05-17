@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ModulePortalPage from "@/components/ModulePortalPage";
 import { type PageAuthClaims, requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
+import { logRuntimeEvent } from "@/lib/server/runtime-observability";
 
 /**
  * Returns true for Next.js internal errors (redirect, not-found) that must
@@ -26,7 +27,16 @@ export default async function ModulesPage() {
     if (isNextInternalError(error)) {
       throw error;
     }
-    console.error("MODULES_PAGE_RUNTIME_ERROR", error);
+    logRuntimeEvent({
+      module: "modules",
+      event: "MODULES_RUNTIME_ERROR",
+      severity: "error",
+      details: {
+        route: "/modules",
+        errorName: error instanceof Error ? error.name : "UnknownError",
+        errorMessage: error instanceof Error ? error.message : String(error),
+      },
+    });
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
         <section className="w-full max-w-lg rounded-2xl border border-amber-200 bg-white p-6 shadow-sm">

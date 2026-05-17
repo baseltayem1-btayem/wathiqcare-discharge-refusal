@@ -1,3 +1,5 @@
+import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
+
 type DbOperationOptions = {
   traceId?: string;
   operationName?: string;
@@ -90,7 +92,10 @@ export async function runDbOperation<T>(operation: () => Promise<T>, options: Db
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
-      return await withTimeout(operation(), timeoutMs, operationName);
+      const startedAt = Date.now();
+      const result = await withTimeout(operation(), timeoutMs, operationName);
+      recordRuntimeMetric("db_latency_ms", Date.now() - startedAt);
+      return result;
     } catch (error) {
       const transient = isDbConnectivityError(error);
       const canRetry = transient && attempt < maxRetries;
@@ -100,6 +105,17 @@ export async function runDbOperation<T>(operation: () => Promise<T>, options: Db
       }
 
       if (transient) {
+        logRuntimeIncident({
+          module: "database",
+          type: "DB_FAILURE",
+          error,
+          details: {
+            traceId,
+            operationName,
+            attempt,
+            maxRetries,
+          },
+        });
         throw new DatabaseUnavailableError({
           traceId,
           operationName,

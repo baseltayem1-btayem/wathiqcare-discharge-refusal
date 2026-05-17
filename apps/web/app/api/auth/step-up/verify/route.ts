@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getStepUpCookieName, verifyStepUpChallenge } from "@/lib/server/security-policy-service";
+import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
+import { assertRuntimeWriteAllowed } from "@/lib/server/runtime-modes";
 
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
   try {
+    assertRuntimeWriteAllowed();
     const auth = await requireAuth(request);
     const body = await request.json().catch(() => ({}));
     const challengeToken = typeof body?.challengeToken === "string" ? body.challengeToken : "";
@@ -22,6 +26,15 @@ export async function POST(request: NextRequest) {
     });
 
     if (!verified.valid) {
+      logRuntimeIncident({
+        request,
+        auth,
+        module: "auth_step_up",
+        type: "OTP_FAILURE",
+        details: {
+          reason: verified.reason,
+        },
+      });
       return NextResponse.json(
         {
           ok: false,
@@ -49,6 +62,14 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
+    logRuntimeIncident({
+      request,
+      module: "auth_step_up",
+      type: "AUTH_FAILURE",
+      error,
+    });
     return handleApiError(error);
+  } finally {
+    recordRuntimeMetric("response_time_ms", Date.now() - startedAt);
   }
 }
