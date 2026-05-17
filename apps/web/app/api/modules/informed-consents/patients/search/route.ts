@@ -135,7 +135,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return handleApiError(error);
   }
-}import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
