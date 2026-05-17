@@ -25,7 +25,8 @@ let sharedPdfBrowserPromise: Promise<Browser> | null = null;
 
 const PDF_TEMPLATE_VERSION = "1.0.0";
 const CASE_PDF_TEMPLATE_KEY = "legal_case_pdf";
-const SYSTEM_LABEL = "WathiqCare System";
+const SYSTEM_LABEL = "IMC Clinical System";
+const IMC_LOGO_URL = "https://www.imc.med.sa/images/logo.jpg";
 
 type PdfRuntimeTarget = "local_windows" | "preview" | "production" | "local_other";
 
@@ -751,7 +752,7 @@ function buildCasePayload(args: {
       qualityRepresentative: readString(legal, "quality_representative") || "",
     },
     legalStatement:
-      "This report is a system-generated medico-legal record intended for internal compliance review, regulatory inspection, and legal defense documentation.",
+      "This report is issued by International Medical Center as a medico-legal record for clinical governance, regulatory inspection, and legal evidence. WathiqCare serves as the digital evidence platform.",
   };
 }
 
@@ -784,6 +785,7 @@ function renderAuditRows(rows: Array<{ event: string; user: string; role: string
 function buildPdfHtml(payload: ReturnType<typeof buildCasePayload>): string {
   const rtl = payload.language === "ar";
   const draftWatermark = payload.reportStatus === "draft" ? '<div class="draft-watermark">DRAFT</div>' : "";
+  const logoSrc = payload.facility.logoUrl || IMC_LOGO_URL;
 
   return `<!doctype html>
 <html lang="${payload.language}" dir="${rtl ? "rtl" : "ltr"}">
@@ -798,6 +800,8 @@ function buildPdfHtml(payload: ReturnType<typeof buildCasePayload>): string {
         line-height: 1.5;
       }
       .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom: 2px solid #0f766e; padding-bottom: 8px; margin-bottom: 12px; }
+      .header-brand { display:flex; align-items:center; gap:10px; }
+      .header-brand img { width: 52px; height: 52px; object-fit: contain; }
       .title { font-size: 18px; font-weight: 700; color: #0f766e; }
       .meta { font-size: 11px; color: #334155; }
       .section { margin-bottom: 14px; page-break-inside: avoid; }
@@ -831,10 +835,14 @@ function buildPdfHtml(payload: ReturnType<typeof buildCasePayload>): string {
   <body>
     ${draftWatermark}
     <div class="header">
-      <div>
-        <div class="title">Legal Case File - Discharge Refusal</div>
-        <div class="meta">Case ID: ${escapeHtml(payload.facility.caseId)} | Case Number: ${escapeHtml(payload.facility.caseNumber)}</div>
-        <div class="meta">Generated: ${escapeHtml(payload.facility.generatedDate)} | Version: ${payload.version}</div>
+      <div class="header-brand">
+        <img src="${escapeHtml(logoSrc)}" alt="International Medical Center logo" />
+        <div>
+          <div class="title">Discharge Refusal Report</div>
+          <div class="meta">International Medical Center (IMC)</div>
+          <div class="meta">Case ID: ${escapeHtml(payload.facility.caseId)} | Case Number: ${escapeHtml(payload.facility.caseNumber)}</div>
+          <div class="meta">Generated: ${escapeHtml(payload.facility.generatedDate)} | Version: ${payload.version}</div>
+        </div>
       </div>
       <div class="meta" style="text-align:${rtl ? "left" : "right"}">
         <div>${escapeHtml(payload.facility.name)}</div>
@@ -1032,13 +1040,13 @@ async function renderPdfBuffer(args: {
       },
       headerTemplate: `
         <div style="font-size:9px;width:100%;padding:0 10mm;color:#334155;display:flex;justify-content:space-between;">
-          <span>WathiqCare Legal Case File</span>
+          <span>International Medical Center • Discharge Refusal Report</span>
           <span>Generated: ${escapeHtml(args.generatedAt)}</span>
         </div>
       `,
       footerTemplate: `
         <div style="font-size:9px;width:100%;padding:0 10mm;color:#334155;display:flex;justify-content:space-between;">
-          <span>Confidential | System-generated medico-legal record</span>
+          <span>Confidential medico-legal record • Evidence retained via WathiqCare</span>
           <span>v${args.version} | ${escapeHtml(args.reportStatus)} | ${escapeHtml(args.hashForFooter.slice(0, 16))}</span>
           <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
         </div>
@@ -1128,7 +1136,7 @@ async function listPdfDocumentsInternal(tenantId: string, caseId: string) {
 }
 
 function buildFileName(caseId: string, date = new Date()): string {
-  return `WathiqCare_DischargeRefusal_Case_${caseId}_${formatDateForFileName(date)}.pdf`;
+  return `IMC_DischargeRefusal_Report_${caseId}_${formatDateForFileName(date)}.pdf`;
 }
 
 function pickLatestValidCasePdfVersion(summaries: CasePdfVersionSummary[]): CasePdfVersionSummary | null {

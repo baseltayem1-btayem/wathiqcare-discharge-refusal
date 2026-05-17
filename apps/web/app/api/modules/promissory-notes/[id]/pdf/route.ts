@@ -192,7 +192,20 @@ export async function GET(
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
-      margin: { top: "0", right: "0", bottom: "0", left: "0" },
+      displayHeaderFooter: true,
+      margin: { top: "14mm", right: "8mm", bottom: "14mm", left: "8mm" },
+      headerTemplate: `
+        <div style="font-size:8px;width:100%;padding:0 8mm;color:#334155;display:flex;justify-content:space-between;">
+          <span>International Medical Center</span>
+          <span>${noteData.noteNumber.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
+        </div>
+      `,
+      footerTemplate: `
+        <div style="font-size:8px;width:100%;padding:0 8mm;color:#334155;display:flex;justify-content:space-between;">
+          <span>Official IMC Promissory Note • Evidence retained via WathiqCare</span>
+          <span>Page <span class="pageNumber"></span> / <span class="totalPages"></span></span>
+        </div>
+      `,
     });
 
     await page.close();

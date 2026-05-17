@@ -12,6 +12,7 @@ import { ApiError } from "@/lib/server/http";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+const IMC_LOGO_URL = "https://www.imc.med.sa/images/logo.jpg";
 
 async function launchBrowser(): Promise<Browser> {
   const defaultArgs = ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"];
@@ -145,6 +146,32 @@ function copyTypeLabel(copyType: EvidenceCopyType, isAr: boolean): string {
   return "Patient Copy";
 }
 
+async function resolveImcLogoSource(): Promise<string> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500);
+    const response = await fetch(IMC_LOGO_URL, {
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    clearTimeout(timer);
+
+    if (!response.ok) {
+      return IMC_LOGO_URL;
+    }
+
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (!buffer.length) {
+      return IMC_LOGO_URL;
+    }
+
+    return `data:${contentType};base64,${buffer.toString("base64")}`;
+  } catch {
+    return IMC_LOGO_URL;
+  }
+}
+
 function css(direction: "rtl" | "ltr"): string {
   const borderLead = direction === "rtl" ? "border-right" : "border-left";
   return `
@@ -197,6 +224,8 @@ function css(direction: "rtl" | "ltr"): string {
       color: #334155;
     }
     .brand { text-align: ${direction === "rtl" ? "left" : "right"}; color: #002B5C; }
+    .brand .brand-row { display: flex; align-items: center; gap: 8px; justify-content: ${direction === "rtl" ? "flex-start" : "flex-end"}; }
+    .brand img { width: 44px; height: 44px; object-fit: contain; }
     .brand strong { color: #C9A13B; font-size: 18pt; }
     .meta {
       display: grid;
@@ -288,6 +317,16 @@ function css(direction: "rtl" | "ltr"): string {
     .qr { align-items: center; text-align: center; }
     .qr img { width: 82px; height: 82px; border: 1px solid #cdd6df; background: #fff; }
     .qr small { margin-top: 6px; display: block; font-size: 7.5pt; word-break: break-all; }
+    .doc-footer {
+      margin-top: 8px;
+      border-top: 1px solid #cdd6df;
+      padding-top: 6px;
+      font-size: 8pt;
+      color: #334155;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
   `;
 }
 
@@ -332,6 +371,7 @@ function html(args: {
   witnessSignatureLabel: string;
   qrLabel: string;
   qrDataUrl: string;
+  logoSrc: string;
 }): string {
   return `<!doctype html>
 <html lang="${args.isAr ? "ar" : "en"}" dir="${args.isAr ? "rtl" : "ltr"}">
@@ -348,8 +388,13 @@ function html(args: {
           <p>${escapeHtml(args.subtitle)}</p>
         </div>
         <div class="brand">
-          <div>International Medical Center</div>
-          <strong>IMC</strong>
+          <div class="brand-row">
+            <img src="${escapeHtml(args.logoSrc)}" alt="International Medical Center" />
+            <div>
+              <div>International Medical Center</div>
+              <strong>IMC</strong>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -415,6 +460,11 @@ function html(args: {
         <div class="box"><strong>${escapeHtml(args.witnessSignatureLabel)}</strong><span>______________________</span></div>
         <div class="box qr"><img src="${args.qrDataUrl}" alt="QR" /><small>${escapeHtml(args.qrLabel)}</small></div>
       </footer>
+      <div class="doc-footer">
+        ${args.isAr
+    ? "صادر من المركز الطبي الدولي مع حفظ الأدلة الرقمية عبر منصة واثق كير."
+    : "Issued by International Medical Center with digital evidence preservation through WathiqCare platform."}
+      </div>
     </div>
   </body>
 </html>`;
@@ -444,6 +494,11 @@ export async function GET(
             titleEn: true,
             consentType: true,
             specialty: true,
+          },
+        },
+        case: {
+          select: {
+            caseNumber: true,
           },
         },
         emrMappings: {
@@ -514,9 +569,9 @@ export async function GET(
 
     const output = html({
       isAr,
-      title: isAr ? "نظام مكتبة الموافقات الطبية" : "Medical Consent Library Engine",
+      title: isAr ? "نموذج الموافقة المستنيرة" : "Informed Consent Document",
       subtitle: isAr ? doc.template.titleAr : doc.template.titleEn,
-      reference: doc.consentReference,
+      reference: `${doc.consentReference}${doc.case?.caseNumber ? ` | ${doc.case.caseNumber}` : ""}`,
       status: statusLabel(doc.status, isAr),
       version: doc.documentVersion || "v1.0",
       generatedAt: formatDate(doc.createdAt, isAr ? "ar" : "en"),
@@ -553,6 +608,7 @@ export async function GET(
       witnessSignatureLabel: isAr ? "توقيع الشاهد" : "Witness Signature",
       qrLabel: verifyUrl,
       qrDataUrl,
+      logoSrc: await resolveImcLogoSource(),
     });
 
     browser = await launchBrowser();
@@ -562,7 +618,20 @@ export async function GET(
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
-      margin: { top: "0", right: "0", bottom: "0", left: "0" },
+      displayHeaderFooter: true,
+      margin: { top: "14mm", right: "8mm", bottom: "14mm", left: "8mm" },
+      headerTemplate: `
+        <div style="font-size:8px;width:100%;padding:0 8mm;color:#334155;display:flex;justify-content:space-between;">
+          <span>International Medical Center</span>
+          <span>${escapeHtml(doc.consentReference)}</span>
+        </div>
+      `,
+      footerTemplate: `
+        <div style="font-size:8px;width:100%;padding:0 8mm;color:#334155;display:flex;justify-content:space-between;">
+          <span>Confidential medico-legal consent record</span>
+          <span>Page <span class="pageNumber"></span> / <span class="totalPages"></span></span>
+        </div>
+      `,
     });
 
     await page.close();
