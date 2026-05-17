@@ -18,6 +18,50 @@ import {
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
 
+function normalizePostLoginDestination(nextCandidate: string | null, fallbackPath: string): string {
+  const fallback = fallbackPath.trim() || "/modules";
+  if (!nextCandidate) {
+    return fallback;
+  }
+
+  const candidate = nextCandidate.trim();
+  if (!candidate.startsWith("/") || candidate.startsWith("//")) {
+    return fallback;
+  }
+
+  const deLocalized = candidate.replace(/^\/(ar|en)(?=\/|$)/, "") || "/";
+
+  if (deLocalized === "/" || deLocalized === "/login" || deLocalized === "/platform") {
+    return "/modules";
+  }
+
+  if (deLocalized === "/dashboard" || deLocalized === "/dashboards") {
+    return "/modules/discharge-refusal/dashboard";
+  }
+
+  if (deLocalized === "/cases" || deLocalized.startsWith("/cases/")) {
+    return deLocalized.replace(/^\/cases/, "/modules/discharge-refusal/cases");
+  }
+
+  const operationalPrefixes = [
+    "/modules",
+    "/platform",
+    "/tenant",
+    "/admin",
+    "/operations",
+    "/reports",
+    "/compliance",
+    "/archive",
+    "/dashboards",
+  ];
+
+  if (operationalPrefixes.some((prefix) => deLocalized === prefix || deLocalized.startsWith(`${prefix}/`))) {
+    return deLocalized;
+  }
+
+  return fallback;
+}
+
 export default function LangLoginPage() {
   const { isRtl, lang } = useI18n();
   const router = useRouter();
@@ -77,12 +121,12 @@ export default function LangLoginPage() {
       }
 
       const fallbackRedirect = `/${lang}`;
-      const nextPath =
+      const nextPathRaw =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("next") || result.redirectTo || fallbackRedirect
           : result.redirectTo || fallbackRedirect;
 
-      router.push(nextPath);
+      router.push(normalizePostLoginDestination(nextPathRaw, fallbackRedirect));
     } catch {
       setError(copy.invalidCredentials);
     } finally {

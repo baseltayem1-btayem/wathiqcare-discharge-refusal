@@ -83,6 +83,18 @@ export async function requirePageAuthClaimsOrRedirect(nextPath?: string): Promis
   try {
     const claims = verifyAndDecodeJwt(token) as PageAuthClaims;
 
+    if (!claims || typeof claims.sub !== "string" || !claims.sub.trim()) {
+      logRuntimeIncident({
+        module: "session",
+        type: "AUTH_FAILURE",
+        details: {
+          reason: "session_claims_invalid",
+          nextPath: nextPath ?? null,
+        },
+      });
+      redirectToLogin(nextPath, "session_invalid_claims");
+    }
+
     if (nextPath) {
       const moduleKey = resolveModuleKeyFromPath(nextPath);
       if (moduleKey) {

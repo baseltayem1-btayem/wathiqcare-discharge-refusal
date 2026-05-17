@@ -105,13 +105,18 @@ export default function ModuleShell({
   const router = useRouter();
   const { isRtl } = useI18n();
   const [tenantBranding, setTenantBranding] = useState<TenantBranding | null>(null);
+  const [isTenantContextDegraded, setIsTenantContextDegraded] = useState(false);
 
   useEffect(() => {
     fetchAuthMeCached<{ tenant?: TenantBranding | null }>({ cache: "no-store", authFailureMode: "inline" })
-      .then((me) => setTenantBranding(me?.tenant ?? null))
+      .then((me) => {
+        setTenantBranding(me?.tenant ?? null);
+        setIsTenantContextDegraded(false);
+      })
       .catch((error) => {
         console.error("MODULE_SHELL_AUTH_ME_RUNTIME_ERROR", error);
         setTenantBranding(null);
+        setIsTenantContextDegraded(true);
       });
   }, []);
 
@@ -222,6 +227,13 @@ export default function ModuleShell({
             <span><strong>{isRtl ? "الوظيفة" : "Role"}:</strong> {roleLabel}</span>
             <span><strong>{isRtl ? "المسار" : "Route"}:</strong> <span className="font-mono">{pathname}</span></span>
           </div>
+          {isTenantContextDegraded ? (
+            <div className="wc-panel border-amber-200 bg-amber-50 text-xs text-amber-900">
+              {isRtl
+                ? "تعذر تحميل بيانات الجهة الحالية. تم تشغيل المنصة في وضع محدود حتى استعادة البيانات."
+                : "Tenant context could not be loaded. Running in degraded mode until context data recovers."}
+            </div>
+          ) : null}
           {moduleDefinition ? (
             <div className="grid gap-2 lg:grid-cols-3">
               <div className="wc-panel wc-panel-inline">

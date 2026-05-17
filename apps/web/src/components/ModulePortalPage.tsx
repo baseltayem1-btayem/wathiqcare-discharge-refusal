@@ -102,6 +102,7 @@ class ModuleCardErrorBoundary extends Component<
 
 export default function ModulePortalPage({ auth }: { auth: PortalAuth }) {
   const { isRtl, t } = useI18n();
+  const hasAnyRole = Boolean((auth.role || "").trim() || (auth.platform_role || "").trim());
   const moduleCards = (() => {
     try {
       return getAccessibleModules({ role: auth.role, platformRole: auth.platform_role }).map((moduleItem) => ({
@@ -139,6 +140,19 @@ export default function ModulePortalPage({ auth }: { auth: PortalAuth }) {
       }}
     >
       <div className="space-y-3">
+        {!hasAnyRole ? (
+          <section className="wc-panel space-y-2 border-amber-200 bg-amber-50">
+            <div className="text-sm font-semibold text-amber-900">
+              {isRtl ? "لا يمكن تحديد صلاحيات المستخدم" : "Unable to determine user access role"}
+            </div>
+            <p className="text-xs text-amber-800">
+              {isRtl
+                ? "يرجى إعادة تسجيل الدخول أو التواصل مع مدير النظام لتحديث الصلاحيات."
+                : "Please sign in again or contact your administrator to refresh role assignments."}
+            </p>
+          </section>
+        ) : null}
+
         <section className="space-y-3">
           <div className="wc-panel-heading">{t("modules.portal.heading")}</div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

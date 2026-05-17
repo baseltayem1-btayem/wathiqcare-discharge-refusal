@@ -229,6 +229,16 @@ export function proxy(request: NextRequest) {
   }
 
   if (alreadyLocale) {
+    const isLocalizedOperationalAlias = EDGE_PROTECTED_PREFIXES.some(
+      (prefix) => pathWithoutLocale === prefix || pathWithoutLocale.startsWith(`${prefix}/`),
+    );
+
+    if (isLocalizedOperationalAlias) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathWithoutLocale;
+      return NextResponse.rewrite(url);
+    }
+
     return NextResponse.next();
   }
 
