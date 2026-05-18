@@ -64,11 +64,17 @@ interface EncounterData {
   department: string;
   physician: string;
   physicianLicense?: string;
+  physicianId?: string;
   diagnosis: string;
   procedure: string;
   allergies?: string;
   currentMedications?: string;
   physicianSpecialty?: string;
+  caseNumber?: string;
+  syncStatus?: "NOT_SYNCED" | "SYNCING" | "SYNCED" | "PARTIAL" | "FAILED" | "STALE" | "UAT_MOCK" | "CACHED";
+  isMock?: boolean;
+  source?: "trakcare" | "cached_local" | "uat_mock";
+  mockLabel?: string;
 }
 
 interface ConsentTemplate {
@@ -100,7 +106,7 @@ interface ConsentDraft {
 }
 
 interface TrakCareSync {
-  status: "NOT_SYNCED" | "SYNCING" | "SYNCED" | "PARTIAL" | "FAILED" | "STALE";
+  status: "NOT_SYNCED" | "SYNCING" | "SYNCED" | "PARTIAL" | "FAILED" | "STALE" | "UAT_MOCK" | "CACHED";
   sourceSystem?: string;
   lastSyncTime?: string;
   syncError?: string;
@@ -396,6 +402,7 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
           <div className="rounded border border-slate-200 bg-white p-3">
             <div className="font-semibold mb-2">{locale === "ar" ? "الزيارة" : "Encounter"}</div>
             <div>{locale === "ar" ? "رقم الزيارة" : "Encounter No."}: {encounterData?.encounterId || "-"}</div>
+            <div>{locale === "ar" ? "رقم الحالة" : "Case Number"}: {encounterData?.caseNumber || "-"}</div>
             <div>{locale === "ar" ? "تاريخ الزيارة" : "Visit Date"}: {encounterData?.admissionDate ? new Date(encounterData.admissionDate).toLocaleString() : "-"}</div>
             <div>{locale === "ar" ? "القسم" : "Department"}: {encounterData?.department || "-"}</div>
             <div>{locale === "ar" ? "الطبيب المعالج" : "Treating Physician"}: {encounterData?.physician || "-"}</div>
@@ -404,6 +411,11 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
             <div>{locale === "ar" ? "الحساسية" : "Allergies"}: {encounterData?.allergies || "-"}</div>
             <div>{locale === "ar" ? "الأدوية" : "Medications"}: {encounterData?.currentMedications || "-"}</div>
             <div>{locale === "ar" ? "حالة المزامنة" : "Sync Status"}: {trakCareSync.status}</div>
+            {encounterData?.isMock ? (
+              <div>
+                {locale === "ar" ? "نوع الزيارة" : "Encounter Type"}: {encounterData.mockLabel || "UAT Mock Encounter"}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -536,6 +548,32 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
               key={encounter.id}
               onClick={() => {
                 setEncounterData(encounter);
+                setTrakCareSync(
+                  encounter.isMock
+                    ? {
+                        status: "UAT_MOCK",
+                        sourceSystem: "UAT Mock Encounter",
+                        lastSyncTime: encounter.admissionDate,
+                        importedFields: [
+                          "Encounter Number",
+                          "Case Number",
+                          "Department",
+                          "Treating Physician",
+                          "Physician License",
+                          "Diagnosis",
+                          "Procedure",
+                        ],
+                        failedFields: [],
+                        manualOverride: false,
+                      }
+                    : {
+                        status: encounter.syncStatus || "NOT_SYNCED",
+                        importedFields: [],
+                        failedFields: [],
+                        manualOverride: false,
+                      },
+                );
+                setEncounterContextLocked(Boolean(encounter.isMock));
                 setCurrentStep("consent_type_selection");
               }}
               className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all"
@@ -546,12 +584,20 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
                   <div className="text-sm text-gray-600">
                     {new Date(encounter.admissionDate).toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US")}
                   </div>
+                  {encounter.caseNumber ? (
+                    <div className="text-xs font-medium text-slate-500">{locale === "ar" ? "الحالة" : "Case"}: {encounter.caseNumber}</div>
+                  ) : null}
                 </div>
                 <div className="text-right text-sm">
                   <div className="font-semibold">{encounter.department}</div>
                   <div className="text-gray-600">{encounter.physician}</div>
                 </div>
               </div>
+              {encounter.isMock ? (
+                <div className="mt-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                  {encounter.mockLabel || "UAT Mock Encounter"}
+                </div>
+              ) : null}
               <div className="text-sm text-gray-700 mt-2">
                 {locale === "ar" ? "التشخيص:" : "Diagnosis:"} {encounter.diagnosis}
               </div>
