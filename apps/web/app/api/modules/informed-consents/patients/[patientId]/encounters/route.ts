@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
-import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 import { getPrisma } from "@/lib/server/prisma";
 import { buildTrakCareRequestContext } from "@/lib/server/trakcare/request-context";
 import { getEncountersByMrn } from "@/lib/server/trakcare/service";
@@ -135,7 +134,6 @@ export async function GET(
 ) {
   try {
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
-    requireInformedConsentPermission(auth, "consent:create");
 
     const { patientId } = await params;
 
