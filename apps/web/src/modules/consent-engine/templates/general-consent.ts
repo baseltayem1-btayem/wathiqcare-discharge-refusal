@@ -1,0 +1,53 @@
+import type { DynamicConsentTemplateDefinition } from "@/modules/consent-engine/engine/types";
+import { GENERAL_CONSENT_SPECIALTY_MODULE } from "@/modules/consent-engine/specialty-modules/general";
+
+export const GENERAL_DYNAMIC_CONSENT_TEMPLATE: DynamicConsentTemplateDefinition = {
+  id: "dynamic-general-consent-v1",
+  slug: "general-consent",
+  consentType: "GENERAL_CONSENT",
+  specialty: GENERAL_CONSENT_SPECIALTY_MODULE.specialty,
+  language: "bilingual",
+  version: "1.0.0-experimental",
+  displayNameAr: "موافقة ذكية ديناميكية عامة",
+  displayNameEn: "Dynamic Smart General Consent",
+  defaultRiskCodes: GENERAL_CONSENT_SPECIALTY_MODULE.defaultRiskCodes,
+  requiredFields: ["diagnosis", "procedure", "specialty"],
+  sectionBlueprints: [
+    {
+      id: "intro",
+      key: "intro",
+      kind: "intro",
+      titleAr: "مقدمة المريض",
+      titleEn: "Patient Introduction",
+      bodyArTemplate: "هذه الموافقة تخص حالة {{diagnosis}} والإجراء المقترح {{procedure}} ضمن تخصص {{specialty}}.",
+      bodyEnTemplate: "This consent covers the condition {{diagnosis}} and the proposed procedure {{procedure}} within the {{specialty}} specialty.",
+      required: true,
+      layer: 1,
+      order: 10,
+    },
+    {
+      id: "clinical-context",
+      key: "clinical_context",
+      kind: "clinical-context",
+      titleAr: "السياق السريري",
+      titleEn: "Clinical Context",
+      bodyArTemplate: "قام الطبيب {{physicianName}} بمراجعة حالة المريض {{patientName}} وشرح سبب التوصية بالإجراء المقترح ومساره المتوقع.",
+      bodyEnTemplate: "The physician {{physicianName}} reviewed the case of {{patientName}} and explained the rationale and expected course for the proposed intervention.",
+      required: true,
+      layer: 1,
+      order: 20,
+    },
+    {
+      id: "benefits",
+      key: "benefits",
+      kind: "benefits",
+      titleAr: "المنافع المتوقعة",
+      titleEn: "Expected Benefits",
+      bodyArTemplate: "الهدف من الإجراء هو تحسين التشخيص أو العلاج أو تقليل المضاعفات المرتبطة بالحالة الحالية متى كان ذلك مناسبًا سريريًا.",
+      bodyEnTemplate: "The objective of the procedure is to improve diagnosis or treatment or reduce complications related to the current condition when clinically appropriate.",
+      required: true,
+      layer: 2,
+      order: 30,
+    },
+  ],
+};

@@ -1,0 +1,53 @@
+import type { DynamicConsentTemplateDefinition } from "@/modules/consent-engine/engine/types";
+import { CARDIOLOGY_CONSENT_SPECIALTY_MODULE } from "@/modules/consent-engine/specialty-modules/cardiology";
+
+export const CARDIOLOGY_DYNAMIC_CONSENT_TEMPLATE: DynamicConsentTemplateDefinition = {
+  id: "dynamic-cardiology-consent-v1",
+  slug: "cardiology-consent",
+  consentType: "CARDIOLOGY_INTERVENTION",
+  specialty: CARDIOLOGY_CONSENT_SPECIALTY_MODULE.specialty,
+  language: "bilingual",
+  version: "1.0.0-experimental",
+  displayNameAr: "موافقة ذكية ديناميكية لتداخلات القلب",
+  displayNameEn: "Dynamic Smart Cardiology Consent",
+  defaultRiskCodes: CARDIOLOGY_CONSENT_SPECIALTY_MODULE.defaultRiskCodes,
+  requiredFields: ["diagnosis", "procedure", "specialty"],
+  sectionBlueprints: [
+    {
+      id: "intro",
+      key: "intro",
+      kind: "intro",
+      titleAr: "ملخص الإجراء القلبي",
+      titleEn: "Cardiac Procedure Summary",
+      bodyArTemplate: "يُقترح إجراء {{procedure}} لمعالجة أو تقييم {{diagnosis}} ضمن رعاية القلب المتخصصة.",
+      bodyEnTemplate: "The procedure {{procedure}} is proposed to treat or assess {{diagnosis}} within specialized cardiac care.",
+      required: true,
+      layer: 1,
+      order: 10,
+    },
+    {
+      id: "procedure-details",
+      key: "procedure_details",
+      kind: "procedure",
+      titleAr: "شرح التداخل المقترح",
+      titleEn: "Proposed Intervention",
+      bodyArTemplate: "يشمل الإجراء خطوات تشخيصية أو علاجية متتابعة وقد يتطلب أدوات تدخلية أو صبغات أو متابعة داخلية دقيقة حسب قرار الطبيب.",
+      bodyEnTemplate: "The intervention may include staged diagnostic or therapeutic steps and may require devices, contrast media, or close intraprocedural monitoring as determined by the physician.",
+      required: true,
+      layer: 2,
+      order: 20,
+    },
+    {
+      id: "cardiology-specialty",
+      key: "cardiology_specialty",
+      kind: "clinical-context",
+      titleAr: "اعتبارات تخصص القلب",
+      titleEn: "Cardiology-Specific Considerations",
+      bodyArTemplate: "تم شرح احتمالية الحاجة إلى تعديل الخطة أثناء الإجراء القلبي حسب النتائج الفورية والاستجابة السريرية للمريض.",
+      bodyEnTemplate: "The possibility of changing the cardiac procedural plan according to real-time findings and patient response was explained.",
+      required: true,
+      layer: 2,
+      order: 25,
+    },
+  ],
+};

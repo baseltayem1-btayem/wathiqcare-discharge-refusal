@@ -31,12 +31,21 @@ export const ENABLE_SECURE_SIGNING_LINKS = envBool(
   false
 );
 
+/** Enable in-hospital tablet signature capture for informed consents */
+export const ENABLE_TABLET_SIGNATURE = envBool("ENABLE_TABLET_SIGNATURE", true);
+
+/** Enable compliance-controlled biometric verification for informed consents */
+export const ENABLE_BIOMETRIC_SIGNATURE = envBool("ENABLE_BIOMETRIC_SIGNATURE", false);
+
 // ---------------------------------------------------------------------------
 // AI & Knowledge Layer
 // ---------------------------------------------------------------------------
 
 /** Enable AI-assisted consent draft generation */
 export const ENABLE_AI_ASSIST = envBool("FF_ENABLE_AI_ASSIST", true);
+
+/** Enable clinical AI physician drafting assistant for informed consents */
+export const ENABLE_CLINICAL_AI_ASSISTANT = envBool("ENABLE_CLINICAL_AI_ASSISTANT", false);
 
 /** Enable specialty-aware AI prompt engine */
 export const ENABLE_SPECIALTY_PROMPTS = envBool(
@@ -127,6 +136,12 @@ export const ENABLE_PDF_WATERMARK = envBool("FF_ENABLE_PDF_WATERMARK", true);
 /** Enable bilingual (AR+EN) PDF rendering */
 export const ENABLE_BILINGUAL_PDF = envBool("FF_ENABLE_BILINGUAL_PDF", true);
 
+/** Enable the experimental dynamic smart consent engine adapter */
+export const ENABLE_DYNAMIC_CONSENT_ENGINE = envBool(
+  "ENABLE_DYNAMIC_CONSENT_ENGINE",
+  false
+);
+
 // ---------------------------------------------------------------------------
 // Legal & Compliance
 // ---------------------------------------------------------------------------
@@ -156,7 +171,10 @@ export const ENABLE_MODULE_SERVICE_ISOLATION = envBool(
 export const FEATURE_FLAGS = {
   ENABLE_EXTERNAL_SIGNATURES,
   ENABLE_SECURE_SIGNING_LINKS,
+  ENABLE_TABLET_SIGNATURE,
+  ENABLE_BIOMETRIC_SIGNATURE,
   ENABLE_AI_ASSIST,
+  ENABLE_CLINICAL_AI_ASSISTANT,
   ENABLE_SPECIALTY_PROMPTS,
   ENABLE_PROCEDURE_KNOWLEDGE_BASE,
   ENABLE_TIMELINE_AUDIT,
@@ -174,6 +192,7 @@ export const FEATURE_FLAGS = {
   ENABLE_PDF_QR_CODE,
   ENABLE_PDF_WATERMARK,
   ENABLE_BILINGUAL_PDF,
+  ENABLE_DYNAMIC_CONSENT_ENGINE,
   ENABLE_PDPL_NOTICES,
   ENABLE_LEGAL_HOLD,
   ENABLE_RETENTION_POLICY,
