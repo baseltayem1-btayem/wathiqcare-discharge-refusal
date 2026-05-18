@@ -8,8 +8,8 @@ const CANONICAL_ORIGIN = "https://wathiqcare.online";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "WathiqCare",
-  description: "WathiqCare discharge refusal workflow",
+  title: "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+  description: "Healthcare Legal Automation & Consent Governance",
   metadataBase: new URL(CANONICAL_ORIGIN),
   manifest: "/manifest.webmanifest",
   icons: {

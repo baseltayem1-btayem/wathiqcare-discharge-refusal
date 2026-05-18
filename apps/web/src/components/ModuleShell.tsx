@@ -176,8 +176,8 @@ export default function ModuleShell({
             priority
           />
           <div className="wc-brand-copy">
-            <div className="wc-brand-title">WathiqCare System</div>
-            <div className="wc-brand-subtitle">{isRtl ? "بوابة تشغيل الامتثال والحوكمة" : "Compliance & Governance Operations Portal"}</div>
+            <div className="wc-brand-title">WathiqCare™</div>
+            <div className="wc-brand-subtitle">{isRtl ? "Enterprise Healthcare Legal Automation Platform" : "Enterprise Healthcare Legal Automation Platform"}</div>
           </div>
         </Link>
       )}

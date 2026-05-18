@@ -32,10 +32,10 @@ export default function LoginPage() {
     home: isRtl ? "العودة للرئيسية" : "Back to Home",
     title: isRtl ? "دخول آمن إلى واثق كير" : "Secure Access to WathiqCare",
     subtitle: isRtl ? "سجّل الدخول لمتابعة أعمالك بثقة." : "Sign in to continue with confidence.",
-    panelTitle: isRtl ? "مركز الامتثال والرعاية" : "Compliance and Care Hub",
+    panelTitle: isRtl ? "WathiqCare™" : "WathiqCare™",
     panelSubtitle: isRtl
-      ? "منصة قانونية صحية موثوقة تدعم الخصوصية، الامتثال، وإدارة المخاطر."
-      : "A trusted legal-health platform for privacy, compliance, and risk oversight.",
+      ? "Enterprise Healthcare Legal Automation Platform"
+      : "Enterprise Healthcare Legal Automation Platform",
     emailLabel: isRtl ? "البريد الإلكتروني أو اسم المستخدم" : "Email or Username",
     emailPlaceholder: isRtl ? "example@hospital.sa أو user.name" : "example@hospital.sa or user.name",
     passwordLabel: isRtl ? "كلمة المرور" : "Password",

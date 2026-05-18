@@ -90,10 +90,10 @@ export default function LangLoginPage() {
     privacy: isRtl ? "خصوصية البيانات" : "Data Privacy",
     contact: isRtl ? "تواصل معنا" : "Contact Us",
     invalidCredentials: isRtl ? "البريد الإلكتروني أو كلمة المرور غير صحيحة" : "Invalid email or password",
-    panelTitle: isRtl ? "مركز الامتثال والرعاية" : "Compliance and Care Hub",
+    panelTitle: isRtl ? "WathiqCare™" : "WathiqCare™",
     panelSubtitle: isRtl
-      ? "منصة قانونية صحية موثوقة تدعم الخصوصية، الامتثال، وإدارة المخاطر."
-      : "A trusted legal-health platform for privacy, compliance, and risk oversight.",
+      ? "Enterprise Healthcare Legal Automation Platform"
+      : "Enterprise Healthcare Legal Automation Platform",
     badge: isRtl ? "منصة موثوقة" : "Trusted Platform",
     privacyTitle: isRtl ? "خصوصية طبية" : "Medical Privacy",
     privacyDesc: isRtl ? "حماية عالية للبيانات الحساسة." : "High protection for sensitive data.",

@@ -128,12 +128,12 @@ export default function ModulePortalPage({ auth }: { auth: PortalAuth }) {
     <ModuleShell
       auth={auth}
       title={{
-        ar: "بوابة الوحدات",
-        en: "Modules Portal",
+        ar: "WathiqCare™ Platform Portal",
+        en: "WathiqCare™ Platform Portal",
       }}
       subtitle={{
-        ar: "مرحباً بك في واثق كير. اختر الوحدة المطلوبة للمتابعة.",
-        en: "Welcome to WathiqCare. Select a module to continue.",
+        ar: "Healthcare Legal Automation & Consent Governance",
+        en: "Healthcare Legal Automation & Consent Governance",
       }}
       eyebrow={{
         ar: "WathiqCare",

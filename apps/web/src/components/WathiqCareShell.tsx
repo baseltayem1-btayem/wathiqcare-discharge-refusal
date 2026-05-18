@@ -47,10 +47,9 @@ type WathiqCareShellProps = {
 
 const DEFAULT_FOOTER = (
   <>
-    <span>International Medical Center (IMC)</span>
-    <span>Clinical Discharge Refusal &amp; Legal Evidence Module</span>
+    <span>WathiqCare™ Enterprise Healthcare Legal Automation Platform</span>
+    <span>© 2026 International Medical Center (IMC). All rights reserved.</span>
     <span>CR: 4030143596</span>
-    <span>Version: 7.2.4</span>
   </>
 );
 
@@ -143,8 +142,8 @@ function DefaultBrand() {
         decoding="async"
       />
       <div className="wc-brand-copy">
-        <div className="wc-brand-title">WathiqCare System</div>
-        <div className="wc-brand-subtitle">International Medical Center (IMC)</div>
+        <div className="wc-brand-title">WathiqCare™</div>
+        <div className="wc-brand-subtitle">Enterprise Healthcare Legal Automation Platform</div>
       </div>
     </div>
   );
