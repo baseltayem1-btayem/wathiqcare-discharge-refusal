@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { LoaderCircle } from "lucide-react";
+import { captureFingerprintVerification, detectDigitalPersona4500, DIGITALPERSONA_LOCAL_AGENT_ENDPOINT } from "@/lib/signature/digitalpersona-local-agent-client";
 import { apiFetch } from "@/utils/api";
 
 type ScreenMode = "patient-review" | "signature" | "witness" | "interpreter" | "audit-trail" | "evidence-export";
@@ -43,8 +45,11 @@ export default function InformedConsentsEnterpriseWorkflowScreens({
   const [signerName, setSignerName] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [biometricSaving, setBiometricSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [biometricStatus, setBiometricStatus] = useState<"idle" | "detecting" | "ready" | "verifying" | "submitted" | "error">("idle");
+  const [biometricMessage, setBiometricMessage] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -108,6 +113,61 @@ export default function InformedConsentsEnterpriseWorkflowScreens({
       setError(e instanceof Error ? e.message : "Failed to capture signature");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function detectBiometricAgent() {
+    setBiometricStatus("detecting");
+    setBiometricMessage("");
+    try {
+      const detection = await detectDigitalPersona4500();
+      setBiometricStatus(detection.available ? "ready" : "error");
+      setBiometricMessage(
+        detection.available
+          ? `${detection.sdkProvider} ${detection.deviceModel} local agent is reachable.`
+          : "DigitalPersona local agent is not reachable.",
+      );
+    } catch (e) {
+      setBiometricStatus("error");
+      setBiometricMessage(e instanceof Error ? e.message : "Failed to detect local biometric agent");
+    }
+  }
+
+  async function captureBiometricSignature() {
+    if (!signerName.trim()) {
+      setError("Signer name is required");
+      return;
+    }
+
+    setBiometricSaving(true);
+    setError("");
+    setSuccess("");
+    setBiometricMessage("");
+    setBiometricStatus("verifying");
+    try {
+      const verificationResult = await captureFingerprintVerification({ method: "biometric-fingerprint" });
+      const result = await apiFetch<{ evidence?: { evidenceId?: string; evidenceHash?: string } }>(
+        "/api/modules/informed-consents/signature/biometric",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            documentId,
+            role: "PATIENT",
+            signerName: signerName.trim(),
+            acknowledgmentAccepted: true,
+            verificationResult,
+          }),
+        },
+      );
+      setBiometricStatus("submitted");
+      setSuccess(
+        `Biometric verification submitted for patient signature. Evidence ID: ${result.evidence?.evidenceId || "-"}, hash: ${result.evidence?.evidenceHash || "-"}`,
+      );
+    } catch (e) {
+      setBiometricStatus("error");
+      setError(e instanceof Error ? e.message : "Failed to capture biometric signature");
+    } finally {
+      setBiometricSaving(false);
     }
   }
 
@@ -175,9 +235,27 @@ export default function InformedConsentsEnterpriseWorkflowScreens({
             placeholder="Enter signer full name"
           />
           {mode === "signature" ? (
-            <button type="button" disabled={saving} onClick={() => void captureSignature("PATIENT")} className="rounded bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-50">
-              {saving ? "Submitting..." : "Submit Patient Signature"}
-            </button>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                <button type="button" disabled={saving || biometricSaving} onClick={() => void captureSignature("PATIENT")} className="rounded bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-50">
+                  {saving ? "Submitting..." : "Submit OTP Signature"}
+                </button>
+                <button type="button" disabled={saving || biometricSaving || biometricStatus === "detecting" || biometricStatus === "verifying"} onClick={() => void detectBiometricAgent()} className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-50">
+                  {biometricStatus === "detecting" ? <LoaderCircle className="mr-1 inline h-3.5 w-3.5 animate-spin" /> : null}
+                  Detect DigitalPersona Local Agent
+                </button>
+                <button type="button" disabled={saving || biometricSaving || biometricStatus === "detecting" || biometricStatus === "verifying"} onClick={() => void captureBiometricSignature()} className="rounded bg-sky-700 px-3 py-2 text-sm text-white disabled:opacity-50">
+                  {biometricStatus === "verifying" ? <LoaderCircle className="mr-1 inline h-3.5 w-3.5 animate-spin" /> : null}
+                  Verify and Submit Biometric Signature
+                </button>
+              </div>
+              <div className="rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                <div><strong>Local agent endpoint:</strong> {DIGITALPERSONA_LOCAL_AGENT_ENDPOINT}</div>
+                <div><strong>Status:</strong> {biometricStatus}</div>
+                <div><strong>Message:</strong> {biometricMessage || "Biometric flow is Local Agent only and remains feature-flagged off by default."}</div>
+                <div className="mt-2 text-amber-800">HID DigitalPersona SDK or approved HID driver is required. Windows Hello WBF alone is not sufficient. Production activation requires Legal, PDPL, Cybersecurity, and vendor SDK approval.</div>
+              </div>
+            </div>
           ) : null}
           {mode === "witness" ? (
             <button type="button" disabled={saving} onClick={() => void captureSignature("WITNESS")} className="rounded bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-50">

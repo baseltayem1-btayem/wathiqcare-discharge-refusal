@@ -40,13 +40,17 @@ type RawSection = {
   id: string;
   title: LocalizedText;
   body?: LocalizedText;
-  fields?: RawField[];
-  riskBlocks?: RawRiskBlock[];
-  declarations?: RawDeclaration[];
+  fields?: readonly RawField[];
+  riskBlocks?: readonly RawRiskBlock[];
+  declarations?: readonly RawDeclaration[];
   declaration?: LocalizedText;
 };
 
 type RawTemplate = typeof SURGERY_MEDICAL_PROCEDURE_CONSENT_TEMPLATE;
+
+function getRawTemplateSections(rawTemplate: RawTemplate): readonly RawSection[] {
+  return rawTemplate.sections as readonly RawSection[];
+}
 
 function mapSectionKind(sectionId: string): DynamicConsentSectionKind {
   switch (sectionId) {
@@ -82,7 +86,7 @@ function mapSeverity(severity: RawRiskBlock["severity"]): DynamicConsentRiskItem
   return severity;
 }
 
-function createFieldSummary(fields: RawField[] | undefined, language: "en" | "ar"): string {
+function createFieldSummary(fields: readonly RawField[] | undefined, language: "en" | "ar"): string {
   if (!fields || fields.length === 0) {
     return "";
   }
@@ -119,8 +123,8 @@ function mapRawSectionToBlueprint(section: RawSection, order: number): DynamicCo
 }
 
 function mapRiskBlocksToRisks(rawTemplate: RawTemplate): DynamicConsentRiskItem[] {
-  const riskSection = rawTemplate.sections.find((section) => section.id === "risks");
-  const riskBlocks = (riskSection?.riskBlocks || []) as RawRiskBlock[];
+  const riskSection = getRawTemplateSections(rawTemplate).find((section) => section.id === "risks");
+  const riskBlocks = riskSection?.riskBlocks || [];
 
   return riskBlocks.map((risk) => ({
     id: risk.id,
@@ -136,7 +140,7 @@ function mapRiskBlocksToRisks(rawTemplate: RawTemplate): DynamicConsentRiskItem[
 }
 
 function mapAlternativesToPayload(rawTemplate: RawTemplate): DynamicConsentAlternativeItem[] {
-  const alternativesSection = rawTemplate.sections.find((section) => section.id === "alternatives");
+  const alternativesSection = getRawTemplateSections(rawTemplate).find((section) => section.id === "alternatives");
 
   if (!alternativesSection?.fields) {
     return [];
@@ -153,7 +157,7 @@ function mapDeclarationsToLegalStatements(rawTemplate: RawTemplate): DynamicCons
   const sections: DynamicConsentSection[] = [];
   let order = 800;
 
-  for (const rawSection of rawTemplate.sections as RawSection[]) {
+  for (const rawSection of getRawTemplateSections(rawTemplate)) {
     if (rawSection.declaration) {
       sections.push({
         id: `${rawSection.id}-declaration`,
@@ -170,7 +174,7 @@ function mapDeclarationsToLegalStatements(rawTemplate: RawTemplate): DynamicCons
       order += 10;
     }
 
-    for (const declaration of (rawSection.declarations || []) as RawDeclaration[]) {
+    for (const declaration of rawSection.declarations || []) {
       sections.push({
         id: declaration.id,
         key: declaration.id.replace(/-/g, "_"),
@@ -205,6 +209,7 @@ function mapDeclarationsToLegalStatements(rawTemplate: RawTemplate): DynamicCons
 
 export function createDynamicTemplateFromRawSurgeryConsent(): DynamicConsentTemplateDefinition {
   const rawTemplate = SURGERY_MEDICAL_PROCEDURE_CONSENT_TEMPLATE;
+  const rawSections = getRawTemplateSections(rawTemplate);
 
   return {
     id: rawTemplate.id,
@@ -217,7 +222,7 @@ export function createDynamicTemplateFromRawSurgeryConsent(): DynamicConsentTemp
     displayNameEn: rawTemplate.title.en,
     defaultRiskCodes: mapRiskBlocksToRisks(rawTemplate).map((risk) => risk.code),
     requiredFields: ["diagnosis", "procedure", "specialty"],
-    sectionBlueprints: (rawTemplate.sections as RawSection[]).map((section, index) => mapRawSectionToBlueprint(section, index)),
+    sectionBlueprints: rawSections.map((section, index) => mapRawSectionToBlueprint(section, index)),
   };
 }
 
