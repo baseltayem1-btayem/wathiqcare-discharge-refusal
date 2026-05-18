@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -27,14 +27,14 @@ function mergeSection(
   currentMetadata: Record<string, unknown> | null,
   sectionKey: string,
   patch: Record<string, unknown>,
-): Prisma.InputJsonValue {
+): JsonInputValue {
   return {
     ...(currentMetadata ?? {}),
     [sectionKey]: {
       ...(asRecord(currentMetadata?.[sectionKey]) ?? {}),
       ...patch,
     },
-  } as Prisma.InputJsonValue;
+  } as JsonInputValue;
 }
 
 function normalizeRoleCategory(value: string | null | undefined): WitnessRoleCategory {
@@ -145,7 +145,7 @@ export async function recordCasePresentation(
     action: "risks_presented",
     details: "Risks and legal implications explained to the patient/representative",
     caseId,
-    metadataJson: payload as Prisma.InputJsonValue,
+    metadataJson: payload as JsonInputValue,
     request,
   });
 
@@ -214,7 +214,7 @@ export async function recordCaseSignature(
           patient_decision: normalizedDecision,
           authority_verified: payload.identity_verified !== false,
         },
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
       updatedByUserId: auth.sub,
     },
   });
@@ -253,7 +253,7 @@ export async function recordCaseSignature(
     action: "signature_recorded",
     details: `Signature outcome: ${normalizedOutcome}; decision: ${normalizedDecision}`,
     caseId,
-    metadataJson: payload as Prisma.InputJsonValue,
+    metadataJson: payload as JsonInputValue,
     request,
   });
 
@@ -450,7 +450,7 @@ export async function recordCaseWitness(
           witness_unlock_reason:
             isFinalized && payload.force_unlock ? payload.unlock_reason?.trim() || "forced_unlock" : null,
         },
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
       updatedByUserId: auth.sub,
     },
   });
@@ -483,7 +483,7 @@ export async function recordCaseWitness(
       action,
       witness_id: payload.witness_id ?? null,
       total_witnesses: nextWitnesses.length,
-    } as Prisma.InputJsonValue,
+    } as JsonInputValue,
     request,
   });
 
@@ -599,7 +599,7 @@ export async function generateLegalPackageForCase(auth: AuthContext, caseId: str
       status: DocumentStatus.GENERATED,
       documentCode: `LEGAL-PKG-${version}`,
       titleEn: "Saudi Medico-Legal Evidence Package",
-      titleAr: "حزمة الأدلة القانونية الطبية",
+      titleAr: "Ø­Ø²Ù…Ø© Ø§Ù„Ø£Ø¯Ù„Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ© Ø§Ù„Ø·Ø¨ÙŠØ©",
       templateKey: "legal_package",
       versionLabel: String(version),
       fileName: `legal-package-${caseId}-v${version}.html`,
@@ -610,7 +610,7 @@ export async function generateLegalPackageForCase(auth: AuthContext, caseId: str
         readiness,
         document_count: caseRecord.documents.length,
         consent_count: caseRecord.consentRecords.length,
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
       sizeBytes: BigInt(Buffer.byteLength(html, "utf8")),
       generatedByUserId: auth.sub,
     },

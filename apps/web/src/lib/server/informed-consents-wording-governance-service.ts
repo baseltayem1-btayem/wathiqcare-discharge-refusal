@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -136,7 +136,7 @@ async function appendAudit(args: {
   wordingId: string;
   action: string;
   details: string;
-  metadata: Prisma.InputJsonValue;
+  metadata: JsonInputValue;
   request?: NextRequest;
 }) {
   await writeAuditLog({
@@ -147,7 +147,7 @@ async function appendAudit(args: {
     action: args.action,
     details: args.details,
     moduleKey: "informed-consents",
-    metadataJson: args.metadata as Prisma.InputJsonValue,
+    metadataJson: args.metadata as JsonInputValue,
     request: args.request,
   });
 }
@@ -234,7 +234,7 @@ export async function createWordingDraft(
       wordingAr: bodyAr,
       wordingEn: bodyEn,
       isActive: false,
-      metadata: metadata as Prisma.InputJsonValue,
+      metadata: metadata as JsonInputValue,
     },
   });
 
@@ -330,7 +330,7 @@ export async function progressWordingReview(
         approvals,
         lifecycle,
         comments,
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
     },
   });
 
@@ -394,7 +394,7 @@ export async function activateWordingVersion(
           status: "RETIRED",
           retiredAt: new Date().toISOString(),
         },
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
     },
   });
 
@@ -411,7 +411,7 @@ export async function activateWordingVersion(
           status: "ACTIVE",
           effectiveFrom: new Date().toISOString(),
         },
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
     },
   });
 
@@ -463,7 +463,7 @@ export async function retireWordingVersion(
           status: "RETIRED",
           retiredAt: new Date().toISOString(),
         },
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
     },
   });
 

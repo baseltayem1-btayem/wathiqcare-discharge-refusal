@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
@@ -113,7 +113,7 @@ export async function POST(
               requiredRoles: nextRequiredRoles,
               requests: nextRequests,
             },
-          } as Prisma.InputJsonValue,
+          } as JsonInputValue,
         },
       });
 
@@ -176,7 +176,7 @@ export async function POST(
             requiredRoles,
             requests,
           },
-        } as Prisma.InputJsonValue,
+        } as JsonInputValue,
       },
     });
 

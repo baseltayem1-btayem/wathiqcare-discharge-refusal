@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { handleApiError, ApiError } from "@/lib/server/http";
@@ -44,7 +44,7 @@ async function persistWorkflow(documentId: string, metadata: Prisma.JsonValue | 
       metadata: {
         ...root,
         secureSigningWorkflow: workflow,
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
     },
   });
 }

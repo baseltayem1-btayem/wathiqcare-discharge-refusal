@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
@@ -14,7 +14,7 @@ import {
 import { buildAcknowledgmentMethods } from "../method-availability";
 type RouteContext = { params: Promise<{ caseId: string }> };
 
-// ── helpers ────────────────────────────────────────────────────────────────
+// â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const SUPPORTED_METHODS = new Set(["TABLET_SIGNATURE", "EMAIL_NOTICE"]);
 
@@ -34,13 +34,13 @@ const SUPPORTED_DOCUMENT_TYPES: Record<string, string> = {
 function normalizeDocumentType(raw: string): string {
     const key = raw.trim().toLowerCase();
     const resolved = SUPPORTED_DOCUMENT_TYPES[key];
-    if (!resolved) throw new ApiError(400, "نوع المستند غير مدعوم");
+    if (!resolved) throw new ApiError(400, "Ù†ÙˆØ¹ Ø§Ù„Ù…Ø³ØªÙ†Ø¯ ØºÙŠØ± Ù…Ø¯Ø¹ÙˆÙ…");
     return resolved;
 }
 
 function normalizeMethod(raw: string): string {
     const upper = raw.trim().toUpperCase();
-    if (!SUPPORTED_METHODS.has(upper)) throw new ApiError(400, "طريقة الإقرار غير مدعومة");
+    if (!SUPPORTED_METHODS.has(upper)) throw new ApiError(400, "Ø·Ø±ÙŠÙ‚Ø© Ø§Ù„Ø¥Ù‚Ø±Ø§Ø± ØºÙŠØ± Ù…Ø¯Ø¹ÙˆÙ…Ø©");
     return upper;
 }
 
@@ -237,11 +237,11 @@ async function sendEmailNotice(
             error: error instanceof Error ? error.message : String(error),
             failedAt: nowIso(),
         });
-        throw new ApiError(502, "فشل إرسال إشعار البريد الإلكتروني. يرجى المحاولة مرة أخرى.");
+        throw new ApiError(502, "ÙØ´Ù„ Ø¥Ø±Ø³Ø§Ù„ Ø¥Ø´Ø¹Ø§Ø± Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ. ÙŠØ±Ø¬Ù‰ Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø© Ù…Ø±Ø© Ø£Ø®Ø±Ù‰.");
     }
 }
 
-// ── route ──────────────────────────────────────────────────────────────────
+// â”€â”€ route â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
     const prisma = getPrisma();
@@ -304,7 +304,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             const email = resolveRecipientEmail(inputPayload, caseMetadata);
             const emailResult = await sendEmailNotice(request, caseId, patientName, email, templateKey);
             if (emailResult.status !== "sent") {
-                throw new ApiError(502, "فشل إرسال إشعار البريد الإلكتروني. يرجى المحاولة مرة أخرى.");
+                throw new ApiError(502, "ÙØ´Ù„ Ø¥Ø±Ø³Ø§Ù„ Ø¥Ø´Ø¹Ø§Ø± Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ. ÙŠØ±Ø¬Ù‰ Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø© Ù…Ø±Ø© Ø£Ø®Ø±Ù‰.");
             }
             sessionState.verification_status = "notification_sent";
             sessionState.provider_result = {
@@ -323,12 +323,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
                 caseId,
                 documentType: "OTHER",
                 templateKey: `ack_session:${templateKey}`,
-                titleEn: `Acknowledgment Session – ${templateKey}`,
-                titleAr: "جلسة إقرار",
+                titleEn: `Acknowledgment Session â€“ ${templateKey}`,
+                titleAr: "Ø¬Ù„Ø³Ø© Ø¥Ù‚Ø±Ø§Ø±",
                 fileName: `ack_session_${templateKey}.json`,
                 mimeType: "application/json",
                 status: "DRAFT",
-                payloadJson: sessionState as Prisma.InputJsonValue,
+                payloadJson: sessionState as JsonInputValue,
                 generatedByUserId: auth.sub,
             },
         });

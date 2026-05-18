@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { handleApiError, ApiError } from "@/lib/server/http";
@@ -47,7 +47,7 @@ async function persistWorkflow(caseId: string, metadata: Prisma.JsonValue | null
           ...secureSigning,
           discharge: workflow,
         },
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
     },
   });
 }

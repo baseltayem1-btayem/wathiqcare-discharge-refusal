@@ -1,4 +1,4 @@
-import { PlanCode, Prisma } from "@prisma/client";
+﻿import { PlanCode, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const seatLimit = Math.max(1, Math.floor(Number(payload.seatLimit ?? 5)));
     const monthly = Math.max(0, Math.floor(Number(payload.priceMonthlyCents ?? 0)));
     const yearly = Math.max(0, Math.floor(Number(payload.priceYearlyCents ?? 0)));
-    const features = (payload.features ?? {}) as Prisma.InputJsonValue;
+    const features = (payload.features ?? {}) as JsonInputValue;
 
     const plan = await prisma.plan.upsert({
         where: { code },

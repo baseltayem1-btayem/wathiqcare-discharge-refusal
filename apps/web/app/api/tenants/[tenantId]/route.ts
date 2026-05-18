@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import {
   hasPlatformAccess,
@@ -28,7 +28,7 @@ type PatchTenantPayload = {
     microsoft_sso_enabled?: boolean;
     secure_link_enabled?: boolean;
   };
-  metadata?: Prisma.InputJsonValue | null;
+  metadata?: JsonInputValue | null;
 };
 
 type TenantUpdateData = {
@@ -38,8 +38,8 @@ type TenantUpdateData = {
   country?: string | null;
   billingEmail?: string | null;
   isActive?: boolean;
-  authConfig?: Prisma.InputJsonValue;
-  metadata?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+  authConfig?: JsonInputValue;
+  metadata?: JsonInputValue | Prisma.NullableJsonNullValueInput;
 };
 
 function normalizeOptionalString(value: unknown, fieldName: string): string | null | undefined {
@@ -220,8 +220,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       country?: string | null;
       billingEmail?: string | null;
       isActive?: boolean;
-      authConfig?: Prisma.InputJsonValue;
-      metadata?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+      authConfig?: JsonInputValue;
+      metadata?: JsonInputValue | Prisma.NullableJsonNullValueInput;
     } = buildTenantUpdateData(currentTenant.authConfig, payload, platformAccess);
 
     const tenant = await prisma.tenant.update({

@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
@@ -175,7 +175,7 @@ export async function appendAuditChainEvent(args: {
           ? undefined
           : args.metadataJson === null
             ? Prisma.JsonNull
-            : (args.metadataJson as Prisma.InputJsonValue),
+            : (args.metadataJson as JsonInputValue),
       createdAt: occurredAt,
     },
   });

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
@@ -48,7 +47,7 @@ export async function GET(request: NextRequest) {
     const status = (searchParams.get("status") || "").trim().toUpperCase();
     const format = (searchParams.get("format") || "json").trim().toLowerCase();
 
-    const where: Prisma.ConsentDocumentWhereInput = {
+    const where = {
       tenantId,
       ...(start || end
         ? {
@@ -60,7 +59,7 @@ export async function GET(request: NextRequest) {
         : {}),
       ...(specialty ? { physicianSpecialty: specialty } : {}),
       ...(department ? { department } : {}),
-      ...(physician ? { physicianName: { contains: physician, mode: "insensitive" } } : {}),
+      ...(physician ? { physicianName: { contains: physician, mode: "insensitive" as const } } : {}),
       ...(status ? { status: status as never } : {}),
     };
 

@@ -1,4 +1,4 @@
-import { CaseStatus, CaseType, Prisma, UsageMetric } from "@prisma/client";
+﻿import { CaseStatus, CaseType, Prisma, UsageMetric } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId, requireTenantOperationalAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       patientIdNumber?: string;
       medicalRecordNo?: string;
       roomNumber?: string;
-      metadata?: Prisma.InputJsonValue;
+      metadata?: JsonInputValue;
     } | null;
     if (!payload) {
       throw new ApiError(400, "Invalid JSON body");

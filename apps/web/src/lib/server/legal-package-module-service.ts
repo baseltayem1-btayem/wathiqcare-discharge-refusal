@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
@@ -215,12 +215,12 @@ function getLegalPackageState(metadata: Prisma.JsonValue | null | undefined, cas
 function mergePackageMetadata(
   currentMetadata: Prisma.JsonValue | null | undefined,
   state: LegalPackageState,
-): Prisma.InputJsonValue {
+): JsonInputValue {
   const root = asRecord(currentMetadata) ?? {};
   return {
     ...root,
     [PACKAGE_METADATA_KEY]: state,
-  } as Prisma.InputJsonValue;
+  } as JsonInputValue;
 }
 
 async function getAuthorizedCase(auth: AuthContext, caseId: string) {
@@ -404,8 +404,8 @@ async function createDocumentRecord(args: {
       previewHtml: args.html,
       payloadJson: {
         document_hash: hash,
-      } as Prisma.InputJsonValue,
-      metadata: (args.metadata || {}) as Prisma.InputJsonValue,
+      } as JsonInputValue,
+      metadata: (args.metadata || {}) as JsonInputValue,
       sizeBytes: BigInt(bytes.byteLength),
       generatedByUserId: args.auth.sub,
     },
@@ -497,7 +497,7 @@ async function appendPackageAudit(args: {
     action: args.action,
     details: args.details,
     caseId: args.caseId,
-    metadataJson: (args.metadata || {}) as Prisma.InputJsonValue,
+    metadataJson: (args.metadata || {}) as JsonInputValue,
     request: args.request,
   });
 
@@ -574,7 +574,7 @@ export async function generateLegalPackageModule(auth: AuthContext, caseId: stri
       templateKey: `legal_package_${template.key}`,
       fileName: `${template.key}-${caseId}.html`,
       html: rendered,
-      titleAr: "مستند ضمن الحزمة القانونية",
+      titleAr: "Ù…Ø³ØªÙ†Ø¯ Ø¶Ù…Ù† Ø§Ù„Ø­Ø²Ù…Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ©",
       titleEn: "Legal package document",
       status: DocumentStatus.GENERATED,
       metadata: {
@@ -742,9 +742,9 @@ export async function sendLegalPackageForSignature(auth: AuthContext, caseId: st
       sms_sent_at: smsSentAt,
       external_not_configured: false,
       external_message: !signingLink
-        ? "تم إنشاء طلب التوقيع، ولكن لم يتم إرجاع رابط مباشر من PDFfiller. يرجى فتح الطلب من حساب PDFfiller."
+        ? "ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø·Ù„Ø¨ Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ØŒ ÙˆÙ„ÙƒÙ† Ù„Ù… ÙŠØªÙ… Ø¥Ø±Ø¬Ø§Ø¹ Ø±Ø§Ø¨Ø· Ù…Ø¨Ø§Ø´Ø± Ù…Ù† PDFfiller. ÙŠØ±Ø¬Ù‰ ÙØªØ­ Ø§Ù„Ø·Ù„Ø¨ Ù…Ù† Ø­Ø³Ø§Ø¨ PDFfiller."
         : !isTaqnyatConfigured()
-          ? "تم إنشاء رابط التوقيع بنجاح. لم يتم إرسال SMS لأن خدمة تقنيات غير مفعلة."
+          ? "ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø±Ø§Ø¨Ø· Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ø¨Ù†Ø¬Ø§Ø­. Ù„Ù… ÙŠØªÙ… Ø¥Ø±Ø³Ø§Ù„ SMS Ù„Ø£Ù† Ø®Ø¯Ù…Ø© ØªÙ‚Ù†ÙŠØ§Øª ØºÙŠØ± Ù…ÙØ¹Ù„Ø©."
           : null,
     },
     audit_events: [
@@ -806,7 +806,7 @@ export async function refreshLegalPackageSignatureStatus(auth: AuthContext, case
       status: DocumentStatus.SIGNED,
       documentCode: `LEGAL-PACKAGE-SIGNED-${Date.now()}`,
       titleEn: "Signed legal package document",
-      titleAr: "نسخة الحزمة القانونية الموقعة",
+      titleAr: "Ù†Ø³Ø®Ø© Ø§Ù„Ø­Ø²Ù…Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ© Ø§Ù„Ù…ÙˆÙ‚Ø¹Ø©",
       templateKey: "legal_package_signed_pdf",
       versionLabel: "1",
       fileName: `legal-package-signed-${caseId}.pdf`,
@@ -814,10 +814,10 @@ export async function refreshLegalPackageSignatureStatus(auth: AuthContext, case
       payloadJson: {
         source: "pdffiller",
         sha256: signedHash,
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
       metadata: {
         content_base64: signedPdfBuffer.toString("base64"),
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
       sizeBytes: BigInt(signedPdfBuffer.byteLength),
       generatedByUserId: auth.sub,
       signedByUserId: auth.sub,
@@ -833,7 +833,7 @@ export async function refreshLegalPackageSignatureStatus(auth: AuthContext, case
       status: DocumentStatus.ARCHIVED,
       documentCode: `LEGAL-PACKAGE-CERT-${Date.now()}`,
       titleEn: "Signature certificate",
-      titleAr: "شهادة التوقيع",
+      titleAr: "Ø´Ù‡Ø§Ø¯Ø© Ø§Ù„ØªÙˆÙ‚ÙŠØ¹",
       templateKey: "legal_package_signature_certificate",
       versionLabel: "1",
       fileName: `legal-package-certificate-${caseId}.pdf`,
@@ -841,10 +841,10 @@ export async function refreshLegalPackageSignatureStatus(auth: AuthContext, case
       payloadJson: {
         source: "pdffiller",
         sha256: certificateHash,
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
       metadata: {
         content_base64: certificateBuffer.toString("base64"),
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
       sizeBytes: BigInt(certificateBuffer.byteLength),
       generatedByUserId: auth.sub,
     },
@@ -928,7 +928,7 @@ export async function generateCourtBundle(auth: AuthContext, caseId: string, req
     templateKey: "legal_package_court_bundle_index",
     fileName: `court-evidence-index-${caseId}.html`,
     html,
-    titleAr: "فهرس ملف المحكمة",
+    titleAr: "ÙÙ‡Ø±Ø³ Ù…Ù„Ù Ø§Ù„Ù…Ø­ÙƒÙ…Ø©",
     titleEn: "Court evidence package index",
     status: DocumentStatus.ARCHIVED,
     metadata: {

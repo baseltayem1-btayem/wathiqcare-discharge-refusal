@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -133,7 +133,7 @@ type PdfBinaryAvailability = {
 
 type PersistedPdfBinary = {
   storagePath: string;
-  payloadJson: Prisma.InputJsonObject;
+  payloadJson: JsonInputObject;
   cleanup: (() => Promise<void>) | null;
 };
 
@@ -322,7 +322,7 @@ async function persistPdfBinary(args: {
     return {
       storagePath: `local://${relativePath}`,
       payloadJson: {
-        report_payload: args.reportPayload as Prisma.InputJsonValue,
+        report_payload: args.reportPayload as JsonInputValue,
         binary_storage_mode: "local_file",
         binary_storage_key: `local://${relativePath}`,
       },
@@ -340,7 +340,7 @@ async function persistPdfBinary(args: {
   return {
     storagePath: "db-inline://payload",
     payloadJson: {
-      report_payload: args.reportPayload as Prisma.InputJsonValue,
+      report_payload: args.reportPayload as JsonInputValue,
       pdf_base64: base64,
       binary_storage_mode: "db_inline",
     },
@@ -1041,13 +1041,13 @@ async function renderPdfBuffer(args: {
       },
       headerTemplate: `
         <div style="font-size:9px;width:100%;padding:0 10mm;color:#334155;display:flex;justify-content:space-between;">
-          <span>International Medical Center • Discharge Refusal Report</span>
+          <span>International Medical Center â€¢ Discharge Refusal Report</span>
           <span>Generated: ${escapeHtml(args.generatedAt)}</span>
         </div>
       `,
       footerTemplate: `
         <div style="font-size:9px;width:100%;padding:0 10mm;color:#334155;display:flex;justify-content:space-between;">
-          <span>Confidential medico-legal record • Evidence retained via WathiqCare</span>
+          <span>Confidential medico-legal record â€¢ Evidence retained via WathiqCare</span>
           <span>v${args.version} | ${escapeHtml(args.reportStatus)} | ${escapeHtml(args.hashForFooter.slice(0, 16))}</span>
           <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
         </div>
@@ -1197,7 +1197,7 @@ async function createFailedRecord(args: {
   existingDocumentId?: string;
   request?: NextRequest;
 }) {
-  const metadata: Prisma.InputJsonObject = {
+  const metadata: JsonInputObject = {
     trigger: args.trigger,
     report_status: "failed",
     language: args.language,
@@ -1232,7 +1232,7 @@ async function createFailedRecord(args: {
           status: DocumentStatus.DRAFT,
           documentCode: `LEGAL-CASE-PDF-${args.version}`,
           titleEn: "Legal Case PDF Report",
-          titleAr: "تقرير ملف القضية القانوني",
+          titleAr: "ØªÙ‚Ø±ÙŠØ± Ù…Ù„Ù Ø§Ù„Ù‚Ø¶ÙŠØ© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ",
           templateKey: CASE_PDF_TEMPLATE_KEY,
           versionLabel: String(args.version),
           fileName: args.fileName,
@@ -1400,7 +1400,7 @@ export async function generateCasePdfReport(args: {
       status: DocumentStatus.GENERATED,
       documentCode: `LEGAL-CASE-PDF-${version}`,
       titleEn: "Legal Case File Report",
-      titleAr: "تقرير ملف القضية القانوني",
+      titleAr: "ØªÙ‚Ø±ÙŠØ± Ù…Ù„Ù Ø§Ù„Ù‚Ø¶ÙŠØ© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ",
       versionLabel: String(version),
       fileName,
       mimeType: "application/pdf",
@@ -1427,7 +1427,7 @@ export async function generateCasePdfReport(args: {
         can_finalize: validation.canFinalize,
         missing_required: validation.missingRequired,
         immutable: allowFinal,
-      } as Prisma.InputJsonObject,
+      } as JsonInputObject,
     };
 
     let document;
@@ -1511,7 +1511,7 @@ export async function generateCasePdfReport(args: {
           where: { id: document.id },
           data: {
             metadata: {
-              ...(sharedDocumentData.metadata as Prisma.InputJsonObject),
+              ...(sharedDocumentData.metadata as JsonInputObject),
               immutable_audit_reference: currentHash,
             },
           },
@@ -1676,11 +1676,11 @@ async function markDocumentAsBinaryMissing(args: {
         recovery_required: true,
         recovery_message: "Version metadata exists but file is missing; regenerate required",
         binary_available: false,
-      } as Prisma.InputJsonObject,
+      } as JsonInputObject,
       payloadJson: {
         ...previousPayload,
         error: "Version metadata exists but file is missing; regenerate required",
-      } as Prisma.InputJsonObject,
+      } as JsonInputObject,
     },
   });
 }
@@ -1895,7 +1895,7 @@ export async function maybeAutoGenerateCasePdf(args: {
           )?.metadata,
         ) ?? {}),
         status_snapshot: currentStatus,
-      } as Prisma.InputJsonObject,
+      } as JsonInputObject,
     },
   });
 

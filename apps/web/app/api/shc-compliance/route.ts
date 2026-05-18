@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { getConfiguredBackendApiBaseUrl } from "@/lib/server/backend";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -35,7 +34,7 @@ function extractBackendErrorDetail(value: unknown): string {
   return "Unknown backend error";
 }
 
-function toInputJsonValue(value: unknown): Prisma.InputJsonValue | null {
+function toInputJsonValue(value: unknown): JsonInputValue | null {
   if (
     value === null ||
     typeof value === "string" ||
@@ -49,7 +48,7 @@ function toInputJsonValue(value: unknown): Prisma.InputJsonValue | null {
   }
   if (typeof value === "object") {
     const obj = value as Record<string, unknown>;
-    const jsonObj: Record<string, Prisma.InputJsonValue | null> = {};
+    const jsonObj: Record<string, JsonInputValue | null> = {};
     for (const [key, val] of Object.entries(obj)) {
       jsonObj[key] = toInputJsonValue(val);
     }
@@ -140,7 +139,7 @@ export async function POST(request: NextRequest) {
     await prisma.case.update({
       where: { id: payload.caseId },
       data: {
-        metadata: toInputJsonValue(updatedMetadata) as Prisma.InputJsonObject,
+        metadata: toInputJsonValue(updatedMetadata) as JsonInputObject,
         updatedByUserId: auth.sub,
       },
     });
@@ -152,12 +151,13 @@ export async function POST(request: NextRequest) {
       action: "shc_compliance_recorded",
       details: "SHC discharge refusal workflow recorded",
       caseId: payload.caseId,
-      metadataJson: {
-        decision: shc["discharge_status"] ?? null,
-        forms_generated: backendResult?.forms_generated ?? null,
-        signature_method: signature["signature_method"] ?? null,
-        equipment_requests: shc["equipment_request"] ?? null,
-      },
+      metadataJson:
+        toInputJsonValue({
+          decision: shc["discharge_status"] ?? null,
+          forms_generated: backendResult?.forms_generated ?? null,
+          signature_method: signature["signature_method"] ?? null,
+          equipment_requests: shc["equipment_request"] ?? null,
+        }) ?? undefined,
       request,
     });
     return NextResponse.json({ ok: true, backendResult });

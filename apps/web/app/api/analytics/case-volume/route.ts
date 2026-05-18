@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import { requireAuth } from "@/lib/server/auth";
 import { requireTenantId } from "@/lib/server/auth";
@@ -24,7 +23,7 @@ export async function GET(request: NextRequest) {
     startDate.setDate(startDate.getDate() - days);
 
     // Build where clause
-    const caseWhere: Prisma.CaseWhereInput = {
+    const caseWhere = {
       tenantId,
       createdAt: { gte: startDate },
     };

@@ -1,4 +1,4 @@
-import { BillingInterval, MembershipRole, MembershipStatus, PlanCode, Prisma, SubscriptionStatus } from "@prisma/client";
+﻿import { BillingInterval, MembershipRole, MembershipStatus, PlanCode, Prisma, SubscriptionStatus } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { canonicalizeUserRole, membershipRoleForUserRole } from "@/lib/server/roles";
@@ -136,7 +136,7 @@ export async function ensureBasePlans() {
         priceMonthlyCents: plan.priceMonthlyCents,
         priceYearlyCents: plan.priceYearlyCents,
         isActive: true,
-        features: plan.features as Prisma.InputJsonValue,
+        features: plan.features as JsonInputValue,
       },
       create: {
         code: plan.code,
@@ -146,7 +146,7 @@ export async function ensureBasePlans() {
         priceMonthlyCents: plan.priceMonthlyCents,
         priceYearlyCents: plan.priceYearlyCents,
         isActive: true,
-        features: plan.features as Prisma.InputJsonValue,
+        features: plan.features as JsonInputValue,
       },
     });
   }
@@ -425,7 +425,7 @@ export async function setTenantAdminConfig(
   await prisma().tenant.update({
     where: { id: tenantId },
     data: {
-      metadata: nextMetadata as Prisma.InputJsonValue,
+      metadata: nextMetadata as JsonInputValue,
     },
   });
 

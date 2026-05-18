@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+﻿import { NextRequest } from "next/server";
 
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
@@ -83,7 +83,7 @@ export async function PATCH(
         medicalRecordNo?: string | null;
         roomNumber?: string | null;
         closedAt?: string | null;
-        metadata?: Prisma.InputJsonValue | null;
+        metadata?: JsonInputValue | null;
       }
       | null;
 

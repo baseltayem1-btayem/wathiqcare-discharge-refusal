@@ -1,4 +1,4 @@
-import { ConsentSectionKind, ConsentTemplateStatus, Prisma } from "@prisma/client";
+﻿import { ConsentSectionKind, ConsentTemplateStatus, Prisma } from "@prisma/client";
 import crypto from "node:crypto";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -38,24 +38,24 @@ type RuntimeTemplateFilter = {
 
 type DefaultTemplateSeed = SaudiEnterpriseTemplateSeed;
 
-const FIXED_LEGAL_TITLE_AR = "الموافقة المستنيرة الطبية";
+const FIXED_LEGAL_TITLE_AR = "Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„Ù…Ø³ØªÙ†ÙŠØ±Ø© Ø§Ù„Ø·Ø¨ÙŠØ©";
 const FIXED_LEGAL_TITLE_EN = "Medical Informed Consent";
 
-const FIXED_MAIN_AR = `أقر أنا الموقع أدناه بأن الطبيب المعالج وفريق الرعاية الصحية قد قاموا بشرح حالتي الصحية وطبيعة الإجراء الطبي / الجراحي / التشخيصي / العلاجي المقترح لي بصورة واضحة ومفهومة، بما في ذلك الغرض من الإجراء، والفوائد المتوقعة، والمخاطر والمضاعفات المحتملة، والبدائل العلاجية الممكنة، إضافة إلى النتائج أو المضاعفات المحتملة في حال رفض العلاج أو عدم إجرائه.
+const FIXED_MAIN_AR = `Ø£Ù‚Ø± Ø£Ù†Ø§ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø£Ø¯Ù†Ø§Ù‡ Ø¨Ø£Ù† Ø§Ù„Ø·Ø¨ÙŠØ¨ Ø§Ù„Ù…Ø¹Ø§Ù„Ø¬ ÙˆÙØ±ÙŠÙ‚ Ø§Ù„Ø±Ø¹Ø§ÙŠØ© Ø§Ù„ØµØ­ÙŠØ© Ù‚Ø¯ Ù‚Ø§Ù…ÙˆØ§ Ø¨Ø´Ø±Ø­ Ø­Ø§Ù„ØªÙŠ Ø§Ù„ØµØ­ÙŠØ© ÙˆØ·Ø¨ÙŠØ¹Ø© Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ø·Ø¨ÙŠ / Ø§Ù„Ø¬Ø±Ø§Ø­ÙŠ / Ø§Ù„ØªØ´Ø®ÙŠØµÙŠ / Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠ Ø§Ù„Ù…Ù‚ØªØ±Ø­ Ù„ÙŠ Ø¨ØµÙˆØ±Ø© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø©ØŒ Ø¨Ù…Ø§ ÙÙŠ Ø°Ù„Ùƒ Ø§Ù„ØºØ±Ø¶ Ù…Ù† Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ØŒ ÙˆØ§Ù„ÙÙˆØ§Ø¦Ø¯ Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø©ØŒ ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø©ØŒ ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© Ø§Ù„Ù…Ù…ÙƒÙ†Ø©ØŒ Ø¥Ø¶Ø§ÙØ© Ø¥Ù„Ù‰ Ø§Ù„Ù†ØªØ§Ø¦Ø¬ Ø£Ùˆ Ø§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø© ÙÙŠ Ø­Ø§Ù„ Ø±ÙØ¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ Ø£Ùˆ Ø¹Ø¯Ù… Ø¥Ø¬Ø±Ø§Ø¦Ù‡.
 
-كما أقر بأنه أتيحت لي الفرصة الكاملة لطرح الأسئلة والاستفسارات المتعلقة بحالتي الصحية والإجراء المقترح، وقد تمت الإجابة على جميع استفساراتي بصورة واضحة ومفهومة ومرضية بالنسبة لي.
+ÙƒÙ…Ø§ Ø£Ù‚Ø± Ø¨Ø£Ù†Ù‡ Ø£ØªÙŠØ­Øª Ù„ÙŠ Ø§Ù„ÙØ±ØµØ© Ø§Ù„ÙƒØ§Ù…Ù„Ø© Ù„Ø·Ø±Ø­ Ø§Ù„Ø£Ø³Ø¦Ù„Ø© ÙˆØ§Ù„Ø§Ø³ØªÙØ³Ø§Ø±Ø§Øª Ø§Ù„Ù…ØªØ¹Ù„Ù‚Ø© Ø¨Ø­Ø§Ù„ØªÙŠ Ø§Ù„ØµØ­ÙŠØ© ÙˆØ§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ù‚ØªØ±Ø­ØŒ ÙˆÙ‚Ø¯ ØªÙ…Øª Ø§Ù„Ø¥Ø¬Ø§Ø¨Ø© Ø¹Ù„Ù‰ Ø¬Ù…ÙŠØ¹ Ø§Ø³ØªÙØ³Ø§Ø±Ø§ØªÙŠ Ø¨ØµÙˆØ±Ø© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø© ÙˆÙ…Ø±Ø¶ÙŠØ© Ø¨Ø§Ù„Ù†Ø³Ø¨Ø© Ù„ÙŠ.
 
-وأفهم أن ممارسة الطب والجراحة لا تخلو من المخاطر والمضاعفات المحتملة، وأنه لا يمكن تقديم أو ضمان نتائج محددة بشكل مطلق، رغم اتخاذ كافة المعايير المهنية والطبية المتعارف عليها.
+ÙˆØ£ÙÙ‡Ù… Ø£Ù† Ù…Ù…Ø§Ø±Ø³Ø© Ø§Ù„Ø·Ø¨ ÙˆØ§Ù„Ø¬Ø±Ø§Ø­Ø© Ù„Ø§ ØªØ®Ù„Ùˆ Ù…Ù† Ø§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø©ØŒ ÙˆØ£Ù†Ù‡ Ù„Ø§ ÙŠÙ…ÙƒÙ† ØªÙ‚Ø¯ÙŠÙ… Ø£Ùˆ Ø¶Ù…Ø§Ù† Ù†ØªØ§Ø¦Ø¬ Ù…Ø­Ø¯Ø¯Ø© Ø¨Ø´ÙƒÙ„ Ù…Ø·Ù„Ù‚ØŒ Ø±ØºÙ… Ø§ØªØ®Ø§Ø° ÙƒØ§ÙØ© Ø§Ù„Ù…Ø¹Ø§ÙŠÙŠØ± Ø§Ù„Ù…Ù‡Ù†ÙŠØ© ÙˆØ§Ù„Ø·Ø¨ÙŠØ© Ø§Ù„Ù…ØªØ¹Ø§Ø±Ù Ø¹Ù„ÙŠÙ‡Ø§.
 
-وأفهم كذلك أن بعض المخاطر أو المضاعفات قد تكون شائعة أو نادرة أو خطيرة أو مهددة للحياة بحسب طبيعة الإجراء وحالتي الصحية.
+ÙˆØ£ÙÙ‡Ù… ÙƒØ°Ù„Ùƒ Ø£Ù† Ø¨Ø¹Ø¶ Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø£Ùˆ Ø§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ù‚Ø¯ ØªÙƒÙˆÙ† Ø´Ø§Ø¦Ø¹Ø© Ø£Ùˆ Ù†Ø§Ø¯Ø±Ø© Ø£Ùˆ Ø®Ø·ÙŠØ±Ø© Ø£Ùˆ Ù…Ù‡Ø¯Ø¯Ø© Ù„Ù„Ø­ÙŠØ§Ø© Ø¨Ø­Ø³Ø¨ Ø·Ø¨ÙŠØ¹Ø© Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ ÙˆØ­Ø§Ù„ØªÙŠ Ø§Ù„ØµØ­ÙŠØ©.
 
-كما أوافق على اتخاذ أي إجراءات طبية إضافية أو طارئة يراها الفريق الطبي ضرورية أثناء أو بعد الإجراء الطبي حفاظًا على سلامتي الصحية، وفقًا للأصول الطبية المتعارف عليها.
+ÙƒÙ…Ø§ Ø£ÙˆØ§ÙÙ‚ Ø¹Ù„Ù‰ Ø§ØªØ®Ø§Ø° Ø£ÙŠ Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª Ø·Ø¨ÙŠØ© Ø¥Ø¶Ø§ÙÙŠØ© Ø£Ùˆ Ø·Ø§Ø±Ø¦Ø© ÙŠØ±Ø§Ù‡Ø§ Ø§Ù„ÙØ±ÙŠÙ‚ Ø§Ù„Ø·Ø¨ÙŠ Ø¶Ø±ÙˆØ±ÙŠØ© Ø£Ø«Ù†Ø§Ø¡ Ø£Ùˆ Ø¨Ø¹Ø¯ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ø·Ø¨ÙŠ Ø­ÙØ§Ø¸Ù‹Ø§ Ø¹Ù„Ù‰ Ø³Ù„Ø§Ù…ØªÙŠ Ø§Ù„ØµØ­ÙŠØ©ØŒ ÙˆÙÙ‚Ù‹Ø§ Ù„Ù„Ø£ØµÙˆÙ„ Ø§Ù„Ø·Ø¨ÙŠØ© Ø§Ù„Ù…ØªØ¹Ø§Ø±Ù Ø¹Ù„ÙŠÙ‡Ø§.
 
-وأقر بأنه قد تم شرح خيارات التخدير المناسبة لي — إن وجدت — بما في ذلك مخاطر التخدير ومضاعفاته المحتملة.
+ÙˆØ£Ù‚Ø± Ø¨Ø£Ù†Ù‡ Ù‚Ø¯ ØªÙ… Ø´Ø±Ø­ Ø®ÙŠØ§Ø±Ø§Øª Ø§Ù„ØªØ®Ø¯ÙŠØ± Ø§Ù„Ù…Ù†Ø§Ø³Ø¨Ø© Ù„ÙŠ â€” Ø¥Ù† ÙˆØ¬Ø¯Øª â€” Ø¨Ù…Ø§ ÙÙŠ Ø°Ù„Ùƒ Ù…Ø®Ø§Ø·Ø± Ø§Ù„ØªØ®Ø¯ÙŠØ± ÙˆÙ…Ø¶Ø§Ø¹ÙØ§ØªÙ‡ Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø©.
 
-وأوافق على استخدام ومعالجة معلوماتي الصحية الشخصية بالقدر اللازم لأغراض العلاج والرعاية الصحية والتوثيق الطبي والالتزام بالأنظمة واللوائح الصحية المعمول بها، وفقًا لنظام حماية البيانات الشخصية والأنظمة ذات العلاقة في المملكة العربية السعودية.
+ÙˆØ£ÙˆØ§ÙÙ‚ Ø¹Ù„Ù‰ Ø§Ø³ØªØ®Ø¯Ø§Ù… ÙˆÙ…Ø¹Ø§Ù„Ø¬Ø© Ù…Ø¹Ù„ÙˆÙ…Ø§ØªÙŠ Ø§Ù„ØµØ­ÙŠØ© Ø§Ù„Ø´Ø®ØµÙŠØ© Ø¨Ø§Ù„Ù‚Ø¯Ø± Ø§Ù„Ù„Ø§Ø²Ù… Ù„Ø£ØºØ±Ø§Ø¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ ÙˆØ§Ù„Ø±Ø¹Ø§ÙŠØ© Ø§Ù„ØµØ­ÙŠØ© ÙˆØ§Ù„ØªÙˆØ«ÙŠÙ‚ Ø§Ù„Ø·Ø¨ÙŠ ÙˆØ§Ù„Ø§Ù„ØªØ²Ø§Ù… Ø¨Ø§Ù„Ø£Ù†Ø¸Ù…Ø© ÙˆØ§Ù„Ù„ÙˆØ§Ø¦Ø­ Ø§Ù„ØµØ­ÙŠØ© Ø§Ù„Ù…Ø¹Ù…ÙˆÙ„ Ø¨Ù‡Ø§ØŒ ÙˆÙÙ‚Ù‹Ø§ Ù„Ù†Ø¸Ø§Ù… Ø­Ù…Ø§ÙŠØ© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø´Ø®ØµÙŠØ© ÙˆØ§Ù„Ø£Ù†Ø¸Ù…Ø© Ø°Ø§Øª Ø§Ù„Ø¹Ù„Ø§Ù‚Ø© ÙÙŠ Ø§Ù„Ù…Ù…Ù„ÙƒØ© Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© Ø§Ù„Ø³Ø¹ÙˆØ¯ÙŠØ©.
 
-كما أقر بأن هذه الموافقة تمثل موافقة مستنيرة وصادرة بإرادتي الحرة دون أي إكراه أو ضغط.`;
+ÙƒÙ…Ø§ Ø£Ù‚Ø± Ø¨Ø£Ù† Ù‡Ø°Ù‡ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© ØªÙ…Ø«Ù„ Ù…ÙˆØ§ÙÙ‚Ø© Ù…Ø³ØªÙ†ÙŠØ±Ø© ÙˆØµØ§Ø¯Ø±Ø© Ø¨Ø¥Ø±Ø§Ø¯ØªÙŠ Ø§Ù„Ø­Ø±Ø© Ø¯ÙˆÙ† Ø£ÙŠ Ø¥ÙƒØ±Ø§Ù‡ Ø£Ùˆ Ø¶ØºØ·.`;
 
 const FIXED_MAIN_EN = `I, the undersigned, hereby acknowledge that the treating physician and healthcare team have explained to me, in a clear and understandable manner, my medical condition and the nature of the proposed medical, surgical, diagnostic, or therapeutic procedure, including the purpose of the procedure, expected benefits, potential risks and complications, available treatment alternatives, and the possible consequences or complications that may arise from refusing or delaying treatment.
 
@@ -67,97 +67,97 @@ I further understand that certain risks or complications may be common, uncommon
 
 I also authorize the medical team to perform any additional or emergency procedures deemed medically necessary during or after the procedure in order to preserve my health and safety in accordance with accepted medical standards.
 
-I acknowledge that the available anesthesia options — where applicable — together with their potential risks and complications have been explained to me.
+I acknowledge that the available anesthesia options â€” where applicable â€” together with their potential risks and complications have been explained to me.
 
 I consent to the use and processing of my personal health information to the extent necessary for treatment, healthcare operations, medical documentation, and compliance with applicable healthcare laws and regulations, in accordance with the Personal Data Protection Law (PDPL) and related regulations of the Kingdom of Saudi Arabia.
 
 I further acknowledge that this informed consent is given voluntarily and without coercion or undue pressure.`;
 
-const PATIENT_ACK_AR = "إقرار المريض / ولي الأمر: أقر بأنني قرأت وفهمت مضمون هذه الموافقة، وأن المعلومات المتعلقة بحالتي الصحية والإجراء المقترح قد تم شرحها لي بلغة واضحة ومفهومة، وأنني وافقت على الإجراء بعد اطلاعي على الفوائد والمخاطر والمضاعفات والبدائل ومخاطر الرفض.";
+const PATIENT_ACK_AR = "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…Ø±ÙŠØ¶ / ÙˆÙ„ÙŠ Ø§Ù„Ø£Ù…Ø±: Ø£Ù‚Ø± Ø¨Ø£Ù†Ù†ÙŠ Ù‚Ø±Ø£Øª ÙˆÙÙ‡Ù…Øª Ù…Ø¶Ù…ÙˆÙ† Ù‡Ø°Ù‡ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©ØŒ ÙˆØ£Ù† Ø§Ù„Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ù…ØªØ¹Ù„Ù‚Ø© Ø¨Ø­Ø§Ù„ØªÙŠ Ø§Ù„ØµØ­ÙŠØ© ÙˆØ§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ù‚ØªØ±Ø­ Ù‚Ø¯ ØªÙ… Ø´Ø±Ø­Ù‡Ø§ Ù„ÙŠ Ø¨Ù„ØºØ© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø©ØŒ ÙˆØ£Ù†Ù†ÙŠ ÙˆØ§ÙÙ‚Øª Ø¹Ù„Ù‰ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø¨Ø¹Ø¯ Ø§Ø·Ù„Ø§Ø¹ÙŠ Ø¹Ù„Ù‰ Ø§Ù„ÙÙˆØ§Ø¦Ø¯ ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ ÙˆÙ…Ø®Ø§Ø·Ø± Ø§Ù„Ø±ÙØ¶.";
 const PATIENT_ACK_EN = "Patient / Guardian Acknowledgment: I acknowledge that I have read and understood the contents of this consent form, and that the information regarding my medical condition and the proposed procedure has been explained to me in clear and understandable language. I consent to the procedure after being informed of the benefits, risks, complications, alternatives, and risks of refusal.";
 
-const PHYSICIAN_CERT_AR = "إقرار الطبيب: أقر أنا الطبيب / الممارس الصحي الموقع أدناه بأنني قمت بشرح الحالة الطبية للمريض وطبيعة الإجراء المقترح والفوائد والمخاطر والمضاعفات المحتملة والبدائل العلاجية ومخاطر رفض العلاج للمريض أو لممثله النظامي بصورة واضحة ومفهومة، وأجبت على كافة الاستفسارات المطروحة وفقًا للأصول المهنية والطبية المتعارف عليها.";
-const PHYSICIAN_CERT_EN = "Physician Certification: I, the undersigned physician / healthcare practitioner, certify that I have explained to the patient or the patient’s legal representative the medical condition, the nature of the proposed procedure, expected benefits, potential risks and complications, available treatment alternatives, and the risks of refusing treatment in a clear and understandable manner, and that I have answered all related questions in accordance with accepted medical and professional standards.";
+const PHYSICIAN_CERT_AR = "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ø·Ø¨ÙŠØ¨: Ø£Ù‚Ø± Ø£Ù†Ø§ Ø§Ù„Ø·Ø¨ÙŠØ¨ / Ø§Ù„Ù…Ù…Ø§Ø±Ø³ Ø§Ù„ØµØ­ÙŠ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø£Ø¯Ù†Ø§Ù‡ Ø¨Ø£Ù†Ù†ÙŠ Ù‚Ù…Øª Ø¨Ø´Ø±Ø­ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ© Ù„Ù„Ù…Ø±ÙŠØ¶ ÙˆØ·Ø¨ÙŠØ¹Ø© Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ù‚ØªØ±Ø­ ÙˆØ§Ù„ÙÙˆØ§Ø¦Ø¯ ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø© ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© ÙˆÙ…Ø®Ø§Ø·Ø± Ø±ÙØ¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ Ù„Ù„Ù…Ø±ÙŠØ¶ Ø£Ùˆ Ù„Ù…Ù…Ø«Ù„Ù‡ Ø§Ù„Ù†Ø¸Ø§Ù…ÙŠ Ø¨ØµÙˆØ±Ø© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø©ØŒ ÙˆØ£Ø¬Ø¨Øª Ø¹Ù„Ù‰ ÙƒØ§ÙØ© Ø§Ù„Ø§Ø³ØªÙØ³Ø§Ø±Ø§Øª Ø§Ù„Ù…Ø·Ø±ÙˆØ­Ø© ÙˆÙÙ‚Ù‹Ø§ Ù„Ù„Ø£ØµÙˆÙ„ Ø§Ù„Ù…Ù‡Ù†ÙŠØ© ÙˆØ§Ù„Ø·Ø¨ÙŠØ© Ø§Ù„Ù…ØªØ¹Ø§Ø±Ù Ø¹Ù„ÙŠÙ‡Ø§.";
+const PHYSICIAN_CERT_EN = "Physician Certification: I, the undersigned physician / healthcare practitioner, certify that I have explained to the patient or the patientâ€™s legal representative the medical condition, the nature of the proposed procedure, expected benefits, potential risks and complications, available treatment alternatives, and the risks of refusing treatment in a clear and understandable manner, and that I have answered all related questions in accordance with accepted medical and professional standards.";
 
-const GUARDIAN_ACK_AR = "إقرار ولي الأمر / الممثل النظامي: أقر أنا الموقع أدناه بصفتي وليًا شرعيًا / ممثلًا نظاميًا للمريض بأنني مخول نظامًا بإعطاء هذه الموافقة نيابة عنه، وأنه تم شرح الحالة الطبية والإجراء المقترح والمخاطر والبدائل العلاجية لي بصورة واضحة ومفهومة.";
-const GUARDIAN_ACK_EN = "Legal Guardian / Substitute Decision Maker Acknowledgment: I, the undersigned, acting as the patient’s legal guardian / authorized substitute decision maker, acknowledge that I am legally authorized to provide this consent on behalf of the patient, and that the medical condition, proposed procedure, risks, and treatment alternatives have been clearly explained to me.";
+const GUARDIAN_ACK_AR = "Ø¥Ù‚Ø±Ø§Ø± ÙˆÙ„ÙŠ Ø§Ù„Ø£Ù…Ø± / Ø§Ù„Ù…Ù…Ø«Ù„ Ø§Ù„Ù†Ø¸Ø§Ù…ÙŠ: Ø£Ù‚Ø± Ø£Ù†Ø§ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø£Ø¯Ù†Ø§Ù‡ Ø¨ØµÙØªÙŠ ÙˆÙ„ÙŠÙ‹Ø§ Ø´Ø±Ø¹ÙŠÙ‹Ø§ / Ù…Ù…Ø«Ù„Ù‹Ø§ Ù†Ø¸Ø§Ù…ÙŠÙ‹Ø§ Ù„Ù„Ù…Ø±ÙŠØ¶ Ø¨Ø£Ù†Ù†ÙŠ Ù…Ø®ÙˆÙ„ Ù†Ø¸Ø§Ù…Ù‹Ø§ Ø¨Ø¥Ø¹Ø·Ø§Ø¡ Ù‡Ø°Ù‡ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ù†ÙŠØ§Ø¨Ø© Ø¹Ù†Ù‡ØŒ ÙˆØ£Ù†Ù‡ ØªÙ… Ø´Ø±Ø­ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ© ÙˆØ§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ù‚ØªØ±Ø­ ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© Ù„ÙŠ Ø¨ØµÙˆØ±Ø© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø©.";
+const GUARDIAN_ACK_EN = "Legal Guardian / Substitute Decision Maker Acknowledgment: I, the undersigned, acting as the patientâ€™s legal guardian / authorized substitute decision maker, acknowledge that I am legally authorized to provide this consent on behalf of the patient, and that the medical condition, proposed procedure, risks, and treatment alternatives have been clearly explained to me.";
 
-const INTERPRETER_ACK_AR = "إقرار المترجم: أقر بأن المعلومات المتعلقة بالحالة الصحية والإجراء المقترح قد تم شرحها للمريض / ولي الأمر باللغة التي يفهمها، وأنني قمت بالترجمة بصورة واضحة ومفهومة.";
-const INTERPRETER_ACK_EN = "Interpreter Acknowledgment: I acknowledge that the information regarding the patient’s medical condition and proposed procedure has been explained to the patient / guardian in a language they understand, and that I have provided interpretation clearly and appropriately.";
+const INTERPRETER_ACK_AR = "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…ØªØ±Ø¬Ù…: Ø£Ù‚Ø± Ø¨Ø£Ù† Ø§Ù„Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ù…ØªØ¹Ù„Ù‚Ø© Ø¨Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„ØµØ­ÙŠØ© ÙˆØ§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ù‚ØªØ±Ø­ Ù‚Ø¯ ØªÙ… Ø´Ø±Ø­Ù‡Ø§ Ù„Ù„Ù…Ø±ÙŠØ¶ / ÙˆÙ„ÙŠ Ø§Ù„Ø£Ù…Ø± Ø¨Ø§Ù„Ù„ØºØ© Ø§Ù„ØªÙŠ ÙŠÙÙ‡Ù…Ù‡Ø§ØŒ ÙˆØ£Ù†Ù†ÙŠ Ù‚Ù…Øª Ø¨Ø§Ù„ØªØ±Ø¬Ù…Ø© Ø¨ØµÙˆØ±Ø© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø©.";
+const INTERPRETER_ACK_EN = "Interpreter Acknowledgment: I acknowledge that the information regarding the patientâ€™s medical condition and proposed procedure has been explained to the patient / guardian in a language they understand, and that I have provided interpretation clearly and appropriately.";
 
-const NO_GUARANTEE_AR = "عدم ضمان النتائج: أفهم وأقر بأنه لا يمكن ضمان أو التعهد بنتائج محددة للإجراء الطبي أو الجراحي أو العلاجي، وأن الاستجابة للعلاج تختلف من شخص لآخر بحسب الحالة الصحية والعوامل الطبية المختلفة.";
+const NO_GUARANTEE_AR = "Ø¹Ø¯Ù… Ø¶Ù…Ø§Ù† Ø§Ù„Ù†ØªØ§Ø¦Ø¬: Ø£ÙÙ‡Ù… ÙˆØ£Ù‚Ø± Ø¨Ø£Ù†Ù‡ Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¶Ù…Ø§Ù† Ø£Ùˆ Ø§Ù„ØªØ¹Ù‡Ø¯ Ø¨Ù†ØªØ§Ø¦Ø¬ Ù…Ø­Ø¯Ø¯Ø© Ù„Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ø·Ø¨ÙŠ Ø£Ùˆ Ø§Ù„Ø¬Ø±Ø§Ø­ÙŠ Ø£Ùˆ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØŒ ÙˆØ£Ù† Ø§Ù„Ø§Ø³ØªØ¬Ø§Ø¨Ø© Ù„Ù„Ø¹Ù„Ø§Ø¬ ØªØ®ØªÙ„Ù Ù…Ù† Ø´Ø®Øµ Ù„Ø¢Ø®Ø± Ø¨Ø­Ø³Ø¨ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„ØµØ­ÙŠØ© ÙˆØ§Ù„Ø¹ÙˆØ§Ù…Ù„ Ø§Ù„Ø·Ø¨ÙŠØ© Ø§Ù„Ù…Ø®ØªÙ„ÙØ©.";
 const NO_GUARANTEE_EN = "No Guarantee of Outcome: I understand and acknowledge that no specific result or outcome can be guaranteed for the medical, surgical, or therapeutic procedure, and that treatment outcomes may vary depending on individual medical conditions and related factors.";
 
-const ELECTRONIC_SIGNATURE_AR = "التوقيع الإلكتروني: يُعد التوقيع الإلكتروني أو التوقيع المرسل عبر الرابط الإلكتروني الآمن معتمدًا وملزمًا نظامًا، ويترتب عليه ذات الأثر القانوني للتوقيع الخطي، وذلك وفقًا للأنظمة المعمول بها في المملكة العربية السعودية.";
+const ELECTRONIC_SIGNATURE_AR = "Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ: ÙŠÙØ¹Ø¯ Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ Ø£Ùˆ Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ù…Ø±Ø³Ù„ Ø¹Ø¨Ø± Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ Ø§Ù„Ø¢Ù…Ù† Ù…Ø¹ØªÙ…Ø¯Ù‹Ø§ ÙˆÙ…Ù„Ø²Ù…Ù‹Ø§ Ù†Ø¸Ø§Ù…Ù‹Ø§ØŒ ÙˆÙŠØªØ±ØªØ¨ Ø¹Ù„ÙŠÙ‡ Ø°Ø§Øª Ø§Ù„Ø£Ø«Ø± Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ Ù„Ù„ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø®Ø·ÙŠØŒ ÙˆØ°Ù„Ùƒ ÙˆÙÙ‚Ù‹Ø§ Ù„Ù„Ø£Ù†Ø¸Ù…Ø© Ø§Ù„Ù…Ø¹Ù…ÙˆÙ„ Ø¨Ù‡Ø§ ÙÙŠ Ø§Ù„Ù…Ù…Ù„ÙƒØ© Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© Ø§Ù„Ø³Ø¹ÙˆØ¯ÙŠØ©.";
 const ELECTRONIC_SIGNATURE_EN = "Electronic Signature: Electronic signatures or signatures executed through a secure electronic link shall be considered legally valid and binding and shall have the same legal effect as handwritten signatures in accordance with the applicable laws and regulations of the Kingdom of Saudi Arabia.";
 
-const PDPL_AR = "أوافق على استخدام ومعالجة معلوماتي الصحية الشخصية بالقدر اللازم لأغراض العلاج والرعاية الصحية والتوثيق الطبي والالتزام بالأنظمة واللوائح الصحية المعمول بها، وفقًا لنظام حماية البيانات الشخصية والأنظمة ذات العلاقة في المملكة العربية السعودية.";
+const PDPL_AR = "Ø£ÙˆØ§ÙÙ‚ Ø¹Ù„Ù‰ Ø§Ø³ØªØ®Ø¯Ø§Ù… ÙˆÙ…Ø¹Ø§Ù„Ø¬Ø© Ù…Ø¹Ù„ÙˆÙ…Ø§ØªÙŠ Ø§Ù„ØµØ­ÙŠØ© Ø§Ù„Ø´Ø®ØµÙŠØ© Ø¨Ø§Ù„Ù‚Ø¯Ø± Ø§Ù„Ù„Ø§Ø²Ù… Ù„Ø£ØºØ±Ø§Ø¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ ÙˆØ§Ù„Ø±Ø¹Ø§ÙŠØ© Ø§Ù„ØµØ­ÙŠØ© ÙˆØ§Ù„ØªÙˆØ«ÙŠÙ‚ Ø§Ù„Ø·Ø¨ÙŠ ÙˆØ§Ù„Ø§Ù„ØªØ²Ø§Ù… Ø¨Ø§Ù„Ø£Ù†Ø¸Ù…Ø© ÙˆØ§Ù„Ù„ÙˆØ§Ø¦Ø­ Ø§Ù„ØµØ­ÙŠØ© Ø§Ù„Ù…Ø¹Ù…ÙˆÙ„ Ø¨Ù‡Ø§ØŒ ÙˆÙÙ‚Ù‹Ø§ Ù„Ù†Ø¸Ø§Ù… Ø­Ù…Ø§ÙŠØ© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø´Ø®ØµÙŠØ© ÙˆØ§Ù„Ø£Ù†Ø¸Ù…Ø© Ø°Ø§Øª Ø§Ù„Ø¹Ù„Ø§Ù‚Ø© ÙÙŠ Ø§Ù„Ù…Ù…Ù„ÙƒØ© Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© Ø§Ù„Ø³Ø¹ÙˆØ¯ÙŠØ©.";
 const PDPL_EN = "I consent to the use and processing of my personal health information to the extent necessary for treatment, healthcare operations, medical documentation, and compliance with applicable healthcare laws and regulations, in accordance with the Personal Data Protection Law (PDPL) and related regulations of the Kingdom of Saudi Arabia.";
 
 const LEGACY_DEFAULT_TEMPLATES: Array<Record<string, unknown>> = [
   {
     categoryCode: "GENERAL_CONSENT",
-    categoryNameAr: "الموافقة العامة",
+    categoryNameAr: "Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„Ø¹Ø§Ù…Ø©",
     categoryNameEn: "General Consent",
     templateCode: "GENERAL_TREATMENT_CONSENT",
     consentType: "GENERAL_CONSENT",
     specialty: "GENERAL_MEDICINE",
     department: "GENERAL_MEDICINE",
-    titleAr: "نموذج الموافقة العامة على العلاج",
+    titleAr: "Ù†Ù…ÙˆØ°Ø¬ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„Ø¹Ø§Ù…Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø¹Ù„Ø§Ø¬",
     titleEn: "General Treatment Consent",
-    summaryAr: "موافقة علاجية عامة ثنائية اللغة مع فقرات قانونية ثابتة.",
+    summaryAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø¹Ù„Ø§Ø¬ÙŠØ© Ø¹Ø§Ù…Ø© Ø«Ù†Ø§Ø¦ÙŠØ© Ø§Ù„Ù„ØºØ© Ù…Ø¹ ÙÙ‚Ø±Ø§Øª Ù‚Ø§Ù†ÙˆÙ†ÙŠØ© Ø«Ø§Ø¨ØªØ©.",
     summaryEn: "Bilingual general treatment consent with fixed legal wording.",
   },
   {
     categoryCode: "SURGICAL_CONSENT",
-    categoryNameAr: "موافقة جراحية",
+    categoryNameAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø¬Ø±Ø§Ø­ÙŠØ©",
     categoryNameEn: "Surgical Consent",
     templateCode: "GENERAL_SURGICAL_CONSENT",
     consentType: "SURGICAL_CONSENT",
     specialty: "SURGERY",
     department: "GENERAL_SURGERY",
-    titleAr: "نموذج الموافقة الجراحية العامة",
+    titleAr: "Ù†Ù…ÙˆØ°Ø¬ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„Ø¬Ø±Ø§Ø­ÙŠØ© Ø§Ù„Ø¹Ø§Ù…Ø©",
     titleEn: "General Surgical Consent",
-    summaryAr: "موافقة جراحية للممارسات الجراحية الروتينية وعالية المخاطر.",
+    summaryAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø¬Ø±Ø§Ø­ÙŠØ© Ù„Ù„Ù…Ù…Ø§Ø±Ø³Ø§Øª Ø§Ù„Ø¬Ø±Ø§Ø­ÙŠØ© Ø§Ù„Ø±ÙˆØªÙŠÙ†ÙŠØ© ÙˆØ¹Ø§Ù„ÙŠØ© Ø§Ù„Ù…Ø®Ø§Ø·Ø±.",
     summaryEn: "Surgical consent for routine and high-risk surgery workflows.",
   },
   {
     categoryCode: "ANESTHESIA_CONSENT",
-    categoryNameAr: "موافقة التخدير",
+    categoryNameAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„ØªØ®Ø¯ÙŠØ±",
     categoryNameEn: "Anesthesia Consent",
     templateCode: "ANESTHESIA_CONSENT",
     consentType: "ANESTHESIA_CONSENT",
     specialty: "ANESTHESIA",
     department: "ANESTHESIA",
-    titleAr: "نموذج موافقة التخدير",
+    titleAr: "Ù†Ù…ÙˆØ°Ø¬ Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„ØªØ®Ø¯ÙŠØ±",
     titleEn: "Anesthesia Consent",
-    summaryAr: "موافقة تخدير تشمل المخاطر الشائعة والنادرة وخيارات التخدير.",
+    summaryAr: "Ù…ÙˆØ§ÙÙ‚Ø© ØªØ®Ø¯ÙŠØ± ØªØ´Ù…Ù„ Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø© ÙˆØ§Ù„Ù†Ø§Ø¯Ø±Ø© ÙˆØ®ÙŠØ§Ø±Ø§Øª Ø§Ù„ØªØ®Ø¯ÙŠØ±.",
     summaryEn: "Anesthesia consent covering common/rare risks and anesthesia options.",
   },
   {
     categoryCode: "BLOOD_TRANSFUSION_CONSENT",
-    categoryNameAr: "موافقة نقل الدم",
+    categoryNameAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ù†Ù‚Ù„ Ø§Ù„Ø¯Ù…",
     categoryNameEn: "Blood Transfusion Consent",
     templateCode: "BLOOD_TRANSFUSION_CONSENT",
     consentType: "BLOOD_TRANSFUSION_CONSENT",
     specialty: "GENERAL_MEDICINE",
     department: "HEMATOLOGY",
-    titleAr: "نموذج موافقة نقل الدم",
+    titleAr: "Ù†Ù…ÙˆØ°Ø¬ Ù…ÙˆØ§ÙÙ‚Ø© Ù†Ù‚Ù„ Ø§Ù„Ø¯Ù…",
     titleEn: "Blood Transfusion Consent",
-    summaryAr: "موافقة نقل الدم مع بدائل العلاج والمضاعفات المحتملة.",
+    summaryAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ù†Ù‚Ù„ Ø§Ù„Ø¯Ù… Ù…Ø¹ Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø©.",
     summaryEn: "Blood transfusion consent with alternatives and potential complications.",
   },
   {
     categoryCode: "REFUSAL_OF_TREATMENT",
-    categoryNameAr: "رفض العلاج / داما",
+    categoryNameAr: "Ø±ÙØ¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ / Ø¯Ø§Ù…Ø§",
     categoryNameEn: "DAMA / Refusal",
     templateCode: "DAMA_REFUSAL_OF_TREATMENT",
     consentType: "REFUSAL_OF_TREATMENT",
     specialty: "GENERAL_MEDICINE",
     department: "EMERGENCY",
-    titleAr: "نموذج رفض العلاج (DAMA)",
+    titleAr: "Ù†Ù…ÙˆØ°Ø¬ Ø±ÙØ¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ (DAMA)",
     titleEn: "DAMA / Refusal of Treatment",
-    summaryAr: "إقرار رفض العلاج مع توثيق مخاطر الرفض والبدائل.",
+    summaryAr: "Ø¥Ù‚Ø±Ø§Ø± Ø±ÙØ¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ Ù…Ø¹ ØªÙˆØ«ÙŠÙ‚ Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø±ÙØ¶ ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„.",
     summaryEn: "Refusal of treatment acknowledgment with refusal risks and alternatives.",
   },
 ];
@@ -191,7 +191,7 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "fixed_patient_acknowledgment",
       sectionKind: ConsentSectionKind.FIXED_LEGAL,
-      titleAr: "إقرار المريض / ولي الأمر",
+      titleAr: "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…Ø±ÙŠØ¶ / ÙˆÙ„ÙŠ Ø§Ù„Ø£Ù…Ø±",
       titleEn: "Patient / Guardian Acknowledgment",
       contentAr: PATIENT_ACK_AR,
       contentEn: PATIENT_ACK_EN,
@@ -202,9 +202,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_diagnosis",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "التشخيص",
+      titleAr: "Ø§Ù„ØªØ´Ø®ÙŠØµ",
       titleEn: "Diagnosis",
-      contentAr: "[يدخل الطبيب التشخيص الطبي هنا]",
+      contentAr: "[ÙŠØ¯Ø®Ù„ Ø§Ù„Ø·Ø¨ÙŠØ¨ Ø§Ù„ØªØ´Ø®ÙŠØµ Ø§Ù„Ø·Ø¨ÙŠ Ù‡Ù†Ø§]",
       contentEn: "[Physician enters diagnosis here]",
       isRequired: true,
       isEditableByPhysician: true,
@@ -213,9 +213,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_medical_condition",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "الحالة الطبية",
+      titleAr: "Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ©",
       titleEn: "Medical condition",
-      contentAr: "[وصف الحالة الطبية الحالية]",
+      contentAr: "[ÙˆØµÙ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ© Ø§Ù„Ø­Ø§Ù„ÙŠØ©]",
       contentEn: "[Describe current medical condition]",
       isRequired: true,
       isEditableByPhysician: true,
@@ -224,9 +224,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_proposed_procedure",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "الإجراء المقترح",
+      titleAr: "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ù‚ØªØ±Ø­",
       titleEn: "Proposed procedure",
-      contentAr: "[تفاصيل الإجراء الطبي/الجراحي المقترح]",
+      contentAr: "[ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ø·Ø¨ÙŠ/Ø§Ù„Ø¬Ø±Ø§Ø­ÙŠ Ø§Ù„Ù…Ù‚ØªØ±Ø­]",
       contentEn: "[Details of proposed medical/surgical procedure]",
       isRequired: true,
       isEditableByPhysician: true,
@@ -235,9 +235,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_procedure_site_laterality",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "موضع الإجراء / الجهة",
+      titleAr: "Ù…ÙˆØ¶Ø¹ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ / Ø§Ù„Ø¬Ù‡Ø©",
       titleEn: "Procedure site / laterality",
-      contentAr: "[حدد موضع الإجراء والجهة اليمنى/اليسرى إن وجدت]",
+      contentAr: "[Ø­Ø¯Ø¯ Ù…ÙˆØ¶Ø¹ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ ÙˆØ§Ù„Ø¬Ù‡Ø© Ø§Ù„ÙŠÙ…Ù†Ù‰/Ø§Ù„ÙŠØ³Ø±Ù‰ Ø¥Ù† ÙˆØ¬Ø¯Øª]",
       contentEn: "[Specify procedure site and laterality if applicable]",
       isRequired: false,
       isEditableByPhysician: true,
@@ -246,9 +246,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_expected_benefits",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "الفوائد المتوقعة",
+      titleAr: "Ø§Ù„ÙÙˆØ§Ø¦Ø¯ Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø©",
       titleEn: "Expected benefits",
-      contentAr: "[الفوائد العلاجية المتوقعة]",
+      contentAr: "[Ø§Ù„ÙÙˆØ§Ø¦Ø¯ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø©]",
       contentEn: "[Expected therapeutic benefits]",
       isRequired: true,
       isEditableByPhysician: true,
@@ -257,9 +257,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_common_risks",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "المخاطر الشائعة",
+      titleAr: "Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©",
       titleEn: "Common risks",
-      contentAr: "[المخاطر الشائعة]",
+      contentAr: "[Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©]",
       contentEn: "[Common risks]",
       isRequired: true,
       isEditableByPhysician: true,
@@ -268,9 +268,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_uncommon_risks",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "المخاطر غير الشائعة",
+      titleAr: "Ø§Ù„Ù…Ø®Ø§Ø·Ø± ØºÙŠØ± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©",
       titleEn: "Uncommon risks",
-      contentAr: "[المخاطر غير الشائعة]",
+      contentAr: "[Ø§Ù„Ù…Ø®Ø§Ø·Ø± ØºÙŠØ± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©]",
       contentEn: "[Uncommon risks]",
       isRequired: false,
       isEditableByPhysician: true,
@@ -279,9 +279,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_serious_risks",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "المخاطر الجسيمة",
+      titleAr: "Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø¬Ø³ÙŠÙ…Ø©",
       titleEn: "Serious risks",
-      contentAr: "[المخاطر الجسيمة أو المهددة للحياة]",
+      contentAr: "[Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø¬Ø³ÙŠÙ…Ø© Ø£Ùˆ Ø§Ù„Ù…Ù‡Ø¯Ø¯Ø© Ù„Ù„Ø­ÙŠØ§Ø©]",
       contentEn: "[Serious or life-threatening risks]",
       isRequired: true,
       isEditableByPhysician: true,
@@ -290,9 +290,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_complications",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "المضاعفات",
+      titleAr: "Ø§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª",
       titleEn: "Complications",
-      contentAr: "[المضاعفات المحتملة]",
+      contentAr: "[Ø§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø©]",
       contentEn: "[Potential complications]",
       isRequired: true,
       isEditableByPhysician: true,
@@ -301,9 +301,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_treatment_alternatives",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "البدائل العلاجية",
+      titleAr: "Ø§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ©",
       titleEn: "Treatment alternatives",
-      contentAr: "[البدائل العلاجية الممكنة]",
+      contentAr: "[Ø§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© Ø§Ù„Ù…Ù…ÙƒÙ†Ø©]",
       contentEn: "[Available treatment alternatives]",
       isRequired: true,
       isEditableByPhysician: true,
@@ -312,9 +312,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_refusal_risks",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "مخاطر رفض العلاج / عدم العلاج",
+      titleAr: "Ù…Ø®Ø§Ø·Ø± Ø±ÙØ¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ / Ø¹Ø¯Ù… Ø§Ù„Ø¹Ù„Ø§Ø¬",
       titleEn: "Risks of refusal / non-treatment",
-      contentAr: "[المخاطر المتوقعة في حال الرفض أو التأخير]",
+      contentAr: "[Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø© ÙÙŠ Ø­Ø§Ù„ Ø§Ù„Ø±ÙØ¶ Ø£Ùˆ Ø§Ù„ØªØ£Ø®ÙŠØ±]",
       contentEn: "[Expected risks if treatment is refused or delayed]",
       isRequired: true,
       isEditableByPhysician: true,
@@ -323,9 +323,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_post_procedure_instructions",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "تعليمات ما بعد الإجراء",
+      titleAr: "ØªØ¹Ù„ÙŠÙ…Ø§Øª Ù…Ø§ Ø¨Ø¹Ø¯ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡",
       titleEn: "Post-procedure instructions",
-      contentAr: "[تعليمات المتابعة بعد الإجراء]",
+      contentAr: "[ØªØ¹Ù„ÙŠÙ…Ø§Øª Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ø¨Ø¹Ø¯ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡]",
       contentEn: "[Post-procedure follow-up instructions]",
       isRequired: false,
       isEditableByPhysician: true,
@@ -334,9 +334,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_physician_notes",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "ملاحظات الطبيب",
+      titleAr: "Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø§Ù„Ø·Ø¨ÙŠØ¨",
       titleEn: "Physician notes",
-      contentAr: "[ملاحظات إضافية من الطبيب]",
+      contentAr: "[Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø¥Ø¶Ø§ÙÙŠØ© Ù…Ù† Ø§Ù„Ø·Ø¨ÙŠØ¨]",
       contentEn: "[Additional physician notes]",
       isRequired: false,
       isEditableByPhysician: true,
@@ -345,9 +345,9 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "dynamic_special_precautions",
       sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
-      titleAr: "احتياطات خاصة",
+      titleAr: "Ø§Ø­ØªÙŠØ§Ø·Ø§Øª Ø®Ø§ØµØ©",
       titleEn: "Special precautions",
-      contentAr: "[احتياطات خاصة مرتبطة بالحالة]",
+      contentAr: "[Ø§Ø­ØªÙŠØ§Ø·Ø§Øª Ø®Ø§ØµØ© Ù…Ø±ØªØ¨Ø·Ø© Ø¨Ø§Ù„Ø­Ø§Ù„Ø©]",
       contentEn: "[Special case-specific precautions]",
       isRequired: false,
       isEditableByPhysician: true,
@@ -356,7 +356,7 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "fixed_physician_certification",
       sectionKind: ConsentSectionKind.FIXED_LEGAL,
-      titleAr: "إقرار الطبيب",
+      titleAr: "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ø·Ø¨ÙŠØ¨",
       titleEn: "Physician Certification",
       contentAr: PHYSICIAN_CERT_AR,
       contentEn: PHYSICIAN_CERT_EN,
@@ -367,7 +367,7 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "fixed_legal_guardian_ack",
       sectionKind: ConsentSectionKind.FIXED_LEGAL,
-      titleAr: "إقرار ولي الأمر / الممثل النظامي",
+      titleAr: "Ø¥Ù‚Ø±Ø§Ø± ÙˆÙ„ÙŠ Ø§Ù„Ø£Ù…Ø± / Ø§Ù„Ù…Ù…Ø«Ù„ Ø§Ù„Ù†Ø¸Ø§Ù…ÙŠ",
       titleEn: "Legal Guardian / Substitute Decision Maker Acknowledgment",
       contentAr: GUARDIAN_ACK_AR,
       contentEn: GUARDIAN_ACK_EN,
@@ -378,7 +378,7 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "interpreter_acknowledgment",
       sectionKind: ConsentSectionKind.INTERPRETER,
-      titleAr: "إقرار المترجم",
+      titleAr: "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…ØªØ±Ø¬Ù…",
       titleEn: "Interpreter Acknowledgment",
       contentAr: INTERPRETER_ACK_AR,
       contentEn: INTERPRETER_ACK_EN,
@@ -389,7 +389,7 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "fixed_no_guarantee",
       sectionKind: ConsentSectionKind.FIXED_LEGAL,
-      titleAr: "عدم ضمان النتائج",
+      titleAr: "Ø¹Ø¯Ù… Ø¶Ù…Ø§Ù† Ø§Ù„Ù†ØªØ§Ø¦Ø¬",
       titleEn: "No Guarantee of Outcome",
       contentAr: NO_GUARANTEE_AR,
       contentEn: NO_GUARANTEE_EN,
@@ -400,7 +400,7 @@ function buildDefaultSections(): Array<{
     {
       sectionKey: "fixed_electronic_signature",
       sectionKind: ConsentSectionKind.SIGNATURE,
-      titleAr: "التوقيع الإلكتروني",
+      titleAr: "Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ",
       titleEn: "Electronic Signature",
       contentAr: ELECTRONIC_SIGNATURE_AR,
       contentEn: ELECTRONIC_SIGNATURE_EN,
@@ -551,7 +551,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
             requiresInterpreter: seed.requiresInterpreter,
             requiresSeparateConsent: seed.requiresSeparateConsent,
           },
-        } as Prisma.InputJsonValue,
+        } as JsonInputValue,
       },
     });
 
@@ -596,7 +596,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
           title: s.titleAr,
           content: s.contentAr,
           isRequired: s.isRequired,
-        })) as Prisma.InputJsonValue,
+        })) as JsonInputValue,
       },
       create: {
         tenantId,
@@ -611,7 +611,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
           title: s.titleAr,
           content: s.contentAr,
           isRequired: s.isRequired,
-        })) as Prisma.InputJsonValue,
+        })) as JsonInputValue,
       },
     });
 
@@ -632,7 +632,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
           title: s.titleEn,
           content: s.contentEn,
           isRequired: s.isRequired,
-        })) as Prisma.InputJsonValue,
+        })) as JsonInputValue,
       },
       create: {
         tenantId,
@@ -647,7 +647,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
           title: s.titleEn,
           content: s.contentEn,
           isRequired: s.isRequired,
-        })) as Prisma.InputJsonValue,
+        })) as JsonInputValue,
       },
     });
   }

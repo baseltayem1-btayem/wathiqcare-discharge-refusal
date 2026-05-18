@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -59,13 +58,13 @@ async function searchLocalCases(
     return [];
   }
 
-  const orFilters: Prisma.CaseWhereInput[] = [];
+  const orFilters: Array<Record<string, unknown>> = [];
 
   for (const mrn of normalized.mrnVariants) {
     orFilters.push({
       medicalRecordNo: {
         equals: mrn,
-        mode: "insensitive",
+        mode: "insensitive" as const,
       },
     });
   }
@@ -74,14 +73,14 @@ async function searchLocalCases(
     orFilters.push({
       patientName: {
         contains: normalized.containsQuery,
-        mode: "insensitive",
+        mode: "insensitive" as const,
       },
     });
 
     orFilters.push({
       caseNumber: {
         equals: normalized.containsQuery.toUpperCase(),
-        mode: "insensitive",
+        mode: "insensitive" as const,
       },
     });
   }

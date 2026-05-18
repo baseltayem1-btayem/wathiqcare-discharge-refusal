@@ -1,4 +1,4 @@
-import { DocumentStatus, Prisma, UsageMetric } from "@prisma/client";
+﻿import { DocumentStatus, Prisma, UsageMetric } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -20,8 +20,8 @@ type PatchDocumentPayload = {
   titleAr?: string | null;
   storagePath?: string | null;
   previewHtml?: string | null;
-  payloadJson?: Prisma.InputJsonValue;
-  metadata?: Prisma.InputJsonValue | null;
+  payloadJson?: JsonInputValue;
+  metadata?: JsonInputValue | null;
   signedAt?: string | null;
 };
 

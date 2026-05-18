@@ -1,4 +1,4 @@
-import { CaseStatus, DocumentStatus, DocumentType, Prisma } from "@prisma/client";
+﻿import { CaseStatus, DocumentStatus, DocumentType, Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import {
     requireTenantId,
@@ -535,7 +535,7 @@ function buildWorkflowState(caseRecord: AuthorizedCaseRecord): Omit<WorkflowSnap
     return baseWorkflow;
 }
 
-function buildMetadata(baseMetadata: Record<string, unknown> | null, workflow: Omit<WorkflowSnapshot, "documents">): Prisma.InputJsonObject {
+function buildMetadata(baseMetadata: Record<string, unknown> | null, workflow: Omit<WorkflowSnapshot, "documents">): JsonInputObject {
     return {
         ...(baseMetadata ?? {}),
         workflow_stages:
@@ -594,7 +594,7 @@ function buildMetadata(baseMetadata: Record<string, unknown> | null, workflow: O
         social_administrative_interventions: workflow.social_administrative_interventions,
         insurance_coverage_status: workflow.insurance_coverage_status,
         case_status: workflow.case_status,
-    } satisfies Prisma.InputJsonObject;
+    } satisfies JsonInputObject;
 }
 
 async function persistWorkflowState(
@@ -674,20 +674,20 @@ async function createGeneratedDocument(
                     : "Medical Discharge Refusal Form",
             titleAr:
                 templateKey === "financial_responsibility_notice"
-                    ? "إشعار وإقرار بالمسؤولية المالية"
-                    : "نموذج رفض الخروج الطبي",
+                    ? "Ø¥Ø´Ø¹Ø§Ø± ÙˆØ¥Ù‚Ø±Ø§Ø± Ø¨Ø§Ù„Ù…Ø³Ø¤ÙˆÙ„ÙŠØ© Ø§Ù„Ù…Ø§Ù„ÙŠØ©"
+                    : "Ù†Ù…ÙˆØ°Ø¬ Ø±ÙØ¶ Ø§Ù„Ø®Ø±ÙˆØ¬ Ø§Ù„Ø·Ø¨ÙŠ",
             templateKey,
             versionLabel: "1.0",
             fileName: `${templateKey}-${workflow.case_id.slice(0, 8)}.html`,
             mimeType: "text/html",
             previewHtml: html,
-            payloadJson: payload as Prisma.InputJsonValue,
+            payloadJson: payload as JsonInputValue,
             sizeBytes: BigInt(Buffer.byteLength(html, "utf8")),
             generatedByUserId: auth.sub,
             metadata: {
                 source: "frontend-local-workflow-fallback",
                 locale,
-            } as Prisma.InputJsonObject,
+            } as JsonInputObject,
         },
         include: {
             generatedBy: { select: { fullName: true } },
@@ -929,7 +929,7 @@ export async function applyWorkflowAction(args: {
             current_stage: workflow.current_stage,
             status: workflow.status,
             generated_document_id: generatedDocument?.id ?? null,
-        } as Prisma.InputJsonObject,
+        } as JsonInputObject,
         request,
     });
 
@@ -961,7 +961,7 @@ export async function applyWorkflowAction(args: {
             metadataJson: {
                 trigger: autoPdfTrigger,
                 reason: pdfError instanceof Error ? pdfError.message : String(pdfError),
-            } as Prisma.InputJsonObject,
+            } as JsonInputObject,
             request,
         }).catch(() => undefined);
     }

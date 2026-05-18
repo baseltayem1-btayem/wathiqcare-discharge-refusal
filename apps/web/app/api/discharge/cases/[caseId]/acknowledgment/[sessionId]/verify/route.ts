@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
@@ -9,7 +9,7 @@ import { writeAuditLog } from "@/lib/server/saas-services";
 
 type RouteContext = { params: Promise<{ caseId: string; sessionId: string }> };
 
-// ── helpers ────────────────────────────────────────────────────────────────
+// â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function safe(v: unknown): string {
     return (v == null ? "" : String(v)).trim();
@@ -19,7 +19,7 @@ function nowIso(): string {
     return new Date().toISOString();
 }
 
-// ── route ──────────────────────────────────────────────────────────────────
+// â”€â”€ route â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
     const prisma = getPrisma();
@@ -30,14 +30,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
         // Load session from Document record
         const doc = await prisma.document.findFirst({ where: { id: sessionId, tenantId } });
-        if (!doc) throw new ApiError(404, "جلسة الإقرار غير موجودة");
+        if (!doc) throw new ApiError(404, "Ø¬Ù„Ø³Ø© Ø§Ù„Ø¥Ù‚Ø±Ø§Ø± ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©");
 
         if (!doc.payloadJson || typeof doc.payloadJson !== "object" || Array.isArray(doc.payloadJson)) {
-            throw new ApiError(500, "بيانات الجلسة تالفة");
+            throw new ApiError(500, "Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø¬Ù„Ø³Ø© ØªØ§Ù„ÙØ©");
         }
         const session = doc.payloadJson as Record<string, unknown>;
         if (session.case_id !== caseId) {
-            throw new ApiError(400, "جلسة الإقرار لا تطابق الحالة");
+            throw new ApiError(400, "Ø¬Ù„Ø³Ø© Ø§Ù„Ø¥Ù‚Ø±Ø§Ø± Ù„Ø§ ØªØ·Ø§Ø¨Ù‚ Ø§Ù„Ø­Ø§Ù„Ø©");
         }
 
         const bodyRaw = (await request.json().catch(() => null)) as {
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             const submitted = safe(payload.otp_code);
             if (!submitted) throw new ApiError(400, "otp_code is required");
             const expectedHash = safe(session.otp_code_hash);
-            if (!expectedHash) throw new ApiError(400, "لا يوجد رمز OTP مرتبط بهذه الجلسة");
+            if (!expectedHash) throw new ApiError(400, "Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ø±Ù…Ø² OTP Ù…Ø±ØªØ¨Ø· Ø¨Ù‡Ø°Ù‡ Ø§Ù„Ø¬Ù„Ø³Ø©");
             verified = crypto.createHash("sha256").update(submitted).digest("hex") === expectedHash;
         } else if (method === "TABLET_SIGNATURE") {
             const signaturePayload = safe(payload.signature_payload);
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             where: { id: sessionId },
             data: {
                 status: verified ? "SIGNED" : "DRAFT",
-                payloadJson: updatedSession as Prisma.InputJsonValue,
+                payloadJson: updatedSession as JsonInputValue,
                 signedAt: verified ? new Date() : null,
                 signedByUserId: verified ? auth.sub : null,
             },

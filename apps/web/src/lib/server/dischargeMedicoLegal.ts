@@ -1,16 +1,16 @@
-function buildLegalMetadata(
+﻿function buildLegalMetadata(
 	baseMetadata: Record<string, unknown> | null,
 	updates: Record<string, unknown>,
-): Prisma.InputJsonObject {
+): JsonInputObject {
 	const legalRecord = getLegalRecord(baseMetadata);
 	const nextLegalRecord = {
 		...(legalRecord ?? {}),
 		...updates,
-	} as Prisma.InputJsonObject;
+	} as JsonInputObject;
 	return {
 		...(baseMetadata ?? {}),
 		legal_escalation: nextLegalRecord,
-	} satisfies Prisma.InputJsonObject;
+	} satisfies JsonInputObject;
 }
 
 export async function listLegalEscalations(auth: AuthContext): Promise<LegalEscalationCase[]> {
@@ -66,7 +66,7 @@ export async function addLegalEscalationNote(args: {
 			note_type: args.noteType || "legal",
 			author: args.author || "Current User",
 			author_role: args.auth.role || null,
-		} as Prisma.InputJsonObject,
+		} as JsonInputObject,
 		request: args.request,
 	});
 	const createdAt = nowIso();
@@ -110,7 +110,7 @@ export async function updateLegalEscalationPriority(args: {
 		action: "legal_escalation_priority_updated",
 		details: `Priority updated to ${priority}`,
 		caseId: caseRecord.id,
-		metadataJson: { priority } as Prisma.InputJsonObject,
+		metadataJson: { priority } as JsonInputObject,
 		request: args.request,
 	});
 	return getLegalEscalation(args.auth, args.caseId);
@@ -156,7 +156,7 @@ export async function resolveLegalEscalation(args: {
 		metadataJson: {
 			close_case: args.closeCase,
 			resolution_notes: resolutionNotes,
-		} as Prisma.InputJsonObject,
+		} as JsonInputObject,
 		request: args.request,
 	});
 	return getLegalEscalation(args.auth, args.caseId);

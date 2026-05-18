@@ -1,4 +1,4 @@
-import fs from "node:fs";
+﻿import fs from "node:fs";
 import path from "node:path";
 
 import { PrismaClient, type Prisma } from "@prisma/client";
@@ -23,7 +23,7 @@ const TARGET_CASES: SeedCase[] = [
   {
     mrn: "IMC-2026-02000",
     caseNumber: "CASE-2026-0001",
-    patientName: "Najib الفلاح",
+    patientName: "Najib Ø§Ù„ÙÙ„Ø§Ø­",
     patientIdNumber: "UAT-ID-02000",
     encounterId: "ENC-2026-02000",
     department: "INTERNAL MEDICINE",
@@ -33,7 +33,7 @@ const TARGET_CASES: SeedCase[] = [
   {
     mrn: "IMC-2026-02001",
     caseNumber: "CASE-2026-0002",
-    patientName: "Mariam القحطاني",
+    patientName: "Mariam Ø§Ù„Ù‚Ø­Ø·Ø§Ù†ÙŠ",
     patientIdNumber: "UAT-ID-02001",
     encounterId: "ENC-2026-02001",
     department: "CARDIOLOGY",
@@ -43,7 +43,7 @@ const TARGET_CASES: SeedCase[] = [
   {
     mrn: "IMC-2026-02024",
     caseNumber: "CASE-2026-0024",
-    patientName: "Yousef العتيبي",
+    patientName: "Yousef Ø§Ù„Ø¹ØªÙŠØ¨ÙŠ",
     patientIdNumber: "UAT-ID-02024",
     encounterId: "ENC-2026-02024",
     department: "ORTHOPEDICS",
@@ -114,7 +114,7 @@ function mergeJson(
   return merged;
 }
 
-function buildMetadata(seedCase: SeedCase, existingMetadata: Prisma.JsonValue | null): Prisma.InputJsonValue {
+function buildMetadata(seedCase: SeedCase, existingMetadata: Prisma.JsonValue | null): JsonInputValue {
   const current = isPlainObject(existingMetadata) ? existingMetadata : {};
   const encounterSummary = {
     id: seedCase.encounterId,
@@ -156,7 +156,7 @@ function buildMetadata(seedCase: SeedCase, existingMetadata: Prisma.JsonValue | 
       version: 1,
       seededAt: new Date().toISOString(),
     },
-  }) as Prisma.InputJsonValue;
+  }) as JsonInputValue;
 }
 
 async function resolveActorUserId(): Promise<string> {

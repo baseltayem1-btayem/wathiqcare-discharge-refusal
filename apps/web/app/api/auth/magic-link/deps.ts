@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+﻿import type { Prisma } from "@prisma/client";
 import { after, type NextRequest } from "next/server";
 
 import { normalizeEmail } from "@/lib/server/auth-domain-policy";
@@ -255,7 +255,7 @@ async function auditMagicLinkEvent(args: {
         entityId: args.userId,
         action: args.action,
         details: args.details,
-        metadataJson: args.metadataJson as Prisma.InputJsonValue,
+        metadataJson: args.metadataJson as JsonInputValue,
         request: args.request,
     });
 }

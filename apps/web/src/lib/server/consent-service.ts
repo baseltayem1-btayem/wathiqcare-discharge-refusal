@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { ConsentMethod, Prisma, type ConsentRecord } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -70,7 +70,7 @@ async function createConsentRecordWithFallback(args: {
     documentHash: args.documentHash,
     witnessName: args.payload.witnessName?.trim() || null,
     otpReference: args.payload.otpReference?.trim() || null,
-    metadata: metadataValue as Prisma.InputJsonValue,
+    metadata: metadataValue as JsonInputValue,
   };
 
   try {
@@ -247,7 +247,7 @@ export async function recordCaseConsent(
           document_hash: record.documentHash,
           consented_at: record.consentedAt.toISOString(),
         },
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
     },
   });
 

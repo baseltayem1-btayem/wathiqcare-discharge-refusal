@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import {
   ConsentAlertLevel,
   ConsentCommitteeType,
@@ -516,7 +516,7 @@ async function writeConsentAudit(args: {
       actorUserId: args.auth.sub,
       actorRole: args.auth.role || null,
       summary: args.summary,
-      metadata: args.metadata as Prisma.InputJsonValue | undefined,
+      metadata: args.metadata as JsonInputValue | undefined,
     },
   });
 
@@ -566,7 +566,7 @@ async function writeConsentAudit(args: {
         deviceInfo: args.request?.headers.get("sec-ch-ua-platform") || null,
         ipAddress: args.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null,
         userAgent: args.request?.headers.get("user-agent") || null,
-        metadata: (args.metadata || {}) as Prisma.InputJsonValue,
+        metadata: (args.metadata || {}) as JsonInputValue,
       },
     });
   }
@@ -752,7 +752,7 @@ export async function createConsentTemplate(
         specialty,
         department: payload.department?.trim() || null,
         status: ConsentTemplateStatus.DRAFT,
-        titleAr: (payload.titleAr || "نموذج موافقة طبية").trim(),
+        titleAr: (payload.titleAr || "Ù†Ù…ÙˆØ°Ø¬ Ù…ÙˆØ§ÙÙ‚Ø© Ø·Ø¨ÙŠØ©").trim(),
         titleEn: (payload.titleEn || "Medical Consent Form").trim(),
         summaryAr: payload.summaryAr?.trim() || null,
         summaryEn: payload.summaryEn?.trim() || null,
@@ -768,25 +768,25 @@ export async function createConsentTemplate(
         status: ConsentTemplateStatus.DRAFT,
         legalTextAr:
           payload.legalTextAr?.trim() ||
-          "أقر بأن الطبيب شرح لي طبيعة الإجراء الطبي والفوائد والمخاطر والبدائل والمضاعفات المحتملة بلغة واضحة ومفهومة.",
+          "Ø£Ù‚Ø± Ø¨Ø£Ù† Ø§Ù„Ø·Ø¨ÙŠØ¨ Ø´Ø±Ø­ Ù„ÙŠ Ø·Ø¨ÙŠØ¹Ø© Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ø·Ø¨ÙŠ ÙˆØ§Ù„ÙÙˆØ§Ø¦Ø¯ ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø© Ø¨Ù„ØºØ© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø©.",
         legalTextEn:
           payload.legalTextEn?.trim() ||
           "I acknowledge that the physician explained the nature of the procedure, benefits, risks, alternatives, and potential complications in a clear manner.",
         pdplTextAr:
           payload.pdplTextAr?.trim() ||
-          "أوافق على معالجة بياناتي الصحية وفق نظام حماية البيانات الشخصية والأنظمة الصحية المعمول بها في المملكة العربية السعودية.",
+          "Ø£ÙˆØ§ÙÙ‚ Ø¹Ù„Ù‰ Ù…Ø¹Ø§Ù„Ø¬Ø© Ø¨ÙŠØ§Ù†Ø§ØªÙŠ Ø§Ù„ØµØ­ÙŠØ© ÙˆÙÙ‚ Ù†Ø¸Ø§Ù… Ø­Ù…Ø§ÙŠØ© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø´Ø®ØµÙŠØ© ÙˆØ§Ù„Ø£Ù†Ø¸Ù…Ø© Ø§Ù„ØµØ­ÙŠØ© Ø§Ù„Ù…Ø¹Ù…ÙˆÙ„ Ø¨Ù‡Ø§ ÙÙŠ Ø§Ù„Ù…Ù…Ù„ÙƒØ© Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© Ø§Ù„Ø³Ø¹ÙˆØ¯ÙŠØ©.",
         pdplTextEn:
           payload.pdplTextEn?.trim() ||
           "I consent to processing my health data under PDPL and applicable healthcare regulations in the Kingdom of Saudi Arabia.",
         witnessDeclAr:
           payload.witnessDeclAr?.trim() ||
-          "يشهد الشاهد بأن المريض/الولي قد قرأ وفهم هذا النموذج وتمت الإجابة عن جميع استفساراته.",
+          "ÙŠØ´Ù‡Ø¯ Ø§Ù„Ø´Ø§Ù‡Ø¯ Ø¨Ø£Ù† Ø§Ù„Ù…Ø±ÙŠØ¶/Ø§Ù„ÙˆÙ„ÙŠ Ù‚Ø¯ Ù‚Ø±Ø£ ÙˆÙÙ‡Ù… Ù‡Ø°Ø§ Ø§Ù„Ù†Ù…ÙˆØ°Ø¬ ÙˆØªÙ…Øª Ø§Ù„Ø¥Ø¬Ø§Ø¨Ø© Ø¹Ù† Ø¬Ù…ÙŠØ¹ Ø§Ø³ØªÙØ³Ø§Ø±Ø§ØªÙ‡.",
         witnessDeclEn:
           payload.witnessDeclEn?.trim() ||
           "The witness confirms that the patient/guardian read and understood this form and all questions were addressed.",
         physicianCertAr:
           payload.physicianCertAr?.trim() ||
-          "أُقر كطبيب مرخّص أنني شرحت للمريض تفاصيل الإجراء والمخاطر والبدائل، وأتحمل المسؤولية المهنية عن صحة المحتوى الطبي.",
+          "Ø£ÙÙ‚Ø± ÙƒØ·Ø¨ÙŠØ¨ Ù…Ø±Ø®Ù‘Øµ Ø£Ù†Ù†ÙŠ Ø´Ø±Ø­Øª Ù„Ù„Ù…Ø±ÙŠØ¶ ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ØŒ ÙˆØ£ØªØ­Ù…Ù„ Ø§Ù„Ù…Ø³Ø¤ÙˆÙ„ÙŠØ© Ø§Ù„Ù…Ù‡Ù†ÙŠØ© Ø¹Ù† ØµØ­Ø© Ø§Ù„Ù…Ø­ØªÙˆÙ‰ Ø§Ù„Ø·Ø¨ÙŠ.",
         physicianCertEn:
           payload.physicianCertEn?.trim() ||
           "As a licensed physician, I certify that I explained the procedure details, risks, and alternatives, and I remain professionally accountable for medical content accuracy.",
@@ -802,7 +802,7 @@ export async function createConsentTemplate(
         data: sections.map((section, index) => ({
           sectionKind: (section.sectionKind?.trim().toUpperCase() as ConsentSectionKind) || ConsentSectionKind.DYNAMIC_MEDICAL,
           sectionKey: (section.sectionKey || `section_${index + 1}`).trim().toLowerCase(),
-          titleAr: (section.titleAr || `القسم ${index + 1}`).trim(),
+          titleAr: (section.titleAr || `Ø§Ù„Ù‚Ø³Ù… ${index + 1}`).trim(),
           titleEn: (section.titleEn || `Section ${index + 1}`).trim(),
           contentAr: (section.contentAr || "").trim(),
           contentEn: (section.contentEn || "").trim(),
@@ -816,7 +816,7 @@ export async function createConsentTemplate(
               ((section.sectionKind?.trim().toUpperCase() as ConsentSectionKind) || ConsentSectionKind.DYNAMIC_MEDICAL),
               section.isEditableByPhysician ?? true,
             ),
-          } as Prisma.InputJsonValue,
+          } as JsonInputValue,
         })),
       });
     }
@@ -996,7 +996,7 @@ export async function createTemplateVersion(
           metadata: {
             ...(asRecord(section.metadata) || {}),
             governance: resolveSectionGovernance(section.sectionKind, section.isEditableByPhysician),
-          } as Prisma.InputJsonValue,
+          } as JsonInputValue,
         })),
       });
     }
@@ -1092,7 +1092,7 @@ export async function setTemplateVersionStatus(
             validatedAt: new Date().toISOString(),
             issues: [],
           },
-        } as Prisma.InputJsonValue,
+        } as JsonInputValue,
       },
     });
 
@@ -1451,7 +1451,7 @@ export async function createConsentDocument(
             status: ConsentDocumentStatus.DRAFT,
           }),
           ...(payload.metadata || {}),
-        } as Prisma.InputJsonValue,
+        } as JsonInputValue,
       },
     });
 
@@ -1472,7 +1472,7 @@ export async function createConsentDocument(
           metadata: {
             ...(asRecord(section.metadata) || {}),
             governance: resolveSectionGovernance(section.sectionKind, section.isEditableByPhysician),
-          } as Prisma.InputJsonValue,
+          } as JsonInputValue,
         })),
       });
     }
@@ -1644,7 +1644,7 @@ export async function updateConsentDocument(
             bilingualSyncRequired: true,
             lastSyncIssues: [],
           },
-        } as Prisma.InputJsonValue,
+        } as JsonInputValue,
         status:
           existing.status === ConsentDocumentStatus.AI_DRAFT
             ? ConsentDocumentStatus.PHYSICIAN_REVIEW
@@ -1801,7 +1801,7 @@ export async function approveConsentDocument(
           },
           fixedClauseChecksum,
         },
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
     },
   });
 
@@ -1832,6 +1832,7 @@ export async function addConsentSignature(
     signerIdNumber?: string;
     signerLicense?: string;
     signatureMethod?: string;
+    metadata?: Record<string, unknown>;
   },
   request?: NextRequest,
 ) {
@@ -1880,6 +1881,7 @@ export async function addConsentSignature(
       userAgent: request?.headers.get("user-agent") || null,
       metadata: {
         capturedBy: auth.sub,
+        ...(asRecord(payload.metadata) || {}),
       },
     },
   });
@@ -2112,7 +2114,7 @@ export async function finalizeConsentDocument(
           bilingualSyncRequired: true,
           fixedClauseChecksum,
         },
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
     },
   });
 
@@ -2292,7 +2294,7 @@ export async function upsertWordingRepository(
         required: true,
         issues: [],
       },
-    } as Prisma.InputJsonValue,
+    } as JsonInputValue,
   };
 
   const wording = payload.id?.trim()
@@ -2568,13 +2570,13 @@ export async function generateProcedureAwareContent(
   });
 
   const refusalAr = procedure?.refusalConsequences.map((item) => `- ${item.wordingAr}`).join("\n")
-    || "- تأخير التشخيص والعلاج\n- تفاقم الأعراض\n- زيادة احتمال مضاعفات خطرة";
+    || "- ØªØ£Ø®ÙŠØ± Ø§Ù„ØªØ´Ø®ÙŠØµ ÙˆØ§Ù„Ø¹Ù„Ø§Ø¬\n- ØªÙØ§Ù‚Ù… Ø§Ù„Ø£Ø¹Ø±Ø§Ø¶\n- Ø²ÙŠØ§Ø¯Ø© Ø§Ø­ØªÙ…Ø§Ù„ Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø®Ø·Ø±Ø©";
   const refusalEn = procedure?.refusalConsequences.map((item) => `- ${item.wordingEn}`).join("\n")
     || "- Delayed diagnosis and treatment\n- Symptom progression\n- Increased risk of serious complications";
 
   const expectedAr = procedure?.expectedOutcomes.map((item) => `- ${item.wordingAr}`).join("\n")
     || doc.expectedOutcomesAr
-    || "- تحسن تدريجي مع المتابعة السريرية.";
+    || "- ØªØ­Ø³Ù† ØªØ¯Ø±ÙŠØ¬ÙŠ Ù…Ø¹ Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ø§Ù„Ø³Ø±ÙŠØ±ÙŠØ©.";
   const expectedEn = procedure?.expectedOutcomes.map((item) => `- ${item.wordingEn}`).join("\n")
     || doc.expectedOutcomesEn
     || "- Gradual improvement with clinical follow-up.";
@@ -2821,7 +2823,7 @@ export async function submitCommitteeReview(
             transitionedAt: new Date().toISOString(),
             transitionedBy: auth.sub,
           },
-        } as Prisma.InputJsonValue,
+        } as JsonInputValue,
       },
     });
   }
@@ -2918,13 +2920,13 @@ export async function upsertConsentEmrMapping(
       ? undefined
       : payload.allergiesSnapshot === null
         ? Prisma.JsonNull
-        : (payload.allergiesSnapshot as Prisma.InputJsonValue);
+        : (payload.allergiesSnapshot as JsonInputValue);
   const medicationsSnapshot =
     payload.medicationsSnapshot === undefined
       ? undefined
       : payload.medicationsSnapshot === null
         ? Prisma.JsonNull
-        : (payload.medicationsSnapshot as Prisma.InputJsonValue);
+        : (payload.medicationsSnapshot as JsonInputValue);
 
   const mapping = await prisma().consentEmrMapping.upsert({
     where: {
@@ -2943,13 +2945,13 @@ export async function upsertConsentEmrMapping(
         sourceTransactionId,
         isManualOverride,
         overrideReason,
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
       externalPayload:
         payload.sourceSnapshot === undefined
           ? undefined
           : payload.sourceSnapshot === null
             ? Prisma.JsonNull
-            : (payload.sourceSnapshot as Prisma.InputJsonValue),
+            : (payload.sourceSnapshot as JsonInputValue),
     },
     create: {
       id: `${tenantId}:${consentDocumentId}:${adapterKey}`,
@@ -2968,13 +2970,13 @@ export async function upsertConsentEmrMapping(
         sourceTransactionId,
         isManualOverride,
         overrideReason,
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
       externalPayload:
         payload.sourceSnapshot === undefined
           ? undefined
           : payload.sourceSnapshot === null
             ? Prisma.JsonNull
-            : (payload.sourceSnapshot as Prisma.InputJsonValue),
+            : (payload.sourceSnapshot as JsonInputValue),
     },
   });
 
@@ -2991,11 +2993,11 @@ export async function upsertConsentEmrMapping(
         overrideReason,
         snapshot:
           payload.sourceSnapshot === null
-            ? ({ value: null } as Prisma.InputJsonValue)
-            : ((payload.sourceSnapshot as Prisma.InputJsonValue) || ({ value: null } as Prisma.InputJsonValue)),
+            ? ({ value: null } as JsonInputValue)
+            : ((payload.sourceSnapshot as JsonInputValue) || ({ value: null } as JsonInputValue)),
         metadata: {
           adapterKey,
-        } as Prisma.InputJsonValue,
+        } as JsonInputValue,
       },
     });
   }
@@ -3013,7 +3015,7 @@ export async function upsertConsentEmrMapping(
           capturedAt: new Date().toISOString(),
           capturedByUserId: auth.sub,
         },
-      } as Prisma.InputJsonValue,
+      } as JsonInputValue,
     },
   });
 

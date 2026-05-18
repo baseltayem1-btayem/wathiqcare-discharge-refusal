@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -225,7 +224,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       where: { id: sessionId },
       data: {
         status: verified ? "SIGNED" : "DRAFT",
-        payloadJson: updatedSession as Prisma.InputJsonValue,
+        payloadJson: updatedSession as JsonInputValue,
         signedAt: verified ? new Date() : doc.signedAt,
         signedByUserId: verified ? auth.sub : doc.signedByUserId,
       },
