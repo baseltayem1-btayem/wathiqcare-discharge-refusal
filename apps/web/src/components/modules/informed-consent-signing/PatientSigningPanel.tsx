@@ -2,7 +2,7 @@
 
 import { LoaderCircle } from "lucide-react";
 import { captureFingerprintVerification, detectDigitalPersona4500, DIGITALPERSONA_LOCAL_AGENT_ENDPOINT } from "@/lib/signature/digitalpersona-local-agent-client";
-import TabletSignaturePad from "@/components/modules/informed-consent-signing/TabletSignaturePad";
+import TabletSignaturePad from "./TabletSignaturePad";
 import type { SignatureState } from "@/components/modules/informed-consent-issuance/types";
 
 type PatientSigningPanelProps = {
