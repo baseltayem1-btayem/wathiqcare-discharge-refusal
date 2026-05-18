@@ -155,7 +155,11 @@ export async function GET(
     }
 
     if (encounterList.length === 0 && tenantId) {
-      encounterList = await loadCachedEncounters(tenantId, normalizedPatientMrn);
+      try {
+        encounterList = await loadCachedEncounters(tenantId, normalizedPatientMrn);
+      } catch {
+        encounterList = [];
+      }
     }
 
     if (encounterList.length === 0) {
