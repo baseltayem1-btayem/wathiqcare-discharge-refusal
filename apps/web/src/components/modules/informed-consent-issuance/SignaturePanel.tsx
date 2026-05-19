@@ -1,16 +1,21 @@
 "use client";
 
-import { CalendarClock, Fingerprint, Languages, MonitorSmartphone, PenTool, UserCheck, UserRoundCog } from "lucide-react";
+import { CalendarClock, Languages, MonitorSmartphone, PenTool, UserCheck, UserRoundCog } from "lucide-react";
 import { type ComponentType } from "react";
+import PatientSigningPanel from "@/components/modules/informed-consent-signing/PatientSigningPanel";
+import SignatureEvidenceSummary from "@/components/modules/informed-consent-signing/SignatureEvidenceSummary";
+import SignatureMethodSelector from "@/components/modules/informed-consent-signing/SignatureMethodSelector";
 import { type SignatureState } from "./types";
 
 type SignaturePanelProps = {
+  biometricEnabled?: boolean;
+  tabletEnabled?: boolean;
   value: SignatureState;
   onChange: (next: SignatureState) => void;
   timestamp: string;
 };
 
-type SignerKey = "patientSigned" | "physicianSigned" | "witnessSigned" | "interpreterSigned";
+type SignerKey = "physicianSigned" | "witnessSigned" | "interpreterSigned";
 
 const SIGNATURE_CARDS: Array<{
   key: SignerKey;
@@ -18,21 +23,59 @@ const SIGNATURE_CARDS: Array<{
   icon: ComponentType<{ className?: string }>;
   optional?: boolean;
 }> = [
-  { key: "patientSigned", label: "Patient Signature", icon: PenTool },
   { key: "physicianSigned", label: "Physician Signature", icon: UserCheck },
   { key: "witnessSigned", label: "Witness Signature", icon: UserRoundCog },
   { key: "interpreterSigned", label: "Interpreter Signature", icon: Languages, optional: true },
 ];
 
-export default function SignaturePanel({ value, onChange, timestamp }: SignaturePanelProps) {
+function computeEvidenceState(value: SignatureState): Pick<SignatureState, "patientSigned" | "signatureEvidenceReady" | "signatureEvidenceReference"> {
+  const usesTablet = value.selectedMethod === "tablet-drawn-signature" || value.selectedMethod === "combined-tablet-and-otp";
+  const usesBiometric = value.selectedMethod === "biometric-fingerprint" || value.selectedMethod === "combined-biometric-and-otp";
+  const requiresOtp = value.selectedMethod === "otp" || value.selectedMethod === "combined-tablet-and-otp" || value.selectedMethod === "combined-biometric-and-otp";
+
+  const ready = value.acknowledgmentAccepted && (
+    (value.selectedMethod === "otp" && value.otpVerified) ||
+    (usesTablet && value.signatureDataUrl.length > 0 && (!requiresOtp || value.otpVerified)) ||
+    (
+      usesBiometric &&
+      value.biometricVerified &&
+      value.biometricDeviceReference.trim().length > 0 &&
+      value.biometricTransactionId.trim().length > 0 &&
+      value.biometricVerificationHash.trim().length > 0 &&
+      value.biometricSdkProvider === "HID DigitalPersona" &&
+      value.biometricDeviceModel === "DigitalPersona 4500" &&
+      (!requiresOtp || value.otpVerified)
+    )
+  );
+
+  return {
+    patientSigned: ready,
+    signatureEvidenceReady: ready,
+    signatureEvidenceReference: ready ? `PENDING-SAVE-${value.selectedMethod.toUpperCase()}` : "",
+  };
+}
+
+export default function SignaturePanel({ biometricEnabled = false, tabletEnabled = true, value, onChange, timestamp }: SignaturePanelProps) {
+  const applyChange = (next: SignatureState) => onChange({ ...next, ...computeEvidenceState(next) });
+
   return (
     <section className="wc-panel border-slate-200 bg-white">
       <div className="mb-3">
         <h2 className="wc-panel-heading !mb-0">التوقيع والمصادقة | Signature & Authentication</h2>
-        <p className="text-[11px] text-slate-500">Multi-party signatures with OTP and audit metadata placeholders.</p>
+        <p className="text-[11px] text-slate-500">Production-readiness signing flow with bedside tablet capture, compliance-controlled biometric verification, and preserved OTP fallback.</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-3 space-y-3">
+        <SignatureMethodSelector
+          biometricEnabled={biometricEnabled}
+          tabletEnabled={tabletEnabled}
+          value={value.selectedMethod}
+          onChange={(selectedMethod) => applyChange({ ...value, selectedMethod })}
+        />
+        <PatientSigningPanel value={value} onChange={applyChange} />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-3">
         {SIGNATURE_CARDS.map((card) => {
           const Icon = card.icon;
           return (
@@ -40,13 +83,13 @@ export default function SignaturePanel({ value, onChange, timestamp }: Signature
               <Icon className="mx-auto h-4 w-4 text-slate-500" />
               <p className="text-[11px] font-semibold text-slate-700">{card.label}</p>
               <div className="flex h-16 items-center justify-center rounded border border-slate-200 bg-white text-[10px] text-slate-400">
-                Signature pad placeholder
+                Staff confirmation ready
               </div>
               <label className="inline-flex items-center gap-1 text-[10px] text-slate-600">
                 <input
                   type="checkbox"
                   checked={value[card.key]}
-                  onChange={(event) => onChange({ ...value, [card.key]: event.target.checked })}
+                  onChange={(event) => applyChange({ ...value, [card.key]: event.target.checked })}
                   className="h-3.5 w-3.5"
                 />
                 Mark signed {card.optional ? "(if applicable)" : ""}
@@ -56,42 +99,20 @@ export default function SignaturePanel({ value, onChange, timestamp }: Signature
         })}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            // TODO: Integrate OTP verification API endpoint and challenge flow.
-            onChange({ ...value, otpVerified: true });
-          }}
-          className="toolbar-btn toolbar-btn-primary"
-        >
-          <Fingerprint className="h-3.5 w-3.5" />
-          OTP verification
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            // TODO: Integrate digital signature API provider callback and signer certificate validation.
-            onChange({ ...value, pdfFillerSelected: !value.pdfFillerSelected });
-          }}
-          className="toolbar-btn toolbar-btn-secondary"
-        >
-          <PenTool className="h-3.5 w-3.5" />
-          PDF filler signing option
-        </button>
+      <div className="mt-3">
+        <SignatureEvidenceSummary value={value} />
       </div>
 
       <div className="mt-3 grid gap-2 rounded border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-600 sm:grid-cols-3">
         <div className="flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" /> Date/time auto-stamp: {timestamp}</div>
-        <div className="flex items-center gap-1"><MonitorSmartphone className="h-3.5 w-3.5" /> Device/IP placeholder: 10.0.0.1 / Chrome 136</div>
-        <div className="flex items-center gap-1"><UserRoundCog className="h-3.5 w-3.5" /> Audit trail placeholder: Consent issuance log chain</div>
+        <div className="flex items-center gap-1"><MonitorSmartphone className="h-3.5 w-3.5" /> Capture device: {value.deviceLabel || value.biometricDeviceReference || "Pending bedside device selection"}</div>
+        <div className="flex items-center gap-1"><UserRoundCog className="h-3.5 w-3.5" /> Audit trail: server evidence routes available once a live consent document exists</div>
       </div>
       <div className="mt-2 grid gap-2 rounded border border-slate-200 bg-white p-3 text-[11px] text-slate-600 sm:grid-cols-2">
-        <div><strong>Audit Event ID:</strong> EVT-IC-2026-000784</div>
-        <div><strong>Legal Package ID:</strong> LPG-IC-889201</div>
-        <div><strong>Immutable PDF Reference:</strong> IPFS://consent/legal/sha256-placeholder</div>
-        <div><strong>Signer IP Placeholder:</strong> 10.0.0.1</div>
+        <div><strong>Evidence route:</strong> /api/modules/informed-consents/signature/{value.selectedMethod.includes("biometric") ? "biometric" : "tablet"}</div>
+        <div><strong>Legal package readiness:</strong> {value.signatureEvidenceReady ? "Signing evidence prepared" : "Signing evidence incomplete"}</div>
+        <div><strong>Immutable PDF reference:</strong> generated on finalization only</div>
+        <div><strong>Signer state:</strong> {value.patientSigned ? "Patient evidence captured" : "Patient evidence pending"}</div>
       </div>
     </section>
   );

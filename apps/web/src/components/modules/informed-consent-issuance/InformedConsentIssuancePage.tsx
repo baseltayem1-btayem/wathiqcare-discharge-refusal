@@ -49,7 +49,7 @@ const MENU_ITEMS = [
   { href: "/modules/discharge-refusal", label: { ar: "منصة رفض الخروج", en: "Discharge Refusal" } },
 ];
 
-export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth }) {
+export default function InformedConsentIssuancePage({ auth, clinicalAiEnabled = false, tabletSignatureEnabled = true, biometricSignatureEnabled = false }: { auth: ModuleAuth; clinicalAiEnabled?: boolean; tabletSignatureEnabled?: boolean; biometricSignatureEnabled?: boolean }) {
   const [mrnQuery, setMrnQuery] = useState(DEFAULT_PATIENT_INFO.mrn);
   const [selectedRole, setSelectedRole] = useState<UserRole>("Doctor");
   const [selectedConsentTypeId, setSelectedConsentTypeId] = useState(CONSENT_TYPES[0]?.id ?? "");
@@ -60,6 +60,8 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
   const [activeTab, setActiveTab] = useState<"workflow" | "compliance">("workflow");
   const [toastMessage, setToastMessage] = useState<string>("");
   const [runtimeTimestamp, setRuntimeTimestamp] = useState("--");
+  const [aiDraftPending, setAiDraftPending] = useState(false);
+  const [aiDraftError, setAiDraftError] = useState("");
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -82,7 +84,7 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
       { key: "risks", label: { ar: "المخاطر موثقة", en: "Risks documented" }, passed: !!medicalExplanation.materialRisks },
       { key: "alternatives", label: { ar: "البدائل موثقة", en: "Alternatives documented" }, passed: !!medicalExplanation.alternativesExplained },
       { key: "refusal", label: { ar: "عواقب الرفض موثقة", en: "Refusal consequences documented" }, passed: !!medicalExplanation.refusalConsequences },
-      { key: "signature", label: { ar: "التوقيع مكتمل", en: "Signature completed" }, passed: signatures.patientSigned && signatures.physicianSigned },
+      { key: "signature", label: { ar: "التوقيع مكتمل", en: "Signature completed" }, passed: signatures.patientSigned && signatures.physicianSigned && signatures.signatureEvidenceReady },
       { key: "witness", label: { ar: witnessRequired ? "الشاهد مطلوب" : "الشاهد غير مطلوب", en: witnessRequired ? "Witness required" : "Witness not required" }, passed: !witnessRequired || signatures.witnessSigned },
       { key: "interpreter", label: { ar: interpreterRequired ? "المترجم مطلوب" : "المترجم غير مطلوب", en: interpreterRequired ? "Interpreter required" : "Interpreter not required" }, passed: !interpreterRequired || signatures.interpreterSigned },
       { key: "ready", label: { ar: "جاهز لتوليد PDF قانوني", en: "Ready to Generate Legal PDF" }, passed: false },
@@ -94,9 +96,17 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
 
   const validationAlerts = [
     !medicalExplanation.physicianConfirmed ? "Physician confirmation checkbox is required." : "",
-    !signatures.otpVerified ? "OTP verification is pending." : "",
-    !signatures.pdfFillerSelected ? "Select PDF filler signing option before final legal PDF." : "",
+    !signatures.acknowledgmentAccepted ? "Patient acknowledgment is required before signature capture." : "",
+    ((signatures.selectedMethod === "otp" || signatures.selectedMethod === "combined-tablet-and-otp" || signatures.selectedMethod === "combined-biometric-and-otp") && !signatures.otpVerified)
+      ? "OTP verification is pending for the selected signing method."
+      : "",
+    !signatures.signatureEvidenceReady ? "Patient signing evidence must be captured before final legal PDF generation." : "",
+    medicalExplanation.aiDraftStatus === "pending-physician-review" ? "AI-assisted draft must be approved or rejected by the physician before proceeding." : "",
   ].filter(Boolean);
+
+  const disabledActionKeys = medicalExplanation.aiDraftStatus === "pending-physician-review"
+    ? ["save-draft", "submit-review", "generate-draft", "generate-final", "archive"]
+    : [];
 
   const complianceSummary = (
     <div className="grid gap-2 md:grid-cols-2">
@@ -116,6 +126,89 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
     // TODO: Integrate audit logging API for every user action and status transition.
     const message = `Action executed: ${action}`;
     setToastMessage(message);
+    setTimeout(() => setToastMessage(""), 2500);
+  }
+
+  async function generateAiDraft() {
+    if (!clinicalAiEnabled) {
+      setAiDraftError("Clinical AI assistant is disabled.");
+      return;
+    }
+
+    setAiDraftPending(true);
+    setAiDraftError("");
+
+    try {
+      const response = await fetch("/api/modules/informed-consents/ai/draft", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clinicalContext: [medicalExplanation.expectedBenefits, medicalExplanation.patientQuestions].filter(Boolean),
+          consentType: selectedConsentTypeId,
+          diagnosisLabel: medicalExplanation.diagnosisReason,
+          language: "en",
+          procedure: medicalExplanation.procedureDescription,
+          specialty: DEFAULT_PATIENT_INFO.department,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = (await response.json().catch(() => null)) as { message?: string; error?: string } | null;
+        throw new Error(errorPayload?.message || errorPayload?.error || "AI draft generation failed.");
+      }
+
+      const payload = (await response.json()) as {
+        draft: { medicalDisclaimer: string };
+        preparedFields: {
+          aiDraftStatus: "pending-physician-review";
+          alternativesExplained: string;
+          materialRisks: string;
+          patientEducationSummary: string;
+          postProcedureInstructions: string;
+          procedureDescription: string;
+          refusalConsequences: string;
+        };
+      };
+
+      setMedicalExplanation((current) => ({
+        ...current,
+        aiDraftDisclaimer: payload.draft.medicalDisclaimer,
+        aiDraftStatus: payload.preparedFields.aiDraftStatus,
+        alternativesExplained: payload.preparedFields.alternativesExplained,
+        materialRisks: payload.preparedFields.materialRisks,
+        patientEducationSummary: payload.preparedFields.patientEducationSummary,
+        postProcedureInstructions: payload.preparedFields.postProcedureInstructions,
+        procedureDescription: payload.preparedFields.procedureDescription,
+        refusalConsequences: payload.preparedFields.refusalConsequences,
+      }));
+      setToastMessage("AI draft generated. Physician review is required.");
+      setTimeout(() => setToastMessage(""), 2500);
+    } catch (error) {
+      setAiDraftError(error instanceof Error ? error.message : "AI draft generation failed.");
+    } finally {
+      setAiDraftPending(false);
+    }
+  }
+
+  function approveAiDraft() {
+    setMedicalExplanation((current) => ({
+      ...current,
+      aiDraftStatus: "approved",
+      physicianConfirmed: true,
+    }));
+    setToastMessage("AI draft approved by physician.");
+    setTimeout(() => setToastMessage(""), 2500);
+  }
+
+  function rejectAiDraft() {
+    setMedicalExplanation((current) => ({
+      ...current,
+      aiDraftStatus: "rejected",
+    }));
+    setToastMessage("AI draft rejected by physician.");
     setTimeout(() => setToastMessage(""), 2500);
   }
 
@@ -169,22 +262,34 @@ export default function InformedConsentIssuancePage({ auth }: { auth: ModuleAuth
         </div>
 
         <MedicalExplanationForm
+          aiDraftAvailable={clinicalAiEnabled}
+          aiDraftError={aiDraftError}
+          aiDraftPending={aiDraftPending}
+          onApproveAiDraft={approveAiDraft}
           value={medicalExplanation}
           onChange={setMedicalExplanation}
           collapsed={medicalCollapsed}
+          onGenerateAiDraft={generateAiDraft}
+          onRejectAiDraft={rejectAiDraft}
           onToggle={() => setMedicalCollapsed((prev) => !prev)}
         />
 
-        <SignaturePanel value={signatures} onChange={setSignatures} timestamp={runtimeTimestamp} />
+        <SignaturePanel
+          biometricEnabled={biometricSignatureEnabled}
+          tabletEnabled={tabletSignatureEnabled}
+          value={signatures}
+          onChange={setSignatures}
+          timestamp={runtimeTimestamp}
+        />
         <section className="wc-panel border-slate-200 bg-white text-[11px] text-slate-600">
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             <div><strong>Timestamp Placeholder:</strong> {runtimeTimestamp}</div>
-            <div><strong>Audit Event Stream:</strong> pending backend integration</div>
-            <div><strong>Legal Package Link:</strong> pending backend integration</div>
+            <div><strong>Audit Event Stream:</strong> tablet and biometric evidence routes are available for live consent documents</div>
+            <div><strong>Legal Package Link:</strong> final PDF can include signature method, evidence ID, and verification metadata</div>
           </div>
         </section>
         <LegalReadinessCard checks={readinessChecks} />
-        <ActionBar onAction={showActionToast} />
+        <ActionBar disabledActionKeys={disabledActionKeys} onAction={showActionToast} />
       </div>
     </ModuleShell>
   );
