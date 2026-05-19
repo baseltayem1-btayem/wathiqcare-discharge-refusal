@@ -554,6 +554,21 @@ export default function DynamicConsentPreviewPage() {
                 {preview.contentType ?? "text/html-preview"}
               </span>
             </div>
+            <div className="mb-3">
+              <a
+                href={`/internal/verify/${encodeURIComponent(preview.evidence.evidenceId)}?engine=dynamic-preview`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-3 py-1.5 rounded-md border border-emerald-300 bg-white text-emerald-800 text-xs font-medium hover:bg-emerald-50"
+                title="Open the internal verification portal preview (PREVIEW_ONLY)"
+              >
+                Open Verification Preview ↗
+              </a>
+              <p className="text-[10px] text-slate-500 mt-1">
+                Internal preview at <span className="font-mono">/internal/verify/{`{evidenceId}`}</span>.
+                Not a public production page.
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <AuditField label="Evidence ID" value={preview.evidence.evidenceId} mono />
               <AuditField
