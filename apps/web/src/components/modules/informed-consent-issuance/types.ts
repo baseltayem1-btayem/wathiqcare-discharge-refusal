@@ -38,23 +38,42 @@ export type PatientInfo = {
 };
 
 export type MedicalExplanationState = {
+  aiDraftDisclaimer: string;
+  aiDraftStatus: "approved" | "idle" | "pending-physician-review" | "rejected";
   procedureDescription: string;
   diagnosisReason: string;
   expectedBenefits: string;
   materialRisks: string;
   alternativesExplained: string;
+  patientEducationSummary: string;
+  postProcedureInstructions: string;
   refusalConsequences: string;
   patientQuestions: string;
   physicianConfirmed: boolean;
 };
 
 export type SignatureState = {
+  selectedMethod: "otp" | "tablet-drawn-signature" | "biometric-fingerprint" | "combined-tablet-and-otp" | "combined-biometric-and-otp";
+  acknowledgmentAccepted: boolean;
   patientSigned: boolean;
   physicianSigned: boolean;
   witnessSigned: boolean;
   interpreterSigned: boolean;
   otpVerified: boolean;
-  pdfFillerSelected: boolean;
+  signatureEvidenceReady: boolean;
+  signatureEvidenceReference: string;
+  signatureDataUrl: string;
+  deviceLabel: string;
+  staffWitnessName: string;
+  biometricVerified: boolean;
+  biometricDeviceReference: string;
+  biometricTransactionId: string;
+  biometricVerificationHash: string;
+  biometricTimestamp: string;
+  biometricSdkProvider: string;
+  biometricDeviceModel: string;
+  biometricLocalAgentStatus: "idle" | "detecting" | "ready" | "verifying" | "verified" | "unavailable" | "error";
+  biometricLocalAgentMessage: string;
 };
 
 export type LegalReadinessCheck = {
@@ -99,23 +118,42 @@ export const DEFAULT_PATIENT_INFO: PatientInfo = {
 };
 
 export const DEFAULT_MEDICAL_EXPLANATION: MedicalExplanationState = {
+  aiDraftDisclaimer: "AI-assisted draft. Requires physician review and approval.",
+  aiDraftStatus: "idle",
   procedureDescription: "Laparoscopic cholecystectomy with potential conversion to open surgery if indicated.",
   diagnosisReason: "Symptomatic gallstones with recurrent biliary colic and inflammation.",
   expectedBenefits: "Pain relief, reduced recurrence, and prevention of complications.",
   materialRisks: "Bleeding, infection, bile duct injury, anesthesia-related complications.",
   alternativesExplained: "Conservative management, delayed surgery, and dietary control.",
+  patientEducationSummary: "Patient education summary pending physician update.",
+  postProcedureInstructions: "Post-procedure instructions pending physician update.",
   refusalConsequences: "Risk of recurrent pain, infection, pancreatitis, and emergency surgery.",
   patientQuestions: "Patient asked about recovery timeline and anesthesia safety.",
   physicianConfirmed: false,
 };
 
 export const DEFAULT_SIGNATURES: SignatureState = {
+  selectedMethod: "otp",
+  acknowledgmentAccepted: false,
   patientSigned: false,
   physicianSigned: false,
   witnessSigned: false,
   interpreterSigned: false,
   otpVerified: false,
-  pdfFillerSelected: false,
+  signatureEvidenceReady: false,
+  signatureEvidenceReference: "",
+  signatureDataUrl: "",
+  deviceLabel: "Ward Tablet 4",
+  staffWitnessName: "",
+  biometricVerified: false,
+  biometricDeviceReference: "",
+  biometricTransactionId: "",
+  biometricVerificationHash: "",
+  biometricTimestamp: "",
+  biometricSdkProvider: "",
+  biometricDeviceModel: "",
+  biometricLocalAgentStatus: "idle",
+  biometricLocalAgentMessage: "",
 };
 
 export const ROLE_OPTIONS: UserRole[] = ["Doctor", "Nurse", "Legal", "Admin"];
