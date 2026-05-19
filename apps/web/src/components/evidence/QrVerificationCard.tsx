@@ -70,10 +70,14 @@ export default function QrVerificationCard({ qr }: QrVerificationCardProps) {
               Verification URL
             </dt>
             <dd
-              className="break-all font-mono text-[11px]"
+              className="wc-ent-break font-mono text-[11px]"
               style={{ color: "var(--wc-ent-fg-default)" }}
             >
-              {qr?.verificationUrl ?? "—"}
+              {qr?.verificationUrl ? (
+                <bdi dir="ltr">{qr.verificationUrl}</bdi>
+              ) : (
+                "\u2014"
+              )}
             </dd>
           </div>
           <div>
@@ -83,8 +87,8 @@ export default function QrVerificationCard({ qr }: QrVerificationCardProps) {
             >
               Document hash
             </dt>
-            <dd className="break-all font-mono text-[11px]">
-              {qr?.documentHash ?? "—"}
+            <dd className="wc-ent-break font-mono text-[11px]">
+              {qr?.documentHash ? <bdi dir="ltr">{qr.documentHash}</bdi> : "\u2014"}
             </dd>
           </div>
           <div>

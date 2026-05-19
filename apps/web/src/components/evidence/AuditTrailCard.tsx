@@ -39,12 +39,13 @@ export default function AuditTrailCard({
               style={{ borderColor: "var(--wc-ent-surface-ribbon-border)" }}
               data-testid="audit-trail-row"
             >
-              <span
+              <bdi
+                dir="ltr"
                 className="font-mono text-[11px]"
                 style={{ color: "var(--wc-ent-fg-muted)" }}
               >
                 {event.timestamp}
-              </span>
+              </bdi>
               <span className="font-medium">{event.actor}</span>
               <span>
                 <span

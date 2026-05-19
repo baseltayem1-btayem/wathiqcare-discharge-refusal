@@ -45,24 +45,26 @@ export default function OtpLogCard({ attempts }: OtpLogCardProps) {
               style={{ borderColor: "var(--wc-ent-surface-ribbon-border)" }}
               data-testid="otp-log-row"
             >
-              <span
+              <bdi
+                dir="ltr"
                 className="font-mono text-[11px]"
                 style={{ color: "var(--wc-ent-fg-muted)" }}
               >
                 {attempt.timestamp}
-              </span>
+              </bdi>
               <span className="text-xs uppercase tracking-wide">
                 {attempt.channel}
               </span>
-              <span className="font-mono text-xs">
+              <bdi dir="ltr" className="font-mono text-xs">
                 {attempt.destinationMasked}
-              </span>
-              <span
+              </bdi>
+              <bdi
+                dir="ltr"
                 className="font-mono text-[10px]"
                 style={{ color: "var(--wc-ent-fg-muted)" }}
               >
-                {attempt.ip ?? "—"}
-              </span>
+                {attempt.ip ?? "\u2014"}
+              </bdi>
               <EnterpriseStatusPill
                 status={statusToTone[attempt.status]}
                 label={attempt.status}

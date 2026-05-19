@@ -190,7 +190,7 @@ export default function EnterpriseUxDemoPage() {
           }
           patient={{
             name: isAr ? "أحمد المنصور" : "Ahmed Al-Mansour",
-            mrn: "MRN-44219",
+            mrn: "44219",
             nationalId: "1099887766",
             department: isAr ? "قسم القلب" : "Cardiology",
           }}

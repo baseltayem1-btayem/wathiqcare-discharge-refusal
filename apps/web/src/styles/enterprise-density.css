@@ -112,3 +112,33 @@
 .wc-ent-fg-muted { color: var(--wc-ent-fg-muted); }
 .wc-ent-fg-on-dark { color: var(--wc-ent-fg-on-dark); }
 .wc-ent-fg-on-dark-muted { color: var(--wc-ent-fg-on-dark-muted); }
+
+/*
+ * R2 — Arabic font stack for any enterprise surface flagged as RTL.
+ * Scoped under .wc-ent-canvas so we only override the typeface inside
+ * Phase 12 enterprise shells; the rest of the app keeps its current
+ * Arabic font binding.
+ */
+.wc-ent-canvas[dir="rtl"],
+[dir="rtl"] .wc-ent-canvas {
+  font-family: "IBM Plex Sans Arabic", "DIN Next Arabic", "Tajawal", "Segoe UI", sans-serif;
+}
+
+/* R9 — tabular numerics for dense table content, hashes, timestamps. */
+.wc-ent-canvas table,
+.wc-ent-canvas .font-mono,
+.wc-ent-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* R1 — neutral bidi-isolated span (used as inline replacement for code/numerics). */
+.wc-ent-iso {
+  unicode-bidi: isolate;
+}
+
+/* R5 — safe wrapping for long tokens (URLs, hashes). */
+.wc-ent-break {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

@@ -52,8 +52,8 @@ export default function SignerEvidenceCard({ signers }: SignerEvidenceCardProps)
             <th className="py-1 font-medium">Role</th>
             <th className="py-1 font-medium">Name</th>
             <th className="py-1 font-medium">Method</th>
-            <th className="py-1 font-medium">Signed at</th>
-            <th className="py-1 font-medium">Signature hash</th>
+            <th className="py-1 font-medium whitespace-nowrap">Signed at</th>
+            <th className="py-1 font-medium whitespace-nowrap">Hash</th>
             <th className="py-1 font-medium">Status</th>
           </tr>
         </thead>
@@ -67,16 +67,18 @@ export default function SignerEvidenceCard({ signers }: SignerEvidenceCardProps)
               <td className="py-1 font-medium">{roleLabel(signer.role)}</td>
               <td className="py-1">{signer.displayName}</td>
               <td className="py-1">{methodLabel(signer.method)}</td>
-              <td className="py-1" style={{ color: "var(--wc-ent-fg-muted)" }}>
-                {signer.signedAt ?? "—"}
+              <td className="py-1 whitespace-nowrap" style={{ color: "var(--wc-ent-fg-muted)" }}>
+                {signer.signedAt ? <bdi dir="ltr">{signer.signedAt}</bdi> : "—"}
               </td>
               <td
-                className="py-1 font-mono text-[10px]"
+                className="py-1 font-mono text-[10px] whitespace-nowrap"
                 style={{ color: "var(--wc-ent-fg-muted)" }}
               >
-                {signer.signatureHash
-                  ? `${signer.signatureHash.slice(0, 10)}…`
-                  : "—"}
+                {signer.signatureHash ? (
+                  <bdi dir="ltr">{`${signer.signatureHash.slice(0, 10)}…`}</bdi>
+                ) : (
+                  "—"
+                )}
               </td>
               <td className="py-1">
                 {signer.signedAt ? (

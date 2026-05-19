@@ -26,7 +26,9 @@ export default function EvidencePanel({
       <OtpLogCard attempts={data.otp ?? []} />
       <AuditTrailCard events={data.audit ?? []} />
       <QrVerificationCard qr={data.qr} />
-      <ForensicMetadataCard forensic={data.forensic} />
+      <div className={layout === "two-column" ? "lg:col-span-2" : undefined}>
+        <ForensicMetadataCard forensic={data.forensic} />
+      </div>
     </div>
   );
 }

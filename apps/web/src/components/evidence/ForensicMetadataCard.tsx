@@ -8,7 +8,17 @@ export type ForensicMetadataCardProps = {
   forensic: EvidenceForensicMetadata | undefined;
 };
 
-function Row({ label, value, mono }: { label: string; value?: string; mono?: boolean }) {
+function Row({
+  label,
+  value,
+  mono,
+  isolate,
+}: {
+  label: string;
+  value?: string;
+  mono?: boolean;
+  isolate?: boolean;
+}) {
   return (
     <div className="grid grid-cols-[160px_1fr] gap-3 py-1 text-xs">
       <dt
@@ -18,10 +28,14 @@ function Row({ label, value, mono }: { label: string; value?: string; mono?: boo
         {label}
       </dt>
       <dd
-        className={`break-all ${mono ? "font-mono text-[11px]" : ""}`}
+        className={`wc-ent-break ${mono ? "font-mono text-[11px]" : ""}`}
         style={{ color: value ? "var(--wc-ent-fg-default)" : "var(--wc-ent-fg-muted)" }}
       >
-        {value ?? "—"}
+        {value ? (
+          isolate ? <bdi dir="ltr">{value}</bdi> : value
+        ) : (
+          "\u2014"
+        )}
       </dd>
     </div>
   );
@@ -47,14 +61,14 @@ export default function ForensicMetadataCard({ forensic }: ForensicMetadataCardP
       }}
     >
       <dl>
-        <Row label="Captured at" value={forensic?.capturedAt} />
-        <Row label="IP address" value={forensic?.ip} mono />
-        <Row label="User agent" value={forensic?.userAgent} />
-        <Row label="Geolocation" value={geoText} />
-        <Row label="Signature manifest" value={forensic?.signatureManifestHash} mono />
-        <Row label="PDF binary hash" value={forensic?.pdfBinaryHash} mono />
-        <Row label="Evidence bundle ID" value={forensic?.evidenceBundleId} mono />
-        <Row label="Legal seal reference" value={forensic?.legalSealReference} mono />
+        <Row label="Captured at" value={forensic?.capturedAt} isolate />
+        <Row label="IP address" value={forensic?.ip} mono isolate />
+        <Row label="User agent" value={forensic?.userAgent} isolate />
+        <Row label="Geolocation" value={geoText} isolate />
+        <Row label="Signature manifest" value={forensic?.signatureManifestHash} mono isolate />
+        <Row label="PDF binary hash" value={forensic?.pdfBinaryHash} mono isolate />
+        <Row label="Evidence bundle ID" value={forensic?.evidenceBundleId} mono isolate />
+        <Row label="Legal seal reference" value={forensic?.legalSealReference} mono isolate />
       </dl>
       <div className="mt-2 flex flex-wrap gap-1.5">
         <EnterpriseStatusPill

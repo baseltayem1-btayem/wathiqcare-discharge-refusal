@@ -55,10 +55,14 @@ export default function EnterpriseHeader({
               {patient.name}
             </span>
             {patient.mrn ? (
-              <span style={{ color: "var(--wc-ent-fg-muted)" }}>MRN {patient.mrn}</span>
+              <span style={{ color: "var(--wc-ent-fg-muted)" }}>
+                MRN <bdi dir="ltr">{patient.mrn}</bdi>
+              </span>
             ) : null}
             {patient.nationalId ? (
-              <span style={{ color: "var(--wc-ent-fg-muted)" }}>ID {patient.nationalId}</span>
+              <span style={{ color: "var(--wc-ent-fg-muted)" }}>
+                ID <bdi dir="ltr">{patient.nationalId}</bdi>
+              </span>
             ) : null}
             {patient.department ? (
               <span style={{ color: "var(--wc-ent-fg-muted)" }}>{patient.department}</span>
