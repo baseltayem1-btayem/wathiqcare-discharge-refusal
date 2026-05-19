@@ -89,6 +89,64 @@ interface PreviewResponse {
   contentType?: string | null;
 }
 
+type ValidationStatus = "PASS" | "WARNING" | "FAIL" | "SKIPPED";
+
+interface ValidationCheck {
+  id: string;
+  label: string;
+  status: ValidationStatus;
+  detail?: string;
+}
+
+interface ValidationSection {
+  id: string;
+  label: string;
+  status: ValidationStatus;
+  checks: ValidationCheck[];
+}
+
+interface ValidationReport {
+  generatedAt: string;
+  overallStatus: ValidationStatus;
+  sections: ValidationSection[];
+  notes: string[];
+}
+
+interface RendererCapabilityShape {
+  available: boolean;
+  reasonCode?: string;
+  detail: string;
+  rendererId?: string;
+}
+
+interface ScreenshotManifestItem {
+  id: string;
+  demo: string;
+  language: string;
+  section: string;
+  description: string;
+  suggestedFilename: string;
+}
+
+interface ValidationApiResponse {
+  success: boolean;
+  error?: string;
+  renderer?: string;
+  sampledDemo?: string;
+  sampledLanguage?: string;
+  rendererCapability?: RendererCapabilityShape;
+  report?: ValidationReport;
+  specialtyDemos?: Array<{
+    id: string;
+    labelEn: string;
+    htmlLength: number;
+    warnings: string[];
+    auditHash: string;
+  }>;
+  determinismDrifts?: Array<{ demoId: string; field: string; first: string; second: string }>;
+  screenshotManifest?: ScreenshotManifestItem[];
+}
+
 const DEFAULT_DEMOS: DemoSummary[] = [
   { id: "cardiology", labelEn: "Cardiology — Cardiac Catheterization", labelAr: "أمراض القلب" },
   { id: "general-surgery", labelEn: "General Surgery — Laparoscopic Cholecystectomy", labelAr: "جراحة عامة" },
@@ -120,6 +178,10 @@ export default function DynamicConsentPreviewPage() {
   );
   const [pdfDownloading, setPdfDownloading] = useState<boolean>(false);
   const [pdfNotice, setPdfNotice] = useState<{ kind: "info" | "warn" | "error"; message: string } | null>(null);
+  const [validationLoading, setValidationLoading] = useState<boolean>(false);
+  const [validationReport, setValidationReport] = useState<ValidationApiResponse | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [showValidationPanel, setShowValidationPanel] = useState<boolean>(false);
   const previewFrameRef = useRef<HTMLIFrameElement | null>(null);
 
   const demos = useMemo(
@@ -254,6 +316,33 @@ export default function DynamicConsentPreviewPage() {
     }
   }, [demoId, language]);
 
+  const handleRunValidation = useCallback(async () => {
+    setShowValidationPanel(true);
+    setValidationError(null);
+    setValidationLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("engine", "dynamic-preview");
+      params.set("demo", demoId);
+      params.set("language", language);
+      const response = await fetch(
+        `/api/internal/dynamic-consent/validation?${params.toString()}`,
+      );
+      const data: ValidationApiResponse = await response.json();
+      if (!response.ok || !data.success) {
+        setValidationError(data.error || `Validation failed (HTTP ${response.status})`);
+        setValidationReport(null);
+        return;
+      }
+      setValidationReport(data);
+    } catch (err) {
+      setValidationError(err instanceof Error ? err.message : "Unknown validation error");
+      setValidationReport(null);
+    } finally {
+      setValidationLoading(false);
+    }
+  }, [demoId, language]);
+
   return (
     <div className="min-h-screen bg-slate-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -357,6 +446,15 @@ export default function DynamicConsentPreviewPage() {
                 className="inline-flex items-center justify-center px-3 py-2 rounded-md border border-slate-300 bg-white text-slate-700 text-sm hover:bg-slate-50"
               >
                 {showAuditPanel ? "Hide audit" : "Audit"}
+              </button>
+              <button
+                type="button"
+                onClick={handleRunValidation}
+                disabled={validationLoading}
+                className="inline-flex items-center justify-center px-3 py-2 rounded-md border border-violet-300 bg-violet-50 text-violet-800 text-sm hover:bg-violet-100 disabled:opacity-50"
+                title="Run internal validation suite (RTL, signatures, print, determinism, specialty demos)"
+              >
+                {validationLoading ? "Validating…" : "Run Validation"}
               </button>
             </div>
           </div>
@@ -535,6 +633,41 @@ export default function DynamicConsentPreviewPage() {
           </div>
         )}
 
+        {/* Validation panel */}
+        {showValidationPanel && (
+          <div className="rounded-xl bg-white shadow-sm border border-violet-200 p-5 mb-6">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-violet-700">
+                  Validation &amp; Hardening Suite
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Internal-only static + deterministic validators. Read-only.
+                  Production renderer and workflows untouched.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowValidationPanel(false)}
+                className="text-xs text-slate-500 hover:text-slate-700"
+              >
+                Close
+              </button>
+            </div>
+            {validationLoading && (
+              <div className="animate-pulse text-sm text-slate-500">Running validation…</div>
+            )}
+            {validationError && (
+              <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {validationError}
+              </div>
+            )}
+            {validationReport?.report && (
+              <ValidationReportView report={validationReport.report} extras={validationReport} />
+            )}
+          </div>
+        )}
+
         {/* HTML Preview (sandboxed iframe) */}
         {preview?.html && (
           <div className="rounded-xl bg-white shadow-sm border border-slate-200 overflow-hidden">
@@ -602,6 +735,141 @@ function AuditField({
       >
         {value ?? "—"}
       </div>
+    </div>
+  );
+}
+
+function statusClasses(status: ValidationStatus): string {
+  switch (status) {
+    case "PASS":
+      return "border-emerald-300 bg-emerald-50 text-emerald-800";
+    case "WARNING":
+      return "border-amber-300 bg-amber-50 text-amber-800";
+    case "FAIL":
+      return "border-red-300 bg-red-50 text-red-800";
+    case "SKIPPED":
+    default:
+      return "border-slate-200 bg-slate-50 text-slate-600";
+  }
+}
+
+function ValidationReportView({
+  report,
+  extras,
+}: {
+  report: ValidationReport;
+  extras: ValidationApiResponse;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={`inline-flex items-center px-2.5 py-1 rounded-md border text-xs font-mono ${statusClasses(report.overallStatus)}`}
+        >
+          overall: {report.overallStatus}
+        </span>
+        <span className="inline-flex items-center px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 text-xs font-mono text-slate-700">
+          generated: {report.generatedAt}
+        </span>
+        {extras.rendererCapability && (
+          <span
+            className={`inline-flex items-center px-2.5 py-1 rounded-md border text-xs font-mono ${
+              extras.rendererCapability.available
+                ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                : "border-amber-300 bg-amber-50 text-amber-800"
+            }`}
+          >
+            renderer: {extras.rendererCapability.available ? "available" : extras.rendererCapability.reasonCode ?? "unavailable"}
+          </span>
+        )}
+        {extras.sampledDemo && (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 text-xs font-mono text-slate-700">
+            sampled: {extras.sampledDemo} / {extras.sampledLanguage}
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {report.sections.map((section) => (
+          <div
+            key={section.id}
+            className={`rounded-lg border p-3 ${statusClasses(section.status)}`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-semibold">{section.label}</div>
+              <span className="text-[10px] font-mono uppercase">{section.status}</span>
+            </div>
+            <ul className="space-y-1 text-xs">
+              {section.checks.map((c) => (
+                <li key={c.id} className="flex items-start gap-2">
+                  <span
+                    className={`inline-block min-w-[58px] text-[10px] font-mono uppercase ${
+                      c.status === "FAIL"
+                        ? "text-red-700"
+                        : c.status === "WARNING"
+                          ? "text-amber-700"
+                          : c.status === "SKIPPED"
+                            ? "text-slate-500"
+                            : "text-emerald-700"
+                    }`}
+                  >
+                    {c.status}
+                  </span>
+                  <span className="text-slate-800">
+                    {c.label}
+                    {c.detail ? (
+                      <span className="block text-[11px] text-slate-500 font-mono mt-0.5">
+                        {c.detail}
+                      </span>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      {report.notes.length > 0 && (
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+          <div className="text-[10px] font-semibold uppercase tracking-wider mb-1">Notes</div>
+          <ul className="space-y-0.5 list-disc list-inside">
+            {report.notes.map((n, i) => (
+              <li key={i}>{n}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {extras.determinismDrifts && extras.determinismDrifts.length > 0 && (
+        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs">
+          <div className="text-[10px] font-semibold uppercase tracking-wider mb-1 text-red-700">
+            Deterministic Drifts
+          </div>
+          <ul className="space-y-1 font-mono text-red-800">
+            {extras.determinismDrifts.map((d, i) => (
+              <li key={i}>
+                {d.demoId} · {d.field}: {d.first} → {d.second}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {extras.screenshotManifest && extras.screenshotManifest.length > 0 && (
+        <details className="rounded-md border border-slate-200 bg-white p-3">
+          <summary className="text-xs font-semibold text-slate-700 cursor-pointer">
+            Screenshot Capture Manifest ({extras.screenshotManifest.length})
+          </summary>
+          <ul className="mt-2 space-y-1 text-xs text-slate-700">
+            {extras.screenshotManifest.map((s) => (
+              <li key={s.id} className="font-mono">
+                {s.id} — {s.demo}/{s.language}/{s.section} — {s.suggestedFilename}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   );
 }
