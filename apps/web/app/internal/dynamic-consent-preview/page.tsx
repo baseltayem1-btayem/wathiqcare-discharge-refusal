@@ -17,6 +17,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import {
+  buildPilotRolloutStatus,
+  type PilotRolloutStatus,
+} from "@/modules/consent-engine/pilot";
 
 type RendererMode = "default" | "legal-grade";
 type PreviewLanguage = "en" | "ar" | "bilingual";
@@ -188,6 +192,24 @@ export default function DynamicConsentPreviewPage() {
     () => preview?.availableDemos ?? DEFAULT_DEMOS,
     [preview?.availableDemos],
   );
+
+  const pilotStatus = useMemo<PilotRolloutStatus>(() => {
+    const sp =
+      typeof window !== "undefined" && searchParams
+        ? new URLSearchParams(searchParams.toString())
+        : undefined;
+    return buildPilotRolloutStatus({
+      // Client side cannot safely read the auth subject; leave email
+      // null so eligibility renders the "requires authenticated
+      // runtime check" message rather than leaking a wrong identity.
+      email: null,
+      specialty: demoId,
+      searchParams: sp,
+      featureFlagEnabled: false,
+      renderer: rendererMode,
+      evidenceEnabled,
+    });
+  }, [searchParams, demoId, rendererMode, evidenceEnabled]);
 
   const buildPreviewUrl = useCallback(() => {
     const params = new URLSearchParams();
@@ -475,6 +497,68 @@ export default function DynamicConsentPreviewPage() {
               {pdfNotice.message}
             </div>
           )}
+        </div>
+
+        {/* Pilot Rollout Banner — internal preview only */}
+        <div className="mb-6 rounded-xl bg-amber-50 border-2 border-amber-300 p-5">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="text-base font-bold text-amber-900 uppercase tracking-wide">
+                Internal Pilot Preview Only — Not Active in Production
+              </h2>
+              <p className="text-xs text-amber-800 mt-1 max-w-3xl">
+                Controlled pilot rollout foundation. Default-deny gating, in-memory
+                audit metadata only. No DB writes, no external services, no production
+                workflow change.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white border border-amber-300 text-xs font-mono text-amber-900">
+                phase: {pilotStatus.phase}
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white border border-amber-300 text-xs font-mono text-amber-900">
+                mode: {pilotStatus.rolloutMode}
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white border border-amber-300 text-xs font-mono text-amber-900">
+                production active: {pilotStatus.productionActive ? "yes" : "No"}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-xs">
+            <div className="rounded-md border border-amber-200 bg-white px-3 py-2">
+              <div className="uppercase tracking-wider text-amber-700 font-semibold text-[10px]">
+                Feature gate
+              </div>
+              <div className="font-mono text-slate-800 mt-0.5">
+                {pilotStatus.eligibility.checks.requested
+                  ? "requested (engine=dynamic-preview / pilot=dynamic-consent)"
+                  : "not requested"}
+              </div>
+            </div>
+            <div className="rounded-md border border-amber-200 bg-white px-3 py-2">
+              <div className="uppercase tracking-wider text-amber-700 font-semibold text-[10px]">
+                User eligibility
+              </div>
+              <div className="font-mono text-slate-800 mt-0.5">
+                requires authenticated runtime check
+              </div>
+            </div>
+            <div className="rounded-md border border-amber-200 bg-white px-3 py-2">
+              <div className="uppercase tracking-wider text-amber-700 font-semibold text-[10px]">
+                Specialty eligibility
+              </div>
+              <div className="font-mono text-slate-800 mt-0.5">
+                {pilotStatus.eligibility.checks.specialtyAllowed
+                  ? `allowed (${demoId})`
+                  : `blocked (${demoId})`}
+              </div>
+            </div>
+          </div>
+          <ul className="list-disc list-inside text-[11px] text-amber-900 mt-3 space-y-0.5">
+            {pilotStatus.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
         </div>
 
         {/* Loading / Error states */}
