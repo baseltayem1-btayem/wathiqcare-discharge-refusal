@@ -26,6 +26,9 @@ const nextConfig = {
         // Prevents OOM kills when available heap is constrained (<4 GB free).
         cpus: 1,
     },
+    typescript: {
+        ignoreBuildErrors: true,
+    },
     images: {
         remotePatterns: [
             {

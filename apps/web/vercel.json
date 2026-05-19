@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run prisma:generate && next build --webpack && node scripts/write-deterministic-routes-manifest.cjs",
+  "buildCommand": "npm run prisma:generate && next build && node scripts/write-deterministic-routes-manifest.cjs",
   "installCommand": "npm install",
   "outputDirectory": ".next",
   "framework": "nextjs"

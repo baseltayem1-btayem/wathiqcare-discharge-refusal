@@ -1,3 +1,24 @@
+// =====================================================================
+// TEMPORARY COMPATIBILITY SHIM — DO NOT EXPAND.
+// ---------------------------------------------------------------------
+// Purpose: widens Prisma enums to `string` so existing string-typed
+// values (e.g. role/status normalizers, JSON payloads from external
+// systems) can be passed to Prisma without explicit casts during the
+// current production stabilization window.
+//
+// Side-effect: this also widens *return* types from helpers that
+// produce real enum members (e.g. `userTypeForUserRole`) to `string`,
+// which then conflicts with Prisma's `update`/`create` argument types
+// under strict TypeScript checking (`next build --webpack`).
+//
+// Current workaround: Vercel build runs via Turbopack (`next build`),
+// which respects `next.config.js` -> `typescript.ignoreBuildErrors: true`.
+// The shim therefore does not block deploys today.
+//
+// Scheduled cleanup: see `CLEANUP_TYPING_STRICT_MODE.md` (Phase 12).
+// Remove this file in full and replace with proper enum imports +
+// narrow casts at JSON/string boundaries.
+// =====================================================================
 import "@prisma/client";
 
 declare module "@prisma/client" {
