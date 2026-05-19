@@ -1,7 +1,8 @@
 ﻿import crypto from "node:crypto";
 import path from "node:path";
 import { promises as fs } from "node:fs";
-import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 
 import type { AuthContext } from "@/lib/server/auth";

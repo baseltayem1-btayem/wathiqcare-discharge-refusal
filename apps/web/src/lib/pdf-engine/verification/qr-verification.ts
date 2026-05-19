@@ -1,0 +1,2 @@
+export { buildEvidenceQrData as buildEvidenceQrVerification, buildEvidenceQrPayload } from "@/lib/pdf-engine/evidence/qr-generator";
+export type { BuildEvidenceQrInput as BuildEvidenceQrOptions } from "@/lib/pdf-engine/evidence/qr-generator";

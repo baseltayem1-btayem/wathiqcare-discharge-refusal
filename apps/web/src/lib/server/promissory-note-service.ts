@@ -1,5 +1,6 @@
-import crypto from "node:crypto";
-import { Prisma, PromissoryNoteStatus } from "@prisma/client";
+﻿import crypto from "node:crypto";
+import { Prisma } from "@prisma/client";
+import { PromissoryNoteStatus } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -172,7 +173,7 @@ export async function createTenantPromissoryNote(
       status: PromissoryNoteStatus.ACTIVE,
       documentVersion: payload.documentVersion?.trim() || "1.0",
       documentHash: hashPromissoryPayload(documentPayload),
-      metadata: (payload.metadata ?? documentPayload) as Prisma.InputJsonValue,
+      metadata: (payload.metadata ?? documentPayload) as JsonInputValue,
     },
   });
 

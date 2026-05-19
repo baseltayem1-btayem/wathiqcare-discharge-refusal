@@ -1,5 +1,5 @@
 
-import { TenantRoleStatus } from "@prisma/client";
+import { TenantRoleStatus } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { hasPlatformAccess, requireAuth, requireTenantAccess, requireTenantPermission } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";

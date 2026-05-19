@@ -1,4 +1,4 @@
-import { TenantRoleStatus } from "@prisma/client";
+import { TenantRoleStatus } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import {
     hasPlatformAccess,

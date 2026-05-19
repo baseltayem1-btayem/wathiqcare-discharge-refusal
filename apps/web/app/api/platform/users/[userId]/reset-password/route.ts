@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { UserType } from "@prisma/client";
+import { UserType } from "@/lib/server/prisma-enums";
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { setUserPasswordByAdmin } from "@/lib/server/admin-password-reset";
 import { ApiError, handleApiError } from "@/lib/server/http";

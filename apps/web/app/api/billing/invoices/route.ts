@@ -1,14 +1,17 @@
-import { InvoiceStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { hasPlatformAccess, requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError, jsonSuccess } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 
+type InvoiceStatus = "DRAFT" | "OPEN" | "PAID" | "VOID" | "UNCOLLECTIBLE";
+
+const INVOICE_STATUSES: InvoiceStatus[] = ["DRAFT", "OPEN", "PAID", "VOID", "UNCOLLECTIBLE"];
+
 function parseInvoiceStatus(value: string | null): InvoiceStatus | null {
   if (!value) return null;
   const normalized = value.toUpperCase();
-  return Object.values(InvoiceStatus).includes(normalized as InvoiceStatus)
+  return INVOICE_STATUSES.includes(normalized as InvoiceStatus)
     ? (normalized as InvoiceStatus)
     : null;
 }

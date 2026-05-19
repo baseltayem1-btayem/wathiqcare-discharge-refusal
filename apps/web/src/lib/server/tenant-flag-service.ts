@@ -1,4 +1,5 @@
-import { FeatureFlagScope, Prisma } from "@prisma/client";
+﻿import { Prisma } from "@prisma/client";
+import { FeatureFlagScope } from "@/lib/server/prisma-enums";
 import { FEATURE_FLAGS, type FeatureFlag } from "@/lib/config/feature-flags";
 import { getPrisma } from "@/lib/server/prisma";
 import type { ModuleKey } from "@/lib/modules/catalog";
@@ -31,7 +32,7 @@ type UpsertArgs = {
   tenantId?: string | null;
   moduleKey?: ModuleKey | null;
   updatedBy?: string | null;
-  metadata?: Prisma.InputJsonValue;
+  metadata?: JsonInputValue;
 };
 
 function normalizeFlagKey(key: string): FeatureFlag {

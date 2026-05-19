@@ -4,6 +4,13 @@ import { requireAuth } from "@/lib/server/auth";
 import { requireTenantId } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
 
+type CaseVolumeRow = {
+  id: string;
+  createdAt: Date;
+  closedAt: Date | null;
+  status: string | null;
+};
+
 /**
  * GET /api/analytics/case-volume
  * Get case volume time-series data
@@ -34,7 +41,7 @@ export async function GET(request: NextRequest) {
     void branchId;
 
     // Get all cases in date range
-    const cases = await prisma.case.findMany({
+    const cases: CaseVolumeRow[] = await prisma.case.findMany({
       where: caseWhere,
       select: {
         id: true,
@@ -77,6 +84,13 @@ export async function GET(request: NextRequest) {
         closed: volume.closed,
       }));
 
+    let totalClosed = 0;
+    for (const caseItem of cases) {
+      if (caseItem.status === "CLOSED") {
+        totalClosed += 1;
+      }
+    }
+
     return NextResponse.json({
       days,
       startDate: startDate.toISOString(),
@@ -84,7 +98,7 @@ export async function GET(request: NextRequest) {
       data,
       summary: {
         totalCreated: cases.length,
-        totalClosed: cases.filter((c) => c.status === "CLOSED").length,
+        totalClosed,
         avgPerDay: Math.round(cases.length / days),
       },
     });

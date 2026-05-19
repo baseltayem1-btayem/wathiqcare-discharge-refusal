@@ -2,7 +2,8 @@
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import puppeteer from "puppeteer";
 import chromium from "@sparticuz/chromium";

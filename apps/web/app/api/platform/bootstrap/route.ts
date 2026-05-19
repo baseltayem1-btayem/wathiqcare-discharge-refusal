@@ -1,4 +1,4 @@
-import { UserType } from "@prisma/client";
+import { UserType } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";

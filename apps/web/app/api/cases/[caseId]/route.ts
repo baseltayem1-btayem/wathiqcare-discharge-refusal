@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { CaseStatus } from "@prisma/client";
+import { CaseStatus } from "@/lib/server/prisma-enums";
 import { getPrisma } from "@/lib/server/prisma";
 import { requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";

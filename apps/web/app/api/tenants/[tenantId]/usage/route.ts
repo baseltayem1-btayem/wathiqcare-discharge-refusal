@@ -1,4 +1,4 @@
-import { UsageMetric } from "@prisma/client";
+import { UsageMetric } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { requireTenantAccess } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";

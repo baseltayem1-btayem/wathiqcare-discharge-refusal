@@ -1,4 +1,4 @@
-import { LegalReadinessStatus } from "@prisma/client";
+import { LegalReadinessStatus } from "@/lib/server/prisma-enums";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";

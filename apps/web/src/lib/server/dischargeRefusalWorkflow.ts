@@ -1,4 +1,5 @@
-﻿import { CaseStatus, DocumentStatus, DocumentType, Prisma } from "@prisma/client";
+﻿import { Prisma } from "@prisma/client";
+import { CaseStatus, DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import {
     requireTenantId,

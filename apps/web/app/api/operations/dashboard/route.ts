@@ -1,4 +1,4 @@
-import { SlaState } from "@prisma/client";
+import { SlaState } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError, logApiFailure } from "@/lib/server/http";

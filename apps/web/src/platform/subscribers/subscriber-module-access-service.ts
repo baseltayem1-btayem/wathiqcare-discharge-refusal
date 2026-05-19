@@ -1,4 +1,4 @@
-import { SubscriberModuleAccessStatus } from "@prisma/client";
+import { SubscriberModuleAccessStatus } from "@/lib/server/prisma-enums";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { MODULE_DEFINITIONS, type ModuleKey } from "@/lib/modules/catalog";

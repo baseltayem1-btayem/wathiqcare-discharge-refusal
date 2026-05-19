@@ -1,4 +1,4 @@
-import { OperationPriority } from "@prisma/client";
+import { OperationPriority } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId, requireTenantPermissionForAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";

@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+﻿import { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { getPrisma } from "@/lib/server/prisma";
 
@@ -67,7 +67,7 @@ export async function logReportAccess(args: {
           ? undefined
           : args.metadataJson === null
             ? Prisma.JsonNull
-            : (args.metadataJson as Prisma.InputJsonValue),
+            : (args.metadataJson as JsonInputValue),
     },
   }).catch(() => null);
 }

@@ -48,6 +48,8 @@ interface PatientData {
   id: string;
   mrn: string;
   name: string;
+  caseId?: string;
+  caseNumber?: string | null;
   dateOfBirth?: string;
   gender?: string;
   nationalId?: string;
@@ -325,8 +327,23 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
           method: "POST",
           body: JSON.stringify({
             patientId: patientData.id,
+            patientMrn: patientData.mrn,
+            patientCaseId: patientData.caseId,
             encounterId: encounterData.id,
+            encounterNumber: encounterData.encounterId,
+            encounterCaseNumber: encounterData.caseNumber,
+            encounterAdmissionDate: encounterData.admissionDate,
+            encounterDepartment: encounterData.department,
+            encounterPhysician: encounterData.physician,
+            encounterPhysicianLicense: encounterData.physicianLicense,
+            encounterPhysicianSpecialty: encounterData.physicianSpecialty,
+            encounterDiagnosis: encounterData.diagnosis,
+            encounterProcedure: encounterData.procedure,
+            encounterSyncStatus: encounterData.syncStatus,
+            encounterSource: encounterData.source,
             templateId: selectedTemplate.id,
+            templateVersionId: selectedTemplate.templateVersionId,
+            language: selectedTemplate.language,
           }),
         }
       );

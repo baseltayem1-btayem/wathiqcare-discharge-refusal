@@ -1,4 +1,5 @@
-﻿import { PlanCode, Prisma } from "@prisma/client";
+﻿import { Prisma } from "@prisma/client";
+import { PlanCode } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";

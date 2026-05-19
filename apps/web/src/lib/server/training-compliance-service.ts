@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -315,7 +315,7 @@ export async function saveTrainingComplianceEntry(
   const nextMetadata = {
     ...(currentMetadata ?? {}),
     trainingComplianceRegister: result.items,
-  } as Prisma.InputJsonValue;
+  } as JsonInputValue;
 
   await prisma().tenant.update({
     where: { id: auth.tenant_id },

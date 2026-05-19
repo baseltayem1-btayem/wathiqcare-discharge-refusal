@@ -1,10 +1,10 @@
+import { Prisma } from "@prisma/client";
 import {
   BillingInterval,
-  Prisma,
   PlanCode,
   SubscriptionEventType,
   SubscriptionStatus,
-} from "@prisma/client";
+} from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/server/prisma";
 import {

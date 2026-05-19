@@ -1,4 +1,4 @@
-import { DataClassification } from "@prisma/client";
+import { DataClassification } from "@/lib/server/prisma-enums";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { dataClassificationPolicy, type DataClassificationKey } from "@/config/data-classification-policy";

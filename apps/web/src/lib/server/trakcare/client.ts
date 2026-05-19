@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+﻿import { Prisma } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { getTrakCareConfig, getTrakCareReadiness, type TrakCareConfig } from "@/lib/server/trakcare/config";
@@ -64,9 +64,9 @@ function redactDeep(value: unknown): unknown {
   return value;
 }
 
-function toInputJson(value: unknown): Prisma.InputJsonValue {
+function toInputJson(value: unknown): JsonInputValue {
   if (value === null || value === undefined) {
-    return { value: null } as Prisma.InputJsonValue;
+    return { value: null } as JsonInputValue;
   }
 
   if (
@@ -76,10 +76,10 @@ function toInputJson(value: unknown): Prisma.InputJsonValue {
     Array.isArray(value) ||
     typeof value === "object"
   ) {
-    return value as Prisma.InputJsonValue;
+    return value as JsonInputValue;
   }
 
-  return String(value) as Prisma.InputJsonValue;
+  return String(value) as JsonInputValue;
 }
 
 function enforceRateLimit(config: TrakCareConfig, context: TrakCareRequestContext): void {

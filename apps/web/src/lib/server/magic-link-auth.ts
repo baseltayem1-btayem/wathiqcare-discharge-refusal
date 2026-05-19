@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { UserType } from "@prisma/client";
+import { UserType } from "@/lib/server/prisma-enums";
 import { ApiError } from "@/lib/server/http";
 import {
   evaluatePostAuthSnapshot,

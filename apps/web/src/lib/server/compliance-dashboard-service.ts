@@ -1,4 +1,4 @@
-import { CaseType } from "@prisma/client";
+import { CaseType } from "@/lib/server/prisma-enums";
 import type { AuthContext } from "@/lib/server/auth";
 import { requireTenantId } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";

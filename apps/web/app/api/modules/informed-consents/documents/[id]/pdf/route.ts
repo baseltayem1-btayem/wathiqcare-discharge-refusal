@@ -8,6 +8,11 @@ import QRCode from "qrcode";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
+import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
+import {
+  buildInformedConsentEvidenceHtmlPreview,
+  isInformedConsentPdfEnginePreviewEnabled,
+} from "@/lib/server/informed-consent-pdf-preview-adapter";
 
 
 export const dynamic = "force-dynamic";
@@ -314,6 +319,8 @@ function css(direction: "rtl" | "ltr"): string {
     }
     .sign .box { display: flex; flex-direction: column; gap: 6px; }
     .sign strong { color: #002B5C; font-size: 8.8pt; }
+    .sign .sig-meta { font-size: 7.4pt; color: #475569; line-height: 1.45; }
+    .sign .sig-image { width: 120px; height: 48px; object-fit: contain; border-bottom: 1px solid #cbd5e1; background: #fff; }
     .qr { align-items: center; text-align: center; }
     .qr img { width: 82px; height: 82px; border: 1px solid #cdd6df; background: #fff; }
     .qr small { margin-top: 6px; display: block; font-size: 7.5pt; word-break: break-all; }
@@ -328,6 +335,44 @@ function css(direction: "rtl" | "ltr"): string {
       z-index: 1;
     }
   `;
+}
+
+type SignaturePresentation = ReturnType<typeof resolveConsentSignaturePresentation>;
+
+function methodLabel(method: string, isAr: boolean): string {
+  if (method === "combined-tablet-and-otp") return isAr ? "توقيع لوحي + OTP" : "Tablet + OTP";
+  if (method === "tablet-drawn-signature") return isAr ? "توقيع يدوي على جهاز لوحي" : "Tablet Handwritten Signature";
+  if (method === "combined-biometric-and-otp") return isAr ? "تحقق بصمة + OTP" : "Biometric + OTP";
+  if (method === "biometric-fingerprint") return isAr ? "تحقق بصمة" : "Biometric Verification";
+  if (method === "OTP") return "OTP";
+  if (method === "WRITTEN") return isAr ? "توقيع كتابي" : "Written Signature";
+  return isAr ? "توقيع إلكتروني" : "Electronic Signature";
+}
+
+function signatureRoleBlock(args: {
+  evidenceLabel: string;
+  isAr: boolean;
+  label: string;
+  signature: SignaturePresentation | null;
+  signedAtLabel: string;
+}): string {
+  if (!args.signature) {
+    return `<div class="box"><strong>${escapeHtml(args.label)}</strong><span>______________________</span></div>`;
+  }
+
+  const imageHtml = args.signature.signatureImageDataUrl
+    ? `<img class="sig-image" src="${escapeHtml(args.signature.signatureImageDataUrl)}" alt="Signature image" />`
+    : "<span>______________________</span>";
+  const metaLines = [
+    `<div>${escapeHtml(args.signature.signerName)}</div>`,
+    `<div>${escapeHtml(methodLabel(args.signature.method, args.isAr))}</div>`,
+    args.signature.signedAt ? `<div>${escapeHtml(args.signedAtLabel)}: ${escapeHtml(formatDate(args.signature.signedAt, args.isAr ? "ar" : "en"))}</div>` : "",
+    args.signature.evidenceId ? `<div>${escapeHtml(args.evidenceLabel)}: ${escapeHtml(args.signature.evidenceId)}</div>` : "",
+    args.signature.deviceReference ? `<div>${escapeHtml(args.isAr ? "مرجع الجهاز" : "Device Ref")}: ${escapeHtml(args.signature.deviceReference)}</div>` : "",
+    args.signature.transactionId ? `<div>${escapeHtml(args.isAr ? "معرف العملية" : "Transaction ID")}: ${escapeHtml(args.signature.transactionId)}</div>` : "",
+  ].filter(Boolean).join("");
+
+  return `<div class="box"><strong>${escapeHtml(args.label)}</strong>${imageHtml}<div class="sig-meta">${metaLines}</div></div>`;
 }
 
 function html(args: {
@@ -372,6 +417,9 @@ function html(args: {
   qrLabel: string;
   qrDataUrl: string;
   logoSrc: string;
+  patientSignature: SignaturePresentation | null;
+  physicianSignature: SignaturePresentation | null;
+  witnessSignature: SignaturePresentation | null;
 }): string {
   return `<!doctype html>
 <html lang="${args.isAr ? "ar" : "en"}" dir="${args.isAr ? "rtl" : "ltr"}">
@@ -455,9 +503,27 @@ function html(args: {
       </article>
 
       <footer class="sign">
-        <div class="box"><strong>${escapeHtml(args.patientSignatureLabel)}</strong><span>______________________</span></div>
-        <div class="box"><strong>${escapeHtml(args.physicianSignatureLabel)}</strong><span>______________________</span></div>
-        <div class="box"><strong>${escapeHtml(args.witnessSignatureLabel)}</strong><span>______________________</span></div>
+        ${signatureRoleBlock({
+          evidenceLabel: args.isAr ? "معرف الدليل" : "Evidence ID",
+          isAr: args.isAr,
+          label: args.patientSignatureLabel,
+          signature: args.patientSignature,
+          signedAtLabel: args.isAr ? "وقت التوقيع" : "Signed At",
+        })}
+        ${signatureRoleBlock({
+          evidenceLabel: args.isAr ? "معرف الدليل" : "Evidence ID",
+          isAr: args.isAr,
+          label: args.physicianSignatureLabel,
+          signature: args.physicianSignature,
+          signedAtLabel: args.isAr ? "وقت التوقيع" : "Signed At",
+        })}
+        ${signatureRoleBlock({
+          evidenceLabel: args.isAr ? "معرف الدليل" : "Evidence ID",
+          isAr: args.isAr,
+          label: args.witnessSignatureLabel,
+          signature: args.witnessSignature,
+          signedAtLabel: args.isAr ? "وقت التوقيع" : "Signed At",
+        })}
         <div class="box qr"><img src="${args.qrDataUrl}" alt="QR" /><small>${escapeHtml(args.qrLabel)}</small></div>
       </footer>
       <div class="doc-footer">
@@ -505,6 +571,9 @@ export async function GET(
           orderBy: { updatedAt: "desc" },
           take: 1,
           select: { physicianIdentifier: true },
+        },
+        signatures: {
+          orderBy: { signedAt: "asc" },
         },
       },
     });
@@ -568,6 +637,40 @@ export async function GET(
     });
 
     const output = html({
+      patientSignature: resolveConsentSignaturePresentation(
+        (() => {
+          const signature = doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN");
+          return signature
+            ? {
+              metadata: signature.metadata,
+              signatureMethod: signature.signatureMethod,
+              signedAt: signature.signedAt,
+              signerName: signature.signerName,
+            }
+            : { metadata: null, signatureMethod: null, signedAt: null, signerName: "" };
+        })(),
+      ).signerName ? resolveConsentSignaturePresentation({
+        metadata: (doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN")?.metadata) || null,
+        signatureMethod: doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN")?.signatureMethod || null,
+        signedAt: doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN")?.signedAt || null,
+        signerName: doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN")?.signerName || "",
+      }) : null,
+      physicianSignature: doc.signatures.find((item) => item.role === "PHYSICIAN")
+        ? resolveConsentSignaturePresentation({
+          metadata: doc.signatures.find((item) => item.role === "PHYSICIAN")?.metadata || null,
+          signatureMethod: doc.signatures.find((item) => item.role === "PHYSICIAN")?.signatureMethod || null,
+          signedAt: doc.signatures.find((item) => item.role === "PHYSICIAN")?.signedAt || null,
+          signerName: doc.signatures.find((item) => item.role === "PHYSICIAN")?.signerName || "",
+        })
+        : null,
+      witnessSignature: doc.signatures.find((item) => item.role === "WITNESS")
+        ? resolveConsentSignaturePresentation({
+          metadata: doc.signatures.find((item) => item.role === "WITNESS")?.metadata || null,
+          signatureMethod: doc.signatures.find((item) => item.role === "WITNESS")?.signatureMethod || null,
+          signedAt: doc.signatures.find((item) => item.role === "WITNESS")?.signedAt || null,
+          signerName: doc.signatures.find((item) => item.role === "WITNESS")?.signerName || "",
+        })
+        : null,
       isAr,
       title: isAr ? "نموذج الموافقة المستنيرة" : "Informed Consent Document",
       subtitle: isAr ? doc.template.titleAr : doc.template.titleEn,
@@ -610,6 +713,38 @@ export async function GET(
       qrDataUrl,
       logoSrc: await resolveImcLogoSource(),
     });
+
+    if (isInformedConsentPdfEnginePreviewEnabled()) {
+      await buildInformedConsentEvidenceHtmlPreview({
+        document: {
+          id: doc.id,
+          tenantId: doc.tenantId,
+          consentReference: doc.consentReference,
+          documentVersion: doc.documentVersion,
+          patientName: doc.patientName,
+          mrn: doc.mrn,
+          physicianName: doc.physicianName,
+          physicianLicense: doc.physicianLicense,
+          physicianSpecialty: doc.physicianSpecialty,
+          plannedProcedure: doc.plannedProcedure,
+          procedureDetails: doc.procedureDetails,
+          diagnosis: doc.diagnosis,
+          createdAt: doc.createdAt,
+          template: {
+            titleAr: doc.template.titleAr,
+            titleEn: doc.template.titleEn,
+            consentType: doc.template.consentType,
+            specialty: doc.template.specialty,
+          },
+          case: doc.case,
+          auditChecksum: doc.auditChecksum,
+          immutablePdfHash: doc.immutablePdfHash,
+          generatedByModel: doc.generatedByModel,
+        },
+        origin: process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin,
+        language: isAr ? "ar" : "en",
+      });
+    }
 
     browser = await launchBrowser();
     const page = await browser.newPage();

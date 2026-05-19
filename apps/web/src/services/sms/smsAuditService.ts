@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+﻿import { Prisma } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 
 const prisma = () => getPrisma();
@@ -26,7 +26,7 @@ export async function recordSmsAuditAttempt(args: SmsAuditArgs): Promise<void> {
       status: args.status,
       statusCode: args.statusCode ?? null,
       failureReason: args.failureReason ?? null,
-      metadataJson: (args.metadata ?? {}) as Prisma.InputJsonValue,
+      metadataJson: (args.metadata ?? {}) as JsonInputValue,
     },
   });
 }

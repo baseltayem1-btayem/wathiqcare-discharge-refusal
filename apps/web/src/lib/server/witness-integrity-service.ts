@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+﻿import { createHash } from "crypto";
 import type { Prisma } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import { asRecord, readBoolean, readString } from "@/lib/server/compliance-utils";
@@ -59,10 +59,10 @@ const CLINICAL_ROLE_TOKENS = [
   "nurse",
   "clinical",
   "medical",
-  "طبيب",
-  "ممرض",
-  "سريري",
-  "استشاري",
+  "Ø·Ø¨ÙŠØ¨",
+  "Ù…Ù…Ø±Ø¶",
+  "Ø³Ø±ÙŠØ±ÙŠ",
+  "Ø§Ø³ØªØ´Ø§Ø±ÙŠ",
 ];
 
 function normalizeString(value: string | null | undefined): string {
@@ -333,6 +333,6 @@ export function assertWitnessIntegrityOrThrow(metadataJson: Prisma.JsonValue | n
   });
 }
 
-export function toWitnessesMetadataValue(witnesses: LegalWitnessRecord[]): Prisma.InputJsonValue {
-  return witnesses as unknown as Prisma.InputJsonValue;
+export function toWitnessesMetadataValue(witnesses: LegalWitnessRecord[]): JsonInputValue {
+  return witnesses as unknown as JsonInputValue;
 }

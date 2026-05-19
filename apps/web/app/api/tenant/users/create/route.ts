@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { InvitationStatus, MembershipRole, MembershipStatus } from "@prisma/client";
+import { InvitationStatus, MembershipRole, MembershipStatus } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantPermissionForAuth } from "@/lib/server/auth";
 import { extractDomain, isTenantDomainAllowed, normalizeEmail } from "@/lib/server/auth-domain-policy";

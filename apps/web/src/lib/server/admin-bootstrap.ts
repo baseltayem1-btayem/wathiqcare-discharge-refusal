@@ -1,4 +1,11 @@
-﻿import { BillingInterval, MembershipRole, MembershipStatus, PlanCode, Prisma, SubscriptionStatus } from "@prisma/client";
+﻿import { Prisma } from "@prisma/client";
+import {
+  BillingInterval,
+  MembershipRole,
+  MembershipStatus,
+  PlanCode,
+  SubscriptionStatus,
+} from "@/lib/server/prisma-enums";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { canonicalizeUserRole, membershipRoleForUserRole } from "@/lib/server/roles";

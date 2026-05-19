@@ -1,10 +1,10 @@
+﻿import { Prisma } from "@prisma/client";
 import {
   BillingInterval,
   PlanCode,
-  Prisma,
   SubscriptionStatus,
   UsageMetric,
-} from "@prisma/client";
+} from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
@@ -188,7 +188,7 @@ export async function recordUsage(
   tenantId: string,
   metric: UsageMetric,
   incrementBy: bigint,
-  metadata?: Prisma.InputJsonValue,
+  metadata?: JsonInputValue,
 ): Promise<void> {
   const periodDate = startOfUtcDay();
 
@@ -311,7 +311,7 @@ type AuditArgs = {
   moduleKey?: string | null;
   requestId?: string | null;
   correlationId?: string | null;
-  metadataJson?: Prisma.InputJsonValue;
+  metadataJson?: JsonInputValue;
   request?: NextRequest;
 };
 

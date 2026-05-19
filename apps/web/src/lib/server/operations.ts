@@ -1,12 +1,12 @@
+﻿import { Prisma } from "@prisma/client";
 import {
   EscalationLevel,
   NotificationChannel,
   NotificationStatus,
   OperationDepartment,
   OperationPriority,
-  Prisma,
   SlaState,
-} from "@prisma/client";
+} from "@/lib/server/prisma-enums";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -227,7 +227,7 @@ export async function createOperationNotification(args: {
       message: args.message,
       status: NotificationStatus.SENT,
       sentAt: now,
-      metadata: args.metadata as Prisma.InputJsonValue | undefined,
+      metadata: args.metadata as JsonInputValue | undefined,
     },
   ];
 
@@ -243,7 +243,7 @@ export async function createOperationNotification(args: {
       message: args.message,
       status: NotificationStatus.SENT,
       sentAt: now,
-      metadata: args.metadata as Prisma.InputJsonValue | undefined,
+      metadata: args.metadata as JsonInputValue | undefined,
     });
   }
 

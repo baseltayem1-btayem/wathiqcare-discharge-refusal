@@ -1,4 +1,5 @@
-﻿import { CaseStatus, CaseType, Prisma, UsageMetric } from "@prisma/client";
+﻿import { Prisma } from "@prisma/client";
+import { CaseStatus, CaseType, UsageMetric } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId, requireTenantOperationalAccess } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";

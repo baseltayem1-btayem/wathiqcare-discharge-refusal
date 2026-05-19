@@ -1,4 +1,4 @@
-import { CaseStatus, DocumentStatus } from "@prisma/client";
+import { CaseStatus, DocumentStatus } from "@/lib/server/prisma-enums";
 import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/server/auth";
 import { handleApiError, jsonSuccess } from "@/lib/server/http";

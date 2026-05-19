@@ -3,7 +3,7 @@ import {
   MembershipStatus,
   PlanCode,
   SubscriptionStatus,
-} from "@prisma/client";
+} from "@/lib/server/prisma-enums";
 import { NextRequest } from "next/server";
 import { hasPlatformAccess, requireAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError, jsonSuccess } from "@/lib/server/http";

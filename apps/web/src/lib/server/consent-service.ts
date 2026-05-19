@@ -1,5 +1,6 @@
 ﻿import crypto from "node:crypto";
-import { ConsentMethod, Prisma, type ConsentRecord } from "@prisma/client";
+import { Prisma, type ConsentRecord } from "@prisma/client";
+import { ConsentMethod } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";

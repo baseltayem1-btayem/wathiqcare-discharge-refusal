@@ -1,4 +1,4 @@
-import { MembershipStatus, UserType } from "@prisma/client";
+import { MembershipStatus, UserType } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAccess } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";

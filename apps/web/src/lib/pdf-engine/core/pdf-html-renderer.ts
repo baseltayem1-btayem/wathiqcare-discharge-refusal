@@ -1,0 +1,1 @@
+export { renderPdfHtmlDocument } from "@/lib/pdf-engine/core/pdf-renderer";

@@ -1,4 +1,4 @@
-import { DsrRequestStatus, DsrRequestType } from "@prisma/client";
+import { DsrRequestStatus, DsrRequestType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";

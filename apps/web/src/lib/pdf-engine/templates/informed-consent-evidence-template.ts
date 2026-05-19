@@ -1,0 +1,1 @@
+export { buildInformedConsentEvidenceHtml, buildInformedConsentTemplatePayload, renderInformedConsentTemplate } from "@/lib/pdf-engine/templates/informed-consent.template";

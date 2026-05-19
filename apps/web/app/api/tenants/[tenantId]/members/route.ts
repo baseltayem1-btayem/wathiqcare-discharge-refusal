@@ -1,4 +1,4 @@
-import { MembershipRole, MembershipStatus } from "@prisma/client";
+import { MembershipRole, MembershipStatus } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import {
   hasPlatformAccess,

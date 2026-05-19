@@ -1,4 +1,4 @@
-import { BackupJobStatus, DataClassification } from "@prisma/client";
+import { BackupJobStatus, DataClassification } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";

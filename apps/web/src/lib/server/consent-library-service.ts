@@ -1,4 +1,5 @@
 ﻿import crypto from "node:crypto";
+import { Prisma } from "@prisma/client";
 import {
   ConsentAlertLevel,
   ConsentCommitteeType,
@@ -11,8 +12,7 @@ import {
   ConsentSectionKind,
   ConsentSignatureRole,
   ConsentTemplateStatus,
-  Prisma,
-} from "@prisma/client";
+} from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";

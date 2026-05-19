@@ -1,4 +1,4 @@
-import { ConsentSectionKind } from "@prisma/client";
+import { ConsentSectionKind } from "@/lib/server/prisma-enums";
 import { AR_CONSENT_TEXT } from "@/lib/server/consent.ar";
 import { EN_CONSENT_TEXT } from "@/lib/server/consent.en";
 

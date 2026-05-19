@@ -1,4 +1,4 @@
-import { SubscriptionStatus } from "@prisma/client";
+import { SubscriptionStatus } from "@/lib/server/prisma-enums";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 

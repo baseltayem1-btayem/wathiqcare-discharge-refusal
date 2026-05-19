@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -366,7 +366,7 @@ export async function savePolicyAttestationEntry(
   const nextMetadata = {
     ...(currentMetadata ?? {}),
     policyAttestationRegister: result.items,
-  } as Prisma.InputJsonValue;
+  } as JsonInputValue;
 
   await prisma().tenant.update({
     where: { id: auth.tenant_id },

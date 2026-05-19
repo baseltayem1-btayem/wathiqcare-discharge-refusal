@@ -373,7 +373,8 @@ function isRefusalCase(caseRecord: { workflowType: string | null; caseType: Case
 	);
 }
 import type { AuditLog } from "@prisma/client";
-import { CaseStatus, CaseType, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { CaseStatus, CaseType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import { requireTenantId, type AuthContext } from "@/lib/server/auth";
 

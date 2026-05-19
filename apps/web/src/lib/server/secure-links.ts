@@ -1,5 +1,6 @@
-import crypto from "node:crypto";
-import { DocumentStatus, DocumentType, Prisma } from "@prisma/client";
+﻿import crypto from "node:crypto";
+import { Prisma } from "@prisma/client";
+import { DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
@@ -183,7 +184,7 @@ function getNestedString(source: Record<string, unknown> | null, keys: string[])
 }
 
 function buildDefaultLegalNotice(): string {
-  return "أقر بأنني أو من أمثله قد اطّلعت على القرار الطبي والتعليمات المرافقة له، وتم شرح المخاطر والبدائل العلاجية والنتائج المحتملة بشكل واضح. أي قرار يتم تسجيله عبر هذا الرابط يُعد توثيقًا رسميًا وملزمًا يُحفظ ضمن سجل الحالة الطبية.";
+  return "Ø£Ù‚Ø± Ø¨Ø£Ù†Ù†ÙŠ Ø£Ùˆ Ù…Ù† Ø£Ù…Ø«Ù„Ù‡ Ù‚Ø¯ Ø§Ø·Ù‘Ù„Ø¹Øª Ø¹Ù„Ù‰ Ø§Ù„Ù‚Ø±Ø§Ø± Ø§Ù„Ø·Ø¨ÙŠ ÙˆØ§Ù„ØªØ¹Ù„ÙŠÙ…Ø§Øª Ø§Ù„Ù…Ø±Ø§ÙÙ‚Ø© Ù„Ù‡ØŒ ÙˆØªÙ… Ø´Ø±Ø­ Ø§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© ÙˆØ§Ù„Ù†ØªØ§Ø¦Ø¬ Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø© Ø¨Ø´ÙƒÙ„ ÙˆØ§Ø¶Ø­. Ø£ÙŠ Ù‚Ø±Ø§Ø± ÙŠØªÙ… ØªØ³Ø¬ÙŠÙ„Ù‡ Ø¹Ø¨Ø± Ù‡Ø°Ø§ Ø§Ù„Ø±Ø§Ø¨Ø· ÙŠÙØ¹Ø¯ ØªÙˆØ«ÙŠÙ‚Ù‹Ø§ Ø±Ø³Ù…ÙŠÙ‹Ø§ ÙˆÙ…Ù„Ø²Ù…Ù‹Ø§ ÙŠÙØ­ÙØ¸ Ø¶Ù…Ù† Ø³Ø¬Ù„ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ©.";
 }
 
 function buildCaseReference(caseRecord: Pick<CaseContext, "id" | "caseNumber">): string {
@@ -342,7 +343,7 @@ function isMissingTableError(error: unknown): boolean {
 function parseSecureLinkPayload(document: { payloadJson: unknown }): SecureLinkPayload {
   const payload = asRecord(document.payloadJson);
   if (!payload) {
-    throw new ApiError(500, "بيانات الرابط الآمن تالفة");
+    throw new ApiError(500, "Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø¢Ù…Ù† ØªØ§Ù„ÙØ©");
   }
   return payload as unknown as SecureLinkPayload;
 }
@@ -481,12 +482,12 @@ function mapPublicCase(payload: SecureLinkPayload): PublicSecureCase {
 
 function ensureLinkActive(payload: SecureLinkPayload): void {
   if (payload.revoked_at) {
-    throw new ApiError(410, "تم إلغاء الرابط الآمن");
+    throw new ApiError(410, "ØªÙ… Ø¥Ù„ØºØ§Ø¡ Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø¢Ù…Ù†");
   }
 
   const expiresAt = new Date(payload.expires_at);
   if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now()) {
-    throw new ApiError(410, "انتهت صلاحية الرابط الآمن");
+    throw new ApiError(410, "Ø§Ù†ØªÙ‡Øª ØµÙ„Ø§Ø­ÙŠØ© Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø¢Ù…Ù†");
   }
 }
 
@@ -520,7 +521,7 @@ async function getStoredSecureLinkByToken(token: string): Promise<StoredSecureLi
       reason: "not_found",
       secure_token_hash: tokenHash,
     });
-    throw new ApiError(404, "الرابط الآمن غير موجود");
+    throw new ApiError(404, "Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø¢Ù…Ù† ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯");
   }
 
   return document;
@@ -594,12 +595,12 @@ export async function createSecureLink(args: {
       status: DocumentStatus.GENERATED,
       documentCode: `${SECURE_LINK_CODE_PREFIX}${tokenHash}`,
       titleEn: "Secure Patient Decision Link",
-      titleAr: "رابط قرار خروج آمن",
+      titleAr: "Ø±Ø§Ø¨Ø· Ù‚Ø±Ø§Ø± Ø®Ø±ÙˆØ¬ Ø¢Ù…Ù†",
       templateKey: SECURE_LINK_TEMPLATE_KEY,
       versionLabel: "1.0",
       fileName: `secure_link_${args.caseId}.json`,
       mimeType: "application/json",
-      payloadJson: payload as unknown as Prisma.InputJsonValue,
+      payloadJson: payload as unknown as JsonInputValue,
       sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(payload), "utf8")),
       generatedByUserId: args.userId,
       metadata: {
@@ -696,7 +697,7 @@ export async function revokeSecureLink(args: {
     where: { id: document.id },
     data: {
       status: DocumentStatus.ARCHIVED,
-      payloadJson: updatedPayload as unknown as Prisma.InputJsonValue,
+      payloadJson: updatedPayload as unknown as JsonInputValue,
       sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
     },
   });
@@ -726,7 +727,7 @@ export async function getPublicSecureLink(token: string): Promise<PublicSecureCa
       await prisma().document.update({
         where: { id: document.id },
         data: {
-          payloadJson: updatedPayload as unknown as Prisma.InputJsonValue,
+          payloadJson: updatedPayload as unknown as JsonInputValue,
           sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
         },
       });
@@ -762,8 +763,8 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
         submitted_at: payload.decision_submitted_at,
         confirmation_message:
           payload.decision_type === "accept"
-            ? "تم تسجيل موافقتكم على الخروج مسبقًا."
-            : "تم تسجيل رفضكم للخروج مسبقًا وتوثيق الإقرار القانوني.",
+            ? "ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ù…ÙˆØ§ÙÙ‚ØªÙƒÙ… Ø¹Ù„Ù‰ Ø§Ù„Ø®Ø±ÙˆØ¬ Ù…Ø³Ø¨Ù‚Ù‹Ø§."
+            : "ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø±ÙØ¶ÙƒÙ… Ù„Ù„Ø®Ø±ÙˆØ¬ Ù…Ø³Ø¨Ù‚Ù‹Ø§ ÙˆØªÙˆØ«ÙŠÙ‚ Ø§Ù„Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ.",
       };
     }
 
@@ -801,7 +802,7 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
       where: { id: document.id },
       data: {
         status: DocumentStatus.SIGNED,
-        payloadJson: updatedPayload as unknown as Prisma.InputJsonValue,
+        payloadJson: updatedPayload as unknown as JsonInputValue,
         signedAt: new Date(submittedAt),
         sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
       },
@@ -893,8 +894,8 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
     submitted_at: submittedAt,
     confirmation_message:
       decision === "accept"
-        ? "تم تسجيل موافقتكم على الخروج بنجاح."
-        : "تم تسجيل رفضكم للخروج وتوثيق الإقرار القانوني بنجاح.",
+        ? "ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ù…ÙˆØ§ÙÙ‚ØªÙƒÙ… Ø¹Ù„Ù‰ Ø§Ù„Ø®Ø±ÙˆØ¬ Ø¨Ù†Ø¬Ø§Ø­."
+        : "ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø±ÙØ¶ÙƒÙ… Ù„Ù„Ø®Ø±ÙˆØ¬ ÙˆØªÙˆØ«ÙŠÙ‚ Ø§Ù„Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ Ø¨Ù†Ø¬Ø§Ø­.",
     };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -932,7 +933,7 @@ export async function downloadPublicSecureLinkArtifact(
   });
 
   if (!pdfDoc?.storagePath) {
-    throw new ApiError(404, "المستند غير متوفر حالياً");
+    throw new ApiError(404, "Ø§Ù„Ù…Ø³ØªÙ†Ø¯ ØºÙŠØ± Ù…ØªÙˆÙØ± Ø­Ø§Ù„ÙŠØ§Ù‹");
   }
 
   try {
@@ -940,7 +941,7 @@ export async function downloadPublicSecureLinkArtifact(
     const data = await readFile(pdfDoc.storagePath);
     return { data, mimeType: pdfDoc.mimeType, fileName: pdfDoc.fileName };
   } catch {
-    throw new ApiError(503, "تعذر الوصول إلى الملف");
+    throw new ApiError(503, "ØªØ¹Ø°Ø± Ø§Ù„ÙˆØµÙˆÙ„ Ø¥Ù„Ù‰ Ø§Ù„Ù…Ù„Ù");
   }
 }
 
@@ -960,7 +961,7 @@ export async function requestPublicSecureLinkOtp(
   const updatedPayload: SecureLinkPayload = { ...payload, otp_hash: otpHash, otp_expires_at: otpExpiresAt };
   await prisma().document.update({
     where: { id: document.id },
-    data: { payloadJson: updatedPayload as unknown as Prisma.InputJsonValue },
+    data: { payloadJson: updatedPayload as unknown as JsonInputValue },
   });
 
   const email = payload.recipient_email;
@@ -972,7 +973,7 @@ export async function requestPublicSecureLinkOtp(
     secure_token_hash: computeTokenHash(token),
   });
 
-  return { success: true, message: "تم إرسال رمز التحقق إلى بريدك الإلكتروني", masked_email: maskedEmail };
+  return { success: true, message: "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚ Ø¥Ù„Ù‰ Ø¨Ø±ÙŠØ¯Ùƒ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ", masked_email: maskedEmail };
 }
 
 export async function verifyPublicSecureLinkOtp(
@@ -988,11 +989,11 @@ export async function verifyPublicSecureLinkOtp(
   const expiresAt = payload.otp_expires_at;
 
   if (!storedHash || !expiresAt) {
-    throw new ApiError(400, "لم يتم طلب رمز التحقق");
+    throw new ApiError(400, "Ù„Ù… ÙŠØªÙ… Ø·Ù„Ø¨ Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚");
   }
 
   if (new Date(expiresAt).getTime() <= Date.now()) {
-    throw new ApiError(410, "انتهت صلاحية رمز التحقق");
+    throw new ApiError(410, "Ø§Ù†ØªÙ‡Øª ØµÙ„Ø§Ø­ÙŠØ© Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚");
   }
 
   const submittedHash = computeSignatureHash(otpCode);
@@ -1001,13 +1002,13 @@ export async function verifyPublicSecureLinkOtp(
       secure_token_hash: computeTokenHash(token),
       ip: context.ip,
     });
-    throw new ApiError(401, "رمز التحقق غير صحيح");
+    throw new ApiError(401, "Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚ ØºÙŠØ± ØµØ­ÙŠØ­");
   }
 
   const updatedPayload: SecureLinkPayload = { ...payload, otp_hash: null, otp_expires_at: null };
   await prisma().document.update({
     where: { id: document.id },
-    data: { payloadJson: updatedPayload as unknown as Prisma.InputJsonValue },
+    data: { payloadJson: updatedPayload as unknown as JsonInputValue },
   });
 
   logSecureLinkPublicEvent("public_secure_link_otp_verified", {

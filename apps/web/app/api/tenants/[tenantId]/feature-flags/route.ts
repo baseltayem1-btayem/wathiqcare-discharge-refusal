@@ -1,4 +1,4 @@
-import { FeatureFlagScope } from "@prisma/client";
+import { FeatureFlagScope } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { FEATURE_FLAGS, type FeatureFlag } from "@/lib/config/feature-flags";
 import {

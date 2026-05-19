@@ -1,4 +1,4 @@
-import { IncidentSeverity, IncidentStatus } from "@prisma/client";
+import { IncidentSeverity, IncidentStatus } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";

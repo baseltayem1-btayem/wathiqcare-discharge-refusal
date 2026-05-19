@@ -1,4 +1,5 @@
-﻿import { DocumentStatus, Prisma, UsageMetric } from "@prisma/client";
+﻿import { Prisma } from "@prisma/client";
+import { DocumentStatus, UsageMetric } from "@/lib/server/prisma-enums";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireTenantId } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";

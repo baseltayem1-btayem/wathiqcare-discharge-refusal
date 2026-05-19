@@ -1,4 +1,4 @@
-import { MembershipRole, UserType } from "@prisma/client";
+import { MembershipRole, UserType } from "@/lib/server/prisma-enums";
 
 export const PLATFORM_ROLES = ["platform_superadmin", "platform_admin"] as const;
 export type PlatformRole = (typeof PLATFORM_ROLES)[number];

@@ -1,4 +1,4 @@
-import { DataClassification, RetentionActionStatus } from "@prisma/client";
+import { DataClassification, RetentionActionStatus } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
