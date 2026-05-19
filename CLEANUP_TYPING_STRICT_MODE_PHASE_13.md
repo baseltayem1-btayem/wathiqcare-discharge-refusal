@@ -1,4 +1,4 @@
-# Phase 12 — Typing & Build Hardening (Post-Stabilization Cleanup)
+# Phase 13 — Typing & Build Hardening (Post-Stabilization Cleanup)
 
 > Status: **Planned (not started).** Do not execute during the current
 > production stabilization window. This document tracks debt accepted

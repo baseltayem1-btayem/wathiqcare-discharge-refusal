@@ -1,0 +1,114 @@
+/*
+ * Phase 12 — Enterprise density tokens.
+ *
+ * Additive stylesheet. Imported ONLY by Phase 12 demo routes and the
+ * `enterprise/` component group. Does not modify global tokens — every
+ * variable below is namespaced under `--wc-ent-*` to avoid collision
+ * with the existing globals.css surface tokens.
+ *
+ * Density philosophy mirrors Epic / TrakCare / Cerner: tight vertical
+ * rhythm (32-36px row height), wide sidebar, persistent action ribbon,
+ * card grids tuned for landscape tablets.
+ */
+
+:root {
+  /* Layout grid */
+  --wc-ent-sidebar-w: 248px;
+  --wc-ent-sidebar-w-collapsed: 56px;
+  --wc-ent-header-h: 56px;
+  --wc-ent-ribbon-h: 44px;
+  --wc-ent-row-h: 32px;
+  --wc-ent-row-h-touch: 40px;
+
+  /* Spacing scale (dense) */
+  --wc-ent-space-1: 4px;
+  --wc-ent-space-2: 8px;
+  --wc-ent-space-3: 12px;
+  --wc-ent-space-4: 16px;
+  --wc-ent-space-5: 20px;
+  --wc-ent-space-6: 24px;
+
+  /* Typography */
+  --wc-ent-font-xs: 11px;
+  --wc-ent-font-sm: 12px;
+  --wc-ent-font-md: 13px;
+  --wc-ent-font-lg: 15px;
+  --wc-ent-font-xl: 18px;
+  --wc-ent-line-tight: 1.25;
+  --wc-ent-line-base: 1.4;
+
+  /* Surfaces (light) */
+  --wc-ent-surface-canvas: #f4f6f9;
+  --wc-ent-surface-card: #ffffff;
+  --wc-ent-surface-sidebar: #0f1e34;
+  --wc-ent-surface-sidebar-hover: #18304f;
+  --wc-ent-surface-sidebar-active: #1f3e66;
+  --wc-ent-surface-ribbon: #ffffff;
+  --wc-ent-surface-ribbon-border: #d8dee7;
+  --wc-ent-surface-header: #ffffff;
+
+  /* Foreground */
+  --wc-ent-fg-strong: #0b1424;
+  --wc-ent-fg-default: #1f2a3d;
+  --wc-ent-fg-muted: #5a6577;
+  --wc-ent-fg-on-dark: #f6f8fb;
+  --wc-ent-fg-on-dark-muted: #aab4c4;
+
+  /* States */
+  --wc-ent-state-ok-bg: #e2f5ec;
+  --wc-ent-state-ok-fg: #066b3b;
+  --wc-ent-state-warn-bg: #fff4dd;
+  --wc-ent-state-warn-fg: #8a5a07;
+  --wc-ent-state-err-bg: #fde2e2;
+  --wc-ent-state-err-fg: #8a1a1a;
+  --wc-ent-state-info-bg: #e3edff;
+  --wc-ent-state-info-fg: #144a9d;
+  --wc-ent-state-neutral-bg: #eef0f4;
+  --wc-ent-state-neutral-fg: #3a4357;
+
+  /* Borders & radius */
+  --wc-ent-border: 1px solid #dbe0e8;
+  --wc-ent-border-strong: 1px solid #aab4c4;
+  --wc-ent-radius-sm: 4px;
+  --wc-ent-radius-md: 6px;
+  --wc-ent-radius-lg: 8px;
+
+  /* Shadow */
+  --wc-ent-shadow-card: 0 1px 0 rgba(15, 30, 52, 0.04), 0 0 0 1px rgba(15, 30, 52, 0.06);
+  --wc-ent-shadow-floating: 0 8px 24px rgba(15, 30, 52, 0.12);
+}
+
+/* Utility classes (kept minimal — components prefer Tailwind utilities) */
+.wc-ent-canvas {
+  background: var(--wc-ent-surface-canvas);
+  color: var(--wc-ent-fg-default);
+  font-size: var(--wc-ent-font-md);
+  line-height: var(--wc-ent-line-base);
+}
+
+.wc-ent-card {
+  background: var(--wc-ent-surface-card);
+  border-radius: var(--wc-ent-radius-md);
+  box-shadow: var(--wc-ent-shadow-card);
+}
+
+.wc-ent-row-dense {
+  min-height: var(--wc-ent-row-h);
+  padding-block: var(--wc-ent-space-1);
+}
+
+.wc-ent-row-touch {
+  min-height: var(--wc-ent-row-h-touch);
+  padding-block: var(--wc-ent-space-2);
+}
+
+[dir="rtl"] .wc-ent-flip {
+  transform: scaleX(-1);
+}
+
+/* Foreground utilities */
+.wc-ent-fg-strong { color: var(--wc-ent-fg-strong); }
+.wc-ent-fg-default { color: var(--wc-ent-fg-default); }
+.wc-ent-fg-muted { color: var(--wc-ent-fg-muted); }
+.wc-ent-fg-on-dark { color: var(--wc-ent-fg-on-dark); }
+.wc-ent-fg-on-dark-muted { color: var(--wc-ent-fg-on-dark-muted); }
