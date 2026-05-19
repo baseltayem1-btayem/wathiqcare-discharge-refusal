@@ -118,6 +118,8 @@ export default function DynamicConsentPreviewPage() {
   const [evidenceEnabled, setEvidenceEnabled] = useState<boolean>(
     searchParams?.get("evidence") === "true",
   );
+  const [pdfDownloading, setPdfDownloading] = useState<boolean>(false);
+  const [pdfNotice, setPdfNotice] = useState<{ kind: "info" | "warn" | "error"; message: string } | null>(null);
   const previewFrameRef = useRef<HTMLIFrameElement | null>(null);
 
   const demos = useMemo(
@@ -185,6 +187,72 @@ export default function DynamicConsentPreviewPage() {
     frame.contentWindow.focus();
     frame.contentWindow.print();
   }, []);
+
+  const handleDownloadPdf = useCallback(async () => {
+    setPdfNotice(null);
+    setPdfDownloading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("engine", "dynamic-preview");
+      params.set("renderer", "legal-grade");
+      params.set("evidence", "true");
+      params.set("demo", demoId);
+      params.set("language", language);
+      const response = await fetch(
+        `/api/internal/dynamic-consent/pdf-preview?${params.toString()}`,
+      );
+      const contentType = response.headers.get("content-type") ?? "";
+      if (response.status === 501 || contentType.includes("application/json")) {
+        let detail = "";
+        try {
+          const json = await response.json();
+          detail = json?.detail || json?.message || "";
+        } catch {
+          /* ignore */
+        }
+        setPdfNotice({
+          kind: "warn",
+          message:
+            "PDF binary renderer unavailable; use Print / Save as PDF for now." +
+            (detail ? ` (${detail})` : ""),
+        });
+        return;
+      }
+      if (!response.ok) {
+        setPdfNotice({
+          kind: "error",
+          message: `PDF preview request failed with status ${response.status}.`,
+        });
+        return;
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get("content-disposition") ?? "";
+      const match = /filename="?([^";]+)"?/i.exec(disposition);
+      const filename = match?.[1] ?? "wathiqcare-consent-preview.pdf";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setPdfNotice({
+        kind: "info",
+        message: `Downloaded experimental PDF preview (${filename}).`,
+      });
+    } catch (err) {
+      setPdfNotice({
+        kind: "error",
+        message:
+          err instanceof Error
+            ? `PDF preview request error: ${err.message}`
+            : "PDF preview request error.",
+      });
+    } finally {
+      setPdfDownloading(false);
+    }
+  }, [demoId, language]);
 
   return (
     <div className="min-h-screen bg-slate-100 p-6">
@@ -263,6 +331,15 @@ export default function DynamicConsentPreviewPage() {
               </button>
               <button
                 type="button"
+                onClick={handleDownloadPdf}
+                disabled={pdfDownloading}
+                className="inline-flex items-center justify-center px-3 py-2 rounded-md border border-indigo-300 bg-indigo-50 text-indigo-800 text-sm hover:bg-indigo-100 disabled:opacity-50"
+                title="Internal experimental PDF binary preview (requires renderer=legal-grade and evidence=true)"
+              >
+                {pdfDownloading ? "Generating…" : "Download Experimental PDF"}
+              </button>
+              <button
+                type="button"
                 onClick={() => setEvidenceEnabled((v) => !v)}
                 className={[
                   "inline-flex items-center justify-center px-3 py-2 rounded-md border text-sm",
@@ -283,6 +360,23 @@ export default function DynamicConsentPreviewPage() {
               </button>
             </div>
           </div>
+          {pdfNotice && (
+            <div
+              className={[
+                "mt-3 rounded-md border px-3 py-2 text-xs",
+                pdfNotice.kind === "info" &&
+                  "border-emerald-200 bg-emerald-50 text-emerald-800",
+                pdfNotice.kind === "warn" &&
+                  "border-amber-200 bg-amber-50 text-amber-800",
+                pdfNotice.kind === "error" &&
+                  "border-red-200 bg-red-50 text-red-800",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {pdfNotice.message}
+            </div>
+          )}
         </div>
 
         {/* Loading / Error states */}
