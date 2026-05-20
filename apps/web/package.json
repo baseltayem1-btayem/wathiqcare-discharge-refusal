@@ -9,6 +9,8 @@
     "validate:prod-release": "node scripts/prod-release-gate.cjs",
     "demo:seed": "node scripts/seed-demo-users.mjs",
     "uat:seed": "node scripts/seed-uat-users.mjs",
+    "uat:diagnose": "node scripts/diagnose-uat-accounts.mjs",
+    "uat:diagnose:apply": "node scripts/diagnose-uat-accounts.mjs --apply",
     "auth:ensure-user": "tsx -r dotenv/config scripts/ensure-auth-user.ts",
     "lint": "eslint",
     "test": "tsx --test src/lib/server/*.test.ts src/components/cases/*.test.ts",
@@ -52,13 +54,14 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "madge": "^8.0.0",
     "postcss": "^8.5.10",
     "prisma": "^6.19.2",
     "tailwindcss": "^4",
-    "tsx": "^4.20.6",
+    "tsx": "^4.22.3",
     "typescript": "^5"
   }
 }
