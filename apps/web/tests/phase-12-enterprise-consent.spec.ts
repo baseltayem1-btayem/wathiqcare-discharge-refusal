@@ -109,7 +109,7 @@ test.describe("Phase 12.2 — Enterprise Informed Consent Integration", () => {
     const otpInput = page.getByTestId("otp-code-input");
     await expect(otpInput).toBeVisible({ timeout: 3000 });
 
-    await otpInput.fill("482917");
+    await otpInput.fill("123456");
     await page.getByTestId("otp-verify-button").click();
 
     await expect(page.getByTestId("otp-verified-banner")).toBeVisible({
@@ -133,5 +133,60 @@ test.describe("Phase 12.2 — Enterprise Informed Consent Integration", () => {
     await expect(
       riskGrid.locator('[data-risk-severity="high"]').first(),
     ).toBeVisible();
+  });
+
+  test("TEST MODE banner + default patient values + test OTP code render", async ({ page }) => {
+    await page.goto("/internal/enterprise-consent");
+
+    await expect(page.getByTestId("test-mode-banner")).toContainText(
+      "PREVIEW TEST MODE",
+    );
+
+    await expect(page.getByTestId("default-patient-name")).toHaveText("Test Patient");
+    await expect(page.getByTestId("default-mrn")).toHaveText("MRN-TEST-1001");
+    await expect(page.getByTestId("default-mobile")).toContainText("+966500000001");
+    await expect(page.getByTestId("default-email")).toHaveText("admin@wathiqcare.med.sa");
+    await expect(page.getByTestId("default-national-id")).toHaveText("1029384756");
+    await expect(page.getByTestId("default-physician")).toHaveText("Dr. Demo Physician");
+    await expect(page.getByTestId("default-witness")).toHaveText("Demo Witness");
+    await expect(page.getByTestId("default-otp-code")).toHaveText("123456");
+
+    await page.screenshot({
+      path: path.join(OUT_DIR, "test-mode-defaults.png"),
+      fullPage: true,
+    });
+  });
+
+  test("Send Patient Signing Link simulates email + shows preview URL", async ({ page }) => {
+    await page.goto("/internal/enterprise-consent");
+
+    await expect(page.getByTestId("signing-link-panel")).toBeVisible();
+    await page.getByTestId("send-signing-link-button").click();
+
+    await expect(page.getByTestId("signing-link-sent-message")).toContainText(
+      "admin@wathiqcare.med.sa",
+    );
+    await expect(page.getByTestId("signing-link-url")).toContainText(
+      "/internal/enterprise-consent?token=test-patient-signing",
+    );
+
+    await page.screenshot({
+      path: path.join(OUT_DIR, "signing-link-sent.png"),
+      fullPage: true,
+    });
+  });
+
+  test("?token=test-patient-signing opens session in signing-link mode", async ({ page }) => {
+    await page.goto("/internal/enterprise-consent?token=test-patient-signing");
+
+    await expect(page.getByTestId("test-mode-banner")).toBeVisible();
+    await expect(page.getByTestId("test-mode-signing-link-active")).toBeVisible();
+    await expect(page.getByTestId("consent-reading-panel")).toBeVisible();
+    await expect(page.getByTestId("default-patient-name")).toHaveText("Test Patient");
+
+    await page.screenshot({
+      path: path.join(OUT_DIR, "signing-link-route.png"),
+      fullPage: true,
+    });
   });
 });

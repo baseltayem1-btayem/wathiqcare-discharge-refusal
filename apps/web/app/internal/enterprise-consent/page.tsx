@@ -20,7 +20,8 @@
  *   - Does not modify any existing production component.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   EnterpriseShell,
   EnterpriseSidebar,
@@ -208,20 +209,36 @@ function buildConsentReadingSections(): ConsentSectionViewModel[] {
 /* Mock data                                                            */
 /* ------------------------------------------------------------------ */
 
+/* Preview-only TEST MODE defaults — no real patient data, no real contact details. */
+const TEST_MODE = {
+  patientName: "Test Patient",
+  patientNameAr: "مريض تجريبي",
+  mrn: "MRN-TEST-1001",
+  mobile: "+966500000001",
+  email: "admin@wathiqcare.med.sa",
+  nationalId: "1029384756",
+  physicianName: "Dr. Demo Physician",
+  physicianNameAr: "د. الطبيب التجريبي",
+  witnessName: "Demo Witness",
+  otpCode: "123456",
+  signingToken: "test-patient-signing",
+} as const;
+
 const PATIENT = {
-  nameEn: "Ahmed Al-Mansour",
-  nameAr: "أحمد المنصور",
-  mrn: "44219",
-  nationalId: "1099887766",
+  nameEn: TEST_MODE.patientName,
+  nameAr: TEST_MODE.patientNameAr,
+  mrn: TEST_MODE.mrn,
+  nationalId: TEST_MODE.nationalId,
   departmentEn: "Cardiology",
   departmentAr: "قسم القلب",
-  maskedPhone: "+9665••••4421",
+  maskedPhone: TEST_MODE.mobile,
+  email: TEST_MODE.email,
 };
 
 const PHYSICIAN = {
-  nameEn: "Dr. Khalid Al-Ruwaili",
-  nameAr: "د. خالد الرويلي",
-  license: "MOH-PHY-2024-77812",
+  nameEn: TEST_MODE.physicianName,
+  nameAr: TEST_MODE.physicianNameAr,
+  license: "MOH-PHY-DEMO-0001",
   departmentEn: "Interventional Cardiology",
   departmentAr: "قسم قسطرة القلب",
 };
@@ -251,9 +268,9 @@ const INITIAL_SIGNATURE_STATE: SignatureState = {
 };
 
 const INITIAL_WITNESS_STATE: WitnessSignatureState = {
-  witnessName: "Sara Al-Otaibi (RN)",
+  witnessName: TEST_MODE.witnessName,
   witnessRole: "Charge Nurse",
-  witnessIdNumber: "STF-77119",
+  witnessIdNumber: "STF-DEMO-0001",
   signed: false,
 };
 
@@ -261,19 +278,19 @@ const MOCK_EVIDENCE: EvidencePanelData = {
   signers: [
     {
       role: "patient",
-      displayName: "Ahmed Al-Mansour",
+      displayName: TEST_MODE.patientName,
       method: "combined-tablet-and-otp",
       acknowledged: false,
     },
     {
       role: "physician",
-      displayName: "Dr. Khalid Al-Ruwaili",
+      displayName: TEST_MODE.physicianName,
       method: "biometric-fingerprint",
       acknowledged: false,
     },
     {
       role: "witness",
-      displayName: "Sara Al-Otaibi (RN)",
+      displayName: TEST_MODE.witnessName,
       method: "otp",
     },
   ],
@@ -291,7 +308,7 @@ const MOCK_EVIDENCE: EvidencePanelData = {
     {
       id: "a-preview-1",
       timestamp: "2026-05-19 10:12:00",
-      actor: "Dr. K. Al-Ruwaili",
+      actor: TEST_MODE.physicianName,
       action: "Consent draft created",
       detail: "Template: Surgery / Medical Procedure v1.0.0",
       severity: "info",
@@ -336,6 +353,38 @@ export default function EnterpriseConsentPreviewPage() {
   );
   const [physicianConfirmed, setPhysicianConfirmed] = useState<boolean>(false);
   const [otpVerifiedPreview, setOtpVerifiedPreview] = useState<boolean>(false);
+
+  /* ---- Preview-only TEST MODE signing-link simulator ---- */
+  const searchParams = useSearchParams();
+  const signingToken = searchParams?.get("token") ?? null;
+  const isSigningLinkMode = signingToken === TEST_MODE.signingToken;
+  const [signingLinkUrl, setSigningLinkUrl] = useState<string>("");
+  const [signingLinkSent, setSigningLinkSent] = useState<boolean>(false);
+  const [signingLinkCopied, setSigningLinkCopied] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const base = `${window.location.origin}/internal/enterprise-consent`;
+      setSigningLinkUrl(`${base}?token=${TEST_MODE.signingToken}`);
+    }
+  }, []);
+
+  const handleSendSigningLink = () => {
+    /* No real email — preview-only simulation. */
+    setSigningLinkSent(true);
+  };
+
+  const handleCopySigningLink = async () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard && signingLinkUrl) {
+      try {
+        await navigator.clipboard.writeText(signingLinkUrl);
+        setSigningLinkCopied(true);
+        setTimeout(() => setSigningLinkCopied(false), 2000);
+      } catch {
+        /* ignore — preview only */
+      }
+    }
+  };
 
   const isAr = direction === "rtl";
   const language: "en" | "ar" = isAr ? "ar" : "en";
@@ -570,6 +619,191 @@ export default function EnterpriseConsentPreviewPage() {
       }
     >
       <div className="grid gap-4" data-testid="enterprise-consent-main">
+        {/* PREVIEW TEST MODE banner */}
+        <div
+          data-testid="test-mode-banner"
+          className="rounded border px-3 py-2 text-sm font-semibold"
+          style={{
+            background: "#fff4cc",
+            borderColor: "#e0b800",
+            color: "#5a4500",
+          }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span>
+              {isAr
+                ? "وضع المعاينة التجريبي — لا يتم إرسال رسائل SMS أو بريد إلكتروني فعلية"
+                : "PREVIEW TEST MODE — NO REAL SMS OR EMAIL SENT"}
+            </span>
+            <span
+              className="rounded px-2 py-0.5 text-[10px] font-bold uppercase"
+              style={{ background: "#e0b800", color: "#3a2e00" }}
+            >
+              {isAr ? "بيانات تجريبية" : "Test data"}
+            </span>
+          </div>
+          {isSigningLinkMode ? (
+            <div
+              className="mt-1 text-[11px] font-normal"
+              data-testid="test-mode-signing-link-active"
+              style={{ color: "#5a4500" }}
+            >
+              {isAr
+                ? "تم فتح الجلسة عبر رابط توقيع المريض التجريبي."
+                : "Session opened via test patient signing link."}
+            </div>
+          ) : null}
+        </div>
+
+        {/* Test patient defaults summary (preview-only) */}
+        <EnterpriseCard
+          header={{
+            title: isAr ? "بيانات المريض التجريبية" : "Test Patient Defaults",
+            subtitle: isAr
+              ? "قيم افتراضية مهيأة مسبقًا للاختبار الداخلي"
+              : "Pre-filled default values for internal testing",
+            status: { label: "Preview", tone: "info" },
+          }}
+        >
+          <dl
+            data-testid="test-patient-defaults"
+            className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] md:grid-cols-3"
+          >
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--wc-ent-fg-muted)" }}>
+                {isAr ? "اسم المريض" : "Patient Name"}
+              </dt>
+              <dd className="font-mono" data-testid="default-patient-name">{TEST_MODE.patientName}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--wc-ent-fg-muted)" }}>MRN</dt>
+              <dd className="font-mono" data-testid="default-mrn">{TEST_MODE.mrn}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--wc-ent-fg-muted)" }}>
+                {isAr ? "الجوال" : "Mobile"}
+              </dt>
+              <dd className="font-mono" data-testid="default-mobile"><bdi dir="ltr">{TEST_MODE.mobile}</bdi></dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--wc-ent-fg-muted)" }}>
+                {isAr ? "البريد الإلكتروني" : "Email"}
+              </dt>
+              <dd className="font-mono" data-testid="default-email">{TEST_MODE.email}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--wc-ent-fg-muted)" }}>
+                {isAr ? "رقم الهوية" : "National ID"}
+              </dt>
+              <dd className="font-mono" data-testid="default-national-id">{TEST_MODE.nationalId}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--wc-ent-fg-muted)" }}>
+                {isAr ? "الطبيب" : "Physician"}
+              </dt>
+              <dd className="font-mono" data-testid="default-physician">{TEST_MODE.physicianName}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--wc-ent-fg-muted)" }}>
+                {isAr ? "الشاهد" : "Witness"}
+              </dt>
+              <dd className="font-mono" data-testid="default-witness">{TEST_MODE.witnessName}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--wc-ent-fg-muted)" }}>
+                {isAr ? "رمز OTP التجريبي" : "Test OTP"}
+              </dt>
+              <dd className="font-mono font-bold" data-testid="default-otp-code">{TEST_MODE.otpCode}</dd>
+            </div>
+          </dl>
+        </EnterpriseCard>
+
+        {/* Send Patient Signing Link (preview-only simulation) */}
+        <EnterpriseCard
+          header={{
+            title: isAr ? "إرسال رابط التوقيع للمريض" : "Send Patient Signing Link",
+            subtitle: isAr
+              ? "محاكاة إرسال دعوة التوقيع — لا يتم إرسال بريد إلكتروني فعلي"
+              : "Simulated signing invitation — no real email sent",
+            status: {
+              label: signingLinkSent ? (isAr ? "تم الإرسال" : "Sent") : "Preview",
+              tone: signingLinkSent ? "ok" : "info",
+            },
+          }}
+        >
+          <div className="space-y-2 text-sm" data-testid="signing-link-panel">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSendSigningLink}
+                data-testid="send-signing-link-button"
+                className="rounded px-3 py-1.5 text-sm font-semibold"
+                style={{
+                  background: "var(--wc-ent-state-info-bg)",
+                  color: "var(--wc-ent-state-info-fg)",
+                  border: "var(--wc-ent-border)",
+                }}
+              >
+                {isAr ? "إرسال رابط توقيع المريض" : "Send Patient Signing Link"}
+              </button>
+              {signingLinkSent ? (
+                <button
+                  type="button"
+                  onClick={handleCopySigningLink}
+                  data-testid="copy-signing-link-button"
+                  className="rounded px-3 py-1.5 text-xs"
+                  style={{ border: "var(--wc-ent-border)" }}
+                >
+                  {signingLinkCopied
+                    ? isAr
+                      ? "تم النسخ"
+                      : "Copied"
+                    : isAr
+                      ? "نسخ الرابط"
+                      : "Copy link"}
+                </button>
+              ) : null}
+            </div>
+
+            {signingLinkSent ? (
+              <div
+                data-testid="signing-link-sent-message"
+                className="rounded border px-3 py-2 text-[12px]"
+                style={{
+                  background: "var(--wc-ent-state-ok-bg, #ecfdf5)",
+                  borderColor: "var(--wc-ent-state-ok-border, #10b981)",
+                  color: "var(--wc-ent-state-ok-fg, #065f46)",
+                }}
+              >
+                <div className="font-semibold">
+                  {isAr
+                    ? `تم إرسال دعوة التوقيع بنجاح إلى ${TEST_MODE.email}`
+                    : `Signing invitation sent successfully to ${TEST_MODE.email}`}
+                </div>
+                {signingLinkUrl ? (
+                  <div className="mt-1 break-all font-mono text-[11px]" data-testid="signing-link-url">
+                    {signingLinkUrl}
+                  </div>
+                ) : null}
+                <div
+                  className="mt-1 text-[10px]"
+                  style={{ color: "var(--wc-ent-fg-muted)" }}
+                >
+                  {isAr
+                    ? "محاكاة فقط — لم يتم استدعاء أي خادم بريد إلكتروني خارجي."
+                    : "Simulation only — no external SMTP provider was called."}
+                </div>
+              </div>
+            ) : (
+              <div className="text-[11px]" style={{ color: "var(--wc-ent-fg-muted)" }}>
+                {isAr
+                  ? "اضغط الزر لمحاكاة إنشاء وإرسال رابط توقيع المريض."
+                  : "Click the button to simulate generating and sending the patient signing link."}
+              </div>
+            )}
+          </div>
+        </EnterpriseCard>
+
         {/* Step progress */}
         <EnterpriseCard
           header={{
@@ -674,10 +908,11 @@ export default function EnterpriseConsentPreviewPage() {
           />
         </div>
 
-        {/* OTP verification */}
+        {/* OTP verification — TEST MODE uses fixed code 123456 */}
         <MockOtpVerification
           language={language}
           maskedPhone={PATIENT.maskedPhone}
+          expectedCode={TEST_MODE.otpCode}
           onVerified={() => setOtpVerifiedPreview(true)}
         />
 
@@ -696,6 +931,48 @@ export default function EnterpriseConsentPreviewPage() {
             <EvidencePanel data={MOCK_EVIDENCE} layout="two-column" />
           </div>
         </EnterpriseCard>
+
+        {/* TEST MODE success summary — visible after all signing steps complete */}
+        {overallComplete ? (
+          <EnterpriseCard
+            header={{
+              title: isAr ? "اكتمل التوقيع — ملخص النجاح" : "Signing Complete — Success Summary",
+              subtitle: isAr
+                ? "حزمة الأدلة جاهزة في وضع المعاينة"
+                : "Evidence package ready in preview mode",
+              status: { label: isAr ? "مكتمل" : "Complete", tone: "ok" },
+            }}
+          >
+            <ul
+              data-testid="signing-success-summary"
+              className="grid gap-1 text-sm md:grid-cols-2"
+            >
+              <li data-testid="success-patient-signed">
+                ✓ {isAr ? "تم توقيع المريض" : "Patient signed"}
+              </li>
+              <li data-testid="success-otp-verified">
+                ✓ {isAr ? "تم التحقق من رمز OTP" : "OTP verified"}
+              </li>
+              <li data-testid="success-witness-completed">
+                ✓ {isAr ? "اكتمل توقيع الشاهد" : "Witness completed"}
+              </li>
+              <li data-testid="success-physician-ack">
+                ✓ {isAr ? "اكتمل إقرار الطبيب" : "Physician acknowledgment completed"}
+              </li>
+              <li data-testid="success-evidence-ready" className="md:col-span-2">
+                ✓ {isAr ? "حزمة الأدلة جاهزة" : "Evidence package ready"}
+              </li>
+            </ul>
+            <div
+              className="mt-2 text-[11px]"
+              style={{ color: "var(--wc-ent-fg-muted)" }}
+            >
+              {isAr
+                ? "وضع المعاينة فقط — لم يتم ختم وثيقة PDF حقيقية."
+                : "Preview mode only — no real PDF was sealed."}
+            </div>
+          </EnterpriseCard>
+        ) : null}
       </div>
     </EnterpriseShell>
   );
