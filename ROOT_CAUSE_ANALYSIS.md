@@ -93,7 +93,7 @@ That converted real API failures into an empty template list, so the user only s
 
 ## Production SHA / alias / deployed build verification
 ### Local
-- **Current local HEAD SHA:** `54696b69614565804a9a06937542981e23217a1b`
+- **Current local HEAD SHA:** use `git rev-parse HEAD` in the current checkout (the SHA changes as hotfix commits are added during the investigation).
 
 ### Production
 - **Current production deployment SHA:** not confirmed from this sandbox
