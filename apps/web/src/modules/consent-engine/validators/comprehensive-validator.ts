@@ -3,7 +3,6 @@ import { validateDynamicConsentPayload } from "@/modules/consent-engine/validato
 import { validateSignatureRequirements, validatePhysicianDeclaration } from "@/modules/consent-engine/validators/signature-validator";
 import { validateSubstituteDecisionMaker } from "@/modules/consent-engine/validators/substitute-decision-maker";
 import { validateTranslator } from "@/modules/consent-engine/validators/translator-validator";
-import { validateMandatoryDisclosures } from "@/modules/consent-engine/validators/mandatory-disclosures";
 
 export interface ComprehensiveValidationResult {
   isValid: boolean;
@@ -53,7 +52,7 @@ export function performComprehensiveValidation(
 
   // SDM validation
   if (options?.validateSDM !== false) {
-    const sdmResult = validateSubstituteDecisionMaker(payload.patient as any, 0, "full");
+    const sdmResult = validateSubstituteDecisionMaker(payload.patient, 0, "full");
     if (!sdmResult.isValid) {
       if (sdmResult.isRequired) {
         errors.push(...sdmResult.errors);
