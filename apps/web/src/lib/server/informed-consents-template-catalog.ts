@@ -1,4 +1,4 @@
-﻿import { Prisma, type PrismaClient } from "@prisma/client";
+﻿import type { PrismaClient } from "@prisma/client";
 import { ConsentSectionKind, ConsentTemplateStatus } from "@/lib/server/prisma-enums";
 import crypto from "node:crypto";
 import type { AuthContext } from "@/lib/server/auth";
