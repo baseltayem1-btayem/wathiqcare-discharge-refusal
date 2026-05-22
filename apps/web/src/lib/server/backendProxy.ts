@@ -208,7 +208,7 @@ export async function forwardToBackend(
 
     // Prevent recursive self-calls when backend base URL points to the same host+path.
     if (targetHost && requestHost && targetHost === requestHost && targetPath === sourcePath) {
-        const message = "خدمة الواجهة الخلفية غير متاحة حالياً. يرجى ضبط BACKEND_API_BASE_URL على خدمة backend الحقيقية.";
+        const message = "خدمة الواجهة الخلفية غير متاحة حالياً. يرجى ضبط متغير البيئة على خدمة حقيقية.";
         logApiFailure({
             traceId,
             status: 503,

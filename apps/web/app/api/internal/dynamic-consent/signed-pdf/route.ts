@@ -38,8 +38,8 @@ const HTML_FALLBACK_PATH = "/internal/dynamic-consent-signed-preview";
 const PREVIEW_SIMULATED_SIGNATURES = [
   {
     role: "Patient",
-    name: "Najib الفلاح",
-    statement: "Signed electronically by Najib الفلاح",
+    name: "نجيب الفلاح",
+    statement: "تم التوقيع إلكترونياً بواسطة نجيب الفلاح",
   },
   {
     role: "Physician",
@@ -77,7 +77,7 @@ function escapeHtml(value: string): string {
 function buildUatSamplePayload(language: DynamicConsentLanguage): DynamicConsentPayload {
   return {
     patient: {
-      name: "Najib الفلاح",
+      name: "نجيب الفلاح",
       identifier: "IMC-2026-02000",
       role: "Patient",
     },

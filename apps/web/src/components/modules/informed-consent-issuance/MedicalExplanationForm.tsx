@@ -46,7 +46,7 @@ export default function MedicalExplanationForm({
     <section className="wc-panel border-slate-200 bg-white">
       <button type="button" onClick={onToggle} className="flex w-full items-center justify-between gap-2 text-start">
         <div>
-          <h2 className="wc-panel-heading !mb-0">الشرح الطبي | Medical Explanation</h2>
+          <h2 className="wc-panel-heading !mb-0">الشرح الطبي</h2>
           <p className="text-[11px] text-slate-500">Structured physician explanation for legal defensibility.</p>
         </div>
         {collapsed ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronUp className="h-4 w-4 text-slate-500" />}

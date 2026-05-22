@@ -1,7 +1,6 @@
 import {
-  TARGET_DIRS,
   type ScanViolation,
-  collectTextFiles,
+  collectArabicLocaleFiles,
   containsForbiddenForArabicMode,
   printSummary,
   safeReadFile,
@@ -10,7 +9,7 @@ import {
 } from "./_common";
 
 async function main(): Promise<void> {
-  const files = await collectTextFiles(TARGET_DIRS);
+  const files = await collectArabicLocaleFiles();
   const violations: ScanViolation[] = [];
 
   for (const file of files) {

@@ -32,7 +32,7 @@ export default function PatientInfoCard({ patient, collapsed, onToggle }: Patien
     <section className="wc-panel border-slate-200 bg-white">
       <button type="button" onClick={onToggle} className="flex w-full items-center justify-between gap-2 text-start">
         <div>
-          <h2 className="wc-panel-heading !mb-0">بيانات المريض | Patient Information</h2>
+          <h2 className="wc-panel-heading !mb-0">بيانات المريض</h2>
           <p className="text-[11px] text-slate-500">Identity and care context required before consent issuance.</p>
         </div>
         {collapsed ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronUp className="h-4 w-4 text-slate-500" />}

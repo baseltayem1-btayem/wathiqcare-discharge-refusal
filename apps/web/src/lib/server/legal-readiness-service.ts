@@ -78,7 +78,7 @@ export function evaluateLegalReadinessFromSnapshot(input: {
     },
     {
       key: "refusal_form_completed",
-      label: "تم إكمال نموذج refusal الصحيح",
+      label: "تم إكمال نموذج الرفض الصحيح",
       required: true,
       satisfied: input.refusalFormCompleted,
       reason: input.refusalFormCompleted ? "Available" : "Discharge refusal form is missing.",
@@ -135,14 +135,14 @@ export function evaluateLegalReadinessFromSnapshot(input: {
     },
     {
       key: "consent_record_saved",
-      label: "تم حفظ consent record",
+      label: "تم حفظ سجل الموافقة",
       required: true,
       satisfied: input.consentRecorded,
       reason: input.consentRecorded ? `Captured (${input.consentCount})` : "No consent record is stored.",
     },
     {
       key: "audit_trail_complete",
-      label: "تم حفظ audit trail كامل",
+      label: "تم حفظ سجل التدقيق كاملاً",
       required: true,
       satisfied: input.auditTrailCaptured && input.auditChainVerified,
       reason:
@@ -166,7 +166,7 @@ export function evaluateLegalReadinessFromSnapshot(input: {
     },
     {
       key: "financial_acknowledgment",
-      label: "تم إكمال financial acknowledgment إذا كانت مطلوبة",
+      label: "تم إكمال الإقرار المالي إذا كانت مطلوبة",
       required: input.financialAcknowledgmentRequired,
       satisfied: !input.financialAcknowledgmentRequired || input.financialAcknowledgmentCompleted,
       reason:
@@ -176,7 +176,7 @@ export function evaluateLegalReadinessFromSnapshot(input: {
     },
     {
       key: "validation_errors_closed",
-      label: "تم إغلاق أي validation errors",
+      label: "تم إغلاق أي أخطاء التحقق",
       required: true,
       satisfied: input.openValidationErrors <= 0,
       reason:

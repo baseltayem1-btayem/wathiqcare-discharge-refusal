@@ -24,8 +24,12 @@ async function main(): Promise<void> {
   const violations: ScanViolation[] = [];
 
   for (const file of files) {
-    const content = await safeReadFile(file);
-    if (!content) continue;
+    const raw = await safeReadFile(file);
+    if (!raw) continue;
+
+    // Strip CSS/style blocks so that font-family and other CSS declarations are not
+    // treated as Latin text inside Arabic templates.
+    const content = raw.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
 
     const isArabicVariant = /\.ar\.|\bar\b|arabic/i.test(file);
     const isEnglishVariant = /\.en\.|\ben\b|english/i.test(file);

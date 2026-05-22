@@ -61,7 +61,7 @@ export default function SignaturePanel({ biometricEnabled = false, tabletEnabled
   return (
     <section className="wc-panel border-slate-200 bg-white">
       <div className="mb-3">
-        <h2 className="wc-panel-heading !mb-0">التوقيع والمصادقة | Signature & Authentication</h2>
+        <h2 className="wc-panel-heading !mb-0">التوقيع والمصادقة</h2>
         <p className="text-[11px] text-slate-500">Production-readiness signing flow with bedside tablet capture, compliance-controlled biometric verification, and preserved OTP fallback.</p>
       </div>
 

@@ -31,7 +31,7 @@ export interface SpecialtyDemo {
 }
 
 const COMMON_PATIENT = {
-  name: "Najib الفلاح",
+  name: "نجيب الفلاح",
   identifier: "IMC-2026-02000",
   role: "Patient",
 } as const;

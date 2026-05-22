@@ -92,9 +92,9 @@ function renderTitleBlock(
       ${titleEn}
       ${titleAr}
       <div class="lg-meta-grid">
-        ${renderMetaCell("Patient / المريض", payload.patient.name || "—")}
+        ${renderMetaCell("المريض", payload.patient.name || "—")}
         ${renderMetaCell("MRN", payload.patient.identifier || "—")}
-        ${renderMetaCell("Case / الحالة", payload.encounter.caseNumber || "—")}
+        ${renderMetaCell("الحالة", payload.encounter.caseNumber || "—")}
         ${renderMetaCell("Encounter", payload.encounter.encounterNumber || "—")}
         ${renderMetaCell("Department", payload.encounter.department || payload.specialty || "—")}
         ${renderMetaCell("Diagnosis", payload.diagnosis || "—")}
@@ -218,7 +218,7 @@ function renderDeclaration(language: DynamicConsentLanguage): string {
     : "";
   return `
     <section class="lg-declaration" data-kind="acknowledgment">
-      <h4>Patient Declaration / إقرار المريض</h4>
+      <h4>إقرار المريض</h4>
       ${en}
       ${ar}
     </section>
