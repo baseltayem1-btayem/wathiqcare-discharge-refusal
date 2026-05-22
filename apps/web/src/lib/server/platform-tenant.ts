@@ -44,7 +44,7 @@ export async function getPlatformTenant(): Promise<PlatformTenant> {
             console.error("getPlatformTenant: failed to bootstrap platform tenant", fallbackError);
             throw new ApiError(
                 503,
-                "Platform configuration is incomplete. Please initialize platform settings. / إعدادات المنصة غير مكتملة. يرجى تهيئة النظام أولاً.",
+                "إعدادات المنصة غير مكتملة. يرجى تهيئة النظام أولاً.",
             );
         }
     }

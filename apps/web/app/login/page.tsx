@@ -37,7 +37,7 @@ export default function LoginPage() {
       ? "Enterprise Healthcare Legal Automation Platform"
       : "Enterprise Healthcare Legal Automation Platform",
     emailLabel: isRtl ? "البريد الإلكتروني أو اسم المستخدم" : "Email or Username",
-    emailPlaceholder: isRtl ? "example@hospital.sa أو user.name" : "example@hospital.sa or user.name",
+    emailPlaceholder: isRtl ? "example@hospital.sa أو اسم.مستخدم" : "example@hospital.sa or user.name",
     passwordLabel: isRtl ? "كلمة المرور" : "Password",
     rememberMe: isRtl ? "تذكرني" : "Remember me",
     forgotPassword: isRtl ? "نسيت كلمة المرور؟" : "Forgot password?",

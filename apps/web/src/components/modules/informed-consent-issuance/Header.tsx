@@ -20,7 +20,7 @@ export default function Header({ mrnQuery, onMrnQueryChange, selectedRole, onRol
         <div className="flex items-center gap-3">
           <Image src="/images/imc-logo.png" alt="IMC" width={120} height={40} className="h-9 w-auto object-contain" priority />
           <div>
-            <h1 className="text-base font-bold text-[var(--primary-pressed)]">إصدار الموافقات المستنيرة | Informed Consent Issuance</h1>
+            <h1 className="text-base font-bold text-[var(--primary-pressed)]">إصدار الموافقات المستنيرة</h1>
             <p className="text-xs text-slate-600">TrakCare-style clinical and legal issuance console</p>
           </div>
         </div>
@@ -35,7 +35,7 @@ export default function Header({ mrnQuery, onMrnQueryChange, selectedRole, onRol
 
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_170px]">
         <label className="wc-form-field">
-          <span className="wc-form-label">بحث برقم الملف الطبي | Patient MRN Search</span>
+          <span className="wc-form-label">بحث برقم الملف الطبي</span>
           <div className="relative">
             <Search className="pointer-events-none absolute start-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
             <input

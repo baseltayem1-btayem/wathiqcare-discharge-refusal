@@ -334,7 +334,7 @@ def resolve_secure_token(token: str, request: Request):
 @router.get(
     "/api/secure-links/{token}",
     response_model=PublicSecureCaseResponse,
-    summary="[Compatibility] التحقق من رمز الرابط الآمن",
+    summary="[توافق] التحقق من رمز الرابط الآمن",
     include_in_schema=True,
 )
 def resolve_secure_token_compat(token: str, request: Request):
@@ -377,7 +377,7 @@ def submit_secure_decision(
 @router.post(
     "/api/secure-links/{token}/decision",
     response_model=SubmitDecisionResponse,
-    summary="[Compatibility] تسجيل القرار عبر الرابط الآمن",
+    summary="[توافق] تسجيل القرار عبر الرابط الآمن",
 )
 def submit_secure_decision_compat(
     token: str,

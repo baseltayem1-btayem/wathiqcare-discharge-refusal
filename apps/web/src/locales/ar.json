@@ -747,7 +747,7 @@
       "invalidCodes": "رموز غير صحيحة",
       "todayValidations": "اليوم"
     },
-    "searchPlaceholder": "أدخل رمز ICD-11 (مثال: 1A00)",
+    "searchPlaceholder": "أدخل رمز ICD-11",
     "validate": "تحقق",
     "validating": "جار التحقق...",
     "codeReference": "مرجع الرموز",
@@ -1211,7 +1211,7 @@
     "tabPassword": "كلمة المرور",
     "microsoftTitle": "تسجيل دخول المؤسسات",
     "microsoftSubtitle": "لحسابات المستشفيات والمنشآت الصحية باستخدام مايكروسوفت 365",
-    "microsoftEmailPlaceholder": "البريد@المنشأة.com",
+    "microsoftEmailPlaceholder": "example@hospital.sa",
     "microsoftBtn": "تسجيل الدخول عبر مايكروسوفت",
     "microsoftSigning": "جارٍ الدخول...",
     "magicTitle": "تسجيل الدخول عبر الرابط الآمن",

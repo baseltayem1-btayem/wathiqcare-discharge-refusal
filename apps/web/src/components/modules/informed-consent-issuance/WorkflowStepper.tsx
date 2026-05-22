@@ -18,7 +18,7 @@ export default function WorkflowStepper({ steps }: WorkflowStepperProps) {
     <section className="wc-panel border-slate-200 bg-white">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
-          <h2 className="wc-panel-heading !mb-0">سير العمل | Workflow Control Panel</h2>
+          <h2 className="wc-panel-heading !mb-0">سير العمل</h2>
           <p className="text-[11px] text-slate-500">Horizontal legal-clinical status tracking for consent issuance lifecycle.</p>
         </div>
         <span className="wc-module-pill">{steps.filter((step) => step.status === "completed").length}/{steps.length} complete</span>

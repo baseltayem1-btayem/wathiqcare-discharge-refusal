@@ -35,8 +35,8 @@ export function renderSignatureZone(zone: SignatureZoneDescriptor): string {
       </div>
       <div class="lg-signature-line" aria-label="signature line"></div>
       <div class="lg-signature-stamp">
-        <span><strong>Date / التاريخ</strong> __________________</span>
-        <span><strong>Time / الوقت</strong> __________________</span>
+        <span><strong>التاريخ</strong> __________________</span>
+        <span><strong>الوقت</strong> __________________</span>
       </div>
     </div>
   `;

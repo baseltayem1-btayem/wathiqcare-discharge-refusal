@@ -77,7 +77,7 @@ function unavailableResponse(
 function buildDefaultSamplePayload(): DynamicConsentPayload {
   return {
     patient: {
-      name: "Najib الفلاح",
+      name: "نجيب الفلاح",
       identifier: "IMC-2026-02000",
       role: "Patient",
     },

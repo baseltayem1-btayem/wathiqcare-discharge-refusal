@@ -106,7 +106,7 @@ export const WORKFLOW_STEPS: WorkflowStep[] = [
 ];
 
 export const DEFAULT_PATIENT_INFO: PatientInfo = {
-  patientName: "أحمد خالد السبيعي | Ahmed Khalid Al-Subaie",
+  patientName: "أحمد خالد السبيعي",
   mrn: "MRN-2026-000741",
   nationalId: "1023456789",
   dateOfBirth: "1986-04-17",

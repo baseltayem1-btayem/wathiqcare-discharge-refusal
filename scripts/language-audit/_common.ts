@@ -33,7 +33,9 @@ const TEXT_EXTENSIONS = new Set([
   ".sql",
 ]);
 
-const CODE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py"]);
+// Include .json so locale files are parsed as key→value pairs (keys are skipped by
+// looksTechnicalSegment) rather than as raw lines that contain both the Latin key and Arabic value.
+const CODE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".json"]);
 
 const DEFAULT_SKIP_SEGMENTS = [
   "node_modules",
@@ -51,8 +53,14 @@ const DEFAULT_SKIP_SEGMENTS = [
 ];
 
 const ALLOW_PATTERNS: RegExp[] = [
+  // Strip brace-enclosed template variables / f-string expressions FIRST so that identifiers
+  // inside (e.g. `html`, `payload`) are not later matched by keyword patterns.
+  /\{[a-zA-Z_][^}]*\}/g,
+  /{{\s*[^}]+\s*}}/g,
+  /\$\{[^}]+\}/g,
   /<[^>]+>/g,
   /https?:\/\/\S+/g,
+  /\/[a-zA-Z0-9\-_./[\]{}:]+/g,
   /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi,
   /\b[A-Fa-f0-9]{32,}\b/g,
   /\b[a-zA-Z_][a-zA-Z0-9_\-]{0,80}\b(?=\s*[:=])/g,
@@ -61,8 +69,16 @@ const ALLOW_PATTERNS: RegExp[] = [
   /\b[a-z\-]+\s*:\s*[^;{}]+;?/gi,
   /\b(rgb|rgba|hsl|hsla|px|rem|em|vh|vw|rtl|ltr|utf-8|doctype|html|head|body|meta|style)\b/gi,
   /\b(api|token|key|id|uuid|hash|mrn|icd11)\b/gi,
-  /{{\s*[^}]+\s*}}/g,
-  /\$\{[^}]+\}/g,
+  // Internationally recognised technical acronyms used in Arabic medical/legal contexts
+  /\b(otp|qr|pdf|ai|sha|sha-?256|sms|pdpl|trakcare|mrz|ecg|icu|cpr|url|uri|jwt|http|https|fhir|hl7|emr|rpo|rto)\b/gi,
+  // ALL_CAPS identifiers / environment variable names (minimum 2 chars after first uppercase letter)
+  /\b[A-Z][A-Z0-9_]{1,}\b/g,
+  // Source-code escape sequences appearing literally in file text (\n, \r, \t …)
+  /\\[nrtbfv01]/g,
+  // Recognised product / technology brand names always written in Latin script
+  /\b(wathiqcare|microsoft|pdffiller|azure|whatsapp|saas|manifest|backend|compatibility|graph)\b/gi,
+  // Common internet TLDs used in Arabic domain/email examples
+  /\b[a-zA-Z0-9\-]+\.(com|net|org|sa|gov|edu|io|me)\b/gi,
 ];
 
 const ARABIC_CHAR_REGEX = /[\u0600-\u06FF]/;
@@ -186,6 +202,14 @@ function looksTechnicalSegment(text: string): boolean {
   if (/^[A-Za-z_][A-Za-z0-9_./:@\-]{1,}$/.test(text)) return true;
   if (/^\$?[A-Z0-9_\-:.]{2,}$/.test(text)) return true;
   if (/^[@#][A-Za-z0-9_\-/.]+$/.test(text)) return true;
+  // CSS / Tailwind classname strings: only lowercase-hyphenated tokens, digits, and CSS syntax chars
+  // (no Arabic characters → safe to treat as pure technical)
+  if (
+    !ARABIC_CHAR_REGEX.test(text) &&
+    /^[a-z0-9][a-z0-9\-/:[\].()*!,_%\s]*$/.test(text.trim())
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -269,6 +293,36 @@ export async function writeJsonReport(fileName: string, summary: ScanSummary): P
   await fs.mkdir(outDir, { recursive: true });
   const filePath = path.join(outDir, fileName);
   await fs.writeFile(filePath, JSON.stringify(summary, null, 2), "utf8");
+}
+
+/**
+ * Returns only the Arabic-locale string files (ar.json, locales/ar/**).
+ * Used by auditArabicPurity to avoid false-positive on bilingual source files.
+ */
+export async function collectArabicLocaleFiles(): Promise<string[]> {
+  const all = await collectTextFiles(TARGET_DIRS);
+  return all.filter((f) => {
+    const rel = toRepoRelative(f);
+    return (
+      /\/locales\/ar(\/|\.json$)/.test(rel) ||
+      /\.ar\.(ts|tsx|json)$/.test(rel)
+    );
+  });
+}
+
+/**
+ * Returns only the English-locale string files (en.json, locales/en/**).
+ * Used by auditEnglishPurity to avoid false-positive on bilingual source files.
+ */
+export async function collectEnglishLocaleFiles(): Promise<string[]> {
+  const all = await collectTextFiles(TARGET_DIRS);
+  return all.filter((f) => {
+    const rel = toRepoRelative(f);
+    return (
+      /\/locales\/en(\/|\.json$)/.test(rel) ||
+      /\.en\.(ts|tsx|json)$/.test(rel)
+    );
+  });
 }
 
 export const TARGET_DIRS = [

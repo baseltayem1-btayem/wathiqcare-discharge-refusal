@@ -759,7 +759,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
       sectionKind: ConsentSectionKind.FIXED_LEGAL,
       titleAr: "الختم القانوني وسجل التدقيق",
       titleEn: "Legal Seal and Audit Trail",
-      contentAr: "يُختم المستند بخلاصة قانونية (Legal Seal Hash) مع ربط كامل بسجل تدقيق غير قابل للتلاعب.",
+      contentAr: "يُختم المستند بخلاصة قانونية (هاش الختم القانوني) مع ربط كامل بسجل تدقيق غير قابل للتلاعب.",
       contentEn: "The document is sealed with a legal hash and linked to an immutable audit trail.",
       isRequired: true,
       isEditableByPhysician: false,

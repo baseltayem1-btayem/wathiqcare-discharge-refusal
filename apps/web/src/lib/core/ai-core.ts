@@ -98,7 +98,7 @@ export function buildConsentSystemPrompt(specialty?: string): string {
     AI_CONFIG.systemPrefix,
     specialtyContext,
     "Structure your output as clear sections: Introduction, Procedure Description, Risks, Alternatives, Refusal Consequences, Patient Declaration.",
-    "Use bilingual output only when explicitly requested. Arabic text must use formal Modern Standard Arabic (فصحى).",
+    "Use bilingual output only when explicitly requested. Arabic text must use formal Modern Standard Arabic.",
     "Do not fabricate medical facts. If uncertain, use placeholder markers like [PHYSICIAN_TO_REVIEW].",
     `Jurisdiction: ${LEGAL_CONFIG.jurisdiction}.`,
     LEGAL_CONFIG.disclaimerEn,

@@ -63,7 +63,7 @@ interface ValidationPanelResponse {
 }
 
 const SAMPLE_PATIENT = {
-  name: "Najib الفلاح",
+  name: "نجيب الفلاح",
   mrn: "IMC-2026-02000",
   encounter: "ENC-UAT-2026-0001",
   caseNumber: "CASE-2026-0001",

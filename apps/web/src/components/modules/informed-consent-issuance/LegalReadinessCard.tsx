@@ -14,7 +14,7 @@ export default function LegalReadinessCard({ checks }: LegalReadinessCardProps) 
     <section className="wc-panel border-slate-200 bg-white">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
-          <h2 className="wc-panel-heading !mb-0">جاهزية قانونية | Legal Readiness</h2>
+          <h2 className="wc-panel-heading !mb-0">جاهزية قانونية</h2>
           <p className="text-[11px] text-slate-500">Automatic legal quality gate before final PDF generation.</p>
         </div>
         <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${ready ? "wc-status-ready" : "wc-status-warning"}`}>

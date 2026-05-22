@@ -32,7 +32,7 @@ export default function ConsentTypeSelector({ consentTypes, selectedConsentTypeI
     <section className="wc-panel border-slate-200 bg-white">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
-          <h2 className="wc-panel-heading !mb-0">نوع الموافقة | Consent Type Selection</h2>
+          <h2 className="wc-panel-heading !mb-0">نوع الموافقة</h2>
           <p className="text-[11px] text-slate-500">Select consent form family before explanation and signatures.</p>
         </div>
         <span className="wc-module-pill">{consentTypes.length} types</span>
