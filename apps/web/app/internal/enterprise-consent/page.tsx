@@ -358,16 +358,15 @@ export default function EnterpriseConsentPreviewPage() {
   const searchParams = useSearchParams();
   const signingToken = searchParams?.get("token") ?? null;
   const isSigningLinkMode = signingToken === TEST_MODE.signingToken;
-  const [signingLinkUrl, setSigningLinkUrl] = useState<string>("");
+  const signingLinkUrl = useMemo(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+    const base = `${window.location.origin}/internal/enterprise-consent`;
+    return `${base}?token=${TEST_MODE.signingToken}`;
+  }, []);
   const [signingLinkSent, setSigningLinkSent] = useState<boolean>(false);
   const [signingLinkCopied, setSigningLinkCopied] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const base = `${window.location.origin}/internal/enterprise-consent`;
-      setSigningLinkUrl(`${base}?token=${TEST_MODE.signingToken}`);
-    }
-  }, []);
 
   const handleSendSigningLink = () => {
     /* No real email — preview-only simulation. */

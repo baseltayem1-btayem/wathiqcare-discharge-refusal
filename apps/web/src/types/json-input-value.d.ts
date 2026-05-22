@@ -1,4 +1,5 @@
-type JsonInputValue = any;
+type JsonInputPrimitive = string | number | boolean | null;
+type JsonInputValue = JsonInputPrimitive | JsonInputObject | JsonInputArray;
 
-type JsonInputObject = Record<string, any>;
-type JsonInputArray = any[];
+type JsonInputObject = Record<string, JsonInputValue>;
+type JsonInputArray = JsonInputValue[];

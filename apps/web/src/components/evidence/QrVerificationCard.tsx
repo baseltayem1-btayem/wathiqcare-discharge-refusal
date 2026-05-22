@@ -11,29 +11,41 @@ export type QrVerificationCardProps = {
 };
 
 export default function QrVerificationCard({ qr }: QrVerificationCardProps) {
-  const [dataUrl, setDataUrl] = useState<string | null>(null);
+  const [generatedQr, setGeneratedQr] = useState<{
+    verificationUrl: string;
+    dataUrl: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!qr?.verificationUrl) {
-      setDataUrl(null);
       return;
     }
     let cancelled = false;
-    QRCode.toDataURL(qr.verificationUrl, {
+    const verificationUrl = qr.verificationUrl;
+    QRCode.toDataURL(verificationUrl, {
       width: 144,
       margin: 1,
       errorCorrectionLevel: "M",
     })
       .then((url) => {
-        if (!cancelled) setDataUrl(url);
+        if (!cancelled) {
+          setGeneratedQr({ verificationUrl, dataUrl: url });
+        }
       })
       .catch(() => {
-        if (!cancelled) setDataUrl(null);
+        if (!cancelled) {
+          setGeneratedQr({ verificationUrl, dataUrl: null });
+        }
       });
     return () => {
       cancelled = true;
     };
   }, [qr?.verificationUrl]);
+
+  const dataUrl =
+    qr?.verificationUrl && generatedQr?.verificationUrl === qr.verificationUrl
+      ? generatedQr.dataUrl
+      : null;
 
   return (
     <EnterpriseCard
