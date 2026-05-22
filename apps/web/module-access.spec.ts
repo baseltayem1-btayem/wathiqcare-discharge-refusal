@@ -71,6 +71,7 @@ const ALLOWED_SUBROUTES: Record<string, string[]> = {
     "/modules/informed-consents/create",
     "/modules/informed-consents/archive",
     "/modules/informed-consents/templates",
+    "/legacy/informed-consents",
   ],
   "/modules/promissory-notes": [
     "/modules/promissory-notes",
@@ -86,6 +87,7 @@ const ALLOWED_SUBROUTES: Record<string, string[]> = {
 };
 
 const ROUTE_REDIRECT_TARGETS: Record<string, string[]> = {
+  "/modules/informed-consents": ["/modules/informed-consents/create"],
   "/modules/discharge-refusal/dashboard": ["/dashboard", "/dashboards"],
   "/modules/discharge-refusal/cases": ["/cases"],
 };

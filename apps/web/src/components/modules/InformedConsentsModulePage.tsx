@@ -94,9 +94,10 @@ export default function InformedConsentsModulePage({
 
   const menuItems = useMemo(
     () => [
-      { href: "/modules/informed-consents", label: { ar: "لوحة الموافقات", en: "Consent Console" } },
+      { href: "/modules/informed-consents/create", label: { ar: "إصدار الموافقات", en: "Consent Issuance" } },
       { href: "/modules/informed-consents/list", label: { ar: "قائمة الموافقات", en: "Consent List" } },
       { href: "/modules/informed-consents/create", label: { ar: "إنشاء موافقة", en: "Create Consent" } },
+      { href: "/legacy/informed-consents", label: { ar: "الواجهة السابقة", en: "Legacy Console" } },
       { href: "/modules/informed-consents/archive", label: { ar: "الأرشيف", en: "Archive" } },
       { href: "/modules/informed-consents/templates", label: { ar: "القوالب", en: "Templates" } },
       { href: "/modules/informed-consents/governance", label: { ar: "الحوكمة", en: "Governance" } },

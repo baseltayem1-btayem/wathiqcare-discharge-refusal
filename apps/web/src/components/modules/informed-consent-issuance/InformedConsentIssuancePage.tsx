@@ -42,8 +42,9 @@ type ModuleAuth = {
 };
 
 const MENU_ITEMS = [
-  { href: "/modules/informed-consents", label: { ar: "الموافقات المستنيرة", en: "Informed Consents" } },
+  { href: "/modules/informed-consents/create", label: { ar: "إصدار الموافقات", en: "Consent Issuance" } },
   { href: "/modules/informed-consents/list", label: { ar: "قائمة الموافقات", en: "Consent List" } },
+  { href: "/legacy/informed-consents", label: { ar: "الواجهة السابقة", en: "Legacy Console" } },
   { href: "/modules/informed-consents/archive", label: { ar: "الأرشيف", en: "Archive" } },
   { href: "/modules/informed-consents/templates", label: { ar: "القوالب", en: "Templates" } },
   { href: "/modules/discharge-refusal", label: { ar: "منصة رفض الخروج", en: "Discharge Refusal" } },
