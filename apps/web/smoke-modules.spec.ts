@@ -59,7 +59,7 @@ test.describe("Module Portal - Authenticated Browser Smoke Tests", () => {
 
     // Check for informed-consents module accessibility
     const informedConsentsLink = page.locator(
-      'a[href*="/modules/informed-consents"], button:has-text("Informed Consents")'
+      'a[href*="/modules/informed-consents/create"], button:has-text("Informed Consents")'
     );
     await expect(informedConsentsLink).toBeVisible();
 
@@ -89,6 +89,13 @@ test.describe("Module Portal - Authenticated Browser Smoke Tests", () => {
     // Test create view
     await page.goto(`${BASE_URL}/modules/informed-consents/create`);
     await expect(page).toHaveURL(/\/modules\/informed-consents\/create/);
+    await page.waitForLoadState("networkidle");
+    content = page.locator("body");
+    await expect(content).not.toContainText(/not found|unauthorized/i);
+
+    // Test legacy view
+    await page.goto(`${BASE_URL}/legacy/informed-consents`);
+    await expect(page).toHaveURL(/\/legacy\/informed-consents/);
     await page.waitForLoadState("networkidle");
     content = page.locator("body");
     await expect(content).not.toContainText(/not found|unauthorized/i);

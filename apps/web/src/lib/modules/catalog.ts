@@ -56,7 +56,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
       en: "Structured digital workflows for secure informed-consent management, patient acknowledgment, and legally traceable healthcare approvals.",
     },
     status: "live",
-    href: "/modules/informed-consents",
+    href: "/modules/informed-consents/create",
     allowedRoles: INFORMED_CONSENTS_ALLOWED_ROLES,
   },
   {
@@ -129,7 +129,7 @@ export function getAccessibleModules(access: ModuleAccessContext): ModuleDefinit
 }
 
 export function resolveModuleKeyFromPath(pathname: string): ModuleKey | null {
-  if (pathname.startsWith("/modules/informed-consents")) {
+  if (pathname.startsWith("/modules/informed-consents") || pathname.startsWith("/legacy/informed-consents")) {
     return "informed-consents";
   }
   if (pathname.startsWith("/modules/promissory-notes")) {
