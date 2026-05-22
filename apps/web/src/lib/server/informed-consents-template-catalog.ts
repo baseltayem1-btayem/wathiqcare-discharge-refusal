@@ -1,4 +1,4 @@
-﻿import { Prisma } from "@prisma/client";
+﻿import { Prisma, type PrismaClient } from "@prisma/client";
 import { ConsentSectionKind, ConsentTemplateStatus } from "@/lib/server/prisma-enums";
 import crypto from "node:crypto";
 import type { AuthContext } from "@/lib/server/auth";
@@ -14,6 +14,282 @@ import {
 } from "@/lib/server/informed-consents-saudi-template-library";
 
 const prisma = () => getPrisma();
+
+function readDatabaseErrorCode(error: unknown): string {
+  if (!error || typeof error !== "object") {
+    return "";
+  }
+
+  const e = error as { code?: unknown; meta?: { code?: unknown } };
+  const code = typeof e.code === "string" ? e.code : "";
+  const sqlState = typeof e.meta?.code === "string" ? e.meta.code : "";
+  return code || sqlState;
+}
+
+export function isMissingConsentTemplateSchemaError(error: unknown): boolean {
+  const code = readDatabaseErrorCode(error);
+  return code === "P2021" || code === "P2022" || code === "42P01" || code === "42703";
+}
+
+export async function ensureConsentTemplateSchema(client: PrismaClient): Promise<void> {
+  await client.$executeRawUnsafe(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ConsentTemplateStatus') THEN
+        CREATE TYPE "ConsentTemplateStatus" AS ENUM ('DRAFT', 'APPROVED', 'ACTIVE', 'ARCHIVED');
+      END IF;
+    END $$;
+  `);
+
+  await client.$executeRawUnsafe(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ConsentSectionKind') THEN
+        CREATE TYPE "ConsentSectionKind" AS ENUM (
+          'FIXED_LEGAL',
+          'DYNAMIC_MEDICAL',
+          'AUTO_POPULATED',
+          'SIGNATURE',
+          'WITNESS',
+          'INTERPRETER'
+        );
+      END IF;
+    END $$;
+  `);
+
+  await client.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS consent_categories (
+      id TEXT NOT NULL PRIMARY KEY,
+      tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      code TEXT NOT NULL,
+      name_ar TEXT NOT NULL,
+      name_en TEXT NOT NULL,
+      description_ar TEXT,
+      description_en TEXT,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      sort_order INTEGER NOT NULL DEFAULT 100,
+      metadata JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS consent_templates (
+      id TEXT NOT NULL PRIMARY KEY,
+      tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      category_id TEXT REFERENCES consent_categories(id) ON DELETE SET NULL,
+      template_code TEXT NOT NULL,
+      risk_level TEXT NOT NULL DEFAULT 'MEDIUM',
+      requires_witness BOOLEAN NOT NULL DEFAULT FALSE,
+      requires_guardian BOOLEAN NOT NULL DEFAULT FALSE,
+      requires_interpreter BOOLEAN NOT NULL DEFAULT FALSE,
+      requires_separate_consent BOOLEAN NOT NULL DEFAULT FALSE,
+      consent_type TEXT NOT NULL,
+      specialty TEXT NOT NULL,
+      department TEXT,
+      status "ConsentTemplateStatus" NOT NULL DEFAULT 'DRAFT',
+      current_version_id TEXT,
+      title_ar TEXT NOT NULL,
+      title_en TEXT NOT NULL,
+      summary_ar TEXT,
+      summary_en TEXT,
+      is_ai_assist_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      is_system_template BOOLEAN NOT NULL DEFAULT FALSE,
+      metadata JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS consent_template_versions (
+      id TEXT NOT NULL PRIMARY KEY,
+      tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      template_id TEXT NOT NULL REFERENCES consent_templates(id) ON DELETE CASCADE,
+      version_label TEXT NOT NULL,
+      version_number INTEGER NOT NULL DEFAULT 1,
+      status "ConsentTemplateStatus" NOT NULL DEFAULT 'DRAFT',
+      legal_text_ar TEXT NOT NULL,
+      legal_text_en TEXT NOT NULL,
+      pdpl_text_ar TEXT NOT NULL,
+      pdpl_text_en TEXT NOT NULL,
+      witness_decl_ar TEXT NOT NULL,
+      witness_decl_en TEXT NOT NULL,
+      physician_cert_ar TEXT NOT NULL,
+      physician_cert_en TEXT NOT NULL,
+      ai_warning_ar TEXT NOT NULL,
+      ai_warning_en TEXT NOT NULL,
+      created_by_user_id TEXT,
+      approved_by_user_id TEXT,
+      approved_at TIMESTAMPTZ,
+      legal_hash TEXT,
+      is_immutable BOOLEAN NOT NULL DEFAULT FALSE,
+      effective_from TIMESTAMPTZ,
+      effective_to TIMESTAMPTZ,
+      metadata JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS consent_template_sections (
+      id TEXT NOT NULL PRIMARY KEY,
+      tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      template_version_id TEXT NOT NULL REFERENCES consent_template_versions(id) ON DELETE CASCADE,
+      section_key TEXT NOT NULL,
+      section_kind "ConsentSectionKind" NOT NULL,
+      title_ar TEXT NOT NULL,
+      title_en TEXT NOT NULL,
+      content_ar TEXT NOT NULL,
+      content_en TEXT NOT NULL,
+      is_required BOOLEAN NOT NULL DEFAULT TRUE,
+      is_editable_by_physician BOOLEAN NOT NULL DEFAULT FALSE,
+      sort_order INTEGER NOT NULL DEFAULT 100,
+      metadata JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS consent_template_localizations (
+      id TEXT NOT NULL PRIMARY KEY,
+      tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      template_version_id TEXT NOT NULL REFERENCES consent_template_versions(id) ON DELETE CASCADE,
+      language TEXT NOT NULL,
+      direction TEXT NOT NULL,
+      title TEXT NOT NULL,
+      full_body TEXT NOT NULL,
+      sections_json JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_consent_categories_tenant_code
+      ON consent_categories (tenant_id, code)
+  `);
+  await client.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_consent_templates_tenant_template_code
+      ON consent_templates (tenant_id, template_code)
+  `);
+  await client.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_consent_template_versions_template_version
+      ON consent_template_versions (template_id, version_number)
+  `);
+  await client.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_consent_template_sections_version_key
+      ON consent_template_sections (template_version_id, section_key)
+  `);
+  await client.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_consent_template_localizations_version_language
+      ON consent_template_localizations (template_version_id, language)
+  `);
+  await client.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_consent_templates_tenant_status_specialty
+      ON consent_templates (tenant_id, status, specialty)
+  `);
+  await client.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_consent_templates_tenant_type
+      ON consent_templates (tenant_id, consent_type)
+  `);
+  await client.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_consent_template_versions_tenant_template_version
+      ON consent_template_versions (tenant_id, template_id, version_number)
+  `);
+  await client.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_consent_template_localizations_tenant_language
+      ON consent_template_localizations (tenant_id, language)
+  `);
+}
+
+async function withConsentTemplateSchemaRecovery<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (!isMissingConsentTemplateSchemaError(error)) {
+      throw error;
+    }
+
+    await ensureConsentTemplateSchema(prisma());
+    return operation();
+  }
+}
+
+async function listRuntimeConsentTemplatesWithClient(
+  client: PrismaClient,
+  auth: AuthContext,
+  filter: RuntimeTemplateFilter,
+): Promise<RuntimeConsentTemplate[]> {
+  const tenantId = requireTenantId(auth);
+  const consentType = normalizeConsentType(filter.consentType);
+  const specialty = normalizeFilter(filter.specialty).toUpperCase();
+  const department = normalizeFilter(filter.department).toUpperCase();
+
+  await ensureDefaultTemplates(tenantId, auth.sub);
+
+  const templates = await client.consentTemplate.findMany({
+    where: {
+      tenantId,
+      ...(consentType ? { consentType } : {}),
+      ...(department ? { OR: [{ department }, { department: null }] } : {}),
+      ...(specialty ? { OR: [{ specialty }, { specialty: "GENERAL_MEDICINE" }] } : {}),
+      status: { in: [ConsentTemplateStatus.ACTIVE, ConsentTemplateStatus.APPROVED] },
+    },
+    include: {
+      versions: {
+        where: {
+          status: { in: [ConsentTemplateStatus.ACTIVE, ConsentTemplateStatus.APPROVED] },
+        },
+        orderBy: [{ versionNumber: "desc" }],
+        take: 1,
+      },
+    },
+    orderBy: [{ isSystemTemplate: "desc" }, { updatedAt: "desc" }],
+    take: 100,
+  });
+
+  const mapped = templates
+    .map((template) => {
+      const version = template.versions[0];
+      if (!version) return null;
+
+      return {
+        id: template.id,
+        templateVersionId: version.id,
+        titleAr: template.titleAr,
+        titleEn: template.titleEn,
+        consentType: template.consentType,
+        specialty: template.specialty,
+        department: template.department,
+        version: version.versionLabel,
+        status: version.status,
+        language: "bilingual" as const,
+        summaryAr: template.summaryAr,
+        summaryEn: template.summaryEn,
+        previewAr: version.legalTextAr,
+        previewEn: version.legalTextEn,
+      };
+    })
+    .filter((item): item is RuntimeConsentTemplate => item !== null);
+
+  if (mapped.length === 0) {
+    const originalConsentType = normalizeFilter(filter.consentType);
+    const normalizedConsentType = consentType || "UNSPECIFIED";
+    throw new ApiError(
+      404,
+      originalConsentType
+        ? `No consent templates found for "${originalConsentType}" after normalization to "${normalizedConsentType}".`
+        : "No consent templates found for the requested filters.",
+      { code: "CONSENT_TEMPLATE_NOT_FOUND" },
+    );
+  }
+
+  return mapped;
+}
 
 export type RuntimeConsentTemplate = {
   id: string;
@@ -659,69 +935,8 @@ export async function listRuntimeConsentTemplates(
   auth: AuthContext,
   filter: RuntimeTemplateFilter,
 ): Promise<RuntimeConsentTemplate[]> {
-  const tenantId = requireTenantId(auth);
-  const consentType = normalizeConsentType(filter.consentType);
-  const specialty = normalizeFilter(filter.specialty).toUpperCase();
-  const department = normalizeFilter(filter.department).toUpperCase();
-
-  await ensureDefaultTemplates(tenantId, auth.sub);
-
-  const templates = await prisma().consentTemplate.findMany({
-    where: {
-      tenantId,
-      ...(consentType ? { consentType } : {}),
-      ...(department ? { OR: [{ department }, { department: null }] } : {}),
-      ...(specialty ? { OR: [{ specialty }, { specialty: "GENERAL_MEDICINE" }] } : {}),
-      status: { in: [ConsentTemplateStatus.ACTIVE, ConsentTemplateStatus.APPROVED] },
-    },
-    include: {
-      versions: {
-        where: {
-          status: { in: [ConsentTemplateStatus.ACTIVE, ConsentTemplateStatus.APPROVED] },
-        },
-        orderBy: [{ versionNumber: "desc" }],
-        take: 1,
-      },
-    },
-    orderBy: [{ isSystemTemplate: "desc" }, { updatedAt: "desc" }],
-    take: 100,
+  const client = prisma();
+  return withConsentTemplateSchemaRecovery(async () => {
+    return listRuntimeConsentTemplatesWithClient(client, auth, filter);
   });
-
-  const mapped = templates
-    .map((template) => {
-      const version = template.versions[0];
-      if (!version) return null;
-
-      return {
-        id: template.id,
-        templateVersionId: version.id,
-        titleAr: template.titleAr,
-        titleEn: template.titleEn,
-        consentType: template.consentType,
-        specialty: template.specialty,
-        department: template.department,
-        version: version.versionLabel,
-        status: version.status,
-        language: "bilingual" as const,
-        summaryAr: template.summaryAr,
-        summaryEn: template.summaryEn,
-        previewAr: version.legalTextAr,
-        previewEn: version.legalTextEn,
-      };
-    })
-    .filter((item): item is RuntimeConsentTemplate => item !== null);
-
-  if (mapped.length === 0) {
-    const originalConsentType = normalizeFilter(filter.consentType);
-    const normalizedConsentType = consentType || "UNSPECIFIED";
-    throw new ApiError(
-      404,
-      originalConsentType
-        ? `No consent templates found for "${originalConsentType}" after normalization to "${normalizedConsentType}".`
-        : "No consent templates found for the requested filters.",
-      { code: "CONSENT_TEMPLATE_NOT_FOUND" },
-    );
-  }
-
-  return mapped;
 }
