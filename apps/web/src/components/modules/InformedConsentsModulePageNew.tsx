@@ -216,8 +216,12 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
         `/api/modules/informed-consents/templates?type=${encodeURIComponent(normalizedConsentType)}`
       );
 
-      setTemplates(Array.isArray(tmpl) ? tmpl : []);
+      const normalizedTemplates = Array.isArray(tmpl) ? tmpl : [];
+      setTemplates(normalizedTemplates);
       setSelectedTemplate(null);
+      if (normalizedTemplates.length === 0) {
+        setError("No active consent templates were found for the selected consent type and encounter context.");
+      }
     } catch (err) {
       setTemplates([]);
       setSelectedTemplate(null);

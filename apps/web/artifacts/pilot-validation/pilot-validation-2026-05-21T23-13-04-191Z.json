@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-05-21T23:13:04.191Z",
+  "baseUrl": "https://wathiqcare.online",
+  "checks": {
+    "users": [],
+    "mrns": [],
+    "authentication": []
+  },
+  "summary": {
+    "totalChecks": 0,
+    "passed": 0,
+    "failed": 0,
+    "blocked": 1
+  },
+  "blocker": "No database URL found. Set DATABASE_URL, POSTGRES_PRISMA_URL, POSTGRES_URL, or POSTGRES_URL_NON_POOLING to run validation."
+}

@@ -225,18 +225,12 @@ async function listRuntimeConsentTemplatesWithClient(
   filter: RuntimeTemplateFilter,
 ): Promise<RuntimeConsentTemplate[]> {
   const tenantId = requireTenantId(auth);
-  const consentType = normalizeConsentType(filter.consentType);
-  const specialty = normalizeFilter(filter.specialty).toUpperCase();
-  const department = normalizeFilter(filter.department).toUpperCase();
 
   await ensureDefaultTemplates(tenantId, auth.sub);
 
   const templates = await client.consentTemplate.findMany({
     where: {
       tenantId,
-      ...(consentType ? { consentType } : {}),
-      ...(department ? { OR: [{ department }, { department: null }] } : {}),
-      ...(specialty ? { OR: [{ specialty }, { specialty: "GENERAL_MEDICINE" }] } : {}),
       status: { in: [ConsentTemplateStatus.ACTIVE, ConsentTemplateStatus.APPROVED] },
     },
     include: {
@@ -249,10 +243,12 @@ async function listRuntimeConsentTemplatesWithClient(
       },
     },
     orderBy: [{ isSystemTemplate: "desc" }, { updatedAt: "desc" }],
-    take: 100,
+    take: 200,
   });
 
   const mapped = templates
+    .filter((template) => templateMatchesRuntimeFilter(template, filter))
+    .sort((left, right) => scoreRuntimeTemplateMatch(right, filter) - scoreRuntimeTemplateMatch(left, filter))
     .map((template) => {
       const version = template.versions[0];
       if (!version) return null;
@@ -275,18 +271,6 @@ async function listRuntimeConsentTemplatesWithClient(
       };
     })
     .filter((item): item is RuntimeConsentTemplate => item !== null);
-
-  if (mapped.length === 0) {
-    const originalConsentType = normalizeFilter(filter.consentType);
-    const normalizedConsentType = consentType || "UNSPECIFIED";
-    throw new ApiError(
-      404,
-      originalConsentType
-        ? `No consent templates found for "${originalConsentType}" after normalization to "${normalizedConsentType}".`
-        : "No consent templates found for the requested filters.",
-      { code: "CONSENT_TEMPLATE_NOT_FOUND" },
-    );
-  }
 
   return mapped;
 }
@@ -452,6 +436,113 @@ function requireTenantId(auth: AuthContext): string {
 
 function normalizeFilter(value: string | null | undefined): string {
   return (value || "").trim();
+}
+
+const CANONICAL_CONSENT_TYPE_ALIASES: Record<string, string> = {
+  GENERAL_TREATMENT_CONSENT: "GENERAL_CONSENT",
+  SURGICAL_CONSENT: "SURGERY_CONSENT",
+  SURGICAL_PROCEDURE_CONSENT: "SURGERY_CONSENT",
+  BLOOD_TRANSFUSION: "BLOOD_TRANSFUSION_CONSENT",
+  HIGH_RISK_MEDICAL_PROCEDURE_CONSENT: "HIGH_RISK_PROCEDURE_CONSENT",
+  DAMA_REFUSAL_CONSENT: "DAMA_REFUSAL_OF_DISCHARGE",
+};
+
+const CANONICAL_SPECIALTY_ALIASES: Record<string, string> = {
+  GENERAL_SURGERY: "SURGERY",
+  SURGICAL: "SURGERY",
+  OB_GYN: "OBSTETRICS_GYNECOLOGY",
+  OBSTETRICS_AND_GYNECOLOGY: "OBSTETRICS_GYNECOLOGY",
+  EMERGENCY: "EMERGENCY_MEDICINE",
+};
+
+const CANONICAL_DEPARTMENT_ALIASES: Record<string, string> = {
+  OBSTETRICS_AND_GYNECOLOGY: "OBSTETRICS_GYNECOLOGY",
+};
+
+function normalizeLookupToken(value: string | null | undefined): string {
+  return normalizeFilter(value).toUpperCase().replace(/[\s-]+/g, "_");
+}
+
+export function normalizeRuntimeConsentType(value: string | null | undefined): string {
+  const normalized = normalizeLookupToken(value);
+  return CANONICAL_CONSENT_TYPE_ALIASES[normalized] || normalized;
+}
+
+export function normalizeRuntimeSpecialty(value: string | null | undefined): string {
+  const normalized = normalizeLookupToken(value);
+  return CANONICAL_SPECIALTY_ALIASES[normalized] || normalized;
+}
+
+export function normalizeRuntimeDepartment(value: string | null | undefined): string {
+  const normalized = normalizeLookupToken(value);
+  return CANONICAL_DEPARTMENT_ALIASES[normalized] || normalized;
+}
+
+export function templateMatchesRuntimeFilter(
+  template: {
+    consentType: string;
+    specialty: string;
+    department: string | null;
+  },
+  filter: RuntimeTemplateFilter,
+): boolean {
+  const consentType = normalizeRuntimeConsentType(filter.consentType);
+  const specialty = normalizeRuntimeSpecialty(filter.specialty);
+  const department = normalizeRuntimeDepartment(filter.department);
+
+  const templateConsentType = normalizeRuntimeConsentType(template.consentType);
+  const templateSpecialty = normalizeRuntimeSpecialty(template.specialty);
+  const templateDepartment = normalizeRuntimeDepartment(template.department);
+
+  if (consentType && templateConsentType !== consentType) {
+    return false;
+  }
+
+  if (specialty && templateSpecialty !== specialty && templateSpecialty !== "GENERAL_MEDICINE") {
+    return false;
+  }
+
+  if (
+    department &&
+    templateDepartment &&
+    templateDepartment !== department &&
+    templateDepartment !== specialty &&
+    templateDepartment !== "GENERAL_MEDICINE"
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function scoreRuntimeTemplateMatch(
+  template: {
+    specialty: string;
+    department: string | null;
+    isSystemTemplate: boolean;
+  },
+  filter: RuntimeTemplateFilter,
+): number {
+  const specialty = normalizeRuntimeSpecialty(filter.specialty);
+  const department = normalizeRuntimeDepartment(filter.department);
+  const templateSpecialty = normalizeRuntimeSpecialty(template.specialty);
+  const templateDepartment = normalizeRuntimeDepartment(template.department);
+
+  let score = template.isSystemTemplate ? 1 : 0;
+
+  if (specialty && templateSpecialty === specialty) {
+    score += 4;
+  }
+
+  if (department && templateDepartment === department) {
+    score += 3;
+  } else if (department && templateDepartment === specialty) {
+    score += 2;
+  } else if (!templateDepartment || templateDepartment === "GENERAL_MEDICINE") {
+    score += 1;
+  }
+
+  return score;
 }
 
 function buildDefaultSections(): Array<{
