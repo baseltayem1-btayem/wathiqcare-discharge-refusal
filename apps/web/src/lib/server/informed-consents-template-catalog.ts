@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
+import { normalizeConsentType } from "@/lib/consent-type-canonicalization";
 import {
   SAUDI_ENTERPRISE_TEMPLATES,
   buildSaudiTemplateBodyAr,
@@ -659,7 +660,7 @@ export async function listRuntimeConsentTemplates(
   filter: RuntimeTemplateFilter,
 ): Promise<RuntimeConsentTemplate[]> {
   const tenantId = requireTenantId(auth);
-  const consentType = normalizeFilter(filter.consentType).toUpperCase();
+  const consentType = normalizeConsentType(filter.consentType);
   const specialty = normalizeFilter(filter.specialty).toUpperCase();
   const department = normalizeFilter(filter.department).toUpperCase();
 
@@ -709,6 +710,18 @@ export async function listRuntimeConsentTemplates(
       };
     })
     .filter((item): item is RuntimeConsentTemplate => item !== null);
+
+  if (mapped.length === 0) {
+    const originalConsentType = normalizeFilter(filter.consentType);
+    const normalizedConsentType = consentType || "UNSPECIFIED";
+    throw new ApiError(
+      404,
+      originalConsentType
+        ? `No consent templates found for "${originalConsentType}" after normalization to "${normalizedConsentType}".`
+        : "No consent templates found for the requested filters.",
+      { code: "CONSENT_TEMPLATE_NOT_FOUND" },
+    );
+  }
 
   return mapped;
 }
