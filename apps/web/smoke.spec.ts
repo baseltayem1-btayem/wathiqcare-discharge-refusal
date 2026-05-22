@@ -13,6 +13,7 @@ const protectedRoutes = [
   '/modules/informed-consents',
   '/modules/informed-consents/list',
   '/modules/informed-consents/create',
+  '/legacy/informed-consents',
   '/modules/informed-consents/archive',
   '/modules/informed-consents/templates',
   '/modules/promissory-notes',

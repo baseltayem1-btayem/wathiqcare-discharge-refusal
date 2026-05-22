@@ -11,7 +11,7 @@ const DEMO_ACCOUNTS = [
     email: "demo.platform.admin@wathiqcare.local",
     password: "DemoPlatformAdmin@2026!",
     nextPassword: "RotatedPlatformDemo@2026!",
-    expectedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
+    expectedModules: ["/modules/informed-consents/create", "/modules/promissory-notes", "/modules/discharge-refusal"],
     blockedModules: [],
   },
   {
@@ -19,7 +19,7 @@ const DEMO_ACCOUNTS = [
     email: "demo.legal.affairs@demo-imc.local",
     password: "DemoLegalAffairs@2026!",
     nextPassword: "RotatedLegalDemo@2026!",
-    expectedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
+    expectedModules: ["/modules/informed-consents/create", "/modules/promissory-notes", "/modules/discharge-refusal"],
     blockedModules: [],
   },
   {
@@ -27,7 +27,7 @@ const DEMO_ACCOUNTS = [
     email: "demo.doctor@demo-imc.local",
     password: "DemoDoctor@2026!",
     nextPassword: "RotatedDoctorDemo@2026!",
-    expectedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
+    expectedModules: ["/modules/informed-consents/create", "/modules/discharge-refusal"],
     blockedModules: ["/modules/promissory-notes"],
   },
   {
@@ -35,7 +35,7 @@ const DEMO_ACCOUNTS = [
     email: "demo.nurse@demo-imc.local",
     password: "DemoNurse@2026!",
     nextPassword: "RotatedNurseDemo@2026!",
-    expectedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
+    expectedModules: ["/modules/informed-consents/create", "/modules/discharge-refusal"],
     blockedModules: ["/modules/promissory-notes"],
   },
   {
@@ -43,7 +43,7 @@ const DEMO_ACCOUNTS = [
     email: "demo.medical.director@demo-imc.local",
     password: "DemoMedicalDirector@2026!",
     nextPassword: "RotatedMedicalDirectorDemo@2026!",
-    expectedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
+    expectedModules: ["/modules/informed-consents/create", "/modules/discharge-refusal"],
     blockedModules: ["/modules/promissory-notes"],
   },
   {
@@ -51,7 +51,7 @@ const DEMO_ACCOUNTS = [
     email: "demo.compliance@demo-imc.local",
     password: "DemoCompliance@2026!",
     nextPassword: "RotatedComplianceDemo@2026!",
-    expectedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
+    expectedModules: ["/modules/informed-consents/create", "/modules/promissory-notes", "/modules/discharge-refusal"],
     blockedModules: [],
   },
   {
@@ -60,7 +60,7 @@ const DEMO_ACCOUNTS = [
     password: "DemoFinance@2026!",
     nextPassword: "RotatedFinanceDemo@2026!",
     expectedModules: ["/modules/promissory-notes"],
-    blockedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
+    blockedModules: ["/modules/informed-consents/create", "/modules/discharge-refusal"],
   },
 ] as const;
 
@@ -71,6 +71,7 @@ const ALLOWED_SUBROUTES: Record<string, string[]> = {
     "/modules/informed-consents/create",
     "/modules/informed-consents/archive",
     "/modules/informed-consents/templates",
+    "/legacy/informed-consents",
   ],
   "/modules/promissory-notes": [
     "/modules/promissory-notes",
@@ -86,6 +87,7 @@ const ALLOWED_SUBROUTES: Record<string, string[]> = {
 };
 
 const ROUTE_REDIRECT_TARGETS: Record<string, string[]> = {
+  "/modules/informed-consents": ["/modules/informed-consents/create"],
   "/modules/discharge-refusal/dashboard": ["/dashboard", "/dashboards"],
   "/modules/discharge-refusal/cases": ["/cases"],
 };

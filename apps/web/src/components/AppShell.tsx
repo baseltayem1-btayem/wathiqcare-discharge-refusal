@@ -61,7 +61,7 @@ function buildCaseWorkflowNav(caseNav: NonNullable<AppShellProps["workflowCaseNa
 
 const PRIMARY_TENANT_HREFS = [
   "/modules",
-  "/modules/informed-consents",
+  "/modules/informed-consents/create",
   "/dashboard",
   "/cases",
   "/documents",
@@ -71,6 +71,14 @@ const PRIMARY_TENANT_HREFS = [
   "/users",
   "/settings",
 ] as const;
+
+function isPrimaryNavItemActive(href: string, pathname: string): boolean {
+  if (href === "/modules/informed-consents/create") {
+    return pathname.startsWith("/modules/informed-consents") || pathname.startsWith("/legacy/informed-consents");
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 function TenantBrandMark({ name, logoUrl, compact = false }: { name: string; logoUrl: string | null; compact?: boolean }) {
   const isImcTenant = /\bIMC\b/i.test(name);
@@ -409,7 +417,7 @@ export default function AppShell({
         label: t(item.labelKey || ""),
         icon: item.icon,
         disabled: item.disabled,
-        active: pathname === item.href || pathname.startsWith(`${item.href}/`),
+        active: isPrimaryNavItemActive(item.href, pathname),
         ariaLabel: t(item.labelKey || ""),
       }))}
       moduleMeta={(

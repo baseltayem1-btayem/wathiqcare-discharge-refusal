@@ -26,6 +26,7 @@ import ModuleShell from "@/components/ModuleShell";
 import { apiFetch } from "@/utils/api";
 import SecureSigningStatusBadges from "@/components/signing/SecureSigningStatusBadges";
 import type { SecureSigningWorkflow } from "@/lib/server/module-secure-signing-service";
+import { normalizeConsentType } from "@/lib/consent-type-canonicalization";
 
 type ModuleAuth = {
   role?: string | null;
@@ -206,23 +207,25 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
   }, []);
 
   // Load Templates
-  const loadTemplates = useCallback(async (consentTypeVal: string, specialtyVal: string) => {
+  const loadTemplates = useCallback(async (consentTypeVal: string) => {
     setLoading(true);
     setError("");
     try {
-      const departmentVal = encounterData?.department?.trim() || "";
+      const normalizedConsentType = normalizeConsentType(consentTypeVal);
       const tmpl = await apiFetch<ConsentTemplate[]>(
-        `/api/modules/informed-consents/templates?type=${encodeURIComponent(consentTypeVal)}&specialty=${encodeURIComponent(specialtyVal)}&department=${encodeURIComponent(departmentVal)}`
-      ).catch(() => []);
+        `/api/modules/informed-consents/templates?type=${encodeURIComponent(normalizedConsentType)}`
+      );
 
       setTemplates(Array.isArray(tmpl) ? tmpl : []);
       setSelectedTemplate(null);
     } catch (err) {
+      setTemplates([]);
+      setSelectedTemplate(null);
       setError(err instanceof Error ? err.message : "Failed to load templates");
     } finally {
       setLoading(false);
     }
-  }, [encounterData?.department]);
+  }, []);
 
   useEffect(() => {
     if (!selectedTemplate) {
@@ -651,13 +654,14 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
           <button
             key={type}
             onClick={() => {
-              setConsentType(type);
+              const normalizedType = normalizeConsentType(type);
+              setConsentType(normalizedType);
               setSpecialty(encounterData?.physicianSpecialty || "GENERAL_MEDICINE");
-              loadTemplates(type, encounterData?.physicianSpecialty || "GENERAL_MEDICINE");
+              loadTemplates(normalizedType);
               setCurrentStep("template_selection");
             }}
             className={`p-4 border-2 rounded-lg transition-all ${
-              consentType === type
+              consentType === normalizeConsentType(type)
                 ? "border-blue-600 bg-blue-50"
                 : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
             }`}
