@@ -10,8 +10,12 @@ function normalizeToken(value: string | null | undefined): string {
   return (value || "").trim().replace(/[\s-]+/g, "_").toUpperCase();
 }
 
+export function normalizeCatalogLookup(value: string | null | undefined): string {
+  return normalizeToken(value);
+}
+
 export function normalizeConsentType(value: string | null | undefined): string {
-  const normalized = normalizeToken(value);
+  const normalized = normalizeCatalogLookup(value);
   if (!normalized) {
     return "";
   }

@@ -207,7 +207,7 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
   }, []);
 
   // Load Templates
-  const loadTemplates = useCallback(async (consentTypeVal: string, specialtyVal: string) => {
+  const loadTemplates = useCallback(async (consentTypeVal: string) => {
     setLoading(true);
     setError("");
     try {
@@ -657,7 +657,7 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
               const normalizedType = normalizeConsentType(type);
               setConsentType(normalizedType);
               setSpecialty(encounterData?.physicianSpecialty || "GENERAL_MEDICINE");
-              loadTemplates(normalizedType, encounterData?.physicianSpecialty || "GENERAL_MEDICINE");
+              loadTemplates(normalizedType);
               setCurrentStep("template_selection");
             }}
             className={`p-4 border-2 rounded-lg transition-all ${
