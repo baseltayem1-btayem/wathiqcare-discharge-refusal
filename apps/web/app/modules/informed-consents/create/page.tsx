@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
-import InformedConsentIssuancePage from "@/components/modules/informed-consent-issuance/InformedConsentIssuancePage";
-import { ENABLE_BIOMETRIC_SIGNATURE, ENABLE_CLINICAL_AI_ASSISTANT, ENABLE_TABLET_SIGNATURE } from "@/lib/config/feature-flags";
+import InformedConsentsModulePageNew from "@/components/modules/InformedConsentsModulePageNew";
+import ModuleShell from "@/components/ModuleShell";
 import { isInformedConsentsEnabled } from "@/lib/modules/informed-consents-release";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
+import { getEnvironmentConfig } from "@/lib/environment/environment";
 
 export const metadata: Metadata = {
   title: "Create Informed Consent | WathiqCare",
@@ -12,22 +12,29 @@ export const metadata: Metadata = {
 };
 
 export default async function InformedConsentsCreatePage() {
-  if (!isInformedConsentsEnabled()) {
-    notFound();
-  }
+  const environment = getEnvironmentConfig();
+  const canRenderPilotWorkflow = environment.isPilot || environment.isUAT;
+  const informedConsentsEnabled = isInformedConsentsEnabled();
+  const shouldShowPilotBanner = canRenderPilotWorkflow || !informedConsentsEnabled;
 
   const auth = await requirePageAuthClaimsOrRedirect("/modules/informed-consents/create");
 
   if (!canAccessModule("informed-consents", { role: auth.role, platformRole: auth.platform_role })) {
-    redirect("/dashboard");
+    return (
+      <ModuleShell
+        auth={auth}
+        moduleKey="informed-consents"
+        title={{ ar: "الموافقات المستنيرة", en: "Informed Consents" }}
+        subtitle={{ ar: "صلاحيات الوصول", en: "Access control" }}
+      >
+        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+          Access denied: You do not have permission to open the informed consent workflow.
+        </div>
+      </ModuleShell>
+    );
   }
 
   return (
-    <InformedConsentIssuancePage
-      auth={auth}
-      clinicalAiEnabled={ENABLE_CLINICAL_AI_ASSISTANT}
-      tabletSignatureEnabled={ENABLE_TABLET_SIGNATURE}
-      biometricSignatureEnabled={ENABLE_BIOMETRIC_SIGNATURE}
-    />
+    <InformedConsentsModulePageNew auth={auth} showInternalPilotBanner={shouldShowPilotBanner} />
   );
 }

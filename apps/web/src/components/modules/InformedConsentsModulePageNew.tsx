@@ -130,7 +130,13 @@ const WORKFLOW_STEPS: { id: WorkflowStep; labelAr: string; labelEn: string }[] =
   { id: "finalization", labelAr: "الإنهاء", labelEn: "Finalization" },
 ];
 
-export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAuth }) {
+export default function InformedConsentsModulePageNew({
+  auth,
+  showInternalPilotBanner = false,
+}: {
+  auth: ModuleAuth;
+  showInternalPilotBanner?: boolean;
+}) {
   const { t, locale } = useI18n();
   const [currentStep, setCurrentStep] = useState<WorkflowStep>("patient_search");
   const [patientData, setPatientData] = useState<PatientData | null>(null);
@@ -1170,6 +1176,13 @@ export default function InformedConsentsModulePageNew({ auth }: { auth: ModuleAu
       }}
     >
       <div className="space-y-6">
+        {showInternalPilotBanner ? (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="font-semibold">INTERNAL PILOT — TEST DATA ONLY</div>
+            <div>Do not use or expose real patient data in this workflow.</div>
+          </div>
+        ) : null}
+
         {error && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
