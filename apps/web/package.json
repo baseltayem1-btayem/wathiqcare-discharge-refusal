@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run prisma:generate && node scripts/run-sql-migrations.cjs && next build --webpack && node scripts/write-deterministic-routes-manifest.cjs",
+    "build": "npm run prisma:generate && node ../../scripts/write-release-build-info.mjs && node scripts/run-sql-migrations.cjs && next build --webpack && node scripts/write-deterministic-routes-manifest.cjs",
     "start": "next start",
+    "runtime:pre-vercel": "node scripts/pre-vercel-deploy-check.mjs",
     "validate:prod-release": "node scripts/prod-release-gate.cjs",
     "demo:seed": "node scripts/seed-demo-users.mjs",
     "uat:seed": "node scripts/seed-uat-users.mjs",

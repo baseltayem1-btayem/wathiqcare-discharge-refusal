@@ -1,0 +1,87 @@
+#!/usr/bin/env node
+/**
+ * WathiqCare Web - Pre-Vercel Deploy Check
+ *
+ * Runs from apps/web project root in Vercel builds.
+ */
+
+import fs from 'fs';
+
+function readJson(path) {
+  return JSON.parse(fs.readFileSync(path, 'utf8'));
+}
+
+function normalizeBranch(ref) {
+  return (ref || '').replace(/^refs\/heads\//, '').trim();
+}
+
+function isBlockedProductionBranch(branchName) {
+  if (!branchName) return false;
+  return (
+    branchName.startsWith('copilot/') ||
+    branchName.startsWith('hotfix/') ||
+    branchName.startsWith('tmp/') ||
+    branchName.startsWith('temp/') ||
+    branchName.startsWith('temporary/')
+  );
+}
+
+function main() {
+  const issues = [];
+  const pkg = readJson('package.json');
+
+  const vercelEnv = (process.env.VERCEL_ENV || process.env.VERCEL_TARGET_ENV || '').trim().toLowerCase();
+  const branchRef = process.env.VERCEL_GIT_COMMIT_REF || process.env.GITHUB_REF || process.env.GITHUB_REF_NAME || '';
+  const branchName = normalizeBranch(branchRef);
+  const commitSha = (process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || '').trim();
+
+  if (!pkg.scripts?.build) {
+    issues.push('package.json missing build script');
+  }
+
+  if (!pkg.scripts?.['prisma:generate']) {
+    issues.push('package.json missing prisma:generate script');
+  }
+
+  if (!pkg.dependencies?.next) {
+    issues.push('Next.js dependency missing');
+  }
+
+  if (!pkg.dependencies?.['@prisma/client']) {
+    issues.push('@prisma/client dependency missing');
+  }
+
+  if (!pkg.devDependencies?.prisma) {
+    issues.push('prisma devDependency missing');
+  }
+
+  if (vercelEnv === 'production') {
+    if (branchName && branchName !== 'main') {
+      issues.push(`Production deployment blocked: branch must be main, received ${branchName}`);
+    }
+
+    if (isBlockedProductionBranch(branchName)) {
+      issues.push(`Production deployment blocked: branch prefix is not allowed (${branchName})`);
+    }
+
+    if (!commitSha) {
+      issues.push('Production deployment blocked: commit SHA is missing from CI metadata');
+    }
+  }
+
+  if (issues.length > 0) {
+    console.error('PRE_VERCEL_DEPLOY_CHECK: FAIL');
+    for (const issue of issues) {
+      console.error(` - ${issue}`);
+    }
+    process.exit(1);
+  }
+
+  console.log('PRE_VERCEL_DEPLOY_CHECK: PASS');
+  console.log(`sourceBranch=${branchName || 'unknown'}`);
+  console.log(`vercelEnv=${vercelEnv || 'unknown'}`);
+  console.log('Next.js runtime compatibility: PASS');
+  console.log('Prisma compatibility: PASS');
+}
+
+main();
