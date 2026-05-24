@@ -130,6 +130,21 @@ const ROLE_PERMISSIONS: Record<string, InformedConsentPermission[]> = {
   ],
 };
 
+// Maps canonical operational roles (as stored in auth.role / DB) to their
+// consent-module RBAC equivalents. Operational role names do not match the
+// consent-specific keys above, so this bridge is required.
+const OPERATIONAL_CONSENT_ROLE_MAP: Record<string, string> = {
+  doctor:           "consent_physician",
+  nursing:          "consent_physician",
+  nurse:            "consent_physician",
+  medical_director: "consent_medical_reviewer",
+  legal_admin:      "consent_legal_reviewer",
+  legal:            "consent_legal_reviewer",
+  compliance:       "consent_compliance_reviewer",
+  auditor:          "consent_viewer",
+  quality:          "consent_viewer",
+};
+
 function normalizeRole(role: string | null | undefined): string {
   return (role || "").trim().toLowerCase();
 }
@@ -137,10 +152,14 @@ function normalizeRole(role: string | null | undefined): string {
 export function listInformedConsentPermissions(auth: AuthContext): Set<InformedConsentPermission> {
   const set = new Set<InformedConsentPermission>();
 
+  const rawRole = normalizeRole(auth.role);
+  const resolvedConsentRole = OPERATIONAL_CONSENT_ROLE_MAP[rawRole] ?? rawRole;
+
   const candidates = [
     normalizeRole(auth.platform_role),
     normalizeRole(auth.user_type),
-    normalizeRole(auth.role),
+    rawRole,
+    resolvedConsentRole,
   ];
 
   for (const role of candidates) {
