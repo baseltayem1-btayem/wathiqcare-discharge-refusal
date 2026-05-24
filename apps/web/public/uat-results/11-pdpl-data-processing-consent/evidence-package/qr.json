@@ -1,6 +1,6 @@
 {
   "status": "VALID",
-  "token": "aa9ba1f3dc849cac0dc1",
-  "verifyUrl": "/uat/verify/11-pdpl-data-processing-consent/aa9ba1f3dc849cac0dc1",
-  "checksum": "2c81aa5864d54d27b879a978cc7fbfea55f9bc5603809de733a5a3d2e5ff20d2"
+  "token": "660be049baa9af743655",
+  "verifyUrl": "/uat-results/11-pdpl-data-processing-consent/qr-verification.html",
+  "checksum": "b608aadcaacb7ad1473631a4c92339a0ae7a696a9d152d2f226161ab2bd63057"
 }

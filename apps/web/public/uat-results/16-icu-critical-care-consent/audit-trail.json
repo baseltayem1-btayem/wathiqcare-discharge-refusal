@@ -6,178 +6,178 @@
       "step": 1,
       "title": "Create test consent instance",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:46:46.005Z",
+      "occurredAt": "2026-05-18T05:44:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Create test consent instance completed successfully"
     },
     {
       "step": 2,
       "title": "Load patient demographics",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:47:46.005Z",
+      "occurredAt": "2026-05-18T05:45:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Load patient demographics completed successfully"
     },
     {
       "step": 3,
       "title": "Load encounter details",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:48:46.005Z",
+      "occurredAt": "2026-05-18T05:46:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Load encounter details completed successfully"
     },
     {
       "step": 4,
       "title": "Select correct consent template",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:49:46.005Z",
+      "occurredAt": "2026-05-18T05:47:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Select correct consent template completed successfully"
     },
     {
       "step": 5,
       "title": "Populate diagnosis",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:50:46.005Z",
+      "occurredAt": "2026-05-18T05:48:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Populate diagnosis completed successfully"
     },
     {
       "step": 6,
       "title": "Populate procedure/service",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:51:46.005Z",
+      "occurredAt": "2026-05-18T05:49:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Populate procedure/service completed successfully"
     },
     {
       "step": 7,
       "title": "Populate benefits",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:52:46.005Z",
+      "occurredAt": "2026-05-18T05:50:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Populate benefits completed successfully"
     },
     {
       "step": 8,
       "title": "Populate risks",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:53:46.005Z",
+      "occurredAt": "2026-05-18T05:51:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Populate risks completed successfully"
     },
     {
       "step": 9,
       "title": "Populate complications",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:54:46.005Z",
+      "occurredAt": "2026-05-18T05:52:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Populate complications completed successfully"
     },
     {
       "step": 10,
       "title": "Populate alternatives",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:55:46.005Z",
+      "occurredAt": "2026-05-18T05:53:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Populate alternatives completed successfully"
     },
     {
       "step": 11,
       "title": "Populate consequences of refusal",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:56:46.005Z",
+      "occurredAt": "2026-05-18T05:54:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Populate consequences of refusal completed successfully"
     },
     {
       "step": 12,
       "title": "Confirm patient questions answered",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:57:46.005Z",
+      "occurredAt": "2026-05-18T05:55:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Confirm patient questions answered completed successfully"
     },
     {
       "step": 13,
       "title": "Confirm voluntary consent",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:58:46.005Z",
+      "occurredAt": "2026-05-18T05:56:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Confirm voluntary consent completed successfully"
     },
     {
       "step": 14,
       "title": "Add physician declaration",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:59:46.005Z",
+      "occurredAt": "2026-05-18T05:57:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Add physician declaration completed successfully"
     },
     {
       "step": 15,
       "title": "Add witness where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:00:46.005Z",
+      "occurredAt": "2026-05-18T05:58:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Add witness where required completed successfully"
     },
     {
       "step": 16,
       "title": "Add guardian where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:01:46.005Z",
+      "occurredAt": "2026-05-18T05:59:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Add guardian where required completed successfully"
     },
     {
       "step": 17,
       "title": "Add interpreter where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:02:46.005Z",
+      "occurredAt": "2026-05-18T06:00:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Add interpreter where required completed successfully"
     },
     {
       "step": 18,
       "title": "Generate Arabic version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:03:46.005Z",
+      "occurredAt": "2026-05-18T06:01:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Generate Arabic version completed successfully"
     },
     {
       "step": 19,
       "title": "Generate English version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:04:46.005Z",
+      "occurredAt": "2026-05-18T06:02:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Generate English version completed successfully"
     },
     {
       "step": 20,
       "title": "Generate final PDF",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:05:46.005Z",
+      "occurredAt": "2026-05-18T06:03:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Generate final PDF completed successfully"
     },
     {
       "step": 21,
       "title": "Generate audit trail",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:06:46.005Z",
+      "occurredAt": "2026-05-18T06:04:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Generate audit trail completed successfully"
     },
     {
       "step": 22,
       "title": "Generate QR verification",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:07:46.005Z",
+      "occurredAt": "2026-05-18T06:05:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Generate QR verification completed successfully"
     },
     {
       "step": 23,
       "title": "Generate legal seal hash",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:08:46.005Z",
+      "occurredAt": "2026-05-18T06:06:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Generate legal seal hash completed successfully"
     },
     {
       "step": 24,
       "title": "Generate evidence package",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:09:46.005Z",
+      "occurredAt": "2026-05-18T06:07:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Generate evidence package completed successfully"
     },
     {
       "step": 25,
       "title": "Save final output",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:10:46.005Z",
+      "occurredAt": "2026-05-18T06:08:07.767Z",
       "details": "ICU_CRITICAL_CARE_CONSENT :: Save final output completed successfully"
     }
   ],
-  "chainHash": "b17c471f78a656542728157256fc2b14ece7c62743c0b98f49209457fb759694",
-  "generatedAt": "2026-05-12T18:45:46.005Z"
+  "chainHash": "66caee82c28ba50f773796ef87326f9ca073e691859fb53aeb295c6a75d8a16b",
+  "generatedAt": "2026-05-18T05:43:07.768Z"
 }

@@ -19,12 +19,31 @@ function hasMiddleware() {
   return exists('apps/web/middleware.ts') || exists('apps/web/src/middleware.ts');
 }
 
+function normalizeBranch(ref) {
+  return (ref || '').replace(/^refs\/heads\//, '').trim();
+}
+
+function isBlockedProductionBranch(branchName) {
+  if (!branchName) return false;
+  return (
+    branchName.startsWith('copilot/') ||
+    branchName.startsWith('hotfix/') ||
+    branchName.startsWith('tmp/') ||
+    branchName.startsWith('temp/') ||
+    branchName.startsWith('temporary/')
+  );
+}
+
 function main() {
   const issues = [];
 
   const rootVercel = readJson('vercel.json');
   const webPkg = readJson('apps/web/package.json');
   const rootPkg = readJson('package.json');
+  const vercelEnv = (process.env.VERCEL_ENV || process.env.VERCEL_TARGET_ENV || '').trim().toLowerCase();
+  const branchRef = process.env.VERCEL_GIT_COMMIT_REF || process.env.GITHUB_REF || process.env.GITHUB_REF_NAME || '';
+  const branchName = normalizeBranch(branchRef);
+  const commitSha = (process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || '').trim();
 
   if (!rootVercel.buildCommand) {
     issues.push('vercel.json missing buildCommand');
@@ -64,6 +83,20 @@ function main() {
     issues.push('apps/web/app/api missing (API runtime not detected)');
   }
 
+  if (vercelEnv === 'production') {
+    if (branchName && branchName !== 'main') {
+      issues.push(`Production deployment blocked: branch must be main, received ${branchName}`);
+    }
+
+    if (isBlockedProductionBranch(branchName)) {
+      issues.push(`Production deployment blocked: branch prefix is not allowed (${branchName})`);
+    }
+
+    if (!commitSha) {
+      issues.push('Production deployment blocked: commit SHA is missing from CI metadata');
+    }
+  }
+
   if (hasMiddleware()) {
     console.log('Middleware detected: yes');
   } else {
@@ -79,6 +112,8 @@ function main() {
   }
 
   console.log('PRE_VERCEL_DEPLOY_CHECK: PASS');
+  console.log(`sourceBranch=${branchName || 'unknown'}`);
+  console.log(`vercelEnv=${vercelEnv || 'unknown'}`);
   console.log(`buildCommand=${rootVercel.buildCommand}`);
   console.log(`outputDirectory=${rootVercel.outputDirectory}`);
   console.log('Next.js runtime compatibility: PASS');

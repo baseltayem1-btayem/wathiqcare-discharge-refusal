@@ -1,6 +1,6 @@
 {
   "status": "VALID",
-  "token": "a3f1bf55d55fb0c283fe",
-  "verifyUrl": "/uat/verify/04-blood-transfusion-consent/a3f1bf55d55fb0c283fe",
-  "checksum": "60dd2f2fff3c710ec3a13dfddaa189ce397ddefd7047001a06baa8d410b53ac0"
+  "token": "4a4372b66b8d087ee554",
+  "verifyUrl": "/uat-results/04-blood-transfusion-consent/qr-verification.html",
+  "checksum": "1c524135ef775076d19252bdbecd3fd11e1e432a0eb364331c95b5e65a1d924c"
 }

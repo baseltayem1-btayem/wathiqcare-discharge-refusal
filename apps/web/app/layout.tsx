@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { Toaster } from "@/components/make-ui/sonner";
 import I18nProvider from "@/i18n/I18nProvider";
 import "./globals.css";
@@ -6,6 +7,19 @@ import "./globals.css";
 const CANONICAL_ORIGIN = "https://wathiqcare.online";
 
 export const dynamic = "force-dynamic";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-english",
+  display: "swap",
+});
+
+const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-arabic",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
@@ -41,7 +55,7 @@ export default async function RootLayout({
       dir="ltr"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className="scroll-smooth"
+      className={`${inter.variable} ${ibmPlexSansArabic.variable} scroll-smooth`}
     >
       <body className="antialiased">
         <I18nProvider>

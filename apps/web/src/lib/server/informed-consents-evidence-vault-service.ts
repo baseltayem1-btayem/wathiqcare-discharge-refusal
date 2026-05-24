@@ -4,6 +4,7 @@ import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { buildEvidencePackageV2 } from "@/lib/server/evidence-package-2-service";
 
 const prisma = () => getPrisma();
 
@@ -158,6 +159,8 @@ export async function buildImmutableEvidencePackage(
     consentReference: doc.consentReference,
   };
 
+  const evidenceV2 = await buildEvidencePackageV2(auth, doc.id);
+
   const packagePayload = {
     finalPdfUrl: doc.immutablePdfUrl,
     draftPdfSnapshot: doc.immutablePdfUrl,
@@ -174,6 +177,10 @@ export async function buildImmutableEvidencePackage(
     signatures: signatureEvidence,
     auditTimeline,
     qrVerification,
+    educationSummary: evidenceV2.educationSummary,
+    consentSummary: evidenceV2.consentSummary,
+    timelineSummary: evidenceV2.timelineSummary,
+    evidencePackageV2Id: evidenceV2.packageId,
     finalizedBy: doc.finalizedByUserId,
     finalizedAt: doc.finalizedAt?.toISOString() || null,
   };
@@ -195,6 +202,10 @@ export async function buildImmutableEvidencePackage(
           storagePath,
           verificationToken,
           checksumSha256,
+          evidencePackageV2Id: evidenceV2.packageId,
+          educationSummary: evidenceV2.educationSummary,
+          consentSummary: evidenceV2.consentSummary,
+          timelineSummary: evidenceV2.timelineSummary,
           files: [
             "final.pdf",
             "draft.pdf",

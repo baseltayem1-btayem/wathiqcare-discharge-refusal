@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
+import { recordEvidenceEvent } from "@/lib/server/evidence-package-2-service";
 import { validateSigningToken } from "@/lib/server/signature-orchestration-service";
 import { buildSigningOtpSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
@@ -266,6 +267,21 @@ export async function requestSigningOtp(args: {
 
   await insertOtpEvent(OTP_REQUESTED_EVENT, payload, false);
 
+  void recordEvidenceEvent({
+    tenantId: context.tenantId,
+    consentDocumentId: context.documentId,
+    eventType: "OTP_REQUESTED",
+    eventTimestamp: new Date(),
+    otpSentTime: new Date(),
+    otpVerificationStatus: deliveryStatus === "sent" ? "SENT" : "FAILED_TO_SEND",
+    maskedMobileNumber: payload.maskedPhone,
+    metadata: {
+      moduleType: context.moduleType,
+      sessionId: context.sessionId,
+      challengeId,
+    },
+  }).catch(() => undefined);
+
   await appendAuditChainEvent({
     tenantId: context.tenantId,
     eventType: "PUBLIC_SIGNING_OTP_REQUESTED",
@@ -351,6 +367,20 @@ export async function verifySigningOtp(args: {
       moduleType: context.moduleType,
     }, true);
 
+    void recordEvidenceEvent({
+      tenantId: context.tenantId,
+      consentDocumentId: context.documentId,
+      eventType: "OTP_VERIFY_FAILED",
+      eventTimestamp: new Date(),
+      otpVerificationStatus: "FAILED",
+      maskedMobileNumber: active.payload.maskedPhone,
+      metadata: {
+        moduleType: context.moduleType,
+        sessionId: context.sessionId,
+        challengeId: active.payload.challengeId,
+      },
+    }).catch(() => undefined);
+
     const latestAttempts = await getFailedAttemptCount(active.payload.challengeId);
     return {
       verified: false,
@@ -370,6 +400,21 @@ export async function verifySigningOtp(args: {
     moduleType: context.moduleType,
     verifiedAt: new Date().toISOString(),
   }, true);
+
+  void recordEvidenceEvent({
+    tenantId: context.tenantId,
+    consentDocumentId: context.documentId,
+    eventType: "OTP_VERIFIED",
+    eventTimestamp: new Date(),
+    otpVerificationTime: new Date(),
+    otpVerificationStatus: "VERIFIED",
+    maskedMobileNumber: active.payload.maskedPhone,
+    metadata: {
+      moduleType: context.moduleType,
+      sessionId: context.sessionId,
+      challengeId: active.payload.challengeId,
+    },
+  }).catch(() => undefined);
 
   await appendAuditChainEvent({
     tenantId: context.tenantId,

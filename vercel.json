@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run runtime:pre-vercel && npm run build",
   "installCommand": "npm install",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",

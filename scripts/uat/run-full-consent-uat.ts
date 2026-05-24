@@ -603,6 +603,98 @@ function buildBilingualHtml(scenario: UatScenario, arBody: string, enBody: strin
 </html>`;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function buildQrVerificationHtml(args: {
+  scenario: UatScenario;
+  qrToken: string;
+  qrResult: { status: string; token: string; verifyUrl: string; checksum: string };
+  legalSealHash: string;
+}): string {
+  return `<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <title>QR Verification - ${escapeHtml(args.scenario.titleEn)}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 28px; background: #f8fafc; color: #0f172a; }
+    .panel { max-width: 880px; margin: 0 auto; background: #fff; border: 1px solid #dbe3ef; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); }
+    .badge { display: inline-block; padding: 6px 10px; border-radius: 999px; background: #dcfce7; color: #166534; font-weight: 700; font-size: 12px; }
+    dl { display: grid; grid-template-columns: 180px 1fr; gap: 10px 16px; margin: 18px 0 0; }
+    dt { font-weight: 700; }
+    dd { margin: 0; word-break: break-word; }
+    a { color: #0369a1; }
+    code { font-family: Consolas, monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <p class="badge">${escapeHtml(args.qrResult.status)}</p>
+    <h1>Consent QR Verification</h1>
+    <p>${escapeHtml(args.scenario.titleEn)} / ${escapeHtml(args.scenario.titleAr)}</p>
+    <dl>
+      <dt>QR token</dt>
+      <dd><code>${escapeHtml(args.qrToken)}</code></dd>
+      <dt>Verification path</dt>
+      <dd><code>${escapeHtml(args.qrResult.verifyUrl)}</code></dd>
+      <dt>Legal seal</dt>
+      <dd><code>${escapeHtml(args.legalSealHash)}</code></dd>
+      <dt>Checksum</dt>
+      <dd><code>${escapeHtml(args.qrResult.checksum)}</code></dd>
+      <dt>JSON record</dt>
+      <dd><a href="./qr-verification.json" target="_blank" rel="noreferrer">Open qr-verification.json</a></dd>
+      <dt>Consent preview</dt>
+      <dd><a href="./preview-bilingual.html" target="_blank" rel="noreferrer">Open bilingual preview</a></dd>
+    </dl>
+  </main>
+</body>
+</html>`;
+}
+
+function buildEvidencePackageHtml(args: {
+  scenario: UatScenario;
+  legalSealHash: string;
+  qrVerifyPath: string;
+}): string {
+  return `<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <title>Evidence Package - ${escapeHtml(args.scenario.titleEn)}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 28px; background: #f8fafc; color: #0f172a; }
+    .panel { max-width: 880px; margin: 0 auto; background: #fff; border: 1px solid #dbe3ef; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); }
+    ul { line-height: 1.9; }
+    a { color: #0369a1; }
+    code { font-family: Consolas, monospace; font-size: 12px; }
+    .meta { color: #475569; }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <h1>Consent Evidence Package</h1>
+    <p>${escapeHtml(args.scenario.titleEn)} / ${escapeHtml(args.scenario.titleAr)}</p>
+    <p class="meta">Legal seal: <code>${escapeHtml(args.legalSealHash)}</code></p>
+    <p class="meta">QR verification page: <a href="../qr-verification.html" target="_blank" rel="noreferrer">${escapeHtml(args.qrVerifyPath)}</a></p>
+    <ul>
+      <li><a href="./snapshot.json" target="_blank" rel="noreferrer">Snapshot JSON</a></li>
+      <li><a href="./audit.json" target="_blank" rel="noreferrer">Audit trail JSON</a></li>
+      <li><a href="./qr.json" target="_blank" rel="noreferrer">QR verification JSON</a></li>
+      <li><a href="./legal-seal.txt" target="_blank" rel="noreferrer">Legal seal text</a></li>
+      <li><a href="../preview-bilingual.html" target="_blank" rel="noreferrer">Bilingual consent preview</a></li>
+      <li><a href="../bilingual.pdf" target="_blank" rel="noreferrer">Bilingual PDF</a></li>
+    </ul>
+  </main>
+</body>
+</html>`;
+}
+
 async function tryRenderPdfFromHtml(htmlPath: string, pdfPath: string): Promise<boolean> {
   try {
     const playwright = await import("playwright");
@@ -678,7 +770,7 @@ async function buildCaseArtifacts(baseDir: string, scenario: UatScenario): Promi
 
   const legalSealHash = sha256({ scenario, patient: DEMO_PATIENT, qrPayload });
   const qrToken = sha256(qrPayload).slice(0, 20);
-  const qrVerifyUrl = `/uat/verify/${scenario.slug}/${qrToken}`;
+  const qrVerifyUrl = `/uat-results/${scenario.slug}/qr-verification.html`;
 
   const arHtml = buildHtmlDocument("ar", scenario.titleAr, arBody, scenario, legalSealHash, qrVerifyUrl);
   const enHtml = buildHtmlDocument("en", scenario.titleEn, enBody, scenario, legalSealHash, qrVerifyUrl);
@@ -773,16 +865,30 @@ async function buildCaseArtifacts(baseDir: string, scenario: UatScenario): Promi
     checksum: sha256({ qrToken, legalSealHash, scenario: scenario.code }),
   };
 
+  const qrVerificationHtml = buildQrVerificationHtml({
+    scenario,
+    qrToken,
+    qrResult,
+    legalSealHash,
+  });
+  const evidencePackageHtml = buildEvidencePackageHtml({
+    scenario,
+    legalSealHash,
+    qrVerifyPath: qrVerifyUrl,
+  });
+
   const languageIsolation = validateLanguageIsolation(arBody, enBody);
 
   await writeJson(path.join(caseDir, "consent-snapshot.json"), consentSnapshot);
   await writeJson(path.join(caseDir, "audit-trail.json"), auditTrail);
   await writeJson(path.join(caseDir, "qr-verification.json"), qrResult);
+  await fs.writeFile(path.join(caseDir, "qr-verification.html"), qrVerificationHtml, "utf8");
 
   await writeJson(path.join(evidenceDir, "snapshot.json"), consentSnapshot);
   await writeJson(path.join(evidenceDir, "audit.json"), auditTrail);
   await writeJson(path.join(evidenceDir, "qr.json"), qrResult);
   await fs.writeFile(path.join(evidenceDir, "legal-seal.txt"), `${legalSealHash}\n`, "utf8");
+  await fs.writeFile(path.join(evidenceDir, "index.html"), evidencePackageHtml, "utf8");
   await fs.writeFile(path.join(screenshotsDir, "preview-link.txt"), `/uat-results/${scenario.slug}/preview-bilingual.html\n`, "utf8");
 
   const missingMandatoryFields: string[] = [];
@@ -813,11 +919,11 @@ async function buildCaseArtifacts(baseDir: string, scenario: UatScenario): Promi
       bilingualPdf: `/uat-results/${scenario.slug}/bilingual.pdf`,
       consentSnapshot: `/uat-results/${scenario.slug}/consent-snapshot.json`,
       auditTrail: `/uat-results/${scenario.slug}/audit-trail.json`,
-      evidencePackage: `/uat-results/${scenario.slug}/evidence-package/`,
+      evidencePackage: `/uat-results/${scenario.slug}/evidence-package/index.html`,
       previewArabic: `/uat-results/${scenario.slug}/preview-ar.html`,
       previewEnglish: `/uat-results/${scenario.slug}/preview-en.html`,
       previewBilingual: `/uat-results/${scenario.slug}/preview-bilingual.html`,
-      qrResult: `/uat-results/${scenario.slug}/qr-verification.json`,
+      qrResult: `/uat-results/${scenario.slug}/qr-verification.html`,
     },
   };
 }

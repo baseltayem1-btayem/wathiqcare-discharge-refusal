@@ -14,7 +14,102 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+function renderPatientEducationSection(section: DynamicConsentSection): string {
+  return `
+    <section class="dc-section dc-layer-${section.layer} dc-kind-patient-education">
+      <header>
+        <h2>${escapeHtml(section.titleEn)}</h2>
+        <h3 dir="rtl">${escapeHtml(section.titleAr)}</h3>
+      </header>
+      <div class="dc-pe-summary">
+        <p>${escapeHtml(section.bodyEn)}</p>
+        <p dir="rtl">${escapeHtml(section.bodyAr)}</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderFaqSection(section: DynamicConsentSection): string {
+  const items = section.meta?.faqItems ?? [];
+  const accordion = items
+    .map(
+      (item) => `
+      <details class="dc-faq-item" data-faq-id="${escapeHtml(item.id)}">
+        <summary>
+          <span>${escapeHtml(item.en.question)}</span>
+          <span dir="rtl">${escapeHtml(item.ar.question)}</span>
+        </summary>
+        <div class="dc-faq-answer">
+          <p>${escapeHtml(item.en.answer)}</p>
+          <p dir="rtl">${escapeHtml(item.ar.answer)}</p>
+        </div>
+      </details>
+    `,
+    )
+    .join("\n");
+  return `
+    <section class="dc-section dc-layer-${section.layer} dc-kind-faq">
+      <header>
+        <h2>${escapeHtml(section.titleEn)}</h2>
+        <h3 dir="rtl">${escapeHtml(section.titleAr)}</h3>
+      </header>
+      <div class="dc-faq-list">${accordion}</div>
+    </section>
+  `;
+}
+
+function renderUnderstandingCheckSection(section: DynamicConsentSection): string {
+  const questions = section.meta?.understandingQuestions ?? [];
+  const scoring = section.meta?.scoring;
+  const items = questions
+    .map((q) => {
+      const options = Object.entries(q.en.options)
+        .map(
+          ([key, label]) => `
+        <label class="dc-uq-option">
+          <input type="radio" name="uq-${escapeHtml(q.id)}" value="${escapeHtml(key)}" data-correct="${escapeHtml(q.correctOption)}" />
+          <span>${escapeHtml(key)}. ${escapeHtml(label)}</span>
+          <span dir="rtl">${escapeHtml(key)}. ${escapeHtml(q.ar.options[key] ?? "")}</span>
+        </label>
+      `,
+        )
+        .join("\n");
+      return `
+        <fieldset class="dc-uq-item" data-uq-id="${escapeHtml(q.id)}" data-weight="${q.weight}">
+          <legend>
+            <span>${escapeHtml(q.en.question)}</span>
+            <span dir="rtl">${escapeHtml(q.ar.question)}</span>
+          </legend>
+          <div class="dc-uq-options">${options}</div>
+        </fieldset>
+      `;
+    })
+    .join("\n");
+  const scoringMeta = scoring
+    ? `<p class="dc-uq-scoring">Passing score: ${scoring.passingScore}% &mdash; Max: ${scoring.maxScore} pts</p>`
+    : "";
+  return `
+    <section class="dc-section dc-layer-${section.layer} dc-kind-understanding-check">
+      <header>
+        <h2>${escapeHtml(section.titleEn)}</h2>
+        <h3 dir="rtl">${escapeHtml(section.titleAr)}</h3>
+      </header>
+      ${scoringMeta}
+      <form class="dc-uq-form" data-uq-form>${items}</form>
+    </section>
+  `;
+}
+
 function renderSection(section: DynamicConsentSection): string {
+  if (section.kind === "patient-education") {
+    return renderPatientEducationSection(section);
+  }
+  if (section.kind === "faq") {
+    return renderFaqSection(section);
+  }
+  if (section.kind === "understanding-check") {
+    return renderUnderstandingCheckSection(section);
+  }
   return `
     <section class="dc-section dc-layer-${section.layer}">
       <header>

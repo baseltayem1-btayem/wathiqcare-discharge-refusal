@@ -1,0 +1,1506 @@
+[
+  {
+    "templateCode": "CT-20260511085135-9CF301",
+    "consentType": "GENERAL_CONSENT",
+    "riskLevel": "MEDIUM",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 1,
+    "completeness": 0,
+    "priority": 300,
+    "missing": [
+      "patient_education",
+      "risks",
+      "benefits",
+      "alternatives",
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": false,
+        "via": null
+      },
+      "risks": {
+        "found": false,
+        "via": null
+      },
+      "benefits": {
+        "found": false,
+        "via": null
+      },
+      "alternatives": {
+        "found": false,
+        "via": null
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": []
+  },
+  {
+    "templateCode": "CHEMOTHERAPY_CONSENT",
+    "consentType": "PROCEDURE_SPECIFIC_CONSENT",
+    "riskLevel": "CRITICAL",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 247,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "DAMA_DISCHARGE_AGAINST_MEDICAL_ADVICE",
+    "consentType": "DAMA_REFUSAL_OF_DISCHARGE",
+    "riskLevel": "CRITICAL",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 247,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "HIGH_RISK_MEDICAL_PROCEDURE_CONSENT",
+    "consentType": "HIGH_RISK_PROCEDURE_CONSENT",
+    "riskLevel": "CRITICAL",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 247,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "ICU_CRITICAL_CARE_CONSENT",
+    "consentType": "HIGH_RISK_PROCEDURE_CONSENT",
+    "riskLevel": "CRITICAL",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 247,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "ANESTHESIA_CONSENT",
+    "consentType": "ANESTHESIA_CONSENT",
+    "riskLevel": "HIGH",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 198,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "BLOOD_AND_PRODUCTS_TRANSFUSION_CONSENT",
+    "consentType": "BLOOD_TRANSFUSION_CONSENT",
+    "riskLevel": "HIGH",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 198,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "MINOR_GUARDIAN_CONSENT",
+    "consentType": "GENERAL_CONSENT",
+    "riskLevel": "HIGH",
+    "requiresWitness": true,
+    "requiresGuardian": true,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 198,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "RADIOTHERAPY_CONSENT",
+    "consentType": "PROCEDURE_SPECIFIC_CONSENT",
+    "riskLevel": "HIGH",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 198,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "REFUSAL_OF_SURGICAL_PROCEDURE",
+    "consentType": "REFUSAL_OF_TREATMENT",
+    "riskLevel": "HIGH",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 198,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "RESEARCH_PARTICIPATION_CONSENT",
+    "consentType": "RESEARCH_CLINICAL_TRIAL_CONSENT",
+    "riskLevel": "HIGH",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 198,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "SPECIAL_INTERVENTIONAL_PROCEDURE_CONSENT",
+    "consentType": "PROCEDURE_SPECIFIC_CONSENT",
+    "riskLevel": "HIGH",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 198,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "SURGICAL_PROCEDURE_CONSENT",
+    "consentType": "SURGERY_CONSENT",
+    "riskLevel": "HIGH",
+    "requiresWitness": true,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 198,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "CONTRAST_MEDIA_RADIOLOGICAL_PROCEDURE_CONSENT",
+    "consentType": "RADIOLOGY_CONTRAST_CONSENT",
+    "riskLevel": "HIGH",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 132,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "PROCEDURAL_SEDATION_CONSENT",
+    "consentType": "SEDATION_CONSENT",
+    "riskLevel": "HIGH",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 132,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "BLOOD_TRANSFUSION_CONSENT",
+    "consentType": "BLOOD_TRANSFUSION_CONSENT",
+    "riskLevel": "MEDIUM",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 1,
+    "completeness": 67,
+    "priority": 99,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "dynamic_medical_condition"
+      },
+      "risks": {
+        "found": true,
+        "via": "dynamic_common_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "dynamic_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "dynamic_treatment_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "fixed_patient_acknowledgment",
+      "dynamic_diagnosis",
+      "dynamic_medical_condition",
+      "dynamic_proposed_procedure",
+      "dynamic_procedure_site_laterality",
+      "dynamic_expected_benefits",
+      "dynamic_common_risks",
+      "dynamic_uncommon_risks",
+      "dynamic_serious_risks",
+      "dynamic_complications",
+      "dynamic_treatment_alternatives",
+      "dynamic_refusal_risks",
+      "dynamic_post_procedure_instructions",
+      "dynamic_physician_notes",
+      "dynamic_special_precautions",
+      "fixed_physician_certification",
+      "fixed_legal_guardian_ack",
+      "interpreter_acknowledgment",
+      "fixed_no_guarantee",
+      "fixed_electronic_signature"
+    ]
+  },
+  {
+    "templateCode": "DAMA_REFUSAL_OF_TREATMENT",
+    "consentType": "REFUSAL_OF_TREATMENT",
+    "riskLevel": "MEDIUM",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 1,
+    "completeness": 67,
+    "priority": 99,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "dynamic_medical_condition"
+      },
+      "risks": {
+        "found": true,
+        "via": "dynamic_common_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "dynamic_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "dynamic_treatment_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "fixed_patient_acknowledgment",
+      "dynamic_diagnosis",
+      "dynamic_medical_condition",
+      "dynamic_proposed_procedure",
+      "dynamic_procedure_site_laterality",
+      "dynamic_expected_benefits",
+      "dynamic_common_risks",
+      "dynamic_uncommon_risks",
+      "dynamic_serious_risks",
+      "dynamic_complications",
+      "dynamic_treatment_alternatives",
+      "dynamic_refusal_risks",
+      "dynamic_post_procedure_instructions",
+      "dynamic_physician_notes",
+      "dynamic_special_precautions",
+      "fixed_physician_certification",
+      "fixed_legal_guardian_ack",
+      "interpreter_acknowledgment",
+      "fixed_no_guarantee",
+      "fixed_electronic_signature"
+    ]
+  },
+  {
+    "templateCode": "GENERAL_SURGICAL_CONSENT",
+    "consentType": "SURGICAL_CONSENT",
+    "riskLevel": "MEDIUM",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 1,
+    "completeness": 67,
+    "priority": 99,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "dynamic_medical_condition"
+      },
+      "risks": {
+        "found": true,
+        "via": "dynamic_common_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "dynamic_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "dynamic_treatment_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "fixed_patient_acknowledgment",
+      "dynamic_diagnosis",
+      "dynamic_medical_condition",
+      "dynamic_proposed_procedure",
+      "dynamic_procedure_site_laterality",
+      "dynamic_expected_benefits",
+      "dynamic_common_risks",
+      "dynamic_uncommon_risks",
+      "dynamic_serious_risks",
+      "dynamic_complications",
+      "dynamic_treatment_alternatives",
+      "dynamic_refusal_risks",
+      "dynamic_post_procedure_instructions",
+      "dynamic_physician_notes",
+      "dynamic_special_precautions",
+      "fixed_physician_certification",
+      "fixed_legal_guardian_ack",
+      "interpreter_acknowledgment",
+      "fixed_no_guarantee",
+      "fixed_electronic_signature"
+    ]
+  },
+  {
+    "templateCode": "GENERAL_TREATMENT_CONSENT",
+    "consentType": "GENERAL_CONSENT",
+    "riskLevel": "MEDIUM",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 99,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "HEALTH_PERSONAL_DATA_PROCESSING_SHARING_CONSENT",
+    "consentType": "GENERAL_CONSENT",
+    "riskLevel": "MEDIUM",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 99,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "HOME_HEALTHCARE_SERVICES_CONSENT",
+    "consentType": "GENERAL_CONSENT",
+    "riskLevel": "MEDIUM",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 99,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "TELEMEDICINE_CONSENT",
+    "consentType": "GENERAL_CONSENT",
+    "riskLevel": "MEDIUM",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 99,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  },
+  {
+    "templateCode": "MEDICAL_PHOTOGRAPHY_MEDIA_CONSENT",
+    "consentType": "GENERAL_CONSENT",
+    "riskLevel": "LOW",
+    "requiresWitness": false,
+    "requiresGuardian": false,
+    "tenantsWithCopy": 2,
+    "completeness": 67,
+    "priority": 66,
+    "missing": [
+      "faq",
+      "understanding_questions"
+    ],
+    "detection": {
+      "patient_education": {
+        "found": true,
+        "via": "04_description"
+      },
+      "risks": {
+        "found": true,
+        "via": "07_material_risks"
+      },
+      "benefits": {
+        "found": true,
+        "via": "06_expected_benefits"
+      },
+      "alternatives": {
+        "found": true,
+        "via": "10_alternatives"
+      },
+      "faq": {
+        "found": false,
+        "via": null
+      },
+      "understanding_questions": {
+        "found": false,
+        "via": null
+      }
+    },
+    "sectionKeys": [
+      "01_consent_title",
+      "02_patient_information",
+      "03_physician_information",
+      "04_description",
+      "05_diagnosis_indication",
+      "06_expected_benefits",
+      "07_material_risks",
+      "08_possible_complications",
+      "09_serious_complications",
+      "10_alternatives",
+      "11_refusal_consequences",
+      "12_questions_confirmation",
+      "13_voluntary_statement",
+      "14_no_guarantee",
+      "15_right_to_refuse_withdraw",
+      "16_pdpl_clause",
+      "17_guardian_clause",
+      "18_interpreter_clause",
+      "19_witness_clause",
+      "20_physician_declaration",
+      "21_patient_ack",
+      "22_signature_block",
+      "23_otp_validation",
+      "24_qr_verification",
+      "25_legal_seal_audit"
+    ]
+  }
+]

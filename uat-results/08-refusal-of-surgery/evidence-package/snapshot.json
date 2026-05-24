@@ -91,28 +91,28 @@
     {
       "role": "PATIENT",
       "name": "Ahmed Mohammed Al-Salem",
-      "signedAt": "2026-05-12T19:25:02.747Z",
+      "signedAt": "2026-05-18T06:22:48.219Z",
       "method": "ELECTRONIC"
     },
     {
       "role": "PHYSICIAN",
       "name": "Dr. Omar Al-Harbi",
-      "signedAt": "2026-05-12T19:26:02.747Z",
+      "signedAt": "2026-05-18T06:23:48.219Z",
       "method": "ELECTRONIC"
     },
     {
       "role": "WITNESS",
       "name": "Nurse Aisha Al-Qahtani",
-      "signedAt": "2026-05-12T19:27:02.747Z",
+      "signedAt": "2026-05-18T06:24:48.219Z",
       "method": "WITNESS_ACKNOWLEDGMENT"
     }
   ],
   "workflowStatus": "SEALED",
-  "legalSealHash": "9cc0627efdb8748b875a9411af224667fe202876b36d1ad28b2ab2fb6594db05",
+  "legalSealHash": "bac91fe87d99e900fd746395a1ce3d334b434f2561c9fcf58d78c9606d502c72",
   "qrVerification": {
     "status": "VALID",
-    "token": "b1ea00369a96880f06f8",
-    "verifyUrl": "/uat/verify/08-refusal-of-surgery/b1ea00369a96880f06f8"
+    "token": "0e74349768617e8212bd",
+    "verifyUrl": "/uat-results/08-refusal-of-surgery/qr-verification.html"
   },
-  "generatedAt": "2026-05-12T18:45:02.747Z"
+  "generatedAt": "2026-05-18T05:42:48.219Z"
 }

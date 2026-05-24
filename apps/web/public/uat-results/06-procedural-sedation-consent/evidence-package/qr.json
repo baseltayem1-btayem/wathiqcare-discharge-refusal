@@ -1,6 +1,6 @@
 {
   "status": "VALID",
-  "token": "07a065236955988bfacd",
-  "verifyUrl": "/uat/verify/06-procedural-sedation-consent/07a065236955988bfacd",
-  "checksum": "661fcf37d438d0fb9c71306a881f4f42e0254c9b325de5412cd583c4d161d64e"
+  "token": "a76d5f850888b6548324",
+  "verifyUrl": "/uat-results/06-procedural-sedation-consent/qr-verification.html",
+  "checksum": "98d90d30d68906388fa750d5ffa6800722c39f99d29454a569548dd2e1ed5e85"
 }

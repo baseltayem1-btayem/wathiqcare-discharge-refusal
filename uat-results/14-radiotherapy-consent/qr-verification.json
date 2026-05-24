@@ -1,6 +1,6 @@
 {
   "status": "VALID",
-  "token": "fd7bc4972be9d9f7ce9f",
-  "verifyUrl": "/uat/verify/14-radiotherapy-consent/fd7bc4972be9d9f7ce9f",
-  "checksum": "fbf05f6dab60b47ba4dab0bc8e53036bfd14003735edde9effffb20478f7dfd0"
+  "token": "d55a26957d2eecc7486a",
+  "verifyUrl": "/uat-results/14-radiotherapy-consent/qr-verification.html",
+  "checksum": "197e2c4c8fb539f33f141a4df057b4cedac3a18aca01728fd20c7f81febd3bba"
 }

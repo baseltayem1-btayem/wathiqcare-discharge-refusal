@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-      - develop
   pull_request:
     branches:
       - main
-      - develop
   workflow_dispatch:
     inputs:
       environment:
@@ -184,7 +182,7 @@ jobs:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: [build, hardening]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/main'
     environment:
       name: staging
       url: https://staging.wathiqcare.online
@@ -232,12 +230,46 @@ jobs:
           echo "⚠️  Manual approval required to proceed to production"
 
   # ============================================================================
+  # STAGE 7.5: PRODUCTION GOVERNANCE GATE
+  # ============================================================================
+  production-governance-gate:
+    name: Production Governance Gate
+    runs-on: ubuntu-latest
+    needs: uat-approval
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Validate production source branch
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "ERROR: production deployments are only allowed from refs/heads/main"
+            exit 1
+          fi
+          echo "✓ production source validated: refs/heads/main"
+
+      - name: Validate blocked branch prefixes
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          if [[ "$BRANCH" == copilot/* || "$BRANCH" == hotfix/* || "$BRANCH" == tmp/* || "$BRANCH" == temp/* || "$BRANCH" == temporary/* ]]; then
+            echo "ERROR: production deployment blocked for branch prefix: $BRANCH"
+            exit 1
+          fi
+          echo "✓ branch prefix policy passed"
+
+      - name: Validate release traceability metadata
+        run: |
+          if [ -z "${GITHUB_SHA}" ]; then
+            echo "ERROR: missing commit SHA"
+            exit 1
+          fi
+          echo "✓ traceability metadata present"
+
+  # ============================================================================
   # STAGE 8: PRODUCTION DEPLOYMENT
   # ============================================================================
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: uat-approval
+    needs: production-governance-gate
     if: github.ref == 'refs/heads/main'
     environment:
       name: production

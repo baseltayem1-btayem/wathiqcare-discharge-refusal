@@ -28,6 +28,7 @@
     "runtime:certify-staging": "node scripts/staging-readiness-certification.mjs",
     "admins:ensure": "node prisma/ensure-admin-access.js",
     "validate:pilot-uat": "npm run validate:pilot-uat -w apps/web",
+    "uat:biometric-local-agent": "node scripts/uat/digitalpersona-local-agent-stub.mjs",
     "audit:language": "npx tsx scripts/language-audit/runAll.ts",
     "audit:language:gate": "npx tsx scripts/language-audit/ciGate.ts",
     "uat:full-consent": "npx tsx scripts/uat/run-full-consent-uat.ts"

@@ -13,7 +13,58 @@ export type DynamicConsentSectionKind =
   | "refusal"
   | "legal"
   | "acknowledgment"
-  | "signatures";
+  | "signatures"
+  // Phase 2.2 patient-education additions (build-only, no DB schema change)
+  | "patient-education"
+  | "faq"
+  | "understanding-check";
+
+/**
+ * Canonical SCREAMING_SNAKE_CASE identifiers for the Phase 2.2 section kinds.
+ * Mirrors the lowercase-kebab values in `DynamicConsentSectionKind` and is
+ * used by loaders / adapters / UI dispatch where the public schema requires
+ * the canonical name (e.g. evidence-package and audit logs).
+ */
+export const PATIENT_EDUCATION_SECTION_KINDS = {
+  PATIENT_EDUCATION: "patient-education",
+  FAQ: "faq",
+  UNDERSTANDING_CHECK: "understanding-check",
+} as const;
+
+export interface PatientEducationFaqItem {
+  id: string;
+  ar: { question: string; answer: string };
+  en: { question: string; answer: string };
+}
+
+export type PatientEducationUnderstandingQuestionType = "multiple_choice" | "true_false";
+
+export interface PatientEducationUnderstandingQuestion {
+  id: string;
+  type: PatientEducationUnderstandingQuestionType;
+  weight: number;
+  en: { question: string; options: Record<string, string> };
+  ar: { question: string; options: Record<string, string> };
+  correctOption: string;
+  rationaleEn?: string;
+  rationaleAr?: string;
+}
+
+/**
+ * Optional structured payload carried by sections of kind `faq` or
+ * `understanding-check`. `body{Ar,En}` still holds a plain-text fallback
+ * so the existing PDF / legacy HTML renderer can serialise the section.
+ */
+export interface DynamicConsentSectionMeta {
+  faqItems?: PatientEducationFaqItem[];
+  understandingQuestions?: PatientEducationUnderstandingQuestion[];
+  scoring?: {
+    passingScore: number;
+    maxScore: number;
+    formula?: string;
+    remediationOnFail?: string;
+  };
+}
 
 export interface DynamicConsentPerson {
   id?: string | null;
@@ -55,6 +106,8 @@ export interface DynamicConsentSection {
   required: boolean;
   layer: 1 | 2 | 3;
   order: number;
+  /** Optional structured payload for new patient-education kinds (Phase 2.2). */
+  meta?: DynamicConsentSectionMeta;
 }
 
 export interface DynamicConsentAlternativeItem {

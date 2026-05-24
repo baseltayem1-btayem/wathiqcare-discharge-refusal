@@ -11,6 +11,7 @@ import { resolveSmartNavigation, type SmartActionKey, type SmartResolvedAction }
 import { useAiLegalIntelligence } from "@/components/navigation/useAiLegalIntelligence";
 import { useCaseWorkflow } from "@/components/navigation/useCaseWorkflow";
 import NotificationBell from "@/components/operations/NotificationBell";
+import AdminReleaseFooterBadge from "@/components/release/AdminReleaseFooterBadge";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   beginTrackingForRoute,
@@ -134,10 +135,13 @@ export default function AppShell({
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [tenantBranding, setTenantBranding] = useState<TenantBranding | null>(null);
   const [viewerRole, setViewerRole] = useState<string | null>(null);
+  const [viewerUserType, setViewerUserType] = useState<string | null>(null);
+  const [viewerPlatformRole, setViewerPlatformRole] = useState<string | null>(null);
   const previousPathRef = useRef<string | null>(null);
   useEffect(() => {
     fetchAuthMeCached<{
       userType?: string;
+      platformRole?: string | null;
       tenant?: TenantBranding | null;
       user?: { role?: string | null } | null;
       claims?: { role?: string | null } | null;
@@ -149,6 +153,8 @@ export default function AppShell({
           return;
         }
         setTenantBranding(me?.tenant ?? null);
+        setViewerUserType(me?.userType ?? null);
+        setViewerPlatformRole(me?.platformRole ?? null);
         setViewerRole(me?.user?.role ?? me?.claims?.role ?? null);
       })
       .catch(() => { /* ignore — primary enforcement is middleware */ });
@@ -479,6 +485,20 @@ export default function AppShell({
         </div>
       )}
       toolbarExtras={actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      footer={(
+        <div className="space-y-1 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <span>WathiqCare™ Enterprise Healthcare Legal Automation Platform</span>
+            <span>© 2026 International Medical Center (IMC). All rights reserved.</span>
+            <span>CR: 4030143596</span>
+          </div>
+          <AdminReleaseFooterBadge
+            userType={viewerUserType}
+            platformRole={viewerPlatformRole}
+            role={viewerRole}
+          />
+        </div>
+      )}
     >
       {children}
     </WathiqCareShell>

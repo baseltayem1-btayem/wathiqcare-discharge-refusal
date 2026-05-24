@@ -1,0 +1,3158 @@
+{
+  "generatedAt": "2026-05-23T17:11:15.464Z",
+  "totalTemplates": 42,
+  "averageCompleteness": 67,
+  "perTemplate": [
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "1de76009-aaa1-4bd4-a300-1cbf50c121b7",
+      "templateCode": "DAMA_DISCHARGE_AGAINST_MEDICAL_ADVICE",
+      "consentType": "DAMA_REFUSAL_OF_DISCHARGE",
+      "specialty": "EMERGENCY_MEDICINE",
+      "department": "EMERGENCY",
+      "titleEn": "Discharge Against Medical Advice / DAMA",
+      "titleAr": "إقرار الخروج ضد النصيحة الطبية",
+      "riskLevel": "CRITICAL",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "b8168258-6207-4743-9b8f-6d14b8f74268",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 247
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "fe0015ac-7b03-4574-87cd-3582055c35cb",
+      "templateCode": "DAMA_DISCHARGE_AGAINST_MEDICAL_ADVICE",
+      "consentType": "DAMA_REFUSAL_OF_DISCHARGE",
+      "specialty": "EMERGENCY_MEDICINE",
+      "department": "EMERGENCY",
+      "titleEn": "Discharge Against Medical Advice / DAMA",
+      "titleAr": "إقرار الخروج ضد النصيحة الطبية",
+      "riskLevel": "CRITICAL",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "8ee9c02f-4aca-452b-8ee0-60cf2c6cab2c",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 247
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "797732a5-8b9c-4ba2-90a6-d6f431f13075",
+      "templateCode": "HIGH_RISK_MEDICAL_PROCEDURE_CONSENT",
+      "consentType": "HIGH_RISK_PROCEDURE_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "CRITICAL_CARE",
+      "titleEn": "High-Risk Medical Procedure Consent",
+      "titleAr": "موافقة الإجراءات الطبية عالية الخطورة",
+      "riskLevel": "CRITICAL",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "d988e3d4-80c2-4f67-81ca-ac4802c1aebc",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 247
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "13e84a65-5dde-491d-9921-3cca9e9e66ed",
+      "templateCode": "HIGH_RISK_MEDICAL_PROCEDURE_CONSENT",
+      "consentType": "HIGH_RISK_PROCEDURE_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "CRITICAL_CARE",
+      "titleEn": "High-Risk Medical Procedure Consent",
+      "titleAr": "موافقة الإجراءات الطبية عالية الخطورة",
+      "riskLevel": "CRITICAL",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "f46176f3-5087-42df-9ef9-e41358b2e955",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 247
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "a458be3b-a69c-43b8-a434-c1079d97d521",
+      "templateCode": "ICU_CRITICAL_CARE_CONSENT",
+      "consentType": "HIGH_RISK_PROCEDURE_CONSENT",
+      "specialty": "ICU",
+      "department": "ICU",
+      "titleEn": "ICU and Critical Care Consent",
+      "titleAr": "موافقة العناية المركزة والإجراءات الحرجة",
+      "riskLevel": "CRITICAL",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "b1233e36-291f-427e-9805-a255e60eeb89",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 247
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "39b8df70-c185-46f2-b9f8-178aab8ca708",
+      "templateCode": "ICU_CRITICAL_CARE_CONSENT",
+      "consentType": "HIGH_RISK_PROCEDURE_CONSENT",
+      "specialty": "ICU",
+      "department": "ICU",
+      "titleEn": "ICU and Critical Care Consent",
+      "titleAr": "موافقة العناية المركزة والإجراءات الحرجة",
+      "riskLevel": "CRITICAL",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "2fb30a19-8a6b-4dad-8d4a-e792871ac302",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 247
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "357269f0-96a5-406d-b4a7-00a63a64fec2",
+      "templateCode": "CHEMOTHERAPY_CONSENT",
+      "consentType": "PROCEDURE_SPECIFIC_CONSENT",
+      "specialty": "ONCOLOGY",
+      "department": "ONCOLOGY",
+      "titleEn": "Chemotherapy Consent",
+      "titleAr": "موافقة العلاج الكيميائي",
+      "riskLevel": "CRITICAL",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "9c89da2b-5f51-4511-a739-0d65bd817690",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 247
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "536b703a-29a5-426b-9165-2bead3956e1b",
+      "templateCode": "CHEMOTHERAPY_CONSENT",
+      "consentType": "PROCEDURE_SPECIFIC_CONSENT",
+      "specialty": "ONCOLOGY",
+      "department": "ONCOLOGY",
+      "titleEn": "Chemotherapy Consent",
+      "titleAr": "موافقة العلاج الكيميائي",
+      "riskLevel": "CRITICAL",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "a584e884-aa36-4b44-8c72-40575d78ff7f",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 247
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "8e69f8ce-0ac5-4d26-a765-3b55cbaa987f",
+      "templateCode": "ANESTHESIA_CONSENT",
+      "consentType": "ANESTHESIA_CONSENT",
+      "specialty": "ANESTHESIA",
+      "department": "ANESTHESIA",
+      "titleEn": "Anesthesia Consent",
+      "titleAr": "موافقة التخدير",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "d11088e9-6d42-4223-91c5-221aa908da67",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "662f6657-443f-4383-9d6c-44282f7dcd1f",
+      "templateCode": "ANESTHESIA_CONSENT",
+      "consentType": "ANESTHESIA_CONSENT",
+      "specialty": "ANESTHESIA",
+      "department": "ANESTHESIA",
+      "titleEn": "Anesthesia Consent",
+      "titleAr": "موافقة التخدير",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "ff65b403-4e47-4535-91b1-0e0c5bd32550",
+      "versionLabel": "v2.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "657116fa-6463-41c5-ad87-71ef45caef12",
+      "templateCode": "BLOOD_AND_PRODUCTS_TRANSFUSION_CONSENT",
+      "consentType": "BLOOD_TRANSFUSION_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "HEMATOLOGY",
+      "titleEn": "Blood and Blood Products Transfusion Consent",
+      "titleAr": "موافقة نقل الدم ومشتقاته",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "a514b197-4928-4acb-81b6-a5d2c78f6e3c",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "9501e635-3b62-4993-91f8-da94774b6709",
+      "templateCode": "BLOOD_AND_PRODUCTS_TRANSFUSION_CONSENT",
+      "consentType": "BLOOD_TRANSFUSION_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "HEMATOLOGY",
+      "titleEn": "Blood and Blood Products Transfusion Consent",
+      "titleAr": "موافقة نقل الدم ومشتقاته",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "7085cf58-2cc6-4e26-988e-23573aade493",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "e9c5e818-77ed-4872-a85a-6e428b48f1a5",
+      "templateCode": "MINOR_GUARDIAN_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "PEDIATRICS",
+      "department": "PEDIATRICS",
+      "titleEn": "Minor / Guardian Consent",
+      "titleAr": "موافقة ولي الأمر / القاصر / فاقد الأهلية",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": true,
+      "status": "ACTIVE",
+      "versionId": "c8e2b411-4075-47d5-9c57-027b4fc40c58",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "6f4da702-b869-4b95-ac00-618bfc3fe3d6",
+      "templateCode": "MINOR_GUARDIAN_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "PEDIATRICS",
+      "department": "PEDIATRICS",
+      "titleEn": "Minor / Guardian Consent",
+      "titleAr": "موافقة ولي الأمر / القاصر / فاقد الأهلية",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": true,
+      "status": "ACTIVE",
+      "versionId": "a4b44d64-cd22-4821-89ea-ed644729a5dd",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "430b13fc-1dd5-4ef9-a4d3-5124242bbfba",
+      "templateCode": "RADIOTHERAPY_CONSENT",
+      "consentType": "PROCEDURE_SPECIFIC_CONSENT",
+      "specialty": "ONCOLOGY",
+      "department": "RADIATION_ONCOLOGY",
+      "titleEn": "Radiotherapy Consent",
+      "titleAr": "موافقة العلاج الإشعاعي",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "eb947e37-9938-4460-9b3b-fac11eb5d901",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "ba9fb37b-fbdb-4638-8ed6-9d5d6d9a4a3c",
+      "templateCode": "RADIOTHERAPY_CONSENT",
+      "consentType": "PROCEDURE_SPECIFIC_CONSENT",
+      "specialty": "ONCOLOGY",
+      "department": "RADIATION_ONCOLOGY",
+      "titleEn": "Radiotherapy Consent",
+      "titleAr": "موافقة العلاج الإشعاعي",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "e244ab82-970a-4642-8f3f-474144951f54",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "15938c89-876f-4357-b180-62ec58905fb6",
+      "templateCode": "SPECIAL_INTERVENTIONAL_PROCEDURE_CONSENT",
+      "consentType": "PROCEDURE_SPECIFIC_CONSENT",
+      "specialty": "RADIOLOGY",
+      "department": "INTERVENTIONAL",
+      "titleEn": "Special and Interventional Procedure Consent",
+      "titleAr": "موافقة الإجراءات الخاصة والتداخلية",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "fc388459-6223-4ede-8e8b-e89200d5bd1d",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "e94001ed-34c6-42d5-9329-584020cd61ee",
+      "templateCode": "SPECIAL_INTERVENTIONAL_PROCEDURE_CONSENT",
+      "consentType": "PROCEDURE_SPECIFIC_CONSENT",
+      "specialty": "RADIOLOGY",
+      "department": "INTERVENTIONAL",
+      "titleEn": "Special and Interventional Procedure Consent",
+      "titleAr": "موافقة الإجراءات الخاصة والتداخلية",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "5e1dceb4-54f2-456a-9d92-8bf510addabf",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "9c8e816b-d236-4e4c-a9de-7bddb6819354",
+      "templateCode": "REFUSAL_OF_SURGICAL_PROCEDURE",
+      "consentType": "REFUSAL_OF_TREATMENT",
+      "specialty": "SURGERY",
+      "department": "GENERAL_SURGERY",
+      "titleEn": "Refusal of Surgical Procedure",
+      "titleAr": "إقرار رفض التدخل الجراحي",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "a587c129-102c-4566-a452-3a7b72ba2544",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "38a6322e-7c29-4f89-88dc-d6a6781870b0",
+      "templateCode": "REFUSAL_OF_SURGICAL_PROCEDURE",
+      "consentType": "REFUSAL_OF_TREATMENT",
+      "specialty": "SURGERY",
+      "department": "GENERAL_SURGERY",
+      "titleEn": "Refusal of Surgical Procedure",
+      "titleAr": "إقرار رفض التدخل الجراحي",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "98153d3e-8c03-4e50-a608-714b8362cfae",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "56d80343-22cf-4521-a7dc-9a082398452d",
+      "templateCode": "RESEARCH_PARTICIPATION_CONSENT",
+      "consentType": "RESEARCH_CLINICAL_TRIAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "RESEARCH",
+      "titleEn": "Research Participation Consent",
+      "titleAr": "موافقة المشاركة في الأبحاث والدراسات الطبية",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "c28c26e1-9784-427d-aae7-46d0c3879e21",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "8fa1b45b-75fa-4c27-b603-f9a688965fbb",
+      "templateCode": "RESEARCH_PARTICIPATION_CONSENT",
+      "consentType": "RESEARCH_CLINICAL_TRIAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "RESEARCH",
+      "titleEn": "Research Participation Consent",
+      "titleAr": "موافقة المشاركة في الأبحاث والدراسات الطبية",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "18634231-9e89-4e8d-8556-7f09345566fd",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "benefits": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "c7ee206b-57fe-442b-9dc6-8285341cbd0b",
+      "templateCode": "SURGICAL_PROCEDURE_CONSENT",
+      "consentType": "SURGERY_CONSENT",
+      "specialty": "SURGERY",
+      "department": "GENERAL_SURGERY",
+      "titleEn": "Surgical Procedure Consent",
+      "titleAr": "موافقة العمليات الجراحية",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "c1a6cbeb-f3bb-45d4-bfd3-58929b8c299e",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "9326971a-4be6-49bb-affc-015680d32926",
+      "templateCode": "SURGICAL_PROCEDURE_CONSENT",
+      "consentType": "SURGERY_CONSENT",
+      "specialty": "SURGERY",
+      "department": "GENERAL_SURGERY",
+      "titleEn": "Surgical Procedure Consent",
+      "titleAr": "موافقة العمليات الجراحية",
+      "riskLevel": "HIGH",
+      "requiresWitness": true,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "57d1066c-622c-49ab-ad8d-e5090644d6c6",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 198
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "77e9733f-7fb2-4273-ba8a-8fac750df7a5",
+      "templateCode": "CONTRAST_MEDIA_RADIOLOGICAL_PROCEDURE_CONSENT",
+      "consentType": "RADIOLOGY_CONTRAST_CONSENT",
+      "specialty": "RADIOLOGY",
+      "department": "RADIOLOGY",
+      "titleEn": "Contrast Media and Radiological Procedure Consent",
+      "titleAr": "موافقة استخدام الصبغة والإجراءات الإشعاعية",
+      "riskLevel": "HIGH",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "123bf529-634e-4bbd-a038-2115bbc8c8b0",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 132
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "248c65c4-c8f7-4791-a7a4-f20f1f81f240",
+      "templateCode": "CONTRAST_MEDIA_RADIOLOGICAL_PROCEDURE_CONSENT",
+      "consentType": "RADIOLOGY_CONTRAST_CONSENT",
+      "specialty": "RADIOLOGY",
+      "department": "RADIOLOGY",
+      "titleEn": "Contrast Media and Radiological Procedure Consent",
+      "titleAr": "موافقة استخدام الصبغة والإجراءات الإشعاعية",
+      "riskLevel": "HIGH",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "60705be2-f050-44df-80b2-abd70b93bd8f",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 132
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "29b66853-2e6c-4895-9cd0-f53aa775c024",
+      "templateCode": "PROCEDURAL_SEDATION_CONSENT",
+      "consentType": "SEDATION_CONSENT",
+      "specialty": "ANESTHESIA",
+      "department": "ANESTHESIA",
+      "titleEn": "Procedural Sedation Consent",
+      "titleAr": "موافقة التهدئة والتسكين الإجرائي",
+      "riskLevel": "HIGH",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "94524de8-b436-40fb-b55b-82660a947abf",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 132
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "c8fb8c1a-76e8-46e5-9f00-100db4365abd",
+      "templateCode": "PROCEDURAL_SEDATION_CONSENT",
+      "consentType": "SEDATION_CONSENT",
+      "specialty": "ANESTHESIA",
+      "department": "ANESTHESIA",
+      "titleEn": "Procedural Sedation Consent",
+      "titleAr": "موافقة التهدئة والتسكين الإجرائي",
+      "riskLevel": "HIGH",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "c8acb914-e67b-45c6-a444-4281b95ecc2c",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 132
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "2f62c268-f367-4673-80f3-f14fc4075c75",
+      "templateCode": "BLOOD_TRANSFUSION_CONSENT",
+      "consentType": "BLOOD_TRANSFUSION_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "HEMATOLOGY",
+      "titleEn": "Blood Transfusion Consent",
+      "titleAr": "نموذج موافقة نقل الدم",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "01d53943-4217-479a-9d48-6ce4287df121",
+      "versionLabel": "v1.0",
+      "sectionCount": 20,
+      "sectionKeys": [
+        "fixed_patient_acknowledgment",
+        "dynamic_diagnosis",
+        "dynamic_medical_condition",
+        "dynamic_proposed_procedure",
+        "dynamic_procedure_site_laterality",
+        "dynamic_expected_benefits",
+        "dynamic_common_risks",
+        "dynamic_uncommon_risks",
+        "dynamic_serious_risks",
+        "dynamic_complications",
+        "dynamic_treatment_alternatives",
+        "dynamic_refusal_risks",
+        "dynamic_post_procedure_instructions",
+        "dynamic_physician_notes",
+        "dynamic_special_precautions",
+        "fixed_physician_certification",
+        "fixed_legal_guardian_ack",
+        "interpreter_acknowledgment",
+        "fixed_no_guarantee",
+        "fixed_electronic_signature"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "ar_match in section fixed_patient_acknowledgment"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section fixed_patient_acknowledgment"
+        },
+        "benefits": {
+          "found": true,
+          "via": "en_match in section fixed_patient_acknowledgment"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section fixed_patient_acknowledgment"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "54c7df83-4fa1-411d-9e0c-fd548d241ef2",
+      "templateCode": "CT-20260511085135-9CF301",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": null,
+      "titleEn": "Medical Consent Form",
+      "titleAr": "نموذج موافقة طبية",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "DRAFT",
+      "versionId": "84ea4765-8f3b-4803-ac28-e98e35b74b9c",
+      "versionLabel": "v1.0",
+      "sectionCount": 0,
+      "sectionKeys": [],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "legal_text"
+        },
+        "risks": {
+          "found": true,
+          "via": "legal_text"
+        },
+        "benefits": {
+          "found": true,
+          "via": "legal_text"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "legal_text"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "f2f04e08-e280-47a8-a9d6-214cfa8cd074",
+      "templateCode": "GENERAL_TREATMENT_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "GENERAL_MEDICINE",
+      "titleEn": "General Treatment Consent",
+      "titleAr": "الموافقة العامة للعلاج والخدمات الطبية",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "aea76e0f-8ec6-42e4-aee9-cbcbb5ee29d7",
+      "versionLabel": "v2.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "f211d15c-ec93-47ce-a962-8792576c8839",
+      "templateCode": "GENERAL_TREATMENT_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "GENERAL_MEDICINE",
+      "titleEn": "General Treatment Consent",
+      "titleAr": "الموافقة العامة للعلاج والخدمات الطبية",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "f5215ef4-b907-4b9c-a9c6-ac0ad5bd5ba6",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "8d91dd72-16c6-415b-8124-4c37bf6b7128",
+      "templateCode": "HEALTH_PERSONAL_DATA_PROCESSING_SHARING_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "LEGAL_COMPLIANCE",
+      "titleEn": "Health Personal Data Processing and Sharing Consent",
+      "titleAr": "موافقة معالجة ومشاركة البيانات الشخصية الصحية",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "adb29cc6-cff9-4253-b91d-6aa83e23ff7e",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "170d933d-2e8a-4bfa-8c85-c47eb08cc733",
+      "templateCode": "HEALTH_PERSONAL_DATA_PROCESSING_SHARING_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "LEGAL_COMPLIANCE",
+      "titleEn": "Health Personal Data Processing and Sharing Consent",
+      "titleAr": "موافقة معالجة ومشاركة البيانات الشخصية الصحية",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "2b07faae-5636-44bb-b267-31f0fa269a33",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "827ffa28-977f-4354-badb-80f66f30b666",
+      "templateCode": "HOME_HEALTHCARE_SERVICES_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "HOME_HEALTHCARE",
+      "titleEn": "Home Healthcare Services Consent",
+      "titleAr": "موافقة خدمات الرعاية الصحية المنزلية",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "7ed7fc62-4ac1-43ab-b96f-0726a7875739",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "3a931f9e-205b-415d-9955-5daac4bf675d",
+      "templateCode": "HOME_HEALTHCARE_SERVICES_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "HOME_HEALTHCARE",
+      "titleEn": "Home Healthcare Services Consent",
+      "titleAr": "موافقة خدمات الرعاية الصحية المنزلية",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "dc16d9e7-5d1d-41fd-8ea7-849b029038ff",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "04fe3cb4-adf3-43c4-9005-04a08f845b04",
+      "templateCode": "TELEMEDICINE_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "VIRTUAL_CARE",
+      "titleEn": "Telemedicine Consent",
+      "titleAr": "موافقة خدمات الطب الاتصالي",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "aee5231d-3752-4217-9d17-f79057bf285b",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "6e90ec84-031d-4d92-80c2-ff8010b4e5da",
+      "templateCode": "TELEMEDICINE_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "VIRTUAL_CARE",
+      "titleEn": "Telemedicine Consent",
+      "titleAr": "موافقة خدمات الطب الاتصالي",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "86f313fa-b445-4fef-8efe-408b655f932b",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "section_key=06_expected_benefits"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "ae5f11dc-293a-4cdd-80f8-77cac75115d5",
+      "templateCode": "DAMA_REFUSAL_OF_TREATMENT",
+      "consentType": "REFUSAL_OF_TREATMENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "EMERGENCY",
+      "titleEn": "DAMA / Refusal of Treatment",
+      "titleAr": "نموذج رفض العلاج (DAMA)",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "62a759b2-9026-4005-99f3-1884678aa36f",
+      "versionLabel": "v1.0",
+      "sectionCount": 20,
+      "sectionKeys": [
+        "fixed_patient_acknowledgment",
+        "dynamic_diagnosis",
+        "dynamic_medical_condition",
+        "dynamic_proposed_procedure",
+        "dynamic_procedure_site_laterality",
+        "dynamic_expected_benefits",
+        "dynamic_common_risks",
+        "dynamic_uncommon_risks",
+        "dynamic_serious_risks",
+        "dynamic_complications",
+        "dynamic_treatment_alternatives",
+        "dynamic_refusal_risks",
+        "dynamic_post_procedure_instructions",
+        "dynamic_physician_notes",
+        "dynamic_special_precautions",
+        "fixed_physician_certification",
+        "fixed_legal_guardian_ack",
+        "interpreter_acknowledgment",
+        "fixed_no_guarantee",
+        "fixed_electronic_signature"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "ar_match in section fixed_patient_acknowledgment"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section fixed_patient_acknowledgment"
+        },
+        "benefits": {
+          "found": true,
+          "via": "en_match in section fixed_patient_acknowledgment"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section fixed_patient_acknowledgment"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "284e2edb-e153-4dc7-94ac-bb70bbbe3dca",
+      "templateCode": "GENERAL_SURGICAL_CONSENT",
+      "consentType": "SURGICAL_CONSENT",
+      "specialty": "SURGERY",
+      "department": "GENERAL_SURGERY",
+      "titleEn": "General Surgical Consent",
+      "titleAr": "نموذج الموافقة الجراحية العامة",
+      "riskLevel": "MEDIUM",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "151391ed-dc85-4767-a01d-6ffdbe88b529",
+      "versionLabel": "v1.0",
+      "sectionCount": 20,
+      "sectionKeys": [
+        "fixed_patient_acknowledgment",
+        "dynamic_diagnosis",
+        "dynamic_medical_condition",
+        "dynamic_proposed_procedure",
+        "dynamic_procedure_site_laterality",
+        "dynamic_expected_benefits",
+        "dynamic_common_risks",
+        "dynamic_uncommon_risks",
+        "dynamic_serious_risks",
+        "dynamic_complications",
+        "dynamic_treatment_alternatives",
+        "dynamic_refusal_risks",
+        "dynamic_post_procedure_instructions",
+        "dynamic_physician_notes",
+        "dynamic_special_precautions",
+        "fixed_physician_certification",
+        "fixed_legal_guardian_ack",
+        "interpreter_acknowledgment",
+        "fixed_no_guarantee",
+        "fixed_electronic_signature"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "ar_match in section fixed_patient_acknowledgment"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section fixed_patient_acknowledgment"
+        },
+        "benefits": {
+          "found": true,
+          "via": "en_match in section fixed_patient_acknowledgment"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section fixed_patient_acknowledgment"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 99
+    },
+    {
+      "tenantId": "efe052b7-a8ac-4962-a021-8c01931514a7",
+      "templateId": "5dac941b-7674-4b8c-b500-4031145e53e6",
+      "templateCode": "MEDICAL_PHOTOGRAPHY_MEDIA_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "QUALITY",
+      "titleEn": "Medical Photography and Media Consent",
+      "titleAr": "موافقة التصوير الطبي والإعلامي",
+      "riskLevel": "LOW",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "baede774-ab37-4345-9427-c15420a3a4c6",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 66
+    },
+    {
+      "tenantId": "8f20716f-7136-4f2f-9e80-d72e84f05865",
+      "templateId": "13172c92-80c2-4918-9d38-a6ac515f1464",
+      "templateCode": "MEDICAL_PHOTOGRAPHY_MEDIA_CONSENT",
+      "consentType": "GENERAL_CONSENT",
+      "specialty": "GENERAL_MEDICINE",
+      "department": "QUALITY",
+      "titleEn": "Medical Photography and Media Consent",
+      "titleAr": "موافقة التصوير الطبي والإعلامي",
+      "riskLevel": "LOW",
+      "requiresWitness": false,
+      "requiresGuardian": false,
+      "status": "ACTIVE",
+      "versionId": "9ea24950-56e2-42af-851d-b35c7a3bf114",
+      "versionLabel": "v1.0-saudi-2019",
+      "sectionCount": 25,
+      "sectionKeys": [
+        "01_consent_title",
+        "02_patient_information",
+        "03_physician_information",
+        "04_description",
+        "05_diagnosis_indication",
+        "06_expected_benefits",
+        "07_material_risks",
+        "08_possible_complications",
+        "09_serious_complications",
+        "10_alternatives",
+        "11_refusal_consequences",
+        "12_questions_confirmation",
+        "13_voluntary_statement",
+        "14_no_guarantee",
+        "15_right_to_refuse_withdraw",
+        "16_pdpl_clause",
+        "17_guardian_clause",
+        "18_interpreter_clause",
+        "19_witness_clause",
+        "20_physician_declaration",
+        "21_patient_ack",
+        "22_signature_block",
+        "23_otp_validation",
+        "24_qr_verification",
+        "25_legal_seal_audit"
+      ],
+      "detection": {
+        "patient_education": {
+          "found": true,
+          "via": "section_key=02_patient_information"
+        },
+        "risks": {
+          "found": true,
+          "via": "en_match in section 06_expected_benefits"
+        },
+        "benefits": {
+          "found": true,
+          "via": "en_match in section 04_description"
+        },
+        "alternatives": {
+          "found": true,
+          "via": "en_match in section 07_material_risks"
+        },
+        "faq": {
+          "found": false,
+          "via": null
+        },
+        "understanding_questions": {
+          "found": false,
+          "via": null
+        }
+      },
+      "completeness": 67,
+      "missing": [
+        "faq",
+        "understanding_questions"
+      ],
+      "priority": 66
+    }
+  ]
+}

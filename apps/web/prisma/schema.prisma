@@ -265,6 +265,22 @@ enum ConsentEvidenceCopyType {
   LEGAL_ARCHIVE_COPY
 }
 
+enum ProcedureEducationStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ProcedureEducationAssetType {
+  IMAGE
+  VIDEO
+  PDF
+}
+
+enum ProcedureEducationAuditAction {
+  VIEWED
+}
+
 enum PromissoryNoteStatus {
   DRAFT
   ACTIVE
@@ -417,11 +433,21 @@ model Tenant {
   consentTimelineEvents               ConsentTimelineEvent[]
   consentCommitteeReviews             ConsentCommitteeReview[]
   consentEvidencePackages             ConsentEvidencePackage[]
+  evidencePackages                    EvidencePackage[]
+  evidenceEvents                      EvidenceEvent[]
+  evidenceTimelines                   EvidenceTimeline[]
+  evidenceAssetRecords                EvidenceAssetRecord[]
   consentEmrMappings                  ConsentEmrMapping[]
   trakCareIntegrationLogs             TrakCareIntegrationLog[]
   patientExternalReferences           PatientExternalReference[]
   encounterExternalReferences         EncounterExternalReference[]
   consentSourceSnapshots              ConsentSourceSnapshot[]
+  procedureEducation                  ProcedureEducation[]
+  procedureEducationVersions          ProcedureEducationVersion[]
+  procedureEducationSections          ProcedureEducationSection[]
+  procedureEducationAssets            ProcedureEducationAsset[]
+  procedureEducationLocalizations     ProcedureEducationLocalization[]
+  procedureEducationAuditEvents       ProcedureEducationAuditEvent[]
   featureFlagOverrides                FeatureFlagOverride[]
 
   @@map("tenants")
@@ -780,6 +806,9 @@ model Case {
   privilegedAccessLogs        PrivilegedAccessLog[]
   promissoryNotes             PromissoryNote[]
   consentDocuments            ConsentDocument[]
+  evidencePackages            EvidencePackage[]
+  evidenceEvents              EvidenceEvent[]
+  evidenceTimelines           EvidenceTimeline[]
   patientExternalReferences   PatientExternalReference[]
   encounterExternalReferences EncounterExternalReference[]
   trakCareIntegrationLogs     TrakCareIntegrationLog[]
@@ -1803,6 +1832,9 @@ model ConsentDocument {
   timelineEvents      ConsentTimelineEvent[]
   committeeReviews    ConsentCommitteeReview[]
   evidencePackages    ConsentEvidencePackage[]
+  evidenceV2Packages  EvidencePackage[]
+  evidenceV2Events    EvidenceEvent[]
+  evidenceV2Timelines EvidenceTimeline[]
   emrMappings         ConsentEmrMapping[]
   sourceSnapshots     ConsentSourceSnapshot[]
 
@@ -1878,6 +1910,162 @@ model ConsentAuditEvent {
   @@index([tenantId, consentDocumentId, createdAt], map: "idx_consent_audit_events_doc_created")
   @@index([tenantId, action, createdAt], map: "idx_consent_audit_events_action_created")
   @@map("consent_audit_events")
+}
+
+model ProcedureEducation {
+  id               String                   @id @default(uuid())
+  tenantId         String                   @map("tenant_id")
+  procedureCode    String                   @map("procedure_code")
+  category         String?
+  specialty        String?
+  status           ProcedureEducationStatus @default(DRAFT)
+  titleAr          String                   @map("title_ar")
+  titleEn          String                   @map("title_en")
+  summaryAr        String?                  @map("summary_ar")
+  summaryEn        String?                  @map("summary_en")
+  currentVersionId String?                  @map("current_version_id")
+  isPublished      Boolean                  @default(false) @map("is_published")
+  metadata         Json?
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  updatedAt        DateTime                 @updatedAt @map("updated_at")
+
+  tenant        Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  currentVersion ProcedureEducationVersion? @relation("ProcedureEducationCurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull)
+  versions      ProcedureEducationVersion[] @relation("ProcedureEducationVersions")
+  sections      ProcedureEducationSection[]
+  assets        ProcedureEducationAsset[]
+  localizations ProcedureEducationLocalization[]
+  auditEvents   ProcedureEducationAuditEvent[]
+
+  @@unique([tenantId, procedureCode], map: "uq_procedure_education_tenant_code")
+  @@index([tenantId, status, updatedAt], map: "idx_procedure_education_tenant_status_updated")
+  @@map("procedure_education")
+}
+
+model ProcedureEducationVersion {
+  id                   String                   @id @default(uuid())
+  tenantId             String                   @map("tenant_id")
+  procedureEducationId String                   @map("procedure_education_id")
+  versionLabel         String                   @map("version_label")
+  versionNumber        Int                      @default(1) @map("version_number")
+  status               ProcedureEducationStatus @default(DRAFT)
+  publishedByUserId    String?                  @map("published_by_user_id")
+  publishedAt          DateTime?                @map("published_at")
+  changelog            String?                  @map("changelog")
+  metadata             Json?
+  createdAt            DateTime                 @default(now()) @map("created_at")
+  updatedAt            DateTime                 @updatedAt @map("updated_at")
+
+  tenant             Tenant                          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedureEducation ProcedureEducation              @relation("ProcedureEducationVersions", fields: [procedureEducationId], references: [id], onDelete: Cascade)
+  currentFor         ProcedureEducation[]            @relation("ProcedureEducationCurrentVersion")
+  sections           ProcedureEducationSection[]
+  assets             ProcedureEducationAsset[]
+  localizations      ProcedureEducationLocalization[]
+  auditEvents        ProcedureEducationAuditEvent[]
+
+  @@unique([procedureEducationId, versionNumber], map: "uq_procedure_education_versions_number")
+  @@index([tenantId, status, publishedAt], map: "idx_procedure_education_versions_tenant_status_published")
+  @@map("procedure_education_versions")
+}
+
+model ProcedureEducationSection {
+  id                   String   @id @default(uuid())
+  tenantId             String   @map("tenant_id")
+  procedureEducationId String   @map("procedure_education_id")
+  versionId            String   @map("version_id")
+  sectionKey           String   @map("section_key")
+  titleAr              String   @map("title_ar")
+  titleEn              String   @map("title_en")
+  bodyAr               String   @map("body_ar")
+  bodyEn               String   @map("body_en")
+  sortOrder            Int      @default(100) @map("sort_order")
+  metadata             Json?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  tenant             Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedureEducation ProcedureEducation        @relation(fields: [procedureEducationId], references: [id], onDelete: Cascade)
+  version            ProcedureEducationVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  assets             ProcedureEducationAsset[]
+
+  @@unique([versionId, sectionKey], map: "uq_procedure_education_sections_version_key")
+  @@index([tenantId, procedureEducationId, sortOrder], map: "idx_procedure_education_sections_sort")
+  @@map("procedure_education_sections")
+}
+
+model ProcedureEducationAsset {
+  id                   String                      @id @default(uuid())
+  tenantId             String                      @map("tenant_id")
+  procedureEducationId String                      @map("procedure_education_id")
+  versionId            String                      @map("version_id")
+  sectionId            String?                     @map("section_id")
+  assetType            ProcedureEducationAssetType @map("asset_type")
+  language             String                      @default("bilingual")
+  title                String
+  sourceUrl            String                      @map("source_url")
+  thumbnailUrl         String?                     @map("thumbnail_url")
+  mimeType             String?                     @map("mime_type")
+  durationSeconds      Int?                        @map("duration_seconds")
+  sortOrder            Int                         @default(100) @map("sort_order")
+  metadata             Json?
+  createdAt            DateTime                    @default(now()) @map("created_at")
+  updatedAt            DateTime                    @updatedAt @map("updated_at")
+
+  tenant             Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedureEducation ProcedureEducation        @relation(fields: [procedureEducationId], references: [id], onDelete: Cascade)
+  version            ProcedureEducationVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  section            ProcedureEducationSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, procedureEducationId, sortOrder], map: "idx_procedure_education_assets_sort")
+  @@index([tenantId, assetType], map: "idx_procedure_education_assets_type")
+  @@map("procedure_education_assets")
+}
+
+model ProcedureEducationLocalization {
+  id                   String   @id @default(uuid())
+  tenantId             String   @map("tenant_id")
+  procedureEducationId String   @map("procedure_education_id")
+  versionId            String   @map("version_id")
+  language             String
+  direction            String
+  localizedTitle       String   @map("localized_title")
+  localizedSummary     String?  @map("localized_summary")
+  bodyJson             Json?    @map("body_json")
+  metadata             Json?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  tenant             Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedureEducation ProcedureEducation        @relation(fields: [procedureEducationId], references: [id], onDelete: Cascade)
+  version            ProcedureEducationVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@unique([versionId, language], map: "uq_procedure_education_localizations_version_lang")
+  @@index([tenantId, language], map: "idx_procedure_education_localizations_tenant_lang")
+  @@map("procedure_education_localizations")
+}
+
+model ProcedureEducationAuditEvent {
+  id                   String                        @id @default(uuid())
+  tenantId             String                        @map("tenant_id")
+  procedureEducationId String                        @map("procedure_education_id")
+  versionId            String?                       @map("version_id")
+  action               ProcedureEducationAuditAction @default(VIEWED)
+  language             String
+  versionLabel         String?                       @map("version_label")
+  durationSeconds      Int?                          @map("duration_seconds")
+  actorUserId          String?                       @map("actor_user_id")
+  metadata             Json?
+  viewedAt             DateTime                      @default(now()) @map("viewed_at")
+  createdAt            DateTime                      @default(now()) @map("created_at")
+
+  tenant             Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedureEducation ProcedureEducation        @relation(fields: [procedureEducationId], references: [id], onDelete: Cascade)
+  version            ProcedureEducationVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, procedureEducationId, viewedAt], map: "idx_procedure_education_audit_viewed")
+  @@index([tenantId, language, viewedAt], map: "idx_procedure_education_audit_language")
+  @@map("procedure_education_audit_events")
 }
 
 model ConsentPromptRegistry {
@@ -2137,6 +2325,146 @@ model ConsentEvidencePackage {
 
   @@index([tenantId, consentDocumentId, copyType], map: "idx_consent_evidence_packages_doc_type")
   @@map("consent_evidence_packages")
+}
+
+model EvidencePackage {
+  id                    String   @id @default(uuid())
+  tenantId              String   @map("tenant_id")
+  caseId                String?  @map("case_id")
+  consentDocumentId     String?  @map("consent_document_id")
+  mrn                   String?
+  procedureName         String?  @map("procedure_name")
+  educationVersion      String?  @map("education_version")
+  educationLanguage     String?  @map("education_language")
+  educationViewed       Boolean  @default(false) @map("education_viewed")
+  viewDurationSeconds   Int?     @map("view_duration_seconds")
+  consentTemplate       String?  @map("consent_template")
+  consentVersion        String?  @map("consent_version")
+  consentLanguage       String?  @map("consent_language")
+  consentTimestamp      DateTime? @map("consent_timestamp")
+  signerIdentity        String?  @map("signer_identity")
+  signatureTimestamp    DateTime? @map("signature_timestamp")
+  browser               String?
+  deviceType            String?  @map("device_type")
+  ipAddress             String?  @map("ip_address")
+  otpSentTime           DateTime? @map("otp_sent_time")
+  otpVerificationTime   DateTime? @map("otp_verification_time")
+  otpVerificationStatus String?  @map("otp_verification_status")
+  maskedMobileNumber    String?  @map("masked_mobile_number")
+  educationSummary      String?  @map("education_summary")
+  consentSummary        String?  @map("consent_summary")
+  timelineSummary       String?  @map("timeline_summary")
+  generatedAt           DateTime @default(now()) @map("generated_at")
+  metadata              Json?
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case            Case?            @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  consentDocument ConsentDocument? @relation(fields: [consentDocumentId], references: [id], onDelete: SetNull)
+  events          EvidenceEvent[]
+  timeline        EvidenceTimeline?
+  assetRecords    EvidenceAssetRecord[]
+
+  @@index([tenantId, generatedAt], map: "idx_evidence_packages_tenant_generated")
+  @@index([tenantId, mrn], map: "idx_evidence_packages_tenant_mrn")
+  @@index([tenantId, consentTemplate], map: "idx_evidence_packages_tenant_template")
+  @@map("evidence_packages")
+}
+
+model EvidenceEvent {
+  id                    String    @id @default(uuid())
+  tenantId              String    @map("tenant_id")
+  packageId             String?   @map("package_id")
+  caseId                String?   @map("case_id")
+  consentDocumentId     String?   @map("consent_document_id")
+  eventType             String    @map("event_type")
+  eventTimestamp        DateTime  @default(now()) @map("event_timestamp")
+  sequenceNo            Int?      @map("sequence_no")
+  procedureName         String?   @map("procedure_name")
+  educationVersion      String?   @map("education_version")
+  educationLanguage     String?   @map("education_language")
+  assetsPresented       Int?      @map("assets_presented")
+  imagesPresented       Int?      @map("images_presented")
+  videosPresented       Int?      @map("videos_presented")
+  pdfsPresented         Int?      @map("pdfs_presented")
+  educationViewed       Boolean?  @map("education_viewed")
+  viewDurationSeconds   Int?      @map("view_duration_seconds")
+  consentTemplate       String?   @map("consent_template")
+  consentVersion        String?   @map("consent_version")
+  consentLanguage       String?   @map("consent_language")
+  consentTimestamp      DateTime? @map("consent_timestamp")
+  signerIdentity        String?   @map("signer_identity")
+  signatureTimestamp    DateTime? @map("signature_timestamp")
+  browser               String?
+  deviceType            String?   @map("device_type")
+  ipAddress             String?   @map("ip_address")
+  otpSentTime           DateTime? @map("otp_sent_time")
+  otpVerificationTime   DateTime? @map("otp_verification_time")
+  otpVerificationStatus String?   @map("otp_verification_status")
+  maskedMobileNumber    String?   @map("masked_mobile_number")
+  metadata              Json?
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  package         EvidencePackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  case            Case?            @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  consentDocument ConsentDocument? @relation(fields: [consentDocumentId], references: [id], onDelete: SetNull)
+  assetRecords    EvidenceAssetRecord[]
+
+  @@index([tenantId, eventType, eventTimestamp], map: "idx_evidence_events_tenant_type_time")
+  @@index([tenantId, caseId, eventTimestamp], map: "idx_evidence_events_case_time")
+  @@index([tenantId, consentDocumentId, eventTimestamp], map: "idx_evidence_events_consent_time")
+  @@map("evidence_events")
+}
+
+model EvidenceTimeline {
+  id                String    @id @default(uuid())
+  tenantId          String    @map("tenant_id")
+  packageId         String    @unique @map("package_id")
+  caseId            String?   @map("case_id")
+  consentDocumentId String?   @map("consent_document_id")
+  mrn               String?
+  timelineJson      Json      @map("timeline_json")
+  summaryText       String?   @map("summary_text")
+  generatedAt       DateTime  @default(now()) @map("generated_at")
+  metadata          Json?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  package         EvidencePackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  case            Case?            @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  consentDocument ConsentDocument? @relation(fields: [consentDocumentId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, generatedAt], map: "idx_evidence_timelines_tenant_generated")
+  @@index([tenantId, mrn], map: "idx_evidence_timelines_tenant_mrn")
+  @@map("evidence_timelines")
+}
+
+model EvidenceAssetRecord {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  packageId     String   @map("package_id")
+  eventId       String?  @map("event_id")
+  assetType     String   @map("asset_type")
+  assetCategory String?  @map("asset_category")
+  title         String?
+  sourceUrl     String?  @map("source_url")
+  language      String?  @default("bilingual")
+  presented     Boolean  @default(true)
+  sortOrder     Int      @default(100) @map("sort_order")
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  package EvidencePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  event   EvidenceEvent?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, packageId, sortOrder], map: "idx_evidence_assets_package_sort")
+  @@index([tenantId, assetType], map: "idx_evidence_assets_tenant_type")
+  @@map("evidence_asset_records")
 }
 
 model ConsentEmrMapping {

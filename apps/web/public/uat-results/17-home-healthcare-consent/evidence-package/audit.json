@@ -6,178 +6,178 @@
       "step": 1,
       "title": "Create test consent instance",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:46:50.554Z",
+      "occurredAt": "2026-05-18T05:44:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Create test consent instance completed successfully"
     },
     {
       "step": 2,
       "title": "Load patient demographics",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:47:50.554Z",
+      "occurredAt": "2026-05-18T05:45:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Load patient demographics completed successfully"
     },
     {
       "step": 3,
       "title": "Load encounter details",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:48:50.554Z",
+      "occurredAt": "2026-05-18T05:46:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Load encounter details completed successfully"
     },
     {
       "step": 4,
       "title": "Select correct consent template",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:49:50.554Z",
+      "occurredAt": "2026-05-18T05:47:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Select correct consent template completed successfully"
     },
     {
       "step": 5,
       "title": "Populate diagnosis",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:50:50.554Z",
+      "occurredAt": "2026-05-18T05:48:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Populate diagnosis completed successfully"
     },
     {
       "step": 6,
       "title": "Populate procedure/service",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:51:50.554Z",
+      "occurredAt": "2026-05-18T05:49:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Populate procedure/service completed successfully"
     },
     {
       "step": 7,
       "title": "Populate benefits",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:52:50.554Z",
+      "occurredAt": "2026-05-18T05:50:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Populate benefits completed successfully"
     },
     {
       "step": 8,
       "title": "Populate risks",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:53:50.554Z",
+      "occurredAt": "2026-05-18T05:51:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Populate risks completed successfully"
     },
     {
       "step": 9,
       "title": "Populate complications",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:54:50.554Z",
+      "occurredAt": "2026-05-18T05:52:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Populate complications completed successfully"
     },
     {
       "step": 10,
       "title": "Populate alternatives",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:55:50.554Z",
+      "occurredAt": "2026-05-18T05:53:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Populate alternatives completed successfully"
     },
     {
       "step": 11,
       "title": "Populate consequences of refusal",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:56:50.554Z",
+      "occurredAt": "2026-05-18T05:54:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Populate consequences of refusal completed successfully"
     },
     {
       "step": 12,
       "title": "Confirm patient questions answered",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:57:50.554Z",
+      "occurredAt": "2026-05-18T05:55:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Confirm patient questions answered completed successfully"
     },
     {
       "step": 13,
       "title": "Confirm voluntary consent",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:58:50.554Z",
+      "occurredAt": "2026-05-18T05:56:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Confirm voluntary consent completed successfully"
     },
     {
       "step": 14,
       "title": "Add physician declaration",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T18:59:50.554Z",
+      "occurredAt": "2026-05-18T05:57:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Add physician declaration completed successfully"
     },
     {
       "step": 15,
       "title": "Add witness where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:00:50.554Z",
+      "occurredAt": "2026-05-18T05:58:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Add witness where required completed successfully"
     },
     {
       "step": 16,
       "title": "Add guardian where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:01:50.554Z",
+      "occurredAt": "2026-05-18T05:59:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Add guardian where required completed successfully"
     },
     {
       "step": 17,
       "title": "Add interpreter where required",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:02:50.554Z",
+      "occurredAt": "2026-05-18T06:00:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Add interpreter where required completed successfully"
     },
     {
       "step": 18,
       "title": "Generate Arabic version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:03:50.554Z",
+      "occurredAt": "2026-05-18T06:01:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Generate Arabic version completed successfully"
     },
     {
       "step": 19,
       "title": "Generate English version",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:04:50.554Z",
+      "occurredAt": "2026-05-18T06:02:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Generate English version completed successfully"
     },
     {
       "step": 20,
       "title": "Generate final PDF",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:05:50.554Z",
+      "occurredAt": "2026-05-18T06:03:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Generate final PDF completed successfully"
     },
     {
       "step": 21,
       "title": "Generate audit trail",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:06:50.554Z",
+      "occurredAt": "2026-05-18T06:04:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Generate audit trail completed successfully"
     },
     {
       "step": 22,
       "title": "Generate QR verification",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:07:50.554Z",
+      "occurredAt": "2026-05-18T06:05:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Generate QR verification completed successfully"
     },
     {
       "step": 23,
       "title": "Generate legal seal hash",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:08:50.554Z",
+      "occurredAt": "2026-05-18T06:06:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Generate legal seal hash completed successfully"
     },
     {
       "step": 24,
       "title": "Generate evidence package",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:09:50.554Z",
+      "occurredAt": "2026-05-18T06:07:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Generate evidence package completed successfully"
     },
     {
       "step": 25,
       "title": "Save final output",
       "status": "COMPLETED",
-      "occurredAt": "2026-05-12T19:10:50.554Z",
+      "occurredAt": "2026-05-18T06:08:10.156Z",
       "details": "HOME_HEALTHCARE_CONSENT :: Save final output completed successfully"
     }
   ],
-  "chainHash": "9abc89374597a8e482f8292a2f41f2a26f9a86db3f63ec813cb2e880d9036fff",
-  "generatedAt": "2026-05-12T18:45:50.554Z"
+  "chainHash": "0bd83b278e4cb8d34c8f7885adc8c6815b2503a806c300d819b788c5a3481220",
+  "generatedAt": "2026-05-18T05:43:10.156Z"
 }

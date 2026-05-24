@@ -1,0 +1,203 @@
+{
+  "generatedAt": "2026-05-18T04:42:50.770Z",
+  "baseUrl": "https://wathiqcare.online",
+  "checks": {
+    "users": [
+      {
+        "email": "dr.ahmed@wathiqcare.med.sa",
+        "label": "Pilot Physician",
+        "expectedRole": "doctor",
+        "exists": false,
+        "roleMatch": false,
+        "active": false,
+        "emailVerified": false,
+        "passwordHashPresent": false,
+        "status": "FAIL",
+        "domainAllowed": false
+      },
+      {
+        "email": "medicaldirector@wathiqcare.med.sa",
+        "label": "Medical Director",
+        "expectedRole": "medical_director",
+        "exists": false,
+        "roleMatch": false,
+        "active": false,
+        "emailVerified": false,
+        "passwordHashPresent": false,
+        "status": "FAIL",
+        "domainAllowed": false
+      },
+      {
+        "email": "nursingsupervisor@wathiqcare.med.sa",
+        "label": "Nursing Supervisor",
+        "expectedRole": "nursing",
+        "exists": false,
+        "roleMatch": false,
+        "active": false,
+        "emailVerified": false,
+        "passwordHashPresent": false,
+        "status": "FAIL",
+        "domainAllowed": false
+      },
+      {
+        "email": "legalreviewer@wathiqcare.med.sa",
+        "label": "Legal Reviewer",
+        "expectedRole": "legal_admin",
+        "exists": false,
+        "roleMatch": false,
+        "active": false,
+        "emailVerified": false,
+        "passwordHashPresent": false,
+        "status": "FAIL",
+        "domainAllowed": false
+      },
+      {
+        "email": "compliance@wathiqcare.med.sa",
+        "label": "Compliance Reviewer",
+        "expectedRole": "compliance",
+        "exists": false,
+        "roleMatch": false,
+        "active": false,
+        "emailVerified": false,
+        "passwordHashPresent": false,
+        "status": "FAIL",
+        "domainAllowed": false
+      }
+    ],
+    "mrns": [
+      {
+        "mrn": "IMC-2026-02000",
+        "exists": true,
+        "caseId": "380b4d60-3d39-4364-9af9-284463d6365a",
+        "patientName": "Najib الفلاح",
+        "bilingualName": true,
+        "status": "PASS"
+      },
+      {
+        "mrn": "IMC-2026-02001",
+        "exists": true,
+        "caseId": "2c5f5683-403d-4adc-93c2-a8af686141ab",
+        "patientName": "Mariam القحطاني",
+        "bilingualName": true,
+        "status": "PASS"
+      },
+      {
+        "mrn": "IMC-2026-02002",
+        "exists": false,
+        "caseId": null,
+        "patientName": "",
+        "bilingualName": false,
+        "status": "FAIL"
+      },
+      {
+        "mrn": "IMC-2026-02003",
+        "exists": false,
+        "caseId": null,
+        "patientName": "",
+        "bilingualName": false,
+        "status": "FAIL"
+      },
+      {
+        "mrn": "IMC-2026-02004",
+        "exists": false,
+        "caseId": null,
+        "patientName": "",
+        "bilingualName": false,
+        "status": "FAIL"
+      },
+      {
+        "mrn": "IMC-2026-02005",
+        "exists": false,
+        "caseId": null,
+        "patientName": "",
+        "bilingualName": false,
+        "status": "FAIL"
+      },
+      {
+        "mrn": "IMC-2026-02010",
+        "exists": false,
+        "caseId": null,
+        "patientName": "",
+        "bilingualName": false,
+        "status": "FAIL"
+      },
+      {
+        "mrn": "IMC-2026-02015",
+        "exists": false,
+        "caseId": null,
+        "patientName": "",
+        "bilingualName": false,
+        "status": "FAIL"
+      },
+      {
+        "mrn": "IMC-2026-02020",
+        "exists": false,
+        "caseId": null,
+        "patientName": "",
+        "bilingualName": false,
+        "status": "FAIL"
+      },
+      {
+        "mrn": "IMC-2026-02024",
+        "exists": true,
+        "caseId": "cdba3f5e-533d-46f5-80c8-70be69d69995",
+        "patientName": "Yousef العتيبي",
+        "bilingualName": true,
+        "status": "PASS"
+      }
+    ],
+    "authentication": [
+      {
+        "email": "dr.ahmed@wathiqcare.med.sa",
+        "loginEnStatus": 429,
+        "loginArStatus": 429,
+        "rememberMeStatus": 429,
+        "redirectTo": null,
+        "hasSessionCookie": false,
+        "status": "FAIL"
+      },
+      {
+        "email": "medicaldirector@wathiqcare.med.sa",
+        "loginEnStatus": 429,
+        "loginArStatus": 429,
+        "rememberMeStatus": 429,
+        "redirectTo": null,
+        "hasSessionCookie": false,
+        "status": "FAIL"
+      },
+      {
+        "email": "nursingsupervisor@wathiqcare.med.sa",
+        "loginEnStatus": 429,
+        "loginArStatus": 429,
+        "rememberMeStatus": 429,
+        "redirectTo": null,
+        "hasSessionCookie": false,
+        "status": "FAIL"
+      },
+      {
+        "email": "legalreviewer@wathiqcare.med.sa",
+        "loginEnStatus": 429,
+        "loginArStatus": 429,
+        "rememberMeStatus": 429,
+        "redirectTo": null,
+        "hasSessionCookie": false,
+        "status": "FAIL"
+      },
+      {
+        "email": "compliance@wathiqcare.med.sa",
+        "loginEnStatus": 429,
+        "loginArStatus": 429,
+        "rememberMeStatus": 429,
+        "redirectTo": null,
+        "hasSessionCookie": false,
+        "status": "FAIL"
+      }
+    ]
+  },
+  "summary": {
+    "totalChecks": 20,
+    "passed": 3,
+    "failed": 17,
+    "blocked": 0
+  }
+}

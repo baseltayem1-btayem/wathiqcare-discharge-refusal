@@ -41,6 +41,9 @@ yarn-error.log*
 next-env.d.ts
 .env*.local
 
+# release governance build metadata
+.release-build.json
+
 .vercel
 .env*.local
 

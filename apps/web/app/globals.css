@@ -1,6 +1,6 @@
 /* WathiqCare Design System
- * English: Inter | Arabic: Alarabiya Normal (with fallbacks)
- * Phase 1 foundation for a calm, professional medical/legal product UI.
+ * English: Inter | Arabic: IBM Plex Sans Arabic (with fallbacks)
+ * Phase 4.1 adds enterprise polish while preserving workflow logic.
  */
 
 @import "tailwindcss";
@@ -14,48 +14,50 @@
 }
 
 :root {
-  --background: #e8edf2;
+  --background: #f4f7fb;
   --surface: #ffffff;
-  --surface-muted: #f7f9fb;
-  --surface-subtle: #eef3f8;
-  --foreground: #1c2733;
-  --foreground-secondary: #4d5b6a;
-  --foreground-muted: #708090;
-  --primary: #2e5c8a;
-  --primary-hover: #264d75;
-  --primary-pressed: #1f3f61;
-  --primary-soft: #dfe9f4;
-  --primary-soft-border: #9db4cb;
-  --border: #cbd5e0;
-  --border-strong: #9eb0c1;
-  --border-soft: #d9e1ea;
-  --state-success: #15803d;
-  --state-success-bg: #edf8ef;
-  --state-success-border: #bcd7c3;
-  --state-warning: #b45309;
-  --state-warning-bg: #fff8e8;
-  --state-warning-border: #e7c995;
-  --state-error: #b42318;
-  --state-error-bg: #fff2f0;
-  --state-error-border: #efc2bc;
-  --state-info: #1f5fa7;
-  --state-info-bg: #edf4fb;
-  --state-info-border: #c2d3e5;
-  --sidebar-bg: #2e5c8a;
-  --sidebar-bg-elevated: #345f89;
-  --sidebar-border: #274f78;
-  --sidebar-text: #eff5fb;
-  --sidebar-text-muted: #c7d5e2;
-  --sidebar-active-bg: #24496f;
-  --sidebar-active-border: #9db4cb;
+  --surface-muted: #f8fbfe;
+  --surface-subtle: #eef5fb;
+  --foreground: #102033;
+  --foreground-secondary: #415166;
+  --foreground-muted: #66768a;
+  --primary: #002b5c;
+  --primary-hover: #00356f;
+  --primary-pressed: #001f43;
+  --primary-soft: #dcecf9;
+  --primary-soft-border: #9bc4e5;
+  --accent-gold: #c9a13b;
+  --accent-gold-soft: #f8eed0;
+  --border: #d7e0ea;
+  --border-strong: #aebdcc;
+  --border-soft: #e6edf4;
+  --state-success: #0f7a4d;
+  --state-success-bg: #ecf8f1;
+  --state-success-border: #bbddc9;
+  --state-warning: #9c6508;
+  --state-warning-bg: #fff4da;
+  --state-warning-border: #e8c983;
+  --state-error: #b3261e;
+  --state-error-bg: #fff1ef;
+  --state-error-border: #efc5bf;
+  --state-info: #4b9cd3;
+  --state-info-bg: #edf7fd;
+  --state-info-border: #b9d8ef;
+  --sidebar-bg: #002b5c;
+  --sidebar-bg-elevated: #07376c;
+  --sidebar-border: #0f447f;
+  --sidebar-text: #f8fbff;
+  --sidebar-text-muted: #ceddec;
+  --sidebar-active-bg: #0f4a8e;
+  --sidebar-active-border: #9bc4e5;
   --sidebar-active-text: #ffffff;
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 2px 6px rgba(23, 35, 48, 0.08);
-  --shadow-floating: 0 10px 24px rgba(23, 35, 48, 0.12);
-  --shadow-focus: 0 0 0 2px rgba(46, 92, 138, 0.18);
+  --shadow-md: 0 2px 10px rgba(15, 32, 51, 0.08);
+  --shadow-floating: 0 16px 36px rgba(15, 32, 51, 0.14);
+  --shadow-focus: 0 0 0 3px rgba(75, 156, 211, 0.18);
 
-  --font-sans-latin: "Inter", "DM Sans", system-ui, sans-serif;
-  --font-sans-arabic: "Inter", "DM Sans", system-ui, sans-serif;
+  --font-sans-latin: var(--font-english, "Inter"), "DM Sans", system-ui, sans-serif;
+  --font-sans-arabic: var(--font-arabic, "IBM Plex Sans Arabic"), "DIN Next Arabic", "Tajawal", system-ui, sans-serif;
   --font-sans-primary: var(--font-sans-latin);
   --font-mono-primary: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", Menlo, monospace;
 
@@ -80,7 +82,10 @@
 }
 
 html {
-  background: #e8edf2;
+  background:
+    radial-gradient(circle at top left, rgba(75, 156, 211, 0.14), transparent 28%),
+    radial-gradient(circle at top right, rgba(201, 161, 59, 0.12), transparent 24%),
+    #f4f7fb;
   color: var(--foreground);
 }
 
@@ -88,23 +93,23 @@ body {
   min-height: 100vh;
   background: transparent;
   color: var(--foreground);
-  font-family: var(--font-sans-latin), sans-serif;
-  font-size: 12px;
-  line-height: 1.45;
+  font-family: var(--font-sans-latin);
+  font-size: 13px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 html[dir="rtl"] body {
   direction: rtl;
-  font-family: var(--font-sans-arabic), sans-serif;
+  font-family: var(--font-sans-arabic);
   letter-spacing: 0;
   line-height: 1.8;
   font-weight: 400;
 }
 
 html[lang="ar"] body {
-  font-family: var(--font-sans-arabic), sans-serif;
+  font-family: var(--font-sans-arabic);
 }
 
 /* RTL font and alignment for interactive controls in Arabic */
@@ -112,7 +117,7 @@ html[dir="rtl"] input,
 html[dir="rtl"] textarea,
 html[dir="rtl"] select {
   text-align: right;
-  font-family: var(--font-sans-arabic), sans-serif;
+  font-family: var(--font-sans-arabic);
 }
 
 html[dir="rtl"] button,
@@ -123,7 +128,7 @@ html[dir="rtl"] h3,
 html[dir="rtl"] h4,
 html[dir="rtl"] h5,
 html[dir="rtl"] h6 {
-  font-family: var(--font-sans-arabic), sans-serif;
+  font-family: var(--font-sans-arabic);
 }
 
 html[dir="rtl"] h1 {
@@ -149,7 +154,7 @@ html[dir="ltr"] h5,
 html[dir="ltr"] h6,
 html[dir="ltr"] button,
 html[dir="ltr"] label {
-  font-family: var(--font-sans-latin), sans-serif;
+  font-family: var(--font-sans-latin);
 }
 
 *,
@@ -180,7 +185,7 @@ select {
 }
 
 ::selection {
-  background: var(--accent-light);
+  background: rgba(75, 156, 211, 0.22);
   color: var(--foreground);
 }
 
@@ -244,11 +249,16 @@ h3,
   }
 
   .wc-card {
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
+    border-radius: 18px;
+    border: 1px solid rgba(0, 43, 92, 0.08);
     background: var(--surface);
-    padding: 0.875rem;
-    box-shadow: var(--shadow-sm);
+    padding: 1rem;
+    box-shadow: var(--shadow-md);
+  }
+
+  .wc-card-elevated {
+    border: 1px solid rgba(0, 43, 92, 0.08);
+    box-shadow: var(--shadow-floating);
   }
 
   .wc-shell-grid {
@@ -289,10 +299,10 @@ h3,
   }
 
   .wc-card-soft {
-    border-radius: var(--radius-lg);
+    border-radius: 18px;
     border: 1px solid var(--border-soft);
     background: var(--surface-muted);
-    padding: 0.75rem;
+    padding: 0.875rem;
   }
 
   .wc-button-primary {
@@ -711,16 +721,71 @@ h3,
   .wc-panel {
     border: 1px solid var(--border);
     background: var(--surface-muted);
+    border-radius: 20px;
     padding: 0.625rem;
+    box-shadow: var(--shadow-sm);
   }
 
   .wc-panel-heading {
     margin-bottom: 0.35rem;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--primary-pressed);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
+  }
+
+  .wc-trust-strip {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .wc-trust-badge {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 43, 92, 0.08);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(237, 247, 253, 0.9));
+    padding: 0.65rem 0.75rem;
+    color: var(--foreground-secondary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .wc-trust-badge__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: var(--primary-soft);
+    color: var(--primary-pressed);
+  }
+
+  .wc-trust-badge__label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--foreground);
+  }
+
+  .wc-trust-badge__description {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.6875rem;
+    line-height: 1.35;
+  }
+
+  .wc-empty-state {
+    border-radius: 18px;
+    border: 1px dashed rgba(0, 43, 92, 0.16);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 254, 0.92));
+    padding: 1rem;
+    color: var(--foreground-secondary);
+    box-shadow: var(--shadow-sm);
   }
 
   .wc-data-chip {
@@ -751,6 +816,14 @@ h3,
     border-color: var(--primary);
     background: #fdfefe;
     color: var(--primary-pressed);
+  }
+
+  .wc-link-card:focus-visible,
+  .wc-tab:focus-visible,
+  .wc-button-primary:focus-visible,
+  .wc-button-secondary:focus-visible,
+  .wc-button-ghost:focus-visible {
+    box-shadow: var(--shadow-focus);
   }
 
   .wc-link-card__icon,
@@ -872,9 +945,10 @@ h3,
   .wc-form-input:focus,
   .wc-form-select:focus,
   .wc-form-textarea:focus {
-    background: #fffbeb;
+    background: #fffdf7;
     border-color: var(--primary);
     outline: none;
+    box-shadow: var(--shadow-focus);
   }
 
   @media (max-width: 960px) {

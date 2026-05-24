@@ -108,4 +108,4 @@ Every sub-phase commits:
 
 | Sub-phase | Commit | Date | Notes |
 |-----------|--------|------|-------|
-| 12.1 | (pending) | 2026-05-19 | Foundation + evidence architecture scaffolding |
+| 12.1 | b311fbc | 2026-05-19 | Foundation + evidence architecture scaffolding |

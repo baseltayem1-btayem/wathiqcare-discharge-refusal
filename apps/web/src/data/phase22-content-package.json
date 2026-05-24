@@ -1,0 +1,903 @@
+{
+  "$schema": "wathiqcare://phase22/enterprise-patient-education-upgrade/v1",
+  "version": "2.2.0",
+  "generatedAt": "2026-05-23T17:30:00.000Z",
+  "status": "FOR_REVIEW",
+  "appliesTo": "wathiqcare.online production templates",
+  "clinicalStyle": "IMC / Saudi MOH / CBAHI / SCFHS",
+  "complianceReferences": [
+    "Saudi Health Council – Informed Consent Guidance",
+    "MOH – Patient Bill of Rights and Responsibilities",
+    "CBAHI Standards: PFR.2 (Informed Consent), PCC (Patient Centred Care)",
+    "PDPL (Personal Data Protection Law) – Sensitive Health Data",
+    "SCFHS – Code of Ethics for Healthcare Practitioners"
+  ],
+  "deliveryRequirements": {
+    "languages": ["ar", "en"],
+    "mobileFriendly": true,
+    "readabilityTargetAr": "Grade 8 MSA, short sentences, no jargon without inline gloss",
+    "readabilityTargetEn": "Grade 7, plain English, defined terms",
+    "evidencePackageCompatible": true,
+    "auditFields": [
+      "templateCode",
+      "sectionKey",
+      "contentChecksum",
+      "languageDirection",
+      "lastReviewedBy",
+      "lastReviewedAt"
+    ]
+  },
+  "scoringRules": {
+    "understandingQuestions": {
+      "passingScore": 80,
+      "maxScore": 10,
+      "weightUnit": "points",
+      "scoreFormula": "sum(correctAnswers.weight) / sum(all.weight) * 100",
+      "remediationOnFail": "Replay patient education summary, then re-attempt; physician must verbally re-explain if patient fails twice."
+    }
+  },
+  "evidencePackageHooks": {
+    "captureForEachConsent": [
+      "patientEducationSummaryShownAt",
+      "faqViewedItems[]",
+      "understandingQuestionsAttempted[]",
+      "understandingQuestionsCorrect[]",
+      "understandingQuestionsScorePct",
+      "physicianReExplainCount",
+      "interpreterPresent",
+      "languageSelected"
+    ]
+  },
+  "templates": [
+
+    {
+      "templateCode": "SURGICAL_PROCEDURE_CONSENT",
+      "consentType": "SURGERY_CONSENT",
+      "riskLevel": "HIGH",
+      "titleAr": "موافقة مستنيرة على الإجراء الجراحي",
+      "titleEn": "Informed Consent for Surgical Procedure",
+
+      "patientEducationSummary": {
+        "ar": "العملية الجراحية هي إجراء طبي يقوم به طبيب جرّاح مرخّص لإصلاح، أو استئصال، أو إعادة بناء جزء من الجسم بهدف علاج المرض أو تخفيف الأعراض أو منع تفاقم الحالة. سيوضّح لك الفريق الجرّاح طبيعة العملية المقترحة، ومدتها المتوقّعة، ومكان إجرائها (غرفة العمليات في مستشفى التخصصي الدولي)، ونوع التخدير الذي سيُستخدم. تجرى العملية وفق معايير الجودة المعتمدة من المجلس السعودي للاعتماد الصحي (CBAHI) ووزارة الصحة، ويرافقها فريق متكامل يشمل الجرّاح وطبيب التخدير والممرضين وفنّيي غرفة العمليات. قبل الموافقة، تأكّد من أنك فهمت سبب الحاجة إلى العملية، والبدائل المتاحة، والمخاطر الرئيسية، وما ستشعر به أثناء وبعد العملية. يحقّ لك طرح أي سؤال، وطلب وقت إضافي للتفكير، أو الاستعانة بمترجم، أو طلب رأي طبي ثانٍ قبل التوقيع.",
+        "en": "A surgical procedure is a medical operation performed by a licensed surgeon to repair, remove, or reconstruct a part of your body in order to treat disease, relieve symptoms, or prevent worsening of your condition. Your surgical team will explain to you the proposed operation, how long it is expected to take, where it will be performed (an operating room at the International Medical Center), and what type of anaesthesia will be used. The procedure is delivered under quality standards accredited by CBAHI and the Saudi Ministry of Health, with a complete team that includes the surgeon, the anaesthesiologist, nurses, and operating-room technicians. Before you sign, make sure you understand why the operation is needed, what alternatives exist, the main risks, and how you will feel during and after the operation. You have the right to ask any question, take more time to decide, request an interpreter, or seek a second medical opinion before signing."
+      },
+
+      "benefits": {
+        "ar": [
+          "علاج المرض الكامن أو إزالة سببه (مثل استئصال ورم أو إصلاح كسر).",
+          "تخفيف الأعراض المؤلمة أو المعطّلة للحياة اليومية.",
+          "استعادة وظيفة عضو أو جزء من الجسم بقدر الإمكان.",
+          "منع تفاقم الحالة أو ظهور مضاعفات مستقبلية أكثر خطورة.",
+          "تحسين جودة الحياة على المدى المتوسط والبعيد بحسب طبيعة الإجراء.",
+          "تأكيد التشخيص في بعض العمليات (مثل أخذ خزعة جراحية)."
+        ],
+        "en": [
+          "Treat the underlying disease or remove its cause (e.g. excise a tumour, repair a fracture).",
+          "Relieve symptoms that are painful or that disrupt daily life.",
+          "Restore the function of an organ or body part to the extent possible.",
+          "Prevent worsening of the condition or future, more serious complications.",
+          "Improve medium- and long-term quality of life, depending on the procedure.",
+          "Confirm the diagnosis in some operations (for example, when a surgical biopsy is taken)."
+        ]
+      },
+
+      "risks": {
+        "ar": [
+          "نزيف قد يستلزم نقل دم أو عملية إضافية.",
+          "عدوى في الجرح أو داخل الجسم قد تحتاج إلى مضادات حيوية أو تدخّل جراحي ثانٍ.",
+          "ردّ فعل تحسسي للأدوية أو مواد التخدير.",
+          "تخثّر دموي في الساقين قد ينتقل إلى الرئة (انسداد رئوي).",
+          "إصابة عضو أو وعاء دموي أو عصب مجاور لمنطقة العملية.",
+          "ندوب أو التصاقات داخلية قد تسبّب ألماً أو انسداداً معوياً لاحقاً.",
+          "تأخّر في التئام الجرح، خصوصاً لدى مرضى السكري أو المدخّنين.",
+          "حاجة غير متوقّعة لتوسيع العملية أو تغيير الخطة الجراحية أثناء الجراحة.",
+          "مضاعفات قلبية أو رئوية (احتشاء، توقّف تنفّسي) خصوصاً لمن لديهم أمراض مزمنة.",
+          "في حالات نادرة جداً: مضاعفات تهدّد الحياة أو الوفاة."
+        ],
+        "en": [
+          "Bleeding that may require a blood transfusion or a further operation.",
+          "Infection of the wound or inside the body, which may need antibiotics or a second surgical intervention.",
+          "Allergic reaction to medications or anaesthesia agents.",
+          "Blood clots in the legs that may travel to the lungs (pulmonary embolism).",
+          "Injury to an organ, blood vessel, or nerve next to the surgical area.",
+          "Scars or internal adhesions that may later cause pain or intestinal obstruction.",
+          "Delayed wound healing, especially in patients with diabetes or in smokers.",
+          "Unexpected need to extend the operation or change the surgical plan during surgery.",
+          "Cardiac or pulmonary complications (heart attack, respiratory arrest), particularly in patients with chronic disease.",
+          "In very rare cases: life-threatening complications or death."
+        ]
+      },
+
+      "alternatives": {
+        "ar": [
+          "العلاج الدوائي أو التحفّظي بدون جراحة، إن كان مناسباً لحالتك.",
+          "إجراء أقل توغّلاً (مثل المنظار أو الأشعة التداخلية) إذا كان متاحاً وآمناً لحالتك.",
+          "المراقبة الطبية المنتظمة دون تدخّل فوري ('الانتظار اليقظ').",
+          "العلاج التلطيفي إذا كان الهدف تخفيف الأعراض دون شفاء جذري.",
+          "طلب رأي طبي ثانٍ من جرّاح آخر داخل أو خارج المستشفى.",
+          "رفض الإجراء كاملاً مع فهم العواقب المتوقّعة لرفض العلاج."
+        ],
+        "en": [
+          "Medical or conservative treatment without surgery, if appropriate for your case.",
+          "A less-invasive option (such as endoscopy or interventional radiology), if available and safe for you.",
+          "Regular medical monitoring without immediate intervention ('watchful waiting').",
+          "Palliative treatment, if the goal is to relieve symptoms rather than cure the disease.",
+          "Seek a second medical opinion from another surgeon, inside or outside the hospital.",
+          "Refuse the procedure entirely, after understanding the expected consequences of refusing treatment."
+        ]
+      },
+
+      "faq": [
+        { "id": "Q1",
+          "ar": { "question": "لماذا أحتاج إلى هذه العملية تحديداً؟", "answer": "لأن حالتك الطبية وصلت إلى مرحلة لا يكفي فيها العلاج الدوائي وحده، أو لأن الجراحة هي الخيار الأكثر فعالية وأماناً لعلاج المشكلة. سيشرح لك الجرّاح الأسباب الخاصة بحالتك بالتفصيل." },
+          "en": { "question": "Why specifically do I need this operation?", "answer": "Because your medical condition has reached a stage where medication alone is not enough, or because surgery is the most effective and safest option to treat the problem. Your surgeon will explain the reasons specific to your case in detail." } },
+        { "id": "Q2",
+          "ar": { "question": "كم تستغرق العملية؟", "answer": "تختلف المدة بحسب نوع العملية وتعقيدها، وعادةً تتراوح بين 30 دقيقة وعدة ساعات. سيخبرك الجرّاح بالمدة المتوقّعة لحالتك، وقد تطول قليلاً إذا ظهرت معطيات جديدة أثناء الجراحة." },
+          "en": { "question": "How long will the operation take?", "answer": "Duration varies with the type and complexity of the operation, usually between 30 minutes and several hours. Your surgeon will tell you the expected duration for your case, and it may take slightly longer if new findings appear during surgery." } },
+        { "id": "Q3",
+          "ar": { "question": "هل سأشعر بألم أثناء العملية؟", "answer": "لا. سيقوم طبيب التخدير بإعطائك التخدير المناسب لتكون مرتاحاً ولا تشعر بألم. قد تشعر ببعض الألم بعد العملية، وسيُعطى لك علاج فعّال للألم وفق بروتوكول إدارة الألم في المستشفى." },
+          "en": { "question": "Will I feel pain during the operation?", "answer": "No. The anaesthesiologist will give you the appropriate anaesthesia so that you are comfortable and feel no pain. You may experience some pain after the operation, and effective pain treatment will be given according to the hospital's pain-management protocol." } },
+        { "id": "Q4",
+          "ar": { "question": "متى أستطيع العودة إلى العمل أو النشاط الطبيعي؟", "answer": "تختلف فترة التعافي حسب نوع العملية وحالتك الصحية، وقد تتراوح من أيام قليلة إلى عدّة أسابيع. سيُزوِّدك الفريق الطبي بخطة تعافٍ مفصّلة وتعليمات الخروج قبل مغادرة المستشفى." },
+          "en": { "question": "When can I return to work or normal activity?", "answer": "Recovery time varies with the type of operation and your overall health, and may range from a few days to several weeks. The medical team will give you a detailed recovery plan and discharge instructions before you leave the hospital." } },
+        { "id": "Q5",
+          "ar": { "question": "ما أكثر المضاعفات شيوعاً؟", "answer": "الأكثر شيوعاً: الألم في موضع الجرح، الغثيان بعد التخدير، وكدمات بسيطة. المضاعفات الجدية مثل النزيف أو العدوى أقل شيوعاً وتُعالج فور اكتشافها." },
+          "en": { "question": "What are the most common complications?", "answer": "The most common are: pain at the wound site, nausea after anaesthesia, and minor bruising. Serious complications such as bleeding or infection are less common and are treated as soon as they are detected." } },
+        { "id": "Q6",
+          "ar": { "question": "هل سأحصل على دم أثناء العملية؟", "answer": "نقل الدم ليس روتينياً ولا يتم إلا عند الحاجة الطبية. إذا توقّع الجرّاح احتمال نقل دم سيُذكر ذلك صراحةً وسيُطلب توقيع موافقة نقل دم منفصلة." },
+          "en": { "question": "Will I receive blood during the operation?", "answer": "Blood transfusion is not routine and is only given when medically necessary. If the surgeon expects a possible transfusion, this will be stated explicitly and a separate transfusion consent will be requested." } },
+        { "id": "Q7",
+          "ar": { "question": "ماذا لو رفضت العملية؟", "answer": "حقّك في رفض العلاج محفوظ. سيُوضّح لك الفريق الطبي العواقب المتوقّعة على حالتك الصحية إذا لم تجرَ العملية، وقد يُعرض عليك خيارات بديلة." },
+          "en": { "question": "What if I refuse the operation?", "answer": "Your right to refuse treatment is protected. The medical team will explain the expected consequences for your health if the operation is not performed, and alternative options may be offered." } },
+        { "id": "Q8",
+          "ar": { "question": "هل أستطيع سحب موافقتي بعد التوقيع؟", "answer": "نعم. تستطيع سحب موافقتك في أي وقت قبل بدء العملية بإبلاغ الفريق الطبي. بعد بدء العملية يصعب إيقافها إلا لأسباب طبية ضرورية حفاظاً على سلامتك." },
+          "en": { "question": "Can I withdraw my consent after signing?", "answer": "Yes. You may withdraw your consent at any time before the operation begins by informing the medical team. Once the operation has started, it can only be stopped for medical reasons necessary to protect your safety." } },
+        { "id": "Q9",
+          "ar": { "question": "من سيُجري العملية فعلياً؟", "answer": "سيُجري العملية الجرّاح المختص المسؤول عن حالتك، وقد يساعده جرّاحون مقيمون أو زملاء تدريب تحت إشرافه المباشر، بحسب سياسة التعليم الطبي المعتمدة في المستشفى." },
+          "en": { "question": "Who will actually perform the operation?", "answer": "The operation will be performed by the consultant surgeon responsible for your case, who may be assisted by resident surgeons or fellows under his direct supervision, in line with the hospital's accredited medical-education policy." } },
+        { "id": "Q10",
+          "ar": { "question": "بمن أتواصل إذا واجهت مشكلة بعد الخروج من المستشفى؟", "answer": "ستحصل في تعليمات الخروج على رقم هاتف العيادة وأرقام طوارئ المستشفى (٩٣٧). في حالات الطوارئ الشديدة (نزيف غزير، صعوبة تنفّس، ألم شديد لا يهدأ) توجّه فوراً إلى أقرب قسم طوارئ." },
+          "en": { "question": "Who do I contact if I have a problem after discharge?", "answer": "Your discharge instructions will include the clinic phone number and the hospital emergency line (937). For severe emergencies (heavy bleeding, breathing difficulty, severe uncontrolled pain), go immediately to the nearest emergency department." } }
+      ],
+
+      "understandingQuestions": [
+        {
+          "id": "UQ1", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "What is the main purpose of this surgical procedure?",
+                  "options": { "A": "To replace the need for any future medication", "B": "To treat the underlying disease or repair damage", "C": "Only to relieve mild discomfort", "D": "To guarantee a 100% cure" } },
+          "ar": { "question": "ما الهدف الأساسي من هذه العملية الجراحية؟",
+                  "options": { "A": "الاستغناء عن أي علاج دوائي مستقبلاً", "B": "علاج المرض الكامن أو إصلاح الضرر", "C": "تخفيف انزعاج بسيط فقط", "D": "ضمان الشفاء التام بنسبة 100٪" } },
+          "correctOption": "B",
+          "rationaleEn": "The operation aims to treat the disease or repair damage; no operation guarantees a 100% cure.",
+          "rationaleAr": "العملية تهدف إلى علاج المرض أو إصلاح الضرر؛ ولا تضمن أي عملية الشفاء التام بنسبة 100٪."
+        },
+        {
+          "id": "UQ2", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Which of the following is a recognised serious risk you must accept before signing?",
+                  "options": { "A": "Slight thirst after surgery", "B": "Bleeding that may need a transfusion or a second operation", "C": "Mild tiredness on the day of surgery", "D": "Hospital food taste" } },
+          "ar": { "question": "أيٌّ مما يلي يُعدّ مخاطرة جدية معتمدة يجب القبول بها قبل التوقيع؟",
+                  "options": { "A": "عطش خفيف بعد العملية", "B": "نزيف قد يستلزم نقل دم أو عملية ثانية", "C": "إرهاق بسيط يوم العملية", "D": "طعم طعام المستشفى" } },
+          "correctOption": "B",
+          "rationaleEn": "Bleeding requiring transfusion or reoperation is a recognised serious surgical risk.",
+          "rationaleAr": "النزيف الذي يستلزم نقل دم أو إعادة عملية يُعدّ من المخاطر الجراحية الجدية المعروفة."
+        },
+        {
+          "id": "UQ3", "type": "true_false", "weight": 2,
+          "en": { "question": "I have the right to refuse this operation, and the medical team will explain the expected health consequences of refusal.",
+                  "options": { "TRUE": "True", "FALSE": "False" } },
+          "ar": { "question": "يحقّ لي رفض هذه العملية، وسيشرح لي الفريق الطبي العواقب الصحية المتوقّعة للرفض.",
+                  "options": { "TRUE": "صحيح", "FALSE": "خطأ" } },
+          "correctOption": "TRUE",
+          "rationaleEn": "Refusal of treatment is a patient right protected by Saudi MOH guidance and CBAHI standards.",
+          "rationaleAr": "رفض العلاج حقٌّ للمريض محفوظ بموجب توجيهات وزارة الصحة ومعايير CBAHI."
+        },
+        {
+          "id": "UQ4", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "What should you do if you have a new question after signing but before the operation?",
+                  "options": { "A": "Stay quiet because the form is already signed", "B": "Search the internet only", "C": "Tell the surgical or nursing team and ask them; you may still withdraw consent", "D": "Wait until after the operation to ask" } },
+          "ar": { "question": "ماذا تفعل إذا ظهر لديك سؤال جديد بعد التوقيع وقبل العملية؟",
+                  "options": { "A": "أبقى صامتاً لأنني وقّعت بالفعل", "B": "أبحث في الإنترنت فقط", "C": "أُبلغ الفريق الجرّاحي أو التمريضي وأسألهم، ويمكنني سحب الموافقة", "D": "أنتظر حتى بعد العملية لأسأل" } },
+          "correctOption": "C",
+          "rationaleEn": "You may ask new questions and even withdraw consent any time before the operation begins.",
+          "rationaleAr": "يمكنك طرح أسئلة جديدة بل وسحب الموافقة في أي وقت قبل بدء العملية."
+        },
+        {
+          "id": "UQ5", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Which alternative to surgery did the consent document mention?",
+                  "options": { "A": "Only doing nothing", "B": "Only a second opinion", "C": "Medical/conservative treatment, less-invasive options, watchful waiting, palliative care, or refusal", "D": "Surgery is the only option, no alternative exists" } },
+          "ar": { "question": "ما البدائل التي ذكرتها وثيقة الموافقة لإجراء العملية الجراحية؟",
+                  "options": { "A": "عدم القيام بشيء فقط", "B": "طلب رأي ثانٍ فقط", "C": "العلاج الدوائي/التحفّظي، خيارات أقل توغّلاً، الانتظار اليقظ، العلاج التلطيفي، أو الرفض", "D": "الجراحة هي الخيار الوحيد ولا يوجد بديل" } },
+          "correctOption": "C",
+          "rationaleEn": "Several alternatives are formally documented in the consent, not only refusal.",
+          "rationaleAr": "تُوثّق وثيقة الموافقة عدّة بدائل، وليس الرفض وحده."
+        }
+      ]
+    },
+
+    {
+      "templateCode": "ANESTHESIA_CONSENT",
+      "consentType": "ANESTHESIA_CONSENT",
+      "riskLevel": "HIGH",
+      "titleAr": "موافقة مستنيرة على التخدير",
+      "titleEn": "Informed Consent for Anaesthesia",
+
+      "patientEducationSummary": {
+        "ar": "التخدير هو إجراء طبي يُعطى لك بهدف منع الألم وضمان راحتك أثناء العملية أو الإجراء التشخيصي. يُشرف على إعطاء التخدير طبيب استشاري التخدير المتخصّص في مستشفى التخصصي الدولي. هناك ثلاثة أنواع رئيسية: التخدير العام (تكون نائماً بالكامل)، والتخدير الموضعي أو الناحي (يُخدّر جزء من الجسم وأنت مستيقظ أو نصف مستيقظ)، والتهدئة الواعية (تكون مرتاحاً ونعساناً). سيختار طبيب التخدير النوع الأنسب لحالتك بناءً على نوع العملية، عمرك، أمراضك المزمنة، الأدوية التي تتناولها، تجاربك السابقة مع التخدير، ونتائج الفحوصات. سيقوم بتقييمك قبل العملية ومراقبة علاماتك الحيوية (ضغط الدم، نبض القلب، التنفّس، نسبة الأكسجين) باستمرار أثناء التخدير، وحتى تستيقظ بأمان في غرفة الإفاقة. تأكّد من إخباره عن جميع الأدوية والمكمّلات التي تتناولها، أي حساسية معروفة، تجاربك السابقة مع التخدير، أو أي حالة صحية حتى لو بدت غير مرتبطة.",
+        "en": "Anaesthesia is a medical procedure given to you to prevent pain and keep you comfortable during an operation or diagnostic procedure. Anaesthesia is supervised by a consultant anaesthesiologist at the International Medical Center. There are three main types: general anaesthesia (you are completely asleep), local or regional anaesthesia (a part of the body is numbed while you are awake or partly awake), and conscious sedation (you are calm and drowsy). The anaesthesiologist will choose the type best suited to your case based on the operation, your age, chronic illnesses, medications, previous anaesthesia experience, and test results. You will be assessed before the operation, and your vital signs (blood pressure, heart rate, breathing, oxygen level) will be continuously monitored throughout, until you wake up safely in the recovery room. Please tell the anaesthesiologist about every medication and supplement you take, any known allergies, previous anaesthesia problems, and any health condition — even if it seems unrelated."
+      },
+
+      "benefits": {
+        "ar": [
+          "منع الإحساس بالألم أثناء العملية أو الإجراء التشخيصي.",
+          "إبقاؤك ثابتاً ومرتاحاً مما يسمح للجرّاح بالعمل بأمان ودقّة.",
+          "نسيان أحداث العملية في حالة التخدير العام (تأثير محو الذاكرة المؤقت).",
+          "إمكانية إجراء عمليات طويلة ومعقّدة لم تكن ممكنة بدون تخدير حديث.",
+          "مراقبة طبية مستمرة لعلاماتك الحيوية وتدخّل فوري لأي تغيّر.",
+          "تخفيف الألم في الفترة المباشرة بعد العملية عبر تقنيات مكمّلة (مثل التخدير الناحي ومضخّات الألم)."
+        ],
+        "en": [
+          "Prevent any feeling of pain during the operation or diagnostic procedure.",
+          "Keep you still and comfortable so the surgeon can work safely and precisely.",
+          "Erase memory of the operation under general anaesthesia (temporary amnesia effect).",
+          "Make long, complex operations possible that would not be possible without modern anaesthesia.",
+          "Continuous medical monitoring of your vital signs, with immediate intervention if anything changes.",
+          "Reduce pain in the immediate post-operative period through complementary techniques (regional blocks, patient-controlled analgesia)."
+        ]
+      },
+
+      "risks": {
+        "ar": [
+          "غثيان أو قيء بعد التخدير (شائع، يُعالج بسهولة).",
+          "التهاب الحلق أو بحّة في الصوت لفترة قصيرة بسبب أنبوب التنفّس.",
+          "ضرر في الأسنان أو الشفتين أو اللسان أثناء وضع أنبوب التنفّس (نادر).",
+          "ردّ فعل تحسّسي للأدوية المخدّرة، قد يكون شديداً في حالات نادرة.",
+          "هبوط ضغط الدم أو اضطراب نظم القلب أثناء التخدير.",
+          "استنشاق محتويات المعدة إذا لم يكن المريض صائماً بشكل كامل (شفطة).",
+          "الوعي العرضي أثناء التخدير العام (نادر جداً — أقل من 1 في 1000).",
+          "إصابة عصب من التخدير الناحي قد تسبّب خدراً أو ضعفاً مؤقتاً أو نادراً دائماً.",
+          "اضطراب إدراكي بعد العملية، خصوصاً عند كبار السن.",
+          "ارتفاع الحرارة الخبيث (Malignant Hyperthermia) — حالة نادرة جداً قد تكون مهدِّدة للحياة.",
+          "في حالات نادرة جداً: مضاعفات قلبية أو دماغية أو وفاة (أقل من 1 في 100,000 لمريض سليم)."
+        ],
+        "en": [
+          "Nausea or vomiting after anaesthesia (common, easily treated).",
+          "Sore throat or short-term hoarse voice from the breathing tube.",
+          "Damage to teeth, lips, or tongue while placing the breathing tube (rare).",
+          "Allergic reaction to anaesthetic drugs; may be severe in rare cases.",
+          "Drop in blood pressure or heart-rhythm disturbance during anaesthesia.",
+          "Aspiration of stomach contents if the patient is not fully fasted.",
+          "Awareness during general anaesthesia (very rare — less than 1 in 1,000).",
+          "Nerve injury from regional anaesthesia causing temporary, or rarely permanent, numbness or weakness.",
+          "Cognitive disturbance after surgery, especially in elderly patients.",
+          "Malignant Hyperthermia — a very rare, potentially life-threatening reaction.",
+          "In very rare cases: cardiac, brain, or fatal complications (less than 1 in 100,000 for a healthy patient)."
+        ]
+      },
+
+      "alternatives": {
+        "ar": [
+          "تخدير موضعي بدلاً من تخدير عام إذا كانت العملية تسمح بذلك.",
+          "تهدئة واعية (Conscious Sedation) بدلاً من النوم الكامل.",
+          "تخدير ناحي (Regional/Spinal/Epidural) لتخدير منطقة معيّنة فقط.",
+          "إجراء الفحص أو العملية بدون أي تخدير إذا كان ممكناً (نادراً ما يكون مناسباً للعمليات الكبيرة).",
+          "تأجيل العملية لإجراء فحوصات إضافية أو تحسين حالتك قبل التخدير.",
+          "رفض التخدير ومن ثَمّ تأجيل أو إلغاء العملية."
+        ],
+        "en": [
+          "Local anaesthesia instead of general, if the operation allows it.",
+          "Conscious sedation instead of full sleep.",
+          "Regional/spinal/epidural anaesthesia to numb only a specific area.",
+          "Perform the test or procedure without any anaesthesia, if possible (rarely appropriate for major surgery).",
+          "Postpone the operation for additional tests or to optimise your condition before anaesthesia.",
+          "Refuse anaesthesia, which will lead to postponing or cancelling the operation."
+        ]
+      },
+
+      "faq": [
+        { "id": "Q1",
+          "ar": { "question": "هل سأشعر بأي شيء أثناء التخدير العام؟", "answer": "لا. ستكون نائماً بالكامل ولن تشعر بألم أو تتذكّر ما حدث أثناء العملية." },
+          "en": { "question": "Will I feel anything during general anaesthesia?", "answer": "No. You will be completely asleep and will not feel pain or remember what happened during the operation." } },
+        { "id": "Q2",
+          "ar": { "question": "كم ساعة يجب أن أصوم قبل التخدير؟", "answer": "عادة ٦ ساعات بدون طعام صلب و٢ ساعتين بدون سوائل صافية. سيُعطيك الفريق الطبي تعليمات دقيقة بحسب وقت عمليتك." },
+          "en": { "question": "How many hours must I fast before anaesthesia?", "answer": "Usually 6 hours without solid food and 2 hours without clear liquids. The medical team will give you exact instructions based on your operation time." } },
+        { "id": "Q3",
+          "ar": { "question": "هل أستيقظ أثناء العملية؟", "answer": "الوعي أثناء التخدير العام نادر جداً (أقل من 1 في 1000). يستخدم طبيب التخدير أجهزة مراقبة دقيقة لضمان عمق التخدير المناسب." },
+          "en": { "question": "Could I wake up during the operation?", "answer": "Awareness during general anaesthesia is very rare (less than 1 in 1,000). The anaesthesiologist uses precise monitoring to maintain adequate depth of anaesthesia." } },
+        { "id": "Q4",
+          "ar": { "question": "متى أستيقظ بعد التخدير؟", "answer": "عادة خلال دقائق إلى ربع ساعة بعد انتهاء العملية في غرفة الإفاقة. قد تشعر بنعاس لساعات بعدها وهذا طبيعي." },
+          "en": { "question": "When will I wake up after anaesthesia?", "answer": "Usually within minutes to a quarter of an hour after the operation ends, in the recovery room. You may feel drowsy for some hours afterwards, which is normal." } },
+        { "id": "Q5",
+          "ar": { "question": "هل سأشعر بالغثيان بعد التخدير؟", "answer": "احتمال الغثيان شائع، لكن طبيب التخدير سيُعطيك أدوية وقائية. أخبره إذا كنت تعاني من غثيان سابق بعد التخدير." },
+          "en": { "question": "Will I feel nauseous after anaesthesia?", "answer": "Nausea is common, but the anaesthesiologist will give preventive medicines. Tell him if you previously had nausea after anaesthesia." } },
+        { "id": "Q6",
+          "ar": { "question": "هل التخدير الناحي (مثل الإيبيدورال) آمن؟", "answer": "نعم، التخدير الناحي آمن وفعّال لكثير من العمليات. هناك مخاطر صغيرة مثل صداع، انخفاض ضغط الدم، أو في حالات نادرة جداً ضرر عصبي." },
+          "en": { "question": "Is regional anaesthesia (like an epidural) safe?", "answer": "Yes, regional anaesthesia is safe and effective for many operations. There are small risks such as headache, low blood pressure, or, very rarely, nerve damage." } },
+        { "id": "Q7",
+          "ar": { "question": "هل يمكن لطبيب التخدير أن يغيّر نوع التخدير أثناء العملية؟", "answer": "نعم، إذا اقتضت سلامتك ذلك. على سبيل المثال قد يتحوّل من تخدير ناحي إلى تخدير عام إذا لم يكن الأول كافياً أو إذا تغيّرت خطة العملية." },
+          "en": { "question": "Can the anaesthesiologist change the type of anaesthesia during the operation?", "answer": "Yes, if your safety requires it. For example, he may switch from regional to general anaesthesia if the first is insufficient or the surgical plan changes." } },
+        { "id": "Q8",
+          "ar": { "question": "هل أحتاج لإيقاف أدويتي قبل التخدير؟", "answer": "بعض الأدوية يجب إيقافها (مثل مضادات تخثّر معيّنة)، وبعضها يجب الاستمرار عليها. طبيب التخدير سيُراجع قائمة أدويتك ويعطيك تعليمات واضحة." },
+          "en": { "question": "Do I need to stop my medications before anaesthesia?", "answer": "Some medications must be stopped (such as certain blood thinners), and some must be continued. The anaesthesiologist will review your medication list and give clear instructions." } },
+        { "id": "Q9",
+          "ar": { "question": "هل التدخين قبل العملية يزيد المخاطر؟", "answer": "نعم. التدخين يزيد مشاكل التنفّس وتأخّر التئام الجرح. يُنصح بالامتناع عن التدخين لمدة ٢٤ ساعة على الأقل، ويُفضّل أسابيع، قبل العملية." },
+          "en": { "question": "Does smoking before the operation increase risks?", "answer": "Yes. Smoking increases breathing problems and delays wound healing. Avoiding smoking for at least 24 hours, and ideally weeks, before the operation is recommended." } },
+        { "id": "Q10",
+          "ar": { "question": "هل لي الحق في رفض نوع تخدير معيّن؟", "answer": "نعم. ناقش بدائل التخدير مع طبيب التخدير، ولك الحق في تفضيل نوع آخر إذا كان مناسباً طبياً. القرار النهائي يكون مشتركاً بينك وبين الطبيب." },
+          "en": { "question": "Do I have the right to refuse a particular type of anaesthesia?", "answer": "Yes. Discuss alternatives with the anaesthesiologist, and you have the right to prefer another type if it is medically appropriate. The final decision is shared between you and the doctor." } }
+      ],
+
+      "understandingQuestions": [
+        {
+          "id": "UQ1", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Why must you fast before anaesthesia?",
+                  "options": { "A": "To make you lose weight before surgery", "B": "To prevent stomach contents from entering the lungs during anaesthesia", "C": "Because the hospital does not serve food in the morning", "D": "Fasting is optional" } },
+          "ar": { "question": "لماذا يجب الصيام قبل التخدير؟",
+                  "options": { "A": "لإنقاص وزنك قبل العملية", "B": "لمنع دخول محتويات المعدة إلى الرئتين أثناء التخدير", "C": "لأن المستشفى لا يقدّم طعاماً صباحاً", "D": "الصيام اختياري" } },
+          "correctOption": "B",
+          "rationaleEn": "Fasting prevents pulmonary aspiration, a serious anaesthesia risk.",
+          "rationaleAr": "الصيام يمنع شفط محتويات المعدة إلى الرئتين، وهي مضاعفة جدية للتخدير."
+        },
+        {
+          "id": "UQ2", "type": "true_false", "weight": 2,
+          "en": { "question": "It is important to tell the anaesthesiologist about every medication and supplement you take, even herbal ones.",
+                  "options": { "TRUE": "True", "FALSE": "False" } },
+          "ar": { "question": "من المهم إخبار طبيب التخدير بجميع الأدوية والمكمّلات التي تتناولها، حتى الأعشاب منها.",
+                  "options": { "TRUE": "صحيح", "FALSE": "خطأ" } },
+          "correctOption": "TRUE",
+          "rationaleEn": "Many supplements interact with anaesthetic drugs and can affect bleeding and blood pressure.",
+          "rationaleAr": "كثير من المكمّلات تتفاعل مع أدوية التخدير وقد تؤثّر في النزيف وضغط الدم."
+        },
+        {
+          "id": "UQ3", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Which of the following is a common, easily treated side effect of anaesthesia?",
+                  "options": { "A": "Permanent memory loss", "B": "Malignant Hyperthermia in every patient", "C": "Nausea or sore throat", "D": "Heart attack in everyone" } },
+          "ar": { "question": "أيّ مما يلي يُعدّ أثراً جانبياً شائعاً وسهل العلاج للتخدير؟",
+                  "options": { "A": "فقدان دائم للذاكرة", "B": "ارتفاع الحرارة الخبيث لدى كل مريض", "C": "غثيان أو التهاب حلق", "D": "نوبة قلبية لدى الجميع" } },
+          "correctOption": "C",
+          "rationaleEn": "Nausea and sore throat are common, easily treated; the others are rare or non-existent.",
+          "rationaleAr": "الغثيان والتهاب الحلق شائعان وسهل علاجهما؛ بقيّة الخيارات نادرة أو غير صحيحة."
+        },
+        {
+          "id": "UQ4", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Who chooses the most suitable type of anaesthesia for you?",
+                  "options": { "A": "The patient alone, no doctor input", "B": "The anaesthesiologist in shared decision with you, based on the operation and your medical condition", "C": "The receptionist", "D": "Random selection by the surgeon" } },
+          "ar": { "question": "من يختار نوع التخدير الأنسب لك؟",
+                  "options": { "A": "المريض وحده دون مشاركة الطبيب", "B": "طبيب التخدير بقرار مشترك معك بناءً على نوع العملية وحالتك الصحية", "C": "موظف الاستقبال", "D": "اختيار عشوائي من الجرّاح" } },
+          "correctOption": "B",
+          "rationaleEn": "Anaesthesia type is chosen jointly between you and the anaesthesiologist.",
+          "rationaleAr": "يُختار نوع التخدير بقرار مشترك بينك وبين طبيب التخدير."
+        },
+        {
+          "id": "UQ5", "type": "true_false", "weight": 2,
+          "en": { "question": "Awareness during general anaesthesia is extremely common, occurring in most patients.",
+                  "options": { "TRUE": "True", "FALSE": "False" } },
+          "ar": { "question": "الوعي أثناء التخدير العام شائع جداً ويحدث لدى معظم المرضى.",
+                  "options": { "TRUE": "صحيح", "FALSE": "خطأ" } },
+          "correctOption": "FALSE",
+          "rationaleEn": "Awareness under GA is very rare (less than 1 in 1,000), not common.",
+          "rationaleAr": "الوعي تحت التخدير العام نادر جداً (أقل من 1 في 1000) وليس شائعاً."
+        }
+      ]
+    },
+
+    {
+      "templateCode": "BLOOD_AND_PRODUCTS_TRANSFUSION_CONSENT",
+      "consentType": "BLOOD_TRANSFUSION_CONSENT",
+      "riskLevel": "HIGH",
+      "titleAr": "موافقة مستنيرة على نقل الدم ومشتقاته",
+      "titleEn": "Informed Consent for Blood and Blood-Products Transfusion",
+
+      "patientEducationSummary": {
+        "ar": "نقل الدم أو أحد مشتقاته (الكريات الحمراء، الصفائح الدموية، البلازما، أو عوامل التخثّر) إجراء طبي يُجرى عند الحاجة لتعويض ما فقده الجسم من دم بسبب نزيف أو جراحة أو مرض مزمن، أو لتصحيح اضطرابات الدم. يتم الحصول على وحدات الدم في المملكة العربية السعودية من متبرّعين متطوّعين، وتخضع لفحوصات صارمة وفق معايير الهيئة العامة للغذاء والدواء وبنك الدم المركزي، تشمل فحص فيروس نقص المناعة (HIV)، التهاب الكبد B وC، الزُّهري، وفيروسات أخرى. قبل نقل الدم سيتأكّد الفريق الطبي من توافق فصيلة الدم بفحوص متعدّدة، وستُراقَب علاماتك الحيوية أثناء النقل وبعده. في حال شعورك بأي عَرَض غير معتاد (حمّى، رعشة، حكّة، صعوبة تنفّس، ألم في الظهر أو الصدر) فأبلغ الممرض فوراً. لك الحق في معرفة لماذا تحتاج إلى الدم بالضبط، وما البدائل المتاحة، وما المخاطر، ولك الحق في رفض النقل بعد توضيح العواقب الطبية لذلك.",
+        "en": "Transfusion of blood or one of its components (red cells, platelets, plasma, or clotting factors) is a medical procedure given when needed to replace blood lost from bleeding, surgery, or chronic disease, or to correct blood disorders. Blood units in the Kingdom of Saudi Arabia come from voluntary donors and undergo strict testing in line with SFDA and central blood-bank standards, including screening for HIV, hepatitis B and C, syphilis, and other viruses. Before transfusion the medical team confirms blood-group compatibility through multiple tests, and your vital signs are monitored during and after the transfusion. If you feel any unusual symptom (fever, chills, itching, breathing difficulty, back or chest pain), inform the nurse immediately. You have the right to know exactly why you need blood, what alternatives exist, what the risks are, and you have the right to refuse transfusion after the medical consequences are explained."
+      },
+
+      "benefits": {
+        "ar": [
+          "تعويض ما فقده الجسم من دم بسبب نزيف حاد أو عملية كبيرة وإنقاذ الحياة.",
+          "تحسين قدرة الدم على نقل الأكسجين لدى المصابين بفقر دم شديد.",
+          "تعويض الصفائح أو عوامل التخثّر لدى مرضى اضطرابات التخثّر للسيطرة على النزيف.",
+          "دعم العلاج لدى مرضى الأمراض المزمنة (مثل الثلاسيميا والأنيميا المنجلية).",
+          "تحسين الوظائف الحيوية للقلب والدماغ والكليتين عند انخفاض الهيموجلوبين الشديد.",
+          "تسهيل التعافي من العمليات الكبيرة عبر تأمين كمية كافية من الأكسجين للأنسجة."
+        ],
+        "en": [
+          "Replace blood lost from severe bleeding or major surgery, potentially life-saving.",
+          "Improve oxygen-carrying capacity in patients with severe anaemia.",
+          "Replace platelets or clotting factors in bleeding disorders to control bleeding.",
+          "Support treatment of chronic diseases (such as thalassaemia and sickle-cell anaemia).",
+          "Improve vital function of heart, brain, and kidneys when haemoglobin is critically low.",
+          "Facilitate recovery from major surgery by ensuring adequate oxygen delivery to tissues."
+        ]
+      },
+
+      "risks": {
+        "ar": [
+          "ردّ فعل حُمَوي خفيف (حرارة، رعشة) — شائع وسهل العلاج.",
+          "ردّ فعل تحسّسي خفيف إلى متوسط (حكّة، طفح جلدي).",
+          "ردّ فعل تحسّسي شديد (تأقّ) — نادر لكنه قد يهدّد الحياة.",
+          "ردّ فعل انحلالي حادّ بسبب عدم توافق فصيلة الدم — نادر جداً مع بروتوكولات الفحص الحديثة.",
+          "إصابة الرئة المرتبطة بنقل الدم (TRALI) — نادرة.",
+          "حمولة دورانية زائدة (TACO) خصوصاً عند مرضى القلب أو الكلى.",
+          "انتقال عدوى فيروسية (HIV، HCV، HBV) — احتمال منخفض جداً بفضل الفحوصات (أقل من 1 في مليون).",
+          "انتقال عدوى بكتيرية من وحدة ملوّثة — نادر جداً.",
+          "زيادة مخزون الحديد لدى الذين يحتاجون نقل دم متكرّر.",
+          "تثبيط مناعي خفيف ومؤقّت بعد النقل."
+        ],
+        "en": [
+          "Mild febrile reaction (fever, chills) — common and easy to treat.",
+          "Mild to moderate allergic reaction (itching, rash).",
+          "Severe allergic reaction (anaphylaxis) — rare but potentially life-threatening.",
+          "Acute haemolytic reaction from blood-group incompatibility — very rare with modern screening.",
+          "Transfusion-Related Acute Lung Injury (TRALI) — rare.",
+          "Transfusion-Associated Circulatory Overload (TACO), especially in heart or kidney patients.",
+          "Transmission of viral infection (HIV, HCV, HBV) — extremely low risk due to screening (less than 1 in a million).",
+          "Bacterial infection from a contaminated unit — very rare.",
+          "Iron overload in patients who need repeated transfusion.",
+          "Mild, temporary immune suppression after transfusion."
+        ]
+      },
+
+      "alternatives": {
+        "ar": [
+          "علاج فقر الدم بمكمّلات الحديد أو فيتامين B12 أو حمض الفوليك إذا كانت الحالة تسمح بالانتظار.",
+          "أدوية تحفيز إنتاج كريات الدم (مثل الإريثروبويتين) في حالات مختارة.",
+          "التبرّع الذاتي بالدم قبل العمليات المخطّطة (Autologous Donation).",
+          "تقنيات حفظ الدم أثناء العملية (Cell Saver) لإعادة استخدام الدم المفقود.",
+          "تقنيات جراحية لتقليل النزيف والتخدير الموجّه لخفض ضغط الدم.",
+          "بدائل خاصة بالمعتقد الديني/الشخصي (بالنسبة لمن لا يقبل نقل الدم) — تُناقش مع الفريق الطبي.",
+          "رفض النقل مع فهم العواقب المحتملة على حالتك الصحية."
+        ],
+        "en": [
+          "Treat anaemia with iron, vitamin B12, or folic-acid supplements if your condition allows time.",
+          "Drugs that stimulate red-cell production (such as erythropoietin) in selected cases.",
+          "Pre-operative autologous blood donation for elective surgeries.",
+          "Intra-operative blood conservation techniques (Cell Saver) to reuse blood that is lost.",
+          "Surgical techniques to reduce bleeding, and controlled hypotensive anaesthesia.",
+          "Belief-based or personal alternatives (for patients who decline transfusion) — discussed with the medical team.",
+          "Refuse the transfusion, after understanding the possible consequences for your health."
+        ]
+      },
+
+      "faq": [
+        { "id": "Q1",
+          "ar": { "question": "هل الدم المنقول إليّ آمن؟", "answer": "نعم، كل وحدة دم تُفحص ضد فيروسات الإيدز والتهاب الكبد B وC والزُّهري وغيرها وفق معايير بنك الدم في المملكة. الخطر متبقٍّ لكنّه منخفض جداً." },
+          "en": { "question": "Is the blood I will receive safe?", "answer": "Yes. Every unit is tested for HIV, hepatitis B and C, syphilis, and other agents in line with the Kingdom's blood-bank standards. Some residual risk remains, but it is very low." } },
+        { "id": "Q2",
+          "ar": { "question": "كيف يُتأكّد من توافق فصيلة دمي مع وحدة الدم؟", "answer": "تُؤخذ عيّنة من دمك ويُجرى فحص تطابق دقيق (Cross-match) ضدّ وحدة الدم قبل النقل، إضافةً إلى تحقّق هويّتك بأسلوب مزدوج بجانب السرير." },
+          "en": { "question": "How is my blood group matched to the unit?", "answer": "A sample of your blood is taken and a precise cross-match is performed against the unit before transfusion, in addition to a double bedside identity check." } },
+        { "id": "Q3",
+          "ar": { "question": "هل يمكنني التبرّع بدمي لنفسي قبل العملية؟", "answer": "نعم في بعض الحالات، إذا كانت عمليتك مخطّطة وحالتك الصحية تسمح. ناقش هذا الخيار مع طبيبك قبل أسابيع كافية من العملية." },
+          "en": { "question": "Can I donate my own blood for myself before surgery?", "answer": "Yes in some cases, if your operation is elective and your health allows. Discuss this option with your doctor several weeks before the operation." } },
+        { "id": "Q4",
+          "ar": { "question": "ماذا أفعل إذا شعرت بحرارة أو رعشة أثناء النقل؟", "answer": "اطلب الممرض فوراً عبر زرّ الاستدعاء. سيوقف النقل ويفحصك. معظم الردود الحُمَوية بسيطة ويسهل التعامل معها." },
+          "en": { "question": "What if I feel fever or chills during the transfusion?", "answer": "Call the nurse immediately using the call button. The transfusion will be stopped and you will be assessed. Most febrile reactions are mild and easy to manage." } },
+        { "id": "Q5",
+          "ar": { "question": "كم تستغرق وحدة الدم لتنزل؟", "answer": "وحدة كريات حمراء عادة من ساعتين إلى أربع ساعات. الصفائح أو البلازما أسرع." },
+          "en": { "question": "How long does one unit take to infuse?", "answer": "A unit of red cells usually takes 2 to 4 hours. Platelets or plasma are faster." } },
+        { "id": "Q6",
+          "ar": { "question": "هل يمكن رفض نقل الدم لأسباب دينية أو شخصية؟", "answer": "نعم. حقّك مكفول. سيُوضّح لك الفريق الطبي البدائل الممكنة والعواقب المتوقّعة، ويُحتَرَم قرارك بعد توقيعك على نموذج الرفض." },
+          "en": { "question": "Can I refuse blood for religious or personal reasons?", "answer": "Yes. Your right is protected. The medical team will explain possible alternatives and expected consequences, and your decision is respected after you sign a refusal form." } },
+        { "id": "Q7",
+          "ar": { "question": "هل يمكن نقل العدوى عبر الدم؟", "answer": "احتمال انتقال فيروسات مثل HIV أو التهاب الكبد منخفض جداً بفضل الفحوصات (أقل من 1 في مليون) لكنه ليس صفراً." },
+          "en": { "question": "Can infection be transmitted via blood?", "answer": "The chance of transmitting viruses such as HIV or hepatitis is very low thanks to testing (less than 1 in a million) but is not zero." } },
+        { "id": "Q8",
+          "ar": { "question": "ماذا لو لم أتلقَّ الدم رغم حاجتي إليه؟", "answer": "قد يتطوّر فقر الدم لديك، أو لا يلتئم النزيف، أو تضعف وظائف القلب والدماغ. في الحالات الحرجة قد يكون رفض النقل مهدّداً للحياة." },
+          "en": { "question": "What if I do not receive blood although I need it?", "answer": "Your anaemia may worsen, bleeding may not stop, and heart or brain function may suffer. In critical cases, refusing transfusion can be life-threatening." } },
+        { "id": "Q9",
+          "ar": { "question": "هل يمكنني اختيار متبرّع معيّن (مثل قريب)؟", "answer": "تبرّع الأقارب الموجّه ممكن في حالات محدودة لكنه لا يُعتبر بالضرورة أأمن من دم المخزون العام. ناقش الأمر مع بنك الدم في المستشفى." },
+          "en": { "question": "Can I choose a specific donor (e.g. a relative)?", "answer": "Directed donation from relatives is possible in limited cases but is not necessarily safer than the general blood supply. Discuss this with the hospital blood bank." } },
+        { "id": "Q10",
+          "ar": { "question": "هل سأحتاج إلى متابعة بعد نقل الدم؟", "answer": "نعم، ستُؤخَذ عيّنة فحص بعد النقل لتقييم فعّاليته، وستُراقَب علاماتك الحيوية لساعات. أي عَرَض متأخّر مثل اليرقان يجب إبلاغ طبيبك به فوراً." },
+          "en": { "question": "Do I need follow-up after transfusion?", "answer": "Yes, a post-transfusion blood sample is taken to assess effectiveness, and your vitals are monitored for hours. Any delayed symptom such as jaundice must be reported to your doctor immediately." } }
+      ],
+
+      "understandingQuestions": [
+        {
+          "id": "UQ1", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Why might you need a blood transfusion?",
+                  "options": { "A": "To strengthen the immune system against the common cold", "B": "To replace blood lost from bleeding or correct severe anaemia/clotting disorders", "C": "Because it is a routine hospital admission requirement", "D": "Only for cosmetic reasons" } },
+          "ar": { "question": "لماذا قد تحتاج إلى نقل دم؟",
+                  "options": { "A": "لتقوية المناعة ضد الرشح", "B": "لتعويض الدم المفقود من النزيف أو لتصحيح فقر دم/اضطراب تخثّر شديد", "C": "لأنه شرط روتيني عند دخول المستشفى", "D": "لأسباب تجميلية فقط" } },
+          "correctOption": "B",
+          "rationaleEn": "Transfusion replaces blood lost or corrects severe blood disorders; it is not routine or cosmetic.",
+          "rationaleAr": "نقل الدم يعوّض ما فُقد أو يصحّح اضطرابات دم شديدة، وليس روتينياً ولا تجميلياً."
+        },
+        {
+          "id": "UQ2", "type": "true_false", "weight": 2,
+          "en": { "question": "Modern screening in Saudi blood banks makes viral infection transmission via transfusion impossible (zero risk).",
+                  "options": { "TRUE": "True", "FALSE": "False" } },
+          "ar": { "question": "الفحوصات الحديثة في بنوك الدم السعودية تجعل انتقال العدوى الفيروسية عبر النقل مستحيلاً (خطر صفر).",
+                  "options": { "TRUE": "صحيح", "FALSE": "خطأ" } },
+          "correctOption": "FALSE",
+          "rationaleEn": "Risk is extremely low (< 1 in a million) but not zero.",
+          "rationaleAr": "الخطر منخفض جداً (أقل من 1 في مليون) لكنه ليس صفراً."
+        },
+        {
+          "id": "UQ3", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "What should you do if you develop fever or chills during a transfusion?",
+                  "options": { "A": "Continue and tell no one until it ends", "B": "Press the call button immediately so the nurse can stop the transfusion and assess you", "C": "Drink cold water and wait", "D": "Stand up and walk to the nursing station alone" } },
+          "ar": { "question": "ماذا تفعل إذا ظهرت لديك حرارة أو رعشة أثناء نقل الدم؟",
+                  "options": { "A": "أكمل ولا أخبر أحداً حتى ينتهي", "B": "أضغط زرّ الاستدعاء فوراً ليوقف الممرض النقل ويقيّمني", "C": "أشرب ماءً بارداً وأنتظر", "D": "أنهض وأمشي إلى محطة التمريض وحدي" } },
+          "correctOption": "B",
+          "rationaleEn": "Any reaction must be reported immediately so the transfusion can be paused and the patient evaluated.",
+          "rationaleAr": "أي ردّ فعل يجب الإبلاغ عنه فوراً لإيقاف النقل وتقييم المريض."
+        },
+        {
+          "id": "UQ4", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Which of the following are valid alternatives to transfusion discussed in this consent?",
+                  "options": { "A": "Iron/B12/folate, EPO drugs, autologous donation, cell saver, surgical techniques", "B": "No alternatives exist at all", "C": "Only refusing the transfusion", "D": "Only a second opinion" } },
+          "ar": { "question": "أيٌّ مما يلي بدائل صحيحة لنقل الدم وردت في هذه الموافقة؟",
+                  "options": { "A": "الحديد/فيتامين B12/الفوليك، أدوية الإريثروبويتين، التبرّع الذاتي، تقنية Cell Saver، تقنيات جراحية", "B": "لا توجد بدائل إطلاقاً", "C": "رفض النقل فقط", "D": "رأي ثانٍ فقط" } },
+          "correctOption": "A",
+          "rationaleEn": "Multiple alternatives are formally documented in the consent.",
+          "rationaleAr": "وُثّقت في الموافقة بدائل متعدّدة، وليست بديلاً واحداً فقط."
+        },
+        {
+          "id": "UQ5", "type": "true_false", "weight": 2,
+          "en": { "question": "I have the right to refuse a blood transfusion for personal or religious reasons, and the team will explain the possible health consequences.",
+                  "options": { "TRUE": "True", "FALSE": "False" } },
+          "ar": { "question": "يحقّ لي رفض نقل الدم لأسباب شخصية أو دينية، وسيشرح لي الفريق العواقب الصحية المحتملة.",
+                  "options": { "TRUE": "صحيح", "FALSE": "خطأ" } },
+          "correctOption": "TRUE",
+          "rationaleEn": "Refusal is protected by Saudi MOH patient-rights guidance and CBAHI PFR standards.",
+          "rationaleAr": "الرفض حقّ محفوظ ضمن وثيقة حقوق المريض في وزارة الصحة ومعايير CBAHI."
+        }
+      ]
+    },
+
+    {
+      "templateCode": "PROCEDURAL_SEDATION_CONSENT",
+      "consentType": "SEDATION_CONSENT",
+      "riskLevel": "HIGH",
+      "titleAr": "موافقة مستنيرة على التهدئة الإجرائية",
+      "titleEn": "Informed Consent for Procedural Sedation",
+
+      "patientEducationSummary": {
+        "ar": "التهدئة الإجرائية هي إعطاء أدوية وريدية لمساعدتك على الاسترخاء، تخفيف القلق، وعدم الإحساس بالألم خلال إجراء طبي قصير لا يستدعي تخديراً عاماً (مثل تنظير الجهاز الهضمي، تركيب قسطرة، إجراءات الأشعة التداخلية). ستظلّ قادراً على التنفّس بنفسك، لكنك قد تكون نعساناً جداً ولا تتذكّر الإجراء. يُعطى التخدير من قبل طبيب أو ممرض مؤهَّل ومعتمَد في التهدئة، تحت بروتوكول مستشفى التخصصي الدولي، مع مراقبة مستمرة لضغط الدم، نبض القلب، نسبة الأكسجين، والتنفّس طوال الإجراء وفي مرحلة الإفاقة. ستحتاج إلى الصيام قبل الإجراء، وإلى شخص بالغ يرافقك إلى المنزل بعد انتهائه، ويُمنع منعاً تاماً قيادة السيارة، تشغيل آلات، أو اتخاذ قرارات قانونية مهمّة لمدّة لا تقلّ عن 24 ساعة.",
+        "en": "Procedural sedation is the use of intravenous medication to help you relax, reduce anxiety, and not feel pain during a short medical procedure that does not require general anaesthesia (such as gastrointestinal endoscopy, catheter insertion, interventional radiology). You will still breathe on your own, but you may be very drowsy and not remember the procedure. Sedation is given by a qualified, accredited physician or sedation nurse under the International Medical Center's protocol, with continuous monitoring of blood pressure, heart rate, oxygen saturation, and breathing throughout the procedure and in recovery. You will need to fast beforehand and have an adult escort home afterwards. Driving, operating machinery, and making important legal decisions are strictly prohibited for at least 24 hours."
+      },
+
+      "benefits": {
+        "ar": [
+          "الراحة وتقليل القلق أثناء الإجراء.",
+          "تخفيف الألم وعدم الشعور بأحاسيس مزعجة.",
+          "نسيان مؤقّت للإجراء (تأثير محو الذاكرة لدى أغلب المرضى).",
+          "تسهيل عمل الطبيب وزيادة دقّة الإجراء لأنّك مرتاح وثابت.",
+          "تجنّب الحاجة إلى تخدير عام وما يصاحبه من مخاطر إضافية.",
+          "تعافٍ أسرع وعودة إلى المنزل في نفس اليوم في معظم الحالات."
+        ],
+        "en": [
+          "Comfort and reduced anxiety during the procedure.",
+          "Pain relief and avoidance of unpleasant sensations.",
+          "Temporary amnesia for the procedure in most patients.",
+          "Easier and more accurate work for the physician because you are calm and still.",
+          "Avoid the need for general anaesthesia and its additional risks.",
+          "Faster recovery and same-day discharge in most cases."
+        ]
+      },
+
+      "risks": {
+        "ar": [
+          "تثبيط التنفّس وانخفاض نسبة الأكسجين — قد يستلزم دعماً تنفّسياً مؤقّتاً.",
+          "هبوط ضغط الدم أو بطء النبض.",
+          "ردّ فعل تحسّسي للأدوية المهدّئة.",
+          "ردّ فعل عكسي (هياج بدلاً من الهدوء) خصوصاً عند كبار السن أو الأطفال.",
+          "غثيان أو قيء بعد الإجراء.",
+          "تطوّر التهدئة إلى عمق أكبر من المخطّط، قد يستلزم تخديراً كاملاً.",
+          "استنشاق محتويات المعدة (شفطة) إذا لم يكن المريض صائماً.",
+          "استمرار النعاس لساعات بعد الإجراء.",
+          "إصابة في موضع الإبرة الوريدية (كدمة، التهاب).",
+          "في حالات نادرة جداً: مضاعفات قلبية أو تنفّسية تهدّد الحياة."
+        ],
+        "en": [
+          "Respiratory depression and low oxygen — may require temporary breathing support.",
+          "Drop in blood pressure or slow pulse.",
+          "Allergic reaction to sedative drugs.",
+          "Paradoxical reaction (agitation instead of calm), especially in the elderly or children.",
+          "Nausea or vomiting after the procedure.",
+          "Sedation deepening beyond the planned level, sometimes requiring full anaesthesia.",
+          "Aspiration of stomach contents if the patient is not fasted.",
+          "Drowsiness lasting for hours after the procedure.",
+          "Injury at the IV site (bruise, inflammation).",
+          "In very rare cases: life-threatening cardiac or respiratory complications."
+        ]
+      },
+
+      "alternatives": {
+        "ar": [
+          "إجراء الفحص بتخدير موضعي فقط بدون تهدئة وريدية.",
+          "إجراء الفحص دون أي تخدير إذا كان المريض يتحمّل ذلك.",
+          "تخدير عام كامل بدلاً من التهدئة لو كان الإجراء طويلاً أو معقّداً.",
+          "تأجيل الإجراء أو إلغاؤه.",
+          "اختيار إجراء بديل غير جراحي (مثل تصوير شعاعي بدلاً من تنظير في حالات مختارة).",
+          "رفض التهدئة مع فهم العواقب على راحتك وعلى دقّة الإجراء."
+        ],
+        "en": [
+          "Perform the procedure with local anaesthesia only, without IV sedation.",
+          "Perform the procedure without any anaesthesia if the patient can tolerate it.",
+          "Full general anaesthesia instead of sedation, if the procedure is long or complex.",
+          "Postpone or cancel the procedure.",
+          "Choose a non-invasive alternative (e.g. imaging instead of endoscopy in selected cases).",
+          "Refuse sedation, after understanding the impact on your comfort and on the procedure's accuracy."
+        ]
+      },
+
+      "faq": [
+        { "id": "Q1",
+          "ar": { "question": "ما الفرق بين التهدئة والتخدير العام؟", "answer": "في التهدئة تظلّ تتنفّس بنفسك وقد تستجيب للحديث، أمّا في التخدير العام فأنت نائم بالكامل وتُساعد على التنفّس عبر أنبوب." },
+          "en": { "question": "What is the difference between sedation and general anaesthesia?", "answer": "Under sedation you still breathe on your own and may respond to voice. Under general anaesthesia you are completely asleep and your breathing is supported via a tube." } },
+        { "id": "Q2",
+          "ar": { "question": "هل سأشعر بالألم؟", "answer": "في الغالب لا، لأنّ التهدئة تُجمع عادة مع مسكّن قوي. قد تشعر بإحساس ضغط أو شدّ بسيط، لكنّ ألماً واضحاً يستوجب إخبار الطبيب فوراً." },
+          "en": { "question": "Will I feel pain?", "answer": "Usually not, because sedation is normally combined with a strong analgesic. You may feel pressure or mild pulling, but any clear pain should be reported to the doctor immediately." } },
+        { "id": "Q3",
+          "ar": { "question": "هل سأتذكّر الإجراء؟", "answer": "غالباً لا. أغلب المرضى لا يتذكّرون التفاصيل بفضل تأثير الأدوية على الذاكرة المؤقتة." },
+          "en": { "question": "Will I remember the procedure?", "answer": "Usually not. Most patients do not remember the details, thanks to the medications' temporary amnesic effect." } },
+        { "id": "Q4",
+          "ar": { "question": "هل أحتاج لشخص يرافقني إلى المنزل؟", "answer": "نعم، إلزامياً. يجب وجود شخص بالغ يأخذك إلى المنزل ويبقى معك لساعات بعد الإجراء." },
+          "en": { "question": "Do I need someone to take me home?", "answer": "Yes, mandatory. An adult escort must take you home and stay with you for some hours after the procedure." } },
+        { "id": "Q5",
+          "ar": { "question": "هل يمكنني قيادة السيارة بعد الإجراء؟", "answer": "لا، يُمنع منعاً تاماً القيادة، تشغيل الآلات، أو اتخاذ قرارات قانونية مهمّة لمدّة لا تقل عن 24 ساعة." },
+          "en": { "question": "Can I drive after the procedure?", "answer": "No. Driving, operating machinery, or making important legal decisions are strictly prohibited for at least 24 hours." } },
+        { "id": "Q6",
+          "ar": { "question": "كم ساعة يجب أن أصوم قبل الإجراء؟", "answer": "عادة 6 ساعات بدون طعام صلب و2 ساعتين بدون سوائل صافية. سيُعطيك الفريق تعليمات دقيقة بحسب الإجراء." },
+          "en": { "question": "How many hours must I fast?", "answer": "Usually 6 hours without solid food and 2 hours without clear liquids. The team will give exact instructions based on your procedure." } },
+        { "id": "Q7",
+          "ar": { "question": "هل أستطيع متابعة أدويتي اليومية؟", "answer": "غالباً نعم، مع رشفة ماء صغيرة. لكن أدوية معيّنة (مثل أدوية السكري ومضادات التخثّر) قد تحتاج تعديلاً — راجع طبيبك مسبقاً." },
+          "en": { "question": "Can I take my daily medications?", "answer": "Usually yes, with a small sip of water. However, certain medications (such as diabetes drugs and blood thinners) may need adjustment — check with your doctor in advance." } },
+        { "id": "Q8",
+          "ar": { "question": "كم تستغرق الإفاقة؟", "answer": "عادة من 30 دقيقة إلى ساعتين في غرفة الإفاقة قبل أن تصبح جاهزاً للخروج، إذا كانت علاماتك الحيوية مستقرّة." },
+          "en": { "question": "How long is recovery?", "answer": "Usually 30 minutes to 2 hours in the recovery area before you are fit for discharge, provided your vital signs are stable." } },
+        { "id": "Q9",
+          "ar": { "question": "ماذا لو حدث هبوط في التنفّس؟", "answer": "الفريق المؤهَّل يراقب تنفّسك باستمرار ولديه أدوات لدعم التنفّس فوراً، بما في ذلك أدوية مضادّة لتأثير المهدّئات إذا لزم الأمر." },
+          "en": { "question": "What if my breathing slows down?", "answer": "The qualified team continuously monitors your breathing and has immediate tools to support it, including reversal medications if needed." } },
+        { "id": "Q10",
+          "ar": { "question": "هل التهدئة آمنة لكبار السن؟", "answer": "نعم لكن الجرعات تُضبط بدقّة وقد تحتاج لمراقبة أطول. أخبر الفريق عن جميع أمراضك المزمنة وأدويتك." },
+          "en": { "question": "Is sedation safe for the elderly?", "answer": "Yes, but doses are carefully adjusted and longer monitoring may be needed. Inform the team about all chronic illnesses and medications." } }
+      ],
+
+      "understandingQuestions": [
+        {
+          "id": "UQ1", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Under procedural sedation you will be:",
+                  "options": { "A": "Completely asleep with breathing tube", "B": "Relaxed and drowsy but still breathing on your own", "C": "Fully awake with no medication", "D": "Paralysed but conscious" } },
+          "ar": { "question": "أثناء التهدئة الإجرائية ستكون:",
+                  "options": { "A": "نائماً تماماً مع أنبوب تنفّس", "B": "مرتاحاً ونعساناً لكنّك تتنفّس بنفسك", "C": "مستيقظاً تماماً دون أي دواء", "D": "مشلولاً لكن واعياً" } },
+          "correctOption": "B",
+          "rationaleEn": "Sedation differs from general anaesthesia: you remain spontaneously breathing.",
+          "rationaleAr": "تختلف التهدئة عن التخدير العام: تظلّ تتنفّس بنفسك."
+        },
+        {
+          "id": "UQ2", "type": "true_false", "weight": 2,
+          "en": { "question": "I must have an adult escort to take me home, and I must not drive for at least 24 hours after sedation.",
+                  "options": { "TRUE": "True", "FALSE": "False" } },
+          "ar": { "question": "يجب أن يرافقني بالغ إلى المنزل، ويُمنع علي القيادة لمدة 24 ساعة على الأقل بعد التهدئة.",
+                  "options": { "TRUE": "صحيح", "FALSE": "خطأ" } },
+          "correctOption": "TRUE",
+          "rationaleEn": "Escort and driving restrictions are mandatory safety requirements after sedation.",
+          "rationaleAr": "مرافقة المريض وحظر القيادة شرطان إلزاميّان لسلامته بعد التهدئة."
+        },
+        {
+          "id": "UQ3", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Why is fasting required before procedural sedation?",
+                  "options": { "A": "It is not required, fasting is optional", "B": "To prevent stomach contents from being inhaled into the lungs (aspiration)", "C": "To save the hospital food cost", "D": "To make IV insertion easier" } },
+          "ar": { "question": "لماذا الصيام مطلوب قبل التهدئة الإجرائية؟",
+                  "options": { "A": "غير مطلوب، الصيام اختياري", "B": "لمنع شفط محتويات المعدة إلى الرئتين", "C": "لتوفير تكلفة الطعام في المستشفى", "D": "لتسهيل تركيب الوريد" } },
+          "correctOption": "B",
+          "rationaleEn": "Fasting prevents pulmonary aspiration, a serious sedation risk.",
+          "rationaleAr": "الصيام يمنع شفط محتويات المعدة إلى الرئتين، وهي خطر جدّي للتهدئة."
+        },
+        {
+          "id": "UQ4", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Which of the following is the most important monitored parameter during sedation?",
+                  "options": { "A": "Body temperature only", "B": "Breathing rate, oxygen saturation, blood pressure, and heart rate continuously", "C": "Weight every 5 minutes", "D": "Eye colour" } },
+          "ar": { "question": "أيٌّ مما يلي أهمّ مؤشّرات المراقبة أثناء التهدئة؟",
+                  "options": { "A": "درجة حرارة الجسم فقط", "B": "معدّل التنفّس، تشبّع الأكسجين، ضغط الدم، ونبض القلب باستمرار", "C": "الوزن كل 5 دقائق", "D": "لون العينين" } },
+          "correctOption": "B",
+          "rationaleEn": "Continuous monitoring of respiration, SpO2, BP, and HR is standard during sedation.",
+          "rationaleAr": "المراقبة المستمرّة للتنفّس وتشبّع الأكسجين وضغط الدم والنبض هي المعيار أثناء التهدئة."
+        },
+        {
+          "id": "UQ5", "type": "true_false", "weight": 2,
+          "en": { "question": "Sedation can occasionally deepen beyond what is planned and may need to be converted to general anaesthesia.",
+                  "options": { "TRUE": "True", "FALSE": "False" } },
+          "ar": { "question": "قد تتعمّق التهدئة أحياناً أكثر من المخطّط وقد تستلزم التحوّل إلى تخدير عام.",
+                  "options": { "TRUE": "صحيح", "FALSE": "خطأ" } },
+          "correctOption": "TRUE",
+          "rationaleEn": "Sedation depth can shift; conversion to GA is a documented possibility.",
+          "rationaleAr": "قد يتغيّر عمق التهدئة، والتحوّل إلى تخدير عام احتمال موثَّق."
+        }
+      ]
+    },
+
+    {
+      "templateCode": "HIGH_RISK_MEDICAL_PROCEDURE_CONSENT",
+      "consentType": "HIGH_RISK_PROCEDURE_CONSENT",
+      "riskLevel": "CRITICAL",
+      "titleAr": "موافقة مستنيرة على إجراء طبي عالي الخطورة",
+      "titleEn": "Informed Consent for High-Risk Medical Procedure",
+
+      "patientEducationSummary": {
+        "ar": "الإجراء الطبي عالي الخطورة هو إجراء قد يُحدث تغيّراً جوهرياً في وظيفة عضو رئيسي في الجسم، أو قد ينطوي على احتمال غير بسيط لمضاعفات جدية بما فيها — في حالات معيّنة — احتمال الوفاة. أمثلة ذلك: عمليات القلب المفتوح، جراحات الدماغ والأعصاب، زراعة الأعضاء، إجراءات العناية المركزة كالقسطرة المركزية، التهوية الميكانيكية، أو إجراءات الأشعة التداخلية المعقّدة. يخضع هذا الإجراء لرقابة دقيقة من فريق متعدّد التخصّصات في مستشفى التخصصي الدولي ضمن بروتوكولات معتمدة من CBAHI ووزارة الصحة. سيشرح لك الطبيب المسؤول طبيعة الإجراء، الفائدة المتوقّعة على حالتك، البدائل المتاحة (بما في ذلك العلاج التحفّظي أو التلطيفي)، المخاطر الجدية وغير الجدية، ومدى احتمال الحاجة إلى رعاية مركّزة بعد الإجراء. لك الحق الكامل في طرح أي سؤال، طلب وقت إضافي، طلب رأي طبي ثانٍ، الاستعانة بمترجم، أو إشراك أحد أفراد العائلة في النقاش، قبل اتخاذ قرارك.",
+        "en": "A high-risk medical procedure is one that may substantially alter the function of a major organ, or carries a non-trivial probability of serious complications including — in specific cases — the possibility of death. Examples include: open-heart surgery, neurosurgery, organ transplantation, intensive-care procedures such as central-line insertion, mechanical ventilation, or complex interventional-radiology procedures. The procedure is delivered under tight multidisciplinary oversight at the International Medical Center within protocols accredited by CBAHI and the Saudi Ministry of Health. The responsible physician will explain the nature of the procedure, the expected benefit for your condition, the alternatives available (including conservative or palliative care), the serious and non-serious risks, and the likelihood that intensive care will be needed afterwards. You have the full right to ask any question, take additional time, request a second medical opinion, request an interpreter, or involve a family member in the discussion before deciding."
+      },
+
+      "benefits": {
+        "ar": [
+          "علاج حالة طبية خطيرة أو مهدّدة للحياة قد لا يستجيب لها العلاج التحفّظي.",
+          "تحسين وظيفة عضو رئيسي (مثل القلب، الدماغ، الكلى، الرئتين).",
+          "زيادة فرصة البقاء على المدى المتوسط والبعيد في حالات معيّنة.",
+          "السيطرة على أعراض شديدة لم تستجب لعلاجات أقل توغّلاً.",
+          "تأكيد التشخيص بدقّة في حالات معقّدة (إجراءات تشخيصية عالية الخطورة).",
+          "في حالات الزرع: استعادة وظيفة عضو فُقد بالكامل."
+        ],
+        "en": [
+          "Treat a serious or life-threatening condition that may not respond to conservative care.",
+          "Improve the function of a major organ (heart, brain, kidney, lung).",
+          "Increase medium- and long-term survival in selected cases.",
+          "Control severe symptoms that did not respond to less-invasive therapy.",
+          "Establish an accurate diagnosis in complex cases (high-risk diagnostic procedures).",
+          "In transplantation: restore the function of an organ that is completely lost."
+        ]
+      },
+
+      "risks": {
+        "ar": [
+          "نزيف شديد قد يستلزم نقل دم أو إعادة تدخّل عاجل.",
+          "عدوى داخلية أو عدوى مرتبطة بأجهزة طبية (قسطرة مركزية، أنبوب تنفّس).",
+          "إصابة عضو حيوي أو تلف وعاء دموي رئيسي.",
+          "سكتة دماغية أو إصابة دماغية بسبب نقص الأكسجين أو الجلطة.",
+          "احتشاء عضلة القلب أو اضطراب نظم قلبي يهدّد الحياة.",
+          "فشل وظيفي مؤقّت أو دائم في عضو رئيسي (كلى، رئتين، كبد).",
+          "حاجة لإقامة طويلة في العناية المركّزة وتهوية ميكانيكية.",
+          "حاجة لإجراء جراحي إضافي عاجل لإنقاذ الحياة.",
+          "مضاعفات تخثّر/انسداد رئوي بعد الإجراء.",
+          "خلل إدراكي مستمرّ، خصوصاً بعد عمليات القلب الكبيرة لدى كبار السن.",
+          "في حالات نادرة لكنها ممكنة: الوفاة. ستتم مناقشة احتمال الوفاة الخاصّ بحالتك بصراحة مع الطبيب المسؤول."
+        ],
+        "en": [
+          "Severe bleeding that may require transfusion or urgent re-intervention.",
+          "Internal infection or device-related infection (central line, breathing tube).",
+          "Injury to a vital organ or damage to a major blood vessel.",
+          "Stroke or brain injury from low oxygen or clot.",
+          "Heart attack or life-threatening cardiac arrhythmia.",
+          "Temporary or permanent failure of a major organ (kidney, lung, liver).",
+          "Need for a long ICU stay and mechanical ventilation.",
+          "Need for an additional, urgent life-saving surgical procedure.",
+          "Clotting/pulmonary-embolism complications after the procedure.",
+          "Persistent cognitive dysfunction, especially after major cardiac surgery in the elderly.",
+          "In rare but possible cases: death. The specific probability for your case will be openly discussed with the responsible physician."
+        ]
+      },
+
+      "alternatives": {
+        "ar": [
+          "العلاج التحفّظي بالأدوية والمتابعة المنتظمة دون إجراء.",
+          "إجراء أقل توغّلاً (مثل تدخّل عبر القسطرة بدلاً من جراحة مفتوحة) حيثما توفّر وأمن.",
+          "علاج تلطيفي يركّز على تخفيف الأعراض إذا كانت فرص النجاح محدودة أو رغبة المريض في تجنّب الإجراءات الكبرى.",
+          "تأجيل الإجراء لتحسين حالتك العامة قبله (مثل علاج فقر الدم، ضبط السكري، إيقاف التدخين).",
+          "نقل الرعاية إلى مركز متخصّص آخر إذا رغبت بذلك.",
+          "رفض الإجراء كلياً مع توقيع نموذج رفض العلاج وفهم العواقب المتوقّعة بالكامل."
+        ],
+        "en": [
+          "Conservative treatment with medications and regular follow-up, without the procedure.",
+          "A less-invasive alternative (such as catheter-based intervention instead of open surgery) where available and safe.",
+          "Palliative care focused on symptom relief, if chances of success are limited or the patient wishes to avoid major procedures.",
+          "Postpone the procedure to optimise general condition (treat anaemia, control diabetes, stop smoking).",
+          "Transfer care to another specialised centre, if you wish.",
+          "Refuse the procedure entirely, signing a refusal-of-treatment form after fully understanding the expected consequences."
+        ]
+      },
+
+      "faq": [
+        { "id": "Q1",
+          "ar": { "question": "لماذا يُصنَّف هذا الإجراء بأنّه عالي الخطورة؟", "answer": "لأنّه يتعامل مع عضو حيوي أو حالة حرجة، أو لأنّه ينطوي على احتمال غير بسيط لمضاعفات جدية. سيشرح لك الطبيب الأسباب الخاصة بحالتك." },
+          "en": { "question": "Why is this procedure classified as high-risk?", "answer": "Because it involves a vital organ or a critical condition, or because it carries a non-trivial chance of serious complications. The doctor will explain the reasons specific to your case." } },
+        { "id": "Q2",
+          "ar": { "question": "ما احتمال الوفاة بسبب هذا الإجراء؟", "answer": "يختلف بشدّة من حالة لأخرى. سيُناقش الطبيب احتمال الوفاة الخاصّ بك بصراحة استناداً إلى عمرك، أمراضك المصاحبة، نوع الإجراء، وخبرة الفريق." },
+          "en": { "question": "What is the probability of death from this procedure?", "answer": "It varies greatly from one case to another. The doctor will openly discuss your specific probability based on age, co-morbidities, type of procedure, and team experience." } },
+        { "id": "Q3",
+          "ar": { "question": "هل سأذهب إلى العناية المركّزة بعد الإجراء؟", "answer": "في كثير من الإجراءات عالية الخطورة، نعم — للمراقبة الدقيقة لأول 24-72 ساعة. سيخبرك الفريق إن كان ذلك متوقّعاً في حالتك." },
+          "en": { "question": "Will I go to intensive care after the procedure?", "answer": "For many high-risk procedures, yes — for close monitoring over the first 24–72 hours. The team will tell you whether this is expected in your case." } },
+        { "id": "Q4",
+          "ar": { "question": "ما البدائل المتاحة لي إذا رفضت؟", "answer": "علاج تحفّظي بالأدوية، إجراء أقل توغّلاً، رعاية تلطيفية، أو نقل لمركز آخر. سيُناقش معك تفصيلياً ما الأنسب لحالتك." },
+          "en": { "question": "What alternatives do I have if I refuse?", "answer": "Conservative medication treatment, a less-invasive option, palliative care, or transfer to another centre. The most suitable option for your case will be discussed in detail." } },
+        { "id": "Q5",
+          "ar": { "question": "هل أستطيع طلب رأي طبي ثانٍ؟", "answer": "نعم، حقّك مكفول. يمكنك الاستفسار من جرّاح/طبيب آخر داخل المستشفى أو من خارجه قبل التوقيع." },
+          "en": { "question": "Can I request a second medical opinion?", "answer": "Yes, this is your right. You may consult another surgeon/physician inside or outside the hospital before signing." } },
+        { "id": "Q6",
+          "ar": { "question": "ماذا يحدث إذا ظهرت معطيات جديدة أثناء الإجراء؟", "answer": "إذا اكتشف الفريق شيئاً غير متوقّع، فقد يتّخذ قرارات حماية حياتك فوراً ضمن نطاق الموافقة الأصلية، وستُبلَّغ عنها بعد الإجراء بكامل التفاصيل." },
+          "en": { "question": "What if new findings appear during the procedure?", "answer": "If the team discovers something unexpected, they may take immediate life-protecting decisions within the scope of the original consent, and you will be informed in full afterwards." } },
+        { "id": "Q7",
+          "ar": { "question": "هل يحقّ لي رفض الإجراء حتى لو كان منقذاً للحياة؟", "answer": "نعم، طالما أنت قادر على اتخاذ القرار. سيُوضّح لك الفريق العواقب المتوقّعة، ويُحتَرَم قرارك بعد توقيع نموذج رفض العلاج." },
+          "en": { "question": "May I refuse the procedure even if it could be life-saving?", "answer": "Yes, as long as you are capable of decision-making. The team will explain the expected consequences, and your decision is respected after you sign a refusal-of-treatment form." } },
+        { "id": "Q8",
+          "ar": { "question": "من سيتّخذ القرارات نيابة عنّي إذا فقدت الوعي؟", "answer": "وفق نظام صحّي معتمد، يُتّخذ القرار وفق وصيّتك الصحّية المسبقة إن وُجدت، وإلا فمن قبل وليّ الأمر المعتمَد بالتشاور مع الفريق الطبي." },
+          "en": { "question": "Who makes decisions for me if I lose consciousness?", "answer": "Per accredited healthcare regulation, decisions follow your advance health directive if one exists; otherwise the legally authorised next-of-kin in consultation with the medical team." } },
+        { "id": "Q9",
+          "ar": { "question": "كم من الوقت أحتاج للتعافي؟", "answer": "يختلف بحسب الإجراء، وقد يمتد من أسابيع إلى أشهر، وقد يتضمّن إعادة تأهيل. سيُوضّح لك الفريق خطّة التعافي المتوقّعة." },
+          "en": { "question": "How long will recovery take?", "answer": "Varies with the procedure and may range from weeks to months, possibly including rehabilitation. The team will explain the expected recovery plan." } },
+        { "id": "Q10",
+          "ar": { "question": "كيف أحضّر نفسي قبل هذا الإجراء؟", "answer": "اتّبع تعليمات الصيام، أوقف التدخين، التزم بضبط الأمراض المزمنة، وأخبر الفريق عن كل أدويتك ومكمّلاتك. أحضر معك مرافقاً بالغاً ومستندات هويّتك." },
+          "en": { "question": "How do I prepare before this procedure?", "answer": "Follow fasting instructions, stop smoking, keep chronic illnesses well controlled, and tell the team about every medication and supplement. Bring an adult escort and your identity documents." } }
+      ],
+
+      "understandingQuestions": [
+        {
+          "id": "UQ1", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Why is this procedure described as 'high-risk'?",
+                  "options": { "A": "Because it is always painful", "B": "Because it carries a non-trivial chance of serious complications, including in some cases death", "C": "Because it is rare", "D": "Because the equipment is expensive" } },
+          "ar": { "question": "لماذا يوصف هذا الإجراء بأنّه 'عالي الخطورة'؟",
+                  "options": { "A": "لأنّه مؤلم دائماً", "B": "لأنّه ينطوي على احتمال غير بسيط لمضاعفات جدية بما في ذلك في بعض الحالات الوفاة", "C": "لأنّه نادر", "D": "لأنّ المعدّات باهظة الثمن" } },
+          "correctOption": "B",
+          "rationaleEn": "High-risk classification reflects the serious-complication / mortality probability, not pain or cost.",
+          "rationaleAr": "تصنيف 'عالي الخطورة' يعكس احتمال المضاعفات الجدية والوفاة، لا الألم ولا التكلفة."
+        },
+        {
+          "id": "UQ2", "type": "true_false", "weight": 2,
+          "en": { "question": "Even if a procedure is life-saving, I still have the right to refuse it after the consequences are explained.",
+                  "options": { "TRUE": "True", "FALSE": "False" } },
+          "ar": { "question": "حتى لو كان الإجراء منقذاً للحياة، يحقّ لي رفضه بعد شرح العواقب لي.",
+                  "options": { "TRUE": "صحيح", "FALSE": "خطأ" } },
+          "correctOption": "TRUE",
+          "rationaleEn": "Patient autonomy is upheld; refusal is a protected right for a capable patient.",
+          "rationaleAr": "استقلالية المريض محفوظة، والرفض حقٌّ مكفول للمريض القادر على اتخاذ القرار."
+        },
+        {
+          "id": "UQ3", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Where will you most likely recover for the first 24–72 hours after a high-risk procedure?",
+                  "options": { "A": "At home alone", "B": "In a regular outpatient clinic", "C": "In the Intensive Care Unit (ICU) for close monitoring", "D": "In a hotel" } },
+          "ar": { "question": "أين على الأرجح ستتم رعايتك في أول 24-72 ساعة بعد إجراء عالي الخطورة؟",
+                  "options": { "A": "في المنزل وحدي", "B": "في عيادة خارجية عادية", "C": "في وحدة العناية المركّزة (ICU) للمراقبة الدقيقة", "D": "في فندق" } },
+          "correctOption": "C",
+          "rationaleEn": "Close ICU monitoring is the norm after many high-risk procedures.",
+          "rationaleAr": "المراقبة في وحدة العناية المركّزة هي المعتاد بعد كثير من الإجراءات عالية الخطورة."
+        },
+        {
+          "id": "UQ4", "type": "multiple_choice", "weight": 2,
+          "en": { "question": "Which of the following is a legitimate alternative to a high-risk procedure documented in this consent?",
+                  "options": { "A": "No alternatives exist", "B": "Conservative medical treatment, less-invasive option, palliative care, transfer to another centre, or refusal", "C": "Only refusal", "D": "Only a second opinion" } },
+          "ar": { "question": "أيٌّ مما يلي بديل صحيح للإجراء عالي الخطورة وثّقته هذه الموافقة؟",
+                  "options": { "A": "لا توجد بدائل", "B": "علاج تحفّظي، خيار أقل توغّلاً، رعاية تلطيفية، نقل إلى مركز آخر، أو الرفض", "C": "الرفض فقط", "D": "رأي ثانٍ فقط" } },
+          "correctOption": "B",
+          "rationaleEn": "Several formal alternatives are listed; refusal is one of many.",
+          "rationaleAr": "تُذكر بدائل رسمية متعدّدة، والرفض واحد منها لا الوحيد."
+        },
+        {
+          "id": "UQ5", "type": "true_false", "weight": 2,
+          "en": { "question": "If new, unexpected findings occur during the procedure, the team may take immediate life-protecting decisions within the scope of the original consent, and explain them to me afterwards.",
+                  "options": { "TRUE": "True", "FALSE": "False" } },
+          "ar": { "question": "في حال اكتُشفت معطيات غير متوقّعة أثناء الإجراء، يجوز للفريق اتّخاذ قرارات حماية الحياة فوراً ضمن نطاق الموافقة الأصلية، وشرحها لي لاحقاً.",
+                  "options": { "TRUE": "صحيح", "FALSE": "خطأ" } },
+          "correctOption": "TRUE",
+          "rationaleEn": "Within the scope of consent, life-protecting decisions are permitted with full post-event disclosure.",
+          "rationaleAr": "ضمن نطاق الموافقة، يجوز اتخاذ قرارات حماية الحياة، مع الإفصاح الكامل بعد الإجراء."
+        }
+      ]
+    }
+
+  ],
+
+  "uiRenderingHints": {
+    "patientEducationSummary": "Render as a single paragraph in a card with Arabic on top (RTL) and English on the bottom (LTR). Provide a 'Listen' (TTS) button for low-literacy patients.",
+    "benefits": "Render as a bulleted list with a green check-mark icon.",
+    "risks": "Render as a bulleted list with an amber warning icon. Group items into Common / Less common / Rare visually based on order (item 1-3 = common, 4-7 = less common, 8+ = rare).",
+    "alternatives": "Render as a bulleted list with a blue info icon.",
+    "faq": "Render as an accordion. Default collapsed. Track which FAQ items the patient opens — capture into evidencePackageHooks.faqViewedItems.",
+    "understandingQuestions": "Render one question at a time on mobile. Disable Next until an answer is selected. After all questions, compute score; if score < passingScore (80) trigger remediation flow (replay summary + physician re-explain)."
+  },
+
+  "loadingNotes": {
+    "ddlImpactAssessment": "No new DDL strictly required. Content can be loaded into existing consent_template_sections rows by adding 6 new section_key entries per template: PE_SUMMARY, BENEFITS, RISKS, ALTERNATIVES, FAQ_JSON, UNDERSTANDING_QUESTIONS_JSON. FAQ_JSON and UNDERSTANDING_QUESTIONS_JSON would store the structured array as JSON in content_en/content_ar; a future schema improvement could promote them to first-class tables.",
+    "alternativeSchemaImprovement": "If/when schema changes are allowed: introduce consent_template_faq and consent_template_understanding_questions tables keyed by templateVersionId for proper relational scoring and audit. This is a recommendation only — NOT applied here.",
+    "noDeployment": "This file is content for review only. No DB writes, no template updates, no API calls, no deployment performed. Hand to clinical review board before any application."
+  },
+
+  "reviewChecklist": [
+    "Clinical accuracy reviewed and signed off by IMC consultant for each specialty (Surgery, Anaesthesia, Haematology, Endoscopy/IR, ICU).",
+    "Arabic linguistic review by an MSA medical-Arabic editor.",
+    "Saudi MOH / CBAHI / PDPL compliance check.",
+    "Patient advisory panel review for readability and tone.",
+    "Legal review for refusal-of-treatment language and decision-making-capacity language."
+  ]
+}
