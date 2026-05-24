@@ -124,10 +124,10 @@ export async function createSigningSession(
   }
 
   // Submit to provider
-  const provider = getProvider(providerKey);
   let providerSessionId: string | undefined;
 
   try {
+    const provider = getProvider(providerKey);
     const result = await provider.submitForSigning(input, signerLinks as Record<SignerRole, string>);
     providerSessionId = result.providerSessionId;
 
