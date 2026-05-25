@@ -33,7 +33,7 @@ type OtpChallengePayload = {
 type OtpEventRow = {
   id: string;
   raw_payload: unknown;
-  created_at: Date | string;
+  received_at: Date | string;
 };
 
 export type SigningTokenContext = {
@@ -119,7 +119,7 @@ function safeJsonParse(value: string): unknown {
 function buildRedirectPath(moduleType: string, documentId: string, token: string): string {
   const normalized = moduleType.toLowerCase();
   if (normalized.includes("informed")) {
-    return `/modules/informed-consents/${encodeURIComponent(documentId)}/signature`;
+    return `/sign/${encodeURIComponent(token)}/workflow`;
   }
   if (normalized.includes("discharge")) {
     return `/secure/${encodeURIComponent(token)}`;
@@ -152,13 +152,13 @@ export async function getSigningTokenContext(token: string): Promise<SigningToke
 
 async function getLatestActiveOtpChallenge(token: string): Promise<{ rowId: string; payload: OtpChallengePayload; createdAt: Date } | null> {
   const rows = await prisma().$queryRawUnsafe<OtpEventRow[]>(
-    `SELECT id, raw_payload, created_at
+    `SELECT id, raw_payload, received_at
      FROM webhook_events
      WHERE provider_key = $1
        AND event_type = $2
        AND COALESCE(processed, FALSE) = FALSE
        AND raw_payload ->> 'tokenHash' = $3
-     ORDER BY created_at DESC
+     ORDER BY received_at DESC
      LIMIT 1`,
     OTP_PROVIDER_KEY,
     OTP_REQUESTED_EVENT,
@@ -174,7 +174,7 @@ async function getLatestActiveOtpChallenge(token: string): Promise<{ rowId: stri
   return {
     rowId: row.id,
     payload,
-    createdAt: row.created_at instanceof Date ? row.created_at : new Date(row.created_at),
+    createdAt: row.received_at instanceof Date ? row.received_at : new Date(row.received_at),
   };
 }
 
@@ -209,7 +209,7 @@ async function markOtpChallengeProcessed(rowId: string): Promise<void> {
   await prisma().$executeRawUnsafe(
     `UPDATE webhook_events
      SET processed = TRUE, processed_at = NOW()
-     WHERE id = $1`,
+     WHERE id = $1::uuid`,
     rowId,
   );
 }
