@@ -1765,8 +1765,14 @@ export async function approveConsentDocument(
     throw new ApiError(400, "Physician license is required for final approval");
   }
 
+  const stagedApprovalRecord: Record<string, unknown> = {
+    ...(doc as unknown as Record<string, unknown>),
+    approvedByUserId: auth.sub,
+    approvedAt: new Date(),
+  };
+
   const approvalSyncIssues = validateBilingualSync({
-    record: doc as unknown as Record<string, unknown>,
+    record: stagedApprovalRecord,
     expectedVersion: doc.documentVersion,
     status: "APPROVED",
     requireApprovedPair: true,

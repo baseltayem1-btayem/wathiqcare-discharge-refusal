@@ -36,7 +36,6 @@ export async function GET(
         metadata: true,
         case: {
           select: {
-            assignedToUserId: true,
             createdByUserId: true,
           },
         },
@@ -67,7 +66,7 @@ export async function GET(
       const scopedAccessAllowed =
         doc.status === "FINALIZED"
         && Boolean(auth.sub)
-        && (doc.case?.assignedToUserId === auth.sub || doc.case?.createdByUserId === auth.sub);
+        && doc.case?.createdByUserId === auth.sub;
 
       if (!scopedAccessAllowed) {
         throw new ApiError(403, "Missing permission: consent:view_evidence");
