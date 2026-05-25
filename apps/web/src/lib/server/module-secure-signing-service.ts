@@ -299,21 +299,25 @@ export async function sendModuleSecureSigningLink(args: {
     },
   });
 
-  await appendAuditChainEvent({
-    tenantId: args.tenantId,
-    caseId: args.caseId,
-    eventType: "SECURE_SIGNING_LINK_CREATED",
-    actorId: args.initiatedBy,
-    actorRole: "system",
-    payloadSummary: `Secure signing link created for ${args.moduleKey}`,
-    metadataJson: {
-      moduleKey: args.moduleKey,
-      documentId: args.documentId,
-      sessionId: session.sessionId,
-      tokenHash,
-      smsDeliveryStatus,
-    },
-  });
+  try {
+    await appendAuditChainEvent({
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      eventType: "SECURE_SIGNING_LINK_CREATED",
+      actorId: args.initiatedBy,
+      actorRole: "system",
+      payloadSummary: `Secure signing link created for ${args.moduleKey}`,
+      metadataJson: {
+        moduleKey: args.moduleKey,
+        documentId: args.documentId,
+        sessionId: session.sessionId,
+        tokenHash,
+        smsDeliveryStatus,
+      },
+    });
+  } catch (auditChainError) {
+    console.error("audit chain append failed (non-fatal)", auditChainError);
+  }
 
   const status = await loadBadgeFlags({
     tenantId: args.tenantId,
