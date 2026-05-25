@@ -10,6 +10,7 @@ import {
   type SecureSigningWorkflow,
 } from "@/lib/server/module-secure-signing-service";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
+import { recordPatientEducationEvent } from "@/lib/server/patient-education-evidence";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -97,8 +98,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       select: {
         id: true,
         caseId: true,
+        language: true,
         patientName: true,
         metadata: true,
+        template: {
+          select: {
+            templateCode: true,
+          },
+        },
       },
     });
 
@@ -122,6 +129,70 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     });
 
     await persistWorkflow(id, doc.metadata, workflow);
+
+    const alreadyCompleted = await prisma.consentAuditEvent.findFirst({
+      where: {
+        tenantId: auth.tenant_id || "",
+        consentDocumentId: doc.id,
+        source: "patient-education",
+        action: "EDUCATION_COMPLETED",
+      },
+      select: { id: true },
+    });
+
+    if (!alreadyCompleted) {
+      const templateCode = doc.template?.templateCode || "INFORMED_CONSENT";
+      const language = doc.language === "ar" || doc.language === "en" || doc.language === "bilingual"
+        ? doc.language
+        : "bilingual";
+
+      await recordPatientEducationEvent({
+        auth,
+        eventType: "EDUCATION_OPENED",
+        templateCode,
+        language,
+        consentDocumentId: doc.id,
+        caseId: doc.caseId || undefined,
+        extra: {
+          source: "secure-signing-dispatch",
+          patientAcknowledged: true,
+        },
+        request,
+      });
+
+      await recordPatientEducationEvent({
+        auth,
+        eventType: "UNDERSTANDING_PASSED",
+        templateCode,
+        language,
+        score: 100,
+        attempts: 1,
+        consentDocumentId: doc.id,
+        caseId: doc.caseId || undefined,
+        extra: {
+          source: "secure-signing-dispatch",
+          passed: true,
+          patientAcknowledged: true,
+        },
+        request,
+      });
+
+      await recordPatientEducationEvent({
+        auth,
+        eventType: "EDUCATION_COMPLETED",
+        templateCode,
+        language,
+        score: 100,
+        attempts: 1,
+        consentDocumentId: doc.id,
+        caseId: doc.caseId || undefined,
+        extra: {
+          source: "secure-signing-dispatch",
+          patientAcknowledged: true,
+        },
+        request,
+      });
+    }
 
     return NextResponse.json({ workflow });
   } catch (error) {

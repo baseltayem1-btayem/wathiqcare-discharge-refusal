@@ -55,7 +55,7 @@ function escapeHtml(value: string | null | undefined): string {
 }
 
 function content(value: string | null | undefined): string {
-  const normalized = (value || "").trim();
+  const normalized = cleanupText(value || "").trim();
   return escapeHtml(normalized || "-");
 }
 
@@ -88,6 +88,38 @@ function statusLabel(status: string, isAr: boolean): string {
   if (normalized === "AI_DRAFT") return "AI Draft";
   if (normalized === "PHYSICIAN_REVIEW") return "Physician Review";
   return "Draft";
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function asDate(value: unknown): Date | null {
+  if (!value || typeof value !== "string") return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function repairMojibake(input: string): string {
+  if (!input) return input;
+  if (!/[ÃÂâØÙ]/.test(input)) return input;
+
+  try {
+    const decoded = Buffer.from(input, "latin1").toString("utf8");
+    if (!decoded || decoded.includes("�")) return input;
+    if (/[\u0600-\u06FF]/.test(decoded) || /[’“”–—]/.test(decoded) || decoded.includes("patient's")) {
+      return decoded;
+    }
+  } catch {
+    return input;
+  }
+
+  return input;
+}
+
+function cleanupText(input: string): string {
+  return repairMojibake(input);
 }
 
 function normalizeText(value: string | null | undefined): string {
@@ -339,6 +371,69 @@ function css(direction: "rtl" | "ltr"): string {
 
 type SignaturePresentation = ReturnType<typeof resolveConsentSignaturePresentation>;
 
+type EducationEvidenceSummary = {
+  viewed: boolean;
+  viewedAt: Date | null;
+  completedAt: Date | null;
+  language: string | null;
+  templateCode: string | null;
+  score: number | null;
+  attempts: number | null;
+  faqViewedCount: number;
+  patientAcknowledged: boolean;
+};
+
+function extractEducationEvidenceSummary(input: {
+  auditEvents: Array<{ action: string; source: string | null; createdAt: Date; metadata: unknown }>;
+  hasPatientSignature: boolean;
+}): EducationEvidenceSummary {
+  const educationEvents = input.auditEvents.filter((event) => {
+    const source = (event.source || "").toLowerCase();
+    return source === "patient-education" || event.action.startsWith("EDUCATION_") || event.action.startsWith("UNDERSTANDING_");
+  });
+
+  const viewedAt = educationEvents.length > 0 ? educationEvents[0].createdAt : null;
+  const completedAt =
+    educationEvents.find((event) => event.action === "EDUCATION_COMPLETED")?.createdAt
+    || (educationEvents.length > 0 ? educationEvents[educationEvents.length - 1].createdAt : null);
+  const latestMetadata = educationEvents.length > 0 ? asRecord(educationEvents[educationEvents.length - 1].metadata) : {};
+
+  const scoreValue = typeof latestMetadata.score === "number" && Number.isFinite(latestMetadata.score)
+    ? latestMetadata.score
+    : null;
+  const attemptsValue = typeof latestMetadata.attempts === "number" && Number.isFinite(latestMetadata.attempts)
+    ? latestMetadata.attempts
+    : null;
+  const faqViewedCountValue = typeof latestMetadata.faqViewedCount === "number" && Number.isFinite(latestMetadata.faqViewedCount)
+    ? latestMetadata.faqViewedCount
+    : 0;
+  const patientAcknowledgedFromEvent =
+    educationEvents.some((event) => {
+      const metadata = asRecord(event.metadata);
+      return metadata.patientAcknowledged === true || metadata.acknowledged === true || metadata.passed === true;
+    })
+    || educationEvents.some((event) => event.action === "UNDERSTANDING_PASSED")
+    || educationEvents.some((event) => event.action === "EDUCATION_COMPLETED");
+
+  return {
+    viewed: educationEvents.length > 0,
+    viewedAt,
+    completedAt,
+    language:
+      typeof latestMetadata.language === "string" && latestMetadata.language.trim() !== ""
+        ? latestMetadata.language
+        : null,
+    templateCode:
+      typeof latestMetadata.templateCode === "string" && latestMetadata.templateCode.trim() !== ""
+        ? latestMetadata.templateCode
+        : null,
+    score: scoreValue,
+    attempts: attemptsValue,
+    faqViewedCount: faqViewedCountValue,
+    patientAcknowledged: patientAcknowledgedFromEvent || input.hasPatientSignature,
+  };
+}
+
 function methodLabel(method: string, isAr: boolean): string {
   if (method === "combined-tablet-and-otp") return isAr ? "توقيع لوحي + OTP" : "Tablet + OTP";
   if (method === "tablet-drawn-signature") return isAr ? "توقيع يدوي على جهاز لوحي" : "Tablet Handwritten Signature";
@@ -407,6 +502,15 @@ function html(args: {
   refusalRisks: string | null;
   expectedOutcomes: string | null;
   physicianNotes: string | null;
+  educationViewed: string;
+  educationViewedAt: string | null;
+  educationCompletedAt: string | null;
+  educationLanguage: string | null;
+  educationTemplateCode: string | null;
+  educationScore: string | null;
+  educationAttempts: string | null;
+  educationFaqViewedCount: string | null;
+  patientAcknowledged: string;
   legalText: string;
   pdplText: string;
   witnessDecl: string;
@@ -494,6 +598,19 @@ function html(args: {
         <p><strong>${args.isAr ? "ملاحظات الطبيب" : "Physician Notes"}:</strong></p><pre>${content(args.physicianNotes)}</pre>
       </article>
 
+      <article class="card full">
+        <h3>${args.isAr ? "أدلة تثقيف المريض" : "Patient Education Evidence"}</h3>
+        <p><strong>${args.isAr ? "تم عرض التثقيف" : "Education Displayed"}:</strong> ${content(args.educationViewed)}</p>
+        <p><strong>${args.isAr ? "وقت بدء التثقيف" : "Education Opened At"}:</strong> ${content(args.educationViewedAt)}</p>
+        <p><strong>${args.isAr ? "وقت إكمال التثقيف" : "Education Completed At"}:</strong> ${content(args.educationCompletedAt)}</p>
+        <p><strong>${args.isAr ? "لغة التثقيف" : "Education Language"}:</strong> ${content(args.educationLanguage)}</p>
+        <p><strong>${args.isAr ? "مرجع القالب" : "Template Code"}:</strong> ${content(args.educationTemplateCode)}</p>
+        <p><strong>${args.isAr ? "نتيجة الفهم" : "Understanding Score"}:</strong> ${content(args.educationScore)}</p>
+        <p><strong>${args.isAr ? "عدد المحاولات" : "Attempts"}:</strong> ${content(args.educationAttempts)}</p>
+        <p><strong>${args.isAr ? "الأسئلة الشائعة التي تمت مشاهدتها" : "FAQ Items Viewed"}:</strong> ${content(args.educationFaqViewedCount)}</p>
+        <p><strong>${args.isAr ? "إقرار المريض" : "Patient Acknowledgement"}:</strong> ${content(args.patientAcknowledged)}</p>
+      </article>
+
       <article class="card full legal">
         <h3>${args.isAr ? "الإقرار القانوني والخصوصية" : "Legal and Privacy Declarations"}</h3>
         <p>${content(args.legalText)}</p>
@@ -532,6 +649,40 @@ function html(args: {
     : "Issued by International Medical Center with digital evidence preservation through WathiqCare platform."}
       </div>
     </div>
+  </body>
+</html>`;
+}
+
+function extractBody(markup: string): string {
+  const match = markup.match(/<body>([\s\S]*)<\/body>/i);
+  return match ? match[1] : markup;
+}
+
+function bilingualHtml(arArgs: Parameters<typeof html>[0], enArgs: Parameters<typeof html>[0]): string {
+  const arBody = extractBody(html(arArgs));
+  const enBody = extractBody(html(enArgs));
+
+  return `<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      ${css("ltr")}
+      .page-break { page-break-before: always; }
+      .lang-block[dir="rtl"] {
+        direction: rtl;
+        font-family: 'Noto Naskh Arabic','Tahoma',serif;
+      }
+      .lang-block[dir="ltr"] {
+        direction: ltr;
+        font-family: 'Segoe UI',Arial,sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="lang-block" dir="rtl" lang="ar">${arBody}</section>
+    <div class="page-break"></div>
+    <section class="lang-block" dir="ltr" lang="en">${enBody}</section>
   </body>
 </html>`;
 }
@@ -575,6 +726,15 @@ export async function GET(
         signatures: {
           orderBy: { signedAt: "asc" },
         },
+        auditEvents: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            action: true,
+            source: true,
+            createdAt: true,
+            metadata: true,
+          },
+        },
       },
     });
 
@@ -593,7 +753,18 @@ export async function GET(
       physicianCertEn: doc.physicianCertEn,
     });
 
-    const metadata = (doc.metadata && typeof doc.metadata === "object" ? doc.metadata : {}) as Record<string, unknown>;
+    const metadata = asRecord(doc.metadata);
+    const workflow = asRecord(metadata.secureSigningWorkflow);
+    const workflowStatus = asRecord(workflow.status);
+    const workflowSigned = workflowStatus.signed === true;
+    const metadataFinalizedAt = asDate(asRecord(asRecord(metadata.governance).lifecycle).finalizedAt) || asDate(metadata.finalizedAt);
+    const workflowUpdatedAt = asDate(workflow.updatedAt);
+    const effectiveFinalizedAt = doc.finalizedAt || metadataFinalizedAt || (workflowSigned ? workflowUpdatedAt : null);
+    const effectiveStatus =
+      doc.status === "FINALIZED" || Boolean(effectiveFinalizedAt)
+        ? "FINALIZED"
+        : (doc.status === "SIGNED" || workflowSigned ? "SIGNED" : doc.status);
+
     const snapshot =
       metadata.finalizedWordingSnapshot && typeof metadata.finalizedWordingSnapshot === "object"
         ? (metadata.finalizedWordingSnapshot as Record<string, unknown>)
@@ -617,7 +788,8 @@ export async function GET(
       }
     }
 
-    const lang = (request.nextUrl.searchParams.get("lang") || doc.language || "bilingual").toLowerCase();
+    const requestedLang = (request.nextUrl.searchParams.get("lang") || doc.language || "bilingual").toLowerCase();
+    const lang = requestedLang === "ar" || requestedLang === "en" || requestedLang === "bilingual" ? requestedLang : "bilingual";
     const isAr = lang === "ar";
     const copyType = parseCopyType(request.nextUrl.searchParams.get("copy"));
     const copyLabel = copyTypeLabel(copyType, isAr);
@@ -626,7 +798,7 @@ export async function GET(
     const qrPayload = doc.qrPayload || [
       `CONSENT:${doc.consentReference}`,
       `DOC:${doc.id}`,
-      `STATUS:${doc.status}`,
+      `STATUS:${effectiveStatus}`,
       `VERIFY:${verifyUrl}`,
     ].join("|");
 
@@ -636,83 +808,106 @@ export async function GET(
       margin: 1,
     });
 
-    const output = html({
-      patientSignature: resolveConsentSignaturePresentation(
-        (() => {
-          const signature = doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN");
-          return signature
-            ? {
-              metadata: signature.metadata,
-              signatureMethod: signature.signatureMethod,
-              signedAt: signature.signedAt,
-              signerName: signature.signerName,
-            }
-            : { metadata: null, signatureMethod: null, signedAt: null, signerName: "" };
-        })(),
-      ).signerName ? resolveConsentSignaturePresentation({
-        metadata: (doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN")?.metadata) || null,
-        signatureMethod: doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN")?.signatureMethod || null,
-        signedAt: doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN")?.signedAt || null,
-        signerName: doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN")?.signerName || "",
-      }) : null,
-      physicianSignature: doc.signatures.find((item) => item.role === "PHYSICIAN")
-        ? resolveConsentSignaturePresentation({
-          metadata: doc.signatures.find((item) => item.role === "PHYSICIAN")?.metadata || null,
-          signatureMethod: doc.signatures.find((item) => item.role === "PHYSICIAN")?.signatureMethod || null,
-          signedAt: doc.signatures.find((item) => item.role === "PHYSICIAN")?.signedAt || null,
-          signerName: doc.signatures.find((item) => item.role === "PHYSICIAN")?.signerName || "",
+    const patientRaw = doc.signatures.find((item) => item.role === "PATIENT" || item.role === "GUARDIAN") || null;
+    const physicianRaw = doc.signatures.find((item) => item.role === "PHYSICIAN") || null;
+    const witnessRaw = doc.signatures.find((item) => item.role === "WITNESS") || null;
+
+    const patientSignature = patientRaw
+      ? resolveConsentSignaturePresentation({
+          metadata: patientRaw.metadata || null,
+          signatureMethod: patientRaw.signatureMethod || null,
+          signedAt: patientRaw.signedAt || null,
+          signerName: patientRaw.signerName || "",
         })
-        : null,
-      witnessSignature: doc.signatures.find((item) => item.role === "WITNESS")
-        ? resolveConsentSignaturePresentation({
-          metadata: doc.signatures.find((item) => item.role === "WITNESS")?.metadata || null,
-          signatureMethod: doc.signatures.find((item) => item.role === "WITNESS")?.signatureMethod || null,
-          signedAt: doc.signatures.find((item) => item.role === "WITNESS")?.signedAt || null,
-          signerName: doc.signatures.find((item) => item.role === "WITNESS")?.signerName || "",
+      : null;
+    const physicianSignature = physicianRaw
+      ? resolveConsentSignaturePresentation({
+          metadata: physicianRaw.metadata || null,
+          signatureMethod: physicianRaw.signatureMethod || null,
+          signedAt: physicianRaw.signedAt || null,
+          signerName: physicianRaw.signerName || "",
         })
-        : null,
-      isAr,
-      title: isAr ? "نموذج الموافقة المستنيرة" : "Informed Consent Document",
-      subtitle: isAr ? doc.template.titleAr : doc.template.titleEn,
-      reference: `${doc.consentReference}${doc.case?.caseNumber ? ` | ${doc.case.caseNumber}` : ""}`,
-      status: statusLabel(doc.status, isAr),
-      version: doc.documentVersion || "v1.0",
-      generatedAt: formatDate(doc.createdAt, isAr ? "ar" : "en"),
-      warning: isAr ? doc.aiWarningAr : doc.aiWarningEn,
-      copyLabel,
-      watermarkLabel: `${copyLabel} | ${doc.consentReference}`,
-      auditChecksum: doc.auditChecksum || doc.immutablePdfHash,
-      generatedByModel: doc.generatedByModel,
-      finalizedAt: doc.finalizedAt ? formatDate(doc.finalizedAt, isAr ? "ar" : "en") : null,
-      physicianIdentifier: doc.emrMappings[0]?.physicianIdentifier || doc.physicianLicense,
-      patient: doc.patientName,
-      mrn: doc.mrn,
-      dob: doc.dob,
-      gender: doc.gender,
-      diagnosis: doc.diagnosis,
-      physician: doc.physicianName,
-      physicianLicense: doc.physicianLicense,
-      specialty: doc.physicianSpecialty,
-      consentType: doc.template.consentType,
-      plannedProcedure: doc.plannedProcedure,
-      procedureDetails: doc.procedureDetails,
-      risks: isAr ? doc.risksAr : doc.risksEn,
-      sideEffects: isAr ? doc.sideEffectsAr : doc.sideEffectsEn,
-      alternatives: isAr ? doc.alternativesAr : doc.alternativesEn,
-      refusalRisks: isAr ? doc.refusalRisksAr : doc.refusalRisksEn,
-      expectedOutcomes: isAr ? doc.expectedOutcomesAr : doc.expectedOutcomesEn,
-      physicianNotes: isAr ? doc.physicianNotesAr : doc.physicianNotesEn,
-      legalText: isAr ? doc.legalTextAr : doc.legalTextEn,
-      pdplText: isAr ? doc.pdplTextAr : doc.pdplTextEn,
-      witnessDecl: isAr ? doc.witnessDeclAr : doc.witnessDeclEn,
-      physicianCert: isAr ? doc.physicianCertAr : doc.physicianCertEn,
-      patientSignatureLabel: isAr ? "توقيع المريض / الولي" : "Patient / Guardian Signature",
-      physicianSignatureLabel: isAr ? "توقيع الطبيب" : "Physician Signature",
-      witnessSignatureLabel: isAr ? "توقيع الشاهد" : "Witness Signature",
-      qrLabel: verifyUrl,
-      qrDataUrl,
-      logoSrc: await resolveImcLogoSource(),
+      : null;
+    const witnessSignature = witnessRaw
+      ? resolveConsentSignaturePresentation({
+          metadata: witnessRaw.metadata || null,
+          signatureMethod: witnessRaw.signatureMethod || null,
+          signedAt: witnessRaw.signedAt || null,
+          signerName: witnessRaw.signerName || "",
+        })
+      : null;
+
+    const logoSrc = await resolveImcLogoSource();
+    const educationEvidence = extractEducationEvidenceSummary({
+      auditEvents: doc.auditEvents,
+      hasPatientSignature: Boolean(patientRaw),
     });
+    const buildArgs = (renderAr: boolean): Parameters<typeof html>[0] => {
+      const localizedCopyLabel = copyTypeLabel(copyType, renderAr);
+
+      return {
+        patientSignature,
+        physicianSignature,
+        witnessSignature,
+        isAr: renderAr,
+        title: renderAr ? "نموذج الموافقة المستنيرة" : "Informed Consent Document",
+        subtitle: renderAr ? cleanupText(doc.template.titleAr) : cleanupText(doc.template.titleEn),
+        reference: `${cleanupText(doc.consentReference)}${doc.case?.caseNumber ? ` | ${cleanupText(doc.case.caseNumber)}` : ""}`,
+        status: statusLabel(effectiveStatus, renderAr),
+        version: cleanupText(doc.documentVersion || "v1.0"),
+        generatedAt: formatDate(doc.createdAt, renderAr ? "ar" : "en"),
+        warning: renderAr ? cleanupText(doc.aiWarningAr) : cleanupText(doc.aiWarningEn),
+        copyLabel: localizedCopyLabel,
+        watermarkLabel: `${localizedCopyLabel} | ${cleanupText(doc.consentReference)}`,
+        auditChecksum: cleanupText(doc.auditChecksum || doc.immutablePdfHash || ""),
+        generatedByModel: cleanupText(doc.generatedByModel || ""),
+        finalizedAt: effectiveFinalizedAt ? formatDate(effectiveFinalizedAt, renderAr ? "ar" : "en") : null,
+        physicianIdentifier: cleanupText(doc.emrMappings[0]?.physicianIdentifier || doc.physicianLicense || ""),
+        patient: cleanupText(doc.patientName),
+        mrn: cleanupText(doc.mrn || ""),
+        dob: cleanupText(doc.dob || ""),
+        gender: cleanupText(doc.gender || ""),
+        diagnosis: cleanupText(doc.diagnosis || ""),
+        physician: cleanupText(doc.physicianName),
+        physicianLicense: cleanupText(doc.physicianLicense || ""),
+        specialty: cleanupText(doc.physicianSpecialty),
+        consentType: cleanupText(doc.template.consentType),
+        plannedProcedure: cleanupText(doc.plannedProcedure || ""),
+        procedureDetails: cleanupText(doc.procedureDetails || ""),
+        risks: cleanupText(renderAr ? doc.risksAr || "" : doc.risksEn || ""),
+        sideEffects: cleanupText(renderAr ? doc.sideEffectsAr || "" : doc.sideEffectsEn || ""),
+        alternatives: cleanupText(renderAr ? doc.alternativesAr || "" : doc.alternativesEn || ""),
+        refusalRisks: cleanupText(renderAr ? doc.refusalRisksAr || "" : doc.refusalRisksEn || ""),
+        expectedOutcomes: cleanupText(renderAr ? doc.expectedOutcomesAr || "" : doc.expectedOutcomesEn || ""),
+        physicianNotes: cleanupText(renderAr ? doc.physicianNotesAr || "" : doc.physicianNotesEn || ""),
+        educationViewed: educationEvidence.viewed ? (renderAr ? "نعم" : "Yes") : (renderAr ? "لا" : "No"),
+        educationViewedAt: educationEvidence.viewedAt ? formatDate(educationEvidence.viewedAt, renderAr ? "ar" : "en") : null,
+        educationCompletedAt: educationEvidence.completedAt ? formatDate(educationEvidence.completedAt, renderAr ? "ar" : "en") : null,
+        educationLanguage: cleanupText(educationEvidence.language || (doc.language || "")),
+        educationTemplateCode: cleanupText(educationEvidence.templateCode || ""),
+        educationScore: educationEvidence.score == null ? null : `${Math.round(educationEvidence.score)}%`,
+        educationAttempts: educationEvidence.attempts == null ? null : String(educationEvidence.attempts),
+        educationFaqViewedCount: String(educationEvidence.faqViewedCount),
+        patientAcknowledged: educationEvidence.patientAcknowledged
+          ? (renderAr ? "تم الإقرار" : "Acknowledged")
+          : (renderAr ? "غير مسجل" : "Not recorded"),
+        legalText: cleanupText(renderAr ? doc.legalTextAr : doc.legalTextEn),
+        pdplText: cleanupText(renderAr ? doc.pdplTextAr : doc.pdplTextEn),
+        witnessDecl: cleanupText(renderAr ? doc.witnessDeclAr : doc.witnessDeclEn),
+        physicianCert: cleanupText(renderAr ? doc.physicianCertAr : doc.physicianCertEn),
+        patientSignatureLabel: renderAr ? "توقيع المريض / الولي" : "Patient / Guardian Signature",
+        physicianSignatureLabel: renderAr ? "توقيع الطبيب" : "Physician Signature",
+        witnessSignatureLabel: renderAr ? "توقيع الشاهد" : "Witness Signature",
+        qrLabel: verifyUrl,
+        qrDataUrl,
+        logoSrc,
+      };
+    };
+
+    const output =
+      lang === "bilingual"
+        ? bilingualHtml(buildArgs(true), buildArgs(false))
+        : html(buildArgs(isAr));
 
     if (isInformedConsentPdfEnginePreviewEnabled()) {
       await buildInformedConsentEvidenceHtmlPreview({
@@ -786,7 +981,7 @@ export async function GET(
         "X-Wathiq-Wording-Checksum": fixedClauseChecksum,
         "X-Wathiq-Bilingual-Sync": "verified",
         "X-Wathiq-Generated-By": doc.generatedByModel || "",
-        "X-Wathiq-Finalized-At": doc.finalizedAt ? doc.finalizedAt.toISOString() : "",
+        "X-Wathiq-Finalized-At": effectiveFinalizedAt ? effectiveFinalizedAt.toISOString() : "",
       },
     });
   } catch (err) {
