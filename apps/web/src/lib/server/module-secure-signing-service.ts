@@ -172,7 +172,7 @@ async function loadBadgeFlags(args: {
   const tokenRows = await prisma().$queryRawUnsafe<TokenRow[]>(
     `SELECT expires_at, used_at
      FROM signing_secure_tokens
-     WHERE session_id = $1
+     WHERE session_id = $1::uuid
      ORDER BY created_at DESC
      LIMIT 1`,
     args.sessionId,
