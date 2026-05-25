@@ -6,6 +6,7 @@
  */
 
 import fs from 'fs';
+import { execSync } from 'node:child_process';
 
 function readJson(path) {
   return JSON.parse(fs.readFileSync(path, 'utf8'));
@@ -21,6 +22,18 @@ function hasMiddleware() {
 
 function normalizeBranch(ref) {
   return (ref || '').replace(/^refs\/heads\//, '').trim();
+}
+
+function resolveCommitSha() {
+  const envSha = (process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || process.env.RELEASE_COMMIT_SHA || '').trim();
+  if (envSha) {
+    return envSha;
+  }
+  try {
+    return execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    return '';
+  }
 }
 
 function isBlockedProductionBranch(branchName) {
@@ -43,7 +56,7 @@ function main() {
   const vercelEnv = (process.env.VERCEL_ENV || process.env.VERCEL_TARGET_ENV || '').trim().toLowerCase();
   const branchRef = process.env.VERCEL_GIT_COMMIT_REF || process.env.GITHUB_REF || process.env.GITHUB_REF_NAME || '';
   const branchName = normalizeBranch(branchRef);
-  const commitSha = (process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || '').trim();
+  const commitSha = resolveCommitSha();
 
   if (!rootVercel.buildCommand) {
     issues.push('vercel.json missing buildCommand');
