@@ -337,24 +337,28 @@ export async function sendModuleSecureSigningLink(args: {
     throw new ApiError(502, secureSigningEmail.failureReason || "Failed to send secure signing link email");
   }
 
-  await appendAuditChainEvent({
-    tenantId: args.tenantId,
-    caseId: args.caseId,
-    eventType: "SECURE_SIGNING_LINK_CREATED",
-    actorId: args.initiatedBy,
-    actorRole: "system",
-    payloadSummary: `Secure signing link created for ${args.moduleKey}`,
-    metadataJson: {
-      moduleKey: args.moduleKey,
-      documentId: args.documentId,
-      sessionId: session.sessionId,
-      tokenHash,
-      smsDeliveryStatus,
-      emailDeliveryStatus: secureSigningEmail.status,
-      emailDeliveryAuditId: secureSigningEmail.auditId,
-      emailRecipient: secureSigningEmail.recipient,
-    },
-  });
+  try {
+    await appendAuditChainEvent({
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      eventType: "SECURE_SIGNING_LINK_CREATED",
+      actorId: args.initiatedBy,
+      actorRole: "system",
+      payloadSummary: `Secure signing link created for ${args.moduleKey}`,
+      metadataJson: {
+        moduleKey: args.moduleKey,
+        documentId: args.documentId,
+        sessionId: session.sessionId,
+        tokenHash,
+        smsDeliveryStatus,
+        emailDeliveryStatus: secureSigningEmail.status,
+        emailDeliveryAuditId: secureSigningEmail.auditId,
+        emailRecipient: secureSigningEmail.recipient,
+      },
+    });
+  } catch (error) {
+    console.error("[module-secure-signing] appendAuditChainEvent failed", error);
+  }
 
   const status = await loadBadgeFlags({
     tenantId: args.tenantId,
