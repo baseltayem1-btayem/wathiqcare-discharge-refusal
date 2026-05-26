@@ -1,7 +1,9 @@
 import crypto from "node:crypto";
 import { createSigningSession } from "@/lib/server/signature-orchestration-service";
+import { sendSecureSigningLinkEmail } from "@/lib/server/pilot-email-override";
 import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
+import { ApiError } from "@/lib/server/http";
 import { buildSecureSigningLinkSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
 import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
@@ -34,8 +36,11 @@ export type SecureSigningWorkflow = {
   tokenHash: string;
   signingUrl: string;
   recipientMobile: string;
+  recipientEmail?: string;
   smsDeliveryStatus: "sent" | "failed";
   smsFailureReason: string | null;
+  emailDeliveryStatus?: "sent" | "failed";
+  emailFailureReason?: string | null;
   createdAt: string;
   updatedAt: string;
   status: SecureSigningBadgeFlags;
@@ -55,6 +60,14 @@ function normalizePhoneNumber(value: string): string {
   if (compact.startsWith("966")) return `+${compact}`;
   if (compact.startsWith("05") && compact.length === 10) return `+966${compact.slice(1)}`;
   return `+${compact}`;
+}
+
+function normalizeRecipientEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function isValidRecipientEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(value);
 }
 
 function extractToken(signingUrl: string): string {
@@ -172,7 +185,7 @@ async function loadBadgeFlags(args: {
   const tokenRows = await prisma().$queryRawUnsafe<TokenRow[]>(
     `SELECT expires_at, used_at
      FROM signing_secure_tokens
-     WHERE session_id = $1
+     WHERE session_id = $1::uuid
      ORDER BY created_at DESC
      LIMIT 1`,
     args.sessionId,
@@ -226,9 +239,16 @@ export async function sendModuleSecureSigningLink(args: {
   caseId: string;
   patientName: string;
   mobileNumber: string;
+  recipientEmail: string;
   locale?: "ar" | "en";
 }): Promise<SecureSigningWorkflow> {
   const normalizedMobile = normalizePhoneNumber(args.mobileNumber);
+  const normalizedRecipientEmail = normalizeRecipientEmail(args.recipientEmail);
+
+  if (!isValidRecipientEmail(normalizedRecipientEmail)) {
+    throw new ApiError(400, "Invalid email address");
+  }
+
   const pdfBytes = buildPdfBuffer("WathiqCare Secure Signing", [
     `Module: ${args.moduleKey}`,
     `Case: ${args.caseId}`,
@@ -299,6 +319,24 @@ export async function sendModuleSecureSigningLink(args: {
     },
   });
 
+  const secureSigningEmail = await sendSecureSigningLinkEmail({
+    tenantId: args.tenantId,
+    caseId: args.caseId,
+    patientName: args.patientName,
+    recipientEmail: normalizedRecipientEmail,
+    mobileNumber: normalizedMobile || "unknown",
+    signingUrl,
+    expiresMinutes: Number(process.env.SIGNING_LINK_EXPIRY_MINUTES || "30"),
+    documentId: args.documentId,
+    sessionId: session.sessionId,
+    moduleKey: args.moduleKey,
+    locale: args.locale,
+  });
+
+  if (secureSigningEmail.status !== "sent") {
+    throw new ApiError(502, secureSigningEmail.failureReason || "Failed to send secure signing link email");
+  }
+
   await appendAuditChainEvent({
     tenantId: args.tenantId,
     caseId: args.caseId,
@@ -312,6 +350,9 @@ export async function sendModuleSecureSigningLink(args: {
       sessionId: session.sessionId,
       tokenHash,
       smsDeliveryStatus,
+      emailDeliveryStatus: secureSigningEmail.status,
+      emailDeliveryAuditId: secureSigningEmail.auditId,
+      emailRecipient: secureSigningEmail.recipient,
     },
   });
 
@@ -329,8 +370,11 @@ export async function sendModuleSecureSigningLink(args: {
     tokenHash,
     signingUrl,
     recipientMobile: normalizedMobile,
+    recipientEmail: normalizedRecipientEmail,
     smsDeliveryStatus,
     smsFailureReason,
+    emailDeliveryStatus: secureSigningEmail.status,
+    emailFailureReason: secureSigningEmail.failureReason,
     createdAt: now,
     updatedAt: now,
     status,

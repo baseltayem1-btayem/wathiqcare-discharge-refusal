@@ -36,6 +36,14 @@ function getPatientMobile(metadata: Record<string, unknown>): string {
   return "";
 }
 
+function normalizeRecipientEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function isValidRecipientEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(value);
+}
+
 async function persistWorkflow(documentId: string, metadata: Prisma.JsonValue | null | undefined, workflow: SecureSigningWorkflow) {
   const root = asRecord(metadata);
   const prisma = getPrisma();
@@ -91,7 +99,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const auth = await requireModuleOperationalAccess(request, "informed-consents");
     requireInformedConsentPermission(auth, "consent:send_signature");
     const { id } = await params;
-    const body = (await request.json().catch(() => null)) as { mobileNumber?: string } | null;
+    const body = (await request.json().catch(() => null)) as { mobileNumber?: string; recipientEmail?: string } | null;
 
     const doc = await prisma.consentDocument.findFirst({
       where: { id, tenantId: auth.tenant_id },
@@ -115,6 +123,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     const metadata = asRecord(doc.metadata);
     const mobile = body?.mobileNumber?.trim() || getPatientMobile(metadata);
+    const recipientEmail = normalizeRecipientEmail(body?.recipientEmail || "");
+
+    if (!recipientEmail) {
+      throw new ApiError(400, "recipient_email is required");
+    }
+
+    if (!isValidRecipientEmail(recipientEmail)) {
+      throw new ApiError(400, "Invalid email address");
+    }
 
     const workflow = await sendModuleSecureSigningLink({
       tenantId: auth.tenant_id || "",
@@ -125,6 +142,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       caseId: doc.caseId,
       patientName: doc.patientName,
       mobileNumber: mobile,
+      recipientEmail,
       locale: "ar",
     });
 
