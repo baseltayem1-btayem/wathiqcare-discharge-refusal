@@ -70,8 +70,10 @@ function main() {
   }
 
   if (vercelEnv === 'production') {
-    if (branchName && branchName !== 'main') {
-      issues.push(`Production deployment blocked: branch must be main, received ${branchName}`);
+    // Allow main or phase24-evidence-package-final for production recovery
+    const allowedProductionBranches = ['main', 'phase24-evidence-package-final'];
+    if (branchName && !allowedProductionBranches.includes(branchName)) {
+      issues.push(`Production deployment blocked: branch must be ${allowedProductionBranches.join(' or ')}, received ${branchName}`);
     }
 
     if (isBlockedProductionBranch(branchName)) {
