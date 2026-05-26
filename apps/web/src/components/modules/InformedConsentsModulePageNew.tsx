@@ -162,6 +162,7 @@ export default function InformedConsentsModulePageNew({
   const [encounterList, setEncounterList] = useState<EncounterData[]>([]);
   const [secureSigningWorkflow, setSecureSigningWorkflow] = useState<SecureSigningWorkflow | null>(null);
   const [signatureMobile, setSignatureMobile] = useState<string>("");
+  const [signatureEmail, setSignatureEmail] = useState<string>("");
 
   // Get step index for progress tracking
   const currentStepIndex = WORKFLOW_STEPS.findIndex((s) => s.id === currentStep);
@@ -1026,6 +1027,8 @@ export default function InformedConsentsModulePageNew({
           <input
             id="secure-signing-email"
             type="email"
+            value={signatureEmail}
+            onChange={(event) => setSignatureEmail(event.target.value)}
             placeholder="patient@example.com"
             title={locale === "ar" ? "البريد الإلكتروني" : "Email"}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1039,6 +1042,12 @@ export default function InformedConsentsModulePageNew({
               return;
             }
 
+            const normalizedRecipientEmail = signatureEmail.trim();
+            if (!normalizedRecipientEmail) {
+              setError(locale === "ar" ? "أدخل بريد المريض الإلكتروني" : "Enter the patient's email address");
+              return;
+            }
+
             setLoading(true);
             setError("");
             setSuccess("");
@@ -1049,6 +1058,7 @@ export default function InformedConsentsModulePageNew({
                 method: "POST",
                 body: JSON.stringify({
                   mobileNumber: signatureMobile || patientData?.mobileNumber || "",
+                  recipientEmail: normalizedRecipientEmail,
                 }),
               },
             )
@@ -1153,6 +1163,9 @@ export default function InformedConsentsModulePageNew({
             setDraftConsent(null);
             setEncounterContextLocked(false);
             setShowImportedData(false);
+            setSignatureMobile("");
+            setSignatureEmail("");
+            setSecureSigningWorkflow(null);
             setTrakCareSync({ status: "NOT_SYNCED", importedFields: [], failedFields: [], manualOverride: false });
             localStorage.removeItem("wathiqcare.informed-consents.selected-template");
           }}
