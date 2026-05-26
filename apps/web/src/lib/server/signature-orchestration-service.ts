@@ -86,7 +86,7 @@ export async function createSigningSession(
     `INSERT INTO signing_sessions
        (tenant_id, document_id, module_type, provider_key, status,
         required_signers, completed_signers, signer_links, expires_at, initiated_by_id)
-     VALUES ($1, $2, $3, $4, 'PENDING', $5::jsonb, '[]'::jsonb, $6::jsonb, $7, $8)
+      VALUES ($1::uuid, $2::uuid, $3, $4, 'PENDING', $5::jsonb, '[]'::jsonb, $6::jsonb, $7::timestamptz, $8::uuid)
      RETURNING id`,
     input.tenantId,
     input.documentId,
@@ -101,7 +101,7 @@ export async function createSigningSession(
   // Get the created session ID
   const rows = await prisma().$queryRawUnsafe<Array<{ id: string }>>(
     `SELECT id FROM signing_sessions
-     WHERE tenant_id = $1 AND document_id = $2
+     WHERE tenant_id = $1::uuid AND document_id = $2::uuid
      ORDER BY created_at DESC LIMIT 1`,
     input.tenantId,
     input.documentId
@@ -114,7 +114,7 @@ export async function createSigningSession(
   for (const t of tokenRows) {
     await prisma().$executeRawUnsafe(
       `INSERT INTO signing_secure_tokens (session_id, tenant_id, signer_role, token, expires_at)
-       VALUES ($1, $2, $3, $4, $5)`,
+       VALUES ($1::uuid, $2::uuid, $3, $4, $5::timestamptz)` ,
       sessionId,
       input.tenantId,
       t.signerRole,
@@ -314,7 +314,7 @@ export async function resendSigningLink(
     Array<{ provider_session_id: string; provider_key: string; resend_count: number }>
   >(
     `SELECT provider_session_id, provider_key, resend_count FROM signing_sessions
-     WHERE id = $1 AND tenant_id = $2 LIMIT 1`,
+     WHERE id = $1::uuid AND tenant_id = $2::uuid LIMIT 1`,
     sessionId,
     tenantId
   );
@@ -350,7 +350,7 @@ export async function revokeSigningSession(
     Array<{ provider_session_id: string; provider_key: string }>
   >(
     `SELECT provider_session_id, provider_key FROM signing_sessions
-     WHERE id = $1 AND tenant_id = $2 LIMIT 1`,
+     WHERE id = $1::uuid AND tenant_id = $2::uuid LIMIT 1`,
     sessionId,
     tenantId
   );
@@ -391,7 +391,7 @@ export async function retrieveSignedPdf(
     Array<{ provider_session_id: string; provider_key: string; status: string }>
   >(
     `SELECT provider_session_id, provider_key, status FROM signing_sessions
-     WHERE id = $1 AND tenant_id = $2 LIMIT 1`,
+     WHERE id = $1::uuid AND tenant_id = $2::uuid LIMIT 1`,
     sessionId,
     tenantId
   );
@@ -421,7 +421,7 @@ async function logSigningEvent(
 ): Promise<void> {
   await prisma().$executeRawUnsafe(
     `INSERT INTO signing_events (session_id, tenant_id, event_type, signer_role, provider_key, payload)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+     VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::jsonb)`,
     sessionId,
     tenantId,
     eventType,
