@@ -1,13 +1,13 @@
 // Stabilization smoke test (corrected API paths) — non-destructive
 const fs = require('fs');
 const { Client } = require('pg');
-const BASE = 'https://wathiqcare.online';
+const BASE = process.env.SMOKE_BASE_URL || 'https://wathiqcare.online';
 const PHYSICIAN_EMAIL = 'dr.ahmed@wathiqcare.med.sa';
 const PHYSICIAN_PASSWORD = 'WathiqCare@2026';
 const TEST_MOBILE = '966543587772';
 const TEST_EMAIL = `smoke.stabilization.${Date.now()}@imc.med.sa`;
 
-const env = fs.readFileSync('.env.vercel.prod.readonly', 'utf8');
+const env = fs.readFileSync(process.env.SMOKE_ENV_FILE || '.env.vercel.prod.readonly', 'utf8');
 const getEnv = (n) => { const m = env.match(new RegExp(`^${n}=(.*)$`, 'm')); return m ? m[1].trim().replace(/^"|"$/g, '') : null; };
 const connectionString = getEnv('DATABASE_URL_UNPOOLED') || getEnv('DATABASE_URL');
 

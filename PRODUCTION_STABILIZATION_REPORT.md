@@ -9,6 +9,27 @@
 
 ---
 
+## 0. Patch Log
+
+### v1.0.1 — 2026-05-27 — Patient Consent Presentation Flow Correction (Path A)
+
+- **Tag:** `wathiqcare-informed-consent-pilot-ready-v1.0.1`
+- **Commit:** `74608ee389729b225bb0bb4ea8c65d7489481fe9`
+- **Deployment:** `wathiqcare-discharge-refusal-ko5w186ok-wathiqcare.vercel.app` (alias `wathiqcare.online`)
+- **Authorization:** Critical-defect patch under PRODUCTION_CHANGE_GUARDRAILS Rule 4.
+- **Issue:** `/sign/{token}/workflow` rendered `InformedConsentsEnterpriseWorkflowScreens mode="signature"` — a signature-capture-only widget — so patients landed directly on the signature screen with no education, consent review, decision, or OTP UI.
+- **Fix (UI-only, server contracts unchanged):**
+  - Switched route to render `PublicSigningWorkflow` (the fully-sequenced patient component).
+  - Added Accept / Refuse decision buttons calling `/api/public-signing/document/{token}/decision`.
+  - Added OTP request + verify UI calling `/api/sign/{token}/request-otp` and `/verify-otp`.
+  - Added Step N of N progress indicator (5 stages no-education, 6 with education; refuse-path variant).
+  - Tightened signature submit: disabled until `otpVerified === true`.
+- **Files changed:** `apps/web/app/sign/[token]/workflow/page.tsx`, `apps/web/src/components/modules/PublicSigningWorkflow.tsx` (+256 / -8).
+- **Smoke:** 11/11 PASS against `https://wathiqcare.online` (`__smoke_prod_v1_0_1.json`).
+- **Rollback ready:** alias revert to `wathiqcare-discharge-refusal-691qpznq0-...` (v1.0).
+
+---
+
 ## 1. Smoke Test Result — PASS (11/11)
 
 Non-destructive end-to-end smoke run against production on 2026-05-27 04:16–04:18 UTC. Source: `__smoke_stabilization.cjs`.
