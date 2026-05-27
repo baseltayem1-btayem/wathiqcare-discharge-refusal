@@ -26,6 +26,7 @@ Approach: **no rebuild**. Validated preview deployment was promoted to productio
 | Production env var added | `NEXT_PUBLIC_FF_UI_REFRESH_V1_1 = 1` (Production scope, encrypted) |
 | Production redeploy (same source) | `vercel redeploy dpl_9VhEGcQfmqLKhRYmeKzRDe4zc87g` → `wathiqcare-discharge-refusal-nts0jls4d-wathiqcare.vercel.app` (Ready, Aliased to `wathiqcare.online`) |
 | **Hotfix rebuild from source (2026‑05‑27)** | `vercel deploy --prod` from commit `28403cc` → `wathiqcare-discharge-refusal-gvz0l5kif-wathiqcare.vercel.app` (Ready in 2m, Aliased to `wathiqcare.online`). **Supersedes** `nts0jls4d`. See [SAFARI_HOTFIX_VALIDATION.md](../../SAFARI_HOTFIX_VALIDATION.md). |
+| **Re‑enable v1.1 source‑true rebuild (2026‑05‑27)** | `vercel env rm` + `vercel env add NEXT_PUBLIC_FF_UI_REFRESH_V1_1 production --value 1 --yes`, then `vercel deploy --prod` from commit `28403cc` → `wathiqcare-discharge-refusal-i866h3wek-wathiqcare.vercel.app` (Ready in 2m, Aliased to `wathiqcare.online`). **Supersedes** `gvz0l5kif`. Restores v1.1 marker after prior `vercel env pull` revealed flag was empty in build. See [UI_REFRESH_REENABLE_VALIDATION.md](../../UI_REFRESH_REENABLE_VALIDATION.md). |
 
 No code changes were made between preview validation and production. Only the production scope env flag was enabled and the same deployment lineage was rebuilt to inline the value into the client bundle.
 

@@ -1,0 +1,118 @@
+﻿node : (node:44624) Warning: SECURITY WARNING: The SSL modes 'prefer', 
+'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+At line:1 char:1
++ node __hotfix_verify_otp_cookie.cjs xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5 ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:44624) Wa... 'verify-full'. 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these 
+modes will adopt standard libpq semantics, which have weaker security 
+guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 
+'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode 
+definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+{
+  "base": "https://wathiqcare.online",
+  "token": "xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko",
+  "ts": "2026-05-27T21:15:43.399Z",
+  "preDecision_CONSENT_PRESENTED": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "decision": {
+        "status": "CONSENT_ACCEPTED",
+        "consentPresentedAt": "2026-05-27T20:41:52.543Z",
+        "selectedAt": "2026-05-27T20:48:44.271Z",
+        "refusalFormPresentedAt": null,
+        "refusalAcknowledged": false,
+        "refusalAcknowledgedAt": null,
+        "refusalSignedAt": null,
+        "refusalSignatureCaptured": false,
+        "refusalSignatureId": null,
+        "refusalForm": null
+      }
+    }
+  },
+  "preDecision_CONSENT_ACCEPTED": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "decision": {
+        "status": "CONSENT_ACCEPTED",
+        "consentPresentedAt": "2026-05-27T20:41:52.543Z",
+        "selectedAt": "2026-05-27T21:15:57.851Z",
+        "refusalFormPresentedAt": null,
+        "refusalAcknowledged": false,
+        "refusalAcknowledgedAt": null,
+        "refusalSignedAt": null,
+        "refusalSignatureCaptured": false,
+        "refusalSignatureId": null,
+        "refusalForm": null
+      }
+    }
+  },
+  "requestOtp": {
+    "status": 200,
+    "body": {
+      "challengeId": "fba392f7-ec0b-478a-a58e-1b8f490d41bd",
+      "expiresAt": "2026-05-27T21:26:05.327Z",
+      "deliveryStatus": "sent",
+      "fallbackMode": true,
+      "maskedPhone": "*********7772"
+    }
+  },
+  "resolveOtp": {
+    "challengeId": "fba392f7-ec0b-478a-a58e-1b8f490d41bd",
+    "expiresAt": "2026-05-27T21:26:05.327Z",
+    "codeLength": 6
+  },
+  "verifyOtp": {
+    "status": 200,
+    "headers": {
+      "set-cookie": "wathiqcare_public_signing_session=eyJkb2N1bWVudElkIjoiZmI1NjM3NDQtNmY5My00NzJhLWJkNTEtN2I5NWU2NDc2YjE4IiwidG9rZW5IYXNoIjoiMDlhMTkyOGZkYTQwMzQ4NDg2ZWNlMjRiMzMyNDBiMTdiMjU5NTE3OTA0Mzc3MDFlOWY3OWMwOTUwYTAyMDU0NyIsInNpZ25lclJvbGUiOiJQQVRJRU5UIiwidGVuYW50SWQiOiJlZmUwNTJiNy1hOGFjLTQ5NjItYTAyMS04YzAxOTMxNTE0YTciLCJtb2R1bGVUeXBlIjoiaW5mb3JtZWRfY29uc2VudCIsImNoYWxsZW5nZUlkIjoiZmJhMzkyZjctZWMwYi00NzhhLWE1OGUtMWI4ZjQ5MGQ0MWJkIiwidmVyaWZpZWRBdCI6IjIwMjYtMDUtMjdUMjE6MTY6MTUuOTc1WiIsImV4cGlyZXNBdCI6IjIwMjYtMDUtMjdUMjE6NDY6MTguODA4WiJ9.q9EwsyD91nCEpPotr6zYrduHd7vLSBqcE_oSmdAMtp8; Path=/; Expires=Wed, 27 May 2026 21:46:18 GMT; Max-Age=1797; Domain=.wathiqcare.online; Secure; HttpOnly; SameSite=lax"
+    },
+    "bodyVerified": true,
+    "bodyHasPublicSigningSession": true,
+    "sessionCookieLine": "wathiqcare_public_signing_session=eyJkb2N1bWVudElkIjoiZmI1NjM3NDQtNmY5My00NzJhLWJkNTEtN2I5NWU2NDc2YjE4IiwidG9rZW5IYXNoIjoiMDlhMTkyOGZkYTQwMzQ4NDg2ZWNlMjRiMzMyNDBiMTdiMjU5NTE3OTA0Mzc3MDFlOWY3OWMwOTUwYTAyMDU0NyIsInNpZ25lclJvbGUiOiJQQVRJRU5UIiwidGVuYW50SWQiOiJlZmUwNTJiNy1hOGFjLTQ5NjItYTAyMS04YzAxOTMxNTE0YTciLCJtb2R1bGVUeXBlIjoiaW5mb3JtZWRfY29uc2VudCIsImNoYWxsZW5nZUlkIjoiZmJhMzkyZjctZWMwYi00NzhhLWE1OGUtMWI4ZjQ5MGQ0MWJkIiwidmVyaWZpZWRBdCI6IjIwMjYtMDUtMjdUMjE6MTY6MTUuOTc1WiIsImV4cGlyZXNBdCI6IjIwMjYtMDUtMjdUMjE6NDY6MTguODA4WiJ9.q9EwsyD91nCEpPotr6zYrduHd7vLSBqcE_oSmdAMtp8; Path=/; Expires=Wed, 27 May 2026 21:46:18 GMT; Max-Age=1797; Domain=.wathiqcare.online; Secure; HttpOnly; SameSite=lax",
+    "cookieFlags": {
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "lax",
+      "path": "/",
+      "domain": ".wathiqcare.online",
+      "maxAge": "1797"
+    }
+  },
+  "continuityCheck": {
+    "endpoint": "GET /api/public-signing/document/[token]",
+    "status": 200,
+    "ok": true,
+    "bodyPreview": "{\"documentId\":\"fb563744-6f93-472a-bd51-7b95e6476b18\",\"consentReference\":\"IC-20260527203818-F73945\",\"status\":\"DRAFT\",\"signerRole\":\"PATIENT\",\"patientName\":\"Test Patient 000 / ┘à╪▒┘è╪╢ ╪¬╪¼╪▒┘è╪¿┘è 000\",\"physicianName\":\"dr.ahmed@wathiqcare.med.sa\",\"diagnosis\":\"\",\"plannedProcedure\":\"\",\"templateTitleAr\":\"┘à┘ê╪º┘ü┘é╪⌐ ┘ê┘ä"
+  },
+  "decisionCheck": {
+    "status": 200,
+    "body": {
+      "ok": true,
+      "decision": {
+        "status": "CONSENT_ACCEPTED",
+        "consentPresentedAt": "2026-05-27T20:41:52.543Z",
+        "selectedAt": "2026-05-27T21:16:30.031Z",
+        "refusalFormPresentedAt": null,
+        "refusalAcknowledged": false,
+        "refusalAcknowledgedAt": null,
+        "refusalSignedAt": null,
+        "refusalSignatureCaptured": false,
+        "refusalSignatureId": null,
+        "refusalForm": null
+      }
+    }
+  }
+}

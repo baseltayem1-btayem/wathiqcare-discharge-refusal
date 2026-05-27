@@ -1,0 +1,125 @@
+{
+  "ts": "2026-05-27T21:14:14.463Z",
+  "base": "https://wathiqcare.online",
+  "token": "xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko",
+  "captures": [
+    {
+      "name": "workflow-safari-iphone14-en",
+      "url": "https://wathiqcare.online/sign/xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko/workflow",
+      "viewport": null,
+      "locale": "en-US",
+      "marker": {
+        "marker": 1,
+        "landing": 0,
+        "surface": [
+          "public-signing"
+        ],
+        "htmlDir": "ltr",
+        "htmlLang": "en"
+      }
+    },
+    {
+      "name": "workflow-safari-iphone14-ar",
+      "url": "https://wathiqcare.online/sign/xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko/workflow?lang=ar",
+      "viewport": null,
+      "locale": "ar-SA",
+      "marker": {
+        "marker": 1,
+        "landing": 0,
+        "surface": [
+          "public-signing"
+        ],
+        "htmlDir": "rtl",
+        "htmlLang": "ar"
+      }
+    },
+    {
+      "name": "workflow-android-pixel7-en",
+      "url": "https://wathiqcare.online/sign/xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko/workflow",
+      "viewport": null,
+      "locale": "en-US",
+      "marker": {
+        "marker": 1,
+        "landing": 0,
+        "surface": [
+          "public-signing"
+        ],
+        "htmlDir": "ltr",
+        "htmlLang": "en"
+      }
+    },
+    {
+      "name": "workflow-android-pixel7-ar",
+      "url": "https://wathiqcare.online/sign/xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko/workflow?lang=ar",
+      "viewport": null,
+      "locale": "ar-SA",
+      "marker": {
+        "marker": 1,
+        "landing": 0,
+        "surface": [
+          "public-signing"
+        ],
+        "htmlDir": "rtl",
+        "htmlLang": "ar"
+      }
+    },
+    {
+      "name": "workflow-desktop-1280-en",
+      "url": "https://wathiqcare.online/sign/xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko/workflow",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "locale": "en-US",
+      "marker": {
+        "marker": 1,
+        "landing": 0,
+        "surface": [
+          "public-signing"
+        ],
+        "htmlDir": "ltr",
+        "htmlLang": "en"
+      }
+    },
+    {
+      "name": "workflow-desktop-1280-ar",
+      "url": "https://wathiqcare.online/sign/xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko/workflow?lang=ar",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "locale": "ar-SA",
+      "marker": {
+        "marker": 1,
+        "landing": 0,
+        "surface": [
+          "public-signing"
+        ],
+        "htmlDir": "rtl",
+        "htmlLang": "ar"
+      }
+    },
+    {
+      "name": "negative-home",
+      "url": "https://wathiqcare.online/",
+      "marker": {
+        "marker": 0,
+        "landing": 0,
+        "surface": [],
+        "htmlDir": "rtl",
+        "htmlLang": "ar"
+      }
+    },
+    {
+      "name": "negative-dashboards",
+      "url": "https://wathiqcare.online/dashboards",
+      "marker": {
+        "marker": 0,
+        "landing": 0,
+        "surface": [],
+        "htmlDir": "rtl",
+        "htmlLang": "ar"
+      }
+    }
+  ]
+}
