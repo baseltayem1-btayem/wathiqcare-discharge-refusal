@@ -1,0 +1,87 @@
+{
+  "base": "https://wathiqcare.online",
+  "token": "RpLQENB3_QRCnjz16eyaBaUFVBWLoH8hE9kTKhXsm5c",
+  "steps": [
+    {
+      "name": "cold_get_no_cookie",
+      "status": 200,
+      "phase": "pre-otp",
+      "hasBootstrap": true,
+      "facilityName": "WathiqCare IMC Pilot Tenant",
+      "templateTitleAr": "موافقة ولي الأمر / القاصر / فاقد الأهلية",
+      "templateTitleEn": "Minor / Guardian Consent",
+      "moduleType": "informed_consent",
+      "signerRole": "PATIENT",
+      "educationRequired": false,
+      "leaksPhi": false
+    },
+    {
+      "name": "decision_presented",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "name": "decision_accepted",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "name": "request_otp",
+      "status": 200,
+      "ok": true,
+      "challengeId": "92c77d96-09d4-4640-b2aa-847a68678ec4"
+    },
+    {
+      "name": "resolve_otp_from_db",
+      "code": "825616",
+      "stderr": "selibpqcompat=true&sslmode=require'\n\nSee https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.\n(Use `node --trace-warnings ...` to show where the warning was created)\n",
+      "exit": 0
+    },
+    {
+      "name": "verify_otp",
+      "status": 200,
+      "ok": true,
+      "setCookieRaw": "wathiqcare_public_signing_session=eyJkb2N1bWVudElkIjoiOGRjYmFmNjQtZjEyZi00MTc3LWE2ZjktNzFjODZkNGYyNGFkIiwidG9rZW5IYXNoIjoiMTIwOWJlNjQ2ODI1MDJhMDZhZTBjNDlmMjc4NGE3YmY1MjVmYjdmNzRmMzhjYjU5YmI1NGQyN2U0N2…",
+      "sessionCookieParsed": "wathiqcare_public_signing_session=eyJkb2N1bWVudElkIjoiOGRjYm…",
+      "cookieAttrs": {
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "lax",
+        "domain": ".wathiqcare.online",
+        "maxAge": "1797",
+        "path": "/"
+      }
+    },
+    {
+      "name": "refetch_with_cookie",
+      "status": 200,
+      "hasPhaseKey": false,
+      "hasDocumentId": true,
+      "hasTemplate": false,
+      "hasEducation": true,
+      "hasDecision": true,
+      "hasSignature": false,
+      "keys": [
+        "documentId",
+        "consentReference",
+        "status",
+        "signerRole",
+        "patientName",
+        "physicianName",
+        "diagnosis",
+        "plannedProcedure",
+        "templateTitleAr",
+        "templateTitleEn",
+        "versionLabel",
+        "sections",
+        "legalTextAr",
+        "legalTextEn",
+        "pdplTextAr",
+        "pdplTextEn",
+        "signatureCaptured",
+        "decision",
+        "education"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+﻿{
+    "generatedAt":  "2026-05-28T00:56:29.6475472+03:00",
+    "base":  "https://wathiqcare.online",
+    "mrn":  "IMC-2026-02000",
+    "results":  [
+                    {
+                        "name":  "Auth: POST /api/auth/password/login",
+                        "status":  "PASS",
+                        "extra":  "HTTP 200, cookies=1",
+                        "timestamp":  "2026-05-28T00:54:47.9853864+03:00"
+                    },
+                    {
+                        "name":  "Step 1: GET /modules/informed-consents/create",
+                        "status":  "PASS",
+                        "extra":  "HTTP 200, 31794 bytes",
+                        "timestamp":  "2026-05-28T00:54:50.4161364+03:00"
+                    },
+                    {
+                        "name":  "Step 2 probe /api/cases?medicalRecordNo=IMC-2026-02000",
+                        "status":  "PASS",
+                        "extra":  "HTTP 200 matched MRN",
+                        "timestamp":  "2026-05-28T00:54:53.1527546+03:00"
+                    },
+                    {
+                        "name":  "Step 3+4: GET /api/modules/informed-consents/templates",
+                        "status":  "PASS",
+                        "extra":  "templates returned: 19",
+                        "timestamp":  "2026-05-28T00:55:48.7261620+03:00"
+                    },
+                    {
+                        "name":  "Step 5: POST generate-draft",
+                        "status":  "PASS",
+                        "extra":  "HTTP 200, docId=006ce63a-4d5d-4174-8ddd-5e85983a7077, status=DRAFT",
+                        "timestamp":  "2026-05-28T00:55:59.6922846+03:00"
+                    },
+                    {
+                        "name":  "Step 6: GET document detail (Patient Education context)",
+                        "status":  "PASS",
+                        "extra":  "HTTP 200",
+                        "timestamp":  "2026-05-28T00:56:04.1043481+03:00"
+                    },
+                    {
+                        "name":  "Step 7: Understanding Check gate (draft PDF reachable)",
+                        "status":  "PASS",
+                        "extra":  "HTTP 200, content-type=application/pdf, bytes=183509",
+                        "timestamp":  "2026-05-28T00:56:14.0418019+03:00"
+                    },
+                    {
+                        "name":  "Step 8a: GET document timeline (signature context)",
+                        "status":  "PASS",
+                        "extra":  "HTTP 200",
+                        "timestamp":  "2026-05-28T00:56:17.7577921+03:00"
+                    },
+                    {
+                        "name":  "Step 8b: signature endpoint reachable",
+                        "status":  "PASS",
+                        "extra":  "HTTP 400 (endpoint exists, body validated)",
+                        "timestamp":  "2026-05-28T00:56:20.1926992+03:00"
+                    },
+                    {
+                        "name":  "Step 9: OTP/secure-signing endpoint",
+                        "status":  "PASS",
+                        "extra":  "HTTP 400 (endpoint exists, prereq not met = acceptable for reach test)",
+                        "timestamp":  "2026-05-28T00:56:23.0919601+03:00"
+                    },
+                    {
+                        "name":  "Step 10: GET evidence-package",
+                        "status":  "PASS",
+                        "extra":  "HTTP 403 (endpoint exists, prereq not met = acceptable for reach test)",
+                        "timestamp":  "2026-05-28T00:56:25.4713174+03:00"
+                    }
+                ],
+    "summary":  {
+                    "pass":  11,
+                    "fail":  0,
+                    "info":  0
+                }
+}
