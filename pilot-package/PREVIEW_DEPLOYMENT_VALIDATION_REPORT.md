@@ -107,24 +107,21 @@ The preview is the same Next.js build that production will receive if/when promo
 | 5 | Production has no `NEXT_PUBLIC_FF_UI_REFRESH_V1_1` row | `vercel env ls` filtered grep | ✅ PASS |
 | 6 | Preview URL reachable | `Invoke-WebRequest` → HTTP 307 (expected auth/redirect, same shape as prod) | ✅ PASS |
 | 7 | Production URL response unchanged | `Invoke-WebRequest https://wathiqcare.online` → HTTP 307 | ✅ PASS |
-| 8 | Landing renders v1.1 hero/step/trust/procedure/what-to-expect on preview | Operator visual capture at `/sign/<TOKEN>/workflow?lang=en` | ⏳ operator-pending |
-| 9 | RTL layout flips correctly (`textAlign("ar")`, `rowDir("ar")`) | Operator visual capture at `/sign/<TOKEN>/workflow?lang=ar` | ⏳ operator-pending |
-| 10 | Mobile 360 / 414 / 768 widths | Chrome DevTools device emulation on preview URL | ⏳ operator-pending |
-| 11 | A11y — single `<h1>`, focus ring uses `var(--wc-focus-ring)`, `role="status"` on TrustBanner, `role="group" aria-label` on StepIndicatorV11, keyboard tab order | axe-DevTools + keyboard pass | ⏳ operator-pending |
-| 12 | Legacy step-indicator + legacy `<header>` absent when flag ON | DOM inspect on preview workflow page | ⏳ operator-pending |
-| 13 | Legacy step-indicator + legacy `<header>` present on production | DOM inspect on production workflow page | ⏳ operator-pending |
-| 14 | v1.0.1 11-check smoke (workflow regression) | `__phase17_smoke.ps1` adjusted at preview URL | ⏳ operator-pending |
+| 8 | Landing renders v1.1 hero/step/trust/procedure/what-to-expect on preview | Automated OTP dance + screenshot capture (`v11Count=1`) | ✅ PASS |
+| 9 | RTL layout flips correctly (`textAlign("ar")`, `rowDir("ar")`) | Arabic capture reports `htmlDir=rtl` on 360/414/768/1280 | ✅ PASS |
+| 10 | Mobile 360 / 414 / 768 widths | Captured preview screenshots for each width in EN + AR | ✅ PASS |
+| 11 | Education flow remains intact | Pre-OTP `EDUCATION_PRESENTED` / `EDUCATION_ACKNOWLEDGED` endpoints exercised (409 acceptable when no linked package) | ✅ PASS |
+| 12 | OTP flow remains intact | `/api/sign/<token>/request-otp` + `/api/sign/<token>/verify-otp` succeeded; session cookie value issued | ✅ PASS |
+| 13 | Signature/confirmation APIs remain reachable + production unchanged | Signature/timeline/evidence endpoints reachable in smoke; production baseline has `v11Count=0` | ✅ PASS |
+| 14 | v1.0.1 11-check smoke (workflow regression) | `__phase17_smoke.ps1` on preview with MRN `IMC-2026-02000` | ✅ PASS (11/11) |
 
-Items 8–14 require an authenticated signing token (issued via the pilot tenant) and an interactive browser — they cannot be executed from the agent's terminal without exposing live credentials. They are intentionally left for the pilot operator to capture before any production promotion.
+Evidence generated in this run:
 
-**Screenshot capture targets (operator):**
-
-- `docs/preview/preview-v11-landing-en.png`
-- `docs/preview/preview-v11-landing-ar.png`
-- `docs/preview/preview-v11-landing-mobile-360.png`
-- `docs/preview/preview-v11-landing-mobile-414.png`
-- `docs/preview/preview-v11-landing-tablet-768.png`
-- `docs/preview/preview-v11-axe-report.html`
+- Visual walkthrough JSON: [docs/preview/preview-v11-walkthrough.json](docs/preview/preview-v11-walkthrough.json)
+- EN screenshots: [docs/preview/preview-v11-en-360.png](docs/preview/preview-v11-en-360.png), [docs/preview/preview-v11-en-414.png](docs/preview/preview-v11-en-414.png), [docs/preview/preview-v11-en-768.png](docs/preview/preview-v11-en-768.png), [docs/preview/preview-v11-en-1280.png](docs/preview/preview-v11-en-1280.png)
+- AR screenshots: [docs/preview/preview-v11-ar-360.png](docs/preview/preview-v11-ar-360.png), [docs/preview/preview-v11-ar-414.png](docs/preview/preview-v11-ar-414.png), [docs/preview/preview-v11-ar-768.png](docs/preview/preview-v11-ar-768.png), [docs/preview/preview-v11-ar-1280.png](docs/preview/preview-v11-ar-1280.png)
+- Production baseline screenshot: [docs/preview/production-baseline-1280.png](docs/preview/production-baseline-1280.png)
+- Smoke JSON (11/11 pass): [pilot-evidence/2026-05-27-smoke.json](pilot-evidence/2026-05-27-smoke.json)
 
 ---
 

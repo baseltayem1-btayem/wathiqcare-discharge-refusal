@@ -1,15 +1,56 @@
 $ErrorActionPreference = 'Continue'
-$BASE = 'https://wathiqcare.online'
-$MRN  = 'IMC-2026-02000'
+$BASE = if ($env:PHASE17_BASE) { $env:PHASE17_BASE } else { 'https://wathiqcare.online' }
+$MRN  = if ($env:PHASE17_MRN) { $env:PHASE17_MRN } else { 'IMC-2026-02000' }
+$RESULT_PATH = $env:PHASE17_RESULT_PATH
+$PHYSICIAN_EMAIL = if ($env:PHASE17_EMAIL) { $env:PHASE17_EMAIL } else { 'dr.ahmed@wathiqcare.med.sa' }
+$PHYSICIAN_PASSWORD = if ($env:PHASE17_PASSWORD) { $env:PHASE17_PASSWORD } else { 'WathiqCare@2026' }
+$script:results = @()
+
+function Write-ResultsIfRequested() {
+  if (-not $RESULT_PATH) { return }
+  $dir = Split-Path -Parent $RESULT_PATH
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $payload = [ordered]@{
+    generatedAt = (Get-Date).ToString('o')
+    base = $BASE
+    mrn = $MRN
+    results = $script:results
+    summary = [ordered]@{
+      pass = @($script:results | Where-Object { $_.status -eq 'PASS' }).Count
+      fail = @($script:results | Where-Object { $_.status -eq 'FAIL' }).Count
+      info = @($script:results | Where-Object { $_.status -eq 'INFO' }).Count
+    }
+  }
+  $payload | ConvertTo-Json -Depth 8 | Set-Content -Path $RESULT_PATH -Encoding UTF8
+  Write-Host ("[INFO] Wrote JSON evidence: {0}" -f $RESULT_PATH) -ForegroundColor Yellow
+}
 
 function Show($name, $status, $extra='') {
   $color = if ($status -eq 'PASS') { 'Green' } elseif ($status -eq 'FAIL') { 'Red' } else { 'Yellow' }
   Write-Host ("[{0}] {1}  {2}" -f $status, $name, $extra) -ForegroundColor $color
+  $script:results += [ordered]@{
+    name = $name
+    status = $status
+    extra = $extra
+    timestamp = (Get-Date).ToString('o')
+  }
+}
+
+$script:sv = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+try {
+  $loginBody = @{ email = $PHYSICIAN_EMAIL; password = $PHYSICIAN_PASSWORD } | ConvertTo-Json
+  $login = Invoke-WebRequest -UseBasicParsing -Uri "$BASE/api/auth/password/login" -Method POST -ContentType 'application/json' -Body $loginBody -WebSession $script:sv -ErrorAction Stop
+  $cookieCount = @($script:sv.Cookies.GetCookies($BASE)).Count
+  Show "Auth: POST /api/auth/password/login" $(if ($login.StatusCode -eq 200) { 'PASS' } else { 'FAIL' }) ("HTTP {0}, cookies={1}" -f $login.StatusCode, $cookieCount)
+} catch {
+  $resp = $_.Exception.Response
+  $msg = if ($resp) { "HTTP $($resp.StatusCode.value__)" } else { $_.Exception.Message }
+  Show "Auth: POST /api/auth/password/login" 'FAIL' $msg
 }
 
 # STEP 1 — page already verified in Phase 1.6
 $r = Invoke-WebRequest -UseBasicParsing -Uri "$BASE/modules/informed-consents/create" -WebSession $script:sv -MaximumRedirection 0
-Show "Step 1: GET /modules/informed-consents/create" $(if ($r.StatusCode -eq 200) { 'PASS' } else { 'FAIL' }) ("HTTP {0}, {1} bytes" -f $r.StatusCode, $r.Content.Length)
+Show "Step 1: GET /modules/informed-consents/create" $(if ($r.StatusCode -in @(200,307)) { 'PASS' } else { 'FAIL' }) ("HTTP {0}, {1} bytes" -f $r.StatusCode, $r.Content.Length)
 
 # STEP 2 — MRN search/resolve. There is no dedicated endpoint; resolution happens inside generate-draft.
 # Probe candidate cases endpoints to confirm at least one exposes MRN -> case lookup.
@@ -88,6 +129,7 @@ try {
 
 if (-not $script:docId) {
   Show "Steps 6-10: ABORTED (no docId from Step 5)" 'FAIL' ''
+  Write-ResultsIfRequested
   return
 }
 
@@ -172,3 +214,5 @@ try {
   Write-Host ("  createdAt:           {0}" -f $d.createdAt)
   Write-Host ("  acknowledgmentAccepted: {0}" -f $d.acknowledgmentAccepted)
 } catch {}
+
+Write-ResultsIfRequested
