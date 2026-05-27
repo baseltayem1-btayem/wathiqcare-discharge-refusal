@@ -2,6 +2,8 @@
 
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import TabletSignaturePad from "@/components/modules/informed-consent-signing/TabletSignaturePad";
+import { FEATURE_UI_REFRESH_V1_1 } from "@/lib/config/ui-refresh-flag";
+import PatientLandingV11 from "@/components/modules/public-signing/PatientLandingV11";
 
 type PublicSigningDocumentPayload = {
   documentId: string;
@@ -630,6 +632,28 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
           currentIndex = stages.indexOf("Decision");
         }
         if (currentIndex < 0) currentIndex = 0;
+        // --- Controlled UI Refresh wiring: landing visual layer only ---
+        // When FEATURE_UI_REFRESH_V1_1 is ON, swap the legacy step-indicator
+        // + header pair for the v1.1 landing block. Decision/OTP/signature/
+        // confirmation rendering further down remains UNCHANGED.
+        if (FEATURE_UI_REFRESH_V1_1) {
+          return (
+            <PatientLandingV11
+              titleEn={documentData.templateTitleEn}
+              titleAr={documentData.templateTitleAr}
+              description={`${documentData.consentReference} · ${documentData.versionLabel}`}
+              consentTypeLabel="Procedure"
+              consentTypeValue={documentData.plannedProcedure || documentData.templateTitleEn}
+              physician={documentData.physicianName ? `Physician · ${documentData.physicianName}` : undefined}
+              facility={documentData.consentReference ? `Reference · ${documentData.consentReference}` : undefined}
+              trustBannerMessage="Your information is protected. This session is encrypted end-to-end."
+              whatToExpectTitle="What to expect"
+              whatToExpectItems={stages.map((label, index) => ({ id: `${index}-${label}`, text: label }))}
+              currentStep={currentIndex + 1}
+              totalSteps={stages.length}
+            />
+          );
+        }
         return (
           <section aria-label="Workflow progress" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Step {currentIndex + 1} of {stages.length} — {stages[currentIndex]}</p>
@@ -653,19 +677,21 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         );
       })()}
 
-      <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">WathiqCare Secure Sign</p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">{documentData.templateTitleEn}</h1>
-        <p className="mt-1 text-lg font-medium text-slate-700" dir="rtl">{documentData.templateTitleAr}</p>
-        <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
-          <p><strong>Reference:</strong> {documentData.consentReference}</p>
-          <p><strong>Version:</strong> {documentData.versionLabel}</p>
-          <p><strong>Patient:</strong> {documentData.patientName}</p>
-          <p><strong>Physician:</strong> {documentData.physicianName}</p>
-          <p><strong>Diagnosis:</strong> {documentData.diagnosis || "-"}</p>
-          <p><strong>Procedure:</strong> {documentData.plannedProcedure || "-"}</p>
-        </div>
-      </header>
+      {FEATURE_UI_REFRESH_V1_1 ? null : (
+        <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">WathiqCare Secure Sign</p>
+          <h1 className="mt-2 text-2xl font-semibold text-slate-900">{documentData.templateTitleEn}</h1>
+          <p className="mt-1 text-lg font-medium text-slate-700" dir="rtl">{documentData.templateTitleAr}</p>
+          <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
+            <p><strong>Reference:</strong> {documentData.consentReference}</p>
+            <p><strong>Version:</strong> {documentData.versionLabel}</p>
+            <p><strong>Patient:</strong> {documentData.patientName}</p>
+            <p><strong>Physician:</strong> {documentData.physicianName}</p>
+            <p><strong>Diagnosis:</strong> {documentData.diagnosis || "-"}</p>
+            <p><strong>Procedure:</strong> {documentData.plannedProcedure || "-"}</p>
+          </div>
+        </header>
+      )}
 
       <section className="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sm text-sky-900 shadow-sm">
         <h2 className="text-lg font-semibold">Educational Materials Status</h2>
