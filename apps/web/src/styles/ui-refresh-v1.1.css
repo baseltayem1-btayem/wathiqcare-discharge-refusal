@@ -18,23 +18,41 @@
  * ------------------------------------------------------------------ */
 
 [data-ui-refresh="v1.1"] {
-  /* --- Color (placeholders mirror current legacy palette) -------- */
-  --wc-color-bg: #ffffff;
-  --wc-color-surface: #ffffff;
-  --wc-color-surface-muted: #f8fafc;
-  --wc-color-border: #e2e8f0;
-  --wc-color-text: #0f172a;
-  --wc-color-text-muted: #475569;
-  --wc-color-primary: #0f766e;
-  --wc-color-primary-contrast: #ffffff;
-  --wc-color-accent: #1d4ed8;
-  --wc-color-success: #15803d;
-  --wc-color-warning: #b45309;
-  --wc-color-danger: #b91c1c;
+  /* --- Color (sourced from Figma export: design/figma/wathiqcare-v1.1/
+   *           src/styles/theme.css; see pilot-package/FIGMA_TO_CODE_MAPPING.md
+   *           §3 for the per-variable provenance.) ----------------- */
+  --wc-color-bg: #F0F4F8;              /* theme --background */
+  --wc-color-surface: #FFFFFF;         /* theme --card / --popover */
+  --wc-color-surface-muted: #EDF1F7;   /* theme --muted */
+  --wc-color-surface-secondary: #E8EEF6; /* theme --secondary */
+  --wc-color-input-bg: #F5F8FC;        /* theme --input-background */
+  --wc-color-border: rgba(27, 79, 138, 0.12); /* theme --border */
+  --wc-color-border-strong: rgba(27, 79, 138, 0.20);
+  --wc-color-text: #0D1B2A;            /* theme --foreground */
+  --wc-color-text-muted: #5A6B82;      /* theme --muted-foreground */
+  --wc-color-primary: #1B4F8A;         /* theme --primary (navy) */
+  --wc-color-primary-contrast: #FFFFFF;/* theme --primary-foreground */
+  --wc-color-accent: #0F6B45;          /* theme --accent (medical green) */
+  --wc-color-accent-contrast: #FFFFFF; /* theme --accent-foreground */
+  --wc-color-success: #0F6B45;
+  --wc-color-success-soft: #ECFDF5;    /* emerald-50 used in confirmation */
+  --wc-color-warning: #B45309;         /* chart-3 amber */
+  --wc-color-warning-soft: #FEF3C7;
+  --wc-color-danger: #C41B1B;          /* theme --destructive */
+  --wc-color-danger-soft: #FEE2E2;
+  --wc-color-info: #1B4F8A;
+  --wc-color-info-soft: #DBEAFE;
 
   /* --- Typography ----------------------------------------------- */
   --wc-font-sans: "Inter", "Noto Sans Arabic", system-ui, -apple-system,
     Segoe UI, sans-serif;
+  --wc-font-arabic: "Noto Sans Arabic", "Inter", system-ui, sans-serif;
+  --wc-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+  --wc-font-weight-normal: 400;
+  --wc-font-weight-medium: 500;
+  --wc-font-weight-semibold: 600;
+  --wc-font-weight-bold: 700;
   --wc-font-size-xs: 0.75rem;
   --wc-font-size-sm: 0.875rem;
   --wc-font-size-base: 1rem;
@@ -42,7 +60,9 @@
   --wc-font-size-xl: 1.25rem;
   --wc-font-size-2xl: 1.5rem;
   --wc-line-height-tight: 1.25;
+  --wc-line-height-snug: 1.375;
   --wc-line-height-normal: 1.5;
+  --wc-line-height-relaxed: 1.625;
 
   /* --- Spacing scale (4-pt grid) -------------------------------- */
   --wc-space-1: 0.25rem;
@@ -55,7 +75,7 @@
   --wc-space-10: 2.5rem;
   --wc-space-12: 3rem;
 
-  /* --- Radii ----------------------------------------------------- */
+  /* --- Radii (Figma --radius = 0.5rem base) --------------------- */
   --wc-radius-sm: 0.25rem;
   --wc-radius-md: 0.5rem;
   --wc-radius-lg: 0.75rem;
@@ -63,18 +83,18 @@
   --wc-radius-pill: 9999px;
 
   /* --- Elevation ------------------------------------------------- */
-  --wc-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --wc-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
-  --wc-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.08);
+  --wc-shadow-sm: 0 1px 2px rgba(13, 27, 42, 0.04);
+  --wc-shadow-md: 0 4px 12px rgba(13, 27, 42, 0.06);
+  --wc-shadow-lg: 0 12px 32px rgba(13, 27, 42, 0.08);
 
   /* --- Motion ---------------------------------------------------- */
   --wc-motion-fast: 120ms;
   --wc-motion-base: 200ms;
   --wc-motion-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* --- Focus ring (a11y) ---------------------------------------- */
+  /* --- Focus ring (a11y, WCAG 2.1 AA) --------------------------- */
   --wc-focus-ring: 0 0 0 2px var(--wc-color-bg),
-    0 0 0 4px var(--wc-color-accent);
+    0 0 0 4px var(--wc-color-primary);
 }
 
 /* RTL hook — scoped, no global mutation. */
