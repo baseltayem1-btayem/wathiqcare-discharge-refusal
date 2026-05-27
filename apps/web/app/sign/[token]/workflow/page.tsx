@@ -1,7 +1,9 @@
-import InformedConsentsEnterpriseWorkflowScreens from "@/components/modules/InformedConsentsEnterpriseWorkflowScreens";
+import PublicSigningWorkflow from "@/components/modules/PublicSigningWorkflow";
 import { notFound } from "next/navigation";
 import { getSigningTokenContext } from "@/lib/server/public-signing-service";
 import { ApiError } from "@/lib/server/http";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ token: string }>;
@@ -9,9 +11,8 @@ type PageProps = {
 
 export default async function PublicSigningWorkflowPage({ params }: PageProps) {
   const { token } = await params;
-  let context;
   try {
-    context = await getSigningTokenContext(token);
+    await getSigningTokenContext(token);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       notFound();
@@ -19,5 +20,5 @@ export default async function PublicSigningWorkflowPage({ params }: PageProps) {
     throw error;
   }
 
-  return <InformedConsentsEnterpriseWorkflowScreens documentId={context.documentId} mode="signature" />;
+  return <PublicSigningWorkflow token={token} />;
 }

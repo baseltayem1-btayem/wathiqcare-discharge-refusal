@@ -195,6 +195,13 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
   const [faqViewed, setFaqViewed] = useState<string[]>([]);
   const [assetViews, setAssetViews] = useState<string[]>([]);
   const [scrollCompletion, setScrollCompletion] = useState(0);
+  // --- OTP verification state (v1.0.1) ---
+  const [otpMobile, setOtpMobile] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpRequestResult, setOtpRequestResult] = useState<{ maskedPhone: string; expiresAt: string; deliveryStatus: string; fallbackMode: boolean } | null>(null);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpBusy, setOtpBusy] = useState(false);
+  const [otpError, setOtpError] = useState("");
   const educationStartedAtRef = useRef<number | null>(null);
   const presentedSentRef = useRef(false);
   const completedSentRef = useRef(false);
@@ -512,6 +519,82 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
     setAssetViews((current) => (current.includes(assetKey) ? current : [...current, assetKey]));
   }
 
+  // --- Decision handlers (v1.0.1) ---
+  async function acceptConsent() {
+    setError("");
+    try {
+      await postDecisionEvent("CONSENT_ACCEPTED");
+    } catch (decisionError) {
+      setError(decisionError instanceof Error ? decisionError.message : "Failed to record consent acceptance");
+    }
+  }
+
+  async function refuseConsent() {
+    setError("");
+    try {
+      await postDecisionEvent("CONSENT_REFUSED");
+    } catch (decisionError) {
+      setError(decisionError instanceof Error ? decisionError.message : "Failed to record consent refusal");
+    }
+  }
+
+  // --- OTP handlers (v1.0.1) ---
+  async function requestOtp() {
+    if (otpBusy) return;
+    setOtpBusy(true);
+    setOtpError("");
+    try {
+      const response = await fetch(`/api/sign/${encodeURIComponent(token)}/request-otp`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mobileNumber: otpMobile.trim(), locale: "ar" }),
+      });
+      const payload = await readJsonSafe<{ challengeId: string; expiresAt: string; deliveryStatus: "sent" | "failed"; fallbackMode: boolean; maskedPhone: string }>(response);
+      if (!response.ok) {
+        throw new Error(getErrorMessage(payload as ApiErrorPayload, "Failed to send OTP"));
+      }
+      const result = payload as { challengeId: string; expiresAt: string; deliveryStatus: "sent" | "failed"; fallbackMode: boolean; maskedPhone: string };
+      setOtpRequestResult({
+        maskedPhone: result.maskedPhone,
+        expiresAt: result.expiresAt,
+        deliveryStatus: result.deliveryStatus,
+        fallbackMode: result.fallbackMode,
+      });
+    } catch (requestError) {
+      setOtpError(requestError instanceof Error ? requestError.message : "Failed to send OTP");
+    } finally {
+      setOtpBusy(false);
+    }
+  }
+
+  async function verifyOtp() {
+    if (otpBusy) return;
+    setOtpBusy(true);
+    setOtpError("");
+    try {
+      const response = await fetch(`/api/sign/${encodeURIComponent(token)}/verify-otp`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ otpCode: otpCode.trim() }),
+      });
+      const payload = await readJsonSafe<{ verified: boolean; attemptsRemaining: number }>(response);
+      if (!response.ok) {
+        throw new Error(getErrorMessage(payload as ApiErrorPayload, "Failed to verify OTP"));
+      }
+      const result = payload as { verified: boolean };
+      setOtpVerified(Boolean(result.verified));
+      if (!result.verified) {
+        setOtpError("OTP not verified. Please re-enter the code.");
+      }
+    } catch (verifyError) {
+      setOtpError(verifyError instanceof Error ? verifyError.message : "Failed to verify OTP");
+    } finally {
+      setOtpBusy(false);
+    }
+  }
+
   if (loading) {
     return <main className="mx-auto max-w-5xl p-6 text-sm text-slate-600">Loading public signing workflow...</main>;
   }
@@ -522,6 +605,54 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
 
   return (
     <main className="mx-auto max-w-5xl space-y-5 p-6">
+      {/* --- Step indicator (v1.0.1) --- */}
+      {(() => {
+        const baseStages = educationRequired
+          ? ["Education", "Consent Review", "Decision", "OTP Verification", "Signature", "Confirmation"]
+          : ["Consent Review", "Decision", "OTP Verification", "Signature", "Confirmation"];
+        const stages = isRefusalPath
+          ? (educationRequired
+              ? ["Education", "Consent Review", "Decision", "Refusal Acknowledgement", "OTP Verification", "Refusal Signature"]
+              : ["Consent Review", "Decision", "Refusal Acknowledgement", "OTP Verification", "Refusal Signature"])
+          : baseStages;
+        let currentIndex = 0;
+        if (documentData.signatureCaptured) {
+          currentIndex = stages.length - 1;
+        } else if (otpVerified) {
+          currentIndex = stages.indexOf(isRefusalPath ? "Refusal Signature" : "Signature");
+        } else if (documentData.decision.status !== "UNDECIDED" && (!isRefusalPath || documentData.decision.refusalAcknowledged)) {
+          currentIndex = stages.indexOf("OTP Verification");
+        } else if (isRefusalPath) {
+          currentIndex = stages.indexOf("Refusal Acknowledgement");
+        } else if (educationRequired && !educationAcknowledged) {
+          currentIndex = stages.indexOf("Education");
+        } else {
+          currentIndex = stages.indexOf("Decision");
+        }
+        if (currentIndex < 0) currentIndex = 0;
+        return (
+          <section aria-label="Workflow progress" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Step {currentIndex + 1} of {stages.length} — {stages[currentIndex]}</p>
+            <ol className="mt-3 flex flex-wrap gap-2 text-xs">
+              {stages.map((label, index) => {
+                const state = index < currentIndex ? "done" : index === currentIndex ? "current" : "upcoming";
+                const className =
+                  state === "done"
+                    ? "rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-800"
+                    : state === "current"
+                      ? "rounded-full border border-sky-300 bg-sky-50 px-3 py-1 font-semibold text-sky-900"
+                      : "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-slate-500";
+                return (
+                  <li key={label} className={className}>
+                    {index + 1}. {label}
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        );
+      })()}
+
       <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">WathiqCare Secure Sign</p>
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">{documentData.templateTitleEn}</h1>
@@ -740,6 +871,38 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         />
       ) : null}
 
+      {/* --- Decision Section: Accept or Refuse (v1.0.1) --- */}
+      {(!documentData.education.required || educationAcknowledged) && documentData.decision.status === "UNDECIDED" ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Consent Decision</h2>
+          <p className="mt-2 text-sm text-slate-600">After reviewing the educational materials, consent text, and privacy notice above, choose whether to proceed.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => void acceptConsent()}
+              disabled={decisionSubmitting}
+              className="inline-flex rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {decisionSubmitting ? "Recording decision..." : "Accept and Continue"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void refuseConsent()}
+              disabled={decisionSubmitting}
+              className="inline-flex rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {decisionSubmitting ? "Recording decision..." : "Refuse Treatment"}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {(!documentData.education.required || educationAcknowledged) && documentData.decision.status === "CONSENT_ACCEPTED" ? (
+        <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          Consent acceptance recorded on {documentData.decision.selectedAt ? new Date(documentData.decision.selectedAt).toLocaleString() : "—"}.
+        </section>
+      ) : null}
+
       {isRefusalPath && documentData.decision.refusalForm ? (
         <section className="rounded-2xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Treatment Refusal Form</h2>
@@ -785,14 +948,91 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         </section>
       ) : null}
 
+      {/* --- OTP Verification (v1.0.1) --- */}
+      {(!documentData.education.required || educationAcknowledged)
+        && documentData.decision.status !== "UNDECIDED"
+        && (!isRefusalPath || documentData.decision.refusalAcknowledged)
+        && !documentData.signatureCaptured
+        && !otpVerified ? (
+        <section className="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">OTP Verification</h2>
+          <p className="mt-2 text-sm text-slate-600">Enter your mobile number to receive a one-time password, then verify the code before signing.</p>
+          <div className="mt-4 space-y-3">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="otpMobile">Mobile Number</label>
+            <input
+              id="otpMobile"
+              type="tel"
+              value={otpMobile}
+              onChange={(event) => setOtpMobile(event.target.value)}
+              placeholder="+9665XXXXXXXX"
+              disabled={otpBusy || Boolean(otpRequestResult)}
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
+            />
+            <button
+              type="button"
+              onClick={() => void requestOtp()}
+              disabled={otpBusy || !otpMobile.trim()}
+              className="inline-flex rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {otpBusy && !otpRequestResult ? "Sending OTP..." : otpRequestResult ? "OTP sent" : "Request OTP"}
+            </button>
+            {otpRequestResult ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                <p>OTP delivery status: {otpRequestResult.deliveryStatus}</p>
+                <p>Mobile: {otpRequestResult.maskedPhone}</p>
+                <p>Expires at: {otpRequestResult.expiresAt ? new Date(otpRequestResult.expiresAt).toLocaleString() : "—"}</p>
+                {otpRequestResult.fallbackMode ? <p>SMS provider is not configured in this environment.</p> : null}
+              </div>
+            ) : null}
+            {otpRequestResult ? (
+              <div className="mt-2 space-y-2">
+                <label className="block text-sm font-medium text-slate-700" htmlFor="otpCode">OTP Code</label>
+                <input
+                  id="otpCode"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={otpCode}
+                  onChange={(event) => setOtpCode(event.target.value)}
+                  placeholder="123456"
+                  disabled={otpBusy}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => void verifyOtp()}
+                  disabled={otpBusy || !otpCode.trim()}
+                  className="inline-flex rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {otpBusy ? "Verifying..." : "Verify OTP"}
+                </button>
+              </div>
+            ) : null}
+            {otpError ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{otpError}</div> : null}
+          </div>
+        </section>
+      ) : null}
+
+      {otpVerified && !documentData.signatureCaptured ? (
+        <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          OTP verified. Continue to capture the signature below.
+        </section>
+      ) : null}
+
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">{isRefusalPath ? "Treatment Refusal Signature" : "Patient Signature"}</h2>
         <p className="mt-2 text-sm text-slate-600">
           {documentData.education.required && !educationAcknowledged
             ? "Complete education acknowledgement to reveal the consent document and signature step."
-            : isRefusalPath
-              ? "OTP has been verified. Submit the signer name and signature to persist the treatment refusal form."
-              : "OTP has been verified. Submit the signer name and signature capture to persist the patient signature."}
+            : documentData.decision.status === "UNDECIDED"
+              ? "Record your consent decision before continuing to OTP and signature."
+              : isRefusalPath && !documentData.decision.refusalAcknowledged
+                ? "Acknowledge the refusal form before requesting OTP and signing."
+                : !otpVerified
+                  ? "Request and verify the OTP before signing."
+                  : isRefusalPath
+                    ? "OTP has been verified. Submit the signer name and signature to persist the treatment refusal form."
+                    : "OTP has been verified. Submit the signer name and signature capture to persist the patient signature."}
         </p>
         <div className="mt-4 space-y-4">
           <label className="block text-sm font-medium text-slate-700" htmlFor="publicSignerName">Signer Name</label>
@@ -818,7 +1058,14 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
           <button
             type="button"
             onClick={() => void submitSignature()}
-            disabled={submitting || documentData.signatureCaptured || (documentData.education.required && !educationAcknowledged) || (isRefusalPath && !documentData.decision.refusalAcknowledged)}
+            disabled={
+              submitting
+              || documentData.signatureCaptured
+              || (documentData.education.required && !educationAcknowledged)
+              || documentData.decision.status === "UNDECIDED"
+              || (isRefusalPath && !documentData.decision.refusalAcknowledged)
+              || !otpVerified
+            }
             className="inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {documentData.signatureCaptured ? "Signature already captured" : submitting ? "Submitting signature..." : isRefusalPath ? "Submit Refusal Signature" : "Submit OTP Signature"}
