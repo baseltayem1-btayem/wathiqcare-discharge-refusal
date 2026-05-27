@@ -26,6 +26,20 @@ import ModuleShell from "@/components/ModuleShell";
 import { apiFetch } from "@/utils/api";
 import SecureSigningStatusBadges from "@/components/signing/SecureSigningStatusBadges";
 import type { SecureSigningWorkflow } from "@/lib/server/module-secure-signing-service";
+import {
+  getActiveRouteConsentTypes,
+  getHiddenActiveRouteConsentTypeCount,
+} from "@/components/modules/informed-consents-active-types";
+
+/**
+ * Pilot-readiness gate for the consent-type selector.
+ * Computed once at module load. Only types with status `pilot-ready`
+ * or `active` are exposed; the remainder are tracked for a
+ * "coming soon" disclosure. See `informed-consents-active-types.ts`
+ * and `pilot-package/CONSENT_TYPE_READINESS_MATRIX.md` §4.
+ */
+const ACTIVE_ROUTE_CONSENT_TYPES_FOR_SELECTOR = getActiveRouteConsentTypes();
+const HIDDEN_ACTIVE_ROUTE_CONSENT_TYPE_COUNT = getHiddenActiveRouteConsentTypeCount();
 
 type ModuleAuth = {
   role?: string | null;
@@ -654,7 +668,7 @@ export default function InformedConsentsModulePageNew({
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {["GENERAL_CONSENT", "SURGICAL_CONSENT", "ANESTHESIA_CONSENT", "BLOOD_TRANSFUSION"].map((type) => (
+        {ACTIVE_ROUTE_CONSENT_TYPES_FOR_SELECTOR.map(({ id: type, label }) => (
           <button
             key={type}
             onClick={() => {
@@ -669,10 +683,25 @@ export default function InformedConsentsModulePageNew({
                 : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
             }`}
           >
-            <div className="font-semibold">{type.replace(/_/g, " ")}</div>
+            <div className="font-semibold">{label ?? type.replace(/_/g, " ")}</div>
           </button>
         ))}
       </div>
+
+      {HIDDEN_ACTIVE_ROUTE_CONSENT_TYPE_COUNT > 0 && (
+        <div
+          className="text-xs text-gray-500 italic"
+          title={
+            locale === "ar"
+              ? "أنواع إضافية قيد التحقق للتجربة التجريبية."
+              : "Additional consent types are pending pilot validation."
+          }
+        >
+          {locale === "ar"
+            ? `${HIDDEN_ACTIVE_ROUTE_CONSENT_TYPE_COUNT} أنواع أخرى قريبًا`
+            : `${HIDDEN_ACTIVE_ROUTE_CONSENT_TYPE_COUNT} more coming soon`}
+        </div>
+      )}
     </div>
   );
 
