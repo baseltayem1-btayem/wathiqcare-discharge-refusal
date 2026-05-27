@@ -403,6 +403,18 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
     setRefusalAcknowledgementChecked(documentData.decision.refusalAcknowledged);
   }, [documentData]);
 
+  // [WORKFLOW_SEQUENCE_CORRECTION] When the server returns a fully-validated
+  // document payload (i.e., not the pre-OTP bootstrap), the public-signing
+  // session cookie has already been issued and OTP is verified server-side.
+  // Reflect that in client state so the corrected lifecycle (OTP → Education
+  // → Consent Review → Decision → Signature) does not redundantly demand OTP
+  // re-entry on returning visits.
+  useEffect(() => {
+    if (documentData && !otpVerified) {
+      setOtpVerified(true);
+    }
+  }, [documentData, otpVerified]);
+
   useEffect(() => {
     if (!documentData || documentData.decision.status !== "CONSENT_REFUSED") return;
     if (documentData.decision.refusalFormPresentedAt || refusalPresentedSentRef.current) return;
@@ -720,23 +732,25 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
 
   return (
     <main className="mx-auto max-w-5xl space-y-5 p-6">
-      {/* --- Step indicator (v1.0.1) --- */}
+      {/* --- Step indicator (v1.0.1 — corrected sequence) --- */}
       {(() => {
+        // [WORKFLOW_SEQUENCE_CORRECTION] OTP precedes clinical content. The
+        // lifecycle is now: OTP → Education → Consent Review → Decision →
+        // Signature → Confirmation. Decision and signature still come after
+        // education/consent review (legal requirement preserved).
         const baseStages = educationRequired
-          ? ["Education", "Consent Review", "Decision", "OTP Verification", "Signature", "Confirmation"]
-          : ["Consent Review", "Decision", "OTP Verification", "Signature", "Confirmation"];
+          ? ["OTP Verification", "Education", "Consent Review", "Decision", "Signature", "Confirmation"]
+          : ["OTP Verification", "Consent Review", "Decision", "Signature", "Confirmation"];
         const stages = isRefusalPath
           ? (educationRequired
-              ? ["Education", "Consent Review", "Decision", "Refusal Acknowledgement", "OTP Verification", "Refusal Signature"]
-              : ["Consent Review", "Decision", "Refusal Acknowledgement", "OTP Verification", "Refusal Signature"])
+              ? ["OTP Verification", "Education", "Consent Review", "Decision", "Refusal Acknowledgement", "Refusal Signature"]
+              : ["OTP Verification", "Consent Review", "Decision", "Refusal Acknowledgement", "Refusal Signature"])
           : baseStages;
         let currentIndex = 0;
         if (documentData.signatureCaptured) {
           currentIndex = stages.length - 1;
-        } else if (otpVerified) {
-          currentIndex = stages.indexOf(isRefusalPath ? "Refusal Signature" : "Signature");
         } else if (documentData.decision.status !== "UNDECIDED" && (!isRefusalPath || documentData.decision.refusalAcknowledged)) {
-          currentIndex = stages.indexOf("OTP Verification");
+          currentIndex = stages.indexOf(isRefusalPath ? "Refusal Signature" : "Signature");
         } else if (isRefusalPath) {
           currentIndex = stages.indexOf("Refusal Acknowledgement");
         } else if (educationRequired && !educationAcknowledged) {
@@ -1087,70 +1101,15 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
         </section>
       ) : null}
 
-      {/* --- OTP Verification (v1.0.1) --- */}
-      {(!documentData.education.required || educationAcknowledged)
-        && documentData.decision.status !== "UNDECIDED"
-        && (!isRefusalPath || documentData.decision.refusalAcknowledged)
-        && !documentData.signatureCaptured
-        && !otpVerified ? (
-        <section className="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">OTP Verification</h2>
-          <p className="mt-2 text-sm text-slate-600">Enter your mobile number to receive a one-time password, then verify the code before signing.</p>
-          <div className="mt-4 space-y-3">
-            <label className="block text-sm font-medium text-slate-700" htmlFor="otpMobile">Mobile Number</label>
-            <input
-              id="otpMobile"
-              type="tel"
-              value={otpMobile}
-              onChange={(event) => setOtpMobile(event.target.value)}
-              placeholder="+9665XXXXXXXX"
-              disabled={otpBusy || Boolean(otpRequestResult)}
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
-            />
-            <button
-              type="button"
-              onClick={() => void requestOtp()}
-              disabled={otpBusy || !otpMobile.trim()}
-              className="inline-flex rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {otpBusy && !otpRequestResult ? "Sending OTP..." : otpRequestResult ? "OTP sent" : "Request OTP"}
-            </button>
-            {otpRequestResult ? (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-                <p>OTP delivery status: {otpRequestResult.deliveryStatus}</p>
-                <p>Mobile: {otpRequestResult.maskedPhone}</p>
-                <p>Expires at: {otpRequestResult.expiresAt ? new Date(otpRequestResult.expiresAt).toLocaleString() : "—"}</p>
-                {otpRequestResult.fallbackMode ? <p>SMS provider is not configured in this environment.</p> : null}
-              </div>
-            ) : null}
-            {otpRequestResult ? (
-              <div className="mt-2 space-y-2">
-                <label className="block text-sm font-medium text-slate-700" htmlFor="otpCode">OTP Code</label>
-                <input
-                  id="otpCode"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  value={otpCode}
-                  onChange={(event) => setOtpCode(event.target.value)}
-                  placeholder="123456"
-                  disabled={otpBusy}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
-                />
-                <button
-                  type="button"
-                  onClick={() => void verifyOtp()}
-                  disabled={otpBusy || !otpCode.trim()}
-                  className="inline-flex rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {otpBusy ? "Verifying..." : "Verify OTP"}
-                </button>
-              </div>
-            ) : null}
-            {otpError ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{otpError}</div> : null}
-          </div>
-        </section>
-      ) : null}
+      {/* --- OTP Verification ---
+         [WORKFLOW_SEQUENCE_CORRECTION] OTP is performed BEFORE clinical
+         content via the pre-OTP bootstrap path (rendered above when
+         `bootstrap && !documentData`). Reaching this main render means the
+         server already validated the public-signing session cookie, so the
+         legacy in-flow OTP section has been removed to avoid presenting it
+         after education/decision. Signature submission still requires
+         `otpVerified` and the server still requires OTP evidence + decision
+         before persisting the signature. */}
 
       {otpVerified && !documentData.signatureCaptured ? (
         <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
@@ -1164,11 +1123,11 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
           {documentData.education.required && !educationAcknowledged
             ? "Complete education acknowledgement to reveal the consent document and signature step."
             : documentData.decision.status === "UNDECIDED"
-              ? "Record your consent decision before continuing to OTP and signature."
+              ? "Record your consent decision before continuing to signature."
               : isRefusalPath && !documentData.decision.refusalAcknowledged
-                ? "Acknowledge the refusal form before requesting OTP and signing."
+                ? "Acknowledge the refusal form before signing."
                 : !otpVerified
-                  ? "Request and verify the OTP before signing."
+                  ? "Verify the OTP before signing."
                   : isRefusalPath
                     ? "OTP has been verified. Submit the signer name and signature to persist the treatment refusal form."
                     : "OTP has been verified. Submit the signer name and signature capture to persist the patient signature."}

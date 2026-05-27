@@ -1135,6 +1135,14 @@ export async function recordPublicDecisionEvent(args: {
   eventType: PublicDecisionEventType;
   refusalAcknowledged?: boolean;
 }): Promise<DecisionStatus> {
+  // [WORKFLOW_SEQUENCE_CORRECTION] Decision events are LEGAL ARTIFACTS and
+  // must only be recorded against a verified public-signing session. This
+  // enforces "decision after OTP / verified session" at the service layer
+  // so no endpoint can record a decision before OTP verification, regardless
+  // of UI state.
+  if (args.request) {
+    await validatePublicSigningSession({ token: args.token, request: args.request });
+  }
   const context = await getSigningTokenContext(args.token);
   const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
   const linkedEducationPackage = await getLinkedEducationPackage(context.tenantId, doc.templateId, doc.templateVersionId);
@@ -1607,20 +1615,13 @@ export async function requestSigningOtp(args: {
 }): Promise<{ challengeId: string; expiresAt: string; deliveryStatus: "sent" | "failed"; fallbackMode: boolean; maskedPhone: string }> {
   const context = await getSigningTokenContext(args.token);
   const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
-  const linkedEducationPackage = await getLinkedEducationPackage(
-    context.tenantId,
-    doc.templateId,
-    doc.templateVersionId,
-  );
-  const education = await getEducationStatus(context.tenantId, context.documentId, linkedEducationPackage, context.sessionId);
-  const decision = await getDecisionStatus(context.tenantId, doc, education);
   const recipientEmail = getSecureSigningRecipientEmail(doc.metadata);
-  if (linkedEducationPackage && (!education.completed || !education.patientAcknowledged)) {
-    throw new ApiError(409, "Education must be completed and acknowledged before OTP can be requested");
-  }
-  if (decision.status === "UNDECIDED") {
-    throw new ApiError(409, "Consent decision is required before OTP can be requested");
-  }
+  // [WORKFLOW_SEQUENCE_CORRECTION] OTP is the FIRST gating step. Pre-OTP
+  // education/decision gates have been removed: OTP must be requestable
+  // immediately after token validation + bootstrap render. Education and
+  // consent decision are still enforced at signature submission time
+  // (see `submitPublicSigningSignature`), which is the only place that
+  // produces legally binding evidence.
   const mobile = normalizePhoneNumber(args.mobileNumber || "");
 
   if (!mobile) {
