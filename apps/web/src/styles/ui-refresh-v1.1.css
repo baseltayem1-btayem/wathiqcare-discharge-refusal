@@ -1,0 +1,92 @@
+/* ------------------------------------------------------------------ *
+ * UI Refresh v1.1 — Design Token Layer (scaffold)                     *
+ * ------------------------------------------------------------------ *
+ *                                                                    *
+ *  These tokens are scoped to `[data-ui-refresh="v1.1"]` so they are *
+ *  completely INERT until <UIRefreshBoundary> mounts with the flag   *
+ *  on. Legacy styling is byte-for-byte unchanged when the flag is    *
+ *  off.                                                              *
+ *                                                                    *
+ *  Current state: SCAFFOLD ONLY. Actual Figma values land in a       *
+ *  follow-up commit once the design export is supplied. The token   *
+ *  names are intentionally aligned with the Figma design-system     *
+ *  taxonomy so downstream components can adopt them progressively.  *
+ *                                                                    *
+ *  Components opt in by reading CSS variables under this scope; no   *
+ *  global selector is introduced. Do not extend with `!important`.   *
+ *                                                                    *
+ * ------------------------------------------------------------------ */
+
+[data-ui-refresh="v1.1"] {
+  /* --- Color (placeholders mirror current legacy palette) -------- */
+  --wc-color-bg: #ffffff;
+  --wc-color-surface: #ffffff;
+  --wc-color-surface-muted: #f8fafc;
+  --wc-color-border: #e2e8f0;
+  --wc-color-text: #0f172a;
+  --wc-color-text-muted: #475569;
+  --wc-color-primary: #0f766e;
+  --wc-color-primary-contrast: #ffffff;
+  --wc-color-accent: #1d4ed8;
+  --wc-color-success: #15803d;
+  --wc-color-warning: #b45309;
+  --wc-color-danger: #b91c1c;
+
+  /* --- Typography ----------------------------------------------- */
+  --wc-font-sans: "Inter", "Noto Sans Arabic", system-ui, -apple-system,
+    Segoe UI, sans-serif;
+  --wc-font-size-xs: 0.75rem;
+  --wc-font-size-sm: 0.875rem;
+  --wc-font-size-base: 1rem;
+  --wc-font-size-lg: 1.125rem;
+  --wc-font-size-xl: 1.25rem;
+  --wc-font-size-2xl: 1.5rem;
+  --wc-line-height-tight: 1.25;
+  --wc-line-height-normal: 1.5;
+
+  /* --- Spacing scale (4-pt grid) -------------------------------- */
+  --wc-space-1: 0.25rem;
+  --wc-space-2: 0.5rem;
+  --wc-space-3: 0.75rem;
+  --wc-space-4: 1rem;
+  --wc-space-5: 1.25rem;
+  --wc-space-6: 1.5rem;
+  --wc-space-8: 2rem;
+  --wc-space-10: 2.5rem;
+  --wc-space-12: 3rem;
+
+  /* --- Radii ----------------------------------------------------- */
+  --wc-radius-sm: 0.25rem;
+  --wc-radius-md: 0.5rem;
+  --wc-radius-lg: 0.75rem;
+  --wc-radius-xl: 1rem;
+  --wc-radius-pill: 9999px;
+
+  /* --- Elevation ------------------------------------------------- */
+  --wc-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --wc-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --wc-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.08);
+
+  /* --- Motion ---------------------------------------------------- */
+  --wc-motion-fast: 120ms;
+  --wc-motion-base: 200ms;
+  --wc-motion-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* --- Focus ring (a11y) ---------------------------------------- */
+  --wc-focus-ring: 0 0 0 2px var(--wc-color-bg),
+    0 0 0 4px var(--wc-color-accent);
+}
+
+/* RTL hook — scoped, no global mutation. */
+[data-ui-refresh="v1.1"][dir="rtl"] {
+  --wc-text-align-start: right;
+  --wc-text-align-end: left;
+}
+
+/* Honour user motion preferences inside the refresh scope. */
+@media (prefers-reduced-motion: reduce) {
+  [data-ui-refresh="v1.1"] {
+    --wc-motion-fast: 0ms;
+    --wc-motion-base: 0ms;
+  }
+}

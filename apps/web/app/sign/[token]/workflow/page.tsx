@@ -1,4 +1,5 @@
 import PublicSigningWorkflow from "@/components/modules/PublicSigningWorkflow";
+import UIRefreshBoundary from "@/components/ui-refresh/UIRefreshBoundary";
 import { notFound } from "next/navigation";
 import { getSigningTokenContext } from "@/lib/server/public-signing-service";
 import { ApiError } from "@/lib/server/http";
@@ -20,5 +21,9 @@ export default async function PublicSigningWorkflowPage({ params }: PageProps) {
     throw error;
   }
 
-  return <PublicSigningWorkflow token={token} />;
+  return (
+    <UIRefreshBoundary surface="public-signing">
+      <PublicSigningWorkflow token={token} />
+    </UIRefreshBoundary>
+  );
 }

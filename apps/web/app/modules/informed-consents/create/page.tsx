@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import InformedConsentsModulePageNew from "@/components/modules/InformedConsentsModulePageNew";
 import ModuleShell from "@/components/ModuleShell";
+import UIRefreshBoundary from "@/components/ui-refresh/UIRefreshBoundary";
 import { isInformedConsentsEnabled } from "@/lib/modules/informed-consents-release";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
@@ -35,6 +36,8 @@ export default async function InformedConsentsCreatePage() {
   }
 
   return (
-    <InformedConsentsModulePageNew auth={auth} showInternalPilotBanner={shouldShowPilotBanner} />
+    <UIRefreshBoundary surface="issuance">
+      <InformedConsentsModulePageNew auth={auth} showInternalPilotBanner={shouldShowPilotBanner} />
+    </UIRefreshBoundary>
   );
 }
