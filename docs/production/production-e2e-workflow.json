@@ -1,0 +1,47 @@
+{
+  "base": "https://wathiqcare.online",
+  "startedAt": "2026-05-27T20:05:57.230Z",
+  "login": {
+    "status": 200,
+    "ok": true,
+    "hasCookie": true
+  },
+  "templateId": "6f4da702-b869-4b95-ac00-618bfc3fe3d6",
+  "caseId": "041ee07b-0728-453e-a9e2-bfadc537c2f2",
+  "create": {
+    "status": 201,
+    "ok": true
+  },
+  "documentId": "0a5be07e-fadd-444b-b8b0-3f32b4ec7629",
+  "approve": {
+    "status": 400,
+    "ok": false
+  },
+  "dispatch": {
+    "status": 200,
+    "ok": true
+  },
+  "token": "uiTfZr5Zk6DPydJabIyYT0BlEoMEag_HQ_PFy6LV6io",
+  "requestOtp": {
+    "status": 200,
+    "ok": true
+  },
+  "verifyOtp": {
+    "status": 200,
+    "ok": true
+  },
+  "sign": {
+    "status": 409,
+    "ok": false,
+    "signatureId": null,
+    "statusValue": null
+  },
+  "document": {
+    "status": 200,
+    "ok": true,
+    "workflowStatus": "DRAFT",
+    "signatureCaptured": false
+  },
+  "success": false,
+  "finishedAt": "2026-05-27T20:08:06.923Z"
+}
