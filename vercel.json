@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run runtime:pre-vercel && npm run build",
-  "installCommand": "npm install",
+  "buildCommand": "npm run runtime:pre-vercel && npm run prisma:generate && npm run build",
+  "installCommand": "npm install && npm run prisma:generate",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
   "env": {

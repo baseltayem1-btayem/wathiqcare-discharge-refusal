@@ -15,6 +15,7 @@
   },
   "scripts": {
     "dev": "npm run dev -w apps/web",
+    "postinstall": "npm run prisma:generate",
     "build": "npm run build -w apps/web",
     "start": "npm run start -w apps/web",
     "lint": "npm run lint -w apps/web",

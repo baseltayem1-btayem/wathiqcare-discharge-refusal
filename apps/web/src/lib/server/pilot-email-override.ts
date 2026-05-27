@@ -468,3 +468,263 @@ export async function sendPilotPatientCopyEmail(args: {
     },
   });
 }
+
+export async function sendSigningOtpEmail(args: {
+  tenantId: string;
+  caseId?: string | null;
+  recipientEmail: string;
+  otpCode: string;
+  linkUrl: string;
+  expiresMinutes: number;
+  sessionId: string;
+  documentId: string;
+  challengeId: string;
+  mobileNumber: string;
+  moduleType: string;
+  locale?: "ar" | "en";
+}, dependencies?: Partial<SecureSigningEmailDependencies>): Promise<SecureSigningEmailResult> {
+  const recipientEmail = normalizeRecipientEmail(args.recipientEmail);
+  if (!isValidRecipientEmail(recipientEmail)) {
+    throw new ApiError(400, "Invalid email address");
+  }
+
+  const sendEmail = dependencies?.sendEmail ?? sendEmailWithDiagnostics;
+  const recordAuditAttempt = dependencies?.recordAuditAttempt ?? recordEmailAuditAttempt;
+  const title = "Secure Signing OTP";
+  const expiresNote = `This OTP expires in ${args.expiresMinutes} minutes.`;
+  const html = buildWathiqCareEmailHtml({
+    title,
+    preheader: "Your secure signing OTP is ready.",
+    bodyHtml: `<p>Your secure signing one-time password (OTP) is:</p><p><strong style=\"font-size:20px;letter-spacing:0.18em;\">${args.otpCode}</strong></p><p>Document ID: <strong>${args.documentId}</strong></p><p>Signing Session ID: <strong>${args.sessionId}</strong></p><p>Mobile target: <strong>${args.mobileNumber}</strong></p>`,
+    ctaUrl: args.linkUrl,
+    ctaText: "Open Secure Signing",
+    expiresNote,
+    securityNote: "Do not share this OTP with anyone. If you did not request this OTP, contact support immediately.",
+  });
+  const text = buildWathiqCareEmailText({
+    title,
+    bodyLines: [
+      `OTP Code: ${args.otpCode}`,
+      `Document ID: ${args.documentId}`,
+      `Signing Session ID: ${args.sessionId}`,
+      `Mobile target: ${args.mobileNumber}`,
+    ],
+    ctaUrl: args.linkUrl,
+    ctaLabel: "Open Secure Signing",
+    expiresNote,
+    securityNote: "Do not share this OTP with anyone.",
+  });
+
+  try {
+    const diagnostics = await sendEmail({
+      to: recipientEmail,
+      subject: `${title} | ${args.documentId}`,
+      html,
+      text,
+    });
+
+    if (!wasRecipientAcceptedByProvider(diagnostics, recipientEmail)) {
+      const failureReason = "OTP email provider did not accept the patient recipient email";
+      const auditId = await recordAuditAttempt({
+        tenantId: args.tenantId,
+        caseId: args.caseId ?? null,
+        recipient: recipientEmail,
+        notificationType: "secure_signing_otp",
+        status: "failed",
+        failureReason,
+        diagnostics,
+        metadata: {
+          sessionId: args.sessionId,
+          documentId: args.documentId,
+          challengeId: args.challengeId,
+          moduleType: args.moduleType,
+          locale: args.locale ?? "ar",
+          mobileNumber: args.mobileNumber,
+        },
+      });
+
+      return {
+        recipient: recipientEmail,
+        status: "failed",
+        auditId,
+        diagnostics,
+        failureReason,
+      };
+    }
+
+    const auditId = await recordAuditAttempt({
+      tenantId: args.tenantId,
+      caseId: args.caseId ?? null,
+      recipient: recipientEmail,
+      notificationType: "secure_signing_otp",
+      status: "sent",
+      diagnostics,
+      metadata: {
+        sessionId: args.sessionId,
+        documentId: args.documentId,
+        challengeId: args.challengeId,
+        moduleType: args.moduleType,
+        locale: args.locale ?? "ar",
+        mobileNumber: args.mobileNumber,
+      },
+    });
+
+    return {
+      recipient: recipientEmail,
+      status: "sent",
+      auditId,
+      diagnostics,
+      failureReason: null,
+    };
+  } catch (error) {
+    const failureReason = error instanceof Error ? error.message : String(error);
+    const auditId = await recordAuditAttempt({
+      tenantId: args.tenantId,
+      caseId: args.caseId ?? null,
+      recipient: recipientEmail,
+      notificationType: "secure_signing_otp",
+      status: "failed",
+      failureReason,
+      metadata: {
+        sessionId: args.sessionId,
+        documentId: args.documentId,
+        challengeId: args.challengeId,
+        moduleType: args.moduleType,
+        locale: args.locale ?? "ar",
+        mobileNumber: args.mobileNumber,
+      },
+    });
+
+    return {
+      recipient: recipientEmail,
+      status: "failed",
+      auditId,
+      diagnostics: null,
+      failureReason,
+    };
+  }
+}
+
+export async function sendPatientCopyNotificationEmail(args: {
+  tenantId: string;
+  caseId?: string | null;
+  patientName: string | null;
+  documentId: string;
+  consentReference: string | null;
+  copyType: string;
+  recipientEmail: string;
+}, dependencies?: Partial<SecureSigningEmailDependencies>): Promise<SecureSigningEmailResult> {
+  const recipientEmail = normalizeRecipientEmail(args.recipientEmail);
+  if (!isValidRecipientEmail(recipientEmail)) {
+    throw new ApiError(400, "Invalid email address");
+  }
+
+  const sendEmail = dependencies?.sendEmail ?? sendEmailWithDiagnostics;
+  const recordAuditAttempt = dependencies?.recordAuditAttempt ?? recordEmailAuditAttempt;
+  const reference = args.consentReference || args.documentId;
+  const title = "Patient Copy Available";
+  const ctaUrl = `${getBaseUrl()}/modules/informed-consents`;
+  const html = buildWathiqCareEmailHtml({
+    title,
+    preheader: "Your patient copy is ready.",
+    bodyHtml: `<p>Your patient copy has been generated.</p><p>Consent Reference: <strong>${reference}</strong></p><p>Document ID: <strong>${args.documentId}</strong></p><p>Copy Type: <strong>${args.copyType}</strong></p><p>Patient: <strong>${args.patientName || "Unknown patient"}</strong></p>`,
+    ctaUrl,
+    ctaText: "Open Consent Module",
+    securityNote: "This message contains sensitive clinical workflow information.",
+  });
+  const text = buildWathiqCareEmailText({
+    title,
+    bodyLines: [
+      `Consent Reference: ${reference}`,
+      `Document ID: ${args.documentId}`,
+      `Copy Type: ${args.copyType}`,
+      `Patient: ${args.patientName || "Unknown patient"}`,
+    ],
+    ctaUrl,
+    ctaLabel: "Open Consent Module",
+    securityNote: "This message contains sensitive clinical workflow information.",
+  });
+
+  try {
+    const diagnostics = await sendEmail({
+      to: recipientEmail,
+      subject: `${title} | ${reference}`,
+      html,
+      text,
+    });
+
+    if (!wasRecipientAcceptedByProvider(diagnostics, recipientEmail)) {
+      const failureReason = "Patient copy email provider did not accept the patient recipient email";
+      const auditId = await recordAuditAttempt({
+        tenantId: args.tenantId,
+        caseId: args.caseId ?? null,
+        recipient: recipientEmail,
+        notificationType: "patient_copy_notification",
+        status: "failed",
+        failureReason,
+        diagnostics,
+        metadata: {
+          documentId: args.documentId,
+          consentReference: args.consentReference,
+          copyType: args.copyType,
+          patientName: args.patientName,
+        },
+      });
+
+      return {
+        recipient: recipientEmail,
+        status: "failed",
+        auditId,
+        diagnostics,
+        failureReason,
+      };
+    }
+
+    const auditId = await recordAuditAttempt({
+      tenantId: args.tenantId,
+      caseId: args.caseId ?? null,
+      recipient: recipientEmail,
+      notificationType: "patient_copy_notification",
+      status: "sent",
+      diagnostics,
+      metadata: {
+        documentId: args.documentId,
+        consentReference: args.consentReference,
+        copyType: args.copyType,
+        patientName: args.patientName,
+      },
+    });
+
+    return {
+      recipient: recipientEmail,
+      status: "sent",
+      auditId,
+      diagnostics,
+      failureReason: null,
+    };
+  } catch (error) {
+    const failureReason = error instanceof Error ? error.message : String(error);
+    const auditId = await recordAuditAttempt({
+      tenantId: args.tenantId,
+      caseId: args.caseId ?? null,
+      recipient: recipientEmail,
+      notificationType: "patient_copy_notification",
+      status: "failed",
+      failureReason,
+      metadata: {
+        documentId: args.documentId,
+        consentReference: args.consentReference,
+        copyType: args.copyType,
+        patientName: args.patientName,
+      },
+    });
+
+    return {
+      recipient: recipientEmail,
+      status: "failed",
+      auditId,
+      diagnostics: null,
+      failureReason,
+    };
+  }
+}

@@ -14,7 +14,8 @@ type AuditChainEventDelegate = {
 };
 
 function getAuditChainEventDelegate(): AuditChainEventDelegate {
-  const delegate = (prisma as unknown as { auditChainEvent?: AuditChainEventDelegate }).auditChainEvent;
+  const db = prisma() as unknown as { auditChainEvent?: AuditChainEventDelegate };
+  const delegate = db.auditChainEvent;
   if (!delegate) {
     throw new ApiError(500, "Audit chain model is not available in current Prisma client");
   }

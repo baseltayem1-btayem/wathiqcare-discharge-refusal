@@ -129,13 +129,14 @@ function buildPdfBuffer(title: string, lines: string[]): Buffer {
 }
 
 function buildSigningUrlFromToken(token: string): string {
+  const encoded = encodeURIComponent(token);
   const configured = process.env.SECURE_SIGNING_BASE_URL?.trim();
   if (configured) {
     const base = configured.replace(/\/$/, "");
     if (base.endsWith("/sign")) {
-      return `${base}/${encodeURIComponent(token)}`;
+      return `${base}/${encoded}/workflow`;
     }
-    return `${base}/sign/${encodeURIComponent(token)}`;
+    return `${base}/sign/${encoded}/workflow`;
   }
 
   const fallbackBase = (
@@ -145,7 +146,7 @@ function buildSigningUrlFromToken(token: string): string {
     || "https://wathiqcare.online"
   ).replace(/\/$/, "");
 
-  return `${fallbackBase}/sign/${encodeURIComponent(token)}`;
+  return `${fallbackBase}/sign/${encoded}/workflow`;
 }
 
 export function deriveSecureSigningBadgeFlags(input: {
