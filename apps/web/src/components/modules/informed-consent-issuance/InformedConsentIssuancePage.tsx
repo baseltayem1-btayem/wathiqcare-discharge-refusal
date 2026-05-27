@@ -16,9 +16,15 @@ import {
   DEFAULT_SIGNATURES,
   ROLE_OPTIONS,
   WORKFLOW_STEPS,
+  getActiveConsentTypes,
   type LegalReadinessCheck,
   type UserRole,
 } from "./types";
+
+// Pilot stabilization (v1.0.1): only `pilot-ready` / `active` consent types are exposed to
+// physicians. Hidden types are not yet validated end-to-end (template + workflow + signing +
+// PDF + audit chain). See `pilot-package/CONSENT_TYPE_READINESS_MATRIX.md`.
+const ACTIVE_CONSENT_TYPES = getActiveConsentTypes();
 
 const WorkflowStepper = dynamic(() => import("./WorkflowStepper"), {
   loading: () => <div className="rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">Loading workflow panel…</div>,
@@ -97,7 +103,7 @@ const JOURNEY_BADGES = [
 export default function InformedConsentIssuancePage({ auth, clinicalAiEnabled = false, tabletSignatureEnabled = true, biometricSignatureEnabled = false }: { auth: ModuleAuth; clinicalAiEnabled?: boolean; tabletSignatureEnabled?: boolean; biometricSignatureEnabled?: boolean }) {
   const [mrnQuery, setMrnQuery] = useState(DEFAULT_PATIENT_INFO.mrn);
   const [selectedRole, setSelectedRole] = useState<UserRole>("Doctor");
-  const [selectedConsentTypeId, setSelectedConsentTypeId] = useState(CONSENT_TYPES[0]?.id ?? "");
+  const [selectedConsentTypeId, setSelectedConsentTypeId] = useState(ACTIVE_CONSENT_TYPES[0]?.id ?? "");
   const [medicalExplanation, setMedicalExplanation] = useState(DEFAULT_MEDICAL_EXPLANATION);
   const [signatures, setSignatures] = useState(DEFAULT_SIGNATURES);
   const [patientCollapsed, setPatientCollapsed] = useState(false);
@@ -499,7 +505,12 @@ export default function InformedConsentIssuancePage({ auth, clinicalAiEnabled = 
         </nav>
 
         {currentStep === "TEMPLATE_SELECTION" ? (
-          <ConsentTypeSelector consentTypes={CONSENT_TYPES} selectedConsentTypeId={selectedConsentTypeId} onSelect={handleConsentTypeSelect} />
+          <ConsentTypeSelector
+            consentTypes={ACTIVE_CONSENT_TYPES}
+            hiddenCount={CONSENT_TYPES.length - ACTIVE_CONSENT_TYPES.length}
+            selectedConsentTypeId={selectedConsentTypeId}
+            onSelect={handleConsentTypeSelect}
+          />
         ) : (
           <div className="rounded-2xl border border-[rgba(0,43,92,0.08)] bg-[var(--surface-muted)] px-3 py-2 text-xs text-[var(--foreground-secondary)] shadow-sm">
             <span className="font-semibold text-[var(--foreground)]">Selected consent type:</span>{" "}

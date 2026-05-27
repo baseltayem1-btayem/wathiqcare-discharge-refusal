@@ -17,10 +17,25 @@ export type WorkflowStep = {
   responsibleUser: string;
 };
 
+/**
+ * Lifecycle status of a consent type within the WathiqCare platform.
+ *
+ * - `pilot-ready` : Fully validated end-to-end (template + workflow + signing + PDF + audit chain).
+ *                   Visible in the consent selector during the controlled pilot.
+ * - `active`      : Generally available (post-pilot). Visible in production.
+ * - `coming-soon` : Template/workflow not yet validated. Hidden from the selector during pilot.
+ * - `disabled`    : Explicitly turned off. Hidden from the selector.
+ *
+ * See `pilot-package/CONSENT_TYPE_READINESS_MATRIX.md` for current status per type.
+ */
+export type ConsentTypeStatus = "pilot-ready" | "active" | "coming-soon" | "disabled";
+
 export type ConsentType = {
   id: string;
   title: Bilingual;
   riskLevel: "low" | "moderate" | "high";
+  /** Lifecycle status. Only `pilot-ready` and `active` types are exposed in the selector. */
+  status: ConsentTypeStatus;
 };
 
 export type PatientCapacityStatus = "competent" | "minor" | "unconscious" | "representative required";
@@ -83,15 +98,35 @@ export type LegalReadinessCheck = {
 };
 
 export const CONSENT_TYPES: ConsentType[] = [
-  { id: "surgical", title: { ar: "موافقة الإجراء الجراحي", en: "Surgical Procedure Consent" }, riskLevel: "high" },
-  { id: "anesthesia", title: { ar: "موافقة التخدير", en: "Anesthesia Consent" }, riskLevel: "high" },
-  { id: "blood", title: { ar: "موافقة نقل الدم", en: "Blood Transfusion Consent" }, riskLevel: "high" },
-  { id: "high-risk", title: { ar: "موافقة الإجراء عالي الخطورة", en: "High-Risk Procedure Consent" }, riskLevel: "high" },
-  { id: "ama", title: { ar: "الخروج ضد النصيحة الطبية", en: "Discharge Against Medical Advice" }, riskLevel: "moderate" },
-  { id: "telemedicine", title: { ar: "موافقة الطب الاتصالي", en: "Telemedicine Consent" }, riskLevel: "low" },
-  { id: "media", title: { ar: "موافقة التصوير الطبي / الإعلامي", en: "Clinical Photography / Media Consent" }, riskLevel: "moderate" },
-  { id: "data-sharing", title: { ar: "موافقة مشاركة البيانات", en: "Data Sharing Consent" }, riskLevel: "moderate" },
+  { id: "surgical", title: { ar: "موافقة الإجراء الجراحي", en: "Surgical Procedure Consent" }, riskLevel: "high", status: "pilot-ready" },
+  { id: "anesthesia", title: { ar: "موافقة التخدير", en: "Anesthesia Consent" }, riskLevel: "high", status: "coming-soon" },
+  { id: "blood", title: { ar: "موافقة نقل الدم", en: "Blood Transfusion Consent" }, riskLevel: "high", status: "coming-soon" },
+  { id: "high-risk", title: { ar: "موافقة الإجراء عالي الخطورة", en: "High-Risk Procedure Consent" }, riskLevel: "high", status: "coming-soon" },
+  { id: "ama", title: { ar: "الخروج ضد النصيحة الطبية", en: "Discharge Against Medical Advice" }, riskLevel: "moderate", status: "coming-soon" },
+  { id: "telemedicine", title: { ar: "موافقة الطب الاتصالي", en: "Telemedicine Consent" }, riskLevel: "low", status: "coming-soon" },
+  { id: "media", title: { ar: "موافقة التصوير الطبي / الإعلامي", en: "Clinical Photography / Media Consent" }, riskLevel: "moderate", status: "coming-soon" },
+  { id: "data-sharing", title: { ar: "موافقة مشاركة البيانات", en: "Data Sharing Consent" }, riskLevel: "moderate", status: "coming-soon" },
 ];
+
+/**
+ * Returns the consent types that should be exposed in the issuance UI.
+ *
+ * Pilot stabilization rule (v1.0.1+): only `pilot-ready` and `active` statuses are returned.
+ * Non-operational types (`coming-soon`, `disabled`) are hidden so physicians cannot dispatch
+ * a workflow that lacks a validated template, education content, signing flow, PDF generation,
+ * or audit-chain integration.
+ *
+ * See `pilot-package/CONSENT_TYPE_READINESS_MATRIX.md`.
+ */
+export function getActiveConsentTypes(): ConsentType[] {
+  return CONSENT_TYPES.filter((t) => t.status === "pilot-ready" || t.status === "active");
+}
+
+/** Returns true if the given consent type id is currently exposable to users. */
+export function isConsentTypeExposed(consentTypeId: string | null | undefined): boolean {
+  if (!consentTypeId) return false;
+  return getActiveConsentTypes().some((t) => t.id === consentTypeId);
+}
 
 export const WORKFLOW_STEPS: WorkflowStep[] = [
   { id: 1, title: { ar: "التحقق من هوية المريض", en: "Patient Verification" }, status: "completed", timestamp: "2026-05-11 10:20", responsibleUser: "Nurse Amal" },

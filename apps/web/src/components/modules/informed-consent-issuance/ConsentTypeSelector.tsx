@@ -8,6 +8,12 @@ type ConsentTypeSelectorProps = {
   consentTypes: ConsentType[];
   selectedConsentTypeId: string;
   onSelect: (id: string) => void;
+  /**
+   * Number of consent types hidden from the selector (pilot stabilization).
+   * When > 0, a small disclosure pill is rendered so physicians are aware that additional
+   * consent types are planned but not yet operational. See `CONSENT_TYPE_READINESS_MATRIX.md`.
+   */
+  hiddenCount?: number;
 };
 
 const ICONS: Record<string, ComponentType<{ className?: string }>> = {
@@ -27,7 +33,7 @@ const RISK_TONE: Record<ConsentType["riskLevel"], string> = {
   high: "wc-status-blocked",
 };
 
-export default function ConsentTypeSelector({ consentTypes, selectedConsentTypeId, onSelect }: ConsentTypeSelectorProps) {
+export default function ConsentTypeSelector({ consentTypes, selectedConsentTypeId, onSelect, hiddenCount = 0 }: ConsentTypeSelectorProps) {
   return (
     <section className="wc-panel border-slate-200 bg-white">
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -35,7 +41,17 @@ export default function ConsentTypeSelector({ consentTypes, selectedConsentTypeI
           <h2 className="wc-panel-heading !mb-0">نوع الموافقة</h2>
           <p className="text-[11px] text-slate-500">Select consent form family before explanation and signatures.</p>
         </div>
-        <span className="wc-module-pill">{consentTypes.length} types</span>
+        <div className="flex items-center gap-2">
+          {hiddenCount > 0 ? (
+            <span
+              className="wc-module-pill"
+              title="Additional consent types are planned for future pilot phases. Only validated workflows are exposed in the current pilot."
+            >
+              {hiddenCount} more coming soon
+            </span>
+          ) : null}
+          <span className="wc-module-pill">{consentTypes.length} available</span>
+        </div>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
