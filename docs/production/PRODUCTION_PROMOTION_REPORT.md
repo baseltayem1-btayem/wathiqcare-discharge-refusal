@@ -25,8 +25,11 @@ Approach: **no rebuild**. Validated preview deployment was promoted to productio
 | Production aliases | `wathiqcare.online`, `api.wathiqcare.online`, `www.wathiqcare.online`, `wathiqcare-discharge-refusal.vercel.app`, `wathiqcare-discharge-refusal-wathiqcare.vercel.app` |
 | Production env var added | `NEXT_PUBLIC_FF_UI_REFRESH_V1_1 = 1` (Production scope, encrypted) |
 | Production redeploy (same source) | `vercel redeploy dpl_9VhEGcQfmqLKhRYmeKzRDe4zc87g` → `wathiqcare-discharge-refusal-nts0jls4d-wathiqcare.vercel.app` (Ready, Aliased to `wathiqcare.online`) |
+| **Hotfix rebuild from source (2026‑05‑27)** | `vercel deploy --prod` from commit `28403cc` → `wathiqcare-discharge-refusal-gvz0l5kif-wathiqcare.vercel.app` (Ready in 2m, Aliased to `wathiqcare.online`). **Supersedes** `nts0jls4d`. See [SAFARI_HOTFIX_VALIDATION.md](../../SAFARI_HOTFIX_VALIDATION.md). |
 
 No code changes were made between preview validation and production. Only the production scope env flag was enabled and the same deployment lineage was rebuilt to inline the value into the client bundle.
+
+> **2026‑05‑27 update — Safari hotfix rebuilt from source:** the patched `verify-otp` route (commit `28403cc`) was deployed via `vercel deploy --prod` (source‑true rebuild). The route now emits `Set-Cookie: wathiqcare_public_signing_session=…; HttpOnly; Secure; SameSite=lax; Domain=.wathiqcare.online; Path=/; Max-Age=1797`, restoring the post‑OTP session on iPhone Safari. Full validation evidence in [SAFARI_HOTFIX_VALIDATION.md](../../SAFARI_HOTFIX_VALIDATION.md).
 
 ## 3. Post‑promotion live validation (https://wathiqcare.online)
 
@@ -81,7 +84,15 @@ Confirmation rendering itself is governed entirely by the existing `signatureCap
 
 ## 5. Rollback
 
-To roll back, repoint production aliases to the prior production deployment `dpl_DVEGHkneXYppASBVSuLVXpj7Y2Rr` (`wathiqcare-discharge-refusal-ko5w186ok-wathiqcare.vercel.app`):
+To roll back the **2026‑05‑27 Safari hotfix** (`gvz0l5kif`) back to the prior production build `nts0jls4d`:
+
+```
+vercel alias set wathiqcare-discharge-refusal-nts0jls4d-wathiqcare.vercel.app wathiqcare.online --scope wathiqcare
+vercel alias set wathiqcare-discharge-refusal-nts0jls4d-wathiqcare.vercel.app api.wathiqcare.online --scope wathiqcare
+vercel alias set wathiqcare-discharge-refusal-nts0jls4d-wathiqcare.vercel.app www.wathiqcare.online --scope wathiqcare
+```
+
+To roll back the full v1.1 promotion, repoint production aliases to the prior v1.0.1 production deployment `dpl_DVEGHkneXYppASBVSuLVXpj7Y2Rr` (`wathiqcare-discharge-refusal-ko5w186ok-wathiqcare.vercel.app`):
 
 ```
 vercel alias set wathiqcare-discharge-refusal-ko5w186ok-wathiqcare.vercel.app wathiqcare.online --scope wathiqcare

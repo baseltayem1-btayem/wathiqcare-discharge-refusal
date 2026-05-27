@@ -1,0 +1,55 @@
+﻿{
+  "base": "https://wathiqcare.online",
+  "patient": {
+    "email": "pilot.patient.preview.1779914233881@imc.med.sa",
+    "mobile": "966543587772",
+    "mrn": "IMC-2026-02000"
+  },
+  "login": {
+    "status": 200,
+    "ok": true
+  },
+  "templateCount": 19,
+  "templateId": "6f4da702-b869-4b95-ac00-618bfc3fe3d6",
+  "templateCode": null,
+  "templateConsentType": "GENERAL_CONSENT",
+  "caseId": "041ee07b-0728-453e-a9e2-bfadc537c2f2",
+  "caseMrn": "IMC-2026-02000",
+  "create": {
+    "status": 201,
+    "ok": true,
+    "error": null
+  },
+  "documentId": "fb563744-6f93-472a-bd51-7b95e6476b18",
+  "dispatch": {
+    "status": 200,
+    "ok": true,
+    "error": null
+  },
+  "workflow": {
+    "sessionId": "7d3923a5-c315-4458-9055-0828987c0d03",
+    "moduleKey": "informed_consent",
+    "documentId": "fb563744-6f93-472a-bd51-7b95e6476b18",
+    "tokenHash": "09a1928fda40348486ece24b33240b17b25951790437701e9f79c0950a020547",
+    "signingUrl": "https://wathiqcare.online/sign/xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko/workflow",
+    "recipientMobile": "+966543587772",
+    "recipientEmail": "pilot.patient.preview.1779914233881@imc.med.sa",
+    "smsDeliveryStatus": "failed",
+    "smsFailureReason": "TAQNYAT_NOT_CONFIGURED",
+    "emailDeliveryStatus": "sent",
+    "emailFailureReason": null,
+    "createdAt": "2026-05-27T20:38:30.112Z",
+    "updatedAt": "2026-05-27T20:38:30.112Z",
+    "status": {
+      "linkCreated": true,
+      "smsSent": false,
+      "opened": false,
+      "otpRequested": false,
+      "otpVerified": false,
+      "signed": false,
+      "expired": false,
+      "failed": true,
+      "failedAttempts": 0
+    }
+  }
+}

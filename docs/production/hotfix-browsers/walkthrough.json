@@ -1,0 +1,130 @@
+{
+  "ts": "2026-05-27T20-46-42-794Z",
+  "base": "https://wathiqcare.online",
+  "token": "xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko",
+  "browsers": [
+    {
+      "name": "iphone-safari",
+      "ts": "2026-05-27T20:46:42.795Z",
+      "steps": [
+        {
+          "stage": "landing",
+          "url": "https://wathiqcare.online/sign/xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko/workflow",
+          "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform"
+        }
+      ],
+      "otpRequest": {
+        "ok": true,
+        "challengeId": "23c90bfb-824e-41dd-b4e6-b016f5f22ec8"
+      },
+      "otpResolved": {
+        "codeLength": 6
+      },
+      "verifyOtp": {
+        "status": 200,
+        "verified": true,
+        "hasSession": true
+      },
+      "persistedCookie": {
+        "present": true,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "None",
+        "path": "/",
+        "domain": ".wathiqcare.online",
+        "expiresInSec": 1797
+      },
+      "continuityCheck": {
+        "status": 200,
+        "ok": true
+      },
+      "signAttempt": {
+        "status": 409,
+        "body": "{\"success\":false,\"data\":null,\"error\":\"Consent must be approved before signature collection\",\"traceId\":\"b0d481ab-7b59-4b3d-9cc4-d2a1803af89f\",\"timestamp\":\"2026-05-27T20:47:38.489Z\",\"detail\":\"Consent mu"
+      },
+      "sessionGateProved": true
+    },
+    {
+      "name": "android-chrome",
+      "ts": "2026-05-27T20:47:38.207Z",
+      "steps": [
+        {
+          "stage": "landing",
+          "url": "https://wathiqcare.online/sign/xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko/workflow",
+          "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform"
+        }
+      ],
+      "otpRequest": {
+        "ok": true,
+        "challengeId": "9ccfe390-fd41-472d-bfe9-97716f3cf945"
+      },
+      "otpResolved": {
+        "codeLength": 6
+      },
+      "verifyOtp": {
+        "status": 200,
+        "verified": true,
+        "hasSession": true
+      },
+      "persistedCookie": {
+        "present": true,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "Lax",
+        "path": "/",
+        "domain": ".wathiqcare.online",
+        "expiresInSec": 1797
+      },
+      "continuityCheck": {
+        "status": 200,
+        "ok": true
+      },
+      "signAttempt": {
+        "status": 409,
+        "body": "{\"success\":false,\"data\":null,\"error\":\"Consent must be approved before signature collection\",\"traceId\":\"16ce09a5-6598-4b4e-a451-31225d93e3ae\",\"timestamp\":\"2026-05-27T20:48:27.917Z\",\"detail\":\"Consent mu"
+      },
+      "sessionGateProved": true
+    },
+    {
+      "name": "desktop-chrome",
+      "ts": "2026-05-27T20:48:27.694Z",
+      "steps": [
+        {
+          "stage": "landing",
+          "url": "https://wathiqcare.online/sign/xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko/workflow",
+          "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform"
+        }
+      ],
+      "otpRequest": {
+        "ok": true,
+        "challengeId": "4226a0be-f7c2-4374-8a0f-58b4ff8ff3dc"
+      },
+      "otpResolved": {
+        "codeLength": 6
+      },
+      "verifyOtp": {
+        "status": 200,
+        "verified": true,
+        "hasSession": true
+      },
+      "persistedCookie": {
+        "present": true,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "Lax",
+        "path": "/",
+        "domain": ".wathiqcare.online",
+        "expiresInSec": 1797
+      },
+      "continuityCheck": {
+        "status": 200,
+        "ok": true
+      },
+      "signAttempt": {
+        "status": 409,
+        "body": "{\"success\":false,\"data\":null,\"error\":\"Consent must be approved before signature collection\",\"traceId\":\"3dbfebd4-a19d-4ddf-9fa6-7f874e74b19f\",\"timestamp\":\"2026-05-27T20:49:12.082Z\",\"detail\":\"Consent mu"
+      },
+      "sessionGateProved": true
+    }
+  ]
+}
