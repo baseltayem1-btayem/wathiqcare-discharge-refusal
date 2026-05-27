@@ -125,6 +125,27 @@ type PublicDecisionEventResponse = {
 
 type EducationSectionKey = "summary" | "risks" | "benefits" | "faq" | "instructions";
 
+// Pre-OTP bootstrap payload returned by GET /api/public-signing/document/[token]
+// when no public signing session cookie is present. Contains ONLY non-PHI
+// metadata so the OTP form can render without a session. See
+// LIVE_SESSION_RACE_CONDITION_REPORT.md and PRE_OTP_BOOTSTRAP_FLOW.md.
+type PreOtpBootstrap = {
+  documentId: string;
+  moduleType: string;
+  signerRole: string;
+  facilityName: string;
+  templateTitleAr: string;
+  templateTitleEn: string;
+  locale: "ar" | "en" | "bilingual";
+  educationRequired: boolean;
+  maskedMobile: string | null;
+  otpRequiredAt: string;
+};
+
+type WorkflowFetchPayload =
+  | { phase: "pre-otp"; bootstrap: PreOtpBootstrap }
+  | PublicSigningDocumentPayload;
+
 async function readJsonSafe<T>(response: Response): Promise<T | ApiErrorPayload | null> {
   const text = await response.text();
   if (!text) return null;
@@ -176,6 +197,8 @@ function getDurationSeconds(startedAt: number | null): number {
 
 export default function PublicSigningWorkflow({ token }: { token: string }) {
   const [documentData, setDocumentData] = useState<PublicSigningDocumentPayload | null>(null);
+  const [bootstrap, setBootstrap] = useState<PreOtpBootstrap | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [signerName, setSignerName] = useState("");
@@ -328,12 +351,20 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
           credentials: "include",
           cache: "no-store",
         });
-        const payload = await readJsonSafe<PublicSigningDocumentPayload>(response);
+        const payload = await readJsonSafe<WorkflowFetchPayload>(response);
         if (!response.ok) {
           throw new Error(getErrorMessage(payload as ApiErrorPayload, "Failed to load public signing document"));
         }
         if (!cancelled) {
-          setDocumentData(payload as PublicSigningDocumentPayload);
+          // Discriminate the pre-OTP bootstrap response (no session cookie yet)
+          // from the full validated document response. See PRE_OTP_BOOTSTRAP_FLOW.md.
+          if (payload && typeof payload === "object" && (payload as { phase?: string }).phase === "pre-otp") {
+            setBootstrap((payload as { bootstrap: PreOtpBootstrap }).bootstrap);
+            setDocumentData(null);
+          } else {
+            setBootstrap(null);
+            setDocumentData(payload as PublicSigningDocumentPayload);
+          }
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -349,7 +380,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, reloadKey]);
 
   useEffect(() => {
     if (!documentData || !documentData.education.required) return;
@@ -589,6 +620,10 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
       setOtpVerified(Boolean(result.verified));
       if (!result.verified) {
         setOtpError("OTP not verified. Please re-enter the code.");
+      } else if (bootstrap && !documentData) {
+        // Pre-OTP bootstrap path: the cookie is now set server-side, so re-fetch
+        // the document endpoint to receive the full validated workflow payload.
+        setReloadKey((current) => current + 1);
       }
     } catch (verifyError) {
       setOtpError(verifyError instanceof Error ? verifyError.message : "Failed to verify OTP");
@@ -599,6 +634,84 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
 
   if (loading) {
     return <main className="mx-auto max-w-5xl p-6 text-sm text-slate-600">Loading public signing workflow...</main>;
+  }
+
+  // Pre-OTP bootstrap render. The session cookie does not exist yet (true cold
+  // open from Mail/SMS). Render only the OTP form using non-PHI bootstrap
+  // metadata; once verifyOtp() succeeds we re-fetch the full payload above.
+  if (bootstrap && !documentData) {
+    return (
+      <main className="mx-auto max-w-5xl space-y-5 p-6">
+        <section className="rounded-2xl border border-sky-200 bg-white p-5 shadow-sm">
+          <div className="space-y-1">
+            {bootstrap.facilityName ? (
+              <p className="text-xs uppercase tracking-wide text-slate-500">{bootstrap.facilityName}</p>
+            ) : null}
+            <h1 className="text-xl font-semibold text-slate-900" dir="rtl">{bootstrap.templateTitleAr}</h1>
+            <h2 className="text-base font-medium text-slate-700">{bootstrap.templateTitleEn}</h2>
+          </div>
+          <p className="mt-3 text-sm text-slate-600">
+            Verify your mobile number to begin. We will send you a one-time password (OTP) to start the consent workflow.
+          </p>
+          <div className="mt-4 space-y-3">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="otpMobile">Mobile Number</label>
+            <input
+              id="otpMobile"
+              type="tel"
+              value={otpMobile}
+              onChange={(event) => setOtpMobile(event.target.value)}
+              placeholder="+9665XXXXXXXX"
+              disabled={otpBusy || Boolean(otpRequestResult)}
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
+            />
+            <button
+              type="button"
+              onClick={() => void requestOtp()}
+              disabled={otpBusy || !otpMobile.trim()}
+              className="inline-flex rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {otpBusy && !otpRequestResult ? "Sending OTP..." : otpRequestResult ? "OTP sent" : "Request OTP"}
+            </button>
+            {otpRequestResult ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                <p>OTP delivery status: {otpRequestResult.deliveryStatus}</p>
+                <p>Mobile: {otpRequestResult.maskedPhone}</p>
+                <p>Expires at: {otpRequestResult.expiresAt ? new Date(otpRequestResult.expiresAt).toLocaleString() : "\u2014"}</p>
+                {otpRequestResult.fallbackMode ? <p>SMS provider is not configured in this environment.</p> : null}
+              </div>
+            ) : null}
+            {otpRequestResult ? (
+              <div className="mt-2 space-y-2">
+                <label className="block text-sm font-medium text-slate-700" htmlFor="otpCode">OTP Code</label>
+                <input
+                  id="otpCode"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={otpCode}
+                  onChange={(event) => setOtpCode(event.target.value)}
+                  placeholder="123456"
+                  disabled={otpBusy}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => void verifyOtp()}
+                  disabled={otpBusy || !otpCode.trim()}
+                  className="inline-flex rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {otpBusy ? "Verifying..." : "Verify OTP"}
+                </button>
+              </div>
+            ) : null}
+            {otpError ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{otpError}</div> : null}
+          </div>
+          <p className="mt-4 text-xs text-slate-500" data-pre-otp-marker="v1">
+            Education review and full consent content will be presented after OTP verification.
+          </p>
+        </section>
+      </main>
+    );
   }
 
   if (!documentData) {

@@ -15,6 +15,7 @@ import { ConsentDocumentStatus, ConsentEvidenceCopyType, ConsentMethod, ConsentS
 import {
   type PublicSigningSessionPayload,
   createPublicSigningSessionCookieValue,
+  getPublicSigningSessionCookieName,
   readPublicSigningSession,
 } from "@/lib/server/public-signing-session";
 import { sendPatientCopyNotificationEmail, sendSigningOtpEmail } from "@/lib/server/pilot-email-override";
@@ -89,6 +90,35 @@ export type SigningTokenContext = {
   signerRole: string;
   redirectPath: string;
 };
+
+/**
+ * Discriminated pre-OTP bootstrap payload returned by GET /api/public-signing/document/[token]
+ * when no public signing session cookie is present. Contains ONLY non-PHI metadata that the
+ * patient has already seen in the SMS / email invitation: facility name, template title,
+ * locale, and whether education is required.
+ *
+ * Strictly does NOT include: patient name, MRN, diagnosis, procedure, physician name,
+ * consent body, sections, risks, benefits, signatures, decision state, or any clinical data.
+ */
+export type PublicSigningPreOtpBootstrapPayload = {
+  phase: "pre-otp";
+  bootstrap: {
+    documentId: string;
+    moduleType: string;
+    signerRole: string;
+    facilityName: string;
+    templateTitleAr: string;
+    templateTitleEn: string;
+    locale: "ar" | "en" | "bilingual";
+    educationRequired: boolean;
+    maskedMobile: string | null;
+    otpRequiredAt: string;
+  };
+};
+
+export type PublicSigningWorkflowPayload =
+  | PublicSigningPreOtpBootstrapPayload
+  | PublicSigningDocumentPayload;
 
 export type PublicSigningDocumentPayload = {
   documentId: string;
@@ -1381,9 +1411,70 @@ export async function validatePublicSigningSession(args: {
 export async function getPublicSigningDocument(args: {
   token: string;
   request: NextRequest;
-}): Promise<PublicSigningDocumentPayload> {
+}): Promise<PublicSigningWorkflowPayload> {
+  // Lifecycle-aware bootstrap (LIVE_SESSION_RACE_CONDITION_REPORT.md).
+  // If no session cookie is present at all, this is a true cold open
+  // (e.g. first hit from Mail/SMS). Return the pre-OTP bootstrap payload
+  // containing ONLY non-PHI metadata so the client can render the OTP form.
+  // If the cookie IS present, run the strict validation path unchanged.
+  const sessionCookie = args.request.cookies.get(getPublicSigningSessionCookieName())?.value;
+  if (!sessionCookie) {
+    return buildPreOtpBootstrapPayload(args.token);
+  }
   const context = await validatePublicSigningSession(args);
   return buildPublicSigningDocumentPayload(context);
+}
+
+async function buildPreOtpBootstrapPayload(
+  token: string,
+): Promise<PublicSigningPreOtpBootstrapPayload> {
+  // Token is validated here (404 on invalid). No session is required for the
+  // bootstrap payload — that is the entire point of this branch.
+  const context = await getSigningTokenContext(token);
+
+  const doc = await prisma().consentDocument.findFirst({
+    where: { tenantId: context.tenantId, id: context.documentId },
+    select: {
+      id: true,
+      templateId: true,
+      templateVersionId: true,
+      tenant: { select: { name: true } },
+      template: { select: { titleAr: true, titleEn: true } },
+    },
+  });
+
+  if (!doc) {
+    throw new ApiError(404, "Consent document not found");
+  }
+
+  // Whether the document requires an education package can be determined by
+  // simply checking if a linked package exists. We don't load its body here.
+  const linkedEducationPackage = await getLinkedEducationPackage(
+    context.tenantId,
+    doc.templateId,
+    doc.templateVersionId,
+  );
+
+  return {
+    phase: "pre-otp",
+    bootstrap: {
+      documentId: context.documentId,
+      moduleType: context.moduleType,
+      signerRole: context.signerRole,
+      facilityName: doc.tenant?.name ?? "",
+      templateTitleAr: doc.template?.titleAr ?? "",
+      templateTitleEn: doc.template?.titleEn ?? "",
+      // Default to Arabic-first per the existing OTP flow (locale: "ar" is
+      // hard-coded in PublicSigningWorkflow.requestOtp).
+      locale: "ar",
+      educationRequired: Boolean(linkedEducationPackage),
+      // No mobile is stored server-side on the consent document — the patient
+      // enters it on the OTP form. We expose null here so the client knows to
+      // prompt for the number.
+      maskedMobile: null,
+      otpRequiredAt: new Date().toISOString(),
+    },
+  };
 }
 
 export async function getPublicSigningPreviewDocument(args: {
