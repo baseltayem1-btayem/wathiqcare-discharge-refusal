@@ -1,0 +1,177 @@
+﻿{
+    "generatedAt":  "2026-05-28T11:03:21.4292476+03:00",
+    "baseUrl":  "https://wathiqcare.online",
+    "authenticated":  true,
+    "validationScope":  [
+                            "template list",
+                            "generated draft",
+                            "education payload",
+                            "legal package metadata",
+                            "PDPL fields"
+                        ],
+    "payloads":  [
+                     {
+                         "name":  "template_list",
+                         "bytesLength":  106430,
+                         "utf8StrictValid":  true,
+                         "utf8Error":  null,
+                         "jsonParseValid":  true,
+                         "jsonError":  null,
+                         "mojibakeCount":  0,
+                         "replacementCharCount":  0,
+                         "arabicCharCount":  25957,
+                         "containsOslashUgrave":  false
+                     },
+                     {
+                         "name":  "generated_draft",
+                         "bytesLength":  6566,
+                         "utf8StrictValid":  true,
+                         "utf8Error":  null,
+                         "jsonParseValid":  true,
+                         "jsonError":  null,
+                         "mojibakeCount":  0,
+                         "replacementCharCount":  0,
+                         "arabicCharCount":  1410,
+                         "containsOslashUgrave":  false
+                     },
+                     {
+                         "name":  "document_detail",
+                         "bytesLength":  57758,
+                         "utf8StrictValid":  true,
+                         "utf8Error":  null,
+                         "jsonParseValid":  true,
+                         "jsonError":  null,
+                         "mojibakeCount":  0,
+                         "replacementCharCount":  0,
+                         "arabicCharCount":  8462,
+                         "containsOslashUgrave":  false
+                     }
+                 ],
+    "documentId":  "89bcb45d-391d-4dbd-b9d2-e779b6ae8c29",
+    "templateId":  "6f4da702-b869-4b95-ac00-618bfc3fe3d6",
+    "templateCount":  19,
+    "checks":  {
+                   "rawJsonHasNoMojibake":  true,
+                   "noOslashUgraveSequences":  true,
+                   "utf8IntegrityEndToEnd":  true,
+                   "requiredArabicFieldIntegrity":  true
+               },
+    "fieldChecks":  {
+                        "educationPayload":  [
+                                                 {
+                                                     "path":  "alternativesAr",
+                                                     "length":  0,
+                                                     "hasArabic":  false,
+                                                     "hasMojibake":  false,
+                                                     "hasReplacement":  false,
+                                                     "preview":  ""
+                                                 },
+                                                 {
+                                                     "path":  "risksAr",
+                                                     "length":  0,
+                                                     "hasArabic":  false,
+                                                     "hasMojibake":  false,
+                                                     "hasReplacement":  false,
+                                                     "preview":  ""
+                                                 },
+                                                 {
+                                                     "path":  "sideEffectsAr",
+                                                     "length":  0,
+                                                     "hasArabic":  false,
+                                                     "hasMojibake":  false,
+                                                     "hasReplacement":  false,
+                                                     "preview":  ""
+                                                 },
+                                                 {
+                                                     "path":  "expectedOutcomesAr",
+                                                     "length":  0,
+                                                     "hasArabic":  false,
+                                                     "hasMojibake":  false,
+                                                     "hasReplacement":  false,
+                                                     "preview":  ""
+                                                 },
+                                                 {
+                                                     "path":  "refusalRisksAr",
+                                                     "length":  0,
+                                                     "hasArabic":  false,
+                                                     "hasMojibake":  false,
+                                                     "hasReplacement":  false,
+                                                     "preview":  ""
+                                                 }
+                                             ],
+                        "legalPackageMetadata":  [
+                                                     {
+                                                         "path":  "template.titleAr",
+                                                         "length":  40,
+                                                         "hasArabic":  true,
+                                                         "hasMojibake":  false,
+                                                         "hasReplacement":  false,
+                                                         "preview":  "موافقة ولي الأمر / القاصر / فاقد الأهلية"
+                                                     },
+                                                     {
+                                                         "path":  "template.summaryAr",
+                                                         "length":  55,
+                                                         "hasArabic":  true,
+                                                         "hasMojibake":  false,
+                                                         "hasReplacement":  false,
+                                                         "preview":  "موافقة مخصصة للقاصر أو فاقد الأهلية عبر الممثل النظامي."
+                                                     },
+                                                     {
+                                                         "path":  "templateVersion.legalTextAr",
+                                                         "length":  1599,
+                                                         "hasArabic":  true,
+                                                         "hasMojibake":  false,
+                                                         "hasReplacement":  false,
+                                                         "preview":  "موافقة ولي الأمر / القاصر / فاقد الأهلية\n\nأقر أنا الموقع أدناه / أو أقر بصفتي ولياً أو ممثلاً نظامياً للمريض، بأن الطبيب"
+                                                     },
+                                                     {
+                                                         "path":  "templateVersion.witnessDeclAr",
+                                                         "length":  51,
+                                                         "hasArabic":  true,
+                                                         "hasMojibake":  false,
+                                                         "hasReplacement":  false,
+                                                         "preview":  "يُثبت الشاهد أن الشرح تم وأن التوقيع تم بإرادة حرة."
+                                                     },
+                                                     {
+                                                         "path":  "templateVersion.physicianCertAr",
+                                                         "length":  317,
+                                                         "hasArabic":  true,
+                                                         "hasMojibake":  false,
+                                                         "hasReplacement":  false,
+                                                         "preview":  "إقرار الطبيب: أقر أنا الطبيب / الممارس الصحي الموقع أدناه بأنني قمت بشرح الحالة الطبية للمريض وطبيعة الإجراء المقترح وال"
+                                                     },
+                                                     {
+                                                         "path":  "document.legalTextAr",
+                                                         "length":  1599,
+                                                         "hasArabic":  true,
+                                                         "hasMojibake":  false,
+                                                         "hasReplacement":  false,
+                                                         "preview":  "موافقة ولي الأمر / القاصر / فاقد الأهلية\n\nأقر أنا الموقع أدناه / أو أقر بصفتي ولياً أو ممثلاً نظامياً للمريض، بأن الطبيب"
+                                                     }
+                                                 ],
+                        "pdplFields":  [
+                                           {
+                                               "path":  "document.pdplTextAr",
+                                               "length":  242,
+                                               "hasArabic":  true,
+                                               "hasMojibake":  false,
+                                               "hasReplacement":  false,
+                                               "preview":  "أوافق على استخدام ومعالجة معلوماتي الصحية الشخصية بالقدر اللازم لأغراض العلاج والرعاية الصحية والتوثيق الطبي والالتزام ب"
+                                           },
+                                           {
+                                               "path":  "templateVersion.pdplTextAr",
+                                               "length":  242,
+                                               "hasArabic":  true,
+                                               "hasMojibake":  false,
+                                               "hasReplacement":  false,
+                                               "preview":  "أوافق على استخدام ومعالجة معلوماتي الصحية الشخصية بالقدر اللازم لأغراض العلاج والرعاية الصحية والتوثيق الطبي والالتزام ب"
+                                           }
+                                       ]
+                    },
+    "summary":  {
+                    "overallClean":  true,
+                    "totalMojibakeChars":  0,
+                    "totalReplacementChars":  0,
+                    "totalArabicChars":  35829
+                }
+}
