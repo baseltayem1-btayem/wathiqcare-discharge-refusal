@@ -128,6 +128,233 @@ function isValidRecipientEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(value);
 }
 
+function buildPatientRequestReference(documentId: string): string {
+  const normalized = (documentId || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  const short = normalized.slice(0, 10) || "UNKNOWN";
+  return `REQ-${short}`;
+}
+
+function buildEnterpriseSecureSigningEmailTemplate(args: {
+  patientName: string;
+  signingUrl: string;
+  expiresMinutes: number;
+  documentId: string;
+  institutionName: string;
+}): { html: string; text: string; subject: string } {
+  const baseUrl = getBaseUrl();
+  const requestReference = buildPatientRequestReference(args.documentId);
+  const safePatientName = (args.patientName || "Patient").replace(/[<>]/g, "");
+  const expiresText = `${args.expiresMinutes} minutes`;
+  const subject = "Electronic Informed Consent Request | طلب مراجعة وتوقيع الموافقة";
+  const imcLogo = `${baseUrl}/images/imc-logo.png`;
+  const wathiqcareLogo = `${baseUrl}/images/wathiqcare-logo.png`;
+
+  const html = `<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Electronic Informed Consent Request</title>
+</head>
+<body style="margin:0;padding:0;background:#eef3f8;font-family:Arial,Helvetica,sans-serif;color:#2F2F2F;">
+  <div style="display:none;font-size:1px;color:#eef3f8;line-height:1px;max-height:0;overflow:hidden;mso-hide:all;">Electronic informed consent review and signing request from International Medical Center.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef3f8;">
+    <tr>
+      <td align="center" style="padding:20px 12px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:660px;background:#FFFFFF;border:1px solid #d7e1ec;border-radius:14px;overflow:hidden;">
+          <tr>
+            <td style="background:#FFFFFF;padding:18px 20px;border-bottom:4px solid #C9A13B;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="left" valign="middle" style="width:50%;">
+                    <img src="${imcLogo}" alt="International Medical Center" width="132" style="display:block;width:132px;max-width:100%;height:auto;border:0;" />
+                  </td>
+                  <td align="right" valign="middle" style="width:50%;">
+                    <img src="${wathiqcareLogo}" alt="Powered by WathiqCare" width="144" style="display:block;width:144px;max-width:100%;height:auto;border:0;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding-top:10px;font-size:12px;line-height:18px;color:#1f2937;font-weight:600;">
+                    International Medical Center (IMC) · Powered by WathiqCare™
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:24px 22px 12px;">
+              <h1 style="margin:0 0 10px;font-size:26px;line-height:32px;color:#002B5C;font-weight:700;">Electronic Informed Consent Request</h1>
+              <p style="margin:0 0 14px;font-size:20px;line-height:30px;color:#002B5C;font-weight:700;" dir="rtl">طلب مراجعة وتوقيع الموافقة المستنيرة الإلكترونية</p>
+              <p style="margin:0 0 8px;font-size:15px;line-height:24px;color:#2F2F2F;">You have received a secure consent review and signing request from International Medical Center.</p>
+              <p style="margin:0;font-size:15px;line-height:24px;color:#2F2F2F;" dir="rtl">لقد تم إرسال طلب مراجعة وتوقيع موافقة مستنيرة إلكترونية من المركز الطبي الدولي.</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:10px 22px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fbff;border:1px solid #d8e6f7;border-radius:10px;">
+                <tr>
+                  <td style="padding:14px 16px;">
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;">✓ Verified by International Medical Center</p>
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;">✓ Powered by WathiqCare</p>
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;">✓ Secure Encrypted Access</p>
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;">✓ OTP Verification Required</p>
+                    <p style="margin:0;font-size:14px;line-height:22px;color:#2F2F2F;">✓ Electronic Audit Trail Enabled</p>
+                    <hr style="border:none;border-top:1px solid #dbe7f4;margin:12px 0;" />
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ تم التحقق من الطلب من المركز الطبي الدولي</p>
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ مدعوم من وثيق كير</p>
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ وصول آمن ومشفر</p>
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ يتطلب التحقق عبر رمز OTP</p>
+                    <p style="margin:0;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ سجل تدقيق إلكتروني مفعل</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:14px 22px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #e1e7ef;border-radius:10px;">
+                <tr>
+                  <td style="padding:14px 16px;">
+                    <p style="margin:0 0 8px;font-size:15px;line-height:22px;font-weight:700;color:#002B5C;">Patient Action Steps</p>
+                    <p style="margin:0 0 6px;font-size:14px;line-height:22px;color:#2F2F2F;">1. Review consent information</p>
+                    <p style="margin:0 0 6px;font-size:14px;line-height:22px;color:#2F2F2F;">2. Review educational materials</p>
+                    <p style="margin:0 0 6px;font-size:14px;line-height:22px;color:#2F2F2F;">3. Verify identity using OTP</p>
+                    <p style="margin:0 0 6px;font-size:14px;line-height:22px;color:#2F2F2F;">4. Confirm understanding</p>
+                    <p style="margin:0 0 12px;font-size:14px;line-height:22px;color:#2F2F2F;">5. Sign electronically</p>
+                    <p style="margin:0 0 6px;font-size:15px;line-height:22px;font-weight:700;color:#002B5C;" dir="rtl">خطوات المريض</p>
+                    <p style="margin:0 0 6px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">1. مراجعة معلومات الموافقة</p>
+                    <p style="margin:0 0 6px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">2. مراجعة المواد التعليمية</p>
+                    <p style="margin:0 0 6px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">3. التحقق من الهوية باستخدام رمز OTP</p>
+                    <p style="margin:0 0 6px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">4. تأكيد الفهم</p>
+                    <p style="margin:0;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">5. التوقيع إلكترونيًا</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:14px 22px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fbff;border:1px solid #d8e6f7;border-radius:10px;">
+                <tr>
+                  <td style="padding:14px 16px;">
+                    <p style="margin:0 0 6px;font-size:13px;line-height:20px;color:#4d5d72;"><strong style="color:#002B5C;">Patient Name:</strong> ${safePatientName}</p>
+                    <p style="margin:0 0 6px;font-size:13px;line-height:20px;color:#4d5d72;"><strong style="color:#002B5C;">Request Reference Number:</strong> ${requestReference}</p>
+                    <p style="margin:0 0 6px;font-size:13px;line-height:20px;color:#4d5d72;"><strong style="color:#002B5C;">Expiration Time:</strong> ${expiresText}</p>
+                    <p style="margin:0;font-size:13px;line-height:20px;color:#4d5d72;"><strong style="color:#002B5C;">Institution Name:</strong> ${args.institutionName}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding:22px 22px 0;">
+              <a href="${args.signingUrl}" style="display:inline-block;background:#002B5C;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:17px;line-height:24px;padding:14px 32px;border-radius:8px;border:2px solid #C9A13B;">
+                Review &amp; Sign Consent<br/><span dir="rtl" style="font-size:16px;line-height:22px;">مراجعة وتوقيع الموافقة</span>
+              </a>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:14px 22px 0;">
+              <p style="margin:0;font-size:12px;line-height:20px;color:#5f6f82;word-break:break-all;">Fallback URL: <a href="${args.signingUrl}" style="color:#4B9CD3;text-decoration:underline;">${args.signingUrl}</a></p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:16px 22px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff8ec;border:1px solid #ead6a4;border-radius:10px;">
+                <tr>
+                  <td style="padding:14px 16px;">
+                    <p style="margin:0 0 8px;font-size:13px;line-height:22px;color:#2F2F2F;"><strong>Security Notice:</strong> This secure link is intended only for the patient or authorized legal representative. Do not share this link with others.</p>
+                    <p style="margin:0;font-size:13px;line-height:22px;color:#2F2F2F;" dir="rtl"><strong>تنبيه أمني:</strong> هذا الرابط الآمن مخصص للمريض أو لممثله النظامي فقط. يرجى عدم مشاركة الرابط مع أي شخص آخر.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:18px 22px 20px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #e3e9f0;">
+                <tr>
+                  <td style="padding-top:14px;font-size:12px;line-height:20px;color:#5f6f82;">
+                    <strong style="color:#002B5C;">International Medical Center (IMC)</strong><br />
+                    Powered by WathiqCare™<br />
+                    Support Contact: <a href="mailto:support@wathiqcare.online" style="color:#4B9CD3;text-decoration:none;">support@wathiqcare.online</a><br />
+                    Privacy Notice: <a href="${baseUrl}/privacy" style="color:#4B9CD3;text-decoration:none;">${baseUrl}/privacy</a><br />
+                    Official Website: <a href="${baseUrl}" style="color:#4B9CD3;text-decoration:none;">${baseUrl}</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = [
+    "Electronic Informed Consent Request",
+    "طلب مراجعة وتوقيع الموافقة المستنيرة الإلكترونية",
+    "",
+    "You have received a secure consent review and signing request from International Medical Center.",
+    "لقد تم إرسال طلب مراجعة وتوقيع موافقة مستنيرة إلكترونية من المركز الطبي الدولي.",
+    "",
+    "Trust Indicators:",
+    "- Verified by International Medical Center",
+    "- Powered by WathiqCare",
+    "- Secure Encrypted Access",
+    "- OTP Verification Required",
+    "- Electronic Audit Trail Enabled",
+    "",
+    "مؤشرات الثقة:",
+    "- تم التحقق من الطلب من المركز الطبي الدولي",
+    "- مدعوم من وثيق كير",
+    "- وصول آمن ومشفر",
+    "- يتطلب التحقق عبر رمز OTP",
+    "- سجل تدقيق إلكتروني مفعل",
+    "",
+    "Patient Action Steps:",
+    "1) Review consent information",
+    "2) Review educational materials",
+    "3) Verify identity using OTP",
+    "4) Confirm understanding",
+    "5) Sign electronically",
+    "",
+    "خطوات المريض:",
+    "1) مراجعة معلومات الموافقة",
+    "2) مراجعة المواد التعليمية",
+    "3) التحقق من الهوية باستخدام رمز OTP",
+    "4) تأكيد الفهم",
+    "5) التوقيع إلكترونيًا",
+    "",
+    `Patient Name: ${safePatientName}`,
+    `Request Reference Number: ${requestReference}`,
+    `Expiration Time: ${expiresText}`,
+    `Institution Name: ${args.institutionName}`,
+    "",
+    `Review & Sign Consent / مراجعة وتوقيع الموافقة: ${args.signingUrl}`,
+    "",
+    "Security Notice: This secure link is intended only for the patient or authorized legal representative. Do not share this link with others.",
+    "هذا الرابط الآمن مخصص للمريض أو لممثله النظامي فقط. يرجى عدم مشاركة الرابط مع أي شخص آخر.",
+    "",
+    "International Medical Center (IMC)",
+    "Powered by WathiqCare™",
+    `Support Contact: support@wathiqcare.online`,
+    `Privacy Notice: ${baseUrl}/privacy`,
+    `Official Website: ${baseUrl}`,
+  ].join("\n");
+
+  return { html, text, subject };
+}
+
 function wasRecipientAcceptedByProvider(diagnostics: EmailDiagnostics, recipientEmail: string): boolean {
   const normalizedRecipient = normalizeRecipientEmail(recipientEmail);
   const accepted = (diagnostics.smtpAccepted ?? []).map(normalizeRecipientEmail);
@@ -305,37 +532,20 @@ export async function sendSecureSigningLinkEmail(args: {
 
   const sendEmail = dependencies?.sendEmail ?? sendEmailWithDiagnostics;
   const recordAuditAttempt = dependencies?.recordAuditAttempt ?? recordEmailAuditAttempt;
-  const title = "Secure Signing Link";
-  const expiresNote = `This secure signing link expires in ${args.expiresMinutes} minutes.`;
-  const html = buildWathiqCareEmailHtml({
-    title,
-    preheader: "A secure signing link is ready for the patient.",
-    bodyHtml: `<p>A secure signing link has been generated for <strong>${args.patientName}</strong>.</p><p>Document ID: <strong>${args.documentId}</strong></p><p>Signing Session ID: <strong>${args.sessionId}</strong></p><p>Mobile target: <strong>${args.mobileNumber}</strong></p>`,
-    ctaUrl: args.signingUrl,
-    ctaText: "Open Secure Signing Link",
-    expiresNote,
-    securityNote: "This secure signing link is intended only for the patient or their legal representative. Do not forward it to unauthorized parties.",
-  });
-  const text = buildWathiqCareEmailText({
-    title,
-    bodyLines: [
-      `Patient: ${args.patientName}`,
-      `Document ID: ${args.documentId}`,
-      `Signing Session ID: ${args.sessionId}`,
-      `Mobile target: ${args.mobileNumber}`,
-    ],
-    ctaUrl: args.signingUrl,
-    ctaLabel: "Open Secure Signing Link",
-    expiresNote,
-    securityNote: "This secure signing link is intended only for the patient or their legal representative.",
+  const template = buildEnterpriseSecureSigningEmailTemplate({
+    patientName: args.patientName,
+    signingUrl: args.signingUrl,
+    expiresMinutes: args.expiresMinutes,
+    documentId: args.documentId,
+    institutionName: "International Medical Center (IMC)",
   });
 
   try {
     const diagnostics = await sendEmail({
       to: recipientEmail,
-      subject: `${title} | ${args.documentId}`,
-      html,
-      text,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
     });
 
     if (!wasRecipientAcceptedByProvider(diagnostics, recipientEmail)) {
