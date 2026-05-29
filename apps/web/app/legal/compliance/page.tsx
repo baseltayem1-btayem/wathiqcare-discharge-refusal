@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import { getPrisma } from "@/lib/server/prisma";
 import { requirePageAuthClaimsOrRedirect, type PageAuthClaims } from "@/lib/server/pageAuth";
-import LegalComplianceDashboard, {
+import {
+  ApprovedLegalCompliance,
   type AuditEventRow,
   type EvidenceRow,
   type OtpEventRow,
   type PdfStatusRow,
-} from "@/components/legal/LegalComplianceDashboard";
+} from "@/components/approved-design/legal/ApprovedLegalCompliance";
 
 export const dynamic = "force-dynamic";
 
@@ -155,7 +156,7 @@ export default async function LegalCompliancePage() {
   }));
 
   return (
-    <LegalComplianceDashboard
+    <ApprovedLegalCompliance
       tenantCode={auth.tenant_code ?? null}
       isPlatform={isPlatform}
       evidence={evidenceRows}

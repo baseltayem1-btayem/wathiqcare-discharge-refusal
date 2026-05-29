@@ -79,6 +79,40 @@
   --color-border-strong: var(--border-strong);
   --font-sans: var(--font-sans-primary);
   --font-mono: var(--font-mono-primary);
+
+  /* Approved Healthcare Consent Platform Design tokens
+   * (mapped to the existing WathiqCare brand variables so the ported
+   * design/figma/wathiqcare-v1.1 components resolve their utilities.) */
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --primary-foreground: #ffffff;
+  --secondary: var(--primary-soft);
+  --secondary-foreground: var(--primary);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--foreground-muted);
+  --accent-foreground: #ffffff;
+  --destructive: var(--state-error);
+  --destructive-foreground: #ffffff;
+  --input-background: var(--surface-muted);
+  --ring: var(--state-info);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input-background: var(--input-background);
+  --color-ring: var(--ring);
 }
 
 html {
