@@ -20,6 +20,16 @@ import {
 } from "@/lib/server/public-signing-session";
 import { sendPatientCopyNotificationEmail, sendSigningOtpEmail } from "@/lib/server/pilot-email-override";
 import { validateSigningToken } from "@/lib/server/signature-orchestration-service";
+import { executeUnifiedDisclosureShadowMode } from "@/lib/projection/unified-disclosure-shadow-mode";
+import {
+  evaluateControlledAuthoritativePilot,
+  recordControlledPilotObservation,
+} from "@/lib/server/controlled-production-pilot-governance";
+import { normalizePublicDecisionStatus, type PublicDecisionStatus } from "@/lib/public-signing/decision-status";
+import {
+  collectArabicMojibakeDiagnostics,
+  normalizeArabicForPatientFacingText,
+} from "@/lib/server/arabic-mojibake-guard";
 import { buildSigningOtpSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
 import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
@@ -80,7 +90,17 @@ type LegacyEducationAssetRow = {
 
 type PublicEducationEventType = EducationSessionEventType;
 type PublicDecisionEventType = "CONSENT_PRESENTED" | "CONSENT_ACCEPTED" | "CONSENT_REFUSED" | "REFUSAL_FORM_PRESENTED" | "REFUSAL_ACKNOWLEDGED";
-type PublicDecisionStatus = "UNDECIDED" | "CONSENT_ACCEPTED" | "CONSENT_REFUSED";
+
+const CONSENT_ACCEPTED_ACTIONS = ["CONSENT_ACCEPTED", "DECISION_ACCEPTED"] as const;
+const CONSENT_REFUSED_ACTIONS = ["CONSENT_REFUSED", "DECISION_REFUSED"] as const;
+const DECISION_EVENT_ACTIONS = [
+  "CONSENT_PRESENTED",
+  ...CONSENT_ACCEPTED_ACTIONS,
+  ...CONSENT_REFUSED_ACTIONS,
+  "REFUSAL_FORM_PRESENTED",
+  "REFUSAL_ACKNOWLEDGED",
+  "REFUSAL_SIGNED",
+] as const;
 
 export type SigningTokenContext = {
   tenantId: string;
@@ -194,6 +214,7 @@ export type PublicSigningDocumentPayload = {
       sortOrder: number;
     }>;
     viewedAt: string | null;
+    acknowledgedAt: string | null;
     completed: boolean;
     patientAcknowledged: boolean;
     acknowledgement: boolean;
@@ -253,6 +274,7 @@ type EducationStatus = {
   postProcedureInstructions: LocalizedLine[];
   assets: LinkedEducationPackagePayload["assets"];
   viewedAt: string | null;
+  acknowledgedAt: string | null;
   completed: boolean;
   patientAcknowledged: boolean;
   acknowledgement: boolean;
@@ -453,10 +475,62 @@ function computeDocumentHash(input: Record<string, unknown>): string {
 }
 
 function normalizeDecisionStatus(value: unknown): PublicDecisionStatus {
-  const normalized = getString(value).toUpperCase();
-  if (normalized === "CONSENT_ACCEPTED") return "CONSENT_ACCEPTED";
-  if (normalized === "CONSENT_REFUSED") return "CONSENT_REFUSED";
-  return "UNDECIDED";
+  return normalizePublicDecisionStatus(value);
+}
+
+function normalizeArabicText(value: string | null | undefined): string {
+  return normalizeArabicForPatientFacingText(getString(value));
+}
+
+function normalizeNullableArabicText(value: string | null | undefined): string | null {
+  if (value == null) {
+    return null;
+  }
+  return normalizeArabicText(value);
+}
+
+function collectPatientFacingArabicDiagnostics(payload: PublicSigningDocumentPayload) {
+  const entries: Array<{ fieldPath: string; value: string | null | undefined }> = [
+    { fieldPath: "templateTitleAr", value: payload.templateTitleAr },
+    { fieldPath: "legalTextAr", value: payload.legalTextAr },
+    { fieldPath: "pdplTextAr", value: payload.pdplTextAr },
+  ];
+
+  for (const [index, section] of payload.sections.entries()) {
+    entries.push({ fieldPath: `sections[${index}].titleAr`, value: section.titleAr });
+    entries.push({ fieldPath: `sections[${index}].contentAr`, value: section.contentAr });
+  }
+
+  if (payload.decision.refusalForm) {
+    entries.push({ fieldPath: "decision.refusalForm.statementAr", value: payload.decision.refusalForm.statementAr });
+    entries.push({ fieldPath: "decision.refusalForm.acknowledgementAr", value: payload.decision.refusalForm.acknowledgementAr });
+  }
+
+  if (payload.education.titleAr) {
+    entries.push({ fieldPath: "education.titleAr", value: payload.education.titleAr });
+  }
+  if (payload.education.summary?.ar) {
+    entries.push({ fieldPath: "education.summary.ar", value: payload.education.summary.ar });
+  }
+
+  for (const [index, item] of payload.education.risks.entries()) {
+    entries.push({ fieldPath: `education.risks[${index}].ar`, value: item.ar });
+  }
+  for (const [index, item] of payload.education.benefits.entries()) {
+    entries.push({ fieldPath: `education.benefits[${index}].ar`, value: item.ar });
+  }
+  for (const [index, item] of payload.education.faq.entries()) {
+    entries.push({ fieldPath: `education.faq[${index}].questionAr`, value: item.questionAr });
+    entries.push({ fieldPath: `education.faq[${index}].answerAr`, value: item.answerAr });
+  }
+  for (const [index, item] of payload.education.preProcedureInstructions.entries()) {
+    entries.push({ fieldPath: `education.preProcedureInstructions[${index}].ar`, value: item.ar });
+  }
+  for (const [index, item] of payload.education.postProcedureInstructions.entries()) {
+    entries.push({ fieldPath: `education.postProcedureInstructions[${index}].ar`, value: item.ar });
+  }
+
+  return collectArabicMojibakeDiagnostics(entries);
 }
 
 function getClientIpAddress(request?: NextRequest): string | null {
@@ -694,10 +768,8 @@ async function getEducationStatus(
     where: {
       tenantId,
       consentDocumentId: documentId,
-      OR: [
-        { source: "patient-education" },
-        { action: { startsWith: "EDUCATION_" } },
-      ],
+      source: "public-signing",
+      action: { startsWith: "EDUCATION_" },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -735,6 +807,7 @@ async function getEducationStatus(
     postProcedureInstructions: linkedPackage?.postProcedureInstructions || [],
     assets: linkedPackage?.assets || [],
     viewedAt: presentedEvent?.createdAt?.toISOString() || null,
+    acknowledgedAt: acknowledgedEvent?.createdAt?.toISOString() || null,
     completed: Boolean(completedEvent),
     patientAcknowledged: Boolean(acknowledgedEvent) || getBoolean(acknowledgedMetadata.acknowledgement),
     acknowledgement: Boolean(acknowledgedEvent) || getBoolean(acknowledgedMetadata.acknowledgement),
@@ -838,6 +911,9 @@ export async function recordPublicEducationEvent(args: {
   assetViews?: string[];
   acknowledgement?: boolean;
 }): Promise<EducationStatus> {
+  if (args.request) {
+    await validatePublicSigningSession({ token: args.token, request: args.request });
+  }
   const context = await getSigningTokenContext(args.token);
   const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
   const linkedEducationPackage = await getLinkedEducationPackage(
@@ -1005,14 +1081,7 @@ async function getDecisionStatus(
       tenantId,
       consentDocumentId: doc.id,
       action: {
-        in: [
-          "CONSENT_PRESENTED",
-          "CONSENT_ACCEPTED",
-          "CONSENT_REFUSED",
-          "REFUSAL_FORM_PRESENTED",
-          "REFUSAL_ACKNOWLEDGED",
-          "REFUSAL_SIGNED",
-        ],
+        in: [...DECISION_EVENT_ACTIONS],
       },
     },
     orderBy: { createdAt: "asc" },
@@ -1022,8 +1091,8 @@ async function getDecisionStatus(
   const executionContext = asRecord(metadata.executionContext) || {};
   const decisionMetadata = asRecord(executionContext.decision) || {};
   const consentPresentedEvent = events.find((event) => event.action === "CONSENT_PRESENTED") || null;
-  const acceptedEvent = [...events].reverse().find((event) => event.action === "CONSENT_ACCEPTED") || null;
-  const refusedEvent = [...events].reverse().find((event) => event.action === "CONSENT_REFUSED") || null;
+  const acceptedEvent = [...events].reverse().find((event) => CONSENT_ACCEPTED_ACTIONS.includes(event.action as (typeof CONSENT_ACCEPTED_ACTIONS)[number])) || null;
+  const refusedEvent = [...events].reverse().find((event) => CONSENT_REFUSED_ACTIONS.includes(event.action as (typeof CONSENT_REFUSED_ACTIONS)[number])) || null;
   const refusalPresentedEvent = [...events].reverse().find((event) => event.action === "REFUSAL_FORM_PRESENTED") || null;
   const refusalAcknowledgedEvent = [...events].reverse().find((event) => event.action === "REFUSAL_ACKNOWLEDGED") || null;
   const refusalSignedEvent = [...events].reverse().find((event) => event.action === "REFUSAL_SIGNED") || null;
@@ -1031,9 +1100,9 @@ async function getDecisionStatus(
   const latestDecisionEvent = [acceptedEvent, refusedEvent]
     .filter((event): event is NonNullable<typeof acceptedEvent> => Boolean(event))
     .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())[0] || null;
-  const status = latestDecisionEvent?.action === "CONSENT_REFUSED"
+  const status = CONSENT_REFUSED_ACTIONS.includes((latestDecisionEvent?.action || "") as (typeof CONSENT_REFUSED_ACTIONS)[number])
     ? "CONSENT_REFUSED"
-    : latestDecisionEvent?.action === "CONSENT_ACCEPTED"
+    : CONSENT_ACCEPTED_ACTIONS.includes((latestDecisionEvent?.action || "") as (typeof CONSENT_ACCEPTED_ACTIONS)[number])
       ? "CONSENT_ACCEPTED"
       : normalizeDecisionStatus(decisionMetadata.status);
   const refusalForm = status === "CONSENT_REFUSED"
@@ -1147,6 +1216,13 @@ export async function recordPublicDecisionEvent(args: {
   const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
   const linkedEducationPackage = await getLinkedEducationPackage(context.tenantId, doc.templateId, doc.templateVersionId);
   const education = await getEducationStatus(context.tenantId, doc.id, linkedEducationPackage, context.sessionId);
+  if (
+    (args.eventType === "CONSENT_ACCEPTED" || args.eventType === "CONSENT_REFUSED")
+    && linkedEducationPackage
+    && (!education.completed || !education.patientAcknowledged)
+  ) {
+    throw new ApiError(409, "Education must be completed and acknowledged before recording a consent decision");
+  }
   const currentDecision = await getDecisionStatus(context.tenantId, doc, education);
   const nextDecisionStatus: PublicDecisionStatus =
     args.eventType === "CONSENT_ACCEPTED"
@@ -1260,6 +1336,8 @@ async function persistPublicSigningEvidencePackages(args: {
       refusalSignedAt: args.decision.refusalSignedAt,
     },
     education: {
+      displayedAt: args.education.viewedAt,
+      acknowledgedAt: args.education.acknowledgedAt,
       completed: args.education.completed,
       patientAcknowledged: args.education.patientAcknowledged,
       completedAt: args.education.completedAt,
@@ -1444,6 +1522,7 @@ async function buildPreOtpBootstrapPayload(
     where: { tenantId: context.tenantId, id: context.documentId },
     select: {
       id: true,
+      status: true,
       templateId: true,
       templateVersionId: true,
       tenant: { select: { name: true } },
@@ -1453,6 +1532,10 @@ async function buildPreOtpBootstrapPayload(
 
   if (!doc) {
     throw new ApiError(404, "Consent document not found");
+  }
+
+  if (doc.status === ConsentDocumentStatus.SIGNED || doc.status === ConsentDocumentStatus.FINALIZED) {
+    throw new ApiError(404, "Invalid or expired signing token");
   }
 
   // Whether the document requires an education package can be determined by
@@ -1504,15 +1587,57 @@ async function buildPublicSigningDocumentPayload(context: SigningTokenContext): 
   const metadata = asRecord(doc.metadata) || {};
   const wordingSnapshot = asRecord(metadata.wordingSnapshot) || {};
   const fixedClauses = asRecord(wordingSnapshot.fixedClauses) || {};
-  const legalTextAr = getString(fixedClauses.legalTextAr);
+  const legalTextAr = normalizeArabicText(fixedClauses.legalTextAr as string | null | undefined);
   const legalTextEn = getString(fixedClauses.legalTextEn);
-  const pdplTextAr = getString(fixedClauses.pdplTextAr);
+  const pdplTextAr = normalizeArabicText(fixedClauses.pdplTextAr as string | null | undefined);
   const pdplTextEn = getString(fixedClauses.pdplTextEn);
   const signatureCaptured = decision.status === "CONSENT_REFUSED"
     ? decision.refusalSignatureCaptured
     : doc.signatures.some((signature) => signature.role === normalizeSignerRole(context.signerRole));
 
-  return {
+  const sections = doc.sections.map((section) => ({
+    id: section.id,
+    sectionKey: section.sectionKey,
+    sectionKind: section.sectionKind,
+    titleAr: normalizeArabicText(section.titleAr),
+    titleEn: section.titleEn,
+    contentAr: normalizeArabicText(section.contentAr),
+    contentEn: section.contentEn,
+  }));
+
+  const normalizedEducation: EducationStatus = {
+    ...education,
+    titleAr: normalizeNullableArabicText(education.titleAr),
+    summary: education.summary
+      ? {
+        ar: normalizeArabicText(education.summary.ar),
+        en: education.summary.en,
+      }
+      : null,
+    risks: education.risks.map((item) => ({ ar: normalizeArabicText(item.ar), en: item.en })),
+    benefits: education.benefits.map((item) => ({ ar: normalizeArabicText(item.ar), en: item.en })),
+    faq: education.faq.map((item) => ({
+      questionAr: normalizeArabicText(item.questionAr),
+      answerAr: normalizeArabicText(item.answerAr),
+      questionEn: item.questionEn,
+      answerEn: item.answerEn,
+    })),
+    preProcedureInstructions: education.preProcedureInstructions.map((item) => ({ ar: normalizeArabicText(item.ar), en: item.en })),
+    postProcedureInstructions: education.postProcedureInstructions.map((item) => ({ ar: normalizeArabicText(item.ar), en: item.en })),
+  };
+
+  const normalizedDecision: DecisionStatus = decision.refusalForm
+    ? {
+      ...decision,
+      refusalForm: {
+        ...decision.refusalForm,
+        statementAr: normalizeArabicText(decision.refusalForm.statementAr),
+        acknowledgementAr: normalizeArabicText(decision.refusalForm.acknowledgementAr),
+      },
+    }
+    : decision;
+
+  const payload: PublicSigningDocumentPayload = {
     documentId: doc.id,
     consentReference: doc.consentReference,
     status: doc.status,
@@ -1521,26 +1646,68 @@ async function buildPublicSigningDocumentPayload(context: SigningTokenContext): 
     physicianName: doc.physicianName,
     diagnosis: doc.diagnosis || "",
     plannedProcedure: doc.plannedProcedure || "",
-    templateTitleAr: doc.template.titleAr,
+    templateTitleAr: normalizeArabicText(doc.template.titleAr),
     templateTitleEn: doc.template.titleEn,
     versionLabel: doc.templateVersion.versionLabel,
-    sections: doc.sections.map((section) => ({
-      id: section.id,
-      sectionKey: section.sectionKey,
-      sectionKind: section.sectionKind,
-      titleAr: section.titleAr,
-      titleEn: section.titleEn,
-      contentAr: section.contentAr,
-      contentEn: section.contentEn,
-    })),
+    sections,
     legalTextAr,
     legalTextEn,
     pdplTextAr,
     pdplTextEn,
     signatureCaptured,
-    decision,
-    education,
+    decision: normalizedDecision,
+    education: normalizedEducation,
   };
+
+  const arabicDiagnostics = collectPatientFacingArabicDiagnostics(payload);
+  if (arabicDiagnostics.length > 0) {
+    console.error("[PUBLIC_SIGNING_ARABIC_MOJIBAKE_BLOCKED]", {
+      documentId: payload.documentId,
+      consentReference: payload.consentReference,
+      diagnostics: arabicDiagnostics,
+    });
+    throw new ApiError(
+      422,
+      "Arabic content appears corrupted in the patient signing view. Please contact support.",
+    );
+  }
+
+  const shadowResult = executeUnifiedDisclosureShadowMode({
+    flow: "patient_signing",
+    tenantId: context.tenantId,
+    consentDocumentId: context.documentId,
+    document: doc as unknown as Record<string, unknown>,
+    legacyPayload: payload,
+  });
+
+  const pilotGovernance = evaluateControlledAuthoritativePilot({
+    flow: "patient_runtime",
+    tenantId: context.tenantId,
+    physicianId: doc.physicianLicense || doc.physicianName,
+    specialty: doc.template.specialty || doc.department,
+    procedure: doc.plannedProcedure,
+    pilotGroup: "GI",
+  });
+  recordControlledPilotObservation({
+    governance: pilotGovernance,
+    module: "public-signing",
+    event: "authoritative_patient_runtime_projection_validated",
+    parity: {
+      shadowStatus: shadowResult.status,
+      mismatchSummary: shadowResult.mismatchSummary,
+      dimensionSummary: shadowResult.dimensionSummary,
+      projectionHashes: shadowResult.projectionHashes ?? undefined,
+    },
+    details: {
+      consentDocumentId: doc.id,
+      consentReference: doc.consentReference,
+      decisionStatus: payload.decision.status,
+      educationCompleted: payload.education.completed,
+      educationAcknowledged: payload.education.patientAcknowledged,
+    },
+  });
+
+  return payload;
 }
 
 async function getLatestActiveOtpChallenge(token: string): Promise<{ rowId: string; payload: OtpChallengePayload; createdAt: Date } | null> {
@@ -1615,6 +1782,9 @@ export async function requestSigningOtp(args: {
 }): Promise<{ challengeId: string; expiresAt: string; deliveryStatus: "sent" | "failed"; fallbackMode: boolean; maskedPhone: string }> {
   const context = await getSigningTokenContext(args.token);
   const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
+  if (doc.status === ConsentDocumentStatus.SIGNED || doc.status === ConsentDocumentStatus.FINALIZED) {
+    throw new ApiError(409, "Signing flow already completed for this document");
+  }
   const recipientEmail = getSecureSigningRecipientEmail(doc.metadata);
   // [WORKFLOW_SEQUENCE_CORRECTION] OTP is the FIRST gating step. Pre-OTP
   // education/decision gates have been removed: OTP must be requestable
@@ -1877,7 +2047,7 @@ export async function verifySigningOtp(args: {
     otpVerificationTime: new Date(),
     otpVerificationStatus: "VERIFIED",
     maskedMobileNumber: active.payload.maskedPhone,
-    educationViewed: education.completed,
+    educationViewed: Boolean(education.viewedAt),
     signatureTimestamp: new Date(verifiedAt),
     signerIdentity: context.signerRole,
     ipAddress: getClientIpAddress(args.request) || undefined,
@@ -1891,6 +2061,12 @@ export async function verifySigningOtp(args: {
       documentHash,
       educationCompleted: education.completed,
       patientAcknowledged: education.patientAcknowledged,
+      educationDisplayedAt: education.viewedAt,
+      educationAcknowledgedAt: education.acknowledgedAt,
+      educationDurationSeconds: education.durationSeconds,
+      educationScrollCompletion: education.scrollCompletion,
+      educationVersion: education.versionLabel,
+      educationHash: education.contentHash,
     },
   }).catch(() => undefined);
 
@@ -2021,6 +2197,7 @@ export async function submitPublicSigningSignature(args: {
     await prisma().consentDocument.update({
       where: { id: context.documentId },
       data: {
+        status: ConsentDocumentStatus.SIGNED,
         metadata: mergeDecisionExecutionContext({
           rawMetadata: doc.metadata,
           eventType: "REFUSAL_ACKNOWLEDGED",
@@ -2106,7 +2283,7 @@ export async function submitPublicSigningSignature(args: {
       browser: requestUserAgent || undefined,
       otpVerificationTime: new Date(context.publicSession.verifiedAt),
       otpVerificationStatus: "VERIFIED",
-      educationViewed: education.completed,
+      educationViewed: Boolean(education.viewedAt),
       metadata: {
         otpHash: latestRequestedChallenge.otpHash,
         tokenHash: context.publicSession.tokenHash,
@@ -2115,6 +2292,12 @@ export async function submitPublicSigningSignature(args: {
         refusalFormHash: refusalForm.formHash,
         educationCompleted: education.completed,
         patientAcknowledged: education.patientAcknowledged,
+        educationDisplayedAt: education.viewedAt,
+        educationAcknowledgedAt: education.acknowledgedAt,
+        educationDurationSeconds: education.durationSeconds,
+        educationScrollCompletion: education.scrollCompletion,
+        educationVersion: education.versionLabel,
+        educationHash: education.contentHash,
         signatureHash,
         decisionStatus: decision.status,
       },
@@ -2122,7 +2305,7 @@ export async function submitPublicSigningSignature(args: {
 
     return {
       documentId: context.documentId,
-      status: doc.status,
+      status: ConsentDocumentStatus.SIGNED,
       signatureId,
       signerRole,
       signerName,
@@ -2161,9 +2344,12 @@ export async function submitPublicSigningSignature(args: {
   const signatures = [...doc.signatures, signature];
   const hasPatient = signatures.some((item) => item.role === ConsentSignatureRole.PATIENT || item.role === ConsentSignatureRole.GUARDIAN);
   const hasPhysician = signatures.some((item) => item.role === ConsentSignatureRole.PHYSICIAN);
-  const nextStatus = hasPatient && hasPhysician
+  const signerCompletesWorkflow = signerRole === ConsentSignatureRole.PATIENT || signerRole === ConsentSignatureRole.GUARDIAN;
+  const nextStatus = signerCompletesWorkflow
     ? ConsentDocumentStatus.SIGNED
-    : ConsentDocumentStatus.READY_FOR_SIGNATURE;
+    : (hasPatient && hasPhysician
+    ? ConsentDocumentStatus.SIGNED
+    : ConsentDocumentStatus.READY_FOR_SIGNATURE);
 
   await prisma().consentDocument.update({
     where: { id: context.documentId },
@@ -2231,7 +2417,7 @@ export async function submitPublicSigningSignature(args: {
     browser: signature.userAgent || undefined,
     otpVerificationTime: new Date(context.publicSession.verifiedAt),
     otpVerificationStatus: "VERIFIED",
-    educationViewed: education.completed,
+    educationViewed: Boolean(education.viewedAt),
     metadata: {
       otpHash: latestRequestedChallenge.otpHash,
       tokenHash: context.publicSession.tokenHash,
@@ -2240,6 +2426,12 @@ export async function submitPublicSigningSignature(args: {
       pdfHash,
       educationCompleted: education.completed,
       patientAcknowledged: education.patientAcknowledged,
+      educationDisplayedAt: education.viewedAt,
+      educationAcknowledgedAt: education.acknowledgedAt,
+      educationDurationSeconds: education.durationSeconds,
+      educationScrollCompletion: education.scrollCompletion,
+      educationVersion: education.versionLabel,
+      educationHash: education.contentHash,
       signatureHash,
       signatureProvided: Boolean(args.signatureDataUrl),
     },
