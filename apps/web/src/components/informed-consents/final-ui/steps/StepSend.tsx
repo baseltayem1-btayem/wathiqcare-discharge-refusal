@@ -30,6 +30,13 @@ export function StepSend({ lang, onPrev, onComplete }: Props) {
   if (sent) {
     return (
       <div className="p-8 flex flex-col items-center justify-center min-h-96 text-center space-y-4">
+        <div className="w-full max-w-md bg-amber-50 border border-amber-200 rounded px-4 py-3 text-left" data-testid="step-send-success-pilot-banner">
+          <span className="text-xs font-semibold text-amber-800">
+            {lang === 'en'
+              ? 'Controlled pilot — this success view is a local preview. No real SMS, email, or signing link was dispatched.'
+              : 'تجربة محكومة — شاشة النجاح هذه معاينة محلية فقط. لم يتم إرسال أي رسالة SMS أو بريد إلكتروني أو رابط توقيع فعلي.'}
+          </span>
+        </div>
         <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
           <CheckCircle2 className="w-8 h-8 text-emerald-600" />
         </div>
@@ -60,6 +67,14 @@ export function StepSend({ lang, onPrev, onComplete }: Props) {
 
   return (
     <div className="p-8 space-y-6" dir={dir}>
+      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded px-4 py-3" data-testid="step-send-pilot-banner">
+        <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+        <span className="text-xs font-semibold text-amber-800">
+          {lang === 'en'
+            ? 'Controlled pilot — the “Send Consent Link” button advances the workflow to a local success preview only. No SMS, no email, and no public-signing token are dispatched from this baseline.'
+            : 'تجربة محكومة — زر «إرسال رابط الموافقة» يعرض شاشة نجاح محلية فقط. لا يتم إرسال رسالة SMS أو بريد إلكتروني أو رمز توقيع عام من هذا الإصدار.'}
+        </span>
+      </div>
       <div>
         <h2 className="text-[#002B5C]">{lang === 'en' ? 'Send Secure Consent Link' : 'إرسال رابط الموافقة الآمن'}</h2>
         <p className="text-sm text-[#6B7280] mt-1">{lang === 'en' ? 'Confirm patient contact details and OTP method before sending.' : 'أكد بيانات التواصل مع المريض وطريقة OTP قبل الإرسال.'}</p>

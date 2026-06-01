@@ -28,6 +28,13 @@ export function StepPreview({ lang, onNext, onPrev, onComplete }: Props) {
 
   return (
     <div className="p-8 space-y-6">
+      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded px-4 py-3" data-testid="step-preview-pilot-banner">
+        <span className="text-xs font-semibold text-amber-800">
+          {lang === 'en'
+            ? 'Controlled pilot — PDF preview is rendered from local fixtures. Final PDF rendering, signature placement, and evidence package generation are not wired to the production renderer in this baseline.'
+            : 'تجربة محكومة — معاينة PDF تُعرض من بيانات تجريبية محلية. لم يتم بعد ربط المعاينة النهائية وتوقيع المستندات وحزمة الأدلة بمولِّد الإنتاج في هذا الإصدار.'}
+        </span>
+      </div>
       <div>
         <h2 className="text-[#002B5C]">{lang === 'en' ? 'Patient Preview Simulation' : 'محاكاة معاينة المريض'}</h2>
         <p className="text-sm text-[#6B7280] mt-1">{lang === 'en' ? 'See exactly what the patient will see before you send the consent link.' : 'شاهد بالضبط ما سيراه المريض قبل إرسال رابط الموافقة.'}</p>

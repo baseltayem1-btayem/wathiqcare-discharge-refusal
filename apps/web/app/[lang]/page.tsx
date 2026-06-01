@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import WathiqcareWhiteLanding from "@/components/landing/WathiqcareWhiteLanding";
 
 // ─── Feature icon map ────────────────────────────────────────────────────────
 
@@ -524,8 +525,14 @@ function Footer({ lang }: { lang: string }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
-  // params.lang is accessed via useI18n (seeded from layout)
-  // We still need lang for href construction — extract from useI18n
+  return <LandingRouter />;
+}
+
+function LandingRouter() {
+  const { lang } = useI18n();
+  if (lang === "en") {
+    return <WathiqcareWhiteLanding lang={lang} />;
+  }
   return <LandingPageInner />;
 }
 
