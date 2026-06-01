@@ -113,8 +113,8 @@ export async function createSigningSession(
   // Persist secure tokens
   for (const t of tokenRows) {
     await prisma().$executeRawUnsafe(
-      `INSERT INTO signing_secure_tokens (session_id, tenant_id, signer_role, token, expires_at)
-       VALUES ($1::uuid, $2::uuid, $3, $4, $5::timestamptz)` ,
+            `INSERT INTO signing_secure_tokens (session_id, tenant_id, signer_role, token, expires_at)
+        VALUES ($1::uuid, $2::uuid, $3, $4, $5::timestamptz)`,
       sessionId,
       input.tenantId,
       t.signerRole,
@@ -133,7 +133,7 @@ export async function createSigningSession(
 
     await prisma().$executeRawUnsafe(
       `UPDATE signing_sessions SET provider_session_id = $1, status = 'SENT', updated_at = NOW()
-       WHERE id = $2`,
+       WHERE id = $2::uuid`,
       providerSessionId,
       sessionId
     );
