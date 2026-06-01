@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, Send, Phone, Mail, Globe, Clock, Shield, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { ClinicalBadge } from '../clinical/ClinicalBadge';
 import type { ConsentStep } from '../clinical/ClinicalTypes';
@@ -10,31 +11,90 @@ interface Props {
   onNext: () => void;
   onPrev: () => void;
   onComplete: (step: ConsentStep, ids: string[]) => void;
+  mobile: string;
+  email: string;
 }
 
-export function StepSend({ lang, onPrev, onComplete }: Props) {
-  const [otpMethod, setOtpMethod] = useState<'sms' | 'email' | 'both'>('sms');
+type SecureSigningWorkflowResponse = {
+  workflow: {
+    signingUrl: string;
+    recipientEmail?: string;
+    emailDeliveryStatus?: 'sent' | 'failed';
+    emailFailureReason?: string | null;
+    createdAt: string;
+  };
+};
+
+export function StepSend({ lang, onPrev, onComplete, mobile, email }: Props) {
+  const searchParams = useSearchParams();
+  const documentId = (searchParams.get('documentId') || '').trim();
   const [patientLang, setPatientLang] = useState<'en' | 'ar' | 'both'>('both');
   const [expiryHours, setExpiryHours] = useState('48');
   const [physicianConfirmed, setPhysicianConfirmed] = useState(false);
+  const [emailAddress, setEmailAddress] = useState(email);
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [workflow, setWorkflow] = useState<SecureSigningWorkflowResponse['workflow'] | null>(null);
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
-  const handleSend = () => {
-    if (physicianConfirmed) {
+  const handleSend = async () => {
+    if (!physicianConfirmed || sending) return;
+
+    const normalizedEmail = emailAddress.trim();
+    if (!documentId) {
+      setError(lang === 'en' ? 'Controlled email delivery requires a live consent documentId in the page URL.' : 'يتطلب الإرسال التجريبي بالبريد الإلكتروني وجود documentId حي في رابط الصفحة.');
+      return;
+    }
+
+    if (!normalizedEmail) {
+      setError(lang === 'en' ? 'Enter the patient email address before sending.' : 'أدخل البريد الإلكتروني للمريض قبل الإرسال.');
+      return;
+    }
+
+    setSending(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/modules/informed-consents/documents/${encodeURIComponent(documentId)}/secure-signing`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mobileNumber: mobile,
+          recipientEmail: normalizedEmail,
+        }),
+      });
+
+      const payload = await response.json().catch(() => null) as SecureSigningWorkflowResponse | { error?: string; message?: string } | null;
+
+      if (!response.ok) {
+        throw new Error((payload && 'message' in payload && payload.message) || (payload && 'error' in payload && payload.error) || 'Failed to send secure signing link');
+      }
+
+      if (!payload || !('workflow' in payload)) {
+        throw new Error('Secure signing response was empty');
+      }
+
+      setWorkflow(payload.workflow);
       onComplete('send', ['v16']);
       setSent(true);
+    } catch (sendError) {
+      setError(sendError instanceof Error ? sendError.message : 'Failed to send secure signing link');
+    } finally {
+      setSending(false);
     }
   };
 
   if (sent) {
     return (
       <div className="p-8 flex flex-col items-center justify-center min-h-96 text-center space-y-4">
-        <div className="w-full max-w-md bg-amber-50 border border-amber-200 rounded px-4 py-3 text-left" data-testid="step-send-success-pilot-banner">
-          <span className="text-xs font-semibold text-amber-800">
+        <div className="w-full max-w-md bg-emerald-50 border border-emerald-200 rounded px-4 py-3 text-left" data-testid="step-send-success-banner">
+          <span className="text-xs font-semibold text-emerald-800">
             {lang === 'en'
-              ? 'Controlled pilot — this success view is a local preview. No real SMS, email, or signing link was dispatched.'
-              : 'تجربة محكومة — شاشة النجاح هذه معاينة محلية فقط. لم يتم إرسال أي رسالة SMS أو بريد إلكتروني أو رابط توقيع فعلي.'}
+              ? 'Controlled pilot — secure link email delivery is active for this live consent document. SMS remains disabled on this surface.'
+              : 'تجربة محكومة — إرسال رابط الموافقة عبر البريد الإلكتروني مفعل لهذا المستند الحي. ما يزال SMS معطلاً في هذه الشاشة.'}
           </span>
         </div>
         <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -42,16 +102,16 @@ export function StepSend({ lang, onPrev, onComplete }: Props) {
         </div>
         <div>
           <h2 className="text-emerald-700">{lang === 'en' ? 'Consent Link Sent Successfully' : 'تم إرسال رابط الموافقة بنجاح'}</h2>
-          <p className="text-sm text-[#6B7280] mt-1">{lang === 'en' ? 'The patient will receive an OTP-secured link to review and sign the consent.' : 'سيتلقى المريض رابطاً آمناً بـ OTP لمراجعة الموافقة والتوقيع عليها.'}</p>
+          <p className="text-sm text-[#6B7280] mt-1">{lang === 'en' ? 'The patient will receive a secure signing link by email to review and sign the consent.' : 'سيتلقى المريض رابط توقيع آمن عبر البريد الإلكتروني لمراجعة الموافقة والتوقيع عليها.'}</p>
         </div>
         <div className="bg-white border border-[#D8DCE3] rounded-lg p-5 w-full max-w-md text-left">
           <div className="space-y-2 text-sm">
             {[
-              { label: 'Sent to', value: '+966 50 234 5678' },
-              { label: 'Method', value: 'SMS OTP' },
+              { label: 'Sent to', value: workflow?.recipientEmail || emailAddress },
+              { label: 'Method', value: 'Email secure link' },
               { label: 'Language', value: 'Arabic & English' },
               { label: 'Expires', value: 'in 48 hours' },
-              { label: 'Reference', value: 'CNS-2024-0847-001' },
+              { label: 'Document ID', value: documentId },
             ].map(item => (
               <div key={item.label} className="flex justify-between">
                 <span className="text-[#6B7280]">{item.label}</span>
@@ -60,6 +120,12 @@ export function StepSend({ lang, onPrev, onComplete }: Props) {
             ))}
           </div>
         </div>
+        {workflow?.signingUrl ? (
+          <div className="bg-white border border-[#D8DCE3] rounded-lg p-5 w-full max-w-md text-left">
+            <div className="text-xs font-semibold text-[#6B7280] mb-2">{lang === 'en' ? 'Generated secure link' : 'الرابط الآمن المُنشأ'}</div>
+            <div className="text-xs text-[#2F2F2F] break-all font-mono">{workflow.signingUrl}</div>
+          </div>
+        ) : null}
         <ClinicalBadge variant="info" label={lang === 'en' ? 'Tracking consent in Status tab' : 'متابعة الموافقة في تبويب الحالة'} />
       </div>
     );
@@ -71,13 +137,13 @@ export function StepSend({ lang, onPrev, onComplete }: Props) {
         <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
         <span className="text-xs font-semibold text-amber-800">
           {lang === 'en'
-            ? 'Controlled pilot — the “Send Consent Link” button advances the workflow to a local success preview only. No SMS, no email, and no public-signing token are dispatched from this baseline.'
-            : 'تجربة محكومة — زر «إرسال رابط الموافقة» يعرض شاشة نجاح محلية فقط. لا يتم إرسال رسالة SMS أو بريد إلكتروني أو رمز توقيع عام من هذا الإصدار.'}
+            ? 'Controlled pilot — this step now sends a real secure signing link by email when a live consent documentId is present in the page URL. SMS remains disabled on this surface.'
+            : 'تجربة محكومة — ترسل هذه الخطوة رابط توقيع آمن فعلي عبر البريد الإلكتروني عند وجود documentId حي في رابط الصفحة. يبقى SMS معطلاً في هذه الشاشة.'}
         </span>
       </div>
       <div>
         <h2 className="text-[#002B5C]">{lang === 'en' ? 'Send Secure Consent Link' : 'إرسال رابط الموافقة الآمن'}</h2>
-        <p className="text-sm text-[#6B7280] mt-1">{lang === 'en' ? 'Confirm patient contact details and OTP method before sending.' : 'أكد بيانات التواصل مع المريض وطريقة OTP قبل الإرسال.'}</p>
+        <p className="text-sm text-[#6B7280] mt-1">{lang === 'en' ? 'Confirm the patient email address before dispatching the secure link.' : 'أكد البريد الإلكتروني للمريض قبل إرسال الرابط الآمن.'}</p>
       </div>
 
       {/* Patient contact */}
@@ -91,7 +157,10 @@ export function StepSend({ lang, onPrev, onComplete }: Props) {
             </label>
             <input
               type="tel"
-              defaultValue="+966 50 234 5678"
+              value={mobile}
+              readOnly
+              placeholder="+966 5x xxx xxxx"
+              title={lang === 'en' ? 'Patient mobile number' : 'رقم جوال المريض'}
               className="w-full border border-[#D8DCE3] rounded bg-[#F8F9FB] px-3 py-2 text-sm text-[#2F2F2F] focus:outline-none focus:ring-2 focus:ring-[#4B9CD3] font-mono"
             />
           </div>
@@ -102,32 +171,25 @@ export function StepSend({ lang, onPrev, onComplete }: Props) {
             </label>
             <input
               type="email"
-              defaultValue="m.alrashidi@email.com"
+              value={emailAddress}
+              onChange={event => setEmailAddress(event.target.value)}
+              placeholder="patient@example.com"
+              title={lang === 'en' ? 'Patient email address' : 'البريد الإلكتروني للمريض'}
               className="w-full border border-[#D8DCE3] rounded bg-[#F8F9FB] px-3 py-2 text-sm text-[#2F2F2F] focus:outline-none focus:ring-2 focus:ring-[#4B9CD3]"
             />
           </div>
         </div>
       </div>
 
-      {/* OTP method */}
+      {/* Delivery method */}
       <div className="bg-white border border-[#D8DCE3] rounded-lg p-5">
-        <h3 className="text-[#2F2F2F] mb-4">{lang === 'en' ? 'OTP Signing Method' : 'طريقة التوقيع بـ OTP'}</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { id: 'sms' as const, label: lang === 'en' ? 'SMS Only' : 'رسالة SMS فقط', icon: Phone, desc: lang === 'en' ? 'OTP sent to mobile' : 'OTP مُرسَل للجوال' },
-            { id: 'email' as const, label: lang === 'en' ? 'Email Only' : 'بريد إلكتروني فقط', icon: Mail, desc: lang === 'en' ? 'OTP sent to email' : 'OTP مُرسَل للبريد' },
-            { id: 'both' as const, label: lang === 'en' ? 'SMS + Email' : 'SMS + بريد إلكتروني', icon: Shield, desc: lang === 'en' ? 'Dual verification' : 'تحقق مزدوج' },
-          ].map(method => (
-            <div key={method.id}
-              onClick={() => setOtpMethod(method.id)}
-              className={`border rounded-lg p-3 cursor-pointer transition-colors ${otpMethod === method.id ? 'border-[#002B5C] bg-blue-50' : 'border-[#D8DCE3] hover:bg-[#F4F6F9]'}`}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <method.icon className="w-4 h-4 text-[#002B5C]" />
-                <span className="text-sm font-medium text-[#2F2F2F]">{method.label}</span>
-              </div>
-              <p className="text-xs text-[#6B7280]">{method.desc}</p>
-            </div>
-          ))}
+        <h3 className="text-[#2F2F2F] mb-4">{lang === 'en' ? 'Delivery Channel' : 'قناة الإرسال'}</h3>
+        <div className="border border-[#002B5C] bg-blue-50 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Mail className="w-4 h-4 text-[#002B5C]" />
+            <span className="text-sm font-medium text-[#2F2F2F]">{lang === 'en' ? 'Email Only' : 'بريد إلكتروني فقط'}</span>
+          </div>
+          <p className="text-xs text-[#6B7280]">{lang === 'en' ? 'This pilot activates secure-link delivery by email only. SMS remains disabled unless approved separately.' : 'يفعّل هذا المسار التجريبي إرسال الرابط الآمن عبر البريد الإلكتروني فقط. يظل SMS معطلاً ما لم يعتمد بشكل مستقل.'}</p>
         </div>
       </div>
 
@@ -160,24 +222,40 @@ export function StepSend({ lang, onPrev, onComplete }: Props) {
           <div className="space-y-3">
             <div>
               <label className="text-xs font-medium text-[#6B7280] block mb-1">{lang === 'en' ? 'Expiry Duration' : 'مدة الانتهاء'}</label>
-              <select value={expiryHours} onChange={e => setExpiryHours(e.target.value)} className="w-full border border-[#D8DCE3] rounded bg-[#F8F9FB] px-3 py-2 text-sm text-[#2F2F2F] focus:outline-none focus:ring-2 focus:ring-[#4B9CD3]">
+              <select value={expiryHours} onChange={e => setExpiryHours(e.target.value)} disabled title={lang === 'en' ? 'Secure link expiry duration' : 'مدة انتهاء الرابط الآمن'} className="w-full border border-[#D8DCE3] rounded bg-[#F8F9FB] px-3 py-2 text-sm text-[#2F2F2F] focus:outline-none focus:ring-2 focus:ring-[#4B9CD3] disabled:opacity-70">
                 <option value="24">24 hours</option>
                 <option value="48">48 hours</option>
                 <option value="72">72 hours</option>
                 <option value="168">7 days</option>
               </select>
+              <p className="mt-1 text-[11px] text-[#6B7280]">{lang === 'en' ? 'The current API controls expiry server-side.' : 'يتحكم الـ API الحالي في مدة الانتهاء من جهة الخادم.'}</p>
             </div>
             <div>
               <label className="text-xs font-medium text-[#6B7280] block mb-1">{lang === 'en' ? 'Max Resend Attempts' : 'الحد الأقصى لإعادة الإرسال'}</label>
-              <select className="w-full border border-[#D8DCE3] rounded bg-[#F8F9FB] px-3 py-2 text-sm text-[#2F2F2F] focus:outline-none focus:ring-2 focus:ring-[#4B9CD3]">
+              <select disabled title={lang === 'en' ? 'Maximum resend attempts' : 'الحد الأقصى لإعادة الإرسال'} className="w-full border border-[#D8DCE3] rounded bg-[#F8F9FB] px-3 py-2 text-sm text-[#2F2F2F] focus:outline-none focus:ring-2 focus:ring-[#4B9CD3] disabled:opacity-70">
                 <option>3 attempts</option>
                 <option>5 attempts</option>
                 <option>Unlimited</option>
               </select>
+              <p className="mt-1 text-[11px] text-[#6B7280]">{lang === 'en' ? 'Resend policy remains managed by the live consent workflow.' : 'تظل سياسة إعادة الإرسال مُدارة من مسار الموافقة الحي.'}</p>
             </div>
           </div>
         </div>
       </div>
+
+      {!documentId && (
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded px-4 py-2.5">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+          <span className="text-xs text-amber-800">{lang === 'en' ? 'Live email dispatch is available only when this page is opened with ?documentId=<live-consent-id>.' : 'يتوفر الإرسال الحي عبر البريد الإلكتروني فقط عند فتح الصفحة مع ?documentId=<live-consent-id>.'}</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded px-4 py-2.5">
+          <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+          <span className="text-xs text-red-800">{error}</span>
+        </div>
+      )}
 
       {/* Final confirmation */}
       <div className={`bg-[#002B5C]/5 border border-[#002B5C]/20 rounded-lg p-5 ${!physicianConfirmed ? 'opacity-100' : 'border-emerald-300 bg-emerald-50'}`}>
@@ -218,9 +296,11 @@ export function StepSend({ lang, onPrev, onComplete }: Props) {
           <ChevronLeft className="w-4 h-4" />
           {lang === 'en' ? 'Back' : 'رجوع'}
         </button>
-        <button onClick={handleSend} disabled={!physicianConfirmed} className="flex items-center gap-2 bg-[#C9A13B] hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white px-8 py-2.5 rounded text-sm font-semibold transition-colors">
+        <button onClick={() => { void handleSend(); }} disabled={!physicianConfirmed || sending || !documentId} className="flex items-center gap-2 bg-[#C9A13B] hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white px-8 py-2.5 rounded text-sm font-semibold transition-colors">
           <Send className="w-4 h-4" />
-          {lang === 'en' ? 'Send Consent Link' : 'إرسال رابط الموافقة'}
+          {sending
+            ? (lang === 'en' ? 'Sending Email Link...' : 'جارٍ إرسال رابط البريد...')
+            : (lang === 'en' ? 'Send Consent Link' : 'إرسال رابط الموافقة')}
         </button>
       </div>
     </div>

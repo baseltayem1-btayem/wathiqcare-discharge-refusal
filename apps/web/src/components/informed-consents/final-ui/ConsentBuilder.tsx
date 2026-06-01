@@ -35,6 +35,8 @@ export function ConsentBuilder({ lang }: Props) {
   const [currentStep, setCurrentStep] = useState<ConsentStep>('patient');
   const [validation, setValidation] = useState<ValidationItem[]>(defaultValidation);
   const [completedSteps, setCompletedSteps] = useState<Set<ConsentStep>>(new Set<ConsentStep>());
+  const [patientMobile, setPatientMobile] = useState('+966 50 234 5678');
+  const [patientEmail, setPatientEmail] = useState('m.alrashidi@email.com');
 
   const currentIndex = steps.findIndex(s => s.key === currentStep);
 
@@ -58,14 +60,14 @@ export function ConsentBuilder({ lang }: Props) {
   const renderStep = () => {
     const props = { lang, onNext: goNext, onPrev: goPrev, onComplete: markStepComplete };
     switch (currentStep) {
-      case 'patient': return <StepPatient {...props} />;
+      case 'patient': return <StepPatient {...props} mobile={patientMobile} email={patientEmail} onMobileChange={setPatientMobile} onEmailChange={setPatientEmail} />;
       case 'procedure': return <StepProcedure {...props} />;
       case 'anesthesia': return <StepAnesthesia {...props} />;
       case 'disclosures': return <StepDisclosures {...props} />;
       case 'education': return <StepEducation {...props} />;
       case 'preview': return <StepPreview {...props} />;
       case 'validation': return <StepValidation {...props} validationItems={validation} />;
-      case 'send': return <StepSend {...props} />;
+      case 'send': return <StepSend {...props} mobile={patientMobile} email={patientEmail} />;
       default: return null;
     }
   };
