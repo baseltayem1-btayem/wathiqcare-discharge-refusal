@@ -1,0 +1,56 @@
+{
+  "phase": "43C",
+  "timestamp": "2026-06-01T22:39:09.193Z",
+  "base": "http://localhost:3000",
+  "authenticatedAs": "medicaldirector@wathiqcare.med.sa",
+  "shots": [
+    {
+      "name": "01_step1_patient",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "file": "docs/production-readiness/phase43c-screenshots/01_step1_patient.png",
+      "bytes": 171717
+    },
+    {
+      "name": "02_step2_procedure",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "file": "docs/production-readiness/phase43c-screenshots/02_step2_procedure.png",
+      "bytes": 167360
+    },
+    {
+      "name": "03_step6_pdf_preview",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "file": "docs/production-readiness/phase43c-screenshots/03_step6_pdf_preview.png",
+      "bytes": 204105
+    },
+    {
+      "name": "04_step7_validation",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "file": "docs/production-readiness/phase43c-screenshots/04_step7_validation.png",
+      "bytes": 156460
+    },
+    {
+      "name": "05_step8_send",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "file": "docs/production-readiness/phase43c-screenshots/05_step8_send.png",
+      "bytes": 161199
+    },
+    {
+      "name": "06_arabic_mode",
+      "url": "http://localhost:3000/modules/informed-consents?lang=ar",
+      "file": "docs/production-readiness/phase43c-screenshots/06_arabic_mode.png",
+      "bytes": 172016
+    },
+    {
+      "name": "07_modules_informed-consents_create",
+      "url": "http://localhost:3000/modules/informed-consents/create",
+      "file": "docs/production-readiness/phase43c-screenshots/07_modules_informed-consents_create.png",
+      "bytes": 113734
+    },
+    {
+      "name": "08_modules",
+      "url": "http://localhost:3000/modules",
+      "file": "docs/production-readiness/phase43c-screenshots/08_modules.png",
+      "bytes": 83421
+    }
+  ]
+}

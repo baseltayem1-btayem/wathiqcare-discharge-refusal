@@ -34,7 +34,7 @@ interface Props {
 export function ConsentBuilder({ lang }: Props) {
   const [currentStep, setCurrentStep] = useState<ConsentStep>('patient');
   const [validation, setValidation] = useState<ValidationItem[]>(defaultValidation);
-  const [completedSteps, setCompletedSteps] = useState<Set<ConsentStep>>(new Set(['patient', 'procedure']));
+  const [completedSteps, setCompletedSteps] = useState<Set<ConsentStep>>(new Set<ConsentStep>());
 
   const currentIndex = steps.findIndex(s => s.key === currentStep);
 

@@ -30,5 +30,5 @@ export const defaultValidation: ValidationItem[] = [
   { id: "v13", label: "Patient education package ready", labelAr: "حزمة تثقيف المريض جاهزة", severity: "warning", complete: false, section: "education" },
   { id: "v14", label: "Patient preview confirmed", labelAr: "معاينة المريض مؤكدة", severity: "warning", complete: false, section: "preview" },
   { id: "v15", label: "PDF readiness verified", labelAr: "جاهزية PDF مؤكدة", severity: "warning", complete: false, section: "validation" },
-  { id: "v16", label: "Contact details confirmed", labelAr: "بيانات التواصل مؤكدة", severity: "critical", complete: false, section: "send" },
+  { id: "v16", label: "Contact details confirmed", labelAr: "بيانات التواصل مؤكدة", severity: "critical", complete: false, section: "patient" },
 ];

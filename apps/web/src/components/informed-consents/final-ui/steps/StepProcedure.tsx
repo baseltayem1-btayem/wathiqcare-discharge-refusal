@@ -39,10 +39,15 @@ const relatedConsents = [
 
 const complexityColors = { low: 'text-emerald-700 bg-emerald-50 border-emerald-200', medium: 'text-amber-700 bg-amber-50 border-amber-200', high: 'text-red-700 bg-red-50 border-red-200' };
 
-export function StepProcedure({ lang, onNext, onPrev }: Props) {
+export function StepProcedure({ lang, onNext, onPrev, onComplete }: Props) {
   const [selectedProc, setSelectedProc] = useState(procedures[0]);
   const [activeConsents, setActiveConsents] = useState<string[]>(['RC1', 'RC2']);
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+  const handleContinue = () => {
+    onComplete('procedure', ['v3', 'v4', 'v5']);
+    onNext();
+  };
 
   return (
     <div className="p-8 space-y-6" dir={dir}>
@@ -138,7 +143,7 @@ export function StepProcedure({ lang, onNext, onPrev }: Props) {
           <ChevronLeft className="w-4 h-4" />
           {lang === 'en' ? 'Back' : 'رجوع'}
         </button>
-        <button onClick={onNext} className="flex items-center gap-2 bg-[#002B5C] hover:bg-blue-900 text-white px-6 py-2.5 rounded text-sm font-medium transition-colors">
+        <button onClick={handleContinue} className="flex items-center gap-2 bg-[#002B5C] hover:bg-blue-900 text-white px-6 py-2.5 rounded text-sm font-medium transition-colors">
           {lang === 'en' ? 'Continue to Anesthesia' : 'متابعة للتخدير'}
           <ChevronRight className="w-4 h-4" />
         </button>
