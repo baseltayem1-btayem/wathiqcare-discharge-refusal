@@ -1,0 +1,56 @@
+{
+  "phase": "40D",
+  "timestamp": "2026-06-01T19:00:26.386Z",
+  "base": "http://localhost:3000",
+  "authenticatedAs": "dr.ahmed@wathiqcare.med.sa",
+  "shots": [
+    {
+      "name": "01_modules_informed-consents_default_landing",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "file": "docs/production-readiness/phase40d-screenshots/01_modules_informed-consents_default_landing.png",
+      "bytes": 159123
+    },
+    {
+      "name": "02_step1_patient",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "file": "docs/production-readiness/phase40d-screenshots/02_step1_patient.png",
+      "bytes": 159123
+    },
+    {
+      "name": "03_step2_procedure",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "file": "docs/production-readiness/phase40d-screenshots/03_step2_procedure.png",
+      "bytes": 167875
+    },
+    {
+      "name": "04_step7_validation",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "file": "docs/production-readiness/phase40d-screenshots/04_step7_validation.png",
+      "bytes": 156554
+    },
+    {
+      "name": "05_step8_send",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "file": "docs/production-readiness/phase40d-screenshots/05_step8_send.png",
+      "bytes": 160600
+    },
+    {
+      "name": "06_arabic_mode",
+      "url": "http://localhost:3000/modules/informed-consents?lang=ar",
+      "file": "docs/production-readiness/phase40d-screenshots/06_arabic_mode.png",
+      "bytes": 159447
+    },
+    {
+      "name": "07_modules_informed-consents_create",
+      "url": "http://localhost:3000/modules/informed-consents/create",
+      "file": "docs/production-readiness/phase40d-screenshots/07_modules_informed-consents_create.png",
+      "bytes": 112540
+    },
+    {
+      "name": "08_modules",
+      "url": "http://localhost:3000/modules",
+      "file": "docs/production-readiness/phase40d-screenshots/08_modules.png",
+      "bytes": 82719
+    }
+  ]
+}
