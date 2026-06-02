@@ -530,10 +530,7 @@ export default function LandingPage() {
 
 function LandingRouter() {
   const { lang } = useI18n();
-  if (lang === "en") {
-    return <WathiqcareWhiteLanding lang={lang} />;
-  }
-  return <LandingPageInner />;
+  return <WathiqcareWhiteLanding lang={lang} />;
 }
 
 function LandingPageInner() {

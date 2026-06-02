@@ -396,6 +396,16 @@ export default function AppShell({
         <Link href="/dashboard" className="wc-brand-block">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
+            src="/images/partners/dar-al-mithaq-logo.png"
+            alt="Dar Al-Mithaq Law Firm"
+            width={92}
+            height={32}
+            className="h-7 w-auto object-contain"
+            loading="eager"
+            decoding="async"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/images/wathiqcare-logo.png"
             alt="WathiqCare"
             width={120}
