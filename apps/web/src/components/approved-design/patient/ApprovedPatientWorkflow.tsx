@@ -23,6 +23,8 @@
  */
 "use client";
 
+import { OtpVerificationShell } from "@/components/public-signing/OtpVerificationShell";
+
 import {
   useCallback,
   useEffect,
@@ -77,7 +79,6 @@ type Bootstrap = {
   maskedMobile?: string | null;
   otpRequiredAt?: string | null;
 };
-
 type Section = {
   id: string;
   sectionKey?: string;
@@ -244,12 +245,12 @@ function formatTimestamp(iso: string, lang: Lang): string {
 }
 
 function shortHash(s?: string | null): string {
-  if (!s) return "—";
-  return `${s.slice(0, 8)}…${s.slice(-6)}`;
+  if (!s) return "-";
+  return `${s.slice(0, 8)}...${s.slice(-6)}`;
 }
 
 /* ════════════════════════════════════════════════════════════════════════
- *  Signature canvas — real pointer capture → data URL
+ *  Signature canvas - real pointer capture to data URL
  * ════════════════════════════════════════════════════════════════════════ */
 
 type SignaturePadHandle = {
@@ -315,13 +316,13 @@ const SignaturePad = (() => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
       if (!canvas || !ctx) return;
-      const p = pointFrom(e);
-      const last = lastRef.current || p;
+      const point = pointFrom(e);
+      const last = lastRef.current || point;
       ctx.beginPath();
       ctx.moveTo(last.x, last.y);
-      ctx.lineTo(p.x, p.y);
+      ctx.lineTo(point.x, point.y);
       ctx.stroke();
-      lastRef.current = p;
+      lastRef.current = point;
       if (!hasInk) {
         setHasInk(true);
         onChange?.(true);
@@ -353,16 +354,14 @@ const SignaturePad = (() => {
     return (
       <div
         className={cls(
-          "relative rounded-xl border-2 bg-white overflow-hidden touch-none select-none",
-          hasInk
-            ? "border-primary"
-            : "border-dashed border-border",
+          "relative overflow-hidden rounded-xl border-2 bg-white touch-none select-none",
+          hasInk ? "border-primary" : "border-dashed border-border",
         )}
         style={{ height: 180 }}
       >
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full cursor-crosshair"
+          className="absolute inset-0 h-full w-full cursor-crosshair"
           onPointerDown={start}
           onPointerMove={move}
           onPointerUp={end}
@@ -370,8 +369,8 @@ const SignaturePad = (() => {
           onPointerLeave={end}
         />
         {!hasInk ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
-            <div className="w-8 h-0.5 bg-muted-foreground/30 rounded" />
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2">
+            <div className="h-0.5 w-8 rounded bg-muted-foreground/30" />
             <p className="text-xs text-muted-foreground">
               {lang === "ar" ? "ارسم توقيعك هنا" : "Draw your signature here"}
             </p>
@@ -641,46 +640,312 @@ export function ApprovedPatientWorkflow({
         attemptsRemaining?: number;
       }>(
         `/api/sign/${encodeURIComponent(token)}/verify-otp`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ otpCode: code }),
-        },
-      );
-      if (!data.verified) {
-        setAttemptsRemaining(data.attemptsRemaining ?? null);
-        setOtpError(
-          lang === "ar"
-            ? "رمز غير صحيح. حاول مرة أخرى."
-            : "Incorrect code. Please try again.",
-        );
-        setOtpDigits(["", "", "", "", "", ""]);
-        otpInputsRef.current[0]?.focus();
-        return;
+      type Section = {
+        id: string;
+        sectionKey?: string;
+        sectionKind?: string;
+        titleAr?: string | null;
+        titleEn?: string | null;
+        contentAr?: string | null;
+        contentEn?: string | null;
+      };
+
+      type EducationFaq = {
+        questionAr?: string | null;
+        questionEn?: string | null;
+        answerAr?: string | null;
+        answerEn?: string | null;
+      };
+
+      type EducationListItem = { ar?: string | null; en?: string | null };
+
+      type EducationPayload = {
+        required?: boolean;
+        packageId?: string | null;
+        packageKey?: string | null;
+        titleAr?: string | null;
+        titleEn?: string | null;
+        versionId?: string | null;
+        versionLabel?: string | null;
+        summary?: { ar?: string | null; en?: string | null } | null;
+        risks?: EducationListItem[] | null;
+        benefits?: EducationListItem[] | null;
+        faq?: EducationFaq[] | null;
+        preProcedureInstructions?: EducationListItem[] | null;
+        postProcedureInstructions?: EducationListItem[] | null;
+        completed?: boolean;
+        patientAcknowledged?: boolean;
+      };
+
+      type DecisionPayload = {
+        status?: "UNDECIDED" | "CONSENT_ACCEPTED" | "CONSENT_REFUSED" | string;
+        consentPresentedAt?: string | null;
+        selectedAt?: string | null;
+        refusalAcknowledged?: boolean;
+        refusalAcknowledgedAt?: string | null;
+        refusalForm?: {
+          statementAr?: string | null;
+          statementEn?: string | null;
+          acknowledgementAr?: string | null;
+          acknowledgementEn?: string | null;
+          formHash?: string | null;
+        } | null;
+      };
+
+      type FullDocument = {
+        documentId: string;
+        consentReference?: string | null;
+        status?: string;
+        signerRole?: string;
+        patientName?: string | null;
+        patientMrn?: string | null;
+        mrn?: string | null;
+        physicianName?: string | null;
+        diagnosis?: string | null;
+        plannedProcedure?: string | null;
+        templateTitleAr?: string | null;
+        templateTitleEn?: string | null;
+        versionLabel?: string | null;
+        facilityName?: string | null;
+        sections?: Section[];
+        legalTextAr?: string | null;
+        legalTextEn?: string | null;
+        pdplTextAr?: string | null;
+        pdplTextEn?: string | null;
+        signatureCaptured?: boolean;
+        decision?: DecisionPayload | null;
+        education?: EducationPayload | null;
+      };
+
+      type DocumentResponse =
+        | { phase: "pre-otp"; bootstrap: Bootstrap }
+        | (FullDocument & { phase?: undefined });
+
+      type SignatureResult = {
+        documentId: string;
+        signatureId: string;
+        status: string;
+        signerName: string;
+        signedAt: string;
+        evidence?: {
+          documentHash?: string | null;
+          otpHash?: string | null;
+          educationCompleted?: boolean;
+          patientAcknowledged?: boolean;
+          decisionStatus?: string;
+        } | null;
+      };
+
+      /* ════════════════════════════════════════════════════════════════════════
+       *  Screens
+       * ════════════════════════════════════════════════════════════════════════ */
+
+      type PatientScreen =
+        | "landing"
+        | "otp"
+        | "education"
+        | "review"
+        | "decision"
+        | "signature"
+        | "confirmation"
+        | "refusal-ack"
+        | "refusal-signature"
+        | "refusal-confirmed";
+
+      /* ════════════════════════════════════════════════════════════════════════
+       *  Helpers
+       * ════════════════════════════════════════════════════════════════════════ */
+
+      function pickLocalized(
+        lang: Lang,
+        ar?: string | null,
+        en?: string | null,
+      ): string {
+        const isAr = lang === "ar";
+        if (isAr) return (ar?.trim() || en?.trim() || "").toString();
+        return (en?.trim() || ar?.trim() || "").toString();
       }
-      const phase = await loadDocument();
-      if (phase === "full") {
-        setScreen(educationRequired ? "education" : "review");
+
+      async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+        const res = await fetch(url, {
+          credentials: "include",
+          cache: "no-store",
+          ...init,
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          let message = `HTTP ${res.status}`;
+          try {
+            const data = text ? JSON.parse(text) : null;
+            if (data && typeof data.error === "string") message = data.error;
+          } catch {
+            /* ignore */
+          }
+          const error = new Error(message) as Error & { status?: number };
+          error.status = res.status;
+          throw error;
+        }
+        try {
+          return JSON.parse(text) as T;
+        } catch {
+          return text as unknown as T;
+        }
       }
-    } catch (err) {
-      const e = err as Error & { status?: number };
-      if (e.status === 410) {
-        setOtpError(
-          lang === "ar"
-            ? "انتهت صلاحية الرمز. اطلب رمزاً جديداً."
-            : "Code expired. Request a new one.",
-        );
-        setOtpStage("request");
-      } else if (e.status === 429) {
-        setOtpError(
-          lang === "ar"
-            ? "تم تجاوز عدد المحاولات. اطلب رمزاً جديداً."
-            : "Too many attempts. Request a new code.",
-        );
-        setOtpStage("request");
-      } else {
-        setOtpError(
-          e.message ||
+
+      function formatTimestamp(iso: string, lang: Lang): string {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return iso;
+        return d.toLocaleString(lang === "ar" ? "ar-SA" : "en-US", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+      }
+
+      function shortHash(s?: string | null): string {
+        if (!s) return "—";
+        return `${s.slice(0, 8)}…${s.slice(-6)}`;
+      }
+
+      /* ════════════════════════════════════════════════════════════════════════
+       *  Signature canvas — real pointer capture → data URL
+       * ════════════════════════════════════════════════════════════════════════ */
+
+      type SignaturePadHandle = {
+        isEmpty(): boolean;
+        clear(): void;
+        toDataUrl(): string | null;
+      };
+
+      const SignaturePad = (() => {
+        type Props = {
+          lang: Lang;
+          onChange?: (hasInk: boolean) => void;
+          padRef: React.MutableRefObject<SignaturePadHandle | null>;
+        };
+        function Inner({ lang, onChange, padRef }: Props) {
+          const canvasRef = useRef<HTMLCanvasElement | null>(null);
+          const drawingRef = useRef(false);
+          const lastRef = useRef<{ x: number; y: number } | null>(null);
+          const [hasInk, setHasInk] = useState(false);
+
+          const resize = useCallback(() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ratio = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * ratio;
+            canvas.height = rect.height * ratio;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return;
+            ctx.scale(ratio, ratio);
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = "#1B4F8A";
+          }, []);
+
+          useEffect(() => {
+            resize();
+            const onResize = () => resize();
+            window.addEventListener("resize", onResize);
+            return () => window.removeEventListener("resize", onResize);
+          }, [resize]);
+
+          const pointFrom = (e: PointerEvent | React.PointerEvent) => {
+            const canvas = canvasRef.current;
+            if (!canvas) return { x: 0, y: 0 };
+            const rect = canvas.getBoundingClientRect();
+            return {
+              x: (e.clientX ?? 0) - rect.left,
+              y: (e.clientY ?? 0) - rect.top,
+            };
+          };
+
+          const start = (e: React.PointerEvent) => {
+            e.preventDefault();
+            (e.target as Element).setPointerCapture?.(e.pointerId);
+            drawingRef.current = true;
+            lastRef.current = pointFrom(e);
+          };
+
+          const move = (e: React.PointerEvent) => {
+            if (!drawingRef.current) return;
+            const canvas = canvasRef.current;
+            const ctx = canvas?.getContext("2d");
+            if (!canvas || !ctx) return;
+            const point = pointFrom(e);
+            const last = lastRef.current || point;
+            ctx.beginPath();
+            ctx.moveTo(last.x, last.y);
+            ctx.lineTo(point.x, point.y);
+            ctx.stroke();
+            lastRef.current = point;
+            if (!hasInk) {
+              setHasInk(true);
+              onChange?.(true);
+            }
+          };
+
+          const end = () => {
+            drawingRef.current = false;
+            lastRef.current = null;
+          };
+
+          padRef.current = {
+            isEmpty: () => !hasInk,
+            clear: () => {
+              const canvas = canvasRef.current;
+              const ctx = canvas?.getContext("2d");
+              if (!canvas || !ctx) return;
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              setHasInk(false);
+              onChange?.(false);
+            },
+            toDataUrl: () => {
+              const canvas = canvasRef.current;
+              if (!canvas || !hasInk) return null;
+              return canvas.toDataURL("image/png");
+            },
+          };
+
+          return (
+            <div
+              className={cls(
+                "relative overflow-hidden rounded-xl border-2 bg-white touch-none select-none",
+                hasInk ? "border-primary" : "border-dashed border-border",
+              )}
+              style={{ height: 180 }}
+            >
+              <canvas
+                ref={canvasRef}
+                className="absolute inset-0 h-full w-full cursor-crosshair"
+                onPointerDown={start}
+                onPointerMove={move}
+                onPointerUp={end}
+                onPointerCancel={end}
+                onPointerLeave={end}
+              />
+              {!hasInk ? (
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <div className="h-0.5 w-8 rounded bg-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar" ? "ارسم توقيعك هنا" : "Draw your signature here"}
+                  </p>
+                </div>
+              ) : null}
+              <div className="absolute bottom-8 left-8 right-8 h-px bg-muted-foreground/20" />
+            </div>
+          );
+        }
+        return Inner;
+      })();
+
+      /* ════════════════════════════════════════════════════════════════════════
+       *  Component
             (lang === "ar"
               ? "تعذر التحقق من الرمز"
               : "OTP verification failed"),
@@ -959,205 +1224,31 @@ export function ApprovedPatientWorkflow({
                 </p>
               ) : null}
             </div>
-            <div className="h-px bg-border" />
-            {physicianName ? (
-              <div
-                className={cls(
-                  "flex items-center gap-2",
-                  lang === "ar" ? "flex-row-reverse" : "flex-row",
-                )}
-              >
-                <Stethoscope size={14} className="text-muted-foreground shrink-0" />
-                <p className="text-xs text-muted-foreground">{physicianName}</p>
-              </div>
-            ) : null}
-            <div
-              className={cls(
-                "flex items-center gap-2",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <Building2 size={14} className="text-muted-foreground shrink-0" />
-              <p className="text-xs text-muted-foreground">{facilityName}</p>
-            </div>
+            <OtpVerificationShell
+              lang={lang}
+              mobile={mobile}
+              maskedPhone={maskedPhone}
+              otpStage={otpStage}
+              otpDigits={otpDigits}
+              otpRequesting={otpRequesting}
+              otpVerifying={otpVerifying}
+              otpExpiresAt={otpExpiresAt}
+              otpError={otpError}
+              attemptsRemaining={attemptsRemaining}
+              onMobileChange={setMobile}
+              onOtpDigitChange={handleOtpDigitChange}
+              onOtpKeyDown={handleOtpKey}
+              onRequestOtp={handleRequestOtp}
+              onVerifyOtp={handleVerifyOtp}
+              onResendOtp={() => {
+                setOtpStage("request");
+                setOtpDigits(["", "", "", "", "", ""]);
+                setOtpError(null);
+              }}
+              otpInputRefs={otpInputsRef}
+              formatTimestamp={formatTimestamp}
+            />
           </Card>
-
-          <SecureNoticeBadge lang={lang} />
-
-          <Alert type="info" lang={lang}>
-            {lang === "ar"
-              ? "هذا الطلب صادر رسمياً من الفريق الطبي. لا يُطلب منك أي دفع."
-              : "This request is officially issued by your medical team. No payment is required."}
-          </Alert>
-
-          <button
-            onClick={() => setScreen("otp")}
-            className={cls(
-              "w-full py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors active:scale-[0.99]",
-              lang === "ar" ? "flex-row-reverse" : "flex-row",
-            )}
-          >
-            {lang === "ar" ? "متابعة" : "Proceed"}
-            <ChevronRight size={16} className={lang === "ar" ? "rotate-180" : ""} />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ───── OTP ───── */
-  if (screen === "otp") {
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
-          lang={lang}
-          onLangToggle={toggleLang}
-          onBack={() => setScreen("landing")}
-          step={2}
-          totalSteps={7}
-        />
-        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full items-center">
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-            <Phone size={24} className="text-primary" />
-          </div>
-          <div
-            className={cls(
-              "flex flex-col gap-1 w-full",
-              lang === "ar" ? "items-end text-right" : "items-start text-left",
-            )}
-          >
-            <h1 className="text-lg font-bold text-foreground">
-              {lang === "ar" ? "التحقق برمز OTP" : "OTP Verification"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {otpStage === "request"
-                ? lang === "ar"
-                  ? "أدخل رقم جوالك لاستلام رمز التحقق عبر رسالة SMS."
-                  : "Enter your mobile number to receive the OTP via SMS."
-                : lang === "ar"
-                  ? "أدخل الرمز المرسل إلى جوالك."
-                  : "Enter the code sent to your mobile."}
-            </p>
-            {otpStage === "verify" && maskedPhone ? (
-              <p className="text-sm font-mono font-semibold text-primary">
-                {maskedPhone}
-              </p>
-            ) : null}
-          </div>
-
-          {otpStage === "request" ? (
-            <div className="w-full flex flex-col gap-3">
-              <input
-                type="tel"
-                inputMode="tel"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                placeholder={lang === "ar" ? "+9665XXXXXXXX" : "+9665XXXXXXXX"}
-                className="w-full px-3 py-3 rounded-lg border-2 border-border bg-card text-sm focus:outline-none focus:border-primary"
-                dir="ltr"
-              />
-              {otpError ? (
-                <Alert type="warning" lang={lang}>{otpError}</Alert>
-              ) : null}
-              <button
-                onClick={handleRequestOtp}
-                disabled={otpRequesting}
-                className={cls(
-                  "w-full py-3.5 rounded-lg font-semibold text-sm transition-colors",
-                  otpRequesting
-                    ? "bg-muted text-muted-foreground"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90",
-                )}
-              >
-                {otpRequesting
-                  ? lang === "ar"
-                    ? "جارٍ الإرسال…"
-                    : "Sending…"
-                  : lang === "ar"
-                    ? "إرسال الرمز"
-                    : "Send Code"}
-              </button>
-            </div>
-          ) : (
-            <div className="w-full flex flex-col gap-4 items-center">
-              <div className="flex gap-2 justify-center" dir="ltr">
-                {otpDigits.map((d, i) => (
-                  <input
-                    key={i}
-                    ref={(el) => {
-                      otpInputsRef.current[i] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={d}
-                    onChange={(e) => handleOtpDigitChange(i, e.target.value)}
-                    onKeyDown={(e) => handleOtpKey(i, e)}
-                    aria-label={`OTP digit ${i + 1}`}
-                    className={cls(
-                      "w-11 h-13 text-center text-xl font-bold rounded-lg border-2 bg-card focus:outline-none transition-colors",
-                      d ? "border-primary text-primary" : "border-border text-foreground",
-                    )}
-                  />
-                ))}
-              </div>
-              {otpExpiresAt ? (
-                <div
-                  className={cls(
-                    "flex items-center gap-1 text-xs text-muted-foreground",
-                    lang === "ar" ? "flex-row-reverse" : "flex-row",
-                  )}
-                >
-                  <Clock size={12} />
-                  <span>
-                    {lang === "ar" ? "صالح حتى" : "Valid until"}{" "}
-                    {formatTimestamp(otpExpiresAt, lang)}
-                  </span>
-                </div>
-              ) : null}
-              {attemptsRemaining !== null && attemptsRemaining > 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {lang === "ar"
-                    ? `محاولات متبقية: ${attemptsRemaining}`
-                    : `Attempts remaining: ${attemptsRemaining}`}
-                </p>
-              ) : null}
-              {otpError ? (
-                <Alert type="warning" lang={lang}>{otpError}</Alert>
-              ) : null}
-              <button
-                onClick={() => {
-                  setOtpStage("request");
-                  setOtpDigits(["", "", "", "", "", ""]);
-                  setOtpError(null);
-                }}
-                className="text-sm text-primary underline-offset-2 hover:underline"
-              >
-                {lang === "ar" ? "إعادة إرسال الرمز" : "Resend code"}
-              </button>
-              <button
-                onClick={handleVerifyOtp}
-                disabled={otpVerifying}
-                className={cls(
-                  "w-full py-3.5 rounded-lg font-semibold text-sm transition-colors",
-                  otpVerifying
-                    ? "bg-muted text-muted-foreground"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90",
-                )}
-              >
-                {otpVerifying
-                  ? lang === "ar"
-                    ? "جارٍ التحقق…"
-                    : "Verifying…"
-                  : lang === "ar"
-                    ? "تحقق"
-                    : "Verify"}
-              </button>
-            </div>
-          )}
         </div>
       </div>
     );
