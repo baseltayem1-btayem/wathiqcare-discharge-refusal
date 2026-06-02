@@ -133,7 +133,7 @@ export function OtpVerificationShell({
                         : "bg-gradient-to-r from-sky-800 via-cyan-600 to-slate-900 hover:translate-y-[-1px] hover:shadow-[0_24px_44px_rgba(2,132,199,0.28)]",
                     )}
                   >
-                    {otpRequesting ? (isAr ? "جارٍ الإرسال…" : "Sending…") : isAr ? "إرسال الرمز" : "Send Code"}
+                    {otpRequesting ? (isAr ? "جارٍ الإرسال..." : "Sending...") : isAr ? "إرسال الرمز" : "Send Code"}
                   </button>
                 </div>
               ) : (
@@ -206,7 +206,7 @@ export function OtpVerificationShell({
                           : "bg-gradient-to-r from-sky-800 via-cyan-600 to-slate-900 hover:translate-y-[-1px] hover:shadow-[0_24px_44px_rgba(2,132,199,0.28)]",
                       )}
                     >
-                      {otpVerifying ? (isAr ? "جارٍ التحقق…" : "Verifying…") : isAr ? "تحقق" : "Verify"}
+                      {otpVerifying ? (isAr ? "جارٍ التحقق..." : "Verifying...") : isAr ? "تحقق" : "Verify"}
                     </button>
                   </div>
                 </div>
@@ -264,163 +264,7 @@ export function OtpVerificationShell({
       </div>
     </OtpVerificationBranding>
   );
-}import Image from "next/image";
-import type { KeyboardEvent } from "react";
-import { Clock, Lock, Phone, Shield } from "lucide-react";
-
-import { OTP_PAGE_BRANDING } from "@/lib/branding/otp-page-branding";
-import { Alert, Card, cls, type Lang } from "@/components/approved-design/shared";
-import { OtpVerificationBranding } from "@/components/public-signing/OtpVerificationBranding";
-
-type OtpVerificationShellProps = {
-  lang: Lang;
-  otpStage: "request" | "verify";
-  mobile: string;
-  maskedPhone?: string | null;
-  otpDigits: string[];
-  attemptsRemaining: number | null;
-  otpExpiresAt?: string | null;
-  otpError?: string | null;
-  otpRequesting: boolean;
-  otpVerifying: boolean;
-  onMobileChange: (value: string) => void;
-  onRequestOtp: () => void;
-  onOtpDigitChange: (index: number, value: string) => void;
-  onOtpKey: (index: number, event: KeyboardEvent<HTMLInputElement>) => void;
-  onResetToRequest: () => void;
-  onVerifyOtp: () => void;
-  setOtpInputRef: (index: number, element: HTMLInputElement | null) => void;
-  formatTimestamp: (value: string, lang: Lang) => string;
-  timeRemainingLabel?: string | null;
-};
-
-export function OtpVerificationShell({
-  lang,
-  otpStage,
-  mobile,
-  maskedPhone,
-  otpDigits,
-  attemptsRemaining,
-  otpExpiresAt,
-  otpError,
-  otpRequesting,
-  otpVerifying,
-  onMobileChange,
-  onRequestOtp,
-  onOtpDigitChange,
-  onOtpKey,
-  onResetToRequest,
-  onVerifyOtp,
-  setOtpInputRef,
-  formatTimestamp,
-  timeRemainingLabel = null,
-}: OtpVerificationShellProps) {
-  return (
-    <OtpVerificationBranding className="flex-1 px-4 py-6 md:px-6">
-      <div className="mx-auto flex h-full w-full max-w-2xl flex-col justify-center gap-6">
-        <Card className="overflow-hidden rounded-[34px] border border-slate-200/80 bg-white/95 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur-sm">
-          <div className="h-1.5 w-full bg-gradient-to-r from-sky-800 via-cyan-600 to-slate-900" />
-          <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="flex flex-col gap-6 p-6 sm:p-8 lg:p-10">
-              <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
-                import Image from "next/image";
-                import type { KeyboardEvent } from "react";
-                import { Clock, Lock, Phone, Shield } from "lucide-react";
-
-                import { OTP_PAGE_BRANDING } from "@/lib/branding/otp-page-branding";
-                import { OtpVerificationBranding } from "@/components/public-signing/OtpVerificationBranding";
-                import { Alert, Card, cls, type Lang } from "@/components/approved-design/shared";
-
-                type OtpVerificationShellProps = {
-                  lang: Lang;
-                  otpStage: "request" | "verify";
-                  mobile: string;
-                  maskedPhone?: string | null;
-                  otpDigits: string[];
-                  attemptsRemaining: number | null;
-                  otpExpiresAt?: string | null;
-                  otpError?: string | null;
-                  otpRequesting: boolean;
-                  otpVerifying: boolean;
-                  onMobileChange: (value: string) => void;
-                  onRequestOtp: () => void;
-                  onOtpDigitChange: (index: number, value: string) => void;
-                  onOtpKey: (index: number, event: KeyboardEvent<HTMLInputElement>) => void;
-                  onResetToRequest: () => void;
-                  onVerifyOtp: () => void;
-                  setOtpInputRef: (index: number, element: HTMLInputElement | null) => void;
-                  formatTimestamp: (value: string, lang: Lang) => string;
-                  timeRemainingLabel?: string | null;
-                };
-
-                export function OtpVerificationShell({
-                  lang,
-                  otpStage,
-                  mobile,
-                  maskedPhone,
-                  otpDigits,
-                  attemptsRemaining,
-                  otpExpiresAt,
-                  otpError,
-                  otpRequesting,
-                  otpVerifying,
-                  onMobileChange,
-                  onRequestOtp,
-                  onOtpDigitChange,
-                  onOtpKey,
-                  onResetToRequest,
-                  onVerifyOtp,
-                  setOtpInputRef,
-                  formatTimestamp,
-                  timeRemainingLabel = null,
-                }: OtpVerificationShellProps) {
-                  return (
-                    <OtpVerificationBranding className="flex-1 px-4 py-6 md:px-6">
-                      <div className="mx-auto flex h-full w-full max-w-2xl flex-col justify-center gap-6">
-                        <Card className="overflow-hidden rounded-[34px] border border-slate-200/80 bg-white/95 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur-sm">
-                          <div className="h-1.5 w-full bg-gradient-to-r from-sky-800 via-cyan-600 to-slate-900" />
-                          <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-                            <div className="flex flex-col gap-6 p-6 sm:p-8 lg:p-10">
-                              <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="rounded-2xl border border-sky-100 bg-sky-50/90 px-5 py-3 shadow-sm">
-                                  <Image
-                                    src={OTP_PAGE_BRANDING.card.imcLogoSrc}
-                                    alt={OTP_PAGE_BRANDING.card.imcLogoAlt}
-                                    width={164}
-                                    height={56}
-                                    className="h-auto w-auto max-h-12 object-contain"
-                                  />
-                                </div>
-                                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold tracking-[0.14em] text-emerald-700 uppercase">
-                                  <Lock size={12} />
-                                  {lang === "ar" ? "اتصال محمي" : "Protected session"}
-                                </div>
-                              </div>
-
-                              <div
-                                className={cls(
-                                  "flex flex-col gap-3",
-                                  lang === "ar" ? "items-end text-right" : "items-start text-left",
-                                )}
-                              >
-                                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700/80">
-                                  {lang === "ar" ? "جلسة تحقق آمنة" : "Secure verification session"}
-                                </p>
-                                <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-[2.25rem]">
-                                  {lang === "ar" ? "التحقق برمز OTP" : "OTP Verification"}
-                                </h1>
-                                <p className="max-w-xl text-sm leading-7 text-slate-600 sm:text-[15px]">
-                                  {otpStage === "request"
-                                    ? lang === "ar"
-                                      ? "أدخل رقم الجوال المسجّل لاستلام رمز التحقق عبر رسالة SMS ومتابعة جلسة الموافقة الطبية المؤمنة."
-                                      : "Enter the registered mobile number to receive the OTP by SMS and continue the secured medical consent session."
-                                    : lang === "ar"
-                                      ? "أدخل الرمز المرسل إلى جوالك لإكمال التحقق والمتابعة إلى الخطوات التالية."
-                                      : "Enter the code sent to your mobile to complete verification and continue to the next steps."}
-                                </p>
-                              </div>
-
-                              {otpStage === "request" ? (
+}
                                 <div className="flex flex-col gap-4">
                                   <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5 shadow-sm">
                                     <div

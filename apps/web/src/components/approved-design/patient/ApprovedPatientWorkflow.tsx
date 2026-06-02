@@ -95,55 +95,177 @@ type EducationFaq = {
   answerAr?: string | null;
   answerEn?: string | null;
 };
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ otpCode: code }),
-        },
-      );
-      if (!data.verified) {
-        setAttemptsRemaining(data.attemptsRemaining ?? null);
-        setOtpError(
-          lang === "ar"
-            ? "رمز غير صحيح. حاول مرة أخرى."
-            : "Incorrect code. Please try again.",
-        );
-        setOtpDigits(["", "", "", "", "", ""]);
-        otpInputsRef.current[0]?.focus();
-        return;
-      }
-      const phase = await loadDocument();
-      if (phase === "full") {
-        setScreen(educationRequired ? "education" : "review");
-      }
-    } catch (err) {
-      const e = err as Error & { status?: number };
-      if (e.status === 410) {
-        setOtpError(
-          lang === "ar"
-            ? "انتهت صلاحية الرمز. اطلب رمزاً جديداً."
-            : "Code expired. Request a new one.",
-        );
-        setOtpStage("request");
-      } else if (e.status === 429) {
-        setOtpError(
-          lang === "ar"
-            ? "تم تجاوز عدد المحاولات. اطلب رمزاً جديداً."
-            : "Too many attempts. Request a new code.",
-        );
-        setOtpStage("request");
-      } else {
-        setOtpError(
-          e.message ||
-            (lang === "ar"
-              ? "تعذر التحقق من الرمز"
-              : "OTP verification failed"),
-        );
-      }
-    } finally {
-      setOtpVerifying(false);
+
+type EducationListItem = { ar?: string | null; en?: string | null };
+
+type EducationPayload = {
+  required?: boolean;
+  packageId?: string | null;
+  packageKey?: string | null;
+  titleAr?: string | null;
+  titleEn?: string | null;
+  versionId?: string | null;
+  versionLabel?: string | null;
+  summary?: { ar?: string | null; en?: string | null } | null;
+  risks?: EducationListItem[] | null;
+  benefits?: EducationListItem[] | null;
+  faq?: EducationFaq[] | null;
+  preProcedureInstructions?: EducationListItem[] | null;
+  postProcedureInstructions?: EducationListItem[] | null;
+  completed?: boolean;
+  patientAcknowledged?: boolean;
+};
+
+type DecisionPayload = {
+  status?: "UNDECIDED" | "CONSENT_ACCEPTED" | "CONSENT_REFUSED" | string;
+  consentPresentedAt?: string | null;
+  selectedAt?: string | null;
+  refusalAcknowledged?: boolean;
+  refusalAcknowledgedAt?: string | null;
+  refusalForm?: {
+    statementAr?: string | null;
+    statementEn?: string | null;
+    acknowledgementAr?: string | null;
+    acknowledgementEn?: string | null;
+    formHash?: string | null;
+  } | null;
+};
+
+type FullDocument = {
+  documentId: string;
+  consentReference?: string | null;
+  status?: string;
+  signerRole?: string;
+  patientName?: string | null;
+  patientMrn?: string | null;
+  mrn?: string | null;
+  physicianName?: string | null;
+  diagnosis?: string | null;
+  plannedProcedure?: string | null;
+  templateTitleAr?: string | null;
+  templateTitleEn?: string | null;
+  versionLabel?: string | null;
+  facilityName?: string | null;
+  sections?: Section[];
+  legalTextAr?: string | null;
+  legalTextEn?: string | null;
+  pdplTextAr?: string | null;
+  pdplTextEn?: string | null;
+  signatureCaptured?: boolean;
+  decision?: DecisionPayload | null;
+  education?: EducationPayload | null;
+};
+
+type DocumentResponse =
+  | { phase: "pre-otp"; bootstrap: Bootstrap }
+  | (FullDocument & { phase?: undefined });
+
+type SignatureResult = {
+  documentId: string;
+  signatureId: string;
+  status: string;
+  signerName: string;
+  signedAt: string;
+  evidence?: {
+    documentHash?: string | null;
+    otpHash?: string | null;
+    educationCompleted?: boolean;
+    patientAcknowledged?: boolean;
+    decisionStatus?: string;
+  } | null;
+};
+
+/* ════════════════════════════════════════════════════════════════════════
+ *  Screens
+ * ════════════════════════════════════════════════════════════════════════ */
+
+type PatientScreen =
+  | "landing"
+  | "otp"
+  | "education"
+  | "review"
+  | "decision"
+  | "signature"
+  | "confirmation"
+  | "refusal-ack"
+  | "refusal-signature"
+  | "refusal-confirmed";
+
+/* ════════════════════════════════════════════════════════════════════════
+ *  Helpers
+ * ════════════════════════════════════════════════════════════════════════ */
+
+function pickLocalized(
+  lang: Lang,
+  ar?: string | null,
+  en?: string | null,
+): string {
+  const isAr = lang === "ar";
+  if (isAr) return (ar?.trim() || en?.trim() || "").toString();
+  return (en?.trim() || ar?.trim() || "").toString();
+}
+
+async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    credentials: "include",
+    cache: "no-store",
+    ...init,
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`;
+    try {
+      const data = text ? JSON.parse(text) : null;
+      if (data && typeof data.error === "string") message = data.error;
+    } catch {
+      /* ignore */
     }
-  }, [otpDigits, lang, token, loadDocument, educationRequired]);
+    const error = new Error(message) as Error & { status?: number };
+    error.status = res.status;
+    throw error;
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as unknown as T;
+  }
+}
+
+function formatTimestamp(iso: string, lang: Lang): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(lang === "ar" ? "ar-SA" : "en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function shortHash(s?: string | null): string {
+  if (!s) return "-";
+  return `${s.slice(0, 8)}...${s.slice(-6)}`;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+ *  Signature canvas - real pointer capture to data URL
+ * ════════════════════════════════════════════════════════════════════════ */
+
+type SignaturePadHandle = {
+  isEmpty(): boolean;
+  clear(): void;
+  toDataUrl(): string | null;
+};
+
+export type ApprovedPatientWorkflowProps = {
+  token: string;
+  initialLang?: Lang;
+};
+
+export function ApprovedPatientWorkflow({
+  token,
   initialLang = "ar",
 }: ApprovedPatientWorkflowProps) {
   const [lang, setLang] = useState<Lang>(initialLang);
@@ -390,312 +512,46 @@ type EducationFaq = {
         attemptsRemaining?: number;
       }>(
         `/api/sign/${encodeURIComponent(token)}/verify-otp`,
-      type Section = {
-        id: string;
-        sectionKey?: string;
-        sectionKind?: string;
-        titleAr?: string | null;
-        titleEn?: string | null;
-        contentAr?: string | null;
-        contentEn?: string | null;
-      };
-
-      type EducationFaq = {
-        questionAr?: string | null;
-        questionEn?: string | null;
-        answerAr?: string | null;
-        answerEn?: string | null;
-      };
-
-      type EducationListItem = { ar?: string | null; en?: string | null };
-
-      type EducationPayload = {
-        required?: boolean;
-        packageId?: string | null;
-        packageKey?: string | null;
-        titleAr?: string | null;
-        titleEn?: string | null;
-        versionId?: string | null;
-        versionLabel?: string | null;
-        summary?: { ar?: string | null; en?: string | null } | null;
-        risks?: EducationListItem[] | null;
-        benefits?: EducationListItem[] | null;
-        faq?: EducationFaq[] | null;
-        preProcedureInstructions?: EducationListItem[] | null;
-        postProcedureInstructions?: EducationListItem[] | null;
-        completed?: boolean;
-        patientAcknowledged?: boolean;
-      };
-
-      type DecisionPayload = {
-        status?: "UNDECIDED" | "CONSENT_ACCEPTED" | "CONSENT_REFUSED" | string;
-        consentPresentedAt?: string | null;
-        selectedAt?: string | null;
-        refusalAcknowledged?: boolean;
-        refusalAcknowledgedAt?: string | null;
-        refusalForm?: {
-          statementAr?: string | null;
-          statementEn?: string | null;
-          acknowledgementAr?: string | null;
-          acknowledgementEn?: string | null;
-          formHash?: string | null;
-        } | null;
-      };
-
-      type FullDocument = {
-        documentId: string;
-        consentReference?: string | null;
-        status?: string;
-        signerRole?: string;
-        patientName?: string | null;
-        patientMrn?: string | null;
-        mrn?: string | null;
-        physicianName?: string | null;
-        diagnosis?: string | null;
-        plannedProcedure?: string | null;
-        templateTitleAr?: string | null;
-        templateTitleEn?: string | null;
-        versionLabel?: string | null;
-        facilityName?: string | null;
-        sections?: Section[];
-        legalTextAr?: string | null;
-        legalTextEn?: string | null;
-        pdplTextAr?: string | null;
-        pdplTextEn?: string | null;
-        signatureCaptured?: boolean;
-        decision?: DecisionPayload | null;
-        education?: EducationPayload | null;
-      };
-
-      type DocumentResponse =
-        | { phase: "pre-otp"; bootstrap: Bootstrap }
-        | (FullDocument & { phase?: undefined });
-
-      type SignatureResult = {
-        documentId: string;
-        signatureId: string;
-        status: string;
-        signerName: string;
-        signedAt: string;
-        evidence?: {
-          documentHash?: string | null;
-          otpHash?: string | null;
-          educationCompleted?: boolean;
-          patientAcknowledged?: boolean;
-          decisionStatus?: string;
-        } | null;
-      };
-
-      /* ════════════════════════════════════════════════════════════════════════
-       *  Screens
-       * ════════════════════════════════════════════════════════════════════════ */
-
-      type PatientScreen =
-        | "landing"
-        | "otp"
-        | "education"
-        | "review"
-        | "decision"
-        | "signature"
-        | "confirmation"
-        | "refusal-ack"
-        | "refusal-signature"
-        | "refusal-confirmed";
-
-      /* ════════════════════════════════════════════════════════════════════════
-       *  Helpers
-       * ════════════════════════════════════════════════════════════════════════ */
-
-      function pickLocalized(
-        lang: Lang,
-        ar?: string | null,
-        en?: string | null,
-      ): string {
-        const isAr = lang === "ar";
-        if (isAr) return (ar?.trim() || en?.trim() || "").toString();
-        return (en?.trim() || ar?.trim() || "").toString();
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ otpCode: code }),
+        },
+      );
+      if (!data.verified) {
+        setAttemptsRemaining(data.attemptsRemaining ?? null);
+        setOtpError(
+          lang === "ar"
+            ? "رمز غير صحيح. حاول مرة أخرى."
+            : "Incorrect code. Please try again.",
+        );
+        setOtpDigits(["", "", "", "", "", ""]);
+        otpInputsRef.current[0]?.focus();
+        return;
       }
-
-      async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-        const res = await fetch(url, {
-          credentials: "include",
-          cache: "no-store",
-          ...init,
-        });
-        const text = await res.text();
-        if (!res.ok) {
-          let message = `HTTP ${res.status}`;
-          try {
-            const data = text ? JSON.parse(text) : null;
-            if (data && typeof data.error === "string") message = data.error;
-          } catch {
-            /* ignore */
-          }
-          const error = new Error(message) as Error & { status?: number };
-          error.status = res.status;
-          throw error;
-        }
-        try {
-          return JSON.parse(text) as T;
-        } catch {
-          return text as unknown as T;
-        }
+      const phase = await loadDocument();
+      if (phase === "full") {
+        setScreen(educationRequired ? "education" : "review");
       }
-
-      function formatTimestamp(iso: string, lang: Lang): string {
-        const d = new Date(iso);
-        if (Number.isNaN(d.getTime())) return iso;
-        return d.toLocaleString(lang === "ar" ? "ar-SA" : "en-US", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        });
-      }
-
-      function shortHash(s?: string | null): string {
-        if (!s) return "—";
-        return `${s.slice(0, 8)}…${s.slice(-6)}`;
-      }
-
-      /* ════════════════════════════════════════════════════════════════════════
-       *  Signature canvas — real pointer capture → data URL
-       * ════════════════════════════════════════════════════════════════════════ */
-
-      type SignaturePadHandle = {
-        isEmpty(): boolean;
-        clear(): void;
-        toDataUrl(): string | null;
-      };
-
-      const SignaturePad = (() => {
-        type Props = {
-          lang: Lang;
-          onChange?: (hasInk: boolean) => void;
-          padRef: React.MutableRefObject<SignaturePadHandle | null>;
-        };
-        function Inner({ lang, onChange, padRef }: Props) {
-          const canvasRef = useRef<HTMLCanvasElement | null>(null);
-          const drawingRef = useRef(false);
-          const lastRef = useRef<{ x: number; y: number } | null>(null);
-          const [hasInk, setHasInk] = useState(false);
-
-          const resize = useCallback(() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ratio = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * ratio;
-            canvas.height = rect.height * ratio;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return;
-            ctx.scale(ratio, ratio);
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-            ctx.lineWidth = 2.5;
-            ctx.strokeStyle = "#1B4F8A";
-          }, []);
-
-          useEffect(() => {
-            resize();
-            const onResize = () => resize();
-            window.addEventListener("resize", onResize);
-            return () => window.removeEventListener("resize", onResize);
-          }, [resize]);
-
-          const pointFrom = (e: PointerEvent | React.PointerEvent) => {
-            const canvas = canvasRef.current;
-            if (!canvas) return { x: 0, y: 0 };
-            const rect = canvas.getBoundingClientRect();
-            return {
-              x: (e.clientX ?? 0) - rect.left,
-              y: (e.clientY ?? 0) - rect.top,
-            };
-          };
-
-          const start = (e: React.PointerEvent) => {
-            e.preventDefault();
-            (e.target as Element).setPointerCapture?.(e.pointerId);
-            drawingRef.current = true;
-            lastRef.current = pointFrom(e);
-          };
-
-          const move = (e: React.PointerEvent) => {
-            if (!drawingRef.current) return;
-            const canvas = canvasRef.current;
-            const ctx = canvas?.getContext("2d");
-            if (!canvas || !ctx) return;
-            const point = pointFrom(e);
-            const last = lastRef.current || point;
-            ctx.beginPath();
-            ctx.moveTo(last.x, last.y);
-            ctx.lineTo(point.x, point.y);
-            ctx.stroke();
-            lastRef.current = point;
-            if (!hasInk) {
-              setHasInk(true);
-              onChange?.(true);
-            }
-          };
-
-          const end = () => {
-            drawingRef.current = false;
-            lastRef.current = null;
-          };
-
-          padRef.current = {
-            isEmpty: () => !hasInk,
-            clear: () => {
-              const canvas = canvasRef.current;
-              const ctx = canvas?.getContext("2d");
-              if (!canvas || !ctx) return;
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              setHasInk(false);
-              onChange?.(false);
-            },
-            toDataUrl: () => {
-              const canvas = canvasRef.current;
-              if (!canvas || !hasInk) return null;
-              return canvas.toDataURL("image/png");
-            },
-          };
-
-          return (
-            <div
-              className={cls(
-                "relative overflow-hidden rounded-xl border-2 bg-white touch-none select-none",
-                hasInk ? "border-primary" : "border-dashed border-border",
-              )}
-              style={{ height: 180 }}
-            >
-              <canvas
-                ref={canvasRef}
-                className="absolute inset-0 h-full w-full cursor-crosshair"
-                onPointerDown={start}
-                onPointerMove={move}
-                onPointerUp={end}
-                onPointerCancel={end}
-                onPointerLeave={end}
-              />
-              {!hasInk ? (
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <div className="h-0.5 w-8 rounded bg-muted-foreground/30" />
-                  <p className="text-xs text-muted-foreground">
-                    {lang === "ar" ? "ارسم توقيعك هنا" : "Draw your signature here"}
-                  </p>
-                </div>
-              ) : null}
-              <div className="absolute bottom-8 left-8 right-8 h-px bg-muted-foreground/20" />
-            </div>
-          );
-        }
-        return Inner;
-      })();
-
-      /* ════════════════════════════════════════════════════════════════════════
-       *  Component
+    } catch (err) {
+      const e = err as Error & { status?: number };
+      if (e.status === 410) {
+        setOtpError(
+          lang === "ar"
+            ? "انتهت صلاحية الرمز. اطلب رمزاً جديداً."
+            : "Code expired. Request a new one.",
+        );
+        setOtpStage("request");
+      } else if (e.status === 429) {
+        setOtpError(
+          lang === "ar"
+            ? "تم تجاوز عدد المحاولات. اطلب رمزاً جديداً."
+            : "Too many attempts. Request a new code.",
+        );
+        setOtpStage("request");
+      } else {
+        setOtpError(
+          e.message ||
             (lang === "ar"
               ? "تعذر التحقق من الرمز"
               : "OTP verification failed"),
