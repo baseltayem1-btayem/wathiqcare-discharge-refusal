@@ -1,0 +1,86 @@
+{
+  "phase": "40G",
+  "timestamp": "2026-06-01T20:35:56.056Z",
+  "base": "http://localhost:3000",
+  "authenticatedAs": "dr.ahmed@wathiqcare.med.sa",
+  "physicianShots": [
+    {
+      "name": "01_modules_informed-consents_default_landing",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "status": 200,
+      "file": "docs/production-readiness/phase40g-screenshots/01_modules_informed-consents_default_landing.png",
+      "bytes": 159123
+    },
+    {
+      "name": "02_step1_patient",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "status": 200,
+      "file": "docs/production-readiness/phase40g-screenshots/02_step1_patient.png",
+      "bytes": 159123
+    },
+    {
+      "name": "03_step2_procedure",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "status": 200,
+      "file": "docs/production-readiness/phase40g-screenshots/03_step2_procedure.png",
+      "bytes": 167875
+    },
+    {
+      "name": "04_step7_validation",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "status": 200,
+      "file": "docs/production-readiness/phase40g-screenshots/04_step7_validation.png",
+      "bytes": 156554
+    },
+    {
+      "name": "05_step8_send",
+      "url": "http://localhost:3000/modules/informed-consents",
+      "status": 200,
+      "file": "docs/production-readiness/phase40g-screenshots/05_step8_send.png",
+      "bytes": 160600
+    },
+    {
+      "name": "06_arabic_mode",
+      "url": "http://localhost:3000/modules/informed-consents?lang=ar",
+      "status": 200,
+      "file": "docs/production-readiness/phase40g-screenshots/06_arabic_mode.png",
+      "bytes": 159447
+    },
+    {
+      "name": "07_modules_informed-consents_create",
+      "url": "http://localhost:3000/modules/informed-consents/create",
+      "status": 200,
+      "file": "docs/production-readiness/phase40g-screenshots/07_modules_informed-consents_create.png",
+      "bytes": 112540
+    },
+    {
+      "name": "08_modules",
+      "url": "http://localhost:3000/modules",
+      "status": 200,
+      "file": "docs/production-readiness/phase40g-screenshots/08_modules.png",
+      "bytes": 82719
+    }
+  ],
+  "patientJourneyAttempts": [
+    {
+      "token": "xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko",
+      "status": 404,
+      "bytes": 8956,
+      "bodySnippet": "404\nThis page could not be found.",
+      "file": "docs/production-readiness/phase40g-screenshots/09_patient_workflow_xYonm4Ro.png"
+    },
+    {
+      "token": "FQiasUsNY7AvjauI8Ou2ggLPRoPaRFILNc8tAZOC7Bk",
+      "status": 404,
+      "bytes": 8956,
+      "bodySnippet": "404\nThis page could not be found.",
+      "file": "docs/production-readiness/phase40g-screenshots/09_patient_workflow_FQiasUsN.png"
+    }
+  ],
+  "apiSmoke": {
+    "GET /api/health/runtime": {
+      "status": 503,
+      "body": "{\"status\":\"degraded\",\"deployment\":{\"vercelEnv\":null,\"vercelUrl\":null,\"gitCommitSha\":null,\"gitCommitRef\":null},\"runtime\":{\"nodeEnv\":\"production\",\"fingerprint\":\"d794ab917fd95468\",\"envPresence\":[{\"key\":\"DATABASE_URL\",\"present\":true},{\"key\":\"POSTGRES_PRISMA_URL\",\"present\":false},{\"key\":\"POSTGRES_URL\",\"present\":false},{\"key\":\"NEXTAUTH_SECRET\",\"present\":false},{\"key\":\"NEXTAUTH_URL\",\"present\":false},{\"key\":\"AUTH_TRUST_HOST\",\"present\":false},{\"key\":\"NODE_ENV\",\"present\":true}]},\"diagnostics\":{\"missingRequiredKeys\":[\"POSTGRES_PRISMA_URL\",\"POSTGRES_URL\",\"NEXTAUTH_SECRET\",\"NEXTAUTH_URL\",\"AUTH_TRUST_HOST\"],\"modes\":{\"maintenanceMode\":false,\"readonlyMode\":false,\"degradedMode\":false,\"effectiveMode\":\"normal\"},\"metrics\":{\"counters\":{\"response_time_ms\":1,\"db_latency_ms\":4,\"pdf_generation_duration_ms\":0,\"session_validation_duration_ms\":18},\"latestMs\":{\"response_time_ms\":13172,\"session_validation_duration_ms\":2836,\"db_latency_ms\":1109},\"updatedAt\":\"2026-06-01T20:35:46.594Z\"},\"pdfEngine\":{\"mode\":\"db_inline\",\"executableConfigured\":false,\"chromiumFallbackEnabled\":true}}}"
+    }
+  }
+}

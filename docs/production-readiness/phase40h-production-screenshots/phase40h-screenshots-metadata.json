@@ -1,0 +1,77 @@
+{
+  "phase": "40H",
+  "timestamp": "2026-06-01T20:44:53.934Z",
+  "base": "https://wathiqcare.online",
+  "authenticatedAs": "dr.ahmed@wathiqcare.med.sa",
+  "physicianShots": [
+    {
+      "name": "01_modules_informed-consents_default_landing",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "status": 200,
+      "file": "docs/production-readiness/phase40h-production-screenshots/01_modules_informed-consents_default_landing.png",
+      "bytes": 159123
+    },
+    {
+      "name": "02_step2_procedure",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "status": 200,
+      "file": "docs/production-readiness/phase40h-production-screenshots/02_step2_procedure.png",
+      "bytes": 167875
+    },
+    {
+      "name": "03_step7_validation",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "status": 200,
+      "file": "docs/production-readiness/phase40h-production-screenshots/03_step7_validation.png",
+      "bytes": 156554
+    },
+    {
+      "name": "04_step8_send",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "status": 200,
+      "file": "docs/production-readiness/phase40h-production-screenshots/04_step8_send.png",
+      "bytes": 160600
+    },
+    {
+      "name": "05_arabic_mode",
+      "url": "https://wathiqcare.online/modules/informed-consents?lang=ar",
+      "status": 200,
+      "file": "docs/production-readiness/phase40h-production-screenshots/05_arabic_mode.png",
+      "bytes": 159447
+    },
+    {
+      "name": "06_modules_informed-consents_create",
+      "url": "https://wathiqcare.online/modules/informed-consents/create",
+      "status": 200,
+      "file": "docs/production-readiness/phase40h-production-screenshots/06_modules_informed-consents_create.png",
+      "bytes": 112540
+    },
+    {
+      "name": "07_modules",
+      "url": "https://wathiqcare.online/modules",
+      "status": 200,
+      "file": "docs/production-readiness/phase40h-production-screenshots/07_modules.png",
+      "bytes": 82719
+    }
+  ],
+  "patientJourneyAttempts": [
+    {
+      "token": "xYonm4RoYnXH9u3CDNGxFB6lPB131oRS5md2zWkP-Ko",
+      "status": 404,
+      "bytes": 8956,
+      "file": "docs/production-readiness/phase40h-production-screenshots/08_patient_workflow_xYonm4Ro.png"
+    },
+    {
+      "token": "FQiasUsNY7AvjauI8Ou2ggLPRoPaRFILNc8tAZOC7Bk",
+      "status": 404,
+      "bytes": 8956,
+      "file": "docs/production-readiness/phase40h-production-screenshots/08_patient_workflow_FQiasUsN.png"
+    }
+  ],
+  "apiSmoke": {
+    "GET /api/health/runtime": {
+      "status": 200,
+      "body": "{\"status\":\"ok\",\"deployment\":{\"vercelEnv\":\"production\",\"vercelUrl\":\"wathiqcare-discharge-refusal-b6iwie3bs-wathiqcare.vercel.app\",\"gitCommitSha\":\"ffe3b03d40258d87539a11898c8621745f095dae\",\"gitCommitRef\":\"main\"},\"runtime\":{\"nodeEnv\":\"production\",\"fingerprint\":\"58ec1998fd12cf60\",\"envPresence\":[{\"key\":\"DATABASE_URL\",\"present\":true},{\"key\":\"POSTGRES_PRISMA_URL\",\"present\":true},{\"key\":\"POSTGRES_URL\",\"present\":true},{\"key\":\"NEXTAUTH_SECRET\",\"present\":true},{\"key\":\"NEXTAUTH_URL\",\"present\":true},{\"key\":\"AUTH_TRUST_HOST\",\"present\":true},{\"key\":\"NODE_ENV\",\"present\":true}]},\"diagnostics\":{\"missingRequiredKeys\":[],\"modes\":{\"maintenanceMode\":false,\"readonlyMode\":false,\"degradedMode\":false,\"effectiveMode\":\"normal\"},\"metrics\":{\"counters\":{\"response_time_ms\":1,\"db_latency_ms\":4,\"pdf_generation_duration_ms\":0,\"session_validation_duration_ms\":16},\"latestMs\":{\"response_time_ms\":6299,\"session_validation_duration_ms\":1278,\"db_latency_ms\":456},\"updatedAt\":\"2026-06-01T20:44:43.256Z\"},\"pdfEngine\":{\"mode\":\"db_inline\",\"executableConfigured\":false,\"chromiumFallbackEnabled\":true}}}"
+    }
+  }
+}

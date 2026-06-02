@@ -1,0 +1,32 @@
+[
+    {
+        "path":  "/",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "path":  "/request-demo",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "path":  "/login",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "path":  "/modules/informed-consents",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "path":  "/modules/discharge-refusal/dashboard",
+        "status":  200,
+        "ok":  true
+    },
+    {
+        "path":  "/api/health",
+        "status":  200,
+        "ok":  true
+    }
+]

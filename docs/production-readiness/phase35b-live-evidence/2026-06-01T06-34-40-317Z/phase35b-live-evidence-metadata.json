@@ -1,0 +1,110 @@
+{
+  "capturedAtUtc": "2026-06-01T06:34:40.536Z",
+  "outputDir": "docs\\production-readiness\\phase35b-live-evidence\\2026-06-01T06-34-40-317Z",
+  "checks": [
+    {
+      "startedAt": "2026-06-01T06:34:40.617Z",
+      "capturedAt": "2026-06-01T06:34:46.952Z",
+      "url": "https://wathiqcare.online",
+      "finalUrl": "https://wathiqcare.online/ar",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "screenshotPath": "docs/production-readiness/phase35b-live-evidence/2026-06-01T06-34-40-317Z/wathiqcare.online__root.png",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "Human-Centered Informed Consent, Legally Protected Care.",
+      "visibleIdentity": "HomeHow It WorksFAQNewsContactGet in TouchHuman-Centered Informed Consent, Legally Protected Care.A Smart Digital Platform for Informed Consent and Medical Authorization in Saudi Arabia.Get started nowLearn more informationTrusted by indust",
+      "bodyTextSnippet": "Home How It Works FAQ News Contact Get in Touch Human-Centered Informed Consent, Legally Protected Care. A Smart Digital Platform for Informed Consent and Medical Authorization in Saudi Arabia. Get started now Learn more information Trusted by industry experts 4.9 Why To Choose WathiqCare? 100% Secure Data Handling 99.9% System Reliability 0 Security Breaches Designed for Every Stakeholder in the "
+    },
+    {
+      "startedAt": "2026-06-01T06:34:47.013Z",
+      "capturedAt": "2026-06-01T06:34:48.549Z",
+      "url": "https://wathiqcare.online/request-demo",
+      "finalUrl": "https://wathiqcare.online/request-demo",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "screenshotPath": "docs/production-readiness/phase35b-live-evidence/2026-06-01T06-34-40-317Z/wathiqcare.online__request-demo.png",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "Request a Demo",
+      "visibleIdentity": "Back to HomeLanguageENعربيEnter SystemRequest a DemoPlease fill in your facility details and our team will contact you to schedule a personalized demonstration.PDPL CompliantCBAHI Ready99.9% Uptime24/7 Supportdemo@wathiqcare.online+966 5435",
+      "bodyTextSnippet": "Back to Home Language EN عربي Enter System Request a Demo Please fill in your facility details and our team will contact you to schedule a personalized demonstration. PDPL Compliant CBAHI Ready 99.9% Uptime 24/7 Support demo@wathiqcare.online +966 543587772 Demo Request Details Required fields are marked with an asterisk. Facility Name* Full Name* Contact Email* Phone Number* Contact Address* Numb"
+    },
+    {
+      "startedAt": "2026-06-01T06:34:48.602Z",
+      "capturedAt": "2026-06-01T06:34:50.267Z",
+      "url": "https://wathiqcare.online/login",
+      "finalUrl": "https://wathiqcare.online/login",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "screenshotPath": "docs/production-readiness/phase35b-live-evidence/2026-06-01T06-34-40-317Z/wathiqcare.online__login.png",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "WathiqCare™",
+      "visibleIdentity": "Trusted PlatformWathiqCare™Enterprise Healthcare Legal Automation PlatformMedical PrivacyHigh protection for sensitive data.Continuous ComplianceReal-time alignment with regulations.Clear GovernancePrecise decisions with legal context.Back ",
+      "bodyTextSnippet": "Trusted Platform WathiqCare™ Enterprise Healthcare Legal Automation Platform Medical Privacy High protection for sensitive data. Continuous Compliance Real-time alignment with regulations. Clear Governance Precise decisions with legal context. Back to Home العربية EN Secure Access to WathiqCare Sign in to continue with confidence. Email or Username Password Remember me Forgot password? Sign In Sig"
+    },
+    {
+      "startedAt": "2026-06-01T06:34:50.352Z",
+      "capturedAt": "2026-06-01T06:34:52.135Z",
+      "url": "https://wathiqcare.online/modules",
+      "finalUrl": "https://wathiqcare.online/login?next=%2Fmodules",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "screenshotPath": "docs/production-readiness/phase35b-live-evidence/2026-06-01T06-34-40-317Z/wathiqcare.online__modules.png",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "WathiqCare™",
+      "visibleIdentity": "Trusted PlatformWathiqCare™Enterprise Healthcare Legal Automation PlatformMedical PrivacyHigh protection for sensitive data.Continuous ComplianceReal-time alignment with regulations.Clear GovernancePrecise decisions with legal context.Back ",
+      "bodyTextSnippet": "Trusted Platform WathiqCare™ Enterprise Healthcare Legal Automation Platform Medical Privacy High protection for sensitive data. Continuous Compliance Real-time alignment with regulations. Clear Governance Precise decisions with legal context. Back to Home العربية EN Secure Access to WathiqCare Sign in to continue with confidence. Email or Username Password Remember me Forgot password? Sign In Sig"
+    },
+    {
+      "startedAt": "2026-06-01T06:34:52.194Z",
+      "capturedAt": "2026-06-01T06:34:53.966Z",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "finalUrl": "https://wathiqcare.online/login?next=%2Fmodules%2Finformed-consents",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "screenshotPath": "docs/production-readiness/phase35b-live-evidence/2026-06-01T06-34-40-317Z/wathiqcare.online__modules__informed-consents.png",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "WathiqCare™",
+      "visibleIdentity": "Trusted PlatformWathiqCare™Enterprise Healthcare Legal Automation PlatformMedical PrivacyHigh protection for sensitive data.Continuous ComplianceReal-time alignment with regulations.Clear GovernancePrecise decisions with legal context.Back ",
+      "bodyTextSnippet": "Trusted Platform WathiqCare™ Enterprise Healthcare Legal Automation Platform Medical Privacy High protection for sensitive data. Continuous Compliance Real-time alignment with regulations. Clear Governance Precise decisions with legal context. Back to Home العربية EN Secure Access to WathiqCare Sign in to continue with confidence. Email or Username Password Remember me Forgot password? Sign In Sig"
+    },
+    {
+      "startedAt": "2026-06-01T06:34:54.014Z",
+      "capturedAt": "2026-06-01T06:34:55.805Z",
+      "url": "https://wathiqcare.online/modules/promissory-notes",
+      "finalUrl": "https://wathiqcare.online/login?next=%2Fmodules%2Fpromissory-notes",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "screenshotPath": "docs/production-readiness/phase35b-live-evidence/2026-06-01T06-34-40-317Z/wathiqcare.online__modules__promissory-notes.png",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "WathiqCare™",
+      "visibleIdentity": "Trusted PlatformWathiqCare™Enterprise Healthcare Legal Automation PlatformMedical PrivacyHigh protection for sensitive data.Continuous ComplianceReal-time alignment with regulations.Clear GovernancePrecise decisions with legal context.Back ",
+      "bodyTextSnippet": "Trusted Platform WathiqCare™ Enterprise Healthcare Legal Automation Platform Medical Privacy High protection for sensitive data. Continuous Compliance Real-time alignment with regulations. Clear Governance Precise decisions with legal context. Back to Home العربية EN Secure Access to WathiqCare Sign in to continue with confidence. Email or Username Password Remember me Forgot password? Sign In Sig"
+    },
+    {
+      "startedAt": "2026-06-01T06:34:55.858Z",
+      "capturedAt": "2026-06-01T06:35:58.600Z",
+      "url": "https://wathiqcare.online/api/health",
+      "finalUrl": "https://wathiqcare.online/api/health",
+      "status": 200,
+      "contentType": "application/json",
+      "screenshotPath": "docs/production-readiness/phase35b-live-evidence/2026-06-01T06-34-40-317Z/wathiqcare.online__api__health.png",
+      "title": "",
+      "h1": null,
+      "visibleIdentity": null,
+      "bodyTextSnippet": "{\"status\":\"ok\",\"service\":\"frontend\",\"role\":\"api-proxy-host\",\"checks\":{\"db\":\"/api/health/db\",\"auth\":\"/api/health/auth\",\"runtime\":\"/api/health/runtime\",\"dashboard\":\"/api/health/dashboard\"},\"database\":{\"status\":\"ok\",\"latencyMs\":1204}}"
+    },
+    {
+      "startedAt": "2026-06-01T06:35:58.678Z",
+      "capturedAt": "2026-06-01T06:37:00.164Z",
+      "url": "https://wathiqcare.online/api/health/runtime",
+      "finalUrl": "https://wathiqcare.online/api/health/runtime",
+      "status": 200,
+      "contentType": "application/json",
+      "screenshotPath": "docs/production-readiness/phase35b-live-evidence/2026-06-01T06-34-40-317Z/wathiqcare.online__api__health__runtime.png",
+      "title": "",
+      "h1": null,
+      "visibleIdentity": null,
+      "bodyTextSnippet": "{\"status\":\"ok\",\"deployment\":{\"vercelEnv\":\"production\",\"vercelUrl\":\"wathiqcare-discharge-refusal-f57bh4bxj-wathiqcare.vercel.app\",\"gitCommitSha\":\"0f7eb3603135a43b31b1b263c28b31ad0ee7e1e0\",\"gitCommitRef\":\"phase24-evidence-package-final\"},\"runtime\":{\"nodeEnv\":\"production\",\"fingerprint\":\"58ec1998fd12cf60\",\"envPresence\":[{\"key\":\"DATABASE_URL\",\"present\":true},{\"key\":\"POSTGRES_PRISMA_URL\",\"present\":true}"
+    }
+  ]
+}

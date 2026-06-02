@@ -1,0 +1,38 @@
+{
+  "capturedAt": "2026-06-01T07:29:03.296Z",
+  "scope": "pre-deploy-live-authenticated",
+  "records": [
+    {
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "finalUrl": "https://wathiqcare.online/modules/informed-consents",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "hasOldSimplifiedConsentTypeScreen": true,
+      "hasPlaceholderUi": false,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-live/2026-06-01T07-28-51-455Z_wathiqcare_online_modules_informed_consents.png"
+    },
+    {
+      "url": "https://wathiqcare.online/modules/informed-consents?lang=ar",
+      "finalUrl": "https://wathiqcare.online/modules/informed-consents?lang=ar",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "hasOldSimplifiedConsentTypeScreen": true,
+      "hasPlaceholderUi": false,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-live/2026-06-01T07-28-51-455Z_wathiqcare_online_modules_informed_consents_lang_ar.png"
+    },
+    {
+      "url": "https://wathiqcare.online/modules/informed-consents?lang=en",
+      "finalUrl": "https://wathiqcare.online/modules/informed-consents?lang=en",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "hasOldSimplifiedConsentTypeScreen": true,
+      "hasPlaceholderUi": false,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-live/2026-06-01T07-28-51-455Z_wathiqcare_online_modules_informed_consents_lang_en.png"
+    },
+    {
+      "url": "https://wathiqcare.online/modules",
+      "finalUrl": "https://wathiqcare.online/modules",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "hasOldSimplifiedConsentTypeScreen": false,
+      "hasPlaceholderUi": false,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-live/2026-06-01T07-28-51-455Z_wathiqcare_online_modules.png"
+    }
+  ]
+}

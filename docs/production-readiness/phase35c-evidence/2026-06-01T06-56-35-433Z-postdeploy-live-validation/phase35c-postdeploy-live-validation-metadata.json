@@ -1,0 +1,65 @@
+{
+  "capturedAtUtc": "2026-06-01T06:56:35.534Z",
+  "phase": "phase35c",
+  "stage": "postdeploy-live-validation",
+  "baseUrl": "https://wathiqcare.online",
+  "outputDir": "docs/production-readiness/phase35c-evidence/2026-06-01T06-56-35-433Z-postdeploy-live-validation",
+  "checks": [
+    {
+      "startedAt": "2026-06-01T06:56:35.610Z",
+      "capturedAt": "2026-06-01T06:56:43.056Z",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "finalUrl": "https://wathiqcare.online/login?next=%2Fmodules%2Finformed-consents",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "WathiqCare™",
+      "hasApprovedTestId": false,
+      "hasApprovedReleaseSurface": false,
+      "bodyTextSnippet": "Trusted Platform WathiqCare™ Enterprise Healthcare Legal Automation Platform Medical Privacy High protection for sensitive data. Continuous Compliance Real-time alignment with regulations. Clear Governance Precise decisions with legal context. Back to Home العربية EN Secure Access to WathiqCare Sign in to continue with confidence. Email or Username Password Remember me Forgot password? Sign In Sig",
+      "screenshotPath": "docs/production-readiness/phase35c-evidence/2026-06-01T06-56-35-433Z-postdeploy-live-validation/wathiqcare.online__modules__informed-consents.png"
+    },
+    {
+      "startedAt": "2026-06-01T06:56:43.103Z",
+      "capturedAt": "2026-06-01T06:56:45.321Z",
+      "url": "https://wathiqcare.online/modules",
+      "finalUrl": "https://wathiqcare.online/login?next=%2Fmodules",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "WathiqCare™",
+      "hasApprovedTestId": false,
+      "hasApprovedReleaseSurface": false,
+      "bodyTextSnippet": "Trusted Platform WathiqCare™ Enterprise Healthcare Legal Automation Platform Medical Privacy High protection for sensitive data. Continuous Compliance Real-time alignment with regulations. Clear Governance Precise decisions with legal context. Back to Home العربية EN Secure Access to WathiqCare Sign in to continue with confidence. Email or Username Password Remember me Forgot password? Sign In Sig",
+      "screenshotPath": "docs/production-readiness/phase35c-evidence/2026-06-01T06-56-35-433Z-postdeploy-live-validation/wathiqcare.online__modules.png"
+    },
+    {
+      "startedAt": "2026-06-01T06:56:45.373Z",
+      "capturedAt": "2026-06-01T06:57:20.629Z",
+      "url": "https://wathiqcare.online/api/health",
+      "finalUrl": "https://wathiqcare.online/api/health",
+      "status": 200,
+      "contentType": "application/json",
+      "title": "",
+      "h1": null,
+      "hasApprovedTestId": false,
+      "hasApprovedReleaseSurface": false,
+      "bodyTextSnippet": "{\"status\":\"ok\",\"service\":\"frontend\",\"role\":\"api-proxy-host\",\"checks\":{\"db\":\"/api/health/db\",\"auth\":\"/api/health/auth\",\"runtime\":\"/api/health/runtime\",\"dashboard\":\"/api/health/dashboard\"},\"database\":{\"status\":\"ok\",\"latencyMs\":3010}}",
+      "screenshotPath": "docs/production-readiness/phase35c-evidence/2026-06-01T06-56-35-433Z-postdeploy-live-validation/wathiqcare.online__api__health.png"
+    },
+    {
+      "startedAt": "2026-06-01T06:57:20.708Z",
+      "capturedAt": "2026-06-01T06:57:53.285Z",
+      "url": "https://wathiqcare.online/api/health/runtime",
+      "finalUrl": "https://wathiqcare.online/api/health/runtime",
+      "status": 200,
+      "contentType": "application/json",
+      "title": "",
+      "h1": null,
+      "hasApprovedTestId": false,
+      "hasApprovedReleaseSurface": false,
+      "bodyTextSnippet": "{\"status\":\"ok\",\"deployment\":{\"vercelEnv\":\"production\",\"vercelUrl\":\"wathiqcare-discharge-refusal-am8zz7deh-wathiqcare.vercel.app\",\"gitCommitSha\":\"0f7eb3603135a43b31b1b263c28b31ad0ee7e1e0\",\"gitCommitRef\":\"phase24-evidence-package-final\"},\"runtime\":{\"nodeEnv\":\"production\",\"fingerprint\":\"58ec1998fd12cf60\",\"envPresence\":[{\"key\":\"DATABASE_URL\",\"present\":true},{\"key\":\"POSTGRES_PRISMA_URL\",\"present\":true}",
+      "screenshotPath": "docs/production-readiness/phase35c-evidence/2026-06-01T06-56-35-433Z-postdeploy-live-validation/wathiqcare.online__api__health__runtime.png"
+    }
+  ]
+}

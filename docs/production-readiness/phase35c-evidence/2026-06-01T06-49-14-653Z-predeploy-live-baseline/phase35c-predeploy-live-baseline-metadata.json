@@ -1,0 +1,51 @@
+{
+  "capturedAtUtc": "2026-06-01T06:49:14.857Z",
+  "phase": "phase35c",
+  "stage": "predeploy-live-baseline",
+  "baseUrl": "https://wathiqcare.online",
+  "outputDir": "docs/production-readiness/phase35c-evidence/2026-06-01T06-49-14-653Z-predeploy-live-baseline",
+  "checks": [
+    {
+      "startedAt": "2026-06-01T06:49:15.233Z",
+      "capturedAt": "2026-06-01T06:49:22.196Z",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "finalUrl": "https://wathiqcare.online/login?next=%2Fmodules%2Finformed-consents",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "WathiqCare™",
+      "hasApprovedTestId": false,
+      "hasApprovedReleaseSurface": false,
+      "bodyTextSnippet": "Trusted Platform WathiqCare™ Enterprise Healthcare Legal Automation Platform Medical Privacy High protection for sensitive data. Continuous Compliance Real-time alignment with regulations. Clear Governance Precise decisions with legal context. Back to Home العربية EN Secure Access to WathiqCare Sign in to continue with confidence. Email or Username Password Remember me Forgot password? Sign In Sig",
+      "screenshotPath": "docs/production-readiness/phase35c-evidence/2026-06-01T06-49-14-653Z-predeploy-live-baseline/wathiqcare.online__modules__informed-consents.png"
+    },
+    {
+      "startedAt": "2026-06-01T06:49:22.266Z",
+      "capturedAt": "2026-06-01T06:49:24.623Z",
+      "url": "https://wathiqcare.online/modules/informed-consents?lang=ar",
+      "finalUrl": "https://wathiqcare.online/login?next=%2Fmodules%2Finformed-consents%3Flang%3Dar",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "WathiqCare™",
+      "hasApprovedTestId": false,
+      "hasApprovedReleaseSurface": false,
+      "bodyTextSnippet": "Trusted Platform WathiqCare™ Enterprise Healthcare Legal Automation Platform Medical Privacy High protection for sensitive data. Continuous Compliance Real-time alignment with regulations. Clear Governance Precise decisions with legal context. Back to Home العربية EN Secure Access to WathiqCare Sign in to continue with confidence. Email or Username Password Remember me Forgot password? Sign In Sig",
+      "screenshotPath": "docs/production-readiness/phase35c-evidence/2026-06-01T06-49-14-653Z-predeploy-live-baseline/wathiqcare.online__modules__informed-consents__q_lang_ar.png"
+    },
+    {
+      "startedAt": "2026-06-01T06:49:24.693Z",
+      "capturedAt": "2026-06-01T06:49:27.138Z",
+      "url": "https://wathiqcare.online/modules/informed-consents?lang=en",
+      "finalUrl": "https://wathiqcare.online/login?next=%2Fmodules%2Finformed-consents%3Flang%3Den",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+      "h1": "WathiqCare™",
+      "hasApprovedTestId": false,
+      "hasApprovedReleaseSurface": false,
+      "bodyTextSnippet": "Trusted Platform WathiqCare™ Enterprise Healthcare Legal Automation Platform Medical Privacy High protection for sensitive data. Continuous Compliance Real-time alignment with regulations. Clear Governance Precise decisions with legal context. Back to Home العربية EN Secure Access to WathiqCare Sign in to continue with confidence. Email or Username Password Remember me Forgot password? Sign In Sig",
+      "screenshotPath": "docs/production-readiness/phase35c-evidence/2026-06-01T06-49-14-653Z-predeploy-live-baseline/wathiqcare.online__modules__informed-consents__q_lang_en.png"
+    }
+  ]
+}

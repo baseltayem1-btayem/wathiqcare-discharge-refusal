@@ -1,0 +1,56 @@
+{
+  "capturedAt": "2026-06-01T07:30:54.465Z",
+  "scope": "pre-deploy-local-and-preview",
+  "result": "blocked-by-authentication",
+  "summary": "All local and preview module routes redirected to /login because authenticated session context was unavailable for localhost/preview domains in the automated browser context.",
+  "records": [
+    {
+      "url": "http://127.0.0.1:3002/modules/informed-consents",
+      "finalUrl": "http://127.0.0.1:3002/login?next=%2Fmodules%2Finformed-consents",
+      "onLogin": true,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-local-preview/2026-06-01T07-30-35-292Z_127_0_0_1_3002_modules_informed_consents.png"
+    },
+    {
+      "url": "http://127.0.0.1:3002/modules/informed-consents?lang=ar",
+      "finalUrl": "http://127.0.0.1:3002/login?next=%2Fmodules%2Finformed-consents%3Flang%3Dar",
+      "onLogin": true,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-local-preview/2026-06-01T07-30-35-292Z_127_0_0_1_3002_modules_informed_consents_lang_ar.png"
+    },
+    {
+      "url": "http://127.0.0.1:3002/modules/informed-consents?lang=en",
+      "finalUrl": "http://127.0.0.1:3002/login?next=%2Fmodules%2Finformed-consents%3Flang%3Den",
+      "onLogin": true,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-local-preview/2026-06-01T07-30-35-292Z_127_0_0_1_3002_modules_informed_consents_lang_en.png"
+    },
+    {
+      "url": "http://127.0.0.1:3002/modules",
+      "finalUrl": "http://127.0.0.1:3002/login?next=%2Fmodules",
+      "onLogin": true,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-local-preview/2026-06-01T07-30-35-292Z_127_0_0_1_3002_modules.png"
+    },
+    {
+      "url": "https://wathiqcare-discharge-refusal-7pwgp96lg-wathiqcare.vercel.app/modules/informed-consents",
+      "finalUrl": "https://wathiqcare-discharge-refusal-7pwgp96lg-wathiqcare.vercel.app/login?next=%2Fmodules%2Finformed-consents",
+      "onLogin": true,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-local-preview/2026-06-01T07-30-35-292Z_wathiqcare_discharge_refusal_7pwgp96lg_wathiqcare_vercel_app_modules_informed_consents.png"
+    },
+    {
+      "url": "https://wathiqcare-discharge-refusal-7pwgp96lg-wathiqcare.vercel.app/modules/informed-consents?lang=ar",
+      "finalUrl": "https://wathiqcare-discharge-refusal-7pwgp96lg-wathiqcare.vercel.app/login?next=%2Fmodules%2Finformed-consents%3Flang%3Dar",
+      "onLogin": true,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-local-preview/2026-06-01T07-30-35-292Z_wathiqcare_discharge_refusal_7pwgp96lg_wathiqcare_vercel_app_modules_informed_consents_lang_ar.png"
+    },
+    {
+      "url": "https://wathiqcare-discharge-refusal-7pwgp96lg-wathiqcare.vercel.app/modules/informed-consents?lang=en",
+      "finalUrl": "https://wathiqcare-discharge-refusal-7pwgp96lg-wathiqcare.vercel.app/login?next=%2Fmodules%2Finformed-consents%3Flang%3Den",
+      "onLogin": true,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-local-preview/2026-06-01T07-30-35-292Z_wathiqcare_discharge_refusal_7pwgp96lg_wathiqcare_vercel_app_modules_informed_consents_lang_en.png"
+    },
+    {
+      "url": "https://wathiqcare-discharge-refusal-7pwgp96lg-wathiqcare.vercel.app/modules",
+      "finalUrl": "https://wathiqcare-discharge-refusal-7pwgp96lg-wathiqcare.vercel.app/login?next=%2Fmodules",
+      "onLogin": true,
+      "screenshotPath": "docs/production-readiness/phase35e-authenticated-visual-proof/pre-deploy-local-preview/2026-06-01T07-30-35-292Z_wathiqcare_discharge_refusal_7pwgp96lg_wathiqcare_vercel_app_modules.png"
+    }
+  ]
+}

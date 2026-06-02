@@ -1,0 +1,86 @@
+{
+  "phase": "43D",
+  "timestamp": "2026-06-01T22:54:52.422Z",
+  "base": "https://wathiqcare.online",
+  "authenticatedAs": "medicaldirector@wathiqcare.med.sa",
+  "shots": [
+    {
+      "name": "01_landing",
+      "url": "https://wathiqcare.online/",
+      "file": "docs/production-readiness/phase43d-production-screenshots/01_landing.png",
+      "bytes": 1238879
+    },
+    {
+      "name": "02_landing_en",
+      "url": "https://wathiqcare.online/en",
+      "file": "docs/production-readiness/phase43d-production-screenshots/02_landing_en.png",
+      "bytes": 1597300
+    },
+    {
+      "name": "03_landing_ar",
+      "url": "https://wathiqcare.online/ar",
+      "file": "docs/production-readiness/phase43d-production-screenshots/03_landing_ar.png",
+      "bytes": 1238764
+    },
+    {
+      "name": "04_request_demo",
+      "url": "https://wathiqcare.online/request-demo",
+      "file": "docs/production-readiness/phase43d-production-screenshots/04_request_demo.png",
+      "bytes": 47037
+    },
+    {
+      "name": "05_step1_patient",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "file": "docs/production-readiness/phase43d-production-screenshots/05_step1_patient.png",
+      "bytes": 150721
+    },
+    {
+      "name": "06_step2_procedure",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "file": "docs/production-readiness/phase43d-production-screenshots/06_step2_procedure.png",
+      "bytes": 153471
+    },
+    {
+      "name": "07_step6_pdf_preview",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "file": "docs/production-readiness/phase43d-production-screenshots/07_step6_pdf_preview.png",
+      "bytes": 182188
+    },
+    {
+      "name": "08_step7_validation",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "file": "docs/production-readiness/phase43d-production-screenshots/08_step7_validation.png",
+      "bytes": 142395
+    },
+    {
+      "name": "09_step8_send",
+      "url": "https://wathiqcare.online/modules/informed-consents",
+      "file": "docs/production-readiness/phase43d-production-screenshots/09_step8_send.png",
+      "bytes": 134520
+    },
+    {
+      "name": "10_arabic_mode",
+      "url": "https://wathiqcare.online/modules/informed-consents?lang=ar",
+      "file": "docs/production-readiness/phase43d-production-screenshots/10_arabic_mode.png",
+      "bytes": 150870
+    },
+    {
+      "name": "11_modules_informed-consents_create",
+      "url": "https://wathiqcare.online/modules/informed-consents/create",
+      "file": "docs/production-readiness/phase43d-production-screenshots/11_modules_informed-consents_create.png",
+      "bytes": 82567
+    },
+    {
+      "name": "12_modules",
+      "url": "https://wathiqcare.online/modules",
+      "file": "docs/production-readiness/phase43d-production-screenshots/12_modules.png",
+      "bytes": 63476
+    },
+    {
+      "name": "13_sign_workflow_token_gate",
+      "url": "https://wathiqcare.online/sign/PHASE43D-TOKEN-PROBE/workflow",
+      "file": "docs/production-readiness/phase43d-production-screenshots/13_sign_workflow_token_gate.png",
+      "bytes": 7791
+    }
+  ]
+}
