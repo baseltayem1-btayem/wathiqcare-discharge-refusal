@@ -256,9 +256,100 @@ export default function WathiqcareWhiteLanding({
             {copy.stakeholdersSubtitle}
           </p>
 
-          <div className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-12">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 lg:col-span-8">
-              {copy.stakeholders.map(({ title, Icon }) => (
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-3">
+            {copy.stakeholders.map(({ title, Icon }) => (
+              <article key={title} className="rounded-2xl border border-[#2596BE]/18 bg-white p-6 shadow-sm">
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[#E7F7FB] text-[#0B5A70]">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-bold text-[#07111F]">{title}</h3>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#F6FAFC] px-6 py-20 md:px-10">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center">
+          <div className="lg:col-span-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <article className="overflow-hidden rounded-2xl border border-[#2596BE]/20 bg-white p-3 shadow-sm">
+                <a
+                  href="https://daralmithaq.sa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={copy.darAlMithaqLabel}
+                  aria-label={copy.darAlMithaqLabel}
+                  className="flex h-40 w-full items-center justify-center rounded-xl bg-white p-5"
+                >
+                  <Image
+                    src="/images/partners/dar-al-mithaq-logo.png"
+                    alt={copy.darAlMithaqLabel}
+                    width={500}
+                    height={220}
+                    className="h-full w-full object-contain"
+                  />
+                </a>
+              </article>
+
+              <article className="overflow-hidden rounded-2xl border border-[#2596BE]/20 bg-white p-3 shadow-sm">
+                <div
+                  title={isArabic ? "\u0627\u0644\u0645\u0631\u0643\u0632 \u0627\u0644\u0637\u0628\u064a \u0627\u0644\u062f\u0648\u0644\u064a" : "International Medical Center"}
+                  aria-label={isArabic ? "\u0627\u0644\u0645\u0631\u0643\u0632 \u0627\u0644\u0637\u0628\u064a \u0627\u0644\u062f\u0648\u0644\u064a" : "International Medical Center"}
+                  className="flex h-40 w-full items-center justify-center rounded-xl bg-white p-5"
+                >
+                  <Image
+                    src="/images/imc-logo.png"
+                    alt={isArabic ? "\u0627\u0644\u0645\u0631\u0643\u0632 \u0627\u0644\u0637\u0628\u064a \u0627\u0644\u062f\u0648\u0644\u064a" : "International Medical Center"}
+                    width={500}
+                    height={220}
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div className="lg:col-span-7">
+            <h2 className="text-3xl font-extrabold text-[#07111F] md:text-4xl">
+              {copy.partnersTitle}
+            </h2>
+            <p className="mt-4 max-w-3xl text-base leading-8 text-[#4B5563]">
+              {copy.partnersSubtitle}
+            </p>
+
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <article className="rounded-2xl border border-[#2596BE]/18 bg-white p-5 shadow-sm">
+                <a href="https://daralmithaq.sa" target="_blank" rel="noopener noreferrer" className={`flex gap-4 ${isArabic ? "flex-row-reverse items-center text-right" : "items-center"}`}>
+                  <Image
+                    src="/images/partners/dar-al-mithaq-logo.png"
+                    alt={copy.darAlMithaqLabel}
+                    width={180}
+                    height={78}
+                    className="h-14 w-auto object-contain"
+                  />
+                  <div className={`flex flex-col ${textAlign}`}>
+                    <h3 className="text-lg font-bold text-[#07111F]">{copy.darAlMithaqLabel}</h3>
+                    <span className="text-sm text-[#4B5563]">daralmithaq.sa</span>
+                  </div>
+                </a>
+              </article>
+
+              <article className="rounded-2xl border border-[#2596BE]/18 bg-white p-5 shadow-sm">
+                <a href="https://www.btayem.com/" target="_blank" rel="noopener noreferrer" className={`flex gap-4 ${isArabic ? "flex-row-reverse items-center text-right" : "items-center"}`}>
+                  <Image
+                    src="/images/partners/tayem-co-logo-royal-blue.png"
+                    alt={copy.partnerTwoLabel}
+                    width={180}
+                    height={78}
+                    className="h-16 w-auto object-contain opacity-100"
+                  />
+                  <div className={`flex flex-col ${textAlign}`}>
+                    <h3 className="text-lg font-bold text-[#07111F]">{copy.partnerTwoLabel}</h3>
+                    <span className="text-sm text-[#4B5563]">btayem.com</span>
+                  </div>
+                </a>
+              </article>
             </div>
           </div>
         </div>
