@@ -760,7 +760,7 @@ export function ApprovedPatientWorkflow({
         className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -881,7 +881,7 @@ export function ApprovedPatientWorkflow({
           step={3}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1117,7 +1117,7 @@ export function ApprovedPatientWorkflow({
           step={4}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1289,7 +1289,7 @@ export function ApprovedPatientWorkflow({
           step={5}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1412,7 +1412,7 @@ export function ApprovedPatientWorkflow({
           step={6}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1552,7 +1552,7 @@ export function ApprovedPatientWorkflow({
           onLangToggle={toggleLang}
           onBack={() => setScreen("decision")}
         />
-        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
           <div
             className={cls(
               "flex flex-col gap-2",
@@ -1656,7 +1656,7 @@ export function ApprovedPatientWorkflow({
           onLangToggle={toggleLang}
           onBack={() => setScreen("refusal-ack")}
         />
-        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1731,7 +1731,7 @@ export function ApprovedPatientWorkflow({
         className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6 items-center text-center">
+        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5 items-center text-center">
           <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-600" />
           </div>
@@ -1868,7 +1868,7 @@ export function ApprovedPatientWorkflow({
         className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6 items-center text-center">
+        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5 items-center text-center">
           <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center">
             <AlertCircle size={40} className="text-orange-600" />
           </div>

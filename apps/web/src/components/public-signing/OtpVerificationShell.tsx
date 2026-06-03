@@ -94,12 +94,12 @@ export function OtpVerificationShell({
   return (
     <section
       dir={direction}
-      className={cls("w-full px-3 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8", className)}
+      className={cls("w-full", className)}
     >
-      <Card className="mx-auto w-full max-w-[760px] overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.12)]">
+      <Card className="mx-auto w-full overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.10)]">
         <div className="h-1.5 w-full bg-gradient-to-r from-sky-800 via-cyan-600 to-slate-950" />
 
-        <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col gap-5 p-4 sm:p-6">
           <header className={cls("flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between", isAr ? "sm:flex-row-reverse text-right" : "text-left")}>
             <div className="inline-flex w-fit items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 shadow-sm">
               <Image
@@ -132,7 +132,7 @@ export function OtpVerificationShell({
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 shadow-sm sm:p-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
             <div className={cls("mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500", isAr ? "flex-row-reverse" : "flex-row")}>
               <Phone size={14} className="text-sky-700" />
               <span>{copy.mobileNumber}</span>
