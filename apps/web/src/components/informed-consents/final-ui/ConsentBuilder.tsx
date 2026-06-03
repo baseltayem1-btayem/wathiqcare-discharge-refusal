@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Circle, ChevronRight } from 'lucide-react';
-import type { ConsentStep } from './clinical/ClinicalTypes';
+import type { ConsentStep, ValidationItem } from './clinical/ClinicalTypes';
+import { defaultValidation } from './fixtures/consent-builder';
 import { ValidationDrawer } from './clinical/ValidationDrawer';
 import { StepPatient } from './steps/StepPatient';
 import { StepProcedure } from './steps/StepProcedure';
@@ -14,19 +15,39 @@ import { StepValidation } from './steps/StepValidation';
 import { StepSend } from './steps/StepSend';
 import { mockEncounters, mockPatients } from './fixtures/patient-search';
 
+
+const SAFE_CONSENT_STEP_AR_LABELS: Record<string, string> = {
+  patient: "\u0627\u0644\u0645\u0631\u064a\u0636",
+  procedure: "\u0627\u0644\u0625\u062c\u0631\u0627\u0621",
+  anesthesia: "\u0627\u0644\u062a\u062e\u062f\u064a\u0631",
+  disclosures: "\u0627\u0644\u0625\u0641\u0635\u0627\u062d\u0627\u062a",
+  education: "\u0627\u0644\u062a\u062b\u0642\u064a\u0641",
+  preview: "\u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629",
+  validation: "\u0627\u0644\u062a\u062d\u0642\u0642",
+  send: "\u0627\u0644\u0625\u0631\u0633\u0627\u0644",
+};
+
+function getSafeConsentStepLabel(step: Record<string, unknown>, lang: string): string {
+  const stepKey = String(step.id || step.key || step.step || "").trim();
+
+  if (lang === "ar" && SAFE_CONSENT_STEP_AR_LABELS[stepKey]) {
+    return SAFE_CONSENT_STEP_AR_LABELS[stepKey];
+  }
+
+  return String(step.label || step.title || step.name || stepKey);
+}
+
 const steps: { key: ConsentStep; label: string; labelAr: string }[] = [
-  { key: 'patient', label: 'Patient', labelAr: 'Ø§Ù„Ù…Ø±ÙŠØ¶' },
-  { key: 'procedure', label: 'Procedure', labelAr: 'Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡' },
-  { key: 'anesthesia', label: 'Anesthesia', labelAr: 'Ø§Ù„ØªØ®Ø¯ÙŠØ±' },
-  { key: 'disclosures', label: 'Disclosures', labelAr: 'Ø§Ù„Ø¥ÙØµØ§Ø­Ø§Øª' },
-  { key: 'education', label: 'Education', labelAr: 'Ø§Ù„ØªØ«Ù‚ÙŠÙ' },
-  { key: 'preview', label: 'Preview', labelAr: 'Ø§Ù„Ù…Ø¹Ø§ÙŠÙ†Ø©' },
-  { key: 'validation', label: 'Validation', labelAr: 'Ø§Ù„ØªØ­Ù‚Ù‚' },
-  { key: 'send', label: 'Send', labelAr: 'Ø§Ù„Ø¥Ø±Ø³Ø§Ù„' },
+  { key: 'patient', label: 'Patient', labelAr: "\u0627\u0644\u0645\u0631\u064a\u0636" },
+  { key: 'procedure', label: 'Procedure', labelAr: "\u0627\u0644\u0625\u062c\u0631\u0627\u0621" },
+  { key: 'anesthesia', label: 'Anesthesia', labelAr: "\u0627\u0644\u062a\u062e\u062f\u064a\u0631" },
+  { key: 'disclosures', label: 'Disclosures', labelAr: "\u0627\u0644\u0625\u0641\u0635\u0627\u062d\u0627\u062a" },
+  { key: 'education', label: 'Education', labelAr: "\u0627\u0644\u062a\u062b\u0642\u064a\u0641" },
+  { key: 'preview', label: 'Preview', labelAr: "\u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629" },
+  { key: 'validation', label: 'Validation', labelAr: "\u0627\u0644\u062a\u062d\u0642\u0642" },
+  { key: 'send', label: 'Send', labelAr: "\u0627\u0644\u0625\u0631\u0633\u0627\u0644" },
 ];
 
-import type { ValidationItem } from './clinical/ClinicalTypes';
-import { defaultValidation } from './fixtures/consent-builder';
 
 interface Props {
   lang: 'en' | 'ar';
@@ -253,9 +274,5 @@ export function ConsentBuilder({ lang }: Props) {
     </div>
   );
 }
-
-
-
-
 
 
