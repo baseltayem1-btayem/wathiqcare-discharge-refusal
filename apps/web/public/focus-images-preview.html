@@ -1,0 +1,83 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>WathiqCare Focus Images Preview</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 48px;
+      font-family: Arial, sans-serif;
+      background: #f6f9fc;
+      color: #0b1f38;
+    }
+    h1 { margin-bottom: 8px; }
+    p { color: #40546b; margin-bottom: 32px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1400px;
+    }
+    .card {
+      height: 260px;
+      border-radius: 22px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 18px 42px rgba(0,0,0,0.16);
+      border: 1px solid rgba(0,43,92,0.18);
+      background: #002B5C;
+    }
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(0,20,45,0.82), rgba(0,95,130,0.38));
+    }
+    .title {
+      position: absolute;
+      left: 28px;
+      right: 28px;
+      bottom: 28px;
+      color: white;
+      font-size: 21px;
+      font-weight: 800;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+    }
+    @media (max-width: 900px) {
+      body { padding: 24px; }
+      .grid { grid-template-columns: 1fr; }
+      .card { height: 230px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>What We Focus On — Realistic Image Preview</h1>
+  <p>Review these images before applying them to the landing page.</p>
+
+  <div class="grid">
+    <div class="card">
+      <img src="/images/focus-real/legal-protection.jpg" />
+      <div class="overlay"></div>
+      <div class="title">Legal Protection & Documentation</div>
+    </div>
+
+    <div class="card">
+      <img src="/images/focus-real/healthcare-patient.jpg" />
+      <div class="overlay"></div>
+      <div class="title">Healthcare-Centered Patient Experience</div>
+    </div>
+
+    <div class="card">
+      <img src="/images/focus-real/compliance-governance.jpg" />
+      <div class="overlay"></div>
+      <div class="title">Compliance, Contracts & Governance</div>
+    </div>
+  </div>
+</body>
+</html>

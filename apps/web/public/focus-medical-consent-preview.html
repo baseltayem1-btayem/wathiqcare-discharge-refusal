@@ -1,0 +1,221 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Medical Consent Real Photos Preview</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 40px;
+      font-family: Arial, sans-serif;
+      background: #f5f8fc;
+      color: #0b2340;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    p {
+      margin: 0 0 28px;
+      color: #52677e;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1500px;
+    }
+
+    .card {
+      overflow: hidden;
+      border-radius: 22px;
+      background: #fff;
+      border: 1px solid #d8e4ef;
+      box-shadow: 0 16px 36px rgba(15, 35, 60, 0.12);
+    }
+
+    .image {
+      position: relative;
+      height: 270px;
+      overflow: hidden;
+      background: #dce7f2;
+    }
+
+    .image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,43,92,0.05), rgba(0,20,45,0.72));
+    }
+
+    .badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: #002B5C;
+      color: white;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .title {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 20px;
+      color: #fff;
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 1.3;
+      text-shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+
+    .meta {
+      padding: 18px 20px 22px;
+    }
+
+    .meta h3 {
+      margin: 0 0 8px;
+      color: #002B5C;
+      font-size: 17px;
+    }
+
+    .meta p {
+      margin: 0;
+      font-size: 14px;
+      color: #52677e;
+    }
+
+    .note {
+      margin-top: 28px;
+      max-width: 1100px;
+      background: #fff8e8;
+      border: 1px solid #ebcf8b;
+      color: #644500;
+      padding: 16px 18px;
+      border-radius: 16px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1100px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 22px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .image {
+        height: 230px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Medical / Informed Consent Real Photo Preview</h1>
+  <p>اختر 3 صور نهائية مرتبطة بالموافقة المستنيرة، التوثيق الطبي، تجربة المريض، والحوكمة الصحية.</p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="image">
+        <img src="/images/focus-medical-consent-options/option-1-doctor-patient-consultation.jpg" />
+        <div class="overlay"></div>
+        <div class="badge">Option 1</div>
+        <div class="title">Doctor / Patient Consultation</div>
+      </div>
+      <div class="meta">
+        <h3>مناسب لتجربة المريض</h3>
+        <p>طبيب يشرح للمريض أو يناقش الحالة الطبية قبل الموافقة.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="image">
+        <img src="/images/focus-medical-consent-options/option-2-medical-team-patient.jpg" />
+        <div class="overlay"></div>
+        <div class="badge">Option 2</div>
+        <div class="title">Medical Team & Patient Care</div>
+      </div>
+      <div class="meta">
+        <h3>مناسب للرعاية المرتكزة على المريض</h3>
+        <p>صورة طبية واقعية تعكس التواصل والرعاية داخل البيئة الصحية.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="image">
+        <img src="/images/focus-medical-consent-options/option-3-clinical-documentation.jpg" />
+        <div class="overlay"></div>
+        <div class="badge">Option 3</div>
+        <div class="title">Clinical Documentation</div>
+      </div>
+      <div class="meta">
+        <h3>مناسب للتوثيق القانوني الطبي</h3>
+        <p>يوضح مفهوم الملفات الطبية والمستندات والحوكمة السريرية.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="image">
+        <img src="/images/focus-medical-consent-options/option-4-doctor-tablet-patient.jpg" />
+        <div class="overlay"></div>
+        <div class="badge">Option 4</div>
+        <div class="title">Digital Medical Consent</div>
+      </div>
+      <div class="meta">
+        <h3>مناسب للموافقة الرقمية</h3>
+        <p>يربط بين الطبيب، المريض، والتقنية الطبية.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="image">
+        <img src="/images/focus-medical-consent-options/option-5-medical-records.jpg" />
+        <div class="overlay"></div>
+        <div class="badge">Option 5</div>
+        <div class="title">Medical Records & Consent Files</div>
+      </div>
+      <div class="meta">
+        <h3>مناسب للحماية والتوثيق</h3>
+        <p>يركز على سجلات المرضى والمستندات الطبية.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="image">
+        <img src="/images/focus-medical-consent-options/option-6-hospital-consent-review.jpg" />
+        <div class="overlay"></div>
+        <div class="badge">Option 6</div>
+        <div class="title">Hospital Consent Review</div>
+      </div>
+      <div class="meta">
+        <h3>مناسب للامتثال والحوكمة</h3>
+        <p>صورة إدارية/طبية تناسب الامتثال والعقود والحوكمة الصحية.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    بعد المعاينة، أرسل لي أرقام 3 صور فقط، مثل: <b>1 + 4 + 6</b>، وسأعطيك أمر التيرمنال لاعتمادها في قسم What We Focus On.
+  </div>
+</body>
+</html>
