@@ -397,7 +397,19 @@ export default function WathiqcareWhiteLanding({
                 </a>
               </article>
               <article className="rounded-2xl border border-[#2596BE]/18 bg-white p-5 shadow-sm">
-                <h3 className="text-lg font-bold text-[#07111F]">{copy.partnerTwoLabel}</h3>
+                <a href="https://www.btayem.com/" target="_blank" rel="noopener noreferrer" className={`flex gap-4 ${isArabic ? "flex-row-reverse items-center text-right" : "items-center"}`}>
+                  <Image
+                    src="/images/partners/tayem-co-logo.png"
+                    alt={copy.partnerTwoLabel}
+                    width={180}
+                    height={78}
+                    className="h-14 w-auto object-contain"
+                  />
+                  <div className={`flex flex-col ${textAlign}`}>
+                    <h3 className="text-lg font-bold text-[#07111F]">{copy.partnerTwoLabel}</h3>
+                    <span className="text-sm text-[#4B5563]">btayem.com</span>
+                  </div>
+                </a>
               </article>
             </div>
           </div>
