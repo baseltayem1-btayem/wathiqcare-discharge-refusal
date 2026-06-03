@@ -729,7 +729,7 @@ export function ApprovedPatientWorkflow({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
@@ -737,8 +737,8 @@ export function ApprovedPatientWorkflow({
 
   if (error && !bootstrap && !doc) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="w-full max-w-[720px] p-6 text-center">
+      <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex items-center justify-center p-4 sm:p-6">
+        <Card className="w-full max-w-[720px] p-6 text-center border border-slate-200/80 shadow-sm bg-white/95">
           <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
           <h2 className="text-base font-semibold text-foreground mb-2">
             {lang === "ar" ? "تعذر تحميل الوثيقة" : "Document unavailable"}
@@ -757,10 +757,10 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
+        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -781,7 +781,7 @@ export function ApprovedPatientWorkflow({
           </div>
 
           {patientName ? (
-            <Card className="p-4">
+            <Card className="p-5 sm:p-6 border border-slate-200/80 shadow-sm bg-white/95">
               <div
                 className={cls(
                   "flex items-center gap-3",
@@ -811,7 +811,7 @@ export function ApprovedPatientWorkflow({
             </Card>
           ) : null}
 
-          <Card className="p-4 flex flex-col gap-3">
+          <Card className="p-5 sm:p-6 flex flex-col gap-4 border border-slate-200/80 shadow-sm bg-white/95">
             <div
               className={cls(
                 "flex flex-col gap-1",
@@ -872,7 +872,7 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
+        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader
           lang={lang}
@@ -881,7 +881,7 @@ export function ApprovedPatientWorkflow({
           step={3}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -900,7 +900,7 @@ export function ApprovedPatientWorkflow({
           </div>
 
           {summary ? (
-            <Card className="p-4 flex flex-col gap-2">
+            <Card className="p-5 sm:p-6 flex flex-col gap-3 border border-slate-200/80 shadow-sm bg-white/95">
               <div
                 className={cls(
                   "flex items-center gap-2",
@@ -926,7 +926,7 @@ export function ApprovedPatientWorkflow({
           ) : null}
 
           {benefits.length > 0 ? (
-            <Card className="p-4 flex flex-col gap-2.5">
+            <Card className="p-5 sm:p-6 flex flex-col gap-3 border border-slate-200/80 shadow-sm bg-white/95">
               <div
                 className={cls(
                   "flex items-center gap-2",
@@ -963,7 +963,7 @@ export function ApprovedPatientWorkflow({
           ) : null}
 
           {risks.length > 0 ? (
-            <Card className="p-4 flex flex-col gap-2.5">
+            <Card className="p-5 sm:p-6 flex flex-col gap-3 border border-slate-200/80 shadow-sm bg-white/95">
               <div
                 className={cls(
                   "flex items-center gap-2",
@@ -1000,7 +1000,7 @@ export function ApprovedPatientWorkflow({
           ) : null}
 
           {(ed.preProcedureInstructions || []).length > 0 ? (
-            <Card className="p-4 flex flex-col gap-2">
+            <Card className="p-5 sm:p-6 flex flex-col gap-3 border border-slate-200/80 shadow-sm bg-white/95">
               <div
                 className={cls(
                   "flex items-center gap-2",
@@ -1023,7 +1023,7 @@ export function ApprovedPatientWorkflow({
           ) : null}
 
           {faq.length > 0 ? (
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden border border-slate-200/80 shadow-sm bg-white/95">
               <div
                 className={cls(
                   "px-4 py-3 border-b border-border",
@@ -1108,7 +1108,7 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
+        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader
           lang={lang}
@@ -1117,7 +1117,7 @@ export function ApprovedPatientWorkflow({
           step={4}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1134,7 +1134,7 @@ export function ApprovedPatientWorkflow({
             </p>
           </div>
 
-          <Card className="p-4 flex flex-col gap-3">
+          <Card className="p-5 sm:p-6 flex flex-col gap-4 border border-slate-200/80 shadow-sm bg-white/95">
             <div
               className={cls(
                 "flex items-center gap-2",
@@ -1189,7 +1189,7 @@ export function ApprovedPatientWorkflow({
           </Card>
 
           {pdplText ? (
-            <Card className="p-3">
+            <Card className="p-4 sm:p-5 border border-slate-200/80 shadow-sm bg-white/95">
               <div
                 className={cls(
                   "flex items-center gap-2 mb-1",
@@ -1280,7 +1280,7 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
+        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader
           lang={lang}
@@ -1289,7 +1289,7 @@ export function ApprovedPatientWorkflow({
           step={5}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1307,7 +1307,7 @@ export function ApprovedPatientWorkflow({
           </div>
 
           {patientName ? (
-            <Card className="p-4">
+            <Card className="p-5 sm:p-6 border border-slate-200/80 shadow-sm bg-white/95">
               <div
                 className={cls(
                   "flex items-center gap-3",
@@ -1359,7 +1359,7 @@ export function ApprovedPatientWorkflow({
             <button
               onClick={() => submitDecision("CONSENT_ACCEPTED")}
               disabled={decisionSubmitting}
-              className="w-full rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4 flex flex-col items-center gap-1 hover:border-emerald-400 hover:bg-emerald-100 transition-colors active:scale-[0.99] disabled:opacity-60"
+              className="w-full rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5 sm:p-6 flex flex-col items-center gap-2 hover:border-emerald-400 hover:bg-emerald-100 transition-colors active:scale-[0.99] disabled:opacity-60"
             >
               <CheckCircle size={28} className="text-emerald-600" />
               <span className="text-base font-bold text-emerald-700">
@@ -1374,7 +1374,7 @@ export function ApprovedPatientWorkflow({
             <button
               onClick={() => submitDecision("CONSENT_REFUSED")}
               disabled={decisionSubmitting}
-              className="w-full rounded-xl border-2 border-red-200 bg-red-50 p-4 flex flex-col items-center gap-1 hover:border-red-400 hover:bg-red-100 transition-colors active:scale-[0.99] disabled:opacity-60"
+              className="w-full rounded-2xl border-2 border-red-200 bg-red-50 p-5 sm:p-6 flex flex-col items-center gap-2 hover:border-red-400 hover:bg-red-100 transition-colors active:scale-[0.99] disabled:opacity-60"
             >
               <XCircle size={28} className="text-red-600" />
               <span className="text-base font-bold text-red-700">
@@ -1403,7 +1403,7 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
+        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader
           lang={lang}
@@ -1412,7 +1412,7 @@ export function ApprovedPatientWorkflow({
           step={6}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1430,7 +1430,7 @@ export function ApprovedPatientWorkflow({
           </div>
 
           {patientName ? (
-            <Card className="p-4">
+            <Card className="p-5 sm:p-6 border border-slate-200/80 shadow-sm bg-white/95">
               <div
                 className={cls(
                   "flex items-center gap-3",
@@ -1545,14 +1545,14 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
+        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader
           lang={lang}
           onLangToggle={toggleLang}
           onBack={() => setScreen("decision")}
         />
-        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-2",
@@ -1573,7 +1573,7 @@ export function ApprovedPatientWorkflow({
           </div>
 
           {statement ? (
-            <Card className="p-4">
+            <Card className="p-5 sm:p-6 border border-slate-200/80 shadow-sm bg-white/95">
               <p
                 className={cls(
                   "text-sm text-foreground leading-relaxed whitespace-pre-line",
@@ -1649,14 +1649,14 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
+        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader
           lang={lang}
           onLangToggle={toggleLang}
           onBack={() => setScreen("refusal-ack")}
         />
-        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
+        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1728,10 +1728,10 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
+        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-10 flex flex-col gap-6 items-center text-center">
+        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6 items-center text-center">
           <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-600" />
           </div>
@@ -1746,7 +1746,7 @@ export function ApprovedPatientWorkflow({
             </p>
           </div>
 
-          <Card className="p-4 w-full flex flex-col gap-3">
+          <Card className="p-5 sm:p-6 w-full flex flex-col gap-4 border border-slate-200/80 shadow-sm bg-white/95">
             <div
               className={cls(
                 "flex justify-between items-center gap-3",
@@ -1865,10 +1865,10 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
+        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-10 flex flex-col gap-6 items-center text-center">
+        <div className="flex-1 w-full max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col gap-6 items-center text-center">
           <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center">
             <AlertCircle size={40} className="text-orange-600" />
           </div>
@@ -1880,7 +1880,7 @@ export function ApprovedPatientWorkflow({
               ? "تم حفظ قرارك في السجل الطبي مع سلسلة مراجعة قانونية كاملة."
               : "Your decision is stored in the medical record with a full legal audit chain."}
           </p>
-          <Card className="p-4 w-full">
+          <Card className="p-5 sm:p-6 w-full border border-slate-200/80 shadow-sm bg-white/95">
             <div
               className={cls(
                 "flex justify-between items-center gap-3",
@@ -1921,8 +1921,8 @@ export function ApprovedPatientWorkflow({
 
   /* Fallback */
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Card className="w-full max-w-[720px] p-6 text-center">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex items-center justify-center p-4 sm:p-6">
+      <Card className="w-full max-w-[720px] p-6 text-center border border-slate-200/80 shadow-sm bg-white/95">
         <p className="text-sm text-muted-foreground">
           {lang === "ar" ? "جارٍ التحميل…" : "Loading…"}
         </p>
