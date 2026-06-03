@@ -259,157 +259,21 @@ export default function WathiqcareWhiteLanding({
           <div className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-12">
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 lg:col-span-8">
               {copy.stakeholders.map(({ title, Icon }) => (
-                <article
-                  key={title}
-                  className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,#0B5A70_0%,#2596BE_100%)] p-6 text-white shadow-[0_14px_28px_rgba(7,80,97,0.2)]"
-                >
-                  <Icon className="h-7 w-7 text-white" />
-                  <h3 className="mt-4 text-lg font-bold">{title}</h3>
-                </article>
-              ))}
-            </div>
-
-            <article className="rounded-2xl bg-[linear-gradient(180deg,#075061_0%,#2596BE_100%)] p-7 text-white shadow-[0_18px_36px_rgba(7,80,97,0.24)] lg:col-span-4">
-              <Hospital className="h-8 w-8" />
-              <h3 className="mt-4 text-2xl font-extrabold leading-snug">
-                {copy.stakeholdersSpotlightTitle}
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-white/90">
-                {copy.stakeholdersSpotlightBody}
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section id="how-it-works" className="bg-white px-6 py-20 md:px-10">
-        <div className="mx-auto w-full max-w-7xl">
-          <h2 className="text-3xl font-extrabold text-[#07111F] md:text-4xl">
-            {copy.focusTitle}
-          </h2>
-          <p className="mt-4 max-w-5xl text-base leading-8 text-[#4B5563]">
-            {copy.focusSubtitle}
-          </p>
-
-          <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
-            {copy.focusTiles.map(({ title, Icon, imageSrc }) => (
-              <article
-                key={title}
-                className="relative overflow-hidden rounded-2xl border border-[#2596BE]/20"
-              >
-                <Image
-                  src={imageSrc}
-                  alt={title}
-                  width={1100}
-                  height={500}
-                  className="h-52 w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,17,31,0.72),rgba(37,150,190,0.38))]" />
-                <div className="absolute inset-0 flex items-end p-6">
-                  <div className="flex items-center gap-3 text-white">
-                    <Icon className="h-6 w-6" />
-                    <h3 className="text-lg font-bold">{title}</h3>
+                                            <article className="rounded-2xl border border-[#2596BE]/18 bg-white p-5 shadow-sm">
+                <div className={`flex gap-4 ${isArabic ? "flex-row-reverse items-center text-right" : "items-center"}`}>
+                  <Image
+                    src="/images/imc-logo.png"
+                    alt="International Medical Center"
+                    width={180}
+                    height={78}
+                    className="h-16 w-auto object-contain"
+                  />
+                  <div className={`flex flex-col ${textAlign}`}>
+                    <h3 className="text-lg font-bold text-[#07111F]">
+                      {isArabic ? "?????? ????? ??????" : "International Medical Center"}
+                    </h3>
                   </div>
                 </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white px-6 py-20 md:px-10">
-        <div className="mx-auto w-full max-w-7xl">
-          <h2 className="text-3xl font-extrabold text-[#07111F] md:text-4xl">
-            {copy.consentTitle}
-          </h2>
-          <p className="mt-4 max-w-5xl text-base leading-8 text-[#4B5563]">
-            {copy.consentSubtitle}
-          </p>
-
-          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {copy.consentFeatures.map(({ title, Icon }) => (
-              <article
-                key={title}
-                className="rounded-2xl bg-[linear-gradient(180deg,#0B5A70_0%,#2596BE_100%)] p-6 text-white shadow-[0_14px_28px_rgba(7,80,97,0.2)]"
-              >
-                <Icon className="h-6 w-6" />
-                <h3 className="mt-4 text-lg font-bold leading-snug">{title}</h3>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white px-6 py-20 md:px-10">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-8 lg:grid-cols-12">
-          <div className="grid grid-cols-2 gap-3 lg:col-span-5">
-            <article className="overflow-hidden rounded-2xl border border-[#2596BE]/20 bg-white p-3 shadow-sm">
-              <Image
-                src="/images/landing-focus-healthcare.jpg"
-                alt={copy.focusTiles[1].title}
-                width={700}
-                height={500}
-                className="h-40 w-full rounded-xl object-cover"
-              />
-            </article>
-            <article className="overflow-hidden rounded-2xl border border-[#2596BE]/20 bg-white p-3 shadow-sm">
-              <a
-                href="https://daralmithaq.sa"
-                target="_blank"
-                rel="noopener noreferrer"
-                title={copy.darAlMithaqLabel}
-                aria-label={copy.darAlMithaqLabel}
-                className="flex h-40 w-full items-center justify-center rounded-xl bg-white p-5"
-              >
-                <Image
-                  src="/images/partners/dar-al-mithaq-logo.png"
-                  alt={copy.darAlMithaqLabel}
-                  width={500}
-                  height={220}
-                  className="h-full w-full object-cover"
-                />
-              </a>
-            </article>
-          </div>
-
-          <div className="lg:col-span-7">
-            <h2 className="text-3xl font-extrabold text-[#07111F] md:text-4xl">
-              {copy.partnersTitle}
-            </h2>
-            <p className="mt-4 max-w-3xl text-base leading-8 text-[#4B5563]">
-              {copy.partnersSubtitle}
-            </p>
-
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <article className="rounded-2xl border border-[#2596BE]/18 bg-white p-5 shadow-sm">
-                <a href="https://daralmithaq.sa" target="_blank" rel="noopener noreferrer" className={`flex gap-4 ${isArabic ? "flex-row-reverse items-center text-right" : "items-center"}`}>
-                  <Image
-                    src="/images/partners/dar-al-mithaq-logo.png"
-                    alt={copy.darAlMithaqLabel}
-                    width={180}
-                    height={78}
-                    className="h-14 w-auto object-cover"
-                  />
-                  <div className={`flex flex-col ${textAlign}`}>
-                    <h3 className="text-lg font-bold text-[#07111F]">{copy.darAlMithaqLabel}</h3>
-                    <span className="text-sm text-[#4B5563]">daralmithaq.sa</span>
-                  </div>
-                </a>
-              </article>
-              <article className="rounded-2xl border border-[#2596BE]/18 bg-white p-5 shadow-sm">
-                <a href="https://www.btayem.com/" target="_blank" rel="noopener noreferrer" className={`flex gap-4 ${isArabic ? "flex-row-reverse items-center text-right" : "items-center"}`}>
-                  <Image
-                    src="/images/partners/tayem-co-logo.png"
-                    alt={copy.partnerTwoLabel}
-                    width={180}
-                    height={78}
-                    className="h-14 w-auto object-contain"
-                  />
-                  <div className={`flex flex-col ${textAlign}`}>
-                    <h3 className="text-lg font-bold text-[#07111F]">{copy.partnerTwoLabel}</h3>
-                    <span className="text-sm text-[#4B5563]">btayem.com</span>
-                  </div>
-                </a>
               </article>
             </div>
           </div>
