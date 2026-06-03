@@ -89,7 +89,7 @@ const LANDING_COPY = {
     primaryCta: "ابدأ الآن",
     secondaryCta: "اعرف المزيد",
     trustLead: "موثوق من خبراء القطاع",
-    statsTitle: "لماذا تختار وثيق كير؟",
+    statsTitle: "لماذا تختار واثق كير؟",
     statsItems: ["معالجة آمنة للبيانات بنسبة 100%", "اعتمادية تشغيلية 99.9%", "0 اختراقات أمنية"],
     stakeholdersTitle: "مصممة لكل طرف في رحلة الرعاية الصحية",
     stakeholdersSubtitle:
@@ -134,7 +134,7 @@ const LANDING_COPY = {
     footerQuickItems: ["الرئيسية", "آلية العمل", "الأسئلة الشائعة"],
     footerResourceItems: ["الأخبار", "الرؤى", "الدعم"],
     footerLegalItems: ["التواصل", "الخصوصية", "الشروط"],
-    footerRights: "© 2026 وثيق كير. جميع الحقوق محفوظة.",
+    footerRights: "© 2026 واثق كير. جميع الحقوق محفوظة.",
   },
 } as const;
 
