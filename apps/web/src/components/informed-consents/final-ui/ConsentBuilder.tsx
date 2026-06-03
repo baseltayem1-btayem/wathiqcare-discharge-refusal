@@ -98,7 +98,10 @@ export function ConsentBuilder({ lang }: Props) {
         });
 
         if (!templatesResponse.ok) {
-          throw new Error('Failed to load consent templates');
+          const errorText = await templatesResponse.text().catch(() => '');
+          throw new Error(
+            `Failed to load consent templates: HTTP ${templatesResponse.status}${errorText ? ` - ${errorText.slice(0, 300)}` : ''}`,
+          );
         }
 
         const templates = await templatesResponse.json() as RuntimeConsentTemplate[];
