@@ -138,6 +138,24 @@ const LANDING_COPY = {
   },
 } as const;
 
+
+function LandingLanguageToggle({ lang }: { lang: string }) {
+  const isAr = lang === "ar";
+  const targetHref = isAr ? "/en" : "/ar";
+  const label = isAr ? "English" : "\u0627\u0644\u0639\u0631\u0628\u064a\u0629";
+
+  return (
+    <a
+      href={targetHref}
+      aria-label={isAr ? "Switch to English" : "Switch to Arabic"}
+      className="fixed right-4 top-4 z-50 inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white/95 px-4 text-sm font-bold text-[#002B5C] shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:border-[#4B9CD3] hover:bg-white focus:outline-none focus:ring-4 focus:ring-sky-100"
+      dir={isAr ? "ltr" : "rtl"}
+    >
+      {label}
+    </a>
+  );
+}
+
 export default function WathiqcareWhiteLanding({
   lang = "en",
 }: WathiqcareWhiteLandingProps) {
@@ -148,6 +166,7 @@ export default function WathiqcareWhiteLanding({
 
   return (
     <main className="landing-root bg-white text-[#07111F]" dir={copy.dir}>
+      <LandingLanguageToggle lang={lang} />
       <section className="hero relative min-h-[84vh] overflow-hidden">
         <Image
           src="/images/demo-hero.jpg"
