@@ -738,7 +738,7 @@ export function ApprovedPatientWorkflow({
   if (error && !bootstrap && !doc) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="max-w-md p-6 text-center">
+        <Card className="w-full max-w-[720px] p-6 text-center">
           <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
           <h2 className="text-base font-semibold text-foreground mb-2">
             {lang === "ar" ? "تعذر تحميل الوثيقة" : "Document unavailable"}
@@ -760,7 +760,7 @@ export function ApprovedPatientWorkflow({
         className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
+        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -881,7 +881,7 @@ export function ApprovedPatientWorkflow({
           step={3}
           totalSteps={7}
         />
-        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
+        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1117,7 +1117,7 @@ export function ApprovedPatientWorkflow({
           step={4}
           totalSteps={7}
         />
-        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
+        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1289,7 +1289,7 @@ export function ApprovedPatientWorkflow({
           step={5}
           totalSteps={7}
         />
-        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
+        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1412,7 +1412,7 @@ export function ApprovedPatientWorkflow({
           step={6}
           totalSteps={7}
         />
-        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
+        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1552,7 +1552,7 @@ export function ApprovedPatientWorkflow({
           onLangToggle={toggleLang}
           onBack={() => setScreen("decision")}
         />
-        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
+        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-2",
@@ -1656,7 +1656,7 @@ export function ApprovedPatientWorkflow({
           onLangToggle={toggleLang}
           onBack={() => setScreen("refusal-ack")}
         />
-        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
+        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-8 lg:py-10 flex flex-col gap-6">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1731,7 +1731,7 @@ export function ApprovedPatientWorkflow({
         className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 px-4 py-8 flex flex-col gap-5 max-w-md mx-auto w-full items-center text-center">
+        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-10 flex flex-col gap-6 items-center text-center">
           <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-600" />
           </div>
@@ -1868,7 +1868,7 @@ export function ApprovedPatientWorkflow({
         className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 px-4 py-10 flex flex-col gap-5 max-w-md mx-auto w-full items-center text-center">
+        <div className="flex-1 w-full max-w-[1040px] mx-auto px-5 sm:px-8 lg:px-10 py-10 flex flex-col gap-6 items-center text-center">
           <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center">
             <AlertCircle size={40} className="text-orange-600" />
           </div>
@@ -1922,7 +1922,7 @@ export function ApprovedPatientWorkflow({
   /* Fallback */
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Card className="max-w-md p-6 text-center">
+      <Card className="w-full max-w-[720px] p-6 text-center">
         <p className="text-sm text-muted-foreground">
           {lang === "ar" ? "جارٍ التحميل…" : "Loading…"}
         </p>
