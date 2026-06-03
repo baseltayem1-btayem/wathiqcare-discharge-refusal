@@ -14,13 +14,27 @@ import type { Patient, Encounter } from './clinical/ClinicalTypes';
 type Screen = 'dashboard' | 'search' | 'consent-builder' | 'status';
 
 const navItems = [
-  { id: 'dashboard' as Screen, label: 'Dashboard', labelAr: 'لوحة التحكم', icon: LayoutDashboard },
-  { id: 'search' as Screen, label: 'Patient Search', labelAr: 'البحث عن مريض', icon: Search },
-  { id: 'consent-builder' as Screen, label: 'Consent Builder', labelAr: 'بناء الموافقة', icon: FileText },
-  { id: 'status' as Screen, label: 'Status Tracking', labelAr: 'متابعة الحالة', icon: Activity },
+  { id: 'dashboard' as Screen, label: 'Dashboard', labelAr: '\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645', icon: LayoutDashboard },
+  { id: 'search' as Screen, label: 'Patient Search', labelAr: '\u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0645\u0631\u064a\u0636', icon: Search },
+  { id: 'consent-builder' as Screen, label: 'Consent Builder', labelAr: '\u0628\u0646\u0627\u0621 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629', icon: FileText },
+  { id: 'status' as Screen, label: 'Status Tracking', labelAr: '\u0645\u062a\u0627\u0628\u0639\u0629 \u0627\u0644\u062d\u0627\u0644\u0629', icon: Activity },
 ];
 
 export default function App() {
+
+  const handleSidebarSignOut = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Continue redirect even if logout endpoint fails client-side.
+    }
+
+    window.location.href = "/login";
+  };
+
   const [screen, setScreen] = useState<Screen>('consent-builder');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -95,19 +109,30 @@ export default function App() {
 
           <div className="border-t border-white/10 mt-3 pt-3">
             <p className="text-xs uppercase tracking-widest px-3 mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>System</p>
-            {[
-              { label: lang === 'en' ? 'Settings' : 'الإعدادات', icon: Settings },
-              { label: lang === 'en' ? 'Sign Out' : 'تسجيل الخروج', icon: LogOut },
-            ].map(item => (
-              <button key={item.label}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-left text-sm transition-colors"
-                style={{ color: 'rgba(255,255,255,0.5)' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}>
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </button>
-            ))}
+
+            <button
+              type="button"
+              onClick={() => { window.location.href = "/settings"; }}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-left text-sm transition-colors"
+              style={{ color: 'rgba(255,255,255,0.5)' }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}
+            >
+              <Settings className="w-4 h-4" />
+              {lang === 'en' ? 'Settings' : '\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSidebarSignOut}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-left text-sm transition-colors"
+              style={{ color: 'rgba(255,255,255,0.5)' }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}
+            >
+              <LogOut className="w-4 h-4" />
+              {lang === 'en' ? 'Sign Out' : '\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c'}
+            </button>
           </div>
         </nav>
 
