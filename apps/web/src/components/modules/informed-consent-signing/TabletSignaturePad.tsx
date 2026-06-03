@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import SignaturePad from "signature_pad";
 
 type TabletSignaturePadProps = {
   value: string;

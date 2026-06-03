@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
+import SignaturePad from "signature_pad";
 
 type Props = {
     value: string;
