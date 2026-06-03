@@ -49,9 +49,9 @@ const LANDING_COPY = {
     focusSubtitle:
       "We focus on delivering safer, more human-centered healthcare through strict regulatory compliance, stronger medico-legal governance, and patient-first workflows that preserve clarity, privacy, and accountability.",
     focusTiles: [
-      { title: "Legal Protection & Documentation", Icon: Scale, imageSrc: "/images/landing-focus-legal.svg" },
-      { title: "Healthcare-Centered Patient Experience", Icon: HeartPulse, imageSrc: "/images/landing-focus-healthcare.svg" },
-      { title: "Compliance, Contracts & Governance", Icon: ShieldCheck, imageSrc: "/images/landing-focus-governance.svg" },
+      { title: "Legal Protection & Documentation", Icon: Scale, imageSrc: "/images/landing-focus-legal.jpg" },
+      { title: "Healthcare-Centered Patient Experience", Icon: HeartPulse, imageSrc: "/images/landing-focus-healthcare.jpg" },
+      { title: "Compliance, Contracts & Governance", Icon: ShieldCheck, imageSrc: "/images/landing-focus-governance.jpg" },
     ],
     consentTitle: "Consent Made Simple, Secure, and Smart",
     consentSubtitle:
@@ -106,9 +106,9 @@ const LANDING_COPY = {
     focusSubtitle:
       "نركز على تقديم رعاية أكثر أماناً وإنسانية عبر الامتثال التنظيمي، وتعزيز الحوكمة الطبية القانونية، وبناء مسارات متمحورة حول المريض تحفظ الوضوح والخصوصية وقابلية التتبع.",
     focusTiles: [
-      { title: "حماية قانونية وتوثيق رصين", Icon: Scale, imageSrc: "/images/landing-focus-legal.svg" },
-      { title: "تجربة صحية متمحورة حول المريض", Icon: HeartPulse, imageSrc: "/images/landing-focus-healthcare.svg" },
-      { title: "امتثال وعقود وحوكمة صحية", Icon: ShieldCheck, imageSrc: "/images/landing-focus-governance.svg" },
+      { title: "حماية قانونية وتوثيق رصين", Icon: Scale, imageSrc: "/images/landing-focus-legal.jpg" },
+      { title: "تجربة صحية متمحورة حول المريض", Icon: HeartPulse, imageSrc: "/images/landing-focus-healthcare.jpg" },
+      { title: "امتثال وعقود وحوكمة صحية", Icon: ShieldCheck, imageSrc: "/images/landing-focus-governance.jpg" },
     ],
     consentTitle: "موافقات مبسطة وآمنة وذكية",
     consentSubtitle:
@@ -168,7 +168,7 @@ export default function WathiqcareWhiteLanding({
               width={460}
               height={130}
               priority
-              className="h-auto w-auto shrink-0 object-contain brightness-0 invert max-w-[280px] max-h-[84px] sm:max-w-[300px] sm:max-h-[90px] md:max-w-[430px] md:max-h-[128px] lg:max-w-[520px] lg:max-h-[156px]"
+              className="h-auto w-auto shrink-0 object-cover brightness-0 invert max-w-[280px] max-h-[84px] sm:max-w-[300px] sm:max-h-[90px] md:max-w-[430px] md:max-h-[128px] lg:max-w-[520px] lg:max-h-[156px]"
             />
 
             <nav className="hidden items-center gap-4 text-xs font-medium text-white/95 2xl:flex">
@@ -326,7 +326,7 @@ export default function WathiqcareWhiteLanding({
           <div className="grid grid-cols-2 gap-3 lg:col-span-5">
             <article className="overflow-hidden rounded-2xl border border-[#2596BE]/20 bg-white p-3 shadow-sm">
               <Image
-                src="/images/landing-focus-healthcare.svg"
+                src="/images/landing-focus-healthcare.jpg"
                 alt={copy.focusTiles[1].title}
                 width={700}
                 height={500}
@@ -347,7 +347,7 @@ export default function WathiqcareWhiteLanding({
                   alt={copy.darAlMithaqLabel}
                   width={500}
                   height={220}
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-cover"
                 />
               </a>
             </article>
@@ -369,7 +369,7 @@ export default function WathiqcareWhiteLanding({
                     alt={copy.darAlMithaqLabel}
                     width={180}
                     height={78}
-                    className="h-14 w-auto object-contain"
+                    className="h-14 w-auto object-cover"
                   />
                   <div className={`flex flex-col ${textAlign}`}>
                     <h3 className="text-lg font-bold text-[#07111F]">{copy.darAlMithaqLabel}</h3>
@@ -408,7 +408,7 @@ export default function WathiqcareWhiteLanding({
                 alt="WathiqCare"
                 fill
                 sizes="176px"
-                className="object-contain"
+                className="object-cover"
               />
             </div>
           </div>
