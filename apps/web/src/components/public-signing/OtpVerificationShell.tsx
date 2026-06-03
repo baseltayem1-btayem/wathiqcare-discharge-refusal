@@ -61,7 +61,7 @@ export function OtpVerificationShell({
       <div className="mx-auto flex w-full max-w-[920px] flex-col justify-start gap-5">
         <Card className="w-full overflow-hidden rounded-[28px] sm:rounded-[34px] border border-slate-200/80 bg-white/95 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur-sm">
           <div className="h-1.5 w-full bg-gradient-to-r from-sky-800 via-cyan-600 to-slate-900" />
-          <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="block">
             <div className="flex min-w-0 flex-col gap-5 p-4 sm:gap-6 sm:p-7 lg:p-8">
               <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="rounded-2xl border border-sky-100 bg-sky-50/90 px-5 py-3 shadow-sm">
@@ -213,7 +213,7 @@ export function OtpVerificationShell({
               )}
             </div>
 
-            <div className="hidden border-t border-slate-200/80 bg-[linear-gradient(180deg,rgba(2,132,199,0.05),rgba(15,23,42,0.02))] p-6 xl:block xl:border-l xl:border-t-0">
+            <div className="hidden hidden">
               <div className="flex h-full flex-col justify-between gap-6">
                 <div className={cls("flex flex-col gap-3", isAr ? "items-end text-right" : "items-start text-left")}>
                   <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-[0_16px_30px_rgba(15,23,42,0.18)]">
