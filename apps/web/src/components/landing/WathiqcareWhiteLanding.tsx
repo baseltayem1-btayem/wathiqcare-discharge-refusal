@@ -259,22 +259,6 @@ export default function WathiqcareWhiteLanding({
           <div className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-12">
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 lg:col-span-8">
               {copy.stakeholders.map(({ title, Icon }) => (
-                                            <article className="rounded-2xl border border-[#2596BE]/18 bg-white p-5 shadow-sm">
-                <div className={`flex gap-4 ${isArabic ? "flex-row-reverse items-center text-right" : "items-center"}`}>
-                  <Image
-                    src="/images/imc-logo.png"
-                    alt="International Medical Center"
-                    width={180}
-                    height={78}
-                    className="h-16 w-auto object-contain"
-                  />
-                  <div className={`flex flex-col ${textAlign}`}>
-                    <h3 className="text-lg font-bold text-[#07111F]">
-                      {isArabic ? "?????? ????? ??????" : "International Medical Center"}
-                    </h3>
-                  </div>
-                </div>
-              </article>
             </div>
           </div>
         </div>
