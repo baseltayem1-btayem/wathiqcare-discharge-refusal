@@ -58,11 +58,11 @@ export function OtpVerificationShell({
 
   return (
     <OtpVerificationBranding className={cls("flex-1 w-full px-3 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8", className)}>
-      <div className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[1180px] flex-col justify-center gap-6">
+      <div className="mx-auto flex w-full max-w-[920px] flex-col justify-start gap-5">
         <Card className="w-full overflow-hidden rounded-[28px] sm:rounded-[34px] border border-slate-200/80 bg-white/95 shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur-sm">
           <div className="h-1.5 w-full bg-gradient-to-r from-sky-800 via-cyan-600 to-slate-900" />
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-            <div className="flex min-w-0 flex-col gap-5 p-4 sm:gap-6 sm:p-8 lg:p-10">
+          <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="flex min-w-0 flex-col gap-5 p-4 sm:gap-6 sm:p-7 lg:p-8">
               <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="rounded-2xl border border-sky-100 bg-sky-50/90 px-5 py-3 shadow-sm">
                   <Image
@@ -83,10 +83,10 @@ export function OtpVerificationShell({
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700/80">
                   {isAr ? "جلسة تحقق آمنة" : "Secure verification session"}
                 </p>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-[2.25rem]">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
                   {isAr ? "التحقق برمز OTP" : "OTP Verification"}
                 </h1>
-                <p className="max-w-xl text-sm leading-7 text-slate-600 sm:text-[15px]">
+                <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-[15px]">
                   {otpStage === "request"
                     ? isAr
                       ? "أدخل رقم الجوال المسجّل لاستلام رمز التحقق عبر رسالة SMS ومتابعة جلسة الموافقة الطبية المؤمنة."
@@ -154,7 +154,7 @@ export function OtpVerificationShell({
                         </span>
                       ) : null}
                     </div>
-                    <div className="grid grid-cols-6 gap-2 sm:flex sm:justify-center" dir="ltr">
+                    <div className="grid grid-cols-6 gap-2" dir="ltr">
                       {otpDigits.map((digit, index) => (
                         <input
                           key={index}
@@ -169,7 +169,7 @@ export function OtpVerificationShell({
                           onKeyDown={(e) => onOtpKeyDown(index, e)}
                           aria-label={`OTP digit ${index + 1}`}
                           className={cls(
-                            "h-12 w-full min-w-0 rounded-2xl border bg-white text-center text-lg font-bold shadow-sm outline-none transition-all focus:ring-4 focus:ring-sky-100 sm:h-16 sm:w-14 sm:text-xl",
+                            "h-12 w-full min-w-0 rounded-xl border bg-white text-center text-lg font-bold shadow-sm outline-none transition-all focus:ring-4 focus:ring-sky-100 sm:h-14 sm:text-xl",
                             digit ? "border-sky-600 text-sky-800" : "border-slate-200 text-slate-900",
                           )}
                         />
@@ -200,7 +200,7 @@ export function OtpVerificationShell({
                       onClick={onVerifyOtp}
                       disabled={otpVerifying}
                       className={cls(
-                        "w-full rounded-[22px] px-5 py-4 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(2,132,199,0.25)] transition-all sm:w-auto sm:min-w-[220px]",
+                        "w-full rounded-[18px] px-5 py-4 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(2,132,199,0.25)] transition-all",
                         otpVerifying
                           ? "bg-slate-300 shadow-none"
                           : "bg-gradient-to-r from-sky-800 via-cyan-600 to-slate-900 hover:translate-y-[-1px] hover:shadow-[0_24px_44px_rgba(2,132,199,0.28)]",
@@ -213,7 +213,7 @@ export function OtpVerificationShell({
               )}
             </div>
 
-            <div className="border-t border-slate-200/80 bg-[linear-gradient(180deg,rgba(2,132,199,0.05),rgba(15,23,42,0.02))] p-4 sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
+            <div className="hidden border-t border-slate-200/80 bg-[linear-gradient(180deg,rgba(2,132,199,0.05),rgba(15,23,42,0.02))] p-6 xl:block xl:border-l xl:border-t-0">
               <div className="flex h-full flex-col justify-between gap-6">
                 <div className={cls("flex flex-col gap-3", isAr ? "items-end text-right" : "items-start text-left")}>
                   <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-[0_16px_30px_rgba(15,23,42,0.18)]">
