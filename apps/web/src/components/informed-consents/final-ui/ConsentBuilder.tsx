@@ -82,7 +82,7 @@ export function ConsentBuilder({ lang }: Props) {
 
   useEffect(() => {
     const shouldLinkDocument = currentStep === 'preview' || currentStep === 'validation' || currentStep === 'send';
-    if (!shouldLinkDocument || linkedDocumentId || isLinkingDocument) {
+    if (!shouldLinkDocument || linkedDocumentId) {
       return;
     }
 
@@ -178,7 +178,7 @@ export function ConsentBuilder({ lang }: Props) {
     return () => {
       isCancelled = true;
     };
-  }, [currentStep, isLinkingDocument, linkedDocumentId]);
+  }, [currentStep, linkedDocumentId]);
 
   const renderStep = () => {
     const props = { lang, onNext: goNext, onPrev: goPrev, onComplete: markStepComplete };
@@ -250,6 +250,9 @@ export function ConsentBuilder({ lang }: Props) {
     </div>
   );
 }
+
+
+
 
 
 
