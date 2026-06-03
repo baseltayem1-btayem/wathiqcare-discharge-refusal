@@ -6,6 +6,7 @@ import chromium from "@sparticuz/chromium";
 import type { Browser, LaunchOptions } from "puppeteer";
 import QRCode from "qrcode";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
+import { validatePublicSigningSession } from "@/lib/server/public-signing-service";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
@@ -695,15 +696,33 @@ export async function GET(
 
   try {
     const prisma = getPrisma();
-    const auth = await requireModuleOperationalAccess(request, "informed-consents");
     const { id } = await params;
 
-    if (!auth.tenant_id) {
+    const publicToken = request.nextUrl.searchParams.get("publicToken")?.trim() || "";
+    let tenantId: string | null = null;
+
+    if (publicToken) {
+      const publicContext = await validatePublicSigningSession({
+        token: publicToken,
+        request,
+      });
+
+      if (publicContext.documentId !== id) {
+        return NextResponse.json({ error: "Public token does not match requested document" }, { status: 403 });
+      }
+
+      tenantId = publicContext.tenantId;
+    } else {
+      const auth = await requireModuleOperationalAccess(request, "informed-consents");
+      tenantId = auth.tenant_id ?? null;
+    }
+
+    if (!tenantId) {
       return NextResponse.json({ error: "Tenant context required" }, { status: 403 });
     }
 
     const doc = await prisma.consentDocument.findFirst({
-      where: { id, tenantId: auth.tenant_id },
+      where: { id, tenantId },
       include: {
         template: {
           select: {
