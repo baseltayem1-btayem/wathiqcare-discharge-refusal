@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Circle, ChevronRight } from 'lucide-react';
@@ -15,14 +15,14 @@ import { StepSend } from './steps/StepSend';
 import { mockEncounters, mockPatients } from './fixtures/patient-search';
 
 const steps: { key: ConsentStep; label: string; labelAr: string }[] = [
-  { key: 'patient', label: 'Patient', labelAr: 'المريض' },
-  { key: 'procedure', label: 'Procedure', labelAr: 'الإجراء' },
-  { key: 'anesthesia', label: 'Anesthesia', labelAr: 'التخدير' },
-  { key: 'disclosures', label: 'Disclosures', labelAr: 'الإفصاحات' },
-  { key: 'education', label: 'Education', labelAr: 'التثقيف' },
-  { key: 'preview', label: 'Preview', labelAr: 'المعاينة' },
-  { key: 'validation', label: 'Validation', labelAr: 'التحقق' },
-  { key: 'send', label: 'Send', labelAr: 'الإرسال' },
+  { key: 'patient', label: 'Patient', labelAr: 'Ø§Ù„Ù…Ø±ÙŠØ¶' },
+  { key: 'procedure', label: 'Procedure', labelAr: 'Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡' },
+  { key: 'anesthesia', label: 'Anesthesia', labelAr: 'Ø§Ù„ØªØ®Ø¯ÙŠØ±' },
+  { key: 'disclosures', label: 'Disclosures', labelAr: 'Ø§Ù„Ø¥ÙØµØ§Ø­Ø§Øª' },
+  { key: 'education', label: 'Education', labelAr: 'Ø§Ù„ØªØ«Ù‚ÙŠÙ' },
+  { key: 'preview', label: 'Preview', labelAr: 'Ø§Ù„Ù…Ø¹Ø§ÙŠÙ†Ø©' },
+  { key: 'validation', label: 'Validation', labelAr: 'Ø§Ù„ØªØ­Ù‚Ù‚' },
+  { key: 'send', label: 'Send', labelAr: 'Ø§Ù„Ø¥Ø±Ø³Ø§Ù„' },
 ];
 
 import type { ValidationItem } from './clinical/ClinicalTypes';
@@ -138,12 +138,27 @@ export function ConsentBuilder({ lang }: Props) {
           throw new Error((draftPayload && 'message' in draftPayload && draftPayload.message) || (draftPayload && 'error' in draftPayload && draftPayload.error) || 'Failed to generate linked consent document');
         }
 
-        if (!draftPayload || !('id' in draftPayload) || !draftPayload.id) {
+        const payloadRecord = draftPayload as Record<string, unknown> | null;
+
+        const linkedConsentDocumentId =
+          typeof payloadRecord?.id === 'string'
+            ? payloadRecord.id
+            : typeof (payloadRecord?.document as Record<string, unknown> | undefined)?.id === 'string'
+              ? String((payloadRecord?.document as Record<string, unknown>).id)
+              : typeof (payloadRecord?.consentDocument as Record<string, unknown> | undefined)?.id === 'string'
+                ? String((payloadRecord?.consentDocument as Record<string, unknown>).id)
+                : typeof payloadRecord?.documentId === 'string'
+                  ? payloadRecord.documentId
+                  : typeof payloadRecord?.consentDocumentId === 'string'
+                    ? payloadRecord.consentDocumentId
+                    : '';
+
+        if (!linkedConsentDocumentId) {
           throw new Error('Draft generation did not return a linked consent document');
         }
 
         if (!isCancelled) {
-          setLinkedDocumentId(draftPayload.id);
+          setLinkedDocumentId(linkedConsentDocumentId);
           setDocumentReady(true);
         }
       } catch (error) {
@@ -235,3 +250,6 @@ export function ConsentBuilder({ lang }: Props) {
     </div>
   );
 }
+
+
+
