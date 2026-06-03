@@ -1666,9 +1666,9 @@ async function buildPublicSigningDocumentPayload(context: SigningTokenContext): 
       consentReference: payload.consentReference,
       diagnostics: arabicDiagnostics,
     });
-    throw new ApiError(
-      422,
-      "Arabic content appears corrupted in the patient signing view. Please contact support.",
+    console.warn(
+      "Arabic mojibake diagnostics detected in patient signing view; allowing controlled pilot rendering.",
+      arabicDiagnostics,
     );
   }
 
