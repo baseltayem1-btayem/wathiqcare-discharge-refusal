@@ -264,6 +264,179 @@ export type ApprovedPatientWorkflowProps = {
   initialLang?: Lang;
 };
 
+
+
+function SignaturePad({
+  lang,
+  padRef,
+  onChange,
+}: {
+  lang: Lang;
+  padRef: { current: SignaturePadHandle | null };
+  onChange: (hasInk: boolean) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawingRef = useRef(false);
+  const hasInkRef = useRef(false);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+
+  const isAr = lang === "ar";
+
+  const resizeCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    const previousData = canvas.toDataURL("image/png");
+
+    canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+    canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 2.4;
+    ctx.strokeStyle = "#002B5C";
+
+    if (hasInkRef.current && previousData) {
+      const image = new Image();
+      image.onload = () => {
+        ctx.drawImage(image, 0, 0, rect.width, rect.height);
+      };
+      image.src = previousData;
+    }
+  };
+
+  const getPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+  };
+
+  const startDrawing = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    const point = getPoint(event);
+
+    if (!canvas || !ctx || !point) return;
+
+    canvas.setPointerCapture(event.pointerId);
+    drawingRef.current = true;
+    lastPointRef.current = point;
+
+    ctx.beginPath();
+    ctx.moveTo(point.x, point.y);
+  };
+
+  const draw = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    const point = getPoint(event);
+
+    if (!ctx || !point || !lastPointRef.current) return;
+
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+
+    lastPointRef.current = point;
+
+    if (!hasInkRef.current) {
+      hasInkRef.current = true;
+      onChange(true);
+    }
+  };
+
+  const stopDrawing = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+
+    if (canvas?.hasPointerCapture(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
+
+    drawingRef.current = false;
+    lastPointRef.current = null;
+  };
+
+  const clear = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+
+    if (!canvas || !ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasInkRef.current = false;
+    onChange(false);
+  };
+
+  useEffect(() => {
+    resizeCanvas();
+
+    const handleResize = () => resizeCanvas();
+    window.addEventListener("resize", handleResize);
+
+    padRef.current = {
+      isEmpty: () => !hasInkRef.current,
+      clear,
+      toDataUrl: () => {
+        const canvas = canvasRef.current;
+        if (!canvas || !hasInkRef.current) return null;
+        return canvas.toDataURL("image/png");
+      },
+    };
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      padRef.current = null;
+    };
+  }, []);
+
+  return (
+    <div className="w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-slate-900">
+          {isAr ? "\u0627\u0644\u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Electronic Signature"}
+        </p>
+
+        <button
+          type="button"
+          onClick={clear}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+        >
+          {isAr ? "\u0645\u0633\u062d" : "Clear"}
+        </button>
+      </div>
+
+      <canvas
+        ref={canvasRef}
+        className="h-52 w-full touch-none rounded-xl border border-dashed border-slate-300 bg-slate-50"
+        onPointerDown={startDrawing}
+        onPointerMove={draw}
+        onPointerUp={stopDrawing}
+        onPointerCancel={stopDrawing}
+        aria-label={isAr ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u0648\u0642\u064a\u0639" : "Signature pad"}
+      />
+
+      <p className="mt-2 text-xs text-slate-500">
+        {isAr
+          ? "\u0648\u0642\u0651\u0639 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u0631\u0628\u0639 \u0623\u0639\u0644\u0627\u0647 \u0628\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u0641\u0623\u0631\u0629 \u0623\u0648 \u0627\u0644\u0644\u0645\u0633."
+          : "Sign inside the box above using mouse or touch."}
+      </p>
+    </div>
+  );
+}
+
 export function ApprovedPatientWorkflow({
   token,
   initialLang = "ar",
