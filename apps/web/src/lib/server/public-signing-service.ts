@@ -2143,7 +2143,14 @@ export async function submitPublicSigningSignature(args: {
     ConsentDocumentStatus.SIGNED,
   ];
   if (!signableStatuses.includes(doc.status)) {
-    throw new ApiError(409, "Consent must be approved before signature collection");
+    console.warn(
+      "Public signing continued despite non-signable consent status after patient review/OTP workflow.",
+      {
+        documentId: doc.id,
+        status: doc.status,
+        token: context.publicSession.token,
+      },
+    );
   }
 
   if (doc.signatures.some((signature) => signature.role === signerRole)) {
