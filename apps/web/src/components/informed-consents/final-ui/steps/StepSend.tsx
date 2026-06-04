@@ -122,9 +122,9 @@ export function StepSend({
   const [copied, setCopied] = useState(false);
 
   const dir = lang === "ar" ? "rtl" : "ltr";
-  const displayMobile = mobile?.trim() || "+966 50 234 5678";
+  const displayMobile = mobile?.trim() || "";
   const displayEmail = email?.trim() || "";
-  const canSend = physicianConfirmed && Boolean(linkedDocumentId) && Boolean(displayEmail) && !isSending && !isLinkingDocument;
+  const canSend = physicianConfirmed && Boolean(linkedDocumentId) && Boolean(displayEmail) && (otpMethod === "email" || Boolean(displayMobile)) && !isSending && !isLinkingDocument;
 
   const handleSend = async () => {
     if (!physicianConfirmed) return;
@@ -140,6 +140,11 @@ export function StepSend({
 
     if (!displayEmail) {
       setSendError(lang === "en" ? "Recipient email is required to send the secure signing link." : ar.missingEmail);
+      return;
+    }
+
+    if ((otpMethod === "sms" || otpMethod === "both") && !displayMobile) {
+      setSendError(lang === "en" ? "Recipient mobile number is required for SMS OTP delivery." : "??? ???? ?????? ????? ??? ?????? ?????? ??? ??????? ??????.");
       return;
     }
 

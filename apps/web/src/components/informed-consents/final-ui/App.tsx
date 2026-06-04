@@ -35,6 +35,24 @@ export default function App() {
     setScreen('consent-builder');
   };
 
+  async function handleSignOut() {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      // Best-effort server-side logout.
+    }
+
+    try {
+      localStorage.removeItem('wathiqcare_token');
+      localStorage.removeItem('token');
+      sessionStorage.clear();
+    } catch {
+      // Best-effort client-side cleanup.
+    }
+
+    window.location.href = '/login';
+  }
+
   return (
     <div className="h-screen w-screen flex overflow-hidden" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', fontSize: 14 }}>
       {/* Sidebar */}
@@ -96,14 +114,22 @@ export default function App() {
           <div className="border-t border-white/10 mt-3 pt-3">
             <p className="text-xs uppercase tracking-widest px-3 mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>System</p>
             {[
-              { label: lang === 'en' ? 'Settings' : 'الإعدادات', icon: Settings },
-              { label: lang === 'en' ? 'Sign Out' : 'تسجيل الخروج', icon: LogOut },
+              { label: lang === 'en' ? 'Settings' : 'الإعدادات', icon: Settings, action: 'settings' },
+              { label: lang === 'en' ? 'Sign Out' : 'تسجيل الخروج', icon: LogOut, action: 'logout' },
             ].map(item => (
-              <button key={item.label}
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => {
+                  if (item.action === 'logout') {
+                    void handleSignOut();
+                  }
+                }}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-left text-sm transition-colors"
                 style={{ color: 'rgba(255,255,255,0.5)' }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}>
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}
+              >
                 <item.icon className="w-4 h-4" />
                 {item.label}
               </button>

@@ -86,8 +86,8 @@ const pilotConsentCase = {
   caseNumber: 'ENC-2024-1847',
   medicalRecordNo: 'MRN-2024-0847',
   patientName: 'Mohammed Ibrahim Al-Rashidi',
-  mobile: '+966 50 234 5678',
-  email: 'm.alrashidi@email.com',
+  mobile: '',
+  email: '',
 } as const;
 
 const defaultPatientRecord = defaultPatient as unknown as Record<string, unknown>;
