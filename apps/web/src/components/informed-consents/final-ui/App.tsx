@@ -166,7 +166,13 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                 <button
                   type="button"
                   onClick={() => {
-                    if ('action' in card && card.action === 'technical-ticket') {
+                    const isTechnicalTicket =
+                      card.title === 'Open Technical Support Ticket' ||
+                      card.button === 'Open Ticket' ||
+                      card.title === 'فتح تذكرة دعم تقني' ||
+                      card.button === 'فتح تذكرة دعم تقني';
+
+                    if (isTechnicalTicket) {
                       setSupportRequestModal('technical-ticket');
                     }
                   }}
