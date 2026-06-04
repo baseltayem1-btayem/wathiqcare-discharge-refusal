@@ -88,8 +88,8 @@ export function StepAnesthesia({ lang, onNext, onPrev, onComplete }: Props) {
 
   const handleComplete = () => {
     const validationIds = anesthesiaApplies
-      ? ["anesthesia-applies", `anesthesia-type-${selectedType}`, "anesthesiologist-review-required"]
-      : ["anesthesia-not-applicable"];
+      ? ["v6", "v7", "v8", "anesthesia-applies", `anesthesia-type-${selectedType}`, "anesthesiologist-review-required"]
+      : ["v6", "v7", "v8", "anesthesia-not-applicable"];
 
     onComplete("anesthesia", validationIds);
     onNext();
