@@ -74,7 +74,7 @@ const navItems = [
 
 function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
   const isArabic = lang === 'ar';
-  const [supportRequestModal, setSupportRequestModal] = useState<null | 'technical-ticket'>(null);
+  const [supportRequestModal, setSupportRequestModal] = useState<null | 'technical-ticket' | 'legal-consultation'>(null);
 
   const cards = [
     {
@@ -172,8 +172,18 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                       card.title === 'فتح تذكرة دعم تقني' ||
                       card.button === 'فتح تذكرة دعم تقني';
 
+                    const isLegalConsultation =
+                      card.title === 'Request Legal Consultation' ||
+                      card.button === 'Request Consultation' ||
+                      card.title === '??? ??????? ???????' ||
+                      card.button === '??? ??????? ???????';
+
                     if (isTechnicalTicket) {
                       setSupportRequestModal('technical-ticket');
+                    }
+
+                    if (isLegalConsultation) {
+                      setSupportRequestModal('legal-consultation');
                     }
                   }}
                   className={`mt-6 w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${tone.button}`}
@@ -184,6 +194,98 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
             );
           })}
         </div>
+
+        {supportRequestModal === 'legal-consultation' ? (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-2xl rounded-xl border border-[#D8DCE3] bg-white shadow-xl" dir={isArabic ? 'rtl' : 'ltr'}>
+              <div className="flex items-start justify-between border-b border-[#EEF1F5] px-6 py-4">
+                <div>
+                  <h2 className="text-xl font-bold text-[#002B5C]">
+                    {isArabic ? 'طلب استشارة قانونية' : 'Request Legal Consultation'}
+                  </h2>
+                  <p className="mt-1 text-sm text-[#6B7280]">
+                    {isArabic ? 'أدخل تفاصيل الطلب القانوني لإرساله إلى الإدارة القانونية.' : 'Enter the legal request details to submit them to the Legal Affairs team.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSupportRequestModal(null)}
+                  className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]"
+                >
+                  ?
+                </button>
+              </div>
+
+              <form
+                className="space-y-4 px-6 py-5"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  window.alert(isArabic ? 'تم إنشاء طلب الاستشارة القانونية وتسجيله للمتابعة.' : 'Legal consultation request created and logged for follow-up.');
+                  setSupportRequestModal(null);
+                }}
+              >
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <label className="block">
+                    <span className="text-sm font-medium text-[#2F2F2F]">
+                      {isArabic ? 'نوع الطلب' : 'Request Type'}
+                    </span>
+                    <select className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm">
+                      <option>Consent Wording Review</option>
+                      <option>Policy Clarification</option>
+                      <option>Patient Refusal / Special Case</option>
+                      <option>Disclosure / Risk Statement</option>
+                      <option>Legal Escalation</option>
+                      <option>Other</option>
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-medium text-[#2F2F2F]">
+                      {isArabic ? 'الأولوية' : 'Priority'}
+                    </span>
+                    <select className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm">
+                      <option>Normal</option>
+                      <option>Urgent</option>
+                      <option>Critical</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-[#2F2F2F]">
+                    {isArabic ? 'وصف الاستشارة' : 'Consultation Description'}
+                  </span>
+                  <textarea
+                    required
+                    rows={5}
+                    className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm"
+                    placeholder={isArabic ? 'اكتب موضوع الاستشارة، وما هو الاستفسار القانوني، وأي مرفقات أو حالة يجب مراجعتها.' : 'Describe the legal question, the consent issue, and any case or attachment that should be reviewed.'}
+                  />
+                </label>
+
+                <div className="rounded border border-green-100 bg-green-50 px-4 py-3 text-xs text-green-800">
+                  {isArabic ? 'سيتم إرفاق سياق الحالة تلقائيًا: المستخدم، الصفحة، الوقت، ومرجع الجلسة.' : 'The request will automatically include user, page, timestamp, and session reference.'}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setSupportRequestModal(null)}
+                    className="rounded border border-[#D8DCE3] px-4 py-2 text-sm font-medium text-[#6B7280] hover:bg-[#F4F6F9]"
+                  >
+                    {isArabic ? 'إلغاء' : 'Cancel'}
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+                  >
+                    {isArabic ? 'إرسال الطلب' : 'Submit Request'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        ) : null}
 
         {supportRequestModal === 'technical-ticket' ? (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
