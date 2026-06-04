@@ -9,7 +9,7 @@ interface Props {
   lang: 'en' | 'ar';
   onNext: () => void;
   onPrev: () => void;
-  onComplete: (step: ConsentStep, ids: string[]) => void;
+  onComplete: (step: ConsentStep, ids: string[], payload?: Record<string, unknown>) => void;
 }
 
 type DisclosureField = {
@@ -92,7 +92,9 @@ export function StepDisclosures({ lang, onNext, onPrev, onComplete }: Props) {
   const [showAr, setShowAr] = useState(false);
 
   const handleComplete = () => {
-    onComplete('disclosures', ['v9', 'v10', 'v11', 'v12']);
+    onComplete('disclosures', ['v9', 'v10', 'v11', 'v12'], {
+      disclosures: values,
+    });
     onNext();
   };
 

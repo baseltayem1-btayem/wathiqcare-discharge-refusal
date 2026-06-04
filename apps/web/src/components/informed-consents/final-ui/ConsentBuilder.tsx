@@ -68,8 +68,21 @@ type DraftConsentResponse = {
   draftPdfUrl?: string | null;
 };
 
+type BuilderState = {
+  patient: Record<string, unknown>;
+  procedure: Record<string, unknown>;
+  anesthesia: Record<string, unknown>;
+  disclosures: Record<string, unknown>;
+  education: Record<string, unknown>;
+  document: Record<string, unknown>;
+  updatedAt?: string;
+};
+
 const defaultPatient = mockPatients[0];
 const defaultEncounter = mockEncounters.find((encounter) => encounter.status === 'active') || mockEncounters[0];
+
+const defaultPatientRecord = defaultPatient as unknown as Record<string, unknown>;
+const defaultEncounterRecord = defaultEncounter as unknown as Record<string, unknown>;
 
 export function ConsentBuilder({ lang }: Props) {
   const [currentStep, setCurrentStep] = useState<ConsentStep>('patient');
@@ -77,6 +90,32 @@ export function ConsentBuilder({ lang }: Props) {
   const [completedSteps, setCompletedSteps] = useState<Set<ConsentStep>>(new Set<ConsentStep>());
   const [patientMobile, setPatientMobile] = useState('+966 50 234 5678');
   const [patientEmail, setPatientEmail] = useState('m.alrashidi@email.com');
+  const [builderState, setBuilderState] = useState<BuilderState>({
+    patient: {
+      name: String(defaultPatientRecord.name || defaultPatientRecord.fullName || defaultPatientRecord.patientName || 'Selected patient'),
+      mrn: String(defaultPatientRecord.mrn || defaultPatientRecord.MRN || 'Not provided'),
+      dateOfBirth: String(defaultPatientRecord.dateOfBirth || defaultPatientRecord.dob || 'Not provided'),
+      mobile: patientMobile,
+      email: patientEmail,
+    },
+    procedure: {
+      name: 'Not selected',
+      nameAr: '\u063a\u064a\u0631 \u0645\u062d\u062f\u062f',
+      description: 'Not provided',
+      descriptionAr: '\u063a\u064a\u0631 \u0645\u062f\u062e\u0644',
+      requiresAnesthesia: false,
+    },
+    anesthesia: {
+      applies: false,
+      status: 'Not applicable',
+      typeLabel: 'Not applicable',
+      typeLabelAr: '\u063a\u064a\u0631 \u0645\u0646\u0637\u0628\u0642',
+      anesthesiologistRequired: false,
+    },
+    disclosures: {},
+    education: {},
+    document: {},
+  });
   const [linkedDocumentId, setLinkedDocumentId] = useState('');
   const [documentReady, setDocumentReady] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
@@ -84,13 +123,32 @@ export function ConsentBuilder({ lang }: Props) {
 
   const currentIndex = steps.findIndex(s => s.key === currentStep);
 
-  const markStepComplete = (step: ConsentStep, itemIds: string[]) => {
+  const markStepComplete = (step: ConsentStep, itemIds: string[], payload?: Record<string, unknown>) => {
     const completedIds = new Set(itemIds);
 
     if (step === 'anesthesia' && completedIds.has('anesthesia-not-applicable')) {
       completedIds.add('v6');
       completedIds.add('v7');
       completedIds.add('v8');
+    }
+
+    if (step === 'disclosures') {
+      completedIds.add('v9');
+      completedIds.add('v10');
+      completedIds.add('v11');
+      completedIds.add('v12');
+    }
+
+    if (step === 'education') {
+      completedIds.add('v13');
+    }
+
+    if (payload) {
+      setBuilderState(prev => ({
+        ...prev,
+        ...(payload as Partial<BuilderState>),
+        updatedAt: new Date().toISOString(),
+      }));
     }
 
     setValidation(prev => prev.map(v => completedIds.has(v.id) ? { ...v, complete: true } : v));
@@ -213,6 +271,21 @@ export function ConsentBuilder({ lang }: Props) {
   }, [currentStep, linkedDocumentId]);
 
   const renderStep = () => {
+    const liveBuilderState: BuilderState = {
+      ...builderState,
+      patient: {
+        ...builderState.patient,
+        mobile: patientMobile,
+        email: patientEmail,
+      },
+      document: {
+        linkedDocumentId,
+        documentReady,
+        documentError,
+        isLinkingDocument,
+      },
+    };
+
     const props = { lang, onNext: goNext, onPrev: goPrev, onComplete: markStepComplete };
     switch (currentStep) {
       case 'patient': return <StepPatient {...props} mobile={patientMobile} email={patientEmail} onMobileChange={setPatientMobile} onEmailChange={setPatientEmail} />;
@@ -220,7 +293,7 @@ export function ConsentBuilder({ lang }: Props) {
       case 'anesthesia': return <StepAnesthesia {...props} />;
       case 'disclosures': return <StepDisclosures {...props} />;
       case 'education': return <StepEducation {...props} />;
-      case 'preview': return <StepPreview {...props} />;
+      case 'preview': return <StepPreview {...props} builderState={liveBuilderState} linkedDocumentId={linkedDocumentId} documentReady={documentReady} documentError={documentError} isLinkingDocument={isLinkingDocument} onGoToStep={setCurrentStep} />;
       case 'validation': return <StepValidation {...props} validationItems={validation} />;
       case 'send': return <StepSend {...props} mobile={patientMobile} email={patientEmail} linkedDocumentId={linkedDocumentId} documentReady={documentReady} isLinkingDocument={isLinkingDocument} documentError={documentError} />;
       default: return null;
