@@ -1,11 +1,8 @@
 import { redirect } from "next/navigation";
-import FinalInformedConsentsModule from "@/components/informed-consents/FinalInformedConsentsModule";
+import { ApprovedPhysicianDashboard } from "@/components/approved-design/physician/ApprovedPhysicianDashboard";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
-// Phase 40 route wiring: mount the controlled-port OneDrive/Figma UI as the
-// primary /modules/informed-consents surface. Visual-only — backed by mock
-// fixtures isolated in components/informed-consents/final-ui/fixtures/.
 export default async function InformedConsentsPage() {
   const auth = await requirePageAuthClaimsOrRedirect("/modules/informed-consents");
 
@@ -13,14 +10,31 @@ export default async function InformedConsentsPage() {
     redirect("/dashboard");
   }
 
+  const currentUser = auth as {
+    name?: string | null;
+    fullName?: string | null;
+    email?: string | null;
+    role?: string | null;
+  };
+
   return (
     <section
       data-testid="approved-informed-consents-module"
       data-release-surface="approved-informed-consents"
-      aria-label="Approved informed consents module"
+      aria-label="Approved informed consents physician dashboard"
     >
-      <h1 className="sr-only">Approved Informed Consents Module</h1>
-      <FinalInformedConsentsModule auth={auth} />
+      <h1 className="sr-only">Approved Informed Consents Physician Dashboard</h1>
+      <ApprovedPhysicianDashboard
+        initialLang="ar"
+        currentUser={{
+          name:
+            currentUser.fullName ||
+            currentUser.name ||
+            currentUser.email ||
+            "Physician",
+          role: currentUser.role || auth.role,
+        }}
+      />
     </section>
   );
 }
