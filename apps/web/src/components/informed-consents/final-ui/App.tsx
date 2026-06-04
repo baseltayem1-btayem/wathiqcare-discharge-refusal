@@ -35,7 +35,7 @@ export default function App() {
     window.location.href = "/login";
   };
 
-  const [screen, setScreen] = useState<Screen>('consent-builder');
+  const [screen, setScreen] = useState<Screen>('dashboard');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedEncounter, setSelectedEncounter] = useState<Encounter | null>(null);

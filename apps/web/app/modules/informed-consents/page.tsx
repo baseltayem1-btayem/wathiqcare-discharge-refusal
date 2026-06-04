@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import InformedConsentsModulePage from "@/components/modules/InformedConsentsModulePage";
+import FinalInformedConsentsModule from "@/components/informed-consents/FinalInformedConsentsModule";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
@@ -10,5 +10,14 @@ export default async function InformedConsentsPage() {
     redirect("/dashboard");
   }
 
-  return <InformedConsentsModulePage auth={auth} view="list" />;
+  return (
+    <section
+      data-testid="approved-informed-consents-module"
+      data-release-surface="wathiqcare-clinical-consent-builder"
+      aria-label="WathiqCare clinical consent builder"
+    >
+      <h1 className="sr-only">WathiqCare Clinical Consent Builder</h1>
+      <FinalInformedConsentsModule auth={auth} />
+    </section>
+  );
 }
