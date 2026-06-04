@@ -51,6 +51,8 @@ const steps: { key: ConsentStep; label: string; labelAr: string }[] = [
 
 interface Props {
   lang: 'en' | 'ar';
+  licenseExpired?: boolean;
+  licenseExpiryDate?: string;
 }
 
 type RuntimeConsentTemplate = {
@@ -93,7 +95,7 @@ const pilotConsentCase = {
 const defaultPatientRecord = defaultPatient as unknown as Record<string, unknown>;
 const defaultEncounterRecord = defaultEncounter as unknown as Record<string, unknown>;
 
-export function ConsentBuilder({ lang }: Props) {
+export function ConsentBuilder({ lang, licenseExpired = false, licenseExpiryDate }: Props) {
   const [currentStep, setCurrentStep] = useState<ConsentStep>('patient');
   const [validation, setValidation] = useState<ValidationItem[]>(defaultValidation);
   const [completedSteps, setCompletedSteps] = useState<Set<ConsentStep>>(new Set<ConsentStep>());
@@ -281,6 +283,14 @@ export function ConsentBuilder({ lang }: Props) {
     };
   }, [currentStep, linkedDocumentId]);
 
+  const licenseWarning = licenseExpired ? (
+    <div className="mx-6 mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      {lang === 'en'
+        ? `Physician medical license has expired${licenseExpiryDate ? ` on ${licenseExpiryDate}` : ''}. Consent issuance is blocked until the license is renewed.`
+        : `انتهت صلاحية الترخيص الطبي للطبيب${licenseExpiryDate ? ` بتاريخ ${licenseExpiryDate}` : ''}، ولا يمكن إصدار الموافقة حتى يتم تجديد الترخيص.`}
+    </div>
+  ) : null;
+
   const renderStep = () => {
     const liveBuilderState: BuilderState = {
       ...builderState,
@@ -306,7 +316,7 @@ export function ConsentBuilder({ lang }: Props) {
       case 'education': return <StepEducation {...props} />;
       case 'preview': return <StepPreview {...props} builderState={liveBuilderState} linkedDocumentId={linkedDocumentId} documentReady={documentReady} documentError={documentError} isLinkingDocument={isLinkingDocument} onGoToStep={setCurrentStep} />;
       case 'validation': return <StepValidation {...props} validationItems={validation} />;
-      case 'send': return <StepSend {...props} mobile={patientMobile} email={patientEmail} linkedDocumentId={linkedDocumentId} documentReady={documentReady} isLinkingDocument={isLinkingDocument} documentError={documentError} />;
+      case 'send': return <StepSend {...props} mobile={patientMobile} email={patientEmail} linkedDocumentId={linkedDocumentId} documentReady={documentReady} isLinkingDocument={isLinkingDocument} documentError={documentError} licenseExpired={licenseExpired} licenseExpiryDate={licenseExpiryDate} />;
       default: return null;
     }
   };

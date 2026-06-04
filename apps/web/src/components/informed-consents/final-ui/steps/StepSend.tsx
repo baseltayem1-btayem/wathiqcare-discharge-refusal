@@ -29,6 +29,8 @@ interface Props {
   documentReady?: boolean;
   isLinkingDocument?: boolean;
   documentError?: string | null;
+  licenseExpired?: boolean;
+  licenseExpiryDate?: string;
 }
 
 type SecureSigningWorkflow = {
@@ -124,7 +126,7 @@ export function StepSend({
   const dir = lang === "ar" ? "rtl" : "ltr";
   const displayMobile = mobile?.trim() || "";
   const displayEmail = email?.trim() || "";
-  const canSend = physicianConfirmed && Boolean(linkedDocumentId) && Boolean(displayEmail) && (otpMethod === "email" || Boolean(displayMobile)) && !isSending && !isLinkingDocument;
+  const canSend = !licenseExpired && physicianConfirmed && Boolean(linkedDocumentId) && Boolean(displayEmail) && (otpMethod === "email" || Boolean(displayMobile)) && !isSending && !isLinkingDocument;
 
   const handleSend = async () => {
     if (!physicianConfirmed) return;

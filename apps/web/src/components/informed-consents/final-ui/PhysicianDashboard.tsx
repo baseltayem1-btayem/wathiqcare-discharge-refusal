@@ -35,8 +35,18 @@ interface Props {
   onViewConsent: (mrn: string) => void;
 }
 
-export function PhysicianDashboard({ onNewConsent, onViewConsent }: Props) {
+export function PhysicianDashboard({ onNewConsent, onViewConsent, licenseExpired = false, licenseExpiryDate }: Props) {
   const [lang, setLang] = useState<'en' | 'ar'>('en');
+
+  function handleViewAllAlerts() {
+    const target = document.getElementById('incomplete-consents-section');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    window.location.hash = 'incomplete-consents';
+  }
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#F4F6F9]">
@@ -52,8 +62,10 @@ export function PhysicianDashboard({ onNewConsent, onViewConsent }: Props) {
             <button onClick={() => setLang('ar')} className={`px-3 py-1.5 font-medium transition-colors ${lang === 'ar' ? 'bg-[#002B5C] text-white' : 'text-[#6B7280] hover:bg-[#F4F6F9]'}`}>ع</button>
           </div>
           <button
-            onClick={onNewConsent}
-            className="flex items-center gap-2 bg-[#C9A13B] hover:bg-amber-600 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+            onClick={licenseExpired ? undefined : onNewConsent}
+            disabled={licenseExpired}
+            title={licenseExpired ? `Medical license expired${licenseExpiryDate ? ` on ${licenseExpiryDate}` : ''}` : undefined}
+            className={`flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition-colors ${licenseExpired ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-[#C9A13B] hover:bg-amber-600 text-white'}`}
           >
             <PlusCircle className="w-4 h-4" />
             New Consent
@@ -68,8 +80,16 @@ export function PhysicianDashboard({ onNewConsent, onViewConsent }: Props) {
           <div className="flex-1">
             <span className="text-sm font-medium text-red-800">3 consents have incomplete mandatory disclosures — surgery cannot proceed until resolved.</span>
           </div>
-          <button className="text-sm text-red-700 font-medium underline hover:no-underline">View All</button>
+          <button className="text-sm text-red-700 font-medium underline hover:no-underline" onClick={handleViewAllAlerts}>View All</button>
         </div>
+
+        {licenseExpired ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
+            {lang === 'en'
+              ? `Physician medical license has expired${licenseExpiryDate ? ` on ${licenseExpiryDate}` : ''}. New consent issuance is blocked until renewal.`
+              : `انتهت صلاحية الترخيص الطبي للطبيب${licenseExpiryDate ? ` بتاريخ ${licenseExpiryDate}` : ''}، وتم إيقاف إصدار موافقة جديدة حتى التجديد.`}
+          </div>
+        ) : null}
 
         {/* Stat cards */}
         <div className="grid grid-cols-4 gap-4">
@@ -139,7 +159,7 @@ export function PhysicianDashboard({ onNewConsent, onViewConsent }: Props) {
           </div>
 
           {/* Activity feed */}
-          <div className="bg-white border border-[#D8DCE3] rounded-lg overflow-hidden">
+          <div id="incomplete-consents-section" className="bg-white border border-[#D8DCE3] rounded-lg overflow-hidden">
             <div className="px-5 py-3 border-b border-[#D8DCE3]">
               <h3 className="text-[#2F2F2F]">Live Activity</h3>
             </div>

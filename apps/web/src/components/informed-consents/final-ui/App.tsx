@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import {
   LayoutDashboard, Search, FileText, Activity,
   ChevronDown, Bell, LogOut, Settings, Shield, User,
@@ -13,6 +14,31 @@ import type { Patient, Encounter } from './clinical/ClinicalTypes';
 
 type Screen = 'dashboard' | 'search' | 'consent-builder' | 'status';
 
+const physicianProfile = {
+  name: 'Dr. Khalid Al-Qahtani',
+  specialty: 'General Surgery - FACS',
+  licenseNumber: 'SCFHS-245871',
+  licenseExpiryDate: '2026-12-31',
+} as const;
+
+function getMedicalLicenseStatus(expiryDate: string) {
+  const expiry = new Date(expiryDate);
+  if (Number.isNaN(expiry.getTime())) {
+    return 'unknown';
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  expiry.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return 'expired';
+  if (diffDays <= 30) return 'expiringSoon';
+  return 'active';
+}
+
+
 const navItems = [
   { id: 'dashboard' as Screen, label: 'Dashboard', labelAr: 'لوحة التحكم', icon: LayoutDashboard },
   { id: 'search' as Screen, label: 'Patient Search', labelAr: 'البحث عن مريض', icon: Search },
@@ -23,6 +49,8 @@ const navItems = [
 export default function App() {
   const [screen, setScreen] = useState<Screen>('dashboard');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
+  const licenseStatus = getMedicalLicenseStatus(physicianProfile.licenseExpiryDate);
+  const isLicenseExpired = licenseStatus === 'expired';
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedEncounter, setSelectedEncounter] = useState<Encounter | null>(null);
   const [alertCount] = useState(3);
@@ -60,8 +88,15 @@ export default function App() {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: '#C9A13B' }}>
-              <Shield className="w-4 h-4 text-white" />
+            <div className="w-9 h-9 rounded flex items-center justify-center shrink-0 overflow-hidden bg-transparent">
+              <Image
+                src="/images/wathiqcare-logo.png"
+                alt="WathiqCare"
+                width={36}
+                height={36}
+                className="object-contain"
+                priority
+              />
             </div>
             <div>
               <div className="text-white font-semibold text-sm leading-tight">WathiqCare</div>
@@ -77,8 +112,14 @@ export default function App() {
               <User className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-white text-xs font-semibold truncate">Dr. Khalid Al-Qahtani</div>
-              <div className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.5)' }}>General Surgery · FACS</div>
+              <div className="text-white text-xs font-semibold truncate">{physicianProfile.name}</div>
+              <div className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.5)' }}>{physicianProfile.specialty}</div>
+              <div className="mt-1 space-y-0.5 text-[10px] leading-tight">
+                <div style={{ color: 'rgba(255,255,255,0.45)' }}>License No: {physicianProfile.licenseNumber}</div>
+                <div className={licenseStatus === 'expired' ? 'text-red-300' : licenseStatus === 'expiringSoon' ? 'text-amber-300' : 'text-emerald-300'}>
+                  License Expiry: {physicianProfile.licenseExpiryDate}
+                </div>
+              </div>
             </div>
             <ChevronDown className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }} />
           </div>
@@ -199,13 +240,13 @@ export default function App() {
         {/* Screen content */}
         <div className="flex-1 flex overflow-hidden" style={{ background: '#F4F6F9' }}>
           {screen === 'dashboard' && (
-            <PhysicianDashboard onNewConsent={handleNewConsent} onViewConsent={handleViewConsent} />
+            <PhysicianDashboard onNewConsent={handleNewConsent} onViewConsent={handleViewConsent} licenseExpired={isLicenseExpired} licenseExpiryDate={physicianProfile.licenseExpiryDate} />
           )}
           {screen === 'search' && (
             <PatientSearch onSelectPatient={handlePatientSelected} />
           )}
           {screen === 'consent-builder' && (
-            <ConsentBuilder lang={lang} />
+            <ConsentBuilder lang={lang} licenseExpired={isLicenseExpired} licenseExpiryDate={physicianProfile.licenseExpiryDate} />
           )}
           {screen === 'status' && (
             <StatusTracking lang={lang} />
