@@ -293,13 +293,18 @@ export default function App() {
           <div className="border-t border-white/10 mt-3 pt-3">
             <p className="text-xs uppercase tracking-widest px-3 mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>System</p>
             {[
-              { label: lang === 'en' ? 'Settings' : 'الإعدادات', icon: Settings, action: 'settings' },
+              { label: lang === 'en' ? 'Support & Settings' : 'الدعم والإعدادات', icon: Settings, action: 'settings' },
               { label: lang === 'en' ? 'Sign Out' : 'تسجيل الخروج', icon: LogOut, action: 'logout' },
             ].map(item => (
               <button
                 key={item.label}
                 type="button"
                 onClick={() => {
+                  if (item.action === 'settings') {
+                    setScreen('support-settings');
+                    return;
+                  }
+
                   if (item.action === 'logout') {
                     void handleSignOut();
                   }
