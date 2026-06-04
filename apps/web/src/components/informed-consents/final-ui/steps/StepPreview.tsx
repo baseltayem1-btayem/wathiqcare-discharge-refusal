@@ -28,15 +28,8 @@ export function StepPreview({ lang, onNext, onPrev, onComplete }: Props) {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded px-4 py-3" data-testid="step-preview-pilot-banner">
-        <span className="text-xs font-semibold text-amber-800">
-          {lang === 'en'
-            ? 'Controlled pilot — PDF preview is rendered from local fixtures. Final PDF rendering, signature placement, and evidence package generation are not wired to the production renderer in this baseline.'
-            : 'تجربة محكومة — معاينة PDF تُعرض من بيانات تجريبية محلية. لم يتم بعد ربط المعاينة النهائية وتوقيع المستندات وحزمة الأدلة بمولِّد الإنتاج في هذا الإصدار.'}
-        </span>
-      </div>
-      <div>
-        <h2 className="text-[#002B5C]">{lang === 'en' ? 'Patient Preview Simulation' : 'محاكاة معاينة المريض'}</h2>
+<div>
+        <h2 className="text-[#002B5C]">{lang === 'en' ? 'Patient Preview ' : 'محاكاة معاينة المريض'}</h2>
         <p className="text-sm text-[#6B7280] mt-1">{lang === 'en' ? 'See exactly what the patient will see before you send the consent link.' : 'شاهد بالضبط ما سيراه المريض قبل إرسال رابط الموافقة.'}</p>
       </div>
 
@@ -128,7 +121,7 @@ export function StepPreview({ lang, onNext, onPrev, onComplete }: Props) {
               <div className="p-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                 {/* Simulated patient view */}
                 <div className="border-2 border-dashed border-[#4B9CD3]/30 rounded-lg p-4 mb-4 bg-[#EBF3FB]/30">
-                  <p className="text-xs text-[#4B9CD3] font-medium text-center">— Patient View Simulation — What the patient sees on their device —</p>
+                  <p className="text-xs text-[#4B9CD3] font-medium text-center">— Patient View  — What the patient sees on their device —</p>
                 </div>
 
                 <div className="text-center mb-6">
