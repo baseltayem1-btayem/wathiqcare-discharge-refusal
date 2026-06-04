@@ -191,10 +191,10 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
               <div className="flex items-start justify-between border-b border-[#EEF1F5] px-6 py-4">
                 <div>
                   <h2 className="text-xl font-bold text-[#002B5C]">
-                    {isArabic ? '??? ????? ??? ????' : 'Open Technical Support Ticket'}
+                    {isArabic ? 'فتح تذكرة دعم تقني' : 'Open Technical Support Ticket'}
                   </h2>
                   <p className="mt-1 text-sm text-[#6B7280]">
-                    {isArabic ? '???? ?????? ??????? ??????? ???????? ??? ???? ?????.' : 'Enter the technical issue details to submit them to the support team.'}
+                    {isArabic ? 'أدخل تفاصيل المشكلة التقنية لإرسالها إلى فريق الدعم.' : 'Enter the technical issue details to submit them to the support team.'}
                   </p>
                 </div>
                 <button
@@ -210,14 +210,14 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                 className="space-y-4 px-6 py-5"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  window.alert(isArabic ? '?? ????? ????? ????? ?????? ???????? ????????.' : 'Technical support ticket created and logged for follow-up.');
+                  window.alert(isArabic ? 'تم إنشاء تذكرة الدعم التقني وتسجيلها للمتابعة.' : 'Technical support ticket created and logged for follow-up.');
                   setSupportRequestModal(null);
                 }}
               >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <label className="block">
                     <span className="text-sm font-medium text-[#2F2F2F]">
-                      {isArabic ? '??? ???????' : 'Issue Type'}
+                      {isArabic ? 'نوع المشكلة' : 'Issue Type'}
                     </span>
                     <select className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm">
                       <option>System Access</option>
@@ -232,7 +232,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
 
                   <label className="block">
                     <span className="text-sm font-medium text-[#2F2F2F]">
-                      {isArabic ? '????????' : 'Priority'}
+                      {isArabic ? 'الأولوية' : 'Priority'}
                     </span>
                     <select className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm">
                       <option>Normal</option>
@@ -244,18 +244,18 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
 
                 <label className="block">
                   <span className="text-sm font-medium text-[#2F2F2F]">
-                    {isArabic ? '??? ???????' : 'Issue Description'}
+                    {isArabic ? 'وصف المشكلة' : 'Issue Description'}
                   </span>
                   <textarea
                     required
                     rows={5}
                     className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm"
-                    placeholder={isArabic ? '???? ?? ???????? ??? ????? ??? ?????? ???? ????? ?????? ??????.' : 'Describe the issue, when it happened, and the step that requires support.'}
+                    placeholder={isArabic ? 'اكتب ما المشكلة، متى حدثت، وما الخطوة التي تحتاج مساعدة بشأنها.' : 'Describe the issue, when it happened, and the step that requires support.'}
                   />
                 </label>
 
                 <div className="rounded border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-[#002B5C]">
-                  {isArabic ? '???? ????? ???? ?????? ????????: ????????? ??????? ?????? ????? ??????.' : 'The request will automatically include user, page, timestamp, and session reference.'}
+                  {isArabic ? 'سيتم إرفاق سياق الحالة تلقائيًا: المستخدم، الصفحة، الوقت، ومرجع الجلسة.' : 'The request will automatically include user, page, timestamp, and session reference.'}
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
@@ -264,13 +264,13 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                     onClick={() => setSupportRequestModal(null)}
                     className="rounded border border-[#D8DCE3] px-4 py-2 text-sm font-medium text-[#6B7280] hover:bg-[#F4F6F9]"
                   >
-                    {isArabic ? '?????' : 'Cancel'}
+                    {isArabic ? 'إلغاء' : 'Cancel'}
                   </button>
                   <button
                     type="submit"
                     className="rounded bg-[#002B5C] px-4 py-2 text-sm font-semibold text-white hover:bg-[#003B7A]"
                   >
-                    {isArabic ? '????? ???????' : 'Submit Ticket'}
+                    {isArabic ? 'إرسال التذكرة' : 'Submit Ticket'}
                   </button>
                 </div>
               </form>
