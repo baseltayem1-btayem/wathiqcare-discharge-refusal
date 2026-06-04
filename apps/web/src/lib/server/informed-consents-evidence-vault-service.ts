@@ -51,15 +51,63 @@ export async function ensureSignatureOrchestrationComplete(auth: AuthContext, do
   if (!doc) throw new ApiError(404, "Consent document not found");
 
   const metadata = asRecord(doc.metadata);
-  const requiredRoles = (asArray(asRecord(metadata.signatureOrchestration).requiredRoles).map((item) => String(item))).filter(Boolean);
+  const signatureOrchestration = asRecord(metadata.signatureOrchestration);
+  const signatureSecurity = asRecord(metadata.signatureSecurity);
+  const anesthesiaMetadata = asRecord(metadata.anesthesiaMetadata);
+
+  const requiredRoles = (asArray(signatureOrchestration.requiredRoles).map((item) => String(item))).filter(Boolean);
   const defaultRoles = ["PATIENT", "PHYSICIAN"];
   const expectedRoles = requiredRoles.length > 0 ? requiredRoles : defaultRoles;
 
-  const signedByRole = new Set(doc.signatures.map((item) => item.role));
+  const signedByRole = new Set(doc.signatures.map((item) => String(item.role)));
+
   for (const role of expectedRoles) {
-    if (!signedByRole.has(role as never)) {
+    if (!signedByRole.has(role)) {
       throw new ApiError(409, `Cannot finalize before signature completion for role ${role}`);
     }
+  }
+
+  const isTruthy = (value: unknown): boolean => {
+    if (value === true) return true;
+    if (typeof value === "number") return value === 1;
+    if (typeof value !== "string") return false;
+    return ["true", "yes", "y", "1", "applies", "required"].includes(value.trim().toLowerCase());
+  };
+
+  const anesthesiaApplies =
+    isTruthy(anesthesiaMetadata.applies)
+    || isTruthy(signatureSecurity.anesthesiaRequired)
+    || isTruthy(signatureOrchestration.anesthesiaRequired);
+
+  const signatureClinicalRole = (signature: { metadata?: unknown; role?: unknown }): string => {
+    const itemMetadata = asRecord(signature.metadata);
+    return String(
+      itemMetadata.clinicalRole
+      || itemMetadata.certificationRole
+      || itemMetadata.signerClinicalRole
+      || signature.role
+      || "",
+    ).trim().toUpperCase();
+  };
+
+  const hasTreatingPhysicianSignature = doc.signatures.some((signature) => {
+    const role = String(signature.role || "").toUpperCase();
+    const clinicalRole = signatureClinicalRole(signature);
+    return role === "PHYSICIAN" && clinicalRole !== "ANESTHESIOLOGIST";
+  });
+
+  if (!hasTreatingPhysicianSignature) {
+    throw new ApiError(409, "Physician signature is mandatory before finalization");
+  }
+
+  const hasAnesthesiologistSignature = doc.signatures.some((signature) => {
+    const role = String(signature.role || "").toUpperCase();
+    const clinicalRole = signatureClinicalRole(signature);
+    return role === "ANESTHESIOLOGIST" || clinicalRole === "ANESTHESIOLOGIST";
+  });
+
+  if (anesthesiaApplies && !hasAnesthesiologistSignature) {
+    throw new ApiError(409, "Anesthesiologist signature is mandatory before finalization");
   }
 
   const requests = getSignatureRequests(doc.metadata);
