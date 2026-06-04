@@ -77,6 +77,17 @@ const navItems = [
 function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
   const isArabic = lang === 'ar';
   const [supportRequestModal, setSupportRequestModal] = useState<null | 'technical-ticket' | 'legal-consultation'>(null);
+  const [supportRequestContext] = useState(() => ({
+    user: physicianProfile.name,
+    specialty: physicianProfile.specialty,
+    licenseNumber: physicianProfile.licenseNumber,
+    licenseExpiryDate: physicianProfile.licenseExpiryDate,
+    module: 'Informed Consents',
+    page: 'Support & Settings',
+    source: 'WathiqCare Physician Portal',
+    timestamp: new Date().toISOString(),
+    sessionReference: `WTC-${Date.now().toString(36).toUpperCase()}`,
+  }));
 
   const cards = [
     {
@@ -220,7 +231,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                 <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">?</button>
               </div>
 
-              <form className="space-y-4 px-6 py-5" onSubmit={(event) => { event.preventDefault(); window.alert(isArabic ? '\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0637\u0644\u0628 \u0627\u0644\u0627\u0633\u062a\u0634\u0627\u0631\u0629 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629 \u0648\u062a\u0633\u062c\u064a\u0644\u0647 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629.' : 'Legal consultation request created and logged for follow-up.'); setSupportRequestModal(null); }}>
+              <form className="space-y-4 px-6 py-5" onSubmit={(event) => { event.preventDefault(); console.info('WathiqCare legal consultation context', supportRequestContext); window.alert(isArabic ? '\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0637\u0644\u0628 \u0627\u0644\u0627\u0633\u062a\u0634\u0627\u0631\u0629 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629 \u0648\u062a\u0633\u062c\u064a\u0644\u0647 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629.' : 'Legal consultation request created and logged for follow-up.'); setSupportRequestModal(null); }}>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <label className="block">
                     <span className="text-sm font-medium text-[#2F2F2F]">{isArabic ? '\u0646\u0648\u0639 \u0627\u0644\u0637\u0644\u0628' : 'Request Type'}</span>
@@ -248,8 +259,17 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                   <textarea required rows={5} className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm" placeholder={isArabic ? '\u0627\u0643\u062a\u0628 \u0645\u0648\u0636\u0648\u0639 \u0627\u0644\u0627\u0633\u062a\u0634\u0627\u0631\u0629\u060c \u0648\u0627\u0644\u0627\u0633\u062a\u0641\u0633\u0627\u0631 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u060c \u0648\u0623\u064a \u062d\u0627\u0644\u0629 \u0623\u0648 \u0645\u0631\u0641\u0642\u0627\u062a \u062a\u062d\u062a\u0627\u062c \u0645\u0631\u0627\u062c\u0639\u0629.' : 'Describe the legal question, consent issue, and any case or attachment that should be reviewed.'} />
                 </label>
 
+                <input type="hidden" name="supportRequestContext" value={JSON.stringify(supportRequestContext)} />
                 <div className="rounded border border-green-100 bg-green-50 px-4 py-3 text-xs text-green-800">
-                  {isArabic ? '\u0633\u064a\u062a\u0645 \u0625\u0631\u0641\u0627\u0642 \u0633\u064a\u0627\u0642 \u0627\u0644\u062d\u0627\u0644\u0629 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627: \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645\u060c \u0627\u0644\u0635\u0641\u062d\u0629\u060c \u0627\u0644\u0648\u0642\u062a\u060c \u0648\u0645\u0631\u062c\u0639 \u0627\u0644\u062c\u0644\u0633\u0629.' : 'The request will automatically include user, page, timestamp, and session reference.'}
+                  <div className="mb-2 font-semibold">
+                    {isArabic ? '\u0633\u064a\u062a\u0645 \u0625\u0631\u0641\u0627\u0642 \u0633\u064a\u0627\u0642 \u0627\u0644\u0637\u0644\u0628 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627' : 'The request will automatically include this context'}
+                  </div>
+                  <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
+                    <div><span className="font-medium">{isArabic ? '\u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645' : 'User'}:</span> {supportRequestContext.user}</div>
+                    <div><span className="font-medium">{isArabic ? '\u0627\u0644\u0635\u0641\u062d\u0629' : 'Page'}:</span> {supportRequestContext.page}</div>
+                    <div><span className="font-medium">{isArabic ? '\u0627\u0644\u0648\u0642\u062a' : 'Timestamp'}:</span> {supportRequestContext.timestamp}</div>
+                    <div><span className="font-medium">{isArabic ? '\u0645\u0631\u062c\u0639 \u0627\u0644\u062c\u0644\u0633\u0629' : 'Session Reference'}:</span> {supportRequestContext.sessionReference}</div>
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
@@ -272,7 +292,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                 <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">?</button>
               </div>
 
-              <form className="space-y-4 px-6 py-5" onSubmit={(event) => { event.preventDefault(); window.alert(isArabic ? '\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062a\u0630\u0643\u0631\u0629 \u0627\u0644\u062f\u0639\u0645 \u0627\u0644\u062a\u0642\u0646\u064a \u0648\u062a\u0633\u062c\u064a\u0644\u0647\u0627 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629.' : 'Technical support ticket created and logged for follow-up.'); setSupportRequestModal(null); }}>
+              <form className="space-y-4 px-6 py-5" onSubmit={(event) => { event.preventDefault(); console.info('WathiqCare technical ticket context', supportRequestContext); window.alert(isArabic ? '\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062a\u0630\u0643\u0631\u0629 \u0627\u0644\u062f\u0639\u0645 \u0627\u0644\u062a\u0642\u0646\u064a \u0648\u062a\u0633\u062c\u064a\u0644\u0647\u0627 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629.' : 'Technical support ticket created and logged for follow-up.'); setSupportRequestModal(null); }}>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <label className="block">
                     <span className="text-sm font-medium text-[#2F2F2F]">{isArabic ? '\u0646\u0648\u0639 \u0627\u0644\u0645\u0634\u0643\u0644\u0629' : 'Issue Type'}</span>
@@ -301,8 +321,17 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                   <textarea required rows={5} className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm" placeholder={isArabic ? '\u0627\u0643\u062a\u0628 \u0645\u0627 \u0627\u0644\u0645\u0634\u0643\u0644\u0629\u060c \u0645\u062a\u0649 \u062d\u062f\u062b\u062a\u060c \u0648\u0645\u0627 \u0627\u0644\u062e\u0637\u0648\u0629 \u0627\u0644\u062a\u064a \u062a\u062d\u062a\u0627\u062c \u0645\u0633\u0627\u0639\u062f\u0629 \u0628\u0634\u0623\u0646\u0647\u0627.' : 'Describe the issue, when it happened, and the step that requires support.'} />
                 </label>
 
+                <input type="hidden" name="supportRequestContext" value={JSON.stringify(supportRequestContext)} />
                 <div className="rounded border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-[#002B5C]">
-                  {isArabic ? '\u0633\u064a\u062a\u0645 \u0625\u0631\u0641\u0627\u0642 \u0633\u064a\u0627\u0642 \u0627\u0644\u062d\u0627\u0644\u0629 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627: \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645\u060c \u0627\u0644\u0635\u0641\u062d\u0629\u060c \u0627\u0644\u0648\u0642\u062a\u060c \u0648\u0645\u0631\u062c\u0639 \u0627\u0644\u062c\u0644\u0633\u0629.' : 'The request will automatically include user, page, timestamp, and session reference.'}
+                  <div className="mb-2 font-semibold">
+                    {isArabic ? '\u0633\u064a\u062a\u0645 \u0625\u0631\u0641\u0627\u0642 \u0633\u064a\u0627\u0642 \u0627\u0644\u0637\u0644\u0628 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627' : 'The request will automatically include this context'}
+                  </div>
+                  <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
+                    <div><span className="font-medium">{isArabic ? '\u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645' : 'User'}:</span> {supportRequestContext.user}</div>
+                    <div><span className="font-medium">{isArabic ? '\u0627\u0644\u0635\u0641\u062d\u0629' : 'Page'}:</span> {supportRequestContext.page}</div>
+                    <div><span className="font-medium">{isArabic ? '\u0627\u0644\u0648\u0642\u062a' : 'Timestamp'}:</span> {supportRequestContext.timestamp}</div>
+                    <div><span className="font-medium">{isArabic ? '\u0645\u0631\u062c\u0639 \u0627\u0644\u062c\u0644\u0633\u0629' : 'Session Reference'}:</span> {supportRequestContext.sessionReference}</div>
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
