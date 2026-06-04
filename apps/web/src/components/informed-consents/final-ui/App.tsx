@@ -72,57 +72,51 @@ const navItems = [
 ];
 
 
+
+
 function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
   const isArabic = lang === 'ar';
   const [supportRequestModal, setSupportRequestModal] = useState<null | 'technical-ticket' | 'legal-consultation'>(null);
 
   const cards = [
     {
-      title: isArabic ? 'الإعدادات' : 'Settings',
-      description: isArabic ? 'إدارة إعدادات الحساب والتنبيهات والمزامنة والأرشفة وسجل التدقيق.' : 'Manage account settings, alerts, sync, archiving, and audit log.',
-      button: isArabic ? 'الانتقال للإعدادات' : 'Open Settings',
+      title: isArabic ? '\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a' : 'Settings',
+      description: isArabic ? '\u0625\u062f\u0627\u0631\u0629 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u062d\u0633\u0627\u0628 \u0648\u0627\u0644\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0648\u0627\u0644\u0645\u0632\u0627\u0645\u0646\u0629 \u0648\u0627\u0644\u0623\u0631\u0634\u0641\u0629 \u0648\u0633\u062c\u0644 \u0627\u0644\u062a\u062f\u0642\u064a\u0642.' : 'Manage account settings, alerts, sync, archiving, and audit log.',
+      button: isArabic ? '\u0627\u0644\u0627\u0646\u062a\u0642\u0627\u0644 \u0644\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a' : 'Open Settings',
       icon: Settings,
       tone: 'blue',
+      modal: null,
     },
     {
-      title: isArabic ? 'الدعم القانوني' : 'Legal Support',
-      description: isArabic ? 'تواصل مع الفريق القانوني المختص للدعم والمراجعة والتوجيه.' : 'Contact the legal team for support, review, and guidance.',
-      button: isArabic ? 'الدعم القانوني' : 'Legal Support',
+      title: isArabic ? '\u0627\u0644\u062f\u0639\u0645 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a' : 'Legal Support',
+      description: isArabic ? '\u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u0641\u0631\u064a\u0642 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a \u0627\u0644\u0645\u062e\u062a\u0635 \u0644\u0644\u062f\u0639\u0645 \u0648\u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0648\u0627\u0644\u062a\u0648\u062c\u064a\u0647.' : 'Contact the legal team for support, review, and guidance.',
+      button: isArabic ? '\u0627\u0644\u062f\u0639\u0645 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a' : 'Legal Support',
       icon: Shield,
       tone: 'purple',
+      modal: null,
     },
     {
-      title: isArabic ? 'طلب استشارة قانونية' : 'Request Legal Consultation',
-      description: isArabic ? 'افتح طلبًا قانونيًا رسميًا متعلقًا بالموافقة أو الصياغة أو السياسات.' : 'Open a formal legal request related to consent, wording, or policies.',
-      button: isArabic ? 'طلب استشارة قانونية' : 'Request Consultation',
+      title: isArabic ? '\u0637\u0644\u0628 \u0627\u0633\u062a\u0634\u0627\u0631\u0629 \u0642\u0627\u0646\u0648\u0646\u064a\u0629' : 'Request Legal Consultation',
+      description: isArabic ? '\u0627\u0641\u062a\u062d \u0637\u0644\u0628\u064b\u0627 \u0642\u0627\u0646\u0648\u0646\u064a\u064b\u0627 \u0631\u0633\u0645\u064a\u064b\u0627 \u0645\u062a\u0639\u0644\u0642\u064b\u0627 \u0628\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0623\u0648 \u0627\u0644\u0635\u064a\u0627\u063a\u0629 \u0623\u0648 \u0627\u0644\u0633\u064a\u0627\u0633\u0627\u062a.' : 'Open a formal legal request related to consent, wording, or policies.',
+      button: isArabic ? '\u0637\u0644\u0628 \u0627\u0633\u062a\u0634\u0627\u0631\u0629 \u0642\u0627\u0646\u0648\u0646\u064a\u0629' : 'Request Consultation',
       icon: FileText,
       tone: 'green',
+      modal: 'legal-consultation',
     },
     {
-      title: isArabic ? 'فتح تذكرة دعم تقني' : 'Open Technical Support Ticket',
-      description: isArabic ? 'أبلغ عن مشكلة تقنية تتعلق بالنظام أو الإيميل أو الرسائل أو TrakCare أو DocuWare.' : 'Report a technical issue related to the system, email, SMS, TrakCare, or DocuWare.',
-      button: isArabic ? 'فتح تذكرة دعم تقني' : 'Open Ticket',
+      title: isArabic ? '\u0641\u062a\u062d \u062a\u0630\u0643\u0631\u0629 \u062f\u0639\u0645 \u062a\u0642\u0646\u064a' : 'Open Technical Support Ticket',
+      description: isArabic ? '\u0623\u0628\u0644\u063a \u0639\u0646 \u0645\u0634\u0643\u0644\u0629 \u062a\u0642\u0646\u064a\u0629 \u062a\u062a\u0639\u0644\u0642 \u0628\u0627\u0644\u0646\u0638\u0627\u0645 \u0623\u0648 \u0627\u0644\u0625\u064a\u0645\u064a\u0644 \u0623\u0648 \u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0623\u0648 TrakCare \u0623\u0648 DocuWare.' : 'Report a technical issue related to the system, email, SMS, TrakCare, or DocuWare.',
+      button: isArabic ? '\u0641\u062a\u062d \u062a\u0630\u0643\u0631\u0629 \u062f\u0639\u0645 \u062a\u0642\u0646\u064a' : 'Open Ticket',
       icon: Activity,
       tone: 'blue',
+      modal: 'technical-ticket',
     },
   ] as const;
 
   const toneClasses = {
-    blue: {
-      icon: 'bg-blue-50 text-[#002B5C]',
-      button: 'bg-[#002B5C] hover:bg-[#003B7A] text-white',
-      border: 'border-blue-100',
-    },
-    purple: {
-      icon: 'bg-purple-50 text-purple-700',
-      button: 'bg-purple-700 hover:bg-purple-800 text-white',
-      border: 'border-purple-100',
-    },
-    green: {
-      icon: 'bg-green-50 text-green-700',
-      button: 'bg-green-700 hover:bg-green-800 text-white',
-      border: 'border-green-100',
-    },
+    blue: { icon: 'bg-blue-50 text-[#002B5C]', button: 'bg-[#002B5C] hover:bg-[#003B7A] text-white', border: 'border-blue-100' },
+    purple: { icon: 'bg-purple-50 text-purple-700', button: 'bg-purple-700 hover:bg-purple-800 text-white', border: 'border-purple-100' },
+    green: { icon: 'bg-green-50 text-green-700', button: 'bg-green-700 hover:bg-green-800 text-white', border: 'border-green-100' },
   } as const;
 
   return (
@@ -130,14 +124,8 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
       <div className="px-8 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[#1F2937]">
-              {isArabic ? 'الدعم والإعدادات' : 'Support & Settings'}
-            </h1>
-            <p className="mt-2 text-sm text-[#6B7280]">
-              {isArabic
-                ? 'كل ما تحتاجه من دعم وإعدادات في مساحة عمل مبسطة وآمنة.'
-                : 'All support and settings needed in a simple, secure workspace.'}
-            </p>
+            <h1 className="text-3xl font-bold text-[#1F2937]">{isArabic ? '\u0627\u0644\u062f\u0639\u0645 \u0648\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a' : 'Support & Settings'}</h1>
+            <p className="mt-2 text-sm text-[#6B7280]">{isArabic ? '\u0643\u0644 \u0645\u0627 \u062a\u062d\u062a\u0627\u062c\u0647 \u0645\u0646 \u062f\u0639\u0645 \u0648\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0641\u064a \u0645\u0633\u0627\u062d\u0629 \u0639\u0645\u0644 \u0645\u0628\u0633\u0637\u0629 \u0648\u0622\u0645\u0646\u0629.' : 'All support and settings needed in a simple, secure workspace.'}</p>
           </div>
           <Shield className="h-12 w-12 text-[#C9A13B]" />
         </div>
@@ -148,42 +136,19 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
             const tone = toneClasses[card.tone];
 
             return (
-              <div
-                key={card.title}
-                className={`rounded-xl border ${tone.border} bg-white p-6 shadow-sm transition-shadow hover:shadow-md`}
-              >
+              <div key={card.title} className={`rounded-xl border ${tone.border} bg-white p-6 shadow-sm transition-shadow hover:shadow-md`}>
                 <div className="mb-5 flex items-center justify-center">
                   <div className={`flex h-20 w-20 items-center justify-center rounded-full ${tone.icon}`}>
                     <Icon className="h-10 w-10" />
                   </div>
                 </div>
-
                 <h2 className="text-center text-xl font-bold text-[#002B5C]">{card.title}</h2>
-                <p className="mt-4 min-h-[72px] text-center text-sm leading-6 text-[#4B5563]">
-                  {card.description}
-                </p>
-
+                <p className="mt-4 min-h-[72px] text-center text-sm leading-6 text-[#4B5563]">{card.description}</p>
                 <button
                   type="button"
                   onClick={() => {
-                    const isTechnicalTicket =
-                      card.title === 'Open Technical Support Ticket' ||
-                      card.button === 'Open Ticket' ||
-                      card.title === 'فتح تذكرة دعم تقني' ||
-                      card.button === 'فتح تذكرة دعم تقني';
-
-                    const isLegalConsultation =
-                      card.title === 'Request Legal Consultation' ||
-                      card.button === 'Request Consultation' ||
-                      card.title === '??? ??????? ???????' ||
-                      card.button === '??? ??????? ???????';
-
-                    if (isTechnicalTicket) {
-                      setSupportRequestModal('technical-ticket');
-                    }
-
-                    if (isLegalConsultation) {
-                      setSupportRequestModal('legal-consultation');
+                    if (card.modal) {
+                      setSupportRequestModal(card.modal);
                     }
                   }}
                   className={`mt-6 w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${tone.button}`}
@@ -200,35 +165,16 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
             <div className="w-full max-w-2xl rounded-xl border border-[#D8DCE3] bg-white shadow-xl" dir={isArabic ? 'rtl' : 'ltr'}>
               <div className="flex items-start justify-between border-b border-[#EEF1F5] px-6 py-4">
                 <div>
-                  <h2 className="text-xl font-bold text-[#002B5C]">
-                    {isArabic ? 'طلب استشارة قانونية' : 'Request Legal Consultation'}
-                  </h2>
-                  <p className="mt-1 text-sm text-[#6B7280]">
-                    {isArabic ? 'أدخل تفاصيل الطلب القانوني لإرساله إلى الإدارة القانونية.' : 'Enter the legal request details to submit them to the Legal Affairs team.'}
-                  </p>
+                  <h2 className="text-xl font-bold text-[#002B5C]">{isArabic ? '\u0637\u0644\u0628 \u0627\u0633\u062a\u0634\u0627\u0631\u0629 \u0642\u0627\u0646\u0648\u0646\u064a\u0629' : 'Request Legal Consultation'}</h2>
+                  <p className="mt-1 text-sm text-[#6B7280]">{isArabic ? '\u0623\u062f\u062e\u0644 \u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a \u0644\u0625\u0631\u0633\u0627\u0644\u0647 \u0625\u0644\u0649 \u0627\u0644\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629.' : 'Enter the legal request details to submit them to Legal Affairs.'}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSupportRequestModal(null)}
-                  className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]"
-                >
-                  ?
-                </button>
+                <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">?</button>
               </div>
 
-              <form
-                className="space-y-4 px-6 py-5"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  window.alert(isArabic ? 'تم إنشاء طلب الاستشارة القانونية وتسجيله للمتابعة.' : 'Legal consultation request created and logged for follow-up.');
-                  setSupportRequestModal(null);
-                }}
-              >
+              <form className="space-y-4 px-6 py-5" onSubmit={(event) => { event.preventDefault(); window.alert(isArabic ? '\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0637\u0644\u0628 \u0627\u0644\u0627\u0633\u062a\u0634\u0627\u0631\u0629 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629 \u0648\u062a\u0633\u062c\u064a\u0644\u0647 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629.' : 'Legal consultation request created and logged for follow-up.'); setSupportRequestModal(null); }}>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <label className="block">
-                    <span className="text-sm font-medium text-[#2F2F2F]">
-                      {isArabic ? 'نوع الطلب' : 'Request Type'}
-                    </span>
+                    <span className="text-sm font-medium text-[#2F2F2F]">{isArabic ? '\u0646\u0648\u0639 \u0627\u0644\u0637\u0644\u0628' : 'Request Type'}</span>
                     <select className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm">
                       <option>Consent Wording Review</option>
                       <option>Policy Clarification</option>
@@ -238,11 +184,8 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                       <option>Other</option>
                     </select>
                   </label>
-
                   <label className="block">
-                    <span className="text-sm font-medium text-[#2F2F2F]">
-                      {isArabic ? 'الأولوية' : 'Priority'}
-                    </span>
+                    <span className="text-sm font-medium text-[#2F2F2F]">{isArabic ? '\u0627\u0644\u0623\u0648\u0644\u0648\u064a\u0629' : 'Priority'}</span>
                     <select className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm">
                       <option>Normal</option>
                       <option>Urgent</option>
@@ -252,35 +195,17 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                 </div>
 
                 <label className="block">
-                  <span className="text-sm font-medium text-[#2F2F2F]">
-                    {isArabic ? 'وصف الاستشارة' : 'Consultation Description'}
-                  </span>
-                  <textarea
-                    required
-                    rows={5}
-                    className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm"
-                    placeholder={isArabic ? 'اكتب موضوع الاستشارة، وما هو الاستفسار القانوني، وأي مرفقات أو حالة يجب مراجعتها.' : 'Describe the legal question, the consent issue, and any case or attachment that should be reviewed.'}
-                  />
+                  <span className="text-sm font-medium text-[#2F2F2F]">{isArabic ? '\u0648\u0635\u0641 \u0627\u0644\u0627\u0633\u062a\u0634\u0627\u0631\u0629' : 'Consultation Description'}</span>
+                  <textarea required rows={5} className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm" placeholder={isArabic ? '\u0627\u0643\u062a\u0628 \u0645\u0648\u0636\u0648\u0639 \u0627\u0644\u0627\u0633\u062a\u0634\u0627\u0631\u0629\u060c \u0648\u0627\u0644\u0627\u0633\u062a\u0641\u0633\u0627\u0631 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u060c \u0648\u0623\u064a \u062d\u0627\u0644\u0629 \u0623\u0648 \u0645\u0631\u0641\u0642\u0627\u062a \u062a\u062d\u062a\u0627\u062c \u0645\u0631\u0627\u062c\u0639\u0629.' : 'Describe the legal question, consent issue, and any case or attachment that should be reviewed.'} />
                 </label>
 
                 <div className="rounded border border-green-100 bg-green-50 px-4 py-3 text-xs text-green-800">
-                  {isArabic ? 'سيتم إرفاق سياق الحالة تلقائيًا: المستخدم، الصفحة، الوقت، ومرجع الجلسة.' : 'The request will automatically include user, page, timestamp, and session reference.'}
+                  {isArabic ? '\u0633\u064a\u062a\u0645 \u0625\u0631\u0641\u0627\u0642 \u0633\u064a\u0627\u0642 \u0627\u0644\u062d\u0627\u0644\u0629 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627: \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645\u060c \u0627\u0644\u0635\u0641\u062d\u0629\u060c \u0627\u0644\u0648\u0642\u062a\u060c \u0648\u0645\u0631\u062c\u0639 \u0627\u0644\u062c\u0644\u0633\u0629.' : 'The request will automatically include user, page, timestamp, and session reference.'}
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setSupportRequestModal(null)}
-                    className="rounded border border-[#D8DCE3] px-4 py-2 text-sm font-medium text-[#6B7280] hover:bg-[#F4F6F9]"
-                  >
-                    {isArabic ? 'إلغاء' : 'Cancel'}
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
-                  >
-                    {isArabic ? 'إرسال الطلب' : 'Submit Request'}
-                  </button>
+                  <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded border border-[#D8DCE3] px-4 py-2 text-sm font-medium text-[#6B7280] hover:bg-[#F4F6F9]">{isArabic ? '\u0625\u0644\u063a\u0627\u0621' : 'Cancel'}</button>
+                  <button type="submit" className="rounded bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800">{isArabic ? '\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0637\u0644\u0628' : 'Submit Request'}</button>
                 </div>
               </form>
             </div>
@@ -292,35 +217,16 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
             <div className="w-full max-w-2xl rounded-xl border border-[#D8DCE3] bg-white shadow-xl" dir={isArabic ? 'rtl' : 'ltr'}>
               <div className="flex items-start justify-between border-b border-[#EEF1F5] px-6 py-4">
                 <div>
-                  <h2 className="text-xl font-bold text-[#002B5C]">
-                    {isArabic ? 'فتح تذكرة دعم تقني' : 'Open Technical Support Ticket'}
-                  </h2>
-                  <p className="mt-1 text-sm text-[#6B7280]">
-                    {isArabic ? 'أدخل تفاصيل المشكلة التقنية لإرسالها إلى فريق الدعم.' : 'Enter the technical issue details to submit them to the support team.'}
-                  </p>
+                  <h2 className="text-xl font-bold text-[#002B5C]">{isArabic ? '\u0641\u062a\u062d \u062a\u0630\u0643\u0631\u0629 \u062f\u0639\u0645 \u062a\u0642\u0646\u064a' : 'Open Technical Support Ticket'}</h2>
+                  <p className="mt-1 text-sm text-[#6B7280]">{isArabic ? '\u0623\u062f\u062e\u0644 \u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0645\u0634\u0643\u0644\u0629 \u0627\u0644\u062a\u0642\u0646\u064a\u0629 \u0644\u0625\u0631\u0633\u0627\u0644\u0647\u0627 \u0625\u0644\u0649 \u0641\u0631\u064a\u0642 \u0627\u0644\u062f\u0639\u0645.' : 'Enter the technical issue details to submit them to the support team.'}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSupportRequestModal(null)}
-                  className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]"
-                >
-                  ?
-                </button>
+                <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">?</button>
               </div>
 
-              <form
-                className="space-y-4 px-6 py-5"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  window.alert(isArabic ? 'تم إنشاء تذكرة الدعم التقني وتسجيلها للمتابعة.' : 'Technical support ticket created and logged for follow-up.');
-                  setSupportRequestModal(null);
-                }}
-              >
+              <form className="space-y-4 px-6 py-5" onSubmit={(event) => { event.preventDefault(); window.alert(isArabic ? '\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062a\u0630\u0643\u0631\u0629 \u0627\u0644\u062f\u0639\u0645 \u0627\u0644\u062a\u0642\u0646\u064a \u0648\u062a\u0633\u062c\u064a\u0644\u0647\u0627 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629.' : 'Technical support ticket created and logged for follow-up.'); setSupportRequestModal(null); }}>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <label className="block">
-                    <span className="text-sm font-medium text-[#2F2F2F]">
-                      {isArabic ? 'نوع المشكلة' : 'Issue Type'}
-                    </span>
+                    <span className="text-sm font-medium text-[#2F2F2F]">{isArabic ? '\u0646\u0648\u0639 \u0627\u0644\u0645\u0634\u0643\u0644\u0629' : 'Issue Type'}</span>
                     <select className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm">
                       <option>System Access</option>
                       <option>Email Delivery</option>
@@ -331,11 +237,8 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                       <option>Other</option>
                     </select>
                   </label>
-
                   <label className="block">
-                    <span className="text-sm font-medium text-[#2F2F2F]">
-                      {isArabic ? 'الأولوية' : 'Priority'}
-                    </span>
+                    <span className="text-sm font-medium text-[#2F2F2F]">{isArabic ? '\u0627\u0644\u0623\u0648\u0644\u0648\u064a\u0629' : 'Priority'}</span>
                     <select className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm">
                       <option>Normal</option>
                       <option>Urgent</option>
@@ -345,35 +248,17 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                 </div>
 
                 <label className="block">
-                  <span className="text-sm font-medium text-[#2F2F2F]">
-                    {isArabic ? 'وصف المشكلة' : 'Issue Description'}
-                  </span>
-                  <textarea
-                    required
-                    rows={5}
-                    className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm"
-                    placeholder={isArabic ? 'اكتب ما المشكلة، متى حدثت، وما الخطوة التي تحتاج مساعدة بشأنها.' : 'Describe the issue, when it happened, and the step that requires support.'}
-                  />
+                  <span className="text-sm font-medium text-[#2F2F2F]">{isArabic ? '\u0648\u0635\u0641 \u0627\u0644\u0645\u0634\u0643\u0644\u0629' : 'Issue Description'}</span>
+                  <textarea required rows={5} className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm" placeholder={isArabic ? '\u0627\u0643\u062a\u0628 \u0645\u0627 \u0627\u0644\u0645\u0634\u0643\u0644\u0629\u060c \u0645\u062a\u0649 \u062d\u062f\u062b\u062a\u060c \u0648\u0645\u0627 \u0627\u0644\u062e\u0637\u0648\u0629 \u0627\u0644\u062a\u064a \u062a\u062d\u062a\u0627\u062c \u0645\u0633\u0627\u0639\u062f\u0629 \u0628\u0634\u0623\u0646\u0647\u0627.' : 'Describe the issue, when it happened, and the step that requires support.'} />
                 </label>
 
                 <div className="rounded border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-[#002B5C]">
-                  {isArabic ? 'سيتم إرفاق سياق الحالة تلقائيًا: المستخدم، الصفحة، الوقت، ومرجع الجلسة.' : 'The request will automatically include user, page, timestamp, and session reference.'}
+                  {isArabic ? '\u0633\u064a\u062a\u0645 \u0625\u0631\u0641\u0627\u0642 \u0633\u064a\u0627\u0642 \u0627\u0644\u062d\u0627\u0644\u0629 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627: \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645\u060c \u0627\u0644\u0635\u0641\u062d\u0629\u060c \u0627\u0644\u0648\u0642\u062a\u060c \u0648\u0645\u0631\u062c\u0639 \u0627\u0644\u062c\u0644\u0633\u0629.' : 'The request will automatically include user, page, timestamp, and session reference.'}
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setSupportRequestModal(null)}
-                    className="rounded border border-[#D8DCE3] px-4 py-2 text-sm font-medium text-[#6B7280] hover:bg-[#F4F6F9]"
-                  >
-                    {isArabic ? 'إلغاء' : 'Cancel'}
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded bg-[#002B5C] px-4 py-2 text-sm font-semibold text-white hover:bg-[#003B7A]"
-                  >
-                    {isArabic ? 'إرسال التذكرة' : 'Submit Ticket'}
-                  </button>
+                  <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded border border-[#D8DCE3] px-4 py-2 text-sm font-medium text-[#6B7280] hover:bg-[#F4F6F9]">{isArabic ? '\u0625\u0644\u063a\u0627\u0621' : 'Cancel'}</button>
+                  <button type="submit" className="rounded bg-[#002B5C] px-4 py-2 text-sm font-semibold text-white hover:bg-[#003B7A]">{isArabic ? '\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u062a\u0630\u0643\u0631\u0629' : 'Submit Ticket'}</button>
                 </div>
               </form>
             </div>
@@ -381,9 +266,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
         ) : null}
 
         <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-center text-sm text-amber-800">
-          {isArabic
-            ? 'جميع الطلبات والإجراءات تسجل لأغراض التدقيق والامتثال وحماية البيانات.'
-            : 'All requests and actions are logged for audit, compliance, and data protection.'}
+          {isArabic ? '\u062c\u0645\u064a\u0639 \u0627\u0644\u0637\u0644\u0628\u0627\u062a \u0648\u0627\u0644\u0625\u062c\u0631\u0627\u0621\u0627\u062a \u062a\u0633\u062c\u0644 \u0644\u0623\u063a\u0631\u0627\u0636 \u0627\u0644\u062a\u062f\u0642\u064a\u0642 \u0648\u0627\u0644\u0627\u0645\u062a\u062b\u0627\u0644 \u0648\u062d\u0645\u0627\u064a\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a.' : 'All requests and actions are logged for audit, compliance, and data protection.'}
         </div>
       </div>
     </div>
