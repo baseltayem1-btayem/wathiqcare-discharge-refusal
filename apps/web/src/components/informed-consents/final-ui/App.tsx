@@ -146,9 +146,26 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                 <p className="mt-4 min-h-[72px] text-center text-sm leading-6 text-[#4B5563]">{card.description}</p>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (card.modal) {
-                      setSupportRequestModal(card.modal);
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    if (card.title === 'Request Legal Consultation' || card.button === 'Request Consultation' || card.modal === 'legal-consultation') {
+                      setSupportRequestModal('legal-consultation');
+                      return;
+                    }
+
+                    if (card.title === 'Open Technical Support Ticket' || card.button === 'Open Ticket' || card.modal === 'technical-ticket') {
+                      setSupportRequestModal('technical-ticket');
+                    }
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (card.title === 'Request Legal Consultation' || card.button === 'Request Consultation' || card.modal === 'legal-consultation') {
+                      setSupportRequestModal('legal-consultation');
+                      return;
+                    }
+
+                    if (card.title === 'Open Technical Support Ticket' || card.button === 'Open Ticket' || card.modal === 'technical-ticket') {
+                      setSupportRequestModal('technical-ticket');
                     }
                   }}
                   className={`mt-6 w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${tone.button}`}
