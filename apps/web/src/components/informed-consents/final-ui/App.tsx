@@ -39,6 +39,30 @@ function getMedicalLicenseStatus(expiryDate: string) {
 }
 
 
+const physicianNotifications = [
+  {
+    id: 'notif-incomplete-disclosures',
+    title: 'Incomplete mandatory disclosures',
+    message: '3 consents require completion before surgery can proceed.',
+    time: 'Today',
+    severity: 'critical',
+  },
+  {
+    id: 'notif-awaiting-signature',
+    title: 'Patient signature pending',
+    message: '12 consent links are sent and awaiting patient action.',
+    time: 'Today',
+    severity: 'info',
+  },
+  {
+    id: 'notif-license-status',
+    title: 'Medical license status verified',
+    message: `License expiry: ${physicianProfile.licenseExpiryDate}`,
+    time: 'System check',
+    severity: 'success',
+  },
+];
+
 const navItems = [
   { id: 'dashboard' as Screen, label: 'Dashboard', labelAr: 'لوحة التحكم', icon: LayoutDashboard },
   { id: 'search' as Screen, label: 'Patient Search', labelAr: 'البحث عن مريض', icon: Search },
@@ -53,7 +77,8 @@ export default function App() {
   const isLicenseExpired = licenseStatus === 'expired';
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedEncounter, setSelectedEncounter] = useState<Encounter | null>(null);
-  const [alertCount] = useState(3);
+  const [alertCount, setAlertCount] = useState(3);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const handleNewConsent = () => setScreen('search');
   const handleViewConsent = (_mrn: string) => setScreen('consent-builder');
@@ -219,12 +244,78 @@ export default function App() {
             </div>
 
             {/* Notifications */}
-            <button className="relative p-2 rounded hover:bg-[#F4F6F9] transition-colors">
-              <Bell className="w-4 h-4" style={{ color: '#6B7280' }} />
-              {alertCount > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: '#C0392B' }} />
-              )}
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Open notifications"
+                onClick={() => setShowNotifications((value) => !value)}
+                className="relative p-2 rounded hover:bg-[#F4F6F9] transition-colors"
+              >
+                <Bell className="w-4 h-4" style={{ color: '#6B7280' }} />
+                {alertCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full px-1 text-[10px] leading-4 text-white text-center"
+                    style={{ background: '#C0392B' }}
+                  >
+                    {alertCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications ? (
+                <div className="absolute right-0 top-10 z-50 w-96 rounded-lg border border-[#D8DCE3] bg-white shadow-lg">
+                  <div className="flex items-center justify-between border-b border-[#EEF1F5] px-4 py-3">
+                    <div>
+                      <div className="text-sm font-semibold text-[#2F2F2F]">Notifications</div>
+                      <div className="text-xs text-[#6B7280]">Physician consent alerts</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAlertCount(0);
+                        setShowNotifications(false);
+                      }}
+                      className="text-xs font-medium text-[#002B5C] hover:underline"
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto">
+                    {physicianNotifications.map((notification) => (
+                      <button
+                        key={notification.id}
+                        type="button"
+                        onClick={() => {
+                          if (notification.id === 'notif-incomplete-disclosures') {
+                            setScreen('dashboard');
+                          }
+                          setShowNotifications(false);
+                        }}
+                        className="w-full border-b border-[#EEF1F5] px-4 py-3 text-left hover:bg-[#F4F6F9]"
+                      >
+                        <div className="flex items-start gap-3">
+                          <span
+                            className={`mt-1 h-2 w-2 rounded-full ${
+                              notification.severity === 'critical'
+                                ? 'bg-red-500'
+                                : notification.severity === 'success'
+                                  ? 'bg-emerald-500'
+                                  : 'bg-[#4B9CD3]'
+                            }`}
+                          />
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-[#2F2F2F]">{notification.title}</div>
+                            <div className="mt-0.5 text-xs text-[#6B7280]">{notification.message}</div>
+                            <div className="mt-1 text-[11px] text-[#9CA3AF]">{notification.time}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
 
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-xs" style={{ color: '#6B7280' }}>
