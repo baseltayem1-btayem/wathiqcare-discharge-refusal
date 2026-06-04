@@ -210,8 +210,10 @@ export function ConsentBuilder({ lang }: Props) {
           body: JSON.stringify({
             patientId: defaultPatient.mrn,
             patientMrn: defaultPatient.mrn,
+            patientCaseId: 'a4173dc9-5e40-4204-9b2c-4712abb6c7fa',
             encounterId: defaultEncounter.id,
             encounterNumber: defaultEncounter.id,
+            encounterCaseNumber: 'ENC-2024-1847',
             encounterDepartment: defaultEncounter.department,
             encounterPhysician: defaultEncounter.physician,
             encounterDiagnosis: 'Symptomatic cholelithiasis',
