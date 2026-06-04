@@ -166,6 +166,13 @@ type SignatureResult = {
   status: string;
   signerName: string;
   signedAt: string;
+  finalPdf?: {
+    status: "generated" | "failed" | "pending";
+    viewUrl: string;
+    downloadUrl: string;
+    retryUrl: string;
+    error?: string | null;
+  } | null;
   evidence?: {
     documentHash?: string | null;
     otpHash?: string | null;
@@ -489,6 +496,7 @@ export function ApprovedPatientWorkflow({
   const [signing, setSigning] = useState(false);
   const [signError, setSignError] = useState<string | null>(null);
   const [signResult, setSignResult] = useState<SignatureResult | null>(null);
+  const [finalPdfRetrying, setFinalPdfRetrying] = useState(false);
 
   const toggleLang = useCallback(
     () => setLang((l) => (l === "ar" ? "en" : "ar")),
@@ -895,6 +903,46 @@ export function ApprovedPatientWorkflow({
     },
     [signerName, token, lang],
   );
+
+  const retryFinalPdf = useCallback(async () => {
+    if (!signResult?.finalPdf?.retryUrl) return;
+
+    setFinalPdfRetrying(true);
+    setSignError(null);
+    try {
+      const result = await fetchJson<NonNullable<SignatureResult["finalPdf"]>>(
+        signResult.finalPdf.retryUrl,
+        {
+          method: "POST",
+        },
+      );
+      setSignResult((current) => (current ? { ...current, finalPdf: result } : current));
+    } catch (err) {
+      const message = err instanceof Error
+        ? err.message
+        : (lang === "ar" ? "تعذر تجهيز ملف PDF النهائي" : "Unable to prepare the final PDF");
+      setSignResult((current) => current
+        ? {
+            ...current,
+            finalPdf: {
+              status: "failed",
+              viewUrl:
+                current.finalPdf?.viewUrl
+                || `/api/public/informed-consents/signing/${encodeURIComponent(token)}/final-pdf?disposition=inline&lang=bilingual&copy=PATIENT_COPY`,
+              downloadUrl:
+                current.finalPdf?.downloadUrl
+                || `/api/public/informed-consents/signing/${encodeURIComponent(token)}/final-pdf?disposition=attachment&lang=bilingual&copy=PATIENT_COPY`,
+              retryUrl:
+                current.finalPdf?.retryUrl
+                || `/api/public/informed-consents/signing/${encodeURIComponent(token)}/final-pdf`,
+              error: message,
+            },
+          }
+        : current);
+    } finally {
+      setFinalPdfRetrying(false);
+    }
+  }, [lang, signResult, token]);
 
   /* ════════════════════════════════════════════════════════════════
    *  Render
@@ -1895,9 +1943,32 @@ export function ApprovedPatientWorkflow({
 
   /* ───── Confirmation (consent accepted + signed) ───── */
   if (screen === "confirmation" && signResult) {
-    const pdfHref = `/api/modules/informed-consents/documents/${encodeURIComponent(
-      signResult.documentId,
-    )}/pdf`;
+    const finalPdf = signResult.finalPdf;
+    const isAwaitingPhysicianSignature =
+      Boolean(finalPdf?.error && /physician signature is mandatory|all required signatures are completed|not ready until all required signatures/i.test(finalPdf.error));
+
+    const finalPdfDisplayStatus = finalPdf?.status === "generated"
+      ? (lang === "ar" ? "?? ????? ??? PDF ???????" : "Final PDF generated")
+      : isAwaitingPhysicianSignature
+        ? (lang === "ar"
+          ? "\u0628\u0627\u0646\u062a\u0638\u0627\u0631 \u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0637\u0628\u064a\u0628 \u0642\u0628\u0644 \u0625\u0635\u062f\u0627\u0631 \u0645\u0644\u0641 PDF \u0627\u0644\u0646\u0647\u0627\u0626\u064a"
+          : "Awaiting physician signature before final PDF generation")
+        : finalPdf?.status === "failed"
+          ? (lang === "ar" ? "\u062a\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0645\u0644\u0641 PDF \u0627\u0644\u0646\u0647\u0627\u0626\u064a" : "Final PDF generation failed")
+          : (lang === "ar" ? "\u0642\u064a\u062f \u0627\u0644\u0625\u0639\u062f\u0627\u062f" : "Preparing final PDF");
+
+    const finalPdfDisplayError = isAwaitingPhysicianSignature
+      ? (lang === "ar"
+        ? "\u0627\u0643\u062a\u0645\u0644 \u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0645\u0631\u064a\u0636\u060c \u0648\u0633\u064a\u062a\u0645 \u062a\u0641\u0639\u064a\u0644 \u0639\u0631\u0636 \u0648\u062a\u0646\u0632\u064a\u0644 \u0645\u0644\u0641 PDF \u0627\u0644\u0646\u0647\u0627\u0626\u064a \u0628\u0639\u062f \u0627\u0633\u062a\u0643\u0645\u0627\u0644 \u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0637\u0628\u064a\u0628."
+        : "The patient signature is complete. View and download will be enabled after the physician signature is completed.")
+      : finalPdf?.error || null;
+
+    const finalPdfRetryLabel = finalPdfRetrying
+      ? (lang === "ar" ? "\u062c\u0627\u0631\u064d \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629..." : "Retrying...")
+      : isAwaitingPhysicianSignature
+        ? (lang === "ar" ? "\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0628\u0639\u062f \u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0637\u0628\u064a\u0628" : "Retry after physician signature")
+        : (lang === "ar" ? "\u0625\u0639\u0627\u062f\u0629 \u0645\u062d\u0627\u0648\u0644\u0629 \u0625\u0646\u0634\u0627\u0621 \u0645\u0644\u0641 PDF \u0627\u0644\u0646\u0647\u0627\u0626\u064a" : "Retry PDF generation if failed");
+
     return (
       <div
         dir={dir}
@@ -1910,7 +1981,7 @@ export function ApprovedPatientWorkflow({
           </div>
           <div className="flex flex-col gap-2">
             <h1 className="text-xl font-bold text-foreground">
-              {lang === "ar" ? "تم تسجيل موافقتك" : "Your Consent is Recorded"}
+              {lang === "ar" ? "اكتملت الموافقة" : "Consent completed"}
             </h1>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {lang === "ar"
@@ -2014,20 +2085,82 @@ export function ApprovedPatientWorkflow({
                 </span>
               </div>
             </div>
+            <div className="h-px bg-border" />
+            <div
+              className={cls(
+                "flex justify-between items-center gap-3",
+                lang === "ar" ? "flex-row-reverse" : "flex-row",
+              )}
+            >
+              <span className="text-xs text-muted-foreground">
+                {lang === "ar" ? "حالة ملف PDF النهائي" : "Final PDF status"}
+              </span>
+              <span
+                className={cls(
+                  "text-xs font-semibold",
+                  finalPdf?.status === "generated"
+                    ? "text-emerald-600"
+                    : finalPdf?.status === "failed"
+                      ? "text-amber-600"
+                      : "text-sky-600",
+                )}
+              >
+                {finalPdf?.status === "generated"
+                  ? (lang === "ar" ? "تم إنشاء ملف PDF النهائي" : "Final PDF generated")
+                  : finalPdf?.status === "failed"
+                    ? (lang === "ar" ? "تعذر إنشاء ملف PDF النهائي" : "Final PDF generation failed")
+                    : (lang === "ar" ? "قيد الإعداد" : "Preparing final PDF")}
+              </span>
+            </div>
+            {finalPdfDisplayError ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 text-start">
+                {finalPdfDisplayError}
+              </div>
+            ) : null}
           </Card>
 
-          <a
-            href={pdfHref}
-            target="_blank"
-            rel="noopener noreferrer"
+          <div className="w-full grid gap-3 sm:grid-cols-2">
+            <a
+              href={finalPdf?.viewUrl || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cls(
+                "w-full py-3 rounded-lg border border-primary text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors",
+                (!finalPdf?.viewUrl || finalPdf.status !== "generated") && "pointer-events-none opacity-50",
+                lang === "ar" ? "flex-row-reverse" : "flex-row",
+              )}
+            >
+              <Shield size={15} />
+              {lang === "ar" ? "عرض ملف PDF النهائي" : "View Final PDF"}
+            </a>
+            <a
+              href={finalPdf?.downloadUrl || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cls(
+                "w-full py-3 rounded-lg border border-primary bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-95 transition-colors",
+                (!finalPdf?.downloadUrl || finalPdf.status !== "generated") && "pointer-events-none opacity-50",
+                lang === "ar" ? "flex-row-reverse" : "flex-row",
+              )}
+            >
+              <Download size={15} />
+              {lang === "ar" ? "تنزيل ملف PDF" : "Download PDF"}
+            </a>
+          </div>
+          <button
+            type="button"
+            onClick={retryFinalPdf}
+            disabled={finalPdfRetrying}
             className={cls(
-              "w-full py-3 rounded-lg border border-primary text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors",
+              "w-full py-3 rounded-lg border border-slate-300 text-slate-700 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors disabled:opacity-60",
               lang === "ar" ? "flex-row-reverse" : "flex-row",
             )}
           >
             <Download size={15} />
-            {lang === "ar" ? "تنزيل نسخة PDF" : "Download PDF Copy"}
-          </a>
+            {finalPdfRetrying
+              ? (lang === "ar" ? "جارٍ إعادة المحاولة..." : "Retrying...")
+              : (lang === "ar" ? "إعادة محاولة إنشاء ملف PDF النهائي" : "Retry PDF generation if failed")}
+          </button>
         </div>
       </div>
     );
