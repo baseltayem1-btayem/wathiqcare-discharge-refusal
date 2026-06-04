@@ -120,7 +120,39 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
   } as const;
 
   return (
-    <div className="flex-1 overflow-auto bg-[#F4F6F9]" dir={isArabic ? 'rtl' : 'ltr'}>
+    <div
+      className="flex-1 overflow-auto bg-[#F4F6F9]"
+      dir={isArabic ? 'rtl' : 'ltr'}
+      onClickCapture={(event) => {
+        const target = event.target as HTMLElement;
+        const button = target.closest('button');
+
+        if (!button) return;
+
+        const label = button.textContent?.trim() || '';
+
+        const isLegalConsultation =
+          label.includes('Request Consultation') ||
+          label.includes('??? ??????? ???????');
+
+        const isTechnicalTicket =
+          label.includes('Open Ticket') ||
+          label.includes('??? ????? ??? ????');
+
+        if (isLegalConsultation) {
+          event.preventDefault();
+          event.stopPropagation();
+          setSupportRequestModal('legal-consultation');
+          return;
+        }
+
+        if (isTechnicalTicket) {
+          event.preventDefault();
+          event.stopPropagation();
+          setSupportRequestModal('technical-ticket');
+        }
+      }}
+    >
       <div className="px-8 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
