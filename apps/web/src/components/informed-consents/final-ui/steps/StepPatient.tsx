@@ -10,14 +10,12 @@ interface Props {
   onNext: () => void;
   onPrev: () => void;
   onComplete: (step: ConsentStep, ids: string[]) => void;
-  mobile: string;
-  email: string;
-  onMobileChange: (value: string) => void;
-  onEmailChange: (value: string) => void;
 }
 
-export function StepPatient({ lang, onNext, onComplete, mobile, email, onMobileChange, onEmailChange }: Props) {
+export function StepPatient({ lang, onNext, onComplete }: Props) {
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const [mobile, setMobile] = useState('+966 50 234 5678');
+  const [email, setEmail] = useState('m.alrashidi@email.com');
   const [channel, setChannel] = useState<'sms' | 'email' | 'both'>('sms');
   const [contactVerified, setContactVerified] = useState(false);
 
@@ -133,9 +131,7 @@ export function StepPatient({ lang, onNext, onComplete, mobile, email, onMobileC
             <input
               type="tel"
               value={mobile}
-              onChange={e => { onMobileChange(e.target.value); setContactVerified(false); }}
-              placeholder="+966 5x xxx xxxx"
-              title={lang === 'en' ? 'Patient mobile number' : 'رقم جوال المريض'}
+              onChange={e => { setMobile(e.target.value); setContactVerified(false); }}
               className="w-full border border-[#D8DCE3] rounded bg-[#F8F9FB] px-3 py-2 text-sm text-[#2F2F2F] focus:outline-none focus:ring-2 focus:ring-[#4B9CD3] font-mono"
             />
           </div>
@@ -147,9 +143,7 @@ export function StepPatient({ lang, onNext, onComplete, mobile, email, onMobileC
             <input
               type="email"
               value={email}
-              onChange={e => { onEmailChange(e.target.value); setContactVerified(false); }}
-              placeholder="patient@example.com"
-              title={lang === 'en' ? 'Patient email address' : 'البريد الإلكتروني للمريض'}
+              onChange={e => { setEmail(e.target.value); setContactVerified(false); }}
               className="w-full border border-[#D8DCE3] rounded bg-[#F8F9FB] px-3 py-2 text-sm text-[#2F2F2F] focus:outline-none focus:ring-2 focus:ring-[#4B9CD3]"
             />
           </div>

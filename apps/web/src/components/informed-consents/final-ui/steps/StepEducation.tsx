@@ -8,7 +8,7 @@ interface Props {
   lang: 'en' | 'ar';
   onNext: () => void;
   onPrev: () => void;
-  onComplete: (step: ConsentStep, ids: string[], payload?: Record<string, unknown>) => void;
+  onComplete: (step: ConsentStep, ids: string[]) => void;
 }
 
 const educationSections = [
@@ -64,19 +64,7 @@ export function StepEducation({ lang, onNext, onPrev, onComplete }: Props) {
   };
 
   const handleComplete = () => {
-    onComplete('education', ['v13'], {
-      education: {
-        sections: educationSections.map((section) => ({
-          id: section.id,
-          label: section.label,
-          labelAr: section.labelAr,
-          contentEn: section.contentEn,
-          contentAr: section.contentAr,
-        })),
-        beforeAfter,
-        checkedItems,
-      },
-    });
+    onComplete('education', ['v13']);
     onNext();
   };
 

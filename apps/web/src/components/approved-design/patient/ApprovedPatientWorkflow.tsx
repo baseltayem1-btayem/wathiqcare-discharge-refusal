@@ -23,8 +23,6 @@
  */
 "use client";
 
-import { OtpVerificationShell } from "@/components/public-signing/OtpVerificationShell";
-
 import {
   useCallback,
   useEffect,
@@ -79,6 +77,7 @@ type Bootstrap = {
   maskedMobile?: string | null;
   otpRequiredAt?: string | null;
 };
+
 type Section = {
   id: string;
   sectionKey?: string;
@@ -166,13 +165,6 @@ type SignatureResult = {
   status: string;
   signerName: string;
   signedAt: string;
-  finalPdf?: {
-    status: "generated" | "failed" | "pending";
-    viewUrl: string;
-    downloadUrl: string;
-    retryUrl: string;
-    error?: string | null;
-  } | null;
   evidence?: {
     documentHash?: string | null;
     otpHash?: string | null;
@@ -252,12 +244,12 @@ function formatTimestamp(iso: string, lang: Lang): string {
 }
 
 function shortHash(s?: string | null): string {
-  if (!s) return "-";
-  return `${s.slice(0, 8)}...${s.slice(-6)}`;
+  if (!s) return "—";
+  return `${s.slice(0, 8)}…${s.slice(-6)}`;
 }
 
 /* ════════════════════════════════════════════════════════════════════════
- *  Signature canvas - real pointer capture to data URL
+ *  Signature canvas — real pointer capture → data URL
  * ════════════════════════════════════════════════════════════════════════ */
 
 type SignaturePadHandle = {
@@ -266,183 +258,140 @@ type SignaturePadHandle = {
   toDataUrl(): string | null;
 };
 
-export type ApprovedPatientWorkflowProps = {
-  token: string;
-  initialLang?: Lang;
-};
+const SignaturePad = (() => {
+  type Props = {
+    lang: Lang;
+    onChange?: (hasInk: boolean) => void;
+    padRef: React.MutableRefObject<SignaturePadHandle | null>;
+  };
+  function Inner({ lang, onChange, padRef }: Props) {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const drawingRef = useRef(false);
+    const lastRef = useRef<{ x: number; y: number } | null>(null);
+    const [hasInk, setHasInk] = useState(false);
 
+    const resize = useCallback(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.scale(ratio, ratio);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = "#1B4F8A";
+    }, []);
 
+    useEffect(() => {
+      resize();
+      const onResize = () => resize();
+      window.addEventListener("resize", onResize);
+      return () => window.removeEventListener("resize", onResize);
+    }, [resize]);
 
-function SignaturePad({
-  lang,
-  padRef,
-  onChange,
-}: {
-  lang: Lang;
-  padRef: { current: SignaturePadHandle | null };
-  onChange: (hasInk: boolean) => void;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const drawingRef = useRef(false);
-  const hasInkRef = useRef(false);
-  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
-
-  const isAr = lang === "ar";
-
-  const resizeCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    const previousData = canvas.toDataURL("image/png");
-
-    canvas.width = Math.max(1, Math.floor(rect.width * ratio));
-    canvas.height = Math.max(1, Math.floor(rect.height * ratio));
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = 2.4;
-    ctx.strokeStyle = "#002B5C";
-
-    if (hasInkRef.current && previousData) {
-      const image = new Image();
-      image.onload = () => {
-        ctx.drawImage(image, 0, 0, rect.width, rect.height);
+    const pointFrom = (e: PointerEvent | React.PointerEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return { x: 0, y: 0 };
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (e.clientX ?? 0) - rect.left,
+        y: (e.clientY ?? 0) - rect.top,
       };
-      image.src = previousData;
-    }
-  };
-
-  const getPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-
-    const rect = canvas.getBoundingClientRect();
-
-    return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
     };
-  };
 
-  const startDrawing = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    const point = getPoint(event);
+    const start = (e: React.PointerEvent) => {
+      e.preventDefault();
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+      drawingRef.current = true;
+      lastRef.current = pointFrom(e);
+    };
 
-    if (!canvas || !ctx || !point) return;
+    const move = (e: React.PointerEvent) => {
+      if (!drawingRef.current) return;
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
+      const p = pointFrom(e);
+      const last = lastRef.current || p;
+      ctx.beginPath();
+      ctx.moveTo(last.x, last.y);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      lastRef.current = p;
+      if (!hasInk) {
+        setHasInk(true);
+        onChange?.(true);
+      }
+    };
 
-    canvas.setPointerCapture(event.pointerId);
-    drawingRef.current = true;
-    lastPointRef.current = point;
-
-    ctx.beginPath();
-    ctx.moveTo(point.x, point.y);
-  };
-
-  const draw = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!drawingRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    const point = getPoint(event);
-
-    if (!ctx || !point || !lastPointRef.current) return;
-
-    ctx.lineTo(point.x, point.y);
-    ctx.stroke();
-
-    lastPointRef.current = point;
-
-    if (!hasInkRef.current) {
-      hasInkRef.current = true;
-      onChange(true);
-    }
-  };
-
-  const stopDrawing = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-
-    if (canvas?.hasPointerCapture(event.pointerId)) {
-      canvas.releasePointerCapture(event.pointerId);
-    }
-
-    drawingRef.current = false;
-    lastPointRef.current = null;
-  };
-
-  const clear = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-
-    if (!canvas || !ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    hasInkRef.current = false;
-    onChange(false);
-  };
-
-  useEffect(() => {
-    resizeCanvas();
-
-    const handleResize = () => resizeCanvas();
-    window.addEventListener("resize", handleResize);
+    const end = () => {
+      drawingRef.current = false;
+      lastRef.current = null;
+    };
 
     padRef.current = {
-      isEmpty: () => !hasInkRef.current,
-      clear,
+      isEmpty: () => !hasInk,
+      clear: () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext("2d");
+        if (!canvas || !ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        setHasInk(false);
+        onChange?.(false);
+      },
       toDataUrl: () => {
         const canvas = canvasRef.current;
-        if (!canvas || !hasInkRef.current) return null;
+        if (!canvas || !hasInk) return null;
         return canvas.toDataURL("image/png");
       },
     };
 
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      padRef.current = null;
-    };
-  }, []);
-
-  return (
-    <div className="w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-slate-900">
-          {isAr ? "\u0627\u0644\u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a" : "Electronic Signature"}
-        </p>
-
-        <button
-          type="button"
-          onClick={clear}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-        >
-          {isAr ? "\u0645\u0633\u062d" : "Clear"}
-        </button>
+    return (
+      <div
+        className={cls(
+          "relative rounded-xl border-2 bg-white overflow-hidden touch-none select-none",
+          hasInk
+            ? "border-primary"
+            : "border-dashed border-border",
+        )}
+        style={{ height: 180 }}
+      >
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full cursor-crosshair"
+          onPointerDown={start}
+          onPointerMove={move}
+          onPointerUp={end}
+          onPointerCancel={end}
+          onPointerLeave={end}
+        />
+        {!hasInk ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
+            <div className="w-8 h-0.5 bg-muted-foreground/30 rounded" />
+            <p className="text-xs text-muted-foreground">
+              {lang === "ar" ? "ارسم توقيعك هنا" : "Draw your signature here"}
+            </p>
+          </div>
+        ) : null}
+        <div className="absolute bottom-8 left-8 right-8 h-px bg-muted-foreground/20" />
       </div>
+    );
+  }
+  return Inner;
+})();
 
-      <canvas
-        ref={canvasRef}
-        className="h-52 w-full touch-none rounded-xl border border-dashed border-slate-300 bg-slate-50"
-        onPointerDown={startDrawing}
-        onPointerMove={draw}
-        onPointerUp={stopDrawing}
-        onPointerCancel={stopDrawing}
-        aria-label={isAr ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u0648\u0642\u064a\u0639" : "Signature pad"}
-      />
+/* ════════════════════════════════════════════════════════════════════════
+ *  Component
+ * ════════════════════════════════════════════════════════════════════════ */
 
-      <p className="mt-2 text-xs text-slate-500">
-        {isAr
-          ? "\u0648\u0642\u0651\u0639 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u0631\u0628\u0639 \u0623\u0639\u0644\u0627\u0647 \u0628\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u0641\u0623\u0631\u0629 \u0623\u0648 \u0627\u0644\u0644\u0645\u0633."
-          : "Sign inside the box above using mouse or touch."}
-      </p>
-    </div>
-  );
-}
+export type ApprovedPatientWorkflowProps = {
+  token: string;
+  initialLang?: Lang;
+};
 
 export function ApprovedPatientWorkflow({
   token,
@@ -496,7 +445,6 @@ export function ApprovedPatientWorkflow({
   const [signing, setSigning] = useState(false);
   const [signError, setSignError] = useState<string | null>(null);
   const [signResult, setSignResult] = useState<SignatureResult | null>(null);
-  const [finalPdfRetrying, setFinalPdfRetrying] = useState(false);
 
   const toggleLang = useCallback(
     () => setLang((l) => (l === "ar" ? "en" : "ar")),
@@ -904,53 +852,13 @@ export function ApprovedPatientWorkflow({
     [signerName, token, lang],
   );
 
-  const retryFinalPdf = useCallback(async () => {
-    if (!signResult?.finalPdf?.retryUrl) return;
-
-    setFinalPdfRetrying(true);
-    setSignError(null);
-    try {
-      const result = await fetchJson<NonNullable<SignatureResult["finalPdf"]>>(
-        signResult.finalPdf.retryUrl,
-        {
-          method: "POST",
-        },
-      );
-      setSignResult((current) => (current ? { ...current, finalPdf: result } : current));
-    } catch (err) {
-      const message = err instanceof Error
-        ? err.message
-        : (lang === "ar" ? "تعذر تجهيز ملف PDF النهائي" : "Unable to prepare the final PDF");
-      setSignResult((current) => current
-        ? {
-            ...current,
-            finalPdf: {
-              status: "failed",
-              viewUrl:
-                current.finalPdf?.viewUrl
-                || `/api/public/informed-consents/signing/${encodeURIComponent(token)}/final-pdf?disposition=inline&lang=bilingual&copy=PATIENT_COPY`,
-              downloadUrl:
-                current.finalPdf?.downloadUrl
-                || `/api/public/informed-consents/signing/${encodeURIComponent(token)}/final-pdf?disposition=attachment&lang=bilingual&copy=PATIENT_COPY`,
-              retryUrl:
-                current.finalPdf?.retryUrl
-                || `/api/public/informed-consents/signing/${encodeURIComponent(token)}/final-pdf`,
-              error: message,
-            },
-          }
-        : current);
-    } finally {
-      setFinalPdfRetrying(false);
-    }
-  }, [lang, signResult, token]);
-
   /* ════════════════════════════════════════════════════════════════
    *  Render
    * ════════════════════════════════════════════════════════════════ */
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
@@ -958,8 +866,8 @@ export function ApprovedPatientWorkflow({
 
   if (error && !bootstrap && !doc) {
     return (
-      <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex items-center justify-center p-4 sm:p-6">
-        <Card className="w-full max-w-[720px] p-6 text-center border border-slate-200/80 shadow-sm bg-white/95">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="max-w-md p-6 text-center">
           <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
           <h2 className="text-base font-semibold text-foreground mb-2">
             {lang === "ar" ? "تعذر تحميل الوثيقة" : "Document unavailable"}
@@ -978,10 +886,10 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
+        className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
+        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1002,7 +910,7 @@ export function ApprovedPatientWorkflow({
           </div>
 
           {patientName ? (
-            <Card className="p-5 sm:p-6 border border-slate-200/80 shadow-sm bg-white/95">
+            <Card className="p-4">
               <div
                 className={cls(
                   "flex items-center gap-3",
@@ -1032,7 +940,7 @@ export function ApprovedPatientWorkflow({
             </Card>
           ) : null}
 
-          <Card className="p-5 sm:p-6 flex flex-col gap-4 border border-slate-200/80 shadow-sm bg-white/95">
+          <Card className="p-4 flex flex-col gap-3">
             <div
               className={cls(
                 "flex flex-col gap-1",
@@ -1051,31 +959,205 @@ export function ApprovedPatientWorkflow({
                 </p>
               ) : null}
             </div>
-            <OtpVerificationShell
-              lang={lang}
-              mobile={mobile}
-              maskedPhone={maskedPhone}
-              otpStage={otpStage}
-              otpDigits={otpDigits}
-              otpRequesting={otpRequesting}
-              otpVerifying={otpVerifying}
-              otpExpiresAt={otpExpiresAt}
-              otpError={otpError}
-              attemptsRemaining={attemptsRemaining}
-              onMobileChange={setMobile}
-              onOtpDigitChange={handleOtpDigitChange}
-              onOtpKeyDown={handleOtpKey}
-              onRequestOtp={handleRequestOtp}
-              onVerifyOtp={handleVerifyOtp}
-              onResendOtp={() => {
-                setOtpStage("request");
-                setOtpDigits(["", "", "", "", "", ""]);
-                setOtpError(null);
-              }}
-              otpInputRefs={otpInputsRef}
-              formatTimestamp={formatTimestamp}
-            />
+            <div className="h-px bg-border" />
+            {physicianName ? (
+              <div
+                className={cls(
+                  "flex items-center gap-2",
+                  lang === "ar" ? "flex-row-reverse" : "flex-row",
+                )}
+              >
+                <Stethoscope size={14} className="text-muted-foreground shrink-0" />
+                <p className="text-xs text-muted-foreground">{physicianName}</p>
+              </div>
+            ) : null}
+            <div
+              className={cls(
+                "flex items-center gap-2",
+                lang === "ar" ? "flex-row-reverse" : "flex-row",
+              )}
+            >
+              <Building2 size={14} className="text-muted-foreground shrink-0" />
+              <p className="text-xs text-muted-foreground">{facilityName}</p>
+            </div>
           </Card>
+
+          <SecureNoticeBadge lang={lang} />
+
+          <Alert type="info" lang={lang}>
+            {lang === "ar"
+              ? "هذا الطلب صادر رسمياً من الفريق الطبي. لا يُطلب منك أي دفع."
+              : "This request is officially issued by your medical team. No payment is required."}
+          </Alert>
+
+          <button
+            onClick={() => setScreen("otp")}
+            className={cls(
+              "w-full py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors active:scale-[0.99]",
+              lang === "ar" ? "flex-row-reverse" : "flex-row",
+            )}
+          >
+            {lang === "ar" ? "متابعة" : "Proceed"}
+            <ChevronRight size={16} className={lang === "ar" ? "rotate-180" : ""} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ───── OTP ───── */
+  if (screen === "otp") {
+    return (
+      <div
+        dir={dir}
+        className={cls("min-h-screen bg-background flex flex-col", langClass)}
+      >
+        <MobileHeader
+          lang={lang}
+          onLangToggle={toggleLang}
+          onBack={() => setScreen("landing")}
+          step={2}
+          totalSteps={7}
+        />
+        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full items-center">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+            <Phone size={24} className="text-primary" />
+          </div>
+          <div
+            className={cls(
+              "flex flex-col gap-1 w-full",
+              lang === "ar" ? "items-end text-right" : "items-start text-left",
+            )}
+          >
+            <h1 className="text-lg font-bold text-foreground">
+              {lang === "ar" ? "التحقق برمز OTP" : "OTP Verification"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {otpStage === "request"
+                ? lang === "ar"
+                  ? "أدخل رقم جوالك لاستلام رمز التحقق عبر رسالة SMS."
+                  : "Enter your mobile number to receive the OTP via SMS."
+                : lang === "ar"
+                  ? "أدخل الرمز المرسل إلى جوالك."
+                  : "Enter the code sent to your mobile."}
+            </p>
+            {otpStage === "verify" && maskedPhone ? (
+              <p className="text-sm font-mono font-semibold text-primary">
+                {maskedPhone}
+              </p>
+            ) : null}
+          </div>
+
+          {otpStage === "request" ? (
+            <div className="w-full flex flex-col gap-3">
+              <input
+                type="tel"
+                inputMode="tel"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                placeholder={lang === "ar" ? "+9665XXXXXXXX" : "+9665XXXXXXXX"}
+                className="w-full px-3 py-3 rounded-lg border-2 border-border bg-card text-sm focus:outline-none focus:border-primary"
+                dir="ltr"
+              />
+              {otpError ? (
+                <Alert type="warning" lang={lang}>{otpError}</Alert>
+              ) : null}
+              <button
+                onClick={handleRequestOtp}
+                disabled={otpRequesting}
+                className={cls(
+                  "w-full py-3.5 rounded-lg font-semibold text-sm transition-colors",
+                  otpRequesting
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90",
+                )}
+              >
+                {otpRequesting
+                  ? lang === "ar"
+                    ? "جارٍ الإرسال…"
+                    : "Sending…"
+                  : lang === "ar"
+                    ? "إرسال الرمز"
+                    : "Send Code"}
+              </button>
+            </div>
+          ) : (
+            <div className="w-full flex flex-col gap-4 items-center">
+              <div className="flex gap-2 justify-center" dir="ltr">
+                {otpDigits.map((d, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => {
+                      otpInputsRef.current[i] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={(e) => handleOtpDigitChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKey(i, e)}
+                    aria-label={`OTP digit ${i + 1}`}
+                    className={cls(
+                      "w-11 h-13 text-center text-xl font-bold rounded-lg border-2 bg-card focus:outline-none transition-colors",
+                      d ? "border-primary text-primary" : "border-border text-foreground",
+                    )}
+                  />
+                ))}
+              </div>
+              {otpExpiresAt ? (
+                <div
+                  className={cls(
+                    "flex items-center gap-1 text-xs text-muted-foreground",
+                    lang === "ar" ? "flex-row-reverse" : "flex-row",
+                  )}
+                >
+                  <Clock size={12} />
+                  <span>
+                    {lang === "ar" ? "صالح حتى" : "Valid until"}{" "}
+                    {formatTimestamp(otpExpiresAt, lang)}
+                  </span>
+                </div>
+              ) : null}
+              {attemptsRemaining !== null && attemptsRemaining > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {lang === "ar"
+                    ? `محاولات متبقية: ${attemptsRemaining}`
+                    : `Attempts remaining: ${attemptsRemaining}`}
+                </p>
+              ) : null}
+              {otpError ? (
+                <Alert type="warning" lang={lang}>{otpError}</Alert>
+              ) : null}
+              <button
+                onClick={() => {
+                  setOtpStage("request");
+                  setOtpDigits(["", "", "", "", "", ""]);
+                  setOtpError(null);
+                }}
+                className="text-sm text-primary underline-offset-2 hover:underline"
+              >
+                {lang === "ar" ? "إعادة إرسال الرمز" : "Resend code"}
+              </button>
+              <button
+                onClick={handleVerifyOtp}
+                disabled={otpVerifying}
+                className={cls(
+                  "w-full py-3.5 rounded-lg font-semibold text-sm transition-colors",
+                  otpVerifying
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90",
+                )}
+              >
+                {otpVerifying
+                  ? lang === "ar"
+                    ? "جارٍ التحقق…"
+                    : "Verifying…"
+                  : lang === "ar"
+                    ? "تحقق"
+                    : "Verify"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1093,7 +1175,7 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
+        className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader
           lang={lang}
@@ -1102,7 +1184,7 @@ export function ApprovedPatientWorkflow({
           step={3}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
+        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1121,7 +1203,7 @@ export function ApprovedPatientWorkflow({
           </div>
 
           {summary ? (
-            <Card className="p-5 sm:p-6 flex flex-col gap-3 border border-slate-200/80 shadow-sm bg-white/95">
+            <Card className="p-4 flex flex-col gap-2">
               <div
                 className={cls(
                   "flex items-center gap-2",
@@ -1147,7 +1229,7 @@ export function ApprovedPatientWorkflow({
           ) : null}
 
           {benefits.length > 0 ? (
-            <Card className="p-5 sm:p-6 flex flex-col gap-3 border border-slate-200/80 shadow-sm bg-white/95">
+            <Card className="p-4 flex flex-col gap-2.5">
               <div
                 className={cls(
                   "flex items-center gap-2",
@@ -1184,7 +1266,7 @@ export function ApprovedPatientWorkflow({
           ) : null}
 
           {risks.length > 0 ? (
-            <Card className="p-5 sm:p-6 flex flex-col gap-3 border border-slate-200/80 shadow-sm bg-white/95">
+            <Card className="p-4 flex flex-col gap-2.5">
               <div
                 className={cls(
                   "flex items-center gap-2",
@@ -1221,7 +1303,7 @@ export function ApprovedPatientWorkflow({
           ) : null}
 
           {(ed.preProcedureInstructions || []).length > 0 ? (
-            <Card className="p-5 sm:p-6 flex flex-col gap-3 border border-slate-200/80 shadow-sm bg-white/95">
+            <Card className="p-4 flex flex-col gap-2">
               <div
                 className={cls(
                   "flex items-center gap-2",
@@ -1244,7 +1326,7 @@ export function ApprovedPatientWorkflow({
           ) : null}
 
           {faq.length > 0 ? (
-            <Card className="overflow-hidden border border-slate-200/80 shadow-sm bg-white/95">
+            <Card className="overflow-hidden">
               <div
                 className={cls(
                   "px-4 py-3 border-b border-border",
@@ -1329,7 +1411,7 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
+        className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader
           lang={lang}
@@ -1338,7 +1420,7 @@ export function ApprovedPatientWorkflow({
           step={4}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
+        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1355,7 +1437,7 @@ export function ApprovedPatientWorkflow({
             </p>
           </div>
 
-          <Card className="p-5 sm:p-6 flex flex-col gap-4 border border-slate-200/80 shadow-sm bg-white/95">
+          <Card className="p-4 flex flex-col gap-3">
             <div
               className={cls(
                 "flex items-center gap-2",
@@ -1410,7 +1492,7 @@ export function ApprovedPatientWorkflow({
           </Card>
 
           {pdplText ? (
-            <Card className="p-4 sm:p-5 border border-slate-200/80 shadow-sm bg-white/95">
+            <Card className="p-3">
               <div
                 className={cls(
                   "flex items-center gap-2 mb-1",
@@ -1501,7 +1583,7 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
+        className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader
           lang={lang}
@@ -1510,7 +1592,7 @@ export function ApprovedPatientWorkflow({
           step={5}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
+        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1528,7 +1610,7 @@ export function ApprovedPatientWorkflow({
           </div>
 
           {patientName ? (
-            <Card className="p-5 sm:p-6 border border-slate-200/80 shadow-sm bg-white/95">
+            <Card className="p-4">
               <div
                 className={cls(
                   "flex items-center gap-3",
@@ -1580,7 +1662,7 @@ export function ApprovedPatientWorkflow({
             <button
               onClick={() => submitDecision("CONSENT_ACCEPTED")}
               disabled={decisionSubmitting}
-              className="w-full rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5 sm:p-6 flex flex-col items-center gap-2 hover:border-emerald-400 hover:bg-emerald-100 transition-colors active:scale-[0.99] disabled:opacity-60"
+              className="w-full rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4 flex flex-col items-center gap-1 hover:border-emerald-400 hover:bg-emerald-100 transition-colors active:scale-[0.99] disabled:opacity-60"
             >
               <CheckCircle size={28} className="text-emerald-600" />
               <span className="text-base font-bold text-emerald-700">
@@ -1595,7 +1677,7 @@ export function ApprovedPatientWorkflow({
             <button
               onClick={() => submitDecision("CONSENT_REFUSED")}
               disabled={decisionSubmitting}
-              className="w-full rounded-2xl border-2 border-red-200 bg-red-50 p-5 sm:p-6 flex flex-col items-center gap-2 hover:border-red-400 hover:bg-red-100 transition-colors active:scale-[0.99] disabled:opacity-60"
+              className="w-full rounded-xl border-2 border-red-200 bg-red-50 p-4 flex flex-col items-center gap-1 hover:border-red-400 hover:bg-red-100 transition-colors active:scale-[0.99] disabled:opacity-60"
             >
               <XCircle size={28} className="text-red-600" />
               <span className="text-base font-bold text-red-700">
@@ -1624,7 +1706,7 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
+        className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader
           lang={lang}
@@ -1633,7 +1715,7 @@ export function ApprovedPatientWorkflow({
           step={6}
           totalSteps={7}
         />
-        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
+        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1651,7 +1733,7 @@ export function ApprovedPatientWorkflow({
           </div>
 
           {patientName ? (
-            <Card className="p-5 sm:p-6 border border-slate-200/80 shadow-sm bg-white/95">
+            <Card className="p-4">
               <div
                 className={cls(
                   "flex items-center gap-3",
@@ -1766,14 +1848,14 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
+        className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader
           lang={lang}
           onLangToggle={toggleLang}
           onBack={() => setScreen("decision")}
         />
-        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
+        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
           <div
             className={cls(
               "flex flex-col gap-2",
@@ -1794,7 +1876,7 @@ export function ApprovedPatientWorkflow({
           </div>
 
           {statement ? (
-            <Card className="p-5 sm:p-6 border border-slate-200/80 shadow-sm bg-white/95">
+            <Card className="p-4">
               <p
                 className={cls(
                   "text-sm text-foreground leading-relaxed whitespace-pre-line",
@@ -1870,14 +1952,14 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
+        className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader
           lang={lang}
           onLangToggle={toggleLang}
           onBack={() => setScreen("refusal-ack")}
         />
-        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5">
+        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
           <div
             className={cls(
               "flex flex-col gap-1",
@@ -1943,45 +2025,22 @@ export function ApprovedPatientWorkflow({
 
   /* ───── Confirmation (consent accepted + signed) ───── */
   if (screen === "confirmation" && signResult) {
-    const finalPdf = signResult.finalPdf;
-    const isAwaitingPhysicianSignature =
-      Boolean(finalPdf?.error && /physician signature is mandatory|all required signatures are completed|not ready until all required signatures/i.test(finalPdf.error));
-
-    const finalPdfDisplayStatus = finalPdf?.status === "generated"
-      ? (lang === "ar" ? "?? ????? ??? PDF ???????" : "Final PDF generated")
-      : isAwaitingPhysicianSignature
-        ? (lang === "ar"
-          ? "\u0628\u0627\u0646\u062a\u0638\u0627\u0631 \u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0637\u0628\u064a\u0628 \u0642\u0628\u0644 \u0625\u0635\u062f\u0627\u0631 \u0645\u0644\u0641 PDF \u0627\u0644\u0646\u0647\u0627\u0626\u064a"
-          : "Awaiting physician signature before final PDF generation")
-        : finalPdf?.status === "failed"
-          ? (lang === "ar" ? "\u062a\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0645\u0644\u0641 PDF \u0627\u0644\u0646\u0647\u0627\u0626\u064a" : "Final PDF generation failed")
-          : (lang === "ar" ? "\u0642\u064a\u062f \u0627\u0644\u0625\u0639\u062f\u0627\u062f" : "Preparing final PDF");
-
-    const finalPdfDisplayError = isAwaitingPhysicianSignature
-      ? (lang === "ar"
-        ? "\u0627\u0643\u062a\u0645\u0644 \u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0645\u0631\u064a\u0636\u060c \u0648\u0633\u064a\u062a\u0645 \u062a\u0641\u0639\u064a\u0644 \u0639\u0631\u0636 \u0648\u062a\u0646\u0632\u064a\u0644 \u0645\u0644\u0641 PDF \u0627\u0644\u0646\u0647\u0627\u0626\u064a \u0628\u0639\u062f \u0627\u0633\u062a\u0643\u0645\u0627\u0644 \u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0637\u0628\u064a\u0628."
-        : "The patient signature is complete. View and download will be enabled after the physician signature is completed.")
-      : finalPdf?.error || null;
-
-    const finalPdfRetryLabel = finalPdfRetrying
-      ? (lang === "ar" ? "\u062c\u0627\u0631\u064d \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629..." : "Retrying...")
-      : isAwaitingPhysicianSignature
-        ? (lang === "ar" ? "\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0628\u0639\u062f \u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0637\u0628\u064a\u0628" : "Retry after physician signature")
-        : (lang === "ar" ? "\u0625\u0639\u0627\u062f\u0629 \u0645\u062d\u0627\u0648\u0644\u0629 \u0625\u0646\u0634\u0627\u0621 \u0645\u0644\u0641 PDF \u0627\u0644\u0646\u0647\u0627\u0626\u064a" : "Retry PDF generation if failed");
-
+    const pdfHref = `/api/modules/informed-consents/documents/${encodeURIComponent(
+      signResult.documentId,
+    )}/pdf`;
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
+        className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5 items-center text-center">
+        <div className="flex-1 px-4 py-8 flex flex-col gap-5 max-w-md mx-auto w-full items-center text-center">
           <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-600" />
           </div>
           <div className="flex flex-col gap-2">
             <h1 className="text-xl font-bold text-foreground">
-              {lang === "ar" ? "اكتملت الموافقة" : "Consent completed"}
+              {lang === "ar" ? "تم تسجيل موافقتك" : "Your Consent is Recorded"}
             </h1>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {lang === "ar"
@@ -1990,7 +2049,7 @@ export function ApprovedPatientWorkflow({
             </p>
           </div>
 
-          <Card className="p-5 sm:p-6 w-full flex flex-col gap-4 border border-slate-200/80 shadow-sm bg-white/95">
+          <Card className="p-4 w-full flex flex-col gap-3">
             <div
               className={cls(
                 "flex justify-between items-center gap-3",
@@ -2085,82 +2144,20 @@ export function ApprovedPatientWorkflow({
                 </span>
               </div>
             </div>
-            <div className="h-px bg-border" />
-            <div
-              className={cls(
-                "flex justify-between items-center gap-3",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <span className="text-xs text-muted-foreground">
-                {lang === "ar" ? "حالة ملف PDF النهائي" : "Final PDF status"}
-              </span>
-              <span
-                className={cls(
-                  "text-xs font-semibold",
-                  finalPdf?.status === "generated"
-                    ? "text-emerald-600"
-                    : finalPdf?.status === "failed"
-                      ? "text-amber-600"
-                      : "text-sky-600",
-                )}
-              >
-                {finalPdf?.status === "generated"
-                  ? (lang === "ar" ? "تم إنشاء ملف PDF النهائي" : "Final PDF generated")
-                  : finalPdf?.status === "failed"
-                    ? (lang === "ar" ? "تعذر إنشاء ملف PDF النهائي" : "Final PDF generation failed")
-                    : (lang === "ar" ? "قيد الإعداد" : "Preparing final PDF")}
-              </span>
-            </div>
-            {finalPdfDisplayError ? (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 text-start">
-                {finalPdfDisplayError}
-              </div>
-            ) : null}
           </Card>
 
-          <div className="w-full grid gap-3 sm:grid-cols-2">
-            <a
-              href={finalPdf?.viewUrl || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cls(
-                "w-full py-3 rounded-lg border border-primary text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors",
-                (!finalPdf?.viewUrl || finalPdf.status !== "generated") && "pointer-events-none opacity-50",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <Shield size={15} />
-              {lang === "ar" ? "عرض ملف PDF النهائي" : "View Final PDF"}
-            </a>
-            <a
-              href={finalPdf?.downloadUrl || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cls(
-                "w-full py-3 rounded-lg border border-primary bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-95 transition-colors",
-                (!finalPdf?.downloadUrl || finalPdf.status !== "generated") && "pointer-events-none opacity-50",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <Download size={15} />
-              {lang === "ar" ? "تنزيل ملف PDF" : "Download PDF"}
-            </a>
-          </div>
-          <button
-            type="button"
-            onClick={retryFinalPdf}
-            disabled={finalPdfRetrying}
+          <a
+            href={pdfHref}
+            target="_blank"
+            rel="noopener noreferrer"
             className={cls(
-              "w-full py-3 rounded-lg border border-slate-300 text-slate-700 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors disabled:opacity-60",
+              "w-full py-3 rounded-lg border border-primary text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors",
               lang === "ar" ? "flex-row-reverse" : "flex-row",
             )}
           >
             <Download size={15} />
-            {finalPdfRetrying
-              ? (lang === "ar" ? "جارٍ إعادة المحاولة..." : "Retrying...")
-              : (lang === "ar" ? "إعادة محاولة إنشاء ملف PDF النهائي" : "Retry PDF generation if failed")}
-          </button>
+            {lang === "ar" ? "تنزيل نسخة PDF" : "Download PDF Copy"}
+          </a>
         </div>
       </div>
     );
@@ -2171,10 +2168,10 @@ export function ApprovedPatientWorkflow({
     return (
       <div
         dir={dir}
-        className={cls("min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(75,156,211,0.12),transparent_32%),linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex flex-col text-slate-950", langClass)}
+        className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
         <MobileHeader lang={lang} onLangToggle={toggleLang} />
-        <div className="flex-1 w-full max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-5 items-center text-center">
+        <div className="flex-1 px-4 py-10 flex flex-col gap-5 max-w-md mx-auto w-full items-center text-center">
           <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center">
             <AlertCircle size={40} className="text-orange-600" />
           </div>
@@ -2186,7 +2183,7 @@ export function ApprovedPatientWorkflow({
               ? "تم حفظ قرارك في السجل الطبي مع سلسلة مراجعة قانونية كاملة."
               : "Your decision is stored in the medical record with a full legal audit chain."}
           </p>
-          <Card className="p-5 sm:p-6 w-full border border-slate-200/80 shadow-sm bg-white/95">
+          <Card className="p-4 w-full">
             <div
               className={cls(
                 "flex justify-between items-center gap-3",
@@ -2227,8 +2224,8 @@ export function ApprovedPatientWorkflow({
 
   /* Fallback */
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#edf4fb_100%)] flex items-center justify-center p-4 sm:p-6">
-      <Card className="w-full max-w-[720px] p-6 text-center border border-slate-200/80 shadow-sm bg-white/95">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <Card className="max-w-md p-6 text-center">
         <p className="text-sm text-muted-foreground">
           {lang === "ar" ? "جارٍ التحميل…" : "Loading…"}
         </p>
