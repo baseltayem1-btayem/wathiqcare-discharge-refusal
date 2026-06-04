@@ -12,7 +12,7 @@ import { ConsentBuilder } from './ConsentBuilder';
 import { StatusTracking } from './StatusTracking';
 import type { Patient, Encounter } from './clinical/ClinicalTypes';
 
-type Screen = 'dashboard' | 'search' | 'consent-builder' | 'status';
+type Screen = 'dashboard' | 'search' | 'consent-builder' | 'status' | 'support-settings';
 
 const physicianProfile = {
   name: 'Dr. Khalid Al-Qahtani',
@@ -69,6 +69,119 @@ const navItems = [
   { id: 'consent-builder' as Screen, label: 'Consent Builder', labelAr: 'بناء الموافقة', icon: FileText },
   { id: 'status' as Screen, label: 'Status Tracking', labelAr: 'متابعة الحالة', icon: Activity },
 ];
+
+
+function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
+  const isArabic = lang === 'ar';
+
+  const cards = [
+    {
+      title: isArabic ? 'الإعدادات' : 'Settings',
+      description: isArabic ? 'إدارة إعدادات الحساب والتنبيهات والمزامنة والأرشفة وسجل التدقيق.' : 'Manage account settings, alerts, sync, archiving, and audit log.',
+      button: isArabic ? 'الانتقال للإعدادات' : 'Open Settings',
+      icon: Settings,
+      tone: 'blue',
+    },
+    {
+      title: isArabic ? 'الدعم القانوني' : 'Legal Support',
+      description: isArabic ? 'تواصل مع الفريق القانوني المختص للدعم والمراجعة والتوجيه.' : 'Contact the legal team for support, review, and guidance.',
+      button: isArabic ? 'الدعم القانوني' : 'Legal Support',
+      icon: Shield,
+      tone: 'purple',
+    },
+    {
+      title: isArabic ? 'طلب استشارة قانونية' : 'Request Legal Consultation',
+      description: isArabic ? 'افتح طلبًا قانونيًا رسميًا متعلقًا بالموافقة أو الصياغة أو السياسات.' : 'Open a formal legal request related to consent, wording, or policies.',
+      button: isArabic ? 'طلب استشارة قانونية' : 'Request Consultation',
+      icon: FileText,
+      tone: 'green',
+    },
+    {
+      title: isArabic ? 'فتح تذكرة دعم تقني' : 'Open Technical Support Ticket',
+      description: isArabic ? 'أبلغ عن مشكلة تقنية تتعلق بالنظام أو الإيميل أو الرسائل أو TrakCare أو DocuWare.' : 'Report a technical issue related to the system, email, SMS, TrakCare, or DocuWare.',
+      button: isArabic ? 'فتح تذكرة دعم تقني' : 'Open Ticket',
+      icon: Activity,
+      tone: 'blue',
+    },
+  ] as const;
+
+  const toneClasses = {
+    blue: {
+      icon: 'bg-blue-50 text-[#002B5C]',
+      button: 'bg-[#002B5C] hover:bg-[#003B7A] text-white',
+      border: 'border-blue-100',
+    },
+    purple: {
+      icon: 'bg-purple-50 text-purple-700',
+      button: 'bg-purple-700 hover:bg-purple-800 text-white',
+      border: 'border-purple-100',
+    },
+    green: {
+      icon: 'bg-green-50 text-green-700',
+      button: 'bg-green-700 hover:bg-green-800 text-white',
+      border: 'border-green-100',
+    },
+  } as const;
+
+  return (
+    <div className="flex-1 overflow-auto bg-[#F4F6F9]" dir={isArabic ? 'rtl' : 'ltr'}>
+      <div className="px-8 py-8">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[#1F2937]">
+              {isArabic ? 'الدعم والإعدادات' : 'Support & Settings'}
+            </h1>
+            <p className="mt-2 text-sm text-[#6B7280]">
+              {isArabic
+                ? 'كل ما تحتاجه من دعم وإعدادات في مساحة عمل مبسطة وآمنة.'
+                : 'All support and settings needed in a simple, secure workspace.'}
+            </p>
+          </div>
+          <Shield className="h-12 w-12 text-[#C9A13B]" />
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
+          {cards.map((card) => {
+            const Icon = card.icon;
+            const tone = toneClasses[card.tone];
+
+            return (
+              <div
+                key={card.title}
+                className={`rounded-xl border ${tone.border} bg-white p-6 shadow-sm transition-shadow hover:shadow-md`}
+              >
+                <div className="mb-5 flex items-center justify-center">
+                  <div className={`flex h-20 w-20 items-center justify-center rounded-full ${tone.icon}`}>
+                    <Icon className="h-10 w-10" />
+                  </div>
+                </div>
+
+                <h2 className="text-center text-xl font-bold text-[#002B5C]">{card.title}</h2>
+                <p className="mt-4 min-h-[72px] text-center text-sm leading-6 text-[#4B5563]">
+                  {card.description}
+                </p>
+
+                <button
+                  type="button"
+                  className={`mt-6 w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${tone.button}`}
+                >
+                  {card.button}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-center text-sm text-amber-800">
+          {isArabic
+            ? 'جميع الطلبات والإجراءات تسجل لأغراض التدقيق والامتثال وحماية البيانات.'
+            : 'All requests and actions are logged for audit, compliance, and data protection.'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('dashboard');
@@ -341,6 +454,9 @@ export default function App() {
           )}
           {screen === 'status' && (
             <StatusTracking lang={lang} />
+          )}
+          {screen === 'support-settings' && (
+            <SupportSettingsScreen lang={lang} />
           )}
         </div>
       </div>
