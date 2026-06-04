@@ -68,6 +68,7 @@ const navItems = [
   { id: 'search' as Screen, label: 'Patient Search', labelAr: 'البحث عن مريض', icon: Search },
   { id: 'consent-builder' as Screen, label: 'Consent Builder', labelAr: 'بناء الموافقة', icon: FileText },
   { id: 'status' as Screen, label: 'Status Tracking', labelAr: 'متابعة الحالة', icon: Activity },
+  { id: 'support-settings', label: 'Support & Settings', labelAr: 'الدعم والإعدادات', icon: Settings },
 ];
 
 
@@ -292,32 +293,17 @@ export default function App() {
 
           <div className="border-t border-white/10 mt-3 pt-3">
             <p className="text-xs uppercase tracking-widest px-3 mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>System</p>
-            {[
-              { label: lang === 'en' ? 'Support & Settings' : 'الدعم والإعدادات', icon: Settings, action: 'settings' },
-              { label: lang === 'en' ? 'Sign Out' : 'تسجيل الخروج', icon: LogOut, action: 'logout' },
-            ].map(item => (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => {
-                  if (item.action === 'settings') {
-                    setScreen('support-settings');
-                    return;
-                  }
-
-                  if (item.action === 'logout') {
-                    void handleSignOut();
-                  }
-                }}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-left text-sm transition-colors"
-                style={{ color: 'rgba(255,255,255,0.5)' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => void handleSignOut()}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-left text-sm transition-colors"
+              style={{ color: 'rgba(255,255,255,0.5)' }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}
+            >
+              <LogOut className="w-4 h-4" />
+              {lang === 'en' ? 'Sign Out' : 'تسجيل الخروج'}
+            </button>
           </div>
         </nav>
 
