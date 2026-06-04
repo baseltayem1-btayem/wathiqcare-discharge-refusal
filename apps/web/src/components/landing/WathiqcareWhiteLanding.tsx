@@ -14,7 +14,9 @@ import {
   Archive,
   Languages,
   Network,
-  Hospital,, LogIn } from "lucide-react";
+  Hospital,
+  LogIn,
+} from "lucide-react";
 
 type WathiqcareWhiteLandingProps = {
   lang?: string;
