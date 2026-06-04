@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
+import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
@@ -30,6 +31,8 @@ import {
   collectArabicMojibakeDiagnostics,
   normalizeArabicForPatientFacingText,
 } from "@/lib/server/arabic-mojibake-guard";
+import { finalizeConsentDocument } from "@/lib/server/consent-library-service";
+import { buildFinalConsentPdfPayload } from "@/lib/server/informed-consents-final-pdf-payload";
 import { buildSigningOtpSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
 import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
@@ -93,6 +96,31 @@ type PublicDecisionEventType = "CONSENT_PRESENTED" | "CONSENT_ACCEPTED" | "CONSE
 
 const CONSENT_ACCEPTED_ACTIONS = ["CONSENT_ACCEPTED", "DECISION_ACCEPTED"] as const;
 const CONSENT_REFUSED_ACTIONS = ["CONSENT_REFUSED", "DECISION_REFUSED"] as const;
+
+const SAFE_REFUSAL_LEGAL_TEXT_AR =
+  "\u0623\u0642\u0631 \u0628\u0623\u0646\u0646\u064a \u0623\u0631\u0641\u0636 \u0627\u0644\u062a\u062f\u062e\u0644 \u0627\u0644\u062c\u0631\u0627\u062d\u064a \u0623\u0648 \u0627\u0644\u0625\u062c\u0631\u0627\u0621 \u0627\u0644\u0645\u0642\u062a\u0631\u062d \u0628\u0639\u062f \u0623\u0646 \u0634\u0631\u062d \u0644\u064a \u0627\u0644\u0637\u0628\u064a\u0628 \u062d\u0627\u0644\u062a\u064a \u0627\u0644\u0635\u062d\u064a\u0629\u060c \u0648\u0627\u0644\u062d\u0627\u062c\u0629 \u0627\u0644\u0637\u0628\u064a\u0629 \u0644\u0644\u0625\u062c\u0631\u0627\u0621\u060c \u0648\u0627\u0644\u0645\u062e\u0627\u0637\u0631 \u0648\u0627\u0644\u0645\u0636\u0627\u0639\u0641\u0627\u062a \u0627\u0644\u0645\u062d\u062a\u0645\u0644\u0629\u060c \u0648\u0627\u0644\u0628\u062f\u0627\u0626\u0644 \u0627\u0644\u0639\u0644\u0627\u062c\u064a\u0629\u060c \u0648\u0645\u062e\u0627\u0637\u0631 \u0627\u0644\u0631\u0641\u0636 \u0623\u0648 \u0627\u0644\u062a\u0623\u062c\u064a\u0644. \u0648\u0623\u0642\u0631 \u0628\u0623\u0646\u0647 \u0623\u062a\u064a\u062d\u062a \u0644\u064a \u0627\u0644\u0641\u0631\u0635\u0629 \u0644\u0637\u0631\u062d \u0627\u0644\u0623\u0633\u0626\u0644\u0629 \u0648\u062a\u0645\u062a \u0627\u0644\u0625\u062c\u0627\u0628\u0629 \u0639\u0644\u064a\u0647\u0627 \u0628\u0635\u0648\u0631\u0629 \u0648\u0627\u0636\u062d\u0629 \u0648\u0645\u0641\u0647\u0648\u0645\u0629\u060c \u0648\u0623\u062a\u062d\u0645\u0644 \u0627\u0644\u0646\u062a\u0627\u0626\u062c \u0627\u0644\u0637\u0628\u064a\u0629 \u0627\u0644\u0645\u062d\u062a\u0645\u0644\u0629 \u0627\u0644\u0645\u062a\u0631\u062a\u0628\u0629 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u0631\u0641\u0636.";
+
+const SAFE_REFUSAL_LEGAL_TEXT_EN =
+  "I acknowledge that I refuse the proposed surgical intervention or medical procedure after the physician explained my medical condition, the medical need for the procedure, potential risks and complications, available alternatives, and the risks of refusal or delay. I confirm that I had the opportunity to ask questions and that my questions were answered clearly and understandably, and I accept the potential medical consequences of this refusal.";
+
+const SAFE_PDPL_TEXT_AR =
+  "\u0623\u0648\u0627\u0641\u0642 \u0639\u0644\u0649 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0648\u0645\u0639\u0627\u0644\u062c\u0629 \u0645\u0639\u0644\u0648\u0645\u0627\u062a\u064a \u0627\u0644\u0635\u062d\u064a\u0629 \u0627\u0644\u0634\u062e\u0635\u064a\u0629 \u0628\u0627\u0644\u0642\u062f\u0631 \u0627\u0644\u0644\u0627\u0632\u0645 \u0644\u0623\u063a\u0631\u0627\u0636 \u0627\u0644\u0639\u0644\u0627\u062c \u0648\u0627\u0644\u062a\u0648\u062b\u064a\u0642 \u0627\u0644\u0637\u0628\u064a \u0648\u0627\u0644\u0627\u0644\u062a\u0632\u0627\u0645 \u0628\u0627\u0644\u0623\u0646\u0638\u0645\u0629 \u0648\u0627\u0644\u0644\u0648\u0627\u0626\u062d \u0627\u0644\u0635\u062d\u064a\u0629 \u0627\u0644\u0645\u0639\u0645\u0648\u0644 \u0628\u0647\u0627\u060c \u0648\u0641\u0642\u064b\u0627 \u0644\u0646\u0638\u0627\u0645 \u062d\u0645\u0627\u064a\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0634\u062e\u0635\u064a\u0629 \u0648\u0627\u0644\u0623\u0646\u0638\u0645\u0629 \u0630\u0627\u062a \u0627\u0644\u0639\u0644\u0627\u0642\u0629 \u0641\u064a \u0627\u0644\u0645\u0645\u0644\u0643\u0629 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0629.";
+
+const SAFE_PDPL_TEXT_EN =
+  "I consent to the use and processing of my personal health information as necessary for treatment, medical documentation, healthcare operations, and compliance with applicable Saudi healthcare laws and the Personal Data Protection Law.";
+
+function containsPatientFacingMojibake(value: string | null | undefined): boolean {
+  return typeof value === "string" && /[\u00d8\u00d9\u00db\u00c3\u00c2\u00e2]|\?{4,}/.test(value);
+}
+
+function safeArabicPatientText(value: string | null | undefined, fallback: string): string {
+  const normalized = normalizeArabicText(value);
+  if (!normalized || containsPatientFacingMojibake(normalized)) {
+    return fallback;
+  }
+  return normalized;
+}
+
 const DECISION_EVENT_ACTIONS = [
   "CONSENT_PRESENTED",
   ...CONSENT_ACCEPTED_ACTIONS,
@@ -295,6 +323,13 @@ type PublicSignatureResult = {
   signerName: string;
   signatureMethod: string;
   signedAt: string;
+  finalPdf?: {
+    status: "generated" | "failed" | "pending";
+    viewUrl: string;
+    downloadUrl: string;
+    retryUrl: string;
+    error: string | null;
+  };
   evidence: {
     documentHash: string;
     otpHash: string;
@@ -313,6 +348,83 @@ function getBaseUrl(): string {
     || process.env.APP_BASE_URL?.trim()
     || "https://wathiqcare.online"
   ).replace(/\/$/, "");
+}
+
+function getPublicFinalPdfUrls(token: string) {
+  const basePath = `/api/public/informed-consents/signing/${encodeURIComponent(token)}/final-pdf`;
+  return {
+    viewUrl: `${basePath}?disposition=inline&lang=bilingual&copy=PATIENT_COPY`,
+    downloadUrl: `${basePath}?disposition=attachment&lang=bilingual&copy=PATIENT_COPY`,
+    retryUrl: basePath,
+  };
+}
+
+function publicSigningSystemAuth(tenantId: string): AuthContext {
+  return {
+    sub: "system:public-signing-finalizer",
+    role: "SYSTEM",
+    user_type: "tenant_admin",
+    tenant_id: tenantId,
+  };
+}
+
+export async function ensurePublicFinalConsentPdfState(args: {
+  token: string;
+  request: NextRequest;
+  throwOnFailure?: boolean;
+}): Promise<NonNullable<PublicSignatureResult["finalPdf"]>> {
+  const urls = getPublicFinalPdfUrls(args.token);
+  const context = await getSigningTokenContext(args.token);
+
+  try {
+    const current = await prisma().consentDocument.findFirst({
+      where: { id: context.documentId, tenantId: context.tenantId },
+      select: { status: true },
+    });
+
+    if (!current) {
+      throw new ApiError(404, "Consent document not found");
+    }
+
+    if (current.status === ConsentDocumentStatus.SIGNED) {
+      await finalizeConsentDocument(publicSigningSystemAuth(context.tenantId), context.documentId, {}, args.request);
+    } else if (current.status !== ConsentDocumentStatus.FINALIZED) {
+      const pendingState = {
+        status: "pending" as const,
+        error: "Final PDF is not ready until all required signatures are completed.",
+        ...urls,
+      };
+      if (args.throwOnFailure) {
+        throw new ApiError(409, pendingState.error);
+      }
+      return pendingState;
+    }
+
+    await buildFinalConsentPdfPayload({
+      documentId: context.documentId,
+      tenantId: context.tenantId,
+      requestOrigin: args.request.nextUrl.origin,
+    });
+
+    return {
+      status: "generated",
+      error: null,
+      ...urls,
+    };
+  } catch (error) {
+    if (args.throwOnFailure && error instanceof ApiError) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : "Final PDF generation is currently unavailable.";
+    if (args.throwOnFailure) {
+      throw new ApiError(409, message);
+    }
+    return {
+      status: "failed",
+      error: message,
+      ...urls,
+    };
+  }
 }
 
 function normalizePhoneNumber(value: string): string {
@@ -403,7 +515,7 @@ function getNullableString(value: unknown): string | null {
 }
 
 function getFiniteNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "number" && Number.isFinite(value)) return repairArabicMojibake(value);
   if (typeof value === "string" && value.trim()) {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
@@ -476,6 +588,26 @@ function computeDocumentHash(input: Record<string, unknown>): string {
 
 function normalizeDecisionStatus(value: unknown): PublicDecisionStatus {
   return normalizePublicDecisionStatus(value);
+}
+
+
+function repairArabicMojibake(value: string): string {
+  if (!value) return value;
+
+  const looksCorrupted =
+    value.includes("?") ||
+    value.includes("?") ||
+    value.includes("?") ||
+    value.includes("?") ||
+    value.includes("?");
+
+  if (!looksCorrupted) return value;
+
+  try {
+    return Buffer.from(value, "latin1").toString("utf8");
+  } catch {
+    return value;
+  }
 }
 
 function normalizeArabicText(value: string | null | undefined): string {
@@ -1587,10 +1719,19 @@ async function buildPublicSigningDocumentPayload(context: SigningTokenContext): 
   const metadata = asRecord(doc.metadata) || {};
   const wordingSnapshot = asRecord(metadata.wordingSnapshot) || {};
   const fixedClauses = asRecord(wordingSnapshot.fixedClauses) || {};
-  const legalTextAr = normalizeArabicText(fixedClauses.legalTextAr as string | null | undefined);
-  const legalTextEn = getString(fixedClauses.legalTextEn);
-  const pdplTextAr = normalizeArabicText(fixedClauses.pdplTextAr as string | null | undefined);
-  const pdplTextEn = getString(fixedClauses.pdplTextEn);
+  const isRefusalDocument =
+    decision.status === "CONSENT_REFUSED" ||
+    /refusal/i.test(doc.template.titleEn || "") ||
+    String(doc.template.titleAr || "").includes("\u0631\u0641\u0636");
+
+  const legalTextAr = isRefusalDocument
+    ? SAFE_REFUSAL_LEGAL_TEXT_AR
+    : safeArabicPatientText(fixedClauses.legalTextAr as string | null | undefined, SAFE_REFUSAL_LEGAL_TEXT_AR);
+  const legalTextEn = isRefusalDocument
+    ? SAFE_REFUSAL_LEGAL_TEXT_EN
+    : getString(fixedClauses.legalTextEn);
+  const pdplTextAr = safeArabicPatientText(fixedClauses.pdplTextAr as string | null | undefined, SAFE_PDPL_TEXT_AR);
+  const pdplTextEn = getString(fixedClauses.pdplTextEn) || SAFE_PDPL_TEXT_EN;
   const signatureCaptured = decision.status === "CONSENT_REFUSED"
     ? decision.refusalSignatureCaptured
     : doc.signatures.some((signature) => signature.role === normalizeSignerRole(context.signerRole));
@@ -2325,6 +2466,10 @@ export async function submitPublicSigningSignature(args: {
         patientAcknowledged: education.patientAcknowledged,
         decisionStatus: decision.status,
       },
+      finalPdf: await ensurePublicFinalConsentPdfState({
+        token: args.token,
+        request: args.request,
+      }),
     };
   }
 
@@ -2444,6 +2589,17 @@ export async function submitPublicSigningSignature(args: {
     },
   }).catch(() => undefined);
 
+  const finalPdf = signerCompletesWorkflow
+    ? await ensurePublicFinalConsentPdfState({
+        token: args.token,
+        request: args.request,
+      })
+    : {
+        status: "pending" as const,
+        error: "Final PDF will be available after the patient-side signing journey is complete.",
+        ...getPublicFinalPdfUrls(args.token),
+      };
+
   return {
     documentId: context.documentId,
     status: nextStatus,
@@ -2452,6 +2608,7 @@ export async function submitPublicSigningSignature(args: {
     signerName,
     signatureMethod: signature.signatureMethod,
     signedAt: signature.signedAt.toISOString(),
+    finalPdf,
     evidence: {
       documentHash,
       otpHash: latestRequestedChallenge.otpHash,
