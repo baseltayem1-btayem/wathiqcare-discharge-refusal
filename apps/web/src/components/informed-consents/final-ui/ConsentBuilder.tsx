@@ -85,7 +85,15 @@ export function ConsentBuilder({ lang }: Props) {
   const currentIndex = steps.findIndex(s => s.key === currentStep);
 
   const markStepComplete = (step: ConsentStep, itemIds: string[]) => {
-    setValidation(prev => prev.map(v => itemIds.includes(v.id) ? { ...v, complete: true } : v));
+    const completedIds = new Set(itemIds);
+
+    if (step === 'anesthesia' && completedIds.has('anesthesia-not-applicable')) {
+      completedIds.add('v6');
+      completedIds.add('v7');
+      completedIds.add('v8');
+    }
+
+    setValidation(prev => prev.map(v => completedIds.has(v.id) ? { ...v, complete: true } : v));
     setCompletedSteps(prev => new Set([...prev, step]));
   };
 
