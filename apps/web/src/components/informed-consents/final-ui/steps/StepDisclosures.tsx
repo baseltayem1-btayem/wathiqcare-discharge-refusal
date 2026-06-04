@@ -5,6 +5,44 @@ import { ChevronRight, ChevronLeft, Plus, FileText, Eye, Archive, ClipboardCheck
 import { ClinicalBadge } from '../clinical/ClinicalBadge';
 import type { ConsentStep } from '../clinical/ClinicalTypes';
 
+const SMART_DISCLOSURE_TEMPLATES: Record<string, { en: string; ar: string }> = {
+  procedure: {
+    en: "The proposed procedure has been explained in clear, patient-friendly language, including what will be done, why it is recommended, the expected benefits, and the main steps involved. The patient was given the opportunity to ask questions before making a decision.",
+    ar: "\u062a\u0645 \u0634\u0631\u062d \u0627\u0644\u0625\u062c\u0631\u0627\u0621 \u0627\u0644\u0645\u0642\u062a\u0631\u062d \u0644\u0644\u0645\u0631\u064a\u0636 \u0628\u0644\u063a\u0629 \u0648\u0627\u0636\u062d\u0629 \u0648\u0645\u0628\u0633\u0637\u0629\u060c \u0628\u0645\u0627 \u0641\u064a \u0630\u0644\u0643 \u0637\u0628\u064a\u0639\u0629 \u0627\u0644\u0625\u062c\u0631\u0627\u0621\u060c \u0648\u0633\u0628\u0628 \u0627\u0644\u062a\u0648\u0635\u064a\u0629 \u0628\u0647\u060c \u0648\u0627\u0644\u0641\u0648\u0627\u0626\u062f \u0627\u0644\u0645\u062a\u0648\u0642\u0639\u0629\u060c \u0648\u0627\u0644\u062e\u0637\u0648\u0627\u062a \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629 \u0627\u0644\u0645\u0631\u062a\u0628\u0637\u0629 \u0628\u0647."
+  },
+  risks: {
+    en: "Patient-specific risks have been discussed, including risks related to medical history, current medications, allergies, previous procedures, and other relevant clinical factors. These factors may affect the expected outcome, recovery, or treatment plan.",
+    ar: "\u062a\u0645\u062a \u0645\u0646\u0627\u0642\u0634\u0629 \u0627\u0644\u0645\u062e\u0627\u0637\u0631 \u0627\u0644\u062e\u0627\u0635\u0629 \u0628\u062d\u0627\u0644\u0629 \u0627\u0644\u0645\u0631\u064a\u0636\u060c \u0628\u0645\u0627 \u0641\u064a \u0630\u0644\u0643 \u0627\u0644\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0645\u0631\u0636\u064a\u060c \u0648\u0627\u0644\u0623\u062f\u0648\u064a\u0629 \u0627\u0644\u062d\u0627\u0644\u064a\u0629\u060c \u0648\u0627\u0644\u062d\u0633\u0627\u0633\u064a\u0629\u060c \u0648\u0627\u0644\u0625\u062c\u0631\u0627\u0621\u0627\u062a \u0627\u0644\u0633\u0627\u0628\u0642\u0629\u060c \u0648\u0623\u064a \u0639\u0648\u0627\u0645\u0644 \u0633\u0631\u064a\u0631\u064a\u0629 \u0623\u062e\u0631\u0649 \u0630\u0627\u062a \u0635\u0644\u0629."
+  },
+  alternatives: {
+    en: "Reasonable alternatives were discussed, including observation, medication, non-surgical management, referral, or other clinically appropriate options. The potential benefits and limitations of each option were explained.",
+    ar: "\u062a\u0645\u062a \u0645\u0646\u0627\u0642\u0634\u0629 \u0627\u0644\u0628\u062f\u0627\u0626\u0644 \u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0629\u060c \u0628\u0645\u0627 \u0641\u064a \u0630\u0644\u0643 \u0627\u0644\u0645\u062a\u0627\u0628\u0639\u0629 \u062f\u0648\u0646 \u062a\u062f\u062e\u0644\u060c \u0623\u0648 \u0627\u0644\u0639\u0644\u0627\u062c \u0627\u0644\u062f\u0648\u0627\u0626\u064a\u060c \u0623\u0648 \u0627\u0644\u062a\u062f\u0628\u064a\u0631 \u063a\u064a\u0631 \u0627\u0644\u062c\u0631\u0627\u062d\u064a\u060c \u0623\u0648 \u0623\u064a \u062e\u064a\u0627\u0631\u0627\u062a \u0623\u062e\u0631\u0649 \u0645\u0646\u0627\u0633\u0628\u0629 \u0633\u0631\u064a\u0631\u064a\u064b\u0627."
+  },
+  refusal: {
+    en: "The risks of refusing or delaying the recommended procedure were explained. These may include persistence or worsening of symptoms, progression of the condition, urgent care needs, complications, or reduced effectiveness of later treatment.",
+    ar: "\u062a\u0645 \u0634\u0631\u062d \u0645\u062e\u0627\u0637\u0631 \u0631\u0641\u0636 \u0623\u0648 \u062a\u0623\u062c\u064a\u0644 \u0627\u0644\u0625\u062c\u0631\u0627\u0621 \u0627\u0644\u0645\u0648\u0635\u0649 \u0628\u0647\u060c \u0648\u0642\u062f \u062a\u0634\u0645\u0644 \u0627\u0633\u062a\u0645\u0631\u0627\u0631 \u0627\u0644\u0623\u0639\u0631\u0627\u0636 \u0623\u0648 \u062a\u0641\u0627\u0642\u0645\u0647\u0627\u060c \u0623\u0648 \u062a\u0637\u0648\u0631 \u0627\u0644\u062d\u0627\u0644\u0629\u060c \u0623\u0648 \u0627\u0644\u062d\u0627\u062c\u0629 \u0625\u0644\u0649 \u0631\u0639\u0627\u064a\u0629 \u0639\u0627\u062c\u0644\u0629\u060c \u0623\u0648 \u062d\u062f\u0648\u062b \u0645\u0636\u0627\u0639\u0641\u0627\u062a."
+  },
+  default: {
+    en: "This disclosure was reviewed with the patient in plain language. The patient was informed of the relevant benefits, risks, alternatives, and possible consequences of refusal or delay, and was given the opportunity to ask questions.",
+    ar: "\u062a\u0645\u062a \u0645\u0631\u0627\u062c\u0639\u0629 \u0647\u0630\u0627 \u0627\u0644\u0625\u0641\u0635\u0627\u062d \u0645\u0639 \u0627\u0644\u0645\u0631\u064a\u0636 \u0628\u0644\u063a\u0629 \u0648\u0627\u0636\u062d\u0629. \u0648\u062a\u0645 \u0625\u0628\u0644\u0627\u063a \u0627\u0644\u0645\u0631\u064a\u0636 \u0628\u0627\u0644\u0641\u0648\u0627\u0626\u062f \u0648\u0627\u0644\u0645\u062e\u0627\u0637\u0631 \u0648\u0627\u0644\u0628\u062f\u0627\u0626\u0644 \u0630\u0627\u062a \u0627\u0644\u0635\u0644\u0629\u060c \u0648\u0627\u0644\u0622\u062b\u0627\u0631 \u0627\u0644\u0645\u062d\u062a\u0645\u0644\u0629 \u0644\u0644\u0631\u0641\u0636 \u0623\u0648 \u0627\u0644\u062a\u0623\u062c\u064a\u0644."
+  }
+};
+
+const resolveSmartDisclosureTemplate = (fieldId: string, fieldLabel?: string) => {
+  const key = `${fieldId} ${fieldLabel || ""}`.toLowerCase();
+
+  if (key.includes("risk")) return SMART_DISCLOSURE_TEMPLATES.risks;
+  if (key.includes("alternative")) return SMART_DISCLOSURE_TEMPLATES.alternatives;
+  if (key.includes("refusal")) return SMART_DISCLOSURE_TEMPLATES.refusal;
+  if (key.includes("procedure") || key.includes("description") || key.includes("reason") || key.includes("indication")) {
+    return SMART_DISCLOSURE_TEMPLATES.procedure;
+  }
+
+  return SMART_DISCLOSURE_TEMPLATES.default;
+};
+
+
+
 interface Props {
   lang: 'en' | 'ar';
   onNext: () => void;
@@ -95,6 +133,19 @@ export function StepDisclosures({ lang, onNext, onPrev, onComplete }: Props) {
 
   const toggleNote = (fieldId: string) => {
     setVisibleNotes(prev => ({ ...prev, [fieldId]: !prev[fieldId] }));
+  };
+
+  const applyStandardTemplate = (fieldId: string, fieldLabel?: string) => {
+    const template = resolveSmartDisclosureTemplate(fieldId, fieldLabel);
+
+    setValues(prev => ({
+      ...prev,
+      [fieldId]: {
+        ...(prev[fieldId] || {}),
+        en: template.en,
+        ar: template.ar,
+      },
+    }));
   };
 
   const handleComplete = () => {
@@ -191,9 +242,13 @@ export function StepDisclosures({ lang, onNext, onPrev, onComplete }: Props) {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-medium text-[#6B7280] uppercase tracking-wide">العربية (RTL)</label>
-                  <button className="text-xs text-[#4B9CD3] hover:underline flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => applyStandardTemplate(field.id, field.label)}
+                    className="text-xs text-[#4B9CD3] hover:underline flex items-center gap-1"
+                  >
                     <Plus className="w-3 h-3" />
-                    نسخ من القالب
+                    {lang === 'en' ? 'Copy from template' : '\u0646\u0633\u062e \u0645\u0646 \u0627\u0644\u0642\u0627\u0644\u0628'}
                   </button>
                 </div>
                 <textarea
@@ -225,7 +280,15 @@ export function StepDisclosures({ lang, onNext, onPrev, onComplete }: Props) {
               {/* Smart chips */}
               <div className="flex gap-1.5 flex-wrap">
                 {['Standard template', 'Add patient note', 'Copy from previous', 'Mark as discussed verbally'].map(chip => (
-                  <button key={chip} className="text-xs border border-[#D8DCE3] rounded-full px-2.5 py-0.5 text-[#6B7280] hover:border-[#002B5C] hover:text-[#002B5C] hover:bg-blue-50 transition-colors">
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => {
+                      if (chip === 'Standard template') applyStandardTemplate(field.id, field.label);
+                      if (chip === 'Add patient note') toggleNote(field.id);
+                    }}
+                    className="text-xs border border-[#D8DCE3] rounded-full px-2.5 py-0.5 text-[#6B7280] hover:border-[#002B5C] hover:text-[#002B5C] hover:bg-blue-50 transition-colors"
+                  >
                     {chip}
                   </button>
                 ))}
