@@ -14,7 +14,31 @@ interface Props {
 }
 
 export function StatusTracking({ lang }: Props) {
+  const [statusActionMessage, setStatusActionMessage] = useState<string | null>(null);
+  const [revokedConsentIds, setRevokedConsentIds] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState(consentRecords[0]);
+
+  function handleResendConsentLink(consentId: string) {
+    if (revokedConsentIds.has(consentId)) {
+      setStatusActionMessage('Cannot resend a revoked consent link.');
+      return;
+    }
+
+    setStatusActionMessage(`Secure consent link resent for ${consentId}.`);
+  }
+
+  function handleRevokeConsent(consentId: string) {
+    const confirmed = window.confirm(`Revoke consent link for ${consentId}? This action will invalidate the active signing link.`);
+    if (!confirmed) return;
+
+    setRevokedConsentIds((current) => {
+      const next = new Set(current);
+      next.add(consentId);
+      return next;
+    });
+
+    setStatusActionMessage(`Consent link revoked for ${consentId}.`);
+  }
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#F4F6F9]">
