@@ -9,7 +9,7 @@ interface Props {
   lang: 'en' | 'ar';
   onNext: () => void;
   onPrev: () => void;
-  onComplete: (step: ConsentStep, ids: string[]) => void;
+  onComplete: (step: ConsentStep, ids: string[], payload?: Record<string, unknown>) => void;
 }
 
 type DisclosureField = {
@@ -90,9 +90,27 @@ export function StepDisclosures({ lang, onNext, onPrev, onComplete }: Props) {
     Object.fromEntries(fields.map(f => [f.id, { en: f.defaultEn, ar: f.defaultAr }]))
   );
   const [showAr, setShowAr] = useState(false);
+  const [visibleNotes, setVisibleNotes] = useState<Record<string, boolean>>({});
+  const [notes, setNotes] = useState<Record<string, string>>({});
+
+  const toggleNote = (fieldId: string) => {
+    setVisibleNotes(prev => ({ ...prev, [fieldId]: !prev[fieldId] }));
+  };
 
   const handleComplete = () => {
-    onComplete('disclosures', ['v9', 'v10', 'v11', 'v12']);
+    const disclosurePayload = Object.fromEntries(
+      Object.entries(values).map(([fieldId, value]) => [
+        fieldId,
+        {
+          ...value,
+          note: notes[fieldId] || '',
+        },
+      ]),
+    );
+
+    onComplete('disclosures', ['v9', 'v10', 'v11', 'v12'], {
+      disclosures: disclosurePayload,
+    });
     onNext();
   };
 
@@ -149,9 +167,15 @@ export function StepDisclosures({ lang, onNext, onPrev, onComplete }: Props) {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-medium text-[#6B7280] uppercase tracking-wide">English (LTR)</label>
-                  <button className="text-xs text-[#4B9CD3] hover:underline flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleNote(field.id)}
+                    className="text-xs text-[#4B9CD3] hover:underline flex items-center gap-1"
+                  >
                     <Plus className="w-3 h-3" />
-                    {lang === 'en' ? 'Add note' : 'إضافة ملاحظة'}
+                    {visibleNotes[field.id]
+                      ? (lang === 'en' ? 'Hide note' : '\u0625\u062e\u0641\u0627\u0621 \u0627\u0644\u0645\u0644\u0627\u062d\u0638\u0629')
+                      : (lang === 'en' ? 'Add note' : '\u0625\u0636\u0627\u0641\u0629 \u0645\u0644\u0627\u062d\u0638\u0629')}
                   </button>
                 </div>
                 <textarea
@@ -181,6 +205,22 @@ export function StepDisclosures({ lang, onNext, onPrev, onComplete }: Props) {
                   className="w-full border border-[#D8DCE3] rounded bg-[#F8F9FB] px-3 py-2 text-sm text-[#2F2F2F] focus:outline-none focus:ring-2 focus:ring-[#4B9CD3] resize-none text-right"
                 />
               </div>
+
+              {visibleNotes[field.id] && (
+                <div>
+                  <label className="text-xs font-medium text-[#6B7280] uppercase tracking-wide block mb-1.5">
+                    {lang === 'en' ? 'Internal Note' : '\u0645\u0644\u0627\u062d\u0638\u0629 \u062f\u0627\u062e\u0644\u064a\u0629'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={notes[field.id] || ''}
+                    onChange={e => setNotes(prev => ({ ...prev, [field.id]: e.target.value }))}
+                    placeholder={lang === 'en' ? 'Add internal physician note for this disclosure...' : '\u0623\u0636\u0641 \u0645\u0644\u0627\u062d\u0638\u0629 \u062f\u0627\u062e\u0644\u064a\u0629 \u0644\u0644\u0637\u0628\u064a\u0628 \u062d\u0648\u0644 \u0647\u0630\u0627 \u0627\u0644\u0625\u0641\u0635\u0627\u062d...'}
+                    dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                    className={`w-full border border-[#D8DCE3] rounded bg-white px-3 py-2 text-sm text-[#2F2F2F] focus:outline-none focus:ring-2 focus:ring-[#4B9CD3] resize-none ${lang === 'ar' ? 'text-right' : ''}`}
+                  />
+                </div>
+              )}
 
               {/* Smart chips */}
               <div className="flex gap-1.5 flex-wrap">

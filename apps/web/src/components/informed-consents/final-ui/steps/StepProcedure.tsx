@@ -9,7 +9,7 @@ interface Props {
   lang: 'en' | 'ar';
   onNext: () => void;
   onPrev: () => void;
-  onComplete: (step: ConsentStep, ids: string[]) => void;
+  onComplete: (step: ConsentStep, ids: string[], payload?: Record<string, unknown>) => void;
 }
 
 const procedures = [
@@ -45,7 +45,21 @@ export function StepProcedure({ lang, onNext, onPrev, onComplete }: Props) {
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
   const handleContinue = () => {
-    onComplete('procedure', ['v3', 'v4', 'v5']);
+    onComplete('procedure', ['v3', 'v4', 'v5'], {
+      procedure: {
+        id: selectedProc.id,
+        code: selectedProc.code,
+        name: selectedProc.name,
+        nameAr: selectedProc.nameAr,
+        category: selectedProc.category,
+        complexity: selectedProc.complexity,
+        requiresAnesthesia: selectedProc.requiresAnesthesia,
+        duration: selectedProc.duration,
+        description: selectedProc.description,
+        descriptionAr: selectedProc.descriptionAr,
+        activeConsents,
+      },
+    });
     onNext();
   };
 
