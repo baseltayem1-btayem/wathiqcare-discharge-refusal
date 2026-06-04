@@ -81,6 +81,15 @@ type BuilderState = {
 const defaultPatient = mockPatients[0];
 const defaultEncounter = mockEncounters.find((encounter) => encounter.status === 'active') || mockEncounters[0];
 
+const pilotConsentCase = {
+  id: 'a4173dc9-5e40-4204-9b2c-4712abb6c7fa',
+  caseNumber: 'ENC-2024-1847',
+  medicalRecordNo: 'MRN-2024-0847',
+  patientName: 'Mohammed Ibrahim Al-Rashidi',
+  mobile: '+966 50 234 5678',
+  email: 'm.alrashidi@email.com',
+} as const;
+
 const defaultPatientRecord = defaultPatient as unknown as Record<string, unknown>;
 const defaultEncounterRecord = defaultEncounter as unknown as Record<string, unknown>;
 
@@ -88,8 +97,8 @@ export function ConsentBuilder({ lang }: Props) {
   const [currentStep, setCurrentStep] = useState<ConsentStep>('patient');
   const [validation, setValidation] = useState<ValidationItem[]>(defaultValidation);
   const [completedSteps, setCompletedSteps] = useState<Set<ConsentStep>>(new Set<ConsentStep>());
-  const [patientMobile, setPatientMobile] = useState('+966 50 234 5678');
-  const [patientEmail, setPatientEmail] = useState('m.alrashidi@email.com');
+  const [patientMobile, setPatientMobile] = useState(pilotConsentCase.mobile);
+  const [patientEmail, setPatientEmail] = useState(pilotConsentCase.email);
   const [builderState, setBuilderState] = useState<BuilderState>({
     patient: {
       name: String(defaultPatientRecord.name || defaultPatientRecord.fullName || defaultPatientRecord.patientName || 'Selected patient'),
@@ -210,10 +219,10 @@ export function ConsentBuilder({ lang }: Props) {
           body: JSON.stringify({
             patientId: defaultPatient.mrn,
             patientMrn: defaultPatient.mrn,
-            patientCaseId: 'a4173dc9-5e40-4204-9b2c-4712abb6c7fa',
+            patientCaseId: pilotConsentCase.id,
             encounterId: defaultEncounter.id,
             encounterNumber: defaultEncounter.id,
-            encounterCaseNumber: 'ENC-2024-1847',
+            encounterCaseNumber: pilotConsentCase.caseNumber,
             encounterDepartment: defaultEncounter.department,
             encounterPhysician: defaultEncounter.physician,
             encounterDiagnosis: 'Symptomatic cholelithiasis',
