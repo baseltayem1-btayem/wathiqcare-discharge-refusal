@@ -76,6 +76,7 @@ const navItems = [
 
 function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
   const isArabic = lang === 'ar';
+  const medicalLicenseStatus = getMedicalLicenseStatus(physicianProfile.licenseExpiryDate);
   const [supportRequestModal, setSupportRequestModal] = useState<null | 'settings' | 'technical-ticket' | 'legal-consultation' | 'medical-communication'>(null);
   const [platformSettings, setPlatformSettings] = useState(() => ({
     emailNotifications: true,
@@ -836,7 +837,7 @@ export default function App() {
               <div className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.5)' }}>{physicianProfile.specialty}</div>
               <div className="mt-1 space-y-0.5 text-[10px] leading-tight">
                 <div style={{ color: 'rgba(255,255,255,0.45)' }}>License No: {physicianProfile.licenseNumber}</div>
-                <div className={licenseStatus === 'expired' ? 'text-red-300' : licenseStatus === 'expiringSoon' ? 'text-amber-300' : 'text-emerald-300'}>
+                <div className={licenseStatus === 'expired' ? 'text-red-300' : licenseStatus === 'expiring-soon' ? 'text-amber-300' : 'text-emerald-300'}>
                   License Expiry: {physicianProfile.licenseExpiryDate}
                 </div>
               </div>
