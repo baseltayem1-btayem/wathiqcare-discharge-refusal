@@ -60,6 +60,8 @@ export function StatusTracking({ lang }: Props) {
     ...selectedFixtureAuditTrail,
   ];
 
+  const selectedRecentAuditActions = auditActionsByConsentId[selected.id] || [];
+
   function handleResendConsentLink(consentId: string) {
     if (revokedConsentIds.has(consentId)) {
       setStatusActionMessage(
@@ -78,7 +80,7 @@ export function StatusTracking({ lang }: Props) {
 
     if (!confirmed) return;
 
-    recordStatusAction(consentId, `Consent link resent for ${consentId}`);
+    recordStatusAction(consentId, `RESEND: Consent link resent for ${consentId}`);
 
     setStatusActionMessage(
       lang === 'ar'
@@ -108,7 +110,7 @@ export function StatusTracking({ lang }: Props) {
       return next;
     });
 
-    recordStatusAction(consentId, `Consent link revoked for ${consentId}`);
+    recordStatusAction(consentId, `REVOKE: Consent link revoked for ${consentId}`);
 
     setStatusActionMessage(
       lang === 'ar'
@@ -224,6 +226,24 @@ export function StatusTracking({ lang }: Props) {
                 <ClinicalBadge variant="info" label="Immutable" />
               </div>
               <div className="divide-y divide-[#EEF1F5]">
+                {selectedRecentAuditActions.length > 0 ? (
+                  <div className="border-b border-blue-100 bg-blue-50 px-5 py-3">
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#002B5C]">
+                      {lang === 'en' ? 'Recent Actions for This Consent' : '\u0627\u0644\u0625\u062c\u0631\u0627\u0621\u0627\u062a \u0627\u0644\u0623\u062e\u064a\u0631\u0629 \u0644\u0647\u0630\u0647 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629'}
+                    </div>
+                    <div className="space-y-1">
+                      {selectedRecentAuditActions.map((item, index) => (
+                        <div key={`${selected.id}-recent-${item.time}-${index}`} className="grid grid-cols-4 gap-4 rounded bg-white px-3 py-2 text-xs">
+                          <span className="font-mono text-[#6B7280]">{item.time}</span>
+                          <span className="font-semibold text-[#002B5C]">{item.event}</span>
+                          <span className="text-[#6B7280]">{item.actor}</span>
+                          <span className="font-mono text-[#6B7280]">{item.ip}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 {selectedAuditTrail.map((item, index) => (
                   <div key={`${selected.id}-${item.time}-${index}`} className="grid grid-cols-4 gap-4 px-5 py-3 text-xs">
                     <span className="font-mono text-[#6B7280]">{item.time}</span>
