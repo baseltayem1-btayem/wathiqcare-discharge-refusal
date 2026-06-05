@@ -76,22 +76,28 @@ const navItems = [
 
 function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
   const isArabic = lang === 'ar';
-  const [supportRequestModal, setSupportRequestModal] = useState<null | 'technical-ticket' | 'legal-consultation' | 'medical-communication'>(null);
+  const [supportRequestModal, setSupportRequestModal] = useState<null | 'settings' | 'technical-ticket' | 'legal-consultation' | 'medical-communication'>(null);
+  const [platformSettings, setPlatformSettings] = useState(() => ({
+    emailNotifications: true,
+    smsNotifications: true,
+    whatsappCommunication: true,
+    inAppAlerts: true,
+    trakCareSync: true,
+    docuWareArchive: true,
+    auditLogEnabled: true,
+    showRequestContext: true,
+    sessionTimeoutMinutes: '30',
+    defaultLanguage: lang,
+  }));
 
-  const openMedicalCommunicationWhatsApp = () => {
-    const message = [
-      'WathiqCare Medical Communication',
-      `User: ${physicianProfile.name}`,
-      `Specialty: ${physicianProfile.specialty}`,
-      'Page: Support & Settings',
-      `Time: ${new Date().toISOString()}`,
-      '',
-      'Please provide medical communication support regarding the consent workflow.'
-    ].join('\n');
-
-    const url = `https://wa.me/966543587772?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+  const updatePlatformSetting = (key: keyof typeof platformSettings, value: boolean | string) => {
+    setPlatformSettings((current) => ({
+      ...current,
+      [key]: value,
+    }));
   };
+
+
   const [supportRequestContext] = useState(() => ({
     user: physicianProfile.name,
     specialty: physicianProfile.specialty,
@@ -104,7 +110,14 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
     sessionReference: `WTC-${Date.now().toString(36).toUpperCase()}`,
   }));
 
-  const medicalCommunicationWhatsAppNumber = process.env.NEXT_PUBLIC_MEDICAL_COMMUNICATION_WHATSAPP_NUMBER || '';
+  const medicalCommunicationWhatsAppRoutes: Record<string, string> = {
+    'Attending Physician': process.env.NEXT_PUBLIC_WHATSAPP_ATTENDING_PHYSICIAN || '',
+    Anesthesiologist: process.env.NEXT_PUBLIC_WHATSAPP_ANESTHESIOLOGIST || '',
+    'Nursing Team': process.env.NEXT_PUBLIC_WHATSAPP_NURSING_TEAM || '',
+    'Medical Complaints': process.env.NEXT_PUBLIC_WHATSAPP_MEDICAL_COMPLAINTS || '',
+    'Patient Experience': process.env.NEXT_PUBLIC_WHATSAPP_PATIENT_EXPERIENCE || '',
+    Other: process.env.NEXT_PUBLIC_WHATSAPP_MEDICAL_COMMUNICATION_GENERAL || '',
+  };
 
   const cards = [
     {
@@ -113,7 +126,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
       button: isArabic ? '\u0627\u0644\u0627\u0646\u062a\u0642\u0627\u0644 \u0644\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a' : 'Open Settings',
       icon: Settings,
       tone: 'blue',
-      modal: null,
+      modal: 'settings',
     },
     {
       title: isArabic ? '\u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0627\u0644\u0637\u0628\u064a' : 'Medical Communication',
@@ -224,6 +237,154 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
           })}
         </div>
 
+        {supportRequestModal === 'settings' ? (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-4xl rounded-xl border border-[#D8DCE3] bg-white shadow-xl" dir={isArabic ? 'rtl' : 'ltr'}>
+              <div className="flex items-start justify-between border-b border-[#EEF1F5] px-6 py-4">
+                <div>
+                  <h2 className="text-xl font-bold text-[#002B5C]">
+                    {isArabic ? '\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a' : 'Settings'}
+                  </h2>
+                  <p className="mt-1 text-sm text-[#6B7280]">
+                    {isArabic ? '\u0625\u062f\u0627\u0631\u0629 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u062a\u0646\u0628\u064a\u0647\u0627\u062a\u060c \u0627\u0644\u0645\u0632\u0627\u0645\u0646\u0629\u060c \u0627\u0644\u0623\u0631\u0634\u0641\u0629\u060c \u0648\u0633\u062c\u0644 \u0627\u0644\u062a\u062f\u0642\u064a\u0642.' : 'Manage alerts, sync, archiving, and audit log settings.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSupportRequestModal(null)}
+                  className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]"
+                >
+                  ?
+                </button>
+              </div>
+
+              <div className="max-h-[75vh] overflow-auto px-6 py-5">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                  <section className="rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
+                    <h3 className="font-bold text-[#002B5C]">
+                      {isArabic ? '\u0627\u0644\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0648\u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a' : 'Alerts & Notifications'}
+                    </h3>
+                    <div className="mt-4 space-y-3 text-sm">
+                      {[
+                        ['emailNotifications', isArabic ? '\u0625\u0634\u0639\u0627\u0631\u0627\u062a \u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a' : 'Email notifications'],
+                        ['smsNotifications', isArabic ? '\u0625\u0634\u0639\u0627\u0631\u0627\u062a SMS / OTP' : 'SMS / OTP notifications'],
+                        ['whatsappCommunication', isArabic ? '\u062a\u0648\u0627\u0635\u0644 \u0648\u0627\u062a\u0633\u0627\u0628' : 'WhatsApp communication'],
+                        ['inAppAlerts', isArabic ? '\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u0646\u0635\u0629' : 'In-app alerts'],
+                      ].map(([key, label]) => (
+                        <label key={key} className="flex items-center justify-between gap-3 rounded bg-white px-3 py-2">
+                          <span>{label}</span>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(platformSettings[key as keyof typeof platformSettings])}
+                            onChange={(event) => updatePlatformSetting(key as keyof typeof platformSettings, event.target.checked)}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
+                    <h3 className="font-bold text-[#002B5C]">
+                      {isArabic ? '\u0627\u0644\u062a\u0643\u0627\u0645\u0644 \u0648\u0627\u0644\u0623\u0631\u0634\u0641\u0629' : 'Integration & Archiving'}
+                    </h3>
+                    <div className="mt-4 space-y-3 text-sm">
+                      {[
+                        ['trakCareSync', isArabic ? '\u0645\u0632\u0627\u0645\u0646\u0629 TrakCare' : 'TrakCare Sync'],
+                        ['docuWareArchive', isArabic ? '\u0623\u0631\u0634\u0641\u0629 DocuWare' : 'DocuWare Archive'],
+                        ['auditLogEnabled', isArabic ? '\u0633\u062c\u0644 \u0627\u0644\u062a\u062f\u0642\u064a\u0642 Audit Log' : 'Audit Log'],
+                        ['showRequestContext', isArabic ? '\u0625\u0638\u0647\u0627\u0631 \u0633\u064a\u0627\u0642 \u0627\u0644\u0637\u0644\u0628' : 'Show request context'],
+                      ].map(([key, label]) => (
+                        <label key={key} className="flex items-center justify-between gap-3 rounded bg-white px-3 py-2">
+                          <span>{label}</span>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(platformSettings[key as keyof typeof platformSettings])}
+                            onChange={(event) => updatePlatformSetting(key as keyof typeof platformSettings, event.target.checked)}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
+                    <h3 className="font-bold text-[#002B5C]">
+                      {isArabic ? '\u0627\u0644\u0623\u0645\u0627\u0646 \u0648\u0627\u0644\u062c\u0644\u0633\u0629' : 'Security & Session'}
+                    </h3>
+                    <div className="mt-4 grid grid-cols-1 gap-3 text-sm">
+                      <label>
+                        <span className="font-medium">{isArabic ? '\u0645\u062f\u0629 \u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u062c\u0644\u0633\u0629' : 'Session timeout'}</span>
+                        <select
+                          value={platformSettings.sessionTimeoutMinutes}
+                          onChange={(event) => updatePlatformSetting('sessionTimeoutMinutes', event.target.value)}
+                          className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2"
+                        >
+                          <option value="15">15 minutes</option>
+                          <option value="30">30 minutes</option>
+                          <option value="60">60 minutes</option>
+                        </select>
+                      </label>
+
+                      <label>
+                        <span className="font-medium">{isArabic ? '\u0627\u0644\u0644\u063a\u0629 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a\u0629' : 'Default language'}</span>
+                        <select
+                          value={platformSettings.defaultLanguage}
+                          onChange={(event) => updatePlatformSetting('defaultLanguage', event.target.value)}
+                          className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2"
+                        >
+                          <option value="en">English</option>
+                          <option value="ar">Arabic</option>
+                        </select>
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
+                    <h3 className="font-bold text-[#002B5C]">
+                      {isArabic ? '\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0637\u0628\u064a\u0628' : 'Physician Profile'}
+                    </h3>
+                    <div className="mt-4 space-y-2 rounded bg-white px-3 py-3 text-sm">
+                      <div><span className="font-medium">Name:</span> {physicianProfile.name}</div>
+                      <div><span className="font-medium">Specialty:</span> {physicianProfile.specialty}</div>
+                      <div><span className="font-medium">License:</span> {physicianProfile.licenseNumber}</div>
+                      <div><span className="font-medium">License Expiry:</span> {physicianProfile.licenseExpiryDate}</div>
+                    </div>
+                  </section>
+                </div>
+
+                <div className="mt-5 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  {isArabic ? '\u0647\u0630\u0647 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u062a\u0646\u0638\u0645 \u062a\u062c\u0631\u0628\u0629 \u0627\u0644\u0637\u0628\u064a\u0628 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u0646\u0635\u0629 \u0648\u0644\u0627 \u062a\u063a\u064a\u0631 \u0642\u0648\u0627\u0639\u062f \u0627\u0644\u0627\u0645\u062a\u062b\u0627\u0644 \u0623\u0648 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a.' : 'These settings control the physician platform experience and do not override compliance or consent workflow rules.'}
+                </div>
+
+                <div className="mt-5 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSupportRequestModal(null)}
+                    className="rounded border border-[#D8DCE3] px-4 py-2 text-sm font-medium text-[#6B7280] hover:bg-[#F4F6F9]"
+                  >
+                    {isArabic ? '\u0625\u063a\u0644\u0627\u0642' : 'Close'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        window.localStorage.setItem('wathiqcare-support-settings', JSON.stringify(platformSettings));
+                      } catch {
+                        // localStorage may be unavailable in restricted browsers.
+                      }
+
+                      window.alert(isArabic ? '\u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a.' : 'Settings saved.');
+                      setSupportRequestModal(null);
+                    }}
+                    className="rounded bg-[#002B5C] px-4 py-2 text-sm font-semibold text-white hover:bg-[#003B7A]"
+                  >
+                    {isArabic ? '\u062d\u0641\u0638 \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a' : 'Save Settings'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {supportRequestModal === 'medical-communication' ? (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
             <div className="w-full max-w-2xl rounded-xl border border-[#D8DCE3] bg-white shadow-xl" dir={isArabic ? 'rtl' : 'ltr'}>
@@ -244,26 +405,33 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                 onSubmit={(event) => {
                   event.preventDefault();
 
-                  if (!medicalCommunicationWhatsAppNumber) {
-                    window.alert(isArabic ? '\u0631\u0642\u0645 \u0648\u0627\u062a\u0633\u0627\u0628 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0627\u0644\u0637\u0628\u064a \u063a\u064a\u0631 \u0645\u0636\u0627\u0641 \u0641\u064a \u0645\u062a\u063a\u064a\u0631\u0627\u062a \u0627\u0644\u0628\u064a\u0626\u0629.' : 'Medical communication WhatsApp number is not configured.');
-                    return;
-                  }
-
                   const formData = new FormData(event.currentTarget);
                   const target = String(formData.get('target') || '');
                   const message = String(formData.get('message') || '');
+                  const selectedWhatsAppNumber = medicalCommunicationWhatsAppRoutes[target] || medicalCommunicationWhatsAppRoutes.Other;
+
+                  if (!selectedWhatsAppNumber) {
+                    window.alert(
+                      isArabic
+                        ? '\u0631\u0642\u0645 \u0648\u0627\u062a\u0633\u0627\u0628 \u0627\u0644\u062c\u0647\u0629 \u0627\u0644\u0645\u062d\u062f\u062f\u0629 \u063a\u064a\u0631 \u0645\u0636\u0627\u0641 \u0641\u064a \u0645\u062a\u063a\u064a\u0631\u0627\u062a \u0627\u0644\u0628\u064a\u0626\u0629.'
+                        : `WhatsApp number for ${target} is not configured.`
+                    );
+                    return;
+                  }
 
                   const whatsappMessage = [
                     'WathiqCare Medical Communication',
                     `Target: ${target}`,
                     `User: ${supportRequestContext.user}`,
+                    `Specialty: ${supportRequestContext.specialty}`,
                     `Page: ${supportRequestContext.page}`,
+                    `Timestamp: ${supportRequestContext.timestamp}`,
                     `Session: ${supportRequestContext.sessionReference}`,
                     '',
                     message,
                   ].join('\n');
 
-                  const normalizedNumber = medicalCommunicationWhatsAppNumber.replace(/[^0-9]/g, '');
+                  const normalizedNumber = selectedWhatsAppNumber.replace(/[^0-9]/g, '');
                   const url = `https://wa.me/${normalizedNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
                   window.open(url, '_blank', 'noopener,noreferrer');
@@ -275,12 +443,12 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                     {isArabic ? '\u062c\u0647\u0629 \u0627\u0644\u062a\u0648\u0627\u0635\u0644' : 'Communication Target'}
                   </span>
                   <select name="target" className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm">
-                    <option>Attending Physician</option>
-                    <option>Anesthesiologist</option>
-                    <option>Nursing Team</option>
-                    <option>Medical Complaints</option>
-                    <option>Patient Experience</option>
-                    <option>Other</option>
+                    <option value="Attending Physician">Attending Physician</option>
+                    <option value="Anesthesiologist">Anesthesiologist</option>
+                    <option value="Nursing Team">Nursing Team</option>
+                    <option value="Medical Complaints">Medical Complaints</option>
+                    <option value="Patient Experience">Patient Experience</option>
+                    <option value="Other">Other / General Medical Communication</option>
                   </select>
                 </label>
 
