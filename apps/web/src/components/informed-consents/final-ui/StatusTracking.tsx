@@ -15,28 +15,50 @@ interface Props {
 
 export function StatusTracking({ lang }: Props) {
   const [statusActionMessage, setStatusActionMessage] = useState<string | null>(null);
-  const [statusAuditActions, setStatusAuditActions] = useState<Array<{
+  const [auditActionsByConsentId, setAuditActionsByConsentId] = useState<Record<string, Array<{
     time: string;
-    action: string;
-    user: string;
+    event: string;
+    actor: string;
     ip: string;
-  }>>([]);
+    source: string;
+  }>>>({});
 
-  const recordStatusAction = (action: string) => {
+  const recordStatusAction = (consentId: string, event: string) => {
     const now = new Date();
 
-    setStatusAuditActions((current) => [
-      {
-        time: now.toLocaleTimeString('en-GB', { hour12: false }),
-        action,
-        user: 'Dr. K. Al-Qahtani',
-        ip: '10.1.4.22',
-      },
+    setAuditActionsByConsentId((current) => ({
       ...current,
-    ]);
+      [consentId]: [
+        {
+          time: now.toLocaleTimeString('en-GB', { hour12: false }),
+          event,
+          actor: 'Dr. K. Al-Qahtani',
+          ip: '10.1.4.22',
+          source: 'Physician Portal',
+        },
+        ...(current[consentId] || []),
+      ],
+    }));
   };
+
   const [revokedConsentIds, setRevokedConsentIds] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState(consentRecords[0]);
+
+  const selectedFixtureAuditTrail = [
+    { time: '10:30:12', event: 'Consent draft created by physician', actor: 'Dr. K. Al-Qahtani', ip: '10.1.4.22', source: 'Physician Portal' },
+    { time: '10:33:45', event: 'Disclosure fields completed (EN + AR)', actor: 'Dr. K. Al-Qahtani', ip: '10.1.4.22', source: 'Physician Portal' },
+    { time: '10:40:02', event: 'Anesthesia module reviewed by Dr. R. Al-Farsi', actor: 'Dr. R. Al-Farsi', ip: '10.1.2.88', source: 'Physician Portal' },
+    { time: '10:44:30', event: 'Physician confirmation signed', actor: 'Dr. K. Al-Qahtani', ip: '10.1.4.22', source: 'Physician Portal' },
+    { time: '10:45:01', event: 'Consent link sent via SMS', actor: 'System', ip: '-', source: 'Messaging Gateway' },
+    { time: '11:02:33', event: 'Patient opened consent link', actor: `Patient (${selected.mrn})`, ip: '-', source: 'Patient Portal' },
+    { time: '11:04:15', event: 'OTP verified successfully', actor: 'Patient', ip: '-', source: 'OTP Service' },
+    { time: '11:09:02', event: 'Patient education viewed', actor: 'Patient', ip: '-', source: 'Education Module' },
+  ];
+
+  const selectedAuditTrail = [
+    ...(auditActionsByConsentId[selected.id] || []),
+    ...selectedFixtureAuditTrail,
+  ];
 
   function handleResendConsentLink(consentId: string) {
     if (revokedConsentIds.has(consentId)) {
@@ -56,7 +78,7 @@ export function StatusTracking({ lang }: Props) {
 
     if (!confirmed) return;
 
-    recordStatusAction(`Consent link resent for ${consentId}`);
+    recordStatusAction(consentId, `Consent link resent for ${consentId}`);
 
     setStatusActionMessage(
       lang === 'ar'
@@ -86,7 +108,7 @@ export function StatusTracking({ lang }: Props) {
       return next;
     });
 
-    recordStatusAction(`Consent link revoked for ${consentId}`);
+    recordStatusAction(consentId, `Consent link revoked for ${consentId}`);
 
     setStatusActionMessage(
       lang === 'ar'
@@ -196,38 +218,18 @@ export function StatusTracking({ lang }: Props) {
         </div>
       ) : null}
 
-      {statusAuditActions.length > 0 ? (
-        <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-[#002B5C]">
-          {statusAuditActions.map((item, index) => (
-            <div key={`${item.time}-${index}`} className="flex items-center justify-between gap-4 py-1">
-              <span>{item.time}</span>
-              <span>{item.action}</span>
-              <span>{item.user}</span>
-              <span>{item.ip}</span>
-            </div>
-          ))}
-        </div>
-      ) : null}
+
 
                 <span className="text-sm font-semibold text-[#2F2F2F]">{lang === 'en' ? 'Audit Trail' : 'مسار التدقيق'}</span>
                 <ClinicalBadge variant="info" label="Immutable" />
               </div>
               <div className="divide-y divide-[#EEF1F5]">
-                {[
-                  { time: '10:30:12', event: 'Consent draft created by physician', actor: 'Dr. K. Al-Qahtani', ip: '10.1.4.22' },
-                  { time: '10:33:45', event: 'Disclosure fields completed (EN + AR)', actor: 'Dr. K. Al-Qahtani', ip: '10.1.4.22' },
-                  { time: '10:40:02', event: 'Anesthesia module reviewed by Dr. R. Al-Farsi', actor: 'Dr. R. Al-Farsi', ip: '10.1.2.88' },
-                  { time: '10:44:30', event: 'Physician confirmation signed', actor: 'Dr. K. Al-Qahtani', ip: '10.1.4.22' },
-                  { time: '10:45:01', event: 'Consent link sent via SMS to +966 50 234 5678', actor: 'System', ip: '—' },
-                  { time: '11:02:33', event: 'Patient opened consent link', actor: 'Patient (MRN-2024-0847)', ip: '—' },
-                  { time: '11:04:15', event: 'OTP verified successfully', actor: 'Patient', ip: '—' },
-                  { time: '11:09:02', event: 'Patient education viewed (all sections)', actor: 'Patient', ip: '—' },
-                ].map((entry, i) => (
-                  <div key={i} className="px-5 py-3 flex items-center gap-4 text-xs">
-                    <span className="font-mono text-[#6B7280] w-20 shrink-0">{entry.time}</span>
-                    <span className="text-[#2F2F2F] flex-1">{entry.event}</span>
-                    <span className="text-[#6B7280] w-36 shrink-0">{entry.actor}</span>
-                    <span className="font-mono text-[#6B7280] w-24 shrink-0">{entry.ip}</span>
+                {selectedAuditTrail.map((item, index) => (
+                  <div key={`${selected.id}-${item.time}-${index}`} className="grid grid-cols-4 gap-4 px-5 py-3 text-xs">
+                    <span className="font-mono text-[#6B7280]">{item.time}</span>
+                    <span className="text-[#2F2F2F]">{item.event}</span>
+                    <span className="text-[#6B7280]">{item.actor}</span>
+                    <span className="font-mono text-[#6B7280]">{item.ip}</span>
                   </div>
                 ))}
               </div>
