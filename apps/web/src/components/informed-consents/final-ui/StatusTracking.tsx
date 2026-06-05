@@ -7,13 +7,135 @@ import {
 } from 'lucide-react';
 import { ClinicalBadge } from './clinical/ClinicalBadge';
 
-import { consentRecords } from './fixtures/status-tracking';
 
 interface Props {
   lang: 'en' | 'ar';
 }
 
+
+type TrackingEvent = {
+  stage: string;
+  label: string;
+  time: string | null;
+  done: boolean;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+type TrackingRecord = {
+  id: string;
+  mrn: string;
+  name: string;
+  nameAr: string;
+  procedure: string;
+  procedureAr: string;
+  sent: string;
+  status: string;
+  events: TrackingEvent[];
+};
+
+type StatusTrackingApiRecord = {
+  id: string;
+  consentReference?: string | null;
+  patientName?: string | null;
+  mrn?: string | null;
+  procedure?: string | null;
+  templateTitle?: string | null;
+  status?: string | null;
+  displayStatus?: string | null;
+  progress?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+const initialStatusTrackingRecord: TrackingRecord = {
+  id: 'loading',
+  mrn: '-',
+  name: 'Loading consent records...',
+  nameAr: '\u062c\u0627\u0631\u064a \u062a\u062d\u0645\u064a\u0644 \u0633\u062c\u0644\u0627\u062a \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a...',
+  procedure: 'Informed Consent',
+  procedureAr: '\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0627\u0644\u0645\u0633\u062a\u0646\u064a\u0631\u0629',
+  sent: '-',
+  status: 'loading',
+  events: [
+    { stage: 'draft', label: 'Draft Created', time: null, done: false, icon: FileText },
+    { stage: 'sent', label: 'Link Sent', time: null, done: false, icon: Send },
+    { stage: 'opened', label: 'Patient Opened', time: null, done: false, icon: Eye },
+    { stage: 'otp', label: 'OTP Verified', time: null, done: false, icon: ShieldCheck },
+    { stage: 'education', label: 'Education Viewed', time: null, done: false, icon: BookOpen },
+    { stage: 'decision', label: 'Decision Recorded', time: null, done: false, icon: Circle },
+    { stage: 'signed', label: 'Signed', time: null, done: false, icon: CheckCircle2 },
+    { stage: 'pdf', label: 'PDF Generated', time: null, done: false, icon: FileText },
+    { stage: 'evidence', label: 'Evidence Complete', time: null, done: false, icon: Archive },
+  ],
+};
+
+function formatTrackingDateTime(value?: string | null) {
+  if (!value) return '-';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+
+  return date.toLocaleString('en-GB', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
+function normalizeStatusToStage(status?: string | null) {
+  const normalized = (status || '').toUpperCase();
+
+  if (normalized === 'FINALIZED') return 'evidence';
+  if (normalized === 'SIGNED') return 'signed';
+  if (normalized === 'READY_FOR_SIGNATURE') return 'decision';
+  if (normalized === 'APPROVED') return 'sent';
+  if (normalized === 'PHYSICIAN_REVIEW') return 'draft';
+  if (normalized === 'AI_DRAFT' || normalized === 'DRAFT') return 'draft';
+
+  return 'draft';
+}
+
+function buildTrackingEvents(record: StatusTrackingApiRecord): TrackingEvent[] {
+  const stage = normalizeStatusToStage(record.status);
+  const sentTime = formatTrackingDateTime(record.createdAt);
+
+  const order = ['draft', 'sent', 'opened', 'otp', 'education', 'decision', 'signed', 'pdf', 'evidence'];
+  const currentIndex = order.indexOf(stage);
+
+  return [
+    { stage: 'draft', label: 'Draft Created', time: sentTime, done: currentIndex >= 0, icon: FileText },
+    { stage: 'sent', label: 'Link Sent', time: currentIndex >= 1 ? sentTime : null, done: currentIndex >= 1, icon: Send },
+    { stage: 'opened', label: 'Patient Opened', time: null, done: currentIndex >= 2, icon: Eye },
+    { stage: 'otp', label: 'OTP Verified', time: null, done: currentIndex >= 3, icon: ShieldCheck },
+    { stage: 'education', label: 'Education Viewed', time: null, done: currentIndex >= 4, icon: BookOpen },
+    { stage: 'decision', label: 'Decision Recorded', time: null, done: currentIndex >= 5, icon: Circle },
+    { stage: 'signed', label: 'Signed', time: null, done: currentIndex >= 6, icon: CheckCircle2 },
+    { stage: 'pdf', label: 'PDF Generated', time: null, done: currentIndex >= 7, icon: FileText },
+    { stage: 'evidence', label: 'Evidence Complete', time: null, done: currentIndex >= 8, icon: Archive },
+  ];
+}
+
+function mapApiRecordToTrackingRecord(record: StatusTrackingApiRecord): TrackingRecord {
+  return {
+    id: record.id,
+    mrn: record.mrn || 'N/A',
+    name: record.patientName || 'Unknown Patient',
+    nameAr: record.patientName || '\u063a\u064a\u0631 \u0645\u062d\u062f\u062f',
+    procedure: record.procedure || record.templateTitle || 'Informed Consent',
+    procedureAr: record.procedure || record.templateTitle || '\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0627\u0644\u0645\u0633\u062a\u0646\u064a\u0631\u0629',
+    sent: formatTrackingDateTime(record.createdAt),
+    status: normalizeStatusToStage(record.status),
+    events: buildTrackingEvents(record),
+  };
+}
+
 export function StatusTracking({ lang }: Props) {
+  const [trackingRecords, setTrackingRecords] = useState<TrackingRecord[]>([]);
+  const [isLoadingTrackingRecords, setIsLoadingTrackingRecords] = useState(true);
+  const [trackingRecordsError, setTrackingRecordsError] = useState<string | null>(null);
   const [statusActionMessage, setStatusActionMessage] = useState<string | null>(null);
   const [auditActionsByConsentId, setAuditActionsByConsentId] = useState<Record<string, Array<{
     time: string;
@@ -135,7 +257,62 @@ export function StatusTracking({ lang }: Props) {
   };
 
   const [revokedConsentIds, setRevokedConsentIds] = useState<Set<string>>(new Set());
-  const [selected, setSelected] = useState(consentRecords[0]);
+  const [selected, setSelected] = useState<TrackingRecord>(initialStatusTrackingRecord);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadStatusTrackingRecords = async () => {
+      setIsLoadingTrackingRecords(true);
+      setTrackingRecordsError(null);
+
+      try {
+        const response = await fetch('/api/modules/informed-consents/status-tracking?limit=100', {
+          method: 'GET',
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Status tracking request failed: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const apiRecords = Array.isArray(payload?.records) ? payload.records as StatusTrackingApiRecord[] : [];
+        const mappedRecords = apiRecords.map(mapApiRecordToTrackingRecord);
+
+        if (cancelled) return;
+
+        setTrackingRecords(mappedRecords);
+
+        if (mappedRecords.length > 0) {
+          setSelected((current) => {
+            const stillExists = mappedRecords.some((item) => item.id === current.id);
+            return stillExists ? current : mappedRecords[0];
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setTrackingRecordsError(
+            lang === 'ar'
+              ? '\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0633\u062c\u0644\u0627\u062a \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u0645\u0646 \u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a. \u064a\u062a\u0645 \u0639\u0631\u0636 \u0627\u0644\u062d\u0627\u0644\u0629 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a\u0629 \u0645\u0624\u0642\u062a\u064b\u0627.'
+              : 'Unable to load consent records from the database. Showing temporary fallback state.'
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingTrackingRecords(false);
+        }
+      }
+    };
+
+    void loadStatusTrackingRecords();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lang]);
+
+  const visibleTrackingRecords = trackingRecords.length > 0 ? trackingRecords : [selected];
 
   const selectedFixtureAuditTrail = [
     { time: '10:30:12', event: 'Consent draft created by physician', actor: 'Dr. K. Al-Qahtani', ip: '10.1.4.22', source: 'Physician Portal' },
@@ -243,7 +420,7 @@ export function StatusTracking({ lang }: Props) {
         <div className="grid grid-cols-3 gap-6">
           {/* Left: list */}
           <div className="space-y-3">
-            {consentRecords.map(record => {
+            {visibleTrackingRecords.map(record => {
               const lastDone = [...record.events].reverse().find(e => e.done);
               return (
                 <div key={record.id}
