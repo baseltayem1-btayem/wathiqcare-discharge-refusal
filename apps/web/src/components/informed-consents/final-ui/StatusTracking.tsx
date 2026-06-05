@@ -282,9 +282,6 @@ export function StatusTracking({ lang }: Props) {
     return { allowed: true, reason: '' };
   };
 
-  const selectedResendGuard = getStatusActionGuard('resend', selected);
-  const selectedRevokeGuard = getStatusActionGuard('revoke', selected);
-
   const updateSelectedConsentStatus = (
     consentId: string,
     status: string,
@@ -570,6 +567,9 @@ export function StatusTracking({ lang }: Props) {
 
   const [revokedConsentIds, setRevokedConsentIds] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<TrackingRecord>(initialStatusTrackingRecord);
+
+  const selectedResendGuard = getStatusActionGuard('resend', selected);
+  const selectedRevokeGuard = getStatusActionGuard('revoke', selected);
 
   useEffect(() => {
     let cancelled = false;
