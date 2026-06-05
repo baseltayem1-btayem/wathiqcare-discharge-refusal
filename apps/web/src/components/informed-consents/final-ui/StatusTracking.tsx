@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useState } from 'react';
+import React, { useState } from 'react';
 import {
   CheckCircle2, Circle, Clock, Send, Eye, ShieldCheck,
   BookOpen, FileText, Archive, RotateCcw, XCircle, ChevronRight,
@@ -35,22 +35,33 @@ export function StatusTracking({ lang }: Props) {
       ...current,
     ]);
   };
+  const [revokedConsentIds, setRevokedConsentIds] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState(consentRecords[0]);
 
-  const handleResendConsentLink = () => {
+  function handleResendConsentLink(consentId: string) {
+    if (revokedConsentIds.has(consentId)) {
+      setStatusActionMessage(
+        lang === 'ar'
+          ? '?? ???? ????? ????? ???? ?????? ?? ??????.'
+          : 'Cannot resend a revoked consent link.'
+      );
+      return;
+    }
+
     const confirmed = window.confirm(
       lang === 'ar'
-        ? '?? ???? ????? ????? ???? ???????? ???????'
-        : 'Do you want to resend the consent link to the patient?'
+        ? `?? ???? ????? ????? ???? ???????? ??? ${consentId}?`
+        : `Do you want to resend consent link ${consentId}?`
     );
 
     if (!confirmed) return;
 
-    recordStatusAction('Consent link resent by physician');
+    recordStatusAction(`Consent link resent for ${consentId}`);
 
     setStatusActionMessage(
       lang === 'ar'
-        ? '??? ????? ????? ???? ???????? ??????.'
-        : 'Consent link has been resent to the patient.'
+        ? `??? ????? ????? ???? ???????? ??? ${consentId}.`
+        : `Secure consent link resent for ${consentId}.`
     );
 
     window.alert(
@@ -58,48 +69,15 @@ export function StatusTracking({ lang }: Props) {
         ? '??? ????? ????? ???? ???????? ?????.'
         : 'Consent link resent successfully.'
     );
-  };
-
-  const handleRevokeConsentLink = () => {
-    const confirmed = window.confirm(
-      lang === 'ar'
-        ? '?? ??? ????? ?? ????? ???? ????????? ?? ????? ?????? ?? ??????? ?????? ??? ???????.'
-        : 'Are you sure you want to revoke this consent link? The patient will no longer be able to use it.'
-    );
-
-    if (!confirmed) return;
-
-    recordStatusAction('Consent link revoked by physician');
-
-    setStatusActionMessage(
-      lang === 'ar'
-        ? '?? ????? ???? ???????? ??? ???? ?????? ??????.'
-        : 'Consent link has been revoked and is no longer available to the patient.'
-    );
-
-    window.alert(
-      lang === 'ar'
-        ? '?? ????? ???? ???????? ?????.'
-        : 'Consent link revoked successfully.'
-    );
-  };
-
-
-  const [statusActionMessage, setStatusActionMessage] = useState<string | null>(null);
-  const [revokedConsentIds, setRevokedConsentIds] = useState<Set<string>>(new Set());
-  const [selected, setSelected] = useState(consentRecords[0]);
-
-  function handleResendConsentLink(consentId: string) {
-    if (revokedConsentIds.has(consentId)) {
-      setStatusActionMessage('Cannot resend a revoked consent link.');
-      return;
-    }
-
-    setStatusActionMessage(`Secure consent link resent for ${consentId}.`);
   }
 
   function handleRevokeConsent(consentId: string) {
-    const confirmed = window.confirm(`Revoke consent link for ${consentId}? This action will invalidate the active signing link.`);
+    const confirmed = window.confirm(
+      lang === 'ar'
+        ? `?? ??? ????? ?? ????? ???? ???????? ??? ${consentId}? ?? ????? ?????? ?? ??????? ?????? ??? ???????.`
+        : `Revoke consent link for ${consentId}? This action will invalidate the active signing link.`
+    );
+
     if (!confirmed) return;
 
     setRevokedConsentIds((current) => {
@@ -108,7 +86,19 @@ export function StatusTracking({ lang }: Props) {
       return next;
     });
 
-    setStatusActionMessage(`Consent link revoked for ${consentId}.`);
+    recordStatusAction(`Consent link revoked for ${consentId}`);
+
+    setStatusActionMessage(
+      lang === 'ar'
+        ? `?? ????? ???? ???????? ??? ${consentId}.`
+        : `Consent link revoked for ${consentId}.`
+    );
+
+    window.alert(
+      lang === 'ar'
+        ? '?? ????? ???? ???????? ?????.'
+        : 'Consent link revoked successfully.'
+    );
   }
 
   return (
@@ -160,11 +150,11 @@ export function StatusTracking({ lang }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={handleResendConsentLink} className="flex items-center gap-1.5 border border-[#D8DCE3] text-[#6B7280] hover:text-[#2F2F2F] text-xs px-3 py-1.5 rounded transition-colors">
+                  <button onClick={() => handleResendConsentLink(selected.id)} className="flex items-center gap-1.5 border border-[#D8DCE3] text-[#6B7280] hover:text-[#2F2F2F] text-xs px-3 py-1.5 rounded transition-colors">
                     <RotateCcw className="w-3.5 h-3.5" />
                     {lang === 'en' ? 'Resend' : 'إعادة الإرسال'}
                   </button>
-                  <button onClick={handleRevokeConsentLink} className="flex items-center gap-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs px-3 py-1.5 rounded transition-colors">
+                  <button onClick={() => handleRevokeConsent(selected.id)} className="flex items-center gap-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs px-3 py-1.5 rounded transition-colors">
                     <XCircle className="w-3.5 h-3.5" />
                     {lang === 'en' ? 'Revoke' : 'إلغاء'}
                   </button>
