@@ -102,6 +102,11 @@ function formatTrackingDateTime(value?: string | null) {
 function normalizeStatusToStage(status?: string | null) {
   const normalized = (status || '').toUpperCase();
 
+  if (normalized === 'REVOKED') return 'revoked';
+  if (normalized === 'SENT') return 'sent';
+  if (normalized === 'OPENED') return 'opened';
+  if (normalized === 'EXPIRED') return 'expired';
+  if (normalized === 'FAILED') return 'failed';
   if (normalized === 'FINALIZED') return 'evidence';
   if (normalized === 'SIGNED') return 'signed';
   if (normalized === 'READY_FOR_SIGNATURE') return 'decision';
@@ -116,7 +121,7 @@ function buildTrackingEvents(record: StatusTrackingApiRecord): TrackingEvent[] {
   const stage = normalizeStatusToStage(record.status);
   const sentTime = formatTrackingDateTime(record.createdAt);
 
-  const order = ['draft', 'sent', 'opened', 'otp', 'education', 'decision', 'signed', 'pdf', 'evidence'];
+  const order = ['draft', 'sent', 'opened', 'otp', 'education', 'decision', 'signed', 'pdf', 'evidence', 'revoked', 'expired', 'failed'];
   const currentIndex = order.indexOf(stage);
 
   return [
@@ -716,20 +721,28 @@ export function StatusTracking({ lang }: Props) {
                     </div>
                     <ClinicalBadge
                       variant={
-                        record.status === 'evidence'
+                        record.status === 'evidence' || record.status === 'signed'
                           ? 'signed'
-                          : record.status === 'revoked'
+                          : record.status === 'revoked' || record.status === 'expired' || record.status === 'failed'
                             ? 'warning'
                             : 'sent'
                       }
                       label={
                         record.status === 'evidence'
                           ? (lang === 'en' ? 'Complete' : '\u0645\u0643\u062a\u0645\u0644')
-                          : record.status === 'revoked'
-                            ? (lang === 'en' ? 'Revoked' : '\u0645\u0644\u063a\u0649')
-                            : record.status === 'sent'
-                              ? (lang === 'en' ? 'Sent' : '\u0645\u0631\u0633\u0644')
-                              : (lang === 'en' ? 'Active' : '\u0646\u0634\u0637')
+                          : record.status === 'signed'
+                            ? (lang === 'en' ? 'Signed' : '\u0645\u0648\u0642\u0639')
+                            : record.status === 'revoked'
+                              ? (lang === 'en' ? 'Revoked' : '\u0645\u0644\u063a\u0649')
+                              : record.status === 'expired'
+                                ? (lang === 'en' ? 'Expired' : '\u0645\u0646\u062a\u0647\u064a')
+                                : record.status === 'failed'
+                                  ? (lang === 'en' ? 'Failed' : '\u0641\u0634\u0644')
+                                  : record.status === 'sent'
+                                    ? (lang === 'en' ? 'Sent' : '\u0645\u0631\u0633\u0644')
+                                    : record.status === 'opened'
+                                      ? (lang === 'en' ? 'Opened' : '\u0645\u0641\u062a\u0648\u062d')
+                                      : (lang === 'en' ? 'Active' : '\u0646\u0634\u0637')
                       }
                       dot
                     />

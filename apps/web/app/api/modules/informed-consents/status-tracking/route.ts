@@ -16,6 +16,32 @@ function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
+function getStatusFromSignatureRequest(
+  documentStatus: string | null | undefined,
+  signatureRequest: Record<string, unknown> | null,
+) {
+  const requestStatus = String(signatureRequest?.status || "").toUpperCase();
+
+  if (requestStatus === "REVOKED") return "revoked";
+  if (requestStatus === "SENT") return "sent";
+  if (requestStatus === "OPENED") return "opened";
+  if (requestStatus === "PARTIALLY_SIGNED") return "partial";
+  if (requestStatus === "SIGNED") return "signed";
+  if (requestStatus === "EXPIRED") return "expired";
+  if (requestStatus === "FAILED") return "failed";
+
+  const normalizedDocumentStatus = String(documentStatus || "").toUpperCase();
+
+  if (normalizedDocumentStatus === "FINALIZED") return "evidence";
+  if (normalizedDocumentStatus === "SIGNED") return "signed";
+  if (normalizedDocumentStatus === "READY_FOR_SIGNATURE") return "decision";
+  if (normalizedDocumentStatus === "APPROVED") return "sent";
+  if (normalizedDocumentStatus === "PHYSICIAN_REVIEW") return "draft";
+  if (normalizedDocumentStatus === "AI_DRAFT" || normalizedDocumentStatus === "DRAFT") return "draft";
+
+  return "draft";
+}
+
 function getProgressFromStatus(status: string) {
   const normalized = status.toUpperCase();
 
@@ -112,7 +138,7 @@ export async function GET(request: NextRequest) {
         physicianLicense: doc.physicianLicense,
         physicianSpecialty: doc.physicianSpecialty,
 
-        status: doc.status,
+        status: getStatusFromSignatureRequest(doc.status, primarySignatureRequest),
         displayStatus: getDisplayStatus(doc.status),
         progress: getProgressFromStatus(doc.status),
         priority: getPriorityFromStatus(doc.status),
