@@ -2756,6 +2756,60 @@ export async function listConsentTimeline(auth: AuthContext, id: string) {
   });
 }
 
+
+export async function appendConsentTimelineEvent(
+  auth: AuthContext,
+  id: string,
+  payload: {
+    action?: string;
+    summary?: string;
+    source?: string;
+    metadata?: Record<string, unknown>;
+  },
+  request?: NextRequest,
+) {
+  const tenantId = requireTenantId(auth);
+
+  const action = payload.action?.trim();
+  const summary = payload.summary?.trim();
+  const source = payload.source?.trim() || "physician-portal";
+
+  if (!action) {
+    throw new ApiError(400, "action is required");
+  }
+
+  if (!summary) {
+    throw new ApiError(400, "summary is required");
+  }
+
+  const doc = await prisma().consentDocument.findFirst({
+    where: { id, tenantId },
+    select: { id: true, caseId: true, consentReference: true },
+  });
+
+  if (!doc) {
+    throw new ApiError(404, "Consent document not found");
+  }
+
+  await writeConsentAudit({
+    tenantId,
+    auth,
+    action,
+    summary,
+    source,
+    consentDocumentId: id,
+    caseId: doc.caseId || undefined,
+    metadata: {
+      consentReference: doc.consentReference,
+      timelineAction: action,
+      ...(payload.metadata || {}),
+    },
+    request,
+  });
+
+  return listConsentTimeline(auth, id);
+}
+
 export async function submitCommitteeReview(
   auth: AuthContext,
   payload: {
