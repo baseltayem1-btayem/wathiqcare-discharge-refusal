@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   CheckCircle2, Circle, Clock, Send, Eye, ShieldCheck,
   BookOpen, FileText, Archive, RotateCcw, XCircle, ChevronRight,
@@ -23,22 +23,115 @@ export function StatusTracking({ lang }: Props) {
     source: string;
   }>>>({});
 
-  const recordStatusAction = (consentId: string, event: string) => {
+  const normalizeTimelineEvents = (events: Array<Record<string, unknown>>) => events.map((item) => {
+    const metadata = item.metadata && typeof item.metadata === 'object'
+      ? item.metadata as Record<string, unknown>
+      : {};
+
+    const createdAt = typeof item.createdAt === 'string' ? item.createdAt : null;
+    const action = typeof item.action === 'string' ? item.action : 'timeline_event';
+    const summary = typeof metadata.summary === 'string' ? metadata.summary : action;
+    const source = typeof metadata.source === 'string' ? metadata.source : 'Timeline API';
+    const actorRole = typeof item.actorRole === 'string' ? item.actorRole : null;
+    const actorUserId = typeof item.actorUserId === 'string' ? item.actorUserId : null;
+    const ipAddress = typeof item.ipAddress === 'string' && item.ipAddress.trim() ? item.ipAddress : '-';
+
+    return {
+      time: createdAt
+        ? new Date(createdAt).toLocaleTimeString('en-GB', { hour12: false })
+        : new Date().toLocaleTimeString('en-GB', { hour12: false }),
+      event: summary,
+      actor: actorRole || actorUserId || 'System',
+      ip: ipAddress,
+      source,
+    };
+  });
+
+  const loadPersistedTimeline = async (consentId: string) => {
+    try {
+      const response = await fetch(`/api/modules/informed-consents/documents/${encodeURIComponent(consentId)}/timeline`, {
+        method: 'GET',
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const timeline = await response.json();
+
+      if (Array.isArray(timeline)) {
+        const normalized = normalizeTimelineEvents(timeline).reverse();
+
+        setAuditActionsByConsentId((current) => ({
+          ...current,
+          [consentId]: normalized,
+        }));
+      }
+    } catch {
+      // Keep local fixture/fallback timeline if API is unavailable.
+    }
+  };
+
+  const recordStatusAction = async (
+    consentId: string,
+    action: string,
+    summary: string,
+    metadata: Record<string, unknown> = {},
+  ) => {
     const now = new Date();
+
+    const localEvent = {
+      time: now.toLocaleTimeString('en-GB', { hour12: false }),
+      event: summary,
+      actor: 'Dr. K. Al-Qahtani',
+      ip: '10.1.4.22',
+      source: 'Physician Portal',
+    };
 
     setAuditActionsByConsentId((current) => ({
       ...current,
       [consentId]: [
-        {
-          time: now.toLocaleTimeString('en-GB', { hour12: false }),
-          event,
-          actor: 'Dr. K. Al-Qahtani',
-          ip: '10.1.4.22',
-          source: 'Physician Portal',
-        },
+        localEvent,
         ...(current[consentId] || []),
       ],
     }));
+
+    try {
+      const response = await fetch(`/api/modules/informed-consents/documents/${encodeURIComponent(consentId)}/timeline`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action,
+          summary,
+          source: 'physician-portal',
+          metadata: {
+            ...metadata,
+            consentId,
+            uiSource: 'StatusTracking',
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const timeline = await response.json();
+
+      if (Array.isArray(timeline)) {
+        const normalized = normalizeTimelineEvents(timeline).reverse();
+
+        setAuditActionsByConsentId((current) => ({
+          ...current,
+          [consentId]: normalized,
+        }));
+      }
+    } catch {
+      // Local event remains visible as fallback.
+    }
   };
 
   const [revokedConsentIds, setRevokedConsentIds] = useState<Set<string>>(new Set());
@@ -62,7 +155,11 @@ export function StatusTracking({ lang }: Props) {
 
   const selectedRecentAuditActions = auditActionsByConsentId[selected.id] || [];
 
-  function handleResendConsentLink(consentId: string) {
+  useEffect(() => {
+    void loadPersistedTimeline(selected.id);
+  }, [selected.id]);
+
+  async function handleResendConsentLink(consentId: string) {
     if (revokedConsentIds.has(consentId)) {
       setStatusActionMessage(
         lang === 'ar'
@@ -80,7 +177,12 @@ export function StatusTracking({ lang }: Props) {
 
     if (!confirmed) return;
 
-    recordStatusAction(consentId, `RESEND: Consent link resent for ${consentId}`);
+    await recordStatusAction(
+      consentId,
+      'consent_link_resent',
+      `RESEND: Consent link resent for ${consentId}`,
+      { uiAction: 'RESEND' },
+    );
 
     setStatusActionMessage(
       lang === 'ar'
@@ -95,7 +197,7 @@ export function StatusTracking({ lang }: Props) {
     );
   }
 
-  function handleRevokeConsent(consentId: string) {
+  async function handleRevokeConsent(consentId: string) {
     const confirmed = window.confirm(
       lang === 'ar'
         ? `\u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f \u0645\u0646 \u0625\u0644\u063a\u0627\u0621 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0631\u0642\u0645 ${consentId}? \u0644\u0646 \u064a\u062a\u0645\u0643\u0646 \u0627\u0644\u0645\u0631\u064a\u0636 \u0645\u0646 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u0631\u0627\u0628\u0637 \u0628\u0639\u062f \u0627\u0644\u0625\u0644\u063a\u0627\u0621.`
@@ -110,7 +212,12 @@ export function StatusTracking({ lang }: Props) {
       return next;
     });
 
-    recordStatusAction(consentId, `REVOKE: Consent link revoked for ${consentId}`);
+    await recordStatusAction(
+      consentId,
+      'consent_link_revoked',
+      `REVOKE: Consent link revoked for ${consentId}`,
+      { uiAction: 'REVOKE' },
+    );
 
     setStatusActionMessage(
       lang === 'ar'
