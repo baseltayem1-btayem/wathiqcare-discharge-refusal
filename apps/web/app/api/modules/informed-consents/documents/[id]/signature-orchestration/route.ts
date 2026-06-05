@@ -5,7 +5,7 @@ import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
-import { revokeModuleSecureSigningForDocument } from "@/lib/server/module-secure-signing-service";
+import { revokeModuleSecureSigningForDocument, sendModuleSecureSigningLink } from "@/lib/server/module-secure-signing-service";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
 
@@ -73,7 +73,7 @@ export async function POST(
 
     const doc = await prisma.consentDocument.findFirst({
       where: { id, tenantId: auth.tenant_id },
-      select: { id: true, caseId: true, metadata: true },
+      select: { id: true, caseId: true, patientName: true, metadata: true },
     });
 
     if (!doc) return NextResponse.json({ error: "Consent document not found" }, { status: 404 });
@@ -144,11 +144,48 @@ export async function POST(
     }
 
     if (action === "resend") {
+      const row = requests[index];
+      const recipientMobile = normalize(row.mobile);
+      const recipientEmail = normalize(row.email);
+      const recipientName = normalize(row.recipientName) || doc.patientName || "Patient";
+
+      if (!recipientMobile) {
+        return NextResponse.json({ error: "Recipient mobile number is required for resend" }, { status: 400 });
+      }
+
+      if (!recipientEmail) {
+        return NextResponse.json({ error: "Recipient email is required for resend" }, { status: 400 });
+      }
+
+      const workflow = await sendModuleSecureSigningLink({
+        tenantId: auth.tenant_id || "",
+        initiatedBy: auth.sub,
+        moduleKey: "informed_consent",
+        moduleType: "informed_consent",
+        documentId: id,
+        caseId: doc.caseId,
+        patientName: recipientName,
+        mobileNumber: recipientMobile,
+        recipientEmail,
+        locale: "ar",
+      });
+
       requests[index] = {
         ...requests[index],
         status: "SENT",
+        resentAt: workflow.updatedAt,
         updatedAt: new Date().toISOString(),
         updatedBy: auth.sub,
+        secureSigning: {
+          sessionId: workflow.sessionId,
+          signingUrl: workflow.signingUrl,
+          smsDeliveryStatus: workflow.smsDeliveryStatus,
+          smsFailureReason: workflow.smsFailureReason,
+          emailDeliveryStatus: workflow.emailDeliveryStatus || null,
+          emailFailureReason: workflow.emailFailureReason || null,
+          tokenHash: workflow.tokenHash,
+          status: workflow.status,
+        },
       };
     } else if (action === "revoke") {
       const revocation = await revokeModuleSecureSigningForDocument({
@@ -190,6 +227,9 @@ export async function POST(
       },
     });
 
+    const currentSignatureRequest = asRecord(requests[index]);
+    const currentSecureSigning = asRecord(currentSignatureRequest.secureSigning);
+
     await writeAuditLog({
       tenantId: auth.tenant_id || "",
       userId: auth.sub,
@@ -202,11 +242,15 @@ export async function POST(
       moduleKey: "informed-consents",
       metadataJson: {
         requestId,
-        status: String(requests[index].status || ""),
-        role: String(requests[index].role || ""),
-        correlationId: String(requests[index].correlationId || ""),
-        revokedAt: String(requests[index].revokedAt || ""),
-        revokedSessions: Number(requests[index].revokedSessions || 0),
+        status: String(currentSignatureRequest.status || ""),
+        role: String(currentSignatureRequest.role || ""),
+        correlationId: String(currentSignatureRequest.correlationId || ""),
+        revokedAt: String(currentSignatureRequest.revokedAt || ""),
+        revokedSessions: Number(currentSignatureRequest.revokedSessions || 0),
+        resentAt: String(currentSignatureRequest.resentAt || ""),
+        secureSigningSessionId: String(currentSecureSigning.sessionId || ""),
+        smsDeliveryStatus: String(currentSecureSigning.smsDeliveryStatus || ""),
+        emailDeliveryStatus: String(currentSecureSigning.emailDeliveryStatus || ""),
       },
       request,
     });
