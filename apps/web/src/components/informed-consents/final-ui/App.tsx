@@ -77,6 +77,21 @@ const navItems = [
 function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
   const isArabic = lang === 'ar';
   const [supportRequestModal, setSupportRequestModal] = useState<null | 'technical-ticket' | 'legal-consultation' | 'medical-communication'>(null);
+
+  const openMedicalCommunicationWhatsApp = () => {
+    const message = [
+      'WathiqCare Medical Communication',
+      `User: ${physicianProfile.name}`,
+      `Specialty: ${physicianProfile.specialty}`,
+      'Page: Support & Settings',
+      `Time: ${new Date().toISOString()}`,
+      '',
+      'Please provide medical communication support regarding the consent workflow.'
+    ].join('\n');
+
+    const url = `https://wa.me/966500000000?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
   const [supportRequestContext] = useState(() => ({
     user: physicianProfile.name,
     specialty: physicianProfile.specialty,
@@ -191,26 +206,14 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                 <p className="mt-4 min-h-[72px] text-center text-sm leading-6 text-[#4B5563]">{card.description}</p>
                 <button
                   type="button"
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    if (card.title === 'Request Legal Consultation' || card.button === 'Request Consultation' || card.modal === 'legal-consultation') {
-                      setSupportRequestModal('legal-consultation');
+                  onClick={() => {
+                    if (card.modal === 'medical-communication') {
+                      openMedicalCommunicationWhatsApp();
                       return;
                     }
 
-                    if (card.title === 'Open Technical Support Ticket' || card.button === 'Open Ticket' || card.modal === 'technical-ticket') {
-                      setSupportRequestModal('technical-ticket');
-                    }
-                  }}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    if (card.title === 'Request Legal Consultation' || card.button === 'Request Consultation' || card.modal === 'legal-consultation') {
-                      setSupportRequestModal('legal-consultation');
-                      return;
-                    }
-
-                    if (card.title === 'Open Technical Support Ticket' || card.button === 'Open Ticket' || card.modal === 'technical-ticket') {
-                      setSupportRequestModal('technical-ticket');
+                    if (card.modal) {
+                      setSupportRequestModal(card.modal);
                     }
                   }}
                   className={`mt-6 w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${tone.button}`}
