@@ -218,6 +218,73 @@ export function StatusTracking({ lang }: Props) {
     }
   };
 
+  const getStatusActionGuard = (
+    action: 'resend' | 'revoke',
+    record: TrackingRecord,
+  ) => {
+    const status = String(record.status || '').toLowerCase();
+
+    const blockedForResend = new Set(['signed', 'evidence', 'revoked']);
+    const blockedForRevoke = new Set(['draft', 'signed', 'evidence', 'revoked', 'expired', 'failed']);
+
+    if (action === 'resend') {
+      if (blockedForResend.has(status)) {
+        return {
+          allowed: false,
+          reason:
+            status === 'revoked'
+              ? (lang === 'ar'
+                ? '\u0644\u0627 \u064a\u0645\u0643\u0646 \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0645\u0648\u0627\u0641\u0642\u0629 \u062a\u0645 \u0625\u0644\u063a\u0627\u0624\u0647. \u064a\u062c\u0628 \u0625\u0646\u0634\u0627\u0621 \u0637\u0644\u0628 \u062a\u0648\u0642\u064a\u0639 \u062c\u062f\u064a\u062f.'
+                : 'Cannot resend a revoked consent link. A new signature request is required.')
+              : status === 'signed'
+                ? (lang === 'ar'
+                  ? '\u0644\u0627 \u064a\u0645\u0643\u0646 \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0627\u0641\u0642\u0629 \u062a\u0645 \u062a\u0648\u0642\u064a\u0639\u0647\u0627.'
+                  : 'Cannot resend a consent that has already been signed.')
+                : (lang === 'ar'
+                  ? '\u0644\u0627 \u064a\u0645\u0643\u0646 \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0645\u0648\u0627\u0641\u0642\u0629 \u0645\u0643\u062a\u0645\u0644\u0629 \u0623\u0648 \u0645\u062e\u062a\u0648\u0645\u0629 \u0636\u0645\u0646 \u0627\u0644\u062d\u0632\u0645\u0629 \u0627\u0644\u062f\u0644\u064a\u0644\u064a\u0629.'
+                  : 'Cannot resend a finalized or evidence-sealed consent.'),
+        };
+      }
+
+      return { allowed: true, reason: '' };
+    }
+
+    if (blockedForRevoke.has(status)) {
+      return {
+        allowed: false,
+        reason:
+          status === 'revoked'
+            ? (lang === 'ar'
+              ? '\u062a\u0645 \u0625\u0644\u063a\u0627\u0621 \u0631\u0627\u0628\u0637 \u0647\u0630\u0647 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0645\u0633\u0628\u0642\u064b\u0627.'
+              : 'This consent link has already been revoked.')
+            : status === 'signed'
+              ? (lang === 'ar'
+                ? '\u0644\u0627 \u064a\u0645\u0643\u0646 \u0625\u0644\u063a\u0627\u0621 \u0631\u0627\u0628\u0637 \u0645\u0648\u0627\u0641\u0642\u0629 \u062a\u0645 \u062a\u0648\u0642\u064a\u0639\u0647\u0627.'
+                : 'Cannot revoke a consent link after signing.')
+              : status === 'evidence'
+                ? (lang === 'ar'
+                  ? '\u0644\u0627 \u064a\u0645\u0643\u0646 \u0625\u0644\u063a\u0627\u0621 \u0645\u0648\u0627\u0641\u0642\u0629 \u0628\u0639\u062f \u0627\u0643\u062a\u0645\u0627\u0644 \u0627\u0644\u062d\u0632\u0645\u0629 \u0627\u0644\u062f\u0644\u064a\u0644\u064a\u0629.'
+                  : 'Cannot revoke an evidence-sealed consent.')
+                : status === 'expired'
+                  ? (lang === 'ar'
+                    ? '\u0644\u0627 \u062d\u0627\u062c\u0629 \u0644\u0625\u0644\u063a\u0627\u0621 \u0631\u0627\u0628\u0637 \u0645\u0646\u062a\u0647\u064a \u0627\u0644\u0635\u0644\u0627\u062d\u064a\u0629.'
+                    : 'No revocation is required for an expired link.')
+                  : status === 'failed'
+                    ? (lang === 'ar'
+                      ? '\u0644\u0627 \u064a\u0648\u062c\u062f \u0631\u0627\u0628\u0637 \u0646\u0634\u0637 \u064a\u0645\u0643\u0646 \u0625\u0644\u063a\u0627\u0624\u0647 \u0628\u0639\u062f \u0641\u0634\u0644 \u0627\u0644\u0625\u0631\u0633\u0627\u0644.'
+                      : 'There is no active link to revoke after delivery failure.')
+                    : (lang === 'ar'
+                      ? '\u0644\u0627 \u064a\u0645\u0643\u0646 \u0625\u0644\u063a\u0627\u0621 \u0645\u0648\u0627\u0641\u0642\u0629 \u0641\u064a \u0645\u0631\u062d\u0644\u0629 \u0627\u0644\u0645\u0633\u0648\u062f\u0629.'
+                      : 'Cannot revoke a draft consent.'),
+      };
+    }
+
+    return { allowed: true, reason: '' };
+  };
+
+  const selectedResendGuard = getStatusActionGuard('resend', selected);
+  const selectedRevokeGuard = getStatusActionGuard('revoke', selected);
+
   const updateSelectedConsentStatus = (
     consentId: string,
     status: string,
@@ -582,6 +649,14 @@ export function StatusTracking({ lang }: Props) {
   }, [selected.id]);
 
   async function handleResendConsentLink(consentId: string) {
+    const guard = getStatusActionGuard('resend', selected);
+
+    if (!guard.allowed) {
+      setStatusActionMessage(guard.reason);
+      window.alert(guard.reason);
+      return;
+    }
+
     if (revokedConsentIds.has(consentId)) {
       setStatusActionMessage(
         lang === 'ar'
@@ -640,6 +715,14 @@ export function StatusTracking({ lang }: Props) {
   }
 
   async function handleRevokeConsent(consentId: string) {
+    const guard = getStatusActionGuard('revoke', selected);
+
+    if (!guard.allowed) {
+      setStatusActionMessage(guard.reason);
+      window.alert(guard.reason);
+      return;
+    }
+
     const confirmed = window.confirm(
       lang === 'ar'
         ? `\u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f \u0645\u0646 \u0625\u0644\u063a\u0627\u0621 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0631\u0642\u0645 ${consentId}? \u0644\u0646 \u064a\u062a\u0645\u0643\u0646 \u0627\u0644\u0645\u0631\u064a\u0636 \u0645\u0646 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u0631\u0627\u0628\u0637 \u0628\u0639\u062f \u0627\u0644\u0625\u0644\u063a\u0627\u0621.`
@@ -772,11 +855,29 @@ export function StatusTracking({ lang }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => handleResendConsentLink(selected.id)} className="flex items-center gap-1.5 border border-[#D8DCE3] text-[#6B7280] hover:text-[#2F2F2F] text-xs px-3 py-1.5 rounded transition-colors">
+                  <button
+                    onClick={() => handleResendConsentLink(selected.id)}
+                    disabled={!selectedResendGuard.allowed}
+                    title={selectedResendGuard.allowed ? '' : selectedResendGuard.reason}
+                    className={`flex items-center gap-1.5 border text-xs px-3 py-1.5 rounded transition-colors ${
+                      selectedResendGuard.allowed
+                        ? 'border-[#D8DCE3] text-[#6B7280] hover:text-[#2F2F2F]'
+                        : 'border-[#D8DCE3] text-[#A0A7B3] cursor-not-allowed bg-[#F3F4F6]'
+                    }`}
+                  >
                     <RotateCcw className="w-3.5 h-3.5" />
                     {lang === 'en' ? 'Resend' : 'إعادة الإرسال'}
                   </button>
-                  <button onClick={() => handleRevokeConsent(selected.id)} className="flex items-center gap-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs px-3 py-1.5 rounded transition-colors">
+                  <button
+                    onClick={() => handleRevokeConsent(selected.id)}
+                    disabled={!selectedRevokeGuard.allowed}
+                    title={selectedRevokeGuard.allowed ? '' : selectedRevokeGuard.reason}
+                    className={`flex items-center gap-1.5 border text-xs px-3 py-1.5 rounded transition-colors ${
+                      selectedRevokeGuard.allowed
+                        ? 'border-red-200 text-red-600 hover:bg-red-50'
+                        : 'border-[#D8DCE3] text-[#A0A7B3] cursor-not-allowed bg-[#F3F4F6]'
+                    }`}
+                  >
                     <XCircle className="w-3.5 h-3.5" />
                     {lang === 'en' ? 'Revoke' : 'إلغاء'}
                   </button>
