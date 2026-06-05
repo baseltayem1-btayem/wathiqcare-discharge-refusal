@@ -89,7 +89,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
       'Please provide medical communication support regarding the consent workflow.'
     ].join('\n');
 
-    const url = `https://wa.me/966500000000?text=${encodeURIComponent(message)}`;
+    const url = `https://wa.me/966543587772?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
   const [supportRequestContext] = useState(() => ({
