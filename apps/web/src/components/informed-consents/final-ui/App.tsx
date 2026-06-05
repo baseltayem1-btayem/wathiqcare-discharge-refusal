@@ -172,9 +172,17 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
 
         const modal = button.getAttribute('data-modal') as
           | null
+          | 'settings'
           | 'medical-communication'
           | 'legal-consultation'
           | 'technical-ticket';
+
+        if (modal === 'settings') {
+          event.preventDefault();
+          event.stopPropagation();
+          setSupportRequestModal('settings');
+          return;
+        }
 
         if (modal === 'medical-communication') {
           event.preventDefault();
