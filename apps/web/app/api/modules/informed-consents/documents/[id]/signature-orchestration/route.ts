@@ -73,7 +73,7 @@ export async function POST(
 
     const doc = await prisma.consentDocument.findFirst({
       where: { id, tenantId: auth.tenant_id },
-      select: { id: true, caseId: true, patientName: true, metadata: true },
+      select: { id: true, caseId: true, patientName: true, status: true, metadata: true },
     });
 
     if (!doc) return NextResponse.json({ error: "Consent document not found" }, { status: 404 });
@@ -143,6 +143,64 @@ export async function POST(
       return NextResponse.json({ error: "Signature request not found" }, { status: 404 });
     }
 
+    const guardedSignatureRequest = asRecord(requests[index]);
+    const guardedRequestStatus = normalize(guardedSignatureRequest.status).toUpperCase();
+    const guardedDocumentStatus = normalize(doc.status).toUpperCase();
+    const revokeReason = normalize(payload.reason);
+
+    if (action === "resend") {
+      if (["SIGNED", "REVOKED"].includes(guardedRequestStatus)) {
+        return NextResponse.json(
+          {
+            error:
+              guardedRequestStatus === "REVOKED"
+                ? "Cannot resend a revoked signature request. Create a new signature request instead."
+                : "Cannot resend a signature request that has already been signed.",
+          },
+          { status: 409 },
+        );
+      }
+
+      if (["SIGNED", "FINALIZED"].includes(guardedDocumentStatus)) {
+        return NextResponse.json(
+          { error: "Cannot resend a consent document that is already signed or finalized." },
+          { status: 409 },
+        );
+      }
+    }
+
+    if (action === "revoke") {
+      if (!revokeReason) {
+        return NextResponse.json(
+          { error: "Revocation reason is required." },
+          { status: 400 },
+        );
+      }
+
+      if (["SIGNED", "REVOKED", "EXPIRED", "FAILED"].includes(guardedRequestStatus)) {
+        return NextResponse.json(
+          {
+            error:
+              guardedRequestStatus === "SIGNED"
+                ? "Cannot revoke a signature request after signing."
+                : guardedRequestStatus === "REVOKED"
+                  ? "Signature request has already been revoked."
+                  : guardedRequestStatus === "EXPIRED"
+                    ? "Cannot revoke an expired signature request."
+                    : "Cannot revoke a failed signature request.",
+          },
+          { status: 409 },
+        );
+      }
+
+      if (["SIGNED", "FINALIZED"].includes(guardedDocumentStatus)) {
+        return NextResponse.json(
+          { error: "Cannot revoke a signed or finalized consent document." },
+          { status: 409 },
+        );
+      }
+    }
+
     if (action === "resend") {
       const row = requests[index];
       const recipientMobile = normalize(row.mobile);
@@ -192,7 +250,7 @@ export async function POST(
         tenantId: auth.tenant_id || "",
         documentId: id,
         revokedBy: auth.sub,
-        reason: normalize(payload.reason) || "Revoked by authorized user",
+        reason: revokeReason,
       });
 
       requests[index] = {
@@ -251,6 +309,9 @@ export async function POST(
         secureSigningSessionId: String(currentSecureSigning.sessionId || ""),
         smsDeliveryStatus: String(currentSecureSigning.smsDeliveryStatus || ""),
         emailDeliveryStatus: String(currentSecureSigning.emailDeliveryStatus || ""),
+        guardedRequestStatus: String(guardedRequestStatus || ""),
+        guardedDocumentStatus: String(guardedDocumentStatus || ""),
+        revokeReason: String(revokeReason || ""),
       },
       request,
     });
