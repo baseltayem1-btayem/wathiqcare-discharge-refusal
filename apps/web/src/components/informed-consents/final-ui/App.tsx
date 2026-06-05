@@ -300,7 +300,9 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
 
                     <button
                       type="button"
-                      onClick={() => window.alert(isArabic ? '\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0637\u0644\u0628 \u062a\u062d\u062f\u064a\u062b \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u062a\u0631\u062e\u064a\u0635.' : 'License update request recorded.')}
+                      onClick={() => {
+                        setSupportRequestModal('technical-ticket');
+                      }}
                       className="mt-4 w-full rounded border border-[#002B5C] px-4 py-2 text-sm font-semibold text-[#002B5C] hover:bg-blue-50"
                     >
                       {isArabic ? '\u0637\u0644\u0628 \u062a\u062d\u062f\u064a\u062b \u0627\u0644\u062a\u0631\u062e\u064a\u0635' : 'Request License Update'}
