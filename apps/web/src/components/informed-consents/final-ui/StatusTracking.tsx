@@ -42,7 +42,7 @@ export function StatusTracking({ lang }: Props) {
     if (revokedConsentIds.has(consentId)) {
       setStatusActionMessage(
         lang === 'ar'
-          ? '?? ???? ????? ????? ???? ?????? ?? ??????.'
+          ? '\u0644\u0627 \u064a\u0645\u0643\u0646 \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0645\u0648\u0627\u0641\u0642\u0629 \u062a\u0645 \u0625\u0644\u063a\u0627\u0624\u0647.'
           : 'Cannot resend a revoked consent link.'
       );
       return;
@@ -50,7 +50,7 @@ export function StatusTracking({ lang }: Props) {
 
     const confirmed = window.confirm(
       lang === 'ar'
-        ? `?? ???? ????? ????? ???? ???????? ??? ${consentId}?`
+        ? `\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0631\u0642\u0645 ${consentId}?`
         : `Do you want to resend consent link ${consentId}?`
     );
 
@@ -60,13 +60,13 @@ export function StatusTracking({ lang }: Props) {
 
     setStatusActionMessage(
       lang === 'ar'
-        ? `??? ????? ????? ???? ???????? ??? ${consentId}.`
+        ? `\u062a\u0645\u062a \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0631\u0642\u0645 ${consentId}.`
         : `Secure consent link resent for ${consentId}.`
     );
 
     window.alert(
       lang === 'ar'
-        ? '??? ????? ????? ???? ???????? ?????.'
+        ? '\u062a\u0645\u062a \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0628\u0646\u062c\u0627\u062d.'
         : 'Consent link resent successfully.'
     );
   }
@@ -74,7 +74,7 @@ export function StatusTracking({ lang }: Props) {
   function handleRevokeConsent(consentId: string) {
     const confirmed = window.confirm(
       lang === 'ar'
-        ? `?? ??? ????? ?? ????? ???? ???????? ??? ${consentId}? ?? ????? ?????? ?? ??????? ?????? ??? ???????.`
+        ? `\u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f \u0645\u0646 \u0625\u0644\u063a\u0627\u0621 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0631\u0642\u0645 ${consentId}? \u0644\u0646 \u064a\u062a\u0645\u0643\u0646 \u0627\u0644\u0645\u0631\u064a\u0636 \u0645\u0646 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u0631\u0627\u0628\u0637 \u0628\u0639\u062f \u0627\u0644\u0625\u0644\u063a\u0627\u0621.`
         : `Revoke consent link for ${consentId}? This action will invalidate the active signing link.`
     );
 
@@ -90,13 +90,13 @@ export function StatusTracking({ lang }: Props) {
 
     setStatusActionMessage(
       lang === 'ar'
-        ? `?? ????? ???? ???????? ??? ${consentId}.`
+        ? `\u062a\u0645 \u0625\u0644\u063a\u0627\u0621 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0631\u0642\u0645 ${consentId}.`
         : `Consent link revoked for ${consentId}.`
     );
 
     window.alert(
       lang === 'ar'
-        ? '?? ????? ???? ???????? ?????.'
+        ? '\u062a\u0645 \u0625\u0644\u063a\u0627\u0621 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0628\u0646\u062c\u0627\u062d.'
         : 'Consent link revoked successfully.'
     );
   }
