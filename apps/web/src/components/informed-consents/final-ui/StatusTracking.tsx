@@ -213,15 +213,200 @@ export function StatusTracking({ lang }: Props) {
     }
   };
 
+  const updateSelectedConsentStatus = (
+    consentId: string,
+    status: string,
+    signatureRequestStatus?: string | null,
+  ) => {
+    const actionTime = new Date().toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
+    const updateEvents = (events: TrackingEvent[]) =>
+      events.map((event) => {
+        if (status === 'revoked' && event.stage === 'sent') {
+          return {
+            ...event,
+            label: 'Link Revoked',
+            done: true,
+            time: actionTime,
+          };
+        }
+
+        if (status === 'sent' && event.stage === 'sent') {
+          return {
+            ...event,
+            label: 'Link Sent',
+            done: true,
+            time: actionTime,
+          };
+        }
+
+        return event;
+      });
+
+    setSelected((current) =>
+      current.id === consentId
+        ? {
+            ...current,
+            status,
+            signatureRequestStatus: signatureRequestStatus || current.signatureRequestStatus,
+            events: updateEvents(current.events),
+          }
+        : current
+    );
+
+    setTrackingRecords((current) =>
+      current.map((item) =>
+        item.id === consentId
+          ? {
+              ...item,
+              status,
+              signatureRequestStatus: signatureRequestStatus || item.signatureRequestStatus,
+              events: updateEvents(item.events),
+            }
+          : item
+      )
+    );
+  };
+
+  const applySignatureRequestToSelectedRecord = (
+    request: Record<string, unknown>,
+  ) => {
+    const requestId = typeof request.id === 'string' ? request.id : null;
+    const requestStatus = typeof request.status === 'string' ? request.status : null;
+    const requestMobile = typeof request.mobile === 'string' ? request.mobile : null;
+    const requestEmail = typeof request.email === 'string' ? request.email : null;
+
+    if (!requestId) return null;
+
+    setSelected((current) => ({
+      ...current,
+      signatureRequestId: requestId,
+      signatureRequestStatus: requestStatus,
+      signatureRecipientMobile: requestMobile,
+      signatureRecipientEmail: requestEmail,
+    }));
+
+    setTrackingRecords((current) =>
+      current.map((item) =>
+        item.id === selected.id
+          ? {
+              ...item,
+              signatureRequestId: requestId,
+              signatureRequestStatus: requestStatus,
+              signatureRecipientMobile: requestMobile,
+              signatureRecipientEmail: requestEmail,
+            }
+          : item
+      )
+    );
+
+    return requestId;
+  };
+
+  const configureDefaultSignatureRecipient = async (consentId: string) => {
+    const confirmed = window.confirm(
+      lang === 'ar'
+        ? '\u0644\u0627 \u064a\u0648\u062c\u062f \u0645\u0633\u062a\u0644\u0645 \u062a\u0648\u0642\u064a\u0639 \u0645\u0631\u062a\u0628\u0637 \u0628\u0647\u0630\u0647 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629. \u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0639\u062f\u0627\u062f \u0645\u0633\u062a\u0644\u0645 \u0627\u0644\u062a\u0648\u0642\u064a\u0639 \u0627\u0644\u0622\u0646\u061f'
+        : 'No signature recipient is linked to this consent. Configure a recipient now?'
+    );
+
+    if (!confirmed) {
+      throw new Error('Signature recipient configuration was cancelled.');
+    }
+
+    const mobile = window.prompt(
+      lang === 'ar'
+        ? '\u0623\u062f\u062e\u0644 \u0631\u0642\u0645 \u062c\u0648\u0627\u0644 \u0627\u0644\u0645\u0633\u062a\u0644\u0645 \u0628\u0635\u064a\u063a\u0629 9665XXXXXXXX'
+        : 'Enter recipient mobile number in 9665XXXXXXXX format',
+      selected.signatureRecipientMobile || ''
+    )?.trim();
+
+    if (!mobile) {
+      throw new Error('Recipient mobile number is required.');
+    }
+
+    const email = window.prompt(
+      lang === 'ar'
+        ? '\u0623\u062f\u062e\u0644 \u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u0644\u0645\u0633\u062a\u0644\u0645'
+        : 'Enter recipient email address',
+      selected.signatureRecipientEmail || ''
+    )?.trim();
+
+    if (!email) {
+      throw new Error('Recipient email is required.');
+    }
+
+    const response = await fetch(`/api/modules/informed-consents/documents/${encodeURIComponent(consentId)}/signature-orchestration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'configure_recipients',
+        payload: {
+          requests: [
+            {
+              recipientName: selected.name || 'Patient',
+              role: 'PATIENT',
+              mobile,
+              email,
+              deliveryMethod: 'SMS_TAQNIAT',
+              required: true,
+            },
+          ],
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => null);
+      const message = typeof errorPayload?.error === 'string'
+        ? errorPayload.error
+        : 'Failed to configure signature recipient.';
+
+      throw new Error(message);
+    }
+
+    const payload = await response.json();
+    const requests = Array.isArray(payload?.requests) ? payload.requests : [];
+    const primaryRequest = requests[0] && typeof requests[0] === 'object'
+      ? requests[0] as Record<string, unknown>
+      : null;
+
+    if (!primaryRequest) {
+      throw new Error('Signature recipient was configured but no request was returned.');
+    }
+
+    const requestId = applySignatureRequestToSelectedRecord(primaryRequest);
+
+    if (!requestId) {
+      throw new Error('Signature request was configured but request id is missing.');
+    }
+
+    return requestId;
+  };
+
   const runSignatureOrchestrationAction = async (
     consentId: string,
     action: 'resend' | 'revoke',
     reason?: string,
   ) => {
-    const requestId = selected.signatureRequestId;
+    let requestId = selected.signatureRequestId;
+
+    if (!requestId && action === 'resend') {
+      requestId = await configureDefaultSignatureRecipient(consentId);
+    }
 
     if (!requestId) {
-      throw new Error('No signature request is linked to this consent record.');
+      throw new Error(
+        action === 'revoke'
+          ? 'No active signature request is linked to this consent record for revocation.'
+          : 'No signature request is linked to this consent record.'
+      );
     }
 
     const response = await fetch(`/api/modules/informed-consents/documents/${encodeURIComponent(consentId)}/signature-orchestration`, {
@@ -412,11 +597,13 @@ export function StatusTracking({ lang }: Props) {
     try {
       await runSignatureOrchestrationAction(consentId, 'resend');
 
+      updateSelectedConsentStatus(consentId, 'sent', 'SENT');
+
       await recordStatusAction(
         consentId,
         'consent_link_resent',
         `RESEND: Consent link resent for ${consentId}`,
-        { uiAction: 'RESEND', signatureRequestId: selected.signatureRequestId },
+        { uiAction: 'RESEND', signatureRequestId: selected.signatureRequestId, statusAfterAction: 'SENT' },
       );
 
       setStatusActionMessage(
@@ -483,11 +670,13 @@ export function StatusTracking({ lang }: Props) {
       return next;
     });
 
+    updateSelectedConsentStatus(consentId, 'revoked', 'REVOKED');
+
     await recordStatusAction(
       consentId,
       'consent_link_revoked',
       `REVOKE: Consent link revoked for ${consentId}`,
-      { uiAction: 'REVOKE' },
+      { uiAction: 'REVOKE', signatureRequestId: selected.signatureRequestId, statusAfterAction: 'REVOKED' },
     );
 
     setStatusActionMessage(
@@ -525,7 +714,25 @@ export function StatusTracking({ lang }: Props) {
                       <div className="font-medium text-sm text-[#2F2F2F]">{lang === 'en' ? record.name : record.nameAr}</div>
                       <div className="text-xs text-[#6B7280] font-mono">{record.mrn}</div>
                     </div>
-                    <ClinicalBadge variant={record.status === 'evidence' ? 'signed' : 'sent'} label={record.status === 'evidence' ? (lang === 'en' ? 'Complete' : 'مكتمل') : (lang === 'en' ? 'Active' : 'نشط')} dot />
+                    <ClinicalBadge
+                      variant={
+                        record.status === 'evidence'
+                          ? 'signed'
+                          : record.status === 'revoked'
+                            ? 'warning'
+                            : 'sent'
+                      }
+                      label={
+                        record.status === 'evidence'
+                          ? (lang === 'en' ? 'Complete' : '\u0645\u0643\u062a\u0645\u0644')
+                          : record.status === 'revoked'
+                            ? (lang === 'en' ? 'Revoked' : '\u0645\u0644\u063a\u0649')
+                            : record.status === 'sent'
+                              ? (lang === 'en' ? 'Sent' : '\u0645\u0631\u0633\u0644')
+                              : (lang === 'en' ? 'Active' : '\u0646\u0634\u0637')
+                      }
+                      dot
+                    />
                   </div>
                   <div className="text-xs text-[#6B7280]">{lang === 'en' ? record.procedure : record.procedureAr}</div>
                   {lastDone && (
