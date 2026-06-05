@@ -7,6 +7,15 @@ import { toJsonSafe } from "@/lib/server/json";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
 function getProgressFromStatus(status: string) {
   const normalized = status.toUpperCase();
 
@@ -61,6 +70,18 @@ export async function GET(request: NextRequest) {
 
     const records = docs.map((doc) => {
       const signatureCount = Array.isArray(doc.signatures) ? doc.signatures.length : 0;
+
+      const metadata = asRecord(doc.metadata);
+      const signatureOrchestration = asRecord(metadata.signatureOrchestration);
+      const signatureRequests = asArray(signatureOrchestration.requests).map((item) => asRecord(item));
+      const primarySignatureRequest =
+        signatureRequests.find((item) => {
+          const status = String(item.status || "").toUpperCase();
+          return status !== "REVOKED" && status !== "SIGNED";
+        }) ||
+        signatureRequests[0] ||
+        null;
+
       const templateTitle =
         doc.template?.titleEn ||
         doc.template?.titleAr ||
@@ -104,6 +125,13 @@ export async function GET(request: NextRequest) {
         updatedAt: doc.updatedAt,
         approvedAt: doc.approvedAt,
         finalizedAt: doc.finalizedAt,
+
+        signatureRequestId: primarySignatureRequest ? String(primarySignatureRequest.id || "") : null,
+        signatureRequestStatus: primarySignatureRequest ? String(primarySignatureRequest.status || "") : null,
+        signatureRecipientName: primarySignatureRequest ? String(primarySignatureRequest.recipientName || "") : null,
+        signatureRecipientMobile: primarySignatureRequest ? String(primarySignatureRequest.mobile || "") : null,
+        signatureRecipientEmail: primarySignatureRequest ? String(primarySignatureRequest.email || "") : null,
+        signatureRequestCount: signatureRequests.length,
 
         source: "database",
       };

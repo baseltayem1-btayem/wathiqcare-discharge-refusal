@@ -30,6 +30,10 @@ type TrackingRecord = {
   procedureAr: string;
   sent: string;
   status: string;
+  signatureRequestId?: string | null;
+  signatureRequestStatus?: string | null;
+  signatureRecipientMobile?: string | null;
+  signatureRecipientEmail?: string | null;
   events: TrackingEvent[];
 };
 
@@ -45,6 +49,12 @@ type StatusTrackingApiRecord = {
   progress?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  signatureRequestId?: string | null;
+  signatureRequestStatus?: string | null;
+  signatureRecipientName?: string | null;
+  signatureRecipientMobile?: string | null;
+  signatureRecipientEmail?: string | null;
+  signatureRequestCount?: number | null;
 };
 
 const initialStatusTrackingRecord: TrackingRecord = {
@@ -56,6 +66,10 @@ const initialStatusTrackingRecord: TrackingRecord = {
   procedureAr: '\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0627\u0644\u0645\u0633\u062a\u0646\u064a\u0631\u0629',
   sent: '-',
   status: 'loading',
+  signatureRequestId: null,
+  signatureRequestStatus: null,
+  signatureRecipientMobile: null,
+  signatureRecipientEmail: null,
   events: [
     { stage: 'draft', label: 'Draft Created', time: null, done: false, icon: FileText },
     { stage: 'sent', label: 'Link Sent', time: null, done: false, icon: Send },
@@ -128,6 +142,10 @@ function mapApiRecordToTrackingRecord(record: StatusTrackingApiRecord): Tracking
     procedureAr: record.procedure || record.templateTitle || '\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0627\u0644\u0645\u0633\u062a\u0646\u064a\u0631\u0629',
     sent: formatTrackingDateTime(record.createdAt),
     status: normalizeStatusToStage(record.status),
+    signatureRequestId: record.signatureRequestId || null,
+    signatureRequestStatus: record.signatureRequestStatus || null,
+    signatureRecipientMobile: record.signatureRecipientMobile || null,
+    signatureRecipientEmail: record.signatureRecipientEmail || null,
     events: buildTrackingEvents(record),
   };
 }
@@ -193,6 +211,43 @@ export function StatusTracking({ lang }: Props) {
     } catch {
       // Keep local fixture/fallback timeline if API is unavailable.
     }
+  };
+
+  const runSignatureOrchestrationAction = async (
+    consentId: string,
+    action: 'resend' | 'revoke',
+    reason?: string,
+  ) => {
+    const requestId = selected.signatureRequestId;
+
+    if (!requestId) {
+      throw new Error('No signature request is linked to this consent record.');
+    }
+
+    const response = await fetch(`/api/modules/informed-consents/documents/${encodeURIComponent(consentId)}/signature-orchestration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action,
+        payload: {
+          requestId,
+          reason,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => null);
+      const message = typeof errorPayload?.error === 'string'
+        ? errorPayload.error
+        : `Signature orchestration ${action} failed.`;
+
+      throw new Error(message);
+    }
+
+    return response.json();
   };
 
   const recordStatusAction = async (
@@ -354,24 +409,42 @@ export function StatusTracking({ lang }: Props) {
 
     if (!confirmed) return;
 
-    await recordStatusAction(
-      consentId,
-      'consent_link_resent',
-      `RESEND: Consent link resent for ${consentId}`,
-      { uiAction: 'RESEND' },
-    );
+    try {
+      await runSignatureOrchestrationAction(consentId, 'resend');
 
-    setStatusActionMessage(
-      lang === 'ar'
-        ? `\u062a\u0645\u062a \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0631\u0642\u0645 ${consentId}.`
-        : `Secure consent link resent for ${consentId}.`
-    );
+      await recordStatusAction(
+        consentId,
+        'consent_link_resent',
+        `RESEND: Consent link resent for ${consentId}`,
+        { uiAction: 'RESEND', signatureRequestId: selected.signatureRequestId },
+      );
 
-    window.alert(
-      lang === 'ar'
-        ? '\u062a\u0645\u062a \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0628\u0646\u062c\u0627\u062d.'
-        : 'Consent link resent successfully.'
-    );
+      setStatusActionMessage(
+        lang === 'ar'
+          ? `\u062a\u0645\u062a \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0631\u0642\u0645 ${consentId}.`
+          : `Secure consent link resent for ${consentId}.`
+      );
+
+      window.alert(
+        lang === 'ar'
+          ? '\u062a\u0645\u062a \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0628\u0646\u062c\u0627\u062d.'
+          : 'Consent link resent successfully.'
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Resend failed.';
+
+      setStatusActionMessage(
+        lang === 'ar'
+          ? `\u062a\u0639\u0630\u0631\u062a \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0631\u0627\u0628\u0637: ${message}`
+          : `Unable to resend consent link: ${message}`
+      );
+
+      window.alert(
+        lang === 'ar'
+          ? `\u062a\u0639\u0630\u0631\u062a \u0625\u0639\u0627\u062f\u0629 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0631\u0627\u0628\u0637: ${message}`
+          : `Unable to resend consent link: ${message}`
+      );
+    }
   }
 
   async function handleRevokeConsent(consentId: string) {
@@ -382,6 +455,27 @@ export function StatusTracking({ lang }: Props) {
     );
 
     if (!confirmed) return;
+
+    try {
+      await runSignatureOrchestrationAction(
+        consentId,
+        'revoke',
+        'Revoked from Status Tracking',
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Revoke failed.';
+      setStatusActionMessage(
+        lang === 'ar'
+          ? `\u062a\u0639\u0630\u0631 \u0625\u0644\u063a\u0627\u0621 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629: ${message}`
+          : `Unable to revoke consent link: ${message}`
+      );
+      window.alert(
+        lang === 'ar'
+          ? `\u062a\u0639\u0630\u0631 \u0625\u0644\u063a\u0627\u0621 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629: ${message}`
+          : `Unable to revoke consent link: ${message}`
+      );
+      return;
+    }
 
     setRevokedConsentIds((current) => {
       const next = new Set(current);
