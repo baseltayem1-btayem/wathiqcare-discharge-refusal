@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useState } from 'react';
 import {
   CheckCircle2, Circle, Clock, Send, Eye, ShieldCheck,
   BookOpen, FileText, Archive, RotateCcw, XCircle, ChevronRight,
@@ -14,6 +14,77 @@ interface Props {
 }
 
 export function StatusTracking({ lang }: Props) {
+  const [statusActionMessage, setStatusActionMessage] = useState<string | null>(null);
+  const [statusAuditActions, setStatusAuditActions] = useState<Array<{
+    time: string;
+    action: string;
+    user: string;
+    ip: string;
+  }>>([]);
+
+  const recordStatusAction = (action: string) => {
+    const now = new Date();
+
+    setStatusAuditActions((current) => [
+      {
+        time: now.toLocaleTimeString('en-GB', { hour12: false }),
+        action,
+        user: 'Dr. K. Al-Qahtani',
+        ip: '10.1.4.22',
+      },
+      ...current,
+    ]);
+  };
+
+  const handleResendConsentLink = () => {
+    const confirmed = window.confirm(
+      lang === 'ar'
+        ? '?? ???? ????? ????? ???? ???????? ???????'
+        : 'Do you want to resend the consent link to the patient?'
+    );
+
+    if (!confirmed) return;
+
+    recordStatusAction('Consent link resent by physician');
+
+    setStatusActionMessage(
+      lang === 'ar'
+        ? '??? ????? ????? ???? ???????? ??????.'
+        : 'Consent link has been resent to the patient.'
+    );
+
+    window.alert(
+      lang === 'ar'
+        ? '??? ????? ????? ???? ???????? ?????.'
+        : 'Consent link resent successfully.'
+    );
+  };
+
+  const handleRevokeConsentLink = () => {
+    const confirmed = window.confirm(
+      lang === 'ar'
+        ? '?? ??? ????? ?? ????? ???? ????????? ?? ????? ?????? ?? ??????? ?????? ??? ???????.'
+        : 'Are you sure you want to revoke this consent link? The patient will no longer be able to use it.'
+    );
+
+    if (!confirmed) return;
+
+    recordStatusAction('Consent link revoked by physician');
+
+    setStatusActionMessage(
+      lang === 'ar'
+        ? '?? ????? ???? ???????? ??? ???? ?????? ??????.'
+        : 'Consent link has been revoked and is no longer available to the patient.'
+    );
+
+    window.alert(
+      lang === 'ar'
+        ? '?? ????? ???? ???????? ?????.'
+        : 'Consent link revoked successfully.'
+    );
+  };
+
+
   const [statusActionMessage, setStatusActionMessage] = useState<string | null>(null);
   const [revokedConsentIds, setRevokedConsentIds] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState(consentRecords[0]);
@@ -89,11 +160,11 @@ export function StatusTracking({ lang }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="flex items-center gap-1.5 border border-[#D8DCE3] text-[#6B7280] hover:text-[#2F2F2F] text-xs px-3 py-1.5 rounded transition-colors">
+                  <button onClick={handleResendConsentLink} className="flex items-center gap-1.5 border border-[#D8DCE3] text-[#6B7280] hover:text-[#2F2F2F] text-xs px-3 py-1.5 rounded transition-colors">
                     <RotateCcw className="w-3.5 h-3.5" />
                     {lang === 'en' ? 'Resend' : 'إعادة الإرسال'}
                   </button>
-                  <button className="flex items-center gap-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs px-3 py-1.5 rounded transition-colors">
+                  <button onClick={handleRevokeConsentLink} className="flex items-center gap-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs px-3 py-1.5 rounded transition-colors">
                     <XCircle className="w-3.5 h-3.5" />
                     {lang === 'en' ? 'Revoke' : 'إلغاء'}
                   </button>
@@ -128,6 +199,26 @@ export function StatusTracking({ lang }: Props) {
             <div className="bg-white border border-[#D8DCE3] rounded-lg overflow-hidden">
               <div className="px-5 py-3 border-b border-[#D8DCE3] bg-[#F4F6F9] flex items-center gap-2">
                 <Archive className="w-4 h-4 text-[#002B5C]" />
+
+      {statusActionMessage ? (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+          {statusActionMessage}
+        </div>
+      ) : null}
+
+      {statusAuditActions.length > 0 ? (
+        <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-[#002B5C]">
+          {statusAuditActions.map((item, index) => (
+            <div key={`${item.time}-${index}`} className="flex items-center justify-between gap-4 py-1">
+              <span>{item.time}</span>
+              <span>{item.action}</span>
+              <span>{item.user}</span>
+              <span>{item.ip}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
                 <span className="text-sm font-semibold text-[#2F2F2F]">{lang === 'en' ? 'Audit Trail' : 'مسار التدقيق'}</span>
                 <ClinicalBadge variant="info" label="Immutable" />
               </div>
