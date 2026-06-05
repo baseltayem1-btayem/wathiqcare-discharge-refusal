@@ -76,7 +76,7 @@ const navItems = [
 
 function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
   const isArabic = lang === 'ar';
-  const [supportRequestModal, setSupportRequestModal] = useState<null | 'technical-ticket' | 'legal-consultation'>(null);
+  const [supportRequestModal, setSupportRequestModal] = useState<null | 'technical-ticket' | 'legal-consultation' | 'medical-communication'>(null);
   const [supportRequestContext] = useState(() => ({
     user: physicianProfile.name,
     specialty: physicianProfile.specialty,
@@ -89,6 +89,8 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
     sessionReference: `WTC-${Date.now().toString(36).toUpperCase()}`,
   }));
 
+  const medicalCommunicationWhatsAppNumber = process.env.NEXT_PUBLIC_MEDICAL_COMMUNICATION_WHATSAPP_NUMBER || '';
+
   const cards = [
     {
       title: isArabic ? '\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a' : 'Settings',
@@ -99,12 +101,12 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
       modal: null,
     },
     {
-      title: isArabic ? '\u0627\u0644\u062f\u0639\u0645 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a' : 'Legal Support',
-      description: isArabic ? '\u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u0641\u0631\u064a\u0642 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a \u0627\u0644\u0645\u062e\u062a\u0635 \u0644\u0644\u062f\u0639\u0645 \u0648\u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0648\u0627\u0644\u062a\u0648\u062c\u064a\u0647.' : 'Contact the legal team for support, review, and guidance.',
-      button: isArabic ? '\u0627\u0644\u062f\u0639\u0645 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a' : 'Legal Support',
-      icon: Shield,
+      title: isArabic ? '\u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0627\u0644\u0637\u0628\u064a' : 'Medical Communication',
+      description: isArabic ? '\u0642\u0646\u0627\u0629 \u062a\u0648\u0627\u0635\u0644 \u0645\u0628\u0627\u0634\u0631\u0629 \u0628\u064a\u0646 \u0627\u0644\u0637\u0628\u064a\u0628 \u0627\u0644\u0645\u0639\u0627\u0644\u062c\u060c \u0637\u0628\u064a\u0628 \u0627\u0644\u062a\u062e\u062f\u064a\u0631\u060c \u0627\u0644\u062a\u0645\u0631\u064a\u0636\u060c \u0627\u0644\u0634\u0643\u0627\u0648\u0649 \u0627\u0644\u0637\u0628\u064a\u0629\u060c \u0648\u062a\u062c\u0631\u0628\u0629 \u0627\u0644\u0645\u0631\u0636\u0649.' : 'Direct WhatsApp communication between the attending physician, anesthesiologist, nursing, medical complaints, and patient experience.',
+      button: isArabic ? '\u0628\u062f\u0621 \u0645\u062d\u0627\u062f\u062b\u0629 \u0648\u0627\u062a\u0633\u0627\u0628' : 'Start WhatsApp Chat',
+      icon: Activity,
       tone: 'purple',
-      modal: null,
+      modal: 'medical-communication',
     },
     {
       title: isArabic ? '\u0637\u0644\u0628 \u0627\u0633\u062a\u0634\u0627\u0631\u0629 \u0642\u0627\u0646\u0648\u0646\u064a\u0629' : 'Request Legal Consultation',
@@ -219,6 +221,96 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
             );
           })}
         </div>
+
+        {supportRequestModal === 'medical-communication' ? (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-2xl rounded-xl border border-[#D8DCE3] bg-white shadow-xl" dir={isArabic ? 'rtl' : 'ltr'}>
+              <div className="flex items-start justify-between border-b border-[#EEF1F5] px-6 py-4">
+                <div>
+                  <h2 className="text-xl font-bold text-[#002B5C]">
+                    {isArabic ? '\u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0627\u0644\u0637\u0628\u064a' : 'Medical Communication'}
+                  </h2>
+                  <p className="mt-1 text-sm text-[#6B7280]">
+                    {isArabic ? '\u0642\u0646\u0627\u0629 \u062a\u0648\u0627\u0635\u0644 \u0645\u0628\u0627\u0634\u0631\u0629 \u0628\u064a\u0646 \u0627\u0644\u0637\u0628\u064a\u0628 \u0627\u0644\u0645\u0639\u0627\u0644\u062c\u060c \u0637\u0628\u064a\u0628 \u0627\u0644\u062a\u062e\u062f\u064a\u0631\u060c \u0627\u0644\u062a\u0645\u0631\u064a\u0636\u060c \u0627\u0644\u0634\u0643\u0627\u0648\u0649 \u0627\u0644\u0637\u0628\u064a\u0629\u060c \u0648\u062a\u062c\u0631\u0628\u0629 \u0627\u0644\u0645\u0631\u0636\u0649.' : 'Direct WhatsApp communication between the attending physician, anesthesiologist, nursing, medical complaints, and patient experience.'}
+                  </p>
+                </div>
+                <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">?</button>
+              </div>
+
+              <form
+                className="space-y-4 px-6 py-5"
+                onSubmit={(event) => {
+                  event.preventDefault();
+
+                  if (!medicalCommunicationWhatsAppNumber) {
+                    window.alert(isArabic ? '\u0631\u0642\u0645 \u0648\u0627\u062a\u0633\u0627\u0628 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0627\u0644\u0637\u0628\u064a \u063a\u064a\u0631 \u0645\u0636\u0627\u0641 \u0641\u064a \u0645\u062a\u063a\u064a\u0631\u0627\u062a \u0627\u0644\u0628\u064a\u0626\u0629.' : 'Medical communication WhatsApp number is not configured.');
+                    return;
+                  }
+
+                  const formData = new FormData(event.currentTarget);
+                  const target = String(formData.get('target') || '');
+                  const message = String(formData.get('message') || '');
+
+                  const whatsappMessage = [
+                    'WathiqCare Medical Communication',
+                    `Target: ${target}`,
+                    `User: ${supportRequestContext.user}`,
+                    `Page: ${supportRequestContext.page}`,
+                    `Session: ${supportRequestContext.sessionReference}`,
+                    '',
+                    message,
+                  ].join('\n');
+
+                  const normalizedNumber = medicalCommunicationWhatsAppNumber.replace(/[^0-9]/g, '');
+                  const url = `https://wa.me/${normalizedNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+
+                  window.open(url, '_blank', 'noopener,noreferrer');
+                  setSupportRequestModal(null);
+                }}
+              >
+                <label className="block">
+                  <span className="text-sm font-medium text-[#2F2F2F]">
+                    {isArabic ? '\u062c\u0647\u0629 \u0627\u0644\u062a\u0648\u0627\u0635\u0644' : 'Communication Target'}
+                  </span>
+                  <select name="target" className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm">
+                    <option>Attending Physician</option>
+                    <option>Anesthesiologist</option>
+                    <option>Nursing Team</option>
+                    <option>Medical Complaints</option>
+                    <option>Patient Experience</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-[#2F2F2F]">
+                    {isArabic ? '\u0646\u0635 \u0627\u0644\u0631\u0633\u0627\u0644\u0629' : 'Message'}
+                  </span>
+                  <textarea
+                    name="message"
+                    required
+                    rows={5}
+                    className="mt-1 w-full rounded border border-[#D8DCE3] px-3 py-2 text-sm"
+                    placeholder={isArabic ? '\u0627\u0643\u062a\u0628 \u0645\u0648\u0636\u0648\u0639 \u0627\u0644\u062a\u0648\u0627\u0635\u0644\u060c \u0648\u0627\u0644\u062d\u0627\u0644\u0629 \u0623\u0648 \u0627\u0644\u0645\u0644\u0627\u062d\u0638\u0629 \u0627\u0644\u062a\u064a \u062a\u062d\u062a\u0627\u062c \u0645\u062a\u0627\u0628\u0639\u0629.' : 'Write the medical communication topic, case, or note requiring follow-up.'}
+                  />
+                </label>
+
+                <div className="rounded border border-purple-100 bg-purple-50 px-4 py-3 text-xs text-purple-800">
+                  {isArabic ? '\u0633\u064a\u062a\u0645 \u0625\u0631\u0641\u0627\u0642 \u0633\u064a\u0627\u0642 \u0627\u0644\u0637\u0644\u0628 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627: \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645\u060c \u0627\u0644\u0635\u0641\u062d\u0629\u060c \u0627\u0644\u0648\u0642\u062a\u060c \u0648\u0645\u0631\u062c\u0639 \u0627\u0644\u062c\u0644\u0633\u0629.' : 'The request will automatically include user, page, timestamp, and session reference.'}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded border border-[#D8DCE3] px-4 py-2 text-sm font-medium text-[#6B7280] hover:bg-[#F4F6F9]">
+                    {isArabic ? '\u0625\u0644\u063a\u0627\u0621' : 'Cancel'}
+                  </button>
+                  <button type="submit" className="rounded bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800">
+                    {isArabic ? '\u0641\u062a\u062d \u0648\u0627\u062a\u0633\u0627\u0628' : 'Open WhatsApp'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        ) : null}
 
         {supportRequestModal === 'legal-consultation' ? (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
