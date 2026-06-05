@@ -157,24 +157,27 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
 
         if (!button) return;
 
-        const label = button.textContent?.trim() || '';
+        const modal = button.getAttribute('data-modal') as
+          | null
+          | 'medical-communication'
+          | 'legal-consultation'
+          | 'technical-ticket';
 
-        const isLegalConsultation =
-          label.includes('Request Consultation') ||
-          label.includes('??? ??????? ???????');
+        if (modal === 'medical-communication') {
+          event.preventDefault();
+          event.stopPropagation();
+          setSupportRequestModal('medical-communication');
+          return;
+        }
 
-        const isTechnicalTicket =
-          label.includes('Open Ticket') ||
-          label.includes('??? ????? ??? ????');
-
-        if (isLegalConsultation) {
+        if (modal === 'legal-consultation') {
           event.preventDefault();
           event.stopPropagation();
           setSupportRequestModal('legal-consultation');
           return;
         }
 
-        if (isTechnicalTicket) {
+        if (modal === 'technical-ticket') {
           event.preventDefault();
           event.stopPropagation();
           setSupportRequestModal('technical-ticket');
@@ -206,12 +209,8 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                 <p className="mt-4 min-h-[72px] text-center text-sm leading-6 text-[#4B5563]">{card.description}</p>
                 <button
                   type="button"
+                  data-modal={card.modal || undefined}
                   onClick={() => {
-                    if (card.modal === 'medical-communication') {
-                      openMedicalCommunicationWhatsApp();
-                      return;
-                    }
-
                     if (card.modal) {
                       setSupportRequestModal(card.modal);
                     }
