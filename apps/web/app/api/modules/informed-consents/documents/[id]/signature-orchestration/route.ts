@@ -5,6 +5,7 @@ import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { revokeModuleSecureSigningForDocument } from "@/lib/server/module-secure-signing-service";
 import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 
 
@@ -150,9 +151,18 @@ export async function POST(
         updatedBy: auth.sub,
       };
     } else if (action === "revoke") {
+      const revocation = await revokeModuleSecureSigningForDocument({
+        tenantId: auth.tenant_id || "",
+        documentId: id,
+        revokedBy: auth.sub,
+        reason: normalize(payload.reason) || "Revoked by authorized user",
+      });
+
       requests[index] = {
         ...requests[index],
         status: "REVOKED",
+        revokedAt: revocation.revokedAt,
+        revokedSessions: revocation.revokedSessions,
         updatedAt: new Date().toISOString(),
         updatedBy: auth.sub,
       };
@@ -195,6 +205,8 @@ export async function POST(
         status: String(requests[index].status || ""),
         role: String(requests[index].role || ""),
         correlationId: String(requests[index].correlationId || ""),
+        revokedAt: String(requests[index].revokedAt || ""),
+        revokedSessions: Number(requests[index].revokedSessions || 0),
       },
       request,
     });

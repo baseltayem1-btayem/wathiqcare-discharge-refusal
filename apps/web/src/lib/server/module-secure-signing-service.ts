@@ -25,6 +25,7 @@ export type SecureSigningBadgeFlags = {
   otpVerified: boolean;
   signed: boolean;
   expired: boolean;
+  revoked: boolean;
   failed: boolean;
   failedAttempts: number;
 };
@@ -49,6 +50,7 @@ export type SecureSigningWorkflow = {
 type TokenRow = {
   expires_at: Date | string;
   used_at: Date | string | null;
+  revoked_at: Date | string | null;
 };
 
 function normalizePhoneNumber(value: string): string {
@@ -153,6 +155,7 @@ export function deriveSecureSigningBadgeFlags(input: {
   tokenFound: boolean;
   tokenExpired: boolean;
   tokenUsed: boolean;
+  tokenRevoked: boolean;
   otpRequestedCount: number;
   otpVerifiedCount: number;
   otpFailedCount: number;
@@ -172,6 +175,7 @@ export function deriveSecureSigningBadgeFlags(input: {
     otpVerified,
     signed: input.tokenUsed,
     expired: input.tokenExpired,
+    revoked: input.tokenRevoked,
     failed,
     failedAttempts,
   };
@@ -184,7 +188,7 @@ async function loadBadgeFlags(args: {
   smsDeliveryStatus: "sent" | "failed";
 }): Promise<SecureSigningBadgeFlags> {
   const tokenRows = await prisma().$queryRawUnsafe<TokenRow[]>(
-    `SELECT expires_at, used_at
+    `SELECT expires_at, used_at, revoked_at
      FROM signing_secure_tokens
      WHERE session_id = $1::uuid
      ORDER BY created_at DESC
@@ -194,6 +198,7 @@ async function loadBadgeFlags(args: {
 
   const token = tokenRows[0];
   const expiresAt = toDate(token?.expires_at);
+  const revokedAt = toDate(token?.revoked_at);
 
   const otpRows = await prisma().$queryRawUnsafe<Array<{ event_type: string; count: number }>>(
     `SELECT event_type, COUNT(*)::int AS count
@@ -223,6 +228,7 @@ async function loadBadgeFlags(args: {
     tokenFound: Boolean(token),
     tokenExpired: Boolean(expiresAt && expiresAt.getTime() <= Date.now()),
     tokenUsed: Boolean(token?.used_at),
+    tokenRevoked: Boolean(revokedAt),
     otpRequestedCount: requested,
     otpVerifiedCount: verified,
     otpFailedCount: failed,
@@ -383,6 +389,63 @@ export async function sendModuleSecureSigningLink(args: {
     createdAt: now,
     updatedAt: now,
     status,
+  };
+}
+
+
+export async function revokeModuleSecureSigningForDocument(args: {
+  tenantId: string;
+  documentId: string;
+  revokedBy: string;
+  reason?: string;
+}) {
+  const now = new Date();
+
+  const sessions = await prisma().$queryRawUnsafe<Array<{ id: string }>>(
+    `SELECT id
+     FROM signing_sessions
+     WHERE tenant_id = $1
+       AND document_id = $2
+       AND revoked_at IS NULL
+       AND (status IS NULL OR status NOT IN ('REVOKED', 'SIGNED', 'COMPLETED'))`,
+    args.tenantId,
+    args.documentId,
+  );
+
+  const sessionIds = sessions.map((item) => item.id);
+
+  if (sessionIds.length > 0) {
+    await prisma().$executeRawUnsafe(
+      `UPDATE signing_sessions
+       SET revoked_at = $1,
+           status = 'REVOKED',
+           metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
+             'revokedBy', $2::text,
+             'revocationReason', $3::text,
+             'revokedAt', $1::text
+           )
+       WHERE id = ANY($4::uuid[])`,
+      now,
+      args.revokedBy,
+      args.reason || "Revoked from informed consent status tracking",
+      sessionIds,
+    );
+
+    await prisma().$executeRawUnsafe(
+      `UPDATE signing_secure_tokens
+       SET revoked_at = $1
+       WHERE session_id = ANY($2::uuid[])
+         AND used_at IS NULL
+         AND revoked_at IS NULL`,
+      now,
+      sessionIds,
+    );
+  }
+
+  return {
+    revokedAt: now.toISOString(),
+    revokedSessions: sessionIds.length,
+    documentId: args.documentId,
   };
 }
 
