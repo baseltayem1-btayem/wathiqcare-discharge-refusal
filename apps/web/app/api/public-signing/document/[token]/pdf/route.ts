@@ -1,7 +1,7 @@
 ﻿import { NextResponse, type NextRequest } from "next/server";
 
 import { handleApiError } from "@/lib/server/http";
-import { validatePublicSigningSession } from "@/lib/server/public-signing-service";
+import { getSigningTokenContext } from "@/lib/server/public-signing-service";
 
 type RouteContext = {
   params: Promise<{ token: string }>;
@@ -14,10 +14,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { token } = await context.params;
 
-    const publicContext = await validatePublicSigningSession({
-      token,
-      request,
-    });
+    const publicContext = await getSigningTokenContext(token);
 
     const lang = request.nextUrl.searchParams.get("lang") || "bilingual";
     const copy = request.nextUrl.searchParams.get("copy") || "PATIENT_COPY";

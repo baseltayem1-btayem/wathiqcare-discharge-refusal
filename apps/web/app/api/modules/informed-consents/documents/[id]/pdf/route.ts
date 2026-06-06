@@ -6,7 +6,7 @@ import chromium from "@sparticuz/chromium";
 import type { Browser, LaunchOptions } from "puppeteer";
 import QRCode from "qrcode";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
-import { validatePublicSigningSession } from "@/lib/server/public-signing-service";
+import { getSigningTokenContext } from "@/lib/server/public-signing-service";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
@@ -702,10 +702,7 @@ export async function GET(
     let tenantId: string | null = null;
 
     if (publicToken) {
-      const publicContext = await validatePublicSigningSession({
-        token: publicToken,
-        request,
-      });
+      const publicContext = await getSigningTokenContext(publicToken);
 
       if (publicContext.documentId !== id) {
         return NextResponse.json({ error: "Public token does not match requested document" }, { status: 403 });
