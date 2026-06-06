@@ -64,11 +64,11 @@ const physicianNotifications = [
 ];
 
 const navItems = [
-  { id: 'dashboard' as Screen, label: 'Dashboard', labelAr: 'Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ…', icon: LayoutDashboard },
-  { id: 'search' as Screen, label: 'Patient Search', labelAr: 'Ø§Ù„Ø¨Ø­Ø« Ø¹Ù† Ù…Ø±ÙŠØ¶', icon: Search },
-  { id: 'consent-builder' as Screen, label: 'Consent Builder', labelAr: 'Ø¨Ù†Ø§Ø¡ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©', icon: FileText },
-  { id: 'status' as Screen, label: 'Status Tracking', labelAr: 'Ù…ØªØ§Ø¨Ø¹Ø© Ø§Ù„Ø­Ø§Ù„Ø©', icon: Activity },
-  { id: 'support-settings', label: 'Support & Settings', labelAr: 'Ø§Ù„Ø¯Ø¹Ù… ÙˆØ§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª', icon: Settings },
+  { id: 'dashboard' as Screen, label: 'Dashboard', labelAr: '\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645', icon: LayoutDashboard },
+  { id: 'search' as Screen, label: 'Patient Search', labelAr: '\u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0645\u0631\u064a\u0636', icon: Search },
+  { id: 'consent-builder' as Screen, label: 'Consent Builder', labelAr: '\u0628\u0646\u0627\u0621 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629', icon: FileText },
+  { id: 'status' as Screen, label: 'Status Tracking', labelAr: '\u0645\u062a\u0627\u0628\u0639\u0629 \u0627\u0644\u062d\u0627\u0644\u0629', icon: Activity },
+  { id: 'support-settings', label: 'Support & Settings', labelAr: '\u0627\u0644\u062f\u0639\u0645 \u0648\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a', icon: Settings },
 ];
 
 
@@ -751,7 +751,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                     {isArabic ? '\u0642\u0646\u0627\u0629 \u062a\u0648\u0627\u0635\u0644 \u0645\u0628\u0627\u0634\u0631\u0629 \u0628\u064a\u0646 \u0627\u0644\u0637\u0628\u064a\u0628 \u0627\u0644\u0645\u0639\u0627\u0644\u062c\u060c \u0637\u0628\u064a\u0628 \u0627\u0644\u062a\u062e\u062f\u064a\u0631\u060c \u0627\u0644\u062a\u0645\u0631\u064a\u0636\u060c \u0627\u0644\u0634\u0643\u0627\u0648\u0649 \u0627\u0644\u0637\u0628\u064a\u0629\u060c \u0648\u062a\u062c\u0631\u0628\u0629 \u0627\u0644\u0645\u0631\u0636\u0649.' : 'Direct WhatsApp communication between the attending physician, anesthesiologist, nursing, medical complaints, and patient experience.'}
                   </p>
                 </div>
-                <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">?</button>
+                <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">&times;</button>
               </div>
 
               <form
@@ -844,7 +844,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                   <h2 className="text-xl font-bold text-[#002B5C]">{isArabic ? '\u0637\u0644\u0628 \u0627\u0633\u062a\u0634\u0627\u0631\u0629 \u0642\u0627\u0646\u0648\u0646\u064a\u0629' : 'Request Legal Consultation'}</h2>
                   <p className="mt-1 text-sm text-[#6B7280]">{isArabic ? '\u0623\u062f\u062e\u0644 \u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a \u0644\u0625\u0631\u0633\u0627\u0644\u0647 \u0625\u0644\u0649 \u0627\u0644\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629.' : 'Enter the legal request details to submit them to Legal Affairs.'}</p>
                 </div>
-                <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">?</button>
+                <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">&times;</button>
               </div>
 
               <form className="space-y-4 px-6 py-5" onSubmit={(event) => { event.preventDefault(); console.info('WathiqCare legal consultation context', supportRequestContext); window.alert(isArabic ? '\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0637\u0644\u0628 \u0627\u0644\u0627\u0633\u062a\u0634\u0627\u0631\u0629 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629 \u0648\u062a\u0633\u062c\u064a\u0644\u0647 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629.' : 'Legal consultation request created and logged for follow-up.'); setSupportRequestModal(null); }}>
@@ -905,7 +905,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                   <h2 className="text-xl font-bold text-[#002B5C]">{isArabic ? '\u0641\u062a\u062d \u062a\u0630\u0643\u0631\u0629 \u062f\u0639\u0645 \u062a\u0642\u0646\u064a' : 'Open Technical Support Ticket'}</h2>
                   <p className="mt-1 text-sm text-[#6B7280]">{isArabic ? '\u0623\u062f\u062e\u0644 \u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0645\u0634\u0643\u0644\u0629 \u0627\u0644\u062a\u0642\u0646\u064a\u0629 \u0644\u0625\u0631\u0633\u0627\u0644\u0647\u0627 \u0625\u0644\u0649 \u0641\u0631\u064a\u0642 \u0627\u0644\u062f\u0639\u0645.' : 'Enter the technical issue details to submit them to the support team.'}</p>
                 </div>
-                <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">?</button>
+                <button type="button" onClick={() => setSupportRequestModal(null)} className="rounded px-2 py-1 text-sm text-[#6B7280] hover:bg-[#F4F6F9]">&times;</button>
               </div>
 
               <form className="space-y-4 px-6 py-5" onSubmit={(event) => { event.preventDefault(); console.info('WathiqCare technical ticket context', supportRequestContext); window.alert(isArabic ? '\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062a\u0630\u0643\u0631\u0629 \u0627\u0644\u062f\u0639\u0645 \u0627\u0644\u062a\u0642\u0646\u064a \u0648\u062a\u0633\u062c\u064a\u0644\u0647\u0627 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629.' : 'Technical support ticket created and logged for follow-up.'); setSupportRequestModal(null); }}>
@@ -1284,7 +1284,7 @@ export default function App() {
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}
             >
               <LogOut className="w-4 h-4" />
-              {lang === 'en' ? 'Sign Out' : 'ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø®Ø±ÙˆØ¬'}
+              {lang === 'en' ? 'Sign Out' : '\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c'}
             </button>
           </div>
         </nav>
@@ -1333,7 +1333,7 @@ export default function App() {
                 onClick={() => setLang('ar')}
                 className="px-2.5 py-1.5 font-semibold transition-colors"
                 style={{ background: lang === 'ar' ? '#002B5C' : 'white', color: lang === 'ar' ? 'white' : '#6B7280' }}>
-                Ø¹
+                {'\u0639'}
               </button>
             </div>
 
