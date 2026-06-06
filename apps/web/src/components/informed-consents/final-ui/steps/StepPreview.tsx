@@ -12,8 +12,10 @@ import {
   CheckCircle2,
   Edit3,
   Route,
+  MessageSquare,
 } from "lucide-react";
 import type { ConsentStep } from "../clinical/ClinicalTypes";
+import { ConsentCollaborationPanel } from "../../collaboration/ConsentCollaborationPanel";
 
 type PreviewBuilderState = {
   patient?: Record<string, unknown>;
@@ -42,12 +44,19 @@ const previewTabs = [
   { id: "patient", label: "Patient Journey", labelAr: "\u0631\u062d\u0644\u0629 \u0627\u0644\u0645\u0631\u064a\u0636", icon: Eye },
   { id: "pdf", label: "PDF Preview Status", labelAr: "\u062d\u0627\u0644\u0629 \u0645\u0639\u0627\u064a\u0646\u0629 PDF", icon: FileText },
   { id: "evidence", label: "Evidence Readiness", labelAr: "\u062c\u0627\u0647\u0632\u064a\u0629 \u0627\u0644\u062d\u0632\u0645\u0629 \u0627\u0644\u062f\u0644\u064a\u0644\u064a\u0629", icon: Archive },
+  { id: "collaboration", label: "Clinical Collaboration", labelAr: "??????? ???????", icon: MessageSquare },
 ] as const;
 
 const safeText = (value: unknown, fallback = "Not provided") => {
   if (value === null || value === undefined) return fallback;
   const text = String(value).trim();
   return text || fallback;
+};
+
+const optionalText = (value: unknown) => {
+  if (value === null || value === undefined) return undefined;
+  const text = String(value).trim();
+  return text || undefined;
 };
 
 const disclosureText = (
@@ -82,6 +91,45 @@ export function StepPreview({
   const anesthesia = builderState.anesthesia || {};
   const disclosures = builderState.disclosures || {};
   const education = builderState.education || {};
+  const document = builderState.document || {};
+  const metadata = (builderState as Record<string, unknown>).metadata as Record<string, unknown> | undefined;
+
+  const collaborationCaseId =
+    optionalText(document.caseId) ||
+    optionalText(document.consentCaseId) ||
+    optionalText(document.case_id) ||
+    optionalText(metadata?.caseId);
+
+  const collaborationTenantId =
+    optionalText(document.tenantId) ||
+    optionalText(document.tenant_id) ||
+    optionalText(metadata?.tenantId);
+
+  const collaborationActorUserId =
+    optionalText(document.actorUserId) ||
+    optionalText(document.createdByUserId) ||
+    optionalText(document.created_by_user_id) ||
+    optionalText(metadata?.actorUserId) ||
+    optionalText(metadata?.userId);
+
+  const anesthesiologistUserId =
+    optionalText(anesthesia.anesthesiologistUserId) ||
+    optionalText(anesthesia.assignedAnesthesiologistId) ||
+    optionalText(document.anesthesiologistUserId);
+
+  const surgeonUserId =
+    optionalText(procedure.surgeonUserId) ||
+    optionalText(procedure.physicianUserId) ||
+    optionalText(procedure.doctorUserId) ||
+    optionalText(document.surgeonUserId);
+
+  const legalReviewerUserId =
+    optionalText(document.legalReviewerUserId) ||
+    optionalText(metadata?.legalReviewerUserId);
+
+  const nursingUserId =
+    optionalText(document.nursingUserId) ||
+    optionalText(metadata?.nursingUserId);
 
   const anesthesiaApplies = anesthesia.applies === true;
   const procedureName = isAr
@@ -351,6 +399,20 @@ export function StepPreview({
               </div>
             )}
 
+
+            {previewTab === "collaboration" && (
+              <ConsentCollaborationPanel
+                lang={lang}
+                caseId={collaborationCaseId}
+                tenantId={collaborationTenantId}
+                actorUserId={collaborationActorUserId}
+                anesthesiologistUserId={anesthesiologistUserId}
+                surgeonUserId={surgeonUserId}
+                legalReviewerUserId={legalReviewerUserId}
+                nursingUserId={nursingUserId}
+              />
+            )}
+
             {previewTab === "evidence" && (
               <div className="space-y-3">
                 {readinessRows.map((item) => (
@@ -417,3 +479,4 @@ export function StepPreview({
     </div>
   );
 }
+

@@ -643,6 +643,14 @@ model CaseStepEvent {
   newValue             Json?               @map("new_value")
   actorUserId          String              @map("actor_user_id")
   actorDepartment      OperationDepartment? @map("actor_department")
+  communicationType    String              @default("NOTE") @map("communication_type")
+  message              String?             @db.Text
+  mentionedUserId      String?             @map("mentioned_user_id")
+  taskStatus           String?             @map("task_status")
+  visibility           String              @default("INTERNAL")
+  priority             String              @default("NORMAL")
+  dueAt                DateTime?           @map("due_at")
+  completedAt          DateTime?           @map("completed_at")
   createdAt            DateTime            @default(now()) @map("created_at")
 
   tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -651,6 +659,8 @@ model CaseStepEvent {
 
   @@index([tenantId, caseId, createdAt])
   @@index([tenantId, stageCode, createdAt])
+  @@index([tenantId, communicationType, createdAt])
+  @@index([tenantId, mentionedUserId, taskStatus])
   @@map("case_step_events")
 }
 
