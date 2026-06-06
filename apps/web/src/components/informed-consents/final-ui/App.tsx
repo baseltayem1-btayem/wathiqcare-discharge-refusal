@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -64,11 +64,11 @@ const physicianNotifications = [
 ];
 
 const navItems = [
-  { id: 'dashboard' as Screen, label: 'Dashboard', labelAr: 'لوحة التحكم', icon: LayoutDashboard },
-  { id: 'search' as Screen, label: 'Patient Search', labelAr: 'البحث عن مريض', icon: Search },
-  { id: 'consent-builder' as Screen, label: 'Consent Builder', labelAr: 'بناء الموافقة', icon: FileText },
-  { id: 'status' as Screen, label: 'Status Tracking', labelAr: 'متابعة الحالة', icon: Activity },
-  { id: 'support-settings', label: 'Support & Settings', labelAr: 'الدعم والإعدادات', icon: Settings },
+  { id: 'dashboard' as Screen, label: 'Dashboard', labelAr: 'Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ…', icon: LayoutDashboard },
+  { id: 'search' as Screen, label: 'Patient Search', labelAr: 'Ø§Ù„Ø¨Ø­Ø« Ø¹Ù† Ù…Ø±ÙŠØ¶', icon: Search },
+  { id: 'consent-builder' as Screen, label: 'Consent Builder', labelAr: 'Ø¨Ù†Ø§Ø¡ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©', icon: FileText },
+  { id: 'status' as Screen, label: 'Status Tracking', labelAr: 'Ù…ØªØ§Ø¨Ø¹Ø© Ø§Ù„Ø­Ø§Ù„Ø©', icon: Activity },
+  { id: 'support-settings', label: 'Support & Settings', labelAr: 'Ø§Ù„Ø¯Ø¹Ù… ÙˆØ§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª', icon: Settings },
 ];
 
 
@@ -203,7 +203,12 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
       const payload = await response.json().catch(() => null);
 
       if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error || 'Failed to save clinical collaboration team.');
+        throw new Error(
+          payload?.detail ||
+          payload?.message ||
+          payload?.error ||
+          'Failed to save clinical collaboration team.'
+        );
       }
 
       setCollaborationTeamMessage(isArabic ? '\u062a\u0645 \u062d\u0641\u0638 \u0641\u0631\u064a\u0642 \u0627\u0644\u062a\u0639\u0627\u0648\u0646 \u0627\u0644\u0633\u0631\u064a\u0631\u064a \u0628\u0646\u062c\u0627\u062d.' : 'Clinical collaboration team saved successfully.');
@@ -1279,7 +1284,7 @@ export default function App() {
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}
             >
               <LogOut className="w-4 h-4" />
-              {lang === 'en' ? 'Sign Out' : 'تسجيل الخروج'}
+              {lang === 'en' ? 'Sign Out' : 'ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø®Ø±ÙˆØ¬'}
             </button>
           </div>
         </nav>
@@ -1288,9 +1293,9 @@ export default function App() {
         <div className="px-4 py-3 border-t border-white/10">
           <div className="flex items-center gap-2 mb-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>PDPL · HIPAA · HL7 FHIR</span>
+            <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>PDPL Â· HIPAA Â· HL7 FHIR</span>
           </div>
-          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>WathiqCare v2.4.1 · Session logged</p>
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>WathiqCare v2.4.1 Â· Session logged</p>
         </div>
       </aside>
 
@@ -1303,9 +1308,9 @@ export default function App() {
               <span className="text-xs" style={{ color: '#6B7280' }}>
                 {lang === 'en' ? 'Department' : '\u0627\u0644\u0642\u0633\u0645'}: {runtimeHeader.department}
               </span>
-              <span style={{ color: '#D8DCE3' }}>·</span>
+              <span style={{ color: '#D8DCE3' }}>Â·</span>
               <span className="text-xs" style={{ color: '#6B7280' }}>{runtimeHeader.dateLabel}</span>
-              <span style={{ color: '#D8DCE3' }}>·</span>
+              <span style={{ color: '#D8DCE3' }}>Â·</span>
               <span className="text-xs font-mono" style={{ color: '#6B7280' }}>
                 {lang === 'en' ? 'Session' : '\u0627\u0644\u062c\u0644\u0633\u0629'}: {runtimeHeader.sessionLabel}
               </span>
@@ -1328,7 +1333,7 @@ export default function App() {
                 onClick={() => setLang('ar')}
                 className="px-2.5 py-1.5 font-semibold transition-colors"
                 style={{ background: lang === 'ar' ? '#002B5C' : 'white', color: lang === 'ar' ? 'white' : '#6B7280' }}>
-                ع
+                Ø¹
               </button>
             </div>
 
