@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import chromium from "@sparticuz/chromium";
@@ -19,104 +19,104 @@ const prisma = () => getPrisma();
 const IMC_LOGO_URL = "https://www.imc.med.sa/images/logo.jpg";
 const PRODUCTION_VERIFY_BASE_URL = "https://wathiqcare.online";
 
-const MOJIBAKE_MARKER_REGEX = /[\u00d8\u00d9\u00db\u00c3\u00c2\u00e2]|\?{4,}|ï¿½|�/;
+const MOJIBAKE_MARKER_REGEX = /[\u00d8\u00d9\u00db\u00c3\u00c2\u00e2]|\?{4,}|Ã¯Â¿Â½|ï¿½/;
 
-const NOT_PROVIDED = { ar: "غير مدخل", en: "Not provided" };
-const NOT_APPLICABLE = { ar: "غير منطبق", en: "Not applicable" };
+const NOT_PROVIDED = { ar: "ØºÙŠØ± Ù…Ø¯Ø®Ù„", en: "Not provided" };
+const NOT_APPLICABLE = { ar: "ØºÙŠØ± Ù…Ù†Ø·Ø¨Ù‚", en: "Not applicable" };
 
 const FINAL_TITLE = {
-  ar: "نموذج موافقة مستنيرة نهائي",
+  ar: "Ù†Ù…ÙˆØ°Ø¬ Ù…ÙˆØ§ÙÙ‚Ø© Ù…Ø³ØªÙ†ÙŠØ±Ø© Ù†Ù‡Ø§Ø¦ÙŠ",
   en: "Final Informed Consent Form",
 };
 
 const FINAL_SIGNING_STATEMENT = {
-  ar: "تم التوقيع إلكترونيًا عبر نظام واثق كير",
+  ar: "ØªÙ… Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠÙ‹Ø§ Ø¹Ø¨Ø± Ù†Ø¸Ø§Ù… ÙˆØ§Ø«Ù‚ ÙƒÙŠØ±",
   en: "Electronically Signed via Wathiq Care System",
 };
 
 const PDPL_CONSENT_AR_FALLBACK =
-  "أوافق على استخدام ومعالجة معلوماتي الصحية الشخصية بالقدر اللازم لأغراض العلاج والرعاية الصحية والتوثيق الطبي والالتزام بالأنظمة واللوائح الصحية المعمول بها، ووفقًا لنظام حماية البيانات الشخصية والأنظمة ذات العلاقة في المملكة العربية السعودية.";
+  "Ø£ÙˆØ§ÙÙ‚ Ø¹Ù„Ù‰ Ø§Ø³ØªØ®Ø¯Ø§Ù… ÙˆÙ…Ø¹Ø§Ù„Ø¬Ø© Ù…Ø¹Ù„ÙˆÙ…Ø§ØªÙŠ Ø§Ù„ØµØ­ÙŠØ© Ø§Ù„Ø´Ø®ØµÙŠØ© Ø¨Ø§Ù„Ù‚Ø¯Ø± Ø§Ù„Ù„Ø§Ø²Ù… Ù„Ø£ØºØ±Ø§Ø¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ ÙˆØ§Ù„Ø±Ø¹Ø§ÙŠØ© Ø§Ù„ØµØ­ÙŠØ© ÙˆØ§Ù„ØªÙˆØ«ÙŠÙ‚ Ø§Ù„Ø·Ø¨ÙŠ ÙˆØ§Ù„Ø§Ù„ØªØ²Ø§Ù… Ø¨Ø§Ù„Ø£Ù†Ø¸Ù…Ø© ÙˆØ§Ù„Ù„ÙˆØ§Ø¦Ø­ Ø§Ù„ØµØ­ÙŠØ© Ø§Ù„Ù…Ø¹Ù…ÙˆÙ„ Ø¨Ù‡Ø§ØŒ ÙˆÙˆÙÙ‚Ù‹Ø§ Ù„Ù†Ø¸Ø§Ù… Ø­Ù…Ø§ÙŠØ© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø´Ø®ØµÙŠØ© ÙˆØ§Ù„Ø£Ù†Ø¸Ù…Ø© Ø°Ø§Øª Ø§Ù„Ø¹Ù„Ø§Ù‚Ø© ÙÙŠ Ø§Ù„Ù…Ù…Ù„ÙƒØ© Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© Ø§Ù„Ø³Ø¹ÙˆØ¯ÙŠØ©.";
 
 const PDPL_CONSENT_EN_FALLBACK =
   "I consent to the use and processing of my personal health information as required for treatment, healthcare delivery, medical documentation, and compliance with applicable healthcare laws and regulations.";
 
 const PDPL_PURPOSES_AR_FALLBACK =
-  "تقتصر معالجة معلوماتي الصحية على ما يلزم لأغراض العلاج والتوثيق الطبي والعمليات الصحية ذات الصلة.";
+  "ØªÙ‚ØªØµØ± Ù…Ø¹Ø§Ù„Ø¬Ø© Ù…Ø¹Ù„ÙˆÙ…Ø§ØªÙŠ Ø§Ù„ØµØ­ÙŠØ© Ø¹Ù„Ù‰ Ù…Ø§ ÙŠÙ„Ø²Ù… Ù„Ø£ØºØ±Ø§Ø¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ ÙˆØ§Ù„ØªÙˆØ«ÙŠÙ‚ Ø§Ù„Ø·Ø¨ÙŠ ÙˆØ§Ù„Ø¹Ù…Ù„ÙŠØ§Øª Ø§Ù„ØµØ­ÙŠØ© Ø°Ø§Øª Ø§Ù„ØµÙ„Ø©.";
 
 const PDPL_PURPOSES_EN_FALLBACK =
   "My health information may be processed only for treatment, medical documentation, and related healthcare operations.";
 
 const PDPL_COMPLIANCE_AR_FALLBACK =
-  "تتم معالجة المعلومات الصحية وفقًا لنظام حماية البيانات الشخصية واللوائح الصحية المعمول بها في المملكة العربية السعودية.";
+  "ØªØªÙ… Ù…Ø¹Ø§Ù„Ø¬Ø© Ø§Ù„Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„ØµØ­ÙŠØ© ÙˆÙÙ‚Ù‹Ø§ Ù„Ù†Ø¸Ø§Ù… Ø­Ù…Ø§ÙŠØ© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø´Ø®ØµÙŠØ© ÙˆØ§Ù„Ù„ÙˆØ§Ø¦Ø­ Ø§Ù„ØµØ­ÙŠØ© Ø§Ù„Ù…Ø¹Ù…ÙˆÙ„ Ø¨Ù‡Ø§ ÙÙŠ Ø§Ù„Ù…Ù…Ù„ÙƒØ© Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© Ø§Ù„Ø³Ø¹ÙˆØ¯ÙŠØ©.";
 
 const PDPL_COMPLIANCE_EN_FALLBACK =
   "The processing of health information is governed by the Personal Data Protection Law and applicable Saudi healthcare regulations.";
 
 const NO_GUARANTEE_AR_FALLBACK =
-  "أفهم أنه لا يمكن ضمان نتيجة محددة للإجراء أو العلاج.";
+  "Ø£ÙÙ‡Ù… Ø£Ù†Ù‡ Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¶Ù…Ø§Ù† Ù†ØªÙŠØ¬Ø© Ù…Ø­Ø¯Ø¯Ø© Ù„Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø£Ùˆ Ø§Ù„Ø¹Ù„Ø§Ø¬.";
 
 const NO_GUARANTEE_EN_FALLBACK =
   "I understand that no specific outcome can be guaranteed for the procedure or treatment.";
 
 const PHYSICIAN_CERT_AR_FALLBACK =
-  "إقرار الطبيب: أقر أنا الطبيب أو الممارس الصحي الموقع أدناه بأنني قمت بشرح الحالة الطبية للمريض وطبيعة الإجراء المقترح والفوائد والمخاطر والمضاعفات المحتملة والبدائل العلاجية ومخاطر رفض العلاج للمريض أو لممثله النظامي بصورة واضحة ومفهومة، وأجبت على جميع الاستفسارات المطروحة وفقًا للأصول المهنية والطبية المتعارف عليها.";
+  "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ø·Ø¨ÙŠØ¨: Ø£Ù‚Ø± Ø£Ù†Ø§ Ø§Ù„Ø·Ø¨ÙŠØ¨ Ø£Ùˆ Ø§Ù„Ù…Ù…Ø§Ø±Ø³ Ø§Ù„ØµØ­ÙŠ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø£Ø¯Ù†Ø§Ù‡ Ø¨Ø£Ù†Ù†ÙŠ Ù‚Ù…Øª Ø¨Ø´Ø±Ø­ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ© Ù„Ù„Ù…Ø±ÙŠØ¶ ÙˆØ·Ø¨ÙŠØ¹Ø© Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ù‚ØªØ±Ø­ ÙˆØ§Ù„ÙÙˆØ§Ø¦Ø¯ ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø© ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© ÙˆÙ…Ø®Ø§Ø·Ø± Ø±ÙØ¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ Ù„Ù„Ù…Ø±ÙŠØ¶ Ø£Ùˆ Ù„Ù…Ù…Ø«Ù„Ù‡ Ø§Ù„Ù†Ø¸Ø§Ù…ÙŠ Ø¨ØµÙˆØ±Ø© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø©ØŒ ÙˆØ£Ø¬Ø¨Øª Ø¹Ù„Ù‰ Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø§Ø³ØªÙØ³Ø§Ø±Ø§Øª Ø§Ù„Ù…Ø·Ø±ÙˆØ­Ø© ÙˆÙÙ‚Ù‹Ø§ Ù„Ù„Ø£ØµÙˆÙ„ Ø§Ù„Ù…Ù‡Ù†ÙŠØ© ÙˆØ§Ù„Ø·Ø¨ÙŠØ© Ø§Ù„Ù…ØªØ¹Ø§Ø±Ù Ø¹Ù„ÙŠÙ‡Ø§.";
 
 const PHYSICIAN_CERT_EN_FALLBACK =
-  "Physician Certification: I, the undersigned physician or healthcare practitioner, certify that I have explained to the patient or the patient’s legal representative the medical condition, the nature of the proposed procedure, expected benefits, potential risks and complications, available treatment alternatives, and the risks of refusing treatment in a clear and understandable manner, and that I have answered all related questions in accordance with accepted medical and professional standards.";
+  "Physician Certification: I, the undersigned physician or healthcare practitioner, certify that I have explained to the patient or the patientâ€™s legal representative the medical condition, the nature of the proposed procedure, expected benefits, potential risks and complications, available treatment alternatives, and the risks of refusing treatment in a clear and understandable manner, and that I have answered all related questions in accordance with accepted medical and professional standards.";
 
 const PHYSICIAN_CERT_CONDITION_AR =
-  "أقر بأنني شرحت للمريض أو لممثله النظامي الحالة الطبية وطبيعة الإجراء المقترح بصورة واضحة ومفهومة.";
+  "Ø£Ù‚Ø± Ø¨Ø£Ù†Ù†ÙŠ Ø´Ø±Ø­Øª Ù„Ù„Ù…Ø±ÙŠØ¶ Ø£Ùˆ Ù„Ù…Ù…Ø«Ù„Ù‡ Ø§Ù„Ù†Ø¸Ø§Ù…ÙŠ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ© ÙˆØ·Ø¨ÙŠØ¹Ø© Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ù‚ØªØ±Ø­ Ø¨ØµÙˆØ±Ø© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø©.";
 
 const PHYSICIAN_CERT_CONDITION_EN =
   "I certify that I explained the medical condition and the nature of the proposed procedure in a clear and understandable manner.";
 
 const PHYSICIAN_CERT_RISKS_AR =
-  "أقر بأنني شرحت الفوائد المتوقعة والمخاطر والمضاعفات المحتملة والبدائل العلاجية ومخاطر رفض العلاج.";
+  "Ø£Ù‚Ø± Ø¨Ø£Ù†Ù†ÙŠ Ø´Ø±Ø­Øª Ø§Ù„ÙÙˆØ§Ø¦Ø¯ Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø© ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø© ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© ÙˆÙ…Ø®Ø§Ø·Ø± Ø±ÙØ¶ Ø§Ù„Ø¹Ù„Ø§Ø¬.";
 
 const PHYSICIAN_CERT_RISKS_EN =
   "I certify that I explained the expected benefits, potential risks and complications, treatment alternatives, and the risks of refusing treatment.";
 
 const PHYSICIAN_CERT_QUESTIONS_AR =
-  "أقر بأنني أجبت على جميع الاستفسارات المطروحة وفقًا للأصول المهنية والطبية المتعارف عليها.";
+  "Ø£Ù‚Ø± Ø¨Ø£Ù†Ù†ÙŠ Ø£Ø¬Ø¨Øª Ø¹Ù„Ù‰ Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø§Ø³ØªÙØ³Ø§Ø±Ø§Øª Ø§Ù„Ù…Ø·Ø±ÙˆØ­Ø© ÙˆÙÙ‚Ù‹Ø§ Ù„Ù„Ø£ØµÙˆÙ„ Ø§Ù„Ù…Ù‡Ù†ÙŠØ© ÙˆØ§Ù„Ø·Ø¨ÙŠØ© Ø§Ù„Ù…ØªØ¹Ø§Ø±Ù Ø¹Ù„ÙŠÙ‡Ø§.";
 
 const PHYSICIAN_CERT_QUESTIONS_EN =
   "I certify that I answered all related questions in accordance with accepted medical and professional standards.";
 
 const SYSTEM_VALIDITY_STATEMENT_AR =
-  "سجل موافقة مستنيرة مُنشأ إلكترونيًا من المركز الطبي الدولي عبر نظام واثق كير ويتمتع بحجية نظامية.";
+  "Ø³Ø¬Ù„ Ù…ÙˆØ§ÙÙ‚Ø© Ù…Ø³ØªÙ†ÙŠØ±Ø© Ù…ÙÙ†Ø´Ø£ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠÙ‹Ø§ Ù…Ù† Ø§Ù„Ù…Ø±ÙƒØ² Ø§Ù„Ø·Ø¨ÙŠ Ø§Ù„Ø¯ÙˆÙ„ÙŠ Ø¹Ø¨Ø± Ù†Ø¸Ø§Ù… ÙˆØ§Ø«Ù‚ ÙƒÙŠØ± ÙˆÙŠØªÙ…ØªØ¹ Ø¨Ø­Ø¬ÙŠØ© Ù†Ø¸Ø§Ù…ÙŠØ©.";
 
 const SYSTEM_VALIDITY_STATEMENT_EN =
   "International Medical Center electronically generated consent record via Wathiq Care System with full legal validity.";
 
 const FINANCIAL_ACKNOWLEDGMENT_ROWS = [
   {
-    labelAr: "الخطة العلاجية والتكاليف التقديرية",
+    labelAr: "Ø§Ù„Ø®Ø·Ø© Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© ÙˆØ§Ù„ØªÙƒØ§Ù„ÙŠÙ Ø§Ù„ØªÙ‚Ø¯ÙŠØ±ÙŠØ©",
     labelEn: "Treatment plan and estimated costs",
-    valueAr: "أقر بأنني قد اطلعت على الخطة العلاجية والتكاليف التقديرية للخدمات الطبية وأوافق عليها.",
+    valueAr: "Ø£Ù‚Ø± Ø¨Ø£Ù†Ù†ÙŠ Ù‚Ø¯ Ø§Ø·Ù„Ø¹Øª Ø¹Ù„Ù‰ Ø§Ù„Ø®Ø·Ø© Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© ÙˆØ§Ù„ØªÙƒØ§Ù„ÙŠÙ Ø§Ù„ØªÙ‚Ø¯ÙŠØ±ÙŠØ© Ù„Ù„Ø®Ø¯Ù…Ø§Øª Ø§Ù„Ø·Ø¨ÙŠØ© ÙˆØ£ÙˆØ§ÙÙ‚ Ø¹Ù„ÙŠÙ‡Ø§.",
     valueEn:
       "I acknowledge that I have been informed of the treatment plan and estimated costs of medical services, and I accept them.",
   },
   {
-    labelAr: "التكاليف الإضافية غير المغطاة",
+    labelAr: "Ø§Ù„ØªÙƒØ§Ù„ÙŠÙ Ø§Ù„Ø¥Ø¶Ø§ÙÙŠØ© ØºÙŠØ± Ø§Ù„Ù…ØºØ·Ø§Ø©",
     labelEn: "Additional uncovered costs",
     valueAr:
-      "أقر وألتزم أنا أو ولي أمري الذي وقع على هذا الإقرار بدفع أي تكاليف إضافية لا يتم تغطيتها من متعهدي العلاج أو التأمين أو أهلية العلاج.",
+      "Ø£Ù‚Ø± ÙˆØ£Ù„ØªØ²Ù… Ø£Ù†Ø§ Ø£Ùˆ ÙˆÙ„ÙŠ Ø£Ù…Ø±ÙŠ Ø§Ù„Ø°ÙŠ ÙˆÙ‚Ø¹ Ø¹Ù„Ù‰ Ù‡Ø°Ø§ Ø§Ù„Ø¥Ù‚Ø±Ø§Ø± Ø¨Ø¯ÙØ¹ Ø£ÙŠ ØªÙƒØ§Ù„ÙŠÙ Ø¥Ø¶Ø§ÙÙŠØ© Ù„Ø§ ÙŠØªÙ… ØªØºØ·ÙŠØªÙ‡Ø§ Ù…Ù† Ù…ØªØ¹Ù‡Ø¯ÙŠ Ø§Ù„Ø¹Ù„Ø§Ø¬ Ø£Ùˆ Ø§Ù„ØªØ£Ù…ÙŠÙ† Ø£Ùˆ Ø£Ù‡Ù„ÙŠØ© Ø§Ù„Ø¹Ù„Ø§Ø¬.",
     valueEn:
       "I acknowledge and commit that I, or my legal guardian who signed this consent, will pay any additional costs not covered by the insurer, treatment sponsor, or treatment eligibility.",
   },
   {
-    labelAr: "تحويل الرسوم غير المدفوعة إلى فاتورة نقدية",
+    labelAr: "ØªØ­ÙˆÙŠÙ„ Ø§Ù„Ø±Ø³ÙˆÙ… ØºÙŠØ± Ø§Ù„Ù…Ø¯ÙÙˆØ¹Ø© Ø¥Ù„Ù‰ ÙØ§ØªÙˆØ±Ø© Ù†Ù‚Ø¯ÙŠØ©",
     labelEn: "Conversion of unpaid charges",
     valueAr:
-      "أقر بحق المنشأة الصحية في تحويل أي تكاليف غير مغطاة أو غير مدفوعة إلى نقدية أو فاتورة مستحقة الدفع.",
+      "Ø£Ù‚Ø± Ø¨Ø­Ù‚ Ø§Ù„Ù…Ù†Ø´Ø£Ø© Ø§Ù„ØµØ­ÙŠØ© ÙÙŠ ØªØ­ÙˆÙŠÙ„ Ø£ÙŠ ØªÙƒØ§Ù„ÙŠÙ ØºÙŠØ± Ù…ØºØ·Ø§Ø© Ø£Ùˆ ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹Ø© Ø¥Ù„Ù‰ Ù†Ù‚Ø¯ÙŠØ© Ø£Ùˆ ÙØ§ØªÙˆØ±Ø© Ù…Ø³ØªØ­Ù‚Ø© Ø§Ù„Ø¯ÙØ¹.",
     valueEn:
       "I acknowledge the right of the healthcare facility to convert any uncovered or unpaid costs into cash payment and issue an invoice for such amounts.",
   },
   {
-    labelAr: "التحويل إلى منشأة صحية أخرى",
+    labelAr: "Ø§Ù„ØªØ­ÙˆÙŠÙ„ Ø¥Ù„Ù‰ Ù…Ù†Ø´Ø£Ø© ØµØ­ÙŠØ© Ø£Ø®Ø±Ù‰",
     labelEn: "Transfer to another healthcare facility",
     valueAr:
-      "أقر بحق المنشأة الصحية دون اعتراض مني في تحويل المريض إلى منشأة صحية أخرى لاستكمال علاجه إذا اقتضت مصلحته الطبية ذلك.",
+      "Ø£Ù‚Ø± Ø¨Ø­Ù‚ Ø§Ù„Ù…Ù†Ø´Ø£Ø© Ø§Ù„ØµØ­ÙŠØ© Ø¯ÙˆÙ† Ø§Ø¹ØªØ±Ø§Ø¶ Ù…Ù†ÙŠ ÙÙŠ ØªØ­ÙˆÙŠÙ„ Ø§Ù„Ù…Ø±ÙŠØ¶ Ø¥Ù„Ù‰ Ù…Ù†Ø´Ø£Ø© ØµØ­ÙŠØ© Ø£Ø®Ø±Ù‰ Ù„Ø§Ø³ØªÙƒÙ…Ø§Ù„ Ø¹Ù„Ø§Ø¬Ù‡ Ø¥Ø°Ø§ Ø§Ù‚ØªØ¶Øª Ù…ØµÙ„Ø­ØªÙ‡ Ø§Ù„Ø·Ø¨ÙŠØ© Ø°Ù„Ùƒ.",
     valueEn:
       "I acknowledge the right of the healthcare facility, without objection from me, to transfer me to another healthcare facility to continue or complete my treatment if medically necessary.",
   },
@@ -216,16 +216,16 @@ function repairGenericMojibake(input: string): string {
 
   const commonRepair = (text: string) =>
     text
-      .replace(/â€™/g, "’")
-      .replace(/â€˜/g, "‘")
-      .replace(/â€œ/g, "“")
-      .replace(/â€\u009d/g, "”")
-      .replace(/â€/g, "”")
-      .replace(/â€“/g, "–")
-      .replace(/â€”/g, "—")
-      .replace(/â€¦/g, "…")
-      .replace(/Â /g, " ")
-      .replace(/Â/g, "");
+      .replace(/Ã¢â‚¬â„¢/g, "â€™")
+      .replace(/Ã¢â‚¬Ëœ/g, "â€˜")
+      .replace(/Ã¢â‚¬Å“/g, "â€œ")
+      .replace(/Ã¢â‚¬\u009d/g, "â€")
+      .replace(/Ã¢â‚¬Â/g, "â€")
+      .replace(/Ã¢â‚¬â€œ/g, "â€“")
+      .replace(/Ã¢â‚¬â€/g, "â€”")
+      .replace(/Ã¢â‚¬Â¦/g, "â€¦")
+      .replace(/Ã‚ /g, " ")
+      .replace(/Ã‚/g, "");
 
   let value = commonRepair(input);
 
@@ -236,7 +236,7 @@ function repairGenericMojibake(input: string): string {
       const decoded = Buffer.from(value, "latin1").toString("utf8");
       const cleaned = commonRepair(decoded);
 
-      if (!cleaned || cleaned === value || cleaned.includes("�")) break;
+      if (!cleaned || cleaned === value || cleaned.includes("ï¿½")) break;
 
       value = cleaned;
     } catch {
@@ -324,17 +324,17 @@ function formatDobAge(dob: string | null | undefined, locale: "ar" | "en"): stri
   });
 
   return locale === "ar"
-    ? `${dateLabel} (${Math.max(age, 0)} سنة)`
+    ? `${dateLabel} (${Math.max(age, 0)} Ø³Ù†Ø©)`
     : `${dateLabel} (${Math.max(age, 0)} years)`;
 }
 
 function formatStatus(status: string): { ar: string; en: string } {
   const normalized = normalizeText(status).toUpperCase();
 
-  if (normalized === "FINALIZED") return { ar: "مكتمل ومؤرشف نهائيًا", en: "Completed and finalized" };
-  if (normalized === "SIGNED") return { ar: "موقّع", en: "Signed" };
+  if (normalized === "FINALIZED") return { ar: "Ù…ÙƒØªÙ…Ù„ ÙˆÙ…Ø¤Ø±Ø´Ù Ù†Ù‡Ø§Ø¦ÙŠÙ‹Ø§", en: "Completed and finalized" };
+  if (normalized === "SIGNED") return { ar: "Ù…ÙˆÙ‚Ù‘Ø¹", en: "Signed" };
 
-  return { ar: "قيد المعالجة", en: "In progress" };
+  return { ar: "Ù‚ÙŠØ¯ Ø§Ù„Ù…Ø¹Ø§Ù„Ø¬Ø©", en: "In progress" };
 }
 
 function normalizeValuePair(args: {
@@ -378,13 +378,13 @@ function signatureSummary(signature: SignaturePresentation | null, locale: "ar" 
   if (signature.signedAt) {
     parts.push(
       locale === "ar"
-        ? `تم التوقيع ${formatDateTime(signature.signedAt, "ar")}`
+        ? `ØªÙ… Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ ${formatDateTime(signature.signedAt, "ar")}`
         : `Signed ${formatDateTime(signature.signedAt, "en")}`,
     );
   }
 
   if (signature.evidenceId) {
-    parts.push(locale === "ar" ? `مرجع الدليل: ${signature.evidenceId}` : `Evidence ID: ${signature.evidenceId}`);
+    parts.push(locale === "ar" ? `Ù…Ø±Ø¬Ø¹ Ø§Ù„Ø¯Ù„ÙŠÙ„: ${signature.evidenceId}` : `Evidence ID: ${signature.evidenceId}`);
   }
 
   return parts.filter(Boolean).join("\n");
@@ -792,82 +792,82 @@ export async function buildFinalConsentPdfPayload(args: {
 
   const statusLabel = formatStatus(effectiveStatus);
 
-  addSectionRows("patient_information", "معلومات المريض", "Patient Information", [
-    { labelAr: "اسم المريض", labelEn: "Patient Name", valueAr: document.patientName, valueEn: document.patientName },
-    { labelAr: "رقم الملف الطبي", labelEn: "MRN / Medical Record Number", valueAr: document.mrn, valueEn: document.mrn },
+  addSectionRows("patient_information", "Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ù…Ø±ÙŠØ¶", "Patient Information", [
+    { labelAr: "Ø§Ø³Ù… Ø§Ù„Ù…Ø±ÙŠØ¶", labelEn: "Patient Name", valueAr: document.patientName, valueEn: document.patientName },
+    { labelAr: "Ø±Ù‚Ù… Ø§Ù„Ù…Ù„Ù Ø§Ù„Ø·Ø¨ÙŠ", labelEn: "MRN / Medical Record Number", valueAr: document.mrn, valueEn: document.mrn },
     {
-      labelAr: "رقم الزيارة",
+      labelAr: "Ø±Ù‚Ù… Ø§Ù„Ø²ÙŠØ§Ø±Ø©",
       labelEn: "Encounter / Visit Number",
       valueAr: emrMapping?.encounterIdentifier || firstString(encounter, [["identifier"]]),
       valueEn: emrMapping?.encounterIdentifier || firstString(encounter, [["identifier"]]),
     },
     {
-      labelAr: "تاريخ الميلاد / العمر",
+      labelAr: "ØªØ§Ø±ÙŠØ® Ø§Ù„Ù…ÙŠÙ„Ø§Ø¯ / Ø§Ù„Ø¹Ù…Ø±",
       labelEn: "Date of Birth / Age",
       valueAr: formatDobAge(document.dob, "ar"),
       valueEn: formatDobAge(document.dob, "en"),
     },
-    { labelAr: "الجنس", labelEn: "Gender", valueAr: document.gender, valueEn: document.gender },
-    { labelAr: "الهوية الوطنية / الإقامة", labelEn: "National ID / Iqama", valueAr: nationalId, valueEn: nationalId },
+    { labelAr: "Ø§Ù„Ø¬Ù†Ø³", labelEn: "Gender", valueAr: document.gender, valueEn: document.gender },
+    { labelAr: "Ø§Ù„Ù‡ÙˆÙŠØ© Ø§Ù„ÙˆØ·Ù†ÙŠØ© / Ø§Ù„Ø¥Ù‚Ø§Ù…Ø©", labelEn: "National ID / Iqama", valueAr: nationalId, valueEn: nationalId },
     {
-      labelAr: "القسم / التخصص",
+      labelAr: "Ø§Ù„Ù‚Ø³Ù… / Ø§Ù„ØªØ®ØµØµ",
       labelEn: "Department / Specialty",
       valueAr: document.department || document.physicianSpecialty,
       valueEn: document.department || document.physicianSpecialty,
     },
     {
-      labelAr: "الطبيب المعالج",
+      labelAr: "Ø§Ù„Ø·Ø¨ÙŠØ¨ Ø§Ù„Ù…Ø¹Ø§Ù„Ø¬",
       labelEn: "Treating Physician",
       valueAr: document.physicianName,
       valueEn: document.physicianName,
     },
     {
-      labelAr: "تاريخ الزيارة",
+      labelAr: "ØªØ§Ø±ÙŠØ® Ø§Ù„Ø²ÙŠØ§Ø±Ø©",
       labelEn: "Visit Date",
       valueAr: formatDateTime(visitDate, "ar"),
       valueEn: formatDateTime(visitDate, "en"),
     },
   ]);
-    addSectionRows("consent_information", "معلومات الإجراء الطبي", "Consent / Procedure Information", [
-    { labelAr: "التشخيص", labelEn: "Diagnosis", valueAr: document.diagnosis, valueEn: document.diagnosis },
+    addSectionRows("consent_information", "Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ø·Ø¨ÙŠ", "Consent / Procedure Information", [
+    { labelAr: "Ø§Ù„ØªØ´Ø®ÙŠØµ", labelEn: "Diagnosis", valueAr: document.diagnosis, valueEn: document.diagnosis },
     {
-      labelAr: "الحالة الطبية",
+      labelAr: "Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ©",
       labelEn: "Medical Condition",
       valueAr: sectionMedicalCondition.contentAr || document.admissionDetails,
       valueEn: sectionMedicalCondition.contentEn || document.admissionDetails,
     },
     {
-      labelAr: "الإجراء المقترح",
+      labelAr: "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ù‚ØªØ±Ø­",
       labelEn: "Proposed Procedure",
       valueAr: sectionProcedure.contentAr || document.plannedProcedure,
       valueEn: sectionProcedure.contentEn || document.plannedProcedure,
     },
     {
-      labelAr: "موضع الإجراء / الجهة",
+      labelAr: "Ù…ÙˆØ¶Ø¹ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ / Ø§Ù„Ø¬Ù‡Ø©",
       labelEn: "Procedure Site / Laterality",
       valueAr: sectionSite.contentAr || firstString(procedureMetadata, [["procedureSite"], ["laterality"]]),
       valueEn: sectionSite.contentEn || firstString(procedureMetadata, [["procedureSite"], ["laterality"]]),
     },
     {
-      labelAr: "الفوائد المتوقعة",
+      labelAr: "Ø§Ù„ÙÙˆØ§Ø¦Ø¯ Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø©",
       labelEn: "Expected Benefits",
       valueAr: sectionBenefits.contentAr || document.expectedOutcomesAr,
       valueEn: sectionBenefits.contentEn || document.expectedOutcomesEn,
     },
     {
-      labelAr: "المخاطر الشائعة",
+      labelAr: "Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©",
       labelEn: "Common Risks",
       valueAr: commonRisks.ar || getSection(document, ["dynamic_common_risks"]).contentAr,
       valueEn: commonRisks.en || getSection(document, ["dynamic_common_risks"]).contentEn,
     },
     {
-      labelAr: "المخاطر غير الشائعة",
+      labelAr: "Ø§Ù„Ù…Ø®Ø§Ø·Ø± ØºÙŠØ± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©",
       labelEn: "Uncommon Risks",
       valueAr: uncommonRisks.ar || getSection(document, ["dynamic_uncommon_risks"]).contentAr,
       valueEn: uncommonRisks.en || getSection(document, ["dynamic_uncommon_risks"]).contentEn,
     },
     {
-      labelAr: "المخاطر الجسيمة أو المهددة للحياة",
+      labelAr: "Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø¬Ø³ÙŠÙ…Ø© Ø£Ùˆ Ø§Ù„Ù…Ù‡Ø¯Ø¯Ø© Ù„Ù„Ø­ÙŠØ§Ø©",
       labelEn: "Serious / Life-threatening Risks",
       valueAr:
         toMultilineList([seriousRisks.ar, lifeThreateningRisks.ar]) ||
@@ -877,37 +877,37 @@ export async function buildFinalConsentPdfPayload(args: {
         getSection(document, ["dynamic_serious_risks", "09_serious_complications"]).contentEn,
     },
     {
-      labelAr: "المضاعفات المحتملة",
+      labelAr: "Ø§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø©",
       labelEn: "Potential Complications",
       valueAr: sectionComplications.contentAr || document.sideEffectsAr,
       valueEn: sectionComplications.contentEn || document.sideEffectsEn,
     },
     {
-      labelAr: "البدائل العلاجية",
+      labelAr: "Ø§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ©",
       labelEn: "Treatment Alternatives",
       valueAr: sectionAlternatives.contentAr || document.alternativesAr,
       valueEn: sectionAlternatives.contentEn || document.alternativesEn,
     },
     {
-      labelAr: "مخاطر رفض العلاج أو تأجيله",
+      labelAr: "Ù…Ø®Ø§Ø·Ø± Ø±ÙØ¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ Ø£Ùˆ ØªØ£Ø¬ÙŠÙ„Ù‡",
       labelEn: "Risks of Refusal / Delay",
       valueAr: sectionRefusal.contentAr || document.refusalRisksAr,
       valueEn: sectionRefusal.contentEn || document.refusalRisksEn,
     },
     {
-      labelAr: "تعليمات ما بعد الإجراء",
+      labelAr: "ØªØ¹Ù„ÙŠÙ…Ø§Øª Ù…Ø§ Ø¨Ø¹Ø¯ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡",
       labelEn: "Post-procedure Instructions",
       valueAr: sectionPostProcedure.contentAr || firstString(procedureMetadata, [["postProcedureAr"]]),
       valueEn: sectionPostProcedure.contentEn || firstString(procedureMetadata, [["postProcedureEn"]]),
     },
     {
-      labelAr: "ملاحظات الطبيب",
+      labelAr: "Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø§Ù„Ø·Ø¨ÙŠØ¨",
       labelEn: "Physician Notes",
       valueAr: sectionPhysicianNotes.contentAr || document.physicianNotesAr,
       valueEn: sectionPhysicianNotes.contentEn || document.physicianNotesEn,
     },
     {
-      labelAr: "احتياطات خاصة",
+      labelAr: "Ø§Ø­ØªÙŠØ§Ø·Ø§Øª Ø®Ø§ØµØ©",
       labelEn: "Special Precautions",
       valueAr: sectionSpecialPrecautions.contentAr || firstString(procedureMetadata, [["specialPrecautionsAr"]]),
       valueEn: sectionSpecialPrecautions.contentEn || firstString(procedureMetadata, [["specialPrecautionsEn"]]),
@@ -926,37 +926,37 @@ export async function buildFinalConsentPdfPayload(args: {
       hasText(anesthesiaSection.contentAr),
   );
 
-  addSectionRows("anesthesia_information", "معلومات التخدير", "Anesthesia Information", [
+  addSectionRows("anesthesia_information", "Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„ØªØ®Ø¯ÙŠØ±", "Anesthesia Information", [
     {
-      labelAr: "هل التخدير منطبق؟",
+      labelAr: "Ù‡Ù„ Ø§Ù„ØªØ®Ø¯ÙŠØ± Ù…Ù†Ø·Ø¨Ù‚ØŸ",
       labelEn: "Does Anesthesia Apply?",
-      valueAr: anesthesiaApplicable ? "نعم" : NOT_APPLICABLE.ar,
+      valueAr: anesthesiaApplicable ? "Ù†Ø¹Ù…" : NOT_APPLICABLE.ar,
       valueEn: anesthesiaApplicable ? "Yes" : NOT_APPLICABLE.en,
       applicable: true,
     },
     {
-      labelAr: "نوع التخدير",
+      labelAr: "Ù†ÙˆØ¹ Ø§Ù„ØªØ®Ø¯ÙŠØ±",
       labelEn: "Type of Anesthesia",
       valueAr: firstString(anesthesiaMetadata, [["typeAr"], ["type"]]),
       valueEn: firstString(anesthesiaMetadata, [["typeEn"], ["type"]]),
       applicable: anesthesiaApplicable,
     },
     {
-      labelAr: "خيارات التخدير",
+      labelAr: "Ø®ÙŠØ§Ø±Ø§Øª Ø§Ù„ØªØ®Ø¯ÙŠØ±",
       labelEn: "Anesthesia Options",
       valueAr: firstString(anesthesiaMetadata, [["optionsAr"]]),
       valueEn: firstString(anesthesiaMetadata, [["optionsEn"]]),
       applicable: anesthesiaApplicable,
     },
     {
-      labelAr: "مخاطر التخدير",
+      labelAr: "Ù…Ø®Ø§Ø·Ø± Ø§Ù„ØªØ®Ø¯ÙŠØ±",
       labelEn: "Anesthesia Risks",
       valueAr: firstString(anesthesiaMetadata, [["risksAr"]]) || anesthesiaSection.contentAr,
       valueEn: firstString(anesthesiaMetadata, [["risksEn"]]) || anesthesiaSection.contentEn,
       applicable: anesthesiaApplicable,
     },
     {
-      labelAr: "إقرار المريض",
+      labelAr: "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…Ø±ÙŠØ¶",
       labelEn: "Patient Acknowledgment",
       valueAr: firstString(anesthesiaMetadata, [["acknowledgmentAr"]]),
       valueEn: firstString(anesthesiaMetadata, [["acknowledgmentEn"]]),
@@ -964,48 +964,48 @@ export async function buildFinalConsentPdfPayload(args: {
     },
   ]);
 
-  addSectionRows("patient_acknowledgment_disclosures", "إقرارات المريض والإفصاحات", "Patient Acknowledgment / Disclosures", [
+  addSectionRows("patient_acknowledgment_disclosures", "Ø¥Ù‚Ø±Ø§Ø±Ø§Øª Ø§Ù„Ù…Ø±ÙŠØ¶ ÙˆØ§Ù„Ø¥ÙØµØ§Ø­Ø§Øª", "Patient Acknowledgment / Disclosures", [
     {
-      labelAr: "أتيحت لي الفرصة لطرح الأسئلة",
+      labelAr: "Ø£ØªÙŠØ­Øª Ù„ÙŠ Ø§Ù„ÙØ±ØµØ© Ù„Ø·Ø±Ø­ Ø§Ù„Ø£Ø³Ø¦Ù„Ø©",
       labelEn: "I had the opportunity to ask questions",
-      valueAr: firstBoolean(disclosuresMetadata, [["questionsOpportunity"]]) === false ? "لا" : "نعم",
+      valueAr: firstBoolean(disclosuresMetadata, [["questionsOpportunity"]]) === false ? "Ù„Ø§" : "Ù†Ø¹Ù…",
       valueEn: firstBoolean(disclosuresMetadata, [["questionsOpportunity"]]) === false ? "No" : "Yes",
     },
     {
-      labelAr: "تمت الإجابة على جميع أسئلتي",
+      labelAr: "ØªÙ…Øª Ø§Ù„Ø¥Ø¬Ø§Ø¨Ø© Ø¹Ù„Ù‰ Ø¬Ù…ÙŠØ¹ Ø£Ø³Ø¦Ù„ØªÙŠ",
       labelEn: "All my questions were answered",
-      valueAr: firstBoolean(disclosuresMetadata, [["allQuestionsAnswered"]]) === false ? "لا" : "نعم",
+      valueAr: firstBoolean(disclosuresMetadata, [["allQuestionsAnswered"]]) === false ? "Ù„Ø§" : "Ù†Ø¹Ù…",
       valueEn: firstBoolean(disclosuresMetadata, [["allQuestionsAnswered"]]) === false ? "No" : "Yes",
     },
     {
-      labelAr: "أفهم المعلومات المقدمة لي",
+      labelAr: "Ø£ÙÙ‡Ù… Ø§Ù„Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ù…Ù‚Ø¯Ù…Ø© Ù„ÙŠ",
       labelEn: "I understand the information",
-      valueAr: firstBoolean(disclosuresMetadata, [["patientUnderstood"]]) === false ? "لا" : "نعم",
+      valueAr: firstBoolean(disclosuresMetadata, [["patientUnderstood"]]) === false ? "Ù„Ø§" : "Ù†Ø¹Ù…",
       valueEn: firstBoolean(disclosuresMetadata, [["patientUnderstood"]]) === false ? "No" : "Yes",
     },
     {
-      labelAr: "أوافق بإرادتي الحرة دون إكراه",
+      labelAr: "Ø£ÙˆØ§ÙÙ‚ Ø¨Ø¥Ø±Ø§Ø¯ØªÙŠ Ø§Ù„Ø­Ø±Ø© Ø¯ÙˆÙ† Ø¥ÙƒØ±Ø§Ù‡",
       labelEn: "I consent voluntarily",
-      valueAr: firstBoolean(disclosuresMetadata, [["voluntaryConsent"]]) === false ? "لا" : "نعم",
+      valueAr: firstBoolean(disclosuresMetadata, [["voluntaryConsent"]]) === false ? "Ù„Ø§" : "Ù†Ø¹Ù…",
       valueEn: firstBoolean(disclosuresMetadata, [["voluntaryConsent"]]) === false ? "No" : "Yes",
     },
     {
-      labelAr: "أفهم أنه لا يمكن ضمان نتيجة محددة",
+      labelAr: "Ø£ÙÙ‡Ù… Ø£Ù†Ù‡ Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¶Ù…Ø§Ù† Ù†ØªÙŠØ¬Ø© Ù…Ø­Ø¯Ø¯Ø©",
       labelEn: "I understand no guarantee of outcome",
       valueAr: normalizeArabicRowValue(sectionNoGuarantee.contentAr || document.legalTextAr, NO_GUARANTEE_AR_FALLBACK),
       valueEn: normalizeEnglishRowValue(sectionNoGuarantee.contentEn || document.legalTextEn, NO_GUARANTEE_EN_FALLBACK),
     },
     {
-      labelAr: "أوافق على أي إجراءات إضافية ضرورية",
+      labelAr: "Ø£ÙˆØ§ÙÙ‚ Ø¹Ù„Ù‰ Ø£ÙŠ Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª Ø¥Ø¶Ø§ÙÙŠØ© Ø¶Ø±ÙˆØ±ÙŠØ©",
       labelEn: "Additional procedures if necessary",
       valueAr: firstString(disclosuresMetadata, [["emergencyProceduresAr"]]),
       valueEn: firstString(disclosuresMetadata, [["emergencyProceduresEn"]]),
     },
   ]);
 
-  addSectionRows("pdpl_data_protection", "حماية البيانات الشخصية", "PDPL / Data Protection", [
+  addSectionRows("pdpl_data_protection", "Ø­Ù…Ø§ÙŠØ© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø´Ø®ØµÙŠØ©", "PDPL / Data Protection", [
     {
-      labelAr: "أوافق على استخدام معلوماتي الصحية",
+      labelAr: "Ø£ÙˆØ§ÙÙ‚ Ø¹Ù„Ù‰ Ø§Ø³ØªØ®Ø¯Ø§Ù… Ù…Ø¹Ù„ÙˆÙ…Ø§ØªÙŠ Ø§Ù„ØµØ­ÙŠØ©",
       labelEn: "I consent to use my health information",
       valueAr: normalizeArabicRowValue(
         (fixedClauses.pdplTextAr as string | undefined) || document.pdplTextAr,
@@ -1017,7 +1017,7 @@ export async function buildFinalConsentPdfPayload(args: {
       ),
     },
     {
-      labelAr: "لأغراض العلاج والتوثيق والتشغيل الصحي",
+      labelAr: "Ù„Ø£ØºØ±Ø§Ø¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ ÙˆØ§Ù„ØªÙˆØ«ÙŠÙ‚ ÙˆØ§Ù„ØªØ´ØºÙŠÙ„ Ø§Ù„ØµØ­ÙŠ",
       labelEn: "For treatment, documentation, operations",
       valueAr: normalizeArabicRowValue(
         firstString(metadata, [["pdpl", "processingPurposesAr"]]) || document.pdplTextAr,
@@ -1029,14 +1029,14 @@ export async function buildFinalConsentPdfPayload(args: {
       ),
     },
     {
-      labelAr: "وفقًا لنظام حماية البيانات الشخصية",
+      labelAr: "ÙˆÙÙ‚Ù‹Ø§ Ù„Ù†Ø¸Ø§Ù… Ø­Ù…Ø§ÙŠØ© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø´Ø®ØµÙŠØ©",
       labelEn: "Compliance with Saudi PDPL",
       valueAr: normalizeArabicRowValue(document.pdplTextAr, PDPL_COMPLIANCE_AR_FALLBACK),
       valueEn: normalizeEnglishRowValue(document.pdplTextEn, PDPL_COMPLIANCE_EN_FALLBACK),
     },
   ]);
 
-  addSectionRows("financial_acknowledgment", "الإقرار المالي", "Financial Acknowledgment", [...FINANCIAL_ACKNOWLEDGMENT_ROWS]);
+  addSectionRows("financial_acknowledgment", "Ø§Ù„Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…Ø§Ù„ÙŠ", "Financial Acknowledgment", [...FINANCIAL_ACKNOWLEDGMENT_ROWS]);
 
   const otpVerified = signatureSecurity.otpVerified === true || signatureOrchestration.otpVerified === true;
   const auditReference = evidenceVault.verificationToken || effectiveHash || document.id;
@@ -1046,15 +1046,15 @@ export async function buildFinalConsentPdfPayload(args: {
   const latestDevice =
     patientSignatureRaw?.userAgent || guardianSignatureRaw?.userAgent || document.timelineEvents.at(-1)?.userAgent || null;
 
-  addSectionRows("signature_and_evidence", "التوقيعات والأدلة", "Signatures & Evidence", [
+  addSectionRows("signature_and_evidence", "Ø§Ù„ØªÙˆÙ‚ÙŠØ¹Ø§Øª ÙˆØ§Ù„Ø£Ø¯Ù„Ø©", "Signatures & Evidence", [
     {
-      labelAr: "توقيع المريض",
+      labelAr: "ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ù…Ø±ÙŠØ¶",
       labelEn: "Patient Signature",
       valueAr: signatureSummary(patientSignature, "ar"),
       valueEn: signatureSummary(patientSignature, "en"),
     },
     {
-      labelAr: "إقرار الطبيب",
+      labelAr: "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ø·Ø¨ÙŠØ¨",
       labelEn: "Physician Certification",
       valueAr: normalizeArabicRowValue(
         signatureSummary(physicianSignature, "ar") || document.physicianCertAr,
@@ -1066,25 +1066,25 @@ export async function buildFinalConsentPdfPayload(args: {
       ),
     },
     {
-      labelAr: "شرح الحالة الطبية والإجراء",
+      labelAr: "Ø´Ø±Ø­ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ© ÙˆØ§Ù„Ø¥Ø¬Ø±Ø§Ø¡",
       labelEn: "Condition and procedure explained",
       valueAr: PHYSICIAN_CERT_CONDITION_AR,
       valueEn: PHYSICIAN_CERT_CONDITION_EN,
     },
     {
-      labelAr: "شرح الفوائد والمخاطر والبدائل",
+      labelAr: "Ø´Ø±Ø­ Ø§Ù„ÙÙˆØ§Ø¦Ø¯ ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„",
       labelEn: "Benefits, risks, and alternatives explained",
       valueAr: PHYSICIAN_CERT_RISKS_AR,
       valueEn: PHYSICIAN_CERT_RISKS_EN,
     },
     {
-      labelAr: "الإجابة على الاستفسارات",
+      labelAr: "Ø§Ù„Ø¥Ø¬Ø§Ø¨Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø§Ø³ØªÙØ³Ø§Ø±Ø§Øª",
       labelEn: "Questions answered",
       valueAr: PHYSICIAN_CERT_QUESTIONS_AR,
       valueEn: PHYSICIAN_CERT_QUESTIONS_EN,
     },
     {
-      labelAr: "توقيع شاهد أو مترجم إن وجد",
+      labelAr: "ØªÙˆÙ‚ÙŠØ¹ Ø´Ø§Ù‡Ø¯ Ø£Ùˆ Ù…ØªØ±Ø¬Ù… Ø¥Ù† ÙˆØ¬Ø¯",
       labelEn: "Witness / Interpreter if any",
       valueAr: toMultilineList([
         signatureSummary(witnessSignature, "ar"),
@@ -1097,30 +1097,30 @@ export async function buildFinalConsentPdfPayload(args: {
       applicable: Boolean(witnessSignature || interpreterSignature || document.template.requiresInterpreter),
     },
     {
-      labelAr: "توقيع ولي الأمر إن وجد",
+      labelAr: "ØªÙˆÙ‚ÙŠØ¹ ÙˆÙ„ÙŠ Ø§Ù„Ø£Ù…Ø± Ø¥Ù† ÙˆØ¬Ø¯",
       labelEn: "Legal Representative if any",
       valueAr: signatureSummary(guardianSignature, "ar"),
       valueEn: signatureSummary(guardianSignature, "en"),
       applicable: document.template.requiresGuardian || Boolean(guardianSignature),
     },
     {
-      labelAr: "التحقق عبر OTP",
+      labelAr: "Ø§Ù„ØªØ­Ù‚Ù‚ Ø¹Ø¨Ø± OTP",
       labelEn: "OTP Verification",
-      valueAr: otpVerified ? "تم التحقق" : NOT_PROVIDED.ar,
+      valueAr: otpVerified ? "ØªÙ… Ø§Ù„ØªØ­Ù‚Ù‚" : NOT_PROVIDED.ar,
       valueEn: otpVerified ? "Verified" : NOT_PROVIDED.en,
     },
     {
-      labelAr: "رمز الجلسة / التوقيع",
+      labelAr: "Ø±Ù…Ø² Ø§Ù„Ø¬Ù„Ø³Ø© / Ø§Ù„ØªÙˆÙ‚ÙŠØ¹",
       labelEn: "Signing Token / Session",
       valueAr: normalizeText((signatureOrchestration.sessionId as string | undefined) || (signatureOrchestration.challengeId as string | undefined)),
       valueEn: normalizeText((signatureOrchestration.sessionId as string | undefined) || (signatureOrchestration.challengeId as string | undefined)),
     },
-    { labelAr: "عنوان IP", labelEn: "IP Address", valueAr: latestIp, valueEn: latestIp },
-    { labelAr: "الجهاز / المتصفح", labelEn: "Device / Browser", valueAr: latestDevice, valueEn: latestDevice },
-    { labelAr: "مرجع سجل التدقيق", labelEn: "Audit Trail Reference", valueAr: auditReference, valueEn: auditReference },
-    { labelAr: "حزمة الأدلة", labelEn: "Evidence Package", valueAr: evidencePackageReference, valueEn: evidencePackageReference },
-    { labelAr: "رابط التحقق", labelEn: "Verification URL", valueAr: qrVerificationUrl, valueEn: qrVerificationUrl },
-    { labelAr: "البيان النظامي", labelEn: "System validity statement", valueAr: SYSTEM_VALIDITY_STATEMENT_AR, valueEn: SYSTEM_VALIDITY_STATEMENT_EN },
+    { labelAr: "Ø¹Ù†ÙˆØ§Ù† IP", labelEn: "IP Address", valueAr: latestIp, valueEn: latestIp },
+    { labelAr: "Ø§Ù„Ø¬Ù‡Ø§Ø² / Ø§Ù„Ù…ØªØµÙØ­", labelEn: "Device / Browser", valueAr: latestDevice, valueEn: latestDevice },
+    { labelAr: "Ù…Ø±Ø¬Ø¹ Ø³Ø¬Ù„ Ø§Ù„ØªØ¯Ù‚ÙŠÙ‚", labelEn: "Audit Trail Reference", valueAr: auditReference, valueEn: auditReference },
+    { labelAr: "Ø­Ø²Ù…Ø© Ø§Ù„Ø£Ø¯Ù„Ø©", labelEn: "Evidence Package", valueAr: evidencePackageReference, valueEn: evidencePackageReference },
+    { labelAr: "Ø±Ø§Ø¨Ø· Ø§Ù„ØªØ­Ù‚Ù‚", labelEn: "Verification URL", valueAr: qrVerificationUrl, valueEn: qrVerificationUrl },
+    { labelAr: "Ø§Ù„Ø¨ÙŠØ§Ù† Ø§Ù„Ù†Ø¸Ø§Ù…ÙŠ", labelEn: "System validity statement", valueAr: SYSTEM_VALIDITY_STATEMENT_AR, valueEn: SYSTEM_VALIDITY_STATEMENT_EN },
   ]);
 
   const payload: FinalConsentPdfPayload = {
@@ -1344,595 +1344,6 @@ function buildInlinePdfFontFaceCss(): string {
   }
 
   return faces.join("\n");
-}
-
-function buildTableHtml(payload: FinalConsentPdfPayload, copyTypeLabel: string): string {
-  const groupedRows: string[] = [];
-  let currentSection = "";
-
-  for (const row of payload.bilingualRows) {
-    if (row.sectionKey !== currentSection) {
-      currentSection = row.sectionKey;
-
-      groupedRows.push(`
-        <tr class="section-row">
-          <td colspan="2">
-            <div class="section-title-wrap">
-              <span class="section-header-en">${escapeHtml(row.sectionTitleEn)}</span>
-              <span class="section-header-ar">${escapeHtml(row.sectionTitleAr)}</span>
-            </div>
-          </td>
-        </tr>
-      `);
-    }
-
-    groupedRows.push(`
-      <tr>
-        <td class="cell-en">
-          <div class="label">${escapeHtml(row.labelEn)}</div>
-          ${renderRowValueHtml(row, "en", payload)}
-        </td>
-        <td class="cell-ar">
-          <div class="label">${escapeHtml(row.labelAr)}</div>
-          ${renderRowValueHtml(row, "ar", payload)}
-        </td>
-      </tr>
-    `);
-  }
-
-  return `<!doctype html>
-  <html lang="en">
-    <head>
-      <meta charset="utf-8" />
-      <style>
-        ${buildInlinePdfFontFaceCss()}
-        @page {
-          size: A4 portrait;
-          margin: 8mm 8mm 10mm 8mm;
-        }
-
-        * {
-          box-sizing: border-box;
-        }
-
-        html,
-        body {
-          width: 210mm;
-          min-height: 297mm;
-        }
-
-        body {
-          margin: 0;
-          color: #0f172a;
-          background: #ffffff;
-          font-family: "WathiqPdfSans", "WathiqPdfArabic", sans-serif;
-          font-size: 9.8px;
-          line-height: 1.42;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-
-        .document {
-          /* PDF_TEXT_VISIBILITY_GUARD */
-          color: #0f172a !important;
-          -webkit-text-fill-color: #0f172a !important;
-          width: 100%;
-          max-width: 194mm;
-          margin: 0 auto;
-          color: #0f172a;
-          opacity: 1;
-          visibility: visible;
-        }
-
-        .document,
-        .document * {
-          opacity: 1;
-          visibility: visible;
-        }
-
-        .header {
-          border: 1px solid #c8d6e3;
-          border-top: 4px solid #14537d;
-          border-bottom: 2px solid #d6a93b;
-          padding: 7px 9px;
-          display: grid;
-          grid-template-columns: 32mm 1fr 56mm;
-          gap: 8px;
-          align-items: stretch;
-          margin-bottom: 6px;
-          page-break-inside: avoid;
-          break-inside: avoid;
-          min-height: 36mm;
-          color: #0f172a;
-        }
-
-        .brand-box {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          min-width: 0;
-        }
-
-        .imc-logo {
-          width: 36px;
-          height: 36px;
-          object-fit: contain;
-          flex: 0 0 auto;
-        }
-
-        .imc-brand {
-          font-size: 8px;
-          line-height: 1.2;
-          color: #1e3a5f;
-        }
-
-        .imc-brand strong {
-          display: block;
-          font-size: 9.5px;
-          color: #0f3c60;
-        }
-
-        .title-box {
-          text-align: center;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          gap: 2px;
-          min-width: 0;
-          color: #0f172a;
-        }
-
-        .title-box h1 {
-          color: #164c7a !important;
-          -webkit-text-fill-color: #164c7a !important;
-          margin: 0;
-          font-size: 15px;
-          color: #164c7a;
-          font-weight: 800;
-          line-height: 1.12;
-        }
-
-        .title-ar {
-          color: #164c7a !important;
-          -webkit-text-fill-color: #164c7a !important;
-          margin: 0;
-          font-size: 14px;
-          color: #164c7a;
-          font-family: "WathiqPdfSans", "WathiqPdfArabic", sans-serif;
-          direction: rtl;
-          line-height: 1.2;
-          font-weight: 800;
-        }
-
-        .subtitle-en,
-        .subtitle-ar {
-          font-size: 8.2px;
-          color: #475569;
-          line-height: 1.2;
-        }
-
-        .subtitle-ar {
-          direction: rtl;
-          font-family: "WathiqPdfSans", "WathiqPdfArabic", sans-serif;
-        }
-
-        .right-box {
-          display: grid;
-          grid-template-rows: auto auto;
-          gap: 5px;
-        }
-
-        .metadata-panel {
-          border: 1px solid #d6e1eb;
-          background: #f8fbfe;
-          padding: 4px 5px;
-          display: grid;
-          gap: 3px;
-          color: #0f172a;
-        }
-
-        .meta-row {
-          display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 5px;
-          align-items: start;
-          font-size: 7.2px;
-          color: #334155;
-        }
-
-        .meta-label {
-          font-weight: 800;
-          color: #164c7a;
-          line-height: 1.12;
-        }
-
-        .meta-label-ar {
-          direction: rtl;
-          font-family: "WathiqPdfSans", "WathiqPdfArabic", sans-serif;
-          color: #64748b;
-          line-height: 1.12;
-        }
-
-        .meta-value {
-          text-align: right;
-          font-weight: 700;
-          color: #0f172a;
-          overflow-wrap: anywhere;
-          word-break: normal;
-          line-height: 1.15;
-        }
-
-        .qr-box {
-          display: grid;
-          grid-template-columns: 48px 1fr;
-          align-items: center;
-          gap: 5px;
-          border: 1px solid #d6e1eb;
-          background: #fff;
-          padding: 5px;
-        }
-
-        .qr-box img {
-          width: 48px;
-          height: 48px;
-          border: 1px solid #dbe4ee;
-          background: #fff;
-        }
-
-        .qr-copy {
-          text-align: right;
-          font-size: 7.2px;
-          color: #334155;
-          line-height: 1.2;
-        }
-
-        .qr-copy strong {
-          display: block;
-          color: #164c7a;
-          margin-bottom: 1px;
-        }
-
-        .qr-copy .ar {
-          direction: rtl;
-          font-family: "WathiqPdfSans", "WathiqPdfArabic", sans-serif;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          table-layout: fixed;
-          border: 1px solid #b8c9d8;
-          page-break-inside: auto;
-          color: #0f172a;
-        }
-
-        col {
-          width: 50%;
-        }
-
-        tr {
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
-
-        td {
-          border: 1px solid #d7e2ec;
-          vertical-align: top;
-          color: #0f172a;
-        }
-
-        .cell-en,
-        .cell-ar {
-          width: 50%;
-          padding: 4.5px 6px;
-          border: 1px solid #d7e0ea;
-          vertical-align: top;
-          background: #ffffff;
-        }
-
-        .cell-en {
-          direction: ltr;
-          text-align: left;
-          font-family: "WathiqPdfSans", "WathiqPdfArabic", sans-serif;
-          color: #111827;
-        }
-
-        .cell-ar {
-          direction: rtl;
-          text-align: right;
-          font-family: "WathiqPdfSans", "WathiqPdfArabic", sans-serif;
-          color: #111827;
-        }
-
-        .label {
-          color: #164c7a !important;
-          -webkit-text-fill-color: #164c7a !important;
-          display: block;
-          margin-bottom: 2px;
-          font-size: 8.2px;
-          font-weight: 800;
-          color: #164c7a;
-          line-height: 1.18;
-        }
-
-        .value {
-          color: #111827 !important;
-          -webkit-text-fill-color: #111827 !important;
-          font-size: 8.8px;
-          line-height: 1.44;
-          color: #111827;
-          white-space: normal;
-          overflow-wrap: anywhere;
-          word-break: normal;
-        }
-
-        .cell-en .value {
-          text-align: justify;
-          text-align-last: left;
-          color: #111827;
-        }
-
-        .cell-ar .value {
-          text-align: right;
-          text-align-last: right;
-          direction: rtl;
-          unicode-bidi: plaintext;
-          letter-spacing: 0;
-          word-spacing: normal;
-          color: #111827;
-        }
-
-        .signature-inline {
-          display: block;
-          max-width: 130px;
-          max-height: 36px;
-          object-fit: contain;
-          margin: 0 0 4px;
-          border-bottom: 1px solid #d5e0ea;
-          background: #fff;
-        }
-
-        .section-row td {
-          padding: 5px 7px;
-          background: #eaf4fb;
-          border: 1px solid #c6d2df;
-          border-top: 2px solid #14537d;
-          page-break-after: avoid;
-          break-after: avoid;
-        }
-
-        .section-title-wrap {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .section-header-en {
-          font-size: 9.6px;
-          font-weight: 800;
-          color: #123f66;
-          line-height: 1.18;
-        }
-
-        .section-header-ar {
-          font-size: 9.6px;
-          font-weight: 800;
-          color: #123f66;
-          direction: rtl;
-          text-align: right;
-          font-family: "WathiqPdfSans", "WathiqPdfArabic", sans-serif;
-          line-height: 1.18;
-        }
-
-        .footer {
-          margin-top: 6px;
-          border: 1px solid #c6d2df;
-          background: #f7fafc;
-          padding: 7px 9px;
-          display: grid;
-          grid-template-columns: 1fr 42mm;
-          gap: 8px;
-          page-break-inside: avoid;
-          break-inside: avoid;
-          color: #0f172a;
-        }
-
-        .footer-copy {
-          font-size: 8px;
-          color: #334155;
-          line-height: 1.28;
-        }
-
-        .footer-copy strong {
-          color: #164c7a;
-          display: block;
-          margin-bottom: 2px;
-        }
-
-        .footer-copy .rtl {
-          direction: rtl;
-          font-family: "WathiqPdfSans", "WathiqPdfArabic", sans-serif;
-          margin-top: 2px;
-        }
-
-        .footer-brand {
-          border-left: 2px solid #14537d;
-          padding-left: 8px;
-          text-align: right;
-        }
-
-        .footer-brand strong {
-          display: block;
-          color: #164c7a;
-          font-size: 10px;
-        }
-
-        .footer-brand .sub {
-          font-size: 7.4px;
-          color: #475569;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="document">
-        <div class="header">
-          <div class="brand-box">
-            <img class="imc-logo" src="${escapeHtml(payload.logoSrc)}" alt="International Medical Center" />
-            <div class="imc-brand">
-              <strong>IMC</strong>
-              <div>International Medical Center</div>
-            </div>
-          </div>
-
-          <div class="title-box">
-            <h1>${escapeHtml(FINAL_TITLE.en)}</h1>
-            <div class="title-ar">${escapeHtml(FINAL_TITLE.ar)}</div>
-            <div class="subtitle-en">${escapeHtml(FINAL_SIGNING_STATEMENT.en)}</div>
-            <div class="subtitle-ar">${escapeHtml(FINAL_SIGNING_STATEMENT.ar)}</div>
-          </div>
-
-          <div class="right-box">
-            <div class="metadata-panel">
-              <div class="meta-row">
-                <div>
-                  <div class="meta-label">Document ID</div>
-                  <div class="meta-label-ar">معرف المستند</div>
-                </div>
-                <div class="meta-value">${escapeHtml(payload.consentDocumentId)}</div>
-              </div>
-              <div class="meta-row">
-                <div>
-                  <div class="meta-label">Issue Date</div>
-                  <div class="meta-label-ar">تاريخ الإصدار</div>
-                </div>
-                <div class="meta-value">${escapeHtml(payload.header.issueDate || "")}</div>
-              </div>
-              <div class="meta-row">
-                <div>
-                  <div class="meta-label">Status</div>
-                  <div class="meta-label-ar">الحالة</div>
-                </div>
-                <div class="meta-value">${escapeHtml(payload.header.documentStatus || "")}</div>
-              </div>
-              <div class="meta-row">
-                <div>
-                  <div class="meta-label">Reference</div>
-                  <div class="meta-label-ar">المرجع</div>
-                </div>
-                <div class="meta-value">${escapeHtml(payload.header.consentReference || "")}</div>
-              </div>
-            </div>
-
-            <div class="qr-box">
-              <img src="__QR_DATA_URL__" alt="QR verification" />
-              <div class="qr-copy">
-                <strong>Verify Document</strong>
-                <div class="ar">التحقق من المستند</div>
-                <div>${escapeHtml(copyTypeLabel)}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <table>
-          <colgroup><col /><col /></colgroup>
-          <tbody>${groupedRows.join("")}</tbody>
-        </table>
-
-        <div class="footer">
-          <div class="footer-copy">
-            <strong>This document is electronically generated and signed via Wathiq Care system and is legally valid.</strong>
-            <div class="rtl">تم إصدار هذا المستند وتوقيعه إلكترونيًا عبر نظام واثق كير، وهو وثيقة قانونية معتمدة.</div>
-            <div>Verification URL: ${escapeHtml(payload.qrVerificationUrl)}</div>
-          </div>
-
-          <div class="footer-brand">
-            <strong>Wathiq Care</strong>
-            <div class="sub">System-generated legal validity statement</div>
-          </div>
-        </div>
-      </div>
-    </body>
-  </html>`;
-}
-
-export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<NextResponse> {
-  let browser: Browser | null = null;
-
-  try {
-    const { payload, html } = await buildFinalConsentPdfRenderContext(args);
-
-    if (args.request.nextUrl.searchParams.get("debug") === "html") {
-      return new NextResponse(html, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/html; charset=utf-8",
-          "Cache-Control": "no-store",
-          "X-Wathiq-Rows-Count": String(payload.bilingualRows.length),
-          "X-Wathiq-Html-Length": String(html.length),
-          "X-Wathiq-Html-Has-Patient": html.includes("Patient Name") ? "yes" : "no",
-          "X-Wathiq-Html-Has-Arabic": /[\u0600-\u06FF]/.test(html) ? "yes" : "no",
-        },
-      });
-    }
-
-
-    browser = await launchBrowser();
-
-    const page = await browser.newPage();
-
-    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 });
-
-    await page.setContent(html, { waitUntil: "networkidle0" });
-
-    await page.emulateMediaType("screen");
-    await page.evaluate(async () => {
-      await document.fonts.ready;
-    });
-
-
-    await new Promise((resolve) => setTimeout(resolve, 250));
-
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      preferCSSPageSize: true,
-      displayHeaderFooter: false,
-      margin: { top: "8mm", right: "8mm", bottom: "10mm", left: "8mm" },
-    });
-
-    await page.close();
-
-    const lang = args.lang || "bilingual";
-
-    return new NextResponse(Buffer.from(pdf), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `${args.disposition || "attachment"}; filename="CONSENT-${payload.consentDocumentId}-${args.copyType}-${lang}.pdf"`,
-        "Cache-Control": "no-store",
-        "X-Wathiq-Document-Status": payload.status,
-        "X-Wathiq-Audit-Checksum": payload.immutablePdfHash || "",
-      },
-    });
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-
-    console.error("renderFinalConsentPdfResponse", error);
-
-    return NextResponse.json({ error: "Failed to generate final consent PDF" }, { status: 500 });
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-      } catch {
-        // no-op
-      }
-    }
-  }
 }
 
 function buildPdfTextVisibilityCss(): string {
@@ -2460,28 +1871,28 @@ function buildTableHtml(payload: FinalConsentPdfPayload, copyTypeLabel: string):
               <div class="meta-row">
                 <div>
                   <div class="meta-label">Document ID</div>
-                  <div class="meta-label-ar">معرف المستند</div>
+                  <div class="meta-label-ar">Ù…Ø¹Ø±Ù Ø§Ù„Ù…Ø³ØªÙ†Ø¯</div>
                 </div>
                 <div class="meta-value">${escapeHtml(payload.consentDocumentId)}</div>
               </div>
               <div class="meta-row">
                 <div>
                   <div class="meta-label">Issue Date</div>
-                  <div class="meta-label-ar">تاريخ الإصدار</div>
+                  <div class="meta-label-ar">ØªØ§Ø±ÙŠØ® Ø§Ù„Ø¥ØµØ¯Ø§Ø±</div>
                 </div>
                 <div class="meta-value">${escapeHtml(payload.header.issueDate || "")}</div>
               </div>
               <div class="meta-row">
                 <div>
                   <div class="meta-label">Status</div>
-                  <div class="meta-label-ar">الحالة</div>
+                  <div class="meta-label-ar">Ø§Ù„Ø­Ø§Ù„Ø©</div>
                 </div>
                 <div class="meta-value">${escapeHtml(payload.header.documentStatus || "")}</div>
               </div>
               <div class="meta-row">
                 <div>
                   <div class="meta-label">Reference</div>
-                  <div class="meta-label-ar">المرجع</div>
+                  <div class="meta-label-ar">Ø§Ù„Ù…Ø±Ø¬Ø¹</div>
                 </div>
                 <div class="meta-value">${escapeHtml(payload.header.consentReference || "")}</div>
               </div>
@@ -2491,7 +1902,7 @@ function buildTableHtml(payload: FinalConsentPdfPayload, copyTypeLabel: string):
               <img src="__QR_DATA_URL__" alt="QR verification" />
               <div class="qr-copy">
                 <strong>Verify Document</strong>
-                <div class="ar">التحقق من المستند</div>
+                <div class="ar">Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ù…Ø³ØªÙ†Ø¯</div>
                 <div>${escapeHtml(copyTypeLabel)}</div>
               </div>
             </div>
@@ -2506,7 +1917,7 @@ function buildTableHtml(payload: FinalConsentPdfPayload, copyTypeLabel: string):
         <div class="footer">
           <div class="footer-copy">
             <strong>This document is electronically generated and signed via Wathiq Care system and is legally valid.</strong>
-            <div class="rtl">تم إصدار هذا المستند وتوقيعه إلكترونيًا عبر نظام واثق كير، وهو وثيقة قانونية معتمدة.</div>
+            <div class="rtl">ØªÙ… Ø¥ØµØ¯Ø§Ø± Ù‡Ø°Ø§ Ø§Ù„Ù…Ø³ØªÙ†Ø¯ ÙˆØªÙˆÙ‚ÙŠØ¹Ù‡ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠÙ‹Ø§ Ø¹Ø¨Ø± Ù†Ø¸Ø§Ù… ÙˆØ§Ø«Ù‚ ÙƒÙŠØ±ØŒ ÙˆÙ‡Ùˆ ÙˆØ«ÙŠÙ‚Ø© Ù‚Ø§Ù†ÙˆÙ†ÙŠØ© Ù…Ø¹ØªÙ…Ø¯Ø©.</div>
             <div>Verification URL: ${escapeHtml(payload.qrVerificationUrl)}</div>
           </div>
 
@@ -2566,7 +1977,7 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
 
     await page.evaluate(() => {
       document.body.style.color = "#0f172a";
-      document.body.style.webkitTextFillColor = "#0f172a";
+      document.body.style.setProperty("-webkit-text-fill-color", "#0f172a");
 
       const allNodes = document.querySelectorAll<HTMLElement>("*");
       allNodes.forEach((node) => {
@@ -2580,7 +1991,7 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
 
       darkTextNodes.forEach((node) => {
         node.style.color = "#111827";
-        node.style.webkitTextFillColor = "#111827";
+        node.style.setProperty("-webkit-text-fill-color", "#111827");
       });
 
       const blueTextNodes = document.querySelectorAll<HTMLElement>(
@@ -2589,7 +2000,7 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
 
       blueTextNodes.forEach((node) => {
         node.style.color = "#164c7a";
-        node.style.webkitTextFillColor = "#164c7a";
+        node.style.setProperty("-webkit-text-fill-color", "#164c7a");
       });
     });
 
@@ -2661,10 +2072,10 @@ async function buildFinalConsentPdfRenderContext(
 
   const copyTypeLabel =
     args.copyType === "LEGAL_ARCHIVE_COPY"
-      ? "Legal Archive Copy / نسخة الأرشيف القانوني"
+      ? "Legal Archive Copy / Ù†Ø³Ø®Ø© Ø§Ù„Ø£Ø±Ø´ÙŠÙ Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ"
       : args.copyType === "MEDICAL_RECORD_COPY"
-        ? "Medical Record Copy / نسخة السجل الطبي"
-        : "Patient Copy / نسخة المريض";
+        ? "Medical Record Copy / Ù†Ø³Ø®Ø© Ø§Ù„Ø³Ø¬Ù„ Ø§Ù„Ø·Ø¨ÙŠ"
+        : "Patient Copy / Ù†Ø³Ø®Ø© Ø§Ù„Ù…Ø±ÙŠØ¶";
 
   const html = buildTableHtml(payload, copyTypeLabel).replace(
     "__QR_DATA_URL__",
