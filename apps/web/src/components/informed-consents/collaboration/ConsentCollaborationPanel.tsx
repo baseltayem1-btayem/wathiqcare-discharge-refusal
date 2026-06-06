@@ -250,17 +250,30 @@ export function ConsentCollaborationPanel({
         <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
           {quickActions.map((action) => {
             const Icon = action.icon;
+            const isUnavailable = !action.targetUserId;
+            const unavailableMessage = isAr ? action.missingTargetMessageAr : action.missingTargetMessage;
 
             return (
               <button
                 key={action.key}
                 type="button"
-                disabled={loading}
+                disabled={loading || isUnavailable}
+                title={isUnavailable ? unavailableMessage : undefined}
+                aria-disabled={loading || isUnavailable}
                 onClick={() => addQuickAction(action)}
-                className="flex items-center gap-3 rounded-lg border border-[#D8DCE3] bg-[#F8FAFC] px-4 py-3 text-start text-sm font-medium text-[#2F2F2F] transition hover:border-[#002B5C] hover:bg-white hover:text-[#002B5C] disabled:opacity-60"
+                className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-start text-sm font-medium transition ${
+                  isUnavailable
+                    ? "cursor-not-allowed border-[#D8DCE3] bg-[#F3F4F6] text-[#9CA3AF]"
+                    : "border-[#D8DCE3] bg-[#F8FAFC] text-[#2F2F2F] hover:border-[#002B5C] hover:bg-white hover:text-[#002B5C]"
+                } disabled:opacity-60`}
               >
-                <Icon className="h-4 w-4 shrink-0 text-[#4B9CD3]" />
-                {isAr ? action.labelAr : action.label}
+                <Icon className={`h-4 w-4 shrink-0 ${isUnavailable ? "text-[#9CA3AF]" : "text-[#4B9CD3]"}`} />
+                <span className="flex flex-col gap-0.5">
+                  <span>{isAr ? action.labelAr : action.label}</span>
+                  {isUnavailable ? (
+                    <span className="text-[11px] font-normal text-[#9CA3AF]">{unavailableMessage}</span>
+                  ) : null}
+                </span>
               </button>
             );
           })}
