@@ -20,6 +20,13 @@ const TEAM_ADMIN_ROLES = new Set([
   "admin_medical_director",
   "physician_lead",
   "department_head",
+
+  // Pilot phase: allow physician users to configure the clinical collaboration team.
+  // This can later be restricted to Department Admin / Medical Director only.
+  "physician",
+  "doctor",
+  "attending_physician",
+  "physician_user",
 ]);
 
 function normalizeDepartmentName(value: string | null | undefined) {
@@ -34,7 +41,12 @@ function nullableId(value: unknown) {
 }
 
 function canManageTeam(role: string | undefined) {
-  return TEAM_ADMIN_ROLES.has(String(role || "").trim().toLowerCase());
+  const normalized = String(role || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+  return TEAM_ADMIN_ROLES.has(normalized);
 }
 
 export async function GET(request: NextRequest) {

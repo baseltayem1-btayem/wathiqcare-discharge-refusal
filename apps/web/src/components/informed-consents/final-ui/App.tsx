@@ -167,7 +167,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
       } catch (error) {
         console.error('Failed to load clinical collaboration team settings', error);
         if (!cancelled) {
-          setCollaborationTeamMessage(isArabic ? '???? ????? ???? ??????? ???????.' : 'Unable to load clinical collaboration team.');
+          setCollaborationTeamMessage(isArabic ? '\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0641\u0631\u064a\u0642 \u0627\u0644\u062a\u0639\u0627\u0648\u0646 \u0627\u0644\u0633\u0631\u064a\u0631\u064a.' : 'Unable to load clinical collaboration team.');
         }
       } finally {
         if (!cancelled) {
@@ -206,10 +206,14 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
         throw new Error(payload?.error || 'Failed to save clinical collaboration team.');
       }
 
-      setCollaborationTeamMessage(isArabic ? '?? ??? ???? ??????? ??????? ?????.' : 'Clinical collaboration team saved successfully.');
+      setCollaborationTeamMessage(isArabic ? '\u062a\u0645 \u062d\u0641\u0638 \u0641\u0631\u064a\u0642 \u0627\u0644\u062a\u0639\u0627\u0648\u0646 \u0627\u0644\u0633\u0631\u064a\u0631\u064a \u0628\u0646\u062c\u0627\u062d.' : 'Clinical collaboration team saved successfully.');
     } catch (error) {
       console.error('Failed to save clinical collaboration team settings', error);
-      setCollaborationTeamMessage(isArabic ? '???? ??? ???? ??????? ???????.' : 'Unable to save clinical collaboration team.');
+      const message = error instanceof Error ? error.message : '';
+      setCollaborationTeamMessage(
+        message ||
+          (isArabic ? '\u062a\u0639\u0630\u0631 \u062d\u0641\u0638 \u0641\u0631\u064a\u0642 \u0627\u0644\u062a\u0639\u0627\u0648\u0646 \u0627\u0644\u0633\u0631\u064a\u0631\u064a.' : 'Unable to save clinical collaboration team.')
+      );
     } finally {
       setIsSavingCollaborationTeam(false);
     }
