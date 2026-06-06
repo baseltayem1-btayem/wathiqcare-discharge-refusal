@@ -1462,10 +1462,10 @@ function buildTableHtml(payload: FinalConsentPdfPayload, copyTypeLabel: string):
         }
 
         html,
-        body {
-          width: 210mm;
-          min-height: 297mm;
-        }
+body {
+  width: auto;
+  min-height: auto;
+}
 
         body {
           margin: 0;
@@ -1479,13 +1479,13 @@ function buildTableHtml(payload: FinalConsentPdfPayload, copyTypeLabel: string):
         }
 
         .document {
-          width: 100%;
-          max-width: 194mm;
-          margin: 0 auto;
-          color: #0f172a !important;
-          opacity: 1 !important;
-          visibility: visible !important;
-        }
+  width: 194mm;
+  max-width: 194mm;
+  margin: 0 auto;
+  color: #0f172a !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
 
         .document,
         .document * {
@@ -1666,6 +1666,8 @@ function buildTableHtml(payload: FinalConsentPdfPayload, copyTypeLabel: string):
         }
 
         table {
+  page-break-inside: auto;
+  break-inside: auto;
           width: 100%;
           border-collapse: collapse;
           table-layout: fixed;
@@ -1679,11 +1681,21 @@ function buildTableHtml(payload: FinalConsentPdfPayload, copyTypeLabel: string):
         }
 
         tr {
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
+  page-break-inside: auto;
+  break-inside: auto;
+}
 
-        td {
+.section-row,
+.section-row td {
+  page-break-inside: avoid;
+  break-inside: avoid;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+td {
+  page-break-inside: auto;
+  break-inside: auto;
           border: 1px solid #d7e2ec;
           vertical-align: top;
           color: #0f172a !important;
@@ -1761,6 +1773,8 @@ function buildTableHtml(payload: FinalConsentPdfPayload, copyTypeLabel: string):
         }
 
         .section-row td {
+  page-break-inside: avoid;
+  break-inside: avoid;
           padding: 5px 7px;
           background: #eaf4fb;
           border: 1px solid #c6d2df;
@@ -2011,6 +2025,7 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
       printBackground: true,
       preferCSSPageSize: true,
       displayHeaderFooter: false,
+      scale: 1,
       margin: {
         top: "8mm",
         right: "8mm",
