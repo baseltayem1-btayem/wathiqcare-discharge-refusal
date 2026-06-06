@@ -9,6 +9,35 @@ app.use(express.json({ limit: "25mb" }));
 const PORT = Number(process.env.PORT || 8080);
 const INTERNAL_SECRET = process.env.PDF_RENDERER_SECRET || "";
 
+async function ensureArabicFontsLoaded(): Promise<void> {
+  const chromiumWithFont = chromium as unknown as {
+    font?: (url: string) => Promise<void>;
+  };
+
+  if (typeof chromiumWithFont.font !== "function") {
+    return;
+  }
+
+  try {
+    await Promise.all([
+      chromiumWithFont.font(
+        "https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Regular.ttf",
+      ),
+      chromiumWithFont.font(
+        "https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Bold.ttf",
+      ),
+      chromiumWithFont.font(
+        "https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSansArabic/NotoSansArabic-Regular.ttf",
+      ),
+      chromiumWithFont.font(
+        "https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSansArabic/NotoSansArabic-Bold.ttf",
+      ),
+    ]);
+  } catch (error) {
+    console.warn("Arabic font loading failed", error);
+  }
+}
+
 type RenderRequest = {
   html?: string;
   filename?: string;
@@ -57,6 +86,8 @@ app.post("/render", async (req, res) => {
   let browser: Browser | null = null;
 
   try {
+    await ensureArabicFontsLoaded();
+
     browser = await playwrightChromium.launch({
       args: [
         ...chromium.args,
@@ -78,7 +109,54 @@ app.post("/render", async (req, res) => {
     });
 
     await page.setContent(body.html, {
-      waitUntil: "networkidle"
+      waitUntil: "networkidle",
+    });
+
+    await page.addStyleTag({
+      content: `
+        @font-face {
+          font-family: "Noto Naskh Arabic";
+          src: url("https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Regular.ttf") format("truetype");
+          font-weight: 400;
+          font-style: normal;
+        }
+
+        @font-face {
+          font-family: "Noto Naskh Arabic";
+          src: url("https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoNaskhArabic/NotoNaskhArabic-Bold.ttf") format("truetype");
+          font-weight: 700;
+          font-style: normal;
+        }
+
+        @font-face {
+          font-family: "Noto Sans Arabic";
+          src: url("https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSansArabic/NotoSansArabic-Regular.ttf") format("truetype");
+          font-weight: 400;
+          font-style: normal;
+        }
+
+        @font-face {
+          font-family: "Noto Sans Arabic";
+          src: url("https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSansArabic/NotoSansArabic-Bold.ttf") format("truetype");
+          font-weight: 700;
+          font-style: normal;
+        }
+
+        html,
+        body,
+        * {
+          font-family: "Noto Naskh Arabic", "Noto Sans Arabic", Arial, sans-serif !important;
+        }
+
+        [dir="rtl"],
+        .rtl,
+        .cell-ar,
+        .title-ar,
+        .section-header-ar {
+          font-family: "Noto Naskh Arabic", "Noto Sans Arabic", Arial, sans-serif !important;
+          direction: rtl;
+        }
+      `,
     });
 
     await page.emulateMedia({ media: "screen" });
