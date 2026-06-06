@@ -955,6 +955,16 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
 }
 
 
+type ConsentOperationNotification = {
+  id: string;
+  eventType: string;
+  title: string;
+  message: string;
+  readAt?: string | null;
+  createdAt: string;
+  caseId?: string | null;
+};
+
 export default function App() {
   const [screen, setScreen] = useState<Screen>('dashboard');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
@@ -962,8 +972,10 @@ export default function App() {
   const isLicenseExpired = licenseStatus === 'expired';
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedEncounter, setSelectedEncounter] = useState<Encounter | null>(null);
-  const [alertCount, setAlertCount] = useState(3);
+  const [alertCount, setAlertCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationItems, setNotificationItems] = useState<ConsentOperationNotification[]>([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
 
   const handleNewConsent = () => setScreen('search');
   const handleViewConsent = (_mrn: string) => setScreen('consent-builder');
@@ -972,6 +984,54 @@ export default function App() {
     setSelectedEncounter(encounter);
     setScreen('consent-builder');
   };
+
+  async function loadConsentNotifications() {
+    setIsLoadingNotifications(true);
+
+    try {
+      const response = await fetch('/api/operations/notifications?limit=20', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (payload && Array.isArray(payload.notifications)) {
+        setNotificationItems(payload.notifications);
+        setAlertCount(Number(payload.unread || 0));
+      }
+    } catch (error) {
+      console.error('Failed to load consent notifications', error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  }
+
+  async function markConsentNotificationsRead() {
+    try {
+      await fetch('/api/operations/notifications/read', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all: true }),
+      });
+
+      await loadConsentNotifications();
+      setShowNotifications(false);
+    } catch (error) {
+      console.error('Failed to mark consent notifications as read', error);
+    }
+  }
+
+  useEffect(() => {
+    void loadConsentNotifications();
+
+    const timer = window.setInterval(() => {
+      void loadConsentNotifications();
+    }, 30000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   async function handleSignOut() {
     try {
@@ -1146,10 +1206,7 @@ export default function App() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        setAlertCount(0);
-                        setShowNotifications(false);
-                      }}
+                      onClick={() => void markConsentNotificationsRead()}
                       className="text-xs font-medium text-[#002B5C] hover:underline"
                     >
                       Mark all as read
@@ -1157,36 +1214,49 @@ export default function App() {
                   </div>
 
                   <div className="max-h-80 overflow-y-auto">
-                    {physicianNotifications.map((notification) => (
-                      <button
-                        key={notification.id}
-                        type="button"
-                        onClick={() => {
-                          if (notification.id === 'notif-incomplete-disclosures') {
-                            setScreen('dashboard');
-                          }
-                          setShowNotifications(false);
-                        }}
-                        className="w-full border-b border-[#EEF1F5] px-4 py-3 text-left hover:bg-[#F4F6F9]"
-                      >
-                        <div className="flex items-start gap-3">
-                          <span
-                            className={`mt-1 h-2 w-2 rounded-full ${
-                              notification.severity === 'critical'
-                                ? 'bg-red-500'
-                                : notification.severity === 'success'
-                                  ? 'bg-emerald-500'
-                                  : 'bg-[#4B9CD3]'
-                            }`}
-                          />
-                          <div className="min-w-0">
-                            <div className="text-sm font-medium text-[#2F2F2F]">{notification.title}</div>
-                            <div className="mt-0.5 text-xs text-[#6B7280]">{notification.message}</div>
-                            <div className="mt-1 text-[11px] text-[#9CA3AF]">{notification.time}</div>
+                    {isLoadingNotifications ? (
+                      <div className="px-4 py-6 text-center text-sm text-[#6B7280]">
+                        Loading notifications...
+                      </div>
+                    ) : notificationItems.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-sm text-[#6B7280]">
+                        No notifications yet.
+                      </div>
+                    ) : (
+                      notificationItems.map((notification) => (
+                        <button
+                          key={notification.id}
+                          type="button"
+                          onClick={() => {
+                            if (notification.caseId) {
+                              setScreen('status-tracking');
+                            }
+                            setShowNotifications(false);
+                          }}
+                          className={`w-full border-b border-[#EEF1F5] px-4 py-3 text-left hover:bg-[#F4F6F9] ${
+                            notification.readAt ? 'bg-white' : 'bg-blue-50/60'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span
+                              className={`mt-1 h-2 w-2 rounded-full ${
+                                notification.readAt ? 'bg-[#9CA3AF]' : 'bg-[#C0392B]'
+                              }`}
+                            />
+                            <div className="min-w-0">
+                              <div className="text-[11px] font-semibold uppercase tracking-wide text-[#4B9CD3]">
+                                {notification.eventType?.replaceAll('_', ' ')}
+                              </div>
+                              <div className="mt-0.5 text-sm font-medium text-[#2F2F2F]">{notification.title}</div>
+                              <div className="mt-0.5 text-xs text-[#6B7280]">{notification.message}</div>
+                              <div className="mt-1 text-[11px] text-[#9CA3AF]">
+                                {notification.createdAt ? new Date(notification.createdAt).toLocaleString() : ''}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
               ) : null}
