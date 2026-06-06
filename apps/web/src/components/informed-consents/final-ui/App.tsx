@@ -974,6 +974,82 @@ type ConsentOperationNotification = {
   caseId?: string | null;
 };
 
+type RuntimeHeaderState = {
+  department: string;
+  dateLabel: string;
+  sessionLabel: string;
+  sourceLabel: string;
+};
+
+function formatRuntimeDate() {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date());
+}
+
+function formatSessionDuration(startedAt: number) {
+  const totalMinutes = Math.max(0, Math.floor((Date.now() - startedAt) / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours <= 0) return `${minutes}m`;
+  return `${hours}h ${minutes}m`;
+}
+
+function extractDepartmentFromMePayload(payload: unknown) {
+  const root = payload && typeof payload === "object" && "data" in payload
+    ? (payload as Record<string, unknown>).data
+    : payload;
+
+  const data = root && typeof root === "object" ? root as Record<string, unknown> : {};
+  const user = data.user && typeof data.user === "object" ? data.user as Record<string, unknown> : {};
+  const claims = data.claims && typeof data.claims === "object" ? data.claims as Record<string, unknown> : {};
+
+  const candidates = [
+    user.department,
+    user.departmentName,
+    user.specialty,
+    claims.department,
+    claims.departmentName,
+    claims.specialty,
+  ];
+
+  for (const value of candidates) {
+    const text = String(value || "").trim();
+    if (text) return text;
+  }
+
+  const memberships = Array.isArray(user.memberships) ? user.memberships : [];
+  for (const membership of memberships) {
+    if (!membership || typeof membership !== "object") continue;
+
+    const metadata = (membership as Record<string, unknown>).metadata;
+    if (!metadata || typeof metadata !== "object") continue;
+
+    const meta = metadata as Record<string, unknown>;
+    const text = String(meta.department || meta.departmentName || meta.specialty || "").trim();
+    if (text) return text;
+  }
+
+  return "Department not assigned";
+}
+
+function extractSessionStartedAt(payload: unknown) {
+  const root = payload && typeof payload === "object" && "data" in payload
+    ? (payload as Record<string, unknown>).data
+    : payload;
+
+  const data = root && typeof root === "object" ? root as Record<string, unknown> : {};
+  const claims = data.claims && typeof data.claims === "object" ? data.claims as Record<string, unknown> : {};
+
+  const iat = Number(claims.iat);
+  if (Number.isFinite(iat) && iat > 0) return iat * 1000;
+
+  return Date.now();
+}
+
 export default function App() {
   const [screen, setScreen] = useState<Screen>('dashboard');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
@@ -983,8 +1059,69 @@ export default function App() {
   const [selectedEncounter, setSelectedEncounter] = useState<Encounter | null>(null);
   const [alertCount, setAlertCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [runtimeHeaderStartedAt, setRuntimeHeaderStartedAt] = useState(() => Date.now());
+  const [runtimeHeader, setRuntimeHeader] = useState<RuntimeHeaderState>({
+    department: "Loading department...",
+    dateLabel: formatRuntimeDate(),
+    sessionLabel: "0m",
+    sourceLabel: "Live Auth/Profile",
+  });
   const [notificationItems, setNotificationItems] = useState<ConsentOperationNotification[]>([]);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    let activeStartedAt = runtimeHeaderStartedAt;
+
+    async function loadRuntimeHeaderContext() {
+      try {
+        const response = await fetch("/api/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        const payload = await response.json().catch(() => null);
+        const startedAt = extractSessionStartedAt(payload);
+        activeStartedAt = startedAt;
+
+        if (!cancelled) {
+          setRuntimeHeaderStartedAt(startedAt);
+          setRuntimeHeader({
+            department: extractDepartmentFromMePayload(payload),
+            dateLabel: formatRuntimeDate(),
+            sessionLabel: formatSessionDuration(startedAt),
+            sourceLabel: "Live Auth/Profile",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load runtime header context", error);
+
+        if (!cancelled) {
+          setRuntimeHeader({
+            department: "Department unavailable",
+            dateLabel: formatRuntimeDate(),
+            sessionLabel: formatSessionDuration(activeStartedAt),
+            sourceLabel: "Local session",
+          });
+        }
+      }
+    }
+
+    void loadRuntimeHeaderContext();
+
+    const timer = window.setInterval(() => {
+      setRuntimeHeader((current) => ({
+        ...current,
+        dateLabel: formatRuntimeDate(),
+        sessionLabel: formatSessionDuration(activeStartedAt),
+      }));
+    }, 60000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   const handleNewConsent = () => setScreen('search');
   const handleViewConsent = (_mrn: string) => setScreen('consent-builder');
@@ -1163,11 +1300,19 @@ export default function App() {
         <header className="bg-white border-b flex items-center px-6 py-3 shrink-0" style={{ borderColor: '#D8DCE3' }}>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs" style={{ color: '#6B7280' }}>{lang === 'en' ? 'Department' : 'القسم'}: General Surgery</span>
+              <span className="text-xs" style={{ color: '#6B7280' }}>
+                {lang === 'en' ? 'Department' : '\u0627\u0644\u0642\u0633\u0645'}: {runtimeHeader.department}
+              </span>
               <span style={{ color: '#D8DCE3' }}>·</span>
-              <span className="text-xs" style={{ color: '#6B7280' }}>28 May 2026</span>
+              <span className="text-xs" style={{ color: '#6B7280' }}>{runtimeHeader.dateLabel}</span>
               <span style={{ color: '#D8DCE3' }}>·</span>
-              <span className="text-xs font-mono" style={{ color: '#6B7280' }}>Session: 2h 14m</span>
+              <span className="text-xs font-mono" style={{ color: '#6B7280' }}>
+                {lang === 'en' ? 'Session' : '\u0627\u0644\u062c\u0644\u0633\u0629'}: {runtimeHeader.sessionLabel}
+              </span>
+              <span style={{ color: '#D8DCE3' }}>&middot;</span>
+              <span className="text-xs" title="Runtime source" style={{ color: '#9CA3AF' }}>
+                {runtimeHeader.sourceLabel}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
