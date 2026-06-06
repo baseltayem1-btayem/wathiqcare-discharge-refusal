@@ -361,6 +361,52 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                         </div>
                       </div>
 
+                      <div className="rounded border border-[#D8DCE3] bg-white px-3 py-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-medium text-[#002B5C]">
+                              {isArabic ? '\u0641\u0631\u064a\u0642 \u0627\u0644\u062a\u0639\u0627\u0648\u0646 \u0627\u0644\u0633\u0631\u064a\u0631\u064a' : 'Clinical Collaboration Team'}
+                            </div>
+                            <p className="mt-1 text-xs text-[#6B7280]">
+                              {isArabic
+                                ? '\u064a\u062d\u062f\u062f \u0647\u0630\u0627 \u0627\u0644\u0641\u0631\u064a\u0642 \u0645\u0646 \u064a\u0633\u062a\u0642\u0628\u0644 \u0637\u0644\u0628\u0627\u062a \u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u062a\u062e\u062f\u064a\u0631 \u0648\u0627\u0644\u062c\u0631\u0627\u062d\u0629 \u0648\u0627\u0644\u062a\u0645\u0631\u064a\u0636 \u0648\u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629.'
+                                : 'Defines who receives anesthesia, surgeon, nursing, and legal review tasks before the unified patient notification.'}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
+                            {isArabic ? '\u0642\u064a\u062f \u0627\u0644\u0631\u0628\u0637' : 'Pending binding'}
+                          </span>
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-1 gap-2">
+                          {[
+                            ['Anesthesiologist', isArabic ? '\u0637\u0628\u064a\u0628 \u0627\u0644\u062a\u062e\u062f\u064a\u0631' : 'Anesthesiologist'],
+                            ['Surgeon Reviewer', isArabic ? '\u0645\u0631\u0627\u062c\u0639 \u0627\u0644\u062c\u0631\u0627\u062d\u0629' : 'Surgeon Reviewer'],
+                            ['Nursing Team', isArabic ? '\u0641\u0631\u064a\u0642 \u0627\u0644\u062a\u0645\u0631\u064a\u0636' : 'Nursing Team'],
+                            ['Legal Reviewer', isArabic ? '\u0627\u0644\u0645\u0631\u0627\u062c\u0639 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a' : 'Legal Reviewer'],
+                          ].map(([value, label]) => (
+                            <label key={value} className="grid grid-cols-[150px_1fr] items-center gap-2 text-xs">
+                              <span className="font-medium text-[#4B5563]">{label}</span>
+                              <select
+                                disabled
+                                className="rounded border border-[#D8DCE3] bg-[#F3F4F6] px-2 py-1.5 text-[#6B7280]"
+                                value=""
+                              >
+                                <option value="">
+                                  {isArabic ? '\u064a\u062a\u0645 \u062a\u0639\u064a\u064a\u0646\u0647 \u0645\u0646 \u0627\u0644\u0645\u0634\u0631\u0641 / Admin' : 'Assigned by Admin / Department'}
+                                </option>
+                              </select>
+                            </label>
+                          ))}
+                        </div>
+
+                        <div className="mt-3 rounded bg-[#F8FAFC] px-3 py-2 text-[11px] text-[#6B7280]">
+                          {isArabic
+                            ? '\u0628\u0639\u062f \u0631\u0628\u0637 \u0627\u0644\u0641\u0631\u064a\u0642\u060c \u0633\u064a\u062a\u0645 \u062a\u0641\u0639\u064a\u0644 \u0623\u0632\u0631\u0627\u0631 \u0627\u0644\u062a\u0639\u0627\u0648\u0646 \u0627\u0644\u0633\u0631\u064a\u0631\u064a \u0641\u064a \u062e\u0637\u0648\u0629 \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0642\u0628\u0644 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u0644\u0644\u0645\u0631\u064a\u0636.'
+                            : 'Once bound, these users will activate the clinical collaboration buttons in the Pre-Send Review step.'}
+                        </div>
+                      </div>
+
                       <button
                         type="button"
                         data-modal="medical-communication"
