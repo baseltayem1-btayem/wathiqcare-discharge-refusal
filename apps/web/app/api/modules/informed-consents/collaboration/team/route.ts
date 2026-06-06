@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
       departmentName,
     });
   } catch (error) {
+    console.error("[consent-collaboration-team][GET]", error);
     return handleApiError(error);
   }
 }
@@ -153,6 +154,19 @@ export async function POST(request: NextRequest) {
       team,
     });
   } catch (error) {
-    return handleApiError(error);
+    console.error("[consent-collaboration-team][POST]", {
+      name: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Failed to save clinical collaboration team.",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
 }
