@@ -620,16 +620,20 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
 
                   <section className="rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
                     <h3 className="font-bold text-[#002B5C]">
-                      {isArabic ? '\u062d\u0627\u0644\u0629 \u0627\u0644\u0646\u0638\u0627\u0645' : 'System Status - View Only'}
+                      {isArabic ? '\u062d\u0627\u0644\u0629 \u0627\u0644\u0646\u0638\u0627\u0645' : 'System Integration Readiness - View Only'}
                     </h3>
+                    <div className="mt-3 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+                      <strong>Integration Readiness Note:</strong> These indicators reflect WathiqCare technical connector readiness. Final production activation requires live endpoints, credentials, network authorization, Go-Live approval, and smoke testing.
+                    </div>
 
                     <div className="mt-4 space-y-2 text-sm">
                       {[
-                        ['TrakCare Sync', 'Active', 'Last sync: Today 10:25 AM'],
-                        ['DocuWare Archive', 'Active', 'Last archive: Successful'],
-                        ['Email Provider', 'Configured', 'Provider managed by IT'],
-                        ['SMS / OTP Provider', 'Configured', 'Provider managed by IT'],
-                        ['WhatsApp Routing', 'Configured by Admin', 'Numbers are not editable by physician'],
+                        ['TrakCare API Connector', 'API Ready', 'Connector built and ready for production API connection upon receiving endpoint, credentials, and network authorization'],
+                        ['DocuSign API Connector', 'API Ready', 'Connector built and ready for production signing API connection upon receiving production credentials and webhook approval'],
+                        ['DocuWare Archive Connector', 'API Ready', 'Archive connector built and ready for production connection upon receiving archive mapping and credentials'],
+                        ['Email Provider', 'Ready', 'Provider connector ready; pending final live credentials and smoke test'],
+                        ['SMS / OTP Provider', 'Ready', 'Provider connector ready; pending final production smoke test'],
+                        ['WhatsApp Routing', 'Admin-Controlled', 'Admin-controlled routing; excluded from Clinical Collaboration Phase 1'],
                         ['Audit Log', 'Enabled', 'Immutable activity record'],
                       ].map(([name, status, detail]) => (
                         <div key={name} className="rounded bg-white px-3 py-2">
@@ -907,8 +911,9 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                       <option>System Access</option>
                       <option>Email Delivery</option>
                       <option>SMS / OTP Delivery</option>
-                      <option>TrakCare Sync</option>
-                      <option>DocuWare Archive</option>
+                      <option>TrakCare API Connector</option>
+                      <option>DocuSign API Connector</option>
+                      <option>DocuWare Archive Connector</option>
                       <option>PDF / Evidence Package</option>
                       <option>Other</option>
                     </select>
