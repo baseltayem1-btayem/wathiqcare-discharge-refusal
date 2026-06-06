@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ChevronRight,
   ChevronLeft,
@@ -16,6 +16,13 @@ import {
 } from "lucide-react";
 import type { ConsentStep } from "../clinical/ClinicalTypes";
 import { ConsentCollaborationPanel } from "../../collaboration/ConsentCollaborationPanel";
+
+type CollaborationTeamFromApi = {
+  anesthesiologistUserId?: string | null;
+  surgeonUserId?: string | null;
+  nursingUserId?: string | null;
+  legalReviewerUserId?: string | null;
+};
 
 type PreviewBuilderState = {
   patient?: Record<string, unknown>;
@@ -83,10 +90,36 @@ export function StepPreview({
 }: Props) {
   const [previewTab, setPreviewTab] = useState<(typeof previewTabs)[number]["id"]>("patient");
   const [confirmed, setConfirmed] = useState(false);
+  
+  const [collaborationTeamFromApi, setCollaborationTeamFromApi] = useState<CollaborationTeamFromApi | null>(null);
   const isAr = lang === "ar";
   const dir = isAr ? "rtl" : "ltr";
 
-  const patient = builderState.patient || {};
+  
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCollaborationTeam() {
+      try {
+        const response = await fetch("/api/modules/informed-consents/collaboration/team?departmentName=General");
+        const payload = await response.json().catch(() => null);
+
+        if (!cancelled && payload?.ok && payload.team) {
+          setCollaborationTeamFromApi(payload.team);
+        }
+      } catch (error) {
+        console.error("Failed to load clinical collaboration team for preview", error);
+      }
+    }
+
+    loadCollaborationTeam();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+const patient = builderState.patient || {};
   const procedure = builderState.procedure || {};
   const anesthesia = builderState.anesthesia || {};
   const disclosures = builderState.disclosures || {};
@@ -115,21 +148,25 @@ export function StepPreview({
   const anesthesiologistUserId =
     optionalText(anesthesia.anesthesiologistUserId) ||
     optionalText(anesthesia.assignedAnesthesiologistId) ||
-    optionalText(document.anesthesiologistUserId);
+    optionalText(document.anesthesiologistUserId) ||
+    optionalText(collaborationTeamFromApi?.anesthesiologistUserId);
 
   const surgeonUserId =
     optionalText(procedure.surgeonUserId) ||
     optionalText(procedure.physicianUserId) ||
     optionalText(procedure.doctorUserId) ||
-    optionalText(document.surgeonUserId);
+    optionalText(document.surgeonUserId) ||
+    optionalText(collaborationTeamFromApi?.surgeonUserId);
 
   const legalReviewerUserId =
     optionalText(document.legalReviewerUserId) ||
-    optionalText(metadata?.legalReviewerUserId);
+    optionalText(metadata?.legalReviewerUserId) ||
+    optionalText(collaborationTeamFromApi?.legalReviewerUserId);
 
   const nursingUserId =
     optionalText(document.nursingUserId) ||
-    optionalText(metadata?.nursingUserId);
+    optionalText(metadata?.nursingUserId) ||
+    optionalText(collaborationTeamFromApi?.nursingUserId);
 
   const anesthesiaApplies = anesthesia.applies === true;
   const procedureName = isAr

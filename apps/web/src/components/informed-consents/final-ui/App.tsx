@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import {
   LayoutDashboard, Search, FileText, Activity,
@@ -74,6 +74,28 @@ const navItems = [
 
 
 
+
+type CollaborationTeamUser = {
+  id: string;
+  fullName: string;
+  email?: string | null;
+  role?: string | null;
+};
+
+type CollaborationTeamSettings = {
+  anesthesiologistUserId: string;
+  surgeonUserId: string;
+  nursingUserId: string;
+  legalReviewerUserId: string;
+};
+
+const emptyCollaborationTeamSettings: CollaborationTeamSettings = {
+  anesthesiologistUserId: '',
+  surgeonUserId: '',
+  nursingUserId: '',
+  legalReviewerUserId: '',
+};
+
 function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
   const isArabic = lang === 'ar';
   const medicalLicenseStatus = getMedicalLicenseStatus(physicianProfile.licenseExpiryDate);
@@ -97,6 +119,101 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
       [key]: value,
     }));
   };
+
+  const [collaborationUsers, setCollaborationUsers] = useState<CollaborationTeamUser[]>([]);
+  const [collaborationTeam, setCollaborationTeam] = useState<CollaborationTeamSettings>(emptyCollaborationTeamSettings);
+  const [isLoadingCollaborationTeam, setIsLoadingCollaborationTeam] = useState(false);
+  const [isSavingCollaborationTeam, setIsSavingCollaborationTeam] = useState(false);
+  const [collaborationTeamMessage, setCollaborationTeamMessage] = useState<string | null>(null);
+
+  const updateCollaborationTeam = (key: keyof CollaborationTeamSettings, value: string) => {
+    setCollaborationTeam((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  };
+
+  const collaborationTeamConfiguredCount = Object.values(collaborationTeam).filter(Boolean).length;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCollaborationTeamSettings() {
+      setIsLoadingCollaborationTeam(true);
+
+      try {
+        const [usersResponse, teamResponse] = await Promise.all([
+          fetch('/api/modules/informed-consents/collaboration/team/users'),
+          fetch('/api/modules/informed-consents/collaboration/team?departmentName=General'),
+        ]);
+
+        const usersPayload = await usersResponse.json().catch(() => null);
+        const teamPayload = await teamResponse.json().catch(() => null);
+
+        if (cancelled) return;
+
+        if (usersPayload?.ok && Array.isArray(usersPayload.users)) {
+          setCollaborationUsers(usersPayload.users);
+        }
+
+        if (teamPayload?.ok && teamPayload.team) {
+          setCollaborationTeam({
+            anesthesiologistUserId: teamPayload.team.anesthesiologistUserId || '',
+            surgeonUserId: teamPayload.team.surgeonUserId || '',
+            nursingUserId: teamPayload.team.nursingUserId || '',
+            legalReviewerUserId: teamPayload.team.legalReviewerUserId || '',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load clinical collaboration team settings', error);
+        if (!cancelled) {
+          setCollaborationTeamMessage(isArabic ? '???? ????? ???? ??????? ???????.' : 'Unable to load clinical collaboration team.');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingCollaborationTeam(false);
+        }
+      }
+    }
+
+    loadCollaborationTeamSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isArabic]);
+
+  async function saveCollaborationTeam() {
+    setIsSavingCollaborationTeam(true);
+    setCollaborationTeamMessage(null);
+
+    try {
+      const response = await fetch('/api/modules/informed-consents/collaboration/team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          departmentName: 'General',
+          anesthesiologistUserId: collaborationTeam.anesthesiologistUserId || null,
+          surgeonUserId: collaborationTeam.surgeonUserId || null,
+          nursingUserId: collaborationTeam.nursingUserId || null,
+          legalReviewerUserId: collaborationTeam.legalReviewerUserId || null,
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || 'Failed to save clinical collaboration team.');
+      }
+
+      setCollaborationTeamMessage(isArabic ? '?? ??? ???? ??????? ??????? ?????.' : 'Clinical collaboration team saved successfully.');
+    } catch (error) {
+      console.error('Failed to save clinical collaboration team settings', error);
+      setCollaborationTeamMessage(isArabic ? '???? ??? ???? ??????? ???????.' : 'Unable to save clinical collaboration team.');
+    } finally {
+      setIsSavingCollaborationTeam(false);
+    }
+  }
 
 
   const [supportRequestContext] = useState(() => ({
@@ -380,31 +497,55 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
 
                         <div className="mt-3 grid grid-cols-1 gap-2">
                           {[
-                            ['Anesthesiologist', isArabic ? '\u0637\u0628\u064a\u0628 \u0627\u0644\u062a\u062e\u062f\u064a\u0631' : 'Anesthesiologist'],
-                            ['Surgeon Reviewer', isArabic ? '\u0645\u0631\u0627\u062c\u0639 \u0627\u0644\u062c\u0631\u0627\u062d\u0629' : 'Surgeon Reviewer'],
-                            ['Nursing Team', isArabic ? '\u0641\u0631\u064a\u0642 \u0627\u0644\u062a\u0645\u0631\u064a\u0636' : 'Nursing Team'],
-                            ['Legal Reviewer', isArabic ? '\u0627\u0644\u0645\u0631\u0627\u062c\u0639 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a' : 'Legal Reviewer'],
-                          ].map(([value, label]) => (
-                            <label key={value} className="grid grid-cols-1 gap-1 text-xs 2xl:grid-cols-[150px_1fr] 2xl:items-center">
+                            ['anesthesiologistUserId', isArabic ? '\u0637\u0628\u064a\u0628 \u0627\u0644\u062a\u062e\u062f\u064a\u0631' : 'Anesthesiologist'],
+                            ['surgeonUserId', isArabic ? '\u0645\u0631\u0627\u062c\u0639 \u0627\u0644\u062c\u0631\u0627\u062d\u0629' : 'Surgeon Reviewer'],
+                            ['nursingUserId', isArabic ? '\u0641\u0631\u064a\u0642 \u0627\u0644\u062a\u0645\u0631\u064a\u0636' : 'Nursing Team'],
+                            ['legalReviewerUserId', isArabic ? '\u0627\u0644\u0645\u0631\u0627\u062c\u0639 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a' : 'Legal Reviewer'],
+                          ].map(([key, label]) => (
+                            <label key={key} className="grid grid-cols-1 gap-1 text-xs 2xl:grid-cols-[150px_1fr] 2xl:items-center">
                               <span className="font-medium text-[#4B5563]">{label}</span>
                               <select
-                                disabled
-                                className="rounded border border-[#D8DCE3] bg-[#F3F4F6] px-2 py-1.5 text-[#6B7280]"
-                                value=""
+                                disabled={isLoadingCollaborationTeam}
+                                className="rounded border border-[#D8DCE3] bg-white px-2 py-1.5 text-[#2F2F2F] disabled:bg-[#F3F4F6] disabled:text-[#9CA3AF]"
+                                value={collaborationTeam[key as keyof CollaborationTeamSettings]}
+                                onChange={(event) => updateCollaborationTeam(key as keyof CollaborationTeamSettings, event.target.value)}
                               >
                                 <option value="">
-                                  {isArabic ? '\u064a\u062a\u0645 \u062a\u0639\u064a\u064a\u0646\u0647 \u0645\u0646 \u0627\u0644\u0645\u0634\u0631\u0641 / Admin' : 'Assigned by Admin / Department'}
+                                  {isArabic ? '\u0627\u062e\u062a\u0631 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0627\u0644\u0645\u0633\u0624\u0648\u0644' : 'Select responsible user'}
                                 </option>
+                                {collaborationUsers.map((user) => (
+                                  <option key={user.id} value={user.id}>
+                                    {user.fullName} {user.role ? `- ${user.role}` : ''}
+                                  </option>
+                                ))}
                               </select>
                             </label>
                           ))}
                         </div>
 
-                        <div className="mt-3 rounded bg-[#F8FAFC] px-3 py-2 text-[11px] text-[#6B7280]">
-                          {isArabic
-                            ? '\u0628\u0639\u062f \u0631\u0628\u0637 \u0627\u0644\u0641\u0631\u064a\u0642\u060c \u0633\u064a\u062a\u0645 \u062a\u0641\u0639\u064a\u0644 \u0623\u0632\u0631\u0627\u0631 \u0627\u0644\u062a\u0639\u0627\u0648\u0646 \u0627\u0644\u0633\u0631\u064a\u0631\u064a \u0641\u064a \u062e\u0637\u0648\u0629 \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0642\u0628\u0644 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0627\u062a \u0644\u0644\u0645\u0631\u064a\u0636.'
-                            : 'Once bound, these users will activate the clinical collaboration buttons in the Pre-Send Review step.'}
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded bg-[#F8FAFC] px-3 py-2 text-[11px] text-[#6B7280]">
+                          <span>
+                            {isArabic
+                              ? '\u0627\u062e\u062a\u064a\u0627\u0631 \u0647\u0630\u0627 \u0627\u0644\u0641\u0631\u064a\u0642 \u064a\u0641\u0639\u0651\u0644 \u0623\u0632\u0631\u0627\u0631 \u0627\u0644\u062a\u0639\u0627\u0648\u0646 \u0627\u0644\u0633\u0631\u064a\u0631\u064a \u0641\u064a \u062e\u0637\u0648\u0629 \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629.'
+                              : 'Selecting this team activates the clinical collaboration buttons in Pre-Send Review.'}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={isSavingCollaborationTeam}
+                            onClick={saveCollaborationTeam}
+                            className="rounded bg-[#002B5C] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[#001F42] disabled:opacity-60"
+                          >
+                            {isSavingCollaborationTeam
+                              ? (isArabic ? '\u062c\u0627\u0631\u064a \u0627\u0644\u062d\u0641\u0638...' : 'Saving...')
+                              : (isArabic ? '\u062d\u0641\u0638 \u0627\u0644\u0641\u0631\u064a\u0642' : 'Save Team')}
+                          </button>
                         </div>
+
+                        {collaborationTeamMessage ? (
+                          <div className="mt-2 rounded border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] text-[#002B5C]">
+                            {collaborationTeamMessage}
+                          </div>
+                        ) : null}
                       </div>
 
                       <button

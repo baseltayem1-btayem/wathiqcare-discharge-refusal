@@ -710,3 +710,20 @@ model DepartmentSlaConfig {
   @@index([tenantId, department, isActive])
   @@map("department_sla_configs")
 }
+
+model ConsentCollaborationTeam {
+  id                     String   @id @default(uuid())
+  tenantId               String   @map("tenant_id")
+  departmentName         String   @default("General") @map("department_name")
+  anesthesiologistUserId String?  @map("anesthesiologist_user_id")
+  surgeonUserId          String?  @map("surgeon_user_id")
+  nursingUserId          String?  @map("nursing_user_id")
+  legalReviewerUserId    String?  @map("legal_reviewer_user_id")
+  isActive               Boolean  @default(true) @map("is_active")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, departmentName])
+  @@index([tenantId, isActive])
+  @@map("consent_collaboration_teams")
+}
