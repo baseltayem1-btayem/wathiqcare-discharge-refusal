@@ -365,7 +365,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
 
         {supportRequestModal === 'settings' ? (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
-            <div className="w-full max-w-7xl rounded-xl border border-[#D8DCE3] bg-white shadow-xl" dir={isArabic ? 'rtl' : 'ltr'}>
+            <div className="w-full max-w-[1550px] rounded-xl border border-[#D8DCE3] bg-white shadow-xl" dir={isArabic ? 'rtl' : 'ltr'}>
               <div className="flex items-start justify-between border-b border-[#EEF1F5] px-6 py-4">
                 <div>
                   <h2 className="text-xl font-bold text-[#002B5C]">
@@ -385,7 +385,7 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
               </div>
 
               <div className="max-h-[86vh] overflow-auto px-6 py-5">
-                <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_1fr_1.25fr]">
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_1fr_1.55fr]">
 
                   <section className="rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
                     <h3 className="font-bold text-[#002B5C]">
@@ -502,11 +502,11 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                             ['nursingUserId', isArabic ? '\u0641\u0631\u064a\u0642 \u0627\u0644\u062a\u0645\u0631\u064a\u0636' : 'Nursing Team'],
                             ['legalReviewerUserId', isArabic ? '\u0627\u0644\u0645\u0631\u0627\u062c\u0639 \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a' : 'Legal Reviewer'],
                           ].map(([key, label]) => (
-                            <label key={key} className="grid grid-cols-1 gap-1 text-xs 2xl:grid-cols-[150px_1fr] 2xl:items-center">
+                            <label key={key} className="grid grid-cols-1 gap-2 text-xs xl:grid-cols-[145px_minmax(260px,1fr)] xl:items-center">
                               <span className="font-medium text-[#4B5563]">{label}</span>
                               <select
                                 disabled={isLoadingCollaborationTeam}
-                                className="rounded border border-[#D8DCE3] bg-white px-2 py-1.5 text-[#2F2F2F] disabled:bg-[#F3F4F6] disabled:text-[#9CA3AF]"
+                                className="w-full min-w-[260px] rounded border border-[#D8DCE3] bg-white px-2 py-1.5 text-[#2F2F2F] disabled:bg-[#F3F4F6] disabled:text-[#9CA3AF]"
                                 value={collaborationTeam[key as keyof CollaborationTeamSettings]}
                                 onChange={(event) => updateCollaborationTeam(key as keyof CollaborationTeamSettings, event.target.value)}
                               >
