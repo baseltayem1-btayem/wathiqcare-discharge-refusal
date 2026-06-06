@@ -494,6 +494,7 @@ async function launchBrowser(): Promise<Browser> {
     "--disable-setuid-sandbox",
     "--font-render-hinting=none",
     "--disable-dev-shm-usage",
+    "--lang=ar-SA",
   ];
 
   const defaultOptions: LaunchOptions = {
@@ -1395,7 +1396,7 @@ function buildPdfTextVisibilityCss(): string {
     .meta-value,
     .footer-copy,
     .footer-brand {
-      font-family: Arial, Tahoma, "Segoe UI", sans-serif !important;
+      font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
     }
 
     .cell-ar,
@@ -1405,7 +1406,7 @@ function buildPdfTextVisibilityCss(): string {
     .section-header-ar,
     .footer-copy .rtl,
     .qr-copy .ar {
-      font-family: Tahoma, Arial, "Segoe UI", sans-serif !important;
+      font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
     }
   `;
 }
@@ -1471,7 +1472,7 @@ body {
           margin: 0;
           color: #0f172a !important;
           background: #ffffff;
-          font-family: Arial, Tahoma, "Segoe UI", sans-serif !important;
+          font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
           font-size: 9.8px;
           line-height: 1.42;
           -webkit-print-color-adjust: exact;
@@ -1560,7 +1561,7 @@ body {
           font-size: 14px;
           color: #164c7a !important;
           -webkit-text-fill-color: #164c7a !important;
-          font-family: Tahoma, Arial, "Segoe UI", sans-serif !important;
+          font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
           direction: rtl;
           line-height: 1.2;
           font-weight: 800;
@@ -1576,7 +1577,7 @@ body {
 
         .subtitle-ar {
           direction: rtl;
-          font-family: Tahoma, Arial, "Segoe UI", sans-serif !important;
+          font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
         }
 
         .right-box {
@@ -1612,7 +1613,7 @@ body {
 
         .meta-label-ar {
           direction: rtl;
-          font-family: Tahoma, Arial, "Segoe UI", sans-serif !important;
+          font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
           color: #64748b !important;
           -webkit-text-fill-color: #64748b !important;
           line-height: 1.12;
@@ -1662,7 +1663,7 @@ body {
 
         .qr-copy .ar {
           direction: rtl;
-          font-family: Tahoma, Arial, "Segoe UI", sans-serif !important;
+          font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
         }
 
         table {
@@ -1715,13 +1716,13 @@ td {
         .cell-en {
           direction: ltr;
           text-align: left;
-          font-family: Arial, Tahoma, "Segoe UI", sans-serif !important;
+          font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
         }
 
         .cell-ar {
           direction: rtl;
           text-align: right;
-          font-family: Tahoma, Arial, "Segoe UI", sans-serif !important;
+          font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
         }
 
         .label {
@@ -1805,7 +1806,7 @@ td {
           -webkit-text-fill-color: #123f66 !important;
           direction: rtl;
           text-align: right;
-          font-family: Tahoma, Arial, "Segoe UI", sans-serif !important;
+          font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
           line-height: 1.18;
         }
 
@@ -1838,7 +1839,7 @@ td {
 
         .footer-copy .rtl {
           direction: rtl;
-          font-family: Tahoma, Arial, "Segoe UI", sans-serif !important;
+          font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif !important;
           margin-top: 2px;
         }
 
@@ -1945,26 +1946,37 @@ td {
   </html>`;
 }
 
-export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<NextResponse> {
+async function renderPdfWithExternalRenderer(html: string): Promise<Buffer | null> {
+  const baseUrl = process.env.PDF_RENDERER_URL?.trim();
+
+  if (!baseUrl) {
+    return null;
+  }
+
+  const endpoint = `${baseUrl.replace(/\/+$/, "")}/render`;
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ html }),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`External PDF renderer failed: ${response.status} ${detail}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
+async function renderPdfInternallyWithPuppeteer(html: string): Promise<Buffer> {
   let browser: Browser | null = null;
 
   try {
-    const { payload, html } = await buildFinalConsentPdfRenderContext(args);
-
-    if (args.request.nextUrl.searchParams.get("debug") === "html") {
-      return new NextResponse(html, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/html; charset=utf-8",
-          "Cache-Control": "no-store",
-          "X-Wathiq-Rows-Count": String(payload.bilingualRows.length),
-          "X-Wathiq-Html-Length": String(html.length),
-          "X-Wathiq-Html-Has-Patient": html.includes("Patient Name") ? "yes" : "no",
-          "X-Wathiq-Html-Has-Arabic": /[\u0600-\u06FF]/.test(html) ? "yes" : "no",
-        },
-      });
-    }
-
     browser = await launchBrowser();
 
     const page = await browser.newPage();
@@ -2036,9 +2048,55 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
 
     await page.close();
 
+    return Buffer.from(pdf);
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+      } catch {
+        // no-op
+      }
+    }
+  }
+}
+
+export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<NextResponse> {
+  try {
+    const { payload, html } = await buildFinalConsentPdfRenderContext(args);
+
+    if (args.request.nextUrl.searchParams.get("debug") === "html") {
+      return new NextResponse(html, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-store",
+          "X-Wathiq-Rows-Count": String(payload.bilingualRows.length),
+          "X-Wathiq-Html-Length": String(html.length),
+          "X-Wathiq-Html-Has-Patient": html.includes("Patient Name") ? "yes" : "no",
+          "X-Wathiq-Html-Has-Arabic": /[\u0600-\u06FF]/.test(html) ? "yes" : "no",
+        },
+      });
+    }
+
+    let pdfEngine = "internal-puppeteer";
+    let pdf: Buffer | null = null;
+
+    try {
+      pdf = await renderPdfWithExternalRenderer(html);
+      if (pdf) {
+        pdfEngine = "external-renderer";
+      }
+    } catch (externalError) {
+      console.error("External PDF renderer failed, falling back to internal Puppeteer", externalError);
+    }
+
+    if (!pdf) {
+      pdf = await renderPdfInternallyWithPuppeteer(html);
+    }
+
     const lang = args.lang || "bilingual";
 
-    return new NextResponse(Buffer.from(pdf), {
+    return new NextResponse(pdf, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
@@ -2046,6 +2104,7 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
         "Cache-Control": "no-store",
         "X-Wathiq-Document-Status": payload.status,
         "X-Wathiq-Audit-Checksum": payload.immutablePdfHash || "",
+        "X-Wathiq-Pdf-Engine": pdfEngine,
       },
     });
   } catch (error) {
@@ -2059,17 +2118,8 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
       { error: "Failed to generate final consent PDF" },
       { status: 500 },
     );
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-      } catch {
-        // no-op
-      }
-    }
   }
 }
-
 async function buildFinalConsentPdfRenderContext(
   args: RenderArgs,
 ): Promise<{ payload: FinalConsentPdfPayload; html: string }> {
