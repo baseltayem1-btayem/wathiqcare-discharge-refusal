@@ -1,5 +1,5 @@
 ﻿import { redirect } from "next/navigation";
-import FigmaPhysicianWorkflowShell from "@/components/informed-consents/enterprise-workflow/FigmaPhysicianWorkflowShell";
+import FinalInformedConsentsModule from "@/components/informed-consents/FinalInformedConsentsModule";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
@@ -19,10 +19,11 @@ export default async function InformedConsentsPage() {
       aria-label="Approved informed consents module"
     >
       <h1 className="sr-only">Approved Informed Consents Module</h1>
-      <FigmaPhysicianWorkflowShell lang="en" />
+      <FinalInformedConsentsModule auth={auth} />
     </section>
   );
 }
+
 
 
 
