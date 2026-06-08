@@ -1,7 +1,8 @@
 ﻿"use client";
 
 
-import SmartConsentFastTrackPreview from "./SmartConsentFastTrackPreview";
+
+import ConsentSearchEngine from "./ConsentSearchEngine";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -1149,8 +1150,7 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef4fb_45%,#e8eff8_100%)] text-[#172033]">
       <EnterpriseHeader workflow={workflow} />
-    <SmartConsentFastTrackPreview />
-
+      <ConsentSearchEngine />
       <section className="mx-auto grid max-w-[1680px] grid-cols-1 gap-5 px-4 py-5 xl:grid-cols-[300px_minmax(0,1fr)_380px] xl:px-6">
         <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
           <WorkspaceNavigation
@@ -3128,6 +3128,8 @@ function LogoImage({
     />
   );
 }
+
+
 
 
 
