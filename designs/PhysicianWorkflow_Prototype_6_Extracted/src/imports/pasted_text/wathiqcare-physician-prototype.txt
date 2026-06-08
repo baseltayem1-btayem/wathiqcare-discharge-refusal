@@ -1,0 +1,246 @@
+Do not proceed with Option A, B, or C.
+
+This is not a React implementation task and not a code export task.
+
+You are working as a Figma design agent. Your task is to create the complete Figma UI/UX prototype directly in Figma.
+
+Do not create or reference React files, TypeScript files, components, routes, placeholders, or code implementation.
+
+The required deliverable is a high-fidelity, clickable Figma prototype for WathiqCare Physician Workflow.
+
+Important correction:
+The previous output is not acceptable because it created code-oriented components and stated that the remaining screens are placeholders. Placeholder screens are not acceptable.
+
+You must now create the full Figma prototype with complete designed screens.
+
+Required Figma screens:
+
+1. Home / Physician Dashboard
+
+* Pending consents
+* Draft consents
+* Sent consents
+* Awaiting patient signature
+* Completed consents
+* Incomplete disclosure alerts
+* Start new consent action
+* Recent activity
+
+2. Patient Search
+
+* MRN / name search
+* PHI protection warning
+* Loading state
+* Empty state
+* Error state
+* Patient result cards
+* Selected patient state
+
+3. Encounter Selection
+
+* Encounter cards
+* Encounter number
+* Case number
+* Department
+* Attending physician
+* Diagnosis
+* Planned procedure
+* Sync status
+* TrakCare source badge
+* Selected encounter state
+
+4. Consent / Procedure Selection
+
+* IMC-approved consent card
+* Consent title
+* Template version
+* Language
+* Active / inactive badge
+* Runtime template mapping status
+* Missing mapping warning
+* Selected consent state
+
+5. Anesthesia Decision
+
+* No anesthesia
+* Local anesthesia
+* Regional anesthesia
+* General anesthesia
+* Sedation / monitored anesthesia care
+* Review required badge
+* Selected state
+* Anesthesiologist review status
+
+6. Dynamic Physician Disclosure
+
+* Procedure description
+* Reason for procedure
+* Patient-specific risks
+* Expected outcomes
+* Alternatives discussed
+* Refusal risks
+* Special warnings
+* Preparation instructions
+* Post-procedure instructions
+* Follow-up notes
+* Arabic and English fields
+* Indicators for:
+
+  * Patient view
+  * PDF
+  * Evidence package
+  * Audit trail
+
+7. Patient Education Preview
+
+* Procedure overview
+* Benefits
+* Risks
+* Alternatives
+* No-treatment option
+* Before procedure
+* After procedure
+* FAQ
+* Ask doctor CTA
+
+8. Patient Preview Simulation
+
+* Split-screen layout
+* Left side: physician authoring controls
+* Right side: patient-facing preview
+* Show what patient will read
+* Show what will appear in PDF
+* Show what enters evidence package
+
+9. Completeness Validation Panel
+
+* Always-visible right-side panel
+* Critical / Warning / Ready severity states
+* Missing procedure
+* Missing anesthesia where required
+* Missing physician disclosure
+* Missing risks
+* Missing alternatives
+* Missing Arabic text
+* Missing English text
+* Patient preview not confirmed
+* PDF readiness pending
+
+10. Draft PDF Review
+
+* Draft PDF generated state
+* Open PDF button
+* Patient summary
+* Encounter summary
+* Consent summary
+* Anesthesia information summary
+* Evidence readiness indicator
+* Audit readiness indicator
+* Next recommended action
+
+11. Send Secure Link / Patient Notification
+
+* Patient phone/email confirmation
+* OTP method
+* Language selection
+* Expiration date
+* Resend limits
+* Final physician confirmation
+* Send button disabled until validation passes
+
+12. Status Tracking
+
+* Draft
+* Sent
+* Opened
+* OTP Verified
+* Education Viewed
+* Decision Recorded
+* Signed
+* PDF Generated
+* Evidence Package Completed
+* Resend option
+* Revoke option
+* Audit trail indicator
+
+13. Home Return State
+
+* Dashboard updated after sending
+* Active consent count updated
+* Recent sent consent visible
+* Status updated in the physician workspace
+
+Required design system:
+Create reusable Figma components for:
+
+* Patient card
+* Encounter card
+* Consent card
+* Anesthesia option card
+* Disclosure field card
+* Validation badge
+* Readiness checklist item
+* Timeline item
+* PDF review card
+* Evidence indicator
+* Primary button
+* Secondary button
+* Disabled button
+* Loading button
+* Status chips
+* Alert banner
+
+Visual style:
+
+* Enterprise hospital workflow
+* Epic / Mayo / Cleveland Clinic clinical clarity
+* Not a marketing website
+* Not a consumer app
+* Desktop-first
+* Tablet-ready
+* Arabic RTL and English LTR
+* Use WathiqCare colors:
+
+  * Royal Blue: #002B5C
+  * Luxury Gold: #C9A13B
+  * Dark Gray: #2F2F2F
+  * White: #FFFFFF
+  * Light Blue: #4B9CD3
+
+Workflow and API constraints:
+Use these as fixed system constraints. Do not invent unsupported actions.
+
+Supported actions:
+
+* Search Patient
+* Select Patient
+* Load Encounters
+* Select Encounter
+* Sync Encounter if available
+* Select Consent / Procedure
+* Select Anesthesia Type
+* Generate Draft PDF
+* Open / Review Draft PDF
+* Request Anesthesia Review
+* Send Secure Signing Link / Patient Notification
+* View Timeline / Audit Trail
+* View Evidence Package Readiness
+
+Do not add:
+
+* Unwired AI buttons
+* Fake legal approval workflows
+* Fake clinical rules
+* Marketing sections
+* Consumer-style illustrations
+* Placeholder screens
+* New routes or product modules
+* Billing/admin/settings inside physician workflow
+
+Important:
+The AI Form Assistant, Legal Review Status, Patient Education Materials, Risk Stratification, and Digital Signature Workflow tiles may appear only as supported status / guidance cards within the workflow dashboard or procedure/validation area. They must not become fake actions unless they correspond to an existing supported behavior.
+
+Final deliverable:
+Create the actual Figma frames, component library, prototype links, Arabic RTL screens, English LTR screens, desktop 1440px layout, tablet 1024px layout, and UX notes page.
+
+Do not ask again whether to proceed. Proceed with the complete Figma prototype.
