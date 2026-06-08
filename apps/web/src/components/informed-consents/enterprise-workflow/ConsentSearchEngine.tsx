@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  BookOpenCheck,
   CheckCircle2,
   Clock3,
   FileText,
@@ -9,113 +10,41 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
+import {
+  imcApprovedConsentLibraryGenerated,
+  type ImcApprovedConsentLibraryItem,
+} from "./imcApprovedConsentLibrary.generated";
 
-type ConsentTemplate = {
-  id: string;
-  titleEn: string;
-  titleAr: string;
-  specialty: string;
-  department: string;
-  consentType: string;
-  version: string;
-  language: "bilingual" | "ar" | "en";
-  status: "APPROVED";
-  anesthesiaRequired: boolean;
-  keywords: string[];
-};
+const approvedTemplates: ImcApprovedConsentLibraryItem[] = imcApprovedConsentLibraryGenerated;
 
-const approvedTemplates: ConsentTemplate[] = [
-  {
-    id: "general-surgery-consent",
-    titleEn: "General Surgery Consent",
-    titleAr: "موافقة العمليات الجراحية العامة",
-    specialty: "General Surgery",
-    department: "Surgery",
-    consentType: "Procedure Consent",
-    version: "v1.0",
-    language: "bilingual",
-    status: "APPROVED",
-    anesthesiaRequired: true,
-    keywords: ["surgery", "operation", "procedure", "جراحة", "عملية"],
-  },
-  {
-    id: "general-anesthesia-consent",
-    titleEn: "General Anesthesia Consent",
-    titleAr: "موافقة التخدير العام",
-    specialty: "Anesthesia",
-    department: "Anesthesia",
-    consentType: "Anesthesia Consent",
-    version: "v1.0",
-    language: "bilingual",
-    status: "APPROVED",
-    anesthesiaRequired: false,
-    keywords: ["anesthesia", "general anesthesia", "sedation", "تخدير", "تخدير عام"],
-  },
-  {
-    id: "blood-transfusion-consent",
-    titleEn: "Blood Transfusion Consent",
-    titleAr: "موافقة نقل الدم",
-    specialty: "General Medicine",
-    department: "Medical",
-    consentType: "Blood Transfusion Consent",
-    version: "v1.0",
-    language: "bilingual",
-    status: "APPROVED",
-    anesthesiaRequired: false,
-    keywords: ["blood", "transfusion", "نقل الدم", "دم"],
-  },
-  {
-    id: "endoscopy-consent",
-    titleEn: "Endoscopy Consent",
-    titleAr: "موافقة المنظار",
-    specialty: "Gastroenterology",
-    department: "Endoscopy",
-    consentType: "Procedure Consent",
-    version: "v1.0",
-    language: "bilingual",
-    status: "APPROVED",
-    anesthesiaRequired: true,
-    keywords: ["endoscopy", "scope", "منظار"],
-  },
-  {
-    id: "colonoscopy-consent",
-    titleEn: "Colonoscopy Consent",
-    titleAr: "موافقة منظار القولون",
-    specialty: "Gastroenterology",
-    department: "Endoscopy",
-    consentType: "Procedure Consent",
-    version: "v1.0",
-    language: "bilingual",
-    status: "APPROVED",
-    anesthesiaRequired: true,
-    keywords: ["colonoscopy", "colon", "قولون", "منظار القولون"],
-  },
-  {
-    id: "research-participation-consent",
-    titleEn: "Research Participation Consent",
-    titleAr: "موافقة المشاركة في الأبحاث والدراسات الطبية",
-    specialty: "General Medicine",
-    department: "Research",
-    consentType: "Research Consent",
-    version: "v1.0",
-    language: "bilingual",
-    status: "APPROVED",
-    anesthesiaRequired: false,
-    keywords: ["research", "clinical trial", "study", "بحث", "دراسة"],
-  },
-];
+const departments = Array.from(
+  new Set(approvedTemplates.map((item) => item.department).filter(Boolean)),
+).sort();
 
-const departments = Array.from(new Set(approvedTemplates.map((item) => item.department)));
-const specialties = Array.from(new Set(approvedTemplates.map((item) => item.specialty)));
+const specialties = Array.from(
+  new Set(approvedTemplates.map((item) => item.specialty).filter(Boolean)),
+).sort();
 
-function normalize(value: string) {
-  return value.trim().toLowerCase();
+const consentTypes = Array.from(
+  new Set(approvedTemplates.map((item) => item.consentType).filter(Boolean)),
+).sort();
+
+function normalize(value: string | null | undefined) {
+  return (value || "").trim().toLowerCase();
+}
+
+function formatConsentType(value: string | null | undefined) {
+  return (value || "GENERAL_CONSENT")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 export default function ConsentSearchEngine() {
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("ALL");
   const [specialty, setSpecialty] = useState("ALL");
+  const [consentType, setConsentType] = useState("ALL");
 
   const filteredTemplates = useMemo(() => {
     const q = normalize(query);
@@ -123,14 +52,20 @@ export default function ConsentSearchEngine() {
     return approvedTemplates.filter((template) => {
       const matchesDepartment = department === "ALL" || template.department === department;
       const matchesSpecialty = specialty === "ALL" || template.specialty === specialty;
+      const matchesConsentType = consentType === "ALL" || template.consentType === consentType;
 
       const searchableText = [
+        template.id,
         template.titleEn,
         template.titleAr,
         template.specialty,
         template.department,
+        template.categoryCode,
         template.consentType,
+        template.templateType,
         template.version,
+        template.hospitalPdfFilename,
+        template.patientEducationPdfFilename,
         ...template.keywords,
       ]
         .join(" ")
@@ -138,12 +73,21 @@ export default function ConsentSearchEngine() {
 
       const matchesQuery = !q || searchableText.includes(q);
 
-      return matchesDepartment && matchesSpecialty && matchesQuery;
+      return (
+        template.status === "ACTIVE" &&
+        matchesDepartment &&
+        matchesSpecialty &&
+        matchesConsentType &&
+        matchesQuery
+      );
     });
-  }, [query, department, specialty]);
+  }, [query, department, specialty, consentType]);
+
+  const educationCount = approvedTemplates.filter((item) => item.educationMaterialAvailable).length;
+  const anesthesiaCount = approvedTemplates.filter((item) => item.anesthesiaRequired).length;
 
   return (
-    <section className="mx-auto max-w-[1680px] px-4 pt-5 xl:px-6" dir="auto">
+    <section className="min-w-0" dir="auto">
       <div className="overflow-hidden rounded-[30px] border border-[#D8DCE3] bg-white shadow-[0_18px_46px_rgba(15,23,42,0.08)]">
         <div className="border-b border-[#E5E7EB] bg-[linear-gradient(135deg,#002B5C_0%,#123E76_100%)] px-5 py-5 text-white">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -155,37 +99,41 @@ export default function ConsentSearchEngine() {
                 Smart Consent Search / محرك بحث الموافقات المعتمدة
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-white/80">
-                Search approved PDF consent templates before sending the selected procedure to the physician workflow.
+                Search the generated IMC approved PDF library, including hospital consent files and linked patient education copies.
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-4">
               <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
                 <p className="text-xl font-extrabold">{approvedTemplates.length}</p>
-                <p className="text-[11px] font-semibold text-white/70">Templates</p>
+                <p className="text-[11px] font-semibold text-white/70">Approved Models</p>
+              </div>
+              <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
+                <p className="text-xl font-extrabold">{educationCount}</p>
+                <p className="text-[11px] font-semibold text-white/70">Education Copies</p>
               </div>
               <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
                 <p className="text-xl font-extrabold">{departments.length}</p>
                 <p className="text-[11px] font-semibold text-white/70">Departments</p>
               </div>
               <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
-                <p className="text-xl font-extrabold">PDF</p>
-                <p className="text-[11px] font-semibold text-white/70">Approved</p>
+                <p className="text-xl font-extrabold">{anesthesiaCount}</p>
+                <p className="text-[11px] font-semibold text-white/70">Anesthesia Flag</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-4 bg-[#F4F7FB] p-5 xl:grid-cols-[minmax(0,1fr)_250px_250px]">
+        <div className="grid gap-4 bg-[#F4F7FB] p-5 xl:grid-cols-[minmax(0,1fr)_220px_220px_220px]">
           <label className="block">
             <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#002B5C]">
               <Search className="h-4 w-4" />
-              Search by procedure, consent name, Arabic or English keyword
+              Search by procedure, file name, Arabic/English keyword
             </span>
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Example: colonoscopy, anesthesia, نقل الدم, منظار..."
+              placeholder="Example: colonoscopy, anesthesia, منظار, نقل الدم..."
               className="h-12 w-full rounded-2xl border border-[#CBD5E1] bg-white px-4 text-sm font-semibold text-[#172033] outline-none transition focus:border-[#4B9CD3] focus:ring-4 focus:ring-[#4B9CD3]/15"
             />
           </label>
@@ -227,6 +175,29 @@ export default function ConsentSearchEngine() {
               ))}
             </select>
           </label>
+
+          <label className="block">
+            <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#002B5C]">
+              <Filter className="h-4 w-4" />
+              Consent Type
+            </span>
+            <select
+              value={consentType}
+              onChange={(event) => setConsentType(event.target.value)}
+              className="h-12 w-full rounded-2xl border border-[#CBD5E1] bg-white px-4 text-sm font-semibold text-[#172033] outline-none transition focus:border-[#4B9CD3] focus:ring-4 focus:ring-[#4B9CD3]/15"
+            >
+              <option value="ALL">All consent types</option>
+              {consentTypes.map((item) => (
+                <option key={item} value={item}>
+                  {formatConsentType(item)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="border-b border-[#E5E7EB] px-5 py-3 text-sm font-bold text-[#002B5C]">
+          Showing {filteredTemplates.length} of {approvedTemplates.length} approved models
         </div>
 
         <div className="grid gap-4 p-5 xl:grid-cols-2">
@@ -245,9 +216,13 @@ export default function ConsentSearchEngine() {
                     <h3 className="text-lg font-extrabold text-[#002B5C]">
                       {template.titleEn}
                     </h3>
-                    <p className="mt-1 text-sm font-bold text-[#2F2F2F]" dir="rtl">
-                      {template.titleAr}
-                    </p>
+
+                    {template.titleAr ? (
+                      <p className="mt-1 text-sm font-bold text-[#2F2F2F]" dir="rtl">
+                        {template.titleAr}
+                      </p>
+                    ) : null}
+
                     <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
                       {template.department} • {template.specialty} • {template.version}
                     </p>
@@ -256,37 +231,42 @@ export default function ConsentSearchEngine() {
 
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700">
                   <CheckCircle2 className="h-4 w-4" />
-                  Approved
+                  Active
                 </span>
               </div>
 
               <div className="mt-4 grid gap-3 text-sm lg:grid-cols-3">
                 <div className="rounded-2xl bg-[#F4F7FB] p-3">
-                  <p className="text-[11px] font-bold uppercase text-[#64748B]">
-                    Consent Type
-                  </p>
+                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Consent Type</p>
                   <p className="mt-1 font-extrabold text-[#002B5C]">
-                    {template.consentType}
+                    {formatConsentType(template.consentType)}
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-[#F4F7FB] p-3">
-                  <p className="text-[11px] font-bold uppercase text-[#64748B]">
-                    Language
-                  </p>
+                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Education</p>
                   <p className="mt-1 font-extrabold text-[#002B5C]">
-                    {template.language}
+                    {template.educationMaterialAvailable ? "Linked" : "Not linked"}
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-[#F4F7FB] p-3">
-                  <p className="text-[11px] font-bold uppercase text-[#64748B]">
-                    Anesthesia
-                  </p>
+                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Anesthesia</p>
                   <p className="mt-1 font-extrabold text-[#002B5C]">
                     {template.anesthesiaRequired ? "Required" : "Not required"}
                   </p>
                 </div>
+              </div>
+
+              <div className="mt-4 space-y-2 rounded-2xl border border-[#E5E7EB] bg-[#F8FAFC] p-3 text-xs font-semibold text-[#475569]">
+                <p>
+                  <span className="font-extrabold text-[#002B5C]">Hospital PDF:</span>{" "}
+                  {template.hospitalPdfFilename}
+                </p>
+                <p>
+                  <span className="font-extrabold text-[#002B5C]">Patient Copy:</span>{" "}
+                  {template.patientEducationPdfFilename || "Not available"}
+                </p>
               </div>
 
               <div className="mt-4 flex flex-col gap-3 border-t border-[#E5E7EB] pt-4 lg:flex-row lg:items-center lg:justify-between">
@@ -308,11 +288,12 @@ export default function ConsentSearchEngine() {
 
           {filteredTemplates.length === 0 ? (
             <div className="col-span-full rounded-[24px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-8 text-center">
-              <p className="text-lg font-extrabold text-[#002B5C]">
+              <BookOpenCheck className="mx-auto h-10 w-10 text-[#C9A13B]" />
+              <p className="mt-3 text-lg font-extrabold text-[#002B5C]">
                 No approved consent templates found
               </p>
               <p className="mt-2 text-sm text-[#64748B]">
-                Try another keyword, department, specialty, Arabic term, or procedure name.
+                Try another keyword, department, specialty, consent type, Arabic term, or procedure name.
               </p>
             </div>
           ) : null}
