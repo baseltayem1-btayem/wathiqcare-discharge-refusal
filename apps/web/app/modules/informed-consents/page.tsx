@@ -1,11 +1,10 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import FinalInformedConsentsModule from "@/components/informed-consents/FinalInformedConsentsModule";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
-// Phase 40 route wiring: mount the controlled-port OneDrive/Figma UI as the
-// primary /modules/informed-consents surface. Visual-only — backed by mock
-// fixtures isolated in components/informed-consents/final-ui/fixtures/.
+// Informed consents module entry point. Legacy prototype has been quarantined;
+// production physician issuance is routed through the enterprise workflow.
 export default async function InformedConsentsPage() {
   const auth = await requirePageAuthClaimsOrRedirect("/modules/informed-consents");
 
@@ -24,3 +23,6 @@ export default async function InformedConsentsPage() {
     </section>
   );
 }
+
+
+

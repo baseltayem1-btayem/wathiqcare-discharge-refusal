@@ -1,12 +1,13 @@
 ﻿"use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronRight } from "lucide-react";
 
 import type { ConsentStep, ValidationItem } from "./clinical/ClinicalTypes";
 import { defaultValidation } from "./fixtures/consent-builder";
 import { ValidationDrawer } from "./clinical/ValidationDrawer";
 import { StepPatient } from "./steps/StepPatient";
+import { StepConsentType } from "./steps/StepConsentType";
 import { StepProcedure } from "./steps/StepProcedure";
 import { StepAnesthesia } from "./steps/StepAnesthesia";
 import { StepDisclosures } from "./steps/StepDisclosures";
@@ -18,6 +19,7 @@ import { mockEncounters, mockPatients } from "./fixtures/patient-search";
 
 const SAFE_CONSENT_STEP_AR_LABELS: Record<string, string> = {
   patient: "المريض",
+  consentType: "نوع الموافقة",
   procedure: "الإجراء",
   anesthesia: "التخدير",
   disclosures: "الإفصاحات",
@@ -39,6 +41,7 @@ function getSafeConsentStepLabel(step: Record<string, unknown>, lang: string): s
 
 const steps: { key: ConsentStep; label: string; labelAr: string }[] = [
   { key: "patient", label: "Patient", labelAr: "المريض" },
+  { key: "consentType", label: "Consent Type", labelAr: "نوع الموافقة" },
   { key: "procedure", label: "Procedure", labelAr: "الإجراء" },
   { key: "anesthesia", label: "Anesthesia", labelAr: "التخدير" },
   { key: "disclosures", label: "Disclosures", labelAr: "الإفصاحات" },
@@ -62,6 +65,44 @@ type RuntimeConsentTemplate = {
   specialty: string;
   department: string | null;
   language: "bilingual";
+};
+
+type ImcResolvedConsentPackage = {
+  procedureConsent?: {
+    id: string;
+    titleEn: string;
+    publicPath: string;
+    templateType: string;
+    specialty: string;
+  };
+  patientEducation?: {
+    id: string;
+    titleEn: string;
+    publicPath: string;
+    templateType: string;
+    specialty: string;
+  };
+  anesthesiaConsent?: {
+    id: string;
+    titleEn: string;
+    publicPath: string;
+    templateType: string;
+    specialty: string;
+  };
+  anesthesiaEducation?: {
+    id: string;
+    titleEn: string;
+    publicPath: string;
+    templateType: string;
+    specialty: string;
+  };
+};
+
+type ImcResolveResponse = {
+  ok: boolean;
+  procedure: string;
+  package?: ImcResolvedConsentPackage;
+  message?: string;
 };
 
 type DraftConsentResponse = {
@@ -163,29 +204,43 @@ function extractLinkedConsentDocumentId(payload: DraftConsentResponse | null): s
 function selectSurgicalTemplate(
   templates: RuntimeConsentTemplate[],
 ): RuntimeConsentTemplate | undefined {
+  const eligibleTemplates = templates.filter((template) => {
+    const consentType = String(template.consentType || "").toUpperCase();
+    const title = String(template.titleEn || "").toUpperCase();
+
+    return (
+      !consentType.includes("REFUSAL") &&
+      !title.includes("REFUSAL") &&
+      !title.includes("DECLINE")
+    );
+  });
+
   return (
-    templates.find(
-      (template) =>
-        template.id === "9c8e816b-d236-4e4c-a9de-7bddb6819354" ||
-        template.templateVersionId === "a587c129-102c-4566-a452-3a7b72ba2544",
-    ) ||
-    templates.find((template) => {
-      const consentType = template.consentType.toUpperCase();
-      const specialty = template.specialty.toUpperCase();
-      const department = String(template.department || "").toUpperCase();
-      const title = template.titleEn.toUpperCase();
+    eligibleTemplates.find((template) => {
+      const title = String(template.titleEn || "").toUpperCase();
+      const consentType = String(template.consentType || "").toUpperCase();
 
       return (
-        specialty.includes("SURGERY") ||
-        department.includes("GENERAL_SURGERY") ||
-        title.includes("SURGICAL") ||
-        consentType.includes("SURGICAL")
+        title === "SURGICAL PROCEDURE CONSENT" ||
+        consentType === "SURGERY_CONSENT"
       );
     }) ||
+    eligibleTemplates.find((template) => {
+      const title = String(template.titleEn || "").toUpperCase();
+      const consentType = String(template.consentType || "").toUpperCase();
+      const specialty = String(template.specialty || "").toUpperCase();
+
+      return (
+        title.includes("SURGICAL PROCEDURE") ||
+        title.includes("SURGICAL") ||
+        consentType.includes("SURGERY") ||
+        specialty.includes("SURGERY")
+      );
+    }) ||
+    eligibleTemplates[0] ||
     templates[0]
   );
 }
-
 export function ConsentBuilder({
   lang,
   licenseExpired = false,
@@ -249,6 +304,9 @@ export function ConsentBuilder({
   const [documentReady, setDocumentReady] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
   const [isLinkingDocument, setIsLinkingDocument] = useState(false);
+  const linkInFlightRef = useRef(false);
+  const linkedDocumentIdRef = useRef("");
+  const linkPromiseRef = useRef<Promise<string> | null>(null);
 
   const currentIndex = steps.findIndex((step) => step.key === currentStep);
 
@@ -305,27 +363,61 @@ export function ConsentBuilder({
     }
   };
 
-  useEffect(() => {
-    const shouldLinkDocument =
-      currentStep === "preview" ||
-      currentStep === "validation" ||
-      currentStep === "send";
-
-    if (!shouldLinkDocument || linkedDocumentId) {
-      return;
+  const ensureLinkedConsentDocument = async (): Promise<string> => {
+    if (linkedDocumentIdRef.current) {
+      return linkedDocumentIdRef.current;
     }
 
-    let isCancelled = false;
+    if (linkedDocumentId) {
+      linkedDocumentIdRef.current = linkedDocumentId;
+      return linkedDocumentId;
+    }
 
-    const linkConsentDocument = async () => {
+    if (linkPromiseRef.current) {
+      return linkPromiseRef.current;
+    }
+
+    const selectedProcedureName = "Ventricular Septal Defect Repair";
+
+    linkPromiseRef.current = (async () => {
       setIsLinkingDocument(true);
       setDocumentReady(false);
       setDocumentError(null);
 
       try {
+        console.log("[ConsentBuilder] before IMC resolver fetch");
+
+        const imcResolveResponse = await fetch(
+          `/api/modules/informed-consents/imc-library/resolve?procedure=${encodeURIComponent(selectedProcedureName)}`,
+          { cache: "no-store" },
+        );
+
+        const imcResolvePayload = (await imcResolveResponse.json().catch(() => null)) as
+          | ImcResolveResponse
+          | null;
+
+        if (
+          !imcResolveResponse.ok ||
+          !imcResolvePayload?.ok ||
+          !imcResolvePayload.package?.procedureConsent
+        ) {
+          throw new Error(
+            imcResolvePayload?.message ||
+              "Failed to resolve IMC consent package for selected procedure",
+          );
+        }
+
+        const imcConsentPackage = imcResolvePayload.package;
+
+        console.log("[ConsentBuilder] IMC consent package", imcConsentPackage);
+
+        console.log("[ConsentBuilder] before templates fetch");
+
         const templatesResponse = await fetch("/api/modules/informed-consents/templates", {
           cache: "no-store",
         });
+
+        console.log("[ConsentBuilder] templates status", templatesResponse.status);
 
         if (!templatesResponse.ok) {
           const errorText = await templatesResponse.text().catch(() => "");
@@ -337,12 +429,31 @@ export function ConsentBuilder({
           );
         }
 
-        const templates = (await templatesResponse.json()) as RuntimeConsentTemplate[];
-        const selectedTemplate = selectSurgicalTemplate(templates);
+        const templatesPayload = await templatesResponse.json();
+        const templates = Array.isArray(templatesPayload)
+          ? templatesPayload
+          : templatesPayload?.templates ||
+            templatesPayload?.items ||
+            templatesPayload?.data ||
+            [];
+
+        console.log(
+          "[ConsentBuilder] templates count",
+          Array.isArray(templates) ? templates.length : "not-array",
+        );
+
+        const selectedTemplate = selectSurgicalTemplate(
+          templates as RuntimeConsentTemplate[],
+        );
+
+        console.log("[ConsentBuilder] selectedTemplate", selectedTemplate);
 
         if (!selectedTemplate?.id) {
-          throw new Error("No live consent template is available");
+          throw new Error("No live surgical consent template is available");
         }
+
+        setDocumentReady(false);
+        console.log("[ConsentBuilder] before generate-draft fetch");
 
         const draftResponse = await fetch(
           "/api/modules/informed-consents/generate-draft",
@@ -362,15 +473,30 @@ export function ConsentBuilder({
               encounterNumber: pilotConsentCase.caseNumber,
               encounterCaseNumber: pilotConsentCase.caseNumber,
               encounterDepartment: defaultEncounter.department || "General Surgery",
-              encounterPhysician: defaultEncounter.physician || "Dr. Khalid Al-Qahtani",
-              encounterDiagnosis: "Symptomatic cholelithiasis",
-              encounterProcedure: "Laparoscopic cholecystectomy",
+              encounterPhysician:
+                defaultEncounter.physician || "Dr. Khalid Al-Qahtani",
+
+              // TEMPORARY TEST DATA:
+              // Must later come from selected encounter/procedure.
+              encounterDiagnosis: "Ventricular septal defect requiring surgical repair",
+              encounterProcedure: selectedProcedureName,
+
               templateId: selectedTemplate.id,
+              consentType: builderState?.consentType || selectedTemplate.consentType || "SURGERY_CONSENT",
               templateVersionId: selectedTemplate.templateVersionId,
               language: selectedTemplate.language,
+              imcConsentPackage: {
+                source: "IMC_APPROVED_PDF_LIBRARY",
+                procedureConsent: imcConsentPackage.procedureConsent,
+                patientEducation: imcConsentPackage.patientEducation,
+                anesthesiaConsent: imcConsentPackage.anesthesiaConsent,
+                anesthesiaEducation: imcConsentPackage.anesthesiaEducation,
+              },
             }),
           },
         );
+
+        console.log("[ConsentBuilder] generate-draft status", draftResponse.status);
 
         const draftPayload = (await draftResponse.json().catch(() => null)) as
           | DraftConsentResponse
@@ -385,40 +511,69 @@ export function ConsentBuilder({
           );
         }
 
-        const linkedConsentDocumentId = extractLinkedConsentDocumentId(
+        console.log("[ConsentBuilder] draftPayload", draftPayload);
+
+        const documentId = extractLinkedConsentDocumentId(
           draftPayload as DraftConsentResponse | null,
         );
 
-        if (!linkedConsentDocumentId) {
+        if (!documentId) {
           throw new Error("Draft generation did not return a linked consent document");
         }
 
-        if (!isCancelled) {
-          setLinkedDocumentId(linkedConsentDocumentId);
-          setDocumentReady(true);
-          setDocumentError(null);
-        }
+        linkedDocumentIdRef.current = documentId;
+        setLinkedDocumentId(documentId);
+        setDocumentReady(true);
+        setDocumentError(null);
+
+        console.log("[ConsentBuilder] setting linkedDocumentId", documentId);
+
+        return documentId;
       } catch (error) {
-        if (!isCancelled) {
-          setLinkedDocumentId("");
-          setDocumentReady(false);
-          setDocumentError(
-            error instanceof Error ? error.message : "Failed to link consent document",
-          );
-        }
+        linkedDocumentIdRef.current = "";
+        setLinkedDocumentId("");
+        setDocumentReady(false);
+        setDocumentError(
+          error instanceof Error ? error.message : "Failed to link consent document",
+        );
+
+        console.error("[ConsentBuilder] LINK ERROR", error);
+        throw error;
       } finally {
-        if (!isCancelled) {
-          setIsLinkingDocument(false);
-        }
+        setIsLinkingDocument(false);
+        linkInFlightRef.current = false;
+        linkPromiseRef.current = null;
       }
-    };
+    })();
 
-    void linkConsentDocument();
+    return linkPromiseRef.current;
+  };
+  useEffect(() => {
+    const shouldLinkDocument =
+      currentStep === "anesthesia" ||
+      currentStep === "preview" ||
+      currentStep === "validation" ||
+      currentStep === "send";
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [currentStep, linkedDocumentId, patientMobile, patientEmail]);
+    console.log("[ConsentBuilder] link document trigger", {
+      currentStep,
+      shouldLinkDocument,
+      linkedDocumentId,
+      patientMobile,
+      patientEmail,
+    });
+
+    if (!shouldLinkDocument || linkedDocumentIdRef.current) {
+      return;
+    }
+
+    linkInFlightRef.current = true;
+
+    void ensureLinkedConsentDocument().catch(() => {
+      // Error state is already handled inside ensureLinkedConsentDocument.
+    });
+  }, [currentStep, patientMobile, patientEmail]);
+
 
   const licenseWarning = licenseExpired ? (
     <div className="mx-6 mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -452,7 +607,17 @@ export function ConsentBuilder({
       lang,
       onNext: goNext,
       onPrev: goPrev,
+      onBack: goPrev,
+      onPrevious: goPrev,
       onComplete: markStepComplete,
+      builderState: liveBuilderState,
+      updateBuilderState: (patch: Partial<BuilderState> | Record<string, any>) => {
+        setBuilderState((prev) => ({
+          ...prev,
+          ...patch,
+          updatedAt: new Date().toISOString(),
+        }));
+      },
     };
 
     switch (currentStep) {
@@ -467,11 +632,19 @@ export function ConsentBuilder({
           />
         );
 
+      case "consentType":
+        return <StepConsentType {...props} />;
+
       case "procedure":
         return <StepProcedure {...props} />;
 
       case "anesthesia":
-        return <StepAnesthesia {...props} />;
+        return (
+          <StepAnesthesia
+            {...props}
+            linkedDocumentId={linkedDocumentId}
+          />
+        );
 
       case "disclosures":
         return <StepDisclosures {...props} />;
@@ -589,3 +762,22 @@ export function ConsentBuilder({
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

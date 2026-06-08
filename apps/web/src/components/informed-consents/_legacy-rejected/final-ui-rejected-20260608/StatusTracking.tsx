@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  CheckCircle2, Circle, Clock, Send, Eye, ShieldCheck,
+  CheckCircle2, Circle, Clock, Send, Eye, ShieldCheck, ClipboardCheck,
   BookOpen, FileText, Archive, RotateCcw, XCircle, ChevronRight,
 } from 'lucide-react';
 import { ClinicalBadge } from './clinical/ClinicalBadge';
@@ -72,6 +72,11 @@ const initialStatusTrackingRecord: TrackingRecord = {
   signatureRecipientEmail: null,
   events: [
     { stage: 'draft', label: 'Draft Created', time: null, done: false, icon: FileText },
+    { stage: 'anesthesia-review', label: 'Anesthesia Review', time: null, done: false, icon: ShieldCheck },
+    { stage: 'anesthesia-approved', label: 'Anesthesia Approved', time: null, done: false, icon: CheckCircle2 },
+    { stage: 'nursing-preparation', label: 'Nursing Preparation', time: null, done: false, icon: ClipboardCheck },
+    { stage: 'nursing-ready', label: 'Nursing Ready', time: null, done: false, icon: CheckCircle2 },
+    { stage: 'ready-for-delivery', label: 'Ready for Patient Delivery', time: null, done: false, icon: Send },
     { stage: 'sent', label: 'Link Sent', time: null, done: false, icon: Send },
     { stage: 'opened', label: 'Patient Opened', time: null, done: false, icon: Eye },
     { stage: 'otp', label: 'OTP Verified', time: null, done: false, icon: ShieldCheck },
@@ -102,6 +107,13 @@ function formatTrackingDateTime(value?: string | null) {
 function normalizeStatusToStage(status?: string | null) {
   const normalized = (status || '').toUpperCase();
 
+  if (normalized === 'PENDING_ANESTHESIA_REVIEW') return 'anesthesia-review';
+  if (normalized === 'ANESTHESIA_IN_REVIEW') return 'anesthesia-review';
+  if (normalized === 'ANESTHESIA_APPROVED') return 'anesthesia-approved';
+  if (normalized === 'NURSING_PREPARATION_REQUIRED') return 'nursing-preparation';
+  if (normalized === 'NURSING_READY') return 'nursing-ready';
+  if (normalized === 'READY_FOR_PATIENT_DELIVERY') return 'ready-for-delivery';
+
   if (normalized === 'REVOKED') return 'revoked';
   if (normalized === 'SENT') return 'sent';
   if (normalized === 'OPENED') return 'opened';
@@ -121,19 +133,42 @@ function buildTrackingEvents(record: StatusTrackingApiRecord): TrackingEvent[] {
   const stage = normalizeStatusToStage(record.status);
   const sentTime = formatTrackingDateTime(record.createdAt);
 
-  const order = ['draft', 'sent', 'opened', 'otp', 'education', 'decision', 'signed', 'pdf', 'evidence', 'revoked', 'expired', 'failed'];
+  const order = [
+    'draft',
+    'anesthesia-review',
+    'anesthesia-approved',
+    'nursing-preparation',
+    'nursing-ready',
+    'ready-for-delivery',
+    'sent',
+    'opened',
+    'otp',
+    'education',
+    'decision',
+    'signed',
+    'pdf',
+    'evidence',
+    'revoked',
+    'expired',
+    'failed',
+  ];
   const currentIndex = order.indexOf(stage);
 
   return [
     { stage: 'draft', label: 'Draft Created', time: sentTime, done: currentIndex >= 0, icon: FileText },
-    { stage: 'sent', label: 'Link Sent', time: currentIndex >= 1 ? sentTime : null, done: currentIndex >= 1, icon: Send },
-    { stage: 'opened', label: 'Patient Opened', time: null, done: currentIndex >= 2, icon: Eye },
-    { stage: 'otp', label: 'OTP Verified', time: null, done: currentIndex >= 3, icon: ShieldCheck },
-    { stage: 'education', label: 'Education Viewed', time: null, done: currentIndex >= 4, icon: BookOpen },
-    { stage: 'decision', label: 'Decision Recorded', time: null, done: currentIndex >= 5, icon: Circle },
-    { stage: 'signed', label: 'Signed', time: null, done: currentIndex >= 6, icon: CheckCircle2 },
-    { stage: 'pdf', label: 'PDF Generated', time: null, done: currentIndex >= 7, icon: FileText },
-    { stage: 'evidence', label: 'Evidence Complete', time: null, done: currentIndex >= 8, icon: Archive },
+    { stage: 'anesthesia-review', label: 'Anesthesia Review', time: null, done: currentIndex >= 1, icon: ShieldCheck },
+    { stage: 'anesthesia-approved', label: 'Anesthesia Approved', time: null, done: currentIndex >= 2, icon: CheckCircle2 },
+    { stage: 'nursing-preparation', label: 'Nursing Preparation', time: null, done: currentIndex >= 3, icon: ClipboardCheck },
+    { stage: 'nursing-ready', label: 'Nursing Ready', time: null, done: currentIndex >= 4, icon: CheckCircle2 },
+    { stage: 'ready-for-delivery', label: 'Ready for Patient Delivery', time: null, done: currentIndex >= 5, icon: Send },
+    { stage: 'sent', label: 'Link Sent', time: currentIndex >= 6 ? sentTime : null, done: currentIndex >= 6, icon: Send },
+    { stage: 'opened', label: 'Patient Opened', time: null, done: currentIndex >= 7, icon: Eye },
+    { stage: 'otp', label: 'OTP Verified', time: null, done: currentIndex >= 8, icon: ShieldCheck },
+    { stage: 'education', label: 'Education Viewed', time: null, done: currentIndex >= 9, icon: BookOpen },
+    { stage: 'decision', label: 'Decision Recorded', time: null, done: currentIndex >= 10, icon: Circle },
+    { stage: 'signed', label: 'Signed', time: null, done: currentIndex >= 11, icon: CheckCircle2 },
+    { stage: 'pdf', label: 'PDF Generated', time: null, done: currentIndex >= 12, icon: FileText },
+    { stage: 'evidence', label: 'Evidence Complete', time: null, done: currentIndex >= 13, icon: Archive },
   ];
 }
 
@@ -821,9 +856,19 @@ export function StatusTracking({ lang }: Props) {
                                 ? (lang === 'en' ? 'Expired' : '\u0645\u0646\u062a\u0647\u064a')
                                 : record.status === 'failed'
                                   ? (lang === 'en' ? 'Failed' : '\u0641\u0634\u0644')
-                                  : record.status === 'sent'
-                                    ? (lang === 'en' ? 'Sent' : '\u0645\u0631\u0633\u0644')
-                                    : record.status === 'opened'
+                                  : record.status === 'anesthesia-review'
+                                    ? (lang === 'en' ? 'Anesthesia Review' : '\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u062a\u062e\u062f\u064a\u0631')
+                                    : record.status === 'anesthesia-approved'
+                                      ? (lang === 'en' ? 'Anesthesia Approved' : '\u0627\u0639\u062a\u0645\u0627\u062f \u0627\u0644\u062a\u062e\u062f\u064a\u0631')
+                                      : record.status === 'nursing-preparation'
+                                        ? (lang === 'en' ? 'Nursing Prep' : '\u062a\u062d\u0636\u064a\u0631 \u0627\u0644\u062a\u0645\u0631\u064a\u0636')
+                                        : record.status === 'nursing-ready'
+                                          ? (lang === 'en' ? 'Nursing Ready' : '\u0627\u0644\u062a\u0645\u0631\u064a\u0636 \u062c\u0627\u0647\u0632')
+                                          : record.status === 'ready-for-delivery'
+                                            ? (lang === 'en' ? 'Ready to Send' : '\u062c\u0627\u0647\u0632 \u0644\u0644\u0625\u0631\u0633\u0627\u0644')
+                                            : record.status === 'sent'
+                                              ? (lang === 'en' ? 'Sent' : '\u0645\u0631\u0633\u0644')
+                                              : record.status === 'opened'
                                       ? (lang === 'en' ? 'Opened' : '\u0645\u0641\u062a\u0648\u062d')
                                       : (lang === 'en' ? 'Active' : '\u0646\u0634\u0637')
                       }

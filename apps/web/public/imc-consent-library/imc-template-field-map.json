@@ -1,0 +1,14 @@
+﻿{
+  "_default": {
+    "mode": "overlay",
+    "appendEvidencePage": true,
+    "fields": {},
+    "requiredFields": [
+      "patientName",
+      "mrn",
+      "procedure",
+      "physicianName",
+      "generatedAt"
+    ]
+  }
+}

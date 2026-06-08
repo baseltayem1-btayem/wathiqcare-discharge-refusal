@@ -1,4 +1,4 @@
-export type Screen =
+﻿export type Screen =
   | 'dashboard'
   | 'patient-search'
   | 'encounter-selection'
@@ -7,6 +7,7 @@ export type Screen =
 
 export type ConsentStep =
   | 'patient'
+  | 'consentType'
   | 'procedure'
   | 'anesthesia'
   | 'disclosures'
@@ -57,3 +58,4 @@ export interface ValidationItem {
   complete: boolean;
   section: ConsentStep;
 }
+

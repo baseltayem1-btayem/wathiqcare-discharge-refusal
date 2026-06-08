@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 
-export default async function ConsentCreationWorkflowPage() {
-  redirect("/modules/informed-consents/create");
+export default function DeprecatedConsentCreationWorkflowPage() {
+  redirect("/modules/informed-consents/physician-workflow");
 }

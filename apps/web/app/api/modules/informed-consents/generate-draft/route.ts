@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { createConsentDocument } from "@/lib/server/consent-library-service";
 import { ApiError, handleApiError } from "@/lib/server/http";
@@ -23,9 +23,18 @@ type GenerateDraftPayload = {
   encounterDiagnosis?: string;
   encounterProcedure?: string;
   encounterSyncStatus?: string;
-  encounterSource?: string;
+  encounterSource?: string;
+  anesthesiaDecision?: string;
+  anesthesiaReviewRequired?: boolean;
+  anesthesiaTypeLabel?: string;
   templateId?: string;
   templateVersionId?: string;
+  imcLibraryItemId?: string;
+  imcLibraryTitleEn?: string;
+  imcLibraryPublicPath?: string;
+  imcLibrarySource?: string;
+  imcLibraryStatus?: string;
+  imcLibraryTemplateType?: string;
   language?: "ar" | "en" | "bilingual";
 };
 
@@ -124,6 +133,11 @@ function mapDraftResponse(
       syncStatus: payload.encounterSyncStatus?.trim() || null,
       source: payload.encounterSource?.trim() || null,
     },
+    anesthesiaData: {
+      decision: payload.anesthesiaDecision?.trim() || null,
+      reviewRequired: Boolean(payload.anesthesiaReviewRequired),
+      typeLabel: payload.anesthesiaTypeLabel?.trim() || null,
+    },
     template: {
       id: created.templateId,
       templateVersionId: created.templateVersionId,
@@ -186,6 +200,15 @@ export async function POST(request: NextRequest) {
         plannedProcedure: payload.encounterProcedure,
         procedureDetails: payload.encounterProcedure,
         metadata: {
+          imcApprovedTemplate: {
+            id: payload.imcLibraryItemId || null,
+            titleEn: payload.imcLibraryTitleEn || null,
+            publicPath: payload.imcLibraryPublicPath || null,
+            source: payload.imcLibrarySource || null,
+            status: payload.imcLibraryStatus || null,
+            templateType: payload.imcLibraryTemplateType || null,
+            locked: true,
+          },
           encounterSync: {
             encounterId: payload.encounterId || null,
             encounterNumber: payload.encounterNumber || null,
@@ -193,6 +216,27 @@ export async function POST(request: NextRequest) {
             admissionDate: payload.encounterAdmissionDate || null,
             syncStatus: payload.encounterSyncStatus || null,
             source: payload.encounterSource || null,
+          },
+          anesthesia: {
+            applies: Boolean(payload.anesthesiaReviewRequired),
+            anesthesiaRequired: Boolean(payload.anesthesiaReviewRequired),
+            decision: payload.anesthesiaDecision || null,
+            reviewRequired: Boolean(payload.anesthesiaReviewRequired),
+            typeLabel: payload.anesthesiaTypeLabel || null,
+            type: payload.anesthesiaTypeLabel || payload.anesthesiaDecision || null,
+            typeEn: payload.anesthesiaTypeLabel || payload.anesthesiaDecision || null,
+            typeAr: payload.anesthesiaTypeLabel || payload.anesthesiaDecision || null,
+            optionsEn: payload.anesthesiaTypeLabel || payload.anesthesiaDecision || null,
+            optionsAr: payload.anesthesiaTypeLabel || payload.anesthesiaDecision || null,
+            risksEn: null,
+            risksAr: null,
+            acknowledgmentEn: payload.anesthesiaReviewRequired
+              ? "Anesthesia review is required before sending the unified patient notification."
+              : "No anesthesia review is required based on the physician selection.",
+            acknowledgmentAr: payload.anesthesiaReviewRequired
+              ? "يلزم إجراء مراجعة التخدير قبل إرسال الإشعار الموحد للمريض."
+              : "لا يلزم إجراء مراجعة تخدير بناءً على اختيار الطبيب.",
+            source: "physician-enterprise-workflow",
           },
           draftSource: "modules.informed-consents.generate-draft",
         },
@@ -205,3 +249,10 @@ export async function POST(request: NextRequest) {
     return handleApiError(error);
   }
 }
+
+
+
+
+
+
+

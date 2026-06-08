@@ -1,4 +1,5 @@
-import { type NextRequest, NextResponse } from "next/server";
+﻿import { type NextRequest, NextResponse } from "next/server";
+import { renderImcApprovedConsentPdf } from "@/lib/server/imc-approved-pdf-template-engine";
 import { existsSync } from "node:fs";
 import crypto from "node:crypto";
 import puppeteer from "puppeteer";
@@ -75,12 +76,12 @@ function formatDate(value: string | Date, locale: "ar" | "en"): string {
 function statusLabel(status: string, isAr: boolean): string {
   const normalized = (status || "").toUpperCase();
   if (isAr) {
-    if (normalized === "FINALIZED") return "مؤرشف نهائيا";
-    if (normalized === "SIGNED") return "موقع";
-    if (normalized === "APPROVED") return "معتمد";
-    if (normalized === "AI_DRAFT") return "مسودة AI";
-    if (normalized === "PHYSICIAN_REVIEW") return "مراجعة الطبيب";
-    return "مسودة";
+    if (normalized === "FINALIZED") return "Ù…Ø¤Ø±Ø´Ù Ù†Ù‡Ø§Ø¦ÙŠØ§";
+    if (normalized === "SIGNED") return "Ù…ÙˆÙ‚Ø¹";
+    if (normalized === "APPROVED") return "Ù…Ø¹ØªÙ…Ø¯";
+    if (normalized === "AI_DRAFT") return "Ù…Ø³ÙˆØ¯Ø© AI";
+    if (normalized === "PHYSICIAN_REVIEW") return "Ù…Ø±Ø§Ø¬Ø¹Ø© Ø§Ù„Ø·Ø¨ÙŠØ¨";
+    return "Ù…Ø³ÙˆØ¯Ø©";
   }
 
   if (normalized === "FINALIZED") return "Finalized";
@@ -104,12 +105,12 @@ function asDate(value: unknown): Date | null {
 
 function repairMojibake(input: string): string {
   if (!input) return input;
-  if (!/[ÃÂâØÙ]/.test(input)) return input;
+  if (!/[ÃƒÃ‚Ã¢Ã˜Ã™]/.test(input)) return input;
 
   try {
     const decoded = Buffer.from(input, "latin1").toString("utf8");
-    if (!decoded || decoded.includes("�")) return input;
-    if (/[\u0600-\u06FF]/.test(decoded) || /[’“”–—]/.test(decoded) || decoded.includes("patient's")) {
+    if (!decoded || decoded.includes("ï¿½")) return input;
+    if (/[\u0600-\u06FF]/.test(decoded) || /[â€™â€œâ€â€“â€”]/.test(decoded) || decoded.includes("patient's")) {
       return decoded;
     }
   } catch {
@@ -174,9 +175,9 @@ function parseCopyType(value: string | null): EvidenceCopyType {
 
 function copyTypeLabel(copyType: EvidenceCopyType, isAr: boolean): string {
   if (isAr) {
-    if (copyType === "MEDICAL_RECORD_COPY") return "نسخة السجل الطبي";
-    if (copyType === "LEGAL_ARCHIVE_COPY") return "نسخة الأرشيف القانوني";
-    return "نسخة المريض";
+    if (copyType === "MEDICAL_RECORD_COPY") return "Ù†Ø³Ø®Ø© Ø§Ù„Ø³Ø¬Ù„ Ø§Ù„Ø·Ø¨ÙŠ";
+    if (copyType === "LEGAL_ARCHIVE_COPY") return "Ù†Ø³Ø®Ø© Ø§Ù„Ø£Ø±Ø´ÙŠÙ Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ";
+    return "Ù†Ø³Ø®Ø© Ø§Ù„Ù…Ø±ÙŠØ¶";
   }
 
   if (copyType === "MEDICAL_RECORD_COPY") return "Medical Record Copy";
@@ -436,13 +437,13 @@ function extractEducationEvidenceSummary(input: {
 }
 
 function methodLabel(method: string, isAr: boolean): string {
-  if (method === "combined-tablet-and-otp") return isAr ? "توقيع لوحي + OTP" : "Tablet + OTP";
-  if (method === "tablet-drawn-signature") return isAr ? "توقيع يدوي على جهاز لوحي" : "Tablet Handwritten Signature";
-  if (method === "combined-biometric-and-otp") return isAr ? "تحقق بصمة + OTP" : "Biometric + OTP";
-  if (method === "biometric-fingerprint") return isAr ? "تحقق بصمة" : "Biometric Verification";
+  if (method === "combined-tablet-and-otp") return isAr ? "ØªÙˆÙ‚ÙŠØ¹ Ù„ÙˆØ­ÙŠ + OTP" : "Tablet + OTP";
+  if (method === "tablet-drawn-signature") return isAr ? "ØªÙˆÙ‚ÙŠØ¹ ÙŠØ¯ÙˆÙŠ Ø¹Ù„Ù‰ Ø¬Ù‡Ø§Ø² Ù„ÙˆØ­ÙŠ" : "Tablet Handwritten Signature";
+  if (method === "combined-biometric-and-otp") return isAr ? "ØªØ­Ù‚Ù‚ Ø¨ØµÙ…Ø© + OTP" : "Biometric + OTP";
+  if (method === "biometric-fingerprint") return isAr ? "ØªØ­Ù‚Ù‚ Ø¨ØµÙ…Ø©" : "Biometric Verification";
   if (method === "OTP") return "OTP";
-  if (method === "WRITTEN") return isAr ? "توقيع كتابي" : "Written Signature";
-  return isAr ? "توقيع إلكتروني" : "Electronic Signature";
+  if (method === "WRITTEN") return isAr ? "ØªÙˆÙ‚ÙŠØ¹ ÙƒØªØ§Ø¨ÙŠ" : "Written Signature";
+  return isAr ? "ØªÙˆÙ‚ÙŠØ¹ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ" : "Electronic Signature";
 }
 
 function signatureRoleBlock(args: {
@@ -464,8 +465,8 @@ function signatureRoleBlock(args: {
     `<div>${escapeHtml(methodLabel(args.signature.method, args.isAr))}</div>`,
     args.signature.signedAt ? `<div>${escapeHtml(args.signedAtLabel)}: ${escapeHtml(formatDate(args.signature.signedAt, args.isAr ? "ar" : "en"))}</div>` : "",
     args.signature.evidenceId ? `<div>${escapeHtml(args.evidenceLabel)}: ${escapeHtml(args.signature.evidenceId)}</div>` : "",
-    args.signature.deviceReference ? `<div>${escapeHtml(args.isAr ? "مرجع الجهاز" : "Device Ref")}: ${escapeHtml(args.signature.deviceReference)}</div>` : "",
-    args.signature.transactionId ? `<div>${escapeHtml(args.isAr ? "معرف العملية" : "Transaction ID")}: ${escapeHtml(args.signature.transactionId)}</div>` : "",
+    args.signature.deviceReference ? `<div>${escapeHtml(args.isAr ? "Ù…Ø±Ø¬Ø¹ Ø§Ù„Ø¬Ù‡Ø§Ø²" : "Device Ref")}: ${escapeHtml(args.signature.deviceReference)}</div>` : "",
+    args.signature.transactionId ? `<div>${escapeHtml(args.isAr ? "Ù…Ø¹Ø±Ù Ø§Ù„Ø¹Ù…Ù„ÙŠØ©" : "Transaction ID")}: ${escapeHtml(args.signature.transactionId)}</div>` : "",
   ].filter(Boolean).join("");
 
   return `<div class="box"><strong>${escapeHtml(args.label)}</strong>${imageHtml}<div class="sig-meta">${metaLines}</div></div>`;
@@ -552,68 +553,68 @@ function html(args: {
       </header>
 
       <section class="meta">
-        <div><span>${args.isAr ? "المرجع" : "Reference"}</span><strong>${escapeHtml(args.reference)}</strong></div>
-        <div><span>${args.isAr ? "الحالة" : "Status"}</span><strong>${escapeHtml(args.status)}</strong></div>
-        <div><span>${args.isAr ? "النسخة" : "Version"}</span><strong>${escapeHtml(args.version)}</strong></div>
-        <div><span>${args.isAr ? "التاريخ" : "Timestamp"}</span><strong>${escapeHtml(args.generatedAt)}</strong></div>
+        <div><span>${args.isAr ? "Ø§Ù„Ù…Ø±Ø¬Ø¹" : "Reference"}</span><strong>${escapeHtml(args.reference)}</strong></div>
+        <div><span>${args.isAr ? "Ø§Ù„Ø­Ø§Ù„Ø©" : "Status"}</span><strong>${escapeHtml(args.status)}</strong></div>
+        <div><span>${args.isAr ? "Ø§Ù„Ù†Ø³Ø®Ø©" : "Version"}</span><strong>${escapeHtml(args.version)}</strong></div>
+        <div><span>${args.isAr ? "Ø§Ù„ØªØ§Ø±ÙŠØ®" : "Timestamp"}</span><strong>${escapeHtml(args.generatedAt)}</strong></div>
       </section>
 
       <div class="warn">${escapeHtml(args.warning)}</div>
 
       <section class="evidence">
-        <div><strong>${args.isAr ? "نوع النسخة" : "Copy Type"}:</strong> ${content(args.copyLabel)}</div>
-        <div><strong>${args.isAr ? "ختم النزاهة" : "Integrity Checksum"}:</strong> ${content(args.auditChecksum)}</div>
-        <div><strong>${args.isAr ? "المولد" : "Generated By Model"}:</strong> ${content(args.generatedByModel)}</div>
-        <div><strong>${args.isAr ? "التثبيت النهائي" : "Finalized At"}:</strong> ${content(args.finalizedAt)}</div>
-        <div><strong>${args.isAr ? "معرف الطبيب" : "Physician Identifier"}:</strong> ${content(args.physicianIdentifier)}</div>
-        <div><strong>${args.isAr ? "النسخة" : "Document Version"}:</strong> ${content(args.version)}</div>
+        <div><strong>${args.isAr ? "Ù†ÙˆØ¹ Ø§Ù„Ù†Ø³Ø®Ø©" : "Copy Type"}:</strong> ${content(args.copyLabel)}</div>
+        <div><strong>${args.isAr ? "Ø®ØªÙ… Ø§Ù„Ù†Ø²Ø§Ù‡Ø©" : "Integrity Checksum"}:</strong> ${content(args.auditChecksum)}</div>
+        <div><strong>${args.isAr ? "Ø§Ù„Ù…ÙˆÙ„Ø¯" : "Generated By Model"}:</strong> ${content(args.generatedByModel)}</div>
+        <div><strong>${args.isAr ? "Ø§Ù„ØªØ«Ø¨ÙŠØª Ø§Ù„Ù†Ù‡Ø§Ø¦ÙŠ" : "Finalized At"}:</strong> ${content(args.finalizedAt)}</div>
+        <div><strong>${args.isAr ? "Ù…Ø¹Ø±Ù Ø§Ù„Ø·Ø¨ÙŠØ¨" : "Physician Identifier"}:</strong> ${content(args.physicianIdentifier)}</div>
+        <div><strong>${args.isAr ? "Ø§Ù„Ù†Ø³Ø®Ø©" : "Document Version"}:</strong> ${content(args.version)}</div>
       </section>
 
       <section class="grid2">
         <article class="card">
-          <h3>${args.isAr ? "بيانات المريض" : "Patient Profile"}</h3>
-          <p><strong>${args.isAr ? "الاسم" : "Name"}:</strong> ${content(args.patient)}</p>
+          <h3>${args.isAr ? "Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ù…Ø±ÙŠØ¶" : "Patient Profile"}</h3>
+          <p><strong>${args.isAr ? "Ø§Ù„Ø§Ø³Ù…" : "Name"}:</strong> ${content(args.patient)}</p>
           <p><strong>MRN:</strong> ${content(args.mrn)}</p>
-          <p><strong>${args.isAr ? "تاريخ الميلاد" : "DOB"}:</strong> ${content(args.dob)}</p>
-          <p><strong>${args.isAr ? "الجنس" : "Gender"}:</strong> ${content(args.gender)}</p>
-          <p><strong>${args.isAr ? "التشخيص" : "Diagnosis"}:</strong> ${content(args.diagnosis)}</p>
+          <p><strong>${args.isAr ? "ØªØ§Ø±ÙŠØ® Ø§Ù„Ù…ÙŠÙ„Ø§Ø¯" : "DOB"}:</strong> ${content(args.dob)}</p>
+          <p><strong>${args.isAr ? "Ø§Ù„Ø¬Ù†Ø³" : "Gender"}:</strong> ${content(args.gender)}</p>
+          <p><strong>${args.isAr ? "Ø§Ù„ØªØ´Ø®ÙŠØµ" : "Diagnosis"}:</strong> ${content(args.diagnosis)}</p>
         </article>
         <article class="card">
-          <h3>${args.isAr ? "بيانات الطبيب" : "Physician Profile"}</h3>
-          <p><strong>${args.isAr ? "الاسم" : "Name"}:</strong> ${content(args.physician)}</p>
-          <p><strong>${args.isAr ? "رقم الترخيص" : "License"}:</strong> ${content(args.physicianLicense)}</p>
-          <p><strong>${args.isAr ? "التخصص" : "Specialty"}:</strong> ${content(args.specialty)}</p>
-          <p><strong>${args.isAr ? "نوع الموافقة" : "Consent Type"}:</strong> ${content(args.consentType)}</p>
-          <p><strong>${args.isAr ? "الإجراء المخطط" : "Planned Procedure"}:</strong> ${content(args.plannedProcedure)}</p>
+          <h3>${args.isAr ? "Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø·Ø¨ÙŠØ¨" : "Physician Profile"}</h3>
+          <p><strong>${args.isAr ? "Ø§Ù„Ø§Ø³Ù…" : "Name"}:</strong> ${content(args.physician)}</p>
+          <p><strong>${args.isAr ? "Ø±Ù‚Ù… Ø§Ù„ØªØ±Ø®ÙŠØµ" : "License"}:</strong> ${content(args.physicianLicense)}</p>
+          <p><strong>${args.isAr ? "Ø§Ù„ØªØ®ØµØµ" : "Specialty"}:</strong> ${content(args.specialty)}</p>
+          <p><strong>${args.isAr ? "Ù†ÙˆØ¹ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" : "Consent Type"}:</strong> ${content(args.consentType)}</p>
+          <p><strong>${args.isAr ? "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ø®Ø·Ø·" : "Planned Procedure"}:</strong> ${content(args.plannedProcedure)}</p>
         </article>
       </section>
 
       <article class="card full">
-        <h3>${args.isAr ? "التفاصيل الطبية" : "Medical Content"}</h3>
-        <p><strong>${args.isAr ? "تفاصيل الإجراء" : "Procedure Details"}:</strong> ${content(args.procedureDetails)}</p>
-        <p><strong>${args.isAr ? "المخاطر" : "Risks"}:</strong></p><pre>${content(args.risks)}</pre>
-        <p><strong>${args.isAr ? "الآثار الجانبية" : "Side Effects"}:</strong></p><pre>${content(args.sideEffects)}</pre>
-        <p><strong>${args.isAr ? "البدائل" : "Alternatives"}:</strong></p><pre>${content(args.alternatives)}</pre>
-        <p><strong>${args.isAr ? "مخاطر الرفض" : "Refusal Risks"}:</strong></p><pre>${content(args.refusalRisks)}</pre>
-        <p><strong>${args.isAr ? "النتائج المتوقعة" : "Expected Outcomes"}:</strong></p><pre>${content(args.expectedOutcomes)}</pre>
-        <p><strong>${args.isAr ? "ملاحظات الطبيب" : "Physician Notes"}:</strong></p><pre>${content(args.physicianNotes)}</pre>
+        <h3>${args.isAr ? "Ø§Ù„ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø·Ø¨ÙŠØ©" : "Medical Content"}</h3>
+        <p><strong>${args.isAr ? "ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡" : "Procedure Details"}:</strong> ${content(args.procedureDetails)}</p>
+        <p><strong>${args.isAr ? "Ø§Ù„Ù…Ø®Ø§Ø·Ø±" : "Risks"}:</strong></p><pre>${content(args.risks)}</pre>
+        <p><strong>${args.isAr ? "Ø§Ù„Ø¢Ø«Ø§Ø± Ø§Ù„Ø¬Ø§Ù†Ø¨ÙŠØ©" : "Side Effects"}:</strong></p><pre>${content(args.sideEffects)}</pre>
+        <p><strong>${args.isAr ? "Ø§Ù„Ø¨Ø¯Ø§Ø¦Ù„" : "Alternatives"}:</strong></p><pre>${content(args.alternatives)}</pre>
+        <p><strong>${args.isAr ? "Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø±ÙØ¶" : "Refusal Risks"}:</strong></p><pre>${content(args.refusalRisks)}</pre>
+        <p><strong>${args.isAr ? "Ø§Ù„Ù†ØªØ§Ø¦Ø¬ Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø©" : "Expected Outcomes"}:</strong></p><pre>${content(args.expectedOutcomes)}</pre>
+        <p><strong>${args.isAr ? "Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø§Ù„Ø·Ø¨ÙŠØ¨" : "Physician Notes"}:</strong></p><pre>${content(args.physicianNotes)}</pre>
       </article>
 
       <article class="card full">
-        <h3>${args.isAr ? "أدلة تثقيف المريض" : "Patient Education Evidence"}</h3>
-        <p><strong>${args.isAr ? "تم عرض التثقيف" : "Education Displayed"}:</strong> ${content(args.educationViewed)}</p>
-        <p><strong>${args.isAr ? "وقت بدء التثقيف" : "Education Opened At"}:</strong> ${content(args.educationViewedAt)}</p>
-        <p><strong>${args.isAr ? "وقت إكمال التثقيف" : "Education Completed At"}:</strong> ${content(args.educationCompletedAt)}</p>
-        <p><strong>${args.isAr ? "لغة التثقيف" : "Education Language"}:</strong> ${content(args.educationLanguage)}</p>
-        <p><strong>${args.isAr ? "مرجع القالب" : "Template Code"}:</strong> ${content(args.educationTemplateCode)}</p>
-        <p><strong>${args.isAr ? "نتيجة الفهم" : "Understanding Score"}:</strong> ${content(args.educationScore)}</p>
-        <p><strong>${args.isAr ? "عدد المحاولات" : "Attempts"}:</strong> ${content(args.educationAttempts)}</p>
-        <p><strong>${args.isAr ? "الأسئلة الشائعة التي تمت مشاهدتها" : "FAQ Items Viewed"}:</strong> ${content(args.educationFaqViewedCount)}</p>
-        <p><strong>${args.isAr ? "إقرار المريض" : "Patient Acknowledgement"}:</strong> ${content(args.patientAcknowledged)}</p>
+        <h3>${args.isAr ? "Ø£Ø¯Ù„Ø© ØªØ«Ù‚ÙŠÙ Ø§Ù„Ù…Ø±ÙŠØ¶" : "Patient Education Evidence"}</h3>
+        <p><strong>${args.isAr ? "ØªÙ… Ø¹Ø±Ø¶ Ø§Ù„ØªØ«Ù‚ÙŠÙ" : "Education Displayed"}:</strong> ${content(args.educationViewed)}</p>
+        <p><strong>${args.isAr ? "ÙˆÙ‚Øª Ø¨Ø¯Ø¡ Ø§Ù„ØªØ«Ù‚ÙŠÙ" : "Education Opened At"}:</strong> ${content(args.educationViewedAt)}</p>
+        <p><strong>${args.isAr ? "ÙˆÙ‚Øª Ø¥ÙƒÙ…Ø§Ù„ Ø§Ù„ØªØ«Ù‚ÙŠÙ" : "Education Completed At"}:</strong> ${content(args.educationCompletedAt)}</p>
+        <p><strong>${args.isAr ? "Ù„ØºØ© Ø§Ù„ØªØ«Ù‚ÙŠÙ" : "Education Language"}:</strong> ${content(args.educationLanguage)}</p>
+        <p><strong>${args.isAr ? "Ù…Ø±Ø¬Ø¹ Ø§Ù„Ù‚Ø§Ù„Ø¨" : "Template Code"}:</strong> ${content(args.educationTemplateCode)}</p>
+        <p><strong>${args.isAr ? "Ù†ØªÙŠØ¬Ø© Ø§Ù„ÙÙ‡Ù…" : "Understanding Score"}:</strong> ${content(args.educationScore)}</p>
+        <p><strong>${args.isAr ? "Ø¹Ø¯Ø¯ Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø§Øª" : "Attempts"}:</strong> ${content(args.educationAttempts)}</p>
+        <p><strong>${args.isAr ? "Ø§Ù„Ø£Ø³Ø¦Ù„Ø© Ø§Ù„Ø´Ø§Ø¦Ø¹Ø© Ø§Ù„ØªÙŠ ØªÙ…Øª Ù…Ø´Ø§Ù‡Ø¯ØªÙ‡Ø§" : "FAQ Items Viewed"}:</strong> ${content(args.educationFaqViewedCount)}</p>
+        <p><strong>${args.isAr ? "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…Ø±ÙŠØ¶" : "Patient Acknowledgement"}:</strong> ${content(args.patientAcknowledged)}</p>
       </article>
 
       <article class="card full legal">
-        <h3>${args.isAr ? "الإقرار القانوني والخصوصية" : "Legal and Privacy Declarations"}</h3>
+        <h3>${args.isAr ? "Ø§Ù„Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ ÙˆØ§Ù„Ø®ØµÙˆØµÙŠØ©" : "Legal and Privacy Declarations"}</h3>
         <p>${content(args.legalText)}</p>
         <p>${content(args.pdplText)}</p>
         <p>${content(args.witnessDecl)}</p>
@@ -622,31 +623,31 @@ function html(args: {
 
       <footer class="sign">
         ${signatureRoleBlock({
-          evidenceLabel: args.isAr ? "معرف الدليل" : "Evidence ID",
+          evidenceLabel: args.isAr ? "Ù…Ø¹Ø±Ù Ø§Ù„Ø¯Ù„ÙŠÙ„" : "Evidence ID",
           isAr: args.isAr,
           label: args.patientSignatureLabel,
           signature: args.patientSignature,
-          signedAtLabel: args.isAr ? "وقت التوقيع" : "Signed At",
+          signedAtLabel: args.isAr ? "ÙˆÙ‚Øª Ø§Ù„ØªÙˆÙ‚ÙŠØ¹" : "Signed At",
         })}
         ${signatureRoleBlock({
-          evidenceLabel: args.isAr ? "معرف الدليل" : "Evidence ID",
+          evidenceLabel: args.isAr ? "Ù…Ø¹Ø±Ù Ø§Ù„Ø¯Ù„ÙŠÙ„" : "Evidence ID",
           isAr: args.isAr,
           label: args.physicianSignatureLabel,
           signature: args.physicianSignature,
-          signedAtLabel: args.isAr ? "وقت التوقيع" : "Signed At",
+          signedAtLabel: args.isAr ? "ÙˆÙ‚Øª Ø§Ù„ØªÙˆÙ‚ÙŠØ¹" : "Signed At",
         })}
         ${signatureRoleBlock({
-          evidenceLabel: args.isAr ? "معرف الدليل" : "Evidence ID",
+          evidenceLabel: args.isAr ? "Ù…Ø¹Ø±Ù Ø§Ù„Ø¯Ù„ÙŠÙ„" : "Evidence ID",
           isAr: args.isAr,
           label: args.witnessSignatureLabel,
           signature: args.witnessSignature,
-          signedAtLabel: args.isAr ? "وقت التوقيع" : "Signed At",
+          signedAtLabel: args.isAr ? "ÙˆÙ‚Øª Ø§Ù„ØªÙˆÙ‚ÙŠØ¹" : "Signed At",
         })}
         <div class="box qr"><img src="${args.qrDataUrl}" alt="QR" /><small>${escapeHtml(args.qrLabel)}</small></div>
       </footer>
       <div class="doc-footer">
         ${args.isAr
-    ? "صادر من المركز الطبي الدولي مع حفظ الأدلة الرقمية عبر منصة واثق كير."
+    ? "ØµØ§Ø¯Ø± Ù…Ù† Ø§Ù„Ù…Ø±ÙƒØ² Ø§Ù„Ø·Ø¨ÙŠ Ø§Ù„Ø¯ÙˆÙ„ÙŠ Ù…Ø¹ Ø­ÙØ¸ Ø§Ù„Ø£Ø¯Ù„Ø© Ø§Ù„Ø±Ù‚Ù…ÙŠØ© Ø¹Ø¨Ø± Ù…Ù†ØµØ© ÙˆØ§Ø«Ù‚ ÙƒÙŠØ±."
     : "Issued by International Medical Center with digital evidence preservation through WathiqCare platform."}
       </div>
     </div>
@@ -757,6 +758,26 @@ export async function GET(
     if (!doc) {
       return NextResponse.json({ error: "Consent document not found" }, { status: 404 });
     }
+    const imcTemplateFirstPdf = await renderImcApprovedConsentPdf({
+      documentId: doc.id,
+      tenantId,
+      origin: process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin,
+    });
+
+    const imcSafeReference = imcTemplateFirstPdf.consentReference.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+    return new NextResponse(imcTemplateFirstPdf.bytes, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="CONSENT-${imcSafeReference}-IMC-APPROVED.pdf"`,
+        "Cache-Control": "no-store",
+        "X-Wathiq-PDF-Engine": "IMC_TEMPLATE_FIRST",
+        "X-Wathiq-IMC-Template-Id": imcTemplateFirstPdf.imcTemplateId,
+        "X-Wathiq-IMC-Template-Title": imcTemplateFirstPdf.imcTemplateTitle,
+      },
+    });
+
 
     const fixedClauseChecksum = computeFixedClauseChecksum({
       legalTextAr: doc.legalTextAr,
@@ -866,7 +887,7 @@ export async function GET(
         physicianSignature,
         witnessSignature,
         isAr: renderAr,
-        title: renderAr ? "نموذج الموافقة المستنيرة" : "Informed Consent Document",
+        title: renderAr ? "Ù†Ù…ÙˆØ°Ø¬ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„Ù…Ø³ØªÙ†ÙŠØ±Ø©" : "Informed Consent Document",
         subtitle: renderAr ? cleanupText(doc.template.titleAr) : cleanupText(doc.template.titleEn),
         reference: `${cleanupText(doc.consentReference)}${doc.case?.caseNumber ? ` | ${cleanupText(doc.case.caseNumber)}` : ""}`,
         status: statusLabel(effectiveStatus, renderAr),
@@ -896,7 +917,7 @@ export async function GET(
         refusalRisks: cleanupText(renderAr ? doc.refusalRisksAr || "" : doc.refusalRisksEn || ""),
         expectedOutcomes: cleanupText(renderAr ? doc.expectedOutcomesAr || "" : doc.expectedOutcomesEn || ""),
         physicianNotes: cleanupText(renderAr ? doc.physicianNotesAr || "" : doc.physicianNotesEn || ""),
-        educationViewed: educationEvidence.viewed ? (renderAr ? "نعم" : "Yes") : (renderAr ? "لا" : "No"),
+        educationViewed: educationEvidence.viewed ? (renderAr ? "Ù†Ø¹Ù…" : "Yes") : (renderAr ? "Ù„Ø§" : "No"),
         educationViewedAt: educationEvidence.viewedAt ? formatDate(educationEvidence.viewedAt, renderAr ? "ar" : "en") : null,
         educationCompletedAt: educationEvidence.completedAt ? formatDate(educationEvidence.completedAt, renderAr ? "ar" : "en") : null,
         educationLanguage: cleanupText(educationEvidence.language || (doc.language || "")),
@@ -905,15 +926,15 @@ export async function GET(
         educationAttempts: educationEvidence.attempts == null ? null : String(educationEvidence.attempts),
         educationFaqViewedCount: String(educationEvidence.faqViewedCount),
         patientAcknowledged: educationEvidence.patientAcknowledged
-          ? (renderAr ? "تم الإقرار" : "Acknowledged")
-          : (renderAr ? "غير مسجل" : "Not recorded"),
+          ? (renderAr ? "ØªÙ… Ø§Ù„Ø¥Ù‚Ø±Ø§Ø±" : "Acknowledged")
+          : (renderAr ? "ØºÙŠØ± Ù…Ø³Ø¬Ù„" : "Not recorded"),
         legalText: cleanupText(renderAr ? doc.legalTextAr : doc.legalTextEn),
         pdplText: cleanupText(renderAr ? doc.pdplTextAr : doc.pdplTextEn),
         witnessDecl: cleanupText(renderAr ? doc.witnessDeclAr : doc.witnessDeclEn),
         physicianCert: cleanupText(renderAr ? doc.physicianCertAr : doc.physicianCertEn),
-        patientSignatureLabel: renderAr ? "توقيع المريض / الولي" : "Patient / Guardian Signature",
-        physicianSignatureLabel: renderAr ? "توقيع الطبيب" : "Physician Signature",
-        witnessSignatureLabel: renderAr ? "توقيع الشاهد" : "Witness Signature",
+        patientSignatureLabel: renderAr ? "ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ù…Ø±ÙŠØ¶ / Ø§Ù„ÙˆÙ„ÙŠ" : "Patient / Guardian Signature",
+        physicianSignatureLabel: renderAr ? "ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø·Ø¨ÙŠØ¨" : "Physician Signature",
+        witnessSignatureLabel: renderAr ? "ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø´Ø§Ù‡Ø¯" : "Witness Signature",
         qrLabel: verifyUrl,
         qrDataUrl,
         logoSrc,
@@ -1017,3 +1038,10 @@ export async function GET(
     }
   }
 }
+
+
+
+
+
+
+

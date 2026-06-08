@@ -1,10 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 
 const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "wathiqcare_access_token";
 const LANGUAGE_COOKIE_NAME = "wathiqcare_lang";
 const SUPPORTED_LOCALES = ["ar", "en"] as const;
 type Locale = (typeof SUPPORTED_LOCALES)[number];
 const DEFAULT_LOCALE: Locale = "ar";
+const BLOCKED_PUBLIC_PATHS =
+  /^\/(?:\.env(?:\..*)?|\.git(?:\/.*)?|\.vercel(?:\/.*)?|\.next(?:\/.*)?|\.npmrc|\.yarnrc|\.pnpmrc|package-lock\.json|tsconfig\.json|next\.config\.(?:js|ts|mjs)|vercel\.json)$/i;
 const EDGE_PROTECTED_PREFIXES = [
   "/modules",
   "/dashboard",
@@ -135,6 +137,17 @@ function detectLocale(request: NextRequest): Locale {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (BLOCKED_PUBLIC_PATHS.test(pathname)) {
+    return new NextResponse("Not Found", {
+      status: 404,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
   const { locale, pathWithoutLocale } = splitLocaleFromPath(pathname);
   const alreadyLocale = SUPPORTED_LOCALES.some(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)
@@ -248,3 +261,5 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico|images/).*)"],
 };
+
+
