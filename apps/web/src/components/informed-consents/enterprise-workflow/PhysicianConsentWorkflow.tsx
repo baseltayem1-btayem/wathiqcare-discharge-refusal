@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
+  Search,
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
@@ -22,6 +23,7 @@ import {
   ShieldCheck,
   Stethoscope,
   Syringe,
+  User,
   UserRoundCheck,
 } from "lucide-react";
 
@@ -217,6 +219,121 @@ const workflowSteps: Array<{
   { key: "education", label: "Education", labelAr: "التثقيف" },
   { key: "review", label: "Review PDF", labelAr: "مراجعة المستند" },
   { key: "send", label: "Send", labelAr: "إرسال" },
+];
+
+const workflowStepMeta: Record<
+  WorkflowStepKey,
+  {
+    eyebrow: string;
+    eyebrowAr: string;
+    description: string;
+    descriptionAr: string;
+  }
+> = {
+  patientEncounter: {
+    eyebrow: "Clinical Intake",
+    eyebrowAr: "الاستقبال السريري",
+    description: "Search the patient record, verify PHI, and lock the active encounter before authoring starts.",
+    descriptionAr: "ابحث عن سجل المريض وتحقق من بياناته ثم ثبت الزيارة النشطة قبل بدء التحرير.",
+  },
+  category: {
+    eyebrow: "Governance",
+    eyebrowAr: "الحوكمة",
+    description: "Keep the consent category aligned to the approved hospital workflow lane.",
+    descriptionAr: "حافظ على توافق فئة الموافقة مع مسار الحوكمة المعتمد في المستشفى.",
+  },
+  template: {
+    eyebrow: "Template Control",
+    eyebrowAr: "ضبط القالب",
+    description: "Use only approved IMC content with an active runtime mapping before draft generation.",
+    descriptionAr: "استخدم فقط المحتوى المعتمد من IMC مع ربط تشغيلي فعال قبل إنشاء المسودة.",
+  },
+  procedure: {
+    eyebrow: "Clinical Disclosure",
+    eyebrowAr: "الإفصاح السريري",
+    description: "Capture procedure context, laterality, and physician disclosure notes for the legal draft.",
+    descriptionAr: "سجل سياق الإجراء والجهة أو الموقع وملاحظات الإفصاح الطبي للمسودة القانونية.",
+  },
+  anesthesia: {
+    eyebrow: "Anesthesia Pathway",
+    eyebrowAr: "مسار التخدير",
+    description: "Choose the anesthesia track and clearly expose whether anesthesiology review blocks release.",
+    descriptionAr: "اختر مسار التخدير مع إظهار ما إذا كانت مراجعة طبيب التخدير تمنع الإصدار.",
+  },
+  education: {
+    eyebrow: "Patient Education",
+    eyebrowAr: "تثقيف المريض",
+    description: "Confirm the material package the patient must receive before secure signing.",
+    descriptionAr: "أكد حزمة التثقيف التي يجب أن يستلمها المريض قبل التوقيع الآمن.",
+  },
+  review: {
+    eyebrow: "Draft Review",
+    eyebrowAr: "مراجعة المسودة",
+    description: "Generate the exact bilingual draft PDF and inspect evidence readiness before release.",
+    descriptionAr: "أنشئ مسودة PDF الثنائية نفسها وراجع جاهزية الأدلة قبل الإصدار.",
+  },
+  send: {
+    eyebrow: "Patient Release",
+    eyebrowAr: "إصدار للمريض",
+    description: "Create the patient signing link only after all readiness and governance blockers are cleared.",
+    descriptionAr: "أنشئ رابط توقيع المريض فقط بعد إزالة جميع موانع الجاهزية والحوكمة.",
+  },
+};
+
+const anesthesiaOptionCards: Array<{
+  value: AnesthesiaDecision;
+  icon: LucideIcon;
+  tone: "neutral" | "info" | "warning" | "critical";
+  description: string;
+  descriptionAr: string;
+  review: string;
+  reviewAr: string;
+}> = [
+  {
+    value: "NONE",
+    icon: AlertTriangle,
+    tone: "neutral",
+    description: "No anesthesia planned. Standard consent pathway remains physician-led.",
+    descriptionAr: "لا يوجد تخدير مخطط. يبقى مسار الموافقة تحت قيادة الطبيب المعالج.",
+    review: "No anesthesia review",
+    reviewAr: "لا توجد مراجعة تخدير",
+  },
+  {
+    value: "LOCAL",
+    icon: Syringe,
+    tone: "info",
+    description: "Local anesthesia documented. Additional review depends on policy and procedure class.",
+    descriptionAr: "تم توثيق التخدير الموضعي. تعتمد المراجعة الإضافية على السياسة وتصنيف الإجراء.",
+    review: "Policy-dependent review",
+    reviewAr: "مراجعة حسب السياسة",
+  },
+  {
+    value: "SEDATION",
+    icon: Stethoscope,
+    tone: "warning",
+    description: "Sedation or MAC pathway. Anesthesiology review must be requested before release.",
+    descriptionAr: "مسار التهدئة أو MAC. يجب طلب مراجعة التخدير قبل الإصدار.",
+    review: "Review required",
+    reviewAr: "المراجعة مطلوبة",
+  },
+  {
+    value: "REGIONAL",
+    icon: HeartPulse,
+    tone: "warning",
+    description: "Regional anesthesia selected. Coordination with anesthesia is required before sending.",
+    descriptionAr: "تم اختيار التخدير النصفي أو الإقليمي. يلزم التنسيق مع التخدير قبل الإرسال.",
+    review: "Review required",
+    reviewAr: "المراجعة مطلوبة",
+  },
+  {
+    value: "GENERAL",
+    icon: HeartPulse,
+    tone: "critical",
+    description: "General anesthesia selected. This is a high-priority review and release blocker.",
+    descriptionAr: "تم اختيار التخدير العام. هذه مراجعة عالية الأولوية وتمنع الإصدار.",
+    review: "High-priority review",
+    reviewAr: "مراجعة عالية الأولوية",
+  },
 ];
 
 const workspaceSections: Array<{
@@ -1028,10 +1145,10 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
   }
 
   return (
-    <main className="min-h-screen bg-[#F6F8FB] text-[#172033]">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef4fb_45%,#e8eff8_100%)] text-[#172033]">
       <EnterpriseHeader workflow={workflow} />
 
-      <section className="grid grid-cols-1 gap-4 px-4 py-4 xl:grid-cols-[290px_1fr_360px]">
+      <section className="mx-auto grid max-w-[1680px] grid-cols-1 gap-5 px-4 py-5 xl:grid-cols-[300px_minmax(0,1fr)_380px] xl:px-6">
         <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
           <WorkspaceNavigation
             activeSection={activeSection}
@@ -1057,9 +1174,35 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
               activeStepIndex={activeStepIndex}
               setActiveStepIndex={setActiveStepIndex}
               workflow={workflow}
+              selectedPatient={selectedPatient}
+              selectedEncounter={selectedEncounter}
+              selectedRuntimeTemplate={selectedRuntimeTemplate}
+              patientQuery={patientQuery}
+              setPatientQuery={setPatientQuery}
+              runPatientSearch={runPatientSearch}
+              patientResults={patientResults}
+              patientSearchLoading={patientSearchLoading}
+              patientSearchError={patientSearchError}
+              loadEncountersForPatient={loadEncountersForPatient}
+              encounters={encounters}
+              encountersLoading={encountersLoading}
+              encountersError={encountersError}
+              selectEncounter={selectEncounter}
+              imcLibraryLoading={imcLibraryLoading}
+              imcResolveLoading={imcResolveLoading}
+              imcLibraryError={imcLibraryError}
+              imcResolveError={imcResolveError}
+              imcLibraryItems={imcLibraryItems}
+              selectedImcPackage={selectedImcPackage}
+              runtimeTemplatesLoading={runtimeTemplatesLoading}
+              runtimeTemplatesError={runtimeTemplatesError}
               updateWorkflow={updateWorkflow}
               handleAnesthesiaDecision={handleAnesthesiaDecision}
               generateDraftPdf={generateDraftPdf}
+              draftGenerationLoading={draftGenerationLoading}
+              draftGenerationError={draftGenerationError}
+              draftPdfUrl={draftPdfUrl}
+              consentDocumentId={consentDocumentId}
               goBack={goBack}
               goNext={goNext}
               completionSummary={completionSummary}
@@ -1130,8 +1273,8 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
 
 function EnterpriseHeader({ workflow }: { workflow: WorkflowState }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#0B2F5F] bg-[#002B5C] text-white shadow-lg">
-      <div className="grid grid-cols-1 gap-4 px-5 py-3 xl:grid-cols-[420px_1fr_auto]">
+    <header className="sticky top-0 z-40 border-b border-[#123869] bg-[linear-gradient(135deg,#002B5C_0%,#0A3A74_55%,#174D8C_100%)] text-white shadow-[0_18px_40px_rgba(0,43,92,0.16)]">
+      <div className="mx-auto grid max-w-[1680px] grid-cols-1 gap-4 px-5 py-4 xl:grid-cols-[460px_1fr_auto] xl:px-6">
         <div className="flex items-center gap-4">
           <LogoImage
             alt="WathiqCare"
@@ -1159,7 +1302,7 @@ function EnterpriseHeader({ workflow }: { workflow: WorkflowState }) {
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <p className="text-base font-bold">IMC Informed Consent Workspace</p>
-              <span className="rounded-full border border-[#C9A13B]/50 bg-[#C9A13B]/15 px-2.5 py-1 text-[11px] font-extrabold text-[#F8E7A1]">
+              <span className="rounded-full border border-[#C9A13B]/60 bg-[#C9A13B]/18 px-2.5 py-1 text-[11px] font-extrabold text-[#F8E7A1] shadow-[0_6px_12px_rgba(201,161,59,0.18)]">
                 Production Preview · API Context Bound
               </span>
             </div>
@@ -1175,11 +1318,11 @@ function EnterpriseHeader({ workflow }: { workflow: WorkflowState }) {
           <HeaderDataBlock label="Encounter / الزيارة" value={workflow.encounterNo} />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-3">
           <StatusPill label="Consent Status" value="Draft" valueAr="مسودة" tone="blue" />
           <StatusPill label="PDF Status" value={workflow.pdfStatus === "PENDING" ? "Pending" : "Draft Ready"} valueAr={workflow.pdfStatus === "PENDING" ? "قيد الإنشاء" : "جاهزة"} tone="amber" />
           <StatusPill label="Audit Status" value="Active" valueAr="نشط" tone="green" />
-          <div className="relative ml-2 rounded-full border border-white/20 bg-white/10 p-3">
+          <div className="relative rounded-full border border-white/20 bg-white/10 p-3 backdrop-blur">
             <Bell className="h-5 w-5" />
             <span className="absolute -right-1 -top-1 rounded-full bg-red-500 px-1.5 text-xs font-bold">3</span>
           </div>
@@ -1198,9 +1341,9 @@ function EnterpriseHeader({ workflow }: { workflow: WorkflowState }) {
 
 function HeaderDataBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border-l border-white/20 px-4">
-      <p className="text-xs text-white/75">{label}</p>
-      <p className="mt-1 text-lg font-extrabold">{value}</p>
+    <div className="rounded-2xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">{label}</p>
+      <p className="mt-1 truncate text-lg font-extrabold">{value}</p>
     </div>
   );
 }
@@ -1224,8 +1367,8 @@ function StatusPill({
         : "text-emerald-700";
 
   return (
-    <div className="rounded-full border border-white/20 bg-white px-3 py-1.5 text-[11px] shadow-sm">
-      <p className="font-semibold text-[#002B5C]">{label}</p>
+    <div className="rounded-2xl border border-white/15 bg-white px-3 py-2 text-[11px] shadow-[0_8px_20px_rgba(5,25,55,0.16)]">
+      <p className="font-semibold uppercase tracking-[0.08em] text-[#64748B]">{label}</p>
       <p className={`mt-0.5 font-extrabold ${toneClass}`}>
         {value} <span className="ml-2 font-semibold">{valueAr}</span>
       </p>
@@ -1241,12 +1384,14 @@ function WorkspaceNavigation({
   setActiveSection: (section: EnterpriseSection) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-[#D8DCE3] bg-white p-4 shadow-sm">
-      <p className="px-2 text-xs font-bold uppercase tracking-wide text-[#4B5563]">
-        Workspace
-      </p>
+    <div className="overflow-hidden rounded-[28px] border border-[#D8DCE3] bg-white shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
+      <div className="border-b border-[#E5E7EB] bg-[linear-gradient(135deg,#002B5C_0%,#123E76_100%)] px-5 py-5 text-white">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#C9A13B]">Enterprise Workspace</p>
+        <h2 className="mt-2 text-lg font-extrabold">Physician Workflow Shell</h2>
+        <p className="mt-1 text-sm text-white/78">Navigate clinical issuance, collaboration, audit, and support.</p>
+      </div>
 
-      <div className="mt-4 space-y-2">
+      <div className="space-y-2 p-4">
         {workspaceSections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.key;
@@ -1257,16 +1402,16 @@ function WorkspaceNavigation({
               type="button"
               onClick={() => setActiveSection(section.key)}
               className={[
-                "flex w-full items-center gap-4 rounded-xl px-4 py-4 text-start transition",
+                "flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-start transition",
                 isActive
-                  ? "bg-[#002B5C] text-white shadow-sm"
+                  ? "bg-[linear-gradient(135deg,#002B5C_0%,#123E76_100%)] text-white shadow-[0_12px_24px_rgba(0,43,92,0.16)]"
                   : "text-[#002B5C] hover:bg-[#EEF5FF] disabled:cursor-not-allowed disabled:opacity-50",
               ].join(" ")}
             >
               <span
                 className={[
-                  "rounded-xl border p-2",
-                  isActive ? "border-white/25 bg-white/10" : "border-[#D8DCE3] bg-white",
+                  "rounded-2xl border p-2.5",
+                  isActive ? "border-white/25 bg-white/10" : "border-[#D8DCE3] bg-[#F8FAFC]",
                 ].join(" ")}
               >
                 <Icon className="h-5 w-5" />
@@ -1287,13 +1432,18 @@ function WorkspaceNavigation({
 
 function ConsentSummaryCard({ workflow, actorName }: { workflow: WorkflowState; actorName: string }) {
   return (
-    <div className="rounded-2xl border border-[#D8DCE3] bg-white p-4 shadow-sm">
+    <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-extrabold text-[#002B5C]">Consent Summary</h2>
-        <span className="text-xs font-semibold text-[#4B5563]">ملخص الموافقة</span>
+        <div>
+          <h2 className="text-sm font-extrabold uppercase tracking-[0.12em] text-[#002B5C]">Consent Summary</h2>
+          <span className="text-xs font-semibold text-[#4B5563]">ملخص الموافقة</span>
+        </div>
+        <span className="rounded-full border border-[#C9A13B]/40 bg-[#FFF8E6] px-2.5 py-1 text-[11px] font-extrabold text-[#8A5A00]">
+          Clinical Context
+        </span>
       </div>
 
-      <div className="mt-4 space-y-3 text-xs">
+      <div className="mt-5 space-y-3 text-xs">
         <SummaryRow icon={ClipboardCheck} label="Category" value={workflow.consentCategory} />
         <SummaryRow icon={FileText} label="Template" value={workflow.templateName} />
         <SummaryRow icon={HeartPulse} label="Procedure" value={workflow.procedureName || "Pending"} />
@@ -1315,9 +1465,35 @@ function IssueConsentWorkspace({
   activeStepIndex,
   setActiveStepIndex,
   workflow,
+  selectedPatient,
+  selectedEncounter,
+  selectedRuntimeTemplate,
+  patientQuery,
+  setPatientQuery,
+  runPatientSearch,
+  patientResults,
+  patientSearchLoading,
+  patientSearchError,
+  loadEncountersForPatient,
+  encounters,
+  encountersLoading,
+  encountersError,
+  selectEncounter,
+  imcLibraryLoading,
+  imcResolveLoading,
+  imcLibraryError,
+  imcResolveError,
+  imcLibraryItems,
+  selectedImcPackage,
+  runtimeTemplatesLoading,
+  runtimeTemplatesError,
   updateWorkflow,
   handleAnesthesiaDecision,
   generateDraftPdf,
+  draftGenerationLoading,
+  draftGenerationError,
+  draftPdfUrl,
+  consentDocumentId,
   goBack,
   goNext,
   completionSummary,
@@ -1326,18 +1502,95 @@ function IssueConsentWorkspace({
   activeStepIndex: number;
   setActiveStepIndex: (index: number) => void;
   workflow: WorkflowState;
+  selectedPatient: PatientSearchItem | null;
+  selectedEncounter: EncounterItem | null;
+  selectedRuntimeTemplate: RuntimeConsentTemplate | null;
+  patientQuery: string;
+  setPatientQuery: (value: string) => void;
+  runPatientSearch: () => void;
+  patientResults: PatientSearchItem[];
+  patientSearchLoading: boolean;
+  patientSearchError: string;
+  loadEncountersForPatient: (patient: PatientSearchItem) => void;
+  encounters: EncounterItem[];
+  encountersLoading: boolean;
+  encountersError: string;
+  selectEncounter: (encounter: EncounterItem) => void;
+  imcLibraryLoading: boolean;
+  imcResolveLoading: boolean;
+  imcLibraryError: string;
+  imcResolveError: string;
+  imcLibraryItems: ImcConsentCatalogItem[];
+  selectedImcPackage: ImcConsentPackage | null;
+  runtimeTemplatesLoading: boolean;
+  runtimeTemplatesError: string;
   updateWorkflow: <K extends keyof WorkflowState>(key: K, value: WorkflowState[K]) => void;
   handleAnesthesiaDecision: (decision: AnesthesiaDecision) => void;
   generateDraftPdf: () => void;
+  draftGenerationLoading: boolean;
+  draftGenerationError: string;
+  draftPdfUrl: string;
+  consentDocumentId: string;
   goBack: () => void;
   goNext: () => void;
   completionSummary: CompletionSummary;
 }) {
   const actionGuidance = getCurrentActionGuidance(activeStep.key, workflow, completionSummary);
+  const stepMeta = workflowStepMeta[activeStep.key];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <CurrentActionCard guidance={actionGuidance} />
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_330px]">
+        <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#C9A13B]">{stepMeta.eyebrow}</p>
+              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#002B5C]">{activeStep.label}</h2>
+              <p className="mt-1 text-sm font-semibold text-[#4B5563]">{activeStep.labelAr}</p>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-[#334155]">{stepMeta.description}</p>
+              <p className="text-sm leading-6 text-[#64748B]">{stepMeta.descriptionAr}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatusMetric title="Completion" value={`${completionSummary.progressPercentage}%`} tone="green" />
+              <StatusMetric title="PDF" value={completionSummary.pdfReady ? "Ready" : "Pending"} tone={completionSummary.pdfReady ? "green" : "amber"} />
+              <StatusMetric title="Template" value={completionSummary.runtimeTemplateMappingReady ? "Mapped" : "Blocked"} tone={completionSummary.runtimeTemplateMappingReady ? "green" : "red"} />
+              <StatusMetric title="Send" value={completionSummary.sendBlocked ? "Blocked" : "Ready"} tone={completionSummary.sendBlocked ? "amber" : "green"} />
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <div className="rounded-2xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#64748B]">Patient Context</p>
+              <p className="mt-2 text-base font-extrabold text-[#002B5C]">{selectedPatient?.name || workflow.patientName}</p>
+              <p className="mt-1 text-sm text-[#4B5563]">MRN {selectedPatient?.mrn || workflow.mrn}</p>
+            </div>
+            <div className="rounded-2xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#64748B]">Encounter Context</p>
+              <p className="mt-2 text-base font-extrabold text-[#002B5C]">{selectedEncounter?.encounterId || workflow.encounterNo || "Pending"}</p>
+              <p className="mt-1 text-sm text-[#4B5563]">{selectedEncounter?.department || workflow.department}</p>
+            </div>
+            <div className="rounded-2xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#64748B]">Template Governance</p>
+              <p className="mt-2 text-base font-extrabold text-[#002B5C]">{selectedRuntimeTemplate?.titleEn || workflow.templateName}</p>
+              <p className="mt-1 text-sm text-[#4B5563]">{completionSummary.runtimeTemplateMappingReady ? "Runtime mapping active" : "Mapping pending"}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFC_100%)] p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#C9A13B]">Readiness Snapshot</p>
+          <h3 className="mt-2 text-lg font-extrabold text-[#002B5C]">Clinical release controls</h3>
+          <div className="mt-5 space-y-3">
+            <ReadinessItem label="Patient and encounter locked" labelAr="تم تثبيت المريض والزيارة" ready={completionSummary.patientReady && completionSummary.encounterReady} />
+            <ReadinessItem label="IMC and runtime template aligned" labelAr="تمت مواءمة IMC مع القالب التشغيلي" ready={completionSummary.imcTemplateReady && completionSummary.runtimeTemplateMappingReady} />
+            <ReadinessItem label="Anesthesia path documented" labelAr="تم توثيق مسار التخدير" ready={completionSummary.anesthesiaReady} warning={workflow.anesthesiaReviewRequired} />
+            <ReadinessItem label="Draft PDF reviewed" labelAr="تمت مراجعة مسودة المستند" ready={completionSummary.pdfReady} />
+          </div>
+        </div>
+      </div>
 
       <WorkspaceCard
         title="Issue Informed Consent"
@@ -1347,7 +1600,7 @@ function IssueConsentWorkspace({
         action={
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-lg border border-[#D8DCE3] bg-white px-4 py-3 text-sm font-bold text-[#002B5C] hover:bg-[#EEF5FF] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-2xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm font-bold text-[#002B5C] shadow-sm hover:bg-[#EEF5FF] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
             Save Draft / حفظ المسودة
@@ -1356,7 +1609,7 @@ function IssueConsentWorkspace({
       >
         <WorkflowStepper activeStepIndex={activeStepIndex} setActiveStepIndex={setActiveStepIndex} />
 
-        <div className="mt-6 rounded-2xl border border-[#D8DCE3] bg-white p-5">
+        <div className="mt-6 rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#FFFFFF_0%,#FBFDFF_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
           {activeStep.key === "patientEncounter" && (
             <PatientEncounterApiStep
               patientQuery={patientQuery}
@@ -1503,7 +1756,7 @@ function WorkflowProgressCard({
   completionSummary: CompletionSummary;
 }) {
   return (
-    <div className="rounded-2xl border border-[#D8DCE3] bg-white p-5 shadow-sm">
+    <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-extrabold text-[#002B5C]">
@@ -1638,11 +1891,12 @@ function CurrentActionCard({
         : LayoutDashboard;
 
   return (
-    <div className={["rounded-2xl border px-5 py-4 shadow-sm", toneClasses].join(" ")}>
+    <div className={["rounded-[28px] border px-5 py-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]", toneClasses].join(" ")}>
       <div className="flex items-start gap-3">
         <Icon className="mt-0.5 h-6 w-6 shrink-0" />
         <div>
-          <p className="text-base font-extrabold">{guidance.title}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] opacity-80">Current Guidance</p>
+          <p className="mt-2 text-base font-extrabold">{guidance.title}</p>
           <p className="mt-1 text-sm font-bold">{guidance.titleAr}</p>
           <p className="mt-2 text-sm leading-6">{guidance.description}</p>
           <p className="text-sm leading-6">{guidance.descriptionAr}</p>
@@ -1661,37 +1915,53 @@ function WorkflowStepper({
 }) {
   return (
     <div className="overflow-x-auto">
-      <div className="flex min-w-[850px] items-start gap-2 py-2">
+      <div className="flex min-w-[980px] items-stretch gap-3 py-2">
         {workflowSteps.map((step, index) => {
           const isCompleted = index < activeStepIndex;
           const isActive = index === activeStepIndex;
+          const meta = workflowStepMeta[step.key];
 
           return (
             <button
               key={step.key}
               type="button"
               onClick={() => setActiveStepIndex(index)}
-              className="flex flex-1 items-start gap-2 text-start"
+              className="flex flex-1 items-stretch gap-3 text-start"
             >
               <span
                 className={[
-                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-extrabold",
+                  "flex min-h-[112px] flex-1 items-start gap-3 rounded-2xl border px-4 py-4 transition",
                   isCompleted
-                    ? "border-emerald-600 bg-emerald-600 text-white"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-900"
                     : isActive
-                      ? "border-[#002B5C] bg-[#002B5C] text-white"
-                      : "border-[#CBD5E1] bg-white text-[#64748B]",
+                      ? "border-[#002B5C] bg-[linear-gradient(135deg,#002B5C_0%,#123E76_100%)] text-white shadow-[0_14px_30px_rgba(0,43,92,0.16)]"
+                      : "border-[#D8DCE3] bg-white text-[#475569] hover:border-[#4B9CD3] hover:bg-[#F8FBFF]",
                 ].join(" ")}
               >
-                {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
-              </span>
-              <span>
-                <span className={["block text-xs font-extrabold", isActive ? "text-[#002B5C]" : "text-[#475569]"].join(" ")}>
-                  {step.label}
+                <span
+                  className={[
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-extrabold",
+                    isCompleted
+                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      : isActive
+                        ? "border-white/30 bg-white/10 text-white"
+                        : "border-[#CBD5E1] bg-[#F8FAFC] text-[#64748B]",
+                  ].join(" ")}
+                >
+                  {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
                 </span>
-                <span className="block text-xs text-[#64748B]">{step.labelAr}</span>
+                <span className="min-w-0">
+                  <span className={["block text-xs font-extrabold uppercase tracking-[0.12em]", isActive ? "text-[#C9A13B]" : "text-[#94A3B8]"] .join(" ")}>{meta.eyebrow}</span>
+                  <span className={["mt-1 block text-sm font-extrabold", isActive ? "text-white" : "text-[#002B5C]"].join(" ")}>
+                    {step.label}
+                  </span>
+                  <span className={["block text-xs", isActive ? "text-white/80" : "text-[#64748B]"].join(" ")}>{step.labelAr}</span>
+                  <span className={["mt-2 block text-xs leading-5", isActive ? "text-white/72" : "text-[#64748B]"].join(" ")}>
+                    {meta.description}
+                  </span>
+                </span>
               </span>
-              {index < workflowSteps.length - 1 ? <span className="mt-1 text-[#94A3B8]">→</span> : null}
+              {index < workflowSteps.length - 1 ? <span className="mt-10 text-[#94A3B8]">→</span> : null}
             </button>
           );
         })}
@@ -1731,7 +2001,7 @@ function PatientEncounterApiStep({
 }) {
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-[#D8DCE3] bg-white p-5 shadow-sm">
+      <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
           <div className="flex-1">
             <p className="text-xs font-extrabold uppercase tracking-wide text-[#C9A13B]">
@@ -1740,17 +2010,20 @@ function PatientEncounterApiStep({
             <label className="mt-2 block text-sm font-extrabold text-[#002B5C]">
               Search by MRN, patient name, or case number
             </label>
-            <input
-              value={patientQuery}
-              onChange={(event) => setPatientQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  runPatientSearch();
-                }
-              }}
-              placeholder="Example: MRN, patient name, case number"
-              className="mt-2 w-full rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm text-[#0F172A] outline-none transition focus:border-[#002B5C] focus:ring-4 focus:ring-[#4B9CD3]/20"
-            />
+            <div className="relative mt-2">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#64748B]" />
+              <input
+                value={patientQuery}
+                onChange={(event) => setPatientQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    runPatientSearch();
+                  }
+                }}
+                placeholder="Example: MRN, patient name, case number"
+                className="w-full rounded-2xl border border-[#D8DCE3] bg-white py-3 pl-12 pr-4 text-sm text-[#0F172A] outline-none transition focus:border-[#002B5C] focus:ring-4 focus:ring-[#4B9CD3]/20"
+              />
+            </div>
             <p className="mt-2 text-xs text-[#64748B]">
               البحث عن المريض برقم الملف الطبي أو الاسم أو رقم الحالة.
             </p>
@@ -1771,10 +2044,20 @@ function PatientEncounterApiStep({
             {patientSearchError}
           </div>
         ) : null}
+
+        <div className="mt-4 rounded-2xl border border-[#E6C766] bg-[#FFF8E6] px-4 py-4 text-sm text-[#8A5A00]">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-extrabold">PHI Protection</p>
+              <p className="mt-1 leading-6">Handle patient identifiers only for the active encounter and verify the correct record before continuing.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div className="rounded-2xl border border-[#D8DCE3] bg-white p-5 shadow-sm">
+        <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-wide text-[#C9A13B]">
@@ -1814,14 +2097,24 @@ function PatientEncounterApiStep({
                   >
                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <p className="font-extrabold text-[#002B5C]">{patient.name}</p>
-                        <p className="mt-1 text-xs font-bold text-[#64748B]">
-                          MRN: {patient.mrn}
-                        </p>
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EEF5FF] text-[#002B5C]">
+                            <User className="h-5 w-5" />
+                          </span>
+                          <div>
+                            <p className="font-extrabold text-[#002B5C]">{patient.name}</p>
+                            <p className="mt-1 text-xs font-bold text-[#64748B]">
+                              MRN: {patient.mrn}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <span className="w-fit rounded-full border border-[#D8DCE3] bg-white px-3 py-1 text-xs font-bold text-[#64748B]">
-                        {patient.source || "patient"}
-                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {isSelected ? <span className="w-fit rounded-full bg-[#002B5C] px-3 py-1 text-xs font-bold text-white">Selected</span> : null}
+                        <span className="w-fit rounded-full border border-[#D8DCE3] bg-white px-3 py-1 text-xs font-bold text-[#64748B]">
+                          {patient.source || "patient"}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-[#64748B] md:grid-cols-2">
@@ -1837,7 +2130,7 @@ function PatientEncounterApiStep({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#D8DCE3] bg-white p-5 shadow-sm">
+        <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-wide text-[#C9A13B]">
@@ -1900,9 +2193,12 @@ function PatientEncounterApiStep({
                           {encounter.department || "Department N/A"} · {encounter.source || "source N/A"}
                         </p>
                       </div>
-                      <span className="w-fit rounded-full border border-[#D8DCE3] bg-white px-3 py-1 text-xs font-bold text-[#64748B]">
-                        {encounter.syncStatus || "LOCAL"}
-                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {isSelected ? <span className="w-fit rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white">Selected</span> : null}
+                        <span className="w-fit rounded-full border border-[#D8DCE3] bg-white px-3 py-1 text-xs font-bold text-[#64748B]">
+                          {encounter.syncStatus || "LOCAL"}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-[#64748B] md:grid-cols-2">
@@ -1920,14 +2216,21 @@ function PatientEncounterApiStep({
       </div>
 
       {selectedPatient && selectedEncounter ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">
-          <p className="font-extrabold">Selected patient and encounter are ready.</p>
-          <p className="mt-1">
-            {selectedPatient.name} · MRN {selectedPatient.mrn} · Encounter {selectedEncounter.encounterId}
-          </p>
-          <p className="mt-1">
-            تم اختيار المريض والزيارة، وسيتم استخدام الإجراء المرتبط بالزيارة لحل نموذج IMC المعتمد.
-          </p>
+        <div className="rounded-[28px] border border-emerald-200 bg-[linear-gradient(135deg,#ECFDF3_0%,#F7FFFB_100%)] p-5 text-sm text-emerald-900 shadow-[0_14px_40px_rgba(16,185,129,0.08)]">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="font-extrabold">Selected patient and encounter are ready.</p>
+              <p className="mt-1">
+                {selectedPatient.name} · MRN {selectedPatient.mrn} · Encounter {selectedEncounter.encounterId}
+              </p>
+              <p className="mt-1">
+                تم اختيار المريض والزيارة، وسيتم استخدام الإجراء المرتبط بالزيارة لحل نموذج IMC المعتمد.
+              </p>
+            </div>
+            <span className="w-fit rounded-full border border-emerald-300 bg-white px-3 py-1 text-xs font-extrabold text-emerald-800">
+              Ready for template resolution
+            </span>
+          </div>
         </div>
       ) : null}
     </div>
@@ -1960,7 +2263,7 @@ function ImcApprovedLibraryCard({
   const runtimeMappingReady = Boolean(runtimeTemplate?.id && runtimeTemplate?.templateVersionId);
 
   return (
-    <div className="mt-5 rounded-2xl border border-[#E6C766] bg-[#FFF8E6] p-5">
+    <div className="mt-5 rounded-[28px] border border-[#E6C766] bg-[linear-gradient(180deg,#FFF8E6_0%,#FFFCF2_100%)] p-5 shadow-[0_14px_40px_rgba(201,161,59,0.1)]">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-wide text-[#C9A13B]">
@@ -1980,7 +2283,7 @@ function ImcApprovedLibraryCard({
       </div>
 
       <div className={[
-        "mt-4 rounded-xl border px-4 py-3 text-sm",
+        "mt-5 rounded-2xl border px-4 py-4 text-sm shadow-sm",
         runtimeMappingReady
           ? "border-emerald-200 bg-emerald-50 text-emerald-900"
           : "border-red-200 bg-red-50 text-red-800",
@@ -2013,21 +2316,21 @@ function ImcApprovedLibraryCard({
           Resolving approved IMC consent package...
         </div>
       ) : procedureConsent ? (
-        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
-          <div className="rounded-xl border border-emerald-200 bg-white p-4">
+        <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <div className="rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-bold uppercase text-emerald-700">Procedure Consent</p>
             <p className="mt-2 text-sm font-extrabold text-[#002B5C]">{procedureConsent.titleEn}</p>
             <p className="mt-1 text-xs text-[#64748B]">{procedureConsent.fileName}</p>
             <p className="mt-2 text-xs font-bold text-emerald-700">ACTIVE · {procedureConsent.specialty}</p>
           </div>
 
-          <div className="rounded-xl border border-[#D8DCE3] bg-white p-4">
+          <div className="rounded-2xl border border-[#D8DCE3] bg-white p-4 shadow-sm">
             <p className="text-xs font-bold uppercase text-[#64748B]">Patient Education</p>
             <p className="mt-2 text-sm font-extrabold text-[#002B5C]">{patientEducation?.titleEn || "Not matched"}</p>
             <p className="mt-1 text-xs text-[#64748B]">{patientEducation?.fileName || "Pending governance mapping"}</p>
           </div>
 
-          <div className="rounded-xl border border-[#D8DCE3] bg-white p-4">
+          <div className="rounded-2xl border border-[#D8DCE3] bg-white p-4 shadow-sm">
             <p className="text-xs font-bold uppercase text-[#64748B]">Anesthesia Package</p>
             <p className="mt-2 text-sm font-extrabold text-[#002B5C]">{anesthesiaConsent?.titleEn || "Not required / not matched"}</p>
             <p className="mt-1 text-xs text-[#64748B]">{anesthesiaConsent?.fileName || "Based on anesthesia decision"}</p>
@@ -2050,17 +2353,6 @@ function AnesthesiaDecisionStep({
   workflow: WorkflowState;
   handleAnesthesiaDecision: (decision: AnesthesiaDecision) => void;
 }) {
-  const options: Array<{
-    value: AnesthesiaDecision;
-    icon: LucideIcon;
-  }> = [
-    { value: "NONE", icon: AlertTriangle },
-    { value: "LOCAL", icon: Syringe },
-    { value: "SEDATION", icon: Stethoscope },
-    { value: "REGIONAL", icon: HeartPulse },
-    { value: "GENERAL", icon: HeartPulse },
-  ];
-
   return (
     <div>
       <h3 className="text-xl font-extrabold text-[#002B5C]">
@@ -2073,10 +2365,18 @@ function AnesthesiaDecisionStep({
         اختر مسار التخدير المناسب لهذا الإجراء.
       </p>
 
-      <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {options.map((option) => {
+      <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {anesthesiaOptionCards.map((option) => {
           const Icon = option.icon;
           const isSelected = workflow.anesthesiaDecision === option.value;
+          const toneClass =
+            option.tone === "critical"
+              ? "border-red-200 bg-red-50"
+              : option.tone === "warning"
+                ? "border-[#E6C766] bg-[#FFF8E6]"
+                : option.tone === "info"
+                  ? "border-blue-200 bg-blue-50"
+                  : "border-[#D8DCE3] bg-[#F8FAFC]";
 
           return (
             <button
@@ -2084,25 +2384,38 @@ function AnesthesiaDecisionStep({
               type="button"
               onClick={() => handleAnesthesiaDecision(option.value)}
               className={[
-                "rounded-2xl border p-5 text-center transition",
+                "rounded-[24px] border p-5 text-start transition shadow-sm",
                 isSelected
-                  ? "border-[#002B5C] bg-[#EEF5FF] shadow-sm"
-                  : "border-[#D8DCE3] bg-white hover:border-[#4B9CD3]",
+                  ? "border-[#002B5C] bg-[#EEF5FF] shadow-[0_14px_28px_rgba(0,43,92,0.12)]"
+                  : `${toneClass} hover:border-[#4B9CD3]`,
               ].join(" ")}
             >
-              <Icon className="mx-auto h-9 w-9 text-[#4B9CD3]" />
-              <p className="mt-3 text-sm font-extrabold text-[#002B5C]">
+              <div className="flex items-start justify-between gap-3">
+                <span className="rounded-2xl bg-white p-3 text-[#4B9CD3] shadow-sm">
+                  <Icon className="h-7 w-7" />
+                </span>
+                <span className={[
+                  "rounded-full px-3 py-1 text-[11px] font-extrabold",
+                  option.tone === "critical"
+                    ? "bg-red-100 text-red-800"
+                    : option.tone === "warning"
+                      ? "bg-[#FFF1CC] text-[#8A5A00]"
+                      : option.tone === "info"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-slate-100 text-slate-700",
+                ].join(" ")}>
+                  {option.review}
+                </span>
+              </div>
+              <p className="mt-4 text-sm font-extrabold text-[#002B5C]">
                 {getAnesthesiaLabel(option.value)}
               </p>
               <p className="mt-1 text-sm text-[#002B5C]">
                 {getAnesthesiaLabelAr(option.value)}
               </p>
-              <span
-                className={[
-                  "mx-auto mt-4 block h-5 w-5 rounded-full border",
-                  isSelected ? "border-[#002B5C] bg-[#002B5C] ring-4 ring-[#002B5C]/10" : "border-[#CBD5E1] bg-white",
-                ].join(" ")}
-              />
+              <p className="mt-3 text-sm leading-6 text-[#475569]">{option.description}</p>
+              <p className="mt-1 text-sm leading-6 text-[#64748B]">{option.descriptionAr}</p>
+              <p className="mt-4 text-xs font-bold uppercase tracking-[0.12em] text-[#64748B]">{option.reviewAr}</p>
             </button>
           );
         })}
@@ -2201,8 +2514,8 @@ function ReviewPdfStep({
   consentDocumentId: string;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_320px]">
-      <div className="rounded-2xl border border-[#D8DCE3] bg-[#F8FAFC] p-5">
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#F8FAFC_0%,#FFFFFF_100%)] p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
         <h3 className="text-xl font-extrabold text-[#002B5C]">
           Draft PDF Review / مراجعة مسودة المستند
         </h3>
@@ -2210,14 +2523,29 @@ function ReviewPdfStep({
           This area must render the same legal PDF that the patient will review and sign.
         </p>
 
-        <div className="mt-5 rounded-2xl border border-dashed border-[#94A3B8] bg-white p-6 text-sm leading-8">
-          <p><strong>Patient:</strong> {workflow.patientName}</p>
-          <p><strong>MRN:</strong> {workflow.mrn}</p>
-          <p><strong>Encounter:</strong> {workflow.encounterNo}</p>
-          <p><strong>Template:</strong> {workflow.templateName}</p>
-          <p><strong>Procedure:</strong> {workflow.procedureName || "Not completed"}</p>
-          <p><strong>Anesthesia:</strong> {getAnesthesiaLabel(workflow.anesthesiaDecision)} / {getAnesthesiaLabelAr(workflow.anesthesiaDecision)}</p>
-          <p><strong>PDF Status:</strong> {workflow.pdfStatus}</p>
+        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="rounded-[24px] border border-dashed border-[#94A3B8] bg-white p-6 text-sm leading-8 shadow-sm">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#64748B]">Patient-facing draft preview</p>
+            <div className="mt-4 space-y-2">
+              <p><strong>Patient:</strong> {workflow.patientName}</p>
+              <p><strong>MRN:</strong> {workflow.mrn}</p>
+              <p><strong>Encounter:</strong> {workflow.encounterNo}</p>
+              <p><strong>Template:</strong> {workflow.templateName}</p>
+              <p><strong>Procedure:</strong> {workflow.procedureName || "Not completed"}</p>
+              <p><strong>Anesthesia:</strong> {getAnesthesiaLabel(workflow.anesthesiaDecision)} / {getAnesthesiaLabelAr(workflow.anesthesiaDecision)}</p>
+              <p><strong>PDF Status:</strong> {workflow.pdfStatus}</p>
+            </div>
+          </div>
+
+          <div className="rounded-[24px] border border-[#D8DCE3] bg-white p-5 shadow-sm">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#64748B]">Evidence readiness</p>
+            <div className="mt-4 space-y-3">
+              <ReadinessItem label="Patient context bound" labelAr="تم ربط بيانات المريض" ready={completionSummary.patientReady} />
+              <ReadinessItem label="Template governance passed" labelAr="تم اجتياز حوكمة القالب" ready={completionSummary.imcTemplateReady && completionSummary.runtimeTemplateMappingReady} />
+              <ReadinessItem label="Procedure and anesthesia captured" labelAr="تم تسجيل الإجراء والتخدير" ready={completionSummary.procedureReady && completionSummary.anesthesiaReady} warning={workflow.anesthesiaReviewRequired} />
+              <ReadinessItem label="Draft artifact created" labelAr="تم إنشاء المسودة" ready={completionSummary.pdfReady} />
+            </div>
+          </div>
         </div>
 
         {
@@ -2256,7 +2584,7 @@ function ReviewPdfStep({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#D8DCE3] bg-white p-5">
+      <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
         <h3 className="text-base font-extrabold text-[#002B5C]">
           Readiness Checklist / قائمة الجاهزية
         </h3>
@@ -2288,15 +2616,22 @@ function SendStep({
       </h3>
 
       {completionSummary.sendBlocked ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm leading-6 text-red-800">
+        <div className="rounded-[28px] border border-red-200 bg-red-50 p-5 text-sm leading-6 text-red-800 shadow-[0_14px_40px_rgba(239,68,68,0.08)]">
           <strong>Send Readiness: Blocked</strong>
           <br />
           Resolve the blocking readiness items before creating the patient signing link.
           <br />
           حالة الإرسال: محظور — يجب معالجة البنود المانعة قبل إنشاء رابط توقيع المريض.
+          <div className="mt-4 space-y-2">
+            {completionSummary.riskFlags.map((flag) => (
+              <div key={flag.key} className="rounded-xl border border-red-100 bg-white/70 px-3 py-2 text-xs font-semibold text-red-700">
+                {flag.text}
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 p-5 shadow-[0_14px_40px_rgba(16,185,129,0.08)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="font-extrabold text-emerald-900">Send Readiness: Ready</p>
@@ -2319,7 +2654,7 @@ function SendStep({
         </div>
       )}
 
-      <div className="rounded-2xl border border-[#D8DCE3] bg-[#F8FAFC] p-5 text-sm leading-7">
+      <div className="rounded-[28px] border border-[#D8DCE3] bg-[#F8FAFC] p-5 text-sm leading-7">
         <p><strong>Patient:</strong> {workflow.patientName}</p>
         <p><strong>MRN:</strong> {workflow.mrn}</p>
         <p><strong>Encounter:</strong> {workflow.encounterNo}</p>
@@ -2350,6 +2685,20 @@ function RightContextPanel({
   return (
     <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
       <PanelCard title="Case Readiness" titleAr="جاهزية الحالة">
+        <div className="mb-4 rounded-2xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#64748B]">Overall completion</p>
+              <p className="mt-1 text-3xl font-black text-[#002B5C]">{completionSummary.progressPercentage}%</p>
+            </div>
+            <span className={[
+              "rounded-full px-3 py-1 text-xs font-extrabold",
+              completionSummary.sendBlocked ? "bg-[#FFF1CC] text-[#8A5A00]" : "bg-emerald-100 text-emerald-800",
+            ].join(" ")}>
+              {completionSummary.sendBlocked ? "Blocked" : "Ready"}
+            </span>
+          </div>
+        </div>
         <div className="space-y-3">
           <ReadinessItem label="Patient selected" labelAr="تم اختيار المريض" ready={completionSummary.patientReady} />
           <ReadinessItem label="Encounter selected" labelAr="تم اختيار الزيارة" ready={completionSummary.encounterReady} />
@@ -2426,6 +2775,13 @@ function StatusAuditWorkspace({
       description="Operational status, evidence readiness, audit trail checkpoints, and final send blockers."
       descriptionAr="حالة التشغيل، جاهزية الأدلة، نقاط سجل التدقيق، وموانع الإرسال النهائي."
     >
+      <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
+        <StatusMetric title="Readiness" value={`${completionSummary.progressPercentage}%`} tone={completionSummary.sendBlocked ? "amber" : "green"} />
+        <StatusMetric title="PDF Evidence" value={completionSummary.pdfReady ? "Available" : "Pending"} tone={completionSummary.pdfReady ? "green" : "amber"} />
+        <StatusMetric title="Audit Trail" value={completionSummary.auditReady ? "Active" : "Attention"} tone={completionSummary.auditReady ? "green" : "amber"} />
+        <StatusMetric title="Risk Flags" value={String(completionSummary.riskFlags.length)} tone={completionSummary.riskFlags.some((flag) => flag.tone === "red") ? "red" : completionSummary.riskFlags.length > 0 ? "amber" : "green"} />
+      </div>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <PanelCard title="Evidence Readiness" titleAr="جاهزية الأدلة">
           <div className="space-y-3">
@@ -2466,7 +2822,7 @@ function WorkspaceCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-[#D8DCE3] bg-white p-5 shadow-sm">
+    <div className="rounded-[30px] border border-[#D8DCE3] bg-white p-5 shadow-[0_18px_46px_rgba(15,23,42,0.08)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-xl font-extrabold text-[#002B5C]">
@@ -2493,7 +2849,7 @@ function PanelCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-[#D8DCE3] bg-white shadow-sm">
+    <div className="rounded-[28px] border border-[#D8DCE3] bg-white shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
       <div className="border-b border-[#E5E7EB] px-5 py-4">
         <h3 className="text-base font-extrabold text-[#002B5C]">
           {title} / {titleAr}

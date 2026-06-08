@@ -121,7 +121,31 @@ export function EnterpriseSupportSettingsPanel({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" dir={isAr ? "rtl" : "ltr"}>
+      <div className="rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(135deg,#002B5C_0%,#123E76_100%)] p-5 text-white shadow-[0_18px_46px_rgba(0,43,92,0.18)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#C9A13B]">
+              {isAr ? "تشغيل المؤسسة" : "Enterprise Operations"}
+            </p>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-tight">
+              {isAr ? "الدعم والإعدادات" : "Support and Settings Control Center"}
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/80">
+              {isAr
+                ? "إدارة إعدادات الرحلة، طلبات الدعم القانوني والفني، ومؤشرات جاهزية التشغيل من سطح واحد واضح."
+                : "Manage workflow configuration, legal and technical support intake, and enterprise readiness indicators from a single clinical operations surface."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <SupportMetric label={isAr ? "الحالة" : "Status"} value={isAr ? "جاهز" : "Ready"} accent="gold" />
+            <SupportMetric label={isAr ? "الحوكمة" : "Governance"} value={isAr ? "نشطة" : "Active"} accent="blue" />
+            <SupportMetric label={isAr ? "التصعيد" : "Escalation"} value={isAr ? "متاح" : "Available"} accent="blue" />
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         {panelCards.map((card) => {
           const Icon = card.icon;
@@ -136,14 +160,14 @@ export function EnterpriseSupportSettingsPanel({
                 setStatusMessage("");
               }}
               className={[
-                "rounded-2xl border p-5 text-start shadow-sm transition",
+                "rounded-[24px] border p-5 text-start shadow-[0_14px_40px_rgba(15,23,42,0.08)] transition",
                 isActive
-                  ? "border-[#002B5C] bg-[#EEF5FF]"
+                  ? "border-[#002B5C] bg-[linear-gradient(135deg,#EEF5FF_0%,#F8FBFF_100%)]"
                   : "border-[#D8DCE3] bg-white hover:border-[#4B9CD3]",
               ].join(" ")}
             >
               <div className="flex items-start gap-3">
-                <span className="rounded-xl bg-[#002B5C] p-2 text-white">
+                <span className="rounded-2xl bg-[#002B5C] p-3 text-white shadow-sm">
                   <Icon className="h-5 w-5" />
                 </span>
                 <span>
@@ -161,7 +185,7 @@ export function EnterpriseSupportSettingsPanel({
       </div>
 
       {activeMode === "settings" ? (
-        <div className="rounded-2xl border border-[#D8DCE3] bg-white p-6 shadow-sm">
+        <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-lg font-bold text-[#002B5C]">
@@ -195,7 +219,7 @@ export function EnterpriseSupportSettingsPanel({
           </button>
         </div>
       ) : (
-        <div className="rounded-2xl border border-[#D8DCE3] bg-white p-6 shadow-sm">
+        <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
           <div className="flex items-center gap-3">
             <LifeBuoy className="h-5 w-5 text-[#002B5C]" />
             <h3 className="text-lg font-bold text-[#002B5C]">
@@ -271,10 +295,30 @@ export function EnterpriseSupportSettingsPanel({
 
 function SettingToggle({ label, defaultChecked = false }: { label: string; defaultChecked?: boolean }) {
   return (
-    <label className="flex items-center justify-between rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] px-4 py-3 text-sm">
+    <label className="flex items-center justify-between rounded-2xl border border-[#D8DCE3] bg-[#F8FAFC] px-4 py-4 text-sm shadow-sm">
       <span className="font-semibold text-[#374151]">{label}</span>
       <input type="checkbox" defaultChecked={defaultChecked} className="h-4 w-4" />
     </label>
+  );
+}
+
+function SupportMetric({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent: "gold" | "blue";
+}) {
+  return (
+    <div className={[
+      "rounded-2xl border px-4 py-3",
+      accent === "gold" ? "border-[#C9A13B]/40 bg-[#C9A13B]/10" : "border-white/15 bg-white/10",
+    ].join(" ")}>
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/70">{label}</p>
+      <p className="mt-1 text-sm font-extrabold text-white">{value}</p>
+    </div>
   );
 }
 
