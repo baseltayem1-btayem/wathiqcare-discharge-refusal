@@ -247,3 +247,6 @@ coverage/
 # Promissory PDF validation evidence artifacts (screenshots, generated PDFs, reports)
 artifacts/promissory-evidence/
 apps/web/artifacts/promissory-evidence/
+
+# Local Figma restore backups
+backups/figma-restore-20260608/
