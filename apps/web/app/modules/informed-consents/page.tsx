@@ -1,5 +1,5 @@
 ﻿import { redirect } from "next/navigation";
-import FinalInformedConsentsModule from "@/components/informed-consents/FinalInformedConsentsModule";
+import StableFigmaInformedConsentsFrame from "@/components/informed-consents/enterprise-workflow/StableFigmaInformedConsentsFrame";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
@@ -19,10 +19,11 @@ export default async function InformedConsentsPage() {
       aria-label="Approved informed consents module"
     >
       <h1 className="sr-only">Approved Informed Consents Module</h1>
-      <FinalInformedConsentsModule auth={auth} />
+      <StableFigmaInformedConsentsFrame auth={auth} lang="en" />
     </section>
   );
 }
+
 
 
 
