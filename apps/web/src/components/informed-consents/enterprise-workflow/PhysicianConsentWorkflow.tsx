@@ -33,7 +33,7 @@ import {
 import { ConsentCollaborationPanel } from "@/components/informed-consents/collaboration/ConsentCollaborationPanel";
 import { EnterpriseSupportSettingsPanel } from "@/components/informed-consents/enterprise-workflow/EnterpriseSupportSettingsPanel";
 
-type EnterpriseSection = "issueConsent" | "collaboration" | "statusAudit" | "supportSettings";
+type EnterpriseSection = "issueConsent" | "consentLibrary" | "collaboration" | "statusAudit" | "supportSettings";
 
 type ProcedureCatalogItem = {
   id?: string;
@@ -350,6 +350,12 @@ const workspaceSections: Array<{
     title: "Issue Consent",
     titleAr: "إصدار موافقة مستنيرة",
     icon: FileText,
+  },
+  {
+    key: "consentLibrary",
+    title: "Consent Library",
+    titleAr: "مكتبة الموافقات المعتمدة",
+    icon: Search,
   },
   {
     key: "collaboration",
@@ -1150,7 +1156,6 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef4fb_45%,#e8eff8_100%)] text-[#172033]">
       <EnterpriseHeader workflow={workflow} />
-      <ConsentSearchEngine />
       <section className="mx-auto grid max-w-[1680px] grid-cols-1 gap-5 px-4 py-5 xl:grid-cols-[300px_minmax(0,1fr)_380px] xl:px-6">
         <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
           <WorkspaceNavigation
@@ -1171,7 +1176,9 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
         </aside>
 
         <section className="min-w-0">
-          {activeSection === "issueConsent" ? (
+          {activeSection === "consentLibrary" ? (
+            <ConsentSearchEngine />
+          ) : activeSection === "issueConsent" ? (
             <IssueConsentWorkspace
               activeStep={activeStep}
               activeStepIndex={activeStepIndex}
@@ -3128,6 +3135,7 @@ function LogoImage({
     />
   );
 }
+
 
 
 
