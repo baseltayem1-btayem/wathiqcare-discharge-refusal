@@ -1,64 +1,44 @@
-﻿import Link from "next/link";
-"use client";
-
+﻿"use client";
 
-const WATHIQCARE_API_BASE = "/api/modules/informed-consents";
 import React from "react";
-async function wathiqcareApi<T = any>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${WATHIQCARE_API_BASE}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error(await response.text().catch(()=>"") || `API failed: ${response.status}`);
-  return response.json();
-}
-
-function useWathiqCareEnterpriseBridge() {
-  const [language,setLanguage]=React.useState<"en"|"ar">("en");
-  const [dashboardStats,setDashboardStats]=React.useState<any>(null);
-  const [apiBusy,setApiBusy]=React.useState(false);
-  const [apiError,setApiError]=React.useState<string|null>(null);
-
-  const refreshDashboard=React.useCallback(async()=>{
-    setApiBusy(true); setApiError(null);
-    try{setDashboardStats(await wathiqcareApi("/dashboard"))}
-    catch(e:any){setApiError(e?.message||"Cannot connect to backend")}
-    finally{setApiBusy(false)}
-  },[]);
-
-  React.useEffect(()=>{refreshDashboard()},[refreshDashboard]);
-const openNewConsent=React.useCallback(async()=>{
-    setApiBusy(true); setApiError(null);
-    try{const created=await wathiqcareApi("/documents",{method:"POST",body:JSON.stringify({source:"physician-dashboard"})});
-      if(created?.id) window.location.href=`/modules/informed-consents/documents/${created.id}`; else await refreshDashboard();
-    }catch(e:any){setApiError(e?.message||"Cannot create consent");}finally{setApiBusy(false);}
-  },[refreshDashboard]);
-
-  const selectForPhysicianReview=React.useCallback(async(templateId?:string)=>{
-    setApiBusy(true); setApiError(null);
-    try{const created=await wathiqcareApi("/documents",{method:"POST",body:JSON.stringify({templateId,source:"imc-approved-library"})});
-      if(created?.id) window.location.href=`/modules/informed-consents/documents/${created.id}/review`; else await refreshDashboard();
-    }catch(e:any){setApiError(e?.message||"Cannot select consent");}finally{setApiBusy(false);}
-  },[refreshDashboard]);
-
-  return {dashboardStats,apiBusy,apiError,refreshDashboard,openNewConsent,selectForPhysicianReview};
-}
-import { Activity, AlertCircle, Bell, CheckCircle2, ChevronRight, FileText, Grid2X2, Library, LogOut, Search, Settings, Shield, Stethoscope, User } from "lucide-react";
-
-
-
+import Link from "next/link";
+import {
+  Activity,
+  AlertCircle,
+  Bell,
+  CheckCircle2,
+  ChevronRight,
+  FileText,
+  Grid2X2,
+  Library,
+  LogOut,
+  Search,
+  Settings,
+  Shield,
+  Stethoscope,
+  User,
+} from "lucide-react";
 import ConsentSearchEngine from "./ConsentSearchEngine";
-
-
 
 type ApprovedFigmaConsentWorkspaceProps = {
   auth?: unknown;
-  lang?: "en" | "ar";
+  lang?: "en" | "ar" | string;
+};
+
+type StatCard = {
+  label: string;
+  labelAr: string;
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  bg: string;
+  tone: string;
+  border: string;
+};
+
+type ReadinessItem = {
+  label: string;
+  labelAr: string;
+  done: boolean;
 };
 
 export default function ApprovedFigmaConsentWorkspace({
@@ -67,125 +47,196 @@ export default function ApprovedFigmaConsentWorkspace({
 }: ApprovedFigmaConsentWorkspaceProps) {
   void auth;
 
-  const isArabic = lang === "ar";
+  const [langState, setLangState] = React.useState<"en" | "ar">(
+    lang === "ar" ? "ar" : "en",
+  );
 
-  const navItems = [
-    { label: "Dashboard", labelAr: "لوحة التحكم", icon: Grid2X2, active: true, badge: "3" },
-    { label: "Physician Workflow", labelAr: "رحلة الطبيب", icon: Stethoscope },
-    { label: "Patient Search", labelAr: "البحث عن المريض", icon: Search },
-    { label: "Consent Library", labelAr: "مكتبة الموافقات", icon: Library },
-    { label: "Status Tracking", labelAr: "التتبع والسجل", icon: Activity },
-    { label: "Settings", labelAr: "الإعدادات", icon: Settings },
-  ];
+  const isArabic = langState === "ar";
 
-  const stats = [
-    {
-      label: "Pending Consents",
-      labelAr: "موافقات معلقة",
-      value: "7",
-      tone: "text-amber-600",
-      bg: "bg-amber-50",
-      border: "border-amber-300",
-      icon: AlertCircle,
-    },
-    {
-      label: "Draft Consents",
-      labelAr: "مسودات",
-      value: "3",
-      tone: "text-slate-600",
-      bg: "bg-slate-50",
-      border: "border-[#D8DCE3]",
-      icon: FileText,
-    },
-    {
-      label: "Sent / Awaiting",
-      labelAr: "مرسل / بانتظار",
-      value: "12",
-      tone: "text-[#4B9CD3]",
-      bg: "bg-[#EBF3FB]",
-      border: "border-[#D8DCE3]",
-      icon: Bell,
-    },
-    {
-      label: "Completed Today",
-      labelAr: "مكتملة اليوم",
-      value: "5",
-      tone: "text-emerald-600",
-      bg: "bg-emerald-50",
-      border: "border-[#D8DCE3]",
-      icon: CheckCircle2,
-    },
-  ];
+  React.useEffect(() => {
+    document.documentElement.lang = langState;
+    document.documentElement.dir = isArabic ? "rtl" : "ltr";
+  }, [langState, isArabic]);
 
-  const readinessItems = [
-    { label: "Patient selected", labelAr: "تم اختيار المريض", done: true },
-    { label: "Encounter selected", labelAr: "تم اختيار الزيارة", done: true },
-    { label: "Template selected", labelAr: "تم اختيار النموذج", done: true },
-    { label: "IMC approved template", labelAr: "نموذج معتمد من IMC", done: true },
-    { label: "Procedure details completed", labelAr: "اكتمال بيانات الإجراء", done: true },
-    { label: "Anesthesia decision", labelAr: "قرار التخدير", done: true },
-    { label: "Education package", labelAr: "حزمة التثقيف", done: true },
-    { label: "Draft PDF generated", labelAr: "مسودة PDF", done: false },
-    { label: "Patient link sent", labelAr: "رابط المريض", done: false },
-  ];
+  const toggleLanguage = React.useCallback(() => {
+    setLangState((current) => (current === "ar" ? "en" : "ar"));
+  }, []);
+
+  const stats: StatCard[] = React.useMemo(
+    () => [
+      {
+        label: "Pending Consents",
+        labelAr: "الموافقات المعلقة",
+        value: "7",
+        icon: AlertCircle,
+        bg: "bg-amber-50",
+        tone: "text-amber-600",
+        border: "border-[#D8DCE3]",
+      },
+      {
+        label: "Draft Consents",
+        labelAr: "مسودات الموافقات",
+        value: "3",
+        icon: FileText,
+        bg: "bg-slate-50",
+        tone: "text-slate-600",
+        border: "border-[#D8DCE3]",
+      },
+      {
+        label: "Sent / Awaiting",
+        labelAr: "مرسلة / بانتظار التوقيع",
+        value: "12",
+        icon: Bell,
+        bg: "bg-blue-50",
+        tone: "text-blue-600",
+        border: "border-[#D8DCE3]",
+      },
+      {
+        label: "Completed Today",
+        labelAr: "مكتملة اليوم",
+        value: "5",
+        icon: CheckCircle2,
+        bg: "bg-emerald-50",
+        tone: "text-emerald-600",
+        border: "border-[#D8DCE3]",
+      },
+    ],
+    [],
+  );
+
+  const readinessItems: ReadinessItem[] = React.useMemo(
+    () => [
+      { label: "Patient selected", labelAr: "تم اختيار المريض", done: true },
+      { label: "Encounter selected", labelAr: "تم اختيار الزيارة", done: true },
+      { label: "Template selected", labelAr: "تم اختيار النموذج", done: true },
+      {
+        label: "IMC approved template",
+        labelAr: "نموذج معتمد من IMC",
+        done: true,
+      },
+      {
+        label: "Procedure details completed",
+        labelAr: "تم استكمال تفاصيل الإجراء",
+        done: true,
+      },
+      {
+        label: "Anesthesia decision",
+        labelAr: "قرار التخدير",
+        done: true,
+      },
+      {
+        label: "Education package",
+        labelAr: "الحزمة التثقيفية",
+        done: true,
+      },
+      {
+        label: "Draft PDF generated",
+        labelAr: "تم إنشاء مسودة PDF",
+        done: false,
+      },
+      {
+        label: "Patient link sent",
+        labelAr: "تم إرسال رابط المريض",
+        done: false,
+      },
+    ],
+    [],
+  );
+
+  const navItems = React.useMemo(
+    () => [
+      {
+        label: "Dashboard",
+        labelAr: "لوحة التحكم",
+        href: "/modules/informed-consents",
+        icon: Grid2X2,
+        active: true,
+        badge: "3",
+      },
+      {
+        label: "Physician Workflow",
+        labelAr: "رحلة الطبيب",
+        href: "/modules/informed-consents/physician-workflow",
+        icon: Stethoscope,
+        active: false,
+      },
+      {
+        label: "Patient Search",
+        labelAr: "بحث المرضى",
+        href: "/modules/informed-consents/consent-creation-workflow",
+        icon: Search,
+        active: false,
+      },
+      {
+        label: "Consent Library",
+        labelAr: "مكتبة الموافقات",
+        href: "/modules/informed-consents/templates",
+        icon: Library,
+        active: false,
+      },
+      {
+        label: "Status Tracking",
+        labelAr: "تتبع الحالة",
+        href: "/modules/informed-consents/list",
+        icon: Activity,
+        active: false,
+      },
+    ],
+    [],
+  );
 
   return (
-    <div
-      dir={isArabic ? "rtl" : "ltr"}
-      className="min-h-screen bg-[#F4F7FB] text-[#002B5C]"
-    >
+    <div className="min-h-screen bg-[#F4F7FB] text-[#101828]">
       <div className="flex min-h-screen">
-        <aside className="hidden w-[260px] shrink-0 bg-[#002B5C] text-white xl:flex xl:flex-col">
-          <div className="border-b border-white/10 px-5 py-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#C9A13B] text-white">
-                <Shield className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-lg font-bold leading-tight">WathiqCare</div>
-                <div className="text-xs text-[#C9A13B]">Clinical Consent Platform</div>
+        <aside className="w-[280px] shrink-0 bg-[#003B73] text-white shadow-xl">
+          <div className="flex h-20 items-center gap-3 border-b border-white/10 px-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#C9A13B]">
+              <Shield className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <div className="text-lg font-bold leading-tight">WathiqCare</div>
+              <div className="text-xs font-medium text-[#C9A13B]">
+                Clinical Consent Platform
               </div>
             </div>
           </div>
 
           <div className="border-b border-white/10 px-5 py-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10">
-                <User className="h-4 w-4" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+                <User className="h-5 w-5 text-white" />
               </div>
               <div>
-                <div className="text-sm font-semibold">Dr. Khalid Al-Qahtani</div>
-                <div className="text-xs text-white/60">General Surgery · FACS</div>
+                <div className="text-sm font-bold">Dr. Khalid Al-Qahtani</div>
+                <div className="text-xs text-blue-100">
+                  General Surgery · FACS
+                </div>
               </div>
             </div>
           </div>
 
-          <nav className="flex-1 px-3 py-4">
-            <div className="mb-3 px-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+          <nav className="px-3 py-5">
+            <div className="mb-3 px-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-200">
               Clinical Workspace
             </div>
 
             <div className="space-y-1">
-              {navItems.slice(0, 5).map((item) => {
+              {navItems.map((item) => {
                 const Icon = item.icon;
 
                 return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm transition ${
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
                       item.active
-                        ? "bg-[#174F8A] text-white shadow-sm"
-                        : "text-white/70 hover:bg-white/10 hover:text-white"
+                        ? "bg-[#1976D2] text-white"
+                        : "text-blue-100 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <span className="flex items-center gap-3">
                       <Icon className="h-4 w-4" />
-                      <span>
-                        <span className="block font-semibold">
-                          {isArabic ? item.labelAr : item.label}
-                        </span>
-                      </span>
+                      {isArabic ? item.labelAr : item.label}
                     </span>
 
                     {item.badge ? (
@@ -193,73 +244,72 @@ export default function ApprovedFigmaConsentWorkspace({
                         {item.badge}
                       </span>
                     ) : null}
-                  </button>
+                  </Link>
                 );
               })}
             </div>
 
-            <div className="mt-8 mb-3 px-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+            <div className="mt-8 mb-3 px-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-200">
               System
             </div>
 
             <div className="space-y-1">
-              {navItems.slice(5).map((item) => {
-                const Icon = item.icon;
+              <Link
+                href="/modules/informed-consents/settings-support"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white"
+              >
+                <Settings className="h-4 w-4" />
+                {isArabic ? "الإعدادات والدعم" : "Settings & Support"}
+              </Link>
 
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-white/70 hover:bg-white/10 hover:text-white"
-                  >
-                    <Icon className="h-4 w-4" />
-                    {isArabic ? item.labelAr : item.label}
-                  </button>
-                );
-              })}
-
-              <button
-                type="button"
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm text-white/70 hover:bg-white/10 hover:text-white"
+              <Link
+                href="/login"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white"
               >
                 <LogOut className="h-4 w-4" />
                 {isArabic ? "تسجيل الخروج" : "Sign Out"}
-              </button>
+              </Link>
             </div>
           </nav>
-
-          <div className="border-t border-white/10 px-5 py-4 text-xs text-white/50">
-            <div className="mb-1 flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              PDPL · HIPAA · HL7 FHIR
-            </div>
-            <div>WathiqCare v2.4.1</div>
-          </div>
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="border-b border-[#D8DCE3] bg-white">
-            <div className="flex min-h-[72px] flex-wrap items-center justify-between gap-4 px-7 py-4">
-              <div className="flex flex-wrap items-center gap-3 text-xs text-[#667085]">
-                <span>Department: General Surgery</span>
-                <span>·</span>
-                <span>28 May 2026</span>
-                <span>·</span>
-                <span>Session: 2h 14m</span>
+          <header className="sticky top-0 z-20 border-b border-[#D8DCE3] bg-white/95 backdrop-blur">
+            <div className="flex h-16 items-center justify-between px-7">
+              <div className="text-sm text-[#667085]">
+                Department:{" "}
+                <span className="font-semibold text-[#002B5C]">
+                  General Surgery
+                </span>
+                <span className="mx-3">·</span>
+                28 May 2026
+                <span className="mx-3">·</span>
+                Session: 2h 14m
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex rounded-lg border border-[#D8DCE3] bg-white p-1">
-                  <button type="button" onClick={() => setLangState((current) => current === "ar" ? "en" : "ar")} className="rounded bg-[#002B5C] px-3 py-1.5 text-xs font-bold text-white"><span aria-hidden="true" className="text-sm leading-none">🌐</span> {langState === "en" ? "EN" : "ع"}</button>
-                </div>
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#D8DCE3] bg-white px-3 py-2 text-sm font-bold text-[#002B5C] shadow-sm hover:bg-[#F8FAFC]"
+                >
+                  <span aria-hidden="true" className="text-sm leading-none">
+                    🌐
+                  </span>
+                  {langState === "en" ? "EN" : "ع"}
+                </button>
 
-                <button className="relative rounded-lg border border-[#D8DCE3] bg-white p-2 text-[#002B5C]">
+                <button
+                  type="button"
+                  className="relative rounded-lg border border-[#D8DCE3] bg-white p-2 text-[#002B5C] shadow-sm hover:bg-[#F8FAFC]"
+                >
                   <Bell className="h-4 w-4" />
                   <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500" />
                 </button>
 
                 <div className="text-sm text-[#002B5C]">
-                  Physician Portal / <span className="font-semibold">Dashboard</span>
+                  Physician Portal /{" "}
+                  <span className="font-semibold">Dashboard</span>
                 </div>
               </div>
             </div>
@@ -276,9 +326,13 @@ export default function ApprovedFigmaConsentWorkspace({
                 </p>
               </div>
 
-              <button className="rounded-lg bg-[#C9A13B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm">
-                + {isArabic ? "موافقة جديدة" : "New Consent"}
-              </button>
+              <Link
+                href="/modules/informed-consents/consent-creation-workflow"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#C9A13B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#b58d2e]"
+              >
+                <ChevronRight className="h-4 w-4" />
+                {isArabic ? "موافقة جديدة" : "New Consent"}
+              </Link>
             </section>
 
             <section className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -286,10 +340,18 @@ export default function ApprovedFigmaConsentWorkspace({
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
                   <span>
-                    3 consents have incomplete mandatory disclosures — surgery cannot proceed until resolved.
+                    {isArabic
+                      ? "توجد 3 موافقات بها إفصاحات إلزامية غير مكتملة — لا يمكن متابعة الإجراء حتى يتم حلها."
+                      : "3 consents have incomplete mandatory disclosures — surgery cannot proceed until resolved."}
                   </span>
                 </div>
-                <button className="text-sm font-semibold underline">View All</button>
+
+                <Link
+                  href="/modules/informed-consents/list"
+                  className="text-sm font-semibold underline"
+                >
+                  {isArabic ? "عرض الكل" : "View All"}
+                </Link>
               </div>
             </section>
 
@@ -308,9 +370,11 @@ export default function ApprovedFigmaConsentWorkspace({
                       </div>
                       <span className={card.tone}>ⓘ</span>
                     </div>
+
                     <div className="text-2xl font-semibold text-[#101828]">
                       {card.value}
                     </div>
+
                     <div className="mt-1 text-sm text-[#667085]">
                       {isArabic ? card.labelAr : card.label}
                     </div>
@@ -330,10 +394,11 @@ export default function ApprovedFigmaConsentWorkspace({
                         : "IMC Approved Consent Library"}
                     </h2>
                   </div>
+
                   <p className="mt-1 text-sm text-[#667085]">
                     {isArabic
-                      ? "تمت إضافة مكتبة الموافقات التي تم تطويرها دون إلغاء التصميم المعتمد."
-                      : "The approved consent library has been added without removing the approved Figma design."}
+                      ? "تم ربط مكتبة الموافقات المعتمدة بمحرك البحث ومسار استعراض PDF."
+                      : "The approved consent library is connected to search and PDF preview workflow."}
                   </p>
                 </div>
 
@@ -348,8 +413,11 @@ export default function ApprovedFigmaConsentWorkspace({
                     <div className="text-xs font-bold uppercase tracking-[0.2em] text-[#667085]">
                       Overall Completion
                     </div>
+
                     <div className="mt-2 flex items-center justify-between">
-                      <div className="text-4xl font-bold text-[#002B5C]">88%</div>
+                      <div className="text-4xl font-bold text-[#002B5C]">
+                        88%
+                      </div>
                       <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
                         Blocked
                       </span>
@@ -361,9 +429,7 @@ export default function ApprovedFigmaConsentWorkspace({
                       <div key={item.label} className="flex items-start gap-3">
                         <div
                           className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full ${
-                            item.done
-                              ? "text-emerald-600"
-                              : "text-slate-400"
+                            item.done ? "text-emerald-600" : "text-slate-400"
                           }`}
                         >
                           {item.done ? (
@@ -372,6 +438,7 @@ export default function ApprovedFigmaConsentWorkspace({
                             <Shield className="h-5 w-5" />
                           )}
                         </div>
+
                         <div>
                           <div className="text-sm font-semibold text-[#002B5C]">
                             {isArabic ? item.labelAr : item.label}
@@ -391,12 +458,15 @@ export default function ApprovedFigmaConsentWorkspace({
                       Risk Flags / المخاطر
                     </h3>
                   </div>
+
                   <div className="space-y-3 p-5">
                     <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                      IMC approved PDF matched, but runtime template mapping requires verification.
+                      IMC approved PDF matched, but runtime template mapping
+                      requires verification.
                     </div>
                     <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-                      Draft PDF and patient link remain gated until readiness is complete.
+                      Draft PDF and patient link remain gated until readiness is
+                      complete.
                     </div>
                   </div>
                 </div>
@@ -408,14 +478,3 @@ export default function ApprovedFigmaConsentWorkspace({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
