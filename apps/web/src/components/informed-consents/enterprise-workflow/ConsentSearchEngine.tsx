@@ -184,7 +184,13 @@ export default function ConsentSearchEngine() {
         throw new Error("Approved consent preview did not return a PDF file.");
       }
 
-      window.open(pdfUrl, "_blank", "noopener,noreferrer");
+            const previewWindow = window.open("about:blank", "_blank", "noopener,noreferrer");
+
+      if (previewWindow) {
+        previewWindow.location.href = pdfUrl;
+      } else {
+        window.location.href = pdfUrl;
+      }
     } catch (e: any) {
       setError(e?.message || "Unable to open informed consent PDF preview from production library.");
     } finally {
@@ -335,6 +341,7 @@ export default function ConsentSearchEngine() {
     </div>
   );
 }
+
 
 
 
