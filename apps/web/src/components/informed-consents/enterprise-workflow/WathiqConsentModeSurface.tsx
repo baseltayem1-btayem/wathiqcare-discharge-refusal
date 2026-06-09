@@ -141,7 +141,7 @@ function Sidebar({ mode }: { mode: Mode }) {
 
       <nav className="wc-sidebar-nav">
         {items.map(([label, Icon], index) => (
-          <button key={label as string} type="button" className={index === 0 ? "wc-nav-item active" : "wc-nav-item"}>
+          <button key={label as string} type="button" className={index === 0 ? "wc-nav-item active" : "wc-nav-item"} onClick={() => window.location.assign((label as string) === "Informed Consents" || (label as string) === "My Consents" ? "/modules/informed-consents" : (label as string) === "Encounters" || (label as string) === "Appointments" ? "/modules/informed-consents/physician-workflow" : (label as string) === "Patients" ? "/modules/informed-consents/list" : (label as string) === "Templates" || (label as string) === "My Documents" ? "/modules/informed-consents/template-registry" : (label as string) === "Education Library" ? "/admin/procedure-education" : (label as string) === "Anesthesia" ? "/modules/informed-consents/physician-workflow?step=anesthesia" : (label as string) === "Reports & Audit" ? "/modules/informed-consents/governance-reports" : (label as string) === "Notifications" || (label as string) === "Messages" ? "/alerts" : (label as string) === "Institution Settings" || (label as string) === "Profile & Settings" ? "/modules/informed-consents/settings-support" : "/modules/informed-consents")}>
             <Icon size={22} />
             <span>{label as string}</span>
           </button>
@@ -156,7 +156,7 @@ function Sidebar({ mode }: { mode: Mode }) {
         </div>
         <p><Mail size={15} /> support@wathiqcare.com</p>
         <p><Phone size={15} /> +91 80 6933 0000</p>
-        <button type="button">{mode === "patient" ? "Chat with Support" : "Contact Support"}</button>
+        <button type="button" onClick={() => window.location.assign("/modules/informed-consents/settings-support")}>{mode === "patient" ? "Chat with Support" : "Contact Support"}</button>
       </div>
 
       <button type="button" className="wc-collapse">
@@ -171,7 +171,7 @@ function Header({ mode, setMode }: { mode: Mode; setMode: (mode: Mode) => void }
   return (
     <header className="wc-header">
       <div className="wc-title-group">
-        <button type="button" className="wc-menu-button" aria-label="Open menu">
+        <button type="button" className="wc-menu-button" aria-label="Open menu" onClick={() => window.location.assign("/modules")}>
           <Menu size={25} />
         </button>
         <div>
@@ -194,7 +194,7 @@ function Header({ mode, setMode }: { mode: Mode; setMode: (mode: Mode) => void }
           <span>العربية</span>
         </div>
 
-        <button type="button" className="wc-bell" aria-label="Notifications">
+        <button type="button" className="wc-bell" aria-label="Notifications" onClick={() => window.location.assign("/alerts")}>
           <Bell size={23} />
           <b>{mode === "patient" ? "2" : "2"}</b>
         </button>
@@ -223,7 +223,7 @@ function Stepper({ mode }: { mode: Mode }) {
       {mode === "physician" && (
         <div className="wc-section-head">
           <h2>Latest Consent Workflow</h2>
-          <button type="button">View All Workflows <span>→</span></button>
+          <button type="button" onClick={() => window.location.assign("/modules/informed-consents/list")}>View All Workflows <span>→</span></button>
         </div>
       )}
 
@@ -370,7 +370,7 @@ function ConsentDocumentPreview({ mode }: { mode: Mode }) {
             </button>
           )}
 
-          <button type="button"><Download size={19} /></button>
+          <button type="button" onClick={() => window.location.assign("/api/modules/informed-consents/imc-library/resolve/pdf")}><Download size={19} /></button>
           {mode === "patient" && <button type="button"><Printer size={19} /></button>}
           <button type="button"><Minus size={17} /></button>
           {mode === "patient" && <span className="wc-zoom-label">100%</span>}
@@ -469,7 +469,7 @@ function PhysicianRightPanel() {
               <strong>{title}</strong>
               <span>{sub}</span>
             </div>
-            <button type="button">View</button>
+            <button type="button" onClick={() => window.location.assign("/modules/informed-consents/governance")}>View</button>
           </div>
         ))}
       </section>
@@ -478,8 +478,8 @@ function PhysicianRightPanel() {
         <h2><Headphones size={24} /> Support</h2>
         <p>Need help with this consent?</p>
         <span>Our legal & clinical experts are available.</span>
-        <button type="button"><MessageSquare size={16} /> Chat with Expert</button>
-        <a>Raise a Ticket</a>
+        <button type="button" onClick={() => window.location.assign("/modules/informed-consents/settings-support")}><MessageSquare size={16} /> Chat with Expert</button>
+        <a onClick={() => window.location.assign("/modules/informed-consents/settings-support")}>Raise a Ticket</a>
       </section>
 
       <section className="wc-side-card settings">
@@ -624,5 +624,7 @@ export default function WathiqConsentModeSurface() {
     </main>
   );
 }
+
+
 
 
