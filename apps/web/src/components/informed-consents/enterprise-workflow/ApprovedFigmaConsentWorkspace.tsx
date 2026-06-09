@@ -49,7 +49,7 @@ const openNewConsent=React.useCallback(async()=>{
   return {language,dashboardStats,apiBusy,apiError,refreshDashboard,toggleLanguage,openNewConsent,selectForPhysicianReview};
 }
 import {
-  Activity,
+Activity,
   AlertCircle,
   Bell,
   CheckCircle2,
@@ -63,6 +63,7 @@ import {
   Shield,
   Stethoscope,
   User,
+  Languages,
 } from "lucide-react";
 
 
@@ -423,6 +424,7 @@ export default function ApprovedFigmaConsentWorkspace({
     </div>
   );
 }
+
 
 
 
