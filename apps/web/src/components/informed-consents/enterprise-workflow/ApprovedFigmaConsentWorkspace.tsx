@@ -80,8 +80,6 @@ export default function ApprovedFigmaConsentWorkspace({
   auth,
   lang = "en",
 }: ApprovedFigmaConsentWorkspaceProps) {
-  const [isArabic, setIsArabic] = React.useState(false);
-
   void auth;
 
   const isArabic = lang === "ar";
@@ -267,7 +265,7 @@ export default function ApprovedFigmaConsentWorkspace({
 
               <div className="flex items-center gap-3">
                 <div className="flex rounded-lg border border-[#D8DCE3] bg-white p-1">
-                  <button type="button" onClick={() => setIsArabic((current) => !current)} className="rounded bg-[#002B5C] px-3 py-1.5 text-xs font-bold text-white"><Languages className="h-4 w-4" aria-hidden="true" /> {language==="en"?"EN":"ع"}</button>
+                  <button type="button" onClick={() => setLangState((current) => current === "ar" ? "en" : "ar")} className="rounded bg-[#002B5C] px-3 py-1.5 text-xs font-bold text-white"><Languages className="h-4 w-4" aria-hidden="true" /> {language==="en"?"EN":"ع"}</button>
                 </div>
 
                 <button className="relative rounded-lg border border-[#D8DCE3] bg-white p-2 text-[#002B5C]">
@@ -425,6 +423,7 @@ export default function ApprovedFigmaConsentWorkspace({
     </div>
   );
 }
+
 
 
 
