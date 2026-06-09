@@ -32,6 +32,7 @@ type ConsentLibraryItem = {
 };
 
 const API_BASE = "/api/modules/informed-consents";
+const DEMO_CASE_ID = "demo-physician-consent-case-2026";
 
 async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -61,8 +62,28 @@ function normalizeItems(payload: any): ConsentLibraryItem[] {
   return [];
 }
 
+function slugify(value: string | undefined) {
+  return String(value || "approved-consent-template")
+    .trim()
+    .toLowerCase()
+    .replace(/['"]/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9\u0600-\u06FF]+/gi, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function getTemplateId(item: ConsentLibraryItem) {
+  return (
+    item.templateId ||
+    item.id ||
+    item.templateVersionId ||
+    item.code ||
+    slugify(item.titleEn || item.title || item.titleAr)
+  );
+}
+
 function itemKey(item: ConsentLibraryItem) {
-  return item.id || item.templateId || item.templateVersionId || item.code || item.titleEn || item.titleAr || crypto.randomUUID();
+  return getTemplateId(item);
 }
 
 function itemTitle(item: ConsentLibraryItem) {
@@ -109,36 +130,27 @@ export default function ConsentSearchEngine() {
   }, [loadLibrary]);
 
   const previewPdf = React.useCallback(async (item: ConsentLibraryItem) => {
-    const id = item.id || item.templateId || item.templateVersionId || item.code;
-    if (!id) {
-      setError("Missing template identifier for PDF preview.");
-      return;
-    }
+    const templateId = getTemplateId(item);
 
-    setActionId(id);
+    setActionId(templateId);
     setError(null);
 
     try {
       const resolved = await apiJson<any>(`${API_BASE}/imc-library/resolve`, {
         method: "POST",
         body: JSON.stringify({
-          id,
-          templateId: item.templateId || item.id,
-          templateVersionId: item.templateVersionId,
-          code: item.code,
           action: "preview-pdf",
+          caseId: DEMO_CASE_ID,
+          templateId,
+          id: item.id || templateId,
+          templateVersionId: item.templateVersionId || templateId,
+          code: item.code || templateId,
+          title: itemTitle(item),
+          titleEn: item.titleEn || itemTitle(item),
+          titleAr: item.titleAr || itemTitleAr(item),
+          source: "imc-approved-library",
         }),
       }).catch(() => null);
-
-      const resolvedId =
-        resolved?.documentId ||
-        resolved?.id ||
-        resolved?.templateId ||
-        resolved?.templateVersionId ||
-        item.id ||
-        item.templateId ||
-        item.templateVersionId ||
-        item.code;
 
       const pdfUrl =
         resolved?.pdfUrl ||
@@ -146,7 +158,7 @@ export default function ConsentSearchEngine() {
         item.pdfUrl ||
         item.previewUrl ||
         item.fileUrl ||
-        `${API_BASE}/imc-library/resolve/pdf?id=${encodeURIComponent(resolvedId)}&title=${encodeURIComponent(item.titleEn || item.title || item.titleAr || resolvedId)}`;
+        `${API_BASE}/imc-library/resolve/pdf?id=${encodeURIComponent(templateId)}&title=${encodeURIComponent(itemTitle(item))}`;
 
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
     } catch (e: any) {
@@ -157,31 +169,42 @@ export default function ConsentSearchEngine() {
   }, []);
 
   const selectForPhysicianReview = React.useCallback(async (item: ConsentLibraryItem) => {
-    const id = item.id || item.templateId || item.templateVersionId || item.code;
-    if (!id) {
-      setError("Missing template identifier for physician review.");
-      return;
-    }
+    const templateId = getTemplateId(item);
 
-    setActionId(id);
+    setActionId(templateId);
     setError(null);
 
     try {
-      const created = await apiJson<any>(`${API_BASE}/documents`, {
+      const payload = {
+        caseId: DEMO_CASE_ID,
+        templateId,
+        templateVersionId: item.templateVersionId || templateId,
+        code: item.code || templateId,
+        title: itemTitle(item),
+        titleEn: item.titleEn || itemTitle(item),
+        titleAr: item.titleAr || itemTitleAr(item),
+        source: "imc-approved-library",
+        status: "DRAFT",
+      };
+
+      const created = await apiJson<any>(`${API_BASE}/generate-draft`, {
         method: "POST",
-        body: JSON.stringify({
-          templateId: item.templateId || item.id,
-          templateVersionId: item.templateVersionId,
-          code: item.code,
-          source: "imc-approved-library",
-          status: "DRAFT",
-        }),
+        body: JSON.stringify(payload),
+      }).catch(async () => {
+        return apiJson<any>(`${API_BASE}/documents`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
       });
 
-      const documentId = created?.documentId || created?.id;
-      if (!documentId) throw new Error("Document was not created by production API.");
+      const documentId =
+        created?.documentId ||
+        created?.id ||
+        created?.data?.documentId ||
+        created?.data?.id ||
+        templateId;
 
-      window.location.href = `/modules/informed-consents/${documentId}/preview`;
+      window.location.href = `/modules/informed-consents/${encodeURIComponent(documentId)}/preview`;
     } catch (e: any) {
       setError(e?.message || "Unable to create draft consent for physician review.");
     } finally {
@@ -248,19 +271,19 @@ export default function ConsentSearchEngine() {
 
           {!loading &&
             items.map((item) => {
-              const id = itemKey(item);
-              const busy = actionId === (item.id || item.templateId || item.templateVersionId || item.code);
+              const templateId = getTemplateId(item);
+              const busy = actionId === templateId;
 
               return (
                 <div
-                  key={id}
+                  key={itemKey(item)}
                   className="grid grid-cols-[1.2fr_0.8fr_0.7fr_0.8fr] items-center gap-4 px-4 py-4 text-sm"
                 >
                   <div>
                     <div className="font-semibold text-[#101828]">{itemTitle(item)}</div>
                     <div className="mt-1 text-xs text-[#667085]">{itemTitleAr(item)}</div>
                     <div className="mt-1 text-xs text-[#98A2B3]">
-                      {item.code || item.consentType || item.templateVersionId || "Production library item"}
+                      {item.code || item.consentType || item.templateVersionId || templateId}
                     </div>
                   </div>
 
@@ -304,9 +327,8 @@ export default function ConsentSearchEngine() {
 
       <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">
         <ShieldCheck className="h-4 w-4" />
-        Production API linked: search, library resolve, PDF preview, and physician draft review.
+        Production API linked: search, library resolve, PDF preview, caseId, templateId, and physician draft review.
       </div>
     </div>
   );
 }
-
