@@ -1,24 +1,16 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
 import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
   BadgeCheck,
   Bell,
   BookOpen,
-  Building2,
   CalendarDays,
   Check,
-  CheckCircle2,
-  ChevronDown,
+  ChevronRight,
   ClipboardCheck,
   FileCheck2,
   FileText,
-  Filter,
-  Globe2,
   HeartPulse,
   Home,
   Languages,
@@ -28,755 +20,492 @@ import {
   Phone,
   Search,
   Send,
-  Settings,
   ShieldCheck,
   Sparkles,
   Stethoscope,
   Syringe,
   UserRound,
-  Users,
-  X,
 } from "lucide-react";
 
-type StepKey =
-  | "patient"
-  | "encounter"
-  | "template"
-  | "procedure"
-  | "anesthesia"
-  | "education"
-  | "review"
-  | "send";
+type StepKey = "patient" | "template" | "procedure" | "anesthesia" | "education" | "review" | "send";
 
 type TemplateItem = {
   id: string;
   title: string;
   titleAr: string;
+  department: string;
   type: string;
-  department: string;
-  specialty: string;
-  version: string;
-  status: string;
-  language: string;
 };
 
-type PatientItem = {
-  name: string;
-  mrn: string;
-  ageGender: string;
-  mobile: string;
-  email: string;
-  encounter: string;
-  department: string;
-  physician: string;
-};
-
-const steps: { key: StepKey; label: string; hint: string }[] = [
-  { key: "patient", label: "Patient", hint: "Identity" },
-  { key: "encounter", label: "Encounter", hint: "Visit" },
-  { key: "template", label: "Template", hint: "Approved form" },
-  { key: "procedure", label: "Procedure", hint: "Clinical details" },
-  { key: "anesthesia", label: "Anesthesia", hint: "Decision" },
-  { key: "education", label: "Education", hint: "Material" },
-  { key: "review", label: "Review", hint: "Readiness" },
-  { key: "send", label: "Send", hint: "Signature" },
+const steps: { key: StepKey; label: string }[] = [
+  { key: "patient", label: "Patient" },
+  { key: "template", label: "Template" },
+  { key: "procedure", label: "Procedure" },
+  { key: "anesthesia", label: "Anesthesia" },
+  { key: "education", label: "Education" },
+  { key: "review", label: "Review" },
+  { key: "send", label: "Send" },
 ];
 
-const fallbackPatient: PatientItem = {
-  name: "Mr. Ramesh Kumar",
-  mrn: "WC-2025-001123",
-  ageGender: "52 / Male",
-  mobile: "+966 5X XXX XXXX",
-  email: "patient@example.com",
-  encounter: "OPD / Cardiac Surgery",
-  department: "Cardiac Surgery",
-  physician: "Dr. Arjun Mehta",
-};
-
-const fallbackTemplates: TemplateItem[] = [
+const templates: TemplateItem[] = [
   {
     id: "IMC-CONS-CABG-2025-001",
     title: "Coronary Artery Bypass Grafting Consent",
     titleAr: "موافقة جراحة تحويل مسار الشريان التاجي",
-    type: "Surgical Consent",
     department: "Cardiac Surgery",
-    specialty: "Cardiothoracic Surgery",
-    version: "v2.4",
-    status: "IMC Approved",
-    language: "Bilingual",
-  },
-  {
-    id: "IMC-CONS-GEN-SURG-2025-014",
-    title: "General Surgical Procedure Consent",
-    titleAr: "موافقة إجراء جراحي عام",
     type: "Surgical Consent",
-    department: "Surgery",
-    specialty: "General Surgery",
-    version: "v3.1",
-    status: "IMC Approved",
-    language: "Bilingual",
   },
   {
     id: "IMC-CONS-ANES-2025-006",
     title: "Anesthesia Consent",
     titleAr: "موافقة التخدير",
-    type: "Anesthesia Consent",
     department: "Anesthesia",
-    specialty: "Anesthesiology",
-    version: "v2.9",
-    status: "IMC Approved",
-    language: "Bilingual",
+    type: "Anesthesia Consent",
   },
   {
     id: "IMC-CONS-ENDO-2025-010",
     title: "Endoscopy Procedure Consent",
     titleAr: "موافقة إجراء المنظار",
-    type: "Procedure Consent",
     department: "Endoscopy",
-    specialty: "Gastroenterology",
-    version: "v2.1",
-    status: "IMC Approved",
-    language: "Bilingual",
-  },
-  {
-    id: "IMC-CONS-RAD-2025-009",
-    title: "Interventional Radiology Consent",
-    titleAr: "موافقة الأشعة التداخلية",
     type: "Procedure Consent",
-    department: "Radiology",
-    specialty: "Interventional Radiology",
-    version: "v1.8",
-    status: "Clinical Review",
-    language: "Bilingual",
   },
   {
     id: "IMC-CONS-ICU-2025-004",
     title: "Critical Care Treatment Consent",
     titleAr: "موافقة علاج العناية الحرجة",
-    type: "Treatment Consent",
     department: "ICU",
-    specialty: "Critical Care",
-    version: "v2.6",
-    status: "IMC Approved",
-    language: "Bilingual",
+    type: "Treatment Consent",
   },
 ];
 
-function normalizeTemplates(payload: unknown): TemplateItem[] {
-  const source =
-    Array.isArray(payload)
-      ? payload
-      : Array.isArray((payload as { templates?: unknown[] })?.templates)
-        ? (payload as { templates: unknown[] }).templates
-        : Array.isArray((payload as { data?: unknown[] })?.data)
-          ? (payload as { data: unknown[] }).data
-          : [];
-
-  return source
-    .map((item, index) => {
-      const raw = item as Partial<TemplateItem> & {
-        templateId?: string;
-        code?: string;
-        titleEn?: string;
-        consentType?: string;
-      };
-
-      return {
-        id: raw.id || raw.templateId || raw.code || `WC-TEMPLATE-${index + 1}`,
-        title: raw.title || raw.titleEn || "Untitled Consent Template",
-        titleAr: raw.titleAr || "نموذج موافقة",
-        type: raw.type || raw.consentType || "Procedure Consent",
-        department: raw.department || "General",
-        specialty: raw.specialty || raw.department || "General",
-        version: raw.version || "v1.0",
-        status: raw.status || "IMC Approved",
-        language: raw.language || "Bilingual",
-      };
-    })
-    .filter((item) => item.title && item.id);
-}
-
-function Field({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string;
-  icon: ReactNode;
-}) {
-  return (
-    <div className="sx-field">
-      <span>{icon}</span>
-      <div>
-        <small>{label}</small>
-        <strong>{value}</strong>
-      </div>
-    </div>
-  );
-}
-
-function SmartSuggestion({
-  title,
-  text,
-  severity = "normal",
-}: {
-  title: string;
-  text: string;
-  severity?: "normal" | "warning" | "success";
-}) {
-  return (
-    <article className={`sx-ai-card ${severity}`}>
-      <Sparkles size={18} />
-      <div>
-        <strong>{title}</strong>
-        <p>{text}</p>
-      </div>
-    </article>
-  );
+function openRoute(route: string) {
+  window.location.assign(route);
 }
 
 export default function WathiqSmartConsentExperience() {
   const [activeStep, setActiveStep] = useState(0);
-  const [patient] = useState<PatientItem>(fallbackPatient);
-  const [templates, setTemplates] = useState<TemplateItem[]>(fallbackTemplates);
-  const [templateSource, setTemplateSource] = useState<"loading" | "database" | "fallback">("loading");
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateItem>(fallbackTemplates[0]);
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState("All Types");
-  const [department, setDepartment] = useState("All Departments");
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateItem>(templates[0]);
+  const [query, setQuery] = useState("");
   const [procedure, setProcedure] = useState("Coronary Artery Bypass Grafting (CABG)");
   const [anesthesiaRequired, setAnesthesiaRequired] = useState(true);
   const [educationConfirmed, setEducationConfirmed] = useState(false);
-  const [language, setLanguage] = useState<"English" | "Arabic" | "Bilingual">("Bilingual");
-  const [recipientMobile, setRecipientMobile] = useState(patient.mobile);
-  const [recipientEmail, setRecipientEmail] = useState(patient.email);
+  const [mobile, setMobile] = useState("+966 5X XXX XXXX");
+  const [email, setEmail] = useState("patient@example.com");
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadTemplates() {
-      const endpoints = [
-        "/api/modules/informed-consents/templates",
-        "/api/modules/informed-consents/library",
-        "/api/modules/informed-consents/imc-library",
-      ];
-
-      for (const endpoint of endpoints) {
-        try {
-          const response = await fetch(endpoint, {
-            method: "GET",
-            headers: { Accept: "application/json" },
-            cache: "no-store",
-          });
-
-          if (!response.ok) continue;
-
-          const payload = await response.json();
-          const normalized = normalizeTemplates(payload);
-
-          if (!cancelled && normalized.length > 0) {
-            setTemplates(normalized);
-            setSelectedTemplate(normalized[0]);
-            setTemplateSource("database");
-            return;
-          }
-        } catch {
-          continue;
-        }
-      }
-
-      if (!cancelled) {
-        setTemplates(fallbackTemplates);
-        setSelectedTemplate(fallbackTemplates[0]);
-        setTemplateSource("fallback");
-      }
-    }
-
-    loadTemplates();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const types = useMemo(() => ["All Types", ...Array.from(new Set(templates.map((item) => item.type)))], [templates]);
-  const departments = useMemo(() => ["All Departments", ...Array.from(new Set(templates.map((item) => item.department)))], [templates]);
+  const currentStep = steps[activeStep]?.key || "patient";
 
   const filteredTemplates = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = query.trim().toLowerCase();
 
-    return templates.filter((item) => {
-      const matchesSearch =
-        q.length === 0 ||
-        item.title.toLowerCase().includes(q) ||
-        item.titleAr.toLowerCase().includes(q) ||
-        item.id.toLowerCase().includes(q) ||
-        item.department.toLowerCase().includes(q) ||
-        item.specialty.toLowerCase().includes(q);
-
-      const matchesType = type === "All Types" || item.type === type;
-      const matchesDepartment = department === "All Departments" || item.department === department;
-
-      return matchesSearch && matchesType && matchesDepartment;
+    return templates.filter((template) => {
+      return (
+        !q ||
+        template.title.toLowerCase().includes(q) ||
+        template.titleAr.toLowerCase().includes(q) ||
+        template.department.toLowerCase().includes(q) ||
+        template.id.toLowerCase().includes(q)
+      );
     });
-  }, [templates, search, type, department]);
+  }, [query]);
 
   const readiness = useMemo(() => {
-    let score = 40;
-
-    if (patient.mrn) score += 10;
-    if (selectedTemplate.id) score += 15;
+    let score = 55;
+    if (selectedTemplate) score += 15;
     if (procedure.trim().length > 5) score += 10;
-    if (anesthesiaRequired || anesthesiaRequired === false) score += 10;
     if (educationConfirmed) score += 10;
-    if (recipientMobile || recipientEmail) score += 5;
-
+    if (mobile || email) score += 10;
     return Math.min(score, 100);
-  }, [patient.mrn, selectedTemplate.id, procedure, anesthesiaRequired, educationConfirmed, recipientMobile, recipientEmail]);
+  }, [selectedTemplate, procedure, educationConfirmed, mobile, email]);
 
-  const currentKey = steps[activeStep]?.key || "patient";
-
-  function goNext() {
+  function next() {
     setActiveStep((step) => Math.min(step + 1, steps.length - 1));
   }
 
-  function goBack() {
+  function back() {
     setActiveStep((step) => Math.max(step - 1, 0));
-  }
-
-  function openRoute(route: string) {
-    window.location.assign(route);
   }
 
   function sendConsent() {
     const params = new URLSearchParams({
-      mrn: patient.mrn,
       templateId: selectedTemplate.id,
       procedure,
       anesthesiaRequired: String(anesthesiaRequired),
-      language,
-      mobile: recipientMobile,
-      email: recipientEmail,
+      mobile,
+      email,
     });
 
-    window.location.assign(`/modules/informed-consents/consent-creation-workflow?${params.toString()}`);
+    openRoute(`/modules/informed-consents/consent-creation-workflow?${params.toString()}`);
   }
 
   return (
-    <main className="sx-shell">
-      <aside className="sx-sidebar">
-        <div className="sx-brand">
-          <ShieldCheck size={29} />
+    <main className="care-shell">
+      <aside className="care-sidebar">
+        <div className="care-brand">
+          <ShieldCheck size={30} />
           <div>
             <strong>WathiqCare</strong>
-            <span>LEGAL. CARE. TRUSTED.</span>
+            <span>Smart Consent Portal</span>
           </div>
         </div>
 
         <button className="active" type="button" onClick={() => openRoute("/modules/informed-consents")}>
-          <ClipboardCheck size={18} />
+          <ClipboardCheck size={19} />
           <span>Create Consent</span>
         </button>
+
         <button type="button" onClick={() => openRoute("/modules/informed-consents/list")}>
-          <FileText size={18} />
+          <FileText size={19} />
           <span>Consent Records</span>
         </button>
+
         <button type="button" onClick={() => openRoute("/modules/informed-consents/template-registry")}>
-          <BookOpen size={18} />
+          <BookOpen size={19} />
           <span>Templates</span>
         </button>
+
         <button type="button" onClick={() => openRoute("/modules/informed-consents/governance")}>
-          <ShieldCheck size={18} />
+          <ShieldCheck size={19} />
           <span>Governance</span>
         </button>
+
         <button type="button" onClick={() => openRoute("/modules/informed-consents/settings-support")}>
-          <Settings size={18} />
+          <MessageSquare size={19} />
           <span>Support</span>
         </button>
-
-        <div className="sx-sidebar-help">
-          <MessageSquare size={20} />
-          <strong>Need support?</strong>
-          <span>Clinical-legal support is available.</span>
-          <button type="button" onClick={() => openRoute("/modules/informed-consents/settings-support")}>
-            Contact Support
-          </button>
-        </div>
       </aside>
 
-      <section className="sx-main">
-        <header className="sx-header">
-          <button type="button" className="sx-icon-button" onClick={() => openRoute("/modules")}>
+      <section className="care-main">
+        <header className="care-topbar">
+          <button type="button" className="care-icon" onClick={() => openRoute("/modules")}>
             <Home size={19} />
           </button>
 
-          <div className="sx-header-title">
-            <strong>Smart Consent Experience</strong>
-            <span>Simple healthcare workflow with legal-medical intelligence</span>
+          <div>
+            <strong>WathiqCare Smart Consent</strong>
+            <span>Healthcare-grade consent journey with clinical and legal intelligence</span>
           </div>
 
-          <div className="sx-header-actions">
+          <div className="care-top-actions">
+            <button type="button">
+              <Languages size={16} />
+              EN / AR
+            </button>
             <button type="button" onClick={() => openRoute("/alerts")}>
               <Bell size={16} />
               Alerts
             </button>
-            <button type="button">
-              <Globe2 size={16} />
-              EN / AR
-            </button>
-            <button type="button" onClick={() => openRoute("/doctor/dashboard")}>
-              <Stethoscope size={16} />
-              Physician
-            </button>
           </div>
         </header>
 
-        <section className="sx-patient-context">
-          <Field label="Patient" value={patient.name} icon={<UserRound size={18} />} />
-          <Field label="MRN" value={patient.mrn} icon={<ClipboardCheck size={18} />} />
-          <Field label="Encounter" value={patient.encounter} icon={<CalendarDays size={18} />} />
-          <Field label="Department" value={patient.department} icon={<Building2 size={18} />} />
-          <Field label="Physician" value={patient.physician} icon={<Stethoscope size={18} />} />
+        <section className="care-hero">
+          <div>
+            <span className="care-eyebrow">Today’s Clinical Consent</span>
+            <h1>Issue the right consent, faster and safer.</h1>
+            <p>
+              A focused care portal experience for physicians: select patient, choose approved template,
+              confirm procedure, manage anesthesia, educate the patient, and send for signature.
+            </p>
+          </div>
+
+          <div className="care-hero-card">
+            <Sparkles size={22} />
+            <strong>{readiness}%</strong>
+            <span>Consent readiness</span>
+          </div>
         </section>
 
-        <nav className="sx-stepper" aria-label="Consent issuance steps">
-          {steps.map((step, index) => {
-            const done = index < activeStep;
-            const active = index === activeStep;
+        <section className="care-services">
+          <button type="button" className="active" onClick={() => setActiveStep(0)}>
+            <FileCheck2 size={24} />
+            <strong>New Consent</strong>
+            <span>Create and send consent</span>
+          </button>
 
-            return (
-              <button
-                key={step.key}
-                type="button"
-                className={done ? "done" : active ? "active" : ""}
-                onClick={() => setActiveStep(index)}
-              >
-                <b>{done ? <Check size={14} /> : index + 1}</b>
-                <strong>{step.label}</strong>
-                <span>{step.hint}</span>
-              </button>
-            );
-          })}
-        </nav>
+          <button type="button" onClick={() => openRoute("/modules/informed-consents/list")}>
+            <CalendarDays size={24} />
+            <strong>Pending</strong>
+            <span>Follow active consents</span>
+          </button>
 
-        <div className="sx-workspace">
-          <section className="sx-stage">
-            {currentKey === "patient" && (
-              <>
-                <div className="sx-stage-title">
-                  <h1>Confirm Patient Identity</h1>
-                  <p>Confirm the patient before issuing the consent. This keeps the workflow focused and reduces errors.</p>
-                </div>
+          <button type="button" onClick={() => openRoute("/modules/informed-consents/template-registry")}>
+            <BookOpen size={24} />
+            <strong>Approved Forms</strong>
+            <span>Template library</span>
+          </button>
 
-                <div className="sx-card-grid two">
-                  <Field label="Patient Name" value={patient.name} icon={<UserRound size={18} />} />
-                  <Field label="Age / Gender" value={patient.ageGender} icon={<Users size={18} />} />
-                  <Field label="Mobile" value={patient.mobile} icon={<Phone size={18} />} />
-                  <Field label="Email" value={patient.email} icon={<Mail size={18} />} />
-                </div>
+          <button type="button" onClick={() => openRoute("/modules/informed-consents/governance")}>
+            <ShieldCheck size={24} />
+            <strong>Compliance</strong>
+            <span>Audit and legal checks</span>
+          </button>
+        </section>
 
-                <SmartSuggestion
-                  severity="success"
-                  title="Identity matched"
-                  text="Patient context is ready. Continue to encounter confirmation."
-                />
-              </>
-            )}
-
-            {currentKey === "encounter" && (
-              <>
-                <div className="sx-stage-title">
-                  <h1>Select Encounter</h1>
-                  <p>Attach this consent to the correct visit or clinical episode.</p>
-                </div>
-
-                <div className="sx-selection-list">
-                  {["OPD / Cardiac Surgery", "Inpatient / Cardiac Ward", "Day Surgery", "Emergency Visit"].map((item) => (
-                    <button key={item} type="button" className={item === patient.encounter ? "active" : ""}>
-                      <CalendarDays size={19} />
-                      <span>{item}</span>
-                      {item === patient.encounter && <CheckCircle2 size={18} />}
-                    </button>
-                  ))}
-                </div>
-
-                <SmartSuggestion
-                  title="Smart recommendation"
-                  text="The selected encounter is aligned with Cardiac Surgery and CABG-related consent templates."
-                />
-              </>
-            )}
-
-            {currentKey === "template" && (
-              <>
-                <div className="sx-stage-title compact">
-                  <h1>Select Approved Template</h1>
-                  <p>Search from approved forms. The system will prioritize templates aligned with the department and procedure.</p>
-                </div>
-
-                <div className="sx-filter-row">
-                  <label className="sx-search">
-                    <Search size={17} />
-                    <input
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Search by template, Arabic title, department, specialty, or ID"
-                    />
-                    {search && (
-                      <button type="button" onClick={() => setSearch("")}>
-                        <X size={14} />
-                      </button>
-                    )}
-                  </label>
-
-                  <label className="sx-select">
-                    <Filter size={16} />
-                    <select value={type} onChange={(event) => setType(event.target.value)}>
-                      {types.map((item) => (
-                        <option key={item}>{item}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} />
-                  </label>
-
-                  <label className="sx-select">
-                    <Building2 size={16} />
-                    <select value={department} onChange={(event) => setDepartment(event.target.value)}>
-                      {departments.map((item) => (
-                        <option key={item}>{item}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} />
-                  </label>
-                </div>
-
-                <div className="sx-template-grid">
-                  {filteredTemplates.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={item.id === selectedTemplate.id ? "active" : ""}
-                      onClick={() => setSelectedTemplate(item)}
-                    >
-                      <FileText size={20} />
-                      <span>
-                        <strong>{item.title}</strong>
-                        <em>{item.titleAr}</em>
-                        <small>{item.id}</small>
-                      </span>
-                      <i>{item.department}</i>
-                    </button>
-                  ))}
-                </div>
-
-                <SmartSuggestion
-                  severity={templateSource === "database" ? "success" : "warning"}
-                  title={templateSource === "database" ? "Database templates loaded" : templateSource === "loading" ? "Loading templates" : "Fallback mode active"}
-                  text={templateSource === "database" ? "Templates are loaded from the backend." : "The workflow is using safe fallback templates until backend data is available."}
-                />
-              </>
-            )}
-
-            {currentKey === "procedure" && (
-              <>
-                <div className="sx-stage-title">
-                  <h1>Procedure Details</h1>
-                  <p>Confirm the procedure name and clinical note before review.</p>
-                </div>
-
-                <label className="sx-input-block">
-                  <span>Procedure Name</span>
-                  <input value={procedure} onChange={(event) => setProcedure(event.target.value)} />
-                </label>
-
-                <label className="sx-input-block">
-                  <span>Clinical Note</span>
-                  <textarea defaultValue="The patient was informed about the nature of the proposed procedure, benefits, alternatives, material risks, and possible complications." />
-                </label>
-
-                <SmartSuggestion
-                  title="Clinical intelligence"
-                  text="CABG usually requires anesthesia review and clear explanation of bleeding, infection, stroke, heart attack, and mortality risks."
-                />
-              </>
-            )}
-
-            {currentKey === "anesthesia" && (
-              <>
-                <div className="sx-stage-title">
-                  <h1>Anesthesia Decision</h1>
-                  <p>Determine if anesthesia applies. If required, the anesthesiologist section will be triggered within the same consent.</p>
-                </div>
-
-                <div className="sx-choice-row">
-                  <button type="button" className={anesthesiaRequired ? "active" : ""} onClick={() => setAnesthesiaRequired(true)}>
-                    <Syringe size={22} />
-                    <span>
-                      <strong>Anesthesia Required</strong>
-                      <small>Trigger anesthesiologist workflow</small>
-                    </span>
-                  </button>
-
-                  <button type="button" className={!anesthesiaRequired ? "active" : ""} onClick={() => setAnesthesiaRequired(false)}>
-                    <CheckCircle2 size={22} />
-                    <span>
-                      <strong>Not Applicable</strong>
-                      <small>No anesthesia workflow needed</small>
-                    </span>
-                  </button>
-                </div>
-
-                {anesthesiaRequired && (
-                  <SmartSuggestion
-                    severity="warning"
-                    title="Anesthesia workflow required"
-                    text="The consent should not be sent until the anesthesia section is completed or acknowledged."
-                  />
-                )}
-              </>
-            )}
-
-            {currentKey === "education" && (
-              <>
-                <div className="sx-stage-title">
-                  <h1>Patient Education</h1>
-                  <p>Confirm that education materials are attached and understandable for the patient.</p>
-                </div>
-
-                <div className="sx-education-list">
-                  {["Procedure explanation", "Risks and benefits", "Available alternatives", "Post-procedure care", "Patient questions"].map((item) => (
-                    <button key={item} type="button" className="done">
-                      <CheckCircle2 size={18} />
-                      {item}
-                    </button>
-                  ))}
-                </div>
-
-                <label className="sx-check-confirm">
-                  <input
-                    type="checkbox"
-                    checked={educationConfirmed}
-                    onChange={(event) => setEducationConfirmed(event.target.checked)}
-                  />
-                  <span>I confirm that the required patient education material is ready.</span>
-                </label>
-              </>
-            )}
-
-            {currentKey === "review" && (
-              <>
-                <div className="sx-stage-title">
-                  <h1>Physician Review</h1>
-                  <p>Review consent readiness before sending it to the patient.</p>
-                </div>
-
-                <div className="sx-review-layout">
-                  <div className="sx-readiness">
-                    <strong>{readiness}%</strong>
-                    <span>Readiness Score</span>
-                    <i><b style={{ width: `${readiness}%` }} /></i>
-                  </div>
-
-                  <div className="sx-review-list">
-                    <Field label="Template" value={selectedTemplate.title} icon={<FileText size={18} />} />
-                    <Field label="Procedure" value={procedure} icon={<HeartPulse size={18} />} />
-                    <Field label="Anesthesia" value={anesthesiaRequired ? "Required" : "Not Applicable"} icon={<Syringe size={18} />} />
-                    <Field label="Education" value={educationConfirmed ? "Confirmed" : "Pending"} icon={<BookOpen size={18} />} />
-                  </div>
-                </div>
-
-                {readiness < 90 && (
-                  <SmartSuggestion
-                    severity="warning"
-                    title="Readiness incomplete"
-                    text="Complete education confirmation and recipient details before sending."
-                  />
-                )}
-              </>
-            )}
-
-            {currentKey === "send" && (
-              <>
-                <div className="sx-stage-title">
-                  <h1>Send to Patient</h1>
-                  <p>The patient will receive the consent for OTP verification and electronic signature.</p>
-                </div>
-
-                <div className="sx-send-grid">
-                  <label>
-                    <Phone size={17} />
-                    <input value={recipientMobile} onChange={(event) => setRecipientMobile(event.target.value)} />
-                  </label>
-
-                  <label>
-                    <Mail size={17} />
-                    <input value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} />
-                  </label>
-
-                  <label>
-                    <Languages size={17} />
-                    <select value={language} onChange={(event) => setLanguage(event.target.value as "English" | "Arabic" | "Bilingual")}>
-                      <option>English</option>
-                      <option>Arabic</option>
-                      <option>Bilingual</option>
-                    </select>
-                  </label>
-                </div>
-
-                <button type="button" className="sx-primary wide" onClick={sendConsent}>
-                  <Send size={18} />
-                  Send Consent for Signature
+        <section className="care-workspace">
+          <div className="care-left">
+            <nav className="care-stepper">
+              {steps.map((step, index) => (
+                <button
+                  key={step.key}
+                  type="button"
+                  className={index < activeStep ? "done" : index === activeStep ? "active" : ""}
+                  onClick={() => setActiveStep(index)}
+                >
+                  <b>{index < activeStep ? <Check size={14} /> : index + 1}</b>
+                  <span>{step.label}</span>
                 </button>
+              ))}
+            </nav>
 
-                <div className="sx-security-note">
-                  <Lock size={17} />
-                  OTP, audit trail, QR verification, and patient copy will be generated in the signing flow.
-                </div>
-              </>
-            )}
-          </section>
+            <section className="care-panel">
+              {currentStep === "patient" && (
+                <>
+                  <div className="care-panel-title">
+                    <h2>Patient Context</h2>
+                    <p>Confirm the patient and encounter before starting the consent.</p>
+                  </div>
 
-          <aside className="sx-summary">
-            <div className="sx-summary-head">
-              <BadgeCheck size={22} />
+                  <div className="care-info-grid">
+                    <div>
+                      <UserRound size={20} />
+                      <small>Patient</small>
+                      <strong>Mr. Ramesh Kumar</strong>
+                    </div>
+                    <div>
+                      <ClipboardCheck size={20} />
+                      <small>MRN</small>
+                      <strong>WC-2025-001123</strong>
+                    </div>
+                    <div>
+                      <CalendarDays size={20} />
+                      <small>Encounter</small>
+                      <strong>OPD / Cardiac Surgery</strong>
+                    </div>
+                    <div>
+                      <Stethoscope size={20} />
+                      <small>Physician</small>
+                      <strong>Dr. Arjun Mehta</strong>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {currentStep === "template" && (
+                <>
+                  <div className="care-panel-title">
+                    <h2>Approved Consent Template</h2>
+                    <p>Search and select the approved template. The selected form drives the rest of the workflow.</p>
+                  </div>
+
+                  <label className="care-search">
+                    <Search size={18} />
+                    <input
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="Search template, department, Arabic title, or ID"
+                    />
+                  </label>
+
+                  <div className="care-template-list">
+                    {filteredTemplates.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        className={template.id === selectedTemplate.id ? "active" : ""}
+                        onClick={() => setSelectedTemplate(template)}
+                      >
+                        <FileText size={21} />
+                        <span>
+                          <strong>{template.title}</strong>
+                          <em>{template.titleAr}</em>
+                          <small>{template.id}</small>
+                        </span>
+                        <i>{template.department}</i>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {currentStep === "procedure" && (
+                <>
+                  <div className="care-panel-title">
+                    <h2>Procedure Details</h2>
+                    <p>Confirm the clinical procedure and the essential explanation.</p>
+                  </div>
+
+                  <label className="care-input">
+                    <span>Procedure Name</span>
+                    <input value={procedure} onChange={(event) => setProcedure(event.target.value)} />
+                  </label>
+
+                  <label className="care-input">
+                    <span>Clinical Note</span>
+                    <textarea defaultValue="The patient was informed about the nature, benefits, material risks, alternatives, and possible complications of the proposed procedure." />
+                  </label>
+                </>
+              )}
+
+              {currentStep === "anesthesia" && (
+                <>
+                  <div className="care-panel-title">
+                    <h2>Anesthesia Decision</h2>
+                    <p>Decide whether anesthesia is applicable. If required, anesthesiologist review is triggered.</p>
+                  </div>
+
+                  <div className="care-choice">
+                    <button type="button" className={anesthesiaRequired ? "active" : ""} onClick={() => setAnesthesiaRequired(true)}>
+                      <Syringe size={23} />
+                      <strong>Anesthesia Required</strong>
+                      <span>Send section to anesthesiologist</span>
+                    </button>
+
+                    <button type="button" className={!anesthesiaRequired ? "active" : ""} onClick={() => setAnesthesiaRequired(false)}>
+                      <BadgeCheck size={23} />
+                      <strong>Not Applicable</strong>
+                      <span>No anesthesia workflow needed</span>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {currentStep === "education" && (
+                <>
+                  <div className="care-panel-title">
+                    <h2>Patient Education</h2>
+                    <p>Confirm the education content before patient signature.</p>
+                  </div>
+
+                  <div className="care-education">
+                    {["Procedure explanation", "Risks and benefits", "Alternatives", "Post-procedure care"].map((item) => (
+                      <div key={item}>
+                        <BadgeCheck size={18} />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <label className="care-confirm">
+                    <input
+                      type="checkbox"
+                      checked={educationConfirmed}
+                      onChange={(event) => setEducationConfirmed(event.target.checked)}
+                    />
+                    <span>I confirm patient education is ready.</span>
+                  </label>
+                </>
+              )}
+
+              {currentStep === "review" && (
+                <>
+                  <div className="care-panel-title">
+                    <h2>Smart Review</h2>
+                    <p>Review clinical and legal readiness before sending.</p>
+                  </div>
+
+                  <div className="care-review">
+                    <div>
+                      <strong>{readiness}%</strong>
+                      <span>Readiness Score</span>
+                    </div>
+                    <ul>
+                      <li>Template selected: {selectedTemplate.title}</li>
+                      <li>Procedure: {procedure}</li>
+                      <li>Anesthesia: {anesthesiaRequired ? "Required" : "Not Applicable"}</li>
+                      <li>Education: {educationConfirmed ? "Confirmed" : "Pending"}</li>
+                    </ul>
+                  </div>
+                </>
+              )}
+
+              {currentStep === "send" && (
+                <>
+                  <div className="care-panel-title">
+                    <h2>Send to Patient</h2>
+                    <p>The patient will receive OTP verification and electronic signature link.</p>
+                  </div>
+
+                  <div className="care-send-grid">
+                    <label>
+                      <Phone size={18} />
+                      <input value={mobile} onChange={(event) => setMobile(event.target.value)} />
+                    </label>
+                    <label>
+                      <Mail size={18} />
+                      <input value={email} onChange={(event) => setEmail(event.target.value)} />
+                    </label>
+                  </div>
+
+                  <button type="button" className="care-primary wide" onClick={sendConsent}>
+                    <Send size={18} />
+                    Send Consent for Signature
+                  </button>
+
+                  <div className="care-security">
+                    <Lock size={17} />
+                    OTP, QR verification, audit trail, and patient copy will be generated.
+                  </div>
+                </>
+              )}
+            </section>
+          </div>
+
+          <aside className="care-summary">
+            <div className="care-summary-head">
+              <HeartPulse size={23} />
               <div>
                 <strong>Consent Summary</strong>
-                <span>Live operational context</span>
+                <span>Live journey context</span>
               </div>
             </div>
 
-            <Field label="Patient" value={patient.name} icon={<UserRound size={17} />} />
-            <Field label="Template" value={selectedTemplate.title} icon={<FileText size={17} />} />
-            <Field label="Procedure" value={procedure} icon={<HeartPulse size={17} />} />
-            <Field label="Anesthesia" value={anesthesiaRequired ? "Required" : "Not Applicable"} icon={<Syringe size={17} />} />
-            <Field label="Education" value={educationConfirmed ? "Confirmed" : "Pending"} icon={<BookOpen size={17} />} />
+            <dl>
+              <div>
+                <dt>Patient</dt>
+                <dd>Mr. Ramesh Kumar</dd>
+              </div>
+              <div>
+                <dt>Template</dt>
+                <dd>{selectedTemplate.title}</dd>
+              </div>
+              <div>
+                <dt>Procedure</dt>
+                <dd>{procedure}</dd>
+              </div>
+              <div>
+                <dt>Anesthesia</dt>
+                <dd>{anesthesiaRequired ? "Required" : "Not Applicable"}</dd>
+              </div>
+              <div>
+                <dt>Education</dt>
+                <dd>{educationConfirmed ? "Confirmed" : "Pending"}</dd>
+              </div>
+            </dl>
 
-            <div className="sx-summary-alert">
-              {readiness >= 90 ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
-              <span>{readiness >= 90 ? "Ready to send" : "Pending completion"}</span>
+            <div className="care-ai-note">
+              <Sparkles size={18} />
+              <span>
+                AI guidance appears only when it supports a clinical or legal decision.
+              </span>
             </div>
 
-            <div className="sx-summary-actions">
-              <button type="button" onClick={goBack} disabled={activeStep === 0}>
-                <ArrowLeft size={16} />
+            <div className="care-actions">
+              <button type="button" onClick={back} disabled={activeStep === 0}>
                 Back
               </button>
-
               {activeStep < steps.length - 1 ? (
-                <button type="button" className="sx-primary" onClick={goNext}>
+                <button type="button" className="care-primary" onClick={next}>
                   Continue
-                  <ArrowRight size={16} />
+                  <ChevronRight size={16} />
                 </button>
               ) : (
-                <button type="button" className="sx-primary" onClick={sendConsent}>
+                <button type="button" className="care-primary" onClick={sendConsent}>
                   Send
                   <Send size={16} />
                 </button>
               )}
             </div>
           </aside>
-        </div>
+        </section>
       </section>
     </main>
   );
