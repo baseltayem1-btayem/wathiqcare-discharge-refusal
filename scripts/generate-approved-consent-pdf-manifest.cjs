@@ -1,20 +1,23 @@
 ﻿const fs = require("fs");
 const path = require("path");
 
-const projectRoot = process.cwd();
-const publicRoot = path.join(projectRoot, "apps", "web", "public");
-const pdfRoots = [
-  path.join(publicRoot, "approved-consents"),
-  path.join(publicRoot, "imc-approved-consents"),
-  path.join(publicRoot, "consents"),
-  path.join(publicRoot, "pdf"),
-  path.join(publicRoot, "pdfs"),
-];
+const root = process.cwd();
+const publicRoot = path.join(root, "apps", "web", "public");
+const outFile = path.join(
+  root,
+  "apps",
+  "web",
+  "src",
+  "data",
+  "informed-consents",
+  "approved-consent-pdf-manifest.json"
+);
 
 function slugify(value) {
   return String(value || "")
     .trim()
     .toLowerCase()
+    .replace(/[’‘`´]/g, "'")
     .replace(/['"]/g, "")
     .replace(/&/g, "and")
     .replace(/[^a-z0-9\u0600-\u06FF]+/gi, "-")
@@ -23,44 +26,47 @@ function slugify(value) {
 
 function walk(dir) {
   if (!fs.existsSync(dir)) return [];
-  const out = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...walk(full));
-    if (entry.isFile() && entry.name.toLowerCase().endsWith(".pdf")) out.push(full);
-  }
-  return out;
+    if (entry.isDirectory()) return walk(full);
+    if (entry.isFile() && entry.name.toLowerCase().endsWith(".pdf")) return [full];
+    return [];
+  });
 }
 
-const items = [];
+const pdfs = walk(publicRoot)
+  .filter((file) => {
+    const rel = path.relative(publicRoot, file).replace(/\\/g, "/").toLowerCase();
+    return (
+      rel.includes("approved") ||
+      rel.includes("consent") ||
+      rel.includes("imc") ||
+      rel.includes("pdf")
+    );
+  })
+  .map((file) => {
+    const rel = path.relative(publicRoot, file).replace(/\\/g, "/");
+    const fileName = path.basename(file);
+    const nameWithoutPdf = fileName.replace(/\.pdf$/i, "");
+    const publicPath = "/" + rel.split("/").map(encodeURIComponent).join("/");
 
-for (const root of pdfRoots) {
-  for (const file of walk(root)) {
-    const relativePublic = "/" + path.relative(publicRoot, file).replace(/\\/g, "/");
-    const base = path.basename(file, ".pdf");
-    const slug = slugify(base);
-
-    items.push({
-      id: slug,
-      code: slug,
-      templateId: slug,
-      title: base.replace(/[-_]+/g, " ").trim(),
-      fileName: path.basename(file),
-      publicPath: relativePublic,
+    return {
+      id: slugify(nameWithoutPdf),
+      code: slugify(nameWithoutPdf),
+      templateId: slugify(nameWithoutPdf),
+      title: nameWithoutPdf,
+      fileName,
+      publicPath,
       contentType: "application/pdf",
-    });
-  }
+      lengthBytes: fs.statSync(file).size,
+    };
+  })
+  .sort((a, b) => a.publicPath.localeCompare(b.publicPath));
+
+fs.mkdirSync(path.dirname(outFile), { recursive: true });
+fs.writeFileSync(outFile, JSON.stringify(pdfs, null, 2), "utf8");
+
+console.log(`APPROVED_CONSENT_PDF_MANIFEST_COUNT=${pdfs.length}`);
+for (const item of pdfs) {
+  console.log(`${item.fileName} -> ${item.publicPath} (${item.lengthBytes} bytes)`);
 }
-
-const unique = Array.from(new Map(items.map((item) => [item.id, item])).values());
-
-const outputDir = path.join(projectRoot, "apps", "web", "src", "data", "informed-consents");
-fs.mkdirSync(outputDir, { recursive: true });
-
-fs.writeFileSync(
-  path.join(outputDir, "approved-consent-pdf-manifest.json"),
-  JSON.stringify(unique, null, 2),
-  "utf8"
-);
-
-console.log(`APPROVED_CONSENT_PDF_MANIFEST_ITEMS=${unique.length}`);

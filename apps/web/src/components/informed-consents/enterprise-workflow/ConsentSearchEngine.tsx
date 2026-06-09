@@ -181,10 +181,10 @@ export default function ConsentSearchEngine() {
 
       const contentType = pdfCheck.headers.get("content-type") || "";
       if (!contentType.includes("application/pdf")) {
-        throw new Error("Approved consent preview did not return a PDF file.");
+        throw new Error("The official approved consent PDF is not uploaded or not mapped correctly.");
       }
 
-            const previewWindow = window.open("about:blank", "_blank", "noopener,noreferrer");
+      const previewWindow = window.open("about:blank", "_blank", "noopener,noreferrer");
 
       if (previewWindow) {
         previewWindow.location.href = pdfUrl;
@@ -341,6 +341,7 @@ export default function ConsentSearchEngine() {
     </div>
   );
 }
+
 
 
 
