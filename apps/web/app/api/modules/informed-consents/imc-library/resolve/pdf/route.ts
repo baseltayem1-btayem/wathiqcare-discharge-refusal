@@ -58,7 +58,7 @@ function identityValues(value: any) {
     .map((entry) => normalize(String(entry)));
 }
 
-function findByIdentity(items: PdfManifestItem[] | LibraryItem[], identifier: string, title: string) {
+function findByIdentity(items: any[], identifier: string, title: string) {
   const candidates = new Set(
     [identifier, title, decodeURIComponent(identifier || ""), decodeURIComponent(title || "")]
       .filter(Boolean)
@@ -84,17 +84,40 @@ async function loadLibraryItem(request: NextRequest, identifier: string, title: 
 }
 
 function encodedPublicPath(pathOrFileName: string) {
-  const clean = String(pathOrFileName || "").replace(/^public\//, "").replace(/^\/+/, "");
-  return "/" + clean.split("/").map(encodeURIComponent).join("/");
+  const clean = String(pathOrFileName || "")
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .replace(/^public\//, "")
+    .replace(/^\/+/, "");
+
+  return "/" + clean.split("/").filter(Boolean).map(encodeURIComponent).join("/");
 }
 
-function candidatePathsFromLibraryItem(item: LibraryItem | null) {
+function isUnsafeOrSelfApiPath(request: NextRequest, raw: string) {
+  const value = String(raw || "").trim();
+  if (!value) return true;
+
+  const absolute = value.startsWith("http")
+    ? value
+    : new URL(value.startsWith("/") ? value : `/${value}`, request.nextUrl.origin).toString();
+
+  const current = request.nextUrl.toString();
+
+  if (absolute === current) return true;
+  if (absolute.includes("/api/modules/informed-consents/imc-library/resolve/pdf")) return true;
+  if (absolute.includes("/api/")) return true;
+
+  return false;
+}
+
+function candidatePathsFromLibraryItem(request: NextRequest, item: LibraryItem | null) {
   if (!item) return [];
 
   const candidates = [
     item.publicPath,
     item.pdfPath,
-    item.pdfUrl,
+    item.staticPdfPath,
+    item.approvedPdfPath,
+    item.officialPdfPath,
     item.fileUrl,
     item.previewUrl,
     item.downloadUrl,
@@ -105,32 +128,82 @@ function candidatePathsFromLibraryItem(item: LibraryItem | null) {
     item.fileName ? `/pdfs/${item.fileName}` : "",
   ].filter(Boolean);
 
-  return Array.from(new Set(candidates.map((value) => encodedPublicPath(String(value)))));
+  return Array.from(
+    new Set(
+      candidates
+        .map((value) => String(value))
+        .filter((value) => !isUnsafeOrSelfApiPath(request, value))
+        .map((value) => encodedPublicPath(value)),
+    ),
+  );
 }
 
 async function isPdfAvailable(request: NextRequest, publicPath: string) {
+  if (isUnsafeOrSelfApiPath(request, publicPath)) return false;
+
   const absolute = new URL(publicPath, request.nextUrl.origin);
 
   try {
     const response = await fetch(absolute, {
       method: "GET",
       cache: "no-store",
-      headers: { range: "bytes=0-20" },
+      headers: { range: "bytes=0-40" },
     });
 
     const contentType = response.headers.get("content-type") || "";
 
     return (
       response.ok &&
-      (contentType.includes("application/pdf") ||
-        publicPath.toLowerCase().endsWith(".pdf"))
+      (contentType.includes("application/pdf") || publicPath.toLowerCase().endsWith(".pdf"))
     );
   } catch {
     return false;
   }
 }
 
-function buildDebugJson(args: {
+function readBase64Pdf(item: LibraryItem | null) {
+  if (!item) return null;
+
+  const candidates = [
+    item.pdfBase64,
+    item.fileBase64,
+    item.contentBase64,
+    item.base64,
+    item.pdfData,
+    item.fileData,
+    item.data,
+    item.content,
+    item.binary,
+    item.rawPdf,
+    item.approvedPdfBase64,
+    item.officialPdfBase64,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string") continue;
+
+    let value = candidate.trim();
+
+    if (value.startsWith("data:application/pdf;base64,")) {
+      value = value.replace(/^data:application\/pdf;base64,/i, "");
+    }
+
+    if (value.length < 1000) continue;
+
+    try {
+      const buffer = Buffer.from(value, "base64");
+      if (buffer.length > 500 && buffer.slice(0, 4).toString("utf8") === "%PDF") {
+        return buffer;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function buildMissingMappingJson(args: {
   id: string;
   title: string;
   expectedFileName: string;
@@ -139,9 +212,9 @@ function buildDebugJson(args: {
 }) {
   return {
     success: false,
-    error: "Official approved consent PDF is not physically reachable",
+    error: "Official approved consent PDF is not linked",
     detail:
-      "The selected approved consent exists in the IMC approved library, but the route could not reach the actual uploaded PDF file. This must be fixed by placing the official PDF under apps/web/public/approved-consents or by correcting the publicPath/fileName mapping.",
+      "The system found the approved consent library record, but it did not find a reachable official PDF file or embedded PDF binary. The preview will not generate a substitute consent. Link the actual approved PDF file to this template.",
     id: args.id,
     title: args.title,
     expectedFileName: args.expectedFileName,
@@ -171,16 +244,34 @@ export async function GET(request: NextRequest) {
   const expectedFileName = `${normalize(title || id)}.pdf`;
 
   const physicalPdf = findByIdentity(manifest as PdfManifestItem[], id, title) as PdfManifestItem | null;
+  const checkedPaths: string[] = [];
 
-  if (physicalPdf?.publicPath) {
+  if (physicalPdf?.publicPath && !isUnsafeOrSelfApiPath(request, physicalPdf.publicPath)) {
     const path = encodedPublicPath(physicalPdf.publicPath);
+    checkedPaths.push(path);
+
     if (await isPdfAvailable(request, path)) {
       return NextResponse.redirect(new URL(path, request.nextUrl.origin), 302);
     }
   }
 
   const libraryItem = await loadLibraryItem(request, id, title);
-  const candidatePaths = candidatePathsFromLibraryItem(libraryItem);
+
+  const embeddedPdf = readBase64Pdf(libraryItem);
+  if (embeddedPdf) {
+    return new NextResponse(embeddedPdf, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${expectedFileName}"`,
+        "Cache-Control": "no-store, max-age=0",
+        "X-WathiqCare-PDF-Source": "approved-library-embedded-official-pdf",
+      },
+    });
+  }
+
+  const candidatePaths = candidatePathsFromLibraryItem(request, libraryItem);
+  checkedPaths.push(...candidatePaths);
 
   for (const path of candidatePaths) {
     if (await isPdfAvailable(request, path)) {
@@ -189,15 +280,12 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json(
-    buildDebugJson({
+    buildMissingMappingJson({
       id,
       title,
       expectedFileName,
       libraryItem,
-      checkedPaths: [
-        physicalPdf?.publicPath ? encodedPublicPath(physicalPdf.publicPath) : "",
-        ...candidatePaths,
-      ].filter(Boolean),
+      checkedPaths: Array.from(new Set(checkedPaths)),
     }),
     { status: 404 },
   );
