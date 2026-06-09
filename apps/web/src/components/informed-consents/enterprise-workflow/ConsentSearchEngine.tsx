@@ -153,12 +153,7 @@ export default function ConsentSearchEngine() {
       }).catch(() => null);
 
       const pdfUrl =
-        resolved?.pdfUrl ||
-        resolved?.previewUrl ||
-        item.pdfUrl ||
-        item.previewUrl ||
-        item.fileUrl ||
-        `${API_BASE}/imc-library/resolve/pdf?id=${encodeURIComponent(templateId)}&title=${encodeURIComponent(itemTitle(item))}`;
+        item.pdfUrl || item.previewUrl || item.fileUrl || resolved?.pdfUrl || resolved?.previewUrl || `${API_BASE}/imc-library/resolve/pdf?id=${encodeURIComponent(templateId)}&title=${encodeURIComponent(itemTitle(item))}`;
 
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
     } catch (e: any) {
@@ -332,3 +327,4 @@ export default function ConsentSearchEngine() {
     </div>
   );
 }
+

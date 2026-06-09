@@ -1,54 +1,81 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
+import manifest from "@/data/informed-consents/approved-consent-pdf-manifest.json";
 
-function htmlEscape(value: string) {
+type PdfManifestItem = {
+  id?: string;
+  code?: string;
+  templateId?: string;
+  title?: string;
+  fileName?: string;
+  publicPath?: string;
+  contentType?: string;
+};
+
+function slugify(value: string | null | undefined) {
   return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .trim()
+    .toLowerCase()
+    .replace(/['"]/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9\u0600-\u06FF]+/gi, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function normalize(value: string | null | undefined) {
+  return slugify(value);
+}
+
+function findPdf(identifier: string | null, title: string | null) {
+  const items = manifest as PdfManifestItem[];
+  const candidates = new Set(
+    [
+      identifier,
+      title,
+      decodeURIComponent(identifier || ""),
+      decodeURIComponent(title || ""),
+    ]
+      .filter(Boolean)
+      .map((value) => normalize(value)),
+  );
+
+  return (
+    items.find((item) =>
+      [
+        item.id,
+        item.code,
+        item.templateId,
+        item.title,
+        item.fileName?.replace(/\.pdf$/i, ""),
+      ]
+        .filter(Boolean)
+        .map((value) => normalize(value))
+        .some((value) => candidates.has(value)),
+    ) || null
+  );
 }
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const id = searchParams.get("id") || "approved-consent-template";
-  const title = searchParams.get("title") || id;
+  const id = searchParams.get("id") || searchParams.get("templateId") || searchParams.get("code");
+  const title = searchParams.get("title") || searchParams.get("titleEn") || searchParams.get("titleAr");
 
-  const html = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>${htmlEscape(title)}</title>
-  <style>
-    body{font-family:Arial,sans-serif;margin:40px;color:#0b1f3a}
-    .page{max-width:850px;margin:auto;border:1px solid #d8dce3;border-radius:16px;padding:32px}
-    h1{color:#002B5C;margin:0 0 8px}
-    .badge{display:inline-block;background:#ecfdf3;color:#027a48;border-radius:999px;padding:6px 12px;font-weight:700;font-size:12px}
-    .meta{margin-top:24px;border-top:1px solid #e4e7ec;padding-top:16px;color:#667085}
-    .section{margin-top:28px;line-height:1.75}
-  </style>
-</head>
-<body>
-  <div class="page">
-    <span class="badge">IMC Approved Consent Library</span>
-    <h1>${htmlEscape(title)}</h1>
-    <div class="meta">Template ID: ${htmlEscape(id)}</div>
-    <div class="section">
-      <strong>Production PDF Preview</strong><br/>
-      This preview is served from the approved consent library resolve endpoint.
-      It confirms that the selected library item is no longer routed to a missing consent document record.
-    </div>
-    <div class="section" dir="rtl">
-      <strong>معاينة PDF من مكتبة الموافقات المعتمدة</strong><br/>
-      يتم عرض هذه المعاينة من مسار مكتبة الموافقات المعتمدة، وليس من سجل مستند غير موجود.
-    </div>
-  </div>
-</body>
-</html>`;
+  const pdf = findPdf(id, title);
 
-  return new NextResponse(html, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
-  });
+  if (!pdf?.publicPath) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Approved consent PDF file is not mapped",
+        detail:
+          "The library item was resolved, but no physical PDF file was found in public/approved-consents or the approved PDF manifest.",
+        id,
+        title,
+        expectedFileName: `${normalize(title || id)}.pdf`,
+      },
+      { status: 404 },
+    );
+  }
+
+  const absoluteUrl = new URL(pdf.publicPath, request.nextUrl.origin);
+  return NextResponse.redirect(absoluteUrl, 302);
 }
