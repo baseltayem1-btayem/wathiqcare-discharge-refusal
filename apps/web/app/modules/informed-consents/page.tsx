@@ -1,5 +1,5 @@
 ﻿import { redirect } from "next/navigation";
-import WathiqSmartConsentExperience from "@/components/informed-consents/smart-experience/WathiqSmartConsentExperience";
+import FigmaWathiqCareApp from "@/components/wathiqcare-figma-uiux/App";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
@@ -12,12 +12,12 @@ export default async function InformedConsentsPage() {
 
   return (
     <section
-      data-testid="wathiq-smart-consent-experience"
-      data-release-surface="wathiq-smart-consent-experience"
-      aria-label="WathiqCare smart consent experience"
+      className="wathiqcare-figma-uiux-shell"
+      data-testid="wathiqcare-figma-uiux-design-system"
+      data-release-surface="figma-uiux-design-system"
+      aria-label="WathiqCare Figma UI UX Design System"
     >
-      <h1 className="sr-only">WathiqCare Smart Consent Experience</h1>
-      <WathiqSmartConsentExperience />
+      <FigmaWathiqCareApp />
     </section>
   );
 }
