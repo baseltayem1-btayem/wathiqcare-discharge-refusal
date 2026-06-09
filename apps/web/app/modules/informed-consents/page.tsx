@@ -1,5 +1,5 @@
 ﻿import { redirect } from "next/navigation";
-import WathiqConsentModeSurface from "@/components/informed-consents/enterprise-workflow/WathiqConsentModeSurface";
+import FunctionalConsentIssuanceWorkflow from "@/components/informed-consents/enterprise-workflow/FunctionalConsentIssuanceWorkflow";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
@@ -12,13 +12,12 @@ export default async function InformedConsentsPage() {
 
   return (
     <section
-      data-testid="approved-informed-consents-module"
-      data-release-surface="approved-informed-consents"
-      aria-label="Approved informed consents module"
+      data-testid="functional-informed-consents-module"
+      data-release-surface="functional-informed-consents"
+      aria-label="Functional informed consents module"
     >
-      <h1 className="sr-only">Approved Informed Consents Module</h1>
-      <WathiqConsentModeSurface />
+      <h1 className="sr-only">Functional Informed Consents Module</h1>
+      <FunctionalConsentIssuanceWorkflow />
     </section>
   );
 }
-
