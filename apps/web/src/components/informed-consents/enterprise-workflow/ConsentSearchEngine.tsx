@@ -32,7 +32,6 @@ type ConsentLibraryItem = {
 };
 
 const API_BASE = "/api/modules/informed-consents";
-const DEMO_CASE_ID = "demo-physician-consent-case-2026";
 
 async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -196,37 +195,17 @@ export default function ConsentSearchEngine() {
     setActionId(templateId);
     setError(null);
 
-    try {
-      const payload = {
-        caseId: DEMO_CASE_ID,
+    try {      const params = new URLSearchParams({
+        source: "imc-approved-library",
         templateId,
         templateVersionId: item.templateVersionId || templateId,
         code: item.code || templateId,
         title: itemTitle(item),
         titleEn: item.titleEn || itemTitle(item),
         titleAr: item.titleAr || itemTitleAr(item),
-        source: "imc-approved-library",
-        status: "DRAFT",
-      };
-
-      const created = await apiJson<any>(`${API_BASE}/generate-draft`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }).catch(async () => {
-        return apiJson<any>(`${API_BASE}/documents`, {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
       });
 
-      const documentId =
-        created?.documentId ||
-        created?.id ||
-        created?.data?.documentId ||
-        created?.data?.id ||
-        templateId;
-
-      window.location.href = `/modules/informed-consents/${encodeURIComponent(documentId)}/preview`;
+      window.location.href = `/modules/informed-consents/consent-creation-workflow?${params.toString()}`;
     } catch (e: any) {
       setError(e?.message || "Unable to create draft consent for physician review.");
     } finally {
@@ -354,5 +333,6 @@ export default function ConsentSearchEngine() {
     </div>
   );
 }
+
 
 

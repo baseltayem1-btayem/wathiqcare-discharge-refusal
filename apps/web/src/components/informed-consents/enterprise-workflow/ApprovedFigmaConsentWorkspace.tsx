@@ -478,3 +478,4 @@ export default function ApprovedFigmaConsentWorkspace({
     </div>
   );
 }
+
