@@ -1,6 +1,4 @@
-﻿"use client";
-
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Wind, Clock, AlertTriangle, Check, ChevronRight, User } from "lucide-react";
 import { StatusBadge } from "../StatusBadge";
 
@@ -146,5 +144,4 @@ export function AnesthesiaQueue({ lang }: Props) {
     </div>
   );
 }
-
 

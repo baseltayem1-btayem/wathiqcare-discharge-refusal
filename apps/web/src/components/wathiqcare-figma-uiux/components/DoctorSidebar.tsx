@@ -103,7 +103,7 @@ export function DoctorSidebar({ active, onNavigate, lang }: Props) {
               {lang === "en" ? "Dr. Ahmad Khalil" : "Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„"}
             </div>
             <div className="text-xs truncate" style={{ color: "#64798B" }}>
-              {lang === "en" ? "Surgeon Â· ICU" : "Ø¬Ø±Ø§Ø­ Â· Ø§Ù„Ø¹Ù†Ø§ÙŠØ© Ø§Ù„Ù…Ø±ÙƒØ²Ø©"}
+              {lang === "en" ? "Surgeon · ICU" : "Ø¬Ø±Ø§Ø­ · Ø§Ù„Ø¹Ù†Ø§ÙŠØ© Ø§Ù„Ù…Ø±ÙƒØ²Ø©"}
             </div>
           </div>
           <button className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
@@ -114,5 +114,6 @@ export function DoctorSidebar({ active, onNavigate, lang }: Props) {
     </aside>
   );
 }
+
 
 

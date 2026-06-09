@@ -1,5 +1,3 @@
-﻿"use client";
-
 import { FileText, Clock, CheckSquare, Wind, BookOpen, Shield, Archive, Activity, TrendingUp, AlertCircle, Users, ChevronRight } from "lucide-react";
 import { StatusBadge } from "../StatusBadge";
 import type { DoctorScreen } from "../DoctorSidebar";
@@ -12,7 +10,7 @@ interface Props {
 const t = {
   en: {
     hero: "Good morning, Dr. Ahmad",
-    heroSub: "Here's your clinical consent activity for today â€” Tuesday, June 9, 2026",
+    heroSub: "Here's your clinical consent activity for today — Tuesday, June 9, 2026",
     stats: ["Pending Consents", "Signed Today", "Anesthesia Queue", "Compliance Score"],
     statVals: ["7", "12", "4", "98%"],
     services: "Quick Services",
@@ -27,39 +25,39 @@ const t = {
     alertDesc: "Send reminders or re-issue secure links",
   },
   ar: {
-    hero: "ØµØ¨Ø§Ø­ Ø§Ù„Ø®ÙŠØ±ØŒ Ø¯. Ø£Ø­Ù…Ø¯",
-    heroSub: "Ø¥Ù„ÙŠÙƒ Ù†Ø´Ø§Ø· Ù…ÙˆØ§ÙÙ‚Ø§Øª Ø§Ù„Ø¹ÙŠØ§Ø¯Ø© Ù„Ù„ÙŠÙˆÙ… â€” Ø§Ù„Ø«Ù„Ø§Ø«Ø§Ø¡ Ù© ÙŠÙˆÙ†ÙŠÙˆ Ù¢Ù Ù¢Ù¦",
-    stats: ["Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø§Øª Ø§Ù„Ù…Ø¹Ù„Ù‚Ø©", "Ø§Ù„Ù…ÙˆÙ‚Ø¹Ø© Ø§Ù„ÙŠÙˆÙ…", "Ø·Ø§Ø¨ÙˆØ± Ø§Ù„ØªØ®Ø¯ÙŠØ±", "Ù†Ù‚Ø§Ø· Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„"],
-    statVals: ["Ù§", "Ù¡Ù¢", "Ù¤", "Ù©Ù¨Ùª"],
-    services: "Ø§Ù„Ø®Ø¯Ù…Ø§Øª Ø§Ù„Ø³Ø±ÙŠØ¹Ø©",
-    activity: "Ø§Ù„Ù†Ø´Ø§Ø· Ø§Ù„Ø£Ø®ÙŠØ±",
-    createNew: "Ø¥Ù†Ø´Ø§Ø¡ Ù…ÙˆØ§ÙÙ‚Ø© Ø¬Ø¯ÙŠØ¯Ø©",
-    createDesc: "Ø§Ø¨Ø¯Ø£ Ù…ÙˆØ§ÙÙ‚Ø© Ù…Ø³ØªÙ†ÙŠØ±Ø© Ø¬Ø¯ÙŠØ¯Ø© Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ø±ÙŠØ¶",
-    viewPending: "Ø¹Ø±Ø¶ Ø§Ù„Ù…Ø¹Ù„Ù‚",
-    patientName: "Ø§Ù„Ù…Ø±ÙŠØ¶",
-    procedureLabel: "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡",
-    timeLabel: "Ø§Ù„ÙˆÙ‚Øª",
-    alertTitle: "Ù¢ Ù…ÙˆØ§ÙÙ‚Ø© ÙÙŠ Ø§Ù†ØªØ¸Ø§Ø± ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ù…Ø±ÙŠØ¶",
-    alertDesc: "Ø£Ø±Ø³Ù„ ØªØ°ÙƒÙŠØ±Ø§Øª Ø£Ùˆ Ø£Ø¹Ø¯ Ø¥ØµØ¯Ø§Ø± Ø±ÙˆØ§Ø¨Ø· Ø¢Ù…Ù†Ø©",
+    hero: "صباح الخير، د. أحمد",
+    heroSub: "إليك نشاط موافقات العيادة لليوم — الثلاثاء ٩ يونيو ٢٠٢٦",
+    stats: ["الموافقات المعلقة", "الموقعة اليوم", "طابور التخدير", "نقاط الامتثال"],
+    statVals: ["٧", "١٢", "٤", "٩٨٪"],
+    services: "الخدمات السريعة",
+    activity: "النشاط الأخير",
+    createNew: "إنشاء موافقة جديدة",
+    createDesc: "ابدأ موافقة مستنيرة جديدة لإجراء المريض",
+    viewPending: "عرض المعلق",
+    patientName: "المريض",
+    procedureLabel: "الإجراء",
+    timeLabel: "الوقت",
+    alertTitle: "٢ موافقة في انتظار توقيع المريض",
+    alertDesc: "أرسل تذكيرات أو أعد إصدار روابط آمنة",
   }
 };
 
 const serviceCards = [
-  { id: "home", icon: FileText, colorFrom: "#2F90C7", colorTo: "#12B7B5", en: "Create Consent", ar: "Ø¥Ù†Ø´Ø§Ø¡ Ù…ÙˆØ§ÙÙ‚Ø©", descEn: "New procedure consent", descAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø¥Ø¬Ø±Ø§Ø¡ Ø¬Ø¯ÙŠØ¯Ø©" },
-  { id: "create-consent", icon: Clock, colorFrom: "#D9A93B", colorTo: "#F5C842", en: "Pending Consents", ar: "Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø§Øª Ø§Ù„Ù…Ø¹Ù„Ù‚Ø©", descEn: "7 awaiting response", descAr: "Ù§ ÙÙŠ Ø§Ù†ØªØ¸Ø§Ø± Ø§Ù„Ø±Ø¯" },
-  { id: "approved-forms", icon: CheckSquare, colorFrom: "#19A978", colorTo: "#0ECBA1", en: "Approved Forms", ar: "Ø§Ù„Ù†Ù…Ø§Ø°Ø¬ Ø§Ù„Ù…Ø¹ØªÙ…Ø¯Ø©", descEn: "Browse form library", descAr: "ØªØµÙØ­ Ù…ÙƒØªØ¨Ø© Ø§Ù„Ù†Ù…Ø§Ø°Ø¬" },
-  { id: "anesthesia-queue", icon: Wind, colorFrom: "#6B5CE7", colorTo: "#9B8AF5", en: "Anesthesia Queue", ar: "Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„ØªØ®Ø¯ÙŠØ±", descEn: "4 patients queued", descAr: "Ù¤ Ù…Ø±Ø¶Ù‰ ÙÙŠ Ø§Ù„Ø§Ù†ØªØ¸Ø§Ø±" },
-  { id: "patient-education", icon: BookOpen, colorFrom: "#123B5C", colorTo: "#2F90C7", en: "Patient Education", ar: "ØªØ«Ù‚ÙŠÙ Ø§Ù„Ù…Ø±ÙŠØ¶", descEn: "Education resources", descAr: "Ù…ÙˆØ§Ø±Ø¯ Ø§Ù„ØªØ«Ù‚ÙŠÙ" },
-  { id: "compliance-review", icon: Shield, colorFrom: "#12B7B5", colorTo: "#0ECBA1", en: "Compliance Review", ar: "Ù…Ø±Ø§Ø¬Ø¹Ø© Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„", descEn: "Smart AI audit", descAr: "ØªØ¯Ù‚ÙŠÙ‚ Ø°ÙƒØ§Ø¡ Ø§ØµØ·Ù†Ø§Ø¹ÙŠ" },
-  { id: "consent-records", icon: Archive, colorFrom: "#E84B7A", colorTo: "#F56B9B", en: "Consent Records", ar: "Ø³Ø¬Ù„Ø§Øª Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©", descEn: "Historical archive", descAr: "Ø§Ù„Ø£Ø±Ø´ÙŠÙ Ø§Ù„ØªØ§Ø±ÙŠØ®ÙŠ" },
-  { id: "audit-trail", icon: Activity, colorFrom: "#D9A93B", colorTo: "#F0B94D", en: "Audit Trail", ar: "Ù…Ø³Ø§Ø± Ø§Ù„ØªØ¯Ù‚ÙŠÙ‚", descEn: "Legal evidence log", descAr: "Ø³Ø¬Ù„ Ø§Ù„Ø£Ø¯Ù„Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ©" },
+  { id: "home", icon: FileText, colorFrom: "#2F90C7", colorTo: "#12B7B5", en: "Create Consent", ar: "إنشاء موافقة", descEn: "New procedure consent", descAr: "موافقة إجراء جديدة" },
+  { id: "create-consent", icon: Clock, colorFrom: "#D9A93B", colorTo: "#F5C842", en: "Pending Consents", ar: "الموافقات المعلقة", descEn: "7 awaiting response", descAr: "٧ في انتظار الرد" },
+  { id: "approved-forms", icon: CheckSquare, colorFrom: "#19A978", colorTo: "#0ECBA1", en: "Approved Forms", ar: "النماذج المعتمدة", descEn: "Browse form library", descAr: "تصفح مكتبة النماذج" },
+  { id: "anesthesia-queue", icon: Wind, colorFrom: "#6B5CE7", colorTo: "#9B8AF5", en: "Anesthesia Queue", ar: "قائمة التخدير", descEn: "4 patients queued", descAr: "٤ مرضى في الانتظار" },
+  { id: "patient-education", icon: BookOpen, colorFrom: "#123B5C", colorTo: "#2F90C7", en: "Patient Education", ar: "تثقيف المريض", descEn: "Education resources", descAr: "موارد التثقيف" },
+  { id: "compliance-review", icon: Shield, colorFrom: "#12B7B5", colorTo: "#0ECBA1", en: "Compliance Review", ar: "مراجعة الامتثال", descEn: "Smart AI audit", descAr: "تدقيق ذكاء اصطناعي" },
+  { id: "consent-records", icon: Archive, colorFrom: "#E84B7A", colorTo: "#F56B9B", en: "Consent Records", ar: "سجلات الموافقة", descEn: "Historical archive", descAr: "الأرشيف التاريخي" },
+  { id: "audit-trail", icon: Activity, colorFrom: "#D9A93B", colorTo: "#F0B94D", en: "Audit Trail", ar: "مسار التدقيق", descEn: "Legal evidence log", descAr: "سجل الأدلة القانونية" },
 ] as const;
 
 const recentActivity = [
-  { patient: "Layla Hassan", patientAr: "Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù†", procedure: "Appendectomy", procedureAr: "Ø§Ø³ØªØ¦ØµØ§Ù„ Ø§Ù„Ø²Ø§Ø¦Ø¯Ø©", time: "9:14 AM", status: "signed" as const },
-  { patient: "Omar Al-Rashid", patientAr: "Ø¹Ù…Ø± Ø§Ù„Ø±Ø§Ø´Ø¯", procedure: "Cardiac Catheterization", procedureAr: "Ù‚Ø³Ø·Ø±Ø© Ù‚Ù„Ø¨ÙŠØ©", time: "8:47 AM", status: "pending" as const },
-  { patient: "Sara Al-Mansouri", patientAr: "Ø³Ø§Ø±Ø© Ø§Ù„Ù…Ù†ØµÙˆØ±ÙŠ", procedure: "Knee Replacement", procedureAr: "ØªØ¨Ø¯ÙŠÙ„ Ø§Ù„Ø±ÙƒØ¨Ø©", time: "8:02 AM", status: "approved" as const },
-  { patient: "Khalid Nasser", patientAr: "Ø®Ø§Ù„Ø¯ Ù†Ø§ØµØ±", procedure: "Anesthesia Pre-op", procedureAr: "ØªØ®Ø¯ÙŠØ± Ù…Ø§ Ù‚Ø¨Ù„ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", time: "Yesterday", status: "anesthesia" as const },
+  { patient: "Layla Hassan", patientAr: "ليلى حسن", procedure: "Appendectomy", procedureAr: "استئصال الزائدة", time: "9:14 AM", status: "signed" as const },
+  { patient: "Omar Al-Rashid", patientAr: "عمر الراشد", procedure: "Cardiac Catheterization", procedureAr: "قسطرة قلبية", time: "8:47 AM", status: "pending" as const },
+  { patient: "Sara Al-Mansouri", patientAr: "سارة المنصوري", procedure: "Knee Replacement", procedureAr: "تبديل الركبة", time: "8:02 AM", status: "approved" as const },
+  { patient: "Khalid Nasser", patientAr: "خالد ناصر", procedure: "Anesthesia Pre-op", procedureAr: "تخدير ما قبل العملية", time: "Yesterday", status: "anesthesia" as const },
 ];
 
 export function DoctorHome({ lang, onNavigate }: Props) {
@@ -101,7 +99,7 @@ export function DoctorHome({ lang, onNavigate }: Props) {
       >
         <AlertCircle size={16} style={{ color: "#D9A93B" }} />
         <div className="flex-1">
-          <span className="text-sm font-semibold" style={{ color: "#D9A93B" }}>{tx.alertTitle} â€” </span>
+          <span className="text-sm font-semibold" style={{ color: "#D9A93B" }}>{tx.alertTitle} — </span>
           <span className="text-sm" style={{ color: "#64798B" }}>{tx.alertDesc}</span>
         </div>
         <button
@@ -109,7 +107,7 @@ export function DoctorHome({ lang, onNavigate }: Props) {
           style={{ background: "#D9A93B", color: "white" }}
           onClick={() => onNavigate("create-consent")}
         >
-          {lang === "en" ? "View" : "Ø¹Ø±Ø¶"}
+          {lang === "en" ? "View" : "عرض"}
         </button>
       </div>
 
@@ -152,7 +150,7 @@ export function DoctorHome({ lang, onNavigate }: Props) {
             style={{ color: "#2F90C7" }}
             onClick={() => onNavigate("consent-records")}
           >
-            {lang === "en" ? "See all" : "Ø¹Ø±Ø¶ Ø§Ù„ÙƒÙ„"} <ChevronRight size={12} />
+            {lang === "en" ? "See all" : "عرض الكل"} <ChevronRight size={12} />
           </button>
         </div>
         <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: "#D8E8EF" }}>
@@ -207,5 +205,3 @@ export function DoctorHome({ lang, onNavigate }: Props) {
     </div>
   );
 }
-
-

@@ -1,6 +1,4 @@
-﻿"use client";
-
-import { Activity, Download, Filter, Lock, User, FileText, Send, Eye, CheckSquare } from "lucide-react";
+﻿import { Activity, Download, Filter, Lock, User, FileText, Send, Eye, CheckSquare } from "lucide-react";
 
 interface Props { lang: "en" | "ar" }
 
@@ -97,5 +95,4 @@ export function AuditTrail({ lang }: Props) {
     </div>
   );
 }
-
 

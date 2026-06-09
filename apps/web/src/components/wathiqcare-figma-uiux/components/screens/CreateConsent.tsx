@@ -1,6 +1,4 @@
-﻿"use client";
-
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   User, FileText, Stethoscope, Wind, BookOpen, Shield, Send,
   ChevronRight, ChevronLeft, Check, Search, AlertTriangle, Info,
@@ -735,5 +733,4 @@ export function CreateConsent({ lang }: Props) {
     </div>
   );
 }
-
 

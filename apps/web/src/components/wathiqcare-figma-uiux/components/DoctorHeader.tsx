@@ -71,3 +71,4 @@ export function DoctorHeader({ title, subtitle, lang, onToggleLang }: Props) {
 }
 
 
+

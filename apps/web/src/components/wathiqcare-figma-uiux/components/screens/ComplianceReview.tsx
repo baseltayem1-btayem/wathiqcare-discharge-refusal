@@ -1,6 +1,4 @@
-﻿"use client";
-
-import { Shield, Check, AlertTriangle, Info, TrendingUp, BarChart2, RefreshCw } from "lucide-react";
+﻿import { Shield, Check, AlertTriangle, Info, TrendingUp, BarChart2, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Cell } from "recharts";
 
 interface Props { lang: "en" | "ar" }
@@ -138,5 +136,4 @@ export function ComplianceReview({ lang }: Props) {
     </div>
   );
 }
-
 

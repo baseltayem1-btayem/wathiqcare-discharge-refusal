@@ -63,8 +63,8 @@ export default function App() {
             <div className="w-3 h-3 rounded-full" style={{ background: "#19A978" }} />
             <span className="text-xs text-white/60 font-medium">WathiqCare Platform</span>
           </div>
-          <span className="text-white/20 text-xs mx-1">Â·</span>
-          <span className="text-xs text-white/40">Interactive Prototype Â· All 14 Screens</span>
+          <span className="text-white/20 text-xs mx-1">·</span>
+          <span className="text-xs text-white/40">Interactive Prototype · All 14 Screens</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "#1a3550" }}>
@@ -110,7 +110,7 @@ export default function App() {
               }
               subtitle={
                 showCreateConsent
-                  ? (isRTL ? "Ø§Ù„Ù…Ø±ÙŠØ¶: Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù† Â· MRN-204871" : "Patient: Layla Hassan Â· MRN-204871")
+                  ? (isRTL ? "Ø§Ù„Ù…Ø±ÙŠØ¶: Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù† · MRN-204871" : "Patient: Layla Hassan · MRN-204871")
                   : (isRTL ? title.subAr : title.subEn)
               }
               lang={lang}
@@ -137,7 +137,7 @@ export default function App() {
                         <div className="flex-1">
                           <div className="text-sm font-bold" style={{ color: "#102A43" }}>{isRTL ? r.patientAr : r.patientEn}</div>
                           <div className="text-sm" style={{ color: "#64798B" }}>{isRTL ? r.procedureAr : r.procedureEn}</div>
-                          <div className="text-xs mt-0.5" style={{ color: "#64798B" }}>{r.id} Â· {r.sentTime}</div>
+                          <div className="text-xs mt-0.5" style={{ color: "#64798B" }}>{r.id} · {r.sentTime}</div>
                         </div>
                         <StatusBadge status={r.status} lang={lang} />
                         <button className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: "#EAF6FF", color: "#2F90C7" }}>
@@ -165,5 +165,6 @@ export default function App() {
     </div>
   );
 }
+
 
 

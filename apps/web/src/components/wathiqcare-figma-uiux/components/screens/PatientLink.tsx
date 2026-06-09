@@ -1,6 +1,4 @@
-﻿"use client";
-
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   Globe, Shield, ChevronRight, ChevronLeft, Check, Pen, Lock,
   BookOpen, FileText, Phone, MessageSquare, QrCode, Download,
@@ -521,5 +519,4 @@ export function PatientLink() {
     </div>
   );
 }
-
 

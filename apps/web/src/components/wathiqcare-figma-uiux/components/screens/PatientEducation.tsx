@@ -1,26 +1,24 @@
-﻿"use client";
-
 import { useState } from "react";
 import { BookOpen, Play, FileText, BarChart2, Search, Eye, Globe } from "lucide-react";
 
 interface Props { lang: "en" | "ar" }
 
 const materials = [
-  { id: 1, titleEn: "Pre-operative Fasting Guide", titleAr: "Ø¯Ù„ÙŠÙ„ Ø§Ù„ØµÙŠØ§Ù… Ù‚Ø¨Ù„ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", typeEn: "PDF", typeAr: "PDF", catEn: "Pre-op", catAr: "Ù…Ø§ Ù‚Ø¨Ù„ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", viewsCount: 1240, duration: "5 min", langEn: "Arabic / English", langAr: "Ø¹Ø±Ø¨ÙŠ / Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠ", icon: "ðŸ“„", color: "#E84B7A" },
-  { id: 2, titleEn: "What Happens During Surgery", titleAr: "Ù…Ø§Ø°Ø§ ÙŠØ­Ø¯Ø« Ø£Ø«Ù†Ø§Ø¡ Ø§Ù„Ø¬Ø±Ø§Ø­Ø©", typeEn: "Video", typeAr: "ÙÙŠØ¯ÙŠÙˆ", catEn: "Intra-op", catAr: "Ø£Ø«Ù†Ø§Ø¡ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", viewsCount: 876, duration: "4 min", langEn: "Arabic", langAr: "Ø¹Ø±Ø¨ÙŠ", icon: "ðŸŽ¬", color: "#2F90C7" },
-  { id: 3, titleEn: "Post-operative Care at Home", titleAr: "Ø§Ù„Ø±Ø¹Ø§ÙŠØ© ÙÙŠ Ø§Ù„Ù…Ù†Ø²Ù„ Ø¨Ø¹Ø¯ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", typeEn: "Infographic", typeAr: "Ø¥Ù†ÙÙˆØºØ±Ø§ÙÙŠÙƒ", catEn: "Post-op", catAr: "Ù…Ø§ Ø¨Ø¹Ø¯ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", viewsCount: 2104, duration: "3 min", langEn: "Arabic / English / Urdu", langAr: "Ø¹Ø±Ø¨ÙŠ / Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠ / Ø£Ø±Ø¯ÙŠ", icon: "ðŸ–¼ï¸", color: "#19A978" },
-  { id: 4, titleEn: "Understanding Anesthesia Risks", titleAr: "ÙÙ‡Ù… Ù…Ø®Ø§Ø·Ø± Ø§Ù„ØªØ®Ø¯ÙŠØ±", typeEn: "Video", typeAr: "ÙÙŠØ¯ÙŠÙˆ", catEn: "Anesthesia", catAr: "Ø§Ù„ØªØ®Ø¯ÙŠØ±", viewsCount: 643, duration: "6 min", langEn: "Arabic", langAr: "Ø¹Ø±Ø¨ÙŠ", icon: "ðŸŽ¬", color: "#6B5CE7" },
-  { id: 5, titleEn: "Consent Process Explained", titleAr: "Ø´Ø±Ø­ Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©", typeEn: "PDF", typeAr: "PDF", catEn: "Consent", catAr: "Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©", viewsCount: 3211, duration: "8 min", langEn: "Arabic / English", langAr: "Ø¹Ø±Ø¨ÙŠ / Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠ", icon: "ðŸ“„", color: "#D9A93B" },
-  { id: 6, titleEn: "Recovery Milestones & Timeline", titleAr: "Ù…Ø±Ø§Ø­Ù„ ÙˆÙ…Ø¹Ø§Ù„Ù… Ø§Ù„ØªØ¹Ø§ÙÙŠ", typeEn: "Infographic", typeAr: "Ø¥Ù†ÙÙˆØºØ±Ø§ÙÙŠÙƒ", catEn: "Post-op", catAr: "Ù…Ø§ Ø¨Ø¹Ø¯ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", viewsCount: 1580, duration: "2 min", langEn: "Arabic / English", langAr: "Ø¹Ø±Ø¨ÙŠ / Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠ", icon: "ðŸ–¼ï¸", color: "#12B7B5" },
+  { id: 1, titleEn: "Pre-operative Fasting Guide", titleAr: "دليل الصيام قبل العملية", typeEn: "PDF", typeAr: "PDF", catEn: "Pre-op", catAr: "ما قبل العملية", viewsCount: 1240, duration: "5 min", langEn: "Arabic / English", langAr: "عربي / إنجليزي", icon: "📄", color: "#E84B7A" },
+  { id: 2, titleEn: "What Happens During Surgery", titleAr: "ماذا يحدث أثناء الجراحة", typeEn: "Video", typeAr: "فيديو", catEn: "Intra-op", catAr: "أثناء العملية", viewsCount: 876, duration: "4 min", langEn: "Arabic", langAr: "عربي", icon: "🎬", color: "#2F90C7" },
+  { id: 3, titleEn: "Post-operative Care at Home", titleAr: "الرعاية في المنزل بعد العملية", typeEn: "Infographic", typeAr: "إنفوغرافيك", catEn: "Post-op", catAr: "ما بعد العملية", viewsCount: 2104, duration: "3 min", langEn: "Arabic / English / Urdu", langAr: "عربي / إنجليزي / أردي", icon: "🖼️", color: "#19A978" },
+  { id: 4, titleEn: "Understanding Anesthesia Risks", titleAr: "فهم مخاطر التخدير", typeEn: "Video", typeAr: "فيديو", catEn: "Anesthesia", catAr: "التخدير", viewsCount: 643, duration: "6 min", langEn: "Arabic", langAr: "عربي", icon: "🎬", color: "#6B5CE7" },
+  { id: 5, titleEn: "Consent Process Explained", titleAr: "شرح إجراء الموافقة", typeEn: "PDF", typeAr: "PDF", catEn: "Consent", catAr: "الموافقة", viewsCount: 3211, duration: "8 min", langEn: "Arabic / English", langAr: "عربي / إنجليزي", icon: "📄", color: "#D9A93B" },
+  { id: 6, titleEn: "Recovery Milestones & Timeline", titleAr: "مراحل ومعالم التعافي", typeEn: "Infographic", typeAr: "إنفوغرافيك", catEn: "Post-op", catAr: "ما بعد العملية", viewsCount: 1580, duration: "2 min", langEn: "Arabic / English", langAr: "عربي / إنجليزي", icon: "🖼️", color: "#12B7B5" },
 ];
 
 const cats = [
-  { id: "all", en: "All", ar: "Ø§Ù„ÙƒÙ„" },
-  { id: "Pre-op", en: "Pre-op", ar: "Ù…Ø§ Ù‚Ø¨Ù„" },
-  { id: "Intra-op", en: "Intra-op", ar: "Ø£Ø«Ù†Ø§Ø¡" },
-  { id: "Post-op", en: "Post-op", ar: "Ù…Ø§ Ø¨Ø¹Ø¯" },
-  { id: "Anesthesia", en: "Anesthesia", ar: "Ø§Ù„ØªØ®Ø¯ÙŠØ±" },
-  { id: "Consent", en: "Consent", ar: "Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" },
+  { id: "all", en: "All", ar: "الكل" },
+  { id: "Pre-op", en: "Pre-op", ar: "ما قبل" },
+  { id: "Intra-op", en: "Intra-op", ar: "أثناء" },
+  { id: "Post-op", en: "Post-op", ar: "ما بعد" },
+  { id: "Anesthesia", en: "Anesthesia", ar: "التخدير" },
+  { id: "Consent", en: "Consent", ar: "الموافقة" },
 ];
 
 export function PatientEducation({ lang }: Props) {
@@ -42,16 +40,16 @@ export function PatientEducation({ lang }: Props) {
         <div className="px-6 py-5 border-b bg-white" style={{ borderColor: "#D8E8EF" }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-              {isRTL ? "Ù…ÙƒØªØ¨Ø© ØªØ«Ù‚ÙŠÙ Ø§Ù„Ù…Ø±ÙŠØ¶" : "Patient Education Library"}
+              {isRTL ? "مكتبة تثقيف المريض" : "Patient Education Library"}
             </h2>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold" style={{ background: "#F1EFFF", color: "#6B5CE7" }}>
-              <BookOpen size={14} /> {isRTL ? `${materials.length} Ù…Ø§Ø¯Ø©` : `${materials.length} materials`}
+              <BookOpen size={14} /> {isRTL ? `${materials.length} مادة` : `${materials.length} materials`}
             </div>
           </div>
           <div className="flex items-center gap-2 mb-4 px-3 py-2.5 bg-white rounded-xl border" style={{ borderColor: "#D8E8EF" }}>
             <Search size={14} style={{ color: "#64798B" }} />
             <input className="flex-1 text-sm outline-none bg-transparent" style={{ color: "#102A43" }}
-              placeholder={isRTL ? "Ø¨Ø­Ø« ÙÙŠ Ø§Ù„Ù…ÙˆØ§Ø¯..." : "Search materials..."}
+              placeholder={isRTL ? "بحث في المواد..." : "Search materials..."}
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <div className="flex gap-2">
@@ -83,7 +81,7 @@ export function PatientEducation({ lang }: Props) {
                   {isRTL ? m.titleAr : m.titleEn}
                 </div>
                 <div className="text-xs mb-3" style={{ color: "#64798B" }}>
-                  {isRTL ? m.catAr : m.catEn} Â· {m.duration}
+                  {isRTL ? m.catAr : m.catEn} · {m.duration}
                 </div>
                 <div className="flex items-center gap-3 text-xs" style={{ color: "#64798B" }}>
                   <span className="flex items-center gap-1"><Eye size={10} /> {m.viewsCount.toLocaleString()}</span>
@@ -99,8 +97,8 @@ export function PatientEducation({ lang }: Props) {
       {sel && (
         <div className="w-80 border-l bg-white overflow-y-auto flex-shrink-0" style={{ borderColor: "#D8E8EF" }}>
           <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "#D8E8EF" }}>
-            <span className="text-sm font-bold" style={{ color: "#102A43" }}>{isRTL ? "ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ù…Ø§Ø¯Ø©" : "Material Detail"}</span>
-            <button onClick={() => setSelected(null)} className="text-xs" style={{ color: "#64798B" }}>âœ•</button>
+            <span className="text-sm font-bold" style={{ color: "#102A43" }}>{isRTL ? "تفاصيل المادة" : "Material Detail"}</span>
+            <button onClick={() => setSelected(null)} className="text-xs" style={{ color: "#64798B" }}>✕</button>
           </div>
           <div className="p-5 space-y-4">
             <div className="w-full h-36 rounded-2xl flex items-center justify-center text-5xl" style={{ background: sel.color + "12" }}>
@@ -112,10 +110,10 @@ export function PatientEducation({ lang }: Props) {
             </div>
             <div className="space-y-2">
               {[
-                { labelEn: "Type", labelAr: "Ø§Ù„Ù†ÙˆØ¹", val: isRTL ? sel.typeAr : sel.typeEn },
-                { labelEn: "Duration", labelAr: "Ø§Ù„Ù…Ø¯Ø©", val: sel.duration },
-                { labelEn: "Languages", labelAr: "Ø§Ù„Ù„ØºØ§Øª", val: isRTL ? sel.langAr : sel.langEn },
-                { labelEn: "Total Views", labelAr: "Ù…Ø¬Ù…ÙˆØ¹ Ø§Ù„Ù…Ø´Ø§Ù‡Ø¯Ø§Øª", val: sel.viewsCount.toLocaleString() },
+                { labelEn: "Type", labelAr: "النوع", val: isRTL ? sel.typeAr : sel.typeEn },
+                { labelEn: "Duration", labelAr: "المدة", val: sel.duration },
+                { labelEn: "Languages", labelAr: "اللغات", val: isRTL ? sel.langAr : sel.langEn },
+                { labelEn: "Total Views", labelAr: "مجموع المشاهدات", val: sel.viewsCount.toLocaleString() },
               ].map(row => (
                 <div key={row.labelEn} className="p-3 rounded-xl" style={{ background: "#F7FBFC" }}>
                   <div className="text-xs font-semibold mb-0.5" style={{ color: "#64798B" }}>{isRTL ? row.labelAr : row.labelEn}</div>
@@ -125,10 +123,10 @@ export function PatientEducation({ lang }: Props) {
             </div>
             <div className="flex gap-2">
               <button className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-1.5" style={{ background: sel.color }}>
-                <Play size={13} /> {isRTL ? "Ø¹Ø±Ø¶" : "View"}
+                <Play size={13} /> {isRTL ? "عرض" : "View"}
               </button>
               <button className="flex-1 py-2.5 rounded-xl text-sm font-semibold border flex items-center justify-center gap-1.5" style={{ borderColor: "#D8E8EF", color: "#64798B" }}>
-                <FileText size={13} /> {isRTL ? "Ø¥Ø¶Ø§ÙØ©" : "Attach"}
+                <FileText size={13} /> {isRTL ? "إضافة" : "Attach"}
               </button>
             </div>
           </div>
@@ -137,5 +135,3 @@ export function PatientEducation({ lang }: Props) {
     </div>
   );
 }
-
-

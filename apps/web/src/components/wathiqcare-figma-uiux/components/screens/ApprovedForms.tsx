@@ -1,36 +1,34 @@
-﻿"use client";
-
 import { useState } from "react";
 import { Search, FileText, CheckSquare, Star, Plus, ChevronRight, Eye } from "lucide-react";
 
 interface Props { lang: "en" | "ar" }
 
 const categories = [
-  { id: "all", en: "All Categories", ar: "Ø¬Ù…ÙŠØ¹ Ø§Ù„ØªØ®ØµØµØ§Øª" },
-  { id: "surgery", en: "General Surgery", ar: "Ø¬Ø±Ø§Ø­Ø© Ø¹Ø§Ù…Ø©" },
-  { id: "cardiology", en: "Cardiology", ar: "Ø£Ù…Ø±Ø§Ø¶ Ø§Ù„Ù‚Ù„Ø¨" },
-  { id: "ortho", en: "Orthopedics", ar: "Ø¬Ø±Ø§Ø­Ø© Ø§Ù„Ø¹Ø¸Ø§Ù…" },
-  { id: "gastro", en: "Gastroenterology", ar: "Ø§Ù„Ø¬Ù‡Ø§Ø² Ø§Ù„Ù‡Ø¶Ù…ÙŠ" },
-  { id: "ophthal", en: "Ophthalmology", ar: "Ø·Ø¨ Ø§Ù„Ø¹ÙŠÙˆÙ†" },
-  { id: "anesthesia", en: "Anesthesia", ar: "Ø§Ù„ØªØ®Ø¯ÙŠØ±" },
+  { id: "all", en: "All Categories", ar: "جميع التخصصات" },
+  { id: "surgery", en: "General Surgery", ar: "جراحة عامة" },
+  { id: "cardiology", en: "Cardiology", ar: "أمراض القلب" },
+  { id: "ortho", en: "Orthopedics", ar: "جراحة العظام" },
+  { id: "gastro", en: "Gastroenterology", ar: "الجهاز الهضمي" },
+  { id: "ophthal", en: "Ophthalmology", ar: "طب العيون" },
+  { id: "anesthesia", en: "Anesthesia", ar: "التخدير" },
 ];
 
 const forms = [
-  { id: 1, nameEn: "Appendectomy Consent", nameAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ø³ØªØ¦ØµØ§Ù„ Ø§Ù„Ø²Ø§Ø¦Ø¯Ø©", cat: "surgery", version: "v3.2", usageCount: 247, risk: "medium", starred: true, approvedBy: "Legal & Medical Committee", lastUpdated: "01 May 2026" },
-  { id: 2, nameEn: "Cardiac Catheterization Consent", nameAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„Ù‚Ø³Ø·Ø±Ø© Ø§Ù„Ù‚Ù„Ø¨ÙŠØ©", cat: "cardiology", version: "v2.8", usageCount: 183, risk: "high", starred: true, approvedBy: "Cardiology Board", lastUpdated: "15 Apr 2026" },
-  { id: 3, nameEn: "Total Knee Replacement", nameAr: "ØªØ¨Ø¯ÙŠÙ„ Ù…ÙØµÙ„ Ø§Ù„Ø±ÙƒØ¨Ø© Ø§Ù„ÙƒÙ„ÙŠ", cat: "ortho", version: "v4.1", usageCount: 129, risk: "high", starred: false, approvedBy: "Orthopedic Committee", lastUpdated: "10 Mar 2026" },
-  { id: 4, nameEn: "Colonoscopy Procedure", nameAr: "Ø¥Ø¬Ø±Ø§Ø¡ ØªÙ†Ø¸ÙŠØ± Ø§Ù„Ù‚ÙˆÙ„ÙˆÙ†", cat: "gastro", version: "v2.0", usageCount: 312, risk: "low", starred: false, approvedBy: "Gastro Department", lastUpdated: "20 Feb 2026" },
-  { id: 5, nameEn: "Cataract Surgery Consent", nameAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø¬Ø±Ø§Ø­Ø© Ø§Ù„Ø³Ø§Ø¯", cat: "ophthal", version: "v3.5", usageCount: 201, risk: "low", starred: true, approvedBy: "Ophthalmology Board", lastUpdated: "05 Mar 2026" },
-  { id: 6, nameEn: "General Anesthesia Consent", nameAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„ØªØ®Ø¯ÙŠØ± Ø§Ù„Ø¹Ø§Ù…", cat: "anesthesia", version: "v5.0", usageCount: 589, risk: "high", starred: true, approvedBy: "Anesthesia Committee", lastUpdated: "01 Jun 2026" },
-  { id: 7, nameEn: "Hernia Repair Consent", nameAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø¥ØµÙ„Ø§Ø­ Ø§Ù„ÙØªÙ‚", cat: "surgery", version: "v2.3", usageCount: 156, risk: "medium", starred: false, approvedBy: "Legal & Medical Committee", lastUpdated: "12 Apr 2026" },
-  { id: 8, nameEn: "Spinal / Epidural Consent", nameAr: "Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„ØªØ®Ø¯ÙŠØ± Ø§Ù„Ù†Ø®Ø§Ø¹ÙŠ", cat: "anesthesia", version: "v3.1", usageCount: 98, risk: "high", starred: false, approvedBy: "Anesthesia Committee", lastUpdated: "28 Apr 2026" },
+  { id: 1, nameEn: "Appendectomy Consent", nameAr: "موافقة استئصال الزائدة", cat: "surgery", version: "v3.2", usageCount: 247, risk: "medium", starred: true, approvedBy: "Legal & Medical Committee", lastUpdated: "01 May 2026" },
+  { id: 2, nameEn: "Cardiac Catheterization Consent", nameAr: "موافقة القسطرة القلبية", cat: "cardiology", version: "v2.8", usageCount: 183, risk: "high", starred: true, approvedBy: "Cardiology Board", lastUpdated: "15 Apr 2026" },
+  { id: 3, nameEn: "Total Knee Replacement", nameAr: "تبديل مفصل الركبة الكلي", cat: "ortho", version: "v4.1", usageCount: 129, risk: "high", starred: false, approvedBy: "Orthopedic Committee", lastUpdated: "10 Mar 2026" },
+  { id: 4, nameEn: "Colonoscopy Procedure", nameAr: "إجراء تنظير القولون", cat: "gastro", version: "v2.0", usageCount: 312, risk: "low", starred: false, approvedBy: "Gastro Department", lastUpdated: "20 Feb 2026" },
+  { id: 5, nameEn: "Cataract Surgery Consent", nameAr: "موافقة جراحة الساد", cat: "ophthal", version: "v3.5", usageCount: 201, risk: "low", starred: true, approvedBy: "Ophthalmology Board", lastUpdated: "05 Mar 2026" },
+  { id: 6, nameEn: "General Anesthesia Consent", nameAr: "موافقة التخدير العام", cat: "anesthesia", version: "v5.0", usageCount: 589, risk: "high", starred: true, approvedBy: "Anesthesia Committee", lastUpdated: "01 Jun 2026" },
+  { id: 7, nameEn: "Hernia Repair Consent", nameAr: "موافقة إصلاح الفتق", cat: "surgery", version: "v2.3", usageCount: 156, risk: "medium", starred: false, approvedBy: "Legal & Medical Committee", lastUpdated: "12 Apr 2026" },
+  { id: 8, nameEn: "Spinal / Epidural Consent", nameAr: "موافقة التخدير النخاعي", cat: "anesthesia", version: "v3.1", usageCount: 98, risk: "high", starred: false, approvedBy: "Anesthesia Committee", lastUpdated: "28 Apr 2026" },
 ];
 
 const riskColor: Record<string, string> = { low: "#19A978", medium: "#D9A93B", high: "#E84B7A" };
 const riskLabel: Record<string, { en: string; ar: string }> = {
-  low: { en: "Low Risk", ar: "Ù…Ø®Ø§Ø·Ø± Ù…Ù†Ø®ÙØ¶Ø©" },
-  medium: { en: "Med Risk", ar: "Ù…Ø®Ø§Ø·Ø± Ù…ØªÙˆØ³Ø·Ø©" },
-  high: { en: "High Risk", ar: "Ù…Ø®Ø§Ø·Ø± Ø¹Ø§Ù„ÙŠØ©" },
+  low: { en: "Low Risk", ar: "مخاطر منخفضة" },
+  medium: { en: "Med Risk", ar: "مخاطر متوسطة" },
+  high: { en: "High Risk", ar: "مخاطر عالية" },
 };
 
 export function ApprovedForms({ lang }: Props) {
@@ -52,17 +50,17 @@ export function ApprovedForms({ lang }: Props) {
         <div className="px-6 py-5 border-b bg-white" style={{ borderColor: "#D8E8EF" }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-              {isRTL ? "Ù…ÙƒØªØ¨Ø© Ø§Ù„Ù†Ù…Ø§Ø°Ø¬ Ø§Ù„Ù…Ø¹ØªÙ…Ø¯Ø©" : "Approved Forms Library"}
+              {isRTL ? "مكتبة النماذج المعتمدة" : "Approved Forms Library"}
             </h2>
             <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#123B5C" }}>
-              <Plus size={14} /> {isRTL ? "Ø·Ù„Ø¨ Ù†Ù…ÙˆØ°Ø¬ Ø¬Ø¯ÙŠØ¯" : "Request New Form"}
+              <Plus size={14} /> {isRTL ? "طلب نموذج جديد" : "Request New Form"}
             </button>
           </div>
           <div className="flex items-center gap-2 mb-4 px-3 py-2.5 bg-white rounded-xl border" style={{ borderColor: "#D8E8EF" }}>
             <Search size={14} style={{ color: "#64798B" }} />
             <input
               className="flex-1 text-sm outline-none bg-transparent"
-              placeholder={isRTL ? "Ø§Ù„Ø¨Ø­Ø« ÙÙŠ Ø§Ù„Ù†Ù…Ø§Ø°Ø¬..." : "Search forms..."}
+              placeholder={isRTL ? "البحث في النماذج..." : "Search forms..."}
               style={{ color: "#102A43" }}
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -111,11 +109,11 @@ export function ApprovedForms({ lang }: Props) {
                   </div>
                   <div className="text-xs mt-1 flex items-center gap-2" style={{ color: "#64798B" }}>
                     <span className="px-1.5 py-0.5 rounded" style={{ background: "#F1EFFF", color: "#6B5CE7" }}>{form.version}</span>
-                    <span>{form.usageCount} {isRTL ? "Ø§Ø³ØªØ®Ø¯Ø§Ù…" : "uses"}</span>
+                    <span>{form.usageCount} {isRTL ? "استخدام" : "uses"}</span>
                   </div>
                 </div>
                 <div className="text-xs p-2 rounded-lg" style={{ background: "#F7FBFC", color: "#64798B" }}>
-                  <span className="font-semibold">{isRTL ? "Ù…Ø¹ØªÙ…Ø¯ Ù…Ù†:" : "Approved by:"}</span> {form.approvedBy}
+                  <span className="font-semibold">{isRTL ? "معتمد من:" : "Approved by:"}</span> {form.approvedBy}
                 </div>
                 <div className="flex gap-2 mt-auto">
                   <button
@@ -123,10 +121,10 @@ export function ApprovedForms({ lang }: Props) {
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border transition-all"
                     style={{ borderColor: "#D8E8EF", color: "#64798B" }}
                   >
-                    <Eye size={12} /> {isRTL ? "Ù…Ø¹Ø§ÙŠÙ†Ø©" : "Preview"}
+                    <Eye size={12} /> {isRTL ? "معاينة" : "Preview"}
                   </button>
                   <button className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white" style={{ background: "#2F90C7" }}>
-                    <Plus size={12} /> {isRTL ? "Ø§Ø³ØªØ®Ø¯Ø§Ù…" : "Use"}
+                    <Plus size={12} /> {isRTL ? "استخدام" : "Use"}
                   </button>
                 </div>
               </div>
@@ -140,9 +138,9 @@ export function ApprovedForms({ lang }: Props) {
         <div className="w-80 border-l bg-white overflow-y-auto flex-shrink-0" style={{ borderColor: "#D8E8EF" }}>
           <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "#D8E8EF" }}>
             <span className="text-sm font-bold" style={{ color: "#102A43" }}>
-              {isRTL ? "Ù…Ø¹Ø§ÙŠÙ†Ø© Ø§Ù„Ù†Ù…ÙˆØ°Ø¬" : "Form Preview"}
+              {isRTL ? "معاينة النموذج" : "Form Preview"}
             </span>
-            <button onClick={() => setPreview(null)} className="text-xs" style={{ color: "#64798B" }}>âœ•</button>
+            <button onClick={() => setPreview(null)} className="text-xs" style={{ color: "#64798B" }}>✕</button>
           </div>
           <div className="p-5 space-y-4">
             <div className="flex items-center gap-3">
@@ -151,14 +149,14 @@ export function ApprovedForms({ lang }: Props) {
               </div>
               <div>
                 <div className="text-sm font-bold" style={{ color: "#102A43" }}>{isRTL ? prev.nameAr : prev.nameEn}</div>
-                <div className="text-xs mt-0.5" style={{ color: "#64798B" }}>{prev.version} Â· {prev.lastUpdated}</div>
+                <div className="text-xs mt-0.5" style={{ color: "#64798B" }}>{prev.version} · {prev.lastUpdated}</div>
               </div>
             </div>
             <div className="space-y-2">
               {[
-                { labelEn: "Approved By", labelAr: "Ù…Ø¹ØªÙ…Ø¯ Ù…Ù†", val: prev.approvedBy },
-                { labelEn: "Last Updated", labelAr: "Ø¢Ø®Ø± ØªØ­Ø¯ÙŠØ«", val: prev.lastUpdated },
-                { labelEn: "Total Uses", labelAr: "Ù…Ø±Ø§Øª Ø§Ù„Ø§Ø³ØªØ®Ø¯Ø§Ù…", val: `${prev.usageCount}` },
+                { labelEn: "Approved By", labelAr: "معتمد من", val: prev.approvedBy },
+                { labelEn: "Last Updated", labelAr: "آخر تحديث", val: prev.lastUpdated },
+                { labelEn: "Total Uses", labelAr: "مرات الاستخدام", val: `${prev.usageCount}` },
               ].map(row => (
                 <div key={row.labelEn} className="p-3 rounded-xl" style={{ background: "#F7FBFC" }}>
                   <div className="text-xs font-semibold mb-0.5" style={{ color: "#64798B" }}>{isRTL ? row.labelAr : row.labelEn}</div>
@@ -168,15 +166,15 @@ export function ApprovedForms({ lang }: Props) {
             </div>
             <div className="p-4 rounded-xl" style={{ background: "#F7FBFC", border: "1px solid #D8E8EF" }}>
               <div className="text-xs font-semibold mb-2" style={{ color: "#64798B" }}>
-                {isRTL ? "Ø£Ù‚Ø³Ø§Ù… Ø§Ù„Ù†Ù…ÙˆØ°Ø¬" : "FORM SECTIONS"}
+                {isRTL ? "أقسام النموذج" : "FORM SECTIONS"}
               </div>
               {[
-                isRTL ? "Ù‡ÙˆÙŠØ© Ø§Ù„Ù…Ø±ÙŠØ¶ ÙˆØ§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" : "Patient Identity & Consent",
-                isRTL ? "ÙˆØµÙ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡" : "Procedure Description",
-                isRTL ? "Ø§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª" : "Risks & Complications",
-                isRTL ? "Ø§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ù…ØªØ§Ø­Ø©" : "Alternatives Available",
-                isRTL ? "Ø£Ø³Ø¦Ù„Ø© Ø§Ù„Ù…Ø±ÙŠØ¶" : "Patient Questions",
-                isRTL ? "Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ" : "Electronic Signature",
+                isRTL ? "هوية المريض والموافقة" : "Patient Identity & Consent",
+                isRTL ? "وصف الإجراء" : "Procedure Description",
+                isRTL ? "المخاطر والمضاعفات" : "Risks & Complications",
+                isRTL ? "البدائل المتاحة" : "Alternatives Available",
+                isRTL ? "أسئلة المريض" : "Patient Questions",
+                isRTL ? "التوقيع الإلكتروني" : "Electronic Signature",
               ].map((s, i) => (
                 <div key={i} className="flex items-center gap-2 py-1.5">
                   <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#2F90C7" }} />
@@ -185,7 +183,7 @@ export function ApprovedForms({ lang }: Props) {
               ))}
             </div>
             <button className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(90deg,#2F90C7,#12B7B5)" }}>
-              {isRTL ? "Ø§Ø³ØªØ®Ø¯Ø§Ù… Ù‡Ø°Ø§ Ø§Ù„Ù†Ù…ÙˆØ°Ø¬" : "Use This Form"}
+              {isRTL ? "استخدام هذا النموذج" : "Use This Form"}
             </button>
           </div>
         </div>
@@ -193,5 +191,3 @@ export function ApprovedForms({ lang }: Props) {
     </div>
   );
 }
-
-
