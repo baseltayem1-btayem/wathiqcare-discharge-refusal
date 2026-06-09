@@ -1,10 +1,8 @@
 ﻿import { redirect } from "next/navigation";
-import ApprovedFigmaConsentWorkspace from "@/components/informed-consents/enterprise-workflow/ApprovedFigmaConsentWorkspace";
+import WathiqConsentModeSurface from "@/components/informed-consents/enterprise-workflow/WathiqConsentModeSurface";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
-// Informed consents module entry point. Legacy prototype has been quarantined;
-// production physician issuance is routed through the enterprise workflow.
 export default async function InformedConsentsPage() {
   const auth = await requirePageAuthClaimsOrRedirect("/modules/informed-consents");
 
@@ -19,15 +17,8 @@ export default async function InformedConsentsPage() {
       aria-label="Approved informed consents module"
     >
       <h1 className="sr-only">Approved Informed Consents Module</h1>
-      <ApprovedFigmaConsentWorkspace auth={auth} lang="en" />
+      <WathiqConsentModeSurface />
     </section>
   );
 }
-
-
-
-
-
-
-
 

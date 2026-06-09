@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Inter, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { Toaster } from "@/components/make-ui/sonner";
 import I18nProvider from "@/i18n/I18nProvider";
 import "./globals.css";
+import "./wathiq-consent-mode-ui.css";
 
 const CANONICAL_ORIGIN = "https://wathiqcare.online";
 
@@ -66,3 +67,4 @@ export default async function RootLayout({
     </html>
   );
 }
+
