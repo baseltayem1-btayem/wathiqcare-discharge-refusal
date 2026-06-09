@@ -164,7 +164,7 @@ export default function ConsentSearchEngine() {
       });
 
       if (!pdfCheck.ok) {
-        let message = "Official approved PDF is not uploaded or mapped for this consent item.";
+        let message = "Approved consent PDF could not be generated from the official library data.";
         try {
           const payload = await pdfCheck.json();
           message =
@@ -173,10 +173,15 @@ export default function ConsentSearchEngine() {
             payload?.error ||
             message;
         } catch {
-          message = "Official approved PDF is not uploaded or mapped for this consent item.";
+          message = "Approved consent PDF could not be generated from the official library data.";
         }
 
         throw new Error(message);
+      }
+
+      const contentType = pdfCheck.headers.get("content-type") || "";
+      if (!contentType.includes("application/pdf")) {
+        throw new Error("Approved consent preview did not return a PDF file.");
       }
 
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
@@ -330,6 +335,7 @@ export default function ConsentSearchEngine() {
     </div>
   );
 }
+
 
 
 
