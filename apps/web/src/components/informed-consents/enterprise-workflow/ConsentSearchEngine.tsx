@@ -134,12 +134,10 @@ export default function ConsentSearchEngine() {
     setActionId(templateId);
     setError(null);
 
-    try {
-      const resolved = await apiJson<any>(`${API_BASE}/imc-library/resolve`, {
+    try {      const resolved = await apiJson<any>(`${API_BASE}/imc-library/resolve`, {
         method: "POST",
         body: JSON.stringify({
           action: "preview-pdf",
-          caseId: DEMO_CASE_ID,
           templateId,
           id: item.id || templateId,
           templateVersionId: item.templateVersionId || templateId,
@@ -187,15 +185,14 @@ export default function ConsentSearchEngine() {
     } finally {
       setActionId(null);
     }
-  }, []);
-
-  const selectForPhysicianReview = React.useCallback(async (item: ConsentLibraryItem) => {
+  }, []);  const selectForPhysicianReview = React.useCallback(async (item: ConsentLibraryItem) => {
     const templateId = getTemplateId(item);
 
     setActionId(templateId);
     setError(null);
 
-    try {      const params = new URLSearchParams({
+    try {
+      const params = new URLSearchParams({
         source: "imc-approved-library",
         templateId,
         templateVersionId: item.templateVersionId || templateId,
@@ -207,7 +204,7 @@ export default function ConsentSearchEngine() {
 
       window.location.href = `/modules/informed-consents/consent-creation-workflow?${params.toString()}`;
     } catch (e: any) {
-      setError(e?.message || "Unable to create draft consent for physician review.");
+      setError(e?.message || "Unable to open physician review workflow.");
     } finally {
       setActionId(null);
     }
@@ -333,6 +330,7 @@ export default function ConsentSearchEngine() {
     </div>
   );
 }
+
 
 
 
