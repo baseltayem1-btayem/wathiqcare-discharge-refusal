@@ -46,7 +46,7 @@ const openNewConsent=React.useCallback(async()=>{
     }catch(e:any){setApiError(e?.message||"Cannot select consent");}finally{setApiBusy(false);}
   },[refreshDashboard]);
 
-  return {language,dashboardStats,apiBusy,apiError,refreshDashboard,toggleLanguage,openNewConsent,selectForPhysicianReview};
+  return {dashboardStats,apiBusy,apiError,refreshDashboard,openNewConsent,selectForPhysicianReview};
 }
 import { Activity, AlertCircle, Bell, CheckCircle2, ChevronRight, FileText, Grid2X2, Library, LogOut, Search, Settings, Shield, Stethoscope, User } from "lucide-react";
 
@@ -250,7 +250,7 @@ export default function ApprovedFigmaConsentWorkspace({
 
               <div className="flex items-center gap-3">
                 <div className="flex rounded-lg border border-[#D8DCE3] bg-white p-1">
-                  <button type="button" onClick={() => setLangState((current) => current === "ar" ? "en" : "ar")} className="rounded bg-[#002B5C] px-3 py-1.5 text-xs font-bold text-white"><span aria-hidden="true" className="text-sm leading-none">🌐</span> {language==="en"?"EN":"ع"}</button>
+                  <button type="button" onClick={() => setLangState((current) => current === "ar" ? "en" : "ar")} className="rounded bg-[#002B5C] px-3 py-1.5 text-xs font-bold text-white"><span aria-hidden="true" className="text-sm leading-none">🌐</span> {langState === "en" ? "EN" : "ع"}</button>
                 </div>
 
                 <button className="relative rounded-lg border border-[#D8DCE3] bg-white p-2 text-[#002B5C]">
@@ -408,6 +408,7 @@ export default function ApprovedFigmaConsentWorkspace({
     </div>
   );
 }
+
 
 
 
