@@ -3,6 +3,7 @@ import { Inter, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { Toaster } from "@/components/make-ui/sonner";
 import I18nProvider from "@/i18n/I18nProvider";
 import "./globals.css";
+import "./wathiq-smart-consent-experience.css";
 import "./wathiq-functional-consent-workflow.css";
 import "./wathiq-consent-mode-ui.css";
 
