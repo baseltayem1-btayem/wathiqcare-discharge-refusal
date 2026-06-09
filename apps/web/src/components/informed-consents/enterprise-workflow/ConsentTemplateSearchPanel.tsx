@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import {
   Activity,
   BadgeCheck,
-  BookOpen,
   Brain,
   Building2,
   ChevronDown,
@@ -16,7 +15,6 @@ import {
   Microscope,
   Search,
   ShieldCheck,
-  Sparkles,
   Stethoscope,
   Syringe,
   Users,
@@ -135,8 +133,8 @@ const consentTemplates: ConsentTemplate[] = [
   },
 ];
 
-const allTypes = ["All Types", ...Array.from(new Set(consentTemplates.map((item) => item.type)))];
-const allDepartments = ["All Departments", ...Array.from(new Set(consentTemplates.map((item) => item.department)))];
+const consentTypes = ["All Types", ...Array.from(new Set(consentTemplates.map((item) => item.type)))];
+const departments = ["All Departments", ...Array.from(new Set(consentTemplates.map((item) => item.department)))];
 
 export default function ConsentTemplateSearchPanel() {
   const [query, setQuery] = useState("");
@@ -145,21 +143,21 @@ export default function ConsentTemplateSearchPanel() {
   const [selectedId, setSelectedId] = useState(consentTemplates[0].id);
 
   const filteredTemplates = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const q = query.trim().toLowerCase();
 
     return consentTemplates.filter((template) => {
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        template.title.toLowerCase().includes(normalizedQuery) ||
-        template.titleAr.toLowerCase().includes(normalizedQuery) ||
-        template.id.toLowerCase().includes(normalizedQuery) ||
-        template.specialty.toLowerCase().includes(normalizedQuery) ||
-        template.department.toLowerCase().includes(normalizedQuery);
+      const matchesSearch =
+        q.length === 0 ||
+        template.title.toLowerCase().includes(q) ||
+        template.titleAr.toLowerCase().includes(q) ||
+        template.id.toLowerCase().includes(q) ||
+        template.department.toLowerCase().includes(q) ||
+        template.specialty.toLowerCase().includes(q);
 
       const matchesType = type === "All Types" || template.type === type;
       const matchesDepartment = department === "All Departments" || template.department === department;
 
-      return matchesQuery && matchesType && matchesDepartment;
+      return matchesSearch && matchesType && matchesDepartment;
     });
   }, [query, type, department]);
 
@@ -169,62 +167,50 @@ export default function ConsentTemplateSearchPanel() {
     consentTemplates[0];
 
   return (
-    <section className="wpp-template-search-panel" aria-label="Consent template search and selection">
-      <div className="wpp-template-search-head">
-        <div>
-          <span>
-            <Sparkles size={16} />
-            Smart Consent Selection
-          </span>
-          <h2>Search & Select Approved Consent Document</h2>
-          <p>Distribute templates by consent type, department, specialty, language and approval status before the physician review step.</p>
+    <section className="wc-template-search" aria-label="Consent template search">
+      <div className="wc-template-toolbar">
+        <div className="wc-template-title">
+          <h2>Consent Template Selection</h2>
+          <span>{filteredTemplates.length} templates</span>
         </div>
 
-        <div className="wpp-template-search-counter">
-          <BadgeCheck size={20} />
-          <strong>{filteredTemplates.length}</strong>
-          <small>Matching Templates</small>
-        </div>
-      </div>
-
-      <div className="wpp-template-search-controls">
-        <label className="wpp-template-search-input">
-          <Search size={20} />
+        <label className="wc-template-searchbox">
+          <Search size={18} />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by consent name, Arabic title, department, specialty, or template ID"
+            placeholder="Search by template, department, specialty, Arabic title, or ID"
           />
           {query.length > 0 && (
             <button type="button" onClick={() => setQuery("")} aria-label="Clear search">
-              <X size={17} />
+              <X size={16} />
             </button>
           )}
         </label>
 
-        <label className="wpp-template-select">
-          <Filter size={18} />
+        <label className="wc-template-filter">
+          <Filter size={16} />
           <select value={type} onChange={(event) => setType(event.target.value)}>
-            {allTypes.map((item) => (
+            {consentTypes.map((item) => (
               <option key={item}>{item}</option>
             ))}
           </select>
-          <ChevronDown size={17} />
+          <ChevronDown size={15} />
         </label>
 
-        <label className="wpp-template-select">
-          <Building2 size={18} />
+        <label className="wc-template-filter">
+          <Building2 size={16} />
           <select value={department} onChange={(event) => setDepartment(event.target.value)}>
-            {allDepartments.map((item) => (
+            {departments.map((item) => (
               <option key={item}>{item}</option>
             ))}
           </select>
-          <ChevronDown size={17} />
+          <ChevronDown size={15} />
         </label>
       </div>
 
-      <div className="wpp-template-search-body">
-        <div className="wpp-template-list">
+      <div className="wc-template-grid">
+        <div className="wc-template-results">
           {filteredTemplates.map((template) => {
             const Icon = template.icon;
             const active = template.id === selectedTemplate.id;
@@ -233,20 +219,20 @@ export default function ConsentTemplateSearchPanel() {
               <button
                 key={template.id}
                 type="button"
-                className={active ? "wpp-template-row active" : "wpp-template-row"}
+                className={active ? "wc-template-card active" : "wc-template-card"}
                 onClick={() => setSelectedId(template.id)}
               >
-                <span className="wpp-template-icon">
+                <span className="wc-template-card-icon">
                   <Icon size={22} />
                 </span>
 
-                <span className="wpp-template-copy">
+                <span className="wc-template-card-main">
                   <strong>{template.title}</strong>
                   <em>{template.titleAr}</em>
                   <small>{template.id}</small>
                 </span>
 
-                <span className="wpp-template-tags">
+                <span className="wc-template-card-meta">
                   <b>{template.type}</b>
                   <i>{template.department}</i>
                 </span>
@@ -255,16 +241,16 @@ export default function ConsentTemplateSearchPanel() {
           })}
 
           {filteredTemplates.length === 0 && (
-            <div className="wpp-template-empty">
-              <FileText size={30} />
-              <strong>No matching consent templates found</strong>
-              <span>Adjust the search keyword, consent type, or department filter.</span>
+            <div className="wc-template-empty">
+              <FileText size={28} />
+              <strong>No matching consent templates</strong>
+              <span>Change the search or filters.</span>
             </div>
           )}
         </div>
 
-        <aside className="wpp-template-preview">
-          <div className="wpp-template-preview-top">
+        <aside className="wc-template-details">
+          <div className="wc-template-details-head">
             <span>
               <FileCheck2 size={22} />
             </span>
@@ -280,7 +266,7 @@ export default function ConsentTemplateSearchPanel() {
               <dd>{selectedTemplate.id}</dd>
             </div>
             <div>
-              <dt>Consent Type</dt>
+              <dt>Type</dt>
               <dd>{selectedTemplate.type}</dd>
             </div>
             <div>
@@ -301,16 +287,14 @@ export default function ConsentTemplateSearchPanel() {
             </div>
           </dl>
 
-          <div className="wpp-template-approval">
-            <ClipboardCheck size={19} />
-            <div>
-              <strong>{selectedTemplate.status}</strong>
-              <span>Ready to continue in the physician workflow.</span>
-            </div>
+          <div className="wc-template-status">
+            <BadgeCheck size={18} />
+            <span>{selectedTemplate.status}</span>
           </div>
 
-          <button type="button" className="wpp-template-continue">
-            Use This Consent Template
+          <button type="button" className="wc-template-use">
+            <ClipboardCheck size={17} />
+            Use Selected Template
           </button>
         </aside>
       </div>
