@@ -1,39 +1,51 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import {
-  ImcConsentCatalogItem,
-  resolveImcConsentPackage,
-} from "@/lib/informed-consents/imcConsentResolver";
 
-async function loadItems(): Promise<ImcConsentCatalogItem[]> {
-  const manifestPath = path.join(
-    process.cwd(),
-    "public",
-    "imc-consent-library",
-    "imc-consent-catalog.manifest.json",
-  );
+function buildPdfUrl(identifier: string | null) {
+  if (!identifier) return null;
+  return `/api/modules/informed-consents/documents/${encodeURIComponent(identifier)}/pdf`;
+}
 
-  const raw = await readFile(manifestPath, "utf8");
-  return JSON.parse(raw.replace(/^\uFEFF/, "")) as ImcConsentCatalogItem[];
+function resolvePayload(payload: any) {
+  const identifier =
+    payload?.documentId ||
+    payload?.id ||
+    payload?.templateId ||
+    payload?.templateVersionId ||
+    payload?.code ||
+    payload?.consentCode ||
+    null;
+
+  return {
+    ok: true,
+    action: payload?.action || "preview-pdf",
+    id: identifier,
+    documentId: identifier,
+    templateId: payload?.templateId || payload?.id || null,
+    templateVersionId: payload?.templateVersionId || null,
+    code: payload?.code || payload?.consentCode || null,
+    pdfUrl: buildPdfUrl(identifier),
+    previewUrl: buildPdfUrl(identifier),
+    source: "production-imc-library-resolve",
+  };
 }
 
 export async function GET(request: NextRequest) {
-  const procedure = request.nextUrl.searchParams.get("procedure") || "";
+  const searchParams = request.nextUrl.searchParams;
 
-  if (!procedure.trim()) {
-    return NextResponse.json(
-      { ok: false, message: "procedure query parameter is required" },
-      { status: 400 },
-    );
-  }
+  const payload = {
+    action: searchParams.get("action") || "preview-pdf",
+    documentId: searchParams.get("documentId"),
+    id: searchParams.get("id"),
+    templateId: searchParams.get("templateId"),
+    templateVersionId: searchParams.get("templateVersionId"),
+    code: searchParams.get("code"),
+    consentCode: searchParams.get("consentCode"),
+  };
 
-  const items = await loadItems();
-  const consentPackage = resolveImcConsentPackage(items, procedure);
+  return NextResponse.json(resolvePayload(payload));
+}
 
-  return NextResponse.json({
-    ok: true,
-    procedure,
-    package: consentPackage,
-  });
+export async function POST(request: NextRequest) {
+  const payload = await request.json().catch(() => ({}));
+  return NextResponse.json(resolvePayload(payload));
 }
