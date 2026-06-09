@@ -186,41 +186,466 @@ export default function ApprovedFigmaConsentWorkspace({
   );
 
   return (
-    <div className="min-h-screen bg-[#F4F7FB] text-[#101828]">
-      <div className="flex min-h-screen">
-        <aside className="w-[280px] shrink-0 bg-[#003B73] text-white shadow-xl">
-          <div className="flex h-20 items-center gap-3 border-b border-white/10 px-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#C9A13B]">
-              <Shield className="h-5 w-5 text-white" />
+    <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+      <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+        <aside 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+          <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+            <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+              <Shield 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
             </div>
             <div>
-              <div className="text-lg font-bold leading-tight">WathiqCare</div>
-              <div className="text-xs font-medium text-[#C9A13B]">
+              <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >WathiqCare</div>
+              <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                 Clinical Consent Platform
               </div>
             </div>
           </div>
 
-          <div className="border-b border-white/10 px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
-                <User className="h-5 w-5 text-white" />
+          <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+            <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+              <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                <User 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
               </div>
               <div>
-                <div className="text-sm font-bold">Dr. Khalid Al-Qahtani</div>
-                <div className="text-xs text-blue-100">
+                <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >Dr. Khalid Al-Qahtani</div>
+                <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                   General Surgery · FACS
                 </div>
               </div>
             </div>
           </div>
 
-          <nav className="px-3 py-5">
-            <div className="mb-3 px-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-200">
+          <nav 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+            <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
               Clinical Workspace
             </div>
 
-            <div className="space-y-1">
+            <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
               {navItems.map((item) => {
                 const Icon = item.icon;
 
@@ -234,13 +659,88 @@ export default function ApprovedFigmaConsentWorkspace({
                         : "text-blue-100 hover:bg-white/10 hover:text-white"
                     }`}
                   >
-                    <span className="flex items-center gap-3">
-                      <Icon className="h-4 w-4" />
+                    <span 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                      <Icon 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
                       {isArabic ? item.labelAr : item.label}
                     </span>
 
                     {item.badge ? (
-                      <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                      <span 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                         {item.badge}
                       </span>
                     ) : null}
@@ -249,51 +749,451 @@ export default function ApprovedFigmaConsentWorkspace({
               })}
             </div>
 
-            <div className="mt-8 mb-3 px-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-200">
+            <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
               System
             </div>
 
-            <div className="space-y-1">
+            <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
               <Link
                 href="/modules/informed-consents/settings-support"
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white"
+                
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    
               >
-                <Settings className="h-4 w-4" />
+                <Settings 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
                 {isArabic ? "الإعدادات والدعم" : "Settings & Support"}
               </Link>
 
               <Link
                 href="/login"
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white"
+                
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
                 {isArabic ? "تسجيل الخروج" : "Sign Out"}
               </Link>
             </div>
           </nav>
         </aside>
 
-        <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-20 border-b border-[#D8DCE3] bg-white/95 backdrop-blur">
-            <div className="flex h-16 items-center justify-between px-7">
-              <div className="text-sm text-[#667085]">
+        <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+          <header 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+            <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+              <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                 Department:{" "}
-                <span className="font-semibold text-[#002B5C]">
+                <span 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                   General Surgery
                 </span>
-                <span className="mx-3">·</span>
+                <span 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >·</span>
                 28 May 2026
-                <span className="mx-3">·</span>
+                <span 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >·</span>
                 Session: 2h 14m
               </div>
 
-              <div className="flex items-center gap-3">
+              <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                 <button
                   type="button"
                   onClick={toggleLanguage}
-                  className="inline-flex items-center gap-2 rounded-lg border border-[#D8DCE3] bg-white px-3 py-2 text-sm font-bold text-[#002B5C] shadow-sm hover:bg-[#F8FAFC]"
+                  
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    
                 >
-                  <span aria-hidden="true" className="text-sm leading-none">
+                  <span aria-hidden="true" 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                     🌐
                   </span>
                   {langState === "en" ? "EN" : "ع"}
@@ -301,44 +1201,419 @@ export default function ApprovedFigmaConsentWorkspace({
 
                 <button
                   type="button"
-                  className="relative rounded-lg border border-[#D8DCE3] bg-white p-2 text-[#002B5C] shadow-sm hover:bg-[#F8FAFC]"
+                  
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    
                 >
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+                  <Bell 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
+                  <span 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
                 </button>
 
-                <div className="text-sm text-[#002B5C]">
+                <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                   Physician Portal /{" "}
-                  <span className="font-semibold">Dashboard</span>
+                  <span 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >Dashboard</span>
                 </div>
               </div>
             </div>
           </header>
 
-          <main className="px-7 py-6">
-            <section className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <main 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+            <section 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
               <div>
-                <h1 className="text-2xl font-semibold text-[#101828]">
+                <h1 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                   {isArabic ? "لوحة موافقات الطبيب" : "Physician Consent Dashboard"}
                 </h1>
-                <p className="mt-1 text-sm text-[#667085]">
+                <p 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                   Thursday, 28 May 2026 · Surgical Day List Active
                 </p>
               </div>
 
               <Link
                 href="/modules/informed-consents/consent-creation-workflow"
-                className="inline-flex items-center gap-2 rounded-lg bg-[#C9A13B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#b58d2e]"
+                
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
                 {isArabic ? "موافقة جديدة" : "New Consent"}
               </Link>
             </section>
 
-            <section className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
+            <section 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+              <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                  <AlertCircle 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
                   <span>
                     {isArabic
                       ? "توجد 3 موافقات بها إفصاحات إلزامية غير مكتملة — لا يمكن متابعة الإجراء حتى يتم حلها."
@@ -348,14 +1623,64 @@ export default function ApprovedFigmaConsentWorkspace({
 
                 <Link
                   href="/modules/informed-consents/list"
-                  className="text-sm font-semibold underline"
+                  
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    
                 >
                   {isArabic ? "عرض الكل" : "View All"}
                 </Link>
               </div>
             </section>
 
-            <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-4">
+            <section 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
               {stats.map((card) => {
                 const Icon = card.icon;
 
@@ -364,18 +1689,93 @@ export default function ApprovedFigmaConsentWorkspace({
                     key={card.label}
                     className={`rounded-lg border ${card.border} bg-white p-5 shadow-sm`}
                   >
-                    <div className="mb-4 flex items-center justify-between">
+                    <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                       <div className={`rounded-md ${card.bg} p-2`}>
                         <Icon className={`h-4 w-4 ${card.tone}`} />
                       </div>
                       <span className={card.tone}>ⓘ</span>
                     </div>
 
-                    <div className="text-2xl font-semibold text-[#101828]">
+                    <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                       {card.value}
                     </div>
 
-                    <div className="mt-1 text-sm text-[#667085]">
+                    <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                       {isArabic ? card.labelAr : card.label}
                     </div>
                   </div>
@@ -383,67 +1783,592 @@ export default function ApprovedFigmaConsentWorkspace({
               })}
             </section>
 
-            <section className="grid grid-cols-1 gap-5 2xl:grid-cols-[minmax(0,1fr)_360px]">
-              <div className="overflow-hidden rounded-lg border border-[#D8DCE3] bg-white shadow-sm">
-                <div className="border-b border-[#D8DCE3] px-5 py-4">
-                  <div className="flex items-center gap-2">
-                    <Library className="h-4 w-4 text-[#002B5C]" />
-                    <h2 className="text-lg font-semibold text-[#101828]">
+            <section 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+              <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                  <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                    <Library 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
+                    <h2 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                       {isArabic
                         ? "مكتبة الموافقات المعتمدة"
                         : "IMC Approved Consent Library"}
                     </h2>
                   </div>
 
-                  <p className="mt-1 text-sm text-[#667085]">
+                  <p 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                     {isArabic
                       ? "تم ربط مكتبة الموافقات المعتمدة بمحرك البحث ومسار استعراض PDF."
                       : "The approved consent library is connected to search and PDF preview workflow."}
                   </p>
                 </div>
 
-                <div className="p-5">
+                <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                   <ConsentSearchEngine />
                 </div>
               </div>
 
-              <aside className="space-y-5">
-                <div className="rounded-lg border border-[#D8DCE3] bg-white p-5 shadow-sm">
-                  <div className="mb-4 rounded-xl border border-[#D8DCE3] bg-gradient-to-b from-white to-[#F8FAFC] p-4">
-                    <div className="text-xs font-bold uppercase tracking-[0.2em] text-[#667085]">
+              <aside 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                  <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                    <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                       Overall Completion
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between">
-                      <div className="text-4xl font-bold text-[#002B5C]">
+                    <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                      <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                         88%
                       </div>
-                      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
+                      <span 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                         Blocked
                       </span>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                     {readinessItems.map((item) => (
-                      <div key={item.label} className="flex items-start gap-3">
+                      <div key={item.label} 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                         <div
                           className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full ${
                             item.done ? "text-emerald-600" : "text-slate-400"
                           }`}
                         >
                           {item.done ? (
-                            <CheckCircle2 className="h-5 w-5" />
+                            <CheckCircle2 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
                           ) : (
-                            <Shield className="h-5 w-5" />
+                            <Shield 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+     />
                           )}
                         </div>
 
                         <div>
-                          <div className="text-sm font-semibold text-[#002B5C]">
+                          <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                             {isArabic ? item.labelAr : item.label}
                           </div>
-                          <div className="text-xs text-[#98A2B3]">
+                          <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                             {item.done ? "Completed" : "Pending"}
                           </div>
                         </div>
@@ -452,19 +2377,169 @@ export default function ApprovedFigmaConsentWorkspace({
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-[#D8DCE3] bg-white shadow-sm">
-                  <div className="border-b border-[#D8DCE3] px-5 py-4">
-                    <h3 className="font-semibold text-[#101828]">
+                <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                  <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                    <h3 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                       Risk Flags / المخاطر
                     </h3>
                   </div>
 
-                  <div className="space-y-3 p-5">
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
+                    <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                       IMC approved PDF matched, but runtime template mapping
                       requires verification.
                     </div>
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                    <div 
+      param($m)
+      $classes=$m.Groups[1].Value
+
+      if($classes -match '\bgrid\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bflex\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\btruncate\b' -and $classes -notmatch '\bmax-w-full\b'){
+        $classes="$classes max-w-full"
+      }
+
+      if($classes -match '\boverflow-hidden\b' -and $classes -notmatch '\bmin-w-0\b'){
+        $classes="$classes min-w-0"
+      }
+
+      if($classes -match '\bwhitespace-nowrap\b' -and $classes -notmatch '\btruncate\b'){
+        $classes="$classes truncate"
+      }
+
+      "className=""$classes"""
+    >
                       Draft PDF and patient link remain gated until readiness is
                       complete.
                     </div>
@@ -478,4 +2553,5 @@ export default function ApprovedFigmaConsentWorkspace({
     </div>
   );
 }
+
 

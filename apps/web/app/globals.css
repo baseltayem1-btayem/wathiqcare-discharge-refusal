@@ -1015,3 +1015,468 @@ h3,
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ==========================================================================
+   WathiqCare Enterprise UI/UX Refinement
+   Microsoft-grade responsive workspace stabilization
+   Scope: Informed Consents / Physician Workspace
+   ========================================================================== */
+
+:root {
+  --wc-shell-max-width: 1920px;
+  --wc-shell-min-width: 0;
+  --wc-radius-xl: 24px;
+  --wc-radius-lg: 18px;
+  --wc-radius-md: 14px;
+  --wc-card-border: rgba(15, 46, 92, 0.14);
+  --wc-card-shadow: 0 18px 48px rgba(15, 46, 92, 0.08);
+  --wc-soft-shadow: 0 8px 24px rgba(15, 46, 92, 0.06);
+  --wc-text-primary: #06254d;
+  --wc-text-secondary: #52647c;
+  --wc-text-muted: #738298;
+  --wc-brand-navy: #002B5C;
+  --wc-brand-blue: #1976D2;
+  --wc-brand-gold: #C9A13B;
+  --wc-bg-soft: #f6f9fd;
+  --wc-line-height: 1.35;
+}
+
+html,
+body {
+  overflow-x: hidden;
+  text-rendering: geometricPrecision;
+}
+
+body {
+  min-width: 320px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body [class*="Informed"],
+body [class*="Consent"],
+body [class*="consent"],
+body [class*="Workflow"],
+body [class*="workflow"] {
+  min-width: 0;
+}
+
+body:has([href*="/modules/informed-consents"]),
+body:has([data-wathiqcare-workspace]),
+body:has([data-module="informed-consents"]) {
+  background: linear-gradient(180deg, #f8fbff 0%, #eef5fb 100%);
+}
+
+/* Header / top shell cards */
+body [class*="IMC Informed Consent Workspace"],
+body [class*="workspace"] header,
+body header {
+  max-width: 100vw;
+}
+
+body header,
+body [class*="top"],
+body [class*="Header"] {
+  min-width: 0;
+}
+
+body header * {
+  min-width: 0;
+}
+
+body header h1,
+body header h2,
+body header h3,
+body header p,
+body header span,
+body header div {
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+body header [class*="grid"],
+body header [class*="flex"] {
+  min-width: 0;
+}
+
+/* General card stabilization */
+body main,
+body section,
+body aside,
+body article,
+body nav,
+body div {
+  min-width: 0;
+}
+
+body main {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body aside,
+body section,
+body article,
+body [class*="card"],
+body [class*="Card"],
+body [class*="panel"],
+body [class*="Panel"],
+body [class*="summary"],
+body [class*="Summary"] {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body [class*="rounded"],
+body [class*="border"] {
+  min-width: 0;
+}
+
+/* Text containment */
+body h1,
+body h2,
+body h3,
+body h4,
+body h5,
+body h6,
+body p,
+body span,
+body label,
+body button,
+body a,
+body td,
+body th,
+body li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: var(--wc-line-height);
+}
+
+body h1,
+body h2,
+body h3 {
+  letter-spacing: -0.02em;
+}
+
+body p,
+body span,
+body label,
+body td,
+body th,
+body li {
+  max-width: 100%;
+}
+
+/* Inputs / search bars */
+body input,
+body textarea,
+body select {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body input::placeholder,
+body textarea::placeholder {
+  text-overflow: ellipsis;
+  opacity: 0.72;
+}
+
+/* Buttons */
+body button,
+body [role="button"] {
+  min-width: 0;
+  white-space: nowrap;
+  align-items: center;
+  justify-content: center;
+}
+
+body button span,
+body [role="button"] span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Enterprise workspace grid: protect screen fit */
+body main > div,
+body main > section,
+body [class*="workspace"] {
+  max-width: 100%;
+}
+
+body main [class*="grid"] {
+  min-width: 0;
+}
+
+/* Tables and consent library list */
+body table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+body th,
+body td {
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+body th {
+  white-space: nowrap;
+  color: var(--wc-text-secondary);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+body td {
+  color: var(--wc-text-primary);
+}
+
+body td > *,
+body th > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body td p,
+body td span,
+body td div {
+  overflow-wrap: anywhere;
+}
+
+body [class*="Consent Library"],
+body [class*="library"],
+body [class*="Library"] {
+  min-width: 0;
+}
+
+/* Scroll containment for central panel */
+body main > div,
+body main > section {
+  overflow-x: hidden;
+}
+
+body [class*="overflow"],
+body [class*="scroll"] {
+  min-width: 0;
+}
+
+/* Right readiness / risk panels */
+body aside {
+  max-width: 100%;
+}
+
+body aside [class*="card"],
+body aside [class*="Card"],
+body aside [class*="panel"],
+body aside [class*="Panel"] {
+  width: 100%;
+}
+
+body aside h3,
+body aside p,
+body aside span,
+body aside div {
+  overflow-wrap: anywhere;
+}
+
+/* Badges / pills */
+body [class*="badge"],
+body [class*="Badge"],
+body [class*="pill"],
+body [class*="Pill"],
+body [class*="status"],
+body [class*="Status"] {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Preserve icon sizes */
+body svg {
+  flex-shrink: 0;
+}
+
+/* Responsive workspace design */
+@media (max-width: 1536px) {
+  body main {
+    padding-left: clamp(12px, 1.4vw, 24px);
+    padding-right: clamp(12px, 1.4vw, 24px);
+  }
+
+  body h1 {
+    font-size: clamp(1.25rem, 1.7vw, 2rem);
+  }
+
+  body h2 {
+    font-size: clamp(1rem, 1.25vw, 1.4rem);
+  }
+
+  body h3 {
+    font-size: clamp(0.92rem, 1vw, 1.15rem);
+  }
+
+  body p,
+  body span,
+  body label,
+  body button,
+  body td,
+  body th {
+    font-size: clamp(0.78rem, 0.78vw, 0.95rem);
+  }
+}
+
+@media (max-width: 1280px) {
+  body main [class*="grid-cols"],
+  body main [class*="xl:grid-cols"],
+  body main [class*="2xl:grid-cols"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body aside {
+    order: 3;
+  }
+
+  body nav,
+  body [class*="sidebar"],
+  body [class*="Sidebar"] {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 1024px) {
+  body header [class*="grid"],
+  body header [class*="flex"] {
+    flex-wrap: wrap;
+  }
+
+  body main {
+    padding: 12px !important;
+  }
+
+  body table,
+  body thead,
+  body tbody,
+  body tr,
+  body th,
+  body td {
+    display: block;
+    width: 100%;
+  }
+
+  body thead {
+    display: none;
+  }
+
+  body tr {
+    border-bottom: 1px solid rgba(15, 46, 92, 0.12);
+    padding: 12px;
+  }
+
+  body td {
+    padding: 6px 0 !important;
+  }
+
+  body td:last-child {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  body header {
+    padding: 12px !important;
+  }
+
+  body h1 {
+    font-size: 1.25rem !important;
+  }
+
+  body h2 {
+    font-size: 1rem !important;
+  }
+
+  body p,
+  body span,
+  body label,
+  body button,
+  body td,
+  body th {
+    font-size: 0.82rem !important;
+  }
+
+  body button {
+    min-height: 38px;
+  }
+
+  body input,
+  body textarea,
+  body select {
+    min-height: 40px;
+  }
+}
+
+/* Arabic refinement */
+html[dir="rtl"] body,
+body[dir="rtl"] {
+  letter-spacing: 0;
+}
+
+html[dir="rtl"] body h1,
+html[dir="rtl"] body h2,
+html[dir="rtl"] body h3,
+html[dir="rtl"] body p,
+html[dir="rtl"] body span,
+html[dir="rtl"] body button,
+html[dir="rtl"] body label {
+  line-height: 1.55;
+}
+
+/* Stronger visual hierarchy for enterprise cards */
+body [class*="shadow"],
+body [class*="Shadow"] {
+  box-shadow: var(--wc-soft-shadow);
+}
+
+body [class*="rounded-"],
+body [class*="rounded"] {
+  border-radius: clamp(12px, 1vw, 24px);
+}
+
+/* Prevent full-screen overflow caused by long IDs / MRNs / encounter strings */
+body [class*="MRN"],
+body [class*="Encounter"],
+body [class*="Patient"],
+body [class*="Template"],
+body [class*="template"],
+body [class*="id"],
+body [class*="Id"] {
+  overflow-wrap: anywhere;
+}
+
+/* Print/PDF viewer friendly */
+@media print {
+  body {
+    background: #fff !important;
+  }
+
+  body main,
+  body section,
+  body aside,
+  body article {
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+}
+
