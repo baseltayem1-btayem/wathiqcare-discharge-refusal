@@ -146,7 +146,7 @@ export default function ConsentSearchEngine() {
         item.pdfUrl ||
         item.previewUrl ||
         item.fileUrl ||
-        `${API_BASE}/documents/${encodeURIComponent(resolvedId)}/pdf`;
+        `${API_BASE}/imc-library/resolve/pdf?id=${encodeURIComponent(resolvedId)}&title=${encodeURIComponent(item.titleEn || item.title || item.titleAr || resolvedId)}`;
 
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
     } catch (e: any) {
@@ -309,3 +309,4 @@ export default function ConsentSearchEngine() {
     </div>
   );
 }
+
