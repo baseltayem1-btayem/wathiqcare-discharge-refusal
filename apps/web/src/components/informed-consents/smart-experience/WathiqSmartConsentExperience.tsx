@@ -6,7 +6,7 @@ import {
   Bell,
   BookOpen,
   CalendarDays,
-  Check,
+  CheckCircle2,
   ChevronRight,
   ClipboardCheck,
   FileCheck2,
@@ -14,9 +14,8 @@ import {
   HeartPulse,
   Home,
   Languages,
-  Lock,
   Mail,
-  MessageSquare,
+  MessageCircle,
   Phone,
   Search,
   Send,
@@ -25,11 +24,12 @@ import {
   Stethoscope,
   Syringe,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 
 type StepKey = "patient" | "template" | "procedure" | "anesthesia" | "education" | "review" | "send";
 
-type TemplateItem = {
+type ConsentTemplate = {
   id: string;
   title: string;
   titleAr: string;
@@ -37,17 +37,17 @@ type TemplateItem = {
   type: string;
 };
 
-const steps: { key: StepKey; label: string }[] = [
-  { key: "patient", label: "Patient" },
-  { key: "template", label: "Template" },
-  { key: "procedure", label: "Procedure" },
-  { key: "anesthesia", label: "Anesthesia" },
-  { key: "education", label: "Education" },
-  { key: "review", label: "Review" },
-  { key: "send", label: "Send" },
+const journeySteps: { key: StepKey; label: string; title: string }[] = [
+  { key: "patient", label: "Patient", title: "Patient Context" },
+  { key: "template", label: "Template", title: "Approved Consent Template" },
+  { key: "procedure", label: "Procedure", title: "Procedure Details" },
+  { key: "anesthesia", label: "Anesthesia", title: "Anesthesia Decision" },
+  { key: "education", label: "Education", title: "Patient Education" },
+  { key: "review", label: "Review", title: "Smart Review" },
+  { key: "send", label: "Send", title: "Send to Patient" },
 ];
 
-const templates: TemplateItem[] = [
+const approvedTemplates: ConsentTemplate[] = [
   {
     id: "IMC-CONS-CABG-2025-001",
     title: "Coronary Artery Bypass Grafting Consent",
@@ -84,7 +84,7 @@ function openRoute(route: string) {
 
 export default function WathiqSmartConsentExperience() {
   const [activeStep, setActiveStep] = useState(0);
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateItem>(templates[0]);
+  const [selectedTemplate, setSelectedTemplate] = useState<ConsentTemplate>(approvedTemplates[0]);
   const [query, setQuery] = useState("");
   const [procedure, setProcedure] = useState("Coronary Artery Bypass Grafting (CABG)");
   const [anesthesiaRequired, setAnesthesiaRequired] = useState(true);
@@ -92,17 +92,18 @@ export default function WathiqSmartConsentExperience() {
   const [mobile, setMobile] = useState("+966 5X XXX XXXX");
   const [email, setEmail] = useState("patient@example.com");
 
-  const currentStep = steps[activeStep]?.key || "patient";
+  const currentStep = journeySteps[activeStep]?.key ?? "patient";
 
   const filteredTemplates = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    return templates.filter((template) => {
+    return approvedTemplates.filter((template) => {
       return (
         !q ||
         template.title.toLowerCase().includes(q) ||
         template.titleAr.toLowerCase().includes(q) ||
         template.department.toLowerCase().includes(q) ||
+        template.type.toLowerCase().includes(q) ||
         template.id.toLowerCase().includes(q)
       );
     });
@@ -110,18 +111,18 @@ export default function WathiqSmartConsentExperience() {
 
   const readiness = useMemo(() => {
     let score = 55;
-    if (selectedTemplate) score += 15;
-    if (procedure.trim().length > 5) score += 10;
-    if (educationConfirmed) score += 10;
-    if (mobile || email) score += 10;
+    if (selectedTemplate?.id) score += 15;
+    if (procedure.trim().length > 8) score += 10;
+    if (educationConfirmed) score += 15;
+    if (mobile || email) score += 5;
     return Math.min(score, 100);
   }, [selectedTemplate, procedure, educationConfirmed, mobile, email]);
 
-  function next() {
-    setActiveStep((step) => Math.min(step + 1, steps.length - 1));
+  function goNext() {
+    setActiveStep((step) => Math.min(step + 1, journeySteps.length - 1));
   }
 
-  function back() {
+  function goBack() {
     setActiveStep((step) => Math.max(step - 1, 0));
   }
 
@@ -130,6 +131,7 @@ export default function WathiqSmartConsentExperience() {
       templateId: selectedTemplate.id,
       procedure,
       anesthesiaRequired: String(anesthesiaRequired),
+      educationConfirmed: String(educationConfirmed),
       mobile,
       email,
     });
@@ -138,10 +140,10 @@ export default function WathiqSmartConsentExperience() {
   }
 
   return (
-    <main className="care-shell">
-      <aside className="care-sidebar">
-        <div className="care-brand">
-          <ShieldCheck size={30} />
+    <main className="wcl-shell" data-testid="wathiq-alive-care-portal">
+      <aside className="wcl-sidebar">
+        <div className="wcl-brand">
+          <ShieldCheck size={34} />
           <div>
             <strong>WathiqCare</strong>
             <span>Smart Consent Portal</span>
@@ -160,7 +162,7 @@ export default function WathiqSmartConsentExperience() {
 
         <button type="button" onClick={() => openRoute("/modules/informed-consents/template-registry")}>
           <BookOpen size={19} />
-          <span>Templates</span>
+          <span>Approved Templates</span>
         </button>
 
         <button type="button" onClick={() => openRoute("/modules/informed-consents/governance")}>
@@ -169,23 +171,24 @@ export default function WathiqSmartConsentExperience() {
         </button>
 
         <button type="button" onClick={() => openRoute("/modules/informed-consents/settings-support")}>
-          <MessageSquare size={19} />
+          <MessageCircle size={19} />
           <span>Support</span>
         </button>
       </aside>
 
-      <section className="care-main">
-        <header className="care-topbar">
-          <button type="button" className="care-icon" onClick={() => openRoute("/modules")}>
-            <Home size={19} />
-          </button>
-
-          <div>
-            <strong>WathiqCare Smart Consent</strong>
-            <span>Healthcare-grade consent journey with clinical and legal intelligence</span>
+      <section className="wcl-main">
+        <header className="wcl-topbar">
+          <div className="wcl-top-left">
+            <button type="button" onClick={() => openRoute("/modules")}>
+              <Home size={19} />
+            </button>
+            <div>
+              <strong>Welcome to WathiqCare</strong>
+              <span>Create legally reliable clinical consents with a guided care journey.</span>
+            </div>
           </div>
 
-          <div className="care-top-actions">
+          <div className="wcl-top-actions">
             <button type="button">
               <Languages size={16} />
               EN / AR
@@ -197,115 +200,160 @@ export default function WathiqSmartConsentExperience() {
           </div>
         </header>
 
-        <section className="care-hero">
-          <div>
-            <span className="care-eyebrow">Today’s Clinical Consent</span>
-            <h1>Issue the right consent, faster and safer.</h1>
+        <section className="wcl-hero">
+          <div className="wcl-hero-copy">
+            <span>وثّق فهمه</span>
+            <h1>Issue informed consent with clarity, confidence, and care.</h1>
             <p>
-              A focused care portal experience for physicians: select patient, choose approved template,
-              confirm procedure, manage anesthesia, educate the patient, and send for signature.
+              A living healthcare portal experience: select the patient, choose the right approved form,
+              complete the clinical journey, and send the consent for OTP signature.
             </p>
+            <div className="wcl-hero-actions">
+              <button type="button" onClick={() => setActiveStep(0)}>
+                Start consent journey
+                <ChevronRight size={17} />
+              </button>
+              <button type="button" onClick={() => openRoute("/modules/informed-consents/list")}>
+                View pending consents
+              </button>
+            </div>
           </div>
 
-          <div className="care-hero-card">
-            <Sparkles size={22} />
-            <strong>{readiness}%</strong>
-            <span>Consent readiness</span>
+          <div className="wcl-hero-visual" aria-hidden="true">
+            <div className="wcl-care-person">
+              <div className="wcl-face" />
+              <div className="wcl-hijab" />
+              <div className="wcl-body" />
+              <div className="wcl-thumb" />
+            </div>
+            <div className="wcl-ring one" />
+            <div className="wcl-ring two" />
+            <div className="wcl-floating-card">
+              <Sparkles size={18} />
+              <strong>{readiness}%</strong>
+              <span>Consent readiness</span>
+            </div>
           </div>
         </section>
 
-        <section className="care-services">
-          <button type="button" className="active" onClick={() => setActiveStep(0)}>
-            <FileCheck2 size={24} />
-            <strong>New Consent</strong>
-            <span>Create and send consent</span>
-          </button>
+        <section className="wcl-services">
+          <article>
+            <h2>Consent services</h2>
+            <div className="wcl-service-grid two">
+              <button type="button" onClick={() => setActiveStep(0)}>
+                <FileCheck2 size={31} />
+                <span>
+                  <strong>Create consent now</strong>
+                  <small>Start a guided consent journey</small>
+                </span>
+              </button>
 
-          <button type="button" onClick={() => openRoute("/modules/informed-consents/list")}>
-            <CalendarDays size={24} />
-            <strong>Pending</strong>
-            <span>Follow active consents</span>
-          </button>
+              <button type="button" onClick={() => openRoute("/modules/informed-consents/list")}>
+                <CalendarDays size={31} />
+                <span>
+                  <strong>Follow pending consents</strong>
+                  <small>Track signature and completion</small>
+                </span>
+              </button>
+            </div>
+          </article>
 
-          <button type="button" onClick={() => openRoute("/modules/informed-consents/template-registry")}>
-            <BookOpen size={24} />
-            <strong>Approved Forms</strong>
-            <span>Template library</span>
-          </button>
+          <article>
+            <h2>Clinical and legal workflow</h2>
+            <div className="wcl-service-grid three">
+              <button type="button" onClick={() => setActiveStep(1)}>
+                <BookOpen size={31} />
+                <span>
+                  <strong>Approved templates</strong>
+                  <small>Select the right IMC form</small>
+                </span>
+              </button>
 
-          <button type="button" onClick={() => openRoute("/modules/informed-consents/governance")}>
-            <ShieldCheck size={24} />
-            <strong>Compliance</strong>
-            <span>Audit and legal checks</span>
-          </button>
+              <button type="button" onClick={() => setActiveStep(3)}>
+                <Syringe size={31} />
+                <span>
+                  <strong>Anesthesia review</strong>
+                  <small>Trigger anesthesiologist input</small>
+                </span>
+              </button>
+
+              <button type="button" onClick={() => setActiveStep(5)}>
+                <ShieldCheck size={31} />
+                <span>
+                  <strong>Smart compliance</strong>
+                  <small>Check readiness before send</small>
+                </span>
+              </button>
+            </div>
+          </article>
         </section>
 
-        <section className="care-workspace">
-          <div className="care-left">
-            <nav className="care-stepper">
-              {steps.map((step, index) => (
+        <section className="wcl-journey">
+          <div className="wcl-left">
+            <nav className="wcl-stepper" aria-label="Consent journey">
+              {journeySteps.map((step, index) => (
                 <button
                   key={step.key}
                   type="button"
                   className={index < activeStep ? "done" : index === activeStep ? "active" : ""}
                   onClick={() => setActiveStep(index)}
                 >
-                  <b>{index < activeStep ? <Check size={14} /> : index + 1}</b>
+                  <b>{index < activeStep ? <CheckCircle2 size={15} /> : index + 1}</b>
                   <span>{step.label}</span>
                 </button>
               ))}
             </nav>
 
-            <section className="care-panel">
+            <section className="wcl-panel">
               {currentStep === "patient" && (
                 <>
-                  <div className="care-panel-title">
+                  <div className="wcl-panel-title">
                     <h2>Patient Context</h2>
-                    <p>Confirm the patient and encounter before starting the consent.</p>
+                    <p>Confirm identity and encounter before issuing the consent.</p>
                   </div>
 
-                  <div className="care-info-grid">
-                    <div>
-                      <UserRound size={20} />
+                  <div className="wcl-info-grid">
+                    <article>
+                      <UserRound size={24} />
                       <small>Patient</small>
                       <strong>Mr. Ramesh Kumar</strong>
-                    </div>
-                    <div>
-                      <ClipboardCheck size={20} />
+                    </article>
+                    <article>
+                      <ClipboardCheck size={24} />
                       <small>MRN</small>
                       <strong>WC-2025-001123</strong>
-                    </div>
-                    <div>
-                      <CalendarDays size={20} />
+                    </article>
+                    <article>
+                      <CalendarDays size={24} />
                       <small>Encounter</small>
                       <strong>OPD / Cardiac Surgery</strong>
-                    </div>
-                    <div>
-                      <Stethoscope size={20} />
+                    </article>
+                    <article>
+                      <Stethoscope size={24} />
                       <small>Physician</small>
                       <strong>Dr. Arjun Mehta</strong>
-                    </div>
+                    </article>
                   </div>
                 </>
               )}
 
               {currentStep === "template" && (
                 <>
-                  <div className="care-panel-title">
+                  <div className="wcl-panel-title">
                     <h2>Approved Consent Template</h2>
-                    <p>Search and select the approved template. The selected form drives the rest of the workflow.</p>
+                    <p>Search and select the correct consent document.</p>
                   </div>
 
-                  <label className="care-search">
+                  <label className="wcl-search">
                     <Search size={18} />
                     <input
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
-                      placeholder="Search template, department, Arabic title, or ID"
+                      placeholder="Search by template, Arabic title, department, or ID"
                     />
                   </label>
 
-                  <div className="care-template-list">
+                  <div className="wcl-template-list">
                     {filteredTemplates.map((template) => (
                       <button
                         key={template.id}
@@ -313,7 +361,7 @@ export default function WathiqSmartConsentExperience() {
                         className={template.id === selectedTemplate.id ? "active" : ""}
                         onClick={() => setSelectedTemplate(template)}
                       >
-                        <FileText size={21} />
+                        <FileText size={23} />
                         <span>
                           <strong>{template.title}</strong>
                           <em>{template.titleAr}</em>
@@ -328,17 +376,17 @@ export default function WathiqSmartConsentExperience() {
 
               {currentStep === "procedure" && (
                 <>
-                  <div className="care-panel-title">
+                  <div className="wcl-panel-title">
                     <h2>Procedure Details</h2>
-                    <p>Confirm the clinical procedure and the essential explanation.</p>
+                    <p>Confirm the clinical procedure and the key explanation.</p>
                   </div>
 
-                  <label className="care-input">
+                  <label className="wcl-input">
                     <span>Procedure Name</span>
                     <input value={procedure} onChange={(event) => setProcedure(event.target.value)} />
                   </label>
 
-                  <label className="care-input">
+                  <label className="wcl-input">
                     <span>Clinical Note</span>
                     <textarea defaultValue="The patient was informed about the nature, benefits, material risks, alternatives, and possible complications of the proposed procedure." />
                   </label>
@@ -347,22 +395,22 @@ export default function WathiqSmartConsentExperience() {
 
               {currentStep === "anesthesia" && (
                 <>
-                  <div className="care-panel-title">
+                  <div className="wcl-panel-title">
                     <h2>Anesthesia Decision</h2>
-                    <p>Decide whether anesthesia is applicable. If required, anesthesiologist review is triggered.</p>
+                    <p>Decide whether anesthesia is required for this procedure.</p>
                   </div>
 
-                  <div className="care-choice">
+                  <div className="wcl-choice">
                     <button type="button" className={anesthesiaRequired ? "active" : ""} onClick={() => setAnesthesiaRequired(true)}>
-                      <Syringe size={23} />
+                      <Syringe size={28} />
                       <strong>Anesthesia Required</strong>
-                      <span>Send section to anesthesiologist</span>
+                      <span>Trigger anesthesiologist section</span>
                     </button>
 
                     <button type="button" className={!anesthesiaRequired ? "active" : ""} onClick={() => setAnesthesiaRequired(false)}>
-                      <BadgeCheck size={23} />
+                      <BadgeCheck size={28} />
                       <strong>Not Applicable</strong>
-                      <span>No anesthesia workflow needed</span>
+                      <span>No anesthesia workflow required</span>
                     </button>
                   </div>
                 </>
@@ -370,45 +418,47 @@ export default function WathiqSmartConsentExperience() {
 
               {currentStep === "education" && (
                 <>
-                  <div className="care-panel-title">
+                  <div className="wcl-panel-title">
                     <h2>Patient Education</h2>
-                    <p>Confirm the education content before patient signature.</p>
+                    <p>Confirm that the patient education package is ready.</p>
                   </div>
 
-                  <div className="care-education">
+                  <div className="wcl-education">
                     {["Procedure explanation", "Risks and benefits", "Alternatives", "Post-procedure care"].map((item) => (
-                      <div key={item}>
-                        <BadgeCheck size={18} />
+                      <article key={item}>
+                        <CheckCircle2 size={20} />
                         <span>{item}</span>
-                      </div>
+                      </article>
                     ))}
                   </div>
 
-                  <label className="care-confirm">
+                  <label className="wcl-confirm">
                     <input
                       type="checkbox"
                       checked={educationConfirmed}
                       onChange={(event) => setEducationConfirmed(event.target.checked)}
                     />
-                    <span>I confirm patient education is ready.</span>
+                    <span>I confirm the patient education material is ready.</span>
                   </label>
                 </>
               )}
 
               {currentStep === "review" && (
                 <>
-                  <div className="care-panel-title">
+                  <div className="wcl-panel-title">
                     <h2>Smart Review</h2>
-                    <p>Review clinical and legal readiness before sending.</p>
+                    <p>Review readiness before sending the consent to the patient.</p>
                   </div>
 
-                  <div className="care-review">
+                  <div className="wcl-review">
                     <div>
+                      <Sparkles size={24} />
                       <strong>{readiness}%</strong>
                       <span>Readiness Score</span>
                     </div>
                     <ul>
-                      <li>Template selected: {selectedTemplate.title}</li>
+                      <li>Patient: Mr. Ramesh Kumar</li>
+                      <li>Template: {selectedTemplate.title}</li>
                       <li>Procedure: {procedure}</li>
                       <li>Anesthesia: {anesthesiaRequired ? "Required" : "Not Applicable"}</li>
                       <li>Education: {educationConfirmed ? "Confirmed" : "Pending"}</li>
@@ -419,39 +469,35 @@ export default function WathiqSmartConsentExperience() {
 
               {currentStep === "send" && (
                 <>
-                  <div className="care-panel-title">
+                  <div className="wcl-panel-title">
                     <h2>Send to Patient</h2>
-                    <p>The patient will receive OTP verification and electronic signature link.</p>
+                    <p>Send OTP verification and e-signature link.</p>
                   </div>
 
-                  <div className="care-send-grid">
+                  <div className="wcl-send-grid">
                     <label>
                       <Phone size={18} />
                       <input value={mobile} onChange={(event) => setMobile(event.target.value)} />
                     </label>
+
                     <label>
                       <Mail size={18} />
                       <input value={email} onChange={(event) => setEmail(event.target.value)} />
                     </label>
                   </div>
 
-                  <button type="button" className="care-primary wide" onClick={sendConsent}>
+                  <button type="button" className="wcl-primary wide" onClick={sendConsent}>
                     <Send size={18} />
                     Send Consent for Signature
                   </button>
-
-                  <div className="care-security">
-                    <Lock size={17} />
-                    OTP, QR verification, audit trail, and patient copy will be generated.
-                  </div>
                 </>
               )}
             </section>
           </div>
 
-          <aside className="care-summary">
-            <div className="care-summary-head">
-              <HeartPulse size={23} />
+          <aside className="wcl-summary">
+            <div className="wcl-summary-head">
+              <HeartPulse size={25} />
               <div>
                 <strong>Consent Summary</strong>
                 <span>Live journey context</span>
@@ -481,24 +527,23 @@ export default function WathiqSmartConsentExperience() {
               </div>
             </dl>
 
-            <div className="care-ai-note">
+            <div className="wcl-ai-note">
               <Sparkles size={18} />
-              <span>
-                AI guidance appears only when it supports a clinical or legal decision.
-              </span>
+              <span>Smart guidance appears only when it supports a real clinical or legal decision.</span>
             </div>
 
-            <div className="care-actions">
-              <button type="button" onClick={back} disabled={activeStep === 0}>
+            <div className="wcl-actions">
+              <button type="button" onClick={() => setActiveStep((step) => Math.max(step - 1, 0))} disabled={activeStep === 0}>
                 Back
               </button>
-              {activeStep < steps.length - 1 ? (
-                <button type="button" className="care-primary" onClick={next}>
+
+              {activeStep < journeySteps.length - 1 ? (
+                <button type="button" className="wcl-primary" onClick={goNext}>
                   Continue
                   <ChevronRight size={16} />
                 </button>
               ) : (
-                <button type="button" className="care-primary" onClick={sendConsent}>
+                <button type="button" className="wcl-primary" onClick={sendConsent}>
                   Send
                   <Send size={16} />
                 </button>
