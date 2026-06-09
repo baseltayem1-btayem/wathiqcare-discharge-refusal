@@ -1,6 +1,8 @@
 ﻿import Link from "next/link";
 "use client";
+
 
+const WATHIQCARE_API_BASE = "/api/modules/informed-consents";
 import React from "react";
 async function wathiqcareApi<T = any>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${WATHIQCARE_API_BASE}${path}`, {
@@ -73,114 +75,10 @@ import {
 
 
 
-async function wathiqcareApi<T = any>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${WATHIQCARE_API_BASE}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error(await response.text().catch(()=>"") || `API failed: ${response.status}`);
-  return response.json();
-}
-
-function useWathiqCareEnterpriseBridge() {
-  const [language,setLanguage]=React.useState<"en"|"ar">("en");
-  const [dashboardStats,setDashboardStats]=React.useState<any>(null);
-  const [apiBusy,setApiBusy]=React.useState(false);
-  const [apiError,setApiError]=React.useState<string|null>(null);
-
-  const refreshDashboard=React.useCallback(async()=>{
-    setApiBusy(true); setApiError(null);
-    try{setDashboardStats(await wathiqcareApi("/dashboard"))}
-    catch(e:any){setApiError(e?.message||"Cannot connect to backend")}
-    finally{setApiBusy(false)}
-  },[]);
-
-  React.useEffect(()=>{refreshDashboard()},[refreshDashboard]);
-
-  const toggleLanguage=React.useCallback(()=>{
-    setLanguage(current=>{const next=current==="en"?"ar":"en";
-      if(typeof document!=="undefined"){document.documentElement.lang=next;document.documentElement.dir=next==="ar"?"rtl":"ltr"}
-      return next
-    });
-  },[]);
-
-  const openNewConsent=React.useCallback(async()=>{
-    setApiBusy(true); setApiError(null);
-    try{const created=await wathiqcareApi("/documents",{method:"POST",body:JSON.stringify({source:"physician-dashboard"})});
-      if(created?.id) window.location.href=`/modules/informed-consents/documents/${created.id}`; else await refreshDashboard();
-    }catch(e:any){setApiError(e?.message||"Cannot create consent");}finally{setApiBusy(false);}
-  },[refreshDashboard]);
-
-  const selectForPhysicianReview=React.useCallback(async(templateId?:string)=>{
-    setApiBusy(true); setApiError(null);
-    try{const created=await wathiqcareApi("/documents",{method:"POST",body:JSON.stringify({templateId,source:"imc-approved-library"})});
-      if(created?.id) window.location.href=`/modules/informed-consents/documents/${created.id}/review`; else await refreshDashboard();
-    }catch(e:any){setApiError(e?.message||"Cannot select consent");}finally{setApiBusy(false);}
-  },[refreshDashboard]);
-
-  return {language,dashboardStats,apiBusy,apiError,refreshDashboard,toggleLanguage,openNewConsent,selectForPhysicianReview};
-}
 import ConsentSearchEngine from "./ConsentSearchEngine";
 
 
 
-async function wathiqcareApi<T = any>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${WATHIQCARE_API_BASE}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error(await response.text().catch(()=>"") || `API failed: ${response.status}`);
-  return response.json();
-}
-
-function useWathiqCareEnterpriseBridge() {
-  const [language,setLanguage]=React.useState<"en"|"ar">("en");
-  const [dashboardStats,setDashboardStats]=React.useState<any>(null);
-  const [apiBusy,setApiBusy]=React.useState(false);
-  const [apiError,setApiError]=React.useState<string|null>(null);
-
-  const refreshDashboard=React.useCallback(async()=>{
-    setApiBusy(true); setApiError(null);
-    try{setDashboardStats(await wathiqcareApi("/dashboard"))}
-    catch(e:any){setApiError(e?.message||"Cannot connect to backend")}
-    finally{setApiBusy(false)}
-  },[]);
-
-  React.useEffect(()=>{refreshDashboard()},[refreshDashboard]);
-
-  const toggleLanguage=React.useCallback(()=>{
-    setLanguage(current=>{const next=current==="en"?"ar":"en";
-      if(typeof document!=="undefined"){document.documentElement.lang=next;document.documentElement.dir=next==="ar"?"rtl":"ltr"}
-      return next
-    });
-  },[]);
-
-  const openNewConsent=React.useCallback(async()=>{
-    setApiBusy(true); setApiError(null);
-    try{const created=await wathiqcareApi("/documents",{method:"POST",body:JSON.stringify({source:"physician-dashboard"})});
-      if(created?.id) window.location.href=`/modules/informed-consents/documents/${created.id}`; else await refreshDashboard();
-    }catch(e:any){setApiError(e?.message||"Cannot create consent");}finally{setApiBusy(false);}
-  },[refreshDashboard]);
-
-  const selectForPhysicianReview=React.useCallback(async(templateId?:string)=>{
-    setApiBusy(true); setApiError(null);
-    try{const created=await wathiqcareApi("/documents",{method:"POST",body:JSON.stringify({templateId,source:"imc-approved-library"})});
-      if(created?.id) window.location.href=`/modules/informed-consents/documents/${created.id}/review`; else await refreshDashboard();
-    }catch(e:any){setApiError(e?.message||"Cannot select consent");}finally{setApiBusy(false);}
-  },[refreshDashboard]);
-
-  return {language,dashboardStats,apiBusy,apiError,refreshDashboard,toggleLanguage,openNewConsent,selectForPhysicianReview};
-}
 type ApprovedFigmaConsentWorkspaceProps = {
   auth?: unknown;
   lang?: "en" | "ar";
@@ -533,6 +431,7 @@ export default function ApprovedFigmaConsentWorkspace({
     </div>
   );
 }
+
 
 
 
