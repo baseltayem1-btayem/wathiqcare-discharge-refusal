@@ -32,15 +32,7 @@ function useWathiqCareEnterpriseBridge() {
   },[]);
 
   React.useEffect(()=>{refreshDashboard()},[refreshDashboard]);
-
-  const toggleLanguage=React.useCallback(()=>{
-    setLanguage(current=>{const next=current==="en"?"ar":"en";
-      if(typeof document!=="undefined"){document.documentElement.lang=next;document.documentElement.dir=next==="ar"?"rtl":"ltr"}
-      return next
-    });
-  },[]);
-
-  const openNewConsent=React.useCallback(async()=>{
+const openNewConsent=React.useCallback(async()=>{
     setApiBusy(true); setApiError(null);
     try{const created=await wathiqcareApi("/documents",{method:"POST",body:JSON.stringify({source:"physician-dashboard"})});
       if(created?.id) window.location.href=`/modules/informed-consents/documents/${created.id}`; else await refreshDashboard();
@@ -88,6 +80,8 @@ export default function ApprovedFigmaConsentWorkspace({
   auth,
   lang = "en",
 }: ApprovedFigmaConsentWorkspaceProps) {
+  const [isArabic, setIsArabic] = React.useState(false);
+
   void auth;
 
   const isArabic = lang === "ar";
@@ -273,7 +267,7 @@ export default function ApprovedFigmaConsentWorkspace({
 
               <div className="flex items-center gap-3">
                 <div className="flex rounded-lg border border-[#D8DCE3] bg-white p-1">
-                  <button type="button" onClick={toggleLanguage} className="rounded bg-[#002B5C] px-3 py-1.5 text-xs font-bold text-white"><Languages className="h-4 w-4" aria-hidden="true" /> {language==="en"?"EN":"ع"}</button>
+                  <button type="button" onClick={() => setIsArabic((current) => !current)} className="rounded bg-[#002B5C] px-3 py-1.5 text-xs font-bold text-white"><Languages className="h-4 w-4" aria-hidden="true" /> {language==="en"?"EN":"ع"}</button>
                 </div>
 
                 <button className="relative rounded-lg border border-[#D8DCE3] bg-white p-2 text-[#002B5C]">
@@ -431,6 +425,7 @@ export default function ApprovedFigmaConsentWorkspace({
     </div>
   );
 }
+
 
 
 
