@@ -153,7 +153,34 @@ export default function ConsentSearchEngine() {
       }).catch(() => null);
 
       const pdfUrl =
-        item.pdfUrl || item.previewUrl || item.fileUrl || resolved?.pdfUrl || resolved?.previewUrl || `${API_BASE}/imc-library/resolve/pdf?id=${encodeURIComponent(templateId)}&title=${encodeURIComponent(itemTitle(item))}`;
+        item.pdfUrl ||
+        item.previewUrl ||
+        item.fileUrl ||
+        resolved?.pdfUrl ||
+        resolved?.previewUrl ||
+        `${API_BASE}/imc-library/resolve/pdf?id=${encodeURIComponent(templateId)}&title=${encodeURIComponent(itemTitle(item))}`;
+
+      const pdfCheck = await fetch(pdfUrl, {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      if (!pdfCheck.ok) {
+        let message = "Official approved PDF is not uploaded or mapped for this consent item.";
+        try {
+          const payload = await pdfCheck.json();
+          message =
+            payload?.detail ||
+            payload?.message ||
+            payload?.error ||
+            message;
+        } catch {
+          message = "Official approved PDF is not uploaded or mapped for this consent item.";
+        }
+
+        throw new Error(message);
+      }
 
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
     } catch (e: any) {
@@ -327,4 +354,5 @@ export default function ConsentSearchEngine() {
     </div>
   );
 }
+
 
