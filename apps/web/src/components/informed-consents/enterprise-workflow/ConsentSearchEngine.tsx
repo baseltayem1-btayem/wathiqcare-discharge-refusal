@@ -1,306 +1,311 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
+import React from "react";
 import {
-  BookOpenCheck,
+  AlertCircle,
   CheckCircle2,
-  Clock3,
+  Eye,
   FileText,
-  Filter,
+  Loader2,
   Search,
+  Send,
   ShieldCheck,
 } from "lucide-react";
-import {
-  imcApprovedConsentLibraryGenerated,
-  type ImcApprovedConsentLibraryItem,
-} from "./imcApprovedConsentLibrary.generated";
 
-const approvedTemplates: ImcApprovedConsentLibraryItem[] = imcApprovedConsentLibraryGenerated;
+type ConsentLibraryItem = {
+  id?: string;
+  templateId?: string;
+  templateVersionId?: string;
+  code?: string;
+  titleAr?: string;
+  titleEn?: string;
+  title?: string;
+  specialty?: string;
+  department?: string;
+  consentType?: string;
+  status?: string;
+  version?: string;
+  language?: string;
+  pdfUrl?: string;
+  fileUrl?: string;
+  previewUrl?: string;
+};
 
-const departments = Array.from(
-  new Set(approvedTemplates.map((item) => item.department).filter(Boolean)),
-).sort();
+const API_BASE = "/api/modules/informed-consents";
 
-const specialties = Array.from(
-  new Set(approvedTemplates.map((item) => item.specialty).filter(Boolean)),
-).sort();
+async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    ...init,
+    credentials: "include",
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
+  });
 
-const consentTypes = Array.from(
-  new Set(approvedTemplates.map((item) => item.consentType).filter(Boolean)),
-).sort();
+  if (!response.ok) {
+    const message = await response.text().catch(() => "");
+    throw new Error(message || `API request failed: ${response.status}`);
+  }
 
-function normalize(value: string | null | undefined) {
-  return (value || "").trim().toLowerCase();
+  return response.json();
 }
 
-function formatConsentType(value: string | null | undefined) {
-  return (value || "GENERAL_CONSENT")
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+function normalizeItems(payload: any): ConsentLibraryItem[] {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.templates)) return payload.templates;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.results)) return payload.results;
+  return [];
+}
+
+function itemKey(item: ConsentLibraryItem) {
+  return item.id || item.templateId || item.templateVersionId || item.code || item.titleEn || item.titleAr || crypto.randomUUID();
+}
+
+function itemTitle(item: ConsentLibraryItem) {
+  return item.titleEn || item.title || item.titleAr || item.code || "Approved Consent";
+}
+
+function itemTitleAr(item: ConsentLibraryItem) {
+  return item.titleAr || item.title || item.titleEn || item.code || "نموذج موافقة معتمد";
 }
 
 export default function ConsentSearchEngine() {
-  const [query, setQuery] = useState("");
-  const [department, setDepartment] = useState("ALL");
-  const [specialty, setSpecialty] = useState("ALL");
-  const [consentType, setConsentType] = useState("ALL");
+  const [query, setQuery] = React.useState("");
+  const [items, setItems] = React.useState<ConsentLibraryItem[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [actionId, setActionId] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const filteredTemplates = useMemo(() => {
-    const q = normalize(query);
+  const loadLibrary = React.useCallback(async (searchValue = query) => {
+    setLoading(true);
+    setError(null);
 
-    return approvedTemplates.filter((template) => {
-      const matchesDepartment = department === "ALL" || template.department === department;
-      const matchesSpecialty = specialty === "ALL" || template.specialty === specialty;
-      const matchesConsentType = consentType === "ALL" || template.consentType === consentType;
+    try {
+      const qs = new URLSearchParams();
+      if (searchValue.trim()) qs.set("q", searchValue.trim());
 
-      const searchableText = [
-        template.id,
-        template.titleEn,
-        template.titleAr,
-        template.specialty,
-        template.department,
-        template.categoryCode,
-        template.consentType,
-        template.templateType,
-        template.version,
-        template.hospitalPdfFilename,
-        template.patientEducationPdfFilename,
-        ...template.keywords,
-      ]
-        .join(" ")
-        .toLowerCase();
+      const payload = await apiJson<any>(`${API_BASE}/imc-library${qs.toString() ? `?${qs.toString()}` : ""}`);
+      let nextItems = normalizeItems(payload);
 
-      const matchesQuery = !q || searchableText.includes(q);
+      if (nextItems.length === 0) {
+        const fallback = await apiJson<any>(`${API_BASE}/templates${qs.toString() ? `?${qs.toString()}` : ""}`);
+        nextItems = normalizeItems(fallback);
+      }
 
-      return (
-        template.status === "ACTIVE" &&
-        matchesDepartment &&
-        matchesSpecialty &&
-        matchesConsentType &&
-        matchesQuery
-      );
-    });
-  }, [query, department, specialty, consentType]);
+      setItems(nextItems);
+    } catch (e: any) {
+      setError(e?.message || "Unable to load approved consent library from production API.");
+    } finally {
+      setLoading(false);
+    }
+  }, [query]);
 
-  const educationCount = approvedTemplates.filter((item) => item.educationMaterialAvailable).length;
-  const anesthesiaCount = approvedTemplates.filter((item) => item.anesthesiaRequired).length;
+  React.useEffect(() => {
+    loadLibrary("");
+  }, [loadLibrary]);
+
+  const previewPdf = React.useCallback(async (item: ConsentLibraryItem) => {
+    const id = item.id || item.templateId || item.templateVersionId || item.code;
+    if (!id) {
+      setError("Missing template identifier for PDF preview.");
+      return;
+    }
+
+    setActionId(id);
+    setError(null);
+
+    try {
+      const resolved = await apiJson<any>(`${API_BASE}/imc-library/resolve`, {
+        method: "POST",
+        body: JSON.stringify({
+          id,
+          templateId: item.templateId || item.id,
+          templateVersionId: item.templateVersionId,
+          code: item.code,
+          action: "preview-pdf",
+        }),
+      }).catch(() => null);
+
+      const resolvedId =
+        resolved?.documentId ||
+        resolved?.id ||
+        resolved?.templateId ||
+        resolved?.templateVersionId ||
+        item.id ||
+        item.templateId ||
+        item.templateVersionId ||
+        item.code;
+
+      const pdfUrl =
+        resolved?.pdfUrl ||
+        resolved?.previewUrl ||
+        item.pdfUrl ||
+        item.previewUrl ||
+        item.fileUrl ||
+        `${API_BASE}/documents/${encodeURIComponent(resolvedId)}/pdf`;
+
+      window.open(pdfUrl, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      setError(e?.message || "Unable to open informed consent PDF preview from production library.");
+    } finally {
+      setActionId(null);
+    }
+  }, []);
+
+  const selectForPhysicianReview = React.useCallback(async (item: ConsentLibraryItem) => {
+    const id = item.id || item.templateId || item.templateVersionId || item.code;
+    if (!id) {
+      setError("Missing template identifier for physician review.");
+      return;
+    }
+
+    setActionId(id);
+    setError(null);
+
+    try {
+      const created = await apiJson<any>(`${API_BASE}/documents`, {
+        method: "POST",
+        body: JSON.stringify({
+          templateId: item.templateId || item.id,
+          templateVersionId: item.templateVersionId,
+          code: item.code,
+          source: "imc-approved-library",
+          status: "DRAFT",
+        }),
+      });
+
+      const documentId = created?.documentId || created?.id;
+      if (!documentId) throw new Error("Document was not created by production API.");
+
+      window.location.href = `/modules/informed-consents/${documentId}/preview`;
+    } catch (e: any) {
+      setError(e?.message || "Unable to create draft consent for physician review.");
+    } finally {
+      setActionId(null);
+    }
+  }, []);
 
   return (
-    <section className="min-w-0" dir="auto">
-      <div className="overflow-hidden rounded-[30px] border border-[#D8DCE3] bg-white shadow-[0_18px_46px_rgba(15,23,42,0.08)]">
-        <div className="border-b border-[#E5E7EB] bg-[linear-gradient(135deg,#002B5C_0%,#123E76_100%)] px-5 py-5 text-white">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#C9A13B]">
-                IMC Approved Consent Library
-              </p>
-              <h2 className="mt-2 text-2xl font-extrabold">
-                Smart Consent Search / محرك بحث الموافقات المعتمدة
-              </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-white/80">
-                Search the generated IMC approved PDF library, including hospital consent files and linked patient education copies.
-              </p>
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 lg:flex-row">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#667085]" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") loadLibrary(query);
+            }}
+            placeholder="Search approved consent library / البحث في مكتبة الموافقات"
+            className="w-full rounded-lg border border-[#D8DCE3] bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#002B5C] focus:ring-2 focus:ring-[#002B5C]/10"
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => loadLibrary(query)}
+          disabled={loading}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#002B5C] px-4 py-2.5 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+          Search
+        </button>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-xl border border-[#D8DCE3] bg-white">
+        <div className="grid grid-cols-[1.2fr_0.8fr_0.7fr_0.8fr] gap-4 border-b border-[#D8DCE3] bg-[#F8FAFC] px-4 py-3 text-xs font-bold uppercase tracking-wide text-[#667085]">
+          <div>Consent / الموافقة</div>
+          <div>Specialty</div>
+          <div>Status</div>
+          <div className="text-right">Actions</div>
+        </div>
+
+        <div className="divide-y divide-[#EEF2F6]">
+          {loading && (
+            <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm font-semibold text-[#667085]">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading approved production library
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-4">
-              <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
-                <p className="text-xl font-extrabold">{approvedTemplates.length}</p>
-                <p className="text-[11px] font-semibold text-white/70">Approved Models</p>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
-                <p className="text-xl font-extrabold">{educationCount}</p>
-                <p className="text-[11px] font-semibold text-white/70">Education Copies</p>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
-                <p className="text-xl font-extrabold">{departments.length}</p>
-                <p className="text-[11px] font-semibold text-white/70">Departments</p>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
-                <p className="text-xl font-extrabold">{anesthesiaCount}</p>
-                <p className="text-[11px] font-semibold text-white/70">Anesthesia Flag</p>
-              </div>
+          {!loading && items.length === 0 && (
+            <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm font-semibold text-[#667085]">
+              <FileText className="h-4 w-4" />
+              No approved consent templates found from production API
             </div>
-          </div>
-        </div>
+          )}
 
-        <div className="grid gap-4 bg-[#F4F7FB] p-5 xl:grid-cols-[minmax(0,1fr)_220px_220px_220px]">
-          <label className="block">
-            <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#002B5C]">
-              <Search className="h-4 w-4" />
-              Search by procedure, file name, Arabic/English keyword
-            </span>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Example: colonoscopy, anesthesia, منظار, نقل الدم..."
-              className="h-12 w-full rounded-2xl border border-[#CBD5E1] bg-white px-4 text-sm font-semibold text-[#172033] outline-none transition focus:border-[#4B9CD3] focus:ring-4 focus:ring-[#4B9CD3]/15"
-            />
-          </label>
+          {!loading &&
+            items.map((item) => {
+              const id = itemKey(item);
+              const busy = actionId === (item.id || item.templateId || item.templateVersionId || item.code);
 
-          <label className="block">
-            <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#002B5C]">
-              <Filter className="h-4 w-4" />
-              Department
-            </span>
-            <select
-              value={department}
-              onChange={(event) => setDepartment(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-[#CBD5E1] bg-white px-4 text-sm font-semibold text-[#172033] outline-none transition focus:border-[#4B9CD3] focus:ring-4 focus:ring-[#4B9CD3]/15"
-            >
-              <option value="ALL">All departments</option>
-              {departments.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
+              return (
+                <div
+                  key={id}
+                  className="grid grid-cols-[1.2fr_0.8fr_0.7fr_0.8fr] items-center gap-4 px-4 py-4 text-sm"
+                >
+                  <div>
+                    <div className="font-semibold text-[#101828]">{itemTitle(item)}</div>
+                    <div className="mt-1 text-xs text-[#667085]">{itemTitleAr(item)}</div>
+                    <div className="mt-1 text-xs text-[#98A2B3]">
+                      {item.code || item.consentType || item.templateVersionId || "Production library item"}
+                    </div>
+                  </div>
 
-          <label className="block">
-            <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#002B5C]">
-              <Filter className="h-4 w-4" />
-              Specialty
-            </span>
-            <select
-              value={specialty}
-              onChange={(event) => setSpecialty(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-[#CBD5E1] bg-white px-4 text-sm font-semibold text-[#172033] outline-none transition focus:border-[#4B9CD3] focus:ring-4 focus:ring-[#4B9CD3]/15"
-            >
-              <option value="ALL">All specialties</option>
-              {specialties.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#002B5C]">
-              <Filter className="h-4 w-4" />
-              Consent Type
-            </span>
-            <select
-              value={consentType}
-              onChange={(event) => setConsentType(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-[#CBD5E1] bg-white px-4 text-sm font-semibold text-[#172033] outline-none transition focus:border-[#4B9CD3] focus:ring-4 focus:ring-[#4B9CD3]/15"
-            >
-              <option value="ALL">All consent types</option>
-              {consentTypes.map((item) => (
-                <option key={item} value={item}>
-                  {formatConsentType(item)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="border-b border-[#E5E7EB] px-5 py-3 text-sm font-bold text-[#002B5C]">
-          Showing {filteredTemplates.length} of {approvedTemplates.length} approved models
-        </div>
-
-        <div className="grid gap-4 p-5 xl:grid-cols-2">
-          {filteredTemplates.map((template) => (
-            <article
-              key={template.id}
-              className="rounded-[24px] border border-[#D8DCE3] bg-white p-5 shadow-[0_10px_28px_rgba(15,23,42,0.06)] transition hover:border-[#4B9CD3] hover:shadow-[0_16px_36px_rgba(0,43,92,0.1)]"
-            >
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="flex gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#002B5C] text-white">
-                    <FileText className="h-6 w-6" />
+                  <div className="text-[#667085]">
+                    {item.specialty || item.department || "General"}
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-extrabold text-[#002B5C]">
-                      {template.titleEn}
-                    </h3>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {item.status || "ACTIVE"}
+                    </span>
+                  </div>
 
-                    {template.titleAr ? (
-                      <p className="mt-1 text-sm font-bold text-[#2F2F2F]" dir="rtl">
-                        {template.titleAr}
-                      </p>
-                    ) : null}
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => previewPdf(item)}
+                      disabled={busy}
+                      title="Preview approved consent PDF"
+                      className="inline-flex items-center justify-center rounded-lg border border-[#D8DCE3] bg-white p-2 text-[#002B5C] shadow-sm hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+                    </button>
 
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#64748B]">
-                      {template.department} • {template.specialty} • {template.version}
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => selectForPhysicianReview(item)}
+                      disabled={busy}
+                      className="inline-flex items-center gap-2 rounded-lg bg-[#C9A13B] px-3 py-2 text-xs font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      Review
+                    </button>
                   </div>
                 </div>
-
-                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Active
-                </span>
-              </div>
-
-              <div className="mt-4 grid gap-3 text-sm lg:grid-cols-3">
-                <div className="rounded-2xl bg-[#F4F7FB] p-3">
-                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Consent Type</p>
-                  <p className="mt-1 font-extrabold text-[#002B5C]">
-                    {formatConsentType(template.consentType)}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-[#F4F7FB] p-3">
-                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Education</p>
-                  <p className="mt-1 font-extrabold text-[#002B5C]">
-                    {template.educationMaterialAvailable ? "Linked" : "Not linked"}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-[#F4F7FB] p-3">
-                  <p className="text-[11px] font-bold uppercase text-[#64748B]">Anesthesia</p>
-                  <p className="mt-1 font-extrabold text-[#002B5C]">
-                    {template.anesthesiaRequired ? "Required" : "Not required"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 space-y-2 rounded-2xl border border-[#E5E7EB] bg-[#F8FAFC] p-3 text-xs font-semibold text-[#475569]">
-                <p>
-                  <span className="font-extrabold text-[#002B5C]">Hospital PDF:</span>{" "}
-                  {template.hospitalPdfFilename}
-                </p>
-                <p>
-                  <span className="font-extrabold text-[#002B5C]">Patient Copy:</span>{" "}
-                  {template.patientEducationPdfFilename || "Not available"}
-                </p>
-              </div>
-
-              <div className="mt-4 flex flex-col gap-3 border-t border-[#E5E7EB] pt-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex items-center gap-2 text-xs font-semibold text-[#64748B]">
-                  <Clock3 className="h-4 w-4 text-[#C9A13B]" />
-                  Visit date and diagnosis can be synced from TrakCare during encounter selection.
-                </div>
-
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#002B5C] px-5 py-3 text-sm font-extrabold text-white shadow-[0_10px_22px_rgba(0,43,92,0.18)] transition hover:bg-[#123E76]"
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  Select for physician review
-                </button>
-              </div>
-            </article>
-          ))}
-
-          {filteredTemplates.length === 0 ? (
-            <div className="col-span-full rounded-[24px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-8 text-center">
-              <BookOpenCheck className="mx-auto h-10 w-10 text-[#C9A13B]" />
-              <p className="mt-3 text-lg font-extrabold text-[#002B5C]">
-                No approved consent templates found
-              </p>
-              <p className="mt-2 text-sm text-[#64748B]">
-                Try another keyword, department, specialty, consent type, Arabic term, or procedure name.
-              </p>
-            </div>
-          ) : null}
+              );
+            })}
         </div>
       </div>
-    </section>
+
+      <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">
+        <ShieldCheck className="h-4 w-4" />
+        Production API linked: search, library resolve, PDF preview, and physician draft review.
+      </div>
+    </div>
   );
 }
-
-

@@ -2,9 +2,6 @@
 "use client";
 
 import React from "react";
-
-const WATHIQCARE_API_BASE = "/api/modules/informed-consents";
-
 async function wathiqcareApi<T = any>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${WATHIQCARE_API_BASE}${path}`, {
     ...init,
@@ -75,7 +72,6 @@ import {
 } from "lucide-react";
 
 
-const WATHIQCARE_API_BASE = "/api/modules/informed-consents";
 
 async function wathiqcareApi<T = any>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${WATHIQCARE_API_BASE}${path}`, {
@@ -132,7 +128,6 @@ function useWathiqCareEnterpriseBridge() {
 import ConsentSearchEngine from "./ConsentSearchEngine";
 
 
-const WATHIQCARE_API_BASE = "/api/modules/informed-consents";
 
 async function wathiqcareApi<T = any>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${WATHIQCARE_API_BASE}${path}`, {
@@ -538,5 +533,7 @@ export default function ApprovedFigmaConsentWorkspace({
     </div>
   );
 }
+
+
 
 
