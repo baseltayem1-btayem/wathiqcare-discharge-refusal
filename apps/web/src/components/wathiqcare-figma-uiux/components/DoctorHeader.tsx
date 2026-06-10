@@ -27,7 +27,7 @@ export function DoctorHeader({ title, subtitle, lang, onToggleLang }: Props) {
           style={{ background: "#F7FBFC", border: "1px solid #D8E8EF", color: "#64798B" }}
         >
           <Search size={14} />
-          <span>{lang === "en" ? "Search patients..." : "Ø§Ù„Ø¨Ø­Ø« Ø¹Ù† Ù…Ø±Ø¶Ù‰..."}</span>
+          <span>"Search patients..."</span>
         </div>
 
         {/* Lang toggle */}
@@ -37,7 +37,7 @@ export function DoctorHeader({ title, subtitle, lang, onToggleLang }: Props) {
           style={{ background: "#EAF6FF", color: "#2F90C7", border: "1px solid #D8E8EF" }}
         >
           <Globe size={14} />
-          {lang === "en" ? "Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©" : "English"}
+          "English"
         </button>
 
         {/* Alerts */}
@@ -69,6 +69,7 @@ export function DoctorHeader({ title, subtitle, lang, onToggleLang }: Props) {
     </header>
   );
 }
+
 
 
 

@@ -9,31 +9,31 @@ interface Props { lang: "en" | "ar" }
 
 const steps = {
   en: ["Patient Context","Template","Procedure Details","Anesthesia","Education","Review","Send Link"],
-  ar: ["Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ù…Ø±ÙŠØ¶","Ø§Ù„Ù†Ù…ÙˆØ°Ø¬","ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡","Ø§Ù„ØªØ®Ø¯ÙŠØ±","Ø§Ù„ØªØ«Ù‚ÙŠÙ","Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©","Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø§Ø¨Ø·"],
+  ar: ["ب`ا ات ا&ر`ض","ا &ذج","تفاص` اإجراء","اتخد`ر","اتث`ف","ا&راجعة","إرسا ارابط"],
 };
 
 const stepIcons = [User, FileText, Stethoscope, Wind, BookOpen, Shield, Send];
 
 const templates = [
-  { id: "append", nameEn: "Appendectomy", nameAr: "Ø§Ø³ØªØ¦ØµØ§Ù„ Ø§Ù„Ø²Ø§Ø¦Ø¯Ø© Ø§Ù„Ø¯ÙˆØ¯ÙŠØ©", catEn: "General Surgery", catAr: "Ø¬Ø±Ø§Ø­Ø© Ø¹Ø§Ù…Ø©", risk: "medium" },
-  { id: "cardiac", nameEn: "Cardiac Catheterization", nameAr: "Ù‚Ø³Ø·Ø±Ø© Ù‚Ù„Ø¨ÙŠØ©", catEn: "Cardiology", catAr: "Ø£Ù…Ø±Ø§Ø¶ Ø§Ù„Ù‚Ù„Ø¨", risk: "high" },
-  { id: "knee", nameEn: "Knee Replacement", nameAr: "ØªØ¨Ø¯ÙŠÙ„ Ù…ÙØµÙ„ Ø§Ù„Ø±ÙƒØ¨Ø©", catEn: "Orthopedics", catAr: "Ø¬Ø±Ø§Ø­Ø© Ø§Ù„Ø¹Ø¸Ø§Ù…", risk: "high" },
-  { id: "colonoscopy", nameEn: "Colonoscopy", nameAr: "ØªÙ†Ø¸ÙŠØ± Ø§Ù„Ù‚ÙˆÙ„ÙˆÙ†", catEn: "Gastroenterology", catAr: "Ø£Ù…Ø±Ø§Ø¶ Ø§Ù„Ø¬Ù‡Ø§Ø² Ø§Ù„Ù‡Ø¶Ù…ÙŠ", risk: "low" },
-  { id: "cataract", nameEn: "Cataract Surgery", nameAr: "Ø¬Ø±Ø§Ø­Ø© Ø§Ù„Ø³Ø§Ø¯", catEn: "Ophthalmology", catAr: "Ø·Ø¨ Ø§Ù„Ø¹ÙŠÙˆÙ†", risk: "low" },
-  { id: "hernia", nameEn: "Hernia Repair", nameAr: "Ø¥ØµÙ„Ø§Ø­ Ø§Ù„ÙØªÙ‚", catEn: "General Surgery", catAr: "Ø¬Ø±Ø§Ø­Ø© Ø¹Ø§Ù…Ø©", risk: "medium" },
+  { id: "append", nameEn: "Appendectomy", nameAr: "استئصا ازائدة ادد`ة", catEn: "General Surgery", catAr: "جراحة عا&ة", risk: "medium" },
+  { id: "cardiac", nameEn: "Cardiac Catheterization", nameAr: "سطرة ب`ة", catEn: "Cardiology", catAr: "أ&راض اب", risk: "high" },
+  { id: "knee", nameEn: "Knee Replacement", nameAr: "تبد` &فص ارْبة", catEn: "Orthopedics", catAr: "جراحة اعظا&", risk: "high" },
+  { id: "colonoscopy", nameEn: "Colonoscopy", nameAr: "ت ظ`ر ا ", catEn: "Gastroenterology", catAr: "أ&راض اج!از ا!ض&`", risk: "low" },
+  { id: "cataract", nameEn: "Cataract Surgery", nameAr: "جراحة اساد", catEn: "Ophthalmology", catAr: "طب اع` ", risk: "low" },
+  { id: "hernia", nameEn: "Hernia Repair", nameAr: "إصاح افت", catEn: "General Surgery", catAr: "جراحة عا&ة", risk: "medium" },
 ];
 
 const riskColor: Record<string, string> = { low: "#19A978", medium: "#D9A93B", high: "#E84B7A" };
 const riskLabel: Record<string, { en: string; ar: string }> = {
-  low: { en: "Low Risk", ar: "Ù…Ø®Ø§Ø·Ø± Ù…Ù†Ø®ÙØ¶Ø©" },
-  medium: { en: "Med Risk", ar: "Ù…Ø®Ø§Ø·Ø± Ù…ØªÙˆØ³Ø·Ø©" },
-  high: { en: "High Risk", ar: "Ù…Ø®Ø§Ø·Ø± Ø¹Ø§Ù„ÙŠØ©" },
+  low: { en: "Low Risk", ar: "&خاطر & خفضة" },
+  medium: { en: "Med Risk", ar: "&خاطر &تسطة" },
+  high: { en: "High Risk", ar: "&خاطر عا`ة" },
 };
 
 const educationMaterials = [
-  { id: "a1", titleEn: "Pre-operative Instructions", titleAr: "ØªØ¹Ù„ÙŠÙ…Ø§Øª Ù…Ø§ Ù‚Ø¨Ù„ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", typeEn: "PDF Guide", typeAr: "Ø¯Ù„ÙŠÙ„ PDF", duration: "5 min" },
-  { id: "a2", titleEn: "What to Expect During Surgery", titleAr: "Ù…Ø§ ÙŠÙ…ÙƒÙ† ØªÙˆÙ‚Ø¹Ù‡ Ø£Ø«Ù†Ø§Ø¡ Ø§Ù„Ø¬Ø±Ø§Ø­Ø©", typeEn: "Video", typeAr: "ÙÙŠØ¯ÙŠÙˆ", duration: "3 min" },
-  { id: "a3", titleEn: "Recovery & Post-op Care", titleAr: "Ø§Ù„ØªØ¹Ø§ÙÙŠ ÙˆØ§Ù„Ø±Ø¹Ø§ÙŠØ© Ø¨Ø¹Ø¯ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", typeEn: "Infographic", typeAr: "Ø¥Ù†ÙÙˆØºØ±Ø§ÙÙŠÙƒ", duration: "2 min" },
+  { id: "a1", titleEn: "Pre-operative Instructions", titleAr: "تع`&ات &ا ب اع&`ة", typeEn: "PDF Guide", typeAr: "د` PDF", duration: "5 min" },
+  { id: "a2", titleEn: "What to Expect During Surgery", titleAr: "&ا `&ْ  تع! أث اء اجراحة", typeEn: "Video", typeAr: "ف`د`", duration: "3 min" },
+  { id: "a3", titleEn: "Recovery & Post-op Care", titleAr: "اتعاف` ارعا`ة بعد اع&`ة", typeEn: "Infographic", typeAr: "إ فغراف`ْ", duration: "2 min" },
 ];
 
 export function CreateConsent({ lang }: Props) {
@@ -104,10 +104,10 @@ export function CreateConsent({ lang }: Props) {
             <div className="max-w-2xl mx-auto space-y-5">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-                  {isRTL ? "Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ù…Ø±ÙŠØ¶" : "Patient Context"}
+                  {isRTL ? "ب`ا ات ا&ر`ض" : "Patient Context"}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø£Ø¯Ø®Ù„ Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ù…Ø±ÙŠØ¶ Ø£Ùˆ Ø§Ø¨Ø­Ø« ÙÙŠ Ø§Ù„Ø³Ø¬Ù„Ø§Øª" : "Enter patient information or search existing records"}
+                  {isRTL ? "أدخ &ع&ات ا&ر`ض أ ابحث ف` اسجات" : "Enter patient information or search existing records"}
                 </p>
               </div>
 
@@ -115,18 +115,18 @@ export function CreateConsent({ lang }: Props) {
                 <div className="flex gap-3">
                   <div className="flex-1">
                     <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
-                      {isRTL ? "Ø§Ù„Ø§Ø³Ù… Ø§Ù„ÙƒØ§Ù…Ù„" : "Full Name"}
+                      {isRTL ? "ااس& اْا&" : "Full Name"}
                     </label>
                     <input
                       className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none focus:ring-2"
                       style={{ borderColor: "#D8E8EF", background: "#F7FBFC", color: "#102A43" }}
-                      placeholder={isRTL ? "Ø£Ø¯Ø®Ù„ Ø§Ø³Ù… Ø§Ù„Ù…Ø±ÙŠØ¶" : "Enter patient name"}
-                      defaultValue={isRTL ? "Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù†" : "Layla Hassan"}
+                      placeholder={isRTL ? "أدخ اس& ا&ر`ض" : "Enter patient name"}
+                      defaultValue={isRTL ? "`0 حس " : "Layla Hassan"}
                     />
                   </div>
                   <div className="w-36">
                     <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
-                      {isRTL ? "Ø±Ù‚Ù… Ø§Ù„Ù…Ù„Ù" : "MRN"}
+                      {isRTL ? "ر& ا&ف" : "MRN"}
                     </label>
                     <input
                       className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none focus:ring-2"
@@ -139,7 +139,7 @@ export function CreateConsent({ lang }: Props) {
                 <div className="flex gap-3">
                   <div className="flex-1">
                     <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
-                      {isRTL ? "Ø±Ù‚Ù… Ø§Ù„Ø¬ÙˆØ§Ù„" : "Mobile"}
+                      {isRTL ? "ر& اجا" : "Mobile"}
                     </label>
                     <div className="flex gap-2">
                       <span className="flex items-center gap-1 px-3 py-2.5 rounded-xl text-sm border" style={{ borderColor: "#D8E8EF", background: "#EAF6FF", color: "#2F90C7" }}>
@@ -154,7 +154,7 @@ export function CreateConsent({ lang }: Props) {
                   </div>
                   <div className="flex-1">
                     <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
-                      {isRTL ? "ØªØ§Ø±ÙŠØ® Ø§Ù„Ù…ÙŠÙ„Ø§Ø¯" : "Date of Birth"}
+                      {isRTL ? "تار`خ ا&`اد" : "Date of Birth"}
                     </label>
                     <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm" style={{ borderColor: "#D8E8EF", background: "#F7FBFC", color: "#102A43" }}>
                       <Calendar size={13} style={{ color: "#64798B" }} />
@@ -165,7 +165,7 @@ export function CreateConsent({ lang }: Props) {
 
                 <div>
                   <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
-                    {isRTL ? "Ø§Ù„Ø¬Ù†Ø³ÙŠØ© / Ø§Ù„Ù„ØºØ© Ø§Ù„Ù…ÙØ¶Ù„Ø©" : "Nationality / Preferred Language"}
+                    {isRTL ? "اج س`ة / اغة ا&فضة" : "Nationality / Preferred Language"}
                   </label>
                   <div className="flex gap-2">
                     {["Arabic", "English", "Urdu", "Filipino"].map(l => (
@@ -186,13 +186,13 @@ export function CreateConsent({ lang }: Props) {
 
                 <div>
                   <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
-                    {isRTL ? "Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø³Ø±ÙŠØ±ÙŠØ© / Ø§Ù„Ù…Ù„Ø§Ø­Ø¸Ø§Øª" : "Clinical Notes"}
+                    {isRTL ? "احاة اسر`ر`ة / ا&احظات" : "Clinical Notes"}
                   </label>
                   <textarea
                     rows={3}
                     className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none resize-none"
                     style={{ borderColor: "#D8E8EF", background: "#F7FBFC", color: "#102A43" }}
-                    defaultValue={isRTL ? "Ù…Ø±ÙŠØ¶Ø© ØªØ¨Ù„Øº Ù…Ù† Ø§Ù„Ø¹Ù…Ø± 34 Ø¹Ø§Ù…Ø§Ù‹ØŒ ØªØ¹Ø§Ù†ÙŠ Ù…Ù† Ø¢Ù„Ø§Ù… ÙÙŠ Ø§Ù„Ø¨Ø·Ù† Ù…Ø¹ Ø¹Ù„Ø§Ù…Ø§Øª Ø§Ù„ØªÙ‡Ø§Ø¨ Ø§Ù„Ø²Ø§Ø¦Ø¯Ø© Ø§Ù„Ø¯ÙˆØ¯ÙŠØ©." : "34-year-old female presenting with acute abdominal pain, signs consistent with appendicitis."}
+                    defaultValue={isRTL ? "&ر`ضة تبغ &  اع&ر 34 عا&ا9R تعا ` &  آا& ف` ابط  &ع عا&ات ات!اب ازائدة ادد`ة." : "34-year-old female presenting with acute abdominal pain, signs consistent with appendicitis."}
                   />
                 </div>
               </div>
@@ -203,7 +203,7 @@ export function CreateConsent({ lang }: Props) {
                   <div className="flex items-center gap-2 mb-3">
                     <AlertTriangle size={14} style={{ color: "#D9A93B" }} />
                     <span className="text-sm font-semibold" style={{ color: "#102A43" }}>
-                      {isRTL ? "Ø§Ù„Ø­Ø³Ø§Ø³ÙŠØ©" : "Allergies"}
+                      {isRTL ? "احساس`ة" : "Allergies"}
                     </span>
                   </div>
                   <div className="flex gap-2 flex-wrap">
@@ -218,7 +218,7 @@ export function CreateConsent({ lang }: Props) {
                   <div className="flex items-center gap-2 mb-3">
                     <Info size={14} style={{ color: "#2F90C7" }} />
                     <span className="text-sm font-semibold" style={{ color: "#102A43" }}>
-                      {isRTL ? "Ø§Ù„Ø­Ø§Ù„Ø§Øª Ø§Ù„Ù…ØµØ§Ø­Ø¨Ø©" : "Comorbidities"}
+                      {isRTL ? "احاات ا&صاحبة" : "Comorbidities"}
                     </span>
                   </div>
                   <div className="flex gap-2 flex-wrap">
@@ -238,17 +238,17 @@ export function CreateConsent({ lang }: Props) {
             <div className="max-w-2xl mx-auto space-y-5">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-                  {isRTL ? "Ø§Ø®ØªØ± Ù†Ù…ÙˆØ°Ø¬ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" : "Select Consent Template"}
+                  {isRTL ? "اختر  &ذج ا&افة" : "Select Consent Template"}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø§Ø®ØªØ± Ù…Ù† Ù…ÙƒØªØ¨Ø© Ø§Ù„Ù†Ù…Ø§Ø°Ø¬ Ø§Ù„Ù…Ø¹ØªÙ…Ø¯Ø©" : "Choose from the approved template library"}
+                  {isRTL ? "اختر &  &ْتبة ا &اذج ا&عت&دة" : "Choose from the approved template library"}
                 </p>
               </div>
               <div className="flex items-center gap-2 px-3 py-2.5 bg-white rounded-xl border" style={{ borderColor: "#D8E8EF" }}>
                 <Search size={15} style={{ color: "#64798B" }} />
                 <input
                   className="flex-1 text-sm outline-none bg-transparent"
-                  placeholder={isRTL ? "Ø§Ù„Ø¨Ø­Ø« Ø¹Ù† Ù†Ù…ÙˆØ°Ø¬..." : "Search templates..."}
+                  placeholder={isRTL ? "ابحث ع   &ذج..." : "Search templates..."}
                   style={{ color: "#102A43" }}
                   value={searchTpl}
                   onChange={e => setSearchTpl(e.target.value)}
@@ -284,7 +284,7 @@ export function CreateConsent({ lang }: Props) {
                     </div>
                     {selectedTemplate === tpl.id && (
                       <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#2F90C7" }}>
-                        <Check size={12} /> {isRTL ? "Ù…Ø­Ø¯Ø¯" : "Selected"}
+                        <Check size={12} /> {isRTL ? "&حدد" : "Selected"}
                       </div>
                     )}
                   </button>
@@ -298,10 +298,10 @@ export function CreateConsent({ lang }: Props) {
             <div className="max-w-2xl mx-auto space-y-5">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-                  {isRTL ? "ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡" : "Procedure Details"}
+                  {isRTL ? "تفاص` اإجراء" : "Procedure Details"}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø£ÙƒÙ…Ù„ ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ø¬Ø±Ø§Ø­ÙŠ" : "Complete the procedure-specific details"}
+                  {isRTL ? "أْ& تفاص` اإجراء اجراح`" : "Complete the procedure-specific details"}
                 </p>
               </div>
               {selectedTpl && (
@@ -319,10 +319,10 @@ export function CreateConsent({ lang }: Props) {
               )}
               <div className="bg-white rounded-2xl p-5 border space-y-4" style={{ borderColor: "#D8E8EF" }}>
                 {[
-                  { labelEn: "Surgeon Name", labelAr: "Ø§Ø³Ù… Ø§Ù„Ø¬Ø±Ø§Ø­", val: isRTL ? "Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„" : "Dr. Ahmad Khalil" },
-                  { labelEn: "Scheduled Date", labelAr: "ØªØ§Ø±ÙŠØ® Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", val: "12 / 06 / 2026" },
-                  { labelEn: "Hospital / Operating Room", labelAr: "Ø§Ù„Ù…Ø³ØªØ´ÙÙ‰ / ØºØ±ÙØ© Ø§Ù„Ø¹Ù…Ù„ÙŠØ§Øª", val: isRTL ? "Ù…Ø³ØªØ´ÙÙ‰ Ø§Ù„Ù…Ù„Ùƒ Ø¹Ø¨Ø¯Ø§Ù„Ø¹Ø²ÙŠØ² â€” ØºØ±ÙØ© Ù£" : "King Abdulaziz Hospital â€” OR 3" },
-                  { labelEn: "Procedure Duration (est.)", labelAr: "Ù…Ø¯Ø© Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ (ØªÙ‚Ø¯ÙŠØ±ÙŠØ©)", val: "90 min" },
+                  { labelEn: "Surgeon Name", labelAr: "اس& اجراح", val: isRTL ? "د. أح&د خ`" : "Dr. Ahmad Khalil" },
+                  { labelEn: "Scheduled Date", labelAr: "تار`خ اع&`ة", val: "12 / 06 / 2026" },
+                  { labelEn: "Hospital / Operating Room", labelAr: "ا&ستشف0 / غرفة اع&`ات", val: isRTL ? "&ستشف0 ا&ْ عبداعز`ز  غرفة ٣" : "King Abdulaziz Hospital  OR 3" },
+                  { labelEn: "Procedure Duration (est.)", labelAr: "&دة اإجراء (تد`ر`ة)", val: "90 min" },
                 ].map(f => (
                   <div key={f.labelEn}>
                     <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
@@ -337,11 +337,11 @@ export function CreateConsent({ lang }: Props) {
                 ))}
                 <div>
                   <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
-                    {isRTL ? "Ø§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©" : "Key Risks & Complications"}
+                    {isRTL ? "ا&خاطر ا&ضاعفات ارئ`س`ة" : "Key Risks & Complications"}
                   </label>
                   <div className="space-y-2">
                     {(isRTL
-                      ? ["Ù†Ø²ÙŠÙ", "Ø¹Ø¯ÙˆÙ‰", "ØªÙ„Ù Ø§Ù„Ø£Ø¹Ø¶Ø§Ø¡ Ø§Ù„Ù…Ø¬Ø§ÙˆØ±Ø©", "Ø§Ù„Ø­Ø§Ø¬Ø© Ø¥Ù„Ù‰ Ø¥Ø¬Ø±Ø§Ø¡ Ø¢Ø®Ø±"]
+                      ? [" ز`ف", "عد0", "تف اأعضاء ا&جارة", "احاجة إ0 إجراء آخر"]
                       : ["Bleeding", "Infection", "Adjacent organ injury", "Need for further procedure"]
                     ).map((risk, i) => (
                       <label key={i} className="flex items-center gap-2 cursor-pointer">
@@ -362,17 +362,17 @@ export function CreateConsent({ lang }: Props) {
             <div className="max-w-2xl mx-auto space-y-5">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-                  {isRTL ? "Ù‚Ø±Ø§Ø± Ø§Ù„ØªØ®Ø¯ÙŠØ±" : "Anesthesia Decision"}
+                  {isRTL ? "رار اتخد`ر" : "Anesthesia Decision"}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø­Ø¯Ø¯ Ù†ÙˆØ¹ Ø§Ù„ØªØ®Ø¯ÙŠØ± ÙˆØ£Ø¶Ù Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø·Ø¨ÙŠØ¨ Ø§Ù„ØªØ®Ø¯ÙŠØ±" : "Select anesthesia type and add anesthesiologist notes"}
+                  {isRTL ? "حدد  ع اتخد`ر أضف &احظات طب`ب اتخد`ر" : "Select anesthesia type and add anesthesiologist notes"}
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {([
-                  { id: "general", icon: "ðŸ«", en: "General Anesthesia", ar: "ØªØ®Ø¯ÙŠØ± Ø¹Ø§Ù…" },
-                  { id: "local", icon: "ðŸ’‰", en: "Local Anesthesia", ar: "ØªØ®Ø¯ÙŠØ± Ù…ÙˆØ¶Ø¹ÙŠ" },
-                  { id: "spinal", icon: "ðŸ©º", en: "Spinal / Epidural", ar: "ØªØ®Ø¯ÙŠØ± Ù†Ø®Ø§Ø¹ÙŠ / ÙÙˆÙ‚ Ø§Ù„Ø¬Ø§ÙÙŠØ©" },
+                  { id: "general", icon: "x", en: "General Anesthesia", ar: "تخد`ر عا&" },
+                  { id: "local", icon: "x0", en: "Local Anesthesia", ar: "تخد`ر &ضع`" },
+                  { id: "spinal", icon: "x", en: "Spinal / Epidural", ar: "تخد`ر  خاع` / ف اجاف`ة" },
                 ] as const).map(opt => (
                   <button
                     key={opt.id}
@@ -400,32 +400,32 @@ export function CreateConsent({ lang }: Props) {
                 <div className="bg-white rounded-2xl p-5 border space-y-4" style={{ borderColor: "#D8E8EF" }}>
                   <div>
                     <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
-                      {isRTL ? "Ø·Ø¨ÙŠØ¨ Ø§Ù„ØªØ®Ø¯ÙŠØ±" : "Anesthesiologist"}
+                      {isRTL ? "طب`ب اتخد`ر" : "Anesthesiologist"}
                     </label>
                     <input
                       className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none"
                       style={{ borderColor: "#D8E8EF", background: "#F7FBFC" }}
-                      defaultValue={isRTL ? "Ø¯. Ø³Ø§Ø±Ø© Ø§Ù„Ù…Ù†ØµÙˆØ±ÙŠ" : "Dr. Sara Al-Mansouri"}
+                      defaultValue={isRTL ? "د. سارة ا& صر`" : "Dr. Sara Al-Mansouri"}
                     />
                   </div>
                   <div>
                     <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
-                      {isRTL ? "Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø§Ù„ØªØ®Ø¯ÙŠØ±" : "Anesthesia Notes"}
+                      {isRTL ? "&احظات اتخد`ر" : "Anesthesia Notes"}
                     </label>
                     <textarea rows={3} className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none resize-none"
                       style={{ borderColor: "#D8E8EF", background: "#F7FBFC" }}
-                      defaultValue={isRTL ? "Ù…Ø±ÙŠØ¶Ø© Ø­Ø³Ø§Ø³Ø© Ù„Ù„Ø¨Ù†Ø³Ù„ÙŠÙ†. ÙŠÙÙˆØµÙ‰ Ø¨Ù…Ø±Ø§Ù‚Ø¨Ø© Ø¯Ù‚ÙŠÙ‚Ø© Ù„Ù„Ù‚Ù„Ø¨." : "Patient is allergic to Penicillin. Close cardiac monitoring recommended."}
+                      defaultValue={isRTL ? "&ر`ضة حساسة ب س` . `ُص0 ب&رابة د`ة ب." : "Patient is allergic to Penicillin. Close cardiac monitoring recommended."}
                     />
                   </div>
                   <div className="p-3 rounded-xl" style={{ background: "#EAFFFB", border: "1px solid #12B7B530" }}>
                     <div className="flex items-center gap-2">
                       <Info size={14} style={{ color: "#12B7B5" }} />
                       <span className="text-xs font-semibold" style={{ color: "#12B7B5" }}>
-                        {isRTL ? "ÙŠØªØ·Ù„Ø¨ Ù…ÙˆØ§ÙÙ‚Ø© Ù…Ù†ÙØµÙ„Ø© Ù„Ù„ØªØ®Ø¯ÙŠØ±" : "Requires separate anesthesia consent"}
+                        {isRTL ? "`تطب &افة & فصة تخد`ر" : "Requires separate anesthesia consent"}
                       </span>
                     </div>
                     <p className="text-xs mt-1 ms-5" style={{ color: "#64798B" }}>
-                      {isRTL ? "Ø³ÙŠØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ù†Ù…ÙˆØ°Ø¬ ØªØ®Ø¯ÙŠØ± Ù…Ù†ÙØµÙ„ ÙˆØ¥Ø¶Ø§ÙØªÙ‡ Ø¥Ù„Ù‰ Ø§Ù„Ø·Ø§Ø¨ÙˆØ±." : "A separate anesthesia form will be generated and added to the queue."}
+                      {isRTL ? "س`ت& إ شاء  &ذج تخد`ر & فص إضافت! إ0 اطابر." : "A separate anesthesia form will be generated and added to the queue."}
                     </p>
                   </div>
                 </div>
@@ -438,10 +438,10 @@ export function CreateConsent({ lang }: Props) {
             <div className="max-w-2xl mx-auto space-y-5">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-                  {isRTL ? "Ù…ÙˆØ§Ø¯ Ø§Ù„ØªØ«Ù‚ÙŠÙ Ø§Ù„ØµØ­ÙŠ" : "Patient Education Materials"}
+                  {isRTL ? "&اد اتث`ف اصح`" : "Patient Education Materials"}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø§Ø®ØªØ± Ø§Ù„Ù…ÙˆØ§Ø¯ Ø§Ù„ØªÙŠ Ø³ØªÙØ±Ø³Ù„ Ù…Ø¹ Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø¢Ù…Ù† Ù„Ù„Ù…Ø±ÙŠØ¶" : "Select materials to send with the patient's secure link"}
+                  {isRTL ? "اختر ا&اد ات` ستُرس &ع ارابط اآ&  &ر`ض" : "Select materials to send with the patient's secure link"}
                 </p>
               </div>
               <div className="space-y-3">
@@ -467,8 +467,8 @@ export function CreateConsent({ lang }: Props) {
                         </div>
                         <div className="text-xs mt-0.5 flex items-center gap-2" style={{ color: "#64798B" }}>
                           <span>{isRTL ? m.typeAr : m.typeEn}</span>
-                          <span>Â·</span>
-                          <span>{m.duration} {isRTL ? "Ø¯Ù‚Ø§Ø¦Ù‚" : "read"}</span>
+                          <span>·</span>
+                          <span>{m.duration} {isRTL ? "دائ" : "read"}</span>
                         </div>
                       </div>
                       <div className="w-5 h-5 rounded flex items-center justify-center border transition-all"
@@ -482,8 +482,8 @@ export function CreateConsent({ lang }: Props) {
               <div className="p-4 rounded-2xl" style={{ background: "#F1EFFF", border: "1px solid #6B5CE720" }}>
                 <p className="text-sm" style={{ color: "#6B5CE7" }}>
                   {isRTL
-                    ? "ðŸ’¡ ÙŠÙÙˆØµÙ‰ Ø¨Ù…Ø´Ø§Ø±ÙƒØ© Ù…ÙˆØ§Ø¯ Ø§Ù„ØªØ«Ù‚ÙŠÙ Ù‚Ø¨Ù„ Ù¢Ù¤ Ø³Ø§Ø¹Ø© Ù…Ù† Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ù„Ø¶Ù…Ø§Ù† ÙÙ‡Ù… Ø§Ù„Ù…Ø±ÙŠØ¶."
-                    : "ðŸ’¡ Recommended to share education materials 24h before the procedure for best patient comprehension."}
+                    ? "x `ُص0 ب&شارْة &اد اتث`ف ب ٢٤ ساعة &  اإجراء ض&ا  ف!& ا&ر`ض."
+                    : "x Recommended to share education materials 24h before the procedure for best patient comprehension."}
                 </p>
               </div>
             </div>
@@ -494,10 +494,10 @@ export function CreateConsent({ lang }: Props) {
             <div className="max-w-2xl mx-auto space-y-5">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-                  {isRTL ? "Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø© Ø§Ù„Ø°ÙƒÙŠØ©" : "Smart Review"}
+                  {isRTL ? "ا&راجعة اذْ`ة" : "Smart Review"}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ù…Ø±Ø§Ø¬Ø¹Ø© Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„ Ø¨Ø§Ù„Ø°ÙƒØ§Ø¡ Ø§Ù„Ø§ØµØ·Ù†Ø§Ø¹ÙŠ Ù‚Ø¨Ù„ Ø§Ù„Ø¥Ø±Ø³Ø§Ù„" : "AI compliance check before sending to patient"}
+                  {isRTL ? "&راجعة اا&تثا باذْاء ااصط اع` ب اإرسا" : "AI compliance check before sending to patient"}
                 </p>
               </div>
               {/* AI check card */}
@@ -507,20 +507,20 @@ export function CreateConsent({ lang }: Props) {
                     <Shield size={15} style={{ color: "#12B7B5" }} />
                   </div>
                   <span className="text-sm font-bold" style={{ color: "#102A43" }}>
-                    {isRTL ? "ÙØ­Øµ Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„ â€” Ù©Ù¨Ùª ØµØ­ÙŠØ­" : "Compliance Check â€” 98% Valid"}
+                    {isRTL ? "فحص اا&تثا  ٩٨٪ صح`ح" : "Compliance Check  98% Valid"}
                   </span>
                   <span className="ms-auto px-2.5 py-0.5 rounded-lg text-xs font-semibold" style={{ background: "#E8F9F4", color: "#19A978" }}>
-                    {isRTL ? "Ø¬Ø§Ù‡Ø² Ù„Ù„Ø¥Ø±Ø³Ø§Ù„" : "Ready to Send"}
+                    {isRTL ? "جا!ز إرسا" : "Ready to Send"}
                   </span>
                 </div>
                 <div className="space-y-2 pt-1">
                   {[
-                    { ok: true, en: "Patient identity verified", ar: "Ù‡ÙˆÙŠØ© Ø§Ù„Ù…Ø±ÙŠØ¶ Ù…Ø¤ÙƒØ¯Ø©" },
-                    { ok: true, en: "Template approved by legal team", ar: "Ø§Ù„Ù†Ù…ÙˆØ°Ø¬ Ù…Ø¹ØªÙ…Ø¯ Ù…Ù† Ø§Ù„ÙØ±ÙŠÙ‚ Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ" },
-                    { ok: true, en: "Risks documented", ar: "Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ù…ÙˆØ«Ù‚Ø©" },
-                    { ok: true, en: "Anesthesia consent included", ar: "Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„ØªØ®Ø¯ÙŠØ± Ù…Ø¶Ù…Ù†Ø©" },
-                    { ok: true, en: "Education materials attached", ar: "Ù…ÙˆØ§Ø¯ Ø§Ù„ØªØ«Ù‚ÙŠÙ Ù…Ø±ÙÙ‚Ø©" },
-                    { ok: false, en: "Witness signature required (optional)", ar: "ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø´Ø§Ù‡Ø¯ Ù…Ø·Ù„ÙˆØ¨ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)" },
+                    { ok: true, en: "Patient identity verified", ar: "!`ة ا&ر`ض &ؤْدة" },
+                    { ok: true, en: "Template approved by legal team", ar: "ا &ذج &عت&د &  افر` اا  `" },
+                    { ok: true, en: "Risks documented", ar: "ا&خاطر &ثة" },
+                    { ok: true, en: "Anesthesia consent included", ar: "&افة اتخد`ر &ض& ة" },
+                    { ok: true, en: "Education materials attached", ar: "&اد اتث`ف &رفة" },
+                    { ok: false, en: "Witness signature required (optional)", ar: "ت`ع اشا!د &طب (اخت`ار`)" },
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
                       <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
@@ -539,15 +539,15 @@ export function CreateConsent({ lang }: Props) {
               {/* Summary */}
               <div className="bg-white rounded-2xl p-5 border" style={{ borderColor: "#D8E8EF" }}>
                 <div className="text-sm font-bold mb-3" style={{ color: "#102A43" }}>
-                  {isRTL ? "Ù…Ù„Ø®Øµ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" : "Consent Summary"}
+                  {isRTL ? "&خص ا&افة" : "Consent Summary"}
                 </div>
                 {[
-                  { labelEn: "Patient", labelAr: "Ø§Ù„Ù…Ø±ÙŠØ¶", val: isRTL ? "Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù†" : "Layla Hassan" },
-                  { labelEn: "Procedure", labelAr: "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡", val: isRTL ? "Ø§Ø³ØªØ¦ØµØ§Ù„ Ø§Ù„Ø²Ø§Ø¦Ø¯Ø© Ø§Ù„Ø¯ÙˆØ¯ÙŠØ©" : "Appendectomy" },
-                  { labelEn: "Surgeon", labelAr: "Ø§Ù„Ø¬Ø±Ø§Ø­", val: isRTL ? "Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„" : "Dr. Ahmad Khalil" },
-                  { labelEn: "Anesthesia", labelAr: "Ø§Ù„ØªØ®Ø¯ÙŠØ±", val: isRTL ? "ØªØ®Ø¯ÙŠØ± Ø¹Ø§Ù…" : "General Anesthesia" },
-                  { labelEn: "Scheduled", labelAr: "Ø§Ù„Ù…ÙˆØ¹Ø¯", val: "12 Jun 2026 â€” 09:00" },
-                  { labelEn: "Language", labelAr: "Ø§Ù„Ù„ØºØ©", val: isRTL ? "Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©" : "Arabic" },
+                  { labelEn: "Patient", labelAr: "ا&ر`ض", val: isRTL ? "`0 حس " : "Layla Hassan" },
+                  { labelEn: "Procedure", labelAr: "اإجراء", val: isRTL ? "استئصا ازائدة ادد`ة" : "Appendectomy" },
+                  { labelEn: "Surgeon", labelAr: "اجراح", val: isRTL ? "د. أح&د خ`" : "Dr. Ahmad Khalil" },
+                  { labelEn: "Anesthesia", labelAr: "اتخد`ر", val: isRTL ? "تخد`ر عا&" : "General Anesthesia" },
+                  { labelEn: "Scheduled", labelAr: "ا&عد", val: "12 Jun 2026  09:00" },
+                  { labelEn: "Language", labelAr: "اغة", val: isRTL ? "اعرب`ة" : "Arabic" },
                 ].map(row => (
                   <div key={row.labelEn} className="flex justify-between py-2 border-t text-sm" style={{ borderColor: "#F7FBFC" }}>
                     <span style={{ color: "#64798B" }}>{isRTL ? row.labelAr : row.labelEn}</span>
@@ -566,16 +566,16 @@ export function CreateConsent({ lang }: Props) {
               </div>
               <div>
                 <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-                  {isRTL ? "Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø¢Ù…Ù†" : "Send Secure Link"}
+                  {isRTL ? "إرسا ارابط اآ& " : "Send Secure Link"}
                 </h2>
                 <p className="text-sm mt-1" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø³ÙŠØªÙ„Ù‚Ù‰ Ø§Ù„Ù…Ø±ÙŠØ¶ Ø±Ø§Ø¨Ø·Ø§Ù‹ Ø¢Ù…Ù†Ø§Ù‹ Ø¹Ø¨Ø± SMS Ù„Ù„ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ" : "Patient will receive a secure SMS link for e-signature"}
+                  {isRTL ? "س`ت0 ا&ر`ض رابطا9 آ& ا9 عبر SMS ت`ع اإْتر `" : "Patient will receive a secure SMS link for e-signature"}
                 </p>
               </div>
               <div className="bg-white rounded-2xl p-5 border text-left space-y-3" style={{ borderColor: "#D8E8EF" }}>
                 <div>
                   <label className="text-sm font-semibold block mb-1.5" style={{ color: "#102A43" }}>
-                    {isRTL ? "Ø±Ù‚Ù… Ø¬ÙˆØ§Ù„ Ø§Ù„Ù…Ø±ÙŠØ¶" : "Patient Mobile"}
+                    {isRTL ? "ر& جا ا&ر`ض" : "Patient Mobile"}
                   </label>
                   <div className="flex gap-2">
                     <span className="flex items-center px-3 py-2.5 rounded-xl text-sm border font-medium" style={{ borderColor: "#D8E8EF", background: "#EAF6FF", color: "#2F90C7" }}>+966</span>
@@ -584,8 +584,8 @@ export function CreateConsent({ lang }: Props) {
                 </div>
                 <div className="p-3 rounded-xl text-sm" style={{ background: "#EAFFFB", color: "#64798B" }}>
                   {isRTL
-                    ? "ðŸ“± Ø³ÙŠØµÙ„ Ø±Ø§Ø¨Ø· Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ù…Ø¹ Ø±Ù…Ø² OTP Ù„Ù…Ø±Ø© ÙˆØ§Ø­Ø¯Ø©. ØµØ§Ù„Ø­ Ù„Ù…Ø¯Ø© Ù¤Ù¨ Ø³Ø§Ø¹Ø©."
-                    : "ðŸ“± Consent link + one-time OTP will be sent. Valid for 48 hours."}
+                    ? "x س`ص رابط ا&افة &ع ر&ز OTP &رة احدة. صاح &دة ٤٨ ساعة."
+                    : "x Consent link + one-time OTP will be sent. Valid for 48 hours."}
                 </div>
               </div>
               <button
@@ -594,7 +594,7 @@ export function CreateConsent({ lang }: Props) {
                 style={{ background: "linear-gradient(90deg, #2F90C7, #12B7B5)" }}
               >
                 <Send size={16} />
-                {isRTL ? "Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø¢Ù…Ù†" : "Send Secure Link"}
+                {isRTL ? "إرسا ارابط اآ& " : "Send Secure Link"}
               </button>
             </div>
           )}
@@ -606,22 +606,22 @@ export function CreateConsent({ lang }: Props) {
                 <Check size={36} style={{ color: "#19A978" }} />
               </div>
               <h2 className="text-2xl font-bold" style={{ color: "#102A43" }}>
-                {isRTL ? "ØªÙ… Ø§Ù„Ø¥Ø±Ø³Ø§Ù„ Ø¨Ù†Ø¬Ø§Ø­!" : "Link Sent Successfully!"}
+                {isRTL ? "ت& اإرسا ب جاح!" : "Link Sent Successfully!"}
               </h2>
               <p className="text-sm" style={{ color: "#64798B" }}>
                 {isRTL
-                  ? "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø±Ø§Ø¨Ø· Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„Ø¢Ù…Ù† Ø¥Ù„Ù‰ Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù† (+966 055 123 4567)"
+                  ? "ت& إرسا رابط ا&افة اآ&  إ0 `0 حس  (+966 055 123 4567)"
                   : "Secure consent link sent to Layla Hassan (+966 055 123 4567)"}
               </p>
               <div className="bg-white rounded-2xl p-5 border" style={{ borderColor: "#D8E8EF" }}>
                 <div className="text-xs font-semibold mb-3" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø¢Ù…Ù†" : "SECURE LINK"}
+                  {isRTL ? "ارابط اآ& " : "SECURE LINK"}
                 </div>
                 <div className="px-3 py-2 rounded-xl text-xs font-mono text-left" style={{ background: "#F7FBFC", color: "#2F90C7", wordBreak: "break-all" }}>
                   https://consent.wathiqcare.com/p/Xq9mR2kL4nT
                 </div>
                 <div className="mt-3 text-xs" style={{ color: "#64798B" }}>
-                  {isRTL ? "ØµØ§Ù„Ø­ Ù„Ù…Ø¯Ø© Ù¤Ù¨ Ø³Ø§Ø¹Ø© Â· Ù…Ø´ÙØ± Â· OTP Ù…Ø·Ù„ÙˆØ¨" : "Valid 48h Â· Encrypted Â· OTP required"}
+                  {isRTL ? "صاح &دة ٤٨ ساعة · &شفر · OTP &طب" : "Valid 48h · Encrypted · OTP required"}
                 </div>
               </div>
               <button
@@ -629,7 +629,7 @@ export function CreateConsent({ lang }: Props) {
                 className="px-6 py-3 rounded-xl text-sm font-semibold text-white"
                 style={{ background: "#123B5C" }}
               >
-                {isRTL ? "Ø¥Ù†Ø´Ø§Ø¡ Ù…ÙˆØ§ÙÙ‚Ø© Ø¬Ø¯ÙŠØ¯Ø©" : "Create New Consent"}
+                {isRTL ? "إ شاء &افة جد`دة" : "Create New Consent"}
               </button>
             </div>
           )}
@@ -645,10 +645,10 @@ export function CreateConsent({ lang }: Props) {
               style={{ borderColor: "#D8E8EF", color: "#64798B" }}
             >
               <ChevronLeft size={15} />
-              {isRTL ? "Ø§Ù„Ø³Ø§Ø¨Ù‚" : "Back"}
+              {isRTL ? "اساب" : "Back"}
             </button>
             <span className="text-xs" style={{ color: "#64798B" }}>
-              {isRTL ? `Ø§Ù„Ø®Ø·ÙˆØ© ${step + 1} Ù…Ù† 7` : `Step ${step + 1} of 7`}
+              {isRTL ? `اخطة ${step + 1} &  7` : `Step ${step + 1} of 7`}
             </span>
             <button
               onClick={step === 6 ? () => setSent(true) : next}
@@ -656,7 +656,7 @@ export function CreateConsent({ lang }: Props) {
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
               style={{ background: step === 6 ? "linear-gradient(90deg,#19A978,#0ECBA1)" : "linear-gradient(90deg,#2F90C7,#12B7B5)" }}
             >
-              {step === 6 ? (isRTL ? "Ø¥Ø±Ø³Ø§Ù„" : "Send") : (isRTL ? "Ø§Ù„ØªØ§Ù„ÙŠ" : "Next")}
+              {step === 6 ? (isRTL ? "إرسا" : "Send") : (isRTL ? "اتا`" : "Next")}
               <ChevronRight size={15} />
             </button>
           </div>
@@ -670,7 +670,7 @@ export function CreateConsent({ lang }: Props) {
             <div className="flex items-center gap-2">
               <Clipboard size={14} style={{ color: "#2F90C7" }} />
               <span className="text-sm font-bold" style={{ color: "#102A43" }}>
-                {isRTL ? "Ù…Ù„Ø®Øµ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" : "Consent Summary"}
+                {isRTL ? "&خص ا&افة" : "Consent Summary"}
               </span>
             </div>
           </div>
@@ -678,13 +678,13 @@ export function CreateConsent({ lang }: Props) {
             {/* Patient */}
             <div className="p-3 rounded-xl" style={{ background: "#F7FBFC" }}>
               <div className="text-xs font-semibold mb-2" style={{ color: "#64798B" }}>
-                {isRTL ? "Ø§Ù„Ù…Ø±ÙŠØ¶" : "PATIENT"}
+                {isRTL ? "ا&ر`ض" : "PATIENT"}
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#2F90C7,#12B7B5)" }}>L</div>
                 <div>
                   <div className="text-sm font-semibold" style={{ color: "#102A43" }}>
-                    {isRTL ? "Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù†" : "Layla Hassan"}
+                    {isRTL ? "`0 حس " : "Layla Hassan"}
                   </div>
                   <div className="text-xs" style={{ color: "#64798B" }}>MRN-204871</div>
                 </div>
@@ -693,7 +693,7 @@ export function CreateConsent({ lang }: Props) {
             {selectedTpl && (
               <div className="p-3 rounded-xl" style={{ background: "#EAF6FF" }}>
                 <div className="text-xs font-semibold mb-1" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡" : "PROCEDURE"}
+                  {isRTL ? "اإجراء" : "PROCEDURE"}
                 </div>
                 <div className="text-sm font-semibold" style={{ color: "#123B5C" }}>
                   {isRTL ? selectedTpl.nameAr : selectedTpl.nameEn}
@@ -703,11 +703,11 @@ export function CreateConsent({ lang }: Props) {
             {anesthesiaType && (
               <div className="p-3 rounded-xl" style={{ background: "#EAFFFB" }}>
                 <div className="text-xs font-semibold mb-1" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø§Ù„ØªØ®Ø¯ÙŠØ±" : "ANESTHESIA"}
+                  {isRTL ? "اتخد`ر" : "ANESTHESIA"}
                 </div>
                 <div className="text-sm font-semibold" style={{ color: "#12B7B5" }}>
                   {isRTL
-                    ? anesthesiaType === "general" ? "ØªØ®Ø¯ÙŠØ± Ø¹Ø§Ù…" : anesthesiaType === "local" ? "ØªØ®Ø¯ÙŠØ± Ù…ÙˆØ¶Ø¹ÙŠ" : "ØªØ®Ø¯ÙŠØ± Ù†Ø®Ø§Ø¹ÙŠ"
+                    ? anesthesiaType === "general" ? "تخد`ر عا&" : anesthesiaType === "local" ? "تخد`ر &ضع`" : "تخد`ر  خاع`"
                     : anesthesiaType === "general" ? "General" : anesthesiaType === "local" ? "Local" : "Spinal"}
                 </div>
               </div>
@@ -715,16 +715,16 @@ export function CreateConsent({ lang }: Props) {
             {selectedMaterials.length > 0 && (
               <div className="p-3 rounded-xl" style={{ background: "#F1EFFF" }}>
                 <div className="text-xs font-semibold mb-1" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø§Ù„Ù…ÙˆØ§Ø¯ Ø§Ù„ØªØ¹Ù„ÙŠÙ…ÙŠØ©" : "EDUCATION"}
+                  {isRTL ? "ا&اد اتع`&`ة" : "EDUCATION"}
                 </div>
                 <div className="text-sm font-semibold" style={{ color: "#6B5CE7" }}>
-                  {selectedMaterials.length} {isRTL ? "Ù…ÙˆØ§Ø¯ Ù…Ø±ÙÙ‚Ø©" : "materials attached"}
+                  {selectedMaterials.length} {isRTL ? "&اد &رفة" : "materials attached"}
                 </div>
               </div>
             )}
             <div className="p-3 rounded-xl border border-dashed" style={{ borderColor: "#D8E8EF" }}>
               <div className="text-xs" style={{ color: "#64798B" }}>
-                {isRTL ? "Ø£ÙƒÙ…Ù„ Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø®Ø·ÙˆØ§Øª Ù„Ø¥Ø±Ø³Ø§Ù„ Ø±Ø§Ø¨Ø· Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„Ø¢Ù…Ù†" : "Complete all steps to send the secure consent link to the patient"}
+                {isRTL ? "أْ& ج&`ع اخطات إرسا رابط ا&افة اآ& " : "Complete all steps to send the secure consent link to the patient"}
               </div>
             </div>
           </div>

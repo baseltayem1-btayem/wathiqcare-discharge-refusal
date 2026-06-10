@@ -5,10 +5,10 @@ import { StatusBadge } from "../StatusBadge";
 interface Props { lang: "en" | "ar" }
 
 const queue = [
-  { id: "AQ-001", patientEn: "Omar Al-Rashid", patientAr: "Ø¹Ù…Ø± Ø§Ù„Ø±Ø§Ø´Ø¯", mrn: "MRN-187432", procedureEn: "Cardiac Catheterization", procedureAr: "Ù‚Ø³Ø·Ø±Ø© Ù‚Ù„Ø¨ÙŠØ©", typeEn: "General Anesthesia", typeAr: "ØªØ®Ø¯ÙŠØ± Ø¹Ø§Ù…", orRoom: "OR-1", scheduledTime: "08:00", anesthesiologistEn: "Dr. Sara Al-Mansouri", anesthesiologistAr: "Ø¯. Ø³Ø§Ø±Ø© Ø§Ù„Ù…Ù†ØµÙˆØ±ÙŠ", status: "pending" as const, alert: true, alertMsgEn: "Allergy: Penicillin", alertMsgAr: "Ø­Ø³Ø§Ø³ÙŠØ©: Ø¨Ù†Ø³Ù„ÙŠÙ†" },
-  { id: "AQ-002", patientEn: "Fatimah Ibrahim", patientAr: "ÙØ§Ø·Ù…Ø© Ø¥Ø¨Ø±Ø§Ù‡ÙŠÙ…", mrn: "MRN-210045", procedureEn: "Cataract Surgery", procedureAr: "Ø¬Ø±Ø§Ø­Ø© Ø§Ù„Ø³Ø§Ø¯", typeEn: "Local Anesthesia", typeAr: "ØªØ®Ø¯ÙŠØ± Ù…ÙˆØ¶Ø¹ÙŠ", orRoom: "OR-3", scheduledTime: "09:30", anesthesiologistEn: "Dr. Yusuf Al-Harbi", anesthesiologistAr: "Ø¯. ÙŠÙˆØ³Ù Ø§Ù„Ø­Ø±Ø¨ÙŠ", status: "approved" as const, alert: false, alertMsgEn: "", alertMsgAr: "" },
-  { id: "AQ-003", patientEn: "Khalid Nasser", patientAr: "Ø®Ø§Ù„Ø¯ Ù†Ø§ØµØ±", mrn: "MRN-195700", procedureEn: "Knee Replacement", procedureAr: "ØªØ¨Ø¯ÙŠÙ„ Ù…ÙØµÙ„ Ø§Ù„Ø±ÙƒØ¨Ø©", typeEn: "Spinal Epidural", typeAr: "ØªØ®Ø¯ÙŠØ± Ù†Ø®Ø§Ø¹ÙŠ", orRoom: "OR-2", scheduledTime: "11:00", anesthesiologistEn: "Dr. Sara Al-Mansouri", anesthesiologistAr: "Ø¯. Ø³Ø§Ø±Ø© Ø§Ù„Ù…Ù†ØµÙˆØ±ÙŠ", status: "anesthesia" as const, alert: true, alertMsgEn: "Diabetes Type 2 â€” check glucose", alertMsgAr: "Ø³ÙƒØ±ÙŠ Ù†ÙˆØ¹ Ù¢ â€” ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ø¬Ù„ÙˆÙƒÙˆØ²" },
-  { id: "AQ-004", patientEn: "Reem Al-Zahrani", patientAr: "Ø±ÙŠÙ… Ø§Ù„Ø²Ù‡Ø±Ø§Ù†ÙŠ", mrn: "MRN-199832", procedureEn: "Hernia Repair", procedureAr: "Ø¥ØµÙ„Ø§Ø­ Ø§Ù„ÙØªÙ‚", typeEn: "General Anesthesia", typeAr: "ØªØ®Ø¯ÙŠØ± Ø¹Ø§Ù…", orRoom: "OR-1", scheduledTime: "13:00", anesthesiologistEn: "Dr. Yusuf Al-Harbi", anesthesiologistAr: "Ø¯. ÙŠÙˆØ³Ù Ø§Ù„Ø­Ø±Ø¨ÙŠ", status: "pending" as const, alert: false, alertMsgEn: "", alertMsgAr: "" },
+  { id: "AQ-001", patientEn: "Omar Al-Rashid", patientAr: "ع&ر اراشد", mrn: "MRN-187432", procedureEn: "Cardiac Catheterization", procedureAr: "سطرة ب`ة", typeEn: "General Anesthesia", typeAr: "تخد`ر عا&", orRoom: "OR-1", scheduledTime: "08:00", anesthesiologistEn: "Dr. Sara Al-Mansouri", anesthesiologistAr: "د. سارة ا& صر`", status: "pending" as const, alert: true, alertMsgEn: "Allergy: Penicillin", alertMsgAr: "حساس`ة: ب س` " },
+  { id: "AQ-002", patientEn: "Fatimah Ibrahim", patientAr: "فاط&ة إبرا!`&", mrn: "MRN-210045", procedureEn: "Cataract Surgery", procedureAr: "جراحة اساد", typeEn: "Local Anesthesia", typeAr: "تخد`ر &ضع`", orRoom: "OR-3", scheduledTime: "09:30", anesthesiologistEn: "Dr. Yusuf Al-Harbi", anesthesiologistAr: "د. `سف احرب`", status: "approved" as const, alert: false, alertMsgEn: "", alertMsgAr: "" },
+  { id: "AQ-003", patientEn: "Khalid Nasser", patientAr: "خاد  اصر", mrn: "MRN-195700", procedureEn: "Knee Replacement", procedureAr: "تبد` &فص ارْبة", typeEn: "Spinal Epidural", typeAr: "تخد`ر  خاع`", orRoom: "OR-2", scheduledTime: "11:00", anesthesiologistEn: "Dr. Sara Al-Mansouri", anesthesiologistAr: "د. سارة ا& صر`", status: "anesthesia" as const, alert: true, alertMsgEn: "Diabetes Type 2  check glucose", alertMsgAr: "سْر`  ع ٢  تح &  اجْز" },
+  { id: "AQ-004", patientEn: "Reem Al-Zahrani", patientAr: "ر`& از!را `", mrn: "MRN-199832", procedureEn: "Hernia Repair", procedureAr: "إصاح افت", typeEn: "General Anesthesia", typeAr: "تخد`ر عا&", orRoom: "OR-1", scheduledTime: "13:00", anesthesiologistEn: "Dr. Yusuf Al-Harbi", anesthesiologistAr: "د. `سف احرب`", status: "pending" as const, alert: false, alertMsgEn: "", alertMsgAr: "" },
 ];
 
 export function AnesthesiaQueue({ lang }: Props) {
@@ -22,15 +22,15 @@ export function AnesthesiaQueue({ lang }: Props) {
         <div className="px-6 py-5 border-b bg-white" style={{ borderColor: "#D8E8EF" }}>
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-              {isRTL ? "Ù‚Ø§Ø¦Ù…Ø© Ø§Ù†ØªØ¸Ø§Ø± Ø§Ù„ØªØ®Ø¯ÙŠØ±" : "Anesthesia Queue"}
+              {isRTL ? "ائ&ة ا تظار اتخد`ر" : "Anesthesia Queue"}
             </h2>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold" style={{ background: "#EAFFFB", color: "#12B7B5" }}>
               <Wind size={14} />
-              {isRTL ? `${queue.length} Ù…Ø±Ø¶Ù‰ Ø§Ù„ÙŠÙˆÙ…` : `${queue.length} patients today`}
+              {isRTL ? `${queue.length} مرضى اليوم` : `${queue.length} patients today`}
             </div>
           </div>
           <p className="text-sm" style={{ color: "#64798B" }}>
-            {isRTL ? "Ø§Ù„Ø«Ù„Ø§Ø«Ø§Ø¡ Ù© ÙŠÙˆÙ†ÙŠÙˆ Ù¢Ù Ù¢Ù¦ Â· Ù…Ø³ØªØ´ÙÙ‰ Ø§Ù„Ù…Ù„Ùƒ Ø¹Ø¨Ø¯Ø§Ù„Ø¹Ø²ÙŠØ²" : "Tuesday June 9, 2026 Â· King Abdulaziz Hospital"}
+            {isRTL ? "اثاثاء ٩ ` ` ٢٠٢٦ · &ستشف0 ا&ْ عبداعز`ز" : "Tuesday June 9, 2026 · King Abdulaziz Hospital"}
           </p>
         </div>
 
@@ -95,8 +95,8 @@ export function AnesthesiaQueue({ lang }: Props) {
       {sel && (
         <div className="w-80 border-l bg-white overflow-y-auto flex-shrink-0" style={{ borderColor: "#D8E8EF" }}>
           <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "#D8E8EF" }}>
-            <span className="text-sm font-bold" style={{ color: "#102A43" }}>{isRTL ? "ØªÙØ§ØµÙŠÙ„ Ø§Ù„ØªØ®Ø¯ÙŠØ±" : "Anesthesia Detail"}</span>
-            <button onClick={() => setSelected(null)} className="text-xs" style={{ color: "#64798B" }}>âœ•</button>
+            <span className="text-sm font-bold" style={{ color: "#102A43" }}>{isRTL ? "تفاص` اتخد`ر" : "Anesthesia Detail"}</span>
+            <button onClick={() => setSelected(null)} className="text-xs" style={{ color: "#64798B" }}>S"</button>
           </div>
           <div className="p-5 space-y-4">
             <div className="flex items-center gap-3">
@@ -110,11 +110,11 @@ export function AnesthesiaQueue({ lang }: Props) {
             </div>
             <div className="space-y-2">
               {[
-                { labelEn: "Procedure", labelAr: "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡", val: isRTL ? sel.procedureAr : sel.procedureEn },
-                { labelEn: "Anesthesia Type", labelAr: "Ù†ÙˆØ¹ Ø§Ù„ØªØ®Ø¯ÙŠØ±", val: isRTL ? sel.typeAr : sel.typeEn },
-                { labelEn: "OR Room", labelAr: "ØºØ±ÙØ© Ø§Ù„Ø¹Ù…Ù„ÙŠØ§Øª", val: sel.orRoom },
-                { labelEn: "Scheduled", labelAr: "Ø§Ù„Ù…ÙˆØ¹Ø¯", val: sel.scheduledTime },
-                { labelEn: "Anesthesiologist", labelAr: "Ø·Ø¨ÙŠØ¨ Ø§Ù„ØªØ®Ø¯ÙŠØ±", val: isRTL ? sel.anesthesiologistAr : sel.anesthesiologistEn },
+                { labelEn: "Procedure", labelAr: "اإجراء", val: isRTL ? sel.procedureAr : sel.procedureEn },
+                { labelEn: "Anesthesia Type", labelAr: " ع اتخد`ر", val: isRTL ? sel.typeAr : sel.typeEn },
+                { labelEn: "OR Room", labelAr: "غرفة اع&`ات", val: sel.orRoom },
+                { labelEn: "Scheduled", labelAr: "ا&عد", val: sel.scheduledTime },
+                { labelEn: "Anesthesiologist", labelAr: "طب`ب اتخد`ر", val: isRTL ? sel.anesthesiologistAr : sel.anesthesiologistEn },
               ].map(row => (
                 <div key={row.labelEn} className="p-3 rounded-xl" style={{ background: "#F7FBFC" }}>
                   <div className="text-xs font-semibold mb-0.5" style={{ color: "#64798B" }}>{isRTL ? row.labelAr : row.labelEn}</div>
@@ -132,10 +132,10 @@ export function AnesthesiaQueue({ lang }: Props) {
             )}
             <div className="flex gap-2">
               <button className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-1.5" style={{ background: "#12B7B5" }}>
-                <Check size={14} /> {isRTL ? "ØªØ£ÙƒÙŠØ¯" : "Confirm"}
+                <Check size={14} /> {isRTL ? "تأْ`د" : "Confirm"}
               </button>
               <button className="flex-1 py-2.5 rounded-xl text-sm font-semibold border flex items-center justify-center gap-1.5" style={{ borderColor: "#D8E8EF", color: "#64798B" }}>
-                <Clock size={14} /> {isRTL ? "ØªØ£Ø¬ÙŠÙ„" : "Defer"}
+                <Clock size={14} /> {isRTL ? "تأج`" : "Defer"}
               </button>
             </div>
           </div>
@@ -144,4 +144,5 @@ export function AnesthesiaQueue({ lang }: Props) {
     </div>
   );
 }
+
 

@@ -9,22 +9,22 @@ const monthlyData = [
 ];
 
 const issuesByDept = [
-  { dept: "Surgery", deptAr: "Ø¬Ø±Ø§Ø­Ø©", issues: 3 },
-  { dept: "Cardio", deptAr: "Ù‚Ù„Ø¨", issues: 1 },
-  { dept: "Ortho", deptAr: "Ø¹Ø¸Ø§Ù…", issues: 2 },
-  { dept: "Gastro", deptAr: "Ù‡Ø¶Ù…ÙŠ", issues: 0 },
-  { dept: "Anes.", deptAr: "ØªØ®Ø¯ÙŠØ±", issues: 1 },
+  { dept: "Surgery", deptAr: "جراحة", issues: 3 },
+  { dept: "Cardio", deptAr: "ب", issues: 1 },
+  { dept: "Ortho", deptAr: "عظا&", issues: 2 },
+  { dept: "Gastro", deptAr: "!ض&`", issues: 0 },
+  { dept: "Anes.", deptAr: "تخد`ر", issues: 1 },
 ];
 
 const checks = [
-  { ok: true, en: "All active consents have valid patient identity", ar: "Ø¬Ù…ÙŠØ¹ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø§Øª Ø§Ù„Ù†Ø´Ø·Ø© Ù„Ø¯ÙŠÙ‡Ø§ Ù‡ÙˆÙŠØ© Ù…Ø±ÙŠØ¶ ØµØ§Ù„Ø­Ø©" },
-  { ok: true, en: "Approved templates used across all departments", ar: "Ø§Ù„Ù†Ù…Ø§Ø°Ø¬ Ø§Ù„Ù…Ø¹ØªÙ…Ø¯Ø© Ù…Ø³ØªØ®Ø¯Ù…Ø© ÙÙŠ Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø£Ù‚Ø³Ø§Ù…" },
-  { ok: true, en: "Anesthesia consent rate: 100%", ar: "Ù…Ø¹Ø¯Ù„ Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„ØªØ®Ø¯ÙŠØ±: Ù¡Ù Ù Ùª" },
-  { ok: true, en: "OTP verification enforced on all patient links", ar: "Ø§Ù„ØªØ­Ù‚Ù‚ Ø¨Ù€ OTP Ù…Ø·Ø¨Ù‚ Ø¹Ù„Ù‰ Ø¬Ù…ÙŠØ¹ Ø±ÙˆØ§Ø¨Ø· Ø§Ù„Ù…Ø±Ø¶Ù‰" },
-  { ok: false, en: "3 consents missing witness signature (non-critical)", ar: "Ù£ Ù…ÙˆØ§ÙÙ‚Ø§Øª Ø¨Ø¯ÙˆÙ† ØªÙˆÙ‚ÙŠØ¹ Ø´Ø§Ù‡Ø¯ (ØºÙŠØ± Ø­Ø±Ø¬)" },
-  { ok: true, en: "All signed consents backed up and sealed", ar: "Ø¬Ù…ÙŠØ¹ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø§Øª Ø§Ù„Ù…ÙˆÙ‚Ø¹Ø© Ù…Ø¯Ø¹ÙˆÙ…Ø© ÙˆÙ…Ø®ØªÙˆÙ…Ø©" },
-  { ok: false, en: "1 consent link expired â€” patient not responsive", ar: "Ø±Ø§Ø¨Ø· Ù…ÙˆØ§ÙÙ‚Ø© ÙˆØ§Ø­Ø¯ Ù…Ù†ØªÙ‡ÙŠ â€” Ø§Ù„Ù…Ø±ÙŠØ¶ ØºÙŠØ± Ù…Ø³ØªØ¬ÙŠØ¨" },
-  { ok: true, en: "Audit trail complete for last 90 days", ar: "Ù…Ø³Ø§Ø± Ø§Ù„ØªØ¯Ù‚ÙŠÙ‚ Ù…ÙƒØªÙ…Ù„ Ù„Ù„Ù€ Ù©Ù  ÙŠÙˆÙ…Ø§Ù‹ Ø§Ù„Ù…Ø§Ø¶ÙŠØ©" },
+  { ok: true, en: "All active consents have valid patient identity", ar: "ج&`ع ا&افات ا شطة د`!ا !`ة &ر`ض صاحة" },
+  { ok: true, en: "Approved templates used across all departments", ar: "ا &اذج ا&عت&دة &ستخد&ة ف` ج&`ع اأسا&" },
+  { ok: true, en: "Anesthesia consent rate: 100%", ar: "&عد &افة اتخد`ر: ١٠٠٪" },
+  { ok: true, en: "OTP verification enforced on all patient links", ar: "اتح ب٬ OTP &طب ع0 ج&`ع رابط ا&رض0" },
+  { ok: false, en: "3 consents missing witness signature (non-critical)", ar: "٣ &افات بد  ت`ع شا!د (غ`ر حرج)" },
+  { ok: true, en: "All signed consents backed up and sealed", ar: "ج&`ع ا&افات ا&عة &دع&ة &خت&ة" },
+  { ok: false, en: "1 consent link expired  patient not responsive", ar: "رابط &افة احد & ت!`  ا&ر`ض غ`ر &ستج`ب" },
+  { ok: true, en: "Audit trail complete for last 90 days", ar: "&سار اتد` &ْت& ٬ ٩٠ `&ا9 ا&اض`ة" },
 ];
 
 export function ComplianceReview({ lang }: Props) {
@@ -35,24 +35,24 @@ export function ComplianceReview({ lang }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-            {isRTL ? "Ù…Ø±Ø§Ø¬Ø¹Ø© Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„ Ø§Ù„Ø°ÙƒÙŠØ©" : "Smart Compliance Review"}
+            {isRTL ? "&راجعة اا&تثا اذْ`ة" : "Smart Compliance Review"}
           </h2>
           <p className="text-sm mt-0.5" style={{ color: "#64798B" }}>
-            {isRTL ? "ÙØ­Øµ Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„ Ø¨Ø§Ù„Ø°ÙƒØ§Ø¡ Ø§Ù„Ø§ØµØ·Ù†Ø§Ø¹ÙŠ â€” Ø¢Ø®Ø± ØªØ­Ø¯ÙŠØ«: Ù© ÙŠÙˆÙ†ÙŠÙˆ Ù¢Ù Ù¢Ù¦ Ù Ù©:Ù Ù " : "AI-powered audit â€” Last updated: Jun 9, 2026 09:00"}
+            {isRTL ? "فحص اا&تثا باذْاء ااصط اع`  آخر تحد`ث: ٩ ` ` ٢٠٢٦ ٠٩:٠٠" : "AI-powered audit  Last updated: Jun 9, 2026 09:00"}
           </p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:bg-gray-50" style={{ borderColor: "#D8E8EF", color: "#64798B" }}>
-          <RefreshCw size={14} /> {isRTL ? "ØªØ­Ø¯ÙŠØ« Ø§Ù„ÙØ­Øµ" : "Refresh Check"}
+          <RefreshCw size={14} /> {isRTL ? "تحد`ث افحص" : "Refresh Check"}
         </button>
       </div>
 
       {/* Score cards */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { icon: Shield, colorFrom: "#2F90C7", colorTo: "#12B7B5", valEn: "98%", valAr: "Ù©Ù¨Ùª", labelEn: "Overall Compliance", labelAr: "Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„ Ø§Ù„Ø¹Ø§Ù…", trend: "+2%" },
-          { icon: Check, colorFrom: "#19A978", colorTo: "#0ECBA1", valEn: "156", valAr: "Ù¡Ù¥Ù¦", labelEn: "Consents Valid", labelAr: "Ù…ÙˆØ§ÙÙ‚Ø§Øª ØµØ§Ù„Ø­Ø©", trend: "+12" },
-          { icon: AlertTriangle, colorFrom: "#D9A93B", colorTo: "#F5C842", valEn: "2", valAr: "Ù¢", labelEn: "Action Needed", labelAr: "ÙŠØªØ·Ù„Ø¨ Ø¥Ø¬Ø±Ø§Ø¡", trend: "-1" },
-          { icon: TrendingUp, colorFrom: "#6B5CE7", colorTo: "#9B8AF5", valEn: "4.9/5", valAr: "Ù¤.Ù©/Ù¥", labelEn: "Patient Satisfaction", labelAr: "Ø±Ø¶Ø§ Ø§Ù„Ù…Ø±ÙŠØ¶", trend: "+0.1" },
+          { icon: Shield, colorFrom: "#2F90C7", colorTo: "#12B7B5", valEn: "98%", valAr: "٩٨٪", labelEn: "Overall Compliance", labelAr: "اا&تثا اعا&", trend: "+2%" },
+          { icon: Check, colorFrom: "#19A978", colorTo: "#0ECBA1", valEn: "156", valAr: "١٥٦", labelEn: "Consents Valid", labelAr: "&افات صاحة", trend: "+12" },
+          { icon: AlertTriangle, colorFrom: "#D9A93B", colorTo: "#F5C842", valEn: "2", valAr: "٢", labelEn: "Action Needed", labelAr: "`تطب إجراء", trend: "-1" },
+          { icon: TrendingUp, colorFrom: "#6B5CE7", colorTo: "#9B8AF5", valEn: "4.9/5", valAr: "٤.٩/٥", labelEn: "Patient Satisfaction", labelAr: "رضا ا&ر`ض", trend: "+0.1" },
         ].map((card, i) => (
           <div key={i} className="bg-white rounded-2xl p-5 border" style={{ borderColor: "#D8E8EF" }}>
             <div className="flex items-center justify-between mb-3">
@@ -73,7 +73,7 @@ export function ComplianceReview({ lang }: Props) {
           <div className="flex items-center gap-2 mb-4">
             <BarChart2 size={16} style={{ color: "#2F90C7" }} />
             <span className="text-sm font-bold" style={{ color: "#102A43" }}>
-              {isRTL ? "Ø§ØªØ¬Ø§Ù‡ Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„ Ø§Ù„Ø´Ù‡Ø±ÙŠ" : "Monthly Compliance Trend"}
+              {isRTL ? "اتجا! اا&تثا اش!ر`" : "Monthly Compliance Trend"}
             </span>
           </div>
           <ResponsiveContainer width="100%" height={140}>
@@ -92,7 +92,7 @@ export function ComplianceReview({ lang }: Props) {
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle size={16} style={{ color: "#D9A93B" }} />
             <span className="text-sm font-bold" style={{ color: "#102A43" }}>
-              {isRTL ? "Ø§Ù„Ù…Ø´ÙƒÙ„Ø§Øª Ø­Ø³Ø¨ Ø§Ù„Ù‚Ø³Ù…" : "Issues by Department"}
+              {isRTL ? "ا&شْات حسب اس&" : "Issues by Department"}
             </span>
           </div>
           <ResponsiveContainer width="100%" height={140}>
@@ -116,7 +116,7 @@ export function ComplianceReview({ lang }: Props) {
         <div className="flex items-center gap-2 mb-4">
           <Shield size={16} style={{ color: "#12B7B5" }} />
           <span className="text-sm font-bold" style={{ color: "#102A43" }}>
-            {isRTL ? "Ù†ØªØ§Ø¦Ø¬ ÙØ­Øµ Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„" : "Compliance Check Results"}
+            {isRTL ? " تائج فحص اا&تثا" : "Compliance Check Results"}
           </span>
         </div>
         <div className="space-y-2">

@@ -23,15 +23,15 @@ interface Props {
 }
 
 const navItems = [
-  { id: "home", icon: FileText, en: "Create Consent", ar: "Ø¥Ù†Ø´Ø§Ø¡ Ù…ÙˆØ§ÙÙ‚Ø©" },
-  { id: "create-consent", icon: Clock, en: "Pending Consents", ar: "Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø§Øª Ø§Ù„Ù…Ø¹Ù„Ù‚Ø©" },
-  { id: "consent-records", icon: Archive, en: "Consent Records", ar: "Ø³Ø¬Ù„Ø§Øª Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" },
-  { id: "approved-forms", icon: CheckSquare, en: "Approved Forms", ar: "Ø§Ù„Ù†Ù…Ø§Ø°Ø¬ Ø§Ù„Ù…Ø¹ØªÙ…Ø¯Ø©" },
-  { id: "anesthesia-queue", icon: Wind, en: "Anesthesia Queue", ar: "Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„ØªØ®Ø¯ÙŠØ±" },
-  { id: "patient-education", icon: BookOpen, en: "Patient Education", ar: "ØªØ«Ù‚ÙŠÙ Ø§Ù„Ù…Ø±ÙŠØ¶" },
-  { id: "compliance-review", icon: Shield, en: "Compliance Review", ar: "Ù…Ø±Ø§Ø¬Ø¹Ø© Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„" },
-  { id: "audit-trail", icon: Activity, en: "Audit Trail", ar: "Ù…Ø³Ø§Ø± Ø§Ù„ØªØ¯Ù‚ÙŠÙ‚" },
-  { id: "settings", icon: Settings, en: "Settings & Support", ar: "Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª ÙˆØ§Ù„Ø¯Ø¹Ù…" },
+  { id: "home", icon: FileText, en: "Create Consent", ar: "إ شاء &افة" },
+  { id: "create-consent", icon: Clock, en: "Pending Consents", ar: "ا&افات ا&عة" },
+  { id: "consent-records", icon: Archive, en: "Consent Records", ar: "سجات ا&افة" },
+  { id: "approved-forms", icon: CheckSquare, en: "Approved Forms", ar: "ا &اذج ا&عت&دة" },
+  { id: "anesthesia-queue", icon: Wind, en: "Anesthesia Queue", ar: "ائ&ة اتخد`ر" },
+  { id: "patient-education", icon: BookOpen, en: "Patient Education", ar: "تث`ف ا&ر`ض" },
+  { id: "compliance-review", icon: Shield, en: "Compliance Review", ar: "&راجعة اا&تثا" },
+  { id: "audit-trail", icon: Activity, en: "Audit Trail", ar: "&سار اتد`" },
+  { id: "settings", icon: Settings, en: "Settings & Support", ar: "اإعدادات ادع&" },
 ] as const;
 
 export function DoctorSidebar({ active, onNavigate, lang }: Props) {
@@ -54,7 +54,7 @@ export function DoctorSidebar({ active, onNavigate, lang }: Props) {
           <div>
             <div className="text-sm font-semibold" style={{ color: "#123B5C" }}>WathiqCare</div>
             <div className="text-xs" style={{ color: "#64798B" }}>
-              {lang === "en" ? "Doctor Workspace" : "Ù…Ø³Ø§Ø­Ø© Ø§Ù„Ø·Ø¨ÙŠØ¨"}
+              {lang === "en" ? "Doctor Workspace" : "&ساحة اطب`ب"}
             </div>
           </div>
         </div>
@@ -63,7 +63,7 @@ export function DoctorSidebar({ active, onNavigate, lang }: Props) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <div className="mb-2 px-3 text-xs font-semibold tracking-wider uppercase" style={{ color: "#64798B" }}>
-          {lang === "en" ? "Services" : "Ø§Ù„Ø®Ø¯Ù…Ø§Øª"}
+          {lang === "en" ? "Services" : "اخد&ات"}
         </div>
         <ul className="space-y-0.5">
           {navItems.map((item) => {
@@ -100,10 +100,10 @@ export function DoctorSidebar({ active, onNavigate, lang }: Props) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate" style={{ color: "#102A43" }}>
-              {lang === "en" ? "Dr. Ahmad Khalil" : "Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„"}
+              {lang === "en" ? "Dr. Ahmad Khalil" : "د. أح&د خ`"}
             </div>
             <div className="text-xs truncate" style={{ color: "#64798B" }}>
-              {lang === "en" ? "Surgeon · ICU" : "Ø¬Ø±Ø§Ø­ · Ø§Ù„Ø¹Ù†Ø§ÙŠØ© Ø§Ù„Ù…Ø±ÙƒØ²Ø©"}
+              {lang === "en" ? "Surgeon  ICU" : "جراح  اع ا`ة ا&رْزة"}
             </div>
           </div>
           <button className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
