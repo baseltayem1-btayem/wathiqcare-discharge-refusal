@@ -1,5 +1,7 @@
-﻿import { PhysicianConsentWorkflow } from "@/components/informed-consents/enterprise-workflow/PhysicianConsentWorkflow";
+﻿"use client";
 
-export default function PhysicianWorkflowPage() {
-  return <PhysicianConsentWorkflow />;
+import { redirect } from "next/navigation";
+
+export default function Page() {
+  redirect("/modules/informed-consents/create");
 }

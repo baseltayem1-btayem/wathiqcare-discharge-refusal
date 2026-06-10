@@ -1,6 +1,7 @@
-﻿import { redirect } from "next/navigation";
+﻿"use client";
 
-export default function DeprecatedConsentCreationWorkflowPage() {
-  redirect("/modules/informed-consents/physician-workflow");
+import { redirect } from "next/navigation";
+
+export default function Page() {
+  redirect("/modules/informed-consents/create");
 }
-
