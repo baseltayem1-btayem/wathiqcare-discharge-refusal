@@ -1,5 +1,8 @@
 ﻿import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type ApprovedConsentTemplate = {
   id: string;
   titleEn: string;
@@ -156,7 +159,7 @@ export async function GET(request: Request) {
   const specialty = searchParams.get("specialty") || "all";
   const riskLevel = searchParams.get("riskLevel") || "all";
 
-  let data = approvedTemplates
+  const templates = approvedTemplates
     .filter((item) => item.approvalStatus === "approved")
     .filter((item) => category === "all" || item.category === category)
     .filter((item) => specialty === "all" || item.specialty === specialty)
@@ -171,7 +174,7 @@ export async function GET(request: Request) {
     ok: true,
     source: "approved-imc-consent-library",
     generatedAt: new Date().toISOString(),
-    total: data.length,
+    total: templates.length,
     filters: {
       q,
       category,
@@ -179,6 +182,6 @@ export async function GET(request: Request) {
       riskLevel
     },
     specialties,
-    templates: data
+    templates
   });
 }
