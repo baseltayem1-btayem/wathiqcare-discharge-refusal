@@ -1,0 +1,16 @@
+﻿WathiqCare Modern UI Stable Deployment
+=====================================
+Date: 2026-06-10 04:29:17
+Branch: main
+Commit: 7abc9b1
+
+Confirmed:
+- Doctor workspace uses modern Figma UI.
+- Patient public journey is not rendered inside doctor workspace.
+- Patient journey remains available through separate public secure link.
+
+Doctor Route:
+https://wathiqcare.online/modules/informed-consents
+
+Patient Public Link Route:
+https://wathiqcare.online/sign/demo-wathiq-public-link

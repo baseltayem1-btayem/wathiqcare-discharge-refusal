@@ -23,15 +23,15 @@ interface Props {
 }
 
 const navItems = [
-  { id: "home", icon: FileText, en: "Create Consent", ar: "إ شاء &افة" },
-  { id: "create-consent", icon: Clock, en: "Pending Consents", ar: "ا&افات ا&عة" },
-  { id: "consent-records", icon: Archive, en: "Consent Records", ar: "سجات ا&افة" },
-  { id: "approved-forms", icon: CheckSquare, en: "Approved Forms", ar: "ا &اذج ا&عت&دة" },
-  { id: "anesthesia-queue", icon: Wind, en: "Anesthesia Queue", ar: "ائ&ة اتخد`ر" },
-  { id: "patient-education", icon: BookOpen, en: "Patient Education", ar: "تث`ف ا&ر`ض" },
-  { id: "compliance-review", icon: Shield, en: "Compliance Review", ar: "&راجعة اا&تثا" },
-  { id: "audit-trail", icon: Activity, en: "Audit Trail", ar: "&سار اتد`" },
-  { id: "settings", icon: Settings, en: "Settings & Support", ar: "اإعدادات ادع&" },
+  { id: "home", icon: FileText, en: "Create Consent", ar: "إنشاء موافقة" },
+  { id: "create-consent", icon: Clock, en: "Pending Consents", ar: "الموافقات المعلقة" },
+  { id: "consent-records", icon: Archive, en: "Consent Records", ar: "سجلات الموافقات" },
+  { id: "approved-forms", icon: CheckSquare, en: "Approved Forms", ar: "النماذج المعتمدة" },
+  { id: "anesthesia-queue", icon: Wind, en: "Anesthesia Queue", ar: "قائمة التخدير" },
+  { id: "patient-education", icon: BookOpen, en: "Patient Education", ar: "تثقيف المريض" },
+  { id: "compliance-review", icon: Shield, en: "Compliance Review", ar: "مراجعة الامتثال" },
+  { id: "audit-trail", icon: Activity, en: "Audit Trail", ar: "مسار التدقيق" },
+  { id: "settings", icon: Settings, en: "Settings & Support", ar: "الإعدادات والدعم" },
 ] as const;
 
 export function DoctorSidebar({ active, onNavigate, lang }: Props) {
@@ -54,7 +54,7 @@ export function DoctorSidebar({ active, onNavigate, lang }: Props) {
           <div>
             <div className="text-sm font-semibold" style={{ color: "#123B5C" }}>WathiqCare</div>
             <div className="text-xs" style={{ color: "#64798B" }}>
-              {lang === "en" ? "Doctor Workspace" : "&ساحة اطب`ب"}
+              {lang === "en" ? "Doctor Workspace" : "مساحة الطبيب"}
             </div>
           </div>
         </div>
@@ -63,7 +63,7 @@ export function DoctorSidebar({ active, onNavigate, lang }: Props) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <div className="mb-2 px-3 text-xs font-semibold tracking-wider uppercase" style={{ color: "#64798B" }}>
-          {lang === "en" ? "Services" : "اخد&ات"}
+          {lang === "en" ? "Services" : "الخدمات"}
         </div>
         <ul className="space-y-0.5">
           {navItems.map((item) => {
@@ -100,10 +100,10 @@ export function DoctorSidebar({ active, onNavigate, lang }: Props) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate" style={{ color: "#102A43" }}>
-              {lang === "en" ? "Dr. Ahmad Khalil" : "د. أح&د خ`"}
+              {lang === "en" ? "Dr. Ahmad Khalil" : "د. أحمد خليل"}
             </div>
             <div className="text-xs truncate" style={{ color: "#64798B" }}>
-              {lang === "en" ? "Surgeon  ICU" : "جراح  اع ا`ة ا&رْزة"}
+              {lang === "en" ? "Surgeon · ICU" : "جرّاح · العناية المركزة"}
             </div>
           </div>
           <button className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
@@ -114,6 +114,7 @@ export function DoctorSidebar({ active, onNavigate, lang }: Props) {
     </aside>
   );
 }
+
 
 
 

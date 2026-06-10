@@ -11,9 +11,9 @@ const monthlyData = [
 const issuesByDept = [
   { dept: "Surgery", deptAr: "جراحة", issues: 3 },
   { dept: "Cardio", deptAr: "ب", issues: 1 },
-  { dept: "Ortho", deptAr: "عظا&", issues: 2 },
-  { dept: "Gastro", deptAr: "!ض&`", issues: 0 },
-  { dept: "Anes.", deptAr: "تخد`ر", issues: 1 },
+  { dept: "Ortho", deptAr: "العظام", issues: 2 },
+  { dept: "Gastro", deptAr: "الجهاز الهضمي", issues: 0 },
+  { dept: "Anes.", deptAr: "التخدير", issues: 1 },
 ];
 
 const checks = [

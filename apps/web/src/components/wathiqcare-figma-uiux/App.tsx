@@ -32,10 +32,10 @@ const screenTitles: Record<DoctorScreen, { en: string; ar: string; subEn?: strin
 export default function App() {
   const [mode, setMode] = useState<Mode>("doctor");
   const [screen, setScreen] = useState<DoctorScreen>("home");
-  const [lang] = useState<"en" | "ar">("en");
+  const [lang, setLang] = useState<"en" | "ar">("en");
   const [showCreateConsent, setShowCreateConsent] = useState(false);
 
-  const isRTL = false;
+  const isRTL = lang === "ar";
 
   const handleNavigate = (s: DoctorScreen) => {
     if (s === "home") {
@@ -149,6 +149,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
