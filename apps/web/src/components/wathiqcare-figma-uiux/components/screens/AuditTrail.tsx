@@ -3,13 +3,13 @@
 interface Props { lang: "en" | "ar" }
 
 const events = [
-  { id: "EVT-0841", time: "09:14:32", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„", actionEn: "Consent signed by patient â€” Layla Hassan", actionAr: "ØªÙ… ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ù…Ù† Ø§Ù„Ù…Ø±ÙŠØ¶Ø© â€” Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù†", typeEn: "Signature", typeAr: "ØªÙˆÙ‚ÙŠØ¹", icon: CheckSquare, color: "#19A978", ip: "192.168.1.45", deviceEn: "Mobile Safari / iOS", deviceAr: "Ù…ÙˆØ¨Ø§ÙŠÙ„ Ø³ÙØ§Ø±ÙŠ / iOS" },
-  { id: "EVT-0840", time: "08:57:11", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„", actionEn: "Secure link sent via SMS to +966 055 123 4567", actionAr: "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø§Ø¨Ø· Ø§Ù„Ø¢Ù…Ù† Ø¹Ø¨Ø± SMS Ø¥Ù„Ù‰ +966 055 123 4567", typeEn: "Link Sent", typeAr: "Ø¥Ø±Ø³Ø§Ù„ Ø±Ø§Ø¨Ø·", icon: Send, color: "#2F90C7", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "ÙƒØ±ÙˆÙ… / ÙˆÙŠÙ†Ø¯ÙˆØ² Ù¡Ù¡" },
-  { id: "EVT-0839", time: "08:47:00", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„", actionEn: "Consent form created â€” Appendectomy (WC-2026-0412)", actionAr: "ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ù†Ù…ÙˆØ°Ø¬ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© â€” Ø§Ø³ØªØ¦ØµØ§Ù„ Ø§Ù„Ø²Ø§Ø¦Ø¯Ø© (WC-2026-0412)", typeEn: "Form Created", typeAr: "Ø¥Ù†Ø´Ø§Ø¡ Ù†Ù…ÙˆØ°Ø¬", icon: FileText, color: "#6B5CE7", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "ÙƒØ±ÙˆÙ… / ÙˆÙŠÙ†Ø¯ÙˆØ² Ù¡Ù¡" },
-  { id: "EVT-0838", time: "08:32:15", date: "09 Jun 2026", actorEn: "System", actorAr: "Ø§Ù„Ù†Ø¸Ø§Ù…", actionEn: "Patient OTP verified â€” Layla Hassan (MRN-204871)", actionAr: "ØªÙ… Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† OTP Ù„Ù„Ù…Ø±ÙŠØ¶Ø© â€” Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù† (MRN-204871)", typeEn: "OTP Verified", typeAr: "Ø§Ù„ØªØ­Ù‚Ù‚ OTP", icon: Lock, color: "#12B7B5", ip: "Mobile Network", deviceEn: "Mobile Safari / iOS", deviceAr: "Ù…ÙˆØ¨Ø§ÙŠÙ„ Ø³ÙØ§Ø±ÙŠ / iOS" },
-  { id: "EVT-0837", time: "17:22:04", date: "08 Jun 2026", actorEn: "Dr. Nasser Al-Ghamdi", actorAr: "Ø¯. Ù†Ø§ØµØ± Ø§Ù„ØºØ§Ù…Ø¯ÙŠ", actionEn: "Consent record WC-2026-0410 downloaded (PDF)", actionAr: "ØªÙ… ØªÙ†Ø²ÙŠÙ„ Ø³Ø¬Ù„ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© WC-2026-0410 (PDF)", typeEn: "Download", typeAr: "ØªÙ†Ø²ÙŠÙ„", icon: Download, color: "#D9A93B", ip: "10.0.0.21", deviceEn: "Firefox / macOS", deviceAr: "ÙØ§ÙŠØ±ÙÙˆÙƒØ³ / macOS" },
-  { id: "EVT-0836", time: "15:09:44", date: "08 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„", actionEn: "Patient education materials sent â€” Sara Al-Mansouri", actionAr: "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ù…ÙˆØ§Ø¯ Ø§Ù„ØªØ«Ù‚ÙŠÙ â€” Ø³Ø§Ø±Ø© Ø§Ù„Ù…Ù†ØµÙˆØ±ÙŠ", typeEn: "Education", typeAr: "ØªØ«Ù‚ÙŠÙ", icon: Eye, color: "#19A978", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "ÙƒØ±ÙˆÙ… / ÙˆÙŠÙ†Ø¯ÙˆØ² Ù¡Ù¡" },
-  { id: "EVT-0835", time: "11:03:28", date: "07 Jun 2026", actorEn: "System", actorAr: "Ø§Ù„Ù†Ø¸Ø§Ù…", actionEn: "Consent link expired â€” Khalid Nasser (no response in 48h)", actionAr: "Ø§Ù†ØªÙ‡Øª ØµÙ„Ø§Ø­ÙŠØ© Ø±Ø§Ø¨Ø· Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© â€” Ø®Ø§Ù„Ø¯ Ù†Ø§ØµØ± (Ù„Ø§ Ø§Ø³ØªØ¬Ø§Ø¨Ø© Ø®Ù„Ø§Ù„ Ù¤Ù¨ Ø³Ø§Ø¹Ø©)", typeEn: "Expired", typeAr: "Ø§Ù†ØªÙ‡Ù‰", icon: Lock, color: "#E84B7A", ip: "â€”", deviceEn: "â€”", deviceAr: "â€”" },
+  { id: "EVT-0841", time: "09:14:32", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أح&د خ`", actionEn: "Consent signed by patient  Layla Hassan", actionAr: "ت& ت`ع ا&افة &  ا&ر`ضة  `0 حس ", typeEn: "Signature", typeAr: "ت`ع", icon: CheckSquare, color: "#19A978", ip: "192.168.1.45", deviceEn: "Mobile Safari / iOS", deviceAr: "&با` سفار` / iOS" },
+  { id: "EVT-0840", time: "08:57:11", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أح&د خ`", actionEn: "Secure link sent via SMS to +966 055 123 4567", actionAr: "ت& إرسا ارابط اآ&  عبر SMS إ0 +966 055 123 4567", typeEn: "Link Sent", typeAr: "إرسا رابط", icon: Send, color: "#2F90C7", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "ْر& / ` دز ١١" },
+  { id: "EVT-0839", time: "08:47:00", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أح&د خ`", actionEn: "Consent form created  Appendectomy (WC-2026-0412)", actionAr: "ت& إ شاء  &ذج ا&افة  استئصا ازائدة (WC-2026-0412)", typeEn: "Form Created", typeAr: "إ شاء  &ذج", icon: FileText, color: "#6B5CE7", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "ْر& / ` دز ١١" },
+  { id: "EVT-0838", time: "08:32:15", date: "09 Jun 2026", actorEn: "System", actorAr: "ا ظا&", actionEn: "Patient OTP verified  Layla Hassan (MRN-204871)", actionAr: "ت& اتح &  OTP &ر`ضة  `0 حس  (MRN-204871)", typeEn: "OTP Verified", typeAr: "اتح OTP", icon: Lock, color: "#12B7B5", ip: "Mobile Network", deviceEn: "Mobile Safari / iOS", deviceAr: "&با` سفار` / iOS" },
+  { id: "EVT-0837", time: "17:22:04", date: "08 Jun 2026", actorEn: "Dr. Nasser Al-Ghamdi", actorAr: "د.  اصر اغا&د`", actionEn: "Consent record WC-2026-0410 downloaded (PDF)", actionAr: "ت& ت ز` سج ا&افة WC-2026-0410 (PDF)", typeEn: "Download", typeAr: "ت ز`", icon: Download, color: "#D9A93B", ip: "10.0.0.21", deviceEn: "Firefox / macOS", deviceAr: "فا`رفْس / macOS" },
+  { id: "EVT-0836", time: "15:09:44", date: "08 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أح&د خ`", actionEn: "Patient education materials sent  Sara Al-Mansouri", actionAr: "ت& إرسا &اد اتث`ف  سارة ا& صر`", typeEn: "Education", typeAr: "تث`ف", icon: Eye, color: "#19A978", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "ْر& / ` دز ١١" },
+  { id: "EVT-0835", time: "11:03:28", date: "07 Jun 2026", actorEn: "System", actorAr: "ا ظا&", actionEn: "Consent link expired  Khalid Nasser (no response in 48h)", actionAr: "ا ت!ت صاح`ة رابط ا&افة  خاد  اصر (ا استجابة خا ٤٨ ساعة)", typeEn: "Expired", typeAr: "ا ت!0", icon: Lock, color: "#E84B7A", ip: "", deviceEn: "", deviceAr: "" },
 ];
 
 export function AuditTrail({ lang }: Props) {
@@ -20,19 +20,19 @@ export function AuditTrail({ lang }: Props) {
       <div className="px-6 py-5 border-b bg-white" style={{ borderColor: "#D8E8EF" }}>
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-            {isRTL ? "Ù…Ø³Ø§Ø± Ø§Ù„ØªØ¯Ù‚ÙŠÙ‚ / Ø§Ù„Ø£Ø¯Ù„Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ©" : "Audit Trail / Legal Evidence"}
+            {isRTL ? "&سار اتد` / اأدة اا  `ة" : "Audit Trail / Legal Evidence"}
           </h2>
           <div className="flex gap-2">
             <button className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium" style={{ borderColor: "#D8E8EF", color: "#64798B" }}>
-              <Filter size={13} /> {isRTL ? "ØªØµÙÙŠØ©" : "Filter"}
+              <Filter size={13} /> {isRTL ? "تصف`ة" : "Filter"}
             </button>
             <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: "#123B5C" }}>
-              <Download size={13} /> {isRTL ? "ØªØµØ¯ÙŠØ± Ø§Ù„Ø³Ø¬Ù„" : "Export Log"}
+              <Download size={13} /> {isRTL ? "تصد`ر اسج" : "Export Log"}
             </button>
           </div>
         </div>
         <p className="text-sm" style={{ color: "#64798B" }}>
-          {isRTL ? "Ø³Ø¬Ù„ ØºÙŠØ± Ù‚Ø§Ø¨Ù„ Ù„Ù„ØªØ¹Ø¯ÙŠÙ„ Ù„Ø¬Ù…ÙŠØ¹ Ø£Ù†Ø´Ø·Ø© Ø§Ù„Ù…Ù†ØµØ© â€¢ Ù…Ø´ÙØ± â€¢ Ù…Ø®ØªÙˆÙ… Ø¨Ø§Ù„ÙˆÙ‚Øª" : "Immutable log of all platform activity â€¢ Encrypted â€¢ Timestamped"}
+          {isRTL ? "سج غ`ر اب تعد` ج&`ع أ شطة ا& صة ⬢ &شفر ⬢ &خت& بات" : "Immutable log of all platform activity ⬢ Encrypted ⬢ Timestamped"}
         </p>
       </div>
 
@@ -57,9 +57,9 @@ export function AuditTrail({ lang }: Props) {
                     <span className="flex items-center gap-1">
                       <User size={10} /> {isRTL ? ev.actorAr : ev.actorEn}
                     </span>
-                    <span>Â·</span>
-                    <span>{ev.time} Â· {ev.date}</span>
-                    <span>Â·</span>
+                    <span>·</span>
+                    <span>{ev.time} · {ev.date}</span>
+                    <span>·</span>
                     <span>IP: {ev.ip}</span>
                   </div>
                   <div className="text-xs mt-1" style={{ color: "#64798B" }}>
@@ -82,12 +82,12 @@ export function AuditTrail({ lang }: Props) {
           <div className="flex items-center gap-2 mb-2">
             <Lock size={13} style={{ color: "#2F90C7" }} />
             <span className="text-xs font-bold" style={{ color: "#2F90C7" }}>
-              {isRTL ? "Ù…Ù„Ø§Ø­Ø¸Ø© Ù‚Ø§Ù†ÙˆÙ†ÙŠØ©" : "Legal Note"}
+              {isRTL ? "&احظة ا  `ة" : "Legal Note"}
             </span>
           </div>
           <p className="text-xs" style={{ color: "#64798B" }}>
             {isRTL
-              ? "Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø¥Ø¯Ø®Ø§Ù„Ø§Øª ÙÙŠ Ù‡Ø°Ø§ Ø§Ù„Ø³Ø¬Ù„ Ù…Ø®ØªÙˆÙ…Ø© Ø²Ù…Ù†ÙŠØ§Ù‹ ÙˆÙ…Ø´ÙØ±Ø© ÙˆÙ„Ø§ ÙŠÙ…ÙƒÙ† ØªØ¹Ø¯ÙŠÙ„Ù‡Ø§. Ù‡Ø°Ø§ Ø§Ù„Ø³Ø¬Ù„ ØµØ§Ù„Ø­ ÙƒØ¯Ù„ÙŠÙ„ Ù‚Ø§Ù†ÙˆÙ†ÙŠ ÙˆÙÙ‚Ø§Ù‹ Ù„Ù…Ø¹Ø§ÙŠÙŠØ± HIPAA ÙˆNCA."
+              ? "ج&`ع اإدخاات ف` !ذا اسج &خت&ة ز& `ا9 &شفرة ا `&ْ  تعد`!ا. !ذا اسج صاح ْد` ا  ` فا9 &عا``ر HIPAA NCA."
               : "All entries in this log are timestamped, encrypted, and immutable. This log is valid as legal evidence per HIPAA and NCA standards."}
           </p>
         </div>

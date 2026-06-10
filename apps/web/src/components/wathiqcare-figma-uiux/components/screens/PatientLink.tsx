@@ -12,7 +12,7 @@ const stepOrder: Step[] = ["language", "otp", "summary", "education", "consent",
 
 const stepLabels = {
   en: { language: "Language", otp: "Verify", summary: "Summary", education: "Learn", consent: "Review", question: "Questions", signature: "Sign", complete: "Done" },
-  ar: { language: "Ø§Ù„Ù„ØºØ©", otp: "ØªØ­Ù‚Ù‚", summary: "Ù…Ù„Ø®Øµ", education: "ØªØ¹Ù„Ù…", consent: "Ù…Ø±Ø§Ø¬Ø¹Ø©", question: "Ø£Ø³Ø¦Ù„Ø©", signature: "ØªÙˆÙ‚ÙŠØ¹", complete: "ØªÙ…" }
+  ar: { language: "اغة", otp: "تح", summary: "&خص", education: "تع&", consent: "&راجعة", question: "أسئة", signature: "ت`ع", complete: "ت&" }
 };
 
 export function PatientLink() {
@@ -53,7 +53,7 @@ export function PatientLink() {
       {/* Viewport switcher */}
       <div className="sticky top-0 z-10 flex items-center justify-center gap-3 py-3 px-4" style={{ background: "#0D2035", borderBottom: "1px solid #1a3550" }}>
         <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-          {isRTL ? "Ù…Ø¹Ø§ÙŠÙ†Ø© Ø±Ø§Ø¨Ø· Ø§Ù„Ù…Ø±ÙŠØ¶" : "Patient Link Preview"}
+          {isRTL ? "&عا` ة رابط ا&ر`ض" : "Patient Link Preview"}
         </span>
         <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "#1a3550" }}>
           {([
@@ -97,7 +97,7 @@ export function PatientLink() {
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#19A978" }} />
-              <span className="text-xs text-white/70">{isRTL ? "Ø¢Ù…Ù† ÙˆÙ…Ø´ÙØ±" : "Secure"}</span>
+              <span className="text-xs text-white/70">{isRTL ? "آ&  &شفر" : "Secure"}</span>
             </div>
           </div>
 
@@ -136,26 +136,26 @@ export function PatientLink() {
                 </div>
                 <div className="text-xl font-bold mb-1" style={{ color: "#102A43" }}>WathiqCare</div>
                 <div className="text-sm mb-6" style={{ color: "#64798B" }}>
-                  Secure Consent Â· Ù…ÙˆØ§ÙÙ‚Ø© Ø¢Ù…Ù†Ø©
+                  Secure Consent · &افة آ& ة
                 </div>
                 <p className="text-sm mb-6" style={{ color: "#64798B" }}>
-                  {lang === "en" ? "Dr. Ahmad Khalil has sent you a consent request for:" : "Ø£Ø±Ø³Ù„ Ù„Ùƒ Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„ Ø·Ù„Ø¨ Ù…ÙˆØ§ÙÙ‚Ø© Ù„Ù„Ø¥Ø¬Ø±Ø§Ø¡:"}
+                  {lang === "en" ? "Dr. Ahmad Khalil has sent you a consent request for:" : "أرس ْ د. أح&د خ` طب &افة إجراء:"}
                 </p>
                 <div className="px-5 py-3 rounded-2xl mb-8 w-full" style={{ background: "#EAF6FF", border: "1px solid #2F90C730" }}>
                   <div className="text-base font-bold" style={{ color: "#123B5C" }}>
-                    {lang === "en" ? "Appendectomy" : "Ø§Ø³ØªØ¦ØµØ§Ù„ Ø§Ù„Ø²Ø§Ø¦Ø¯Ø© Ø§Ù„Ø¯ÙˆØ¯ÙŠØ©"}
+                    {lang === "en" ? "Appendectomy" : "استئصا ازائدة ادد`ة"}
                   </div>
                   <div className="text-sm mt-0.5" style={{ color: "#64798B" }}>
-                    {lang === "en" ? "King Abdulaziz Hospital Â· 12 Jun 2026" : "Ù…Ø³ØªØ´ÙÙ‰ Ø§Ù„Ù…Ù„Ùƒ Ø¹Ø¨Ø¯Ø§Ù„Ø¹Ø²ÙŠØ² Â· Ù¡Ù¢ ÙŠÙˆÙ†ÙŠÙˆ Ù¢Ù Ù¢Ù¦"}
+                    {lang === "en" ? "King Abdulaziz Hospital · 12 Jun 2026" : "&ستشف0 ا&ْ عبداعز`ز · ١٢ ` ` ٢٠٢٦"}
                   </div>
                 </div>
                 <p className="text-sm font-semibold mb-3" style={{ color: "#102A43" }}>
-                  Ø§Ø®ØªØ± Ù„ØºØªÙƒ / Choose your language
+                  اختر غتْ / Choose your language
                 </p>
                 <div className="flex flex-col gap-3 w-full">
                   {[
-                    { code: "ar" as const, label: "Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©", sub: "Arabic" },
-                    { code: "en" as const, label: "English", sub: "Ø§Ù„Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠØ©" },
+                    { code: "ar" as const, label: "اعرب`ة", sub: "Arabic" },
+                    { code: "en" as const, label: "English", sub: "اإ ج`ز`ة" },
                   ].map(l => (
                     <button
                       key={l.code}
@@ -181,7 +181,7 @@ export function PatientLink() {
                   className="w-full mt-6 py-4 rounded-2xl font-bold text-white text-base shadow-lg transition-all hover:opacity-90"
                   style={{ background: "linear-gradient(90deg,#2F90C7,#12B7B5)" }}
                 >
-                  {isRTL ? "Ù…ØªØ§Ø¨Ø¹Ø©" : "Continue"} <ChevronRight className="inline ms-1" size={16} />
+                  {isRTL ? "&تابعة" : "Continue"} <ChevronRight className="inline ms-1" size={16} />
                 </button>
               </div>
             )}
@@ -193,10 +193,10 @@ export function PatientLink() {
                   <Shield size={24} style={{ color: "#2F90C7" }} />
                 </div>
                 <h2 className="text-xl font-bold text-center mb-2" style={{ color: "#102A43" }}>
-                  {isRTL ? "Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ù‡ÙˆÙŠØªÙƒ" : "Verify Your Identity"}
+                  {isRTL ? "اتح &  !`تْ" : "Verify Your Identity"}
                 </h2>
                 <p className="text-sm text-center mb-2" style={{ color: "#64798B" }}>
-                  {isRTL ? "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚ Ø¥Ù„Ù‰" : "We sent a verification code to"}
+                  {isRTL ? "ت& إرسا ر&ز اتح إ0" : "We sent a verification code to"}
                 </p>
                 <p className="text-sm font-bold mb-6" style={{ color: "#123B5C" }}>+966 055 *** 4567</p>
 
@@ -227,10 +227,10 @@ export function PatientLink() {
                   className="w-full py-4 rounded-2xl font-bold text-white mb-3"
                   style={{ background: "linear-gradient(90deg,#2F90C7,#12B7B5)" }}
                 >
-                  {isRTL ? "ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ø±Ù…Ø²" : "Verify Code"}
+                  {isRTL ? "تح &  ار&ز" : "Verify Code"}
                 </button>
                 <button className="text-sm" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø¥Ø¹Ø§Ø¯Ø© Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ù…Ø²" : "Resend code"}
+                  {isRTL ? "إعادة إرسا ار&ز" : "Resend code"}
                 </button>
               </div>
             )}
@@ -243,19 +243,19 @@ export function PatientLink() {
                     <Check size={22} style={{ color: "#19A978" }} />
                   </div>
                   <h2 className="text-lg font-bold" style={{ color: "#102A43" }}>
-                    {isRTL ? "Ù…Ø±Ø­Ø¨Ø§Ù‹ ÙŠØ§ Ù„ÙŠÙ„Ù‰" : "Hello, Layla"}
+                    {isRTL ? "&رحبا9 `ا `0" : "Hello, Layla"}
                   </h2>
                   <p className="text-sm mt-1" style={{ color: "#64798B" }}>
-                    {isRTL ? "ÙŠØ±Ø¬Ù‰ Ù…Ø±Ø§Ø¬Ø¹Ø© Ù…Ù„Ø®Øµ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" : "Please review your consent summary"}
+                    {isRTL ? "`رج0 &راجعة &خص ا&افة" : "Please review your consent summary"}
                   </p>
                 </div>
                 <div className="rounded-2xl overflow-hidden border" style={{ borderColor: "#D8E8EF" }}>
                   {[
-                    { labelEn: "Procedure", labelAr: "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡", val: isRTL ? "Ø§Ø³ØªØ¦ØµØ§Ù„ Ø§Ù„Ø²Ø§Ø¦Ø¯Ø© Ø§Ù„Ø¯ÙˆØ¯ÙŠØ©" : "Appendectomy" },
-                    { labelEn: "Surgeon", labelAr: "Ø§Ù„Ø¬Ø±Ø§Ø­", val: isRTL ? "Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„" : "Dr. Ahmad Khalil" },
-                    { labelEn: "Hospital", labelAr: "Ø§Ù„Ù…Ø³ØªØ´ÙÙ‰", val: isRTL ? "Ù…Ø³ØªØ´ÙÙ‰ Ø§Ù„Ù…Ù„Ùƒ Ø¹Ø¨Ø¯Ø§Ù„Ø¹Ø²ÙŠØ²" : "King Abdulaziz Hospital" },
-                    { labelEn: "Date", labelAr: "Ø§Ù„ØªØ§Ø±ÙŠØ®", val: "12 Jun 2026 Â· 09:00" },
-                    { labelEn: "Anesthesia", labelAr: "Ø§Ù„ØªØ®Ø¯ÙŠØ±", val: isRTL ? "ØªØ®Ø¯ÙŠØ± Ø¹Ø§Ù…" : "General Anesthesia" },
+                    { labelEn: "Procedure", labelAr: "اإجراء", val: isRTL ? "استئصا ازائدة ادد`ة" : "Appendectomy" },
+                    { labelEn: "Surgeon", labelAr: "اجراح", val: isRTL ? "د. أح&د خ`" : "Dr. Ahmad Khalil" },
+                    { labelEn: "Hospital", labelAr: "ا&ستشف0", val: isRTL ? "&ستشف0 ا&ْ عبداعز`ز" : "King Abdulaziz Hospital" },
+                    { labelEn: "Date", labelAr: "اتار`خ", val: "12 Jun 2026 · 09:00" },
+                    { labelEn: "Anesthesia", labelAr: "اتخد`ر", val: isRTL ? "تخد`ر عا&" : "General Anesthesia" },
                   ].map((r, i) => (
                     <div key={i} className="flex justify-between px-4 py-3 border-b" style={{ borderColor: "#F7FBFC", background: i % 2 === 0 ? "white" : "#F7FBFC" }}>
                       <span className="text-sm" style={{ color: "#64798B" }}>{isRTL ? r.labelAr : r.labelEn}</span>
@@ -267,12 +267,12 @@ export function PatientLink() {
                   <div className="flex items-start gap-2">
                     <AlertCircle size={14} style={{ color: "#D9A93B" }} className="mt-0.5 flex-shrink-0" />
                     <p className="text-xs" style={{ color: "#D9A93B" }}>
-                      {isRTL ? "ÙŠÙØ±Ø¬Ù‰ Ù‚Ø±Ø§Ø¡Ø© Ø§Ù„Ù…ÙˆØ§Ø¯ Ø§Ù„ØªØ¹Ù„ÙŠÙ…ÙŠØ© ÙˆØ§Ù„Ù†Ù…ÙˆØ°Ø¬ Ø§Ù„ÙƒØ§Ù…Ù„ Ù‚Ø¨Ù„ Ø§Ù„ØªÙˆÙ‚ÙŠØ¹." : "Please read the education materials and full form before signing."}
+                      {isRTL ? "`ُرج0 راءة ا&اد اتع`&`ة ا &ذج اْا& ب ات`ع." : "Please read the education materials and full form before signing."}
                     </p>
                   </div>
                 </div>
                 <button onClick={next} className="w-full py-4 rounded-2xl font-bold text-white" style={{ background: "linear-gradient(90deg,#2F90C7,#12B7B5)" }}>
-                  {isRTL ? "Ù…Ø±Ø§Ø¬Ø¹Ø© Ø§Ù„Ù…ÙˆØ§Ø¯ Ø§Ù„ØªØ¹Ù„ÙŠÙ…ÙŠØ©" : "Review Education Materials"} <ChevronRight className="inline ms-1" size={16} />
+                  {isRTL ? "&راجعة ا&اد اتع`&`ة" : "Review Education Materials"} <ChevronRight className="inline ms-1" size={16} />
                 </button>
               </div>
             )}
@@ -283,16 +283,16 @@ export function PatientLink() {
                 <div className="flex items-center gap-2">
                   <BookOpen size={18} style={{ color: "#6B5CE7" }} />
                   <h2 className="text-lg font-bold" style={{ color: "#102A43" }}>
-                    {isRTL ? "Ù…ÙˆØ§Ø¯ Ø§Ù„ØªØ«Ù‚ÙŠÙ Ø§Ù„ØµØ­ÙŠ" : "Health Education"}
+                    {isRTL ? "&اد اتث`ف اصح`" : "Health Education"}
                   </h2>
                 </div>
                 <p className="text-sm" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø£Ø±Ø³Ù„ Ù„Ùƒ Ø·Ø¨ÙŠØ¨Ùƒ Ù‡Ø°Ù‡ Ø§Ù„Ù…ÙˆØ§Ø¯ Ù„Ù„Ù…Ø³Ø§Ø¹Ø¯Ø© ÙÙŠ ÙÙ‡Ù… Ø§Ù„Ø¹Ù…Ù„ÙŠØ©" : "Your doctor has shared these to help you understand the procedure"}
+                  {isRTL ? "أرس ْ طب`بْ !ذ! ا&اد &ساعدة ف` ف!& اع&`ة" : "Your doctor has shared these to help you understand the procedure"}
                 </p>
                 {[
-                  { icon: "ðŸ“„", titleEn: "Pre-operative Fasting Guide", titleAr: "Ø¯Ù„ÙŠÙ„ Ø§Ù„ØµÙŠØ§Ù… Ù‚Ø¨Ù„ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", duration: "5 min", color: "#E84B7A" },
-                  { icon: "ðŸŽ¬", titleEn: "What Happens During Surgery", titleAr: "Ù…Ø§Ø°Ø§ ÙŠØ­Ø¯Ø« Ø£Ø«Ù†Ø§Ø¡ Ø§Ù„Ø¬Ø±Ø§Ø­Ø©", duration: "4 min", color: "#2F90C7" },
-                  { icon: "ðŸ–¼ï¸", titleEn: "Post-op Recovery Guide", titleAr: "Ø¯Ù„ÙŠÙ„ Ø§Ù„ØªØ¹Ø§ÙÙŠ Ø¨Ø¹Ø¯ Ø§Ù„Ø¹Ù…Ù„ÙŠØ©", duration: "3 min", color: "#19A978" },
+                  { icon: "x", titleEn: "Pre-operative Fasting Guide", titleAr: "د` اص`ا& ب اع&`ة", duration: "5 min", color: "#E84B7A" },
+                  { icon: "x}", titleEn: "What Happens During Surgery", titleAr: "&اذا `حدث أث اء اجراحة", duration: "4 min", color: "#2F90C7" },
+                  { icon: "x️", titleEn: "Post-op Recovery Guide", titleAr: "د` اتعاف` بعد اع&`ة", duration: "3 min", color: "#19A978" },
                 ].map((m, i) => (
                   <div key={i} className="flex items-center gap-3 p-4 bg-white rounded-2xl border" style={{ borderColor: "#D8E8EF" }}>
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0" style={{ background: m.color + "15" }}>
@@ -300,15 +300,15 @@ export function PatientLink() {
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-semibold" style={{ color: "#102A43" }}>{isRTL ? m.titleAr : m.titleEn}</div>
-                      <div className="text-xs mt-0.5" style={{ color: "#64798B" }}>{m.duration} {isRTL ? "Ù‚Ø±Ø§Ø¡Ø©" : "read"}</div>
+                      <div className="text-xs mt-0.5" style={{ color: "#64798B" }}>{m.duration} {isRTL ? "راءة" : "read"}</div>
                     </div>
                     <button className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: m.color, color: "white" }}>
-                      {isRTL ? "Ø¹Ø±Ø¶" : "View"}
+                      {isRTL ? "عرض" : "View"}
                     </button>
                   </div>
                 ))}
                 <button onClick={next} className="w-full py-4 rounded-2xl font-bold text-white" style={{ background: "linear-gradient(90deg,#2F90C7,#12B7B5)" }}>
-                  {isRTL ? "Ù…Ø±Ø§Ø¬Ø¹Ø© Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" : "Review Consent Form"} <ChevronRight className="inline ms-1" size={16} />
+                  {isRTL ? "&راجعة ا&افة" : "Review Consent Form"} <ChevronRight className="inline ms-1" size={16} />
                 </button>
               </div>
             )}
@@ -319,15 +319,15 @@ export function PatientLink() {
                 <div className="flex items-center gap-2">
                   <FileText size={18} style={{ color: "#2F90C7" }} />
                   <h2 className="text-lg font-bold" style={{ color: "#102A43" }}>
-                    {isRTL ? "Ù†Ù…ÙˆØ°Ø¬ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© Ø§Ù„ÙƒØ§Ù…Ù„" : "Full Consent Form"}
+                    {isRTL ? " &ذج ا&افة اْا&" : "Full Consent Form"}
                   </h2>
                 </div>
                 <div className="p-4 rounded-2xl bg-white border space-y-3 max-h-72 overflow-y-auto" style={{ borderColor: "#D8E8EF" }}>
                   {[
-                    { hEn: "1. Procedure Description", hAr: "Ù¡. ÙˆØµÙ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡", bodyEn: "You are scheduled for an Appendectomy â€” surgical removal of the appendix â€” performed under general anesthesia by Dr. Ahmad Khalil.", bodyAr: "Ø£Ù†ØªÙ Ù…Ø¬Ø¯ÙˆÙ„Ø© Ù„Ø¹Ù…Ù„ÙŠØ© Ø§Ø³ØªØ¦ØµØ§Ù„ Ø§Ù„Ø²Ø§Ø¦Ø¯Ø© Ø§Ù„Ø¯ÙˆØ¯ÙŠØ© â€” Ø§Ù„Ø§Ø³ØªØ¦ØµØ§Ù„ Ø§Ù„Ø¬Ø±Ø§Ø­ÙŠ Ù„Ù„Ø²Ø§Ø¦Ø¯Ø© â€” ØªØ­Øª Ø§Ù„ØªØ®Ø¯ÙŠØ± Ø§Ù„Ø¹Ø§Ù… Ø¨ÙˆØ§Ø³Ø·Ø© Ø¯. Ø£Ø­Ù…Ø¯ Ø®Ù„ÙŠÙ„." },
-                    { hEn: "2. Risks & Complications", hAr: "Ù¢. Ø§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª", bodyEn: "Risks include bleeding, infection, injury to adjacent organs, and rarely the need for a second procedure. Your anesthesiologist will monitor you continuously.", bodyAr: "ØªØ´Ù…Ù„ Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ù†Ø²ÙŠÙ ÙˆØ§Ù„Ø¹Ø¯ÙˆÙ‰ ÙˆØ§Ù„Ø¥ØµØ§Ø¨Ø© Ø¨Ø§Ù„Ø£Ø¹Ø¶Ø§Ø¡ Ø§Ù„Ù…Ø¬Ø§ÙˆØ±Ø© ÙˆÙ†Ø§Ø¯Ø±Ø§Ù‹ Ø§Ù„Ø­Ø§Ø¬Ø© Ø¥Ù„Ù‰ Ø¥Ø¬Ø±Ø§Ø¡ Ø«Ø§Ù†Ù. Ø³ÙŠØ±Ø§Ù‚Ø¨Ùƒ Ø·Ø¨ÙŠØ¨ Ø§Ù„ØªØ®Ø¯ÙŠØ± Ø¨Ø§Ø³ØªÙ…Ø±Ø§Ø±." },
-                    { hEn: "3. Alternatives", hAr: "Ù£. Ø§Ù„Ø¨Ø¯Ø§Ø¦Ù„", bodyEn: "Non-surgical management with antibiotics is an alternative, though it may be less effective and carries risk of recurrence.", bodyAr: "Ø§Ù„Ø¹Ù„Ø§Ø¬ ØºÙŠØ± Ø§Ù„Ø¬Ø±Ø§Ø­ÙŠ Ø¨Ø§Ù„Ù…Ø¶Ø§Ø¯Ø§Øª Ø§Ù„Ø­ÙŠÙˆÙŠØ© Ø¨Ø¯ÙŠÙ„ Ù…Ø­ØªÙ…Ù„ØŒ ÙˆØ¥Ù† ÙƒØ§Ù† Ø£Ù‚Ù„ ÙØ§Ø¹Ù„ÙŠØ© ÙˆÙŠÙ†Ø·ÙˆÙŠ Ø¹Ù„Ù‰ Ø®Ø·Ø± Ø§Ù„ØªÙƒØ±Ø§Ø±." },
-                    { hEn: "4. Patient Rights", hAr: "Ù¤. Ø­Ù‚ÙˆÙ‚ Ø§Ù„Ù…Ø±ÙŠØ¶", bodyEn: "You have the right to withdraw consent at any time before the procedure begins. Your decision will not affect the quality of your care.", bodyAr: "ÙŠØ­Ù‚ Ù„ÙƒÙ Ø³Ø­Ø¨ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© ÙÙŠ Ø£ÙŠ ÙˆÙ‚Øª Ù‚Ø¨Ù„ Ø¨Ø¯Ø¡ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡. Ù„Ù† ÙŠØ¤Ø«Ø± Ù‚Ø±Ø§Ø±Ùƒ Ø¹Ù„Ù‰ Ø¬ÙˆØ¯Ø© Ø±Ø¹Ø§ÙŠØªÙƒ." },
+                    { hEn: "1. Procedure Description", hAr: "١. صف اإجراء", bodyEn: "You are scheduled for an Appendectomy  surgical removal of the appendix  performed under general anesthesia by Dr. Ahmad Khalil.", bodyAr: "أ تِ &جدة ع&`ة استئصا ازائدة ادد`ة  ااستئصا اجراح` زائدة  تحت اتخد`ر اعا& باسطة د. أح&د خ`." },
+                    { hEn: "2. Risks & Complications", hAr: "٢. ا&خاطر ا&ضاعفات", bodyEn: "Risks include bleeding, infection, injury to adjacent organs, and rarely the need for a second procedure. Your anesthesiologist will monitor you continuously.", bodyAr: "تش& ا&خاطر ا ز`ف اعد0 اإصابة باأعضاء ا&جارة  ادرا9 احاجة إ0 إجراء ثا ٍ. س`رابْ طب`ب اتخد`ر باست&رار." },
+                    { hEn: "3. Alternatives", hAr: "٣. ابدائ", bodyEn: "Non-surgical management with antibiotics is an alternative, though it may be less effective and carries risk of recurrence.", bodyAr: "اعاج غ`ر اجراح` با&ضادات اح``ة بد` &حت&R إ  ْا  أ فاع`ة ` ط` ع0 خطر اتْرار." },
+                    { hEn: "4. Patient Rights", hAr: "٤. ح ا&ر`ض", bodyEn: "You have the right to withdraw consent at any time before the procedure begins. Your decision will not affect the quality of your care.", bodyAr: "`ح ِْ سحب ا&افة ف` أ` ت ب بدء اإجراء.   `ؤثر رارْ ع0 جدة رعا`تْ." },
                   ].map((s, i) => (
                     <div key={i}>
                       <div className="text-sm font-bold mb-1" style={{ color: "#123B5C" }}>{isRTL ? s.hAr : s.hEn}</div>
@@ -336,7 +336,7 @@ export function PatientLink() {
                   ))}
                 </div>
                 <button onClick={next} className="w-full py-4 rounded-2xl font-bold text-white" style={{ background: "linear-gradient(90deg,#2F90C7,#12B7B5)" }}>
-                  {isRTL ? "Ù„Ø¯ÙŠ Ø³Ø¤Ø§Ù„ / Ø£ÙÙ‡Ù…Øª" : "I Have a Question / I Understand"} <ChevronRight className="inline ms-1" size={16} />
+                  {isRTL ? "د` سؤا / أف!&ت" : "I Have a Question / I Understand"} <ChevronRight className="inline ms-1" size={16} />
                 </button>
               </div>
             )}
@@ -347,11 +347,11 @@ export function PatientLink() {
                 <div className="flex items-center gap-2">
                   <MessageSquare size={18} style={{ color: "#D9A93B" }} />
                   <h2 className="text-lg font-bold" style={{ color: "#102A43" }}>
-                    {isRTL ? "Ù‡Ù„ Ù„Ø¯ÙŠÙƒ Ø³Ø¤Ø§Ù„ØŸ" : "Any Questions?"}
+                    {isRTL ? "! د`ْ سؤاx" : "Any Questions?"}
                   </h2>
                 </div>
                 <p className="text-sm" style={{ color: "#64798B" }}>
-                  {isRTL ? "ÙŠÙ…ÙƒÙ†Ùƒ Ø¥Ø±Ø³Ø§Ù„ Ø³Ø¤Ø§Ù„ Ù„Ù„Ø·Ø¨ÙŠØ¨ Ø£Ùˆ ØªØ£ÙƒÙŠØ¯ ÙÙ‡Ù…Ùƒ Ù„Ù„Ù…ØªØ§Ø¨Ø¹Ø©." : "You can ask your doctor a question or confirm you understand to proceed."}
+                  {isRTL ? "`&ْ ْ إرسا سؤا طب`ب أ تأْ`د ف!&ْ &تابعة." : "You can ask your doctor a question or confirm you understand to proceed."}
                 </p>
                 {!questionSent ? (
                   <>
@@ -359,7 +359,7 @@ export function PatientLink() {
                       rows={4}
                       className="w-full px-4 py-3 rounded-2xl border text-sm outline-none resize-none"
                       style={{ borderColor: "#D8E8EF", background: "white", color: "#102A43" }}
-                      placeholder={isRTL ? "Ø§ÙƒØªØ¨ Ø³Ø¤Ø§Ù„Ùƒ Ù‡Ù†Ø§..." : "Type your question here..."}
+                      placeholder={isRTL ? "اْتب سؤاْ ! ا..." : "Type your question here..."}
                       value={question}
                       onChange={e => setQuestion(e.target.value)}
                     />
@@ -369,7 +369,7 @@ export function PatientLink() {
                       className="w-full py-3 rounded-2xl text-sm font-semibold text-white disabled:opacity-40"
                       style={{ background: "#D9A93B" }}
                     >
-                      {isRTL ? "Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø³Ø¤Ø§Ù„ Ù„Ù„Ø·Ø¨ÙŠØ¨" : "Send Question to Doctor"}
+                      {isRTL ? "إرسا اسؤا طب`ب" : "Send Question to Doctor"}
                     </button>
                   </>
                 ) : (
@@ -377,11 +377,11 @@ export function PatientLink() {
                     <div className="flex items-center gap-2 mb-1">
                       <Check size={15} style={{ color: "#19A978" }} />
                       <span className="text-sm font-semibold" style={{ color: "#19A978" }}>
-                        {isRTL ? "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø³Ø¤Ø§Ù„Ùƒ" : "Question sent!"}
+                        {isRTL ? "ت& إرسا سؤاْ" : "Question sent!"}
                       </span>
                     </div>
                     <p className="text-xs" style={{ color: "#64798B" }}>
-                      {isRTL ? "Ø³ÙŠØ±Ø¯ Ø§Ù„Ø·Ø¨ÙŠØ¨ Ø®Ù„Ø§Ù„ Ù¢Ù¤ Ø³Ø§Ø¹Ø©. ÙŠÙ…ÙƒÙ†Ùƒ Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ù„Ù„ØªÙˆÙ‚ÙŠØ¹." : "Doctor will respond within 24h. You can proceed to sign."}
+                      {isRTL ? "س`رد اطب`ب خا ٢٤ ساعة. `&ْ ْ ا&تابعة ت`ع." : "Doctor will respond within 24h. You can proceed to sign."}
                     </p>
                   </div>
                 )}
@@ -396,7 +396,7 @@ export function PatientLink() {
                     </div>
                     <span className="text-sm" style={{ color: "#102A43" }}>
                       {isRTL
-                        ? "Ø£Ø¤ÙƒØ¯ Ø£Ù†Ù†ÙŠ ÙÙ‡Ù…Øª Ù…Ø­ØªÙˆÙ‰ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø© ÙˆÙ…Ø®Ø§Ø·Ø±Ù‡Ø§ ÙˆØ¨Ø¯Ø§Ø¦Ù„Ù‡Ø§ØŒ ÙˆØ£Ø±ØºØ¨ ÙÙŠ Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø©."
+                        ? "أؤْد أ  ` ف!&ت &حت0 ا&افة &خاطر!ا بدائ!اR أرغب ف` ا&تابعة."
                         : "I confirm I have read and understood the consent, its risks and alternatives, and wish to proceed."}
                     </span>
                   </label>
@@ -407,7 +407,7 @@ export function PatientLink() {
                   className="w-full py-4 rounded-2xl font-bold text-white disabled:opacity-40"
                   style={{ background: "linear-gradient(90deg,#2F90C7,#12B7B5)" }}
                 >
-                  {isRTL ? "Ù…ØªØ§Ø¨Ø¹Ø© Ù„Ù„ØªÙˆÙ‚ÙŠØ¹" : "Proceed to Signature"} <ChevronRight className="inline ms-1" size={16} />
+                  {isRTL ? "&تابعة ت`ع" : "Proceed to Signature"} <ChevronRight className="inline ms-1" size={16} />
                 </button>
               </div>
             )}
@@ -418,11 +418,11 @@ export function PatientLink() {
                 <div className="flex items-center gap-2">
                   <Pen size={18} style={{ color: "#123B5C" }} />
                   <h2 className="text-lg font-bold" style={{ color: "#102A43" }}>
-                    {isRTL ? "Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ" : "Electronic Signature"}
+                    {isRTL ? "ات`ع اإْتر `" : "Electronic Signature"}
                   </h2>
                 </div>
                 <p className="text-sm" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø§Ø±Ø³Ù… ØªÙˆÙ‚ÙŠØ¹Ùƒ ÙÙŠ Ø§Ù„Ø¥Ø·Ø§Ø± Ø£Ø¯Ù†Ø§Ù‡" : "Draw your signature in the box below"}
+                  {isRTL ? "ارس& ت`عْ ف` اإطار أد ا!" : "Draw your signature in the box below"}
                 </p>
 
                 <div
@@ -432,14 +432,14 @@ export function PatientLink() {
                 >
                   {signed ? (
                     <div className="text-center">
-                      <div className="text-3xl font-bold italic mb-1" style={{ color: "#19A978", fontFamily: "cursive" }}>Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù†</div>
+                      <div className="text-3xl font-bold italic mb-1" style={{ color: "#19A978", fontFamily: "cursive" }}>`0 حس </div>
                       <div className="text-xs" style={{ color: "#64798B" }}>Layla Hassan</div>
                     </div>
                   ) : (
                     <div className="text-center">
                       <Pen size={24} className="mx-auto mb-2 opacity-30" style={{ color: "#64798B" }} />
                       <p className="text-sm" style={{ color: "#64798B" }}>
-                        {isRTL ? "Ø§Ù†Ù‚Ø± Ù„Ù„ØªÙˆÙ‚ÙŠØ¹" : "Tap to sign"}
+                        {isRTL ? "ا ر ت`ع" : "Tap to sign"}
                       </p>
                     </div>
                   )}
@@ -450,7 +450,7 @@ export function PatientLink() {
                     <div className="flex items-center gap-2 text-xs" style={{ color: "#12B7B5" }}>
                       <Lock size={11} />
                       <span>
-                        {isRTL ? "ØªÙ… Ø§Ù„ØªÙ‚Ø§Ø· Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ù…Ø¹ Ø§Ù„Ø·Ø§Ø¨Ø¹ Ø§Ù„Ø²Ù…Ù†ÙŠ ÙˆØ¨ØµÙ…Ø© Ø§Ù„Ø¬Ù‡Ø§Ø²" : "Signature captured with timestamp & device fingerprint"}
+                        {isRTL ? "ت& اتاط ات`ع &ع اطابع از& ` بص&ة اج!از" : "Signature captured with timestamp & device fingerprint"}
                       </span>
                     </div>
                   </div>
@@ -462,7 +462,7 @@ export function PatientLink() {
                   className="w-full py-4 rounded-2xl font-bold text-white text-base disabled:opacity-40 shadow-lg"
                   style={{ background: "linear-gradient(90deg,#19A978,#0ECBA1)" }}
                 >
-                  {isRTL ? "ØªØ£ÙƒÙŠØ¯ ÙˆØ¥Ø±Ø³Ø§Ù„ Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" : "Confirm & Submit Consent"}
+                  {isRTL ? "تأْ`د إرسا ا&افة" : "Confirm & Submit Consent"}
                 </button>
               </div>
             )}
@@ -474,11 +474,11 @@ export function PatientLink() {
                   <Check size={36} color="white" />
                 </div>
                 <h2 className="text-2xl font-bold" style={{ color: "#102A43" }}>
-                  {isRTL ? "ØªÙ… Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ø¨Ù†Ø¬Ø§Ø­!" : "Consent Signed!"}
+                  {isRTL ? "ت& ات`ع ب جاح!" : "Consent Signed!"}
                 </h2>
                 <p className="text-sm" style={{ color: "#64798B" }}>
                   {isRTL
-                    ? "ØªÙ… ØªÙˆÙ‚ÙŠØ¹ Ù…ÙˆØ§ÙÙ‚ØªÙƒ ÙˆØ¥Ø±Ø³Ø§Ù„Ù‡Ø§ Ø¥Ù„Ù‰ Ø§Ù„ÙØ±ÙŠÙ‚ Ø§Ù„Ø·Ø¨ÙŠ. Ø´ÙƒØ±Ø§Ù‹ Ù„ÙƒÙ."
+                    ? "ت& ت`ع &افتْ إرسا!ا إ0 افر` اطب`. شْرا9 ِْ."
                     : "Your consent has been signed and sent to the medical team. Thank you."}
                 </p>
                 <div className="w-full p-5 rounded-2xl bg-white border space-y-3" style={{ borderColor: "#D8E8EF" }}>
@@ -486,15 +486,15 @@ export function PatientLink() {
                     <QrCode size={64} style={{ color: "#123B5C" }} />
                   </div>
                   <div className="text-xs" style={{ color: "#64798B" }}>
-                    {isRTL ? "Ø±Ù…Ø² QR Ù„Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©" : "QR code to verify consent"}
+                    {isRTL ? "ر&ز QR تح &  ا&افة" : "QR code to verify consent"}
                   </div>
-                  <div className="text-xs font-mono" style={{ color: "#2F90C7" }}>WC-2026-0412 Â· Layla Hassan</div>
+                  <div className="text-xs font-mono" style={{ color: "#2F90C7" }}>WC-2026-0412 · Layla Hassan</div>
                 </div>
                 <button className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold border text-sm" style={{ borderColor: "#D8E8EF", color: "#64798B" }}>
-                  <Download size={15} /> {isRTL ? "ØªØ­Ù…ÙŠÙ„ PDF" : "Download PDF Copy"}
+                  <Download size={15} /> {isRTL ? "تح&` PDF" : "Download PDF Copy"}
                 </button>
                 <p className="text-xs" style={{ color: "#64798B" }}>
-                  {isRTL ? "Ø³ÙŠØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ù†Ø³Ø®Ø© Ø¥Ù„Ù‰ Ø¨Ø±ÙŠØ¯Ùƒ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ" : "A copy will be sent to your email"}
+                  {isRTL ? "س`ت& إرسا  سخة إ0 بر`دْ اإْتر `" : "A copy will be sent to your email"}
                 </p>
               </div>
             )}
@@ -504,13 +504,13 @@ export function PatientLink() {
           {step !== "language" && step !== "complete" && step !== "otp" && (
             <div className="bg-white border-t flex items-center justify-between px-5 py-3" style={{ borderColor: "#D8E8EF" }}>
               <button onClick={prev} className="flex items-center gap-1 text-sm" style={{ color: "#64798B" }}>
-                <ChevronLeft size={14} /> {isRTL ? "Ø§Ù„Ø³Ø§Ø¨Ù‚" : "Back"}
+                <ChevronLeft size={14} /> {isRTL ? "اساب" : "Back"}
               </button>
               <div className="text-xs" style={{ color: "#64798B" }}>
-                {isRTL ? "Ø¢Ù…Ù† ÙˆÙ…Ø´ÙØ± â€¢ WathiqCare" : "Secure â€¢ WathiqCare"}
+                {isRTL ? "آ&  &شفر ⬢ WathiqCare" : "Secure ⬢ WathiqCare"}
               </div>
               <div className="flex items-center gap-1 text-xs" style={{ color: "#19A978" }}>
-                <Lock size={11} /> {isRTL ? "Ù…Ø­Ù…ÙŠ" : "Secure"}
+                <Lock size={11} /> {isRTL ? "&ح&`" : "Secure"}
               </div>
             </div>
           )}

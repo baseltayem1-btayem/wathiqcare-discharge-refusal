@@ -14,30 +14,28 @@ import { PatientEducation } from "./components/screens/PatientEducation";
 import { ComplianceReview } from "./components/screens/ComplianceReview";
 import { AuditTrail } from "./components/screens/AuditTrail";
 import { Settings } from "./components/screens/Settings";
-import { PatientLink } from "./components/screens/PatientLink";
-
-type Mode = "doctor" ;
+type Mode = "doctor";
 
 const screenTitles: Record<DoctorScreen, { en: string; ar: string; subEn?: string; subAr?: string }> = {
-  "home": { en: "Doctor Workspace", ar: "Ù…Ø³Ø§Ø­Ø© Ø§Ù„Ø·Ø¨ÙŠØ¨", subEn: "Tuesday, June 9, 2026", subAr: "Ø§Ù„Ø«Ù„Ø§Ø«Ø§Ø¡ Ù© ÙŠÙˆÙ†ÙŠÙˆ Ù¢Ù Ù¢Ù¦" },
-  "create-consent": { en: "Pending Consents", ar: "Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø§Øª Ø§Ù„Ù…Ø¹Ù„Ù‚Ø©", subEn: "7 awaiting patient response", subAr: "Ù§ ÙÙŠ Ø§Ù†ØªØ¸Ø§Ø± Ø±Ø¯ Ø§Ù„Ù…Ø±ÙŠØ¶" },
-  "consent-records": { en: "Consent Records", ar: "Ø³Ø¬Ù„Ø§Øª Ø§Ù„Ù…ÙˆØ§ÙÙ‚Ø©", subEn: "Historical archive", subAr: "Ø§Ù„Ø£Ø±Ø´ÙŠÙ Ø§Ù„ØªØ§Ø±ÙŠØ®ÙŠ" },
-  "approved-forms": { en: "Approved Forms Library", ar: "Ù…ÙƒØªØ¨Ø© Ø§Ù„Ù†Ù…Ø§Ø°Ø¬ Ø§Ù„Ù…Ø¹ØªÙ…Ø¯Ø©" },
-  "anesthesia-queue": { en: "Anesthesia Queue", ar: "Ù‚Ø§Ø¦Ù…Ø© Ø§Ù†ØªØ¸Ø§Ø± Ø§Ù„ØªØ®Ø¯ÙŠØ±", subEn: "4 patients today", subAr: "Ù¤ Ù…Ø±Ø¶Ù‰ Ø§Ù„ÙŠÙˆÙ…" },
-  "patient-education": { en: "Patient Education Library", ar: "Ù…ÙƒØªØ¨Ø© ØªØ«Ù‚ÙŠÙ Ø§Ù„Ù…Ø±ÙŠØ¶" },
-  "compliance-review": { en: "Smart Compliance Review", ar: "Ù…Ø±Ø§Ø¬Ø¹Ø© Ø§Ù„Ø§Ù…ØªØ«Ø§Ù„ Ø§Ù„Ø°ÙƒÙŠØ©" },
-  "audit-trail": { en: "Audit Trail", ar: "Ù…Ø³Ø§Ø± Ø§Ù„ØªØ¯Ù‚ÙŠÙ‚" },
-  "settings": { en: "Settings & Support", ar: "Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª ÙˆØ§Ù„Ø¯Ø¹Ù…" },
+  "home": { en: "Doctor Workspace", ar: "&ساحة اطب`ب", subEn: "Tuesday, June 9, 2026", subAr: "اثاثاء ٩ ` ` ٢٠٢٦" },
+  "create-consent": { en: "Pending Consents", ar: "ا&افات ا&عة", subEn: "7 awaiting patient response", subAr: "٧ ف` ا تظار رد ا&ر`ض" },
+  "consent-records": { en: "Consent Records", ar: "سجات ا&افة", subEn: "Historical archive", subAr: "اأرش`ف اتار`خ`" },
+  "approved-forms": { en: "Approved Forms Library", ar: "&ْتبة ا &اذج ا&عت&دة" },
+  "anesthesia-queue": { en: "Anesthesia Queue", ar: "ائ&ة ا تظار اتخد`ر", subEn: "4 patients today", subAr: "٤ &رض0 ا`&" },
+  "patient-education": { en: "Patient Education Library", ar: "&ْتبة تث`ف ا&ر`ض" },
+  "compliance-review": { en: "Smart Compliance Review", ar: "&راجعة اا&تثا اذْ`ة" },
+  "audit-trail": { en: "Audit Trail", ar: "&سار اتد`" },
+  "settings": { en: "Settings & Support", ar: "اإعدادات ادع&" },
 };
 
 
 export default function App() {
   const [mode, setMode] = useState<Mode>("doctor");
   const [screen, setScreen] = useState<DoctorScreen>("home");
-  const [lang, setLang] = useState<"en" | "ar">("en");
+  const [lang] = useState<"en" | "ar">("en");
   const [showCreateConsent, setShowCreateConsent] = useState(false);
 
-  const isRTL = lang === "ar";
+  const isRTL = false;
 
   const handleNavigate = (s: DoctorScreen) => {
     if (s === "home") {
@@ -68,21 +66,7 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "#1a3550" }}>
-            <button
-              onClick={() => { setMode("doctor"); setScreen("home"); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={{ background: mode === "doctor" ? "#2F90C7" : "transparent", color: "white" }}
-            >
-              <Monitor size={12} /> {isRTL ? "Ø§Ù„Ø·Ø¨ÙŠØ¨" : "Doctor Workspace"}
-            </button>
-            <button
-              onClick={() => setMode("patient")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={{ background: mode === "patient" ? "#19A978" : "transparent", color: "white" }}
-            >
-              <Smartphone size={12} /> {isRTL ? "Ø§Ù„Ù…Ø±ÙŠØ¶" : "Patient Link"}
-            </button>
-          </div>
+</div>
         </div>
       </div>
 
@@ -105,12 +89,12 @@ export default function App() {
             <DoctorHeader
               title={
                 showCreateConsent
-                  ? (isRTL ? "Ø¥Ù†Ø´Ø§Ø¡ Ù…ÙˆØ§ÙÙ‚Ø© Ø¬Ø¯ÙŠØ¯Ø©" : "Create New Consent")
+                  ? (isRTL ? "إ شاء &افة جد`دة" : "Create New Consent")
                   : (isRTL ? title.ar : title.en)
               }
               subtitle={
                 showCreateConsent
-                  ? (isRTL ? "Ø§Ù„Ù…Ø±ÙŠØ¶: Ù„ÙŠÙ„Ù‰ Ø­Ø³Ù† · MRN-204871" : "Patient: Layla Hassan · MRN-204871")
+                  ? (isRTL ? "ا&ر`ض: `0 حس   MRN-204871" : "Patient: Layla Hassan  MRN-204871")
                   : (isRTL ? title.subAr : title.subEn)
               }
               lang={lang}
@@ -123,11 +107,11 @@ export default function App() {
                 {/* Pending Consents list */}
                 <div className="max-w-3xl space-y-3">
                   {[
-                    { id: "WC-2026-0413", patientEn: "Omar Al-Rashid", patientAr: "Ø¹Ù…Ø± Ø§Ù„Ø±Ø§Ø´Ø¯", procedureEn: "Cardiac Catheterization", procedureAr: "Ù‚Ø³Ø·Ø±Ø© Ù‚Ù„Ø¨ÙŠØ©", sentTime: "2h ago", status: "sent" as const },
-                    { id: "WC-2026-0414", patientEn: "Mohammed Al-Qahtani", patientAr: "Ù…Ø­Ù…Ø¯ Ø§Ù„Ù‚Ø­Ø·Ø§Ù†ÙŠ", procedureEn: "Hernia Repair", procedureAr: "Ø¥ØµÙ„Ø§Ø­ Ø§Ù„ÙØªÙ‚", sentTime: "5h ago", status: "sent" as const },
-                    { id: "WC-2026-0415", patientEn: "Reem Al-Zahrani", patientAr: "Ø±ÙŠÙ… Ø§Ù„Ø²Ù‡Ø±Ø§Ù†ÙŠ", procedureEn: "Colonoscopy", procedureAr: "ØªÙ†Ø¸ÙŠØ± Ø§Ù„Ù‚ÙˆÙ„ÙˆÙ†", sentTime: "1d ago", status: "sent" as const },
-                    { id: "WC-2026-0416", patientEn: "Hana Al-Shehri", patientAr: "Ù‡Ù†Ø§ Ø§Ù„Ø´Ù‡Ø±ÙŠ", procedureEn: "Knee Arthroscopy", procedureAr: "Ù…Ù†Ø¸Ø§Ø± Ø§Ù„Ø±ÙƒØ¨Ø©", sentTime: "1d ago", status: "pending" as const },
-                    { id: "WC-2026-0417", patientEn: "Tariq Mansoor", patientAr: "Ø·Ø§Ø±Ù‚ Ù…Ù†ØµÙˆØ±", procedureEn: "Gallbladder Removal", procedureAr: "Ø§Ø³ØªØ¦ØµØ§Ù„ Ø§Ù„Ù…Ø±Ø§Ø±Ø©", sentTime: "2d ago", status: "pending" as const },
+                    { id: "WC-2026-0413", patientEn: "Omar Al-Rashid", patientAr: "ع&ر اراشد", procedureEn: "Cardiac Catheterization", procedureAr: "سطرة ب`ة", sentTime: "2h ago", status: "sent" as const },
+                    { id: "WC-2026-0414", patientEn: "Mohammed Al-Qahtani", patientAr: "&ح&د احطا `", procedureEn: "Hernia Repair", procedureAr: "إصاح افت", sentTime: "5h ago", status: "sent" as const },
+                    { id: "WC-2026-0415", patientEn: "Reem Al-Zahrani", patientAr: "ر`& از!را `", procedureEn: "Colonoscopy", procedureAr: "ت ظ`ر ا ", sentTime: "1d ago", status: "sent" as const },
+                    { id: "WC-2026-0416", patientEn: "Hana Al-Shehri", patientAr: "! ا اش!ر`", procedureEn: "Knee Arthroscopy", procedureAr: "& ظار ارْبة", sentTime: "1d ago", status: "pending" as const },
+                    { id: "WC-2026-0417", patientEn: "Tariq Mansoor", patientAr: "طار & صر", procedureEn: "Gallbladder Removal", procedureAr: "استئصا ا&رارة", sentTime: "2d ago", status: "pending" as const },
                   ].map(r => {
                     return (
                       <div key={r.id} className="flex items-center gap-4 p-4 bg-white rounded-2xl border" style={{ borderColor: "#D8E8EF" }}>
@@ -141,7 +125,7 @@ export default function App() {
                         </div>
                         <StatusBadge status={r.status} lang={lang} />
                         <button className="px-3 py-1.5 rounded-xl text-xs font-semibold" style={{ background: "#EAF6FF", color: "#2F90C7" }}>
-                          {isRTL ? "Ø¥Ø¹Ø§Ø¯Ø© Ø§Ù„Ø¥Ø±Ø³Ø§Ù„" : "Resend"}
+                          {isRTL ? "إعادة اإرسا" : "Resend"}
                         </button>
                       </div>
                     );
@@ -161,10 +145,11 @@ export default function App() {
       )}
 
       {/* Patient link experience */}
-      {mode === "patient" && <PatientLink />}
+      
     </div>
   );
 }
+
 
 
 
