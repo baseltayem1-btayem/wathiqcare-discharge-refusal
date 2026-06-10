@@ -1,5 +1,5 @@
 ﻿import { redirect } from "next/navigation";
-import FigmaWathiqCareApp from "@/components/wathiqcare-figma-uiux/App";
+import DoctorWorkspaceOnlyApp from "@/components/wathiqcare-figma-uiux/DoctorWorkspaceOnlyApp";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
@@ -13,11 +13,11 @@ export default async function InformedConsentsPage() {
   return (
     <section
       className="wathiqcare-figma-uiux-shell"
-      data-testid="wathiqcare-figma-uiux-design-system"
-      data-release-surface="figma-uiux-design-system"
-      aria-label="WathiqCare Figma UI UX Design System"
+      data-testid="doctor-workspace-route"
+      data-release-surface="doctor-workspace-only"
+      aria-label="WathiqCare Doctor Workspace"
     >
-      <FigmaWathiqCareApp />
+      <DoctorWorkspaceOnlyApp />
     </section>
   );
 }

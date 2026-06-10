@@ -18,7 +18,7 @@ const stepLabels = {
 export function PatientLink() {
   const [viewport, setViewport] = useState<Viewport>("mobile");
   const [step, setStep] = useState<Step>("language");
-  const [lang, setLang] = useState<"en" | "ar">("ar");
+  const [lang, setLang] = useState<"en" | "ar">("en");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [signed, setSigned] = useState(false);
   const [question, setQuestion] = useState("");
@@ -519,4 +519,5 @@ export function PatientLink() {
     </div>
   );
 }
+
 
