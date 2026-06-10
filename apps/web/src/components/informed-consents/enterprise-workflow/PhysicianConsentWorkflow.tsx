@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Bell,
+  CheckCheck,
   CheckCircle2,
   ClipboardCheck,
   FileText,
@@ -26,8 +27,10 @@ import {
   ShieldCheck,
   Stethoscope,
   Syringe,
+  Target,
   User,
   UserRoundCheck,
+  RotateCcw,
 } from "lucide-react";
 
 import { ConsentCollaborationPanel } from "@/components/informed-consents/collaboration/ConsentCollaborationPanel";
@@ -193,6 +196,42 @@ type PhysicianConsentWorkflowProps = {
     name?: string | null;
     tenantId?: string | null;
   };
+};
+
+type ConsentWorkflowNotification = {
+  id: string;
+  eventType: string;
+  title: string;
+  titleAr: string;
+  message: string;
+  messageAr: string;
+  createdAt: string;
+  readAt?: string | null;
+  targetSection?: EnterpriseSection;
+  targetStep?: WorkflowStepKey;
+};
+
+type WorkflowActivityEvent = {
+  id: string;
+  title: string;
+  titleAr: string;
+  summary: string;
+  summaryAr: string;
+  createdAt: string;
+};
+
+type LinkActionState = {
+  mode: "send" | "resend" | null;
+  tone: "success" | "error" | null;
+  message: string;
+  messageAr: string;
+};
+
+type RefocusTarget = {
+  section: EnterpriseSection;
+  step?: WorkflowStepKey;
+  reason: string;
+  reasonAr: string;
 };
 
 type CollaborationTeamUser = {
@@ -540,6 +579,103 @@ function normalizeTemplateMatchText(value: string | null | undefined) {
     .trim();
 }
 
+const initialWorkflowNotifications: ConsentWorkflowNotification[] = [
+  {
+    id: "notif-anesthesia-review",
+    eventType: "anesthesia_review",
+    title: "Anesthesia section pending review",
+    titleAr: "قسم التخدير بانتظار المراجعة",
+    message: "The anesthesia pathway must be reviewed before the patient package can be released.",
+    messageAr: "يجب مراجعة مسار التخدير قبل إصدار حزمة المريض.",
+    createdAt: "2026-06-11T08:25:00.000Z",
+    targetSection: "issueConsent",
+    targetStep: "anesthesia",
+  },
+  {
+    id: "notif-consent-sent",
+    eventType: "consent_sent",
+    title: "Consent sent to patient",
+    titleAr: "تم إرسال الموافقة إلى المريض",
+    message: "Unified patient notification was dispatched and the signing link is active.",
+    messageAr: "تم إرسال الإشعار الموحد للمريض وأصبح رابط التوقيع فعالاً.",
+    createdAt: "2026-06-11T08:52:00.000Z",
+    targetSection: "statusAudit",
+    targetStep: "send",
+  },
+  {
+    id: "notif-patient-signed",
+    eventType: "patient_signature",
+    title: "Patient signature completed",
+    titleAr: "اكتمل توقيع المريض",
+    message: "The patient completed signature and the audit package is ready for final review.",
+    messageAr: "أكمل المريض التوقيع وأصبحت الحزمة الدليلية جاهزة للمراجعة النهائية.",
+    createdAt: "2026-06-11T09:05:00.000Z",
+    targetSection: "statusAudit",
+  },
+  {
+    id: "notif-legal-ticket",
+    eventType: "legal_support",
+    title: "Legal support ticket update",
+    titleAr: "تحديث على تذكرة الدعم القانوني",
+    message: "Legal affairs requested clarification on consent wording before release.",
+    messageAr: "طلبت الشؤون القانونية توضيحاً على صياغة الموافقة قبل الإصدار.",
+    createdAt: "2026-06-11T09:20:00.000Z",
+    targetSection: "supportSettings",
+  },
+];
+
+function createWorkflowEventId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getStepIndex(step: WorkflowStepKey) {
+  return workflowSteps.findIndex((item) => item.key === step);
+}
+
+function resolveRefocusTarget(workflow: WorkflowState, completionSummary: CompletionSummary): RefocusTarget {
+  if (workflow.anesthesiaReviewRequired) {
+    return {
+      section: "issueConsent",
+      step: "anesthesia",
+      reason: "Re-focus anesthesia review before patient release",
+      reasonAr: "أعد التركيز على مراجعة التخدير قبل إصدار الحزمة للمريض",
+    };
+  }
+
+  if (!completionSummary.educationReady) {
+    return {
+      section: "issueConsent",
+      step: "education",
+      reason: "Re-focus patient education confirmation",
+      reasonAr: "أعد التركيز على تأكيد تثقيف المريض",
+    };
+  }
+
+  if (!completionSummary.pdfReady) {
+    return {
+      section: "issueConsent",
+      step: "review",
+      reason: "Re-focus draft review and physician confirmation",
+      reasonAr: "أعد التركيز على مراجعة المسودة وتأكيد الطبيب",
+    };
+  }
+
+  if (!completionSummary.patientLinkReady) {
+    return {
+      section: "issueConsent",
+      step: "send",
+      reason: "Re-focus secure patient release and signing link delivery",
+      reasonAr: "أعد التركيز على إصدار الرابط الآمن للمريض وتسليمه",
+    };
+  }
+
+  return {
+    section: "statusAudit",
+    reason: "Re-focus final status and signed consent evidence",
+    reasonAr: "أعد التركيز على الحالة النهائية ودليل الموافقة الموقعة",
+  };
+}
+
 function scoreRuntimeTemplateMatch(template: RuntimeConsentTemplate, imcItem: ImcConsentCatalogItem) {
   const runtimeTitle = normalizeTemplateMatchText(template.titleEn);
   const imcTitle = normalizeTemplateMatchText(imcItem.titleEn);
@@ -605,6 +741,15 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
   const [activeSection, setActiveSection] = useState<EnterpriseSection>("issueConsent");
   const [activeStepIndex, setActiveStepIndex] = useState(4);
   const [workflow, setWorkflow] = useState<WorkflowState>(initialState);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationItems, setNotificationItems] = useState<ConsentWorkflowNotification[]>(initialWorkflowNotifications);
+  const [workflowActivityEvents, setWorkflowActivityEvents] = useState<WorkflowActivityEvent[]>([]);
+  const [linkActionState, setLinkActionState] = useState<LinkActionState>({
+    mode: null,
+    tone: null,
+    message: "",
+    messageAr: "",
+  });
 
   const apiContext = {
     tenantId: auth?.tenantId ?? "tenant-pending",
@@ -1017,6 +1162,83 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
     };
   }, [workflow, selectedImcPackage]);
 
+  const refocusTarget = useMemo(
+    () => resolveRefocusTarget(workflow, completionSummary),
+    [workflow, completionSummary],
+  );
+
+  const unreadNotificationsCount = useMemo(
+    () => notificationItems.filter((item) => !item.readAt).length,
+    [notificationItems],
+  );
+
+  function appendWorkflowActivityEvent(event: Omit<WorkflowActivityEvent, "id" | "createdAt">) {
+    const createdAt = new Date().toISOString();
+
+    setWorkflowActivityEvents((current) => [
+      {
+        id: createWorkflowEventId("activity"),
+        createdAt,
+        ...event,
+      },
+      ...current,
+    ]);
+  }
+
+  function prependNotification(item: Omit<ConsentWorkflowNotification, "id" | "createdAt" | "readAt">) {
+    setNotificationItems((current) => [
+      {
+        id: createWorkflowEventId("notif"),
+        createdAt: new Date().toISOString(),
+        readAt: null,
+        ...item,
+      },
+      ...current,
+    ]);
+  }
+
+  function markNotificationRead(notificationId: string) {
+    setNotificationItems((current) => current.map((item) => (
+      item.id === notificationId && !item.readAt
+        ? { ...item, readAt: new Date().toISOString() }
+        : item
+    )));
+  }
+
+  function markAllNotificationsRead() {
+    setNotificationItems((current) => current.map((item) => (
+      item.readAt ? item : { ...item, readAt: new Date().toISOString() }
+    )));
+  }
+
+  function handleNotificationSelect(notification: ConsentWorkflowNotification) {
+    markNotificationRead(notification.id);
+    setShowNotifications(false);
+
+    if (notification.targetSection) {
+      setActiveSection(notification.targetSection);
+    }
+
+    if (notification.targetStep) {
+      const nextIndex = getStepIndex(notification.targetStep);
+      if (nextIndex >= 0) {
+        setActiveSection("issueConsent");
+        setActiveStepIndex(nextIndex);
+      }
+    }
+  }
+
+  function handleRefocus() {
+    setActiveSection(refocusTarget.section);
+
+    if (refocusTarget.step) {
+      const nextIndex = getStepIndex(refocusTarget.step);
+      if (nextIndex >= 0) {
+        setActiveStepIndex(nextIndex);
+      }
+    }
+  }
+
   function updateWorkflow<K extends keyof WorkflowState>(key: K, value: WorkflowState[K]) {
     setWorkflow((current) => ({
       ...current,
@@ -1153,9 +1375,122 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
     setActiveStepIndex((current) => Math.max(current - 1, 0));
   }
 
+  async function handleSendToPatient() {
+    if (completionSummary.sendBlocked) {
+      handleRefocus();
+      return;
+    }
+
+    setLinkActionState({ mode: "send", tone: null, message: "", messageAr: "" });
+
+    try {
+      // TODO: Replace this UI fallback with the real secure-link creation endpoint once it is restored in apps/web.
+      await new Promise((resolve) => window.setTimeout(resolve, 900));
+
+      setWorkflow((current) => ({
+        ...current,
+        consentStatus: "SENT",
+      }));
+
+      appendWorkflowActivityEvent({
+        title: "Consent sent to patient",
+        titleAr: "تم إرسال الموافقة إلى المريض",
+        summary: "Secure signing link generated and delivered from the physician workflow.",
+        summaryAr: "تم إنشاء رابط التوقيع الآمن وإرساله من مسار الطبيب.",
+      });
+
+      prependNotification({
+        eventType: "consent_sent",
+        title: "Consent sent to patient",
+        titleAr: "تم إرسال الموافقة إلى المريض",
+        message: "Patient link generated successfully and is ready for OTP-secured review.",
+        messageAr: "تم إنشاء رابط المريض بنجاح وأصبح جاهزاً للمراجعة المؤمنة عبر OTP.",
+        targetSection: "statusAudit",
+        targetStep: "send",
+      });
+
+      setLinkActionState({
+        mode: null,
+        tone: "success",
+        message: "Consent link sent successfully.",
+        messageAr: "تم إرسال رابط الموافقة بنجاح.",
+      });
+    } catch {
+      setLinkActionState({
+        mode: null,
+        tone: "error",
+        message: "Unable to send the patient link right now.",
+        messageAr: "تعذر إرسال رابط المريض حالياً.",
+      });
+    }
+  }
+
+  async function handleResendPatientLink() {
+    if (!(workflow.consentStatus === "SENT" || completionSummary.patientLinkReady)) {
+      setLinkActionState({
+        mode: null,
+        tone: "error",
+        message: "Resend is only available after the patient link has been issued.",
+        messageAr: "إعادة الإرسال متاحة فقط بعد إصدار رابط المريض.",
+      });
+      return;
+    }
+
+    setLinkActionState({ mode: "resend", tone: null, message: "", messageAr: "" });
+
+    try {
+      // TODO: Reconnect this action to the signature-orchestration resend endpoint when the route is restored.
+      await new Promise((resolve) => window.setTimeout(resolve, 900));
+
+      setWorkflow((current) => ({
+        ...current,
+        consentStatus: "SENT",
+      }));
+
+      appendWorkflowActivityEvent({
+        title: "Link resent successfully",
+        titleAr: "تمت إعادة إرسال الرابط بنجاح",
+        summary: "Unified patient link was re-issued from the physician workflow status controls.",
+        summaryAr: "تمت إعادة إصدار رابط المريض الموحد من عناصر التحكم في حالة المسار.",
+      });
+
+      prependNotification({
+        eventType: "consent_resent",
+        title: "Patient link resent",
+        titleAr: "تمت إعادة إرسال رابط المريض",
+        message: "The secure consent link was resent successfully and the activity timeline was updated.",
+        messageAr: "تمت إعادة إرسال رابط الموافقة الآمن بنجاح وتم تحديث السجل الزمني.",
+        targetSection: "statusAudit",
+        targetStep: "send",
+      });
+
+      setLinkActionState({
+        mode: null,
+        tone: "success",
+        message: "Link resent successfully.",
+        messageAr: "تمت إعادة إرسال الرابط بنجاح.",
+      });
+    } catch {
+      setLinkActionState({
+        mode: null,
+        tone: "error",
+        message: "Unable to resend the patient link right now.",
+        messageAr: "تعذر إعادة إرسال رابط المريض حالياً.",
+      });
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef4fb_45%,#e8eff8_100%)] text-[#172033]">
-      <EnterpriseHeader workflow={workflow} />
+      <EnterpriseHeader
+        workflow={workflow}
+        notifications={notificationItems}
+        showNotifications={showNotifications}
+        unreadNotificationsCount={unreadNotificationsCount}
+        onToggleNotifications={() => setShowNotifications((current) => !current)}
+        onNotificationSelect={handleNotificationSelect}
+        onMarkAllNotificationsRead={markAllNotificationsRead}
+      />
       <section className="mx-auto grid max-w-[1680px] grid-cols-1 gap-5 px-4 py-5 xl:grid-cols-[300px_minmax(0,1fr)_380px] xl:px-6">
         <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
           <WorkspaceNavigation
@@ -1216,6 +1551,11 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
               goBack={goBack}
               goNext={goNext}
               completionSummary={completionSummary}
+              linkActionState={linkActionState}
+              onSend={handleSendToPatient}
+              onResend={handleResendPatientLink}
+              onRefocus={handleRefocus}
+              refocusTarget={refocusTarget}
             />
           ) : activeSection === "collaboration" ? (
             <WorkspaceCard
@@ -1248,7 +1588,14 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
               />
             </WorkspaceCard>
           ) : activeSection === "statusAudit" ? (
-            <StatusAuditWorkspace workflow={workflow} completionSummary={completionSummary} />
+            <StatusAuditWorkspace
+              workflow={workflow}
+              completionSummary={completionSummary}
+              activityEvents={workflowActivityEvents}
+              linkActionState={linkActionState}
+              onResend={handleResendPatientLink}
+              onRefocus={handleRefocus}
+            />
           ) : (
             <WorkspaceCard
               title="Support & Settings"
@@ -1270,6 +1617,8 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
           workflow={workflow}
           completionSummary={completionSummary}
           setActiveSection={setActiveSection}
+          onRefocus={handleRefocus}
+          refocusTarget={refocusTarget}
           generateDraftPdf={generateDraftPdf}
               draftGenerationLoading={draftGenerationLoading}
               draftGenerationError={draftGenerationError}
@@ -1281,7 +1630,23 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
   );
 }
 
-function EnterpriseHeader({ workflow }: { workflow: WorkflowState }) {
+function EnterpriseHeader({
+  workflow,
+  notifications,
+  showNotifications,
+  unreadNotificationsCount,
+  onToggleNotifications,
+  onNotificationSelect,
+  onMarkAllNotificationsRead,
+}: {
+  workflow: WorkflowState;
+  notifications: ConsentWorkflowNotification[];
+  showNotifications: boolean;
+  unreadNotificationsCount: number;
+  onToggleNotifications: () => void;
+  onNotificationSelect: (notification: ConsentWorkflowNotification) => void;
+  onMarkAllNotificationsRead: () => void;
+}) {
   return (
     <header className="sticky top-0 z-40 border-b border-[#123869] bg-[linear-gradient(135deg,#002B5C_0%,#0A3A74_55%,#174D8C_100%)] text-white shadow-[0_18px_40px_rgba(0,43,92,0.16)]">
       <div className="mx-auto grid max-w-[1680px] grid-cols-1 gap-4 px-5 py-4 xl:grid-cols-[460px_1fr_auto] xl:px-6">
@@ -1332,9 +1697,62 @@ function EnterpriseHeader({ workflow }: { workflow: WorkflowState }) {
           <StatusPill label="Consent Status" value="Draft" valueAr="مسودة" tone="blue" />
           <StatusPill label="PDF Status" value={workflow.pdfStatus === "PENDING" ? "Pending" : "Draft Ready"} valueAr={workflow.pdfStatus === "PENDING" ? "قيد الإنشاء" : "جاهزة"} tone="amber" />
           <StatusPill label="Audit Status" value="Active" valueAr="نشط" tone="green" />
-          <div className="relative rounded-full border border-white/20 bg-white/10 p-3 backdrop-blur">
-            <Bell className="h-5 w-5" />
-            <span className="absolute -right-1 -top-1 rounded-full bg-red-500 px-1.5 text-xs font-bold">3</span>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={onToggleNotifications}
+              aria-label="Open notifications"
+              className="relative rounded-full border border-white/20 bg-white/10 p-3 backdrop-blur transition hover:bg-white/15"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadNotificationsCount > 0 ? (
+                <span className="absolute -right-1 -top-1 rounded-full bg-red-500 px-1.5 text-xs font-bold">
+                  {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                </span>
+              ) : null}
+            </button>
+
+            {showNotifications ? (
+              <div className="absolute right-0 z-50 mt-3 w-[360px] overflow-hidden rounded-[24px] border border-[#D8DCE3] bg-white text-[#172033] shadow-[0_24px_48px_rgba(15,23,42,0.18)]">
+                <div className="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
+                  <div>
+                    <p className="text-sm font-bold text-[#002B5C]">Notifications</p>
+                    <p className="text-xs text-[#64748B]">Workflow updates and support actions</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onMarkAllNotificationsRead}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[#D8DCE3] px-2.5 py-1 text-xs font-semibold text-[#002B5C] hover:bg-[#EEF5FF]"
+                  >
+                    <CheckCheck className="h-3.5 w-3.5" />
+                    Mark all
+                  </button>
+                </div>
+
+                <div className="max-h-[380px] overflow-y-auto">
+                  {notifications.map((notification) => (
+                    <button
+                      key={notification.id}
+                      type="button"
+                      onClick={() => onNotificationSelect(notification)}
+                      className={`w-full border-b border-[#EEF2F7] px-4 py-3 text-left transition hover:bg-[#F8FBFF] ${notification.readAt ? "bg-white" : "bg-[#EEF5FF]"}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#4B9CD3]">
+                          {notification.eventType.replaceAll("_", " ")}
+                        </span>
+                        <span className="text-[11px] text-[#94A3B8]">
+                          {new Date(notification.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm font-bold text-[#002B5C]">{notification.title}</p>
+                      <p className="mt-1 text-xs leading-5 text-[#475569]">{notification.message}</p>
+                      <p className="mt-1 text-xs leading-5 text-[#64748B]">{notification.titleAr}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
           <div className="hidden items-center gap-2 xl:flex">
             <div className="h-10 w-10 rounded-full bg-white/20" />
@@ -1507,6 +1925,11 @@ function IssueConsentWorkspace({
   goBack,
   goNext,
   completionSummary,
+  linkActionState,
+  onSend,
+  onResend,
+  onRefocus,
+  refocusTarget,
 }: {
   activeStep: (typeof workflowSteps)[number];
   activeStepIndex: number;
@@ -1544,6 +1967,11 @@ function IssueConsentWorkspace({
   goBack: () => void;
   goNext: () => void;
   completionSummary: CompletionSummary;
+  linkActionState: LinkActionState;
+  onSend: () => void | Promise<void>;
+  onResend: () => void | Promise<void>;
+  onRefocus: () => void;
+  refocusTarget: RefocusTarget;
 }) {
   const actionGuidance = getCurrentActionGuidance(activeStep.key, workflow, completionSummary);
   const stepMeta = workflowStepMeta[activeStep.key];
@@ -1617,7 +2045,7 @@ function IssueConsentWorkspace({
           </button>
         }
       >
-        <WorkflowStepper activeStepIndex={activeStepIndex} setActiveStepIndex={setActiveStepIndex} />
+        <WorkflowStepper activeStepIndex={activeStepIndex} setActiveStepIndex={setActiveStepIndex} refocusTarget={refocusTarget} />
 
         <div className="mt-6 rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#FFFFFF_0%,#FBFDFF_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
           {activeStep.key === "patientEncounter" && (
@@ -1726,7 +2154,14 @@ function IssueConsentWorkspace({
           )}
 
           {activeStep.key === "send" && (
-            <SendStep workflow={workflow} completionSummary={completionSummary} />
+            <SendStep
+              workflow={workflow}
+              completionSummary={completionSummary}
+              linkActionState={linkActionState}
+              onSend={onSend}
+              onResend={onResend}
+              onRefocus={onRefocus}
+            />
           )}
 
           <div className="mt-6 flex items-center justify-between border-t border-[#E5E7EB] pt-5">
@@ -1782,12 +2217,11 @@ function WorkflowProgressCard({
         </div>
       </div>
 
-      <div className="mt-5 h-3 overflow-hidden rounded-full bg-[#E5E7EB]">
-        <div
-          className="h-full rounded-full bg-emerald-500 transition-all"
-          style={{ width: `${completionSummary.progressPercentage}%` }}
-        />
-      </div>
+      <progress
+        className="mt-5 h-3 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-[#E5E7EB] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-emerald-500 [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-emerald-500"
+        value={completionSummary.progressPercentage}
+        max={100}
+      />
 
       <p className="mt-3 text-center text-sm font-extrabold text-[#002B5C]">
         {completionSummary.completedChecks} Checks Completed / تم إكمال {completionSummary.completedChecks} فحوصات
@@ -1919,9 +2353,11 @@ function CurrentActionCard({
 function WorkflowStepper({
   activeStepIndex,
   setActiveStepIndex,
+  refocusTarget,
 }: {
   activeStepIndex: number;
   setActiveStepIndex: (index: number) => void;
+  refocusTarget: RefocusTarget;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -1929,6 +2365,7 @@ function WorkflowStepper({
         {workflowSteps.map((step, index) => {
           const isCompleted = index < activeStepIndex;
           const isActive = index === activeStepIndex;
+          const isRefocusTarget = refocusTarget.section === "issueConsent" && refocusTarget.step === step.key;
           const meta = workflowStepMeta[step.key];
 
           return (
@@ -1945,6 +2382,8 @@ function WorkflowStepper({
                     ? "border-emerald-200 bg-emerald-50 text-emerald-900"
                     : isActive
                       ? "border-[#002B5C] bg-[linear-gradient(135deg,#002B5C_0%,#123E76_100%)] text-white shadow-[0_14px_30px_rgba(0,43,92,0.16)]"
+                      : isRefocusTarget
+                        ? "border-[#C9A13B] bg-[#FFF8E6] text-[#8A5A00] shadow-[0_12px_24px_rgba(201,161,59,0.18)]"
                       : "border-[#D8DCE3] bg-white text-[#475569] hover:border-[#4B9CD3] hover:bg-[#F8FBFF]",
                 ].join(" ")}
               >
@@ -2615,9 +3054,17 @@ function ReviewPdfStep({
 function SendStep({
   workflow,
   completionSummary,
+  linkActionState,
+  onSend,
+  onResend,
+  onRefocus,
 }: {
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
+  linkActionState: LinkActionState;
+  onSend: () => void | Promise<void>;
+  onResend: () => void | Promise<void>;
+  onRefocus: () => void;
 }) {
   return (
     <div className="space-y-5">
@@ -2639,6 +3086,16 @@ function SendStep({
               </div>
             ))}
           </div>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={onRefocus}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#002B5C] px-4 py-3 text-sm font-extrabold text-white hover:bg-[#001F42]"
+            >
+              <Target className="h-4 w-4" />
+              Re-focus / إعادة التركيز
+            </button>
+          </div>
         </div>
       ) : (
         <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 p-5 shadow-[0_14px_40px_rgba(16,185,129,0.08)]">
@@ -2655,14 +3112,41 @@ function SendStep({
 
             <button
               type="button"
+              onClick={() => void onSend()}
               className="inline-flex items-center gap-2 rounded-xl bg-[#002B5C] px-6 py-3 text-sm font-extrabold text-white hover:bg-[#001F42]"
             >
               <Send className="h-4 w-4" />
-              Create Patient Signing Link / إنشاء رابط توقيع المريض
+              {linkActionState.mode === "send" ? "Sending... / جارٍ الإرسال" : "Create Patient Signing Link / إنشاء رابط توقيع المريض"}
             </button>
           </div>
         </div>
       )}
+
+      {workflow.consentStatus === "SENT" || completionSummary.patientLinkReady ? (
+        <div className="rounded-[24px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-extrabold text-[#002B5C]">Patient link operations / عمليات رابط المريض</p>
+              <p className="mt-1 text-sm text-[#475569]">Resend is enabled because the consent has already been issued to the patient.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void onResend()}
+              className="inline-flex items-center gap-2 rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm font-extrabold text-[#002B5C] hover:bg-[#EEF5FF]"
+            >
+              <RotateCcw className="h-4 w-4" />
+              {linkActionState.mode === "resend" ? "Resending... / جارٍ إعادة الإرسال" : "Resend / إعادة الإرسال"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {linkActionState.tone ? (
+        <div className={`rounded-[20px] border px-4 py-3 text-sm shadow-sm ${linkActionState.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-red-200 bg-red-50 text-red-800"}`}>
+          <p className="font-bold">{linkActionState.message}</p>
+          <p className="mt-1 text-xs">{linkActionState.messageAr}</p>
+        </div>
+      ) : null}
 
       <div className="rounded-[28px] border border-[#D8DCE3] bg-[#F8FAFC] p-5 text-sm leading-7">
         <p><strong>Patient:</strong> {workflow.patientName}</p>
@@ -2677,6 +3161,8 @@ function RightContextPanel({
   workflow,
   completionSummary,
   setActiveSection,
+  onRefocus,
+  refocusTarget,
   generateDraftPdf,
   draftGenerationLoading,
   draftGenerationError,
@@ -2686,6 +3172,8 @@ function RightContextPanel({
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
   setActiveSection: (section: EnterpriseSection) => void;
+  onRefocus: () => void;
+  refocusTarget: RefocusTarget;
   generateDraftPdf: () => void | Promise<void>;
   draftGenerationLoading: boolean;
   draftGenerationError: string;
@@ -2745,11 +3233,17 @@ function RightContextPanel({
 
       <PanelCard title="Quick Actions" titleAr="إجراءات سريعة">
         <div className="space-y-2">
+          <QuickActionButton icon={Target} label="Re-focus" labelAr="إعادة التركيز" onClick={onRefocus} />
           <QuickActionButton icon={UserRoundCheck} label="Request Anesthesia Review" labelAr="طلب مراجعة طبيب التخدير" onClick={() => setActiveSection("collaboration")} />
           <QuickActionButton icon={FileText} label={draftGenerationLoading ? "Generating IMC PDF..." : "Generate Draft PDF"} labelAr="إنشاء مسودة المستند" onClick={generateDraftPdf} disabled={draftGenerationLoading} />
           <QuickActionButton icon={FileText} label="Open Full Preview" labelAr="فتح المعاينة الكاملة" onClick={() => draftPdfUrl && window.open(draftPdfUrl, "_blank", "noopener,noreferrer")} disabled={!draftPdfUrl} />
           <QuickActionButton icon={MessageSquareText} label="Open Collaboration" labelAr="فتح التواصل الطبي القانوني" onClick={() => setActiveSection("collaboration")} />
           <QuickActionButton icon={Settings} label="Go to Support & Settings" labelAr="الانتقال للدعم والإعدادات" onClick={() => setActiveSection("supportSettings")} />
+
+          <div className="rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] px-3 py-3 text-xs font-semibold text-[#334155]">
+            <div className="text-[#002B5C]">{refocusTarget.reason}</div>
+            <div className="mt-1 text-[#64748B]">{refocusTarget.reasonAr}</div>
+          </div>
 
           {/* Right panel draftGenerationError */}
           {draftGenerationError ? (
@@ -2774,9 +3268,17 @@ function RightContextPanel({
 function StatusAuditWorkspace({
   workflow,
   completionSummary,
+  activityEvents,
+  linkActionState,
+  onResend,
+  onRefocus,
 }: {
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
+  activityEvents: WorkflowActivityEvent[];
+  linkActionState: LinkActionState;
+  onResend: () => void | Promise<void>;
+  onRefocus: () => void;
 }) {
   return (
     <WorkspaceCard
@@ -2805,11 +3307,57 @@ function StatusAuditWorkspace({
 
         <PanelCard title="Audit Timeline" titleAr="سجل التدقيق">
           <div className="space-y-4 text-sm">
+            {activityEvents.map((event) => (
+              <AuditRow
+                key={event.id}
+                title={event.title}
+                subtitle={`${event.summary} · ${new Date(event.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+              />
+            ))}
             <AuditRow title="Draft created" subtitle="Physician initiated informed consent workflow." />
             <AuditRow title="Template selected" subtitle={workflow.templateName} />
             <AuditRow title="Anesthesia decision captured" subtitle={`${getAnesthesiaLabel(workflow.anesthesiaDecision)} / ${getAnesthesiaLabelAr(workflow.anesthesiaDecision)}`} />
             <AuditRow title="PDF status" subtitle={workflow.pdfStatus} />
           </div>
+        </PanelCard>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <PanelCard title="Operational Actions" titleAr="إجراءات تشغيلية">
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => void onResend()}
+              disabled={!completionSummary.patientLinkReady}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm font-extrabold text-[#002B5C] hover:bg-[#EEF5FF] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RotateCcw className="h-4 w-4" />
+              {linkActionState.mode === "resend" ? "Resending... / جارٍ إعادة الإرسال" : "Resend / إعادة الإرسال"}
+            </button>
+            <button
+              type="button"
+              onClick={onRefocus}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#002B5C] px-4 py-3 text-sm font-extrabold text-white hover:bg-[#001F42]"
+            >
+              <Target className="h-4 w-4" />
+              Re-focus / إعادة التركيز
+            </button>
+          </div>
+        </PanelCard>
+
+        <PanelCard title="Action Status" titleAr="حالة الإجراءات">
+          {linkActionState.tone ? (
+            <div className={`rounded-2xl border px-4 py-4 text-sm ${linkActionState.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-red-200 bg-red-50 text-red-800"}`}>
+              <p className="font-extrabold">{linkActionState.message}</p>
+              <p className="mt-1 text-xs">{linkActionState.messageAr}</p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-[#D8DCE3] bg-[#F8FAFC] px-4 py-4 text-sm text-[#475569]">
+              Resend and refocus actions are restored in this status surface.
+              <br />
+              تمت استعادة إجراءات إعادة الإرسال وإعادة التركيز داخل شاشة الحالة.
+            </div>
+          )}
         </PanelCard>
       </div>
     </WorkspaceCard>

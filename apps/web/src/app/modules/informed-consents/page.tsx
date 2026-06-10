@@ -34,7 +34,7 @@ const cards = [
     metric: "Audit Ready"
   },
   {
-    title: "Settings & Support",
+    title: "Support & Settings",
     href: "/modules/informed-consents/settings",
     label: "Open Support",
     description: "Legal support, technical support, configuration, and governance requests.",

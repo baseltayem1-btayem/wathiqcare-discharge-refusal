@@ -46,7 +46,7 @@ const panelCards: Array<{
   },
   {
     key: "legal-consultation",
-    title: "Legal Consultation",
+    title: "Request Legal Consultation",
     titleAr: "طلب استشارة قانونية",
     description: "Submit a legal consultation request related to consent wording, risk, or sufficiency.",
     descriptionAr: "إرسال طلب استشارة قانونية متعلق بصياغة الموافقة أو المخاطر أو الكفاية النظامية.",
@@ -226,7 +226,7 @@ export function EnterpriseSupportSettingsPanel({
               {activeMode === "legal-support"
                 ? isAr ? "الدعم القانوني" : "Legal Support"
                 : activeMode === "legal-consultation"
-                  ? isAr ? "طلب استشارة قانونية" : "Legal Consultation Request"
+                  ? isAr ? "طلب استشارة قانونية" : "Request Legal Consultation"
                   : isAr ? "فتح تذكرة دعم فني" : "Technical Support Ticket"}
             </h3>
           </div>

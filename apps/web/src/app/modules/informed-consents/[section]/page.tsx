@@ -1,5 +1,6 @@
 import ModulePlaceholderPage from "@/components/ModulePlaceholderPage";
 import AccessDenied from "@/components/AccessDenied";
+import FinalInformedConsentsModule from "@/components/informed-consents/FinalInformedConsentsModule";
 import { canAccessModule } from "@/lib/modules/catalog";
 import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 import { notFound } from "next/navigation";
@@ -48,6 +49,10 @@ export default async function InformedConsentSectionPage({ params }: { params: P
 
   if (!canAccessModule("informed-consents", { role: auth.role, platformRole: auth.platform_role })) {
     return <AccessDenied resource="Informed Consents Module" backHref="/modules" backLabel="العودة إلى الوحدات" />;
+  }
+
+  if (section === "create") {
+    return <FinalInformedConsentsModule auth={auth} />;
   }
 
   return <ModulePlaceholderPage auth={auth} moduleKey="informed-consents" pageTitle={config.title} pageDescription={config.description} menuItems={MENU_ITEMS} />;
