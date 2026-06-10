@@ -510,7 +510,7 @@ export function PatientLink() {
                 {isRTL ? "آ&  &شفر ⬢ WathiqCare" : "Secure ⬢ WathiqCare"}
               </div>
               <div className="flex items-center gap-1 text-xs" style={{ color: "#19A978" }}>
-                <Lock size={11} /> {isRTL ? "&ح&`" : "Secure"}
+                <Lock size={11} /> {isRTL ? "آمن" : "Secure"}
               </div>
             </div>
           )}

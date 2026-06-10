@@ -32,8 +32,8 @@ const riskLabel: Record<string, { en: string; ar: string }> = {
 
 const educationMaterials = [
   { id: "a1", titleEn: "Pre-operative Instructions", titleAr: "تع`&ات &ا ب اع&`ة", typeEn: "PDF Guide", typeAr: "د` PDF", duration: "5 min" },
-  { id: "a2", titleEn: "What to Expect During Surgery", titleAr: "&ا `&ْ  تع! أث اء اجراحة", typeEn: "Video", typeAr: "ف`د`", duration: "3 min" },
-  { id: "a3", titleEn: "Recovery & Post-op Care", titleAr: "اتعاف` ارعا`ة بعد اع&`ة", typeEn: "Infographic", typeAr: "إ فغراف`ْ", duration: "2 min" },
+  { id: "a2", titleEn: "What to Expect During Surgery", titleAr: "&ا `&ْ  تع! أث اء اجراحة", typeEn: "Video", typeAr: "فيديو", duration: "3 min" },
+  { id: "a3", titleEn: "Recovery & Post-op Care", titleAr: "اتعاف` ارعا`ة بعد اع&`ة", typeEn: "Infographic", typeAr: "إنفوجرافيك", duration: "2 min" },
 ];
 
 export function CreateConsent({ lang }: Props) {
