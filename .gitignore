@@ -250,3 +250,8 @@ apps/web/artifacts/promissory-evidence/
 
 # Local Figma restore backups
 backups/figma-restore-20260608/
+
+# WathiqCare — never commit these env files (contain real production secrets)
+.env.staging
+.env.vercel.prod.readonly
+.env.production*
