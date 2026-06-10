@@ -16,7 +16,7 @@ import { AuditTrail } from "./components/screens/AuditTrail";
 import { Settings } from "./components/screens/Settings";
 import { PatientLink } from "./components/screens/PatientLink";
 
-type Mode = "doctor" | "patient";
+type Mode = "doctor" ;
 
 const screenTitles: Record<DoctorScreen, { en: string; ar: string; subEn?: string; subAr?: string }> = {
   "home": { en: "Doctor Workspace", ar: "Ù…Ø³Ø§Ø­Ø© Ø§Ù„Ø·Ø¨ÙŠØ¨", subEn: "Tuesday, June 9, 2026", subAr: "Ø§Ù„Ø«Ù„Ø§Ø«Ø§Ø¡ Ù© ÙŠÙˆÙ†ÙŠÙˆ Ù¢Ù Ù¢Ù¦" },
@@ -165,6 +165,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

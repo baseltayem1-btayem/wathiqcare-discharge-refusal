@@ -15,7 +15,7 @@
       <section
         style={{
           width: "100%",
-          maxWidth: 420,
+          maxWidth: 430,
           borderRadius: 24,
           background: "#FFFFFF",
           padding: 28,
@@ -25,8 +25,8 @@
       >
         <div
           style={{
-            width: 70,
-            height: 70,
+            width: 72,
+            height: 72,
             margin: "0 auto 18px",
             borderRadius: 22,
             background: "linear-gradient(135deg,#123B5C,#12B7B5)",
