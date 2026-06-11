@@ -69,15 +69,51 @@ export default function CriticalCareConsentPreviewPage() {
 
         {payload && (
           <div className="rounded-xl border border-[#D8DCE3] bg-white p-5">
-            <h2 className="text-sm font-semibold text-[#002B5C] mb-3">
-              Captured Preview Payload
-            </h2>
-            <pre className="max-h-96 overflow-auto rounded-lg bg-[#0B1220] p-4 text-xs text-white">
-              {JSON.stringify(payload, null, 2)}
-            </pre>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A13B]">
+                  Preview Completed
+                </p>
+                <h2 className="mt-1 text-lg font-semibold text-[#002B5C]">
+                  Critical Care Consent Captured Successfully
+                </h2>
+                <p className="mt-2 text-sm text-[#4B5563]">
+                  The selected Critical Care Consent template data has been captured for review only.
+                  No patient data was stored and no database write was performed.
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-[#ECFDF3] px-3 py-2 text-xs font-semibold text-[#027A48]">
+                Review Only
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] p-3">
+                <p className="text-xs text-[#6B7280]">Template</p>
+                <p className="mt-1 text-sm font-semibold text-[#002B5C]">
+                  Critical Care Consent
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] p-3">
+                <p className="text-xs text-[#6B7280]">Form Code</p>
+                <p className="mt-1 text-sm font-semibold text-[#002B5C]">
+                  IMC MR 1363
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] p-3">
+                <p className="text-xs text-[#6B7280]">Version</p>
+                <p className="mt-1 text-sm font-semibold text-[#002B5C]">
+                  Jan 2026
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>
     </main>
   );
 }
+
