@@ -18,6 +18,9 @@ export default function CriticalCareConsentPreviewPage() {
             <h1 className="text-2xl font-semibold text-[#002B5C]">
               Critical Care Consent Digital Template
             </h1>
+            <div className="mt-3 inline-flex items-center rounded-full border border-[#C9A13B]/40 bg-[#C9A13B]/10 px-3 py-1 text-xs font-semibold text-[#8A6A12]">
+              Approved IMC Form Code: IMC-MR-1363
+            </div>
             <p className="text-sm text-[#6B7280] mt-1">
               IMC MR 1363 · Jan 2026 · No patient data · No database write
             </p>
@@ -116,4 +119,5 @@ export default function CriticalCareConsentPreviewPage() {
     </main>
   );
 }
+
 
