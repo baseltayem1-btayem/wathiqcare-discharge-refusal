@@ -222,15 +222,15 @@ export async function isConsentCatalogCapable(
       Array<{ table_name: string; row_count: number }>
     >(
       `
-        SELECT 'consent_categories' AS table_name, COUNT(*)::int AS row_count FROM consent_categories
+        SELECT 'consent_categories' AS table_name, COUNT(*)::int AS row_count FROM public.consent_categories
         UNION ALL
-        SELECT 'consent_templates' AS table_name, COUNT(*)::int AS row_count FROM consent_templates
+        SELECT 'consent_templates' AS table_name, COUNT(*)::int AS row_count FROM public.consent_templates
         UNION ALL
-        SELECT 'consent_template_versions' AS table_name, COUNT(*)::int AS row_count FROM consent_template_versions
+        SELECT 'consent_template_versions' AS table_name, COUNT(*)::int AS row_count FROM public.consent_template_versions
         UNION ALL
-        SELECT 'consent_template_sections' AS table_name, COUNT(*)::int AS row_count FROM consent_template_sections
+        SELECT 'consent_template_sections' AS table_name, COUNT(*)::int AS row_count FROM public.consent_template_sections
         UNION ALL
-        SELECT 'consent_template_localizations' AS table_name, COUNT(*)::int AS row_count FROM consent_template_localizations
+        SELECT 'consent_template_localizations' AS table_name, COUNT(*)::int AS row_count FROM public.consent_template_localizations
       `,
     );
 
@@ -262,8 +262,8 @@ export async function isConsentCatalogCapable(
           t.tenant_id,
           t.current_version_id,
           v.status::text AS version_status
-        FROM consent_templates t
-        LEFT JOIN consent_template_versions v
+        FROM public.consent_templates t
+        LEFT JOIN public.consent_template_versions v
           ON v.id = t.current_version_id
         WHERE t.template_code = $1
           AND t.status IN ('ACTIVE', 'APPROVED')
@@ -884,3 +884,4 @@ export async function listRuntimeConsentTemplates(
 
   return mapped;
 }
+
