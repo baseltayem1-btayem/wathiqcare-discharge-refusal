@@ -172,6 +172,9 @@ const patient = builderState.patient || {};
   const procedureName = isAr
     ? safeText(procedure.nameAr, safeText(procedure.name, "\u063a\u064a\u0631 \u0645\u062f\u062e\u0644"))
     : safeText(procedure.name, "Not selected");
+  const pdfPreviewUrl = linkedDocumentId
+    ? `/api/modules/informed-consents/documents/${encodeURIComponent(linkedDocumentId)}/pdf?lang=bilingual`
+    : "";
 
   const handleComplete = () => {
     onComplete("preview", ["v14"], {
@@ -345,7 +348,7 @@ const patient = builderState.patient || {};
             </div>
           </div>
 
-          <div className="p-6 overflow-y-auto" style={{ maxHeight: "560px" }}>
+          <div className="max-h-[560px] overflow-y-auto p-6">
             {previewTab === "patient" && (
               <div className="space-y-4">
                 <div className="rounded-lg border border-[#D8DCE3] bg-[#F8F9FB] p-4">
@@ -426,11 +429,29 @@ const patient = builderState.patient || {};
 
                 {linkedDocumentId ? (
                   <div className="rounded-lg border border-[#D8DCE3] bg-white p-4">
-                    <p className="text-sm text-[#2F2F2F]">
-                      {isAr
-                        ? "\u064a\u0645\u0643\u0646 \u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0631\u0642\u0645 \u0627\u0644\u0645\u0633\u062a\u0646\u062f \u0623\u0639\u0644\u0627\u0647 \u0644\u0641\u062a\u062d \u0645\u0639\u0627\u064a\u0646\u0629 PDF \u0645\u0646 \u0645\u0633\u0627\u0631 \u0627\u0644\u0625\u0646\u062a\u0627\u062c \u0639\u0646\u062f \u062a\u0648\u0641\u0631\u0647\u0627."
-                        : "Use the linked document ID above to open the production PDF preview when available."}
-                    </p>
+                    <div className="space-y-3">
+                      <p className="text-sm text-[#2F2F2F]">
+                        {isAr
+                          ? "\u0647\u0630\u0647 \u0647\u064a \u0645\u0639\u0627\u064a\u0646\u0629 PDF \u0627\u0644\u0641\u0639\u0644\u064a\u0629 \u0644\u0644\u0645\u0633\u062a\u0646\u062f \u0627\u0644\u0645\u0631\u062a\u0628\u0637 \u0628\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0631\u0642\u0645 \u0627\u0644\u0645\u0633\u062a\u0646\u062f \u0627\u0644\u062d\u0642\u064a\u0642\u064a."
+                          : "This is the real PDF preview for the linked consent document using the actual document ID."}
+                      </p>
+                      <a
+                        href={pdfPreviewUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded border border-[#4B9CD3] px-3 py-2 text-sm font-medium text-[#002B5C] hover:bg-[#EBF3FB]"
+                      >
+                        {isAr ? '\u0641\u062a\u062d \u0645\u0644\u0641 PDF \u0627\u0644\u0641\u0639\u0644\u064a' : 'Open real PDF preview'}
+                        <Route className="h-4 w-4" />
+                      </a>
+                      {documentReady ? (
+                        <iframe
+                          title="consent-pdf-preview"
+                          src={pdfPreviewUrl}
+                          className="h-[640px] w-full rounded border border-[#D8DCE3] bg-white"
+                        />
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
               </div>

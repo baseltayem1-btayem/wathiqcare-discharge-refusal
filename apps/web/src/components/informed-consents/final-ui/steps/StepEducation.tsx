@@ -1,63 +1,266 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronRight, ChevronLeft, BookOpen, CheckCircle2, HelpCircle, Lightbulb } from 'lucide-react';
 import type { ConsentStep } from '../clinical/ClinicalTypes';
+import { criticalCareConsentTemplate } from '@/data/imc-digital-consent-templates';
 
 interface Props {
   lang: 'en' | 'ar';
   onNext: () => void;
   onPrev: () => void;
   onComplete: (step: ConsentStep, ids: string[], payload?: Record<string, unknown>) => void;
+  procedure?: Record<string, unknown>;
 }
 
-const educationSections = [
-  {
-    id: 'overview', icon: BookOpen, label: 'Procedure Overview', labelAr: 'نظرة عامة على الإجراء',
-    contentEn: 'Your surgeon will perform a laparoscopic cholecystectomy — a minimally invasive surgery to remove your gallbladder. Three to four small incisions are made in your abdomen. A tiny camera (laparoscope) and surgical tools are inserted to view and remove the gallbladder safely.',
-    contentAr: 'سيجري طبيبك استئصال المرارة بالمنظار — وهو عملية جراحية طفيفة التوغل لإزالة المرارة. تُجرى ثلاثة إلى أربعة شقوق صغيرة في بطنك. تُدخَل كاميرا صغيرة (منظار) وأدوات جراحية لعرض المرارة وإزالتها بأمان.',
-  },
-  {
-    id: 'benefits', icon: CheckCircle2, label: 'Benefits', labelAr: 'الفوائد',
-    contentEn: '• Relief from gallstone pain and symptoms\n• Minimal scarring (small incisions)\n• Short hospital stay (1–2 days)\n• Quick recovery (return to work in 1–2 weeks)\n• High success rate (>95%)',
-    contentAr: '• تخفيف آلام حصى المرارة والأعراض\n• ندوب ضئيلة (شقوق صغيرة)\n• فترة إقامة قصيرة بالمستشفى (1-2 أيام)\n• تعافٍ سريع (العودة للعمل خلال 1-2 أسبوع)\n• معدل نجاح مرتفع (أكثر من 95%)',
-  },
-  {
-    id: 'risks', icon: HelpCircle, label: 'Risks', labelAr: 'المخاطر',
-    contentEn: 'All surgeries carry some risk. For this procedure:\n• Bleeding or infection (1–3%)\n• Bile duct injury (0.3–0.5%) — may require additional surgery\n• Conversion to open surgery (5%)\n• Anesthesia-related complications\n• Your doctor will discuss your specific risks with you.',
-    contentAr: 'جميع العمليات تنطوي على بعض المخاطر. بالنسبة لهذا الإجراء:\n• النزيف أو العدوى (1-3%)\n• إصابة القناة الصفراوية (0.3-0.5%) — قد تستلزم جراحة إضافية\n• التحول إلى الجراحة المفتوحة (5%)\n• مضاعفات مرتبطة بالتخدير\n• سيناقش طبيبك معك مخاطرك المحددة.',
-  },
-  {
-    id: 'alternatives', icon: Lightbulb, label: 'Alternatives & No-Treatment', labelAr: 'البدائل وعدم العلاج',
-    contentEn: 'You have the right to refuse surgery. Alternative options discussed with your doctor include:\n• Dietary modifications (low-fat diet)\n• Pain management only\n• Open surgical cholecystectomy\n\nIf untreated, gallstones may cause serious complications including infection and perforation.',
-    contentAr: 'لديك الحق في رفض الجراحة. البدائل التي ناقشها معك طبيبك تشمل:\n• التعديلات الغذائية (نظام غذائي قليل الدهون)\n• إدارة الألم فقط\n• استئصال المرارة جراحياً مفتوحاً\n\nإذا لم تُعالَج، قد تسبب حصى المرارة مضاعفات خطيرة تشمل العدوى والانثقاب.',
-  },
-];
+type EducationSection = {
+  id: string;
+  icon: typeof BookOpen | typeof CheckCircle2 | typeof HelpCircle | typeof Lightbulb;
+  label: string;
+  labelAr: string;
+  contentEn: string;
+  contentAr: string;
+};
 
-const beforeAfter = [
-  {
-    phase: 'Before', phaseAr: 'قبل الإجراء', color: '#4B9CD3',
-    items: [
-      { en: 'Fast from midnight (no food or drink)', ar: 'الصيام من منتصف الليل (بدون طعام أو شراب)' },
-      { en: 'Stop blood thinners 5 days before', ar: 'إيقاف مضادات التخثر قبل 5 أيام' },
-      { en: 'Arrive 2 hours before scheduled surgery', ar: 'الحضور قبل ساعتين من الجراحة المحددة' },
-      { en: 'Arrange for a responsible adult to drive you home', ar: 'ترتيب وجود شخص بالغ مسؤول لأخذك إلى المنزل' },
-    ],
-  },
-  {
-    phase: 'After', phaseAr: 'بعد الإجراء', color: '#1A7F4B',
-    items: [
-      { en: 'Rest for 24–48 hours', ar: 'الراحة لمدة 24-48 ساعة' },
-      { en: 'No driving for 24 hours after anesthesia', ar: 'عدم قيادة السيارة لمدة 24 ساعة بعد التخدير' },
-      { en: 'Take prescribed pain medications as directed', ar: 'تناول أدوية الألم الموصوفة كما هو موجه' },
-      { en: 'Follow-up appointment in 1 week', ar: 'موعد متابعة بعد أسبوع واحد' },
-    ],
-  },
-];
+type EducationChecklistGroup = {
+  phase: string;
+  phaseAr: string;
+  headerClassName: string;
+  titleClassName: string;
+  items: Array<{ en: string; ar: string }>;
+};
 
-export function StepEducation({ lang, onNext, onPrev, onComplete }: Props) {
+function isCriticalCareProcedure(procedure?: Record<string, unknown>): boolean {
+  if (!procedure) {
+    return false;
+  }
+
+  const values = [
+    procedure.id,
+    procedure.code,
+    procedure.name,
+    procedure.category,
+    (procedure.digitalConsentTemplate as Record<string, unknown> | undefined)?.formCode,
+  ]
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => value.trim().toLowerCase());
+
+  return values.some(
+    (value) =>
+      value.includes('imc mr 1363') ||
+      value.includes('imc-mr-1363') ||
+      value.includes('critical care') ||
+      value.includes('intensive care') ||
+      value.includes('icu'),
+  );
+}
+
+function buildEducationContent(procedure?: Record<string, unknown>): {
+  titleEn: string;
+  titleAr: string;
+  sections: EducationSection[];
+  beforeAfter: EducationChecklistGroup[];
+} {
+  const criticalCareSelected = isCriticalCareProcedure(procedure);
+  const nameEn = String(procedure?.name || 'Planned procedure').trim() || 'Planned procedure';
+  const nameAr = String(procedure?.nameAr || 'الإجراء المخطط').trim() || 'الإجراء المخطط';
+  const descriptionEn = String(procedure?.description || '').trim();
+  const descriptionAr = String(procedure?.descriptionAr || '').trim();
+
+  if (!criticalCareSelected) {
+    return {
+      titleEn: nameEn,
+      titleAr: nameAr,
+      sections: [
+        {
+          id: 'overview',
+          icon: BookOpen,
+          label: 'Procedure Overview',
+          labelAr: 'نظرة عامة على الإجراء',
+          contentEn:
+            descriptionEn ||
+            `${nameEn} has been explained in clear language, including why it is recommended, what will happen, and what to expect before and after the procedure.`,
+          contentAr:
+            descriptionAr ||
+            `تم شرح ${nameAr} بلغة واضحة، بما في ذلك سبب التوصية به، وما الذي سيحدث، وما المتوقع قبل الإجراء وبعده.`,
+        },
+        {
+          id: 'benefits',
+          icon: CheckCircle2,
+          label: 'Expected Benefits',
+          labelAr: 'الفوائد المتوقعة',
+          contentEn:
+            `The clinical team explained the expected benefits of ${nameEn}, the intended therapeutic goal, and the expected short-term monitoring plan.`,
+          contentAr:
+            `شرح الفريق الطبي الفوائد المتوقعة من ${nameAr}، والهدف العلاجي المقصود، وخطة المتابعة المتوقعة على المدى القريب.`,
+        },
+        {
+          id: 'risks',
+          icon: HelpCircle,
+          label: 'Risks',
+          labelAr: 'المخاطر',
+          contentEn:
+            `Potential risks, complications, and safety precautions for ${nameEn} were discussed with the patient, including when urgent review may be required.`,
+          contentAr:
+            `تمت مناقشة المخاطر والمضاعفات المحتملة واحتياطات السلامة المتعلقة بـ ${nameAr} مع المريض، بما في ذلك الحالات التي قد تستدعي مراجعة عاجلة.`,
+        },
+        {
+          id: 'alternatives',
+          icon: Lightbulb,
+          label: 'Alternatives & Refusal',
+          labelAr: 'البدائل ومخاطر الرفض',
+          contentEn:
+            'Available alternatives, the option to defer or refuse treatment when clinically appropriate, and the consequences of delaying care were reviewed before signing.',
+          contentAr:
+            'تمت مراجعة البدائل المتاحة، وخيار تأجيل العلاج أو رفضه عندما يكون ذلك مناسباً سريرياً، والنتائج المحتملة لتأخير الرعاية قبل التوقيع.',
+        },
+      ],
+      beforeAfter: [
+        {
+          phase: 'Before',
+          phaseAr: 'قبل الإجراء',
+          headerClassName: 'bg-[#4B9CD3]/15',
+          titleClassName: 'text-[#4B9CD3]',
+          items: [
+            { en: 'Confirm understanding of the recommended procedure', ar: 'تأكيد فهم الإجراء الموصى به' },
+            { en: 'Review questions with the physician before signing', ar: 'مراجعة الأسئلة مع الطبيب قبل التوقيع' },
+            { en: 'Verify contact details and follow-up instructions', ar: 'التحقق من بيانات التواصل وتعليمات المتابعة' },
+            { en: 'Confirm any required preparation or restrictions', ar: 'تأكيد أي تحضيرات أو قيود مطلوبة' },
+          ],
+        },
+        {
+          phase: 'After',
+          phaseAr: 'بعد الإجراء',
+          headerClassName: 'bg-[#1A7F4B]/15',
+          titleClassName: 'text-[#1A7F4B]',
+          items: [
+            { en: 'Follow the physician’s discharge or monitoring plan', ar: 'اتباع خطة الطبيب للخروج أو المراقبة' },
+            { en: 'Use medications and supportive care as directed', ar: 'استخدام الأدوية والرعاية الداعمة حسب التوجيهات' },
+            { en: 'Escalate new symptoms or concerns promptly', ar: 'الإبلاغ السريع عن أي أعراض أو مخاوف جديدة' },
+            { en: 'Attend the scheduled follow-up review', ar: 'حضور موعد المتابعة المحدد' },
+          ],
+        },
+      ],
+    };
+  }
+
+  const digitalTemplate = (procedure?.digitalConsentTemplate as Record<string, unknown> | undefined) || {};
+  const selectedDetails = Array.isArray(digitalTemplate.selectedIcuProcedureDetails)
+    ? (digitalTemplate.selectedIcuProcedureDetails as Array<Record<string, unknown>>)
+    : criticalCareConsentTemplate.procedures.filter((item) => item.isDefaultSelected) as unknown as Array<Record<string, unknown>>;
+
+  const selectedProcedureLinesEn = selectedDetails.length
+    ? selectedDetails
+        .map((item, index) => {
+          const title = String((item.title as Record<string, unknown> | undefined)?.en || '').trim();
+          const uses = String((item.uses as Record<string, unknown> | undefined)?.en || '').trim();
+          return `${index + 1}. ${title}${uses ? `\nUse: ${uses}` : ''}`;
+        })
+        .join('\n\n')
+    : 'Selected ICU procedures will be reviewed before signing.';
+
+  const selectedProcedureLinesAr = selectedDetails.length
+    ? selectedDetails
+        .map((item, index) => {
+          const title = String((item.title as Record<string, unknown> | undefined)?.ar || '').trim();
+          const uses = String((item.uses as Record<string, unknown> | undefined)?.ar || '').trim();
+          return `${index + 1}. ${title}${uses ? `\nالاستخدام: ${uses}` : ''}`;
+        })
+        .join('\n\n')
+    : 'ستتم مراجعة إجراءات العناية المركزة المختارة قبل التوقيع.';
+
+  const selectedRiskLinesEn = selectedDetails.length
+    ? selectedDetails
+        .map((item, index) => {
+          const title = String((item.title as Record<string, unknown> | undefined)?.en || '').trim();
+          const risks = String((item.risks as Record<string, unknown> | undefined)?.en || '').trim();
+          return `${index + 1}. ${title}: ${risks}`;
+        })
+        .join('\n')
+    : 'Procedure-specific ICU risks will be reviewed with the patient or responsible representative.';
+
+  const selectedRiskLinesAr = selectedDetails.length
+    ? selectedDetails
+        .map((item, index) => {
+          const title = String((item.title as Record<string, unknown> | undefined)?.ar || '').trim();
+          const risks = String((item.risks as Record<string, unknown> | undefined)?.ar || '').trim();
+          return `${index + 1}. ${title}: ${risks}`;
+        })
+        .join('\n')
+    : 'ستتم مراجعة مخاطر إجراءات العناية المركزة الخاصة بالحالة مع المريض أو ممثله المسؤول.';
+
+  return {
+    titleEn: `${criticalCareConsentTemplate.title.en} / ${criticalCareConsentTemplate.formCode}`,
+    titleAr: `${criticalCareConsentTemplate.title.ar} / ${criticalCareConsentTemplate.formCode}`,
+    sections: [
+      {
+        id: 'overview',
+        icon: BookOpen,
+        label: 'ICU Procedure Overview',
+        labelAr: 'نظرة عامة على إجراءات العناية المركزة',
+        contentEn: `${criticalCareConsentTemplate.introduction.map((item) => item.en).join(' ')}\n\n${selectedProcedureLinesEn}`,
+        contentAr: `${criticalCareConsentTemplate.introduction.map((item) => item.ar).join(' ')}\n\n${selectedProcedureLinesAr}`,
+      },
+      {
+        id: 'benefits',
+        icon: CheckCircle2,
+        label: 'Clinical Purpose & Benefits',
+        labelAr: 'الغرض السريري والفوائد',
+        contentEn:
+          'These ICU interventions support monitoring, medication delivery, organ support, and urgent treatment decisions when clinically necessary. The physician explained why each selected intervention may be needed during critical care admission.',
+        contentAr:
+          'تدعم هذه الإجراءات في العناية المركزة المراقبة، وإعطاء الأدوية، ودعم الأعضاء، واتخاذ قرارات علاجية عاجلة عند الحاجة السريرية. وقد شرح الطبيب سبب الحاجة إلى كل إجراء مختار أثناء دخول الرعاية الحرجة.',
+      },
+      {
+        id: 'risks',
+        icon: HelpCircle,
+        label: 'Procedure Risks',
+        labelAr: 'مخاطر الإجراءات',
+        contentEn: selectedRiskLinesEn,
+        contentAr: selectedRiskLinesAr,
+      },
+      {
+        id: 'alternatives',
+        icon: Lightbulb,
+        label: 'Alternatives & Refusal',
+        labelAr: 'البدائل ومخاطر الرفض',
+        contentEn: criticalCareConsentTemplate.refusalSection.text.en,
+        contentAr: criticalCareConsentTemplate.refusalSection.text.ar,
+      },
+    ],
+    beforeAfter: [
+      {
+        phase: 'Before',
+        phaseAr: 'قبل الإجراء',
+        headerClassName: 'bg-[#4B9CD3]/15',
+        titleClassName: 'text-[#4B9CD3]',
+        items: [
+          { en: 'Review the selected ICU procedures and why they may be required', ar: 'مراجعة إجراءات العناية المركزة المختارة وسبب الحاجة إليها' },
+          { en: 'Confirm the responsible decision maker and interpreter needs', ar: 'تأكيد ممثل القرار المسؤول والحاجة إلى مترجم' },
+          { en: 'Discuss monitoring, lines, ventilation, and escalation plans', ar: 'مناقشة خطط المراقبة، والقساطر، والتهوية، والتصعيد العلاجي' },
+          { en: 'Ask questions before consent is finalized', ar: 'طرح الأسئلة قبل اعتماد الموافقة' },
+        ],
+      },
+      {
+        phase: 'After',
+        phaseAr: 'بعد الإجراء',
+        headerClassName: 'bg-[#1A7F4B]/15',
+        titleClassName: 'text-[#1A7F4B]',
+        items: [
+          { en: 'Expect continuous ICU monitoring and reassessment', ar: 'توقع المراقبة المستمرة وإعادة التقييم داخل العناية المركزة' },
+          { en: 'Less common procedures may require separate consent unless emergent', ar: 'قد تتطلب الإجراءات الأقل شيوعاً موافقة مستقلة ما لم تكن الحالة طارئة' },
+          { en: 'The care team will update the patient or responsible relative regularly', ar: 'سيقوم الفريق العلاجي بتحديث المريض أو القريب المسؤول بشكل منتظم' },
+          { en: 'Consent remains active through ICU treatment unless revoked', ar: 'تظل الموافقة سارية خلال علاج العناية المركزة ما لم يتم سحبها' },
+        ],
+      },
+    ],
+  };
+}
+
+export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: Props) {
   const [activeSection, setActiveSection] = useState('overview');
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
+  const educationContent = useMemo(() => buildEducationContent(procedure), [procedure]);
 
   const toggleCheck = (key: string) => {
     setCheckedItems(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
@@ -66,14 +269,16 @@ export function StepEducation({ lang, onNext, onPrev, onComplete }: Props) {
   const handleComplete = () => {
     onComplete('education', ['v13'], {
       education: {
-        sections: educationSections.map((section) => ({
+        titleEn: educationContent.titleEn,
+        titleAr: educationContent.titleAr,
+        sections: educationContent.sections.map((section) => ({
           id: section.id,
           label: section.label,
           labelAr: section.labelAr,
           contentEn: section.contentEn,
           contentAr: section.contentAr,
         })),
-        beforeAfter,
+        beforeAfter: educationContent.beforeAfter,
         checkedItems,
       },
     });
@@ -92,12 +297,12 @@ export function StepEducation({ lang, onNext, onPrev, onComplete }: Props) {
         <div className="bg-[#4B9CD3] px-5 py-3 flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-white" />
           <span className="text-white text-sm font-semibold">{lang === 'en' ? 'Patient Education Preview' : 'معاينة تثقيف المريض'}</span>
-          <span className="ml-auto text-blue-100 text-xs">{lang === 'en' ? 'Laparoscopic Cholecystectomy' : 'استئصال المرارة بالمنظار'}</span>
+          <span className="ml-auto text-blue-100 text-xs">{lang === 'en' ? educationContent.titleEn : educationContent.titleAr}</span>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-[#D8DCE3] overflow-x-auto">
-          {educationSections.map(s => (
+          {educationContent.sections.map(s => (
             <button key={s.id}
               onClick={() => setActiveSection(s.id)}
               className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeSection === s.id ? 'border-[#4B9CD3] text-[#002B5C]' : 'border-transparent text-[#6B7280] hover:text-[#2F2F2F]'}`}>
@@ -108,7 +313,7 @@ export function StepEducation({ lang, onNext, onPrev, onComplete }: Props) {
         </div>
 
         <div className="p-6">
-          {educationSections.map(s => activeSection === s.id && (
+          {educationContent.sections.map(s => activeSection === s.id && (
             <div key={s.id}>
               <div className={`mb-4 ${lang === 'ar' ? 'text-right' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
                 <p className="text-sm text-[#2F2F2F] leading-relaxed whitespace-pre-line">
@@ -126,10 +331,10 @@ export function StepEducation({ lang, onNext, onPrev, onComplete }: Props) {
 
       {/* Before / After checklist */}
       <div className="grid grid-cols-2 gap-4">
-        {beforeAfter.map(phase => (
+        {educationContent.beforeAfter.map(phase => (
           <div key={phase.phase} className="bg-white border border-[#D8DCE3] rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#D8DCE3]" style={{ background: `${phase.color}15` }}>
-              <span className="text-sm font-semibold" style={{ color: phase.color }}>
+            <div className={`px-4 py-3 border-b border-[#D8DCE3] ${phase.headerClassName}`}>
+              <span className={`text-sm font-semibold ${phase.titleClassName}`}>
                 {lang === 'en' ? phase.phase : phase.phaseAr}
               </span>
             </div>

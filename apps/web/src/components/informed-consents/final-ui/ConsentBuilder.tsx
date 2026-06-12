@@ -15,6 +15,7 @@ import { StepPreview } from "./steps/StepPreview";
 import { StepValidation } from "./steps/StepValidation";
 import { StepSend } from "./steps/StepSend";
 import { mockEncounters, mockPatients } from "./fixtures/patient-search";
+import { criticalCareConsentTemplate } from "@/data/imc-digital-consent-templates";
 
 const SAFE_CONSENT_STEP_AR_LABELS: Record<string, string> = {
   patient: "المريض",
@@ -160,9 +161,74 @@ function extractLinkedConsentDocumentId(payload: DraftConsentResponse | null): s
   return "";
 }
 
-function selectSurgicalTemplate(
+function isCriticalCareProcedure(procedure: Record<string, unknown> | undefined): boolean {
+  if (!procedure) {
+    return false;
+  }
+
+  const values = [
+    procedure.id,
+    procedure.code,
+    procedure.name,
+    procedure.category,
+    procedure.description,
+    (procedure.digitalConsentTemplate as Record<string, unknown> | undefined)?.formCode,
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim().toLowerCase());
+
+  return values.some(
+    (value) =>
+      value.includes("imc mr 1363") ||
+      value.includes("imc-mr-1363") ||
+      value.includes("critical care") ||
+      value.includes("intensive care") ||
+      value.includes("icu"),
+  );
+}
+
+function selectTemplateForProcedure(
   templates: RuntimeConsentTemplate[],
+  procedure: Record<string, unknown> | undefined,
 ): RuntimeConsentTemplate | undefined {
+  const criticalCareSelected = isCriticalCareProcedure(procedure);
+
+  if (criticalCareSelected) {
+    return templates.find((template) => {
+      const title = template.titleEn.toUpperCase();
+      const specialty = template.specialty.toUpperCase();
+      const department = String(template.department || "").toUpperCase();
+
+      return (
+        title.includes("CRITICAL CARE") ||
+        title.includes("INTENSIVE CARE") ||
+        specialty.includes("CRITICAL CARE") ||
+        specialty.includes("INTENSIVE CARE") ||
+        department.includes("ICU") ||
+        department.includes("CRITICAL_CARE")
+      );
+    });
+  }
+
+  const name = String(procedure?.name || "").toUpperCase();
+  const category = String(procedure?.category || "").toUpperCase();
+
+  const directMatch = templates.find((template) => {
+    const title = template.titleEn.toUpperCase();
+    const specialty = template.specialty.toUpperCase();
+    const department = String(template.department || "").toUpperCase();
+
+    return (
+      (name && title.includes(name)) ||
+      (category && specialty.includes(category)) ||
+      (category && department.includes(category.replace(/\s+/g, "_")))
+    );
+  });
+
+  if (directMatch) {
+    return directMatch;
+  }
+
   return (
     templates.find(
       (template) =>
@@ -227,18 +293,38 @@ export function ConsentBuilder({
       email: initialPatientEmail,
     },
     procedure: {
-      name: "Laparoscopic cholecystectomy",
-      nameAr: "استئصال المرارة بالمنظار",
-      description: "Laparoscopic cholecystectomy for symptomatic cholelithiasis.",
-      descriptionAr: "استئصال المرارة بالمنظار لعلاج حصوات المرارة المصحوبة بأعراض.",
-      requiresAnesthesia: true,
+      id: "IMC-MR-1363",
+      code: criticalCareConsentTemplate.formCode,
+      name: criticalCareConsentTemplate.title.en,
+      nameAr: criticalCareConsentTemplate.title.ar,
+      category: criticalCareConsentTemplate.specialty.en,
+      categoryAr: criticalCareConsentTemplate.specialty.ar,
+      description:
+        "Structured bilingual ICU consent template with selectable procedures, physician notes, refusal documentation, and production PDF rendering.",
+      descriptionAr:
+        "قالب موافقة رقمي ثنائي اللغة للعناية الحرجة يتضمن إجراءات قابلة للاختيار، ملاحظات الطبيب، توثيق الرفض، وإصدار PDF نهائي.",
+      requiresAnesthesia: false,
+      digitalConsentTemplate: {
+        id: criticalCareConsentTemplate.id,
+        formCode: criticalCareConsentTemplate.formCode,
+        version: criticalCareConsentTemplate.version,
+        title: criticalCareConsentTemplate.title,
+        source: criticalCareConsentTemplate.source,
+        selectedIcuProcedures: criticalCareConsentTemplate.procedures
+          .filter((procedure) => procedure.isDefaultSelected)
+          .map((procedure) => procedure.id),
+        selectedIcuProcedureDetails: criticalCareConsentTemplate.procedures.filter(
+          (procedure) => procedure.isDefaultSelected,
+        ),
+        changePolicy: criticalCareConsentTemplate.audit.changePolicy,
+      },
     },
     anesthesia: {
-      applies: true,
-      status: "Required",
-      typeLabel: "General anesthesia",
-      typeLabelAr: "تخدير عام",
-      anesthesiologistRequired: true,
+      applies: false,
+      status: "Not required",
+      typeLabel: "No separate anesthesia consent by default",
+      typeLabelAr: "لا يلزم نموذج تخدير مستقل افتراضياً",
+      anesthesiologistRequired: false,
     },
     disclosures: {},
     education: {},
@@ -323,12 +409,22 @@ export function ConsentBuilder({
       setDocumentError(null);
 
       try {
+        const procedure = builderState.procedure;
+        const criticalCareWorkflow = isCriticalCareProcedure(procedure);
         const templatesResponse = await fetch("/api/modules/informed-consents/templates", {
           cache: "no-store",
         });
 
         if (!templatesResponse.ok) {
           const errorText = await templatesResponse.text().catch(() => "");
+
+          if (templatesResponse.status === 503) {
+            throw new Error(
+              criticalCareWorkflow
+                ? "Preview informed-consent schema is not ready. Required migrations are 0017_medical_consent_library_engine.sql, 0018_phase2_medico_legal_consent_intelligence.sql, and 0024_enterprise_consent_templates.sql for consent_categories, consent_templates, consent_template_versions, consent_template_sections, and consent_template_localizations. Critical Care / IMC MR 1363 cannot fall back to laparoscopic demo data."
+                : "Preview informed-consent schema is not ready. Required migrations are 0017_medical_consent_library_engine.sql, 0018_phase2_medico_legal_consent_intelligence.sql, and 0024_enterprise_consent_templates.sql.",
+            );
+          }
 
           throw new Error(
             `Failed to load consent templates: HTTP ${templatesResponse.status}${
@@ -338,11 +434,31 @@ export function ConsentBuilder({
         }
 
         const templates = (await templatesResponse.json()) as RuntimeConsentTemplate[];
-        const selectedTemplate = selectSurgicalTemplate(templates);
+        const selectedTemplate = selectTemplateForProcedure(
+          templates,
+          procedure as Record<string, unknown> | undefined,
+        );
 
         if (!selectedTemplate?.id) {
-          throw new Error("No live consent template is available");
+          throw new Error(
+            criticalCareWorkflow
+              ? "No live Critical Care / IMC MR 1363 consent template is available in Preview. The workflow is blocked until the informed-consent catalog is migrated or seeded correctly."
+              : "No live consent template is available",
+          );
         }
+
+        const procedureCode = String((procedure as Record<string, unknown> | undefined)?.code || "").trim();
+        const procedureName = String((procedure as Record<string, unknown> | undefined)?.name || "").trim();
+        const procedureDescription = String(
+          (procedure as Record<string, unknown> | undefined)?.description || "",
+        ).trim();
+        const procedureCategory = String(
+          (procedure as Record<string, unknown> | undefined)?.category || "",
+        ).trim();
+        const digitalConsentTemplate =
+          ((procedure as Record<string, unknown> | undefined)?.digitalConsentTemplate as
+            | Record<string, unknown>
+            | undefined) || undefined;
 
         const draftResponse = await fetch(
           "/api/modules/informed-consents/generate-draft",
@@ -361,12 +477,14 @@ export function ConsentBuilder({
               encounterId: pilotConsentCase.caseNumber,
               encounterNumber: pilotConsentCase.caseNumber,
               encounterCaseNumber: pilotConsentCase.caseNumber,
-              encounterDepartment: defaultEncounter.department || "General Surgery",
+              encounterDepartment: procedureCategory || defaultEncounter.department || "General Surgery",
               encounterPhysician: defaultEncounter.physician || "Dr. Khalid Al-Qahtani",
-              encounterDiagnosis: "Symptomatic cholelithiasis",
-              encounterProcedure: "Laparoscopic cholecystectomy",
+              encounterDiagnosis: procedureDescription || procedureName,
+              encounterProcedure: procedureName,
               templateId: selectedTemplate.id,
               templateVersionId: selectedTemplate.templateVersionId,
+              formCode: procedureCode || undefined,
+              digitalConsentTemplate,
               language: selectedTemplate.language,
             }),
           },
@@ -418,7 +536,7 @@ export function ConsentBuilder({
     return () => {
       isCancelled = true;
     };
-  }, [currentStep, linkedDocumentId, patientMobile, patientEmail]);
+  }, [currentStep, linkedDocumentId, patientMobile, patientEmail, builderState.procedure]);
 
   const licenseWarning = licenseExpired ? (
     <div className="mx-6 mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -477,7 +595,7 @@ export function ConsentBuilder({
         return <StepDisclosures {...props} />;
 
       case "education":
-        return <StepEducation {...props} />;
+        return <StepEducation {...props} procedure={builderState.procedure} />;
 
       case "preview":
         return (
