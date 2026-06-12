@@ -8,4 +8,14 @@ node_modules
 __tests__/
 *.spec.ts
 *.test.ts
-tmp/
+tmp/_backup_pdf_enterprise_20260612172926/
+**/*.bak
+**/*.bak-*
+_backup_pdf_enterprise_*/
+_backup_pdf_v10_*/
+tmp-v9-context.json
+tmp-*.cjs
+apps/web/**/*.bak
+apps/web/**/*.bak-*
+_backup_pdf_v11_*/
+apps/web/src/lib/server/arabic-text-sanitizer.ts.bak

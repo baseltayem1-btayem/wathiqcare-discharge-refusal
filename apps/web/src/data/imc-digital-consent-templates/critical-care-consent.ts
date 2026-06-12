@@ -34,6 +34,7 @@ export type DigitalConsentTemplate = {
     sourceType: "approved-pdf";
     sourceTitle: string;
     sourceNote: string;
+    sourcePdfUrl: string;
   };
   title: ConsentLanguageBlock;
   category: ConsentLanguageBlock;
@@ -71,12 +72,13 @@ export const criticalCareConsentTemplate: DigitalConsentTemplate = {
   id: "imc-critical-care-consent",
   formCode: "IMC MR 1363",
   version: "Jan 2026",
-  status: "draft",
+  status: "approved",
   source: {
     sourceType: "approved-pdf",
     sourceTitle: "Critical Care Consent / موافقة الرعاية الحرجة",
     sourceNote:
       "The approved PDF remains the official source. This digital template is a structured operational version for WathiqCare issuance workflow.",
+    sourcePdfUrl: "/approved-consent-forms/imc/critical-care-consent--master-consent--2-1.pdf",
   },
   title: {
     en: "Critical Care Consent",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { handleApiError, ApiError } from "@/lib/server/http";
 import { recordPublicEducationEvent } from "@/lib/server/public-signing-service";
+import { parseEducationVisualAid } from "@/lib/server/education-visual-aid";
 
 type RouteContext = {
   params: Promise<{ token: string }>;
@@ -22,6 +23,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     const eventType = typeof payload.eventType === "string" ? payload.eventType.trim().toUpperCase() : "";
     if (
+      eventType !== "EDUCATION_VISUAL_GENERATED"
+      &&
       eventType !== "EDUCATION_STARTED"
       && eventType !== "EDUCATION_PRESENTED"
       && eventType !== "EDUCATION_COMPLETED"
@@ -41,6 +44,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         ? payload.assetViews.filter((item): item is string => typeof item === "string")
         : undefined,
       acknowledgement: typeof payload.acknowledgement === "boolean" ? payload.acknowledgement : undefined,
+      educationVisualAid: parseEducationVisualAid(payload.educationVisualAid),
     });
 
     return NextResponse.json({ ok: true, education });

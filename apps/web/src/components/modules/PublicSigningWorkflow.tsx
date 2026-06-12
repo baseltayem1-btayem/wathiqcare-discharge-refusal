@@ -88,6 +88,22 @@ type PublicSigningDocumentPayload = {
     scrollCompletion: number | null;
     assetViews: string[];
     completedAt: string | null;
+    educationVisualAid: {
+      displayed: boolean;
+      displayedTitle: string;
+      visualType: "medical-illustration";
+      clinicalTopic: string;
+      language: "ar" | "en" | "bilingual";
+      imageUrl: string;
+      thumbnailUrl: string;
+      promptSummary: string;
+      generatedAt: string;
+      approvedForEducation: boolean;
+      source: "ai-generated";
+      disclaimerEn: string;
+      disclaimerAr: string;
+      patientAcknowledged: boolean;
+    } | null;
   };
 };
 
@@ -207,6 +223,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
   const [success, setSuccess] = useState("");
   const [signatureResult, setSignatureResult] = useState<PublicSignatureResult | null>(null);
   const [educationSubmitting, setEducationSubmitting] = useState(false);
+  const [visualSubmitting, setVisualSubmitting] = useState(false);
   const [decisionSubmitting, setDecisionSubmitting] = useState(false);
   const [acknowledgementChecked, setAcknowledgementChecked] = useState(false);
   const [refusalAcknowledgementChecked, setRefusalAcknowledgementChecked] = useState(false);
@@ -220,6 +237,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
   const [faqViewed, setFaqViewed] = useState<string[]>([]);
   const [assetViews, setAssetViews] = useState<string[]>([]);
   const [scrollCompletion, setScrollCompletion] = useState(0);
+  const [visualError, setVisualError] = useState("");
   // --- OTP verification state (v1.0.1) ---
   const [otpMobile, setOtpMobile] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -235,6 +253,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
 
   const educationRequired = Boolean(documentData?.education.required);
   const educationAcknowledged = Boolean(documentData?.education.acknowledgement || documentData?.education.patientAcknowledged);
+  const educationVisualAid = documentData?.education.educationVisualAid || null;
   const isRefusalPath = documentData?.decision.status === "CONSENT_REFUSED";
   const faqTargets = documentData?.education.faq || [];
 
@@ -273,6 +292,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
           scrollCompletion: overrides?.scrollCompletion ?? scrollCompletion,
           assetViews: overrides?.assetViews ?? assetViews,
           acknowledgement: overrides?.acknowledgement,
+          educationVisualAid: documentData?.education.educationVisualAid ?? null,
         }),
       });
       const payload = await readJsonSafe<PublicEducationEventResponse>(response);
@@ -283,6 +303,30 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
       setDocumentData((current) => current ? { ...current, education: result.education } : current);
     } finally {
       setEducationSubmitting(false);
+    }
+  }
+
+  async function generateEducationVisualAid() {
+    setVisualSubmitting(true);
+    setVisualError("");
+    try {
+      const response = await fetch(`/api/public-signing/document/${encodeURIComponent(token)}/education-visual/generate`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+      const payload = await readJsonSafe<PublicEducationEventResponse>(response);
+      if (!response.ok) {
+        throw new Error(getErrorMessage(payload as ApiErrorPayload, "Failed to generate education visual"));
+      }
+      const result = payload as PublicEducationEventResponse;
+      setDocumentData((current) => current ? { ...current, education: result.education } : current);
+    } catch (generationError) {
+      setVisualError(generationError instanceof Error ? generationError.message : "Unable to generate the educational visual in this environment.");
+    } finally {
+      setVisualSubmitting(false);
     }
   }
 
@@ -854,6 +898,69 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
               </div>
             </section>
           ) : null}
+
+          <section className="rounded-2xl border border-[#cfd9e6] bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Step 5 Visual Understanding Support</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Request an educational medical visual that explains the condition and planned procedure. This visual remains separate from the legal consent wording.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void generateEducationVisualAid()}
+                disabled={visualSubmitting}
+                className="inline-flex rounded-xl border border-[#002B5C] px-4 py-2 text-sm font-semibold text-[#002B5C] transition hover:bg-[#eef5fb] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {visualSubmitting
+                  ? "Generating visual..."
+                  : educationVisualAid
+                    ? "Regenerate visual"
+                    : "Generate educational visual"}
+              </button>
+            </div>
+
+            {educationVisualAid && educationVisualAid.approvedForEducation ? (
+              <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
+                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">AI-generated visual support</p>
+                    <h4 className="mt-1 text-base font-semibold text-slate-900">{educationVisualAid.displayedTitle}</h4>
+                  </div>
+                  <div className="grid gap-2 text-sm text-slate-700 md:grid-cols-2">
+                    <p><strong>Visual type:</strong> {educationVisualAid.visualType}</p>
+                    <p><strong>Clinical topic:</strong> {educationVisualAid.clinicalTopic}</p>
+                    <p><strong>Generated at:</strong> {new Date(educationVisualAid.generatedAt).toLocaleString()}</p>
+                    <p><strong>Source:</strong> {educationVisualAid.source}</p>
+                  </div>
+                  <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+                    <p>{educationVisualAid.disclaimerEn}</p>
+                    <p className="mt-2" dir="rtl">{educationVisualAid.disclaimerAr}</p>
+                  </div>
+                  <p className="text-xs leading-6 text-slate-500">{educationVisualAid.promptSummary}</p>
+                </div>
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  <img
+                    src={educationVisualAid.imageUrl}
+                    alt={educationVisualAid.displayedTitle}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                <p>No approved Step 5 educational visual has been generated yet.</p>
+                <p className="mt-2">If generation is unavailable in this preview environment, the education review can continue without the image and the acknowledgement workflow will remain intact.</p>
+              </div>
+            )}
+
+            {visualError ? (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {visualError}
+              </div>
+            ) : null}
+          </section>
 
           <section
             ref={(element) => { sectionRefs.current.risks = element; }}

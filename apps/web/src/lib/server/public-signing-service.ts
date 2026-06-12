@@ -11,6 +11,12 @@ import {
   type EducationSessionEventType,
   type EducationSessionState,
 } from "@/lib/server/education-session-service";
+import {
+  buildEducationVisualAid,
+  parseEducationVisualAid,
+  type EducationVisualAid,
+  type EducationVisualLanguage,
+} from "@/lib/server/education-visual-aid";
 import { recordEvidenceEvent } from "@/lib/server/evidence-package-2-service";
 import { ConsentDocumentStatus, ConsentEvidenceCopyType, ConsentMethod, ConsentSignatureRole } from "@/lib/server/prisma-enums";
 import {
@@ -252,6 +258,7 @@ export type PublicSigningDocumentPayload = {
     scrollCompletion: number | null;
     assetViews: string[];
     completedAt: string | null;
+    educationVisualAid: EducationVisualAid | null;
     session: EducationSessionState;
   };
 };
@@ -312,6 +319,7 @@ type EducationStatus = {
   scrollCompletion: number | null;
   assetViews: string[];
   completedAt: string | null;
+  educationVisualAid: EducationVisualAid | null;
   session: EducationSessionState;
 };
 
@@ -338,6 +346,16 @@ type PublicSignatureResult = {
     decisionStatus: PublicDecisionStatus;
   };
 };
+
+function getEducationVisualAidFromMetadata(value: unknown): EducationVisualAid | null {
+  const metadata = asRecord(value) || {};
+  const direct = parseEducationVisualAid(metadata.educationVisualAid);
+  if (direct) return direct;
+
+  const executionContext = asRecord(metadata.executionContext) || {};
+  const education = asRecord(executionContext.education) || {};
+  return parseEducationVisualAid(education.educationVisualAid);
+}
 
 type DecisionStatus = PublicSigningDocumentPayload["decision"];
 
@@ -949,6 +967,24 @@ async function getEducationStatus(
     scrollCompletion: getFiniteNumber(completedMetadata.scrollCompletion),
     assetViews: getStringArray(completedMetadata.assetViews),
     completedAt: completedEvent?.createdAt?.toISOString() || null,
+    educationVisualAid: (() => {
+      const visualAid =
+        getEducationVisualAidFromMetadata(latestMetadata)
+        || getEducationVisualAidFromMetadata(acknowledgedMetadata)
+        || getEducationVisualAidFromMetadata(completedMetadata);
+
+      if (!visualAid) {
+        return null;
+      }
+
+      return {
+        ...visualAid,
+        patientAcknowledged:
+          visualAid.patientAcknowledged
+          || Boolean(acknowledgedEvent)
+          || getBoolean(acknowledgedMetadata.acknowledgement),
+      };
+    })(),
     session,
   };
 }
@@ -956,6 +992,8 @@ async function getEducationStatus(
 function buildPublicEducationEventSummary(eventType: PublicEducationEventType, packageKey: string, language: string | null): string {
   const normalizedLanguage = language || "bilingual";
   switch (eventType) {
+    case "EDUCATION_VISUAL_GENERATED":
+      return `Public education visual generated (${packageKey}, ${normalizedLanguage}).`;
     case "EDUCATION_PRESENTED":
       return `Public education presented (${packageKey}, ${normalizedLanguage}).`;
     case "EDUCATION_STARTED":
@@ -981,12 +1019,25 @@ function mergeEducationExecutionContext(
     scrollCompletion?: number | null;
     assetViews?: string[];
     acknowledgement?: boolean;
+    educationVisualAid?: EducationVisualAid | null;
   },
 ): Record<string, unknown> {
   const metadata = asRecord(rawMetadata) || {};
   const executionContext = asRecord(metadata.executionContext) || {};
   const education = asRecord(executionContext.education) || {};
   const occurredAt = new Date().toISOString();
+  const currentVisualAid = parseEducationVisualAid(education.educationVisualAid);
+  const nextVisualAidBase = payload.educationVisualAid ?? currentVisualAid;
+  const nextVisualAid = nextVisualAidBase
+    ? {
+        ...nextVisualAidBase,
+        displayed: true,
+        patientAcknowledged:
+          nextVisualAidBase.patientAcknowledged
+          || Boolean(payload.acknowledgement)
+          || eventType === "EDUCATION_ACKNOWLEDGED",
+      }
+    : null;
 
   const nextEducation = {
     ...education,
@@ -1012,6 +1063,7 @@ function mergeEducationExecutionContext(
     scrollCompletion: payload.scrollCompletion ?? education.scrollCompletion ?? null,
     assetViews: payload.assetViews ?? getStringArray(education.assetViews),
     acknowledgement: payload.acknowledgement ?? getBoolean(education.acknowledgement),
+    educationVisualAid: nextVisualAid,
     lastEventType: eventType,
     updatedAt: occurredAt,
   };
@@ -1042,6 +1094,7 @@ export async function recordPublicEducationEvent(args: {
   scrollCompletion?: number;
   assetViews?: string[];
   acknowledgement?: boolean;
+  educationVisualAid?: EducationVisualAid | null;
 }): Promise<EducationStatus> {
   if (args.request) {
     await validatePublicSigningSession({ token: args.token, request: args.request });
@@ -1062,6 +1115,7 @@ export async function recordPublicEducationEvent(args: {
   const imagesPresented = linkedEducationPackage.assets.filter((asset) => asset.assetType === "IMAGE").length;
   const videosPresented = linkedEducationPackage.assets.filter((asset) => asset.assetType === "VIDEO").length;
   const pdfsPresented = linkedEducationPackage.assets.filter((asset) => asset.assetType === "PDF").length;
+  const nextEducationVisualAid = args.educationVisualAid ?? getEducationVisualAidFromMetadata(doc.metadata);
   const metadata = {
     packageId: linkedEducationPackage.packageId,
     packageKey: linkedEducationPackage.packageKey,
@@ -1077,6 +1131,7 @@ export async function recordPublicEducationEvent(args: {
     imagesPresented,
     videosPresented,
     pdfsPresented,
+    educationVisualAid: nextEducationVisualAid,
   };
 
   await prisma().consentDocument.update({
@@ -1094,6 +1149,7 @@ export async function recordPublicEducationEvent(args: {
           scrollCompletion: args.scrollCompletion ?? null,
           assetViews,
           acknowledgement: args.acknowledgement,
+          educationVisualAid: nextEducationVisualAid,
         },
       ) as Prisma.InputJsonValue,
     },
@@ -1114,6 +1170,41 @@ export async function recordPublicEducationEvent(args: {
   });
 
   return getEducationStatus(context.tenantId, doc.id, linkedEducationPackage, context.sessionId);
+}
+
+export async function generatePublicEducationVisualAid(args: {
+  token: string;
+  request?: NextRequest;
+}): Promise<EducationStatus> {
+  if (args.request) {
+    await validatePublicSigningSession({ token: args.token, request: args.request });
+  }
+
+  const context = await getSigningTokenContext(args.token);
+  const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
+
+  const visualAid = buildEducationVisualAid(
+    {
+      diagnosis: doc.diagnosis,
+      procedure: doc.plannedProcedure,
+      specialty: doc.physicianSpecialty,
+      language: (doc.language || "bilingual") as EducationVisualLanguage,
+      formCode: doc.template.templateCode,
+      templateId: doc.templateId,
+    },
+    {
+      displayed: true,
+      patientAcknowledged: false,
+    },
+  );
+
+  return recordPublicEducationEvent({
+    token: args.token,
+    request: args.request,
+    eventType: "EDUCATION_VISUAL_GENERATED",
+    language: visualAid.language,
+    educationVisualAid: visualAid,
+  });
 }
 
 async function loadPublicDocumentRecord(tenantId: string, documentId: string) {
@@ -1475,6 +1566,7 @@ async function persistPublicSigningEvidencePackages(args: {
       completedAt: args.education.completedAt,
       durationSeconds: args.education.durationSeconds,
       scrollCompletion: args.education.scrollCompletion,
+      educationVisualAid: args.education.educationVisualAid,
       session: args.education.session,
     },
     evidenceBundle: {

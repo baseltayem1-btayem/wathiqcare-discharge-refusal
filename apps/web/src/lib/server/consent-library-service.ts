@@ -16,6 +16,7 @@ import {
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
+import { sanitizePdfDisplayText } from "@/lib/server/arabic-text-sanitizer";
 import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -266,6 +267,25 @@ function sanitizeAiText(value: string | null | undefined): string {
     .replace(/\u0000/g, "")
     .replace(/\r\n/g, "\n")
     .slice(0, 10000);
+}
+
+function sanitizeDocumentText(
+  value: string | null | undefined,
+  language: "ar" | "en" | "bilingual",
+  preserveNewlines = false,
+): string | null {
+  const normalized = normalizeText(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const sanitized = sanitizePdfDisplayText(normalized, {
+    lang: language,
+    preserveNewlines,
+    medicalContext: language !== "en",
+  });
+
+  return sanitized || null;
 }
 
 function hasHallucinationSignal(value: string | null | undefined): boolean {
@@ -592,6 +612,18 @@ export type CreateConsentTemplatePayload = {
   witnessDeclEn?: string;
   physicianCertAr?: string;
   physicianCertEn?: string;
+  risksAr?: string;
+  risksEn?: string;
+  sideEffectsAr?: string;
+  sideEffectsEn?: string;
+  alternativesAr?: string;
+  alternativesEn?: string;
+  refusalRisksAr?: string;
+  refusalRisksEn?: string;
+  expectedOutcomesAr?: string;
+  expectedOutcomesEn?: string;
+  physicianNotesAr?: string;
+  physicianNotesEn?: string;
   aiWarningAr?: string;
   aiWarningEn?: string;
   sections?: Array<{
@@ -1293,6 +1325,27 @@ export type CreateConsentDocumentPayload = {
   plannedProcedure?: string;
   admissionDetails?: string;
   procedureDetails?: string;
+
+  risksAr?: string;
+  risksEn?: string;
+  sideEffectsAr?: string;
+  sideEffectsEn?: string;
+  alternativesAr?: string;
+  alternativesEn?: string;
+  refusalRisksAr?: string;
+  refusalRisksEn?: string;
+  expectedOutcomesAr?: string;
+  expectedOutcomesEn?: string;
+  physicianNotesAr?: string;
+  physicianNotesEn?: string;
+  legalTextAr?: string;
+  legalTextEn?: string;
+  pdplTextAr?: string;
+  pdplTextEn?: string;
+  witnessDeclAr?: string;
+  witnessDeclEn?: string;
+  physicianCertAr?: string;
+  physicianCertEn?: string;
   physicianNotesAr?: string;
   physicianNotesEn?: string;
   metadata?: Record<string, unknown>;
@@ -1372,6 +1425,27 @@ export async function createConsentDocument(
   });
 
   const emrMeta = (caseRecord.metadata || {}) as Record<string, unknown>;
+  const resolvedPhysicianSpecialty = sanitizeDocumentText(payload.physicianSpecialty?.trim() || template.specialty, "bilingual") || template.specialty;
+  const resolvedDepartment = sanitizeDocumentText(payload.department?.trim() || template.department || null, "bilingual") || template.department || null;
+  const resolvedDiagnosis = sanitizeDocumentText(
+    payload.diagnosis?.trim() || (typeof emrMeta.diagnosis === "string" ? emrMeta.diagnosis : null),
+    "bilingual",
+  );
+  const resolvedPlannedProcedure = sanitizeDocumentText(
+    payload.plannedProcedure?.trim() || (typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null),
+    "bilingual",
+  );
+  const resolvedProcedureDetails = sanitizeDocumentText(payload.procedureDetails?.trim() || null, "bilingual", true);
+  const resolvedRisksAr = sanitizeDocumentText(payload.risksAr, "ar", true);
+  const resolvedSideEffectsAr = sanitizeDocumentText(payload.sideEffectsAr, "ar", true);
+  const resolvedAlternativesAr = sanitizeDocumentText(payload.alternativesAr, "ar", true);
+  const resolvedRefusalRisksAr = sanitizeDocumentText(payload.refusalRisksAr, "ar", true);
+  const resolvedExpectedOutcomesAr = sanitizeDocumentText(payload.expectedOutcomesAr, "ar", true);
+  const resolvedPhysicianNotesAr = sanitizeDocumentText(payload.physicianNotesAr, "ar", true);
+  const resolvedLegalTextAr = sanitizeDocumentText(payload.legalTextAr?.trim() || version.legalTextAr, "ar", true) || version.legalTextAr;
+  const resolvedPdplTextAr = sanitizeDocumentText(payload.pdplTextAr?.trim() || version.pdplTextAr, "ar", true) || version.pdplTextAr;
+  const resolvedWitnessDeclAr = sanitizeDocumentText(payload.witnessDeclAr?.trim() || version.witnessDeclAr, "ar", true) || version.witnessDeclAr;
+  const resolvedPhysicianCertAr = sanitizeDocumentText(payload.physicianCertAr?.trim() || version.physicianCertAr, "ar", true) || version.physicianCertAr;
 
   const created = await prisma().$transaction(async (tx) => {
     const consentDocument = await tx.consentDocument.create({
@@ -1389,24 +1463,33 @@ export async function createConsentDocument(
         gender: typeof emrMeta.gender === "string" ? emrMeta.gender : null,
         physicianName: payload.physicianName?.trim() || auth.email || "Assigned Physician",
         physicianLicense: payload.physicianLicense?.trim() || null,
-        physicianSpecialty: payload.physicianSpecialty?.trim() || template.specialty,
-        department: payload.department?.trim() || template.department || null,
-        diagnosis: payload.diagnosis?.trim() || (typeof emrMeta.diagnosis === "string" ? emrMeta.diagnosis : null),
-        plannedProcedure:
-          payload.plannedProcedure?.trim() || (typeof emrMeta.plannedProcedure === "string" ? emrMeta.plannedProcedure : null),
+        physicianSpecialty: resolvedPhysicianSpecialty,
+        department: resolvedDepartment,
+        diagnosis: resolvedDiagnosis,
+        plannedProcedure: resolvedPlannedProcedure,
         admissionDetails:
           payload.admissionDetails?.trim() || (typeof emrMeta.admissionDetails === "string" ? emrMeta.admissionDetails : null),
-        procedureDetails: payload.procedureDetails?.trim() || null,
-        physicianNotesAr: payload.physicianNotesAr?.trim() || null,
+        procedureDetails: resolvedProcedureDetails,
+        risksAr: resolvedRisksAr,
+        risksEn: payload.risksEn?.trim() || null,
+        sideEffectsAr: resolvedSideEffectsAr,
+        sideEffectsEn: payload.sideEffectsEn?.trim() || null,
+        alternativesAr: resolvedAlternativesAr,
+        alternativesEn: payload.alternativesEn?.trim() || null,
+        refusalRisksAr: resolvedRefusalRisksAr,
+        refusalRisksEn: payload.refusalRisksEn?.trim() || null,
+        expectedOutcomesAr: resolvedExpectedOutcomesAr,
+        expectedOutcomesEn: payload.expectedOutcomesEn?.trim() || null,
+        physicianNotesAr: resolvedPhysicianNotesAr,
         physicianNotesEn: payload.physicianNotesEn?.trim() || null,
-        legalTextAr: version.legalTextAr,
-        legalTextEn: version.legalTextEn,
-        pdplTextAr: version.pdplTextAr,
-        pdplTextEn: version.pdplTextEn,
-        witnessDeclAr: version.witnessDeclAr,
-        witnessDeclEn: version.witnessDeclEn,
-        physicianCertAr: version.physicianCertAr,
-        physicianCertEn: version.physicianCertEn,
+        legalTextAr: resolvedLegalTextAr,
+        legalTextEn: payload.legalTextEn?.trim() || version.legalTextEn,
+        pdplTextAr: resolvedPdplTextAr,
+        pdplTextEn: payload.pdplTextEn?.trim() || version.pdplTextEn,
+        witnessDeclAr: resolvedWitnessDeclAr,
+        witnessDeclEn: payload.witnessDeclEn?.trim() || version.witnessDeclEn,
+        physicianCertAr: resolvedPhysicianCertAr,
+        physicianCertEn: payload.physicianCertEn?.trim() || version.physicianCertEn,
         aiWarningAr: version.aiWarningAr,
         aiWarningEn: version.aiWarningEn,
         documentVersion: version.versionLabel,
@@ -1429,14 +1512,14 @@ export async function createConsentDocument(
           },
           wordingSnapshot: buildDocumentWordingSnapshot({
             doc: {
-              legalTextAr: version.legalTextAr,
-              legalTextEn: version.legalTextEn,
-              pdplTextAr: version.pdplTextAr,
-              pdplTextEn: version.pdplTextEn,
-              witnessDeclAr: version.witnessDeclAr,
-              witnessDeclEn: version.witnessDeclEn,
-              physicianCertAr: version.physicianCertAr,
-              physicianCertEn: version.physicianCertEn,
+              legalTextAr: resolvedLegalTextAr,
+              legalTextEn: payload.legalTextEn?.trim() || version.legalTextEn,
+              pdplTextAr: resolvedPdplTextAr,
+              pdplTextEn: payload.pdplTextEn?.trim() || version.pdplTextEn,
+              witnessDeclAr: resolvedWitnessDeclAr,
+              witnessDeclEn: payload.witnessDeclEn?.trim() || version.witnessDeclEn,
+              physicianCertAr: resolvedPhysicianCertAr,
+              physicianCertEn: payload.physicianCertEn?.trim() || version.physicianCertEn,
               documentVersion: version.versionLabel,
             },
             templateVersion: {

@@ -1,6 +1,7 @@
 export type EducationSessionStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 
 export type EducationSessionEventType =
+  | "EDUCATION_VISUAL_GENERATED"
   | "EDUCATION_PRESENTED"
   | "EDUCATION_STARTED"
   | "EDUCATION_COMPLETED"

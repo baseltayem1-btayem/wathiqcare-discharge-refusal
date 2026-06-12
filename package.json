@@ -44,6 +44,7 @@
     "tsx": "^4.22.3"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-sans-arabic": "^5.2.9",
     "signature_pad": "^5.1.3"
   }
 }

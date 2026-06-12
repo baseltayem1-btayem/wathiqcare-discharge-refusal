@@ -247,3 +247,17 @@ coverage/
 # Promissory PDF validation evidence artifacts (screenshots, generated PDFs, reports)
 artifacts/promissory-evidence/
 apps/web/artifacts/promissory-evidence/
+
+# Local WathiqCare PDF/debug backups
+_backup_pdf_enterprise_*/
+_backup_pdf_v10_*/
+_backup_pdf_v11_*/
+*.bak
+*.bak-*
+*.before-*.bak
+tmp-v9-context.json
+tmp-*.cjs
+tmp-*.json
+apps/web/**/*.bak
+apps/web/**/*.bak-*
+apps/web/**/*.before-*.bak
