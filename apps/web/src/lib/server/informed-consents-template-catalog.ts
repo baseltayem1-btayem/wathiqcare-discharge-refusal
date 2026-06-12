@@ -39,6 +39,25 @@ type RuntimeTemplateFilter = {
 
 type DefaultTemplateSeed = SaudiEnterpriseTemplateSeed;
 
+type ConsentCatalogCapability = {
+  capable: boolean;
+  reason: string;
+  queryableTables: string[];
+  missingTables: string[];
+  icuTemplateId?: string;
+  currentVersionId?: string;
+};
+
+const REQUIRED_CONSENT_CATALOG_TABLES = [
+  "consent_categories",
+  "consent_templates",
+  "consent_template_versions",
+  "consent_template_sections",
+  "consent_template_localizations",
+] as const;
+
+const ICU_CRITICAL_CARE_TEMPLATE_CODE = "ICU_CRITICAL_CARE_CONSENT";
+
 const FIXED_LEGAL_TITLE_AR = "الموافقة المستنيرة الطبية";
 const FIXED_LEGAL_TITLE_EN = "Medical Informed Consent";
 
@@ -165,6 +184,156 @@ function requireTenantId(auth: AuthContext): string {
 
 function normalizeFilter(value: string | null | undefined): string {
   return (value || "").trim();
+}
+
+function readPrismaCode(error: unknown): string {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code;
+  }
+
+  if (typeof error === "object" && error !== null && "code" in error) {
+    return String((error as { code?: unknown }).code || "");
+  }
+
+  return "";
+}
+
+function isSchemaQueryFailure(error: unknown): boolean {
+  const prismaCode = readPrismaCode(error);
+  return prismaCode === "P2021" || prismaCode === "P2022";
+}
+
+export async function isConsentCatalogCapable(
+  tenantId: string,
+): Promise<ConsentCatalogCapability> {
+  const normalizedTenantId = tenantId.trim();
+
+  if (!normalizedTenantId) {
+    return {
+      capable: false,
+      reason: "Missing tenant context for informed-consent catalog capability check.",
+      queryableTables: [],
+      missingTables: [...REQUIRED_CONSENT_CATALOG_TABLES],
+    };
+  }
+
+  try {
+    const tableRows = await prisma().$queryRawUnsafe<
+      Array<{ table_name: string; row_count: number }>
+    >(
+      `
+        SELECT 'consent_categories' AS table_name, COUNT(*)::int AS row_count FROM consent_categories
+        UNION ALL
+        SELECT 'consent_templates' AS table_name, COUNT(*)::int AS row_count FROM consent_templates
+        UNION ALL
+        SELECT 'consent_template_versions' AS table_name, COUNT(*)::int AS row_count FROM consent_template_versions
+        UNION ALL
+        SELECT 'consent_template_sections' AS table_name, COUNT(*)::int AS row_count FROM consent_template_sections
+        UNION ALL
+        SELECT 'consent_template_localizations' AS table_name, COUNT(*)::int AS row_count FROM consent_template_localizations
+      `,
+    );
+
+    const queryableTables = tableRows.map((row) => row.table_name);
+    const missingTables = REQUIRED_CONSENT_CATALOG_TABLES.filter(
+      (tableName) => !queryableTables.includes(tableName),
+    );
+
+    if (missingTables.length > 0) {
+      return {
+        capable: false,
+        reason: `Required informed-consent catalog tables are unavailable: ${missingTables.join(", ")}.`,
+        queryableTables,
+        missingTables: [...missingTables],
+      };
+    }
+
+    const icuTemplates = await prisma().$queryRawUnsafe<
+      Array<{
+        id: string;
+        tenant_id: string;
+        current_version_id: string | null;
+        version_status: string | null;
+      }>
+    >(
+      `
+        SELECT
+          t.id,
+          t.tenant_id,
+          t.current_version_id,
+          v.status::text AS version_status
+        FROM consent_templates t
+        LEFT JOIN consent_template_versions v
+          ON v.id = t.current_version_id
+        WHERE t.template_code = $1
+          AND t.status IN ('ACTIVE', 'APPROVED')
+          AND (t.tenant_id = $2 OR t.is_system_template = TRUE)
+        ORDER BY CASE WHEN t.tenant_id = $2 THEN 0 ELSE 1 END, t.updated_at DESC
+        LIMIT 1
+      `,
+      ICU_CRITICAL_CARE_TEMPLATE_CODE,
+      normalizedTenantId,
+    );
+
+    const icuTemplate = icuTemplates[0];
+
+    if (!icuTemplate) {
+      return {
+        capable: false,
+        reason:
+          "The informed-consent catalog is queryable, but ACTIVE ICU_CRITICAL_CARE_CONSENT is missing for this tenant or as an available system template.",
+        queryableTables,
+        missingTables: [],
+      };
+    }
+
+    if (!icuTemplate.current_version_id) {
+      return {
+        capable: false,
+        reason:
+          "ACTIVE ICU_CRITICAL_CARE_CONSENT exists, but current_version_id is not populated.",
+        queryableTables,
+        missingTables: [],
+        icuTemplateId: icuTemplate.id,
+      };
+    }
+
+    if (
+      icuTemplate.version_status !== ConsentTemplateStatus.ACTIVE &&
+      icuTemplate.version_status !== ConsentTemplateStatus.APPROVED
+    ) {
+      return {
+        capable: false,
+        reason:
+          "ACTIVE ICU_CRITICAL_CARE_CONSENT exists, but its current version is not ACTIVE or APPROVED.",
+        queryableTables,
+        missingTables: [],
+        icuTemplateId: icuTemplate.id,
+        currentVersionId: icuTemplate.current_version_id,
+      };
+    }
+
+    return {
+      capable: true,
+      reason:
+        "The informed-consent catalog is queryable and ICU_CRITICAL_CARE_CONSENT is active with a populated current version.",
+      queryableTables,
+      missingTables: [],
+      icuTemplateId: icuTemplate.id,
+      currentVersionId: icuTemplate.current_version_id,
+    };
+  } catch (error) {
+    return {
+      capable: false,
+      reason: isSchemaQueryFailure(error)
+        ? "One or more required informed-consent catalog tables could not be queried."
+        : error instanceof Error
+          ? error.message
+          : "Consent catalog capability check failed.",
+      queryableTables: [],
+      missingTables: [...REQUIRED_CONSENT_CATALOG_TABLES],
+    };
+  }
 }
 
 function buildDefaultSections(): Array<{
@@ -653,11 +822,24 @@ export async function listRuntimeConsentTemplates(
   const specialty = normalizeFilter(filter.specialty).toUpperCase();
   const department = normalizeFilter(filter.department).toUpperCase();
 
-  await ensureDefaultTemplates(tenantId, auth.sub);
+  try {
+    await ensureDefaultTemplates(tenantId, auth.sub);
+  } catch (error) {
+    if (!isSchemaQueryFailure(error)) {
+      throw error;
+    }
+
+    const capability = await isConsentCatalogCapable(tenantId);
+
+    if (!capability.capable) {
+      throw error;
+    }
+  }
 
   const templates = await prisma().consentTemplate.findMany({
     where: {
       tenantId,
+      currentVersionId: { not: null },
       ...(consentType ? { consentType } : {}),
       ...(department ? { OR: [{ department }, { department: null }] } : {}),
       ...(specialty ? { OR: [{ specialty }, { specialty: "GENERAL_MEDICINE" }] } : {}),

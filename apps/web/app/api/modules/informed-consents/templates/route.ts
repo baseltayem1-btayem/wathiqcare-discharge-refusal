@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { handleApiError } from "@/lib/server/http";
 import { toJsonSafe } from "@/lib/server/json";
-import { listRuntimeConsentTemplates } from "@/lib/server/informed-consents-template-catalog";
+import {
+  isConsentCatalogCapable,
+  listRuntimeConsentTemplates,
+} from "@/lib/server/informed-consents-template-catalog";
 
 
 export const dynamic = "force-dynamic";
@@ -31,12 +34,23 @@ export async function GET(request: NextRequest) {
           : "";
 
       if (prismaCode === "P2021" || prismaCode === "P2022") {
+        const capability = await isConsentCatalogCapable(auth.tenant_id || "");
+
+        if (!capability.capable) {
+          return NextResponse.json(
+            {
+              error: capability.reason,
+            },
+            { status: 503 },
+          );
+        }
+
         return NextResponse.json(
           {
             error:
-              "Informed-consent template catalog schema is not ready in Preview. Required migrations are 0017_medical_consent_library_engine.sql, 0018_phase2_medico_legal_consent_intelligence.sql, and 0024_enterprise_consent_templates.sql. Missing objects are likely one or more of: consent_categories, consent_templates, consent_template_versions, consent_template_sections, or consent_template_localizations.",
+              "The informed-consent catalog is already present and ICU critical-care templates are active, but the application query path still failed after bypassing default seeding.",
           },
-          { status: 503 },
+          { status: 500 },
         );
       }
 
