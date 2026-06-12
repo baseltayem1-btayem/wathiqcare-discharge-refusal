@@ -78,6 +78,12 @@ type DraftConsentResponse = {
   };
 };
 
+type TemplateApiErrorPayload = {
+  error?: unknown;
+  message?: unknown;
+  detail?: unknown;
+};
+
 type BuilderState = {
   patient: Record<string, unknown>;
   procedure: Record<string, unknown>;
@@ -156,6 +162,18 @@ function extractLinkedConsentDocumentId(payload: DraftConsentResponse | null): s
     payload.consentDocumentId.trim()
   ) {
     return payload.consentDocumentId.trim();
+  }
+
+  return "";
+}
+
+function readTemplateApiErrorMessage(payload: TemplateApiErrorPayload | null): string {
+  const candidates = [payload?.error, payload?.message, payload?.detail];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
   }
 
   return "";
@@ -334,6 +352,7 @@ export function ConsentBuilder({
   const [linkedDocumentId, setLinkedDocumentId] = useState("");
   const [documentReady, setDocumentReady] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
+  const [templateError, setTemplateError] = useState<string | null>(null);
   const [isLinkingDocument, setIsLinkingDocument] = useState(false);
 
   const currentIndex = steps.findIndex((step) => step.key === currentStep);
@@ -407,6 +426,7 @@ export function ConsentBuilder({
       setIsLinkingDocument(true);
       setDocumentReady(false);
       setDocumentError(null);
+      setTemplateError(null);
 
       try {
         const procedure = builderState.procedure;
@@ -416,22 +436,28 @@ export function ConsentBuilder({
         });
 
         if (!templatesResponse.ok) {
-          const errorText = await templatesResponse.text().catch(() => "");
+          const responseText = await templatesResponse.text().catch(() => "");
+          let responsePayload: TemplateApiErrorPayload | null = null;
 
-          if (templatesResponse.status === 503) {
-            throw new Error(
-              criticalCareWorkflow
-                ? "Preview informed-consent schema is not ready. Required migrations are 0017_medical_consent_library_engine.sql, 0018_phase2_medico_legal_consent_intelligence.sql, and 0024_enterprise_consent_templates.sql for consent_categories, consent_templates, consent_template_versions, consent_template_sections, and consent_template_localizations. Critical Care / IMC MR 1363 cannot fall back to laparoscopic demo data."
-                : "Preview informed-consent schema is not ready. Required migrations are 0017_medical_consent_library_engine.sql, 0018_phase2_medico_legal_consent_intelligence.sql, and 0024_enterprise_consent_templates.sql.",
-            );
+          if (responseText) {
+            try {
+              responsePayload = JSON.parse(responseText) as TemplateApiErrorPayload;
+            } catch {
+              responsePayload = null;
+            }
           }
 
-          throw new Error(
-            `Failed to load consent templates: HTTP ${templatesResponse.status}${
-              errorText ? ` - ${errorText.slice(0, 300)}` : ""
-            }`,
-          );
+          const apiErrorMessage = readTemplateApiErrorMessage(responsePayload);
+          const fallbackMessage = `Failed to load consent templates: HTTP ${templatesResponse.status}${
+            responseText && !apiErrorMessage ? ` - ${responseText.slice(0, 300)}` : ""
+          }`;
+          const nextTemplateError = apiErrorMessage || fallbackMessage;
+
+          setTemplateError(nextTemplateError);
+          throw new Error(nextTemplateError);
         }
+
+        setTemplateError(null);
 
         const templates = (await templatesResponse.json()) as RuntimeConsentTemplate[];
         const selectedTemplate = selectTemplateForProcedure(
@@ -440,12 +466,19 @@ export function ConsentBuilder({
         );
 
         if (!selectedTemplate?.id) {
+          const selectedTemplateError = criticalCareWorkflow
+            ? "No live Critical Care / IMC MR 1363 consent template is available in Preview. The workflow is blocked until the informed-consent catalog is available for this tenant."
+            : "No live consent template is available";
+
+          setTemplateError(selectedTemplateError);
           throw new Error(
             criticalCareWorkflow
-              ? "No live Critical Care / IMC MR 1363 consent template is available in Preview. The workflow is blocked until the informed-consent catalog is migrated or seeded correctly."
-              : "No live consent template is available",
+              ? selectedTemplateError
+              : selectedTemplateError,
           );
         }
+
+        setTemplateError(null);
 
         const procedureCode = String((procedure as Record<string, unknown> | undefined)?.code || "").trim();
         const procedureName = String((procedure as Record<string, unknown> | undefined)?.name || "").trim();
@@ -561,7 +594,7 @@ export function ConsentBuilder({
       document: {
         linkedDocumentId,
         documentReady,
-        documentError,
+        documentError: templateError || documentError,
         isLinkingDocument,
       },
     };
@@ -604,7 +637,7 @@ export function ConsentBuilder({
             builderState={liveBuilderState}
             linkedDocumentId={linkedDocumentId}
             documentReady={documentReady}
-            documentError={documentError}
+            documentError={templateError || documentError}
             isLinkingDocument={isLinkingDocument}
             onGoToStep={setCurrentStep}
           />
@@ -622,7 +655,7 @@ export function ConsentBuilder({
             linkedDocumentId={linkedDocumentId}
             documentReady={documentReady}
             isLinkingDocument={isLinkingDocument}
-            documentError={documentError}
+            documentError={templateError || documentError}
             licenseExpired={licenseExpired}
             licenseExpiryDate={licenseExpiryDate}
           />

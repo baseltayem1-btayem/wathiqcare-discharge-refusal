@@ -411,14 +411,14 @@ const patient = builderState.patient || {};
                           ? (isAr ? "\u062a\u0645 \u0631\u0628\u0637 \u0645\u0633\u062a\u0646\u062f \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629" : "Consent document linked")
                           : isLinkingDocument
                             ? (isAr ? "\u062c\u0627\u0631\u064a \u0625\u0646\u0634\u0627\u0621 \u0648\u0631\u0628\u0637 \u0645\u0633\u062a\u0646\u062f \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629" : "Generating and linking consent document")
-                            : (isAr ? "\u0645\u0644\u0641 PDF \u063a\u064a\u0631 \u062c\u0627\u0647\u0632 \u0628\u0639\u062f" : "PDF preview is not ready yet")}
+                            : (isAr ? "\u0644\u0645 \u064a\u062a\u0645 \u0631\u0628\u0637 \u0645\u0633\u062a\u0646\u062f \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0628\u0639\u062f" : "Consent document has not been linked yet")}
                       </p>
                       <p className={`mt-1 text-sm ${documentReady ? "text-emerald-800" : "text-amber-800"}`}>
                         {linkedDocumentId
                           ? `${isAr ? "\u0631\u0642\u0645 \u0627\u0644\u0645\u0633\u062a\u0646\u062f" : "Document ID"}: ${linkedDocumentId}`
                           : (isAr
-                            ? "\u0644\u0646 \u064a\u062a\u0645 \u0639\u0631\u0636 \u0645\u0644\u0641 PDF \u0648\u0647\u0645\u064a. \u0633\u062a\u062a\u0627\u062d \u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0641\u0639\u0644\u064a\u0629 \u0628\u0639\u062f \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0645\u0633\u062a\u0646\u062f."
-                            : "No fake PDF is displayed. The real preview will be available after the document is generated.")}
+                            ? "\u0633\u062a\u062a\u0627\u062d \u0645\u0639\u0627\u064a\u0646\u0629 \u0645\u0644\u0641 PDF \u0627\u0644\u0641\u0639\u0644\u064a\u0629 \u0628\u0639\u062f \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0645\u0633\u062a\u0646\u062f \u0648\u0631\u0628\u0637\u0647 \u0645\u0646 \u0647\u0630\u0627 \u0627\u0644\u0645\u0633\u0627\u0631."
+                            : "The real PDF preview will appear after this workflow generates and links the consent document.")}
                       </p>
                       {documentError ? (
                         <p className="mt-2 text-xs text-red-700">{documentError}</p>
