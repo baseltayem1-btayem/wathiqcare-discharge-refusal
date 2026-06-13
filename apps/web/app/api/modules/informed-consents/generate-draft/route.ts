@@ -33,8 +33,97 @@ type GenerateDraftPayload = {
   procedure?: {
     digitalConsentTemplate?: unknown;
   };
+  education?: unknown;
   language?: "ar" | "en" | "bilingual";
 };
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function asNullableString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function buildDraftEducationMetadata(educationValue: unknown): Record<string, unknown> {
+  const education = asRecord(educationValue);
+  if (Object.keys(education).length === 0) {
+    return {};
+  }
+
+  const executionVisualAid = asRecord(education.educationVisualAid);
+  const viewedAt = asNullableString(education.viewedAt);
+  const displayedAt = asNullableString(education.displayedAt) || viewedAt;
+  const generatedAt = asNullableString(education.generatedAt) || asNullableString(education.visualAidGeneratedAt);
+  const clinicalTopic =
+    asNullableString(education.visualAidClinicalTopic)
+    || asNullableString(education.clinicalTopic)
+    || asNullableString(executionVisualAid.clinicalTopic);
+
+  return {
+    educationDisplayed: education.educationDisplayed !== false,
+    educationStepNumber:
+      typeof education.educationStepNumber === "number" ? education.educationStepNumber : 5,
+    educationStepNameEn:
+      asNullableString(education.educationStepNameEn) || "Patient Education & Visual Understanding",
+    educationStepNameAr:
+      asNullableString(education.educationStepNameAr) || "التثقيف وفهم الإجراء بصرياً",
+    language: asNullableString(education.educationLanguage) || "bilingual",
+    viewedAt,
+    displayedAt,
+    completedAt: asNullableString(education.completedAt) || viewedAt,
+    patientAcknowledged: education.patientAcknowledged === true,
+    patientAcknowledgementStatus: asNullableString(education.patientAcknowledgementStatus),
+    score: null,
+    attempts: null,
+    faqViewedCount: 0,
+    templateCode: asNullableString(education.formCode),
+    visualAidDisplayed: education.visualAidDisplayed === true,
+    visualAidTypeEn: asNullableString(education.visualAidTypeEn),
+    visualAidTypeAr: asNullableString(education.visualAidTypeAr),
+    visualAidClinicalTopic: clinicalTopic,
+    visualAidGeneratedAt: generatedAt,
+    visualAidPurposeEn: asNullableString(education.visualAidPurposeEn),
+    visualAidPurposeAr: asNullableString(education.visualAidPurposeAr),
+    visualAidDisclaimerEn: asNullableString(education.visualAidDisclaimerEn),
+    visualAidDisclaimerAr: asNullableString(education.visualAidDisclaimerAr),
+    visualAidSourceEn: asNullableString(education.visualAidSourceEn) || asNullableString(education.visualAidSource),
+    visualAidSourceAr: asNullableString(education.visualAidSourceAr),
+    visualAidAssetId: asNullableString(education.visualAidAssetId),
+    visualAidUrl: asNullableString(education.visualAidUrl),
+    visualAidViewedAt: viewedAt,
+    visualAidThumbnailUrl: asNullableString(education.visualAidThumbnailUrl),
+    visualAidApproved: education.visualAidApproved === true,
+    educationVisualAid:
+      Object.keys(executionVisualAid).length > 0
+        ? executionVisualAid
+        : null,
+    executionContext: {
+      education: {
+        educationDisplayed: education.educationDisplayed !== false,
+        displayedAt,
+        viewedAt,
+        completedAt: asNullableString(education.completedAt) || viewedAt,
+        updatedAt: generatedAt || displayedAt || viewedAt,
+        language: asNullableString(education.educationLanguage) || "bilingual",
+        patientAcknowledged: education.patientAcknowledged === true,
+        patientAcknowledgementStatus: asNullableString(education.patientAcknowledgementStatus),
+        visualAidDisplayed: education.visualAidDisplayed === true,
+        clinicalTopic,
+        visualAidAssetId: asNullableString(education.visualAidAssetId),
+        generatedAt,
+        educationVisualAid:
+          Object.keys(executionVisualAid).length > 0
+            ? executionVisualAid
+            : null,
+      },
+    },
+  };
+}
 
 function deepSanitizeArabicText(value: unknown): string {
   if (value == null) {
@@ -381,6 +470,7 @@ export async function POST(request: NextRequest) {
     const criticalCareDigitalContent = attachCriticalCareApprovedSource
       ? sanitizeCriticalCareContent(buildCriticalCareDigitalDocumentContent())
       : {};
+    const draftEducationMetadata = buildDraftEducationMetadata(payload.education);
 
     const created = await createConsentDocument(
       auth,
@@ -416,6 +506,7 @@ export async function POST(request: NextRequest) {
                 }),
               }
             : {}),
+          ...draftEducationMetadata,
         },
       },
       request,

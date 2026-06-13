@@ -940,6 +940,8 @@ function resolveApprovedVisualAidMetadata(latestMetadata: Record<string, unknown
       || asSanitizedText(visualAid.clinicalTopic),
     visualAidGeneratedAt:
       asDate(latestMetadata.visualAidGeneratedAt)
+      || asDate(latestMetadata.generatedAt)
+      || asDate(latestMetadata.displayedAt)
       || asDate(visualAid.generatedAt),
     visualAidPurposeEn:
       asSanitizedText(latestMetadata.visualAidPurposeEn)
@@ -963,6 +965,8 @@ function resolveApprovedVisualAidMetadata(latestMetadata: Record<string, unknown
     visualAidUrl: approvedVisualAidUrl,
     visualAidViewedAt:
       asDate(latestMetadata.visualAidViewedAt)
+      || asDate(latestMetadata.viewedAt)
+      || asDate(latestMetadata.displayedAt)
       || asDate(latestMetadata.generatedAt)
       || asDate(visualAid.generatedAt)
       || asDate(visualAid.viewedAt),
@@ -984,13 +988,36 @@ function extractEducationEvidenceSummary(input: {
     return source === "patient-education" || event.action.startsWith("EDUCATION_") || event.action.startsWith("UNDERSTANDING_");
   });
 
-  const viewedAt = educationEvents.length > 0 ? educationEvents[0].createdAt : null;
+  const documentMetadata = asRecord(input.documentMetadata);
+  const documentExecutionContext = asRecord(documentMetadata.executionContext);
+  const documentEducation = asRecord(documentExecutionContext.education);
+  const viewedAtFromMetadata =
+    asDate(documentEducation.viewedAt)
+    || asDate(documentMetadata.viewedAt)
+    || asDate(documentEducation.displayedAt)
+    || asDate(documentMetadata.displayedAt);
+  const completedAtFromMetadata =
+    asDate(documentEducation.completedAt)
+    || asDate(documentMetadata.completedAt)
+    || viewedAtFromMetadata;
+  const latestMetadata = educationEvents.length > 0 ? asRecord(educationEvents[educationEvents.length - 1].metadata) : {};
+  const effectiveMetadata = {
+    ...documentMetadata,
+    ...documentEducation,
+    ...latestMetadata,
+    executionContext: {
+      ...documentExecutionContext,
+      education: {
+        ...documentEducation,
+        ...latestMetadata,
+      },
+    },
+  };
+
+  const viewedAt = educationEvents.length > 0 ? educationEvents[0].createdAt : viewedAtFromMetadata;
   const completedAt =
     educationEvents.find((event) => event.action === "EDUCATION_COMPLETED")?.createdAt
-    || (educationEvents.length > 0 ? educationEvents[educationEvents.length - 1].createdAt : null);
-  const latestMetadata = educationEvents.length > 0 ? asRecord(educationEvents[educationEvents.length - 1].metadata) : {};
-  const documentMetadata = asRecord(input.documentMetadata);
-  const effectiveMetadata = Object.keys(latestMetadata).length > 0 ? latestMetadata : documentMetadata;
+    || (educationEvents.length > 0 ? educationEvents[educationEvents.length - 1].createdAt : completedAtFromMetadata);
 
   const scoreValue = typeof effectiveMetadata.score === "number" && Number.isFinite(effectiveMetadata.score)
     ? effectiveMetadata.score
@@ -1009,16 +1036,30 @@ function extractEducationEvidenceSummary(input: {
     || educationEvents.some((event) => event.action === "UNDERSTANDING_PASSED")
     || educationEvents.some((event) => event.action === "EDUCATION_COMPLETED");
   const visualAidMetadata = resolveApprovedVisualAidMetadata(effectiveMetadata);
+  const educationDisplayedFromMetadata =
+    asBoolean(effectiveMetadata.educationDisplayed)
+    ?? asBoolean(documentEducation.educationDisplayed)
+    ?? asBoolean(documentMetadata.educationDisplayed)
+    ?? false;
+  const patientAcknowledgedFromMetadata =
+    asBoolean(effectiveMetadata.patientAcknowledged)
+    ?? asBoolean(effectiveMetadata.acknowledgement)
+    ?? asBoolean(documentEducation.patientAcknowledged)
+    ?? false;
 
   return {
-    viewed: educationEvents.length > 0,
+    viewed:
+      educationEvents.length > 0
+      || educationDisplayedFromMetadata
+      || Boolean(viewedAt)
+      || visualAidMetadata.visualAidDisplayed,
     viewedAt,
     completedAt,
     language:
-      typeof latestMetadata.language === "string" && latestMetadata.language.trim() !== ""
-        ? latestMetadata.language
-        : typeof documentMetadata.language === "string" && documentMetadata.language.trim() !== ""
-          ? documentMetadata.language
+      typeof effectiveMetadata.educationLanguage === "string" && effectiveMetadata.educationLanguage.trim() !== ""
+        ? effectiveMetadata.educationLanguage
+        : typeof effectiveMetadata.language === "string" && effectiveMetadata.language.trim() !== ""
+          ? effectiveMetadata.language
         : null,
     templateCode:
       typeof effectiveMetadata.templateCode === "string" && effectiveMetadata.templateCode.trim() !== ""
@@ -1027,7 +1068,7 @@ function extractEducationEvidenceSummary(input: {
     score: scoreValue,
     attempts: attemptsValue,
     faqViewedCount: faqViewedCountValue,
-    patientAcknowledged: patientAcknowledgedFromEvent || input.hasPatientSignature,
+    patientAcknowledged: patientAcknowledgedFromEvent || patientAcknowledgedFromMetadata || input.hasPatientSignature,
     educationStepNumber: asNumber(effectiveMetadata.educationStepNumber) ?? 5,
     educationStepNameEn:
       asSanitizedText(effectiveMetadata.educationStepNameEn)

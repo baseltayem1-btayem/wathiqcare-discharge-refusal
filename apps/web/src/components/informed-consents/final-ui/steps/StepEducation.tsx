@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, ChevronLeft, BookOpen, CheckCircle2, HelpCircle, Lightbulb } from 'lucide-react';
 import type { ConsentStep } from '../clinical/ClinicalTypes';
 import { criticalCareConsentTemplate } from '@/data/imc-digital-consent-templates';
@@ -28,6 +28,39 @@ type EducationChecklistGroup = {
   headerClassName: string;
   titleClassName: string;
   items: Array<{ en: string; ar: string }>;
+};
+
+type EducationVisualAidPreview = {
+  displayed: boolean;
+  displayedTitle: string;
+  visualType: string;
+  visualAssetId: string;
+  clinicalTopic: string;
+  language: 'ar' | 'en' | 'bilingual';
+  imageUrl: string;
+  thumbnailUrl: string;
+  promptSummary: string;
+  generatedAt: string;
+  approvedForEducation: boolean;
+  source: 'ai-generated';
+  disclaimerEn: string;
+  disclaimerAr: string;
+  patientAcknowledged: boolean;
+};
+
+type EducationVisualRequestPayload = {
+  diagnosis: string;
+  procedure: string;
+  specialty: string;
+  language: 'bilingual';
+  formCode: string;
+  templateId: string;
+  clinicalTopic: string;
+  viewedAt?: string | null;
+  displayedAt?: string | null;
+  generatedAt?: string | null;
+  visualAidSourceEn?: string;
+  visualAidSourceAr?: string;
 };
 
 function isCriticalCareProcedure(procedure?: Record<string, unknown>): boolean {
@@ -257,16 +290,120 @@ function buildEducationContent(procedure?: Record<string, unknown>): {
   };
 }
 
+function buildVisualAidRequestPayload(
+  procedure?: Record<string, unknown>,
+): EducationVisualRequestPayload {
+  const digitalTemplate =
+    (procedure?.digitalConsentTemplate as Record<string, unknown> | undefined) || {};
+  const criticalCareSelected = isCriticalCareProcedure(procedure);
+  const procedureName = String(procedure?.name || criticalCareConsentTemplate.title.en).trim();
+  const diagnosis = criticalCareSelected
+    ? 'ICU / Critical Care'
+    : String(procedure?.description || procedure?.name || '').trim();
+  const specialty = criticalCareSelected
+    ? 'ICU / Critical Care'
+    : String(procedure?.category || '').trim() || 'General informed consent education';
+
+  return {
+    diagnosis,
+    procedure: criticalCareSelected ? 'ICU Procedure Overview' : procedureName,
+    specialty,
+    language: 'bilingual',
+    formCode: String(digitalTemplate.formCode || procedure?.code || criticalCareConsentTemplate.formCode).trim(),
+    templateId: String(digitalTemplate.id || criticalCareConsentTemplate.id).trim(),
+    clinicalTopic: criticalCareSelected ? 'ICU / Critical Care' : specialty,
+    visualAidSourceEn: 'AI-assisted / approved visual aid',
+    visualAidSourceAr: 'وسيلة بصرية تعليمية معتمدة ومدعومة بالذكاء الاصطناعي',
+  };
+}
+
 export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: Props) {
   const [activeSection, setActiveSection] = useState('overview');
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
   const educationContent = useMemo(() => buildEducationContent(procedure), [procedure]);
+  const criticalCareSelected = useMemo(() => isCriticalCareProcedure(procedure), [procedure]);
+  const visualRequest = useMemo(() => buildVisualAidRequestPayload(procedure), [procedure]);
+  const [visualAid, setVisualAid] = useState<EducationVisualAidPreview | null>(null);
+  const [isVisualAidLoading, setIsVisualAidLoading] = useState(false);
+  const [visualAidError, setVisualAidError] = useState<string | null>(null);
+  const [displayedAt, setDisplayedAt] = useState<string | null>(null);
+  const [viewedAt, setViewedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!criticalCareSelected) {
+      setVisualAid(null);
+      setIsVisualAidLoading(false);
+      setVisualAidError(null);
+      setDisplayedAt(null);
+      setViewedAt(null);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadVisualAid = async () => {
+      setIsVisualAidLoading(true);
+      setVisualAidError(null);
+
+      try {
+        const response = await fetch('/api/modules/informed-consents/education-visual/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(visualRequest),
+        });
+
+        const payload = (await response.json().catch(() => null)) as
+          | { visual?: EducationVisualAidPreview; error?: string; message?: string }
+          | null;
+
+        if (!response.ok || !payload?.visual) {
+          throw new Error(
+            payload?.error || payload?.message || 'Failed to generate the educational visual aid.',
+          );
+        }
+
+        const now = new Date().toISOString();
+
+        if (!isCancelled) {
+          setVisualAid({
+            ...payload.visual,
+            clinicalTopic: criticalCareSelected ? 'ICU / Critical Care' : payload.visual.clinicalTopic,
+          });
+          setDisplayedAt((current) => current || now);
+          setViewedAt((current) => current || now);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          setVisualAid(null);
+          setVisualAidError(
+            error instanceof Error ? error.message : 'Failed to generate the educational visual aid.',
+          );
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsVisualAidLoading(false);
+        }
+      }
+    };
+
+    void loadVisualAid();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [criticalCareSelected, visualRequest]);
 
   const toggleCheck = (key: string) => {
     setCheckedItems(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   };
 
   const handleComplete = () => {
+    const effectiveViewedAt = viewedAt || displayedAt || visualAid?.generatedAt || new Date().toISOString();
+    const effectiveDisplayedAt = displayedAt || effectiveViewedAt;
+    const clinicalTopic = criticalCareSelected ? 'ICU / Critical Care' : visualAid?.clinicalTopic || educationContent.titleEn;
+
     onComplete('education', ['v13'], {
       education: {
         titleEn: educationContent.titleEn,
@@ -280,6 +417,50 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
         })),
         beforeAfter: educationContent.beforeAfter,
         checkedItems,
+        educationDisplayed: true,
+        visualAidDisplayed: Boolean(visualAid),
+        clinicalTopic,
+        visualAidSource: visualAid ? 'AI-assisted / approved visual aid' : null,
+        visualAidSourceEn: visualAid ? 'AI-assisted / approved visual aid' : null,
+        visualAidSourceAr: visualAid ? 'وسيلة بصرية تعليمية معتمدة ومدعومة بالذكاء الاصطناعي' : null,
+        visualAidAssetId: visualAid?.visualAssetId || null,
+        generatedAt: visualAid?.generatedAt || null,
+        displayedAt: effectiveDisplayedAt,
+        viewedAt: effectiveViewedAt,
+        educationLanguage: 'bilingual',
+        patientAcknowledged: checkedItems.length > 0,
+        patientAcknowledgementStatus:
+          checkedItems.length > 0
+            ? 'Education checklist reviewed in bilingual preview'
+            : 'Education preview displayed in bilingual mode',
+        educationStepNumber: 5,
+        educationStepNameEn: 'Patient Education & Visual Understanding',
+        educationStepNameAr: 'التثقيف وفهم الإجراء بصرياً',
+        visualAidTypeEn: visualAid?.visualType || null,
+        visualAidTypeAr: 'رسم سريري تثقيفي مدعوم بالذكاء الاصطناعي',
+        visualAidClinicalTopic: clinicalTopic,
+        visualAidGeneratedAt: visualAid?.generatedAt || null,
+        visualAidViewedAt: effectiveViewedAt,
+        visualAidPurposeEn: 'Patient education only; not diagnostic interpretation',
+        visualAidPurposeAr: 'للتثقيف فقط؛ وليس للتشخيص أو تفسير الصور الطبية',
+        visualAidDisclaimerEn: visualAid?.disclaimerEn || null,
+        visualAidDisclaimerAr: visualAid?.disclaimerAr || null,
+        visualAidApproved: visualAid?.approvedForEducation || false,
+        visualAidUrl: visualAid?.imageUrl || null,
+        visualAidThumbnailUrl: visualAid?.thumbnailUrl || null,
+        educationVisualAid: visualAid
+          ? {
+              ...visualAid,
+              clinicalTopic,
+            }
+          : null,
+        visualRequest: {
+          ...visualRequest,
+          clinicalTopic,
+          generatedAt: visualAid?.generatedAt || null,
+          displayedAt: effectiveDisplayedAt,
+          viewedAt: effectiveViewedAt,
+        },
       },
     });
     onNext();
@@ -326,6 +507,73 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
               </div>
             </div>
           ))}
+
+          {criticalCareSelected ? (
+            <div className="mt-6 rounded-lg border border-[#D8DCE3] bg-[#F8FBFF] p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#002B5C]">
+                    {lang === 'en' ? 'AI-assisted ICU Educational Visual Aid' : 'وسيلة بصرية تعليمية مدعومة بالذكاء الاصطناعي للعناية المركزة'}
+                  </p>
+                  <p className="mt-1 text-xs text-[#4B5563]">
+                    {lang === 'en'
+                      ? 'Critical Care Consent / IMC MR 1363 visual support is displayed as part of the patient education preview.'
+                      : 'يتم عرض الدعم البصري لموافقة الرعاية الحرجة / IMC MR 1363 كجزء من معاينة تثقيف المريض.'}
+                  </p>
+                </div>
+                <span className="rounded-full bg-[#E7F0FA] px-2.5 py-1 text-[11px] font-medium text-[#0F4C81]">
+                  {lang === 'en' ? 'Clinical Topic: ICU / Critical Care' : 'الموضوع السريري: العناية المركزة / الرعاية الحرجة'}
+                </span>
+              </div>
+
+              {isVisualAidLoading ? (
+                <div className="rounded border border-dashed border-[#B9C7D8] bg-white px-4 py-6 text-sm text-[#4B5563]">
+                  {lang === 'en' ? 'Generating approved educational visual aid…' : 'جارٍ إنشاء الوسيلة البصرية التعليمية المعتمدة...'}
+                </div>
+              ) : null}
+
+              {visualAidError ? (
+                <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {visualAidError}
+                </div>
+              ) : null}
+
+              {visualAid ? (
+                <div className="space-y-3">
+                  <div className="overflow-hidden rounded-lg border border-[#D8DCE3] bg-white">
+                    <img
+                      src={visualAid.imageUrl}
+                      alt={lang === 'en' ? 'ICU educational visual aid' : 'وسيلة بصرية تعليمية للعناية المركزة'}
+                      className="block h-auto w-full bg-[#F8FAFC]"
+                    />
+                  </div>
+
+                  <div className="grid gap-2 text-xs text-[#334155] sm:grid-cols-2">
+                    <p>
+                      <strong className="text-[#002B5C]">{lang === 'en' ? 'Asset ID' : 'معرّف الأصل'}:</strong>{' '}
+                      {visualAid.visualAssetId}
+                    </p>
+                    <p>
+                      <strong className="text-[#002B5C]">{lang === 'en' ? 'Generated At' : 'وقت التوليد'}:</strong>{' '}
+                      {new Date(visualAid.generatedAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}
+                    </p>
+                    <p>
+                      <strong className="text-[#002B5C]">{lang === 'en' ? 'Source' : 'المصدر'}:</strong>{' '}
+                      {lang === 'en' ? 'AI-assisted / approved visual aid' : 'وسيلة بصرية تعليمية معتمدة ومدعومة بالذكاء الاصطناعي'}
+                    </p>
+                    <p>
+                      <strong className="text-[#002B5C]">{lang === 'en' ? 'Language' : 'اللغة'}:</strong>{' '}
+                      {lang === 'en' ? 'Bilingual' : 'ثنائي اللغة'}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-[#475569]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                    {lang === 'en' ? visualAid.disclaimerEn : visualAid.disclaimerAr}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 

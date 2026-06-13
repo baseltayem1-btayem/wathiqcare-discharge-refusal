@@ -49,7 +49,32 @@ function toLanguage(value: string | null | undefined): EducationVisualLanguage {
   return value === "ar" || value === "en" || value === "bilingual" ? value : "bilingual";
 }
 
+function isCriticalCareVisualTopic(input: EducationVisualGenerateInput): boolean {
+  const values = [
+    input.diagnosis,
+    input.procedure,
+    input.specialty,
+    input.formCode,
+    input.templateId,
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => sanitizePromptValue(value).toLowerCase());
+
+  return values.some(
+    (value) =>
+      value.includes("imc mr 1363") ||
+      value.includes("imc-mr-1363") ||
+      value.includes("critical care") ||
+      value.includes("intensive care") ||
+      value.includes("icu"),
+  );
+}
+
 function buildClinicalTopic(input: EducationVisualGenerateInput): string {
+  if (isCriticalCareVisualTopic(input)) {
+    return "ICU / Critical Care";
+  }
+
   const diagnosis = sanitizePromptValue(input.diagnosis);
   const procedure = sanitizePromptValue(input.procedure);
 

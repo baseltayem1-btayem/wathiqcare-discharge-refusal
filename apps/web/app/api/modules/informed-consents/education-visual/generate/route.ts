@@ -18,19 +18,38 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function mergeEducationVisualMetadata(metadata: unknown, visualAid: ReturnType<typeof buildEducationVisualAid>) {
+function asNullableString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function mergeEducationVisualMetadata(
+  metadata: unknown,
+  visualAid: ReturnType<typeof buildEducationVisualAid>,
+  timing: { viewedAt: string | null; displayedAt: string | null },
+) {
   const root = asRecord(metadata);
   const executionContext = asRecord(root.executionContext);
   const education = asRecord(executionContext.education);
-  const viewedAt = typeof education.viewedAt === "string" ? education.viewedAt : visualAid.generatedAt;
+  const viewedAt = timing.viewedAt || (typeof education.viewedAt === "string" ? education.viewedAt : visualAid.generatedAt);
+  const displayedAt = timing.displayedAt || (typeof education.displayedAt === "string" ? education.displayedAt : viewedAt);
 
   return {
     ...root,
     educationVisualAid: visualAid,
+    educationDisplayed: true,
+    viewedAt,
+    displayedAt,
+    visualAidDisplayed: true,
+    visualAidClinicalTopic: visualAid.clinicalTopic,
+    visualAidGeneratedAt: visualAid.generatedAt,
+    visualAidViewedAt: viewedAt,
+    visualAidAssetId: visualAid.visualAssetId,
     executionContext: {
       ...executionContext,
       education: {
         ...education,
+        educationDisplayed: true,
+        displayedAt,
         viewedAt,
         updatedAt: visualAid.generatedAt,
         educationVisualAid: {
@@ -53,14 +72,27 @@ export async function POST(request: NextRequest) {
     }
 
     const language = isLanguage(payload.language) ? payload.language : "bilingual";
-    const visualAid = buildEducationVisualAid({
+    const viewedAt = asNullableString(payload.viewedAt);
+    const displayedAt = asNullableString(payload.displayedAt) || viewedAt;
+    const sourceEn = asNullableString(payload.visualAidSourceEn) || "AI-assisted / approved visual aid";
+    const sourceAr = asNullableString(payload.visualAidSourceAr) || "وسيلة بصرية تعليمية معتمدة ومدعومة بالذكاء الاصطناعي";
+    const clinicalTopicOverride = asNullableString(payload.clinicalTopic);
+    const visualAidBase = buildEducationVisualAid({
       diagnosis: typeof payload.diagnosis === "string" ? payload.diagnosis : null,
       procedure: typeof payload.procedure === "string" ? payload.procedure : null,
       specialty: typeof payload.specialty === "string" ? payload.specialty : null,
       language,
       formCode: typeof payload.formCode === "string" ? payload.formCode : null,
       templateId: typeof payload.templateId === "string" ? payload.templateId : null,
+    }, {
+      generatedAt: asNullableString(payload.generatedAt) || undefined,
     });
+    const visualAid = clinicalTopicOverride
+      ? {
+          ...visualAidBase,
+          clinicalTopic: clinicalTopicOverride,
+        }
+      : visualAidBase;
 
     const consentDocumentId = typeof payload.consentDocumentId === "string" && payload.consentDocumentId.trim()
       ? payload.consentDocumentId.trim()
@@ -92,7 +124,10 @@ export async function POST(request: NextRequest) {
       await prisma.consentDocument.update({
         where: { id: doc.id },
         data: {
-          metadata: mergeEducationVisualMetadata(doc.metadata, visualAid),
+          metadata: mergeEducationVisualMetadata(doc.metadata, visualAid, {
+            viewedAt,
+            displayedAt,
+          }),
         },
       });
 
@@ -111,20 +146,24 @@ export async function POST(request: NextRequest) {
             educationStepNumber: 5,
             educationStepNameEn: "Patient Education & Visual Understanding",
             educationStepNameAr: "التثقيف وفهم الإجراء بصرياً",
+            educationDisplayed: true,
             visualAidDisplayed: true,
             visualAidTypeEn: visualAid.visualType,
             visualAidTypeAr: "رسم سريري تثقيفي مدعوم بالذكاء الاصطناعي",
             visualAidClinicalTopic: visualAid.clinicalTopic,
             visualAidGeneratedAt: visualAid.generatedAt,
-            visualAidViewedAt: visualAid.generatedAt,
+            visualAidViewedAt: viewedAt || displayedAt || visualAid.generatedAt,
             visualAidAssetId: visualAid.visualAssetId,
-            visualAidSourceEn: "AI-generated",
-            visualAidSourceAr: "مولد بالذكاء الاصطناعي",
+            visualAidSourceEn: sourceEn,
+            visualAidSourceAr: sourceAr,
             visualAidDisclaimerEn: visualAid.disclaimerEn,
             visualAidDisclaimerAr: visualAid.disclaimerAr,
             visualAidUrl: visualAid.imageUrl,
             visualAidThumbnailUrl: visualAid.thumbnailUrl,
             visualAidApproved: visualAid.approvedForEducation,
+            displayedAt: displayedAt || visualAid.generatedAt,
+            viewedAt: viewedAt || displayedAt || visualAid.generatedAt,
+            educationLanguage: visualAid.language,
             educationVisualAid: visualAid,
           },
         },

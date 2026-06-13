@@ -84,6 +84,21 @@ type TemplateApiErrorPayload = {
   detail?: unknown;
 };
 
+type EducationVisualPersistPayload = {
+  diagnosis?: string;
+  procedure?: string;
+  specialty?: string;
+  language?: "ar" | "en" | "bilingual";
+  formCode?: string;
+  templateId?: string;
+  clinicalTopic?: string;
+  viewedAt?: string | null;
+  displayedAt?: string | null;
+  generatedAt?: string | null;
+  visualAidSourceEn?: string;
+  visualAidSourceAr?: string;
+};
+
 type BuilderState = {
   patient: Record<string, unknown>;
   procedure: Record<string, unknown>;
@@ -177,6 +192,14 @@ function readTemplateApiErrorMessage(payload: TemplateApiErrorPayload | null): s
   }
 
   return "";
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return value as Record<string, unknown>;
 }
 
 function isCriticalCareProcedure(procedure: Record<string, unknown> | undefined): boolean {
@@ -492,6 +515,7 @@ export function ConsentBuilder({
           ((procedure as Record<string, unknown> | undefined)?.digitalConsentTemplate as
             | Record<string, unknown>
             | undefined) || undefined;
+        const educationState = asRecord(builderState.education);
 
         const draftResponse = await fetch(
           "/api/modules/informed-consents/generate-draft",
@@ -518,6 +542,7 @@ export function ConsentBuilder({
               templateVersionId: selectedTemplate.templateVersionId,
               formCode: procedureCode || undefined,
               digitalConsentTemplate,
+              education: educationState,
               language: selectedTemplate.language,
             }),
           },
@@ -542,6 +567,35 @@ export function ConsentBuilder({
 
         if (!linkedConsentDocumentId) {
           throw new Error("Draft generation did not return a linked consent document");
+        }
+
+        const visualRequest = asRecord(educationState.visualRequest) as EducationVisualPersistPayload;
+        if (visualRequest.templateId && visualRequest.formCode) {
+          const persistVisualResponse = await fetch(
+            "/api/modules/informed-consents/education-visual/generate",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                ...visualRequest,
+                consentDocumentId: linkedConsentDocumentId,
+              }),
+            },
+          );
+
+          const persistVisualPayload = (await persistVisualResponse.json().catch(() => null)) as
+            | { error?: string; message?: string }
+            | null;
+
+          if (!persistVisualResponse.ok) {
+            throw new Error(
+              persistVisualPayload?.error
+                || persistVisualPayload?.message
+                || "Failed to capture Step 5 visual aid evidence for the linked consent document",
+            );
+          }
         }
 
         if (!isCancelled) {
@@ -569,7 +623,7 @@ export function ConsentBuilder({
     return () => {
       isCancelled = true;
     };
-  }, [currentStep, linkedDocumentId, patientMobile, patientEmail, builderState.procedure]);
+  }, [currentStep, linkedDocumentId, patientMobile, patientEmail, builderState.procedure, builderState.education]);
 
   const licenseWarning = licenseExpired ? (
     <div className="mx-6 mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
