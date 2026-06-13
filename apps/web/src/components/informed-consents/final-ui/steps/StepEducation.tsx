@@ -42,7 +42,7 @@ type EducationVisualAidPreview = {
   promptSummary: string;
   generatedAt: string;
   approvedForEducation: boolean;
-  source: 'ai-generated';
+  source: 'approved-library';
   disclaimerEn: string;
   disclaimerAr: string;
   patientAcknowledged: boolean;
@@ -312,8 +312,6 @@ function buildVisualAidRequestPayload(
     formCode: String(digitalTemplate.formCode || procedure?.code || criticalCareConsentTemplate.formCode).trim(),
     templateId: String(digitalTemplate.id || criticalCareConsentTemplate.id).trim(),
     clinicalTopic: criticalCareSelected ? 'ICU / Critical Care' : specialty,
-    visualAidSourceEn: 'AI-assisted / approved visual aid',
-    visualAidSourceAr: 'وسيلة بصرية تعليمية معتمدة ومدعومة بالذكاء الاصطناعي',
   };
 }
 
@@ -326,6 +324,7 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
   const [visualAid, setVisualAid] = useState<EducationVisualAidPreview | null>(null);
   const [isVisualAidLoading, setIsVisualAidLoading] = useState(false);
   const [visualAidError, setVisualAidError] = useState<string | null>(null);
+  const [visualAidUnavailableReason, setVisualAidUnavailableReason] = useState<string | null>(null);
   const [displayedAt, setDisplayedAt] = useState<string | null>(null);
   const [viewedAt, setViewedAt] = useState<string | null>(null);
 
@@ -334,6 +333,7 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
       setVisualAid(null);
       setIsVisualAidLoading(false);
       setVisualAidError(null);
+      setVisualAidUnavailableReason(null);
       setDisplayedAt(null);
       setViewedAt(null);
       return;
@@ -344,6 +344,7 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
     const loadVisualAid = async () => {
       setIsVisualAidLoading(true);
       setVisualAidError(null);
+      setVisualAidUnavailableReason(null);
 
       try {
         const response = await fetch('/api/modules/informed-consents/education-visual/generate', {
@@ -355,30 +356,42 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
         });
 
         const payload = (await response.json().catch(() => null)) as
-          | { visual?: EducationVisualAidPreview; error?: string; message?: string }
+          | { visual?: EducationVisualAidPreview | null; unavailableReason?: string | null; error?: string; message?: string }
           | null;
 
-        if (!response.ok || !payload?.visual) {
+        if (!response.ok) {
           throw new Error(
-            payload?.error || payload?.message || 'Failed to generate the educational visual aid.',
+            payload?.error || payload?.message || 'Failed to load the educational visual aid.',
           );
         }
 
         const now = new Date().toISOString();
 
         if (!isCancelled) {
-          setVisualAid({
-            ...payload.visual,
-            clinicalTopic: criticalCareSelected ? 'ICU / Critical Care' : payload.visual.clinicalTopic,
-          });
+          if (payload?.visual) {
+            setVisualAid({
+              ...payload.visual,
+              clinicalTopic: criticalCareSelected ? 'ICU / Critical Care' : payload.visual.clinicalTopic,
+            });
+            setVisualAidUnavailableReason(null);
+          } else {
+            setVisualAid(null);
+            setVisualAidUnavailableReason(
+              payload?.unavailableReason
+                || (lang === 'en'
+                  ? 'Educational visual is not available for this approved education package.'
+                  : 'الوسيلة البصرية التعليمية غير متاحة ضمن حزمة التثقيف المعتمدة لهذه الموافقة.'),
+            );
+          }
           setDisplayedAt((current) => current || now);
           setViewedAt((current) => current || now);
         }
       } catch (error) {
         if (!isCancelled) {
           setVisualAid(null);
+          setVisualAidUnavailableReason(null);
           setVisualAidError(
-            error instanceof Error ? error.message : 'Failed to generate the educational visual aid.',
+            error instanceof Error ? error.message : 'Failed to load the educational visual aid.',
           );
         }
       } finally {
@@ -420,9 +433,9 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
         educationDisplayed: true,
         visualAidDisplayed: Boolean(visualAid),
         clinicalTopic,
-        visualAidSource: visualAid ? 'AI-assisted / approved visual aid' : null,
-        visualAidSourceEn: visualAid ? 'AI-assisted / approved visual aid' : null,
-        visualAidSourceAr: visualAid ? 'وسيلة بصرية تعليمية معتمدة ومدعومة بالذكاء الاصطناعي' : null,
+        visualAidSource: visualAid ? 'Approved education library' : null,
+        visualAidSourceEn: visualAid ? 'Approved education library' : null,
+        visualAidSourceAr: visualAid ? 'مكتبة التثقيف المعتمدة' : null,
         visualAidAssetId: visualAid?.visualAssetId || null,
         generatedAt: visualAid?.generatedAt || null,
         displayedAt: effectiveDisplayedAt,
@@ -437,17 +450,18 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
         educationStepNameEn: 'Patient Education & Visual Understanding',
         educationStepNameAr: 'التثقيف وفهم الإجراء بصرياً',
         visualAidTypeEn: visualAid?.visualType || null,
-        visualAidTypeAr: 'رسم سريري تثقيفي مدعوم بالذكاء الاصطناعي',
+        visualAidTypeAr: visualAid ? 'صورة تعليمية سريرية معتمدة' : null,
         visualAidClinicalTopic: clinicalTopic,
         visualAidGeneratedAt: visualAid?.generatedAt || null,
         visualAidViewedAt: effectiveViewedAt,
-        visualAidPurposeEn: 'Patient education only; not diagnostic interpretation',
-        visualAidPurposeAr: 'للتثقيف فقط؛ وليس للتشخيص أو تفسير الصور الطبية',
+        visualAidPurposeEn: visualAid?.disclaimerEn || 'Educational visual support for physician counseling only',
+        visualAidPurposeAr: visualAid?.disclaimerAr || 'دعم بصري تعليمي لشرح الطبيب فقط',
         visualAidDisclaimerEn: visualAid?.disclaimerEn || null,
         visualAidDisclaimerAr: visualAid?.disclaimerAr || null,
         visualAidApproved: visualAid?.approvedForEducation || false,
         visualAidUrl: visualAid?.imageUrl || null,
         visualAidThumbnailUrl: visualAid?.thumbnailUrl || null,
+        visualAidUnavailableReason,
         educationVisualAid: visualAid
           ? {
               ...visualAid,
@@ -494,6 +508,17 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
         </div>
 
         <div className="p-6">
+          <div className="mb-5 rounded-lg border border-[#D8DCE3] bg-[#FAFCFF] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#4B9CD3]">
+              {lang === 'en' ? 'Procedure Educational Explanation' : 'الشرح التثقيفي للإجراء'}
+            </p>
+            <p className={`mt-2 text-sm text-[#4B5563] ${lang === 'ar' ? 'text-right' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+              {lang === 'en'
+                ? 'Review the approved procedure explanation with the patient before continuing to preview and signature.'
+                : 'راجع الشرح التثقيفي المعتمد للإجراء مع المريض قبل المتابعة إلى المعاينة والتوقيع.'}
+            </p>
+          </div>
+
           {educationContent.sections.map(s => activeSection === s.id && (
             <div key={s.id}>
               <div className={`mb-4 ${lang === 'ar' ? 'text-right' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -513,12 +538,12 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-[#002B5C]">
-                    {lang === 'en' ? 'AI-assisted ICU Educational Visual Aid' : 'وسيلة بصرية تعليمية مدعومة بالذكاء الاصطناعي للعناية المركزة'}
+                    {lang === 'en' ? 'Educational Visual Aid' : 'الوسيلة البصرية التعليمية'}
                   </p>
                   <p className="mt-1 text-xs text-[#4B5563]">
                     {lang === 'en'
-                      ? 'Critical Care Consent / IMC MR 1363 visual support is displayed as part of the patient education preview.'
-                      : 'يتم عرض الدعم البصري لموافقة الرعاية الحرجة / IMC MR 1363 كجزء من معاينة تثقيف المريض.'}
+                      ? 'Approved visual support is shown when available for the critical care education package.'
+                      : 'يتم عرض الدعم البصري المعتمد عند توفره ضمن حزمة التثقيف الخاصة بالرعاية الحرجة.'}
                   </p>
                 </div>
                 <span className="rounded-full bg-[#E7F0FA] px-2.5 py-1 text-[11px] font-medium text-[#0F4C81]">
@@ -528,13 +553,19 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
 
               {isVisualAidLoading ? (
                 <div className="rounded border border-dashed border-[#B9C7D8] bg-white px-4 py-6 text-sm text-[#4B5563]">
-                  {lang === 'en' ? 'Generating approved educational visual aid…' : 'جارٍ إنشاء الوسيلة البصرية التعليمية المعتمدة...'}
+                  {lang === 'en' ? 'Loading approved educational visual aid...' : 'جارٍ تحميل الوسيلة البصرية التعليمية المعتمدة...'}
                 </div>
               ) : null}
 
               {visualAidError ? (
                 <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {visualAidError}
+                </div>
+              ) : null}
+
+              {!isVisualAidLoading && !visualAidError && !visualAid && visualAidUnavailableReason ? (
+                <div className="rounded border border-[#D8DCE3] bg-white px-4 py-4 text-sm text-[#4B5563]">
+                  {visualAidUnavailableReason}
                 </div>
               ) : null}
 
@@ -546,25 +577,6 @@ export function StepEducation({ lang, onNext, onPrev, onComplete, procedure }: P
                       alt={lang === 'en' ? 'ICU educational visual aid' : 'وسيلة بصرية تعليمية للعناية المركزة'}
                       className="block h-auto w-full bg-[#F8FAFC]"
                     />
-                  </div>
-
-                  <div className="grid gap-2 text-xs text-[#334155] sm:grid-cols-2">
-                    <p>
-                      <strong className="text-[#002B5C]">{lang === 'en' ? 'Asset ID' : 'معرّف الأصل'}:</strong>{' '}
-                      {visualAid.visualAssetId}
-                    </p>
-                    <p>
-                      <strong className="text-[#002B5C]">{lang === 'en' ? 'Generated At' : 'وقت التوليد'}:</strong>{' '}
-                      {new Date(visualAid.generatedAt).toLocaleString(lang === 'ar' ? 'ar-SA' : 'en-US')}
-                    </p>
-                    <p>
-                      <strong className="text-[#002B5C]">{lang === 'en' ? 'Source' : 'المصدر'}:</strong>{' '}
-                      {lang === 'en' ? 'AI-assisted / approved visual aid' : 'وسيلة بصرية تعليمية معتمدة ومدعومة بالذكاء الاصطناعي'}
-                    </p>
-                    <p>
-                      <strong className="text-[#002B5C]">{lang === 'en' ? 'Language' : 'اللغة'}:</strong>{' '}
-                      {lang === 'en' ? 'Bilingual' : 'ثنائي اللغة'}
-                    </p>
                   </div>
 
                   <p className="text-xs text-[#475569]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>

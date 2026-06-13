@@ -143,6 +143,8 @@ function arPdfLabel(label: string): string {
     "Education Language": "لغة التثقيف",
     "Patient Education & Visual Understanding": "التثقيف وفهم الإجراء بصرياً",
     "Education Step": "خطوة التثقيف",
+    "Educational Visual Aid": "الوسيلة البصرية التعليمية",
+    "Procedure Educational Explanation": "الشرح التثقيفي للإجراء",
     "Template Code": "رمز النموذج",
     "Score": "النتيجة",
     "Attempts": "المحاولات",
@@ -156,6 +158,13 @@ function arPdfLabel(label: string): string {
     "Viewed At": "تمت المشاهدة في",
     "Visual Aid Asset ID": "معرّف أصل الوسيلة البصرية",
     "Visual Aid Link": "رابط الوسيلة البصرية",
+    "Procedure Name": "اسم الإجراء",
+    "Clinical Purpose": "الغرض السريري",
+    "What Will Be Done": "ما الذي سيتم عمله",
+    "Benefits": "الفوائد",
+    "Important Notes": "ملاحظات مهمة",
+    "Visual Unavailable": "الوسيلة البصرية غير متاحة",
+    "Review Status": "حالة المراجعة",
     "Generated At": "تاريخ التوليد",
     "Patient Acknowledgment": "إقرار المريض",
     "Patient Acknowledgement": "إقرار المريض",
@@ -820,6 +829,59 @@ function css(direction: "rtl" | "ltr"): string {
       height: auto;
       object-fit: contain;
     }
+    .edu-step {
+      display: grid;
+      gap: 8px;
+    }
+    .edu-summary {
+      border: 1px solid #d7dee8;
+      background: #f8fbff;
+      padding: 6px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px 8px;
+      font-size: 8.6pt;
+    }
+    .edu-panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .edu-field {
+      border: 1px solid #d7dee8;
+      background: #fff;
+      padding: 8px;
+      height: 100%;
+    }
+    .edu-field h4 {
+      margin: 0 0 6px;
+      color: #002B5C;
+      font-size: 9pt;
+    }
+    .edu-visual-frame {
+      margin: 8px 0;
+      border: 1px solid #d7dee8;
+      background: #f8fafc;
+      padding: 6px;
+    }
+    .edu-visual-frame img {
+      display: block;
+      width: 100%;
+      max-height: 240px;
+      height: auto;
+      object-fit: contain;
+    }
+    .edu-unavailable {
+      margin: 8px 0;
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      padding: 10px;
+      color: #475569;
+      font-size: 8.6pt;
+    }
+    .edu-note {
+      margin-top: 6px;
+    }
     .edu-link {
       direction: ltr;
       unicode-bidi: plaintext;
@@ -871,6 +933,7 @@ type EducationEvidenceSummary = {
   patientAcknowledgementStatus: string | null;
   visualAidThumbnailUrl: string | null;
   visualAidApproved: boolean;
+  visualAidUnavailableReason: string | null;
 };
 
 function asBoolean(value: unknown): boolean | null {
@@ -975,6 +1038,10 @@ function resolveApprovedVisualAidMetadata(latestMetadata: Record<string, unknown
       || asSanitizedText(visualAid.patientAcknowledgementStatus),
     visualAidThumbnailUrl: approvedThumbnailUrl,
     visualAidApproved,
+    visualAidUnavailableReason:
+      asSanitizedText(latestMetadata.visualAidUnavailableReason)
+      || asSanitizedText(visualAid.unavailableReason)
+      || asSanitizedText(executionEducation.visualAidUnavailableReason),
   };
 }
 
@@ -1085,34 +1152,64 @@ function educationVisualAidHtml(args: {
   visualAidDisplayed: string;
   visualAidType: string;
   visualAidClinicalTopic: string | null;
-  visualAidGeneratedAt: string | null;
-  visualAidSource: string | null;
-  visualAidAssetId: string | null;
   visualAidUrl: string | null;
-  visualAidViewedAt: string | null;
   disclaimer: string;
   visualAidThumbnailUrl: string | null;
+  visualAidUnavailableReason: string | null;
   patientAcknowledgementStatus: string | null;
 }): string {
-  const thumbnailHtml = args.visualAidThumbnailUrl
-    ? `<div class="edu-visual-thumb"><img src="${escapeHtml(args.visualAidThumbnailUrl)}" alt="Approved visual aid thumbnail" /></div>`
+  const imageSource = args.visualAidUrl || args.visualAidThumbnailUrl;
+  const imageHtml = imageSource
+    ? `<div class="edu-visual-frame"><img src="${escapeHtml(imageSource)}" alt="Educational visual aid" /></div>`
     : "";
-  const linkHtml = args.visualAidUrl
-    ? `<p><strong>${args.isAr ? arPdfLabel("Visual Aid Link") : "Visual Aid Link"}:</strong> <span class="edu-link">${renderText(args.visualAidUrl, { context: "url", fallback: "" })}</span></p>`
-    : "";
+  const unavailableMessage = args.visualAidUnavailableReason || (args.isAr ? "الوسيلة البصرية التعليمية غير متاحة لهذه الحزمة المعتمدة." : "Educational visual is not available for this approved package.");
 
   return `
-        <p><strong>${args.isAr ? arPdfLabel("Visual Aid Displayed") : "Visual Aid Displayed"}:</strong> ${content(args.visualAidDisplayed)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Visual Aid Type") : "Visual Aid Type"}:</strong> ${content(args.visualAidType)}</p>
-      <p><strong>${args.isAr ? arPdfLabel("Clinical Topic") : "Clinical Topic"}:</strong> ${content(args.visualAidClinicalTopic)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Visual Aid Source") : "Visual Aid Source"}:</strong> ${content(args.visualAidSource)}</p>
-      <p><strong>${args.isAr ? arPdfLabel("Generated At") : "Generated At"}:</strong> ${content(args.visualAidGeneratedAt)}</p>
-      <p><strong>${args.isAr ? arPdfLabel("Disclaimer") : "Disclaimer"}:</strong> ${content(args.disclaimer)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Viewed At") : "Viewed At"}:</strong> ${content(args.visualAidViewedAt)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Visual Aid Asset ID") : "Visual Aid Asset ID"}:</strong> ${content(args.visualAidAssetId)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Patient Acknowledgement") : "Patient Acknowledgement"}:</strong> ${content(args.patientAcknowledgementStatus)}</p>
-        ${thumbnailHtml}
-        ${linkHtml}`;
+        <div class="edu-field">
+          <h4>${args.isAr ? arPdfLabel("Educational Visual Aid") : "Educational Visual Aid"}</h4>
+          <p><strong>${args.isAr ? arPdfLabel("Review Status") : "Review Status"}:</strong> ${content(args.visualAidDisplayed)}</p>
+          <p><strong>${args.isAr ? arPdfLabel("Visual Aid Type") : "Visual Aid Type"}:</strong> ${content(args.visualAidType)}</p>
+          <p><strong>${args.isAr ? arPdfLabel("Clinical Topic") : "Clinical Topic"}:</strong> ${content(args.visualAidClinicalTopic)}</p>
+          ${imageHtml || `<div class="edu-unavailable">${escapeHtml(unavailableMessage)}</div>`}
+          <p class="edu-note"><strong>${args.isAr ? arPdfLabel("Disclaimer") : "Disclaimer"}:</strong> ${content(args.disclaimer)}</p>
+          <p><strong>${args.isAr ? arPdfLabel("Patient Acknowledgement") : "Patient Acknowledgement"}:</strong> ${content(args.patientAcknowledgementStatus)}</p>
+        </div>`;
+}
+
+function procedureEducationalExplanationHtml(args: {
+  isAr: boolean;
+  plannedProcedure: string | null;
+  diagnosis: string | null;
+  procedureDetails: string | null;
+  expectedOutcomes: string | null;
+  risks: string | null;
+  alternatives: string | null;
+  physicianNotes: string | null;
+  refusalRisks: string | null;
+}): string {
+  const importantNotes = [args.physicianNotes, args.refusalRisks]
+    .map((value) => sanitizePdfDisplayText(value, { context: "medical-header", preserveNewlines: true }))
+    .filter(Boolean)
+    .join("\n\n");
+
+  return `
+        <div class="edu-field">
+          <h4>${args.isAr ? arPdfLabel("Procedure Educational Explanation") : "Procedure Educational Explanation"}</h4>
+          <p><strong>${args.isAr ? arPdfLabel("Procedure Name") : "Procedure Name"}:</strong></p>
+          <pre>${blockContent(args.plannedProcedure, "medical-header")}</pre>
+          <p><strong>${args.isAr ? arPdfLabel("Clinical Purpose") : "Clinical Purpose"}:</strong></p>
+          <pre>${blockContent(args.diagnosis, "medical-header")}</pre>
+          <p><strong>${args.isAr ? arPdfLabel("What Will Be Done") : "What Will Be Done"}:</strong></p>
+          <pre>${blockContent(args.procedureDetails, "medical-header")}</pre>
+          <p><strong>${args.isAr ? arPdfLabel("Benefits") : "Benefits"}:</strong></p>
+          <pre>${blockContent(args.expectedOutcomes, "medical-header")}</pre>
+          <p><strong>${args.isAr ? arPdfLabel("Risks") : "Risks"}:</strong></p>
+          <pre>${blockContent(args.risks, "medical-header")}</pre>
+          <p><strong>${args.isAr ? arPdfLabel("Alternatives") : "Alternatives"}:</strong></p>
+          <pre>${blockContent(args.alternatives, "medical-header")}</pre>
+          <p><strong>${args.isAr ? arPdfLabel("Important Notes") : "Important Notes"}:</strong></p>
+          <pre>${blockContent(importantNotes, "medical-header")}</pre>
+        </div>`;
 }
 
 function methodLabel(method: string, isAr: boolean): string {
@@ -1225,6 +1322,7 @@ function html(args: {
   visualAidGeneratedAt: string | null;
   visualAidViewedAt: string | null;
   visualAidThumbnailUrl: string | null;
+  visualAidUnavailableReason: string | null;
   legalText: string;
   pdplText: string;
   witnessDecl: string;
@@ -1323,30 +1421,40 @@ function html(args: {
 
       <article class="card full">
         <h3>${args.isAr ? arPdfLabel("Patient Education & Visual Understanding") : "Step 5 – Patient Education & Visual Understanding"}</h3>
-        <p><strong>${args.isAr ? arPdfLabel("Education Step") : "Education Step"}:</strong> ${content(args.educationStepLabel)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Education Displayed") : "Education Displayed"}:</strong> ${content(args.educationViewed)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Education Opened At") : "Education Opened At"}:</strong> ${content(args.educationViewedAt)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Education Completed At") : "Education Completed At"}:</strong> ${content(args.educationCompletedAt)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Education Language") : "Education Language"}:</strong> ${content(args.educationLanguage)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Template Code") : "Template Code"}:</strong> ${content(args.educationTemplateCode)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Understanding Score") : "Understanding Score"}:</strong> ${content(args.educationScore)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Attempts") : "Attempts"}:</strong> ${content(args.educationAttempts)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("FAQ Items Viewed") : "FAQ Items Viewed"}:</strong> ${content(args.educationFaqViewedCount)}</p>
-        <p><strong>${args.isAr ? arPdfLabel("Patient Acknowledgement") : "Patient Acknowledgement"}:</strong> ${content(args.patientAcknowledged)}</p>
+        <div class="edu-step">
+          <div class="edu-summary">
+            <div><strong>${args.isAr ? arPdfLabel("Education Step") : "Education Step"}:</strong> ${content(args.educationStepLabel)}</div>
+            <div><strong>${args.isAr ? arPdfLabel("Education Displayed") : "Education Displayed"}:</strong> ${content(args.educationViewed)}</div>
+            <div><strong>${args.isAr ? arPdfLabel("Education Opened At") : "Education Opened At"}:</strong> ${content(args.educationViewedAt)}</div>
+            <div><strong>${args.isAr ? arPdfLabel("Education Completed At") : "Education Completed At"}:</strong> ${content(args.educationCompletedAt)}</div>
+            <div><strong>${args.isAr ? arPdfLabel("Education Language") : "Education Language"}:</strong> ${content(args.educationLanguage)}</div>
+            <div><strong>${args.isAr ? arPdfLabel("Patient Acknowledgement") : "Patient Acknowledgement"}:</strong> ${content(args.patientAcknowledged)}</div>
+          </div>
+          <div class="edu-panels">
 ${educationVisualAidHtml({
   isAr: args.isAr,
   visualAidDisplayed: args.visualAidDisplayed,
   visualAidType: args.visualAidType,
   visualAidClinicalTopic: args.visualAidClinicalTopic,
-  visualAidGeneratedAt: args.visualAidGeneratedAt,
-  visualAidSource: args.visualAidSource,
-  visualAidAssetId: args.visualAidAssetId,
   visualAidUrl: args.visualAidUrl,
-  visualAidViewedAt: args.visualAidViewedAt,
   disclaimer: args.visualAidPurposeDisclaimer,
   visualAidThumbnailUrl: args.visualAidThumbnailUrl,
+  visualAidUnavailableReason: args.visualAidUnavailableReason,
   patientAcknowledgementStatus: args.patientAcknowledgementStatus,
 })}
+${procedureEducationalExplanationHtml({
+  isAr: args.isAr,
+  plannedProcedure: args.plannedProcedure,
+  diagnosis: args.diagnosis,
+  procedureDetails: args.procedureDetails,
+  expectedOutcomes: args.expectedOutcomes,
+  risks: args.risks,
+  alternatives: args.alternatives,
+  physicianNotes: args.physicianNotes,
+  refusalRisks: args.refusalRisks,
+})}
+          </div>
+        </div>
       </article>
 
       <article class="card full legal">
@@ -1733,6 +1841,9 @@ export async function GET(
         visualAidGeneratedAt: educationEvidence.visualAidGeneratedAt ? formatDate(educationEvidence.visualAidGeneratedAt, renderAr ? "ar" : "en") : null,
         visualAidViewedAt: educationEvidence.visualAidViewedAt ? formatDate(educationEvidence.visualAidViewedAt, renderAr ? "ar" : "en") : null,
         visualAidThumbnailUrl: educationEvidence.visualAidApproved ? educationEvidence.visualAidThumbnailUrl : null,
+        visualAidUnavailableReason: educationEvidence.visualAidUnavailableReason
+          ? cleanupText(renderAr ? sanitizeDeepArabicValue(educationEvidence.visualAidUnavailableReason) : educationEvidence.visualAidUnavailableReason, { context: "medical-header" })
+          : null,
         legalText: cleanupText(renderAr ? doc.legalTextAr : doc.legalTextEn, { context: "medical-header" }),
         pdplText: cleanupText(renderAr ? doc.pdplTextAr : doc.pdplTextEn, { context: "medical-header" }),
         witnessDecl: cleanupText(renderAr ? doc.witnessDeclAr : doc.witnessDeclEn, { context: "medical-header" }),
