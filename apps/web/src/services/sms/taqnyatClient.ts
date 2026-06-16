@@ -46,6 +46,18 @@ function getGatewayUrl(): string {
   return (process.env.SMS_GATEWAY_URL || "").trim().replace(/\/$/, "");
 }
 
+function getGatewaySendUrl(): string {
+  const gatewayUrl = getGatewayUrl();
+
+  if (!gatewayUrl) {
+    return "";
+  }
+
+  return gatewayUrl.endsWith("/v1/sms/send")
+    ? gatewayUrl
+    : `${gatewayUrl}/v1/sms/send`;
+}
+
 function getGatewaySecret(): string {
   return (process.env.SMS_GATEWAY_SECRET || "").trim();
 }
@@ -107,7 +119,7 @@ async function sendViaGateway(args: TaqnyatSendArgs): Promise<TaqnyatSendResult>
     };
   }
 
-  const response = await fetch(`${gatewayUrl}/v1/sms/send`, {
+  const response = await fetch(getGatewaySendUrl(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -172,3 +184,4 @@ export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<Taqnyat
 
   return sendViaTaqnyatDirect(args);
 }
+
