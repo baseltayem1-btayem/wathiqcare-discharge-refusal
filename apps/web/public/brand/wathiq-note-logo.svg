@@ -1,0 +1,14 @@
+﻿<svg width="360" height="96" viewBox="0 0 360 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="360" height="96" rx="24" fill="#FFFFFF"/>
+  <rect x="10" y="10" width="76" height="76" rx="22" fill="url(#paint0_linear)"/>
+  <path d="M30 48.5L43.5 62L67 34" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M57 27H70V40" stroke="#C9A13B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="104" y="43" font-family="Inter, Arial, sans-serif" font-size="27" font-weight="800" fill="#002B5C">WathiqNote</text>
+  <text x="104" y="67" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="#64748B">Verified Notes & Undertakings</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="10" y1="10" x2="86" y2="86" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#002B5C"/>
+      <stop offset="1" stop-color="#1976D2"/>
+    </linearGradient>
+  </defs>
+</svg>
