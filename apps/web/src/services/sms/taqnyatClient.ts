@@ -1,4 +1,4 @@
-import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
+﻿import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
 
 export type TaqnyatSendArgs = {
   recipient: string;
@@ -20,6 +20,14 @@ function getSenderName(): string {
   );
 }
 
+function getSmsTransport(): string {
+  return (process.env.SMS_TRANSPORT || "").trim().toLowerCase();
+}
+
+function isGatewayTransport(): boolean {
+  return getSmsTransport() === "gateway";
+}
+
 function isSmsEnabled(): boolean {
   const raw = process.env.TAQNYAT_SMS_ENABLED?.trim().toLowerCase();
   return raw === "1" || raw === "true" || raw === "yes";
@@ -34,12 +42,97 @@ function getBearerToken(): string {
   );
 }
 
+function getGatewayUrl(): string {
+  return (process.env.SMS_GATEWAY_URL || "").trim().replace(/\/$/, "");
+}
+
+function getGatewaySecret(): string {
+  return (process.env.SMS_GATEWAY_SECRET || "").trim();
+}
+
+function isGatewayReady(): boolean {
+  return Boolean(getGatewayUrl() && getGatewaySecret());
+}
+
 export function isTaqnyatReady(): boolean {
+  if (isGatewayTransport()) {
+    return isSmsEnabled() && isGatewayReady();
+  }
+
   return isSmsEnabled() && Boolean(getBearerToken());
 }
 
-export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function getString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function extractProviderMessageId(response: Record<string, unknown> | null): string | null {
+  if (!response) return null;
+
+  const direct =
+    getString(response.messageId)
+    || getString(response.message_id)
+    || getString(response.id)
+    || getString(response.referenceId);
+
+  if (direct) return direct;
+
+  const providerResponse = asRecord(response.providerResponse);
+  if (!providerResponse) return null;
+
+  return (
+    getString(providerResponse.messageId)
+    || getString(providerResponse.message_id)
+    || getString(providerResponse.id)
+    || null
+  );
+}
+
+async function sendViaGateway(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
+  const gatewayUrl = getGatewayUrl();
+  const gatewaySecret = getGatewaySecret();
+
+  if (!isSmsEnabled() || !gatewayUrl || !gatewaySecret) {
+    return {
+      ok: false,
+      statusCode: 503,
+      providerMessageId: null,
+      response: { code: "SMS_GATEWAY_NOT_CONFIGURED_OR_DISABLED" },
+    };
+  }
+
+  const response = await fetch(`${gatewayUrl}/v1/sms/send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-wathiqcare-sms-secret": gatewaySecret,
+    },
+    body: JSON.stringify({
+      mobile: args.recipient,
+      message: args.message,
+      referenceId: crypto.randomUUID(),
+    }),
+  });
+
+  const parsed = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+
+  return {
+    ok: response.ok && Boolean(parsed?.ok),
+    statusCode: response.status,
+    providerMessageId: extractProviderMessageId(parsed),
+    response: parsed,
+  };
+}
+
+async function sendViaTaqnyatDirect(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
   const bearerToken = getBearerToken();
+
   if (!isSmsEnabled() || !bearerToken) {
     return {
       ok: false,
@@ -62,17 +155,20 @@ export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<Taqnyat
     }),
   });
 
-  let parsed: Record<string, unknown> | null = null;
-  try {
-    parsed = (await response.json()) as Record<string, unknown>;
-  } catch {
-    parsed = null;
-  }
+  const parsed = (await response.json().catch(() => null)) as Record<string, unknown> | null;
 
   return {
     ok: response.ok,
     statusCode: response.status,
-    providerMessageId: typeof parsed?.message_id === "string" ? parsed.message_id : null,
+    providerMessageId: extractProviderMessageId(parsed),
     response: parsed,
   };
+}
+
+export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
+  if (isGatewayTransport()) {
+    return sendViaGateway(args);
+  }
+
+  return sendViaTaqnyatDirect(args);
 }
