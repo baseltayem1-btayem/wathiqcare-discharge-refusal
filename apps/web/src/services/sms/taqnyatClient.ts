@@ -84,6 +84,28 @@ function getString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function normalizeSmsRecipient(recipient: string): string {
+  const digits = recipient.replace(/\D/g, "");
+
+  if (digits.startsWith("009665") && digits.length === 14) {
+    return digits.slice(2);
+  }
+
+  if (digits.startsWith("9665") && digits.length === 12) {
+    return digits;
+  }
+
+  if (digits.startsWith("05") && digits.length === 10) {
+    return `966${digits.slice(1)}`;
+  }
+
+  if (digits.startsWith("5") && digits.length === 9) {
+    return `966${digits}`;
+  }
+
+  return digits;
+}
+
 function extractProviderMessageId(response: Record<string, unknown> | null): string | null {
   if (!response) return null;
 
@@ -126,7 +148,7 @@ async function sendViaGateway(args: TaqnyatSendArgs): Promise<TaqnyatSendResult>
       "x-wathiqcare-sms-secret": gatewaySecret,
     },
     body: JSON.stringify({
-      mobile: args.recipient,
+      mobile: normalizeSmsRecipient(args.recipient),
       message: args.message,
       referenceId: crypto.randomUUID(),
     }),
@@ -161,7 +183,7 @@ async function sendViaTaqnyatDirect(args: TaqnyatSendArgs): Promise<TaqnyatSendR
       Authorization: `Bearer ${bearerToken}`,
     },
     body: JSON.stringify({
-      recipients: [args.recipient],
+      recipients: [normalizeSmsRecipient(args.recipient)],
       body: args.message,
       sender: getSenderName(),
     }),
@@ -184,4 +206,5 @@ export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<Taqnyat
 
   return sendViaTaqnyatDirect(args);
 }
+
 
