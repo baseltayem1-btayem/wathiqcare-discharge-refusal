@@ -50,3 +50,58 @@ export function buildSecureSigningLinkSms(input: SecureSigningLinkTemplateInput)
     "إذا لم تطلب هذا الرابط، يرجى تجاهل الرسالة.",
   ].join(" ");
 }
+
+
+export type PromissoryNoteSigningLinkTemplateInput = {
+  signingUrl: string;
+  noteNumber: string;
+  expiresMinutes: number;
+  locale?: "ar" | "en";
+};
+
+export type PromissoryNoteSigningOtpTemplateInput = {
+  otpCode: string;
+  noteNumber: string;
+  expiresMinutes: number;
+  locale?: "ar" | "en";
+};
+
+export function buildPromissoryNoteSigningLinkSms(input: PromissoryNoteSigningLinkTemplateInput): string {
+  const locale = input.locale ?? "ar";
+
+  if (locale === "en") {
+    return [
+      "WathiqCare Promissory Note signing link.",
+      `Note No.: ${input.noteNumber}.`,
+      input.signingUrl,
+      `This link expires in ${input.expiresMinutes} minutes.`,
+      "If you did not request this, ignore this message.",
+    ].join(" ");
+  }
+
+  return [
+    "رابط توقيع السند لأمر من واثق كير.",
+    `رقم السند: ${input.noteNumber}.`,
+    input.signingUrl,
+    `تنتهي صلاحية الرابط خلال ${input.expiresMinutes} دقيقة.`,
+    "إذا لم تطلب ذلك، يرجى تجاهل هذه الرسالة.",
+  ].join(" ");
+}
+
+export function buildPromissoryNoteSigningOtpSms(input: PromissoryNoteSigningOtpTemplateInput): string {
+  const locale = input.locale ?? "ar";
+
+  if (locale === "en") {
+    return [
+      `Your WathiqCare OTP for Promissory Note ${input.noteNumber} is: ${input.otpCode}.`,
+      `This code expires in ${input.expiresMinutes} minutes.`,
+      "Do not share this code with anyone.",
+    ].join(" ");
+  }
+
+  return [
+    `رمز التحقق لتوقيع السند لأمر رقم ${input.noteNumber} هو: ${input.otpCode}.`,
+    `تنتهي صلاحية الرمز خلال ${input.expiresMinutes} دقيقة.`,
+    "لا تشارك هذا الرمز مع أي شخص.",
+  ].join(" ");
+}
