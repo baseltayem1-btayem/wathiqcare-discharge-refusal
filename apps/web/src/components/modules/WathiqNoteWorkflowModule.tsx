@@ -1450,6 +1450,376 @@ function SupportSettings({ lang }: { lang: Lang }) {
   );
 }
 
+
+const wathiqNoteRoles = [
+  {
+    code: "creator",
+    ar: "منشئ السند",
+    en: "Creator",
+    departmentAr: "شؤون المرضى / المالية",
+    departmentEn: "Patient Affairs / Finance",
+    permissions: ["create", "edit_draft", "download_pdf"],
+  },
+  {
+    code: "reviewer",
+    ar: "مراجع السند",
+    en: "Reviewer",
+    departmentAr: "المطالبات / المالية",
+    departmentEn: "Claims / Finance",
+    permissions: ["review", "edit_draft", "download_pdf", "view_audit"],
+  },
+  {
+    code: "issuer",
+    ar: "مُصدر السند",
+    en: "Issuer",
+    departmentAr: "المالية / شؤون المرضى",
+    departmentEn: "Finance / Patient Affairs",
+    permissions: ["issue", "send_link", "resend_link", "download_pdf", "view_audit"],
+  },
+  {
+    code: "finance",
+    ar: "المالية",
+    en: "Finance",
+    departmentAr: "الإدارة المالية",
+    departmentEn: "Finance Department",
+    permissions: ["settle", "download_pdf", "view_audit"],
+  },
+  {
+    code: "legal",
+    ar: "الشؤون القانونية",
+    en: "Legal",
+    departmentAr: "الشؤون القانونية",
+    departmentEn: "Legal Affairs",
+    permissions: ["void", "review", "resend_link", "download_pdf", "view_audit"],
+  },
+  {
+    code: "admin",
+    ar: "مشرف النظام",
+    en: "Admin",
+    departmentAr: "إدارة النظام",
+    departmentEn: "System Administration",
+    permissions: ["create", "edit_draft", "review", "issue", "send_link", "resend_link", "settle", "void", "download_pdf", "view_audit", "manage_users"],
+  },
+  {
+    code: "auditor",
+    ar: "مدقق",
+    en: "Auditor",
+    departmentAr: "التدقيق والامتثال",
+    departmentEn: "Audit & Compliance",
+    permissions: ["download_pdf", "view_audit"],
+  },
+] as const;
+
+const wathiqNotePermissionRows = [
+  { key: "create", ar: "إنشاء مسودة", en: "Create Draft" },
+  { key: "edit_draft", ar: "تعديل مسودة", en: "Edit Draft" },
+  { key: "review", ar: "مراجعة السند", en: "Review Note" },
+  { key: "issue", ar: "إصدار السند", en: "Issue Note" },
+  { key: "send_link", ar: "إرسال رابط التوقيع", en: "Send Signing Link" },
+  { key: "resend_link", ar: "إعادة إرسال الرابط / OTP", en: "Resend Link / OTP" },
+  { key: "settle", ar: "إقفال بالوفاء", en: "Settle Note" },
+  { key: "void", ar: "إلغاء السند", en: "Void Note" },
+  { key: "download_pdf", ar: "تحميل PDF", en: "Download PDF" },
+  { key: "view_audit", ar: "عرض سجل التدقيق", en: "View Audit Trail" },
+  { key: "manage_users", ar: "إدارة المستخدمين", en: "Manage Users" },
+] as const;
+
+const wathiqNoteUsers = [
+  {
+    nameAr: "أحمد المالكي",
+    nameEn: "Ahmed Al-Malki",
+    email: "finance.user@imc.local",
+    mobile: "9665XXXXXXXX",
+    role: "finance",
+    status: "active",
+    lastActionAr: "أقفل سندًا بالوفاء",
+    lastActionEn: "Settled a note",
+  },
+  {
+    nameAr: "سارة الغامدي",
+    nameEn: "Sarah Al-Ghamdi",
+    email: "patient.affairs@imc.local",
+    mobile: "9665XXXXXXXX",
+    role: "creator",
+    status: "active",
+    lastActionAr: "أنشأت مسودة سند",
+    lastActionEn: "Created a draft note",
+  },
+  {
+    nameAr: "باسل تيم",
+    nameEn: "Basel Tayem",
+    email: "legal.affairs@imc.local",
+    mobile: "9665XXXXXXXX",
+    role: "legal",
+    status: "active",
+    lastActionAr: "راجع سبب إلغاء سند",
+    lastActionEn: "Reviewed void reason",
+  },
+  {
+    nameAr: "مدقق الامتثال",
+    nameEn: "Compliance Auditor",
+    email: "audit@imc.local",
+    mobile: "9665XXXXXXXX",
+    role: "auditor",
+    status: "read_only",
+    lastActionAr: "اطلع على سجل التدقيق",
+    lastActionEn: "Viewed audit trail",
+  },
+];
+
+function roleLabel(lang: Lang, roleCode: string) {
+  const role = wathiqNoteRoles.find((item) => item.code === roleCode);
+  return role ? txt(lang, role.ar, role.en) : roleCode;
+}
+
+function roleDepartment(lang: Lang, roleCode: string) {
+  const role = wathiqNoteRoles.find((item) => item.code === roleCode);
+  return role ? txt(lang, role.departmentAr, role.departmentEn) : "—";
+}
+
+function roleHasPermission(roleCode: string, permission: string) {
+  return Boolean(wathiqNoteRoles.find((role) => role.code === roleCode)?.permissions.includes(permission));
+}
+
+function UsersRolesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: Toast) => void }) {
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        title={txt(lang, "إدارة المستخدمين", "Users & Roles")}
+        subtitle={txt(
+          lang,
+          "إدارة حسابات مستخدمي WathiqNote وربط كل مستخدم بدور تشغيلي واضح داخل دورة حياة السند.",
+          "Manage WathiqNote users and assign each user a clear operational role across the note lifecycle.",
+        )}
+      />
+
+      <div className="grid grid-cols-4 gap-4">
+        <ShellCard className="p-5">
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "المستخدمون النشطون", "Active Users")}</div>
+          <div className="mt-3 text-3xl font-bold text-slate-900">{wathiqNoteUsers.filter((u) => u.status === "active").length}</div>
+        </ShellCard>
+        <ShellCard className="p-5">
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "أدوار WathiqNote", "WathiqNote Roles")}</div>
+          <div className="mt-3 text-3xl font-bold text-slate-900">{wathiqNoteRoles.length}</div>
+        </ShellCard>
+        <ShellCard className="p-5">
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "صلاحيات حساسة", "Sensitive Permissions")}</div>
+          <div className="mt-3 text-3xl font-bold text-slate-900">3</div>
+          <p className="mt-2 text-xs text-slate-500">{txt(lang, "الإصدار، الوفاء، الإلغاء", "Issue, settle, void")}</p>
+        </ShellCard>
+        <ShellCard className="p-5">
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "وضع الصفحة", "Page Mode")}</div>
+          <StatusPill tone="blue">{txt(lang, "جاهز للربط مع API", "API-ready")}</StatusPill>
+        </ShellCard>
+      </div>
+
+      <ShellCard>
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "مستخدمي الموديول", "Module Users")}</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              {txt(lang, "هذه القائمة مخصصة لمستخدمي السندات لأمر فقط، وليست إدارة عامة لكل مستخدمي المستشفى.", "This list is scoped to promissory-note users only, not the full hospital user directory.")}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => showToast({ type: "info", message: txt(lang, "سيتم ربط إضافة المستخدم بواجهة Tenant Users API.", "User creation will be connected to the Tenant Users API.") })}
+            className="rounded-lg bg-[#073763] px-4 py-2 text-sm font-bold text-white"
+          >
+            {txt(lang, "+ إضافة مستخدم", "+ Add User")}
+          </button>
+        </div>
+
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+              <th className="px-5 py-3 text-start">{txt(lang, "المستخدم", "User")}</th>
+              <th className="px-5 py-3 text-start">{txt(lang, "القسم", "Department")}</th>
+              <th className="px-5 py-3 text-start">{txt(lang, "الدور", "Role")}</th>
+              <th className="px-5 py-3 text-start">{txt(lang, "الحالة", "Status")}</th>
+              <th className="px-5 py-3 text-start">{txt(lang, "آخر إجراء", "Last Action")}</th>
+              <th className="px-5 py-3 text-end">{txt(lang, "الإجراءات", "Actions")}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {wathiqNoteUsers.map((user) => (
+              <tr key={user.email}>
+                <td className="px-5 py-4">
+                  <div className="font-bold text-slate-900">{txt(lang, user.nameAr, user.nameEn)}</div>
+                  <div className="text-xs text-slate-500">{user.email}</div>
+                  <div className="text-xs text-slate-400">{user.mobile}</div>
+                </td>
+                <td className="px-5 py-4 text-slate-700">{roleDepartment(lang, user.role)}</td>
+                <td className="px-5 py-4">
+                  <StatusPill tone={user.role === "legal" ? "red" : user.role === "finance" ? "green" : user.role === "admin" ? "blue" : "slate"}>
+                    {roleLabel(lang, user.role)}
+                  </StatusPill>
+                </td>
+                <td className="px-5 py-4">
+                  <StatusPill tone={user.status === "active" ? "green" : "slate"}>
+                    {user.status === "active" ? txt(lang, "نشط", "Active") : txt(lang, "قراءة فقط", "Read-only")}
+                  </StatusPill>
+                </td>
+                <td className="px-5 py-4 text-slate-600">{txt(lang, user.lastActionAr, user.lastActionEn)}</td>
+                <td className="px-5 py-4 text-end">
+                  <div className="flex justify-end gap-2">
+                    <button type="button" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                      {txt(lang, "تعديل", "Edit")}
+                    </button>
+                    <button type="button" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-100">
+                      {txt(lang, "تعليق", "Suspend")}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </ShellCard>
+    </div>
+  );
+}
+
+function PermissionMatrixScreen({ lang }: { lang: Lang }) {
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        title={txt(lang, "مصفوفة الصلاحيات", "Permission Matrix")}
+        subtitle={txt(
+          lang,
+          "تحديد من يستطيع إنشاء السند، إصداره، إقفاله بالوفاء، إلغاؤه، أو الاطلاع على سجل التدقيق.",
+          "Define who can create, issue, settle, void, and audit promissory notes.",
+        )}
+      />
+
+      <ShellCard>
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "صلاحيات دورة حياة السند", "Note Lifecycle Permissions")}</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            {txt(lang, "الإلغاء والوفاء صلاحيات حساسة ويجب ألا تكون متاحة لمنشئ السند العادي.", "Void and settlement are sensitive permissions and should not be available to ordinary creators.")}
+          </p>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[980px] text-sm">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="sticky start-0 bg-slate-50 px-5 py-3 text-start">{txt(lang, "الإجراء", "Action")}</th>
+                {wathiqNoteRoles.map((role) => (
+                  <th key={role.code} className="px-4 py-3 text-center">{txt(lang, role.ar, role.en)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {wathiqNotePermissionRows.map((permission) => (
+                <tr key={permission.key}>
+                  <td className="sticky start-0 bg-white px-5 py-3 font-bold text-slate-800">{txt(lang, permission.ar, permission.en)}</td>
+                  {wathiqNoteRoles.map((role) => {
+                    const allowed = roleHasPermission(role.code, permission.key);
+                    return (
+                      <td key={`${role.code}-${permission.key}`} className="px-4 py-3 text-center">
+                        <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold ${allowed ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-300"}`}>
+                          {allowed ? "✓" : "—"}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </ShellCard>
+
+      <ShellCard className="p-5">
+        <h3 className="text-lg font-bold text-[#073763]">{txt(lang, "قواعد إلزامية", "Mandatory Controls")}</h3>
+        <div className="mt-4 grid grid-cols-3 gap-4">
+          <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+            <div className="font-bold text-blue-900">{txt(lang, "الإصدار", "Issuance")}</div>
+            <p className="mt-2 text-sm leading-6 text-blue-800">{txt(lang, "يقتصر على Issuer أو Admin بعد اكتمال البيانات والمراجعة.", "Restricted to Issuer or Admin after data completion and review.")}</p>
+          </div>
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+            <div className="font-bold text-emerald-900">{txt(lang, "الوفاء", "Settlement")}</div>
+            <p className="mt-2 text-sm leading-6 text-emerald-800">{txt(lang, "يقتصر على Finance أو Admin مع مرجع مالي وتاريخ سداد.", "Restricted to Finance or Admin with payment reference and settlement date.")}</p>
+          </div>
+          <div className="rounded-xl border border-rose-100 bg-rose-50 p-4">
+            <div className="font-bold text-rose-900">{txt(lang, "الإلغاء", "Void")}</div>
+            <p className="mt-2 text-sm leading-6 text-rose-800">{txt(lang, "يقتصر على Legal أو Admin مع سبب إلزامي وسجل تدقيق.", "Restricted to Legal or Admin with mandatory reason and audit trail.")}</p>
+          </div>
+        </div>
+      </ShellCard>
+    </div>
+  );
+}
+
+function DelegationsScreen({ lang }: { lang: Lang }) {
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        title={txt(lang, "التفويضات والاعتمادات", "Delegations & Approvals")}
+        subtitle={txt(lang, "إدارة حدود التفويض لاعتماد إصدار السندات أو إلغائها في الحالات الحساسة.", "Manage delegated authority for note issuance and sensitive void approvals.")}
+      />
+
+      <ShellCard className="p-5">
+        <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "قواعد التفويض المقترحة", "Delegation Rules")}</h2>
+        <div className="mt-4 grid gap-3">
+          {[
+            ["إصدار السند حتى 10,000 ريال", "Issuer فقط بعد المراجعة", "Issue notes up to SAR 10,000", "Issuer after review"],
+            ["إصدار السند فوق 10,000 ريال", "Issuer + Finance Reviewer", "Issue notes above SAR 10,000", "Issuer + Finance Reviewer"],
+            ["إلغاء سند غير موقع", "Legal أو Admin مع سبب", "Void unsigned note", "Legal or Admin with reason"],
+            ["إلغاء سند موقع", "Legal + Finance approval", "Void signed note", "Legal + Finance approval"],
+            ["إلغاء سند تم الوفاء به", "ممنوع", "Void settled note", "Not allowed"],
+          ].map(([arRule, arApproval, enRule, enApproval]) => (
+            <div key={enRule} className="grid grid-cols-[1fr_260px] rounded-xl border border-slate-200 bg-white p-4">
+              <div>
+                <div className="font-bold text-slate-900">{txt(lang, arRule, enRule)}</div>
+                <div className="mt-1 text-xs text-slate-500">{txt(lang, "قاعدة تشغيلية قابلة للربط لاحقًا بالـ API.", "Operational rule ready for API enforcement.")}</div>
+              </div>
+              <StatusPill tone={arApproval === "ممنوع" ? "red" : "blue"}>{txt(lang, arApproval, enApproval)}</StatusPill>
+            </div>
+          ))}
+        </div>
+      </ShellCard>
+    </div>
+  );
+}
+
+function AuditTrailScreen({ lang }: { lang: Lang }) {
+  const rows = [
+    ["09:42", "تم إصدار سند وإرسال رابط التوقيع", "Issued note and sent signing link", "issuer"],
+    ["09:50", "تمت إعادة إرسال OTP", "Resent OTP", "issuer"],
+    ["10:15", "تم إقفال سند بالوفاء", "Settled note", "finance"],
+    ["10:22", "تم إلغاء سند مع سبب موثق", "Voided note with audited reason", "legal"],
+  ];
+
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        title={txt(lang, "سجل التدقيق", "Audit Trail")}
+        subtitle={txt(lang, "عرض الأحداث الحساسة المتعلقة بإصدار السندات والوفاء والإلغاء.", "Review sensitive events related to issuance, settlement, and voiding.")}
+      />
+
+      <ShellCard>
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "أحداث WathiqNote", "WathiqNote Events")}</h2>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {rows.map(([time, ar, en, role]) => (
+            <div key={`${time}-${en}`} className="grid grid-cols-[90px_1fr_180px] items-center gap-4 px-5 py-4">
+              <div className="text-sm font-bold text-slate-500">{time}</div>
+              <div>
+                <div className="font-bold text-slate-900">{txt(lang, ar, en)}</div>
+                <div className="mt-1 text-xs text-slate-500">IP / Device / Tenant / Case reference retained</div>
+              </div>
+              <StatusPill tone={role === "legal" ? "red" : role === "finance" ? "green" : "blue"}>{roleLabel(lang, role)}</StatusPill>
+            </div>
+          ))}
+        </div>
+      </ShellCard>
+    </div>
+  );
+}
+
 function PlaceholderScreen({ lang, screen }: { lang: Lang; screen: Screen }) {
   const titles: Record<Screen, [string, string]> = {
     dashboard: ["لوحة التحكم", "Dashboard"],
@@ -1514,7 +1884,11 @@ export default function WathiqNoteWorkflowModule() {
           {screen === "note-builder" ? <NoteBuilder lang={lang} showToast={showToast} setScreen={setScreen} /> : null}
           {screen === "status-tracking" ? <StatusTracking lang={lang} /> : null}
           {screen === "support-settings" ? <SupportSettings lang={lang} /> : null}
-          {!["dashboard", "patient-search", "note-builder", "status-tracking", "support-settings"].includes(screen) ? (
+          {screen === "users" ? <UsersRolesScreen lang={lang} showToast={showToast} /> : null}
+          {screen === "permission-matrix" ? <PermissionMatrixScreen lang={lang} /> : null}
+          {screen === "delegations" ? <DelegationsScreen lang={lang} /> : null}
+          {screen === "audit" ? <AuditTrailScreen lang={lang} /> : null}
+          {!["dashboard", "patient-search", "note-builder", "status-tracking", "support-settings", "users", "permission-matrix", "delegations", "audit"].includes(screen) ? (
             <PlaceholderScreen lang={lang} screen={screen} />
           ) : null}
         </div>
