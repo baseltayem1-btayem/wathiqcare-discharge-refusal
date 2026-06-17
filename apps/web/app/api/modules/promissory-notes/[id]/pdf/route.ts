@@ -188,6 +188,8 @@ export async function GET(
     browser = await launchBrowser();
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    await page.emulateMediaType("print");
 
     const pdf = await page.pdf({
       format: "A4",

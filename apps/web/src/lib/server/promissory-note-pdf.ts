@@ -165,6 +165,57 @@ function documentCss(isAr: boolean): string {
   `;
 }
 
+
+type PromissoryWatermark = {
+  ar: string;
+  en: string;
+  borderColor: string;
+  textColor: string;
+  backgroundColor: string;
+};
+
+function getPromissoryWatermark(status?: string | null): PromissoryWatermark | null {
+  const normalized = (status || "").trim().toUpperCase();
+
+  if (normalized === "SETTLED" || normalized === "REPAID") {
+    return {
+      ar: "تم الوفاء",
+      en: "SETTLED",
+      borderColor: "rgba(21, 128, 61, 0.34)",
+      textColor: "rgba(21, 128, 61, 0.18)",
+      backgroundColor: "rgba(240, 253, 244, 0.10)",
+    };
+  }
+
+  if (normalized === "VOID" || normalized === "CANCELED" || normalized === "CANCELLED") {
+    return {
+      ar: "ملغى",
+      en: "VOID",
+      borderColor: "rgba(185, 28, 28, 0.36)",
+      textColor: "rgba(185, 28, 28, 0.18)",
+      backgroundColor: "rgba(254, 242, 242, 0.10)",
+    };
+  }
+
+  return null;
+}
+
+function buildPromissoryWatermarkHtml(watermark: PromissoryWatermark | null): string {
+  if (!watermark) return "";
+
+  return `
+    <div class="pn-watermark-layer" aria-hidden="true">
+      <div
+        class="pn-watermark-stamp"
+        style="border-color: ${watermark.borderColor}; color: ${watermark.textColor}; background: ${watermark.backgroundColor};"
+      >
+        <div class="pn-watermark-ar">${escapeHtml(watermark.ar)}</div>
+        <div class="pn-watermark-en">${escapeHtml(watermark.en)}</div>
+      </div>
+    </div>
+  `;
+}
+
 export function buildPromissoryPdfHtml({
   logoSrc,
   noteData,
@@ -323,13 +374,60 @@ export function buildPromissoryPdfHtml({
     </div>
   `;
 
+  const watermark = getPromissoryWatermark(noteData.status);
+
+  const watermarkHtml = buildPromissoryWatermarkHtml(watermark);
+
+
   return `<!doctype html>
 <html lang="${isAr ? "ar" : "en"}" dir="${isAr ? "rtl" : "ltr"}">
   <head>
     <meta charset="utf-8" />
     <style>${embeddedArabicFontCss}${documentCss(isAr)}</style>
+    <style>
+      .pn-watermark-layer {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 9999;
+      }
+
+      .pn-watermark-stamp {
+        transform: rotate(-22deg);
+        min-width: 420px;
+        border: 8px solid;
+        border-radius: 28px;
+        padding: 30px 46px;
+        text-align: center;
+        opacity: 1;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.20) inset;
+        font-family: "WathiqArabicPdfPrimary", "WathiqArabicPdfFallback", "Tajawal", Arial, sans-serif;
+      }
+
+      .pn-watermark-ar {
+        font-size: 68px;
+        font-weight: 900;
+        line-height: 1.1;
+        letter-spacing: 1px;
+        direction: rtl;
+        unicode-bidi: isolate;
+      }
+
+      .pn-watermark-en {
+        margin-top: 8px;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 5px;
+        direction: ltr;
+        unicode-bidi: isolate;
+      }
+    </style>
   </head>
   <body>
+    ${watermarkHtml}
     ${isAr ? bodyAr : bodyEn}
   </body>
 </html>`;
