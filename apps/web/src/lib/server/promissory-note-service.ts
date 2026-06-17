@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { PromissoryNoteStatus } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
@@ -232,6 +232,46 @@ function normalizeLifecycleMetadata(payload: UpdatePromissoryLifecyclePayload = 
   };
 }
 
+
+function requireLifecycleTransitionAllowed(
+  currentStatus: PromissoryNoteStatus,
+  nextStatus: PromissoryNoteStatus,
+  payload: UpdatePromissoryLifecyclePayload,
+): void {
+  if (currentStatus === PromissoryNoteStatus.SETTLED) {
+    throw new ApiError(409, "Settled promissory notes cannot be modified or voided");
+  }
+
+  if (currentStatus === PromissoryNoteStatus.VOID) {
+    throw new ApiError(409, "Voided promissory notes cannot be modified or settled");
+  }
+
+  if (nextStatus === PromissoryNoteStatus.VOID) {
+    const reason = payload.reason?.trim();
+    if (!reason) {
+      throw new ApiError(400, "reason is required when voiding a promissory note");
+    }
+  }
+
+  if (nextStatus === PromissoryNoteStatus.SETTLED) {
+    const reference = payload.reference?.trim();
+    const method = payload.method?.trim();
+    const amount = payload.amount === undefined || payload.amount === null || payload.amount === "" ? null : Number(payload.amount);
+
+    if (!reference) {
+      throw new ApiError(400, "reference is required when settling a promissory note");
+    }
+
+    if (!method) {
+      throw new ApiError(400, "method is required when settling a promissory note");
+    }
+
+    if (amount === null || !Number.isFinite(amount) || amount <= 0) {
+      throw new ApiError(400, "amount must be a positive number when settling a promissory note");
+    }
+  }
+}
+
 async function updateTenantPromissoryLifecycleStatus(
   auth: AuthContext,
   noteId: string,
@@ -266,6 +306,8 @@ async function updateTenantPromissoryLifecycleStatus(
   if (!existing) {
     throw new ApiError(404, "Promissory note not found");
   }
+
+  requireLifecycleTransitionAllowed(existing.status, status, payload);
 
   const lifecycleMetadata = normalizeLifecycleMetadata(payload);
   const previousMetadata =
