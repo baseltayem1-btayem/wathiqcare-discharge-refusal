@@ -2149,6 +2149,313 @@ function AuditTrailScreen({ lang }: { lang: Lang }) {
   );
 }
 
+
+type PromissoryNoteListItem = {
+  id?: string;
+  noteNumber?: string | null;
+  note_number?: string | null;
+  amount?: number | string | null;
+  currency?: string | null;
+  status?: string | null;
+  debtorName?: string | null;
+  debtor_name?: string | null;
+  debtorNationalId?: string | null;
+  debtor_national_id?: string | null;
+  caseId?: string | null;
+  case_id?: string | null;
+  dueDate?: string | null;
+  due_date?: string | null;
+  createdAt?: string | null;
+  created_at?: string | null;
+};
+
+function getNoteNumber(note: PromissoryNoteListItem) {
+  return note.noteNumber || note.note_number || note.id || "—";
+}
+
+function getNoteDebtor(note: PromissoryNoteListItem) {
+  return note.debtorName || note.debtor_name || "—";
+}
+
+function getNoteAmount(note: PromissoryNoteListItem) {
+  const value = Number(note.amount ?? 0);
+  if (!Number.isFinite(value) || value <= 0) return "—";
+  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${note.currency || "SAR"}`;
+}
+
+function getNoteDate(value?: string | null, lang?: Lang) {
+  if (!value) return "—";
+  try {
+    return new Date(value).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US");
+  } catch {
+    return value;
+  }
+}
+
+function statusTone(status?: string | null): "green" | "blue" | "amber" | "red" | "slate" {
+  const normalized = (status || "").toUpperCase();
+  if (normalized === "SETTLED" || normalized === "SIGNED") return "green";
+  if (normalized === "ACTIVE") return "blue";
+  if (normalized === "VOID" || normalized === "CANCELLED" || normalized === "CANCELED") return "red";
+  if (normalized === "DRAFT" || normalized === "PENDING_SIGNATURE") return "amber";
+  return "slate";
+}
+
+function statusLabel(lang: Lang, status?: string | null) {
+  const normalized = (status || "").toUpperCase();
+  if (normalized === "SETTLED") return txt(lang, "تم الوفاء", "Settled");
+  if (normalized === "VOID") return txt(lang, "ملغى", "Void");
+  if (normalized === "ACTIVE") return txt(lang, "نشط", "Active");
+  if (normalized === "DRAFT") return txt(lang, "مسودة", "Draft");
+  if (normalized === "PENDING_SIGNATURE") return txt(lang, "بانتظار التوقيع", "Pending Signature");
+  return status || "—";
+}
+
+function extractPromissoryNotes(payload: unknown): PromissoryNoteListItem[] {
+  if (Array.isArray(payload)) return payload as PromissoryNoteListItem[];
+
+  const keys = ["notes", "items", "promissoryNotes", "data"];
+  for (const key of keys) {
+    const array = getApiArray<PromissoryNoteListItem>(payload, key);
+    if (array.length > 0) return array;
+  }
+
+  if (payload && typeof payload === "object") {
+    const data = (payload as Record<string, unknown>).data;
+    if (Array.isArray(data)) return data as PromissoryNoteListItem[];
+  }
+
+  return [];
+}
+
+function usePromissoryNotes(lang: Lang) {
+  const [notes, setNotes] = useState<PromissoryNoteListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadNotes() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiJson<unknown>("/api/modules/promissory-notes");
+      setNotes(extractPromissoryNotes(response));
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : txt(lang, "تعذر تحميل السندات.", "Unable to load notes."));
+      setNotes([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadNotes();
+  }, []);
+
+  return { notes, loading, error, loadNotes };
+}
+
+function NotesTable({
+  lang,
+  notes,
+  emptyMessage,
+}: {
+  lang: Lang;
+  notes: PromissoryNoteListItem[];
+  emptyMessage: string;
+}) {
+  if (notes.length === 0) {
+    return <div className="p-8 text-center text-sm text-slate-500">{emptyMessage}</div>;
+  }
+
+  return (
+    <table className="w-full text-sm">
+      <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+        <tr>
+          <th className="px-5 py-3 text-start">{txt(lang, "رقم السند", "Note No.")}</th>
+          <th className="px-5 py-3 text-start">{txt(lang, "المدين", "Debtor")}</th>
+          <th className="px-5 py-3 text-start">{txt(lang, "الحالة", "Status")}</th>
+          <th className="px-5 py-3 text-start">{txt(lang, "تاريخ الاستحقاق", "Due Date")}</th>
+          <th className="px-5 py-3 text-end">{txt(lang, "المبلغ", "Amount")}</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-100">
+        {notes.map((note, index) => (
+          <tr key={note.id || getNoteNumber(note) || index}>
+            <td className="px-5 py-4 font-bold text-[#073763]">{getNoteNumber(note)}</td>
+            <td className="px-5 py-4 text-slate-700">{getNoteDebtor(note)}</td>
+            <td className="px-5 py-4">
+              <StatusPill tone={statusTone(note.status)}>{statusLabel(lang, note.status)}</StatusPill>
+            </td>
+            <td className="px-5 py-4 text-slate-600">{getNoteDate(note.dueDate || note.due_date, lang)}</td>
+            <td className="px-5 py-4 text-end font-bold text-slate-900">{getNoteAmount(note)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function TemplatesClausesScreen({ lang }: { lang: Lang }) {
+  const templates = [
+    {
+      ar: "سند لأمر مقابل خدمات طبية",
+      en: "Promissory Note for Medical Services",
+      statusAr: "معتمد",
+      statusEn: "Approved",
+      ownerAr: "الشؤون القانونية",
+      ownerEn: "Legal Affairs",
+    },
+    {
+      ar: "إقرار صفة المدين",
+      en: "Debtor Capacity Acknowledgment",
+      statusAr: "معتمد",
+      statusEn: "Approved",
+      ownerAr: "الشؤون القانونية / المالية",
+      ownerEn: "Legal / Finance",
+    },
+    {
+      ar: "تعليمات الإلغاء والوفاء",
+      en: "Void and Settlement Instructions",
+      statusAr: "قيد المراجعة",
+      statusEn: "Under Review",
+      ownerAr: "المالية",
+      ownerEn: "Finance",
+    },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        title={txt(lang, "القوالب والبنود", "Templates & Clauses")}
+        subtitle={txt(lang, "إدارة قوالب السندات والبنود القانونية المعتمدة قبل الإصدار.", "Manage approved promissory-note templates and legal clauses before issuance.")}
+      />
+
+      <ShellCard>
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "مكتبة القوالب", "Template Library")}</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              {txt(lang, "هذه الشاشة جاهزة للربط لاحقًا بقاعدة بيانات القوالب والإصدارات.", "This screen is ready to connect to template versioning APIs.")}
+            </p>
+          </div>
+          <button type="button" className="rounded-lg bg-[#073763] px-4 py-2 text-sm font-bold text-white">
+            {txt(lang, "+ قالب جديد", "+ New Template")}
+          </button>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          {templates.map((template) => (
+            <div key={template.en} className="grid grid-cols-[1fr_180px_180px_120px] items-center gap-4 px-5 py-4">
+              <div>
+                <div className="font-bold text-slate-900">{txt(lang, template.ar, template.en)}</div>
+                <div className="mt-1 text-xs text-slate-500">{txt(lang, "إصدار محكوم بسجل تدقيق واعتماد.", "Version-controlled and approval-governed.")}</div>
+              </div>
+              <div className="text-sm text-slate-600">{txt(lang, template.ownerAr, template.ownerEn)}</div>
+              <StatusPill tone={template.statusEn === "Approved" ? "green" : "amber"}>{txt(lang, template.statusAr, template.statusEn)}</StatusPill>
+              <button type="button" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">
+                {txt(lang, "فتح", "Open")}
+              </button>
+            </div>
+          ))}
+        </div>
+      </ShellCard>
+    </div>
+  );
+}
+
+function FinanceMonitoringScreen({ lang }: { lang: Lang }) {
+  const { notes, loading, error, loadNotes } = usePromissoryNotes(lang);
+  const financeNotes = notes.filter((note) => {
+    const status = (note.status || "").toUpperCase();
+    return status === "ACTIVE" || status === "PENDING_SIGNATURE" || status === "SETTLED";
+  });
+
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        title={txt(lang, "متابعة المالية", "Finance Monitoring")}
+        subtitle={txt(lang, "متابعة السندات النشطة والسندات التي تم الوفاء بها وربطها بالمراجع المالية.", "Track active and settled notes and connect them with finance references.")}
+      />
+
+      <ShellCard>
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "سندات تحتاج متابعة مالية", "Notes Requiring Finance Follow-up")}</h2>
+          <button type="button" onClick={() => void loadNotes()} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+            {txt(lang, "تحديث", "Refresh")}
+          </button>
+        </div>
+        {error ? <div className="m-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{error}</div> : null}
+        {loading ? <div className="p-8 text-center text-sm text-slate-500">{txt(lang, "جارٍ تحميل السندات...", "Loading notes...")}</div> : (
+          <NotesTable lang={lang} notes={financeNotes} emptyMessage={txt(lang, "لا توجد سندات مالية متاحة للعرض.", "No finance notes available.")} />
+        )}
+      </ShellCard>
+    </div>
+  );
+}
+
+function ClaimsMonitoringScreen({ lang }: { lang: Lang }) {
+  const { notes, loading, error, loadNotes } = usePromissoryNotes(lang);
+  const claimsNotes = notes.filter((note) => (note.status || "").toUpperCase() !== "VOID");
+
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        title={txt(lang, "متابعة المطالبات", "Claims Monitoring")}
+        subtitle={txt(lang, "متابعة السندات المرتبطة بالفواتير والمطالبات ومواقف التغطية.", "Track notes linked to invoices, claims, and coverage decisions.")}
+      />
+
+      <ShellCard>
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "سندات مرتبطة بالمطالبات", "Claim-linked Notes")}</h2>
+          <button type="button" onClick={() => void loadNotes()} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+            {txt(lang, "تحديث", "Refresh")}
+          </button>
+        </div>
+        {error ? <div className="m-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{error}</div> : null}
+        {loading ? <div className="p-8 text-center text-sm text-slate-500">{txt(lang, "جارٍ تحميل السندات...", "Loading notes...")}</div> : (
+          <NotesTable lang={lang} notes={claimsNotes} emptyMessage={txt(lang, "لا توجد سندات مرتبطة بالمطالبات.", "No claim-linked notes available.")} />
+        )}
+      </ShellCard>
+    </div>
+  );
+}
+
+function LegalEscalationScreen({ lang }: { lang: Lang }) {
+  const { notes, loading, error, loadNotes } = usePromissoryNotes(lang);
+  const escalationNotes = notes.filter((note) => {
+    const status = (note.status || "").toUpperCase();
+    return status === "ACTIVE" || status === "OVERDUE" || status === "VOID";
+  });
+
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        title={txt(lang, "التصعيد القانوني", "Legal Escalation")}
+        subtitle={txt(lang, "متابعة الحالات المتعثرة أو الملغاة أو التي تحتاج مراجعة قانونية.", "Track overdue, voided, or legally sensitive notes.")}
+      />
+
+      <ShellCard>
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "حالات تحتاج مراجعة قانونية", "Legal Review Queue")}</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              {txt(lang, "التصعيد القانوني لا يظهر في رحلة إصدار السند إلا بعد وجود سبب تشغيلي أو مالي.", "Legal escalation is separated from issuance and appears only when operational or financial triggers exist.")}
+            </p>
+          </div>
+          <button type="button" onClick={() => void loadNotes()} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+            {txt(lang, "تحديث", "Refresh")}
+          </button>
+        </div>
+        {error ? <div className="m-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{error}</div> : null}
+        {loading ? <div className="p-8 text-center text-sm text-slate-500">{txt(lang, "جارٍ تحميل السندات...", "Loading notes...")}</div> : (
+          <NotesTable lang={lang} notes={escalationNotes} emptyMessage={txt(lang, "لا توجد حالات تصعيد قانوني حاليًا.", "No legal escalation items currently.")} />
+        )}
+      </ShellCard>
+    </div>
+  );
+}
+
 function PlaceholderScreen({ lang, screen }: { lang: Lang; screen: Screen }) {
   const titles: Record<Screen, [string, string]> = {
     dashboard: ["لوحة التحكم", "Dashboard"],
@@ -2217,7 +2524,11 @@ export default function WathiqNoteWorkflowModule() {
           {screen === "permission-matrix" ? <PermissionMatrixScreen lang={lang} /> : null}
           {screen === "delegations" ? <DelegationsScreen lang={lang} /> : null}
           {screen === "audit" ? <AuditTrailScreen lang={lang} /> : null}
-          {!["dashboard", "patient-search", "note-builder", "status-tracking", "support-settings", "users", "permission-matrix", "delegations", "audit"].includes(screen) ? (
+          {screen === "templates" ? <TemplatesClausesScreen lang={lang} /> : null}
+          {screen === "finance-monitoring" ? <FinanceMonitoringScreen lang={lang} /> : null}
+          {screen === "claims-monitoring" ? <ClaimsMonitoringScreen lang={lang} /> : null}
+          {screen === "legal-escalation" ? <LegalEscalationScreen lang={lang} /> : null}
+          {!["dashboard", "patient-search", "note-builder", "status-tracking", "support-settings", "users", "permission-matrix", "delegations", "audit", "templates", "finance-monitoring", "claims-monitoring", "legal-escalation"].includes(screen) ? (
             <PlaceholderScreen lang={lang} screen={screen} />
           ) : null}
         </div>
