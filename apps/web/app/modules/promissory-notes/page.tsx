@@ -1,14 +1,5 @@
-import { redirect } from "next/navigation";
-import PromissoryNotesModulePage from "@/components/modules/PromissoryNotesModulePage";
-import { canAccessModule } from "@/lib/modules/catalog";
-import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
+﻿import { redirect } from "next/navigation";
 
-export default async function PromissoryNotesPage() {
-  const auth = await requirePageAuthClaimsOrRedirect("/modules/promissory-notes");
-
-  if (!canAccessModule("promissory-notes", { role: auth.role, platformRole: auth.platform_role })) {
-    redirect("/dashboard");
-  }
-
-  return <PromissoryNotesModulePage auth={auth} />;
+export default function PromissoryNotesLegacyRedirectPage() {
+  redirect("/modules/promissory-notes/enterprise");
 }
