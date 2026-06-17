@@ -2306,6 +2306,7 @@ function NotesTable({
           <th className="px-5 py-3 text-start">{txt(lang, "الحالة", "Status")}</th>
           <th className="px-5 py-3 text-start">{txt(lang, "تاريخ الاستحقاق", "Due Date")}</th>
           <th className="px-5 py-3 text-end">{txt(lang, "المبلغ", "Amount")}</th>
+          <th className="px-5 py-3 text-end">{txt(lang, "ملف السند", "PDF")}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-slate-100">
@@ -2318,6 +2319,30 @@ function NotesTable({
             </td>
             <td className="px-5 py-4 text-slate-600">{getNoteDate(note.dueDate || note.due_date, lang)}</td>
             <td className="px-5 py-4 text-end font-bold text-slate-900">{getNoteAmount(note)}</td>
+            <td className="px-5 py-4">
+              {note.id ? (
+                <div className="flex justify-end gap-2">
+                  <a
+                    href={`/api/modules/promissory-notes/${encodeURIComponent(note.id)}/pdf?lang=${lang}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100"
+                  >
+                    {txt(lang, "عرض PDF", "View PDF")}
+                  </a>
+                  <a
+                    href={`/api/modules/promissory-notes/${encodeURIComponent(note.id)}/pdf?lang=${lang}&download=1`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
+                  >
+                    {txt(lang, "تحميل", "Download")}
+                  </a>
+                </div>
+              ) : (
+                <span className="text-xs text-slate-400">{txt(lang, "غير متاح", "Unavailable")}</span>
+              )}
+            </td>
           </tr>
         ))}
       </tbody>
