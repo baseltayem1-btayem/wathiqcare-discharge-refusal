@@ -215,3 +215,164 @@ export async function createTenantPromissoryNote(
     case: caseRecord,
   };
 }
+
+type UpdatePromissoryLifecyclePayload = {
+  reason?: string;
+  reference?: string;
+  amount?: number | string;
+  method?: string;
+};
+
+function normalizeLifecycleMetadata(payload: UpdatePromissoryLifecyclePayload = {}) {
+  return {
+    reason: payload.reason?.trim() || null,
+    reference: payload.reference?.trim() || null,
+    amount: payload.amount === undefined || payload.amount === null || payload.amount === "" ? null : String(payload.amount),
+    method: payload.method?.trim() || null,
+  };
+}
+
+async function updateTenantPromissoryLifecycleStatus(
+  auth: AuthContext,
+  noteId: string,
+  status: PromissoryNoteStatus,
+  action: string,
+  auditEventType: string,
+  payload: UpdatePromissoryLifecyclePayload = {},
+  request?: NextRequest,
+) {
+  const tenantId = requireTenantId(auth);
+  const id = noteId?.trim();
+
+  if (!id) {
+    throw new ApiError(400, "promissory note id is required");
+  }
+
+  const existing = await prisma().promissoryNote.findFirst({
+    where: { id, tenantId },
+    include: {
+      case: {
+        select: {
+          id: true,
+          caseNumber: true,
+          patientName: true,
+          patientIdNumber: true,
+          medicalRecordNo: true,
+        },
+      },
+    },
+  });
+
+  if (!existing) {
+    throw new ApiError(404, "Promissory note not found");
+  }
+
+  const lifecycleMetadata = normalizeLifecycleMetadata(payload);
+  const previousMetadata =
+    existing.metadata && typeof existing.metadata === "object" && !Array.isArray(existing.metadata)
+      ? (existing.metadata as Record<string, unknown>)
+      : {};
+
+  const updated = await prisma().promissoryNote.update({
+    where: { id: existing.id },
+    data: {
+      status,
+      metadata: {
+        ...previousMetadata,
+        lifecycle: {
+          status,
+          action,
+          previousStatus: existing.status,
+          updatedAt: new Date().toISOString(),
+          updatedBy: auth.sub,
+          ...lifecycleMetadata,
+        },
+      } as JsonInputValue,
+    },
+    include: {
+      case: {
+        select: {
+          id: true,
+          caseNumber: true,
+          patientName: true,
+          patientIdNumber: true,
+          medicalRecordNo: true,
+        },
+      },
+    },
+  });
+
+  await writeAuditLog({
+    tenantId,
+    userId: auth.sub,
+    entityType: "promissory_note",
+    entityId: updated.id,
+    action,
+    details: `Promissory note ${updated.noteNumber} updated to ${status}`,
+    caseId: updated.caseId,
+    metadataJson: {
+      noteNumber: updated.noteNumber,
+      previousStatus: existing.status,
+      status,
+      ...lifecycleMetadata,
+    },
+    request,
+  });
+
+  await appendAuditChainEvent({
+    tenantId,
+    caseId: updated.caseId,
+    eventType: auditEventType,
+    actorId: auth.sub,
+    actorRole: auth.role ?? null,
+    payloadSummary: `Promissory note ${updated.noteNumber} updated to ${status}`,
+    documentVersion: updated.documentVersion,
+    metadataJson: {
+      promissoryNoteId: updated.id,
+      noteNumber: updated.noteNumber,
+      previousStatus: existing.status,
+      status,
+      ...lifecycleMetadata,
+    },
+    request,
+  }).catch(() => undefined);
+
+  return updated;
+}
+
+export async function settleTenantPromissoryNote(
+  auth: AuthContext,
+  noteId: string,
+  payload: UpdatePromissoryLifecyclePayload = {},
+  request?: NextRequest,
+) {
+  return updateTenantPromissoryLifecycleStatus(
+    auth,
+    noteId,
+    PromissoryNoteStatus.SETTLED,
+    "promissory_note_settled",
+    "PROMISSORY_NOTE_SETTLED",
+    payload,
+    request,
+  );
+}
+
+export async function cancelTenantPromissoryNote(
+  auth: AuthContext,
+  noteId: string,
+  payload: UpdatePromissoryLifecyclePayload = {},
+  request?: NextRequest,
+) {
+  return updateTenantPromissoryLifecycleStatus(
+    auth,
+    noteId,
+    PromissoryNoteStatus.VOID,
+    "promissory_note_voided",
+    "PROMISSORY_NOTE_VOIDED",
+    payload,
+    request,
+  );
+}
+
+
+

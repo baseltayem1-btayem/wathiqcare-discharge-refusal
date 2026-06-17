@@ -83,6 +83,7 @@ export default function PromissoryNotesModulePage({
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string>("");
+  const [actionBusyId, setActionBusyId] = useState<string>("");
   const [form, setForm] = useState<PromissoryFormState>(defaultForm());
 
   const showCreatePane = view === "overview" || view === "create";
@@ -135,6 +136,56 @@ export default function PromissoryNotesModulePage({
       setError(loadError instanceof Error ? loadError.message : t("messages.errors.refreshPromissoryNotes"));
     } finally {
       setRefreshing(false);
+    }
+  }
+
+
+  async function handleSettleNote(record: PromissoryItem) {
+    const reason = window.prompt(`Confirm settlement for ${record.noteNumber}. Enter payment reference or reason:`);
+    if (reason === null) return;
+
+    setActionBusyId(record.id);
+    setError("");
+
+    try {
+      await apiFetch<PromissoryItem>(`/api/modules/promissory-notes/${record.id}/settle`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          reason: reason || "Settled by authorized user",
+          amount: record.amount,
+          method: "manual",
+        }),
+      });
+
+      await refreshRecords();
+    } catch (settleError) {
+      setError(settleError instanceof Error ? settleError.message : "Failed to settle promissory note");
+    } finally {
+      setActionBusyId("");
+    }
+  }
+
+  async function handleVoidNote(record: PromissoryItem) {
+    const reason = window.prompt(`Void ${record.noteNumber}. Please enter void reason:`);
+    if (!reason) return;
+
+    setActionBusyId(record.id);
+    setError("");
+
+    try {
+      await apiFetch<PromissoryItem>(`/api/modules/promissory-notes/${record.id}/cancel`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          reason,
+          method: "manual",
+        }),
+      });
+
+      await refreshRecords();
+    } catch (voidError) {
+      setError(voidError instanceof Error ? voidError.message : "Failed to void promissory note");
+    } finally {
+      setActionBusyId("");
     }
   }
 
@@ -352,7 +403,7 @@ export default function PromissoryNotesModulePage({
                     {(view === "archive"
                       ? records.filter((record) => {
                           const status = (record.status || "").toUpperCase();
-                          return status === "CANCELED" || status === "REPAID" || status === "DEFAULTED";
+                          return status === "VOID" || status === "SETTLED" || status === "OVERDUE";
                         })
                       : records
                     ).map((record) => (
@@ -364,7 +415,7 @@ export default function PromissoryNotesModulePage({
                         <td className="px-3 py-2">{new Date(record.dueDate).toLocaleDateString()}</td>
                         <td className="px-3 py-2">{record.status}</td>
                         <td className="px-3 py-2">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex flex-wrap items-center gap-1.5">
                             <Link
                               href={`/modules/promissory-notes/${record.id}/preview`}
                               className="rounded px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
@@ -379,6 +430,26 @@ export default function PromissoryNotesModulePage({
                             >
                               PDF
                             </a>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void handleSettleNote(record);
+                              }}
+                              disabled={actionBusyId === record.id || ["SETTLED", "VOID", "OVERDUE"].includes((record.status || "").toUpperCase())}
+                              className="rounded px-2 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 disabled:opacity-50"
+                            >
+                              Settle
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void handleVoidNote(record);
+                              }}
+                              disabled={actionBusyId === record.id || ["SETTLED", "VOID"].includes((record.status || "").toUpperCase())}
+                              className="rounded px-2 py-1 text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 disabled:opacity-50"
+                            >
+                              Void
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -387,7 +458,7 @@ export default function PromissoryNotesModulePage({
                     {(view === "archive"
                       ? records.filter((record) => {
                           const status = (record.status || "").toUpperCase();
-                          return status === "CANCELED" || status === "REPAID" || status === "DEFAULTED";
+                          return status === "VOID" || status === "SETTLED" || status === "OVERDUE";
                         }).length === 0
                       : records.length === 0) ? (
                       <tr>
