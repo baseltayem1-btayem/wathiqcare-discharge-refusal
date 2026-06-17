@@ -2323,7 +2323,7 @@ function NotesTable({
   );
 }
 
-function TemplatesClausesScreen({ lang }: { lang: Lang }) {
+function TemplatesClausesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: Toast) => void }) {
   const templates = [
     {
       ar: "سند لأمر مقابل خدمات طبية",
@@ -2366,7 +2366,20 @@ function TemplatesClausesScreen({ lang }: { lang: Lang }) {
               {txt(lang, "هذه الشاشة جاهزة للربط لاحقًا بقاعدة بيانات القوالب والإصدارات.", "This screen is ready to connect to template versioning APIs.")}
             </p>
           </div>
-          <button type="button" className="rounded-lg bg-[#073763] px-4 py-2 text-sm font-bold text-white">
+          <button
+            type="button"
+            onClick={() =>
+              showToast({
+                type: "info",
+                message: txt(
+                  lang,
+                  "إنشاء قالب جديد جاهز كواجهة، وسيتم ربطه لاحقًا بقاعدة بيانات القوالب والاعتمادات.",
+                  "New template creation is ready in the UI and will be connected later to template and approval APIs.",
+                ),
+              })
+            }
+            className="rounded-lg bg-[#073763] px-4 py-2 text-sm font-bold text-white"
+          >
             {txt(lang, "+ قالب جديد", "+ New Template")}
           </button>
         </div>
@@ -2380,7 +2393,20 @@ function TemplatesClausesScreen({ lang }: { lang: Lang }) {
               </div>
               <div className="text-sm text-slate-600">{txt(lang, template.ownerAr, template.ownerEn)}</div>
               <StatusPill tone={template.statusEn === "Approved" ? "green" : "amber"}>{txt(lang, template.statusAr, template.statusEn)}</StatusPill>
-              <button type="button" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">
+              <button
+                type="button"
+                onClick={() =>
+                  showToast({
+                    type: "info",
+                    message: txt(
+                      lang,
+                      `تم فتح قالب: ${template.ar}`,
+                      `Template opened: ${template.en}`,
+                    ),
+                  })
+                }
+                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              >
                 {txt(lang, "فتح", "Open")}
               </button>
             </div>
@@ -2551,7 +2577,7 @@ export default function WathiqNoteWorkflowModule() {
           {screen === "permission-matrix" ? <PermissionMatrixScreen lang={lang} /> : null}
           {screen === "delegations" ? <DelegationsScreen lang={lang} /> : null}
           {screen === "audit" ? <AuditTrailScreen lang={lang} /> : null}
-          {screen === "templates" ? <TemplatesClausesScreen lang={lang} /> : null}
+          {screen === "templates" ? <TemplatesClausesScreen lang={lang} showToast={showToast} /> : null}
           {screen === "finance-monitoring" ? <FinanceMonitoringScreen lang={lang} /> : null}
           {screen === "claims-monitoring" ? <ClaimsMonitoringScreen lang={lang} /> : null}
           {screen === "legal-escalation" ? <LegalEscalationScreen lang={lang} /> : null}
