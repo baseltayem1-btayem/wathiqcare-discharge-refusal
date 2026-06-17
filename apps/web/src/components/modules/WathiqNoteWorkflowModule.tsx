@@ -1581,7 +1581,182 @@ function roleHasPermission(roleCode: string, permission: string) {
   return Boolean(wathiqNoteRoles.find((role) => role.code === roleCode)?.permissions.includes(permission));
 }
 
+type TenantUserListItem = {
+  id: string;
+  email: string | null;
+  fullName: string | null;
+  role: string | null;
+  userType?: string | null;
+  isActive?: boolean | null;
+  status?: string | null;
+  inviteStatus?: string | null;
+  membershipRole?: string | null;
+  invitedAt?: string | null;
+  lastLoginAt?: string | null;
+  createdAt?: string | null;
+  department?: string | null;
+};
+
+type TenantUsersApiResponse = {
+  success?: boolean;
+  users?: TenantUserListItem[];
+  license?: {
+    seatLimit?: number | null;
+    activeUsers?: number | null;
+    pendingUsers?: number | null;
+    availableSeats?: number | null;
+  };
+};
+
+function getApiArray<T>(payload: unknown, key: string): T[] {
+  if (!payload || typeof payload !== "object") return [];
+  const direct = (payload as Record<string, unknown>)[key];
+  if (Array.isArray(direct)) return direct as T[];
+
+  const data = (payload as Record<string, unknown>).data;
+  if (data && typeof data === "object" && Array.isArray((data as Record<string, unknown>)[key])) {
+    return (data as Record<string, unknown>)[key] as T[];
+  }
+
+  return [];
+}
+
+function getApiObject<T extends Record<string, unknown>>(payload: unknown, key: string): T | null {
+  if (!payload || typeof payload !== "object") return null;
+  const direct = (payload as Record<string, unknown>)[key];
+  if (direct && typeof direct === "object" && !Array.isArray(direct)) return direct as T;
+
+  const data = (payload as Record<string, unknown>).data;
+  if (data && typeof data === "object") {
+    const nested = (data as Record<string, unknown>)[key];
+    if (nested && typeof nested === "object" && !Array.isArray(nested)) return nested as T;
+  }
+
+  return null;
+}
+
+function normalizeTenantRoleLabel(lang: Lang, role: string | null | undefined) {
+  const normalized = (role || "").toLowerCase();
+  if (normalized === "tenant_admin") return txt(lang, "مشرف الجهة", "Tenant Admin");
+  if (normalized === "tenant_owner") return txt(lang, "مالك الجهة", "Tenant Owner");
+  if (normalized === "viewer") return txt(lang, "مستخدم قراءة", "Viewer");
+  if (normalized === "doctor") return txt(lang, "مدير / مراجع", "Manager / Reviewer");
+  if (normalized === "admin") return txt(lang, "مشرف", "Admin");
+  if (normalized === "manager") return txt(lang, "مدير", "Manager");
+  if (normalized === "user") return txt(lang, "مستخدم", "User");
+  return role || "—";
+}
+
 function UsersRolesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: Toast) => void }) {
+  const [users, setUsers] = useState<TenantUserListItem[]>([]);
+  const [license, setLicense] = useState<TenantUsersApiResponse["license"] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadUsers() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiJson<TenantUsersApiResponse>("/api/tenant/users");
+      setUsers(Array.isArray(response.users) ? response.users : []);
+      setLicense(response.license ?? null);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : txt(lang, "تعذر تحميل المستخدمين.", "Unable to load users."));
+      setUsers([]);
+      setLicense(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadUsers();
+  }, []);
+
+  async function createUser() {
+    const email = window.prompt(txt(lang, "أدخل بريد المستخدم:", "Enter user email:"));
+    if (!email) return;
+
+    const fullName = window.prompt(txt(lang, "أدخل اسم المستخدم:", "Enter full name:"));
+    if (!fullName) return;
+
+    const department = window.prompt(txt(lang, "أدخل القسم:", "Enter department:")) || "";
+
+    const roleInput = window.prompt(
+      txt(
+        lang,
+        "اختر الدور: user أو manager أو admin",
+        "Choose role: user, manager, or admin",
+      ),
+      "user",
+    ) || "user";
+
+    setBusyAction("create-user");
+
+    try {
+      await apiJson<unknown>("/api/tenant/users/create", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          fullName,
+          department,
+          role: roleInput,
+        }),
+      });
+
+      showToast({
+        type: "success",
+        message: txt(lang, "تم إنشاء المستخدم وإرسال دعوة الدخول.", "User created and invitation sent."),
+      });
+
+      await loadUsers();
+    } catch (createError) {
+      showToast({
+        type: "error",
+        message: createError instanceof Error ? createError.message : txt(lang, "فشل إنشاء المستخدم.", "Failed to create user."),
+      });
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function postUserAction(userId: string, action: "resend-invite" | "reset-password" | "reset-mfa" | "force-logout") {
+    const labels = {
+      "resend-invite": txt(lang, "إعادة الدعوة", "Resend invite"),
+      "reset-password": txt(lang, "إعادة تعيين كلمة المرور", "Reset password"),
+      "reset-mfa": txt(lang, "إعادة ضبط MFA", "Reset MFA"),
+      "force-logout": txt(lang, "فرض تسجيل الخروج", "Force logout"),
+    };
+
+    setBusyAction(`${action}:${userId}`);
+
+    try {
+      await apiJson<unknown>(`/api/tenant/users/${encodeURIComponent(userId)}/${action}`, {
+        method: "POST",
+      });
+
+      showToast({
+        type: "success",
+        message: `${labels[action]} — ${txt(lang, "تم تنفيذ الإجراء.", "Action completed.")}`,
+      });
+
+      await loadUsers();
+    } catch (actionError) {
+      showToast({
+        type: "error",
+        message: actionError instanceof Error ? actionError.message : txt(lang, "فشل تنفيذ الإجراء.", "Action failed."),
+      });
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  const activeCount = license?.activeUsers ?? users.filter((user) => user.isActive).length;
+  const pendingCount = license?.pendingUsers ?? users.filter((user) => !user.isActive).length;
+  const availableSeats = license?.availableSeats;
+
   return (
     <div className="space-y-5">
       <PageTitle
@@ -1596,20 +1771,19 @@ function UsersRolesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: 
       <div className="grid grid-cols-4 gap-4">
         <ShellCard className="p-5">
           <div className="text-xs font-bold text-slate-500">{txt(lang, "المستخدمون النشطون", "Active Users")}</div>
-          <div className="mt-3 text-3xl font-bold text-slate-900">{wathiqNoteUsers.filter((u) => u.status === "active").length}</div>
+          <div className="mt-3 text-3xl font-bold text-slate-900">{activeCount}</div>
         </ShellCard>
         <ShellCard className="p-5">
-          <div className="text-xs font-bold text-slate-500">{txt(lang, "أدوار WathiqNote", "WathiqNote Roles")}</div>
-          <div className="mt-3 text-3xl font-bold text-slate-900">{wathiqNoteRoles.length}</div>
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "بانتظار التفعيل", "Pending Users")}</div>
+          <div className="mt-3 text-3xl font-bold text-slate-900">{pendingCount}</div>
         </ShellCard>
         <ShellCard className="p-5">
-          <div className="text-xs font-bold text-slate-500">{txt(lang, "صلاحيات حساسة", "Sensitive Permissions")}</div>
-          <div className="mt-3 text-3xl font-bold text-slate-900">3</div>
-          <p className="mt-2 text-xs text-slate-500">{txt(lang, "الإصدار، الوفاء، الإلغاء", "Issue, settle, void")}</p>
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "المقاعد المتاحة", "Available Seats")}</div>
+          <div className="mt-3 text-3xl font-bold text-slate-900">{availableSeats ?? "—"}</div>
         </ShellCard>
         <ShellCard className="p-5">
-          <div className="text-xs font-bold text-slate-500">{txt(lang, "وضع الصفحة", "Page Mode")}</div>
-          <StatusPill tone="blue">{txt(lang, "جاهز للربط مع API", "API-ready")}</StatusPill>
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "وضع الربط", "Integration")}</div>
+          <StatusPill tone={error ? "red" : "green"}>{error ? txt(lang, "مقيّد بالصلاحيات", "Permission gated") : txt(lang, "مرتبط بالـ API", "API connected")}</StatusPill>
         </ShellCard>
       </div>
 
@@ -1618,69 +1792,163 @@ function UsersRolesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: 
           <div>
             <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "مستخدمي الموديول", "Module Users")}</h2>
             <p className="mt-1 text-xs text-slate-500">
-              {txt(lang, "هذه القائمة مخصصة لمستخدمي السندات لأمر فقط، وليست إدارة عامة لكل مستخدمي المستشفى.", "This list is scoped to promissory-note users only, not the full hospital user directory.")}
+              {txt(lang, "تتم قراءة المستخدمين من قاعدة بيانات الجهة عبر Tenant Users API.", "Users are loaded from the tenant database through the Tenant Users API.")}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => showToast({ type: "info", message: txt(lang, "سيتم ربط إضافة المستخدم بواجهة Tenant Users API.", "User creation will be connected to the Tenant Users API.") })}
-            className="rounded-lg bg-[#073763] px-4 py-2 text-sm font-bold text-white"
-          >
-            {txt(lang, "+ إضافة مستخدم", "+ Add User")}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => void loadUsers()}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700"
+            >
+              {txt(lang, "تحديث", "Refresh")}
+            </button>
+            <button
+              type="button"
+              disabled={busyAction === "create-user"}
+              onClick={() => void createUser()}
+              className="rounded-lg bg-[#073763] px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+            >
+              {busyAction === "create-user" ? txt(lang, "جارٍ الإضافة...", "Adding...") : txt(lang, "+ إضافة مستخدم", "+ Add User")}
+            </button>
+          </div>
         </div>
 
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-5 py-3 text-start">{txt(lang, "المستخدم", "User")}</th>
-              <th className="px-5 py-3 text-start">{txt(lang, "القسم", "Department")}</th>
-              <th className="px-5 py-3 text-start">{txt(lang, "الدور", "Role")}</th>
-              <th className="px-5 py-3 text-start">{txt(lang, "الحالة", "Status")}</th>
-              <th className="px-5 py-3 text-start">{txt(lang, "آخر إجراء", "Last Action")}</th>
-              <th className="px-5 py-3 text-end">{txt(lang, "الإجراءات", "Actions")}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {wathiqNoteUsers.map((user) => (
-              <tr key={user.email}>
-                <td className="px-5 py-4">
-                  <div className="font-bold text-slate-900">{txt(lang, user.nameAr, user.nameEn)}</div>
-                  <div className="text-xs text-slate-500">{user.email}</div>
-                  <div className="text-xs text-slate-400">{user.mobile}</div>
-                </td>
-                <td className="px-5 py-4 text-slate-700">{roleDepartment(lang, user.role)}</td>
-                <td className="px-5 py-4">
-                  <StatusPill tone={user.role === "legal" ? "red" : user.role === "finance" ? "green" : user.role === "admin" ? "blue" : "slate"}>
-                    {roleLabel(lang, user.role)}
-                  </StatusPill>
-                </td>
-                <td className="px-5 py-4">
-                  <StatusPill tone={user.status === "active" ? "green" : "slate"}>
-                    {user.status === "active" ? txt(lang, "نشط", "Active") : txt(lang, "قراءة فقط", "Read-only")}
-                  </StatusPill>
-                </td>
-                <td className="px-5 py-4 text-slate-600">{txt(lang, user.lastActionAr, user.lastActionEn)}</td>
-                <td className="px-5 py-4 text-end">
-                  <div className="flex justify-end gap-2">
-                    <button type="button" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                      {txt(lang, "تعديل", "Edit")}
-                    </button>
-                    <button type="button" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-100">
-                      {txt(lang, "تعليق", "Suspend")}
-                    </button>
-                  </div>
-                </td>
+        {error ? (
+          <div className="m-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+            {txt(lang, "لا يمكن تحميل المستخدمين لهذا الحساب. يتطلب ذلك دور tenant_admin أو tenant_owner وصلاحية users.read.", "Unable to load users for this account. This requires tenant_admin or tenant_owner role and users.read permission.")}
+            <div className="mt-2 font-mono text-xs">{error}</div>
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="p-8 text-center text-sm text-slate-500">{txt(lang, "جارٍ تحميل المستخدمين...", "Loading users...")}</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-5 py-3 text-start">{txt(lang, "المستخدم", "User")}</th>
+                <th className="px-5 py-3 text-start">{txt(lang, "القسم", "Department")}</th>
+                <th className="px-5 py-3 text-start">{txt(lang, "الدور", "Role")}</th>
+                <th className="px-5 py-3 text-start">{txt(lang, "الحالة", "Status")}</th>
+                <th className="px-5 py-3 text-start">{txt(lang, "آخر دخول", "Last Login")}</th>
+                <th className="px-5 py-3 text-end">{txt(lang, "الإجراءات", "Actions")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-slate-500">
+                    {txt(lang, "لا توجد بيانات مستخدمين متاحة.", "No user records available.")}
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
+                  <tr key={user.id}>
+                    <td className="px-5 py-4">
+                      <div className="font-bold text-slate-900">{user.fullName || "—"}</div>
+                      <div className="text-xs text-slate-500">{user.email || "—"}</div>
+                      <div className="text-xs text-slate-400">{user.id}</div>
+                    </td>
+                    <td className="px-5 py-4 text-slate-700">{user.department || "—"}</td>
+                    <td className="px-5 py-4">
+                      <StatusPill tone={(user.role || "").includes("admin") ? "blue" : "slate"}>
+                        {normalizeTenantRoleLabel(lang, user.role)}
+                      </StatusPill>
+                    </td>
+                    <td className="px-5 py-4">
+                      <StatusPill tone={user.isActive ? "green" : "amber"}>
+                        {user.isActive ? txt(lang, "نشط", "Active") : user.status || user.inviteStatus || txt(lang, "بانتظار", "Pending")}
+                      </StatusPill>
+                    </td>
+                    <td className="px-5 py-4 text-slate-600">
+                      {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString(lang === "ar" ? "ar-SA" : "en-US") : "—"}
+                    </td>
+                    <td className="px-5 py-4 text-end">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <button type="button" onClick={() => void postUserAction(user.id, "resend-invite")} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                          {txt(lang, "إعادة دعوة", "Invite")}
+                        </button>
+                        <button type="button" onClick={() => void postUserAction(user.id, "reset-password")} className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100">
+                          {txt(lang, "كلمة المرور", "Password")}
+                        </button>
+                        <button type="button" onClick={() => void postUserAction(user.id, "reset-mfa")} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-100">
+                          MFA
+                        </button>
+                        <button type="button" onClick={() => void postUserAction(user.id, "force-logout")} className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100">
+                          {txt(lang, "خروج", "Logout")}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </ShellCard>
     </div>
   );
 }
 
+type TenantPermission = {
+  id?: string;
+  code?: string | null;
+  name?: string | null;
+  module?: string | null;
+  description?: string | null;
+};
+
+type TenantRoleApiItem = {
+  id?: string;
+  code?: string | null;
+  name?: string | null;
+  permissions?: Array<{
+    permission?: TenantPermission | null;
+  }> | null;
+};
+
+function getPermissionCode(permission: TenantPermission | null | undefined) {
+  return permission?.code || permission?.name || permission?.id || "";
+}
+
 function PermissionMatrixScreen({ lang }: { lang: Lang }) {
+  const [roles, setRoles] = useState<TenantRoleApiItem[]>([]);
+  const [permissions, setPermissions] = useState<TenantPermission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadRoles() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiJson<unknown>("/api/tenant/roles");
+      const apiRoles = getApiArray<TenantRoleApiItem>(response, "roles");
+      const apiPermissions = getApiArray<TenantPermission>(response, "permissions");
+
+      setRoles(apiRoles);
+      setPermissions(apiPermissions);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : txt(lang, "تعذر تحميل الصلاحيات.", "Unable to load permissions."));
+      setRoles([]);
+      setPermissions([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadRoles();
+  }, []);
+
+  const promissoryPermissions = permissions.filter((permission) => {
+    const text = `${permission.module ?? ""} ${permission.code ?? ""} ${permission.name ?? ""}`.toLowerCase();
+    return text.includes("promissory") || text.includes("note") || text.includes("roles.") || text.includes("users.");
+  });
+
+  const hasLiveMatrix = roles.length > 0 && promissoryPermissions.length > 0;
+
   return (
     <div className="space-y-5">
       <PageTitle
@@ -1693,10 +1961,71 @@ function PermissionMatrixScreen({ lang }: { lang: Lang }) {
       />
 
       <ShellCard>
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "صلاحيات قاعدة البيانات", "Database Permissions")}</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              {txt(lang, "تتم قراءة الأدوار والصلاحيات من Tenant Roles API عند توفر صلاحية roles.read.", "Roles and permissions are loaded from the Tenant Roles API when roles.read is available.")}
+            </p>
+          </div>
+          <button type="button" onClick={() => void loadRoles()} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+            {txt(lang, "تحديث", "Refresh")}
+          </button>
+        </div>
+
+        {error ? (
+          <div className="m-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+            {txt(lang, "تعذر تحميل مصفوفة قاعدة البيانات. سيتم عرض مصفوفة WathiqNote التشغيلية المقترحة أدناه.", "Unable to load the database matrix. The proposed WathiqNote operating matrix is shown below.")}
+            <div className="mt-2 font-mono text-xs">{error}</div>
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="p-8 text-center text-sm text-slate-500">{txt(lang, "جارٍ تحميل الأدوار والصلاحيات...", "Loading roles and permissions...")}</div>
+        ) : hasLiveMatrix ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] text-sm">
+              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="sticky start-0 bg-slate-50 px-5 py-3 text-start">{txt(lang, "الصلاحية", "Permission")}</th>
+                  {roles.map((role) => (
+                    <th key={role.id || role.code || role.name || "role"} className="px-4 py-3 text-center">
+                      {role.name || role.code || role.id}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {promissoryPermissions.map((permission) => (
+                  <tr key={permission.id || permission.code || permission.name || "permission"}>
+                    <td className="sticky start-0 bg-white px-5 py-3">
+                      <div className="font-bold text-slate-800">{permission.name || permission.code || permission.id}</div>
+                      <div className="mt-1 text-xs text-slate-500">{permission.module || "—"}</div>
+                    </td>
+                    {roles.map((role) => {
+                      const permissionCode = getPermissionCode(permission);
+                      const allowed = Boolean(role.permissions?.some((item) => getPermissionCode(item.permission) === permissionCode));
+                      return (
+                        <td key={`${role.id}-${permissionCode}`} className="px-4 py-3 text-center">
+                          <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold ${allowed ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-300"}`}>
+                            {allowed ? "✓" : "—"}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </ShellCard>
+
+      <ShellCard>
         <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "صلاحيات دورة حياة السند", "Note Lifecycle Permissions")}</h2>
+          <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "مصفوفة WathiqNote التشغيلية", "WathiqNote Operating Matrix")}</h2>
           <p className="mt-1 text-xs text-slate-500">
-            {txt(lang, "الإلغاء والوفاء صلاحيات حساسة ويجب ألا تكون متاحة لمنشئ السند العادي.", "Void and settlement are sensitive permissions and should not be available to ordinary creators.")}
+            {txt(lang, "هذه المصفوفة تحدد أفضل ممارسة تشغيلية للسندات داخل المستشفى حتى يتم عكسها بالكامل في قاعدة البيانات.", "This matrix defines the hospital operating best practice until fully reflected in the database permissions.")}
           </p>
         </div>
 
