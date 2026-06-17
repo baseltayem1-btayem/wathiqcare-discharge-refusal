@@ -38,6 +38,7 @@ type Screen =
   | "patient-search"
   | "note-builder"
   | "status-tracking"
+  | "notes-archive"
   | "support-settings"
   | "users"
   | "delegations"
@@ -158,6 +159,7 @@ const nav = {
     { id: "patient-search", ar: "البحث عن المريض", en: "Patient Search", icon: Search },
     { id: "note-builder", ar: "بناء السند", en: "Note Builder", icon: FileText },
     { id: "status-tracking", ar: "تتبع الحالة", en: "Status Tracking", icon: Activity },
+    { id: "notes-archive", ar: "أرشيف السندات", en: "Notes Archive", icon: FileText },
     { id: "support-settings", ar: "المساعدة والإعدادات", en: "Support & Settings", icon: Settings },
   ],
   admin: [
@@ -2323,6 +2325,98 @@ function NotesTable({
   );
 }
 
+function NotesArchiveScreen({ lang }: { lang: Lang }) {
+  const { notes, loading, error, loadNotes } = usePromissoryNotes(lang);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+
+  const filteredNotes = useMemo(() => {
+    if (statusFilter === "ALL") return notes;
+    return notes.filter((note) => (note.status || "").toUpperCase() === statusFilter);
+  }, [notes, statusFilter]);
+
+  const activeCount = notes.filter((note) => (note.status || "").toUpperCase() === "ACTIVE").length;
+  const settledCount = notes.filter((note) => (note.status || "").toUpperCase() === "SETTLED").length;
+  const voidCount = notes.filter((note) => (note.status || "").toUpperCase() === "VOID").length;
+  const overdueCount = notes.filter((note) => (note.status || "").toUpperCase() === "OVERDUE").length;
+
+  return (
+    <div className="space-y-5">
+      <PageTitle
+        title={txt(lang, "أرشيف السندات", "Notes Archive")}
+        subtitle={txt(
+          lang,
+          "سجل منظم لجميع السندات المنشأة والصادرة والمقفلة والملغاة مع روابط المتابعة وملفات PDF.",
+          "Structured archive for all created, issued, settled, and voided notes with follow-up and PDF access.",
+        )}
+      />
+
+      <div className="grid grid-cols-4 gap-4">
+        <ShellCard className="p-5">
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "إجمالي السندات", "Total Notes")}</div>
+          <div className="mt-3 text-3xl font-bold text-slate-900">{notes.length}</div>
+        </ShellCard>
+        <ShellCard className="p-5">
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "نشطة", "Active")}</div>
+          <div className="mt-3 text-3xl font-bold text-blue-700">{activeCount}</div>
+        </ShellCard>
+        <ShellCard className="p-5">
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "مقفلة بالوفاء", "Settled")}</div>
+          <div className="mt-3 text-3xl font-bold text-emerald-700">{settledCount}</div>
+        </ShellCard>
+        <ShellCard className="p-5">
+          <div className="text-xs font-bold text-slate-500">{txt(lang, "ملغاة / متعثرة", "Void / Overdue")}</div>
+          <div className="mt-3 text-3xl font-bold text-rose-700">{voidCount + overdueCount}</div>
+        </ShellCard>
+      </div>
+
+      <ShellCard>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "سجل السندات", "Notes Register")}</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              {txt(lang, "يعرض هذا السجل السندات المحفوظة في قاعدة البيانات حسب حالة دورة الحياة.", "This register displays database-backed notes by lifecycle status.")}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700"
+            >
+              <option value="ALL">{txt(lang, "كل الحالات", "All Statuses")}</option>
+              <option value="ACTIVE">{txt(lang, "نشط", "Active")}</option>
+              <option value="PENDING_SIGNATURE">{txt(lang, "بانتظار التوقيع", "Pending Signature")}</option>
+              <option value="SETTLED">{txt(lang, "مقفل بالوفاء", "Settled")}</option>
+              <option value="VOID">{txt(lang, "ملغى", "Void")}</option>
+              <option value="OVERDUE">{txt(lang, "متعثر", "Overdue")}</option>
+            </select>
+
+            <button
+              type="button"
+              onClick={() => void loadNotes()}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+            >
+              {txt(lang, "تحديث", "Refresh")}
+            </button>
+          </div>
+        </div>
+
+        {error ? <div className="m-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{error}</div> : null}
+
+        {loading ? (
+          <div className="p-8 text-center text-sm text-slate-500">{txt(lang, "جارٍ تحميل الأرشيف...", "Loading archive...")}</div>
+        ) : (
+          <NotesTable
+            lang={lang}
+            notes={filteredNotes}
+            emptyMessage={txt(lang, "لا توجد سندات مطابقة للفلتر الحالي.", "No notes match the current filter.")}
+          />
+        )}
+      </ShellCard>
+    </div>
+  );
+}
 function TemplatesClausesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: Toast) => void }) {
   const templates = [
     {
@@ -2515,6 +2609,7 @@ function PlaceholderScreen({ lang, screen }: { lang: Lang; screen: Screen }) {
     "patient-search": ["البحث عن المريض", "Patient Search"],
     "note-builder": ["بناء السند", "Note Builder"],
     "status-tracking": ["تتبع الحالة", "Status Tracking"],
+    "notes-archive": ["أرشيف السندات", "Notes Archive"],
     "support-settings": ["المساعدة والإعدادات", "Support & Settings"],
     users: ["إدارة المستخدمين", "Users & Roles"],
     delegations: ["التفويضات والاعتمادات", "Delegations & Approvals"],
@@ -2572,6 +2667,7 @@ export default function WathiqNoteWorkflowModule() {
           {screen === "patient-search" ? <PatientSearchScreen lang={lang} setScreen={setScreen} showToast={showToast} /> : null}
           {screen === "note-builder" ? <NoteBuilder lang={lang} showToast={showToast} setScreen={setScreen} /> : null}
           {screen === "status-tracking" ? <StatusTracking lang={lang} /> : null}
+          {screen === "notes-archive" ? <NotesArchiveScreen lang={lang} /> : null}
           {screen === "support-settings" ? <SupportSettings lang={lang} /> : null}
           {screen === "users" ? <UsersRolesScreen lang={lang} showToast={showToast} /> : null}
           {screen === "permission-matrix" ? <PermissionMatrixScreen lang={lang} /> : null}
@@ -2581,7 +2677,7 @@ export default function WathiqNoteWorkflowModule() {
           {screen === "finance-monitoring" ? <FinanceMonitoringScreen lang={lang} /> : null}
           {screen === "claims-monitoring" ? <ClaimsMonitoringScreen lang={lang} /> : null}
           {screen === "legal-escalation" ? <LegalEscalationScreen lang={lang} /> : null}
-          {!["dashboard", "patient-search", "note-builder", "status-tracking", "support-settings", "users", "permission-matrix", "delegations", "audit", "templates", "finance-monitoring", "claims-monitoring", "legal-escalation"].includes(screen) ? (
+          {!["dashboard", "patient-search", "note-builder", "status-tracking", "notes-archive", "support-settings", "users", "permission-matrix", "delegations", "audit", "templates", "finance-monitoring", "claims-monitoring", "legal-escalation"].includes(screen) ? (
             <PlaceholderScreen lang={lang} screen={screen} />
           ) : null}
         </div>
