@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { ReactNode, useMemo, useState } from "react";
 import {
@@ -751,6 +751,8 @@ function NoteBuilder({
   const [signingUrl, setSigningUrl] = useState<string | null>(null);
   const [linkSmsStatus, setLinkSmsStatus] = useState<string | null>(null);
   const [otpSmsStatus, setOtpSmsStatus] = useState<string | null>(null);
+  const [enterpriseLifecycleStatus, setEnterpriseLifecycleStatus] = useState<string | null>(null);
+  const [enterpriseLifecycleBusy, setEnterpriseLifecycleBusy] = useState<string | null>(null);
 
   const activeIndex = builderSteps.findIndex((s) => s.id === activeStep);
   const total = useMemo(() => invoicesSeed.reduce((sum, item) => sum + item.amount, 0), []);
@@ -885,10 +887,12 @@ function NoteBuilder({
       const nextSigningUrl = extractSigningUrl(signingResponse);
       const nextLinkSmsStatus = extractStatus(signingResponse, "linkSmsStatus");
       const nextOtpSmsStatus = extractStatus(signingResponse, "otpSmsStatus");
+      const nextSigningStatus = extractStatus(signingResponse, "status");
 
       setSigningUrl(nextSigningUrl);
       setLinkSmsStatus(nextLinkSmsStatus);
       setOtpSmsStatus(nextOtpSmsStatus);
+      setEnterpriseLifecycleStatus(nextSigningStatus || "PENDING_OTP");
       setCreated(true);
 
       showToast({
@@ -912,6 +916,120 @@ function NoteBuilder({
     }
   }
 
+
+  async function handleEnterpriseResendSigningLink() {
+    if (!createdNoteId) {
+      showToast({ type: "warning", message: txt(lang, "لا يوجد سند منشأ لإعادة إرسال الرابط.", "No created note is available to resend.") });
+      return;
+    }
+
+    setEnterpriseLifecycleBusy("resend");
+
+    try {
+      const signingResponse = await apiJson<unknown>(`/api/modules/promissory-notes/${encodeURIComponent(createdNoteId)}/debtor-signing/start`, {
+        method: "POST",
+        body: JSON.stringify({
+          debtorMobile: mobile,
+          locale: lang,
+        }),
+      });
+
+      const nextSigningUrl = extractSigningUrl(signingResponse);
+      const nextLinkSmsStatus = extractStatus(signingResponse, "linkSmsStatus");
+      const nextOtpSmsStatus = extractStatus(signingResponse, "otpSmsStatus");
+      const nextSigningStatus = extractStatus(signingResponse, "status");
+
+      setSigningUrl(nextSigningUrl);
+      setLinkSmsStatus(nextLinkSmsStatus);
+      setOtpSmsStatus(nextOtpSmsStatus);
+      setEnterpriseLifecycleStatus(nextSigningStatus || "PENDING_OTP");
+
+      showToast({
+        type: "success",
+        message: txt(lang, "تمت إعادة إرسال رابط التوقيع ورمز التحقق.", "Signing link and OTP were resent."),
+      });
+    } catch (error) {
+      showToast({
+        type: "error",
+        message: error instanceof Error ? error.message : txt(lang, "فشلت إعادة إرسال رابط التوقيع.", "Failed to resend signing link."),
+      });
+    } finally {
+      setEnterpriseLifecycleBusy(null);
+    }
+  }
+
+  async function handleEnterpriseSettleNote() {
+    if (!createdNoteId) {
+      showToast({ type: "warning", message: txt(lang, "لا يوجد سند منشأ لإقفاله.", "No created note is available to settle.") });
+      return;
+    }
+
+    const reason = window.prompt(txt(lang, "أدخل مرجع أو سبب إقفال السند بالوفاء:", "Enter payment reference or settlement reason:"));
+    if (reason === null) return;
+
+    setEnterpriseLifecycleBusy("settle");
+
+    try {
+      await apiJson<unknown>(`/api/modules/promissory-notes/${encodeURIComponent(createdNoteId)}/settle`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          reason: reason || "Settled by authorized user",
+          amount,
+          method: "manual",
+        }),
+      });
+
+      setEnterpriseLifecycleStatus("SETTLED");
+
+      showToast({
+        type: "success",
+        message: txt(lang, "تم إقفال السند بالوفاء.", "Promissory note was marked as settled."),
+      });
+    } catch (error) {
+      showToast({
+        type: "error",
+        message: error instanceof Error ? error.message : txt(lang, "فشل إقفال السند بالوفاء.", "Failed to settle promissory note."),
+      });
+    } finally {
+      setEnterpriseLifecycleBusy(null);
+    }
+  }
+
+  async function handleEnterpriseVoidNote() {
+    if (!createdNoteId) {
+      showToast({ type: "warning", message: txt(lang, "لا يوجد سند منشأ لإلغائه.", "No created note is available to void.") });
+      return;
+    }
+
+    const reason = window.prompt(txt(lang, "أدخل سبب إلغاء السند:", "Enter reason for voiding the note:"));
+    if (!reason) return;
+
+    setEnterpriseLifecycleBusy("void");
+
+    try {
+      await apiJson<unknown>(`/api/modules/promissory-notes/${encodeURIComponent(createdNoteId)}/cancel`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          reason,
+          method: "manual",
+        }),
+      });
+
+      setEnterpriseLifecycleStatus("VOID");
+
+      showToast({
+        type: "success",
+        message: txt(lang, "تم إلغاء السند وحفظ السبب في سجل التدقيق.", "Promissory note was voided and the reason was audited."),
+      });
+    } catch (error) {
+      showToast({
+        type: "error",
+        message: error instanceof Error ? error.message : txt(lang, "فشل إلغاء السند.", "Failed to void promissory note."),
+      });
+    } finally {
+      setEnterpriseLifecycleBusy(null);
+    }
+  }
   return (
     <div className="space-y-5">
       <PageTitle
@@ -1127,6 +1245,59 @@ function NoteBuilder({
                 </div>
               </div>
             </ShellCard>
+          ) : null}
+
+          {createdNoteId ? (
+            <div data-testid="enterprise-note-lifecycle-actions" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="text-sm font-bold text-[#073763]">
+                    {txt(lang, "إدارة السند", "Note Lifecycle Management")}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-600">
+                    {createdNoteNumber ? `${createdNoteNumber} · ` : ""}
+                    {enterpriseLifecycleStatus || txt(lang, "تم الإنشاء", "Created")}
+                  </div>
+                </div>
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
+                  {enterpriseLifecycleStatus || "ACTIVE"}
+                </span>
+              </div>
+
+              {signingUrl ? (
+                <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900">
+                  <div className="mb-1 font-bold">{txt(lang, "رابط التوقيع", "Signing Link")}</div>
+                  <div className="break-all">{signingUrl}</div>
+                  <div className="mt-2 text-blue-800">
+                    {txt(lang, "حالة الرابط:", "Link SMS:")} {linkSmsStatus || "—"} · {txt(lang, "حالة OTP:", "OTP SMS:")} {otpSmsStatus || "—"}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap gap-2">
+                {signingUrl ? (
+                  <a href={signingUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100">
+                    {txt(lang, "فتح رابط التوقيع", "Open Signing Link")}
+                  </a>
+                ) : null}
+
+                <a href={`/api/modules/promissory-notes/${encodeURIComponent(createdNoteId)}/pdf?lang=${lang}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">
+                  {txt(lang, "تحميل PDF", "Download PDF")}
+                </a>
+
+                <button type="button" onClick={handleEnterpriseResendSigningLink} disabled={Boolean(enterpriseLifecycleBusy) || ["SETTLED", "VOID"].includes((enterpriseLifecycleStatus || "").toUpperCase())} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+                  {enterpriseLifecycleBusy === "resend" ? txt(lang, "جارٍ الإرسال...", "Resending...") : txt(lang, "إعادة إرسال الرابط", "Resend Link")}
+                </button>
+
+                <button type="button" onClick={handleEnterpriseSettleNote} disabled={Boolean(enterpriseLifecycleBusy) || ["SETTLED", "VOID"].includes((enterpriseLifecycleStatus || "").toUpperCase())} className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">
+                  {enterpriseLifecycleBusy === "settle" ? txt(lang, "جارٍ الإقفال...", "Settling...") : txt(lang, "إقفال بالوفاء", "Settle")}
+                </button>
+
+                <button type="button" onClick={handleEnterpriseVoidNote} disabled={Boolean(enterpriseLifecycleBusy) || ["SETTLED", "VOID"].includes((enterpriseLifecycleStatus || "").toUpperCase())} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50">
+                  {enterpriseLifecycleBusy === "void" ? txt(lang, "جارٍ الإلغاء...", "Voiding...") : txt(lang, "إلغاء السند", "Void Note")}
+                </button>
+              </div>
+            </div>
           ) : null}
 
           <div className="flex items-center justify-between">
