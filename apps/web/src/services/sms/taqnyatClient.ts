@@ -1,4 +1,4 @@
-﻿import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
+import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
 
 export type TaqnyatSendArgs = {
   recipient: string;
@@ -106,6 +106,23 @@ function normalizeSmsRecipient(recipient: string): string {
   return digits;
 }
 
+
+function isProviderSuccess(response: Response, parsed: Record<string, unknown> | null): boolean {
+  if (!response.ok) return false;
+  if (!parsed) return true;
+
+  return (
+    parsed.ok === true ||
+    parsed.success === true ||
+    parsed.accepted === true ||
+    parsed.status === "sent" ||
+    parsed.status === "accepted" ||
+    parsed.status === "queued" ||
+    parsed.code === "OK" ||
+    parsed.code === "ACCEPTED"
+  );
+}
+
 function extractProviderMessageId(response: Record<string, unknown> | null): string | null {
   if (!response) return null;
 
@@ -157,7 +174,7 @@ async function sendViaGateway(args: TaqnyatSendArgs): Promise<TaqnyatSendResult>
   const parsed = (await response.json().catch(() => null)) as Record<string, unknown> | null;
 
   return {
-    ok: response.ok && Boolean(parsed?.ok),
+    ok: isProviderSuccess(response, parsed),
     statusCode: response.status,
     providerMessageId: extractProviderMessageId(parsed),
     response: parsed,

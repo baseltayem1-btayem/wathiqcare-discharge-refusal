@@ -28,7 +28,7 @@ export async function POST(
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof ApiError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
     console.error("POST /api/modules/promissory-notes/[id]/debtor-signing/start", error);

@@ -895,10 +895,37 @@ function NoteBuilder({
       setEnterpriseLifecycleStatus(nextSigningStatus || "PENDING_OTP");
       setCreated(true);
 
-      showToast({
-        type: "success",
-        message: txt(lang, "تم إنشاء السند. يمكنك فتح أو نسخ رابط التوقيع من بطاقة النتيجة.", "Note created. You can open or copy the signing link from the result card."),
-      });
+      const smsOk = nextLinkSmsStatus === "sent" && nextOtpSmsStatus === "sent";
+      const smsFailed = nextLinkSmsStatus === "failed" || nextOtpSmsStatus === "failed";
+
+      if (smsOk) {
+        showToast({
+          type: "success",
+          message: txt(
+            lang,
+            `تم إنشاء السند وإرسال رابط التوقيع ورمز التحقق إلى ${mobile}.`,
+            `Note created and signing link/OTP were sent to ${mobile}.`,
+          ),
+        });
+      } else if (smsFailed) {
+        showToast({
+          type: "warning",
+          message: txt(
+            lang,
+            `تم إنشاء السند، لكن فشل إرسال رسالة SMS إلى ${mobile}. تحقق من إعدادات تقنيات/SMS Gateway أو أعد الإرسال من بطاقة النتيجة.`,
+            `Note created, but SMS delivery to ${mobile} failed. Check Taqnyat/SMS Gateway settings or resend from the result card.`,
+          ),
+        });
+      } else {
+        showToast({
+          type: "warning",
+          message: txt(
+            lang,
+            `تم إنشاء السند، لكن حالة إرسال SMS إلى ${mobile} غير مؤكدة. يرجى مراجعة سجل تقنيات أو إعادة الإرسال.`,
+            `Note created, but SMS delivery status to ${mobile} is not confirmed. Please check provider logs or resend.`,
+          ),
+        });
+      }
     } catch (error) {
       showToast({
         type: "error",
@@ -1269,7 +1296,7 @@ function NoteBuilder({
                   <div className="mb-1 font-bold">{txt(lang, "رابط التوقيع", "Signing Link")}</div>
                   <div className="break-all">{signingUrl}</div>
                   <div className="mt-2 text-blue-800">
-                    {txt(lang, "حالة الرابط:", "Link SMS:")} {linkSmsStatus || "—"} · {txt(lang, "حالة OTP:", "OTP SMS:")} {otpSmsStatus || "—"}
+                    {txt(lang, "رقم الجوال:", "Mobile:")} {mobile} · {txt(lang, "حالة الرابط:", "Link SMS:")} {linkSmsStatus || "—"} · {txt(lang, "حالة OTP:", "OTP SMS:")} {otpSmsStatus || "—"}
                   </div>
                 </div>
               ) : null}
