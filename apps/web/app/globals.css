@@ -1,3 +1,11 @@
+
+@font-face {
+  font-family: "AlArabiya";
+  src: url("/fonts/alarabiya/AlArabiya.ttf") format("truetype");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
 /* WathiqCare Design System
  * English: Inter | Arabic: IBM Plex Sans Arabic (with fallbacks)
  * Phase 4.1 adds enterprise polish while preserving workflow logic.
@@ -1018,7 +1026,7 @@ h3,
 
 /* WathiqCare Arabic typography override */
 :root {
-  --wathiqcare-arabic-font: "العربية", "AlArabiya", "Al Arabiya", "Alarabiya", "Al Arabia", "IBM Plex Sans Arabic", "Noto Sans Arabic", "Tahoma", "Arial", sans-serif;
+  --wathiqcare-arabic-font: "AlArabiya", "العربية", "AlArabiya", "Al Arabiya", "IBM Plex Sans Arabic", "Noto Sans Arabic", "Tahoma", "Arial", sans-serif;
 }
 
 /* Apply Arabic font globally across all internal screens */
