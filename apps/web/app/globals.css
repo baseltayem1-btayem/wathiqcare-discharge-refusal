@@ -1,4 +1,263 @@
 
+/* ─────────────────────────────────────────────────────────────
+   WathiqCare / WathiqNote - Najiz-inspired Saudi Digital Identity
+   Font: IBM Plex Sans Arabic
+   Palette: Saudi Flag Green + Government Neutral + Gold Accent
+   ───────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: "IBM";
+  src: url("/fonts/alarabiya/AlArabiya.ttf") format("truetype");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --layout-base-black-color: #161616;
+
+  --layout-primary-sa-flag-25-color: #F7FDF9;
+  --layout-primary-sa-flag-50-color: #F3FCF6;
+  --layout-primary-sa-flag-100-color: #DFF6E7;
+  --layout-primary-sa-flag-200-color: #B8EACB;
+  --layout-primary-sa-flag-300-color: #88D8AD;
+  --layout-primary-sa-flag-400-color: #54C08A;
+  --layout-primary-sa-flag-500-color: #25935F;
+  --layout-primary-sa-flag-600-color: #1B8354;
+  --layout-primary-sa-flag-700-color: #166A45;
+  --layout-primary-sa-flag-800-color: #14573A;
+  --layout-primary-sa-flag-900-color: #104631;
+  --layout-primary-sa-flag-950-color: #092A1E;
+
+  --layout-secondary-gold-25-color: #FFFEF7;
+  --layout-secondary-gold-50-color: #FFFEF2;
+  --layout-secondary-gold-100-color: #FFFCE6;
+  --layout-secondary-gold-200-color: #FCF3BD;
+  --layout-secondary-gold-300-color: #FAE996;
+  --layout-secondary-gold-400-color: #F7D54D;
+  --layout-secondary-gold-500-color: #F5BD02;
+  --layout-secondary-gold-600-color: #DBA102;
+  --layout-secondary-gold-700-color: #B87B02;
+  --layout-secondary-gold-800-color: #945C01;
+  --layout-secondary-gold-900-color: #6E3C00;
+  --layout-secondary-gold-950-color: #472400;
+
+  --layout-neutral-25-color: #FCFCFD;
+  --layout-neutral-50-color: #F9FAFB;
+  --layout-neutral-100-color: #F3F4F6;
+  --layout-neutral-200-color: #E5E7EB;
+  --layout-neutral-300-color: #D2D6DB;
+  --layout-neutral-400-color: #9DA4AE;
+  --layout-neutral-500-color: #6C737F;
+  --layout-neutral-600-color: #4D5761;
+  --layout-neutral-700-color: #384250;
+  --layout-neutral-800-color: #1F2A37;
+  --layout-neutral-900-color: #111927;
+  --layout-neutral-950-color: #0D121C;
+
+  --layout-bg-body-color: #F7FDF9;
+  --layout-font-primary: "IBM", "IBM Plex Sans Arabic", "AlArabiya", "Tahoma", "Arial", sans-serif;
+
+  --wathiqcare-arabic-font: "IBM", "IBM Plex Sans Arabic", "AlArabiya", "Tahoma", "Arial", sans-serif;
+
+  --primary: #1B8354;
+  --primary-dark: #166A45;
+  --primary-soft: #DFF6E7;
+  --primary-foreground: #FFFFFF;
+
+  --accent: #F5BD02;
+  --accent-soft: #FFFCE6;
+
+  --text-main: #1F2A37;
+  --text-muted: #6C737F;
+  --border-soft: #D2D6DB;
+  --surface: #FFFFFF;
+  --surface-soft: #F7FDF9;
+
+  --radius-xl: 1.5rem;
+  --radius-lg: 1rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+
+  --shadow-sm: 0px 1px 3px rgba(16, 24, 40, 0.10), 0px 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.10), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --shadow-lg: 0px 12px 16px -6px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+}
+
+html {
+  direction: var(--layout-direction, rtl);
+  scroll-behavior: smooth;
+}
+
+html,
+body,
+* {
+  font-family: var(--layout-font-primary) !important;
+}
+
+body {
+  background: var(--layout-bg-body-color);
+  color: var(--layout-neutral-800-color);
+}
+
+/* Shell / Layout */
+.wc-clinical-shell,
+.wc-module-shell,
+.wc-page,
+main {
+  background:
+    radial-gradient(circle at top right, rgba(27, 131, 84, 0.08), transparent 32rem),
+    linear-gradient(180deg, #F7FDF9 0%, #FFFFFF 45%, #F9FAFB 100%);
+  color: var(--layout-neutral-800-color);
+}
+
+/* Header */
+.wc-topbar {
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid var(--layout-neutral-200-color);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+}
+
+/* Panels / Cards */
+.wc-panel,
+.wc-card,
+.wc-link-card,
+.wc-section,
+.wc-dashboard-card {
+  background: var(--surface);
+  border: 1px solid var(--layout-neutral-200-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  color: var(--layout-neutral-800-color);
+}
+
+.wc-panel-heading,
+.wc-section-title,
+.wc-card-title {
+  color: var(--layout-neutral-900-color);
+  font-weight: 700;
+}
+
+/* Pills / Chips */
+.wc-module-pill,
+.wc-data-chip,
+.wc-status-chip {
+  background: var(--layout-primary-sa-flag-50-color);
+  border: 1px solid var(--layout-primary-sa-flag-200-color);
+  color: var(--layout-primary-sa-flag-800-color);
+  border-radius: 999px;
+}
+
+/* Buttons */
+.toolbar-btn-primary,
+.btn-primary,
+button[data-variant="primary"],
+a[data-variant="primary"] {
+  background: var(--layout-primary-sa-flag-600-color) !important;
+  border-color: var(--layout-primary-sa-flag-600-color) !important;
+  color: #FFFFFF !important;
+  box-shadow: var(--shadow-sm);
+}
+
+.toolbar-btn-primary:hover,
+.btn-primary:hover,
+button[data-variant="primary"]:hover,
+a[data-variant="primary"]:hover {
+  background: var(--layout-primary-sa-flag-700-color) !important;
+  border-color: var(--layout-primary-sa-flag-700-color) !important;
+}
+
+.toolbar-btn-secondary,
+.btn-secondary,
+button[data-variant="secondary"],
+a[data-variant="secondary"] {
+  background: #FFFFFF !important;
+  border: 1px solid var(--layout-neutral-300-color) !important;
+  color: var(--layout-neutral-800-color) !important;
+}
+
+.toolbar-btn-secondary:hover,
+.btn-secondary:hover,
+button[data-variant="secondary"]:hover,
+a[data-variant="secondary"]:hover {
+  background: var(--layout-neutral-50-color) !important;
+  border-color: var(--layout-primary-sa-flag-300-color) !important;
+}
+
+/* Links */
+a {
+  color: var(--layout-primary-sa-flag-700-color);
+}
+
+a:hover {
+  color: var(--layout-primary-sa-flag-800-color);
+}
+
+/* Tables */
+table {
+  color: var(--layout-neutral-800-color);
+}
+
+th {
+  background: var(--layout-primary-sa-flag-50-color);
+  color: var(--layout-primary-sa-flag-900-color);
+  font-weight: 700;
+}
+
+td {
+  border-color: var(--layout-neutral-200-color);
+}
+
+/* Inputs */
+input,
+select,
+textarea {
+  border-color: var(--layout-neutral-300-color) !important;
+  border-radius: var(--radius-md);
+  color: var(--layout-neutral-800-color);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--layout-primary-sa-flag-600-color) !important;
+  box-shadow: 0 0 0 3px rgba(27, 131, 84, 0.16);
+}
+
+/* Arabic emphasis */
+[dir="rtl"],
+:lang(ar) {
+  font-family: var(--wathiqcare-arabic-font) !important;
+  letter-spacing: 0;
+}
+
+/* Scrollbar */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--layout-primary-sa-flag-800-color);
+  border-radius: 25px;
+}
+
+*::-webkit-scrollbar-track {
+  background-color: var(--layout-neutral-100-color);
+}
+
+/* WathiqNote-specific tone */
+[data-module="promissory-notes"],
+.wathiqnote,
+.promissory-note-module {
+  --primary: #1B8354;
+  --primary-dark: #166A45;
+  --primary-soft: #DFF6E7;
+  --accent: #F5BD02;
+}
+
 @font-face {
   font-family: "AlArabiya";
   src: url("/fonts/alarabiya/AlArabiya.ttf") format("truetype");
