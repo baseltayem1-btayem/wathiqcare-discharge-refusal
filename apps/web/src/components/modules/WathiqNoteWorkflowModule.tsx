@@ -52,6 +52,7 @@ type Screen =
 type BuilderStep =
   | "patient_visit"
   | "billing_coverage"
+  | "coverage_liability"
   | "note_details"
   | "debtor_capacity"
   | "acknowledgments"
@@ -146,6 +147,7 @@ function addDaysIsoDate(days: number): string {
 const builderSteps: Array<{ id: BuilderStep; ar: string; en: string }> = [
   { id: "patient_visit", ar: "المريض والزيارة", en: "Patient & Visit" },
   { id: "billing_coverage", ar: "الفواتير والتغطية", en: "Billing & Coverage" },
+  { id: "coverage_liability", ar: "التغطية ومسؤولية المريض", en: "Coverage & Liability" },
   { id: "note_details", ar: "بيانات السند", en: "Note Details" },
   { id: "debtor_capacity", ar: "صفة المدين", en: "Debtor Capacity" },
   { id: "acknowledgments", ar: "الإقرارات", en: "Acknowledgments" },
@@ -741,6 +743,11 @@ function NoteBuilder({
   const [ack1, setAck1] = useState(true);
   const [ack2, setAck2] = useState(true);
   const [ack3, setAck3] = useState(true);
+
+  const [coverageDecision, setCoverageDecision] = useState("PENDING");
+  const [liabilityReason, setLiabilityReason] = useState("prior_authorization_pending");
+  const [liabilityEvidenceRef, setLiabilityEvidenceRef] = useState("");
+  const [liabilityApprovedBy, setLiabilityApprovedBy] = useState("");
   const [created, setCreated] = useState(false);
   const [apiBusy, setApiBusy] = useState(false);
   const [caseId, setCaseId] = useState("");
@@ -759,7 +766,25 @@ function NoteBuilder({
   const activeIndex = builderSteps.findIndex((s) => s.id === activeStep);
   const total = useMemo(() => invoicesSeed.reduce((sum, item) => sum + item.amount, 0), []);
 
-  const canIssue = debtorName && debtorId && mobile && makerEmail && makerAddress && amount && ack1 && ack2 && ack3;
+  const coverageLiabilityReady = Boolean(
+    coverageDecision === "PATIENT_LIABILITY_CONFIRMED" &&
+    liabilityReason &&
+    liabilityEvidenceRef.trim() &&
+    liabilityApprovedBy.trim()
+  );
+
+  const canIssue = Boolean(
+    debtorName &&
+    debtorId &&
+    mobile &&
+    makerEmail &&
+    makerAddress &&
+    amount &&
+    ack1 &&
+    ack2 &&
+    ack3 &&
+    coverageLiabilityReady
+  );
 
   function nextStep() {
     const next = builderSteps[Math.min(activeIndex + 1, builderSteps.length - 1)];
@@ -845,6 +870,15 @@ function NoteBuilder({
             claimsDecision: "cash_coverage_required",
             coverageAr: patient.coverageAr,
             coverageEn: patient.coverageEn,
+          },
+          coverageLiabilityDecision: {
+            decision: coverageDecision,
+            reason: liabilityReason,
+            evidenceReference: liabilityEvidenceRef.trim(),
+            approvedBy: liabilityApprovedBy.trim(),
+            patientLiabilityAmount: Number(amount),
+            decisionLabelAr: "مسؤولية المريض المالية",
+            decisionLabelEn: "Patient Financial Liability",
           },
           note: {
             dueType,
@@ -1112,6 +1146,82 @@ function NoteBuilder({
             </ShellCard>
           ) : null}
 
+          {activeStep === "coverage_liability" ? (
+            <ShellCard className="p-5">
+              <h2 className="mb-4 text-lg font-bold text-[#073763]">
+                {txt(lang, "قرار التغطية ومسؤولية المريض", "Coverage & Patient Liability Decision")}
+              </h2>
+
+              <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm leading-7 text-blue-900">
+                {txt(
+                  lang,
+                  "لا يسمح النظام بإصدار سند لأمر إلا إذا كانت مسؤولية المريض المالية مؤكدة وموثقة بمستند واعتماد داخلي.",
+                  "The system will not allow a promissory note unless patient financial liability is confirmed, evidenced, and internally approved.",
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-slate-700">{txt(lang, "قرار التغطية", "Coverage Decision")}</span>
+                  <select
+                    value={coverageDecision}
+                    onChange={(event) => setCoverageDecision(event.target.value)}
+                    className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="PENDING">{txt(lang, "قيد التحقق / لا يسمح بالإصدار", "Pending / Issuance Blocked")}</option>
+                    <option value="INSURANCE_COVERED">{txt(lang, "مغطى من التأمين / لا يسمح بالإصدار", "Insurance Covered / Issuance Blocked")}</option>
+                    <option value="DENIED_UNDER_APPEAL">{txt(lang, "رفض قيد الاعتراض / لا يسمح بالإصدار", "Denied Under Appeal / Issuance Blocked")}</option>
+                    <option value="PATIENT_LIABILITY_CONFIRMED">{txt(lang, "مسؤولية المريض مؤكدة / يسمح بالإصدار", "Patient Liability Confirmed / Issuance Allowed")}</option>
+                  </select>
+                </label>
+
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-slate-700">{txt(lang, "سبب مسؤولية المريض", "Patient Liability Reason")}</span>
+                  <select
+                    value={liabilityReason}
+                    onChange={(event) => setLiabilityReason(event.target.value)}
+                    className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="prior_authorization_denied">{txt(lang, "رفض الموافقة المسبقة", "Prior Authorization Denied")}</option>
+                    <option value="non_covered_service">{txt(lang, "خدمة غير مشمولة", "Non-Covered Service")}</option>
+                    <option value="claim_denied_patient_liable">{txt(lang, "رفض مطالبة والمريض مسؤول", "Claim Denied - Patient Liable")}</option>
+                    <option value="benefit_limit_exhausted">{txt(lang, "استنفاد حد التغطية", "Benefit Limit Exhausted")}</option>
+                    <option value="partial_coverage">{txt(lang, "تغطية جزئية", "Partial Coverage")}</option>
+                    <option value="self_pay_by_choice">{txt(lang, "اختيار المريض الدفع كاش", "Self-Pay by Choice")}</option>
+                    <option value="out_of_network">{txt(lang, "خارج الشبكة", "Out of Network")}</option>
+                  </select>
+                </label>
+
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-slate-700">{txt(lang, "مرجع المستند المؤيد", "Evidence Reference")}</span>
+                  <input
+                    value={liabilityEvidenceRef}
+                    onChange={(event) => setLiabilityEvidenceRef(event.target.value)}
+                    className="h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    placeholder={txt(lang, "مثال: PA-DENIAL-2026-001 / EOB-12345", "Example: PA-DENIAL-2026-001 / EOB-12345")}
+                  />
+                </label>
+
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-slate-700">{txt(lang, "اعتماد مالي / مطالبات", "Finance / Claims Approval")}</span>
+                  <input
+                    value={liabilityApprovedBy}
+                    onChange={(event) => setLiabilityApprovedBy(event.target.value)}
+                    className="h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    placeholder={txt(lang, "اسم المعتمد أو مرجع الاعتماد", "Approver name or approval reference")}
+                  />
+                </label>
+              </div>
+
+              <div className={`mt-5 rounded-xl border p-4 text-sm font-bold ${
+                coverageLiabilityReady ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"
+              }`}>
+                {coverageLiabilityReady
+                  ? txt(lang, "قرار النظام: يسمح بإصدار السند لأن مسؤولية المريض مؤكدة وموثقة.", "System Decision: Issuance allowed because patient liability is confirmed and evidenced.")
+                  : txt(lang, "قرار النظام: لا يسمح بإصدار السند حتى تكتمل مسؤولية المريض والمستند والاعتماد.", "System Decision: Issuance blocked until patient liability, evidence, and approval are complete.")}
+              </div>
+            </ShellCard>
+          ) : null}
           {activeStep === "note_details" ? (
             <ShellCard className="p-5">
               <h2 className="mb-4 text-lg font-bold text-[#073763]">{txt(lang, "بيانات السند", "Note Details")}</h2>
