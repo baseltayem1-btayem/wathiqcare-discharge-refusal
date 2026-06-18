@@ -1945,6 +1945,33 @@ function roleDepartment(lang: Lang, roleCode: string) {
   return role ? txt(lang, role.departmentAr, role.departmentEn) : "—";
 }
 
+
+const WATHIQNOTE_ROLE_CODE_MAP: Record<string, string> = {
+  issuer: "NOTE_ISSUER",
+  reviewer: "NOTE_REVIEWER",
+  finance: "FINANCE",
+  legal: "LEGAL",
+  admin: "ADMIN",
+  auditor: "AUDITOR",
+};
+
+const WATHIQNOTE_PERMISSION_KEY_MAP: Record<string, string> = {
+  create: "promissory_notes.create",
+  edit_draft: "promissory_notes.update",
+  update: "promissory_notes.update",
+  review: "promissory_notes.review",
+  issue: "promissory_notes.issue",
+  send_link: "promissory_notes.signature.send",
+  resend_link: "promissory_notes.otp.resend",
+  resend_otp: "promissory_notes.otp.resend",
+  settle: "promissory_notes.settle",
+  void: "promissory_notes.void",
+  cancel: "promissory_notes.void",
+  download_pdf: "promissory_notes.pdf.download",
+  audit: "promissory_notes.audit.read",
+  audit_read: "promissory_notes.audit.read",
+  manage_users: "users.manage",
+};
 function roleHasPermission(roleCode: string, permission: string) {
   return Boolean(wathiqNoteRoles.find((role) => role.code === roleCode)?.permissions.includes(permission));
 }
@@ -2313,6 +2340,32 @@ function PermissionMatrixScreen({ lang }: { lang: Lang }) {
     void loadRoles();
   }, []);
 
+  async function toggleRolePermissionByCode(roleCode: string | undefined, permissionKey: string | undefined, allowed: boolean) {
+    if (!roleCode || !permissionKey) {
+      setError(txt(lang, "تعذر تحديد الدور أو الصلاحية.", "Unable to identify role or permission."));
+      return;
+    }
+
+    setError(null);
+
+    try {
+      await apiJson<unknown>("/api/tenant/roles", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roleCode,
+          permissionKey,
+          allowed,
+        }),
+      });
+
+      await loadRoles();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : txt(lang, "تعذر تحديث الصلاحية.", "Unable to update permission."));
+    }
+  }
   async function toggleRolePermission(roleId: string | undefined, permissionId: string | undefined, allowed: boolean) {
     if (!roleId || !permissionId) {
       setError(txt(lang, "تعذر تحديد الدور أو الصلاحية.", "Unable to identify role or permission."));

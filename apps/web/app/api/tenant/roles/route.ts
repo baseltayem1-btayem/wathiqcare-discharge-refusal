@@ -234,31 +234,37 @@ export async function PATCH(request: NextRequest) {
     const payload = (await request.json().catch(() => null)) as
       | {
           roleId?: string;
+          roleCode?: string;
           permissionId?: string;
+          permissionKey?: string;
           allowed?: boolean;
         }
       | null;
 
     const roleId = payload?.roleId?.trim();
+    const roleCode = payload?.roleCode?.trim();
     const permissionId = payload?.permissionId?.trim();
+    const permissionKey = payload?.permissionKey?.trim();
 
-    if (!roleId || !permissionId || typeof payload?.allowed !== "boolean") {
-      throw new ApiError(400, "roleId, permissionId, and allowed are required");
+    if ((!roleId && !roleCode) || (!permissionId && !permissionKey) || typeof payload?.allowed !== "boolean") {
+      throw new ApiError(400, "roleId or roleCode, permissionId or permissionKey, and allowed are required");
     }
+
+    await ensureWathiqNoteRolesAndPermissions(tenantId);
 
     const prisma = getPrisma();
 
     const [role, permission] = await Promise.all([
       prisma.tenantRole.findFirst({
         where: {
-          id: roleId,
           tenantId,
+          ...(roleId ? { id: roleId } : { code: roleCode }),
         },
       }),
       prisma.permission.findFirst({
         where: {
-          id: permissionId,
           isActive: true,
+          ...(permissionId ? { id: permissionId } : { key: permissionKey }),
         },
       }),
     ]);
@@ -274,16 +280,16 @@ export async function PATCH(request: NextRequest) {
     const rolePermission = await prisma.tenantRolePermission.upsert({
       where: {
         tenantRoleId_permissionId: {
-          tenantRoleId: roleId,
-          permissionId,
+          tenantRoleId: role.id,
+          permissionId: permission.id,
         },
       },
       update: {
         allowed: payload.allowed,
       },
       create: {
-        tenantRoleId: roleId,
-        permissionId,
+        tenantRoleId: role.id,
+          permissionId: permission.id,
         allowed: payload.allowed,
       },
       include: {
@@ -300,9 +306,9 @@ export async function PATCH(request: NextRequest) {
       action: payload.allowed ? "tenant_role_permission_enabled" : "tenant_role_permission_disabled",
       details: `Permission ${permission.key} ${payload.allowed ? "enabled" : "disabled"} for role ${role.code}`,
       metadataJson: {
-        roleId,
+        roleId: role.id,
         roleCode: role.code,
-        permissionId,
+        permissionId: permission.id,
         permissionKey: permission.key,
         allowed: payload.allowed,
       },
