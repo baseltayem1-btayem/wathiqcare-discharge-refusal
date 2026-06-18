@@ -1500,63 +1500,292 @@ function NoteBuilder({
 }
 
 function StatusTracking({ lang }: { lang: Lang }) {
-  const timeline = [
-    { ar: "تم اختيار الزيارة", en: "Visit selected", done: true },
-    { ar: "تم تحديد الفواتير المطلوبة", en: "Invoices selected", done: true },
-    { ar: "تم بناء السند", en: "Note drafted", done: true },
-    { ar: "تم إرسال رابط التوقيع", en: "Signing link sent", done: false },
-    { ar: "بانتظار توقيع المدين", en: "Awaiting debtor signature", done: false },
-    { ar: "المتابعة المالية", en: "Finance monitoring", done: false },
-    { ar: "التصعيد القانوني يظهر عند التعثر فقط", en: "Legal escalation appears only on default", done: false, locked: true },
-  ];
+  const { notes, loading, error, loadNotes } = usePromissoryNotes(lang);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  function getNoteValue(note: PromissoryNoteListItem | null | undefined, keys: string[]) {
+    if (!note) return "";
+    const record = note as unknown as Record<string, unknown>;
+
+    for (const key of keys) {
+      const value = record[key];
+      if (value !== null && value !== undefined && String(value).trim()) {
+        return String(value);
+      }
+    }
+
+    return "";
+  }
+
+  function getNoteAmount(note: PromissoryNoteListItem | null | undefined) {
+    return getNoteValue(note, ["amount", "principalAmount", "totalAmount", "noteAmount"]) || "0";
+  }
+
+  function getNoteStatus(note: PromissoryNoteListItem | null | undefined) {
+    return getNoteValue(note, ["status", "noteStatus", "lifecycleStatus"]).toUpperCase() || "ACTIVE";
+  }
+
+  const operationalNotes = useMemo(() => {
+    return notes.filter((note) => {
+      const status = getNoteStatus(note);
+      return !["SETTLED", "VOID", "CANCELLED", "CANCELED"].includes(status);
+    });
+  }, [notes]);
+
+  const selectedNote = useMemo(() => {
+    const pool = operationalNotes.length ? operationalNotes : notes;
+    return pool.find((note) => getNoteValue(note, ["id", "noteId"]) === selectedNoteId) || pool[0] || null;
+  }, [notes, operationalNotes, selectedNoteId]);
+
+  useEffect(() => {
+    if (!selectedNoteId && selectedNote) {
+      setSelectedNoteId(getNoteValue(selectedNote, ["id", "noteId"]));
+    }
+  }, [selectedNote, selectedNoteId]);
+
+  function buildTimeline(note: PromissoryNoteListItem | null) {
+    const status = getNoteStatus(note);
+    const hasNote = Boolean(note);
+    const sent = ["PENDING_SIGNATURE", "PENDING_OTP", "SIGNED", "ACTIVE", "SETTLED", "OVERDUE", "VOID"].includes(status);
+    const signed = ["SIGNED", "ACTIVE", "SETTLED", "OVERDUE"].includes(status);
+    const settled = status === "SETTLED";
+    const overdue = status === "OVERDUE";
+    const voided = ["VOID", "CANCELLED", "CANCELED"].includes(status);
+
+    return [
+      { ar: "تم إنشاء السند في النظام", en: "Note created in the system", done: hasNote },
+      { ar: "تم ربط السند ببيانات المريض/المدين", en: "Note linked to patient/debtor data", done: hasNote },
+      { ar: "تم تجهيز ملف PDF للسند", en: "PDF file is available", done: hasNote },
+      { ar: "تم إرسال رابط التوقيع / OTP", en: "Signing link / OTP sent", done: sent },
+      { ar: "بانتظار توقيع المدين", en: "Awaiting debtor signature", done: signed, locked: !sent || voided },
+      { ar: "المتابعة المالية", en: "Finance monitoring", done: signed || settled || overdue },
+      { ar: "إقفال بالوفاء", en: "Settled by payment", done: settled, locked: voided },
+      { ar: "التصعيد القانوني عند التعثر فقط", en: "Legal escalation only on default", done: overdue, locked: !overdue },
+    ];
+  }
+
+  async function runNoteAction(action: "send" | "settle" | "void") {
+    if (!selectedNote) {
+      setActionMessage(txt(lang, "لا يوجد سند محدد.", "No note is selected."));
+      return;
+    }
+
+    const noteId = getNoteValue(selectedNote, ["id", "noteId"]);
+    if (!noteId) {
+      setActionMessage(txt(lang, "لا يمكن تنفيذ الإجراء لأن معرف السند غير متوفر.", "Cannot run this action because the note ID is missing."));
+      return;
+    }
+
+    const status = getNoteStatus(selectedNote);
+    if (["SETTLED", "VOID", "CANCELLED", "CANCELED"].includes(status)) {
+      setActionMessage(txt(lang, "لا يمكن تنفيذ الإجراء على سند مقفل أو ملغى.", "Cannot run this action on a settled or voided note."));
+      return;
+    }
+
+    try {
+      setBusyAction(action);
+      setActionMessage(null);
+
+      if (action === "send") {
+        const debtorMobile =
+          getNoteValue(selectedNote, ["debtorMobile", "mobile", "makerMobile", "phone"]) ||
+          window.prompt(txt(lang, "أدخل رقم جوال المدين لإرسال رابط التوقيع:", "Enter debtor mobile number to send the signing link:")) ||
+          "";
+
+        if (!debtorMobile.trim()) {
+          setActionMessage(txt(lang, "رقم الجوال مطلوب لإرسال رابط التوقيع.", "Mobile number is required to send the signing link."));
+          return;
+        }
+
+        await apiJson<unknown>(`/api/modules/promissory-notes/${encodeURIComponent(noteId)}/debtor-signing/start`, {
+          method: "POST",
+          body: JSON.stringify({ debtorMobile, locale: lang }),
+        });
+
+        setActionMessage(txt(lang, "تم إرسال رابط التوقيع ورمز التحقق بنجاح.", "Signing link and OTP were sent successfully."));
+      }
+
+      if (action === "settle") {
+        const reason = window.prompt(txt(lang, "أدخل مرجع أو سبب الإقفال بالوفاء:", "Enter settlement reference or reason:"));
+        if (reason === null) return;
+
+        await apiJson<unknown>(`/api/modules/promissory-notes/${encodeURIComponent(noteId)}/settle`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            reason: reason || "Settled by authorized user",
+            amount: getNoteAmount(selectedNote),
+            method: "manual",
+          }),
+        });
+
+        setActionMessage(txt(lang, "تم إقفال السند بالوفاء وتحديث السجل.", "The note was settled and the register was updated."));
+      }
+
+      if (action === "void") {
+        const reason = window.prompt(txt(lang, "أدخل سبب إلغاء السند:", "Enter reason for voiding the note:"));
+        if (!reason) return;
+
+        await apiJson<unknown>(`/api/modules/promissory-notes/${encodeURIComponent(noteId)}/cancel`, {
+          method: "PATCH",
+          body: JSON.stringify({ reason, method: "manual" }),
+        });
+
+        setActionMessage(txt(lang, "تم إلغاء السند وحفظ السبب في سجل التدقيق.", "The note was voided and the reason was saved to the audit trail."));
+      }
+
+      await loadNotes();
+    } catch (actionError) {
+      setActionMessage(actionError instanceof Error ? actionError.message : txt(lang, "تعذر تنفيذ الإجراء.", "Unable to complete the action."));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  const selectedNoteIdForLinks = getNoteValue(selectedNote, ["id", "noteId"]);
+  const selectedStatus = getNoteStatus(selectedNote);
+  const timeline = buildTimeline(selectedNote);
 
   return (
     <div className="space-y-5">
       <PageTitle
         title={txt(lang, "تتبع حالة السند", "Note Status Tracking")}
-        subtitle={txt(lang, "متابعة دورة حياة السند من الإنشاء حتى السداد أو التصعيد.", "Track the note lifecycle from creation to settlement or escalation.")}
+        subtitle={txt(lang, "متابعة تشغيلية فعلية لدورة حياة السندات من قاعدة البيانات حتى السداد أو التصعيد.", "Operational tracking of database-backed notes from issuance to settlement or escalation.")}
       />
 
-      <div className="grid grid-cols-[420px_1fr] gap-5">
+      <ShellCard className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-bold text-[#073763]">{txt(lang, "مصدر البيانات", "Data Source")}</div>
+            <div className="mt-1 text-xs text-slate-500">
+              {txt(lang, "هذه الصفحة تقرأ السندات من API الفعلي ولا تستخدم بيانات وهمية.", "This page reads notes from the real API and does not use mock data.")}
+            </div>
+          </div>
+          <button type="button" onClick={() => void loadNotes()} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
+            {txt(lang, "تحديث", "Refresh")}
+          </button>
+        </div>
+
+        {actionMessage ? (
+          <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm font-semibold text-blue-900">{actionMessage}</div>
+        ) : null}
+      </ShellCard>
+
+      <div className="grid grid-cols-[460px_1fr] gap-5">
         <ShellCard>
           <div className="border-b border-slate-200 px-5 py-4">
-            <h2 className="font-bold text-slate-900">{txt(lang, "السندات النشطة", "Active Notes")}</h2>
+            <h2 className="font-bold text-slate-900">{txt(lang, "السندات الفعلية النشطة", "Actual Active Notes")}</h2>
+            <p className="mt-1 text-xs text-slate-500">{txt(lang, "القائمة أدناه تأتي من قاعدة البيانات عبر API.", "The list below is loaded from the database through the API.")}</p>
           </div>
-          <div className="divide-y divide-slate-100">
-            {[1, 2, 3, 4].map((i) => (
-              <button key={i} className="block w-full px-5 py-4 text-start hover:bg-slate-50">
-                <div className="font-semibold text-slate-900">{txt(lang, patient.nameAr, patient.nameEn)}</div>
-                <div className="mt-1 text-xs text-slate-500">{patient.mrn} · PN-20260616-000{i}</div>
-                <div className="mt-2"><StatusPill tone={i === 1 ? "blue" : "slate"}>{txt(lang, "نشط", "Active")}</StatusPill></div>
-              </button>
-            ))}
-          </div>
+
+          {loading ? (
+            <div className="p-8 text-center text-sm text-slate-500">{txt(lang, "جارٍ تحميل السندات...", "Loading notes...")}</div>
+          ) : error ? (
+            <div className="p-8 text-center text-sm text-rose-600">{error}</div>
+          ) : notes.length === 0 ? (
+            <div className="p-8 text-center text-sm text-slate-500">{txt(lang, "لا توجد سندات فعلية في قاعدة البيانات.", "No database-backed notes found.")}</div>
+          ) : (
+            <div className="max-h-[560px] divide-y divide-slate-100 overflow-auto">
+              {(operationalNotes.length ? operationalNotes : notes).map((note) => {
+                const noteId = getNoteValue(note, ["id", "noteId"]);
+                const noteNo = getNoteValue(note, ["noteNumber", "number", "promissoryNoteNumber"]) || noteId || "—";
+                const debtor = getNoteValue(note, ["debtorName", "makerName", "patientName", "patientNameAr", "patientNameEn"]) || txt(lang, "مدين غير محدد", "Unknown debtor");
+                const mrn = getNoteValue(note, ["mrn", "patientMrn", "medicalRecordNumber"]);
+                const status = getNoteStatus(note);
+                const isSelected = noteId === selectedNoteIdForLinks;
+
+                return (
+                  <button key={noteId || noteNo} type="button" onClick={() => setSelectedNoteId(noteId)} className={`block w-full px-5 py-4 text-start hover:bg-slate-50 ${isSelected ? "bg-blue-50" : ""}`}>
+                    <div className="font-semibold text-slate-900">{debtor}</div>
+                    <div className="mt-1 text-xs text-slate-500">{mrn ? mrn + " · " : ""}{noteNo}</div>
+                    <div className="mt-2">
+                      <StatusPill tone={status === "OVERDUE" ? "red" : status === "SETTLED" ? "green" : status === "VOID" ? "slate" : "blue"}>{status}</StatusPill>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </ShellCard>
 
         <ShellCard className="p-6">
-          <h2 className="mb-6 text-xl font-bold text-[#073763]">{txt(lang, "سجل الحالة", "Lifecycle Timeline")}</h2>
-          <div className="space-y-5">
-            {timeline.map((event, index) => (
-              <div key={event.en} className="grid grid-cols-[44px_1fr_120px] items-center gap-4">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-full border ${event.done ? "border-emerald-200 bg-emerald-50" : event.locked ? "border-slate-200 bg-slate-50" : "border-blue-100 bg-blue-50"}`}>
-                  {event.locked ? <Lock className="h-4 w-4 text-slate-400" /> : event.done ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <Activity className="h-4 w-4 text-blue-500" />}
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-900">{txt(lang, event.ar, event.en)}</div>
-                  <div className="text-xs text-slate-500">{index < 3 ? "16/06/2026 · 10:2" + index : txt(lang, "بانتظار الإجراء", "Pending action")}</div>
-                </div>
-                <StatusPill tone={event.done ? "green" : event.locked ? "slate" : "blue"}>
-                  {event.done ? txt(lang, "مكتمل", "Completed") : event.locked ? txt(lang, "مقفل", "Locked") : txt(lang, "قادم", "Next")}
-                </StatusPill>
-              </div>
-            ))}
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold text-[#073763]">{txt(lang, "سجل الحالة التشغيلي", "Operational Lifecycle Timeline")}</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                {selectedNote ? txt(lang, "السجل يتغير حسب السند المحدد وحالته الفعلية.", "Timeline changes based on the selected note and its actual status.") : txt(lang, "اختر سندًا من القائمة لعرض السجل.", "Select a note to display its lifecycle.")}
+              </p>
+            </div>
+
+            {selectedNote ? (
+              <StatusPill tone={selectedStatus === "OVERDUE" ? "red" : selectedStatus === "SETTLED" ? "green" : selectedStatus === "VOID" ? "slate" : "blue"}>{selectedStatus}</StatusPill>
+            ) : null}
           </div>
+
+          {selectedNote ? (
+            <>
+              <div className="mb-5 grid grid-cols-3 gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <SummaryLine label={txt(lang, "رقم السند", "Note No.")} value={getNoteValue(selectedNote, ["noteNumber", "number", "promissoryNoteNumber"]) || selectedNoteIdForLinks || "—"} />
+                <SummaryLine label={txt(lang, "المدين", "Debtor")} value={getNoteValue(selectedNote, ["debtorName", "makerName", "patientName", "patientNameAr", "patientNameEn"]) || "—"} />
+                <SummaryLine label={txt(lang, "المبلغ", "Amount")} value={`${getNoteAmount(selectedNote)} SAR`} />
+              </div>
+
+              <div className="mb-6 flex flex-wrap gap-2">
+                {selectedNoteIdForLinks ? (
+                  <>
+                    <a href={`/api/modules/promissory-notes/${encodeURIComponent(selectedNoteIdForLinks)}/pdf?lang=${lang}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">
+                      {txt(lang, "عرض PDF", "View PDF")}
+                    </a>
+                    <a href={`/api/modules/promissory-notes/${encodeURIComponent(selectedNoteIdForLinks)}/pdf?lang=${lang}&download=1`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">
+                      {txt(lang, "تحميل PDF", "Download PDF")}
+                    </a>
+                    <a href={`/modules/promissory-notes/${encodeURIComponent(selectedNoteIdForLinks)}/preview`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100">
+                      {txt(lang, "فتح السند", "Open Note")}
+                    </a>
+                  </>
+                ) : null}
+
+                <button type="button" onClick={() => void runNoteAction("send")} disabled={Boolean(busyAction) || ["SETTLED", "VOID", "CANCELLED", "CANCELED"].includes(selectedStatus)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+                  {busyAction === "send" ? txt(lang, "جارٍ الإرسال...", "Sending...") : txt(lang, "إرسال / إعادة إرسال رابط التوقيع", "Send / Resend Signing Link")}
+                </button>
+
+                <button type="button" onClick={() => void runNoteAction("settle")} disabled={Boolean(busyAction) || ["SETTLED", "VOID", "CANCELLED", "CANCELED"].includes(selectedStatus)} className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">
+                  {busyAction === "settle" ? txt(lang, "جارٍ الإقفال...", "Settling...") : txt(lang, "إقفال بالوفاء", "Settle")}
+                </button>
+
+                <button type="button" onClick={() => void runNoteAction("void")} disabled={Boolean(busyAction) || ["SETTLED", "VOID", "CANCELLED", "CANCELED"].includes(selectedStatus)} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50">
+                  {busyAction === "void" ? txt(lang, "جارٍ الإلغاء...", "Voiding...") : txt(lang, "إلغاء السند", "Void Note")}
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                {timeline.map((event) => (
+                  <div key={event.en} className="grid grid-cols-[44px_1fr_120px] items-center gap-4">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full border ${event.done ? "border-emerald-200 bg-emerald-50" : event.locked ? "border-slate-200 bg-slate-50" : "border-blue-100 bg-blue-50"}`}>
+                      {event.locked ? <Lock className="h-4 w-4 text-slate-400" /> : event.done ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <Activity className="h-4 w-4 text-blue-500" />}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-slate-900">{txt(lang, event.ar, event.en)}</div>
+                      <div className="text-xs text-slate-500">
+                        {event.done ? txt(lang, "مكتمل بناءً على حالة السند", "Completed based on note status") : txt(lang, "بانتظار الإجراء", "Pending action")}
+                      </div>
+                    </div>
+                    <StatusPill tone={event.done ? "green" : event.locked ? "slate" : "blue"}>
+                      {event.done ? txt(lang, "مكتمل", "Completed") : event.locked ? txt(lang, "مقفل", "Locked") : txt(lang, "قادم", "Next")}
+                    </StatusPill>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="p-8 text-center text-sm text-slate-500">{txt(lang, "لا يوجد سند محدد للمتابعة.", "No note is selected for tracking.")}</div>
+          )}
         </ShellCard>
       </div>
     </div>
   );
 }
-
 function SupportSettings({ lang }: { lang: Lang }) {
   const cards = [
     { titleAr: "الإعدادات", titleEn: "Settings", bodyAr: "إدارة التنبيهات والقوالب وسجل التدقيق.", bodyEn: "Manage alerts, templates, and audit logs.", icon: Settings },
