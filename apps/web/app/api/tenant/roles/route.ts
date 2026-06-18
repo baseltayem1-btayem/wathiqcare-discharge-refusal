@@ -3,7 +3,6 @@ import { TenantRoleStatus } from "@/lib/server/prisma-enums";
 import { requireAuth, requireTenantPermissionForAuth } from "@/lib/server/auth";
 import { ApiError, handleApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
-import { bootstrapTenantAdminConfiguration } from "@/lib/server/tenant-admin";
 import { toJsonSafe } from "@/lib/server/json";
 import { writeAuditLog } from "@/lib/server/saas-services";
 
@@ -52,8 +51,6 @@ export async function GET(request: NextRequest) {
     await requireTenantPermissionForAuth(auth, tenantId, "roles.read", {
       allowPlatform: false,
     });
-
-    await bootstrapTenantAdminConfiguration(tenantId);
 
     const prisma = getPrisma();
 
