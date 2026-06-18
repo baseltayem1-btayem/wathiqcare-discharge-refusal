@@ -2261,6 +2261,7 @@ function UsersRolesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: 
 
 type TenantPermission = {
   id?: string;
+  key?: string | null;
   code?: string | null;
   name?: string | null;
   module?: string | null;
@@ -2272,12 +2273,14 @@ type TenantRoleApiItem = {
   code?: string | null;
   name?: string | null;
   permissions?: Array<{
+    id?: string;
+    allowed?: boolean | null;
     permission?: TenantPermission | null;
   }> | null;
 };
 
 function getPermissionCode(permission: TenantPermission | null | undefined) {
-  return permission?.code || permission?.name || permission?.id || "";
+  return permission?.key || permission?.code || permission?.name || permission?.id || "";
 }
 
 function PermissionMatrixScreen({ lang }: { lang: Lang }) {
@@ -2309,6 +2312,33 @@ function PermissionMatrixScreen({ lang }: { lang: Lang }) {
   useEffect(() => {
     void loadRoles();
   }, []);
+
+  async function toggleRolePermission(roleId: string | undefined, permissionId: string | undefined, allowed: boolean) {
+    if (!roleId || !permissionId) {
+      setError(txt(lang, "تعذر تحديد الدور أو الصلاحية.", "Unable to identify role or permission."));
+      return;
+    }
+
+    setError(null);
+
+    try {
+      await apiJson<unknown>("/api/tenant/roles", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roleId,
+          permissionId,
+          allowed,
+        }),
+      });
+
+      await loadRoles();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : txt(lang, "تعذر تحديث الصلاحية.", "Unable to update permission."));
+    }
+  }
 
   const promissoryPermissions = permissions.filter((permission) => {
     const text = `${permission.module ?? ""} ${permission.code ?? ""} ${permission.name ?? ""}`.toLowerCase();

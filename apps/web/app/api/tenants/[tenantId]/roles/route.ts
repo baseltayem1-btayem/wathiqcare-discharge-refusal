@@ -170,3 +170,93 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         return handleApiError(error);
     }
 }
+
+export async function PATCH(request: NextRequest, { params }: RouteContext) {
+    try {
+        const prisma = getPrisma();
+
+        const { tenantId } = await params;
+        const auth = await authorize(request, tenantId, "roles.manage");
+
+        const payload = (await request.json().catch(() => null)) as
+            | {
+                  roleId?: string;
+                  permissionId?: string;
+                  allowed?: boolean;
+              }
+            | null;
+
+        const roleId = payload?.roleId?.trim();
+        const permissionId = payload?.permissionId?.trim();
+        const allowed = Boolean(payload?.allowed);
+
+        if (!roleId || !permissionId) {
+            throw new ApiError(400, "roleId and permissionId are required");
+        }
+
+        const [role, permission] = await Promise.all([
+            prisma.tenantRole.findFirst({
+                where: {
+                    id: roleId,
+                    tenantId,
+                },
+            }),
+            prisma.permission.findFirst({
+                where: {
+                    id: permissionId,
+                    isActive: true,
+                },
+            }),
+        ]);
+
+        if (!role) {
+            throw new ApiError(404, "Role not found");
+        }
+
+        if (!permission) {
+            throw new ApiError(404, "Permission not found");
+        }
+
+        const rolePermission = await prisma.tenantRolePermission.upsert({
+            where: {
+                tenantRoleId_permissionId: {
+                    tenantRoleId: roleId,
+                    permissionId,
+                },
+            },
+            update: {
+                allowed,
+            },
+            create: {
+                tenantRoleId: roleId,
+                permissionId,
+                allowed,
+            },
+            include: {
+                permission: true,
+                tenantRole: true,
+            },
+        });
+
+        await writeAuditLog({
+            tenantId,
+            userId: auth.sub,
+            entityType: "tenant_role_permission",
+            entityId: rolePermission.id,
+            action: allowed ? "tenant_role_permission_enabled" : "tenant_role_permission_disabled",
+            details: `Permission ${permission.key} ${allowed ? "enabled" : "disabled"} for role ${role.code}`,
+            metadataJson: {
+                roleId,
+                roleCode: role.code,
+                permissionId,
+                permissionKey: permission.key,
+                allowed,
+            },
+            request,
+        });
+
+        return NextResponse.json(toJsonSafe(rolePermission));
+    } catch (error) {
+        return handleApiError(error);
+    }
+}
