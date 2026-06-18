@@ -2340,12 +2340,19 @@ function PermissionMatrixScreen({ lang }: { lang: Lang }) {
     }
   }
 
-  const promissoryPermissions = permissions.filter((permission) => {
-    const text = `${permission.module ?? ""} ${permission.code ?? ""} ${permission.name ?? ""}`.toLowerCase();
-    return text.includes("promissory") || text.includes("note") || text.includes("roles.") || text.includes("users.");
+    const promissoryPermissions = permissions.filter((permission) => {
+    const text = `${permission.module ?? ""} ${permission.key ?? ""} ${permission.code ?? ""} ${permission.name ?? ""}`.toLowerCase();
+    return (
+      text.includes("promissory") ||
+      text.includes("note") ||
+      text.includes("roles.") ||
+      text.includes("users.") ||
+      text.includes("tenant_admin")
+    );
   });
 
-  const hasLiveMatrix = roles.length > 0 && promissoryPermissions.length > 0;
+  const visiblePermissions = promissoryPermissions.length > 0 ? promissoryPermissions : permissions;
+  const hasLiveMatrix = roles.length > 0 && visiblePermissions.length > 0;
 
   return (
     <div className="space-y-5">
@@ -2394,7 +2401,7 @@ function PermissionMatrixScreen({ lang }: { lang: Lang }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {promissoryPermissions.map((permission) => (
+                {visiblePermissions.map((permission) => (
                   <tr key={permission.id || permission.code || permission.name || "permission"}>
                     <td className="sticky start-0 bg-white px-5 py-3">
                       <div className="font-bold text-slate-800">{permission.name || permission.code || permission.id}</div>
