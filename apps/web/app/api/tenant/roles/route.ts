@@ -32,145 +32,12 @@ const WATHIQNOTE_PERMISSIONS = [
   { key: "roles.manage", name: "إدارة الصلاحيات", module: "tenant_admin" },
 ];
 
-const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
-  NOTE_ISSUER: [
-    "promissory_notes.create",
-    "promissory_notes.update",
-    "promissory_notes.issue",
-    "promissory_notes.signature.send",
-    "promissory_notes.otp.resend",
-    "promissory_notes.pdf.download",
-  ],
-  NOTE_REVIEWER: [
-    "promissory_notes.review",
-    "promissory_notes.update",
-    "promissory_notes.pdf.download",
-    "promissory_notes.audit.read",
-  ],
-  FINANCE: [
-    "promissory_notes.settle",
-    "promissory_notes.pdf.download",
-    "promissory_notes.audit.read",
-  ],
-  LEGAL: [
-    "promissory_notes.review",
-    "promissory_notes.void",
-    "promissory_notes.pdf.download",
-    "promissory_notes.audit.read",
-  ],
-  ADMIN: [
-    "promissory_notes.create",
-    "promissory_notes.update",
-    "promissory_notes.review",
-    "promissory_notes.issue",
-    "promissory_notes.signature.send",
-    "promissory_notes.otp.resend",
-    "promissory_notes.settle",
-    "promissory_notes.void",
-    "promissory_notes.pdf.download",
-    "promissory_notes.audit.read",
-    "users.manage",
-    "roles.read",
-    "roles.manage",
-  ],
-  AUDITOR: [
-    "promissory_notes.pdf.download",
-    "promissory_notes.audit.read",
-  ],
-};
+function findSeedRole(roleCode: string | undefined) {
+  return WATHIQNOTE_ROLES.find((item) => item.code === roleCode);
+}
 
-async function ensureWathiqNoteRolesAndPermissions(tenantId: string) {
-  const prisma = getPrisma();
-
-  await prisma.$transaction(async (tx) => {
-    for (const permission of WATHIQNOTE_PERMISSIONS) {
-      await tx.permission.upsert({
-        where: { key: permission.key },
-        update: {
-          name: permission.name,
-          module: permission.module,
-          isActive: true,
-        },
-        create: {
-          key: permission.key,
-          name: permission.name,
-          module: permission.module,
-          description: permission.name,
-          isActive: true,
-        },
-      });
-    }
-
-    for (const role of WATHIQNOTE_ROLES) {
-      await tx.tenantRole.upsert({
-        where: {
-          tenantId_code: {
-            tenantId,
-            code: role.code,
-          },
-        },
-        update: {
-          name: role.name,
-          description: role.description,
-          status: TenantRoleStatus.ACTIVE,
-        },
-        create: {
-          tenantId,
-          code: role.code,
-          name: role.name,
-          description: role.description,
-          status: TenantRoleStatus.ACTIVE,
-          isTemplate: false,
-        },
-      });
-    }
-
-    const roles = await tx.tenantRole.findMany({
-      where: {
-        tenantId,
-        code: {
-          in: WATHIQNOTE_ROLES.map((role) => role.code),
-        },
-      },
-    });
-
-    const permissions = await tx.permission.findMany({
-      where: {
-        key: {
-          in: WATHIQNOTE_PERMISSIONS.map((permission) => permission.key),
-        },
-      },
-    });
-
-    const permissionByKey = new Map(permissions.map((permission) => [permission.key, permission]));
-
-    for (const role of roles) {
-      const allowedKeys = DEFAULT_ROLE_PERMISSIONS[role.code] ?? [];
-
-      for (const permissionKey of WATHIQNOTE_PERMISSIONS.map((permission) => permission.key)) {
-        const permission = permissionByKey.get(permissionKey);
-
-        if (!permission) {
-          continue;
-        }
-
-        await tx.tenantRolePermission.upsert({
-          where: {
-            tenantRoleId_permissionId: {
-              tenantRoleId: role.id,
-              permissionId: permission.id,
-            },
-          },
-          update: {},
-          create: {
-            tenantRoleId: role.id,
-            permissionId: permission.id,
-            allowed: allowedKeys.includes(permissionKey),
-          },
-        });
-      }
-    }
-  });
+function findSeedPermission(permissionKey: string | undefined) {
+  return WATHIQNOTE_PERMISSIONS.find((item) => item.key === permissionKey);
 }
 
 export async function GET(request: NextRequest) {
@@ -187,7 +54,6 @@ export async function GET(request: NextRequest) {
     });
 
     await bootstrapTenantAdminConfiguration(tenantId);
-    await ensureWathiqNoteRolesAndPermissions(tenantId);
 
     const prisma = getPrisma();
 
@@ -250,24 +116,71 @@ export async function PATCH(request: NextRequest) {
       throw new ApiError(400, "roleId or roleCode, permissionId or permissionKey, and allowed are required");
     }
 
-    await ensureWathiqNoteRolesAndPermissions(tenantId);
-
     const prisma = getPrisma();
 
-    const [role, permission] = await Promise.all([
-      prisma.tenantRole.findFirst({
-        where: {
-          tenantId,
-          ...(roleId ? { id: roleId } : { code: roleCode }),
-        },
-      }),
-      prisma.permission.findFirst({
-        where: {
-          isActive: true,
-          ...(permissionId ? { id: permissionId } : { key: permissionKey }),
-        },
-      }),
-    ]);
+    const seedRole = findSeedRole(roleCode);
+    const seedPermission = findSeedPermission(permissionKey);
+
+    const role = roleId
+      ? await prisma.tenantRole.findFirst({
+          where: {
+            id: roleId,
+            tenantId,
+          },
+        })
+      : await prisma.tenantRole.upsert({
+          where: {
+            tenantId_code: {
+              tenantId,
+              code: roleCode!,
+            },
+          },
+          update: seedRole
+            ? {
+                name: seedRole.name,
+                description: seedRole.description,
+                status: TenantRoleStatus.ACTIVE,
+              }
+            : {},
+          create: {
+            tenantId,
+            code: roleCode!,
+            name: seedRole?.name ?? roleCode!,
+            description: seedRole?.description ?? null,
+            status: TenantRoleStatus.ACTIVE,
+            isTemplate: false,
+          },
+        });
+
+    const permission = permissionId
+      ? await prisma.permission.findFirst({
+          where: {
+            id: permissionId,
+            isActive: true,
+          },
+        })
+      : await prisma.permission.upsert({
+          where: {
+            key: permissionKey!,
+          },
+          update: seedPermission
+            ? {
+                name: seedPermission.name,
+                module: seedPermission.module,
+                description: seedPermission.name,
+                isActive: true,
+              }
+            : {
+                isActive: true,
+              },
+          create: {
+            key: permissionKey!,
+            name: seedPermission?.name ?? permissionKey!,
+            module: seedPermission?.module ?? "promissory_notes",
+            description: seedPermission?.name ?? permissionKey!,
+            isActive: true,
+          },
+        });
 
     if (!role) {
       throw new ApiError(404, "Role not found");
@@ -289,7 +202,7 @@ export async function PATCH(request: NextRequest) {
       },
       create: {
         tenantRoleId: role.id,
-          permissionId: permission.id,
+        permissionId: permission.id,
         allowed: payload.allowed,
       },
       include: {

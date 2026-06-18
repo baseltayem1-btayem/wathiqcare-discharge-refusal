@@ -2502,12 +2502,31 @@ function PermissionMatrixScreen({ lang }: { lang: Lang }) {
                 <tr key={permission.key}>
                   <td className="sticky start-0 bg-white px-5 py-3 font-bold text-slate-800">{txt(lang, permission.ar, permission.en)}</td>
                   {wathiqNoteRoles.map((role) => {
-                    const allowed = roleHasPermission(role.code, permission.key);
+                    const roleCode = WATHIQNOTE_ROLE_CODE_MAP[role.code] ?? role.code;
+                    const permissionKey = WATHIQNOTE_PERMISSION_KEY_MAP[permission.key] ?? permission.key;
+                    const dbRole = roles.find((item) => item.code === roleCode);
+                    const dbPermission = permissions.find((item) => getPermissionCode(item) === permissionKey);
+                    const dbPermissionAllowed = Boolean(
+                      dbRole?.permissions?.some(
+                        (item) => getPermissionCode(item.permission) === permissionKey && item.allowed !== false,
+                      ),
+                    );
+                    const allowed = dbRole && dbPermission ? dbPermissionAllowed : roleHasPermission(role.code, permission.key);
+
                     return (
                       <td key={`${role.code}-${permission.key}`} className="px-4 py-3 text-center">
-                        <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold ${allowed ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-300"}`}>
+                        <button
+                          type="button"
+                          onClick={() => void toggleRolePermissionByCode(roleCode, permissionKey, !allowed)}
+                          className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold transition ${
+                            allowed
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                              : "border-slate-200 bg-slate-50 text-slate-300 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                          }`}
+                          title={allowed ? txt(lang, "إلغاء الصلاحية", "Disable permission") : txt(lang, "تفعيل الصلاحية", "Enable permission")}
+                        >
                           {allowed ? "✓" : "—"}
-                        </span>
+                        </button>
                       </td>
                     );
                   })}
