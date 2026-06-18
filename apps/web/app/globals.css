@@ -1018,18 +1018,39 @@ h3,
 
 /* WathiqCare Arabic typography override */
 :root {
-  --wathiqcare-arabic-font: "العربية", "Alarabiya", "Al Arabia", "IBM Plex Sans Arabic", "Noto Sans Arabic", "Tahoma", sans-serif;
+  --wathiqcare-arabic-font: "العربية", "AlArabiya", "Al Arabiya", "Alarabiya", "Al Arabia", "IBM Plex Sans Arabic", "Noto Sans Arabic", "Tahoma", "Arial", sans-serif;
 }
 
+/* Apply Arabic font globally across all internal screens */
 html[lang="ar"],
 html[dir="rtl"],
-[dir="rtl"],
-:lang(ar) {
-  font-family: var(--wathiqcare-arabic-font);
+body[dir="rtl"],
+[dir="rtl"] {
+  font-family: var(--wathiqcare-arabic-font) !important;
 }
 
-html[lang="ar"] body,
-html[dir="rtl"] body,
-[dir="rtl"] body {
-  font-family: var(--wathiqcare-arabic-font);
+/* Force Arabic font inside all UI components, tables, forms, sidebar, buttons, badges and cards */
+html[lang="ar"] *,
+html[dir="rtl"] *,
+body[dir="rtl"] *,
+[dir="rtl"] *,
+:lang(ar),
+:lang(ar) * {
+  font-family: var(--wathiqcare-arabic-font) !important;
+}
+
+/* Keep form controls aligned with the same Arabic typography */
+html[lang="ar"] button,
+html[lang="ar"] input,
+html[lang="ar"] select,
+html[lang="ar"] textarea,
+html[dir="rtl"] button,
+html[dir="rtl"] input,
+html[dir="rtl"] select,
+html[dir="rtl"] textarea,
+[dir="rtl"] button,
+[dir="rtl"] input,
+[dir="rtl"] select,
+[dir="rtl"] textarea {
+  font-family: var(--wathiqcare-arabic-font) !important;
 }
