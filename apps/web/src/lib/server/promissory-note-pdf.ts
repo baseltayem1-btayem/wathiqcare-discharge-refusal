@@ -67,7 +67,7 @@ function documentCss(isAr: boolean): string {
       line-height: 1.45;
       text-align: ${isAr ? "right" : "left"};
       font-family: ${isAr
-    ? "'WathiqArabicPdfPrimary','WathiqArabicPdfFallback','IBM Plex Sans Arabic','Noto Sans Arabic','Noto Naskh Arabic','Tahoma',serif"
+    ? "'AlArabiyaPDF','WathiqArabicPdfPrimary','WathiqArabicPdfFallback','IBM Plex Sans Arabic','Noto Sans Arabic','Noto Naskh Arabic','Tahoma',serif"
     : "'Times New Roman',Times,serif"};
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
@@ -438,14 +438,33 @@ async function readFontAsDataUri(fontPath: string, mimeType: string): Promise<st
   return `data:${mimeType};base64,${fontBytes.toString("base64")}`;
 }
 
+function getFontFormat(fontPath: string): { mimeType: string; format: string } {
+  const normalized = fontPath.toLowerCase();
+
+  if (normalized.endsWith(".ttf")) {
+    return { mimeType: "font/truetype", format: "truetype" };
+  }
+
+  if (normalized.endsWith(".otf")) {
+    return { mimeType: "font/otf", format: "opentype" };
+  }
+
+  if (normalized.endsWith(".woff")) {
+    return { mimeType: "font/woff", format: "woff" };
+  }
+
+  return { mimeType: "font/woff2", format: "woff2" };
+}
+
 async function buildEmbeddedFontFaceCss(config: {
   family: string;
   arabicPath: string;
   latinPath?: string;
 }): Promise<string> {
-  const arabicDataUri = await readFontAsDataUri(config.arabicPath, "font/woff2");
+  const arabicFont = getFontFormat(config.arabicPath);
+  const arabicDataUri = await readFontAsDataUri(config.arabicPath, arabicFont.mimeType);
   const latinDataUri = config.latinPath
-    ? await readFontAsDataUri(config.latinPath, "font/woff2").catch((error: unknown) => {
+    ? await readFontAsDataUri(config.latinPath, getFontFormat(config.latinPath).mimeType).catch((error: unknown) => {
       console.warn("Failed to load embedded Latin font for promissory PDF", error);
       return "";
     })
@@ -457,7 +476,7 @@ async function buildEmbeddedFontFaceCss(config: {
       font-style: normal;
       font-weight: 400;
       font-display: block;
-      src: url(${arabicDataUri}) format('woff2');
+      src: url(${arabicDataUri}) format('${arabicFont.format}');
       unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FEFC;
     }
   `;
@@ -472,7 +491,7 @@ async function buildEmbeddedFontFaceCss(config: {
       font-style: normal;
       font-weight: 400;
       font-display: block;
-      src: url(${latinDataUri}) format('woff2');
+      src: url(${latinDataUri}) format('${config.latinPath ? getFontFormat(config.latinPath).format : "woff2"}');
       unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122,U+FEFF,U+FFFD;
     }
   `;
@@ -483,6 +502,28 @@ async function buildEmbeddedFontFaceCss(config: {
 async function loadEmbeddedArabicFontCss(): Promise<string> {
   const root = process.cwd();
   const candidates = [
+    {
+      family: "AlArabiyaPDF",
+      arabicPath: join(
+        root,
+        "apps",
+        "web",
+        "public",
+        "fonts",
+        "alarabiya",
+        "AlArabiya.ttf",
+      ),
+    },
+    {
+      family: "AlArabiyaPDF",
+      arabicPath: join(
+        root,
+        "public",
+        "fonts",
+        "alarabiya",
+        "AlArabiya.ttf",
+      ),
+    },
     {
       family: "WathiqArabicPdfPrimary",
       arabicPath: join(
