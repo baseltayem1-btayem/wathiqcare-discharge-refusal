@@ -28,7 +28,7 @@ const modules = [
     subtitle: "Financial undertaking workflow",
     description:
       "Controlled legal workflow for undertakings, case tracking, approvals, and supporting documents.",
-    href: "/modules/promissory-notes",
+    href: "/modules/promissory-notes/enterprise",
     status: "Active",
     accent: "from-[#2f2f2f] to-[#c9a13b]",
     stats: ["Legal Review", "Finance", "Approval"]
@@ -129,3 +129,4 @@ export default function ModulesPage() {
     </main>
   );
 }
+
