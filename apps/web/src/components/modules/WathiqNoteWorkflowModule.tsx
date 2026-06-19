@@ -2937,14 +2937,20 @@ function TemplatesClausesScreen({ lang, showToast }: { lang: Lang; showToast: (t
   ).length;
 
   return (
-    <ModuleScreen
-      title={txt(lang, "\u0627\u0644\u0642\u0648\u0627\u0644\u0628 \u0648\u0627\u0644\u0628\u0646\u0648\u062f", "Templates and Clauses")}
-      subtitle={txt(
-        lang,
-        "\u0625\u062f\u0627\u0631\u0629 \u0642\u0648\u0627\u0644\u0628 \u0627\u0644\u0633\u0646\u062f\u0627\u062a \u0648\u0627\u0644\u0625\u0642\u0631\u0627\u0631\u0627\u062a \u0648\u0627\u0644\u0628\u0646\u0648\u062f \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629 \u0648\u0627\u0644\u0645\u0627\u0644\u064a\u0629 \u0627\u0644\u0645\u0639\u062a\u0645\u062f\u0629 \u0642\u0628\u0644 \u0627\u0644\u0625\u0635\u062f\u0627\u0631.",
-        "Manage approved promissory note, acknowledgment, legal, and financial templates before issuance."
-      )}
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-950">
+          {txt(lang, "\u0627\u0644\u0642\u0648\u0627\u0644\u0628 \u0648\u0627\u0644\u0628\u0646\u0648\u062f", "Templates and Clauses")}
+        </h1>
+        <p className="mt-2 text-sm text-slate-500">
+          {txt(
+            lang,
+            "\u0625\u062f\u0627\u0631\u0629 \u0642\u0648\u0627\u0644\u0628 \u0627\u0644\u0633\u0646\u062f\u0627\u062a \u0648\u0627\u0644\u0625\u0642\u0631\u0627\u0631\u0627\u062a \u0648\u0627\u0644\u0628\u0646\u0648\u062f \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629 \u0648\u0627\u0644\u0645\u0627\u0644\u064a\u0629 \u0627\u0644\u0645\u0639\u062a\u0645\u062f\u0629 \u0642\u0628\u0644 \u0627\u0644\u0625\u0635\u062f\u0627\u0631.",
+            "Manage approved promissory note, acknowledgment, legal, and financial templates before issuance."
+          )}
+        </p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
@@ -3084,7 +3090,7 @@ function TemplatesClausesScreen({ lang, showToast }: { lang: Lang; showToast: (t
           </table>
         </div>
       </div>
-    </ModuleScreen>
+    </div>
   );
 
 }
