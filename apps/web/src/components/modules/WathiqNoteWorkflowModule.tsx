@@ -1,5 +1,6 @@
 "use client";
 
+import { wathiqNoteProductionTemplates } from "@/data/wathiqnote/templates";
 import React, { ReactNode, useEffect, useMemo, useState } from "react";
 import {
   Activity,
@@ -2891,97 +2892,201 @@ function NotesArchiveScreen({ lang }: { lang: Lang }) {
   );
 }
 function TemplatesClausesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: Toast) => void }) {
-  const templates = [
-    {
-      ar: "سند لأمر مقابل خدمات طبية",
-      en: "Promissory Note for Medical Services",
-      statusAr: "معتمد",
-      statusEn: "Approved",
-      ownerAr: "الشؤون القانونية",
-      ownerEn: "Legal Affairs",
-    },
-    {
-      ar: "إقرار صفة المدين",
-      en: "Debtor Capacity Acknowledgment",
-      statusAr: "معتمد",
-      statusEn: "Approved",
-      ownerAr: "الشؤون القانونية / المالية",
-      ownerEn: "Legal / Finance",
-    },
-    {
-      ar: "تعليمات الإلغاء والوفاء",
-      en: "Void and Settlement Instructions",
-      statusAr: "قيد المراجعة",
-      statusEn: "Under Review",
-      ownerAr: "المالية",
-      ownerEn: "Finance",
-    },
-  ];
+  void showToast;
+
+  const templates = wathiqNoteProductionTemplates;
+
+  const statusLabel = (status: string) => {
+    const labels: Record<string, { ar: string; en: string }> = {
+      Draft: { ar: "\u0645\u0633\u0648\u062f\u0629", en: "Draft" },
+      "Legal Review": { ar: "\u0645\u0631\u0627\u062c\u0639\u0629 \u0642\u0627\u0646\u0648\u0646\u064a\u0629", en: "Legal Review" },
+      "Finance Review": { ar: "\u0645\u0631\u0627\u062c\u0639\u0629 \u0645\u0627\u0644\u064a\u0629", en: "Finance Review" },
+      "Insurance Review": { ar: "\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u062a\u0623\u0645\u064a\u0646", en: "Insurance Review" },
+      "DPO/IT Review": { ar: "\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0648\u0627\u0644\u062a\u0642\u0646\u064a\u0629", en: "DPO/IT Review" },
+      Approved: { ar: "\u0645\u0639\u062a\u0645\u062f", en: "Approved" },
+      Published: { ar: "\u0645\u0646\u0634\u0648\u0631", en: "Published" },
+      Suspended: { ar: "\u0645\u0648\u0642\u0648\u0641", en: "Suspended" },
+      Archived: { ar: "\u0645\u0624\u0631\u0634\u0641", en: "Archived" },
+    };
+
+    return labels[status]?.[lang] ?? status;
+  };
+
+  const statusClass = (status: string) => {
+    if (status === "Published" || status === "Approved") {
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    }
+
+    if (status.includes("Review")) {
+      return "bg-amber-50 text-amber-700 border-amber-200";
+    }
+
+    if (status === "Suspended" || status === "Archived") {
+      return "bg-slate-100 text-slate-600 border-slate-200";
+    }
+
+    return "bg-blue-50 text-blue-700 border-blue-200";
+  };
+
+  const approvedCount = templates.filter(
+    (template) => template.status === "Approved" || template.status === "Published"
+  ).length;
+
+  const reviewCount = templates.filter((template) =>
+    template.status.includes("Review")
+  ).length;
 
   return (
-    <div className="space-y-5">
-      <PageTitle
-        title={txt(lang, "القوالب والبنود", "Templates & Clauses")}
-        subtitle={txt(lang, "إدارة قوالب السندات والبنود القانونية المعتمدة قبل الإصدار.", "Manage approved promissory-note templates and legal clauses before issuance.")}
-      />
+    <ModuleScreen
+      title={txt(lang, "\u0627\u0644\u0642\u0648\u0627\u0644\u0628 \u0648\u0627\u0644\u0628\u0646\u0648\u062f", "Templates and Clauses")}
+      subtitle={txt(
+        lang,
+        "\u0625\u062f\u0627\u0631\u0629 \u0642\u0648\u0627\u0644\u0628 \u0627\u0644\u0633\u0646\u062f\u0627\u062a \u0648\u0627\u0644\u0625\u0642\u0631\u0627\u0631\u0627\u062a \u0648\u0627\u0644\u0628\u0646\u0648\u062f \u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629 \u0648\u0627\u0644\u0645\u0627\u0644\u064a\u0629 \u0627\u0644\u0645\u0639\u062a\u0645\u062f\u0629 \u0642\u0628\u0644 \u0627\u0644\u0625\u0635\u062f\u0627\u0631.",
+        "Manage approved promissory note, acknowledgment, legal, and financial templates before issuance."
+      )}
+    >
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            {txt(lang, "\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0642\u0648\u0627\u0644\u0628", "Total templates")}
+          </p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">{templates.length}</p>
+        </div>
 
-      <ShellCard>
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            {txt(lang, "\u0645\u0639\u062a\u0645\u062f / \u0645\u0646\u0634\u0648\u0631", "Approved / Published")}
+          </p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">{approvedCount}</p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            {txt(lang, "\u0642\u064a\u062f \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629", "Under review")}
+          </p>
+          <p className="mt-2 text-3xl font-bold text-slate-950">{reviewCount}</p>
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "مكتبة القوالب", "Template Library")}</h2>
-            <p className="mt-1 text-xs text-slate-500">
-              {txt(lang, "هذه الشاشة جاهزة للربط لاحقًا بقاعدة بيانات القوالب والإصدارات.", "This screen is ready to connect to template versioning APIs.")}
+            <h2 className="text-lg font-semibold text-slate-950">
+              {txt(lang, "\u0645\u0643\u062a\u0628\u0629 \u0627\u0644\u0642\u0648\u0627\u0644\u0628 \u0627\u0644\u062a\u0634\u063a\u064a\u0644\u064a\u0629", "Production Template Library")}
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {txt(
+                lang,
+                "\u0627\u0644\u0642\u0648\u0627\u0644\u0628 \u0623\u062f\u0646\u0627\u0647 \u0645\u062d\u0645\u0644\u0629 \u0645\u0646 WathiqNote Production Template Pack\u060c \u0648\u0644\u0627 \u064a\u062c\u0628 \u0623\u0646 \u062a\u0638\u0647\u0631 \u0644\u0644\u0625\u0635\u062f\u0627\u0631 \u0627\u0644\u0646\u0647\u0627\u0626\u064a \u0625\u0644\u0627 \u0639\u0646\u062f \u062d\u0627\u0644\u0629 Published.",
+                "The templates below are loaded from the WathiqNote Production Template Pack and should only be selectable for issuance when Published."
+              )}
             </p>
           </div>
+
           <button
             type="button"
-            onClick={() =>
-              showToast({
-                type: "info",
-                message: txt(
-                  lang,
-                  "إنشاء قالب جديد جاهز كواجهة، وسيتم ربطه لاحقًا بقاعدة بيانات القوالب والاعتمادات.",
-                  "New template creation is ready in the UI and will be connected later to template and approval APIs.",
-                ),
-              })
-            }
-            className="rounded-lg bg-[#073763] px-4 py-2 text-sm font-bold text-white"
+            className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm"
           >
-            {txt(lang, "+ قالب جديد", "+ New Template")}
+            {txt(lang, "+ \u0642\u0627\u0644\u0628 \u062c\u062f\u064a\u062f", "+ New template")}
           </button>
         </div>
 
-        <div className="divide-y divide-slate-100">
-          {templates.map((template) => (
-            <div key={template.en} className="grid grid-cols-[1fr_180px_180px_120px] items-center gap-4 px-5 py-4">
-              <div>
-                <div className="font-bold text-slate-900">{txt(lang, template.ar, template.en)}</div>
-                <div className="mt-1 text-xs text-slate-500">{txt(lang, "إصدار محكوم بسجل تدقيق واعتماد.", "Version-controlled and approval-governed.")}</div>
-              </div>
-              <div className="text-sm text-slate-600">{txt(lang, template.ownerAr, template.ownerEn)}</div>
-              <StatusPill tone={template.statusEn === "Approved" ? "green" : "amber"}>{txt(lang, template.statusAr, template.statusEn)}</StatusPill>
-              <button
-                type="button"
-                onClick={() =>
-                  showToast({
-                    type: "info",
-                    message: txt(
-                      lang,
-                      `تم فتح قالب: ${template.ar}`,
-                      `Template opened: ${template.en}`,
-                    ),
-                  })
-                }
-                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
-              >
-                {txt(lang, "فتح", "Open")}
-              </button>
-            </div>
-          ))}
+        <div className="mt-6 overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead>
+              <tr className="text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <th className="px-3 py-3">{txt(lang, "\u0627\u0644\u0643\u0648\u062f", "Code")}</th>
+                <th className="px-3 py-3">{txt(lang, "\u0627\u0633\u0645 \u0627\u0644\u0642\u0627\u0644\u0628", "Template")}</th>
+                <th className="px-3 py-3">{txt(lang, "\u0627\u0644\u062a\u0635\u0646\u064a\u0641", "Category")}</th>
+                <th className="px-3 py-3">{txt(lang, "\u0627\u0644\u0645\u0627\u0644\u0643", "Owner")}</th>
+                <th className="px-3 py-3">{txt(lang, "\u0627\u0644\u062d\u0627\u0644\u0629", "Status")}</th>
+                <th className="px-3 py-3">{txt(lang, "\u062a\u0641\u0627\u0635\u064a\u0644", "Details")}</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-slate-100">
+              {templates.map((template) => (
+                <tr key={template.code} className="align-top">
+                  <td className="whitespace-nowrap px-3 py-4 font-mono text-xs font-semibold text-slate-700">
+                    {template.code}
+                  </td>
+
+                  <td className="px-3 py-4">
+                    <p className="font-semibold text-slate-950">
+                      {lang === "ar" ? template.nameAr : template.nameEn}
+                    </p>
+                    <p className="mt-1 line-clamp-2 max-w-xl text-xs leading-5 text-slate-500">
+                      {template.purposeAr}
+                    </p>
+                  </td>
+
+                  <td className="whitespace-nowrap px-3 py-4 text-xs font-semibold text-slate-600">
+                    {template.category}
+                  </td>
+
+                  <td className="px-3 py-4 text-xs text-slate-600">
+                    {template.ownerDepartment}
+                  </td>
+
+                  <td className="px-3 py-4">
+                    <span
+                      className={
+                        "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold " +
+                        statusClass(template.status)
+                      }
+                    >
+                      {statusLabel(template.status)}
+                    </span>
+                  </td>
+
+                  <td className="px-3 py-4">
+                    <details className="group max-w-xl rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                      <summary className="cursor-pointer text-xs font-semibold text-slate-700">
+                        {txt(lang, "\u0641\u062a\u062d", "Open")}
+                      </summary>
+
+                      <div className="mt-3 space-y-3 text-xs leading-6 text-slate-600">
+                        <div>
+                          <p className="font-semibold text-slate-800">
+                            {txt(lang, "\u0627\u0644\u0627\u0639\u062a\u0645\u0627\u062f\u0627\u062a \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629", "Required approvals")}
+                          </p>
+                          <p>{template.requiredApprovals.join(" / ")}</p>
+                        </div>
+
+                        <div>
+                          <p className="font-semibold text-slate-800">
+                            {txt(lang, "\u0627\u0644\u062d\u0642\u0648\u0644 \u0627\u0644\u0625\u0644\u0632\u0627\u0645\u064a\u0629", "Required fields")}
+                          </p>
+                          <p>{template.requiredFields.join(", ")}</p>
+                        </div>
+
+                        <div>
+                          <p className="font-semibold text-slate-800">
+                            {txt(lang, "\u0627\u0644\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u062a\u0634\u063a\u064a\u0644\u064a\u0629", "Operational rule")}
+                          </p>
+                          <p>{template.operationalRuleAr}</p>
+                        </div>
+
+                        <div>
+                          <p className="font-semibold text-slate-800">
+                            {txt(lang, "\u0627\u0644\u0646\u0635 \u0627\u0644\u0639\u0631\u0628\u064a", "Arabic clause")}
+                          </p>
+                          <p className="rounded-xl bg-white p-3 text-slate-700">
+                            {template.clauseAr}
+                          </p>
+                        </div>
+                      </div>
+                    </details>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </ShellCard>
-    </div>
+      </div>
+    </ModuleScreen>
   );
+
 }
 
 function FinanceMonitoringScreen({ lang }: { lang: Lang }) {
