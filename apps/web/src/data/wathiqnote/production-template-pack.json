@@ -5,8 +5,12 @@
     "nameEn": "OTP and Electronic Signature Consent",
     "category": "E_SIGNATURE",
     "ownerDepartment": "Legal Affairs / IT / Data Protection",
-    "requiredApprovals": ["Legal Affairs", "IT / Digital Transformation", "Data Protection Officer"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Legal Affairs",
+      "IT / Digital Transformation",
+      "Data Protection Officer"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم هذا القالب للحصول على موافقة صاحب العلاقة على استخدام رقم الجوال والبريد الإلكتروني لأغراض التحقق الإلكتروني واستلام رمز التحقق OTP والتوقيع أو الإقرار الإلكتروني على المستندات الصادرة من WathiqNote.",
     "allowedUseCases": [
       "التحقق من هوية المريض أو المدين أو المفوض",
@@ -47,8 +51,12 @@
     "nameEn": "Debtor Capacity Acknowledgment",
     "category": "FINANCIAL_LEGAL",
     "ownerDepartment": "Legal Affairs / Finance",
-    "requiredApprovals": ["Legal Affairs", "Finance", "Patient Accounts / Collection"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Legal Affairs",
+      "Finance",
+      "Patient Accounts / Collection"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم هذا القالب لتحديد صفة الشخص المسؤول عن سداد المبالغ المستحقة للمركز الطبي الدولي.",
     "allowedUseCases": [
       "قبل إصدار أي تعهد مالي",
@@ -85,8 +93,11 @@
     "nameEn": "Financial Undertaking for Medical Services",
     "category": "FINANCIAL",
     "ownerDepartment": "Legal Affairs / Finance",
-    "requiredApprovals": ["Legal Affairs", "Finance"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Legal Affairs",
+      "Finance"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم لتوثيق التزام المريض أو المدين أو المفوض بسداد تكاليف الخدمات الطبية المستحقة أو التي ستستحق.",
     "requiredFields": [
       "patientName",
@@ -110,8 +121,12 @@
     "nameEn": "Insurance Non-Coverage Acknowledgment",
     "category": "INSURANCE",
     "ownerDepartment": "Insurance / Finance / Legal Affairs",
-    "requiredApprovals": ["Insurance", "Finance", "Legal Affairs"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Insurance",
+      "Finance",
+      "Legal Affairs"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم عند وجود خدمة أو مبلغ غير مشمول بالتغطية التأمينية أو خاضع لتحمل أو رفض من شركة التأمين أو جهة السداد.",
     "requiredFields": [
       "patientName",
@@ -135,8 +150,12 @@
     "nameEn": "Installment / Payment Plan Agreement",
     "category": "FINANCIAL_COLLECTION",
     "ownerDepartment": "Finance / Legal Affairs / Collection",
-    "requiredApprovals": ["Finance", "Legal Affairs", "Collection"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Finance",
+      "Legal Affairs",
+      "Collection"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم لتنظيم سداد المديونية على دفعات محددة بتاريخ وقيمة واضحة.",
     "requiredFields": [
       "totalOutstandingAmount",
@@ -159,8 +178,11 @@
     "nameEn": "Guardian / Companion / Guarantor Financial Undertaking",
     "category": "LEGAL_FINANCIAL",
     "ownerDepartment": "Legal Affairs / Finance",
-    "requiredApprovals": ["Legal Affairs", "Finance"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Legal Affairs",
+      "Finance"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم عندما لا يكون المريض هو المسؤول المباشر عن السداد، مثل ولي الأمر أو الكفيل أو المرافق أو المفوض.",
     "requiredFields": [
       "patientName",
@@ -182,8 +204,11 @@
     "nameEn": "Payment and Settlement Instructions",
     "category": "PAYMENT",
     "ownerDepartment": "Finance / Legal Affairs",
-    "requiredApprovals": ["Finance", "Legal Affairs"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Finance",
+      "Legal Affairs"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم لتوضيح قنوات السداد الرسمية ومنع السداد إلى حسابات أو أشخاص غير مصرح لهم.",
     "requiredFields": [
       "approvedPaymentChannels",
@@ -202,8 +227,11 @@
     "nameEn": "Cancellation and Replacement Instructions",
     "category": "PAYMENT_LEGAL",
     "ownerDepartment": "Legal Affairs / Finance",
-    "requiredApprovals": ["Legal Affairs", "Finance"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Legal Affairs",
+      "Finance"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم عند إلغاء سند أو إقرار أو تعهد مالي أو استبداله بنسخة جديدة.",
     "requiredFields": [
       "originalDocumentReference",
@@ -223,8 +251,11 @@
     "nameEn": "Final Settlement and Release",
     "category": "SETTLEMENT",
     "ownerDepartment": "Finance / Legal Affairs",
-    "requiredApprovals": ["Finance", "Legal Affairs"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Finance",
+      "Legal Affairs"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم عند إغلاق مديونية أو تسوية مطالبة مالية محددة.",
     "requiredFields": [
       "debtorName",
@@ -246,8 +277,12 @@
     "nameEn": "Data Sharing Authorization with Insurer or Payer",
     "category": "PDPL_INSURANCE",
     "ownerDepartment": "Legal Affairs / DPO / Insurance",
-    "requiredApprovals": ["Legal Affairs", "Data Protection Officer", "Insurance"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Legal Affairs",
+      "Data Protection Officer",
+      "Insurance"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم لتوثيق موافقة أو تفويض صاحب العلاقة بمشاركة البيانات اللازمة فقط مع شركة التأمين أو جهة السداد أو الجهة المفوضة.",
     "requiredFields": [
       "patientName",
@@ -269,8 +304,12 @@
     "nameEn": "Medical Report or Medical Record Release Authorization",
     "category": "MEDICAL_RECORDS_PDPL",
     "ownerDepartment": "Medical Records / Legal Affairs / DPO",
-    "requiredApprovals": ["Medical Records", "Legal Affairs", "Data Protection Officer"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Medical Records",
+      "Legal Affairs",
+      "Data Protection Officer"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم عند رغبة المريض أو من يمثله نظاماً في تفويض شخص آخر لاستلام تقرير طبي أو مستندات طبية محددة.",
     "requiredFields": [
       "patientName",
@@ -293,8 +332,11 @@
     "nameEn": "Template Exception Request",
     "category": "GOVERNANCE",
     "ownerDepartment": "Legal Affairs / Governance",
-    "requiredApprovals": ["Legal Affairs", "Relevant Business Owner"],
-    "status": "Draft",
+    "requiredApprovals": [
+      "Legal Affairs",
+      "Relevant Business Owner"
+    ],
+    "status": "Published",
     "purposeAr": "يستخدم داخلياً عند طلب تعديل نص معتمد أو استخدام صياغة خاصة خارج القالب المنشور.",
     "requiredFields": [
       "requesterName",
@@ -316,7 +358,11 @@
     "nameEn": "Promissory Note for Medical Services",
     "category": "FINANCIAL_EXECUTION",
     "ownerDepartment": "Legal Affairs / Finance / Collection",
-    "requiredApprovals": ["Legal Affairs", "Finance", "Collection"],
+    "requiredApprovals": [
+      "Legal Affairs",
+      "Finance",
+      "Collection"
+    ],
     "status": "Legal Review",
     "purposeAr": "يستخدم فقط عندما تكون هناك مديونية مؤكدة ومحددة ناتجة عن خدمات طبية مقدمة أو معتمدة وبعد التحقق من هوية المدين وصفته ومبلغ الدين.",
     "requiredFields": [
@@ -335,6 +381,6 @@
     ],
     "clauseAr": "يقر المدين بأنه مدين للمركز الطبي الدولي بالمبلغ الموضح في هذا السند مقابل خدمات طبية مقدمة أو مستحقة، ويتعهد بسداد المبلغ في تاريخ الاستحقاق المحدد. ويخضع استخدام هذا القالب لاستكمال المتطلبات النظامية والمالية المعتمدة، ولا يعد سنداً تنفيذياً إلكترونياً إلا إذا تم إصداره أو توثيقه من خلال المسار النظامي المعتمد لذلك.",
     "clauseEn": "The debtor acknowledges being indebted to International Medical Center in the amount stated in this note for medical services provided or due, and undertakes to pay the amount on the specified due date. Use of this template is subject to completion of the approved legal and financial requirements, and it shall not be treated as an enforceable electronic promissory note unless issued or authenticated through the approved lawful route.",
-    "operationalRuleAr": "يبقى هذا القالب في حالة Legal Review ولا ينشر للاستخدام التنفيذي إلا بعد اعتماد مسار نافذ أو المسار النظامي المعتمد للسند لأمر."
+    "operationalRuleAr": "???? ??? ?????? ?? ???? Legal Review ??? ???? ????????? ???????? ??? ??? ?????? ???? ???? ?? ?????? ??????? ??????? ????? ????."
   }
 ]
