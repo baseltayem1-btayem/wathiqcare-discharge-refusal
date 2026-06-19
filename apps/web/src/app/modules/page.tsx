@@ -1,132 +1,221 @@
-﻿import Link from "next/link";
+﻿"use client";
 
-export const dynamic = "force-dynamic";
+import Link from "next/link";
+import { useState } from "react";
+
+type Lang = "en" | "ar";
 
 const modules = [
   {
-    title: "Informed Consents",
-    subtitle: "Enterprise physician workspace",
-    description:
+    eyebrowEn: "ENTERPRISE PHYSICIAN WORKSPACE",
+    eyebrowAr: "مساحة عمل الطبيب المؤسسية",
+    titleEn: "Informed Consents",
+    titleAr: "الموافقات المستنيرة",
+    descriptionEn:
       "Approved consent library, patient journey, procedure selection, anesthesia review, education, physician approval, and secure patient signing.",
+    descriptionAr:
+      "مكتبة موافقات معتمدة، رحلة المريض، اختيار الإجراء، مراجعة التخدير، التثقيف، اعتماد الطبيب، والتوقيع الآمن للمريض.",
+    statusEn: "Production Active",
+    statusAr: "الإنتاج مفعل",
     href: "/modules/informed-consents",
-    status: "Production Active",
-    accent: "from-[#002b5c] to-[#1976d2]",
-    stats: ["Approved Forms", "Doctor Workflow", "Audit Trail"]
+    tagsEn: ["Approved Forms", "Doctor Workflow", "Audit Trail"],
+    tagsAr: ["نماذج معتمدة", "مسار الطبيب", "سجل التدقيق"],
+    accent: "from-[#003b7a] to-[#2d9cdb]",
   },
   {
-    title: "Discharge Refusal",
-    subtitle: "Patient refusal documentation",
-    description:
-      "Structured medico-legal documentation for discharge against medical advice, patient acknowledgement, and evidence trail.",
+    eyebrowEn: "PATIENT REFUSAL DOCUMENTATION",
+    eyebrowAr: "توثيق رفض المريض",
+    titleEn: "Discharge Refusal",
+    titleAr: "منصة رفض الخروج",
+    descriptionEn:
+      "Structured medico-legal documentation for discharge against medical advice, patient acknowledgment, and evidence trail.",
+    descriptionAr:
+      "توثيق طبي قانوني منظم لحالات الخروج خلافاً للنصيحة الطبية، إقرار المريض، وسجل الأدلة.",
+    statusEn: "Active",
+    statusAr: "مفعل",
     href: "/modules/discharge-refusal",
-    status: "Active",
-    accent: "from-[#12355b] to-[#4b9cd3]",
-    stats: ["Case File", "Patient Signature", "Legal Record"]
+    tagsEn: ["Case File", "Patient Signature", "Legal Record"],
+    tagsAr: ["ملف الحالة", "توقيع المريض", "سجل قانوني"],
+    accent: "from-[#003b7a] to-[#2d9cdb]",
   },
   {
-    title: "Promissory Notes",
-    subtitle: "Financial undertaking workflow",
-    description:
-      "Controlled legal workflow for undertakings, case tracking, approvals, and supporting documents.",
+    eyebrowEn: "FINANCIAL UNDERTAKING WORKFLOW",
+    eyebrowAr: "مسار التعهدات المالية",
+    titleEn: "Promissory Notes",
+    titleAr: "السندات لأمر والتعهدات المالية",
+    descriptionEn:
+      "Controlled legal workflow for undertakings, case tracking, approvals, supporting documents, OTP signing, and PDF evidence.",
+    descriptionAr:
+      "مسار قانوني منضبط للتعهدات المالية، متابعة الحالات، الاعتمادات، المستندات الداعمة، التوقيع برمز التحقق، وأدلة PDF.",
+    statusEn: "Active",
+    statusAr: "مفعل",
     href: "/modules/promissory-notes/enterprise",
-    status: "Active",
-    accent: "from-[#2f2f2f] to-[#c9a13b]",
-    stats: ["Legal Review", "Finance", "Approval"]
-  }
+    tagsEn: ["Legal Review", "Finance", "Approval", "Najiz-ready"],
+    tagsAr: ["مراجعة قانونية", "المالية", "الاعتماد", "جاهز لهوية ناجز"],
+    accent: "from-[#073763] via-[#b08d2c] to-[#d6b85a]",
+    najiz: true,
+  },
 ];
 
+function t(lang: Lang, en: string, ar: string) {
+  return lang === "ar" ? ar : en;
+}
+
 export default function ModulesPage() {
+  const [lang, setLang] = useState<Lang>("en");
+  const isAr = lang === "ar";
+
   return (
-    <main className="min-h-screen bg-[#f4fafc] text-[#102a43]">
-      <section className="relative overflow-hidden border-b border-white/70 bg-[#002b5c]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(75,156,211,0.38),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(201,161,59,0.22),transparent_30%)]" />
-        <div className="relative mx-auto max-w-7xl px-6 py-12">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+    <main dir={isAr ? "rtl" : "ltr"} className="min-h-screen bg-[#eef6fa] text-[#002b5c]">
+      <section className="bg-gradient-to-br from-[#002b5c] via-[#073763] to-[#0f4c81] text-white">
+        <div className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-16">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <span className="rounded-full border border-white/25 bg-white/10 px-5 py-2 text-sm font-bold">
+              {t(lang, "WathiqCare Enterprise Workspace", "مساحة عمل WathiqCare المؤسسية")}
+            </span>
+
+            <div className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 p-1">
+              <button
+                type="button"
+                onClick={() => setLang("ar")}
+                className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+                  isAr ? "bg-white text-[#002b5c]" : "text-white/80 hover:bg-white/10"
+                }`}
+              >
+                عربي
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("en")}
+                className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+                  !isAr ? "bg-white text-[#002b5c]" : "text-white/80 hover:bg-white/10"
+                }`}
+              >
+                EN
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-[1fr_340px] lg:items-center">
             <div>
-              <div className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90 backdrop-blur">
-                WathiqCare Enterprise Workspace
-              </div>
-              <h1 className="mt-6 max-w-4xl text-4xl font-bold tracking-tight text-white md:text-6xl">
-                Modules Command Center
+              <h1 className="max-w-4xl text-5xl font-black leading-tight tracking-tight md:text-7xl">
+                {t(lang, "Modules Command Center", "مركز قيادة الوحدات")}
               </h1>
-              <p className="mt-5 max-w-3xl text-lg leading-8 text-white/75">
-                Unified healthcare legal modules designed for clinical governance, traceability, speed, and controlled production workflows.
+              <p className="mt-6 max-w-3xl text-xl leading-9 text-blue-50">
+                {t(
+                  lang,
+                  "Unified healthcare legal modules designed for clinical governance, traceability, speed, and controlled production workflows.",
+                  "وحدات قانونية صحية موحدة مصممة للحوكمة السريرية، التتبع، السرعة، ومسارات الإنتاج المنضبطة."
+                )}
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">3</div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-white/60">Modules</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">24/7</div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-white/60">Access</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">IMC</div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-white/60">Governance</div>
+            <div className="rounded-3xl border border-white/20 bg-white/10 p-7 shadow-2xl backdrop-blur">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-4xl font-black">3</div>
+                  <div className="mt-1 text-xs font-bold uppercase tracking-wider text-blue-100">
+                    {t(lang, "Modules", "وحدات")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-4xl font-black">24/7</div>
+                  <div className="mt-1 text-xs font-bold uppercase tracking-wider text-blue-100">
+                    {t(lang, "Access", "وصول")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-4xl font-black">IMC</div>
+                  <div className="mt-1 text-xs font-bold uppercase tracking-wider text-blue-100">
+                    {t(lang, "Governance", "حوكمة")}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="grid gap-6 lg:grid-cols-3">
+      <section className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
+        <div className="grid gap-7 lg:grid-cols-3">
           {modules.map((module) => (
-            <Link
+            <article
               key={module.href}
-              href={module.href}
-              className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
+              className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-xl"
             >
               <div className={`h-2 bg-gradient-to-r ${module.accent}`} />
-              <div className="p-7">
-                <div className="flex items-start justify-between gap-4">
+
+              <div className="p-8">
+                <div className="mb-5 flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-bold uppercase tracking-[0.2em] text-[#1976d2]">
-                      {module.subtitle}
-                    </div>
-                    <h2 className="mt-3 text-2xl font-bold text-[#002b5c]">
-                      {module.title}
+                    <p className="text-sm font-black uppercase tracking-[0.28em] text-[#1f75d6]">
+                      {t(lang, module.eyebrowEn, module.eyebrowAr)}
+                    </p>
+                    <h2 className="mt-4 text-3xl font-black text-[#002b5c]">
+                      {t(lang, module.titleEn, module.titleAr)}
                     </h2>
                   </div>
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-                    {module.status}
+
+                  <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+                    {t(lang, module.statusEn, module.statusAr)}
                   </span>
                 </div>
 
-                <p className="mt-5 min-h-[96px] text-sm leading-7 text-slate-600">
-                  {module.description}
+                {module.najiz ? (
+                  <div className="mb-5 rounded-2xl border border-[#d6b85a]/50 bg-[#fff8df] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black text-[#7a5a00]">
+                          {t(lang, "Najiz-ready Identity", "هوية متوافقة مع ناجز")}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[#7a5a00]/80">
+                          {t(
+                            lang,
+                            "Prepared for controlled legal evidence, OTP signing, and enforceability alignment.",
+                            "مهيأة للأدلة القانونية المنضبطة، التوقيع برمز التحقق، والمواءمة مع متطلبات التنفيذ."
+                          )}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-[#073763] px-3 py-2 text-xs font-black text-white">
+                        {t(lang, "NAJIZ", "ناجز")}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <p className="min-h-[120px] text-lg leading-8 text-slate-600">
+                  {t(lang, module.descriptionEn, module.descriptionAr)}
                 </p>
 
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {module.stats.map((item) => (
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {(isAr ? module.tagsAr : module.tagsEn).map((tag) => (
                     <span
-                      key={item}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600"
+                      key={tag}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-600"
                     >
-                      {item}
+                      {tag}
                     </span>
                   ))}
                 </div>
 
-                <div className="mt-8 flex items-center justify-between rounded-2xl bg-[#f4fafc] px-4 py-3">
-                  <span className="text-sm font-bold text-[#002b5c]">Open Workspace</span>
-                  <span className="grid h-9 w-9 place-items-center rounded-full bg-[#002b5c] text-white transition group-hover:translate-x-1">
-                    →
+                <Link
+                  href={module.href}
+                  className="mt-8 flex items-center justify-between rounded-2xl bg-[#f1f8fc] px-5 py-4 font-black text-[#002b5c] transition hover:bg-[#dff0fb]"
+                >
+                  <span>{t(lang, "Open Workspace", "فتح مساحة العمل")}</span>
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-[#002b5c] text-white transition group-hover:scale-105">
+                    {isAr ? "←" : "→"}
                   </span>
-                </div>
+                </Link>
               </div>
-            </Link>
+            </article>
           ))}
         </div>
-      </section>
 
-      <footer className="mx-auto max-w-7xl px-6 pb-10 text-sm text-slate-500">
-        Secured by WathiqCare
-      </footer>
+        <footer className="mt-10 text-sm font-medium text-slate-500">
+          {t(lang, "Secured by WathiqCare", "مؤمّن بواسطة WathiqCare")}
+        </footer>
+      </section>
     </main>
   );
 }
-
