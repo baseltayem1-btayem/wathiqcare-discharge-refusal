@@ -17,7 +17,7 @@ const modules = [
       "مكتبة موافقات معتمدة، رحلة المريض، اختيار الإجراء، مراجعة التخدير، التثقيف، اعتماد الطبيب، والتوقيع الآمن للمريض.",
     statusEn: "Production Active",
     statusAr: "الإنتاج مفعل",
-    href: "/modules/informed-consents/create",
+    href: "/modules/informed-consents",
     tagsEn: ["Doctor Workspace", "Consent Journey", "Secure Signing"],
     tagsAr: ["مساحة الطبيب", "رحلة الموافقة", "توقيع آمن"],
     accent: "from-[#003b7a] to-[#2d9cdb]",
@@ -195,3 +195,4 @@ export default function ModulesPage() {
     </main>
   );
 }
+

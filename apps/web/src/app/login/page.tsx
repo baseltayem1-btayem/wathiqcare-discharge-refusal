@@ -69,7 +69,7 @@ export default function LoginPage() {
               <p className="mt-3 text-sm leading-6 text-[#5A6E82]">Use your organization account to access the doctor workspace and consent operations.</p>
             </div>
 
-            <form action="/login" method="POST" className="mt-8 flex flex-col gap-5">
+            <form action="/api/auth/login" method="POST" className="mt-8 flex flex-col gap-5">
               <div>
                 <label htmlFor="email" className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-[#102A43]">
                   Email Address
@@ -125,4 +125,5 @@ export default function LoginPage() {
     </main>
   );
 }
+
 
