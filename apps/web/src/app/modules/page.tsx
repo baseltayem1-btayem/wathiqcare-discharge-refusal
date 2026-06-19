@@ -50,11 +50,10 @@ const modules = [
     statusEn: "Active",
     statusAr: "مفعل",
     href: "/modules/promissory-notes/enterprise",
-    tagsEn: ["Legal Review", "Finance", "Approval", "Najiz-ready"],
-    tagsAr: ["مراجعة قانونية", "المالية", "الاعتماد", "جاهز لهوية ناجز"],
+    tagsEn: ["Legal Review", "Finance", "Approval"],
+    tagsAr: ["مراجعة قانونية", "المالية", "الاعتماد"],
     accent: "from-[#073763] via-[#b08d2c] to-[#d6b85a]",
-    najiz: true,
-  },
+},
 ];
 
 function t(lang: Lang, en: string, ar: string) {
@@ -160,30 +159,7 @@ export default function ModulesPage() {
                     {t(lang, module.statusEn, module.statusAr)}
                   </span>
                 </div>
-
-                {module.najiz ? (
-                  <div className="mb-5 rounded-2xl border border-[#d6b85a]/50 bg-[#fff8df] px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-black text-[#7a5a00]">
-                          {t(lang, "Najiz-ready Identity", "هوية متوافقة مع ناجز")}
-                        </p>
-                        <p className="mt-1 text-xs leading-5 text-[#7a5a00]/80">
-                          {t(
-                            lang,
-                            "Prepared for controlled legal evidence, OTP signing, and enforceability alignment.",
-                            "مهيأة للأدلة القانونية المنضبطة، التوقيع برمز التحقق، والمواءمة مع متطلبات التنفيذ."
-                          )}
-                        </p>
-                      </div>
-                      <div className="rounded-xl bg-[#073763] px-3 py-2 text-xs font-black text-white">
-                        {t(lang, "NAJIZ", "ناجز")}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                <p className="min-h-[120px] text-lg leading-8 text-slate-600">
+<p className="min-h-[120px] text-lg leading-8 text-slate-600">
                   {t(lang, module.descriptionEn, module.descriptionAr)}
                 </p>
 
