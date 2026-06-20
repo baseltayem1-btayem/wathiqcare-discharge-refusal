@@ -93,8 +93,8 @@ function main() {
     issues.push('apps/web/next.config.js missing');
   }
 
-  if (!exists('apps/web/app/api')) {
-    issues.push('apps/web/app/api missing (API runtime not detected)');
+  if (!exists('apps/web/app/api') && !exists('apps/web/src/app/api')) {
+    issues.push('App Router API directory missing (API runtime not detected)');
   }
 
   if (vercelEnv === 'production') {
