@@ -1,7 +1,7 @@
-﻿import WathiqNoteWorkflowModule from "@/components/modules/WathiqNoteWorkflowModule";
+import WathiqNoteEnterpriseModule from "@/components/modules/WathiqNoteEnterpriseModule";
 
 export const dynamic = "force-dynamic";
 
 export default function ElectronicPromissoryNotesEnterprisePage() {
-  return <WathiqNoteWorkflowModule />;
+  return <WathiqNoteEnterpriseModule />;
 }

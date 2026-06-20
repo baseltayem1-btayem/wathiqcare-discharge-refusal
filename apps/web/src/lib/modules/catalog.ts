@@ -73,7 +73,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
       en: "Governed digital workflows for promissory notes and financial undertakings with secure acknowledgments and defensible legal archiving.",
     },
     status: "live",
-    href: "/modules/promissory-notes",
+    href: "/modules/promissory-notes/enterprise",
     allowedRoles: ["tenant_owner", "tenant_admin", "legal_admin", "finance_officer", "compliance"],
   },
   {
