@@ -17,7 +17,7 @@ const modules = [
       "مكتبة موافقات معتمدة، رحلة المريض، اختيار الإجراء، مراجعة التخدير، التثقيف، اعتماد الطبيب، والتوقيع الآمن للمريض.",
     statusEn: "Production Active",
     statusAr: "الإنتاج مفعل",
-    href: "/modules/informed-consents",
+    href: "https://wathiqcare-discharge-refusal-k56a3hbtv-wathiqcare.vercel.app/modules/informed-consents",
     tagsEn: ["Doctor Workspace", "Consent Journey", "Secure Signing"],
     tagsAr: ["مساحة الطبيب", "رحلة الموافقة", "توقيع آمن"],
     accent: "from-[#003b7a] to-[#2d9cdb]",
@@ -49,7 +49,7 @@ const modules = [
       "مسار قانوني منضبط للتعهدات المالية، متابعة الحالات، الاعتمادات، المستندات الداعمة، التوقيع برمز التحقق، وأدلة PDF.",
     statusEn: "Active",
     statusAr: "مفعل",
-    href: "/modules/promissory-notes/enterprise",
+    href: "https://wathiqcare-discharge-refusal-q1bib96s3-wathiqcare.vercel.app/modules/promissory-notes/enterprise",
     tagsEn: ["Legal Review", "Finance", "Approval"],
     tagsAr: ["مراجعة قانونية", "المالية", "الاعتماد"],
     accent: "from-[#073763] via-[#b08d2c] to-[#d6b85a]",
@@ -195,6 +195,3 @@ export default function ModulesPage() {
     </main>
   );
 }
-
-
-
