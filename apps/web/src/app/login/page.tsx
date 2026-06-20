@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -145,13 +146,13 @@ export default function LangLoginPage() {
           <div className="relative z-10 flex h-full w-full max-w-[720px] flex-col">
             <div className="mb-10 flex items-start justify-between gap-4">
               <div className="logo-shell w-[228px] sm:w-[278px]">
-                <img
+                <Image
                   src="/images/wathiqcare-logo.png"
                   alt="WathiqCare"
                   width={620}
                   height={190}
                   className="h-auto w-full object-contain"
-                  loading="eager"
+                  priority
                 />
               </div>
               <span className={`chip ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>

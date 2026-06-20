@@ -97,7 +97,6 @@ function buildRedirectPath(userRole: string | null | undefined, email: string): 
 
 function toSessionUserType(
   userRole: string | null | undefined,
-  email: string,
 ): "platform_admin" | "tenant_admin" | "tenant_user" {
   const computedUserType = userTypeForUserRole(userRole ?? "");
 
@@ -239,7 +238,7 @@ async function createSessionForPasswordUser(args: {
   const ttlSeconds = getTokenTtlSeconds();
   const now = Math.floor(Date.now() / 1000);
   const exp = now + ttlSeconds;
-  const sessionUserType = toSessionUserType(normalizedRole, email);
+  const sessionUserType = toSessionUserType(normalizedRole);
 
   const accessToken = createAccessToken(
     {
