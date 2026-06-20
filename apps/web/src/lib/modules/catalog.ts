@@ -56,7 +56,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
       en: "Structured digital workflows for secure informed-consent management, patient acknowledgment, and legally traceable healthcare approvals.",
     },
     status: "live",
-    href: "/modules/informed-consents",
+    href: "https://wathiqcare-discharge-refusal-k56a3hbtv-wathiqcare.vercel.app/modules/informed-consents",
     allowedRoles: INFORMED_CONSENTS_ALLOWED_ROLES,
   },
   {
@@ -73,7 +73,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
       en: "Governed digital workflows for promissory notes and financial undertakings with secure acknowledgments and defensible legal archiving.",
     },
     status: "live",
-    href: "/modules/promissory-notes",
+    href: "https://wathiqcare-discharge-refusal-q1bib96s3-wathiqcare.vercel.app/modules/promissory-notes/enterprise",
     allowedRoles: ["tenant_owner", "tenant_admin", "legal_admin", "finance_officer", "compliance"],
   },
   {
