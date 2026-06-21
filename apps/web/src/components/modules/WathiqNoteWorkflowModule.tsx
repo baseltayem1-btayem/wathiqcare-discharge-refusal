@@ -1,6 +1,11 @@
 "use client";
 
-import { wathiqNoteProductionTemplates } from "@/data/wathiqnote/templates";
+import {
+  getWathiqNoteTemplateByCode,
+  WATHIQNOTE_TEMPLATE_FAMILIES,
+  type WathiqNoteTemplate,
+  type WathiqNoteTemplateFamily,
+} from "@/data/wathiqnote/templates";
 import React, { ReactNode, useEffect, useMemo, useState } from "react";
 import {
   Activity,
@@ -20,7 +25,6 @@ import {
   Landmark,
   LayoutDashboard,
   Lock,
-  LogOut,
   Search,
   Send,
   Settings,
@@ -51,6 +55,7 @@ type Screen =
   | "legal-escalation";
 
 type BuilderStep =
+  | "template_selection"
   | "patient_visit"
   | "billing_coverage"
   | "coverage_liability"
@@ -65,51 +70,34 @@ type Toast = {
   message: string;
 };
 
-const patient = {
-  id: "patient-demo-001",
-  nameAr: "محمد إبراهيم الراشدي",
-  nameEn: "Mohammed Ibrahim Al-Rashidi",
-  mrn: "MRN-2024-0847",
-  visit: "VISIT-2026-11452",
-  departmentAr: "الجراحة العامة",
-  departmentEn: "General Surgery",
-  mobile: "+966 50 234 5678",
-  idNumber: "1012345678",
-  coverageAr: "تغطية غير كافية",
-  coverageEn: "Insufficient Coverage",
-  paymentTypeAr: "مسؤولية المريض",
-  paymentTypeEn: "Patient Responsibility",
+// Production workspace starts with no patient or invoice data.
+// Real records must be loaded from the HIS/ERP or case API before issuance.
+const EMPTY_PATIENT = {
+  id: "",
+  nameAr: "",
+  nameEn: "",
+  mrn: "",
+  visit: "",
+  departmentAr: "",
+  departmentEn: "",
+  mobile: "",
+  idNumber: "",
+  coverageAr: "",
+  coverageEn: "",
+  paymentTypeAr: "",
+  paymentTypeEn: "",
 };
 
-const invoicesSeed = [
-  {
-    id: "inv-55671",
-    no: "INV-2026-55671",
-    serviceAr: "غرفة وعناية ما بعد العملية",
-    serviceEn: "Post-operative room and care",
-    amount: 3850,
-    statusAr: "يتطلب تغطية نقدية",
-    statusEn: "Cash coverage required",
-  },
-  {
-    id: "inv-55672",
-    no: "INV-2026-55672",
-    serviceAr: "مستلزمات طبية",
-    serviceEn: "Medical supplies",
-    amount: 1275,
-    statusAr: "يتطلب تغطية نقدية",
-    statusEn: "Cash coverage required",
-  },
-  {
-    id: "inv-55673",
-    no: "INV-2026-55673",
-    serviceAr: "أدوية ومستهلكات",
-    serviceEn: "Medication and consumables",
-    amount: 645,
-    statusAr: "غير مغطى",
-    statusEn: "Not covered",
-  },
-];
+const patient = EMPTY_PATIENT;
+const invoicesSeed: Array<{
+  id: string;
+  no: string;
+  serviceAr: string;
+  serviceEn: string;
+  amount: number;
+  statusAr: string;
+  statusEn: string;
+}> = [];
 
 
 const saudiCities = [
@@ -145,7 +133,44 @@ function addDaysIsoDate(days: number): string {
   return next.toISOString().slice(0, 10);
 }
 
+function isValidAlphabeticOnly(value: string): boolean {
+  // Allows English and Arabic letters plus whitespace; rejects digits and symbols.
+  if (!value || !value.trim()) return false;
+  return /^[\p{L}\s]+$/u.test(value.trim());
+}
+
+function isValidDateOfBirth(value: string): { valid: boolean; message?: string } {
+  if (!value) {
+    return { valid: false, message: "Date of birth is required" };
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return { valid: false, message: "Invalid date" };
+  }
+
+  const yearStr = value.split("-")[0];
+  if (!/^\d{4}$/.test(yearStr)) {
+    return { valid: false, message: "Year must be exactly four digits" };
+  }
+
+  const year = Number(yearStr);
+  const currentYear = new Date().getFullYear();
+  if (year < 1900 || year > currentYear) {
+    return { valid: false, message: "Year is out of range" };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (parsed.getTime() > today.getTime()) {
+    return { valid: false, message: "Date of birth cannot be in the future" };
+  }
+
+  return { valid: true };
+}
+
 const builderSteps: Array<{ id: BuilderStep; ar: string; en: string }> = [
+  { id: "template_selection", ar: "اختيار القالب", en: "Template Selection" },
   { id: "patient_visit", ar: "المريض والزيارة", en: "Patient & Visit" },
   { id: "billing_coverage", ar: "الفواتير والتغطية", en: "Billing & Coverage" },
   { id: "coverage_liability", ar: "التغطية ومسؤولية المريض", en: "Coverage & Liability" },
@@ -155,6 +180,85 @@ const builderSteps: Array<{ id: BuilderStep; ar: string; en: string }> = [
   { id: "review", ar: "المراجعة", en: "Review" },
   { id: "send_signature", ar: "الإرسال", en: "Send" },
 ];
+
+const TEMPLATE_FIELD_LABELS: Record<string, { ar: string; en: string }> = {
+  patientName: { ar: "اسم المريض", en: "Patient Name" },
+  patientMedicalRecordNumber: { ar: "رقم الملف الطبي", en: "Patient MRN" },
+  patientNationalIdOrIqama: { ar: "رقم هوية / إقامة المريض", en: "Patient ID / Iqama" },
+  patientId: { ar: "رقم هوية المريض", en: "Patient ID" },
+  debtorName: { ar: "اسم المدين / الموقع", en: "Debtor / Signer Name" },
+  debtorNationalIdOrIqama: { ar: "رقم هوية / إقامة المدين", en: "Debtor ID / Iqama" },
+  debtorMobileNumber: { ar: "جوال المدين", en: "Debtor Mobile" },
+  relationshipToPatient: { ar: "علاقة المدين بالمريض", en: "Relationship to Patient" },
+  guarantorName: { ar: "اسم الضامن / الكفيل", en: "Guarantor Name" },
+  guarantorId: { ar: "رقم هوية الضامن", en: "Guarantor ID" },
+  authorizedPersonName: { ar: "اسم المفوض", en: "Authorized Person Name" },
+  authorizedPersonId: { ar: "رقم هوية المفوض", en: "Authorized Person ID" },
+  beneficiaryName: { ar: "اسم المستفيد", en: "Beneficiary Name" },
+  beneficiaryCommercialRegistration: { ar: "السجل التجاري للمستفيد", en: "Beneficiary CR" },
+  vendorName: { ar: "اسم المورد", en: "Vendor Name" },
+  vendorCommercialRegistration: { ar: "السجل التجاري للمورد", en: "Vendor CR" },
+  purchaseOrderReference: { ar: "رقم أمر الشراء", en: "Purchase Order Reference" },
+  contractReference: { ar: "رقم العقد", en: "Contract Reference" },
+  serviceDescription: { ar: "وصف الخدمة", en: "Service Description" },
+  emergencyServiceDescription: { ar: "وصف خدمة الطوارئ", en: "Emergency Service Description" },
+  invoiceReference: { ar: "مرجع الفاتورة", en: "Invoice Reference" },
+  invoiceOrDebtReference: { ar: "مرجع الفاتورة / الدين", en: "Invoice / Debt Reference" },
+  invoiceOrServiceReference: { ar: "مرجع الخدمة / الفاتورة", en: "Service / Invoice Reference" },
+  debtReason: { ar: "سبب الدين", en: "Reason for Debt" },
+  policyNumber: { ar: "رقم البوليصة", en: "Policy Number" },
+  insuranceCompany: { ar: "شركة التأمين", en: "Insurance Company" },
+  payerOrTPA: { ar: "جهة السداد / TPA", en: "Payer / TPA" },
+  nonCoveredAmount: { ar: "المبلغ غير المغطى", en: "Non-Covered Amount" },
+  reasonForNonCoverage: { ar: "سبب عدم التغطية", en: "Reason for Non-Coverage" },
+  approvalOrRejectionReference: { ar: "مرجع الموافقة / الرفض", en: "Approval / Rejection Reference" },
+  amountInWords: { ar: "المبلغ كتابة", en: "Amount in Words" },
+  responsibleDepartment: { ar: "الجهة المسؤولة", en: "Responsible Department" },
+  department: { ar: "القسم", en: "Department" },
+  coverageVerificationStatus: { ar: "حالة التحقق من التغطية", en: "Coverage Verification Status" },
+  signatureMethod: { ar: "طريقة التوقيع", en: "Signature Method" },
+  otpAuditReference: { ar: "مرجع تدقيق OTP", en: "OTP Audit Reference" },
+  advanceAmount: { ar: "مبلغ الدفعة المقدمة", en: "Advance Amount" },
+  deliveryDueDate: { ar: "تاريخ استحقاق التسليم", en: "Delivery Due Date" },
+  estimatedAmount: { ar: "المبلغ التقديري", en: "Estimated Amount" },
+  totalOutstandingAmount: { ar: "إجمالي المبلغ المستحق", en: "Total Outstanding Amount" },
+  settlementAmount: { ar: "مبلغ التسوية", en: "Settlement Amount" },
+  paymentMethod: { ar: "طريقة السداد", en: "Payment Method" },
+  defaultConsequence: { ar: "عواقب التأخر", en: "Default Consequence" },
+  numberOfInstallments: { ar: "عدد الأقساط", en: "Number of Installments" },
+  installmentAmount: { ar: "مبلغ القسط", en: "Installment Amount" },
+  installmentDueDates: { ar: "تواريخ استحقاق الأقساط", en: "Installment Due Dates" },
+  requesterName: { ar: "اسم مقدم الطلب", en: "Requester Name" },
+  exceptionReason: { ar: "سبب الاستثناء", en: "Exception Reason" },
+  proposedChange: { ar: "التعديل المقترح", en: "Proposed Change" },
+  riskAssessment: { ar: "تقييم المخاطر", en: "Risk Assessment" },
+  legalApproval: { ar: "الاعتماد القانوني", en: "Legal Approval" },
+  approverName: { ar: "اسم المعتمد", en: "Approver Name" },
+  approvalDate: { ar: "تاريخ الاعتماد", en: "Approval Date" },
+  auditTrailReference: { ar: "مرجع سجل التدقيق", en: "Audit Trail Reference" },
+  originalDocumentReference: { ar: "مرجع المستند الأصلي", en: "Original Document Reference" },
+  replacementDocumentReference: { ar: "مرجع المستند البديل", en: "Replacement Document Reference" },
+  cancellationReason: { ar: "سبب الإلغاء", en: "Cancellation Reason" },
+  dataCategories: { ar: "فئات البيانات", en: "Data Categories" },
+  processingPurpose: { ar: "غرض المعالجة", en: "Processing Purpose" },
+  authorizationValidity: { ar: "صلاحية التفويض", en: "Authorization Validity" },
+  coveredInvoices: { ar: "الفواتير المشمولة", en: "Covered Invoices" },
+  paymentConfirmation: { ar: "تأكيد السداد", en: "Payment Confirmation" },
+  releaseScope: { ar: "نطاق الإبراء", en: "Release Scope" },
+  effectiveDate: { ar: "تاريخ النفاذ", en: "Effective Date" },
+  documentType: { ar: "نوع المستند", en: "Document Type" },
+  coveredPeriod: { ar: "الفترة المشمولة", en: "Covered Period" },
+  purpose: { ar: "الغرض", en: "Purpose" },
+  bankAccountReference: { ar: "مرجع الحساب البنكي", en: "Bank Account Reference" },
+  paymentReference: { ar: "مرجع السداد", en: "Payment Reference" },
+  approvedPaymentChannels: { ar: "قنوات السداد المعتمدة", en: "Approved Payment Channels" },
+  medicalRecordNumber: { ar: "رقم الملف الطبي", en: "Medical Record Number" },
+  mobileNumber: { ar: "رقم الجوال", en: "Mobile Number" },
+  email: { ar: "البريد الإلكتروني", en: "Email" },
+  financialObligationType: { ar: "نوع الالتزام المالي", en: "Financial Obligation Type" },
+  financialObligationScope: { ar: "نطاق الالتزام المالي", en: "Financial Obligation Scope" },
+  paymentResponsibility: { ar: "مسؤولية السداد", en: "Payment Responsibility" },
+};
 
 const nav = {
   workspace: [
@@ -236,12 +340,14 @@ function Field({
   onChange,
   placeholder,
   type = "text",
+  error,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
+  error?: string;
 }) {
   return (
     <label className="block">
@@ -251,8 +357,14 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        aria-invalid={Boolean(error)}
+        className={`h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 ${
+          error
+            ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+            : "border-slate-200 focus:border-blue-500 focus:ring-blue-100"
+        }`}
       />
+      {error ? <span className="mt-1 block text-xs font-bold text-red-600">{error}</span> : null}
     </label>
   );
 }
@@ -377,14 +489,6 @@ function LeftSidebar({
           );
         })}
       </nav>
-
-      <div className="border-t border-white/20 px-5 py-4">
-        <div className="mb-3 text-xs text-white/60">PDPL · Audit · Evidence</div>
-        <button className="flex items-center gap-2 text-sm text-blue-100">
-          <LogOut className="h-4 w-4" />
-          {txt(lang, "تسجيل الخروج", "Sign Out")}
-        </button>
-      </div>
     </aside>
   );
 }
@@ -423,10 +527,10 @@ function Dashboard({
   showToast: (toast: Toast) => void;
 }) {
   const metrics = [
-    { labelAr: "سندات قيد البناء", labelEn: "Draft Notes", value: "7", tone: "amber" as const },
-    { labelAr: "بانتظار التوقيع", labelEn: "Awaiting Signature", value: "12", tone: "blue" as const },
-    { labelAr: "موقعة اليوم", labelEn: "Signed Today", value: "5", tone: "green" as const },
-    { labelAr: "تحتاج متابعة", labelEn: "Need Follow-up", value: "3", tone: "red" as const },
+    { labelAr: "سندات قيد البناء", labelEn: "Draft Notes", value: "0", tone: "amber" as const },
+    { labelAr: "بانتظار التوقيع", labelEn: "Awaiting Signature", value: "0", tone: "blue" as const },
+    { labelAr: "موقعة اليوم", labelEn: "Signed Today", value: "0", tone: "green" as const },
+    { labelAr: "تحتاج متابعة", labelEn: "Need Follow-up", value: "0", tone: "red" as const },
   ];
 
   return (
@@ -488,10 +592,8 @@ function Dashboard({
           </div>
           <div className="divide-y divide-slate-100">
             {[
-              [txt(lang, "تم إنشاء مسودة سند", "Draft note created"), "09:42"],
-              [txt(lang, "تم تحديد فواتير غير مغطاة", "Uncovered invoices identified"), "09:15"],
-              [txt(lang, "تم إرسال رابط توقيع", "Signing link sent"), "08:50"],
-            ].map(([a, t]) => (
+              // Live activity rows are intentionally empty in production until connected to real audit events.
+            ].map(([a, t]: [string, string]) => (
               <div key={a} className="px-5 py-4">
                 <div className="text-xs font-mono text-slate-500">{t}</div>
                 <div className="mt-1 text-sm text-slate-700">{a}</div>
@@ -576,9 +678,9 @@ function PatientSearchScreen({
           <ShellCard className="p-5">
             <h3 className="font-bold text-slate-900">{txt(lang, "ملخص مالي", "Financial Summary")}</h3>
             <div className="mt-4 grid gap-3 text-sm">
-              <SummaryLine label={txt(lang, "إجمالي المطلوب تغطيته", "Total Required Coverage")} value={money(5770)} />
-              <SummaryLine label={txt(lang, "عدد الفواتير", "Invoices")} value="3" />
-              <SummaryLine label={txt(lang, "قرار المطالبات", "Claims Decision")} value={txt(lang, "يتطلب تغطية نقدية", "Cash coverage required")} />
+              <SummaryLine label={txt(lang, "إجمالي المطلوب تغطيته", "Total Required Coverage")} value={money(0)} />
+              <SummaryLine label={txt(lang, "عدد الفواتير", "Invoices")} value="0" />
+              <SummaryLine label={txt(lang, "قرار المطالبات", "Claims Decision")} value={txt(lang, "—", "—")} />
             </div>
           </ShellCard>
         </div>
@@ -603,9 +705,24 @@ function Stepper({
   setActiveStep: (step: BuilderStep) => void;
 }) {
   const activeIndex = builderSteps.findIndex((s) => s.id === activeStep);
+  const progressPercent = Math.round(((activeIndex + 1) / builderSteps.length) * 100);
 
   return (
     <ShellCard className="p-4">
+      <div className="mb-3 flex items-center justify-between text-xs font-bold text-slate-500">
+        <span>{txt(lang, "تقدم إصدار السند", "Note Issuance Progress")}</span>
+        <span>{progressPercent}%</span>
+      </div>
+      <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+        <div
+          className="h-full rounded-full bg-[#073763] transition-all duration-300"
+          style={{ width: `${progressPercent}%` }}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPercent}
+          role="progressbar"
+        />
+      </div>
       <div className="flex items-center gap-3 overflow-x-auto">
         {builderSteps.map((step, index) => {
           const active = step.id === activeStep;
@@ -730,20 +847,58 @@ function NoteBuilder({
   showToast: (toast: Toast) => void;
   setScreen: (screen: Screen) => void;
 }) {
-  const [activeStep, setActiveStep] = useState<BuilderStep>("patient_visit");
-  const [debtorName, setDebtorName] = useState(txt(lang, patient.nameAr, patient.nameEn));
-  const [debtorId, setDebtorId] = useState(patient.idNumber);
+  const [activeStep, setActiveStep] = useState<BuilderStep>("template_selection");
+
+  // Template selection
+  const [selectedFamilyKey, setSelectedFamilyKey] = useState<string>("");
+  const [selectedTemplateCode, setSelectedTemplateCode] = useState<string>("");
+
+  // Core debtor / note fields
+  const [debtorName, setDebtorName] = useState("");
+  const [debtorId, setDebtorId] = useState("");
   const [makerDateOfBirth, setMakerDateOfBirth] = useState("");
-  const [mobile, setMobile] = useState(patient.mobile);
+  const [mobile, setMobile] = useState("");
   const [makerEmail, setMakerEmail] = useState("");
   const [makerAddress, setMakerAddress] = useState("");
   const [makerCity, setMakerCity] = useState("Jeddah");
-  const [amount, setAmount] = useState("5770.00");
+  const [amount, setAmount] = useState("");
+  const [amountInWords, setAmountInWords] = useState("");
+  const [erpReference, setErpReference] = useState("");
   const [capacity, setCapacity] = useState("original_debtor");
   const [dueType, setDueType] = useState("on_demand");
   const [ack1, setAck1] = useState(true);
   const [ack2, setAck2] = useState(true);
   const [ack3, setAck3] = useState(true);
+
+  // Template-specific dynamic fields
+  const [patientName, setPatientName] = useState("");
+  const [patientMrn, setPatientMrn] = useState("");
+  const [patientIdNumber, setPatientIdNumber] = useState("");
+  const [relationshipToPatient, setRelationshipToPatient] = useState("");
+  const [guarantorName, setGuarantorName] = useState("");
+  const [guarantorId, setGuarantorId] = useState("");
+  const [serviceDescription, setServiceDescription] = useState("");
+  const [invoiceReference, setInvoiceReference] = useState("");
+  const [debtReason, setDebtReason] = useState("");
+  const [policyNumber, setPolicyNumber] = useState("");
+  const [insuranceCompany, setInsuranceCompany] = useState("");
+  const [payerOrTPA, setPayerOrTPA] = useState("");
+  const [nonCoveredAmount, setNonCoveredAmount] = useState("");
+  const [reasonForNonCoverage, setReasonForNonCoverage] = useState("");
+  const [approvalOrRejectionReference, setApprovalOrRejectionReference] = useState("");
+  const [beneficiaryName, setBeneficiaryName] = useState("");
+  const [beneficiaryCommercialRegistration, setBeneficiaryCommercialRegistration] = useState("");
+  const [vendorName, setVendorName] = useState("");
+  const [vendorCommercialRegistration, setVendorCommercialRegistration] = useState("");
+  const [purchaseOrderReference, setPurchaseOrderReference] = useState("");
+  const [contractReference, setContractReference] = useState("");
+  const [deliveryDueDate, setDeliveryDueDate] = useState("");
+  const [responsibleDepartment, setResponsibleDepartment] = useState("");
+  const [emergencyServiceDescription, setEmergencyServiceDescription] = useState("");
+  const [estimatedAmount, setEstimatedAmount] = useState("");
+  const [coverageVerificationStatus, setCoverageVerificationStatus] = useState("");
+  const [signatureMethod, setSignatureMethod] = useState("electronic_otp");
+  const [otpAuditReference, setOtpAuditReference] = useState("");
 
   const [coverageDecision, setCoverageDecision] = useState("PENDING");
   const [liabilityReason, setLiabilityReason] = useState("prior_authorization_pending");
@@ -764,8 +919,20 @@ function NoteBuilder({
   const [enterpriseLifecycleStatus, setEnterpriseLifecycleStatus] = useState<string | null>(null);
   const [enterpriseLifecycleBusy, setEnterpriseLifecycleBusy] = useState<string | null>(null);
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   const activeIndex = builderSteps.findIndex((s) => s.id === activeStep);
   const total = useMemo(() => invoicesSeed.reduce((sum, item) => sum + item.amount, 0), []);
+
+  const selectedTemplate = useMemo<WathiqNoteTemplate | null>(() => {
+    if (!selectedTemplateCode) return null;
+    return getWathiqNoteTemplateByCode(selectedTemplateCode) || null;
+  }, [selectedTemplateCode]);
+
+  const selectedFamily = useMemo<WathiqNoteTemplateFamily | null>(() => {
+    if (!selectedFamilyKey) return null;
+    return WATHIQNOTE_TEMPLATE_FAMILIES.find((f) => f.key === selectedFamilyKey) || null;
+  }, [selectedFamilyKey]);
 
   const coverageLiabilityReady = Boolean(
     coverageDecision === "PATIENT_LIABILITY_CONFIRMED" &&
@@ -775,6 +942,8 @@ function NoteBuilder({
   );
 
   const canIssue = Boolean(
+    selectedTemplate &&
+    selectedTemplate.status === "Published" &&
     debtorName &&
     debtorId &&
     mobile &&
@@ -787,7 +956,387 @@ function NoteBuilder({
     coverageLiabilityReady
   );
 
+  function getTemplateFieldValue(key: string): string {
+    switch (key) {
+      case "patientName":
+      case "patientNameAr":
+        return patientName;
+      case "patientMedicalRecordNumber":
+      case "medicalRecordNumber":
+        return patientMrn;
+      case "patientNationalIdOrIqama":
+      case "patientId":
+        return patientIdNumber;
+      case "debtorName":
+      case "requesterName":
+        return debtorName;
+      case "debtorNationalIdOrIqama":
+        return debtorId;
+      case "debtorMobileNumber":
+      case "mobileNumber":
+        return mobile;
+      case "relationshipToPatient":
+        return relationshipToPatient;
+      case "guarantorName":
+      case "authorizedPersonName":
+        return guarantorName;
+      case "guarantorId":
+      case "authorizedPersonId":
+        return guarantorId;
+      case "beneficiaryName":
+        return beneficiaryName;
+      case "beneficiaryCommercialRegistration":
+        return beneficiaryCommercialRegistration;
+      case "vendorName":
+        return vendorName;
+      case "vendorCommercialRegistration":
+        return vendorCommercialRegistration;
+      case "purchaseOrderReference":
+        return purchaseOrderReference;
+      case "contractReference":
+        return contractReference;
+      case "serviceDescription":
+      case "emergencyServiceDescription":
+        return key === "emergencyServiceDescription" ? emergencyServiceDescription : serviceDescription;
+      case "invoiceReference":
+      case "invoiceOrDebtReference":
+      case "invoiceOrServiceReference":
+      case "coveredInvoices":
+        return invoiceReference;
+      case "debtReason":
+      case "financialObligationScope":
+      case "releaseScope":
+      case "processingPurpose":
+      case "purpose":
+      case "exceptionReason":
+        return debtReason;
+      case "policyNumber":
+        return policyNumber;
+      case "insuranceCompany":
+        return insuranceCompany;
+      case "payerOrTPA":
+        return payerOrTPA;
+      case "nonCoveredAmount":
+      case "estimatedAmount":
+      case "advanceAmount":
+      case "totalOutstandingAmount":
+      case "settlementAmount":
+      case "downPayment":
+      case "installmentAmount":
+        return key === "nonCoveredAmount" ? nonCoveredAmount : key === "estimatedAmount" ? estimatedAmount : key === "advanceAmount" ? amount : amount;
+      case "reasonForNonCoverage":
+        return reasonForNonCoverage;
+      case "approvalOrRejectionReference":
+      case "auditTrailReference":
+        return approvalOrRejectionReference;
+      case "amountInWords":
+        return amountInWords;
+      case "responsibleDepartment":
+      case "department":
+        return responsibleDepartment;
+      case "coverageVerificationStatus":
+        return coverageVerificationStatus;
+      case "signatureMethod":
+      case "paymentMethod":
+        return signatureMethod;
+      case "otpAuditReference":
+        return otpAuditReference;
+      case "deliveryDueDate":
+      case "approvalDate":
+      case "effectiveDate":
+      case "installmentDueDates":
+      case "authorizationValidity":
+        return key === "deliveryDueDate" ? deliveryDueDate : dueDate;
+      case "numberOfInstallments":
+        return "1";
+      case "defaultConsequence":
+      case "riskAssessment":
+      case "proposedChange":
+      case "originalDocumentReference":
+      case "replacementDocumentReference":
+      case "cancellationReason":
+      case "dataCategories":
+      case "documentType":
+      case "coveredPeriod":
+      case "bankAccountReference":
+      case "paymentReference":
+      case "approvedPaymentChannels":
+      case "paymentConfirmation":
+      case "legalApproval":
+      case "approverName":
+        return "";
+      default:
+        return "";
+    }
+  }
+
+  function setTemplateFieldValue(key: string, value: string) {
+    switch (key) {
+      case "patientName":
+      case "patientNameAr":
+        setPatientName(value);
+        break;
+      case "patientMedicalRecordNumber":
+      case "medicalRecordNumber":
+        setPatientMrn(value);
+        break;
+      case "patientNationalIdOrIqama":
+      case "patientId":
+        setPatientIdNumber(value);
+        break;
+      case "debtorName":
+      case "requesterName":
+        setDebtorName(value);
+        break;
+      case "debtorNationalIdOrIqama":
+        setDebtorId(value);
+        break;
+      case "debtorMobileNumber":
+      case "mobileNumber":
+        setMobile(value);
+        break;
+      case "relationshipToPatient":
+        setRelationshipToPatient(value);
+        break;
+      case "guarantorName":
+      case "authorizedPersonName":
+        setGuarantorName(value);
+        break;
+      case "guarantorId":
+      case "authorizedPersonId":
+        setGuarantorId(value);
+        break;
+      case "beneficiaryName":
+        setBeneficiaryName(value);
+        break;
+      case "beneficiaryCommercialRegistration":
+        setBeneficiaryCommercialRegistration(value);
+        break;
+      case "vendorName":
+        setVendorName(value);
+        break;
+      case "vendorCommercialRegistration":
+        setVendorCommercialRegistration(value);
+        break;
+      case "purchaseOrderReference":
+        setPurchaseOrderReference(value);
+        break;
+      case "contractReference":
+        setContractReference(value);
+        break;
+      case "serviceDescription":
+        setServiceDescription(value);
+        break;
+      case "emergencyServiceDescription":
+        setEmergencyServiceDescription(value);
+        break;
+      case "invoiceReference":
+      case "invoiceOrDebtReference":
+      case "invoiceOrServiceReference":
+      case "coveredInvoices":
+        setInvoiceReference(value);
+        break;
+      case "debtReason":
+      case "financialObligationScope":
+      case "releaseScope":
+      case "processingPurpose":
+      case "purpose":
+      case "exceptionReason":
+        setDebtReason(value);
+        break;
+      case "policyNumber":
+        setPolicyNumber(value);
+        break;
+      case "insuranceCompany":
+        setInsuranceCompany(value);
+        break;
+      case "payerOrTPA":
+        setPayerOrTPA(value);
+        break;
+      case "nonCoveredAmount":
+        setNonCoveredAmount(value);
+        break;
+      case "estimatedAmount":
+        setEstimatedAmount(value);
+        break;
+      case "reasonForNonCoverage":
+        setReasonForNonCoverage(value);
+        break;
+      case "approvalOrRejectionReference":
+      case "auditTrailReference":
+        setApprovalOrRejectionReference(value);
+        break;
+      case "amountInWords":
+        setAmountInWords(value);
+        break;
+      case "responsibleDepartment":
+      case "department":
+        setResponsibleDepartment(value);
+        break;
+      case "coverageVerificationStatus":
+        setCoverageVerificationStatus(value);
+        break;
+      case "signatureMethod":
+      case "paymentMethod":
+        setSignatureMethod(value);
+        break;
+      case "otpAuditReference":
+        setOtpAuditReference(value);
+        break;
+      case "deliveryDueDate":
+        setDeliveryDueDate(value);
+        break;
+      default:
+        break;
+    }
+  }
+
+  function applyTemplateFieldValidation(errors: Record<string, string>) {
+    if (!selectedTemplate) return;
+
+    for (const key of selectedTemplate.requiredFields) {
+      const label = TEMPLATE_FIELD_LABELS[key];
+      if (!label) continue;
+
+      const value = getTemplateFieldValue(key);
+      if (typeof value === "string" && !value.trim()) {
+        errors[key] = txt(lang, `الحقل "${label.ar}" مطلوب.`, `Field "${label.en}" is required.`);
+      }
+    }
+  }
+
+  function TemplateSpecificFields() {
+    if (!selectedTemplate) return null;
+
+    const fields = selectedTemplate.requiredFields
+      .map((key) => {
+        const label = TEMPLATE_FIELD_LABELS[key];
+        if (!label) return null;
+
+        const value = getTemplateFieldValue(key);
+        if (value === "") {
+          // Some unsupported fields are intentionally returned as empty; skip them.
+          return null;
+        }
+
+        return (
+          <Field
+            key={key}
+            label={txt(lang, label.ar, label.en)}
+            value={value}
+            onChange={(v) => {
+              setTemplateFieldValue(key, v);
+              clearFieldError(key);
+            }}
+            error={fieldErrors[key]}
+          />
+        );
+      })
+      .filter(Boolean);
+
+    if (!fields.length) return null;
+
+    return (
+      <div className="mt-5 border-t border-slate-200 pt-5">
+        <h3 className="mb-3 text-sm font-bold text-[#073763]">{txt(lang, "الحقول المطلوبة للقالب", "Template-Specific Required Fields")}</h3>
+        <div className="grid grid-cols-2 gap-4">{fields}</div>
+      </div>
+    );
+  }
+
+  function validateCurrentStep(): boolean {
+    const errors: Record<string, string> = {};
+
+    if (activeStep === "template_selection") {
+      if (!selectedFamilyKey) {
+        errors.selectedFamilyKey = txt(lang, "يُرجى اختيار فئة السند.", "Please select a note family.");
+      }
+      if (!selectedTemplateCode) {
+        errors.selectedTemplateCode = txt(lang, "يُرجى اختيار قالب معتمد.", "Please select an approved template.");
+      }
+    }
+
+    if (activeStep === "coverage_liability") {
+      if (coverageDecision !== "PATIENT_LIABILITY_CONFIRMED") {
+        errors.coverageDecision = txt(lang, "يجب تأكيد مسؤولية المريض للمتابعة.", "Patient liability must be confirmed to continue.");
+      }
+      if (!liabilityEvidenceRef.trim()) {
+        errors.liabilityEvidenceRef = txt(lang, "مرجع المستند المؤيد مطلوب.", "Evidence reference is required.");
+      }
+      if (!isValidAlphabeticOnly(liabilityApprovedBy)) {
+        errors.liabilityApprovedBy = txt(
+          lang,
+          "اعتماد مالي / مطالبات: يُقبل الحروف فقط (إنجليزية أو عربية) بدون أرقام أو رموز.",
+          "Finance / Claims Approval: letters only (English or Arabic), no numbers or symbols.",
+        );
+      }
+    }
+
+    if (activeStep === "note_details") {
+      if (!caseId.trim()) {
+        errors.caseId = txt(lang, "رقم الحالة مطلوب.", "Case ID is required.");
+      }
+      if (!amount || Number.isNaN(Number(amount)) || Number(amount) <= 0) {
+        errors.amount = txt(lang, "مبلغ السند مطلوب ويجب أن يكون أكبر من صفر.", "Note amount is required and must be greater than zero.");
+      }
+    }
+
+    if (activeStep === "debtor_capacity") {
+      if (!debtorName.trim()) {
+        errors.debtorName = txt(lang, "اسم محرر السند مطلوب.", "Maker name is required.");
+      }
+      if (!debtorId.trim()) {
+        errors.debtorId = txt(lang, "رقم الهوية / الإقامة مطلوب.", "ID / Iqama is required.");
+      }
+      const dobCheck = isValidDateOfBirth(makerDateOfBirth);
+      if (!dobCheck.valid) {
+        errors.makerDateOfBirth = txt(lang, "تاريخ الميلاد غير صالح.", dobCheck.message || "Invalid date of birth.");
+      }
+      if (!mobile.trim()) {
+        errors.mobile = txt(lang, "رقم الجوال مطلوب.", "Mobile is required.");
+      }
+      if (!makerEmail.trim()) {
+        errors.makerEmail = txt(lang, "البريد الإلكتروني مطلوب.", "Email is required.");
+      }
+      if (!makerAddress.trim()) {
+        errors.makerAddress = txt(lang, "العنوان مطلوب.", "Address is required.");
+      }
+    }
+
+    if (activeStep === "acknowledgments") {
+      if (!ack1 || !ack2 || !ack3) {
+        errors.acknowledgments = txt(lang, "يجب الموافقة على جميع الإقرارات القانونية المطلوبة.", "All required legal acknowledgments must be accepted.");
+      }
+    }
+
+    if (activeStep === "review") {
+      applyTemplateFieldValidation(errors);
+      if (selectedTemplate && selectedTemplate.status !== "Published") {
+        errors.templateNotPublished = txt(
+          lang,
+          "القالب المختار غير منشور ولا يجوز إصداره حتى اعتماده قانونياً.",
+          "The selected template is not published and cannot be issued until legally approved.",
+        );
+      }
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  function clearFieldError(name: string) {
+    setFieldErrors((prev) => {
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  }
+
   function nextStep() {
+    if (!validateCurrentStep()) {
+      return;
+    }
     const next = builderSteps[Math.min(activeIndex + 1, builderSteps.length - 1)];
     setActiveStep(next.id);
   }
@@ -798,8 +1347,14 @@ function NoteBuilder({
   }
 
   async function issueNotePrototype() {
+    if (!validateCurrentStep()) {
+      showToast({ type: "warning", message: txt(lang, "يُرجى تصحيح أخطاء الحقول الحالية قبل الإصدار.", "Please correct the current field errors before issuance.") });
+      return;
+    }
+
     if (!caseId.trim()) {
       showToast({ type: "warning", message: txt(lang, "Case ID مطلوب لأن API الحالي يربط السند بملف حالة قائم.", "Case ID is required because the current API links the note to an existing case.") });
+      setFieldErrors((prev) => ({ ...prev, caseId: txt(lang, "رقم الحالة مطلوب.", "Case ID is required.") }));
       return;
     }
 
@@ -863,7 +1418,7 @@ function NoteBuilder({
           billing: {
             invoices: invoicesSeed,
             totalCashCoverageAmount: total,
-            erpReference: "ERP-AR-2026-000771",
+            erpReference: erpReference.trim() || null,
             financialStatus: "Outstanding - Secured by Promissory Note",
           },
           coverage: {
@@ -894,6 +1449,57 @@ function NoteBuilder({
             dataAccuracy: ack1,
             electronicTransactions: ack2,
             pdplProcessing: ack3,
+          },
+          template: selectedTemplate
+            ? {
+                code: selectedTemplate.code,
+                nameAr: selectedTemplate.nameAr,
+                nameEn: selectedTemplate.nameEn,
+                category: selectedTemplate.category,
+                status: selectedTemplate.status,
+                legalApprovalStatus: selectedTemplate.status === "Published" ? "approved" : "pending",
+                templateVersion: "1.0",
+                clauseAr: selectedTemplate.clauseAr,
+                clauseEn: selectedTemplate.clauseEn,
+                requiredFields: selectedTemplate.requiredFields,
+              }
+            : null,
+          templateSpecificValues: {
+            patientName,
+            patientMrn,
+            patientIdNumber,
+            relationshipToPatient,
+            guarantorName,
+            guarantorId,
+            serviceDescription,
+            invoiceReference,
+            debtReason,
+            policyNumber,
+            insuranceCompany,
+            payerOrTPA,
+            nonCoveredAmount,
+            reasonForNonCoverage,
+            approvalOrRejectionReference,
+            beneficiaryName,
+            beneficiaryCommercialRegistration,
+            vendorName,
+            vendorCommercialRegistration,
+            purchaseOrderReference,
+            contractReference,
+            deliveryDueDate,
+            responsibleDepartment,
+            emergencyServiceDescription,
+            estimatedAmount,
+            coverageVerificationStatus,
+            signatureMethod,
+            otpAuditReference,
+            amountInWords,
+          },
+          audit: {
+            createdAt: new Date().toISOString(),
+            createdBy: debtorName || "system",
+            sourceScreen: "wathiqnote-enterprise-workflow",
+            nafithSubmissionStatus: "pending_api_binding",
           },
         },
       };
@@ -1107,6 +1713,92 @@ function NoteBuilder({
 
       <div className="grid grid-cols-[1fr_360px] gap-5">
         <div className="space-y-5">
+          {activeStep === "template_selection" ? (
+            <ShellCard className="p-5">
+              <h2 className="mb-4 text-lg font-bold text-[#073763]">{txt(lang, "اختيار نوع السند والقالب المعتمد", "Select Note Type & Approved Template")}</h2>
+
+              <div className="mb-5 grid grid-cols-2 gap-4">
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-slate-700">{txt(lang, "فئة السند", "Template Family")}</span>
+                  <select
+                    value={selectedFamilyKey}
+                    onChange={(event) => {
+                      const key = event.target.value;
+                      setSelectedFamilyKey(key);
+                      setSelectedTemplateCode("");
+                      clearFieldError("selectedFamilyKey");
+                      clearFieldError("selectedTemplateCode");
+                    }}
+                    aria-invalid={Boolean(fieldErrors.selectedFamilyKey)}
+                    className={`h-11 rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 ${
+                      fieldErrors.selectedFamilyKey
+                        ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                        : "border-slate-200 focus:border-blue-500 focus:ring-blue-100"
+                    }`}
+                  >
+                    <option value="">{txt(lang, "اختر فئة...", "Choose a family...")}</option>
+                    {WATHIQNOTE_TEMPLATE_FAMILIES.map((family) => (
+                      <option key={family.key} value={family.key}>
+                        {lang === "ar" ? family.labelAr : family.labelEn}
+                      </option>
+                    ))}
+                  </select>
+                  {fieldErrors.selectedFamilyKey ? <span className="text-xs font-bold text-red-600">{fieldErrors.selectedFamilyKey}</span> : null}
+                </label>
+
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-slate-700">{txt(lang, "القالب المعتمد", "Approved Template")}</span>
+                  <select
+                    value={selectedTemplateCode}
+                    onChange={(event) => {
+                      setSelectedTemplateCode(event.target.value);
+                      clearFieldError("selectedTemplateCode");
+                    }}
+                    disabled={!selectedFamily}
+                    aria-invalid={Boolean(fieldErrors.selectedTemplateCode)}
+                    className={`h-11 rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 ${
+                      fieldErrors.selectedTemplateCode
+                        ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                        : "border-slate-200 focus:border-blue-500 focus:ring-blue-100"
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    <option value="">{txt(lang, "اختر قالب...", "Choose a template...")}</option>
+                    {selectedFamily?.templates.map((template) => (
+                      <option key={template.code} value={template.code}>
+                        {lang === "ar" ? template.nameAr : template.nameEn}
+                        {template.isPlaceholder ? ` (${txt(lang, "مسودة", "Draft")})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {fieldErrors.selectedTemplateCode ? <span className="text-xs font-bold text-red-600">{fieldErrors.selectedTemplateCode}</span> : null}
+                </label>
+              </div>
+
+              {selectedTemplate ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="font-bold text-[#073763]">{lang === "ar" ? selectedTemplate.nameAr : selectedTemplate.nameEn}</h3>
+                    <StatusPill tone={selectedTemplate.status === "Published" ? "emerald" : selectedTemplate.isPlaceholder ? "amber" : "blue"}>
+                      {selectedTemplate.status}
+                    </StatusPill>
+                  </div>
+                  <p className="mb-3 text-slate-700">{selectedTemplate.purposeAr}</p>
+                  <div className="grid grid-cols-2 gap-3 text-xs text-slate-600 md:grid-cols-4">
+                    <SummaryLine label={txt(lang, "المستوى القانوني", "Risk Level")} value={selectedTemplate.riskLevel || "-"} />
+                    <SummaryLine label={txt(lang, "نوع الموقع", "Signatory Type")} value={selectedTemplate.signatoryType || "-"} />
+                    <SummaryLine label={txt(lang, "الجهة المالكة", "Owner Department")} value={selectedTemplate.ownerDepartment} />
+                    <SummaryLine label={txt(lang, "الحقول المطلوبة", "Required Fields")} value={String(selectedTemplate.requiredFields.length)} />
+                  </div>
+                  {selectedTemplate.isPlaceholder || selectedTemplate.status !== "Published" ? (
+                    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800">
+                      {txt(lang, "هذا القالب مسودة / قيد المراجعة القانونية ولا يجوز إصداره حتى الاعتماد النهائي.", "This template is a draft / under legal review and cannot be issued until final approval.")}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </ShellCard>
+          ) : null}
+
           {activeStep === "patient_visit" ? (
             <ShellCard className="p-5">
               <h2 className="mb-4 text-lg font-bold text-[#073763]">{txt(lang, "المريض والزيارة النشطة", "Patient & Active Visit")}</h2>
@@ -1166,14 +1858,25 @@ function NoteBuilder({
                   <span className="text-sm font-bold text-slate-700">{txt(lang, "قرار التغطية", "Coverage Decision")}</span>
                   <select
                     value={coverageDecision}
-                    onChange={(event) => setCoverageDecision(event.target.value)}
-                    className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    onChange={(event) => {
+                      setCoverageDecision(event.target.value);
+                      clearFieldError("coverageDecision");
+                    }}
+                    aria-invalid={Boolean(fieldErrors.coverageDecision)}
+                    className={`h-11 rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 ${
+                      fieldErrors.coverageDecision
+                        ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                        : "border-slate-200 focus:border-blue-500 focus:ring-blue-100"
+                    }`}
                   >
                     <option value="PENDING">{txt(lang, "قيد التحقق / لا يسمح بالإصدار", "Pending / Issuance Blocked")}</option>
                     <option value="INSURANCE_COVERED">{txt(lang, "مغطى من التأمين / لا يسمح بالإصدار", "Insurance Covered / Issuance Blocked")}</option>
                     <option value="DENIED_UNDER_APPEAL">{txt(lang, "رفض قيد الاعتراض / لا يسمح بالإصدار", "Denied Under Appeal / Issuance Blocked")}</option>
                     <option value="PATIENT_LIABILITY_CONFIRMED">{txt(lang, "مسؤولية المريض مؤكدة / يسمح بالإصدار", "Patient Liability Confirmed / Issuance Allowed")}</option>
                   </select>
+                  {fieldErrors.coverageDecision ? (
+                    <span className="text-xs font-bold text-red-600">{fieldErrors.coverageDecision}</span>
+                  ) : null}
                 </label>
 
                 <label className="grid gap-2">
@@ -1197,20 +1900,42 @@ function NoteBuilder({
                   <span className="text-sm font-bold text-slate-700">{txt(lang, "مرجع المستند المؤيد", "Evidence Reference")}</span>
                   <input
                     value={liabilityEvidenceRef}
-                    onChange={(event) => setLiabilityEvidenceRef(event.target.value)}
-                    className="h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    onChange={(event) => {
+                      setLiabilityEvidenceRef(event.target.value);
+                      clearFieldError("liabilityEvidenceRef");
+                    }}
+                    aria-invalid={Boolean(fieldErrors.liabilityEvidenceRef)}
+                    className={`h-11 rounded-lg border px-3 text-sm outline-none focus:ring-2 ${
+                      fieldErrors.liabilityEvidenceRef
+                        ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                        : "border-slate-200 focus:border-blue-500 focus:ring-blue-100"
+                    }`}
                     placeholder={txt(lang, "مثال: PA-DENIAL-2026-001 / EOB-12345", "Example: PA-DENIAL-2026-001 / EOB-12345")}
                   />
+                  {fieldErrors.liabilityEvidenceRef ? (
+                    <span className="text-xs font-bold text-red-600">{fieldErrors.liabilityEvidenceRef}</span>
+                  ) : null}
                 </label>
 
                 <label className="grid gap-2">
                   <span className="text-sm font-bold text-slate-700">{txt(lang, "اعتماد مالي / مطالبات", "Finance / Claims Approval")}</span>
                   <input
                     value={liabilityApprovedBy}
-                    onChange={(event) => setLiabilityApprovedBy(event.target.value)}
-                    className="h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    onChange={(event) => {
+                      setLiabilityApprovedBy(event.target.value);
+                      clearFieldError("liabilityApprovedBy");
+                    }}
+                    aria-invalid={Boolean(fieldErrors.liabilityApprovedBy)}
+                    className={`h-11 rounded-lg border px-3 text-sm outline-none focus:ring-2 ${
+                      fieldErrors.liabilityApprovedBy
+                        ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                        : "border-slate-200 focus:border-blue-500 focus:ring-blue-100"
+                    }`}
                     placeholder={txt(lang, "اسم المعتمد أو مرجع الاعتماد", "Approver name or approval reference")}
                   />
+                  {fieldErrors.liabilityApprovedBy ? (
+                    <span className="text-xs font-bold text-red-600">{fieldErrors.liabilityApprovedBy}</span>
+                  ) : null}
                 </label>
               </div>
 
@@ -1227,11 +1952,28 @@ function NoteBuilder({
             <ShellCard className="p-5">
               <h2 className="mb-4 text-lg font-bold text-[#073763]">{txt(lang, "بيانات السند", "Note Details")}</h2>
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Case ID" value={caseId} onChange={setCaseId} placeholder={txt(lang, "أدخل Case ID من النظام", "Enter existing system Case ID")} />
+                <Field
+                  label="Case ID"
+                  value={caseId}
+                  onChange={(value) => {
+                    setCaseId(value);
+                    clearFieldError("caseId");
+                  }}
+                  placeholder={txt(lang, "أدخل Case ID من النظام", "Enter existing system Case ID")}
+                  error={fieldErrors.caseId}
+                />
 
                 <Field label={txt(lang, "تاريخ الإنشاء", "Issue Date")} value={issueDate} onChange={() => {}} type="date" />
 
-                <Field label={txt(lang, "مبلغ السند", "Note Amount")} value={amount} onChange={setAmount} />
+                <Field
+                  label={txt(lang, "مبلغ السند", "Note Amount")}
+                  value={amount}
+                  onChange={(value) => {
+                    setAmount(value);
+                    clearFieldError("amount");
+                  }}
+                  error={fieldErrors.amount}
+                />
 
                 <SelectField
                   label={txt(lang, "نوع الاستحقاق", "Due Type")}
@@ -1281,8 +2023,10 @@ function NoteBuilder({
                 />
 
                 <Field label={txt(lang, "سبب إصدار السند", "Reason")} value={txt(lang, "تغطية نقدية لفواتير غير مغطاة", "Cash coverage for uncovered invoices")} onChange={() => {}} />
-                <Field label="ERP Reference" value="ERP-AR-2026-000771" onChange={() => {}} />
+                <Field label="ERP Reference" value={erpReference} onChange={setErpReference} placeholder={txt(lang, "أدخل مرجع ERP", "Enter ERP reference")} />
               </div>
+
+              <TemplateSpecificFields />
             </ShellCard>
           ) : null}
 
@@ -1290,15 +2034,57 @@ function NoteBuilder({
             <ShellCard className="p-5">
               <h2 className="mb-4 text-lg font-bold text-[#073763]">{txt(lang, "صفة المدين / الموقع", "Debtor / Signer Capacity")}</h2>
               <div className="grid grid-cols-2 gap-4">
-                <Field label={txt(lang, "اسم محرر السند / الموقع", "Maker / Signer Name")} value={debtorName} onChange={setDebtorName} />
+                <Field
+                  label={txt(lang, "اسم محرر السند / الموقع", "Maker / Signer Name")}
+                  value={debtorName}
+                  onChange={(value) => {
+                    setDebtorName(value);
+                    clearFieldError("debtorName");
+                  }}
+                  error={fieldErrors.debtorName}
+                />
 
-                <Field label={txt(lang, "رقم الهوية / الإقامة", "ID / Iqama")} value={debtorId} onChange={setDebtorId} />
+                <Field
+                  label={txt(lang, "رقم الهوية / الإقامة", "ID / Iqama")}
+                  value={debtorId}
+                  onChange={(value) => {
+                    setDebtorId(value);
+                    clearFieldError("debtorId");
+                  }}
+                  error={fieldErrors.debtorId}
+                />
 
-                <Field label={txt(lang, "تاريخ الميلاد", "Date of Birth")} value={makerDateOfBirth} onChange={setMakerDateOfBirth} type="date" />
+                <Field
+                  label={txt(lang, "تاريخ الميلاد", "Date of Birth")}
+                  value={makerDateOfBirth}
+                  onChange={(value) => {
+                    setMakerDateOfBirth(value);
+                    clearFieldError("makerDateOfBirth");
+                  }}
+                  type="date"
+                  error={fieldErrors.makerDateOfBirth}
+                />
 
-                <Field label={txt(lang, "رقم الجوال", "Mobile")} value={mobile} onChange={setMobile} />
+                <Field
+                  label={txt(lang, "رقم الجوال", "Mobile")}
+                  value={mobile}
+                  onChange={(value) => {
+                    setMobile(value);
+                    clearFieldError("mobile");
+                  }}
+                  error={fieldErrors.mobile}
+                />
 
-                <Field label={txt(lang, "البريد الإلكتروني", "Email")} value={makerEmail} onChange={setMakerEmail} placeholder="name@example.com" />
+                <Field
+                  label={txt(lang, "البريد الإلكتروني", "Email")}
+                  value={makerEmail}
+                  onChange={(value) => {
+                    setMakerEmail(value);
+                    clearFieldError("makerEmail");
+                  }}
+                  placeholder="name@example.com"
+                  error={fieldErrors.makerEmail}
+                />
 
                 <SelectField
                   label={txt(lang, "مدينة محرر السند", "Maker City")}
@@ -1311,7 +2097,15 @@ function NoteBuilder({
                 />
 
                 <div className="col-span-2">
-                  <Field label={txt(lang, "العنوان الوطني / العنوان", "National Address / Address")} value={makerAddress} onChange={setMakerAddress} />
+                  <Field
+                    label={txt(lang, "العنوان الوطني / العنوان", "National Address / Address")}
+                    value={makerAddress}
+                    onChange={(value) => {
+                      setMakerAddress(value);
+                      clearFieldError("makerAddress");
+                    }}
+                    error={fieldErrors.makerAddress}
+                  />
                 </div>
 
                 <SelectField
@@ -1334,17 +2128,44 @@ function NoteBuilder({
               <h2 className="mb-4 text-lg font-bold text-[#073763]">{txt(lang, "الإقرارات القانونية", "Legal Acknowledgments")}</h2>
               <div className="grid gap-4 text-sm text-slate-700">
                 <label className="flex items-start gap-3">
-                  <input type="checkbox" checked={ack1} onChange={() => setAck1(!ack1)} className="mt-1 h-4 w-4 rounded border-slate-300" />
+                  <input
+                    type="checkbox"
+                    checked={ack1}
+                    onChange={() => {
+                      setAck1(!ack1);
+                      clearFieldError("acknowledgments");
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-slate-300"
+                  />
                   <span>{txt(lang, "أقر بصحة البيانات والفواتير المختارة.", "I confirm the accuracy of the selected data and invoices.")}</span>
                 </label>
                 <label className="flex items-start gap-3">
-                  <input type="checkbox" checked={ack2} onChange={() => setAck2(!ack2)} className="mt-1 h-4 w-4 rounded border-slate-300" />
+                  <input
+                    type="checkbox"
+                    checked={ack2}
+                    onChange={() => {
+                      setAck2(!ack2);
+                      clearFieldError("acknowledgments");
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-slate-300"
+                  />
                   <span>{txt(lang, "أوافق على التوقيع الإلكتروني وفق نظام التعاملات الإلكترونية.", "I agree to electronic signing under the Electronic Transactions Law.")}</span>
                 </label>
                 <label className="flex items-start gap-3">
-                  <input type="checkbox" checked={ack3} onChange={() => setAck3(!ack3)} className="mt-1 h-4 w-4 rounded border-slate-300" />
+                  <input
+                    type="checkbox"
+                    checked={ack3}
+                    onChange={() => {
+                      setAck3(!ack3);
+                      clearFieldError("acknowledgments");
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-slate-300"
+                  />
                   <span>{txt(lang, "أوافق على معالجة البيانات لغرض التوثيق والمتابعة وفق PDPL.", "I agree to data processing for evidence and follow-up under PDPL.")}</span>
                 </label>
+                {fieldErrors.acknowledgments ? (
+                  <span className="text-xs font-bold text-red-600">{fieldErrors.acknowledgments}</span>
+                ) : null}
               </div>
             </ShellCard>
           ) : null}
@@ -1352,6 +2173,22 @@ function NoteBuilder({
           {activeStep === "review" ? (
             <ShellCard className="p-5">
               <h2 className="mb-4 text-lg font-bold text-[#073763]">{txt(lang, "المراجعة النهائية", "Final Review")}</h2>
+
+              {selectedTemplate ? (
+                <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="font-bold text-[#073763]">{lang === "ar" ? selectedTemplate.nameAr : selectedTemplate.nameEn}</span>
+                    <StatusPill tone={selectedTemplate.status === "Published" ? "emerald" : "amber"}>{selectedTemplate.status}</StatusPill>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs text-slate-600 md:grid-cols-4">
+                    <SummaryLine label={txt(lang, "كود القالب", "Template Code")} value={selectedTemplate.code} />
+                    <SummaryLine label={txt(lang, "الفئة", "Category")} value={selectedTemplate.category} />
+                    <SummaryLine label={txt(lang, "المستوى القانوني", "Risk Level")} value={selectedTemplate.riskLevel || "-"} />
+                    <SummaryLine label={txt(lang, "نوع الموقع", "Signatory Type")} value={selectedTemplate.signatoryType || "-"} />
+                  </div>
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-3 gap-4">
                 <SummaryLine label={txt(lang, "محرر السند", "Maker")} value={debtorName} />
                 <SummaryLine label={txt(lang, "رقم الهوية", "ID Number")} value={debtorId} />
@@ -1360,12 +2197,29 @@ function NoteBuilder({
                 <SummaryLine label={txt(lang, "العنوان", "Address")} value={makerAddress || "—"} />
                 <SummaryLine label={txt(lang, "المدينة", "City")} value={makerCity || "—"} />
                 <SummaryLine label={txt(lang, "المبلغ", "Amount")} value={`${amount} SAR`} />
-                <SummaryLine label={txt(lang, "الفواتير", "Invoices")} value="3" />
+                <SummaryLine label={txt(lang, "الفواتير", "Invoices")} value={String(invoicesSeed.length)} />
                 <SummaryLine label={txt(lang, "نوع الاستحقاق", "Due Type")} value={dueType === "on_demand" ? txt(lang, "لدى الاطلاع من تاريخ الإنشاء", "On Demand from Issue Date") : txt(lang, "بتاريخ محدد", "Specific Date")} />
                 <SummaryLine label={txt(lang, "مكان الإنشاء", "Issue City")} value={issueCity} />
                 <SummaryLine label={txt(lang, "مكان الوفاء", "Payment City")} value={paymentCity} />
                 <SummaryLine label={txt(lang, "التغطية", "Coverage")} value={txt(lang, "مسؤولية المريض", "Patient Responsibility")} />
                 <SummaryLine label={txt(lang, "جاهزية التوقيع", "Signature Readiness")} value={canIssue ? txt(lang, "جاهز", "Ready") : txt(lang, "غير مكتمل", "Incomplete")} />
+              </div>
+
+              {selectedTemplate ? (
+                <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
+                  <h3 className="mb-2 text-sm font-bold text-[#073763]">{txt(lang, "النص القانوني المعتمد (معاينة ثنائية اللغة)", "Approved Legal Text (Bilingual Preview)")}</h3>
+                  <div dir="rtl" className="mb-3 text-sm leading-7 text-slate-800">
+                    <p className="font-bold text-slate-900">{selectedTemplate.clauseAr}</p>
+                  </div>
+                  <div dir="ltr" className="text-sm leading-7 text-slate-700">
+                    <p>{selectedTemplate.clauseEn}</p>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                <div className="font-bold">{txt(lang, "الإرسال إلى نافذ", "Nafith Submission")}</div>
+                <p className="mt-1">{txt(lang, "جاهز للإرسال إلى نافذ — ربط واجهة برمجة التطبيقات معلق.", "Ready for Nafith submission — API binding pending.")}</p>
               </div>
             </ShellCard>
           ) : null}
@@ -1447,7 +2301,12 @@ function NoteBuilder({
               onClick={previousStep}
               className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ChevronLeft className="inline h-4 w-4" /> {txt(lang, "السابق", "Previous")}
+              {lang === "ar" ? (
+                <ChevronRight className="inline h-4 w-4" />
+              ) : (
+                <ChevronLeft className="inline h-4 w-4" />
+              )}{" "}
+              {txt(lang, "السابق", "Previous")}
             </button>
 
             {activeStep === "send_signature" ? (
@@ -1465,7 +2324,12 @@ function NoteBuilder({
                 onClick={nextStep}
                 className="rounded-lg bg-[#073763] px-5 py-2.5 text-sm font-bold text-white"
               >
-                {txt(lang, "التالي", "Next")} <ChevronRight className="inline h-4 w-4" />
+                {txt(lang, "التالي", "Next")}{" "}
+                {lang === "ar" ? (
+                  <ChevronLeft className="inline h-4 w-4" />
+                ) : (
+                  <ChevronRight className="inline h-4 w-4" />
+                )}
               </button>
             )}
           </div>
@@ -1893,48 +2757,7 @@ const wathiqNotePermissionRows = [
   { key: "manage_users", ar: "إدارة المستخدمين", en: "Manage Users" },
 ] as const;
 
-const wathiqNoteUsers = [
-  {
-    nameAr: "أحمد المالكي",
-    nameEn: "Ahmed Al-Malki",
-    email: "finance.user@imc.local",
-    mobile: "9665XXXXXXXX",
-    role: "finance",
-    status: "active",
-    lastActionAr: "أقفل سندًا بالوفاء",
-    lastActionEn: "Settled a note",
-  },
-  {
-    nameAr: "سارة الغامدي",
-    nameEn: "Sarah Al-Ghamdi",
-    email: "patient.affairs@imc.local",
-    mobile: "9665XXXXXXXX",
-    role: "creator",
-    status: "active",
-    lastActionAr: "أنشأت مسودة سند",
-    lastActionEn: "Created a draft note",
-  },
-  {
-    nameAr: "باسل تيم",
-    nameEn: "Basel Tayem",
-    email: "legal.affairs@imc.local",
-    mobile: "9665XXXXXXXX",
-    role: "legal",
-    status: "active",
-    lastActionAr: "راجع سبب إلغاء سند",
-    lastActionEn: "Reviewed void reason",
-  },
-  {
-    nameAr: "مدقق الامتثال",
-    nameEn: "Compliance Auditor",
-    email: "audit@imc.local",
-    mobile: "9665XXXXXXXX",
-    role: "auditor",
-    status: "read_only",
-    lastActionAr: "اطلع على سجل التدقيق",
-    lastActionEn: "Viewed audit trail",
-  },
-];
+const wathiqNoteUsers: Array<Record<string, string>> = [];
 
 function roleLabel(lang: Lang, roleCode: string) {
   const role = wathiqNoteRoles.find((item) => item.code === roleCode);
@@ -2592,12 +3415,7 @@ function DelegationsScreen({ lang }: { lang: Lang }) {
 }
 
 function AuditTrailScreen({ lang }: { lang: Lang }) {
-  const rows = [
-    ["09:42", "تم إصدار سند وإرسال رابط التوقيع", "Issued note and sent signing link", "issuer"],
-    ["09:50", "تمت إعادة إرسال OTP", "Resent OTP", "issuer"],
-    ["10:15", "تم إقفال سند بالوفاء", "Settled note", "finance"],
-    ["10:22", "تم إلغاء سند مع سبب موثق", "Voided note with audited reason", "legal"],
-  ];
+  const rows: Array<[string, string, string, string]> = [];
 
   return (
     <div className="space-y-5">
