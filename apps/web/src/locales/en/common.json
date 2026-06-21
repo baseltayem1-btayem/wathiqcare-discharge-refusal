@@ -295,35 +295,5 @@
       "saved": "Successfully saved",
       "created": "Successfully created"
     }
-  },
-  "notifications": {
-    "title": "Notifications",
-    "noNotifications": "No notifications",
-    "markAsRead": "Mark as read",
-    "markAllAsRead": "Mark all as read",
-    "all": "All",
-    "unread": "Unread",
-    "actionRequired": "Action Required",
-    "allModules": "All modules",
-    "allTypes": "All types",
-    "openNotificationCenter": "Open notification center",
-    "loading": "Loading notifications...",
-    "failedToLoad": "Failed to load notifications",
-    "modules": {
-      "informedConsents": "Informed Consents",
-      "promissoryNotes": "Promissory Notes",
-      "financialUndertakings": "Financial Undertakings",
-      "templatesAndClauses": "Templates and Clauses",
-      "legalReview": "Legal Review",
-      "system": "System"
-    },
-    "types": {
-      "info": "Info",
-      "success": "Success",
-      "warning": "Warning",
-      "urgent": "Urgent",
-      "system": "System",
-      "actionRequired": "Action Required"
-    }
   }
 }

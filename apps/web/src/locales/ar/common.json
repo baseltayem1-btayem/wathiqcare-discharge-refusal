@@ -295,35 +295,5 @@
       "saved": "تم الحفظ بنجاح",
       "created": "تم الإنشاء بنجاح"
     }
-  },
-  "notifications": {
-    "title": "الإشعارات",
-    "noNotifications": "لا توجد إشعارات",
-    "markAsRead": "تحديد كمقروء",
-    "markAllAsRead": "تحديد الكل كمقروء",
-    "all": "الكل",
-    "unread": "غير مقروء",
-    "actionRequired": "يتطلب إجراء",
-    "allModules": "كل الوحدات",
-    "allTypes": "كل الأنواع",
-    "openNotificationCenter": "فتح مركز الإشعارات",
-    "loading": "جاري تحميل الإشعارات...",
-    "failedToLoad": "فشل تحميل الإشعارات",
-    "modules": {
-      "informedConsents": "الموافقات المستنيرة",
-      "promissoryNotes": "السندات لأمر",
-      "financialUndertakings": "التعهّدات المالية",
-      "templatesAndClauses": "القوالب والبنود",
-      "legalReview": "المراجعة القانونية",
-      "system": "النظام"
-    },
-    "types": {
-      "info": "معلومات",
-      "success": "نجاح",
-      "warning": "تحذير",
-      "urgent": "عاجل",
-      "system": "نظام",
-      "actionRequired": "يتطلب إجراء"
-    }
   }
 }
