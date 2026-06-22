@@ -12,7 +12,13 @@ import {
   type EducationSessionState,
 } from "@/lib/server/education-session-service";
 import { recordEvidenceEvent } from "@/lib/server/evidence-package-2-service";
-import { ConsentDocumentStatus, ConsentEvidenceCopyType, ConsentMethod, ConsentSignatureRole } from "@/lib/server/prisma-enums";
+import {
+  $Enums,
+  ConsentDocumentStatus,
+  ConsentEvidenceCopyType,
+  ConsentMethod,
+  ConsentSignatureRole,
+} from "@prisma/client";
 import {
   type PublicSigningSessionPayload,
   createPublicSigningSessionCookieValue,
@@ -572,7 +578,7 @@ function getLocalizedFaqArray(value: unknown): LocalizedFaq[] {
     .filter((item): item is LocalizedFaq => Boolean(item));
 }
 
-function normalizeSignerRole(value: string): string {
+function normalizeSignerRole(value: string): $Enums.ConsentSignatureRole {
   const normalized = value.trim().toUpperCase();
   if (normalized === ConsentSignatureRole.GUARDIAN) return ConsentSignatureRole.GUARDIAN;
   return ConsentSignatureRole.PATIENT;
@@ -747,7 +753,7 @@ async function getLinkedEducationPackage(tenantId: string, templateId: string, t
     const packages = await prisma().procedureEducation.findMany({
       where: {
         tenantId,
-        status: "APPROVED",
+        status: $Enums.ProcedureEducationStatus.ACTIVE,
         currentVersionId: { not: null },
       },
       include: {
@@ -760,7 +766,7 @@ async function getLinkedEducationPackage(tenantId: string, templateId: string, t
 
     for (const item of packages) {
       const version = item.currentVersion;
-      if (!version || version.status !== "APPROVED") continue;
+      if (!version || version.status !== $Enums.ProcedureEducationStatus.ACTIVE) continue;
 
       const packageMetadata = asRecord(item.metadata) || {};
       const versionMetadata = asRecord(version.metadata) || {};
@@ -2282,8 +2288,8 @@ export async function submitPublicSigningSignature(args: {
     ConsentDocumentStatus.APPROVED,
     ConsentDocumentStatus.READY_FOR_SIGNATURE,
     ConsentDocumentStatus.SIGNED,
-  ];
-  if (!signableStatuses.includes(doc.status)) {
+  ] as const;
+  if (!signableStatuses.some((s) => s === doc.status)) {
     console.warn(
       "Public signing continued despite non-signable consent status after patient review/OTP workflow.",
       {
@@ -2405,7 +2411,7 @@ export async function submitPublicSigningSignature(args: {
       signerRole,
       metadata: {
         signerName,
-        signatureMethod: ConsentMethod.OTP,
+        signatureMethod: $Enums.ConsentMethod.OTP,
         tokenHash: context.publicSession.tokenHash,
         challengeId: context.publicSession.challengeId,
         documentHash,
@@ -2457,7 +2463,7 @@ export async function submitPublicSigningSignature(args: {
       signatureId,
       signerRole,
       signerName,
-      signatureMethod: ConsentMethod.OTP,
+      signatureMethod: $Enums.ConsentMethod.OTP,
       signedAt: capturedAt,
       evidence: {
         documentHash,
@@ -2479,7 +2485,7 @@ export async function submitPublicSigningSignature(args: {
       consentDocumentId: context.documentId,
       role: signerRole,
       signerName,
-      signatureMethod: ConsentMethod.OTP,
+      signatureMethod: $Enums.ConsentMethod.OTP,
       ipAddress: requestIpAddress,
       userAgent: requestUserAgent,
       metadata: {
@@ -2543,7 +2549,7 @@ export async function submitPublicSigningSignature(args: {
     signerRole,
     metadata: {
       signerName,
-      signatureMethod: ConsentMethod.OTP,
+      signatureMethod: $Enums.ConsentMethod.OTP,
       tokenHash: context.publicSession.tokenHash,
       challengeId: context.publicSession.challengeId,
       nextStatus,

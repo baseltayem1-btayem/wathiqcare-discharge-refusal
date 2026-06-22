@@ -1,12 +1,13 @@
 ﻿import { Prisma } from "@prisma/client";
 import {
+  $Enums,
   EscalationLevel,
   NotificationChannel,
   NotificationStatus,
   OperationDepartment,
   OperationPriority,
   SlaState,
-} from "@/lib/server/prisma-enums";
+} from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -115,15 +116,15 @@ function minutesBetween(from: Date, to: Date): number {
 function slaStateFromDeadline(
   deadline: Date | null,
   now: Date = new Date(),
-): SlaState {
-  if (!deadline) return SlaState.ON_TRACK;
+): $Enums.SlaState {
+  if (!deadline) return $Enums.SlaState.ON_TRACK;
 
   const minutesLeft = minutesBetween(now, deadline);
 
-  if (minutesLeft <= 0) return SlaState.BREACHED;
-  if (minutesLeft <= 60) return SlaState.AT_RISK;
+  if (minutesLeft <= 0) return $Enums.SlaState.BREACHED;
+  if (minutesLeft <= 60) return $Enums.SlaState.AT_RISK;
 
-  return SlaState.ON_TRACK;
+  return $Enums.SlaState.ON_TRACK;
 }
 
 async function resolveSlaDeadline(args: {
@@ -162,7 +163,7 @@ export async function ensureOperationStateForCase(args: {
   caseId: string;
   actorUserId: string;
   actorRole?: string | null;
-  priority?: OperationPriority;
+  priority?: $Enums.OperationPriority;
 }): Promise<void> {
   const now = new Date();
   const assignedDepartment = departmentForRole(args.actorRole);
@@ -189,7 +190,7 @@ export async function ensureOperationStateForCase(args: {
       assignedDepartment,
       assignmentTimestamp: now,
       waitingTimeMinutes: 0,
-      priority: args.priority ?? OperationPriority.NORMAL,
+      priority: args.priority ?? $Enums.OperationPriority.NORMAL,
       slaDeadline,
       slaState: slaStateFromDeadline(slaDeadline, now),
       escalationLevel: EscalationLevel.NONE,
@@ -258,7 +259,7 @@ export async function assignCaseOperation(args: {
   toUserId?: string | null;
   toDepartment: OperationDepartment;
   reason?: string;
-  priority?: OperationPriority;
+  priority?: $Enums.OperationPriority;
 }): Promise<void> {
   const now = new Date();
 
@@ -391,9 +392,9 @@ export async function recordCaseStepAction(args: {
 
   const nextSlaState =
     args.action === "sla_breached"
-      ? SlaState.BREACHED
+      ? $Enums.SlaState.BREACHED
       : args.action === "delay_detected"
-        ? SlaState.AT_RISK
+        ? $Enums.SlaState.AT_RISK
         : slaStateFromDeadline(slaDeadline, now);
 
   await prisma().caseOperationState.update({
@@ -528,8 +529,8 @@ export async function runSlaSweepForTenant(
     const nextState = slaStateFromDeadline(state.slaDeadline, now);
 
     if (nextState === state.slaState) {
-      if (nextState === SlaState.AT_RISK) atRisk += 1;
-      if (nextState === SlaState.BREACHED) breached += 1;
+      if (nextState === $Enums.SlaState.AT_RISK) atRisk += 1;
+      if (nextState === $Enums.SlaState.BREACHED) breached += 1;
       continue;
     }
 
@@ -543,11 +544,11 @@ export async function runSlaSweepForTenant(
       },
     });
 
-    if (nextState === SlaState.AT_RISK) {
+    if (nextState === $Enums.SlaState.AT_RISK) {
       atRisk += 1;
     }
 
-    if (nextState === SlaState.BREACHED) {
+    if (nextState === $Enums.SlaState.BREACHED) {
       breached += 1;
 
       if (state.assignedToUserId) {
