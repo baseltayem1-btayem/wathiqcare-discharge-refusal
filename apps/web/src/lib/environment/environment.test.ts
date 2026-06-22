@@ -5,6 +5,19 @@
  * in production and pilot environments.
  */
 
+import { describe, test, afterEach } from "node:test";
+
+declare const expect: (actual: unknown) => {
+  toBe(expected: unknown): void;
+  toContain(expected: string): void;
+  toThrow(expected?: string | RegExp): void;
+  not: {
+    toBe(expected: unknown): void;
+    toContain(expected: string): void;
+    toThrow(expected?: string | RegExp): void;
+  };
+};
+
 import {
   getEnvironmentConfig,
   useEnvironmentConfig,
