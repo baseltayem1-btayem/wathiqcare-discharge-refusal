@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronRight } from "lucide-react";
@@ -611,7 +611,7 @@ export function ConsentBuilder({
       onPrevious: goPrev,
       onComplete: markStepComplete,
       builderState: liveBuilderState,
-      updateBuilderState: (patch: Partial<BuilderState> | Record<string, any>) => {
+      updateBuilderState: (patch: Partial<BuilderState> | Record<string, unknown>) => {
         setBuilderState((prev) => ({
           ...prev,
           ...patch,

@@ -326,7 +326,7 @@ export function PatientLink() {
                   {[
                     { hEn: "1. Procedure Description", hAr: "١. صف اإجراء", bodyEn: "You are scheduled for an Appendectomy  surgical removal of the appendix  performed under general anesthesia by Dr. Ahmad Khalil.", bodyAr: "أ تِ &جدة ع&`ة استئصا ازائدة ادد`ة  ااستئصا اجراح` زائدة  تحت اتخد`ر اعا& باسطة د. أح&د خ`." },
                     { hEn: "2. Risks & Complications", hAr: "٢. ا&خاطر ا&ضاعفات", bodyEn: "Risks include bleeding, infection, injury to adjacent organs, and rarely the need for a second procedure. Your anesthesiologist will monitor you continuously.", bodyAr: "تش& ا&خاطر ا ز`ف اعد0 اإصابة باأعضاء ا&جارة  ادرا9 احاجة إ0 إجراء ثا ٍ. س`رابْ طب`ب اتخد`ر باست&رار." },
-                    { hEn: "3. Alternatives", hAr: "٣. ابدائ", bodyEn: "Non-surgical management with antibiotics is an alternative, though it may be less effective and carries risk of recurrence.", bodyAr: "اعاج غ`ر اجراح` با&ضادات اح``ة بد` &حت&R إ  ْا  أ فاع`ة ` ط` ع0 خطر اتْرار." },
+                    { hEn: "3. Alternatives", hAr: "٣. البدائل", bodyEn: "Non-surgical management with antibiotics is an alternative, though it may be less effective and carries risk of recurrence.", bodyAr: "العلاج غير الجراحي بالمضادات الحيوية بديل، لكنه قد يكون أقل فعالية ويحمل خطر الانتكاسة." },
                     { hEn: "4. Patient Rights", hAr: "٤. ح ا&ر`ض", bodyEn: "You have the right to withdraw consent at any time before the procedure begins. Your decision will not affect the quality of your care.", bodyAr: "`ح ِْ سحب ا&افة ف` أ` ت ب بدء اإجراء.   `ؤثر رارْ ع0 جدة رعا`تْ." },
                   ].map((s, i) => (
                     <div key={i}>
@@ -347,7 +347,7 @@ export function PatientLink() {
                 <div className="flex items-center gap-2">
                   <MessageSquare size={18} style={{ color: "#D9A93B" }} />
                   <h2 className="text-lg font-bold" style={{ color: "#102A43" }}>
-                    {isRTL ? "! د`ْ سؤاx" : "Any Questions?"}
+                    {isRTL ? "هل لديك سؤال؟" : "Any Questions?"}
                   </h2>
                 </div>
                 <p className="text-sm" style={{ color: "#64798B" }}>
@@ -396,7 +396,7 @@ export function PatientLink() {
                     </div>
                     <span className="text-sm" style={{ color: "#102A43" }}>
                       {isRTL
-                        ? "أؤْد أ  ` ف!&ت &حت0 ا&افة &خاطر!ا بدائ!اR أرغب ف` ا&تابعة."
+                        ? "أؤكد أنني قرأت وفهمت الموافقة ومخاطرها وبدائلها، وأرغب في المتابعة."
                         : "I confirm I have read and understood the consent, its risks and alternatives, and wish to proceed."}
                     </span>
                   </label>

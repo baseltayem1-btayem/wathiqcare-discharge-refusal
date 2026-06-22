@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import {
@@ -52,12 +52,13 @@ async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
   return response.json();
 }
 
-function normalizeItems(payload: any): ConsentLibraryItem[] {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.templates)) return payload.templates;
-  if (Array.isArray(payload?.data)) return payload.data;
-  if (Array.isArray(payload?.results)) return payload.results;
+function normalizeItems(payload: unknown): ConsentLibraryItem[] {
+  if (Array.isArray(payload)) return payload as ConsentLibraryItem[];
+  const record = payload as Record<string, unknown> | undefined;
+  if (Array.isArray(record?.items)) return record.items as ConsentLibraryItem[];
+  if (Array.isArray(record?.templates)) return record.templates as ConsentLibraryItem[];
+  if (Array.isArray(record?.data)) return record.data as ConsentLibraryItem[];
+  if (Array.isArray(record?.results)) return record.results as ConsentLibraryItem[];
   return [];
 }
 
@@ -93,7 +94,33 @@ function itemTitleAr(item: ConsentLibraryItem) {
   return item.titleAr || item.title || item.titleEn || item.code || "نموذج موافقة معتمد";
 }
 
-export default function ConsentSearchEngine() {
+type Lang = "en" | "ar";
+
+const labels: Record<Lang, { placeholder: string; header: string; search: string; loading: string; empty: string; preview: string; review: string; production: string }> = {
+  en: {
+    placeholder: "Search approved consent library",
+    header: "Consent",
+    search: "Search",
+    loading: "Loading approved production library",
+    empty: "No approved consent templates found from production API",
+    preview: "Preview approved consent PDF",
+    review: "Review",
+    production: "Production API linked: search, library resolve, PDF preview, caseId, templateId, and physician draft review.",
+  },
+  ar: {
+    placeholder: "البحث في مكتبة الموافقات المعتمدة",
+    header: "الموافقة",
+    search: "بحث",
+    loading: "جارٍ تحميل المكتبة الإنتاجية المعتمدة",
+    empty: "لم يُعثر على نماذج موافقة معتمدة من واجهة الإنتاج",
+    preview: "معاينة ملف الموافقة المعتمد",
+    review: "مراجعة",
+    production: "واجهة الإنتاج مرتبطة: البحث، تحليل المكتبة، معاينة PDF، معرف الحالة، معرف النموذج، ومراجعة المسودة الطبية.",
+  },
+};
+
+export default function ConsentSearchEngine({ lang = "en" }: { lang?: Lang }) {
+  const t = labels[lang];
   const [query, setQuery] = React.useState("");
   const [items, setItems] = React.useState<ConsentLibraryItem[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -108,17 +135,17 @@ export default function ConsentSearchEngine() {
       const qs = new URLSearchParams();
       if (searchValue.trim()) qs.set("q", searchValue.trim());
 
-      const payload = await apiJson<any>(`${API_BASE}/imc-library${qs.toString() ? `?${qs.toString()}` : ""}`);
+      const payload = await apiJson<unknown>(`${API_BASE}/imc-library${qs.toString() ? `?${qs.toString()}` : ""}`);
       let nextItems = normalizeItems(payload);
 
       if (nextItems.length === 0) {
-        const fallback = await apiJson<any>(`${API_BASE}/templates${qs.toString() ? `?${qs.toString()}` : ""}`);
+        const fallback = await apiJson<unknown>(`${API_BASE}/templates${qs.toString() ? `?${qs.toString()}` : ""}`);
         nextItems = normalizeItems(fallback);
       }
 
       setItems(nextItems);
-    } catch (e: any) {
-      setError(e?.message || "Unable to load approved consent library from production API.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Unable to load approved consent library from production API.");
     } finally {
       setLoading(false);
     }
@@ -134,7 +161,8 @@ export default function ConsentSearchEngine() {
     setActionId(templateId);
     setError(null);
 
-    try {      const resolved = await apiJson<any>(`${API_BASE}/imc-library/resolve`, {
+    try {
+      const resolved = await apiJson<unknown>(`${API_BASE}/imc-library/resolve`, {
         method: "POST",
         body: JSON.stringify({
           action: "preview-pdf",
@@ -191,12 +219,14 @@ export default function ConsentSearchEngine() {
       } else {
         window.location.href = pdfUrl;
       }
-    } catch (e: any) {
-      setError(e?.message || "Unable to open informed consent PDF preview from production library.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Unable to open informed consent PDF preview from production library.");
     } finally {
       setActionId(null);
     }
-  }, []);  const selectForPhysicianReview = React.useCallback(async (item: ConsentLibraryItem) => {
+  }, []);
+
+  const selectForPhysicianReview = React.useCallback(async (item: ConsentLibraryItem) => {
     const templateId = getTemplateId(item);
 
     setActionId(templateId);
@@ -214,8 +244,8 @@ export default function ConsentSearchEngine() {
       });
 
       window.location.href = `/modules/informed-consents/consent-creation-workflow?${params.toString()}`;
-    } catch (e: any) {
-      setError(e?.message || "Unable to open physician review workflow.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Unable to open physician review workflow.");
     } finally {
       setActionId(null);
     }
@@ -232,7 +262,7 @@ export default function ConsentSearchEngine() {
             onKeyDown={(event) => {
               if (event.key === "Enter") loadLibrary(query);
             }}
-            placeholder="Search approved consent library / البحث في مكتبة الموافقات"
+            placeholder={t.placeholder}
             className="w-full rounded-lg border border-[#D8DCE3] bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#002B5C] focus:ring-2 focus:ring-[#002B5C]/10"
           />
         </div>
@@ -244,7 +274,7 @@ export default function ConsentSearchEngine() {
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#002B5C] px-4 py-2.5 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-          Search
+          {t.search}
         </button>
       </div>
 
@@ -257,7 +287,7 @@ export default function ConsentSearchEngine() {
 
       <div className="overflow-hidden rounded-xl border border-[#D8DCE3] bg-white">
         <div className="grid grid-cols-[1.2fr_0.8fr_0.7fr_0.8fr] gap-4 border-b border-[#D8DCE3] bg-[#F8FAFC] px-4 py-3 text-xs font-bold uppercase tracking-wide text-[#667085]">
-          <div>Consent / الموافقة</div>
+          <div>{t.header}</div>
           <div>Specialty</div>
           <div>Status</div>
           <div className="text-right">Actions</div>
@@ -267,14 +297,14 @@ export default function ConsentSearchEngine() {
           {loading && (
             <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm font-semibold text-[#667085]">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Loading approved production library
+              {t.loading}
             </div>
           )}
 
           {!loading && items.length === 0 && (
             <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm font-semibold text-[#667085]">
               <FileText className="h-4 w-4" />
-              No approved consent templates found from production API
+              {t.empty}
             </div>
           )}
 
@@ -312,7 +342,7 @@ export default function ConsentSearchEngine() {
                       type="button"
                       onClick={() => previewPdf(item)}
                       disabled={busy}
-                      title="Preview approved consent PDF"
+                      title={t.preview}
                       className="inline-flex items-center justify-center rounded-lg border border-[#D8DCE3] bg-white p-2 text-[#002B5C] shadow-sm hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
@@ -325,7 +355,7 @@ export default function ConsentSearchEngine() {
                       className="inline-flex items-center gap-2 rounded-lg bg-[#C9A13B] px-3 py-2 text-xs font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Send className="h-3.5 w-3.5" />
-                      Review
+                      {t.review}
                     </button>
                   </div>
                 </div>
@@ -336,7 +366,7 @@ export default function ConsentSearchEngine() {
 
       <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">
         <ShieldCheck className="h-4 w-4" />
-        Production API linked: search, library resolve, PDF preview, caseId, templateId, and physician draft review.
+        {t.production}
       </div>
     </div>
   );

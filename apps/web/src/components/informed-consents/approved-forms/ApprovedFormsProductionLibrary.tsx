@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import {
@@ -114,8 +114,8 @@ export default function ApprovedFormsProductionLibrary() {
         if (current && nextTemplates.some((item: ApprovedConsentTemplate) => item.id === current.id)) return current;
         return nextTemplates[0] || null;
       });
-    } catch (err: any) {
-      setError(err?.message || "Unable to load approved forms library.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unable to load approved forms library.");
       setTemplates([]);
       setSelected(null);
     } finally {

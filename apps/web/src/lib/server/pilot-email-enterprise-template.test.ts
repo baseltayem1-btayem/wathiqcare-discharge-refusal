@@ -56,7 +56,7 @@ test("enterprise secure-signing template keeps white header and key markers", as
 
   assert.equal(status, "sent");
   assert.equal(captured.to, "patient@example.com");
-  assert.equal(captured.subject, "Electronic Informed Consent Request | طلب مراجعة وتوقيع الموافقة");
+  assert.equal(captured.subject, "Electronic Informed Consent Request");
 
   assert.match(captured.html, /background:#FFFFFF;padding:18px 20px;border-bottom:4px solid #C9A13B;/);
   assert.match(captured.html, /color:#1f2937;font-weight:600;/);

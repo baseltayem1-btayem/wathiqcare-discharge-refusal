@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import {
@@ -78,7 +78,7 @@ export default function FigmaPhysicianWorkflowShell({
               </h1>
               <p className="mt-0.5 text-xs text-[#6B7280]">
                 {isArabic
-                  ? "تصميم Figma المطور مع الحفاظ على مكتبة الموافقات والمنطق الحالي."
+                  ? "تصميم مرجعي مطور مع الحفاظ على مكتبة الموافقات والمنطق الحالي."
                   : "Figma enterprise workflow shell while preserving the current consent library and logic."}
               </p>
             </div>

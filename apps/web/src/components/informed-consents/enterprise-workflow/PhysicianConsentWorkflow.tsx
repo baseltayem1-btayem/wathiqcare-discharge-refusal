@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 
 
@@ -196,6 +196,7 @@ type PhysicianConsentWorkflowProps = {
     name?: string | null;
     tenantId?: string | null;
   };
+  lang?: "en" | "ar";
 };
 
 type ConsentWorkflowNotification = {
@@ -737,7 +738,8 @@ function findCollaborationUserId(users: CollaborationTeamUser[], keywords: strin
 
   return matchedUser?.id;
 }
-export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps) {
+export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsentWorkflowProps) {
+  const isRTL = lang === "ar";
   const [activeSection, setActiveSection] = useState<EnterpriseSection>("issueConsent");
   const [activeStepIndex, setActiveStepIndex] = useState(4);
   const [workflow, setWorkflow] = useState<WorkflowState>(initialState);
@@ -1688,9 +1690,9 @@ function EnterpriseHeader({
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <HeaderDataBlock label="Patient / المريض" value={workflow.patientName} />
-          <HeaderDataBlock label="MRN / رقم الملف" value={workflow.mrn} />
-          <HeaderDataBlock label="Encounter / الزيارة" value={workflow.encounterNo} />
+          <HeaderDataBlock label={isRTL ? "المريض" : "Patient"} value={workflow.patientName} />
+          <HeaderDataBlock label={isRTL ? "رقم الملف" : "MRN"} value={workflow.mrn} />
+          <HeaderDataBlock label={isRTL ? "الزيارة" : "Encounter"} value={workflow.encounterNo} />
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3">
@@ -3020,7 +3022,9 @@ function ReviewPdfStep({
             disabled={draftGenerationLoading}
             className="rounded-xl bg-[#002B5C] px-5 py-3 text-sm font-extrabold text-white hover:bg-[#001F42] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {draftGenerationLoading ? "Generating IMC PDF..." : "Generate Draft PDF / إنشاء مسودة المستند"}
+            {draftGenerationLoading
+              ? (isRTL ? "جارٍ إنشاء ملف PDF..." : "Generating IMC PDF...")
+              : (isRTL ? "إنشاء مسودة المستند" : "Generate Draft PDF")}
           </button>
           <button
             type="button"
@@ -3028,14 +3032,14 @@ function ReviewPdfStep({
             onClick={() => draftPdfUrl && window.open(draftPdfUrl, "_blank", "noopener,noreferrer")}
             className="rounded-xl border border-[#D8DCE3] bg-white px-5 py-3 text-sm font-extrabold text-[#002B5C] hover:bg-[#EEF5FF] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Open Full Preview / فتح المعاينة الكاملة
+            {isRTL ? "فتح المعاينة الكاملة" : "Open Full Preview"}
           </button>
         </div>
       </div>
 
       <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
         <h3 className="text-base font-extrabold text-[#002B5C]">
-          Readiness Checklist / قائمة الجاهزية
+          {isRTL ? "قائمة الجاهزية" : "Readiness Checklist"}
         </h3>
         <div className="mt-4 space-y-3">
           <ReadinessItem label="Patient selected" labelAr="تم اختيار المريض" ready={completionSummary.patientReady} />
@@ -3116,7 +3120,9 @@ function SendStep({
               className="inline-flex items-center gap-2 rounded-xl bg-[#002B5C] px-6 py-3 text-sm font-extrabold text-white hover:bg-[#001F42]"
             >
               <Send className="h-4 w-4" />
-              {linkActionState.mode === "send" ? "Sending... / جارٍ الإرسال" : "Create Patient Signing Link / إنشاء رابط توقيع المريض"}
+              {linkActionState.mode === "send"
+                ? (isRTL ? "جارٍ الإرسال..." : "Sending...")
+                : (isRTL ? "إنشاء رابط توقيع المريض" : "Create Patient Signing Link")}
             </button>
           </div>
         </div>
@@ -3126,7 +3132,7 @@ function SendStep({
         <div className="rounded-[24px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-extrabold text-[#002B5C]">Patient link operations / عمليات رابط المريض</p>
+              <p className="text-sm font-extrabold text-[#002B5C]">{isRTL ? "عمليات رابط المريض" : "Patient link operations"}</p>
               <p className="mt-1 text-sm text-[#475569]">Resend is enabled because the consent has already been issued to the patient.</p>
             </div>
             <button
@@ -3135,7 +3141,9 @@ function SendStep({
               className="inline-flex items-center gap-2 rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm font-extrabold text-[#002B5C] hover:bg-[#EEF5FF]"
             >
               <RotateCcw className="h-4 w-4" />
-              {linkActionState.mode === "resend" ? "Resending... / جارٍ إعادة الإرسال" : "Resend / إعادة الإرسال"}
+              {linkActionState.mode === "resend"
+                ? (isRTL ? "جارٍ إعادة الإرسال..." : "Resending...")
+                : (isRTL ? "إعادة الإرسال" : "Resend")}
             </button>
           </div>
         </div>
@@ -3332,7 +3340,9 @@ function StatusAuditWorkspace({
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm font-extrabold text-[#002B5C] hover:bg-[#EEF5FF] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RotateCcw className="h-4 w-4" />
-              {linkActionState.mode === "resend" ? "Resending... / جارٍ إعادة الإرسال" : "Resend / إعادة الإرسال"}
+              {linkActionState.mode === "resend"
+                ? (isRTL ? "جارٍ إعادة الإرسال..." : "Resending...")
+                : (isRTL ? "إعادة الإرسال" : "Resend")}
             </button>
             <button
               type="button"

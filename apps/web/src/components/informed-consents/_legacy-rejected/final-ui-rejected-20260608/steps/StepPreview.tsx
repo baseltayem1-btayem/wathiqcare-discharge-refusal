@@ -1,14 +1,14 @@
-﻿"use client";
+"use client";
 
 type StepPreviewProps = {
   lang?: "en" | "ar";
-  builderState?: any;
+  builderState?: unknown;
   linkedDocumentId?: string | null;
   documentReady?: boolean;
   onNext?: () => void;
   onBack?: () => void;
   onPrevious?: () => void;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 export function StepPreview({
@@ -99,7 +99,7 @@ export function StepPreview({
         ) : (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-800">
             {isArabic
-              ? "لم يتم ربط مستند الموافقة بعد. انتقل خطوة للخلف ثم ارجع إلى المعاينة، أو تحقق من نجاح generate-draft."
+              ? "لم يتم ربط مستند الموافقة بعد. انتقل خطوة للخلف ثم ارجع إلى المعاينة، أو تحقق من نجاح إنشاء المسودة."
               : "No linked consent document is available yet. Go back and return to preview, or verify that generate-draft completed successfully."}
           </div>
         )}

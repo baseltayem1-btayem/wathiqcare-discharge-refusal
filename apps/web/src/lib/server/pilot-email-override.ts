@@ -145,7 +145,7 @@ function buildEnterpriseSecureSigningEmailTemplate(args: {
   const requestReference = buildPatientRequestReference(args.documentId);
   const safePatientName = (args.patientName || "Patient").replace(/[<>]/g, "");
   const expiresText = `${args.expiresMinutes} minutes`;
-  const subject = "Electronic Informed Consent Request | طلب مراجعة وتوقيع الموافقة";
+  const subject = "Electronic Informed Consent Request";
   const imcLogo = `${baseUrl}/images/imc-logo.png`;
   const wathiqcareLogo = `${baseUrl}/images/wathiqcare-logo.png`;
 
@@ -340,7 +340,8 @@ function buildEnterpriseSecureSigningEmailTemplate(args: {
     `Expiration Time: ${expiresText}`,
     `Institution Name: ${args.institutionName}`,
     "",
-    `Review & Sign Consent / مراجعة وتوقيع الموافقة: ${args.signingUrl}`,
+    `Review & Sign Consent: ${args.signingUrl}`,
+    `مراجعة وتوقيع الموافقة: ${args.signingUrl}`,
     "",
     "Security Notice: This secure link is intended only for the patient or authorized legal representative. Do not share this link with others.",
     "هذا الرابط الآمن مخصص للمريض أو لممثله النظامي فقط. يرجى عدم مشاركة الرابط مع أي شخص آخر.",

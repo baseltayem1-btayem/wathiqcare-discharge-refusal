@@ -26,6 +26,7 @@
 import {
   useCallback,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -333,7 +334,7 @@ const SignaturePad = (() => {
       lastRef.current = null;
     };
 
-    padRef.current = {
+    useImperativeHandle(padRef, () => ({
       isEmpty: () => !hasInk,
       clear: () => {
         const canvas = canvasRef.current;
@@ -348,7 +349,7 @@ const SignaturePad = (() => {
         if (!canvas || !hasInk) return null;
         return canvas.toDataURL("image/png");
       },
-    };
+    }));
 
     return (
       <div

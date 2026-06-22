@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Wind, Clock, AlertTriangle, Check, ChevronRight, User } from "lucide-react";
 import { StatusBadge } from "../StatusBadge";
 
@@ -96,7 +96,7 @@ export function AnesthesiaQueue({ lang }: Props) {
         <div className="w-80 border-l bg-white overflow-y-auto flex-shrink-0" style={{ borderColor: "#D8E8EF" }}>
           <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "#D8E8EF" }}>
             <span className="text-sm font-bold" style={{ color: "#102A43" }}>{isRTL ? "تفاص` اتخد`ر" : "Anesthesia Detail"}</span>
-            <button onClick={() => setSelected(null)} className="text-xs" style={{ color: "#64798B" }}>S"</button>
+            <button onClick={() => setSelected(null)} className="text-xs" style={{ color: "#64798B" }}>S&quot;</button>
           </div>
           <div className="p-5 space-y-4">
             <div className="flex items-center gap-3">
