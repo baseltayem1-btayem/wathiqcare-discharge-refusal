@@ -1,3 +1,9 @@
+// STALE EDUCATION DRIFT — excluded from apps/web/tsconfig.json type-check baseline.
+// This service references Prisma models (educationPackage, educationVersion, etc.)
+// that do not exist in schema.prisma. The project uses ProcedureEducation* models instead.
+// Kept for reference; not imported by the active runtime.
+// See docs/quality-baseline/typescript-error-classification.md
+
 import crypto from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
