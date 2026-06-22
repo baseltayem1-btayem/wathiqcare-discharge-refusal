@@ -14,7 +14,14 @@ import {
 import FinalInformedConsentsModule from "@/components/informed-consents/FinalInformedConsentsModule";
 
 type StableFigmaInformedConsentsFrameProps = {
-  auth: unknown;
+  auth?: {
+    role?: string | null;
+    platform_role?: string | null;
+    userId?: string | null;
+    email?: string | null;
+    name?: string | null;
+    tenantId?: string | null;
+  };
   lang?: "en" | "ar";
 };
 

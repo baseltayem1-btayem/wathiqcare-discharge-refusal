@@ -1318,7 +1318,7 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
 
           anesthesiaDecision: workflow.anesthesiaDecision,
           anesthesiaReviewRequired: workflow.anesthesiaReviewRequired,
-          anesthesiaTypeLabel: getAnesthesiaDecisionLabel(workflow.anesthesiaDecision),
+          anesthesiaTypeLabel: getAnesthesiaLabel(workflow.anesthesiaDecision),
 
           imcLibraryItemId: imcProcedureConsent.id,
           imcLibraryTitleEn: imcProcedureConsent.titleEn,
@@ -1482,6 +1482,7 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
     }
   }
 
+  const currentLang = lang;
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef4fb_45%,#e8eff8_100%)] text-[#172033]">
       <EnterpriseHeader
@@ -1492,6 +1493,7 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
         onToggleNotifications={() => setShowNotifications((current) => !current)}
         onNotificationSelect={handleNotificationSelect}
         onMarkAllNotificationsRead={markAllNotificationsRead}
+        lang={lang}
       />
       <section className="mx-auto grid max-w-[1680px] grid-cols-1 gap-5 px-4 py-5 xl:grid-cols-[300px_minmax(0,1fr)_380px] xl:px-6">
         <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
@@ -1558,6 +1560,7 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
               onResend={handleResendPatientLink}
               onRefocus={handleRefocus}
               refocusTarget={refocusTarget}
+              dir={currentLang === "ar" ? "rtl" : "ltr"}
             />
           ) : activeSection === "collaboration" ? (
             <WorkspaceCard
@@ -1597,6 +1600,7 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
               linkActionState={linkActionState}
               onResend={handleResendPatientLink}
               onRefocus={handleRefocus}
+              lang={lang ?? "en"}
             />
           ) : (
             <WorkspaceCard
@@ -1622,11 +1626,12 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
           onRefocus={handleRefocus}
           refocusTarget={refocusTarget}
           generateDraftPdf={generateDraftPdf}
-              draftGenerationLoading={draftGenerationLoading}
-              draftGenerationError={draftGenerationError}
-              draftPdfUrl={draftPdfUrl}
-              consentDocumentId={consentDocumentId}
-            />
+          draftGenerationLoading={draftGenerationLoading}
+          draftGenerationError={draftGenerationError}
+          draftPdfUrl={draftPdfUrl}
+          consentDocumentId={consentDocumentId}
+          lang={lang}
+        />
       </section>
     </main>
   );
@@ -1640,6 +1645,7 @@ function EnterpriseHeader({
   onToggleNotifications,
   onNotificationSelect,
   onMarkAllNotificationsRead,
+  lang = "en",
 }: {
   workflow: WorkflowState;
   notifications: ConsentWorkflowNotification[];
@@ -1648,7 +1654,10 @@ function EnterpriseHeader({
   onToggleNotifications: () => void;
   onNotificationSelect: (notification: ConsentWorkflowNotification) => void;
   onMarkAllNotificationsRead: () => void;
+  lang?: string;
 }) {
+  const resolvedLang = (lang ?? "en") as "en" | "ar";
+  const isRTL = resolvedLang === "ar";
   return (
     <header className="sticky top-0 z-40 border-b border-[#123869] bg-[linear-gradient(135deg,#002B5C_0%,#0A3A74_55%,#174D8C_100%)] text-white shadow-[0_18px_40px_rgba(0,43,92,0.16)]">
       <div className="mx-auto grid max-w-[1680px] grid-cols-1 gap-4 px-5 py-4 xl:grid-cols-[460px_1fr_auto] xl:px-6">
@@ -1932,6 +1941,7 @@ function IssueConsentWorkspace({
   onResend,
   onRefocus,
   refocusTarget,
+  dir = "ltr",
 }: {
   activeStep: (typeof workflowSteps)[number];
   activeStepIndex: number;
@@ -1974,6 +1984,7 @@ function IssueConsentWorkspace({
   onResend: () => void | Promise<void>;
   onRefocus: () => void;
   refocusTarget: RefocusTarget;
+  dir?: "ltr" | "rtl";
 }) {
   const actionGuidance = getCurrentActionGuidance(activeStep.key, workflow, completionSummary);
   const stepMeta = workflowStepMeta[activeStep.key];
@@ -2152,6 +2163,7 @@ function IssueConsentWorkspace({
               draftGenerationError={draftGenerationError}
               draftPdfUrl={draftPdfUrl}
               consentDocumentId={consentDocumentId}
+              dir={dir}
             />
           )}
 
@@ -2163,6 +2175,7 @@ function IssueConsentWorkspace({
               onSend={onSend}
               onResend={onResend}
               onRefocus={onRefocus}
+              dir={dir}
             />
           )}
 
@@ -2955,6 +2968,7 @@ function ReviewPdfStep({
   draftGenerationError,
   draftPdfUrl,
   consentDocumentId,
+  dir = "ltr",
 }: {
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
@@ -2963,7 +2977,9 @@ function ReviewPdfStep({
   draftGenerationError: string;
   draftPdfUrl: string;
   consentDocumentId: string;
+  dir?: "ltr" | "rtl";
 }) {
+  const isRTL = dir === "rtl";
   return (
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#F8FAFC_0%,#FFFFFF_100%)] p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
@@ -3062,6 +3078,7 @@ function SendStep({
   onSend,
   onResend,
   onRefocus,
+  dir = "ltr",
 }: {
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
@@ -3069,7 +3086,9 @@ function SendStep({
   onSend: () => void | Promise<void>;
   onResend: () => void | Promise<void>;
   onRefocus: () => void;
+  dir?: "ltr" | "rtl";
 }) {
+  const isRTL = dir === "rtl";
   return (
     <div className="space-y-5">
       <h3 className="text-xl font-extrabold text-[#002B5C]">
@@ -3176,6 +3195,7 @@ function RightContextPanel({
   draftGenerationError,
   draftPdfUrl,
   consentDocumentId,
+  lang = "en",
 }: {
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
@@ -3187,7 +3207,10 @@ function RightContextPanel({
   draftGenerationError: string;
   draftPdfUrl: string;
   consentDocumentId: string;
+  lang?: string;
 }) {
+  const resolvedLang = (lang ?? "en") as "en" | "ar";
+  const isRTL = resolvedLang === "ar";
   return (
     <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
       <PanelCard title="Case Readiness" titleAr="جاهزية الحالة">
@@ -3244,7 +3267,7 @@ function RightContextPanel({
           <QuickActionButton icon={Target} label="Re-focus" labelAr="إعادة التركيز" onClick={onRefocus} />
           <QuickActionButton icon={UserRoundCheck} label="Request Anesthesia Review" labelAr="طلب مراجعة طبيب التخدير" onClick={() => setActiveSection("collaboration")} />
           <QuickActionButton icon={FileText} label={draftGenerationLoading ? "Generating IMC PDF..." : "Generate Draft PDF"} labelAr="إنشاء مسودة المستند" onClick={generateDraftPdf} disabled={draftGenerationLoading} />
-          <QuickActionButton icon={FileText} label="Open Full Preview" labelAr="فتح المعاينة الكاملة" onClick={() => draftPdfUrl && window.open(draftPdfUrl, "_blank", "noopener,noreferrer")} disabled={!draftPdfUrl} />
+          <QuickActionButton icon={FileText} label="Open Full Preview" labelAr="فتح المعاينة الكاملة" onClick={() => { if (draftPdfUrl) window.open(draftPdfUrl, "_blank", "noopener,noreferrer"); }} disabled={!draftPdfUrl} />
           <QuickActionButton icon={MessageSquareText} label="Open Collaboration" labelAr="فتح التواصل الطبي القانوني" onClick={() => setActiveSection("collaboration")} />
           <QuickActionButton icon={Settings} label="Go to Support & Settings" labelAr="الانتقال للدعم والإعدادات" onClick={() => setActiveSection("supportSettings")} />
 
@@ -3280,6 +3303,7 @@ function StatusAuditWorkspace({
   linkActionState,
   onResend,
   onRefocus,
+  lang = "en",
 }: {
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
@@ -3287,7 +3311,10 @@ function StatusAuditWorkspace({
   linkActionState: LinkActionState;
   onResend: () => void | Promise<void>;
   onRefocus: () => void;
+  lang?: string;
 }) {
+  const resolvedLang = (lang ?? "en") as "en" | "ar";
+  const isRTL = resolvedLang === "ar";
   return (
     <WorkspaceCard
       title="Status & Audit"

@@ -162,7 +162,7 @@ export default function ConsentSearchEngine({ lang = "en" }: { lang?: Lang }) {
     setError(null);
 
     try {
-      const resolved = await apiJson<unknown>(`${API_BASE}/imc-library/resolve`, {
+      const resolved = await apiJson<{ pdfUrl?: string; previewUrl?: string; fileUrl?: string } | null>(`${API_BASE}/imc-library/resolve`, {
         method: "POST",
         body: JSON.stringify({
           action: "preview-pdf",

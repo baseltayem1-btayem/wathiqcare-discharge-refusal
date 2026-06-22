@@ -33,6 +33,8 @@ const recentActivity = [
 interface Props {
   onNewConsent: () => void;
   onViewConsent: (mrn: string) => void;
+  licenseExpired?: boolean;
+  licenseExpiryDate?: string | null;
 }
 
 export function PhysicianDashboard({ onNewConsent, onViewConsent, licenseExpired = false, licenseExpiryDate }: Props) {

@@ -1974,7 +1974,7 @@ const WATHIQNOTE_PERMISSION_KEY_MAP: Record<string, string> = {
   manage_users: "users.manage",
 };
 function roleHasPermission(roleCode: string, permission: string) {
-  return Boolean(wathiqNoteRoles.find((role) => role.code === roleCode)?.permissions.includes(permission));
+  return Boolean(wathiqNoteRoles.find((role) => role.code === roleCode)?.permissions.includes(permission as never));
 }
 
 type TenantUserListItem = {

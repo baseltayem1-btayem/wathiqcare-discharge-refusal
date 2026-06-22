@@ -125,6 +125,9 @@ type BuilderState = {
   disclosures: Record<string, unknown>;
   education: Record<string, unknown>;
   document: Record<string, unknown>;
+  consentType?: string;
+  template?: Record<string, unknown>;
+  selectedTemplate?: Record<string, unknown>;
   updatedAt?: string;
 };
 
@@ -622,15 +625,7 @@ export function ConsentBuilder({
 
     switch (currentStep) {
       case "patient":
-        return (
-          <StepPatient
-            {...props}
-            mobile={patientMobile}
-            email={patientEmail}
-            onMobileChange={setPatientMobile}
-            onEmailChange={setPatientEmail}
-          />
-        );
+        return <StepPatient {...props} />;
 
       case "consentType":
         return <StepConsentType {...props} />;

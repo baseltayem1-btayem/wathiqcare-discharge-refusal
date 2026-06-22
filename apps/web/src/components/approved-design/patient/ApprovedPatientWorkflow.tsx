@@ -889,7 +889,11 @@ export function ApprovedPatientWorkflow({
         dir={dir}
         className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
-        <MobileHeader lang={lang} onLangToggle={toggleLang} />
+        <MobileHeader
+          lang={lang}
+          title={lang === "ar" ? "الموافقة الطبية" : "Medical Consent"}
+          onLangToggle={toggleLang}
+        />
         <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
           <div
             className={cls(
@@ -1015,10 +1019,9 @@ export function ApprovedPatientWorkflow({
       >
         <MobileHeader
           lang={lang}
+          title={lang === "ar" ? "التحقق برمز OTP" : "OTP Verification"}
           onLangToggle={toggleLang}
           onBack={() => setScreen("landing")}
-          step={2}
-          totalSteps={7}
         />
         <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full items-center">
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
@@ -1180,10 +1183,12 @@ export function ApprovedPatientWorkflow({
       >
         <MobileHeader
           lang={lang}
+          title={
+            pickLocalized(lang, ed.titleAr, ed.titleEn) ||
+            (lang === "ar" ? "تثقيف ما قبل الإجراء" : "Pre-Procedure Education")
+          }
           onLangToggle={toggleLang}
           onBack={() => setScreen("otp")}
-          step={3}
-          totalSteps={7}
         />
         <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
           <div
@@ -1416,10 +1421,9 @@ export function ApprovedPatientWorkflow({
       >
         <MobileHeader
           lang={lang}
+          title={lang === "ar" ? "مراجعة الموافقة" : "Consent Review"}
           onLangToggle={toggleLang}
           onBack={() => setScreen(educationRequired ? "education" : "otp")}
-          step={4}
-          totalSteps={7}
         />
         <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
           <div
@@ -1588,10 +1592,9 @@ export function ApprovedPatientWorkflow({
       >
         <MobileHeader
           lang={lang}
+          title={lang === "ar" ? "قرارك" : "Your Decision"}
           onLangToggle={toggleLang}
           onBack={() => setScreen("review")}
-          step={5}
-          totalSteps={7}
         />
         <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
           <div
@@ -1711,10 +1714,9 @@ export function ApprovedPatientWorkflow({
       >
         <MobileHeader
           lang={lang}
+          title={lang === "ar" ? "توقيع الموافقة" : "Sign Consent"}
           onLangToggle={toggleLang}
           onBack={() => setScreen("decision")}
-          step={6}
-          totalSteps={7}
         />
         <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
           <div
@@ -1853,6 +1855,7 @@ export function ApprovedPatientWorkflow({
       >
         <MobileHeader
           lang={lang}
+          title={lang === "ar" ? "نموذج رفض العلاج" : "Treatment Refusal Form"}
           onLangToggle={toggleLang}
           onBack={() => setScreen("decision")}
         />
@@ -1957,6 +1960,7 @@ export function ApprovedPatientWorkflow({
       >
         <MobileHeader
           lang={lang}
+          title={lang === "ar" ? "توقيع نموذج الرفض" : "Sign Refusal Form"}
           onLangToggle={toggleLang}
           onBack={() => setScreen("refusal-ack")}
         />
@@ -2034,7 +2038,11 @@ export function ApprovedPatientWorkflow({
         dir={dir}
         className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
-        <MobileHeader lang={lang} onLangToggle={toggleLang} />
+        <MobileHeader
+          lang={lang}
+          title={lang === "ar" ? "تم تسجيل موافقتك" : "Your Consent is Recorded"}
+          onLangToggle={toggleLang}
+        />
         <div className="flex-1 px-4 py-8 flex flex-col gap-5 max-w-md mx-auto w-full items-center text-center">
           <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
             <CheckCircle size={40} className="text-emerald-600" />
@@ -2171,7 +2179,11 @@ export function ApprovedPatientWorkflow({
         dir={dir}
         className={cls("min-h-screen bg-background flex flex-col", langClass)}
       >
-        <MobileHeader lang={lang} onLangToggle={toggleLang} />
+        <MobileHeader
+          lang={lang}
+          title={lang === "ar" ? "تم تسجيل قرار الرفض" : "Refusal Recorded"}
+          onLangToggle={toggleLang}
+        />
         <div className="flex-1 px-4 py-10 flex flex-col gap-5 max-w-md mx-auto w-full items-center text-center">
           <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center">
             <AlertCircle size={40} className="text-orange-600" />

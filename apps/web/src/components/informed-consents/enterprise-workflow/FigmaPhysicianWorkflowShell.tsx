@@ -12,7 +12,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 
-import EnterpriseSupportSettingsPanel from "./EnterpriseSupportSettingsPanel";
+import { EnterpriseSupportSettingsPanel } from "./EnterpriseSupportSettingsPanel";
 import SmartConsentFastTrackPreview from "./SmartConsentFastTrackPreview";
 import FigmaPatientSearchAdapter from "./figma-adapters/FigmaPatientSearchAdapter";
 import FigmaConsentBuilderAdapter from "./figma-adapters/FigmaConsentBuilderAdapter";
