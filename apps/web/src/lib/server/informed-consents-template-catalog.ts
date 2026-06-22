@@ -27,7 +27,7 @@ export type RuntimeConsentTemplate = {
   specialty: string;
   department: string | null;
   version: string;
-  status: ConsentTemplateStatus;
+  status: $Enums.ConsentTemplateStatus;
   language: "bilingual";
   summaryAr: string | null;
   summaryEn: string | null;

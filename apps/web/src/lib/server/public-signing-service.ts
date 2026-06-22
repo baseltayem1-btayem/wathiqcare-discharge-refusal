@@ -521,7 +521,7 @@ function getNullableString(value: unknown): string | null {
 }
 
 function getFiniteNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return repairArabicMojibake(value);
+  if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim()) {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
@@ -693,7 +693,7 @@ async function writePublicConsentAudit(args: {
       actorUserId: null,
       actorRole: args.signerRole,
       summary: args.summary,
-      metadata: args.metadata,
+      metadata: args.metadata as Prisma.InputJsonValue,
     },
   });
 
@@ -2295,7 +2295,7 @@ export async function submitPublicSigningSignature(args: {
       {
         documentId: doc.id,
         status: doc.status,
-        token: context.publicSession.token,
+        tokenHash: context.publicSession.tokenHash,
       },
     );
   }
@@ -2379,6 +2379,7 @@ export async function submitPublicSigningSignature(args: {
       documentId: context.documentId,
       caseId: doc.caseId,
       patientName: doc.patientName,
+      patientEmail: null,
       consentReference: doc.consentReference,
       generatedAt: new Date(capturedAt),
       generatedBy: "public_signer",
@@ -2522,7 +2523,6 @@ export async function submitPublicSigningSignature(args: {
     documentId: context.documentId,
     caseId: doc.caseId,
     patientName: doc.patientName,
-    patientEmail,
     patientEmail,
     consentReference: doc.consentReference,
     generatedAt: signature.signedAt,
