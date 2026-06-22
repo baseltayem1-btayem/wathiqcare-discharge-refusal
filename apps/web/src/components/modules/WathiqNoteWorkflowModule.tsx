@@ -12,8 +12,6 @@ import {
   AlertCircle,
   Bell,
   BookOpen,
-  Building2,
-  Calendar,
   Check,
   CheckCircle2,
   ChevronLeft,
@@ -1353,7 +1351,7 @@ function NoteBuilder({
     }
 
     if (!caseId.trim()) {
-      showToast({ type: "warning", message: txt(lang, "Case ID مطلوب لأن API الحالي يربط السند بملف حالة قائم.", "Case ID is required because the current API links the note to an existing case.") });
+      showToast({ type: "warning", message: txt(lang, "رقم الحالة مطلوب لأن واجهة البرمجة الحالية تربط السند بملف حالة قائم.", "Case ID is required because the current API links the note to an existing case.") });
       setFieldErrors((prev) => ({ ...prev, caseId: txt(lang, "رقم الحالة مطلوب.", "Case ID is required.") }));
       return;
     }
@@ -1555,7 +1553,7 @@ function NoteBuilder({
           type: "warning",
           message: txt(
             lang,
-            `تم إنشاء السند، لكن فشل إرسال رسالة SMS إلى ${mobile}. تحقق من إعدادات تقنيات/SMS Gateway أو أعد الإرسال من بطاقة النتيجة.`,
+            `تم إنشاء السند، لكن فشل إرسال الرسالة النصية إلى ${mobile}. تحقق من إعدادات بوابة الرسائل النصية أو أعد الإرسال من بطاقة النتيجة.`,
             `Note created, but SMS delivery to ${mobile} failed. Check Taqnyat/SMS Gateway settings or resend from the result card.`,
           ),
         });
@@ -1959,7 +1957,7 @@ function NoteBuilder({
                     setCaseId(value);
                     clearFieldError("caseId");
                   }}
-                  placeholder={txt(lang, "أدخل Case ID من النظام", "Enter existing system Case ID")}
+                  placeholder={txt(lang, "أدخل رقم الحالة من النظام", "Enter existing system Case ID")}
                   error={fieldErrors.caseId}
                 />
 
@@ -2906,7 +2904,7 @@ function UsersRolesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: 
     const roleInput = window.prompt(
       txt(
         lang,
-        "اختر الدور: user أو manager أو admin",
+        "اختر الدور: مستخدم أو مدير أو مسؤول",
         "Choose role: user, manager, or admin",
       ),
       "user",
@@ -2982,7 +2980,7 @@ function UsersRolesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: 
         title={txt(lang, "إدارة المستخدمين", "Users & Roles")}
         subtitle={txt(
           lang,
-          "إدارة حسابات مستخدمي WathiqNote وربط كل مستخدم بدور تشغيلي واضح داخل دورة حياة السند.",
+          "إدارة حسابات مستخدمي المنصة وربط كل مستخدم بدور تشغيلي واضح داخل دورة حياة السند.",
           "Manage WathiqNote users and assign each user a clear operational role across the note lifecycle.",
         )}
       />
@@ -3011,7 +3009,7 @@ function UsersRolesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: 
           <div>
             <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "مستخدمي الموديول", "Module Users")}</h2>
             <p className="mt-1 text-xs text-slate-500">
-              {txt(lang, "تتم قراءة المستخدمين من قاعدة بيانات الجهة عبر Tenant Users API.", "Users are loaded from the tenant database through the Tenant Users API.")}
+              {txt(lang, "تتم قراءة المستخدمين من قاعدة بيانات الجهة عبر واجهة مستخدمي المستأجر.", "Users are loaded from the tenant database through the Tenant Users API.")}
             </p>
           </div>
           <div className="flex gap-2">
@@ -3035,7 +3033,7 @@ function UsersRolesScreen({ lang, showToast }: { lang: Lang; showToast: (toast: 
 
         {error ? (
           <div className="m-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-            {txt(lang, "لا يمكن تحميل المستخدمين لهذا الحساب. يتطلب ذلك دور tenant_admin أو tenant_owner وصلاحية users.read.", "Unable to load users for this account. This requires tenant_admin or tenant_owner role and users.read permission.")}
+            {txt(lang, "لا يمكن تحميل المستخدمين لهذا الحساب. يتطلب ذلك دور مسؤول المستأجر أو مالك المستأجر وصلاحية قراءة المستخدمين.", "Unable to load users for this account. This requires tenant_admin or tenant_owner role and users.read permission.")}
             <div className="mt-2 font-mono text-xs">{error}</div>
           </div>
         ) : null}
@@ -3247,7 +3245,7 @@ function PermissionMatrixScreen({ lang }: { lang: Lang }) {
           <div>
             <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "صلاحيات قاعدة البيانات", "Database Permissions")}</h2>
             <p className="mt-1 text-xs text-slate-500">
-              {txt(lang, "تتم قراءة الأدوار والصلاحيات من Tenant Roles API عند توفر صلاحية roles.read.", "Roles and permissions are loaded from the Tenant Roles API when roles.read is available.")}
+              {txt(lang, "تتم قراءة الأدوار والصلاحيات من واجهة أدوار المستأجر عند توفر صلاحية قراءة الأدوار.", "Roles and permissions are loaded from the Tenant Roles API when roles.read is available.")}
             </p>
           </div>
           <button type="button" onClick={() => void loadRoles()} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
@@ -3257,7 +3255,7 @@ function PermissionMatrixScreen({ lang }: { lang: Lang }) {
 
         {error ? (
           <div className="m-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-            {txt(lang, "تعذر تحميل مصفوفة قاعدة البيانات. سيتم عرض مصفوفة WathiqNote التشغيلية المقترحة أدناه.", "Unable to load the database matrix. The proposed WathiqNote operating matrix is shown below.")}
+            {txt(lang, "تعذر تحميل مصفوفة قاعدة البيانات. سيتم عرض مصفوفة المنصة التشغيلية المقترحة أدناه.", "Unable to load the database matrix. The proposed WathiqNote operating matrix is shown below.")}
             <div className="mt-2 font-mono text-xs">{error}</div>
           </div>
         ) : null}
@@ -3305,7 +3303,7 @@ function PermissionMatrixScreen({ lang }: { lang: Lang }) {
 
       <ShellCard>
         <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "مصفوفة WathiqNote التشغيلية", "WathiqNote Operating Matrix")}</h2>
+          <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "مصفوفة المنصة التشغيلية", "WathiqNote Operating Matrix")}</h2>
           <p className="mt-1 text-xs text-slate-500">
             {txt(lang, "هذه المصفوفة تحدد أفضل ممارسة تشغيلية للسندات داخل المستشفى حتى يتم عكسها بالكامل في قاعدة البيانات.", "This matrix defines the hospital operating best practice until fully reflected in the database permissions.")}
           </p>
@@ -3366,15 +3364,15 @@ function PermissionMatrixScreen({ lang }: { lang: Lang }) {
         <div className="mt-4 grid grid-cols-3 gap-4">
           <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
             <div className="font-bold text-blue-900">{txt(lang, "الإصدار", "Issuance")}</div>
-            <p className="mt-2 text-sm leading-6 text-blue-800">{txt(lang, "يقتصر على Issuer أو Admin بعد اكتمال البيانات والمراجعة.", "Restricted to Issuer or Admin after data completion and review.")}</p>
+            <p className="mt-2 text-sm leading-6 text-blue-800">{txt(lang, "يقتصر على المُصدر أو المسؤول بعد اكتمال البيانات والمراجعة.", "Restricted to Issuer or Admin after data completion and review.")}</p>
           </div>
           <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
             <div className="font-bold text-emerald-900">{txt(lang, "الوفاء", "Settlement")}</div>
-            <p className="mt-2 text-sm leading-6 text-emerald-800">{txt(lang, "يقتصر على Finance أو Admin مع مرجع مالي وتاريخ سداد.", "Restricted to Finance or Admin with payment reference and settlement date.")}</p>
+            <p className="mt-2 text-sm leading-6 text-emerald-800">{txt(lang, "يقتصر على المالية أو المسؤول مع مرجع مالي وتاريخ سداد.", "Restricted to Finance or Admin with payment reference and settlement date.")}</p>
           </div>
           <div className="rounded-xl border border-rose-100 bg-rose-50 p-4">
             <div className="font-bold text-rose-900">{txt(lang, "الإلغاء", "Void")}</div>
-            <p className="mt-2 text-sm leading-6 text-rose-800">{txt(lang, "يقتصر على Legal أو Admin مع سبب إلزامي وسجل تدقيق.", "Restricted to Legal or Admin with mandatory reason and audit trail.")}</p>
+            <p className="mt-2 text-sm leading-6 text-rose-800">{txt(lang, "يقتصر على القانوني أو المسؤول مع سبب إلزامي وسجل تدقيق.", "Restricted to Legal or Admin with mandatory reason and audit trail.")}</p>
           </div>
         </div>
       </ShellCard>
@@ -3394,9 +3392,9 @@ function DelegationsScreen({ lang }: { lang: Lang }) {
         <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "قواعد التفويض المقترحة", "Delegation Rules")}</h2>
         <div className="mt-4 grid gap-3">
           {[
-            ["إصدار السند حتى 10,000 ريال", "Issuer فقط بعد المراجعة", "Issue notes up to SAR 10,000", "Issuer after review"],
-            ["إصدار السند فوق 10,000 ريال", "Issuer + Finance Reviewer", "Issue notes above SAR 10,000", "Issuer + Finance Reviewer"],
-            ["إلغاء سند غير موقع", "Legal أو Admin مع سبب", "Void unsigned note", "Legal or Admin with reason"],
+            ["إصدار السند حتى 10,000 ريال", "المُصدر فقط بعد المراجعة", "Issue notes up to SAR 10,000", "Issuer after review"],
+            ["إصدار السند فوق 10,000 ريال", "المُصدر + مراجع المالية", "Issue notes above SAR 10,000", "Issuer + Finance Reviewer"],
+            ["إلغاء سند غير موقع", "قانوني أو مسؤول مع سبب", "Void unsigned note", "Legal or Admin with reason"],
             ["إلغاء سند موقع", "Legal + Finance approval", "Void signed note", "Legal + Finance approval"],
             ["إلغاء سند تم الوفاء به", "ممنوع", "Void settled note", "Not allowed"],
           ].map(([arRule, arApproval, enRule, enApproval]) => (
@@ -3426,7 +3424,7 @@ function AuditTrailScreen({ lang }: { lang: Lang }) {
 
       <ShellCard>
         <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "أحداث WathiqNote", "WathiqNote Events")}</h2>
+          <h2 className="text-lg font-bold text-[#073763]">{txt(lang, "أحداث السند", "WathiqNote Events")}</h2>
         </div>
         <div className="divide-y divide-slate-100">
           {rows.map(([time, ar, en, role]) => (
