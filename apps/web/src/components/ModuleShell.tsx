@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, Landmark, Layers3, LogOut, ShieldCheck, Workflow } from "lucide-react";
+import { Building2, Landmark, Layers3, LogOut, Settings, ShieldCheck, Workflow } from "lucide-react";
 
 import AppBreadcrumbs from "@/components/AppBreadcrumbs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -143,6 +143,13 @@ export default function ModuleShell({
       },
     },
     ...(menuItems.length ? menuItems : defaultMenuItems),
+    {
+      href: "/settings",
+      label: {
+        ar: "الإعدادات والدعم",
+        en: "Settings & Support",
+      },
+    },
   ];
 
   async function handleLogout() {
@@ -185,7 +192,14 @@ export default function ModuleShell({
         href: item.href,
         label: isRtl ? item.label.ar : item.label.en,
         active: pathname === item.href || pathname.startsWith(`${item.href}/`),
-        icon: item.href === "/modules" ? <Layers3 className="h-4 w-4" /> : <Workflow className="h-4 w-4" />,
+        icon:
+          item.href === "/modules" ? (
+            <Layers3 className="h-4 w-4" />
+          ) : item.href === "/settings" ? (
+            <Settings className="h-4 w-4" />
+          ) : (
+            <Workflow className="h-4 w-4" />
+          ),
       }))}
       moduleMeta={(
         <>

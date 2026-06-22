@@ -1,6 +1,54 @@
 {
   "support": "Support",
   "supportText": "For urgent legal package blockers, contact support",
+  "settings": {
+    "title": "Settings & Support",
+    "userLoadError": "Unable to load user profile.",
+    "organization": {
+      "title": "Organization Settings",
+      "name": "Organization Name",
+      "code": "Tenant Code",
+      "placeholder": "Coming soon — API binding pending for organization details."
+    },
+    "language": {
+      "title": "Language Preference",
+      "description": "Select the interface language for your session."
+    },
+    "access": {
+      "title": "User & Role Access",
+      "user": "User",
+      "email": "Email",
+      "role": "Role",
+      "placeholder": "Role-based access control — API binding pending."
+    },
+    "notifications": {
+      "title": "Notifications Settings",
+      "placeholder": "Notification preferences — API binding pending."
+    },
+    "templates": {
+      "title": "Template Library",
+      "description": "Open the WathiqNote template library to review approved legal templates.",
+      "openLibrary": "Open Template Library"
+    },
+    "support": {
+      "title": "Legal & Technical Support",
+      "placeholder": "Support request submission — API binding pending.",
+      "legalRequest": "Submit legal support request",
+      "technicalRequest": "Submit technical support request"
+    },
+    "security": {
+      "title": "Security Information",
+      "lastLogin": "Last Login",
+      "unknown": "Unknown",
+      "mfa": "MFA Status",
+      "notConfigured": "Not Configured",
+      "placeholder": "Security settings — API binding pending."
+    },
+    "audit": {
+      "title": "Audit & Compliance",
+      "placeholder": "Audit log and compliance settings — API binding pending."
+    }
+  },
   "legalReadiness": "Legal Readiness",
   "auditTrail": "Audit Trail",
   "auditTrailCompleted": "Audit Trail Completed",
