@@ -1,5 +1,5 @@
-﻿import crypto from "node:crypto";
-import { Prisma } from "@prisma/client";
+import crypto from "node:crypto";
+import { Prisma, $Enums } from "@prisma/client";
 import { DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
@@ -591,8 +591,8 @@ export async function createSecureLink(args: {
       id: linkId,
       tenantId: args.tenantId,
       caseId: args.caseId,
-      documentType: DocumentType.OTHER,
-      status: DocumentStatus.GENERATED,
+      documentType: DocumentType.OTHER as $Enums.DocumentType,
+      status: DocumentStatus.GENERATED as $Enums.DocumentStatus,
       documentCode: `${SECURE_LINK_CODE_PREFIX}${tokenHash}`,
       titleEn: "Secure Patient Decision Link",
       titleAr: "Ø±Ø§Ø¨Ø· Ù‚Ø±Ø§Ø± Ø®Ø±ÙˆØ¬ Ø¢Ù…Ù†",
@@ -696,7 +696,7 @@ export async function revokeSecureLink(args: {
   await prisma().document.update({
     where: { id: document.id },
     data: {
-      status: DocumentStatus.ARCHIVED,
+      status: DocumentStatus.ARCHIVED as $Enums.DocumentStatus,
       payloadJson: updatedPayload as unknown as JsonInputValue,
       sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
     },
@@ -801,7 +801,7 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
     await prisma().document.update({
       where: { id: document.id },
       data: {
-        status: DocumentStatus.SIGNED,
+        status: DocumentStatus.SIGNED as $Enums.DocumentStatus,
         payloadJson: updatedPayload as unknown as JsonInputValue,
         signedAt: new Date(submittedAt),
         sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
@@ -926,7 +926,7 @@ export async function downloadPublicSecureLinkArtifact(
       caseId: payload.case_id,
       tenantId: payload.tenant_id,
       mimeType: "application/pdf",
-      documentType: documentType as import("@prisma/client").DocumentType,
+      documentType: documentType as $Enums.DocumentType,
     },
     orderBy: { createdAt: "desc" },
     select: { storagePath: true, mimeType: true, fileName: true },

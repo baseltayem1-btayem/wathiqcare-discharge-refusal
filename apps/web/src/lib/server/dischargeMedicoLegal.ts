@@ -1,4 +1,4 @@
-﻿function buildLegalMetadata(
+function buildLegalMetadata(
 	baseMetadata: Record<string, unknown> | null,
 	updates: Record<string, unknown>,
 ): JsonInputObject {
@@ -133,7 +133,7 @@ export async function resolveLegalEscalation(args: {
 	await prisma().case.update({
 		where: { id: caseRecord.id },
 		data: {
-			status: args.closeCase ? CaseStatus.CLOSED : caseRecord.status,
+			status: args.closeCase ? (CaseStatus.CLOSED as $Enums.CaseStatus) : caseRecord.status,
 			closedAt: args.closeCase ? new Date() : caseRecord.closedAt,
 			metadata: buildLegalMetadata(metadata, {
 				status: "resolved",
@@ -374,6 +374,7 @@ function isRefusalCase(caseRecord: { workflowType: string | null; caseType: Case
 }
 import type { AuditLog } from "@prisma/client";
 import { Prisma } from "@prisma/client";
+import { $Enums } from "@prisma/client";
 import { CaseStatus, CaseType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import { requireTenantId, type AuthContext } from "@/lib/server/auth";

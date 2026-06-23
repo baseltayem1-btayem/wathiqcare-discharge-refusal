@@ -1,3 +1,4 @@
+import { $Enums } from "@prisma/client";
 import { LegalReadinessStatus } from "@/lib/server/prisma-enums";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -305,7 +306,7 @@ export async function getLegalReadiness(auth: AuthContext, caseId: string) {
     data: {
       tenantId: auth.tenant_id!,
       caseId,
-      status: report.status,
+      status: report.status as $Enums.LegalReadinessStatus,
       canFinalize: report.readyForLegal,
       checklistJson: report.checklist as unknown as object,
       blockersJson: report.blockers as unknown as object,

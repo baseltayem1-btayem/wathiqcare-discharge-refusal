@@ -77,7 +77,7 @@ export function validatePrintLayout(
   checks.push({
     id: "print.orphan.heading-guard",
     label: "Section-level page-break-inside avoidance present",
-    status: /\.lg-section\s*{[^}]*page-break-inside:\s*avoid/s.test(html)
+    status: /\.lg-section\s*{[^}]*page-break-inside:\s*avoid/.test(html)
       ? "PASS"
       : "WARNING",
   });

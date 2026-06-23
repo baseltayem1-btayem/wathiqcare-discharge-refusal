@@ -1,3 +1,4 @@
+import { $Enums } from "@prisma/client";
 import { BackupJobStatus, DataClassification } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -102,12 +103,12 @@ export async function createBackupJob(
   const job = await prisma().backupJob.create({
     data: {
       tenantId: auth.tenant_id,
-      classification: DataClassification.BACKUP,
+      classification: DataClassification.BACKUP as $Enums.DataClassification,
       backupType: payload.backupType?.trim() || "scheduled_snapshot",
       storageLocation: payload.storageLocation.trim(),
       region: payload.region?.trim() || "saudi-arabia-riyadh",
       encrypted: payload.encrypted !== false,
-      status: parseBackupStatus(payload.status),
+      status: parseBackupStatus(payload.status) as $Enums.BackupJobStatus,
       startedAt: new Date(),
       completedAt: payload.status?.toUpperCase() === "SUCCEEDED" ? new Date() : null,
       restoreVerifiedAt: payload.restoreResultStatus?.trim() ? new Date() : null,

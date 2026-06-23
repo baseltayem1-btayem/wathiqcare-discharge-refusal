@@ -1,4 +1,5 @@
-﻿import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { $Enums } from "@prisma/client";
 import { CaseStatus, DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import {
@@ -609,7 +610,7 @@ async function persistWorkflowState(
         where: { id: caseRecord.id },
         data: {
             workflowType: "discharge_refusal",
-            status: workflow.status === "closed" ? CaseStatus.CLOSED : CaseStatus.IN_PROGRESS,
+            status: workflow.status === "closed" ? (CaseStatus.CLOSED as $Enums.CaseStatus) : (CaseStatus.IN_PROGRESS as $Enums.CaseStatus),
             metadata,
             updatedByUserId: auth.sub,
             version: { increment: 1 },
@@ -665,9 +666,9 @@ async function createGeneratedDocument(
             caseId: workflow.case_id,
             documentType:
                 templateKey === "financial_responsibility_notice"
-                    ? DocumentType.FINANCIAL_RESPONSIBILITY_NOTICE
-                    : DocumentType.DISCHARGE_REFUSAL_FORM,
-            status: DocumentStatus.GENERATED,
+                    ? (DocumentType.FINANCIAL_RESPONSIBILITY_NOTICE as $Enums.DocumentType)
+                    : (DocumentType.DISCHARGE_REFUSAL_FORM as $Enums.DocumentType),
+            status: DocumentStatus.GENERATED as $Enums.DocumentStatus,
             documentCode,
             titleEn:
                 templateKey === "financial_responsibility_notice"

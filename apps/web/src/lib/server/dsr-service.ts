@@ -1,3 +1,4 @@
+import { $Enums } from "@prisma/client";
 import { DsrRequestStatus, DsrRequestType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -129,7 +130,7 @@ export async function createDataSubjectRequest(
     data: {
       tenantId: auth.tenant_id,
       caseId: payload.caseId?.trim() || null,
-      requestType: parseRequestType(payload.requestType),
+      requestType: parseRequestType(payload.requestType) as $Enums.DsrRequestType,
       requesterName: payload.requesterName.trim(),
       requesterIdNumber: payload.requesterIdNumber?.trim() || null,
       requestReason: payload.requestReason?.trim() || null,
@@ -193,7 +194,7 @@ export async function updateDataSubjectRequest(
   const updated = await prisma().dataSubjectRequest.update({
     where: { id: existing.id },
     data: {
-      status: payload.status ? parseStatus(payload.status) : existing.status,
+      status: payload.status ? (parseStatus(payload.status) as $Enums.DsrRequestStatus) : existing.status,
       extendedDueAt,
       extensionReason: payload.extensionReason?.trim() || existing.extensionReason,
       identityVerifiedAt:

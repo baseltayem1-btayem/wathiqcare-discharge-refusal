@@ -1,3 +1,4 @@
+import { $Enums } from "@prisma/client";
 import { CaseType } from "@/lib/server/prisma-enums";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -472,7 +473,7 @@ export async function getLegalRiskDashboard(
   const rawCases = await prisma().case.findMany({
     where: {
       tenantId,
-      caseType: CaseType.DISCHARGE_REFUSAL,
+      caseType: CaseType.DISCHARGE_REFUSAL as $Enums.CaseType,
     },
     include: {
       documents: {
@@ -497,7 +498,7 @@ export async function getLegalRiskDashboard(
     take: 1000,
   });
 
-  const scored = rawCases.map((caseRecord) => buildScoredCase({ caseRecord }));
+  const scored = rawCases.map((caseRecord) => buildScoredCase({ caseRecord: caseRecord as Parameters<typeof buildScoredCase>[0]["caseRecord"] }));
   const filtered = applyFilters(scored, filters);
 
   const byRiskLevel = {
