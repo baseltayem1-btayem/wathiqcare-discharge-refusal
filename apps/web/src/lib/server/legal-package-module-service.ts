@@ -1,7 +1,7 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import path from "node:path";
 import { promises as fs } from "node:fs";
-import { Prisma } from "@prisma/client";
+import { Prisma, $Enums } from "@prisma/client";
 import { DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 
@@ -393,8 +393,8 @@ async function createDocumentRecord(args: {
     data: {
       tenantId: args.auth.tenant_id!,
       caseId: args.caseId,
-      documentType: args.documentType,
-      status: args.status || DocumentStatus.GENERATED,
+      documentType: args.documentType as $Enums.DocumentType,
+      status: (args.status || DocumentStatus.GENERATED) as $Enums.DocumentStatus,
       documentCode: `${args.templateKey.toUpperCase()}-${version}`,
       titleEn: args.titleEn,
       titleAr: args.titleAr,
@@ -803,8 +803,8 @@ export async function refreshLegalPackageSignatureStatus(auth: AuthContext, case
     data: {
       tenantId: auth.tenant_id!,
       caseId,
-      documentType: DocumentType.CASE_FILE,
-      status: DocumentStatus.SIGNED,
+      documentType: DocumentType.CASE_FILE as $Enums.DocumentType,
+      status: DocumentStatus.SIGNED as $Enums.DocumentStatus,
       documentCode: `LEGAL-PACKAGE-SIGNED-${Date.now()}`,
       titleEn: "Signed legal package document",
       titleAr: "Ù†Ø³Ø®Ø© Ø§Ù„Ø­Ø²Ù…Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ© Ø§Ù„Ù…ÙˆÙ‚Ø¹Ø©",
@@ -830,8 +830,8 @@ export async function refreshLegalPackageSignatureStatus(auth: AuthContext, case
     data: {
       tenantId: auth.tenant_id!,
       caseId,
-      documentType: DocumentType.CASE_FILE,
-      status: DocumentStatus.ARCHIVED,
+      documentType: DocumentType.CASE_FILE as $Enums.DocumentType,
+      status: DocumentStatus.ARCHIVED as $Enums.DocumentStatus,
       documentCode: `LEGAL-PACKAGE-CERT-${Date.now()}`,
       titleEn: "Signature certificate",
       titleAr: "Ø´Ù‡Ø§Ø¯Ø© Ø§Ù„ØªÙˆÙ‚ÙŠØ¹",

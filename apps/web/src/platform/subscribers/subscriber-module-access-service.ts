@@ -1,3 +1,4 @@
+import { $Enums } from "@prisma/client";
 import { SubscriberModuleAccessStatus } from "@/lib/server/prisma-enums";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
@@ -53,11 +54,14 @@ export async function suspendAllSubscriberModules(subscriberId: string, actorId?
     where: {
       subscriberId,
       status: {
-        in: [SubscriberModuleAccessStatus.ACTIVE, SubscriberModuleAccessStatus.TRIAL],
+        in: [
+          SubscriberModuleAccessStatus.ACTIVE as $Enums.SubscriberModuleAccessStatus,
+          SubscriberModuleAccessStatus.TRIAL as $Enums.SubscriberModuleAccessStatus,
+        ],
       },
     },
     data: {
-      status: SubscriberModuleAccessStatus.SUSPENDED,
+      status: SubscriberModuleAccessStatus.SUSPENDED as $Enums.SubscriberModuleAccessStatus,
       deactivatedBy: actorId ?? null,
       deactivatedAt: now,
       notes: notePrefix,
@@ -196,7 +200,7 @@ export async function upsertSubscriberModuleAccess(input: SubscriberModuleAccess
       },
     },
     update: {
-      status: input.status,
+      status: input.status as $Enums.SubscriberModuleAccessStatus,
       activatedBy: isActivating ? (input.activatedBy || null) : undefined,
       activatedAt: isActivating ? new Date() : undefined,
       deactivatedBy: !isActivating ? (input.deactivatedBy || null) : undefined,
@@ -208,7 +212,7 @@ export async function upsertSubscriberModuleAccess(input: SubscriberModuleAccess
     create: {
       subscriberId: input.subscriberId,
       moduleKey: input.moduleKey,
-      status: input.status,
+      status: input.status as $Enums.SubscriberModuleAccessStatus,
       activatedBy: isActivating ? (input.activatedBy || null) : null,
       activatedAt: isActivating ? new Date() : null,
       deactivatedBy: !isActivating ? (input.deactivatedBy || null) : null,
@@ -234,7 +238,7 @@ export async function bootstrapSubscriberModuleAccess(subscriberId: string) {
         create: {
           subscriberId,
           moduleKey,
-          status: SubscriberModuleAccessStatus.ACTIVE,
+          status: SubscriberModuleAccessStatus.ACTIVE as $Enums.SubscriberModuleAccessStatus,
           activatedAt: new Date(),
           notes: "Default activation at subscriber creation",
         },
@@ -297,8 +301,8 @@ export function toModuleAccessStatus(value: string | null | undefined): Subscrib
   if (!normalized) {
     return null;
   }
-  return Object.values(SubscriberModuleAccessStatus).includes(normalized as SubscriberModuleAccessStatus)
-    ? (normalized as SubscriberModuleAccessStatus)
+  return Object.values(SubscriberModuleAccessStatus).includes(normalized as $Enums.SubscriberModuleAccessStatus)
+    ? (normalized as $Enums.SubscriberModuleAccessStatus)
     : null;
 }
 

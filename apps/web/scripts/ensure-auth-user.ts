@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { PrismaClient, MembershipStatus, SubscriberModuleAccessStatus, UserType } from "@prisma/client";
+import { PrismaClient, $Enums, MembershipRole, MembershipStatus, SubscriberModuleAccessStatus, UserType } from "@prisma/client";
 import { ensurePasswordResetSchema } from "../src/lib/server/auth-reset";
 import { extractDomain, normalizeEmail } from "../src/lib/server/auth-domain-policy";
 import { MODULE_DEFINITIONS, type ModuleKey } from "../src/lib/modules/catalog";
@@ -238,7 +238,7 @@ async function ensureModuleAccess(tenantId: string, moduleKeys: ModuleKey[]) {
     await prisma.subscriberModuleAccess.upsert({
       where: { subscriberId_moduleKey: { subscriberId: tenantId, moduleKey } },
       update: {
-        status: SubscriberModuleAccessStatus.ACTIVE,
+        status: SubscriberModuleAccessStatus.ACTIVE as $Enums.SubscriberModuleAccessStatus,
         activatedAt: new Date(),
         deactivatedAt: null,
         notes: "Ensured by auth user remediation",
@@ -246,7 +246,7 @@ async function ensureModuleAccess(tenantId: string, moduleKeys: ModuleKey[]) {
       create: {
         subscriberId: tenantId,
         moduleKey,
-        status: SubscriberModuleAccessStatus.ACTIVE,
+        status: SubscriberModuleAccessStatus.ACTIVE as $Enums.SubscriberModuleAccessStatus,
         activatedAt: new Date(),
         notes: "Ensured by auth user remediation",
       },
@@ -326,9 +326,9 @@ async function main() {
       data: {
         tenantId: tenant.id,
         fullName: args.fullName,
-        role: canonicalRole,
-        userType: resolvedUserType,
-        status: "active",
+        role: membershipRole as $Enums.MembershipRole,
+        userType: resolvedUserType as $Enums.UserType,
+        status: MembershipStatus.ACTIVE as $Enums.MembershipStatus,
         isActive: true,
         emailVerified: true,
         emailVerifiedAt: new Date(),
@@ -345,9 +345,9 @@ async function main() {
         tenantId: tenant.id,
         email: args.email,
         fullName: args.fullName,
-        role: canonicalRole,
-        userType: resolvedUserType,
-        status: "active",
+        role: membershipRole as $Enums.MembershipRole,
+        userType: resolvedUserType as $Enums.UserType,
+        status: MembershipStatus.ACTIVE as $Enums.MembershipStatus,
         isActive: true,
         emailVerified: true,
         emailVerifiedAt: new Date(),
@@ -360,12 +360,12 @@ async function main() {
 
   await prisma.tenantMembership.upsert({
     where: { tenantId_userId: { tenantId: tenant.id, userId: user.id } },
-    update: { role: membershipRole, status: MembershipStatus.ACTIVE },
+    update: { role: membershipRole as $Enums.MembershipRole, status: MembershipStatus.ACTIVE as $Enums.MembershipStatus },
     create: {
       tenantId: tenant.id,
       userId: user.id,
-      role: membershipRole,
-      status: MembershipStatus.ACTIVE,
+      role: membershipRole as $Enums.MembershipRole,
+      status: MembershipStatus.ACTIVE as $Enums.MembershipStatus,
     },
   });
 

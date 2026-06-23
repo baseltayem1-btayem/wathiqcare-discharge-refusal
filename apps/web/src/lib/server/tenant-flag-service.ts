@@ -1,4 +1,4 @@
-﻿import { Prisma } from "@prisma/client";
+import { Prisma, $Enums } from "@prisma/client";
 import { FeatureFlagScope } from "@/lib/server/prisma-enums";
 import { FEATURE_FLAGS, type FeatureFlag } from "@/lib/config/feature-flags";
 import { getPrisma } from "@/lib/server/prisma";
@@ -68,7 +68,7 @@ async function upsertFlag(args: UpsertArgs): Promise<TenantFlagRecord> {
   const record = await prisma().featureFlagOverride.upsert({
     where: {
       scope_scopeRef_key: {
-        scope: args.scope,
+        scope: args.scope as $Enums.FeatureFlagScope,
         scopeRef,
         key: args.key,
       },
@@ -81,7 +81,7 @@ async function upsertFlag(args: UpsertArgs): Promise<TenantFlagRecord> {
       metadata: args.metadata ?? undefined,
     },
     create: {
-      scope: args.scope,
+      scope: args.scope as $Enums.FeatureFlagScope,
       scopeRef,
       key: args.key,
       value: args.value,
@@ -138,7 +138,7 @@ async function readOverride(scope: FeatureFlagScope, key: FeatureFlag, tenantId?
   const record = await prisma().featureFlagOverride.findUnique({
     where: {
       scope_scopeRef_key: {
-        scope,
+        scope: scope as $Enums.FeatureFlagScope,
         scopeRef,
         key,
       },
@@ -174,9 +174,9 @@ export async function listTenantFeatureFlagOverrides(tenantId: string): Promise<
   const rows = await prisma().featureFlagOverride.findMany({
     where: {
       OR: [
-        { scope: FeatureFlagScope.GLOBAL },
-        { scope: FeatureFlagScope.TENANT, tenantId },
-        { scope: FeatureFlagScope.MODULE, tenantId },
+        { scope: FeatureFlagScope.GLOBAL as $Enums.FeatureFlagScope },
+        { scope: FeatureFlagScope.TENANT as $Enums.FeatureFlagScope, tenantId },
+        { scope: FeatureFlagScope.MODULE as $Enums.FeatureFlagScope, tenantId },
       ],
     },
     orderBy: [{ scope: "asc" }, { key: "asc" }, { moduleKey: "asc" }],
