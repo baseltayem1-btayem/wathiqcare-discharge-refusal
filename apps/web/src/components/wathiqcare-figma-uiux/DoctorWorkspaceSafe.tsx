@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ElementType } from "react";
 import {
   Activity,
   Bell,
@@ -127,47 +127,19 @@ const tx = {
   },
 };
 
-export default function DoctorWorkspaceSafe() {
-  const [lang, setLang] = useState<Lang>("en");
-  const [active, setActive] = useState<Screen>("home");
+type NavItem = { key: Screen; label: string; icon: ElementType };
 
-  const isRTL = lang === "ar";
-  const t = tx[lang];
+type ScreenContentProps = {
+  active: Screen;
+  t: typeof tx.en;
+  isRTL: boolean;
+  nav: NavItem[];
+  workflow: string[];
+  records: { id: string; patient: string; procedure: string; status: string }[];
+  setActive: (screen: Screen) => void;
+};
 
-  const nav = useMemo(
-    () => [
-      { key: "home" as const, label: t.home, icon: LayoutDashboard },
-      { key: "create" as const, label: t.create, icon: FileCheck2 },
-      { key: "pending" as const, label: t.pending, icon: Activity },
-      { key: "records" as const, label: t.records, icon: ClipboardCheck },
-      { key: "forms" as const, label: t.forms, icon: FileText },
-      { key: "anesthesia" as const, label: t.anesthesia, icon: Wind },
-      { key: "education" as const, label: t.education, icon: BookOpen },
-      { key: "compliance" as const, label: t.compliance, icon: ShieldCheck },
-      { key: "audit" as const, label: t.audit, icon: Lock },
-      { key: "settings" as const, label: t.settings, icon: HelpCircle },
-    ],
-    [t]
-  );
-
-  const workflow = [
-    t.patient,
-    t.template,
-    t.procedure,
-    t.anesthesiaStep,
-    t.educationStep,
-    t.review,
-    t.send,
-  ];
-
-  const records = [
-    { id: "WC-2026-0412", patient: isRTL ? "ليلى حسن" : "Layla Hassan", procedure: isRTL ? "استئصال الزائدة" : "Appendectomy", status: t.signed },
-    { id: "WC-2026-0411", patient: isRTL ? "عمر الراشد" : "Omar Al-Rashid", procedure: isRTL ? "قسطرة قلبية" : "Cardiac Catheterization", status: t.viewed },
-    { id: "WC-2026-0410", patient: isRTL ? "خالد ناصر" : "Khalid Nasser", procedure: isRTL ? "تبديل مفصل الركبة" : "Knee Replacement", status: t.otp },
-    { id: "WC-2026-0409", patient: isRTL ? "ريم الزهراني" : "Reem Al-Zahrani", procedure: isRTL ? "تنظير القولون" : "Colonoscopy", status: t.expired },
-  ];
-
-  function ScreenContent() {
+function ScreenContent({ active, t, isRTL, nav, workflow, records, setActive }: ScreenContentProps) {
     if (active === "create") {
       return (
         <section className="wc-safe-card">
@@ -287,6 +259,46 @@ export default function DoctorWorkspaceSafe() {
     );
   }
 
+export default function DoctorWorkspaceSafe() {
+  const [lang, setLang] = useState<Lang>("en");
+  const [active, setActive] = useState<Screen>("home");
+
+  const isRTL = lang === "ar";
+  const t = tx[lang];
+
+  const nav: NavItem[] = useMemo(
+    () => [
+      { key: "home", label: t.home, icon: LayoutDashboard },
+      { key: "create", label: t.create, icon: FileCheck2 },
+      { key: "pending", label: t.pending, icon: Activity },
+      { key: "records", label: t.records, icon: ClipboardCheck },
+      { key: "forms", label: t.forms, icon: FileText },
+      { key: "anesthesia", label: t.anesthesia, icon: Wind },
+      { key: "education", label: t.education, icon: BookOpen },
+      { key: "compliance", label: t.compliance, icon: ShieldCheck },
+      { key: "audit", label: t.audit, icon: Lock },
+      { key: "settings", label: t.settings, icon: HelpCircle },
+    ],
+    [t]
+  );
+
+  const workflow = [
+    t.patient,
+    t.template,
+    t.procedure,
+    t.anesthesiaStep,
+    t.educationStep,
+    t.review,
+    t.send,
+  ];
+
+  const records = [
+    { id: "WC-2026-0412", patient: isRTL ? "ليلى حسن" : "Layla Hassan", procedure: isRTL ? "استئصال الزائدة" : "Appendectomy", status: t.signed },
+    { id: "WC-2026-0411", patient: isRTL ? "عمر الراشد" : "Omar Al-Rashid", procedure: isRTL ? "قسطرة قلبية" : "Cardiac Catheterization", status: t.viewed },
+    { id: "WC-2026-0410", patient: isRTL ? "خالد ناصر" : "Khalid Nasser", procedure: isRTL ? "تبديل مفصل الركبة" : "Knee Replacement", status: t.otp },
+    { id: "WC-2026-0409", patient: isRTL ? "ريم الزهراني" : "Reem Al-Zahrani", procedure: isRTL ? "تنظير القولون" : "Colonoscopy", status: t.expired },
+  ];
+
   return (
     <div className="wc-safe-shell" dir={isRTL ? "rtl" : "ltr"} lang={lang} data-testid="doctor-workspace-safe">
       <aside className="wc-safe-sidebar">
@@ -333,7 +345,7 @@ export default function DoctorWorkspaceSafe() {
         </header>
 
         <div className="wc-safe-content">
-          <ScreenContent />
+          <ScreenContent active={active} t={t} isRTL={isRTL} nav={nav} workflow={workflow} records={records} setActive={setActive} />
         </div>
       </main>
     </div>

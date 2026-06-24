@@ -132,9 +132,9 @@ export async function recordEvidenceEvent(input: {
   eventType: string;
   eventTimestamp?: Date;
   sequenceNo?: number;
-  procedureName?: string;
-  educationVersion?: string;
-  educationLanguage?: string;
+  procedureName?: string | null;
+  educationVersion?: string | null;
+  educationLanguage?: string | null;
   assetsPresented?: number;
   imagesPresented?: number;
   videosPresented?: number;
@@ -145,15 +145,15 @@ export async function recordEvidenceEvent(input: {
   consentVersion?: string;
   consentLanguage?: string;
   consentTimestamp?: Date;
-  signerIdentity?: string;
-  signatureTimestamp?: Date;
+  signerIdentity?: string | null;
+  signatureTimestamp?: Date | null;
   browser?: string;
   deviceType?: string;
-  ipAddress?: string;
-  otpSentTime?: Date;
-  otpVerificationTime?: Date;
-  otpVerificationStatus?: string;
-  maskedMobileNumber?: string;
+  ipAddress?: string | null;
+  otpSentTime?: Date | null;
+  otpVerificationTime?: Date | null;
+  otpVerificationStatus?: string | null;
+  maskedMobileNumber?: string | null;
   metadata?: JsonObject;
 }) {
   return getPrisma().evidenceEvent.create({

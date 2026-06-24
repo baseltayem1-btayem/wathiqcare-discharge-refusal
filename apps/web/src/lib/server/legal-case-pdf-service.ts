@@ -1,8 +1,8 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { Prisma } from "@prisma/client";
+import { Prisma, $Enums } from "@prisma/client";
 import { DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import puppeteer from "puppeteer";
@@ -1213,7 +1213,7 @@ async function createFailedRecord(args: {
     ? await prisma().document.update({
         where: { id: args.existingDocumentId },
         data: {
-          status: DocumentStatus.DRAFT,
+          status: DocumentStatus.DRAFT as $Enums.DocumentStatus,
           fileName: args.fileName,
           storagePath: null,
           previewHtml: null,
@@ -1229,8 +1229,8 @@ async function createFailedRecord(args: {
         data: {
           tenantId: args.tenantId,
           caseId: args.caseId,
-          documentType: DocumentType.CASE_FILE,
-          status: DocumentStatus.DRAFT,
+          documentType: DocumentType.CASE_FILE as $Enums.DocumentType,
+          status: DocumentStatus.DRAFT as $Enums.DocumentStatus,
           documentCode: `LEGAL-CASE-PDF-${args.version}`,
           titleEn: "Legal Case PDF Report",
           titleAr: "ØªÙ‚Ø±ÙŠØ± Ù…Ù„Ù Ø§Ù„Ù‚Ø¶ÙŠØ© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ",
@@ -1398,7 +1398,7 @@ export async function generateCasePdfReport(args: {
     });
 
     const sharedDocumentData = {
-      status: DocumentStatus.GENERATED,
+      status: DocumentStatus.GENERATED as $Enums.DocumentStatus,
       documentCode: `LEGAL-CASE-PDF-${version}`,
       titleEn: "Legal Case File Report",
       titleAr: "ØªÙ‚Ø±ÙŠØ± Ù…Ù„Ù Ø§Ù„Ù‚Ø¶ÙŠØ© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠ",
@@ -1437,7 +1437,7 @@ export async function generateCasePdfReport(args: {
         data: {
           tenantId: caseRecord.tenantId,
           caseId: args.caseId,
-          documentType: DocumentType.CASE_FILE,
+          documentType: DocumentType.CASE_FILE as $Enums.DocumentType,
           templateKey: CASE_PDF_TEMPLATE_KEY,
           ...sharedDocumentData,
         },
@@ -1670,7 +1670,7 @@ async function markDocumentAsBinaryMissing(args: {
   await prisma().document.update({
     where: { id: args.documentId },
     data: {
-      status: DocumentStatus.DRAFT,
+      status: DocumentStatus.DRAFT as $Enums.DocumentStatus,
       metadata: {
         ...previousMetadata,
         report_status: "failed",

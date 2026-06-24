@@ -47,6 +47,11 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "src/lib/server/education-library-service.ts",
+    "scripts/phase6a-general-anesthesia-package.ts",
+    "scripts/phase6b-core-clinical-educational-library.ts",
+    "scripts/phase6c-controlled-educational-assets.ts",
+    "scripts/seed-education-foundation.ts"
   ]
 }

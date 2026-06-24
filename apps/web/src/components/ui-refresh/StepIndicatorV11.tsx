@@ -18,7 +18,7 @@ export interface StepIndicatorV11Props {
   current: number;
   total: number;
   lang?: Lang;
-  /** Visible "Step N of T" / "N من T" label. */
+  /** Visible step counter label. */
   stepLabel?: string;
   ofLabel?: string;
   className?: string;
@@ -28,11 +28,18 @@ export function StepIndicatorV11({
   current,
   total,
   lang = "en",
-  stepLabel = "Step",
-  ofLabel = "of",
+  stepLabel,
+  ofLabel,
   className,
 }: StepIndicatorV11Props) {
   const safeCurrent = Math.max(1, Math.min(current, total));
+  const tStep = stepLabel ?? (lang === "ar" ? "خطوة" : "Step");
+  const tOf = ofLabel ?? (lang === "ar" ? "من" : "of");
+  const ariaLabel = `${tStep} ${safeCurrent} ${tOf} ${total}`;
+  const displayLabel = lang === "ar"
+    ? `${safeCurrent} ${tOf} ${total}`
+    : `${tStep} ${safeCurrent} ${tOf} ${total}`;
+
   return (
     <div
       className={cn(
@@ -41,7 +48,7 @@ export function StepIndicatorV11({
         className,
       )}
       role="group"
-      aria-label={`${stepLabel} ${safeCurrent} ${ofLabel} ${total}`}
+      aria-label={ariaLabel}
     >
       <div className="flex gap-1.5" aria-hidden>
         {Array.from({ length: total }).map((_, i) => {
@@ -63,9 +70,7 @@ export function StepIndicatorV11({
         })}
       </div>
       <span className="font-mono text-xs tabular-nums text-[color:var(--wc-color-text-muted)]">
-        {lang === "ar"
-          ? `${safeCurrent} ${ofLabel} ${total}`
-          : `${stepLabel} ${safeCurrent} ${ofLabel} ${total}`}
+        {displayLabel}
       </span>
     </div>
   );

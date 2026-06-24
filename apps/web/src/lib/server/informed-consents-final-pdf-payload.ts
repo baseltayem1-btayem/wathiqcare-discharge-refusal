@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import chromium from "@sparticuz/chromium";
@@ -1040,7 +1040,7 @@ export async function buildFinalConsentPdfPayload(args: {
   addSectionRows("financial_acknowledgment", "Ø§Ù„Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…Ø§Ù„ÙŠ", "Financial Acknowledgment", [...FINANCIAL_ACKNOWLEDGMENT_ROWS]);
 
   const otpVerified = signatureSecurity.otpVerified === true || signatureOrchestration.otpVerified === true;
-  const auditReference = evidenceVault.verificationToken || effectiveHash || document.id;
+  const auditReference = (evidenceVault.verificationToken as string | undefined) || effectiveHash || document.id;
   const evidencePackageReference =
     document.evidencePackages[0]?.id || normalizeText((evidenceVault.evidencePackageV2Id as string | undefined) || "") || null;
   const latestIp = patientSignatureRaw?.ipAddress || guardianSignatureRaw?.ipAddress || document.timelineEvents.at(-1)?.ipAddress || null;
@@ -2096,7 +2096,7 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
 
     const lang = args.lang || "bilingual";
 
-    return new NextResponse(pdf, {
+    return new NextResponse(pdf as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

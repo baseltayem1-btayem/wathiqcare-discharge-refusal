@@ -1,11 +1,12 @@
-﻿import { Prisma } from "@prisma/client";
-import {
+﻿import {
+  Prisma,
+  $Enums,
   BillingInterval,
   MembershipRole,
   MembershipStatus,
   PlanCode,
   SubscriptionStatus,
-} from "@/lib/server/prisma-enums";
+} from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 import { canonicalizeUserRole, membershipRoleForUserRole } from "@/lib/server/roles";
@@ -104,7 +105,7 @@ export async function getSetupStatus() {
 export async function ensureBasePlans() {
   const defaults = [
     {
-      code: PlanCode.STARTER,
+      code: $Enums.PlanCode.STARTER,
       name: "Starter",
       description: "Starter tier",
       seatLimit: 150,
@@ -113,7 +114,7 @@ export async function ensureBasePlans() {
       features: { maxCasesPerMonth: 5000, maxDocumentsPerMonth: 20000, support: "standard" },
     },
     {
-      code: PlanCode.PROFESSIONAL,
+      code: $Enums.PlanCode.PROFESSIONAL,
       name: "Professional",
       description: "Professional tier",
       seatLimit: 900,
@@ -122,7 +123,7 @@ export async function ensureBasePlans() {
       features: { maxCasesPerMonth: 30000, maxDocumentsPerMonth: 120000, support: "priority" },
     },
     {
-      code: PlanCode.ENTERPRISE,
+      code: $Enums.PlanCode.ENTERPRISE,
       name: "Enterprise",
       description: "Enterprise tier",
       seatLimit: 3000,
@@ -255,18 +256,18 @@ export async function ensureImcBootstrap(input: {
       },
     },
     update: {
-      role: MembershipRole.OWNER,
-      status: MembershipStatus.ACTIVE,
+      role: $Enums.MembershipRole.OWNER,
+      status: $Enums.MembershipStatus.ACTIVE,
     },
     create: {
       tenantId: tenant.id,
       userId: superAdmin.id,
-      role: MembershipRole.OWNER,
-      status: MembershipStatus.ACTIVE,
+      role: $Enums.MembershipRole.OWNER,
+      status: $Enums.MembershipStatus.ACTIVE,
     },
   });
 
-  const starterPlan = await prisma().plan.findUnique({ where: { code: PlanCode.ENTERPRISE } });
+  const starterPlan = await prisma().plan.findUnique({ where: { code: $Enums.PlanCode.ENTERPRISE } });
   if (!starterPlan) {
     throw new ApiError(409, "enterprise_plan_missing");
   }
@@ -284,8 +285,8 @@ export async function ensureImcBootstrap(input: {
       where: { id: subscription.id },
       data: {
         planId: starterPlan.id,
-        status: SubscriptionStatus.ACTIVE,
-        billingInterval: BillingInterval.MONTHLY,
+        status: $Enums.SubscriptionStatus.ACTIVE,
+        billingInterval: $Enums.BillingInterval.MONTHLY,
         seatLimit: Math.max(subscription.seatLimit, 1200),
         trialEndsAt: null,
         currentPeriodStart: periodStart,
@@ -301,8 +302,8 @@ export async function ensureImcBootstrap(input: {
       data: {
         tenantId: tenant.id,
         planId: starterPlan.id,
-        status: SubscriptionStatus.ACTIVE,
-        billingInterval: BillingInterval.MONTHLY,
+        status: $Enums.SubscriptionStatus.ACTIVE,
+        billingInterval: $Enums.BillingInterval.MONTHLY,
         seatLimit: 1200,
         trialEndsAt: null,
         currentPeriodStart: periodStart,

@@ -80,9 +80,9 @@ function buildBase(
     physician: { ...base.physician, ...(overrides.physician ?? {}) },
     signatures: { ...base.signatures, ...(overrides.signatures ?? {}) },
     anesthesia: {
-      ...base.anesthesia,
+      ...(base.anesthesia ?? {}),
       ...(overrides.anesthesia ?? {}),
-      required: overrides.anesthesia?.required ?? base.anesthesia.required,
+      required: overrides.anesthesia?.required ?? base.anesthesia?.required ?? false,
     },
   };
 }

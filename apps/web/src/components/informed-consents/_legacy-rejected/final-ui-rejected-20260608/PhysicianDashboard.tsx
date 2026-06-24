@@ -33,6 +33,8 @@ const recentActivity = [
 interface Props {
   onNewConsent: () => void;
   onViewConsent: (mrn: string) => void;
+  licenseExpired?: boolean;
+  licenseExpiryDate?: string | null;
 }
 
 export function PhysicianDashboard({ onNewConsent, onViewConsent, licenseExpired = false, licenseExpiryDate }: Props) {
@@ -87,7 +89,9 @@ export function PhysicianDashboard({ onNewConsent, onViewConsent, licenseExpired
           <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
             {lang === 'en'
               ? `Physician medical license has expired${licenseExpiryDate ? ` on ${licenseExpiryDate}` : ''}. New consent issuance is blocked until renewal.`
-              : `انتهت صلاحية الترخيص الطبي للطبيب${licenseExpiryDate ? ` بتاريخ ${licenseExpiryDate}` : ''}، وتم إيقاف إصدار موافقة جديدة حتى التجديد.`}
+              : licenseExpiryDate
+                ? "انتهت صلاحية الترخيص الطبي للطبيب بتاريخ " + licenseExpiryDate + "، وتم إيقاف إصدار موافقة جديدة حتى التجديد."
+                : "انتهت صلاحية الترخيص الطبي للطبيب، وتم إيقاف إصدار موافقة جديدة حتى التجديد."}
           </div>
         ) : null}
 
@@ -178,7 +182,7 @@ export function PhysicianDashboard({ onNewConsent, onViewConsent, licenseExpired
 
             {/* Quick metrics */}
             <div className="border-t border-[#D8DCE3] px-5 py-4 bg-[#F4F6F9]">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#6B7280] mb-3">Today's Metrics</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#6B7280] mb-3">Today&apos;s Metrics</p>
               <div className="space-y-2">
                 {[
                   { label: 'Consent Completion Rate', value: '87%', icon: TrendingUp },

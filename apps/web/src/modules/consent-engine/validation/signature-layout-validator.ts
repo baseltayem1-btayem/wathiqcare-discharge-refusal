@@ -39,8 +39,8 @@ export function validateSignatureLayout(
 
   // Page-break protection on signature blocks
   const blockBreakProtected =
-    /\.lg-signature-block\s*{[^}]*page-break-inside:\s*avoid/s.test(html) ||
-    /\.lg-signature-block\s*{[^}]*break-inside:\s*avoid/s.test(html);
+    /\.lg-signature-block\s*{[^}]*page-break-inside:\s*avoid/.test(html) ||
+    /\.lg-signature-block\s*{[^}]*break-inside:\s*avoid/.test(html);
   checks.push({
     id: "sig.blocks.break-protected",
     label: "Signature block CSS includes page-break-inside: avoid",
@@ -52,8 +52,8 @@ export function validateSignatureLayout(
 
   // Container also break-protected
   const containerBreakProtected =
-    /\.lg-signatures\s*{[^}]*page-break-inside:\s*avoid/s.test(html) ||
-    /\.lg-signatures\s*{[^}]*break-inside:\s*avoid/s.test(html);
+    /\.lg-signatures\s*{[^}]*page-break-inside:\s*avoid/.test(html) ||
+    /\.lg-signatures\s*{[^}]*break-inside:\s*avoid/.test(html);
   checks.push({
     id: "sig.container.break-protected",
     label: "Signature container CSS includes page-break-inside: avoid",
@@ -61,7 +61,7 @@ export function validateSignatureLayout(
   });
 
   // Minimum height baseline (long names should not crush block)
-  const minHeightPresent = /\.lg-signature-block\s*{[^}]*min-height:/s.test(html);
+  const minHeightPresent = /\.lg-signature-block\s*{[^}]*min-height:/.test(html);
   checks.push({
     id: "sig.blocks.min-height",
     label: "Signature block has min-height baseline",

@@ -1,6 +1,7 @@
 ﻿import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import {
+  $Enums,
   ConsentAlertLevel,
   ConsentCommitteeType,
   ConsentDocumentStatus,
@@ -12,7 +13,7 @@ import {
   ConsentSectionKind,
   ConsentSignatureRole,
   ConsentTemplateStatus,
-} from "@/lib/server/prisma-enums";
+} from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -346,7 +347,7 @@ function resolveSectionGovernance(
   sectionKind: ConsentSectionKind,
   isEditableByPhysician: boolean,
 ): FieldGovernanceRule {
-  if (sectionKind === ConsentSectionKind.FIXED_LEGAL) {
+  if (sectionKind === $Enums.ConsentSectionKind.FIXED_LEGAL) {
     return {
       editableBy: "GOVERNANCE",
       aiAllowed: false,
@@ -356,7 +357,7 @@ function resolveSectionGovernance(
     };
   }
 
-  if (sectionKind === ConsentSectionKind.DYNAMIC_MEDICAL) {
+  if (sectionKind === $Enums.ConsentSectionKind.DYNAMIC_MEDICAL) {
     return {
       editableBy: isEditableByPhysician ? "PHYSICIAN" : "SYSTEM",
       aiAllowed: true,
@@ -450,12 +451,12 @@ function generateReference(prefix: string): string {
   return `${prefix}-${nowIsoStamp()}-${tail}`;
 }
 
-function normalizeConsentMethod(value: string | null | undefined): ConsentMethod {
+function normalizeConsentMethod(value: string | null | undefined): $Enums.ConsentMethod {
   const normalized = (value || "").trim().toUpperCase();
-  if (normalized === ConsentMethod.OTP) return ConsentMethod.OTP;
-  if (normalized === ConsentMethod.WITNESS_ACKNOWLEDGMENT) return ConsentMethod.WITNESS_ACKNOWLEDGMENT;
-  if (normalized === ConsentMethod.WRITTEN) return ConsentMethod.WRITTEN;
-  return ConsentMethod.ELECTRONIC_SIGNATURE;
+  if (normalized === $Enums.ConsentMethod.OTP) return $Enums.ConsentMethod.OTP;
+  if (normalized === $Enums.ConsentMethod.WITNESS_ACKNOWLEDGMENT) return $Enums.ConsentMethod.WITNESS_ACKNOWLEDGMENT;
+  if (normalized === $Enums.ConsentMethod.WRITTEN) return $Enums.ConsentMethod.WRITTEN;
+  return $Enums.ConsentMethod.ELECTRONIC_SIGNATURE;
 }
 
 function normalizeSignatureRole(value: string | null | undefined): ConsentSignatureRole {
@@ -751,7 +752,7 @@ export async function createConsentTemplate(
         consentType,
         specialty,
         department: payload.department?.trim() || null,
-        status: ConsentTemplateStatus.DRAFT,
+        status: $Enums.ConsentTemplateStatus.DRAFT,
         titleAr: (payload.titleAr || "Ù†Ù…ÙˆØ°Ø¬ Ù…ÙˆØ§ÙÙ‚Ø© Ø·Ø¨ÙŠØ©").trim(),
         titleEn: (payload.titleEn || "Medical Consent Form").trim(),
         summaryAr: payload.summaryAr?.trim() || null,
@@ -765,7 +766,7 @@ export async function createConsentTemplate(
         templateId: template.id,
         versionLabel: "v1.0",
         versionNumber: 1,
-        status: ConsentTemplateStatus.DRAFT,
+        status: $Enums.ConsentTemplateStatus.DRAFT,
         legalTextAr:
           payload.legalTextAr?.trim() ||
           "Ø£Ù‚Ø± Ø¨Ø£Ù† Ø§Ù„Ø·Ø¨ÙŠØ¨ Ø´Ø±Ø­ Ù„ÙŠ Ø·Ø¨ÙŠØ¹Ø© Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ø·Ø¨ÙŠ ÙˆØ§Ù„ÙÙˆØ§Ø¦Ø¯ ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø© Ø¨Ù„ØºØ© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø©.",
@@ -800,7 +801,7 @@ export async function createConsentTemplate(
     if (sections.length > 0) {
       await tx.consentTemplateSection.createMany({
         data: sections.map((section, index) => ({
-          sectionKind: (section.sectionKind?.trim().toUpperCase() as ConsentSectionKind) || ConsentSectionKind.DYNAMIC_MEDICAL,
+          sectionKind: (section.sectionKind?.trim().toUpperCase() as $Enums.ConsentSectionKind) || $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
           sectionKey: (section.sectionKey || `section_${index + 1}`).trim().toLowerCase(),
           titleAr: (section.titleAr || `Ø§Ù„Ù‚Ø³Ù… ${index + 1}`).trim(),
           titleEn: (section.titleEn || `Section ${index + 1}`).trim(),
@@ -813,7 +814,7 @@ export async function createConsentTemplate(
           sortOrder: section.sortOrder ?? (index + 1) * 10,
           metadata: {
             governance: resolveSectionGovernance(
-              ((section.sectionKind?.trim().toUpperCase() as ConsentSectionKind) || ConsentSectionKind.DYNAMIC_MEDICAL),
+              ((section.sectionKind?.trim().toUpperCase() as $Enums.ConsentSectionKind) || $Enums.ConsentSectionKind.DYNAMIC_MEDICAL),
               section.isEditableByPhysician ?? true,
             ),
           } as JsonInputValue,
@@ -933,7 +934,7 @@ export async function createTemplateVersion(
   const syncIssues = validateBilingualSync({
     record: nextRecordForSync,
     expectedVersion: versionLabel,
-    status: ConsentTemplateStatus.DRAFT,
+    status: $Enums.ConsentTemplateStatus.DRAFT,
     requireApprovedPair: false,
   });
 
@@ -948,7 +949,7 @@ export async function createTemplateVersion(
         templateId,
         versionLabel,
         versionNumber: newVersionNumber,
-        status: ConsentTemplateStatus.DRAFT,
+        status: $Enums.ConsentTemplateStatus.DRAFT,
         legalTextAr: payload.legalTextAr?.trim() || sourceVersion.legalTextAr,
         legalTextEn: payload.legalTextEn?.trim() || sourceVersion.legalTextEn,
         pdplTextAr: payload.pdplTextAr?.trim() || sourceVersion.pdplTextAr,
@@ -1036,11 +1037,11 @@ export async function setTemplateVersionStatus(
     throw new ApiError(400, "templateId and templateVersionId are required");
   }
 
-  if (!Object.values(ConsentTemplateStatus).includes(statusRaw as ConsentTemplateStatus)) {
+  if (!Object.values(ConsentTemplateStatus).includes(statusRaw as $Enums.ConsentTemplateStatus)) {
     throw new ApiError(400, "Invalid template status");
   }
 
-  const status = statusRaw as ConsentTemplateStatus;
+  const status = statusRaw as $Enums.ConsentTemplateStatus;
 
   const result = await prisma().$transaction(async (tx) => {
     const existingVersion = await tx.consentTemplateVersion.findFirst({
@@ -1055,7 +1056,7 @@ export async function setTemplateVersionStatus(
       record: existingVersion as unknown as Record<string, unknown>,
       expectedVersion: existingVersion.versionLabel,
       status,
-      requireApprovedPair: status === ConsentTemplateStatus.APPROVED || status === ConsentTemplateStatus.ACTIVE,
+      requireApprovedPair: status === $Enums.ConsentTemplateStatus.APPROVED || status === $Enums.ConsentTemplateStatus.ACTIVE,
     });
 
     if (syncIssues.length > 0) {
@@ -1063,13 +1064,13 @@ export async function setTemplateVersionStatus(
     }
 
     const lifecycleStage =
-      status === ConsentTemplateStatus.DRAFT
+      status === $Enums.ConsentTemplateStatus.DRAFT
         ? "Draft"
-        : status === ConsentTemplateStatus.UNDER_REVIEW
+        : status === $Enums.ConsentTemplateStatus.UNDER_REVIEW
           ? "Legal Review"
-          : status === ConsentTemplateStatus.APPROVED
+          : status === $Enums.ConsentTemplateStatus.APPROVED
             ? "Approved"
-            : status === ConsentTemplateStatus.ACTIVE
+            : status === $Enums.ConsentTemplateStatus.ACTIVE
               ? "Active"
               : "Retired";
 
@@ -1077,8 +1078,8 @@ export async function setTemplateVersionStatus(
       where: { id: templateVersionId },
       data: {
         status,
-        approvedByUserId: status === ConsentTemplateStatus.APPROVED || status === ConsentTemplateStatus.ACTIVE ? auth.sub : null,
-        approvedAt: status === ConsentTemplateStatus.APPROVED || status === ConsentTemplateStatus.ACTIVE ? new Date() : null,
+        approvedByUserId: status === $Enums.ConsentTemplateStatus.APPROVED || status === $Enums.ConsentTemplateStatus.ACTIVE ? auth.sub : null,
+        approvedAt: status === $Enums.ConsentTemplateStatus.APPROVED || status === $Enums.ConsentTemplateStatus.ACTIVE ? new Date() : null,
         metadata: {
           ...(asRecord(existingVersion.metadata) || {}),
           lifecycle: {
@@ -1096,21 +1097,21 @@ export async function setTemplateVersionStatus(
       },
     });
 
-    if (status === ConsentTemplateStatus.ACTIVE) {
+    if (status === $Enums.ConsentTemplateStatus.ACTIVE) {
       await tx.consentTemplate.updateMany({
         where: { id: templateId, tenantId },
         data: {
-          status: ConsentTemplateStatus.ACTIVE,
+          status: $Enums.ConsentTemplateStatus.ACTIVE,
           currentVersionId: templateVersionId,
         },
       });
     }
 
-    if (status === ConsentTemplateStatus.ARCHIVED) {
+    if (status === $Enums.ConsentTemplateStatus.ARCHIVED) {
       await tx.consentTemplate.updateMany({
         where: { id: templateId, tenantId, currentVersionId: templateVersionId },
         data: {
-          status: ConsentTemplateStatus.DRAFT,
+          status: $Enums.ConsentTemplateStatus.DRAFT,
           currentVersionId: null,
         },
       });
@@ -1121,7 +1122,7 @@ export async function setTemplateVersionStatus(
       templateVersionId,
       status,
       syncValidated: true,
-      retiredPair: status === ConsentTemplateStatus.ARCHIVED,
+      retiredPair: status === $Enums.ConsentTemplateStatus.ARCHIVED,
     };
   });
 
@@ -2003,15 +2004,15 @@ export async function finalizeConsentDocument(
     blockers.push("Interpreter confirmation is required");
   }
 
-  const otpRequired = signatureSecurity.otpRequired === true || doc.signatures.some((item) => item.signatureMethod === ConsentMethod.OTP);
+  const otpRequired = signatureSecurity.otpRequired === true || doc.signatures.some((item) => item.signatureMethod === $Enums.ConsentMethod.OTP);
   const otpVerified = signatureSecurity.otpVerified === true || orchestration.otpVerified === true;
   if (otpRequired && !otpVerified) {
     blockers.push("OTP verification is required before final signature");
   }
 
   const versionApproved = (
-    doc.templateVersion.status === ConsentTemplateStatus.ACTIVE
-    || doc.templateVersion.status === ConsentTemplateStatus.APPROVED
+    doc.templateVersion.status === $Enums.ConsentTemplateStatus.ACTIVE
+    || doc.templateVersion.status === $Enums.ConsentTemplateStatus.APPROVED
   ) && Boolean(doc.templateVersion.approvedAt);
   if (!versionApproved) {
     blockers.push("Template version is not approved");
@@ -2866,8 +2867,8 @@ export async function submitCommitteeReview(
 
     const status =
       decision === ConsentReviewDecision.APPROVED && committeeType === ConsentCommitteeType.COMPLIANCE
-        ? ConsentTemplateStatus.APPROVED
-        : ConsentTemplateStatus.UNDER_REVIEW;
+        ? $Enums.ConsentTemplateStatus.APPROVED
+        : $Enums.ConsentTemplateStatus.UNDER_REVIEW;
 
     await prisma().consentTemplateVersion.update({
       where: { id: versionId },

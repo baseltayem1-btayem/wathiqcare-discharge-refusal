@@ -192,7 +192,7 @@ export function CreateConsent({ lang }: Props) {
                     rows={3}
                     className="w-full px-3 py-2.5 rounded-xl text-sm border outline-none resize-none"
                     style={{ borderColor: "#D8E8EF", background: "#F7FBFC", color: "#102A43" }}
-                    defaultValue={isRTL ? "&ر`ضة تبغ &  اع&ر 34 عا&ا9R تعا ` &  آا& ف` ابط  &ع عا&ات ات!اب ازائدة ادد`ة." : "34-year-old female presenting with acute abdominal pain, signs consistent with appendicitis."}
+                    defaultValue={isRTL ? "مريضة تبلغ من العمر ٣٤ عاماً تعاني من ألم حاد في البطن مع علامات تتفق مع التهاب الزائدة." : "34-year-old female presenting with acute abdominal pain, signs consistent with appendicitis."}
                   />
                 </div>
               </div>
@@ -482,7 +482,7 @@ export function CreateConsent({ lang }: Props) {
               <div className="p-4 rounded-2xl" style={{ background: "#F1EFFF", border: "1px solid #6B5CE720" }}>
                 <p className="text-sm" style={{ color: "#6B5CE7" }}>
                   {isRTL
-                    ? "x `ُص0 ب&شارْة &اد اتث`ف ب ٢٤ ساعة &  اإجراء ض&ا  ف!& ا&ر`ض."
+                    ? "يُنصح بمشاركة مواد التثقيف قبل ٢٤ ساعة من الإجراء لتحقيق أفضل فهم للمريض."
                     : "x Recommended to share education materials 24h before the procedure for best patient comprehension."}
                 </p>
               </div>
@@ -584,7 +584,7 @@ export function CreateConsent({ lang }: Props) {
                 </div>
                 <div className="p-3 rounded-xl text-sm" style={{ background: "#EAFFFB", color: "#64798B" }}>
                   {isRTL
-                    ? "x س`ص رابط ا&افة &ع ر&ز OTP &رة احدة. صاح &دة ٤٨ ساعة."
+                    ? "سيتم إرسال رابط الموافقة مع رمز التحقق لمرة واحدة. صالح لمدة ٤٨ ساعة."
                     : "x Consent link + one-time OTP will be sent. Valid for 48 hours."}
                 </div>
               </div>

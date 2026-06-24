@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 type ConsentTypeOption = {
   key: string;
@@ -76,12 +76,12 @@ const CONSENT_TYPE_OPTIONS: ConsentTypeOption[] = [
 
 type StepConsentTypeProps = {
   lang?: "en" | "ar";
-  builderState?: any;
-  updateBuilderState?: (patch: Record<string, any>) => void;
+  builderState?: Record<string, unknown>;
+  updateBuilderState?: (patch: Record<string, unknown>) => void;
   onNext?: () => void;
   onBack?: () => void;
   onPrevious?: () => void;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 export function StepConsentType({
@@ -94,9 +94,9 @@ export function StepConsentType({
 }: StepConsentTypeProps) {
   const isArabic = lang === "ar";
   const selectedConsentType =
-    builderState?.consentType ||
-    builderState?.template?.consentType ||
-    builderState?.selectedTemplate?.consentType ||
+    (builderState?.consentType as string | undefined) ||
+    ((builderState?.template as Record<string, unknown> | undefined)?.consentType as string | undefined) ||
+    ((builderState?.selectedTemplate as Record<string, unknown> | undefined)?.consentType as string | undefined) ||
     "";
 
   const handleSelect = (option: ConsentTypeOption) => {

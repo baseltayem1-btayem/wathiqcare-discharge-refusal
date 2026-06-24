@@ -1,3 +1,4 @@
+import { $Enums } from "@prisma/client";
 import { DataClassification, RetentionActionStatus } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -23,7 +24,7 @@ export async function ensureDefaultRetentionPolicy(tenantId: string) {
       },
     },
     update: {
-      dataType: DataClassification.PATIENT_SENSITIVE,
+      dataType: DataClassification.PATIENT_SENSITIVE as $Enums.DataClassification,
       retentionYears: 10,
       legalHoldRequired: true,
       requiresLegalApproval: true,
@@ -32,7 +33,7 @@ export async function ensureDefaultRetentionPolicy(tenantId: string) {
     },
     create: {
       tenantId,
-      dataType: DataClassification.PATIENT_SENSITIVE,
+      dataType: DataClassification.PATIENT_SENSITIVE as $Enums.DataClassification,
       recordCategory: "discharge_refusal_cases",
       retentionYears: 10,
       legalHoldRequired: true,
@@ -97,7 +98,7 @@ export async function createRetentionEntry(
       },
       create: {
         tenantId: auth.tenant_id,
-        dataType: DataClassification.PATIENT_SENSITIVE,
+        dataType: DataClassification.PATIENT_SENSITIVE as $Enums.DataClassification,
         recordCategory: payload.recordCategory.trim(),
         retentionYears: Math.max(1, Math.floor(payload.retentionYears ?? 10)),
       },
@@ -132,7 +133,9 @@ export async function createRetentionEntry(
       targetType: payload.targetType.trim(),
       targetId: payload.targetId.trim(),
       holdReason: payload.holdReason?.trim() || null,
-      status: payload.holdReason ? RetentionActionStatus.LEGAL_HOLD : RetentionActionStatus.PENDING,
+      status: payload.holdReason
+        ? (RetentionActionStatus.LEGAL_HOLD as $Enums.RetentionActionStatus)
+        : (RetentionActionStatus.PENDING as $Enums.RetentionActionStatus),
       scheduledFor: payload.scheduledFor ? new Date(payload.scheduledFor) : calculateRetentionDueDate(new Date(), 10),
     },
   });

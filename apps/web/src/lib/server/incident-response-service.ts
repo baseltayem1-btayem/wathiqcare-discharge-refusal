@@ -1,3 +1,4 @@
+import { $Enums } from "@prisma/client";
 import { IncidentSeverity, IncidentStatus } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -122,8 +123,8 @@ export async function createSecurityIncident(
     data: {
       tenantId: auth.tenant_id,
       caseId: payload.caseId?.trim() || null,
-      severity,
-      status: parseStatus(payload.status),
+      severity: severity as $Enums.IncidentSeverity,
+      status: parseStatus(payload.status) as $Enums.IncidentStatus,
       title: payload.title.trim(),
       summary: payload.summary.trim(),
       affectedScope: payload.affectedScope?.trim() || "clinical_workflow",

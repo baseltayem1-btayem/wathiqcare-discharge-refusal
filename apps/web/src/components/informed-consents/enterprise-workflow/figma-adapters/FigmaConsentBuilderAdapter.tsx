@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import { CheckCircle2, ChevronRight, FileText, Search } from "lucide-react";
@@ -39,7 +39,7 @@ export default function FigmaConsentBuilderAdapter({
 
         <p className="mt-1 text-xs text-[#6B7280]">
           {isArabic
-            ? "واجهة Figma مع الحفاظ على محرك مكتبة الموافقات المعتمد."
+            ? "واجهة التصميم المرجعي مع الحفاظ على محرك مكتبة الموافقات المعتمد."
             : "Figma layout while preserving the approved consent search library."}
         </p>
       </div>

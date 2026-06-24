@@ -77,7 +77,7 @@ jobs:
         continue-on-error: false
         
       - name: TypeScript type check
-        run: npx tsc --noEmit -w apps/web
+        run: npx tsc --noEmit --project apps/web/tsconfig.json
         continue-on-error: false
 
   # ============================================================================

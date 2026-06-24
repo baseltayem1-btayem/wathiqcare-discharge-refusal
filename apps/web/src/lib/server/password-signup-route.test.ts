@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { NextRequest } from "next/server";
 
-import { POST } from "../../../app/api/auth/password/signup/route";
+import { POST } from "../../../src/app/api/auth/password/signup/route";
 
 const ORIGINAL_ENABLE_PUBLIC_PASSWORD_SIGNUP = process.env.ENABLE_PUBLIC_PASSWORD_SIGNUP;
 

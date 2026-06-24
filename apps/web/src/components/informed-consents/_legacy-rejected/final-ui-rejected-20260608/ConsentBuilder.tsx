@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronRight } from "lucide-react";
@@ -125,6 +125,9 @@ type BuilderState = {
   disclosures: Record<string, unknown>;
   education: Record<string, unknown>;
   document: Record<string, unknown>;
+  consentType?: string;
+  template?: Record<string, unknown>;
+  selectedTemplate?: Record<string, unknown>;
   updatedAt?: string;
 };
 
@@ -611,7 +614,7 @@ export function ConsentBuilder({
       onPrevious: goPrev,
       onComplete: markStepComplete,
       builderState: liveBuilderState,
-      updateBuilderState: (patch: Partial<BuilderState> | Record<string, any>) => {
+      updateBuilderState: (patch: Partial<BuilderState> | Record<string, unknown>) => {
         setBuilderState((prev) => ({
           ...prev,
           ...patch,
@@ -622,15 +625,7 @@ export function ConsentBuilder({
 
     switch (currentStep) {
       case "patient":
-        return (
-          <StepPatient
-            {...props}
-            mobile={patientMobile}
-            email={patientEmail}
-            onMobileChange={setPatientMobile}
-            onEmailChange={setPatientEmail}
-          />
-        );
+        return <StepPatient {...props} />;
 
       case "consentType":
         return <StepConsentType {...props} />;

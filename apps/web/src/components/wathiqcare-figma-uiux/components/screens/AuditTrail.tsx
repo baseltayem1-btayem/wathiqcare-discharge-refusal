@@ -1,15 +1,15 @@
-﻿import { Activity, Download, Filter, Lock, User, FileText, Send, Eye, CheckSquare } from "lucide-react";
+import { Activity, Download, Filter, Lock, User, FileText, Send, Eye, CheckSquare } from "lucide-react";
 
 interface Props { lang: "en" | "ar" }
 
 const events = [
-  { id: "EVT-0841", time: "09:14:32", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أح&د خ`", actionEn: "Consent signed by patient  Layla Hassan", actionAr: "ت& ت`ع ا&افة &  ا&ر`ضة  `0 حس ", typeEn: "Signature", typeAr: "ت`ع", icon: CheckSquare, color: "#19A978", ip: "192.168.1.45", deviceEn: "Mobile Safari / iOS", deviceAr: "&با` سفار` / iOS" },
-  { id: "EVT-0840", time: "08:57:11", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أح&د خ`", actionEn: "Secure link sent via SMS to +966 055 123 4567", actionAr: "ت& إرسا ارابط اآ&  عبر SMS إ0 +966 055 123 4567", typeEn: "Link Sent", typeAr: "إرسا رابط", icon: Send, color: "#2F90C7", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "ْر& / ` دز ١١" },
-  { id: "EVT-0839", time: "08:47:00", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أح&د خ`", actionEn: "Consent form created  Appendectomy (WC-2026-0412)", actionAr: "ت& إ شاء  &ذج ا&افة  استئصا ازائدة (WC-2026-0412)", typeEn: "Form Created", typeAr: "إ شاء  &ذج", icon: FileText, color: "#6B5CE7", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "ْر& / ` دز ١١" },
-  { id: "EVT-0838", time: "08:32:15", date: "09 Jun 2026", actorEn: "System", actorAr: "ا ظا&", actionEn: "Patient OTP verified  Layla Hassan (MRN-204871)", actionAr: "ت& اتح &  OTP &ر`ضة  `0 حس  (MRN-204871)", typeEn: "OTP Verified", typeAr: "اتح OTP", icon: Lock, color: "#12B7B5", ip: "Mobile Network", deviceEn: "Mobile Safari / iOS", deviceAr: "&با` سفار` / iOS" },
-  { id: "EVT-0837", time: "17:22:04", date: "08 Jun 2026", actorEn: "Dr. Nasser Al-Ghamdi", actorAr: "د.  اصر اغا&د`", actionEn: "Consent record WC-2026-0410 downloaded (PDF)", actionAr: "ت& ت ز` سج ا&افة WC-2026-0410 (PDF)", typeEn: "Download", typeAr: "ت ز`", icon: Download, color: "#D9A93B", ip: "10.0.0.21", deviceEn: "Firefox / macOS", deviceAr: "فا`رفْس / macOS" },
-  { id: "EVT-0836", time: "15:09:44", date: "08 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أح&د خ`", actionEn: "Patient education materials sent  Sara Al-Mansouri", actionAr: "ت& إرسا &اد اتث`ف  سارة ا& صر`", typeEn: "Education", typeAr: "تث`ف", icon: Eye, color: "#19A978", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "ْر& / ` دز ١١" },
-  { id: "EVT-0835", time: "11:03:28", date: "07 Jun 2026", actorEn: "System", actorAr: "ا ظا&", actionEn: "Consent link expired  Khalid Nasser (no response in 48h)", actionAr: "ا ت!ت صاح`ة رابط ا&افة  خاد  اصر (ا استجابة خا ٤٨ ساعة)", typeEn: "Expired", typeAr: "ا ت!0", icon: Lock, color: "#E84B7A", ip: "", deviceEn: "", deviceAr: "" },
+  { id: "EVT-0841", time: "09:14:32", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أحمد خليل", actionEn: "Consent signed by patient — Layla Hassan", actionAr: "تم توقيع الموافقة من قبل المريضة — ليلى حسن", typeEn: "Signature", typeAr: "توقيع", icon: CheckSquare, color: "#19A978", ip: "192.168.1.45", deviceEn: "Mobile Safari / iOS", deviceAr: "متصفح سفاري للجوال" },
+  { id: "EVT-0840", time: "08:57:11", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أحمد خليل", actionEn: "Secure link sent via SMS to +966 055 123 4567", actionAr: "تم إرسال الرابط الآمن عبر رسالة جوال إلى +966 055 123 4567", typeEn: "Link Sent", typeAr: "إرسال رابط", icon: Send, color: "#2F90C7", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "كروم على ويندوز ١١" },
+  { id: "EVT-0839", time: "08:47:00", date: "09 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أحمد خليل", actionEn: "Consent form created — Appendectomy (WC-2026-0412)", actionAr: "تم إنشاء نموذج الموافقة — استئصال الزائدة (WC-2026-0412)", typeEn: "Form Created", typeAr: "إنشاء نموذج", icon: FileText, color: "#6B5CE7", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "كروم على ويندوز ١١" },
+  { id: "EVT-0838", time: "08:32:15", date: "09 Jun 2026", actorEn: "System", actorAr: "النظام", actionEn: "Patient OTP verified — Layla Hassan (MRN-204871)", actionAr: "تم التحقق من رمز المريض — ليلى حسن (MRN-204871)", typeEn: "OTP Verified", typeAr: "التحقق من الرمز", icon: Lock, color: "#12B7B5", ip: "Mobile Network", deviceEn: "Mobile Safari / iOS", deviceAr: "متصفح سفاري للجوال" },
+  { id: "EVT-0837", time: "17:22:04", date: "08 Jun 2026", actorEn: "Dr. Nasser Al-Ghamdi", actorAr: "د. ناصر الغامدي", actionEn: "Consent record WC-2026-0410 downloaded (PDF)", actionAr: "تم تنزيل سجل الموافقة WC-2026-0410 (PDF)", typeEn: "Download", typeAr: "تنزيل", icon: Download, color: "#D9A93B", ip: "10.0.0.21", deviceEn: "Firefox / macOS", deviceAr: "فايرفوكس على ماك أو أس" },
+  { id: "EVT-0836", time: "15:09:44", date: "08 Jun 2026", actorEn: "Dr. Ahmad Khalil", actorAr: "د. أحمد خليل", actionEn: "Patient education materials sent — Sara Al-Mansouri", actionAr: "تم إرسال مواد التثقيف للمريضة — سارة المنصوري", typeEn: "Education", typeAr: "تثقيف", icon: Eye, color: "#19A978", ip: "10.0.0.12", deviceEn: "Chrome / Windows 11", deviceAr: "كروم على ويندوز ١١" },
+  { id: "EVT-0835", time: "11:03:28", date: "07 Jun 2026", actorEn: "System", actorAr: "النظام", actionEn: "Consent link expired — Khalid Nasser (no response in 48h)", actionAr: "انتهت صلاحية رابط الموافقة — خالد ناصر (لا استجابة خلال ٤٨ ساعة)", typeEn: "Expired", typeAr: "منتهي", icon: Lock, color: "#E84B7A", ip: "—", deviceEn: "—", deviceAr: "—" },
 ];
 
 export function AuditTrail({ lang }: Props) {
@@ -20,19 +20,19 @@ export function AuditTrail({ lang }: Props) {
       <div className="px-6 py-5 border-b bg-white" style={{ borderColor: "#D8E8EF" }}>
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-xl font-bold" style={{ color: "#102A43" }}>
-            {isRTL ? "&سار اتد` / اأدة اا  `ة" : "Audit Trail / Legal Evidence"}
+            {isRTL ? "مسار التدقيق / الأدلة الرقمية" : "Audit Trail / Legal Evidence"}
           </h2>
           <div className="flex gap-2">
             <button className="flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium" style={{ borderColor: "#D8E8EF", color: "#64798B" }}>
-              <Filter size={13} /> {isRTL ? "تصف`ة" : "Filter"}
+              <Filter size={13} /> {isRTL ? "تصفية" : "Filter"}
             </button>
             <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: "#123B5C" }}>
-              <Download size={13} /> {isRTL ? "تصد`ر اسج" : "Export Log"}
+              <Download size={13} /> {isRTL ? "تصدير السجل" : "Export Log"}
             </button>
           </div>
         </div>
         <p className="text-sm" style={{ color: "#64798B" }}>
-          {isRTL ? "سج غ`ر اب تعد` ج&`ع أ شطة ا& صة ⬢ &شفر ⬢ &خت& بات" : "Immutable log of all platform activity ⬢ Encrypted ⬢ Timestamped"}
+          {isRTL ? "سجل غير قابل للتعديل لجميع أنشطة المنصة ⬢ مشفر ⬢ مختوم بالوقت" : "Immutable log of all platform activity ⬢ Encrypted ⬢ Timestamped"}
         </p>
       </div>
 
@@ -82,12 +82,12 @@ export function AuditTrail({ lang }: Props) {
           <div className="flex items-center gap-2 mb-2">
             <Lock size={13} style={{ color: "#2F90C7" }} />
             <span className="text-xs font-bold" style={{ color: "#2F90C7" }}>
-              {isRTL ? "&احظة ا  `ة" : "Legal Note"}
+              {isRTL ? "ملاحظة قانونية" : "Legal Note"}
             </span>
           </div>
           <p className="text-xs" style={{ color: "#64798B" }}>
             {isRTL
-              ? "ج&`ع اإدخاات ف` !ذا اسج &خت&ة ز& `ا9 &شفرة ا `&ْ  تعد`!ا. !ذا اسج صاح ْد` ا  ` فا9 &عا``ر HIPAA NCA."
+              ? "جميع الإدخالات في هذا السجل مختومة زمنياً ومشفرة وغير قابلة للتعديل. هذا السجل صالح كدليل قانوني وفق معايير HIPAA و NCA."
               : "All entries in this log are timestamped, encrypted, and immutable. This log is valid as legal evidence per HIPAA and NCA standards."}
           </p>
         </div>
@@ -95,4 +95,3 @@ export function AuditTrail({ lang }: Props) {
     </div>
   );
 }
-

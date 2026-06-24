@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -68,7 +68,7 @@ const navItems = [
   { id: 'search' as Screen, label: 'Patient Search', labelAr: '\u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0645\u0631\u064a\u0636', icon: Search },
   { id: 'consent-builder' as Screen, label: 'Consent Builder', labelAr: '\u0628\u0646\u0627\u0621 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629', icon: FileText },
   { id: 'status' as Screen, label: 'Status Tracking', labelAr: '\u0645\u062a\u0627\u0628\u0639\u0629 \u0627\u0644\u062d\u0627\u0644\u0629', icon: Activity },
-  { id: 'support-settings', label: 'Support & Settings', labelAr: '\u0627\u0644\u062f\u0639\u0645 \u0648\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a', icon: Settings },
+  { id: 'support-settings' as Screen, label: 'Support & Settings', labelAr: '\u0627\u0644\u062f\u0639\u0645 \u0648\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a', icon: Settings },
 ];
 
 
@@ -411,13 +411,13 @@ function SupportSettingsScreen({ lang }: { lang: 'en' | 'ar' }) {
                         <span className={`rounded px-2 py-0.5 text-xs font-semibold ${
                           medicalLicenseStatus === 'expired'
                             ? 'bg-red-100 text-red-700'
-                            : medicalLicenseStatus === 'expiring-soon'
+                            : medicalLicenseStatus === 'expiringSoon'
                               ? 'bg-amber-100 text-amber-700'
                               : 'bg-green-100 text-green-700'
                         }`}>
                           {medicalLicenseStatus === 'expired'
                             ? 'Expired'
-                            : medicalLicenseStatus === 'expiring-soon'
+                            : medicalLicenseStatus === 'expiringSoon'
                               ? 'Expiring Soon'
                               : 'Active'}
                         </span>
@@ -1237,7 +1237,7 @@ export default function App() {
               <div className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.5)' }}>{physicianProfile.specialty}</div>
               <div className="mt-1 space-y-0.5 text-[10px] leading-tight">
                 <div style={{ color: 'rgba(255,255,255,0.45)' }}>License No: {physicianProfile.licenseNumber}</div>
-                <div className={licenseStatus === 'expired' ? 'text-red-300' : licenseStatus === 'expiring-soon' ? 'text-amber-300' : 'text-emerald-300'}>
+                <div className={licenseStatus === 'expired' ? 'text-red-300' : licenseStatus === 'expiringSoon' ? 'text-amber-300' : 'text-emerald-300'}>
                   License Expiry: {physicianProfile.licenseExpiryDate}
                 </div>
               </div>
@@ -1388,7 +1388,7 @@ export default function App() {
                           type="button"
                           onClick={() => {
                             if (notification.caseId) {
-                              setScreen('status-tracking');
+                              setScreen('status');
                             }
                             setShowNotifications(false);
                           }}

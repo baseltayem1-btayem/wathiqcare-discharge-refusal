@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Search, Filter, Download, Eye, ChevronRight, Calendar, User } from "lucide-react";
 import { StatusBadge } from "../StatusBadge";
 
-interface Props { lang: "en" | "ar" }
+interface Props { lang: "en" | "ar"; initialFilter?: string }
 
 const records = [
   { id: "WC-2026-0412", patientEn: "Layla Hassan", patientAr: "ليلى حسن", mrn: "MRN-204871", procedureEn: "Appendectomy", procedureAr: "استئصال الزائدة", date: "09 Jun 2026", status: "signed" as const, doctorEn: "Dr. Ahmad Khalil", doctorAr: "د. أحمد خليل" },
@@ -14,9 +14,9 @@ const records = [
   { id: "WC-2026-0406", patientEn: "Reem Al-Zahrani", patientAr: "ريم الزهراني", mrn: "MRN-199832", procedureEn: "Colonoscopy", procedureAr: "تنظير القولون", date: "04 Jun 2026", status: "signed" as const, doctorEn: "Dr. Ahmad Khalil", doctorAr: "د. أحمد خليل" },
 ];
 
-export function ConsentRecords({ lang }: Props) {
+export function ConsentRecords({ lang, initialFilter }: Props) {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<string>(initialFilter ?? "all");
   const [selected, setSelected] = useState<string | null>(null);
   const isRTL = lang === "ar";
 

@@ -1,5 +1,5 @@
-﻿import crypto from "node:crypto";
-import { Prisma, type ConsentRecord } from "@prisma/client";
+import crypto from "node:crypto";
+import { Prisma, type ConsentRecord, $Enums } from "@prisma/client";
 import { ConsentMethod } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -66,7 +66,7 @@ async function createConsentRecordWithFallback(args: {
     lawfulBasis:
       args.payload.lawfulBasis?.trim() || "PDPL healthcare and legal obligation basis",
     consentType: args.payload.consentType?.trim() || "informed_refusal_consent",
-    consentMethod: normalizedMethod,
+    consentMethod: normalizedMethod as $Enums.ConsentMethod,
     documentVersion: args.payload.documentVersion?.trim() || "1.0",
     documentHash: args.documentHash,
     witnessName: args.payload.witnessName?.trim() || null,
@@ -170,7 +170,7 @@ async function createConsentRecordWithFallback(args: {
       processingPurpose: row.processing_purpose,
       lawfulBasis: row.lawful_basis,
       consentType: row.consent_type,
-      consentMethod: normalizeConsentMethod(row.consent_method),
+      consentMethod: normalizeConsentMethod(row.consent_method) as $Enums.ConsentMethod,
       consentedAt: row.consented_at,
       documentId: row.document_id,
       documentVersion: row.document_version,

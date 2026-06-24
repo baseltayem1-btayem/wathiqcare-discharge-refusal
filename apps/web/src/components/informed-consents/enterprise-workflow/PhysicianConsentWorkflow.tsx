@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 
 
@@ -196,6 +196,7 @@ type PhysicianConsentWorkflowProps = {
     name?: string | null;
     tenantId?: string | null;
   };
+  lang?: "en" | "ar";
 };
 
 type ConsentWorkflowNotification = {
@@ -737,7 +738,8 @@ function findCollaborationUserId(users: CollaborationTeamUser[], keywords: strin
 
   return matchedUser?.id;
 }
-export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps) {
+export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsentWorkflowProps) {
+  const isRTL = lang === "ar";
   const [activeSection, setActiveSection] = useState<EnterpriseSection>("issueConsent");
   const [activeStepIndex, setActiveStepIndex] = useState(4);
   const [workflow, setWorkflow] = useState<WorkflowState>(initialState);
@@ -1316,7 +1318,7 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
 
           anesthesiaDecision: workflow.anesthesiaDecision,
           anesthesiaReviewRequired: workflow.anesthesiaReviewRequired,
-          anesthesiaTypeLabel: getAnesthesiaDecisionLabel(workflow.anesthesiaDecision),
+          anesthesiaTypeLabel: getAnesthesiaLabel(workflow.anesthesiaDecision),
 
           imcLibraryItemId: imcProcedureConsent.id,
           imcLibraryTitleEn: imcProcedureConsent.titleEn,
@@ -1480,6 +1482,7 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
     }
   }
 
+  const currentLang = lang;
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#ffffff_0%,#eef4fb_45%,#e8eff8_100%)] text-[#172033]">
       <EnterpriseHeader
@@ -1490,6 +1493,7 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
         onToggleNotifications={() => setShowNotifications((current) => !current)}
         onNotificationSelect={handleNotificationSelect}
         onMarkAllNotificationsRead={markAllNotificationsRead}
+        lang={lang}
       />
       <section className="mx-auto grid max-w-[1680px] grid-cols-1 gap-5 px-4 py-5 xl:grid-cols-[300px_minmax(0,1fr)_380px] xl:px-6">
         <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
@@ -1556,6 +1560,7 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
               onResend={handleResendPatientLink}
               onRefocus={handleRefocus}
               refocusTarget={refocusTarget}
+              dir={currentLang === "ar" ? "rtl" : "ltr"}
             />
           ) : activeSection === "collaboration" ? (
             <WorkspaceCard
@@ -1595,6 +1600,7 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
               linkActionState={linkActionState}
               onResend={handleResendPatientLink}
               onRefocus={handleRefocus}
+              lang={lang ?? "en"}
             />
           ) : (
             <WorkspaceCard
@@ -1620,11 +1626,12 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
           onRefocus={handleRefocus}
           refocusTarget={refocusTarget}
           generateDraftPdf={generateDraftPdf}
-              draftGenerationLoading={draftGenerationLoading}
-              draftGenerationError={draftGenerationError}
-              draftPdfUrl={draftPdfUrl}
-              consentDocumentId={consentDocumentId}
-            />
+          draftGenerationLoading={draftGenerationLoading}
+          draftGenerationError={draftGenerationError}
+          draftPdfUrl={draftPdfUrl}
+          consentDocumentId={consentDocumentId}
+          lang={lang}
+        />
       </section>
     </main>
   );
@@ -1638,6 +1645,7 @@ function EnterpriseHeader({
   onToggleNotifications,
   onNotificationSelect,
   onMarkAllNotificationsRead,
+  lang = "en",
 }: {
   workflow: WorkflowState;
   notifications: ConsentWorkflowNotification[];
@@ -1646,7 +1654,10 @@ function EnterpriseHeader({
   onToggleNotifications: () => void;
   onNotificationSelect: (notification: ConsentWorkflowNotification) => void;
   onMarkAllNotificationsRead: () => void;
+  lang?: string;
 }) {
+  const resolvedLang = (lang ?? "en") as "en" | "ar";
+  const isRTL = resolvedLang === "ar";
   return (
     <header className="sticky top-0 z-40 border-b border-[#123869] bg-[linear-gradient(135deg,#002B5C_0%,#0A3A74_55%,#174D8C_100%)] text-white shadow-[0_18px_40px_rgba(0,43,92,0.16)]">
       <div className="mx-auto grid max-w-[1680px] grid-cols-1 gap-4 px-5 py-4 xl:grid-cols-[460px_1fr_auto] xl:px-6">
@@ -1688,9 +1699,9 @@ function EnterpriseHeader({
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <HeaderDataBlock label="Patient / المريض" value={workflow.patientName} />
-          <HeaderDataBlock label="MRN / رقم الملف" value={workflow.mrn} />
-          <HeaderDataBlock label="Encounter / الزيارة" value={workflow.encounterNo} />
+          <HeaderDataBlock label={isRTL ? "المريض" : "Patient"} value={workflow.patientName} />
+          <HeaderDataBlock label={isRTL ? "رقم الملف" : "MRN"} value={workflow.mrn} />
+          <HeaderDataBlock label={isRTL ? "الزيارة" : "Encounter"} value={workflow.encounterNo} />
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3">
@@ -1930,6 +1941,7 @@ function IssueConsentWorkspace({
   onResend,
   onRefocus,
   refocusTarget,
+  dir = "ltr",
 }: {
   activeStep: (typeof workflowSteps)[number];
   activeStepIndex: number;
@@ -1972,6 +1984,7 @@ function IssueConsentWorkspace({
   onResend: () => void | Promise<void>;
   onRefocus: () => void;
   refocusTarget: RefocusTarget;
+  dir?: "ltr" | "rtl";
 }) {
   const actionGuidance = getCurrentActionGuidance(activeStep.key, workflow, completionSummary);
   const stepMeta = workflowStepMeta[activeStep.key];
@@ -2150,6 +2163,7 @@ function IssueConsentWorkspace({
               draftGenerationError={draftGenerationError}
               draftPdfUrl={draftPdfUrl}
               consentDocumentId={consentDocumentId}
+              dir={dir}
             />
           )}
 
@@ -2161,6 +2175,7 @@ function IssueConsentWorkspace({
               onSend={onSend}
               onResend={onResend}
               onRefocus={onRefocus}
+              dir={dir}
             />
           )}
 
@@ -2953,6 +2968,7 @@ function ReviewPdfStep({
   draftGenerationError,
   draftPdfUrl,
   consentDocumentId,
+  dir = "ltr",
 }: {
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
@@ -2961,7 +2977,9 @@ function ReviewPdfStep({
   draftGenerationError: string;
   draftPdfUrl: string;
   consentDocumentId: string;
+  dir?: "ltr" | "rtl";
 }) {
+  const isRTL = dir === "rtl";
   return (
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#F8FAFC_0%,#FFFFFF_100%)] p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
@@ -3020,7 +3038,9 @@ function ReviewPdfStep({
             disabled={draftGenerationLoading}
             className="rounded-xl bg-[#002B5C] px-5 py-3 text-sm font-extrabold text-white hover:bg-[#001F42] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {draftGenerationLoading ? "Generating IMC PDF..." : "Generate Draft PDF / إنشاء مسودة المستند"}
+            {draftGenerationLoading
+              ? (isRTL ? "جارٍ إنشاء ملف PDF..." : "Generating IMC PDF...")
+              : (isRTL ? "إنشاء مسودة المستند" : "Generate Draft PDF")}
           </button>
           <button
             type="button"
@@ -3028,14 +3048,14 @@ function ReviewPdfStep({
             onClick={() => draftPdfUrl && window.open(draftPdfUrl, "_blank", "noopener,noreferrer")}
             className="rounded-xl border border-[#D8DCE3] bg-white px-5 py-3 text-sm font-extrabold text-[#002B5C] hover:bg-[#EEF5FF] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Open Full Preview / فتح المعاينة الكاملة
+            {isRTL ? "فتح المعاينة الكاملة" : "Open Full Preview"}
           </button>
         </div>
       </div>
 
       <div className="rounded-[28px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
         <h3 className="text-base font-extrabold text-[#002B5C]">
-          Readiness Checklist / قائمة الجاهزية
+          {isRTL ? "قائمة الجاهزية" : "Readiness Checklist"}
         </h3>
         <div className="mt-4 space-y-3">
           <ReadinessItem label="Patient selected" labelAr="تم اختيار المريض" ready={completionSummary.patientReady} />
@@ -3058,6 +3078,7 @@ function SendStep({
   onSend,
   onResend,
   onRefocus,
+  dir = "ltr",
 }: {
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
@@ -3065,7 +3086,9 @@ function SendStep({
   onSend: () => void | Promise<void>;
   onResend: () => void | Promise<void>;
   onRefocus: () => void;
+  dir?: "ltr" | "rtl";
 }) {
+  const isRTL = dir === "rtl";
   return (
     <div className="space-y-5">
       <h3 className="text-xl font-extrabold text-[#002B5C]">
@@ -3116,7 +3139,9 @@ function SendStep({
               className="inline-flex items-center gap-2 rounded-xl bg-[#002B5C] px-6 py-3 text-sm font-extrabold text-white hover:bg-[#001F42]"
             >
               <Send className="h-4 w-4" />
-              {linkActionState.mode === "send" ? "Sending... / جارٍ الإرسال" : "Create Patient Signing Link / إنشاء رابط توقيع المريض"}
+              {linkActionState.mode === "send"
+                ? (isRTL ? "جارٍ الإرسال..." : "Sending...")
+                : (isRTL ? "إنشاء رابط توقيع المريض" : "Create Patient Signing Link")}
             </button>
           </div>
         </div>
@@ -3126,7 +3151,7 @@ function SendStep({
         <div className="rounded-[24px] border border-[#D8DCE3] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)]">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-extrabold text-[#002B5C]">Patient link operations / عمليات رابط المريض</p>
+              <p className="text-sm font-extrabold text-[#002B5C]">{isRTL ? "عمليات رابط المريض" : "Patient link operations"}</p>
               <p className="mt-1 text-sm text-[#475569]">Resend is enabled because the consent has already been issued to the patient.</p>
             </div>
             <button
@@ -3135,7 +3160,9 @@ function SendStep({
               className="inline-flex items-center gap-2 rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm font-extrabold text-[#002B5C] hover:bg-[#EEF5FF]"
             >
               <RotateCcw className="h-4 w-4" />
-              {linkActionState.mode === "resend" ? "Resending... / جارٍ إعادة الإرسال" : "Resend / إعادة الإرسال"}
+              {linkActionState.mode === "resend"
+                ? (isRTL ? "جارٍ إعادة الإرسال..." : "Resending...")
+                : (isRTL ? "إعادة الإرسال" : "Resend")}
             </button>
           </div>
         </div>
@@ -3168,6 +3195,7 @@ function RightContextPanel({
   draftGenerationError,
   draftPdfUrl,
   consentDocumentId,
+  lang = "en",
 }: {
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
@@ -3179,7 +3207,10 @@ function RightContextPanel({
   draftGenerationError: string;
   draftPdfUrl: string;
   consentDocumentId: string;
+  lang?: string;
 }) {
+  const resolvedLang = (lang ?? "en") as "en" | "ar";
+  const isRTL = resolvedLang === "ar";
   return (
     <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
       <PanelCard title="Case Readiness" titleAr="جاهزية الحالة">
@@ -3236,7 +3267,7 @@ function RightContextPanel({
           <QuickActionButton icon={Target} label="Re-focus" labelAr="إعادة التركيز" onClick={onRefocus} />
           <QuickActionButton icon={UserRoundCheck} label="Request Anesthesia Review" labelAr="طلب مراجعة طبيب التخدير" onClick={() => setActiveSection("collaboration")} />
           <QuickActionButton icon={FileText} label={draftGenerationLoading ? "Generating IMC PDF..." : "Generate Draft PDF"} labelAr="إنشاء مسودة المستند" onClick={generateDraftPdf} disabled={draftGenerationLoading} />
-          <QuickActionButton icon={FileText} label="Open Full Preview" labelAr="فتح المعاينة الكاملة" onClick={() => draftPdfUrl && window.open(draftPdfUrl, "_blank", "noopener,noreferrer")} disabled={!draftPdfUrl} />
+          <QuickActionButton icon={FileText} label="Open Full Preview" labelAr="فتح المعاينة الكاملة" onClick={() => { if (draftPdfUrl) window.open(draftPdfUrl, "_blank", "noopener,noreferrer"); }} disabled={!draftPdfUrl} />
           <QuickActionButton icon={MessageSquareText} label="Open Collaboration" labelAr="فتح التواصل الطبي القانوني" onClick={() => setActiveSection("collaboration")} />
           <QuickActionButton icon={Settings} label="Go to Support & Settings" labelAr="الانتقال للدعم والإعدادات" onClick={() => setActiveSection("supportSettings")} />
 
@@ -3272,6 +3303,7 @@ function StatusAuditWorkspace({
   linkActionState,
   onResend,
   onRefocus,
+  lang = "en",
 }: {
   workflow: WorkflowState;
   completionSummary: CompletionSummary;
@@ -3279,7 +3311,10 @@ function StatusAuditWorkspace({
   linkActionState: LinkActionState;
   onResend: () => void | Promise<void>;
   onRefocus: () => void;
+  lang?: string;
 }) {
+  const resolvedLang = (lang ?? "en") as "en" | "ar";
+  const isRTL = resolvedLang === "ar";
   return (
     <WorkspaceCard
       title="Status & Audit"
@@ -3332,7 +3367,9 @@ function StatusAuditWorkspace({
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm font-extrabold text-[#002B5C] hover:bg-[#EEF5FF] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RotateCcw className="h-4 w-4" />
-              {linkActionState.mode === "resend" ? "Resending... / جارٍ إعادة الإرسال" : "Resend / إعادة الإرسال"}
+              {linkActionState.mode === "resend"
+                ? (isRTL ? "جارٍ إعادة الإرسال..." : "Resending...")
+                : (isRTL ? "إعادة الإرسال" : "Resend")}
             </button>
             <button
               type="button"

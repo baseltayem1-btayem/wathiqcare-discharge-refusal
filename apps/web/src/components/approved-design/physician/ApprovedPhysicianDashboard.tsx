@@ -267,7 +267,7 @@ export function ApprovedPhysicianDashboard({
   /* ── Status tracker load on entry ──────────────────────────────────── */
   useEffect(() => {
     if (screen !== "status-tracker") return;
-    let cancelled = false;
+    const cancelled = false;
     const run = async () => {
       setDocsLoading(true);
       setDocsError(null);

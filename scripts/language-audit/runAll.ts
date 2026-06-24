@@ -2,14 +2,6 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { getRepoRoot } from "./_common";
 
-function resolveBinary(command: string): string {
-  if (process.platform === "win32") {
-    if (command === "npx") return "npx.cmd";
-    if (command === "npm") return "npm.cmd";
-  }
-  return command;
-}
-
 const scanners = [
   "auditArabicPurity.ts",
   "auditEnglishPurity.ts",
@@ -23,7 +15,7 @@ const scanners = [
 function run(file: string): number {
   const repoRoot = getRepoRoot();
   const abs = path.join(repoRoot, "scripts", "language-audit", file);
-  const result = spawnSync(resolveBinary("npx"), ["tsx", abs], {
+  const result = spawnSync(process.execPath, ["--import", "tsx", abs], {
     stdio: "inherit",
     cwd: repoRoot,
   });

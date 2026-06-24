@@ -1,5 +1,9 @@
 ﻿import { Prisma } from "@prisma/client";
-import { ConsentSectionKind, ConsentTemplateStatus } from "@/lib/server/prisma-enums";
+import {
+  $Enums,
+  ConsentSectionKind,
+  ConsentTemplateStatus,
+} from "@prisma/client";
 import crypto from "node:crypto";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -23,7 +27,7 @@ export type RuntimeConsentTemplate = {
   specialty: string;
   department: string | null;
   version: string;
-  status: ConsentTemplateStatus;
+  status: $Enums.ConsentTemplateStatus;
   language: "bilingual";
   summaryAr: string | null;
   summaryEn: string | null;
@@ -181,7 +185,7 @@ function buildDefaultSections(): Array<{
   return [
     {
       sectionKey: "fixed_patient_acknowledgment",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…Ø±ÙŠØ¶ / ÙˆÙ„ÙŠ Ø§Ù„Ø£Ù…Ø±",
       titleEn: "Patient / Guardian Acknowledgment",
       contentAr: PATIENT_ACK_AR,
@@ -192,7 +196,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_diagnosis",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ø§Ù„ØªØ´Ø®ÙŠØµ",
       titleEn: "Diagnosis",
       contentAr: "[ÙŠØ¯Ø®Ù„ Ø§Ù„Ø·Ø¨ÙŠØ¨ Ø§Ù„ØªØ´Ø®ÙŠØµ Ø§Ù„Ø·Ø¨ÙŠ Ù‡Ù†Ø§]",
@@ -203,7 +207,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_medical_condition",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ©",
       titleEn: "Medical condition",
       contentAr: "[ÙˆØµÙ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø·Ø¨ÙŠØ© Ø§Ù„Ø­Ø§Ù„ÙŠØ©]",
@@ -214,7 +218,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_proposed_procedure",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ù…Ù‚ØªØ±Ø­",
       titleEn: "Proposed procedure",
       contentAr: "[ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ø·Ø¨ÙŠ/Ø§Ù„Ø¬Ø±Ø§Ø­ÙŠ Ø§Ù„Ù…Ù‚ØªØ±Ø­]",
@@ -225,7 +229,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_procedure_site_laterality",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ù…ÙˆØ¶Ø¹ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ / Ø§Ù„Ø¬Ù‡Ø©",
       titleEn: "Procedure site / laterality",
       contentAr: "[Ø­Ø¯Ø¯ Ù…ÙˆØ¶Ø¹ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ ÙˆØ§Ù„Ø¬Ù‡Ø© Ø§Ù„ÙŠÙ…Ù†Ù‰/Ø§Ù„ÙŠØ³Ø±Ù‰ Ø¥Ù† ÙˆØ¬Ø¯Øª]",
@@ -236,7 +240,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_expected_benefits",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ø§Ù„ÙÙˆØ§Ø¦Ø¯ Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø©",
       titleEn: "Expected benefits",
       contentAr: "[Ø§Ù„ÙÙˆØ§Ø¦Ø¯ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø©]",
@@ -247,7 +251,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_common_risks",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©",
       titleEn: "Common risks",
       contentAr: "[Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©]",
@@ -258,7 +262,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_uncommon_risks",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ø§Ù„Ù…Ø®Ø§Ø·Ø± ØºÙŠØ± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©",
       titleEn: "Uncommon risks",
       contentAr: "[Ø§Ù„Ù…Ø®Ø§Ø·Ø± ØºÙŠØ± Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©]",
@@ -269,7 +273,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_serious_risks",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø¬Ø³ÙŠÙ…Ø©",
       titleEn: "Serious risks",
       contentAr: "[Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ø¬Ø³ÙŠÙ…Ø© Ø£Ùˆ Ø§Ù„Ù…Ù‡Ø¯Ø¯Ø© Ù„Ù„Ø­ÙŠØ§Ø©]",
@@ -280,7 +284,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_complications",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ø§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª",
       titleEn: "Complications",
       contentAr: "[Ø§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø©]",
@@ -291,7 +295,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_treatment_alternatives",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ø§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ©",
       titleEn: "Treatment alternatives",
       contentAr: "[Ø§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø§Ù„Ø¹Ù„Ø§Ø¬ÙŠØ© Ø§Ù„Ù…Ù…ÙƒÙ†Ø©]",
@@ -302,7 +306,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_refusal_risks",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ù…Ø®Ø§Ø·Ø± Ø±ÙØ¶ Ø§Ù„Ø¹Ù„Ø§Ø¬ / Ø¹Ø¯Ù… Ø§Ù„Ø¹Ù„Ø§Ø¬",
       titleEn: "Risks of refusal / non-treatment",
       contentAr: "[Ø§Ù„Ù…Ø®Ø§Ø·Ø± Ø§Ù„Ù…ØªÙˆÙ‚Ø¹Ø© ÙÙŠ Ø­Ø§Ù„ Ø§Ù„Ø±ÙØ¶ Ø£Ùˆ Ø§Ù„ØªØ£Ø®ÙŠØ±]",
@@ -313,7 +317,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_post_procedure_instructions",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "ØªØ¹Ù„ÙŠÙ…Ø§Øª Ù…Ø§ Ø¨Ø¹Ø¯ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡",
       titleEn: "Post-procedure instructions",
       contentAr: "[ØªØ¹Ù„ÙŠÙ…Ø§Øª Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ø¨Ø¹Ø¯ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡]",
@@ -324,7 +328,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_physician_notes",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø§Ù„Ø·Ø¨ÙŠØ¨",
       titleEn: "Physician notes",
       contentAr: "[Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø¥Ø¶Ø§ÙÙŠØ© Ù…Ù† Ø§Ù„Ø·Ø¨ÙŠØ¨]",
@@ -335,7 +339,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "dynamic_special_precautions",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "Ø§Ø­ØªÙŠØ§Ø·Ø§Øª Ø®Ø§ØµØ©",
       titleEn: "Special precautions",
       contentAr: "[Ø§Ø­ØªÙŠØ§Ø·Ø§Øª Ø®Ø§ØµØ© Ù…Ø±ØªØ¨Ø·Ø© Ø¨Ø§Ù„Ø­Ø§Ù„Ø©]",
@@ -346,7 +350,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "fixed_physician_certification",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ø·Ø¨ÙŠØ¨",
       titleEn: "Physician Certification",
       contentAr: PHYSICIAN_CERT_AR,
@@ -357,7 +361,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "fixed_legal_guardian_ack",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "Ø¥Ù‚Ø±Ø§Ø± ÙˆÙ„ÙŠ Ø§Ù„Ø£Ù…Ø± / Ø§Ù„Ù…Ù…Ø«Ù„ Ø§Ù„Ù†Ø¸Ø§Ù…ÙŠ",
       titleEn: "Legal Guardian / Substitute Decision Maker Acknowledgment",
       contentAr: GUARDIAN_ACK_AR,
@@ -368,7 +372,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "interpreter_acknowledgment",
-      sectionKind: ConsentSectionKind.INTERPRETER,
+      sectionKind: $Enums.ConsentSectionKind.INTERPRETER,
       titleAr: "Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…ØªØ±Ø¬Ù…",
       titleEn: "Interpreter Acknowledgment",
       contentAr: INTERPRETER_ACK_AR,
@@ -379,7 +383,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "fixed_no_guarantee",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "Ø¹Ø¯Ù… Ø¶Ù…Ø§Ù† Ø§Ù„Ù†ØªØ§Ø¦Ø¬",
       titleEn: "No Guarantee of Outcome",
       contentAr: NO_GUARANTEE_AR,
@@ -390,7 +394,7 @@ function buildDefaultSections(): Array<{
     },
     {
       sectionKey: "fixed_electronic_signature",
-      sectionKind: ConsentSectionKind.SIGNATURE,
+      sectionKind: $Enums.ConsentSectionKind.SIGNATURE,
       titleAr: "Ø§Ù„ØªÙˆÙ‚ÙŠØ¹ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ",
       titleEn: "Electronic Signature",
       contentAr: ELECTRONIC_SIGNATURE_AR,
@@ -466,7 +470,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
         titleEn: seed.titleEn,
         summaryAr: seed.summaryAr,
         summaryEn: seed.summaryEn,
-        status: ConsentTemplateStatus.ACTIVE,
+        status: $Enums.ConsentTemplateStatus.ACTIVE,
         isSystemTemplate: true,
       },
     });
@@ -484,7 +488,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       where: {
         tenantId,
         templateId: template.id,
-        status: { in: [ConsentTemplateStatus.ACTIVE, ConsentTemplateStatus.APPROVED] },
+        status: { in: [$Enums.ConsentTemplateStatus.ACTIVE, $Enums.ConsentTemplateStatus.APPROVED] },
         legalHash,
       },
       orderBy: { versionNumber: "desc" },
@@ -494,7 +498,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
       await prisma().consentTemplate.update({
         where: { id: template.id },
         data: {
-          status: ConsentTemplateStatus.ACTIVE,
+          status: $Enums.ConsentTemplateStatus.ACTIVE,
           currentVersionId: hasActiveVersion.id,
         },
       });
@@ -510,7 +514,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
         templateId: template.id,
         versionLabel: `v${versionNumber}.0-saudi-2019`,
         versionNumber,
-        status: ConsentTemplateStatus.ACTIVE,
+        status: $Enums.ConsentTemplateStatus.ACTIVE,
         legalTextAr: arBody,
         legalTextEn: enBody,
         pdplTextAr: PDPL_AR,
@@ -551,7 +555,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
         tenantId,
         templateVersionId: version.id,
         sectionKey: section.sectionKey,
-        sectionKind: section.sectionKind,
+        sectionKind: section.sectionKind as $Enums.ConsentSectionKind,
         titleAr: section.titleAr,
         titleEn: section.titleEn,
         contentAr: section.contentAr,
@@ -565,7 +569,7 @@ async function ensureDefaultTemplates(tenantId: string, actorUserId?: string): P
     await prisma().consentTemplate.update({
       where: { id: template.id },
       data: {
-        status: ConsentTemplateStatus.ACTIVE,
+        status: $Enums.ConsentTemplateStatus.ACTIVE,
         currentVersionId: version.id,
       },
     });
@@ -661,12 +665,12 @@ export async function listRuntimeConsentTemplates(
       ...(consentType ? { consentType } : {}),
       ...(department ? { OR: [{ department }, { department: null }] } : {}),
       ...(specialty ? { OR: [{ specialty }, { specialty: "GENERAL_MEDICINE" }] } : {}),
-      status: { in: [ConsentTemplateStatus.ACTIVE, ConsentTemplateStatus.APPROVED] },
+      status: { in: [$Enums.ConsentTemplateStatus.ACTIVE, $Enums.ConsentTemplateStatus.APPROVED] },
     },
     include: {
       versions: {
         where: {
-          status: { in: [ConsentTemplateStatus.ACTIVE, ConsentTemplateStatus.APPROVED] },
+          status: { in: [$Enums.ConsentTemplateStatus.ACTIVE, $Enums.ConsentTemplateStatus.APPROVED] },
         },
         orderBy: [{ versionNumber: "desc" }],
         take: 1,
