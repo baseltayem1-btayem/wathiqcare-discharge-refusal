@@ -1,7 +1,7 @@
-import WathiqNoteWorkflowModule from "@/components/modules/WathiqNoteWorkflowModule";
+import WathiqNotePageWrapper from "@/components/modules/WathiqNotePageWrapper";
 
 export const dynamic = "force-dynamic";
 
 export default function WathiqNotePage() {
-  return <WathiqNoteWorkflowModule />;
+  return <WathiqNotePageWrapper />;
 }
