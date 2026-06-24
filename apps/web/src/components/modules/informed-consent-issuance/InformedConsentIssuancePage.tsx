@@ -532,7 +532,7 @@ export default function InformedConsentIssuancePage({ auth, clinicalAiEnabled = 
               titleEn={understandingSection.titleEn}
               titleAr={understandingSection.titleAr}
               questions={understandingSection.meta?.understandingQuestions ?? []}
-              scoring={understandingSection.meta?.scoring ?? { passingScore: 80, maxScore: 100, formula: "weighted_sum", remediationOnFail: { en: "Please review the summary and try again.", ar: "يرجى مراجعة الملخص وإعادة المحاولة." } }}
+              scoring={understandingSection.meta?.scoring ?? { passingScore: 80, maxScore: 100, formula: "weighted_sum", remediationOnFail: "Please review the summary and try again." }}
               onResult={handleEducationResult}
             />
             <div className="flex flex-col gap-3 rounded-2xl border border-[rgba(0,43,92,0.08)] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">

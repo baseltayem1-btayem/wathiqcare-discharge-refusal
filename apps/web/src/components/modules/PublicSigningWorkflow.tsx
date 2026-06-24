@@ -104,6 +104,7 @@ type PublicSignatureResult = {
     otpHash: string;
     educationCompleted: boolean;
     patientAcknowledged: boolean;
+    decisionStatus: string;
   };
 };
 
@@ -231,7 +232,7 @@ export default function PublicSigningWorkflow({ token }: { token: string }) {
   const presentedSentRef = useRef(false);
   const completedSentRef = useRef(false);
   const refusalPresentedSentRef = useRef(false);
-  const sectionRefs = useRef<Partial<Record<EducationSectionKey, HTMLDivElement | null>>>({});
+  const sectionRefs = useRef<Partial<Record<EducationSectionKey, HTMLElement | null>>>({});
 
   const educationRequired = Boolean(documentData?.education.required);
   const educationAcknowledged = Boolean(documentData?.education.acknowledgement || documentData?.education.patientAcknowledged);

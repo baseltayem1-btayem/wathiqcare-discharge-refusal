@@ -145,7 +145,7 @@ function shortHash(hash: string | null): string {
 export default function LegalComplianceDashboard({ tenantCode, isPlatform, evidence, audit, otp, pdf }: Props) {
   const [tab, setTab] = useState<Tab>("evidence");
   const [lang, setLang] = useState<Lang>("en");
-  const t = T[lang];
+  const t = T[lang] as Lookup;
   const isAr = lang === "ar";
 
   const counts = useMemo(
@@ -445,9 +445,9 @@ function Th({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Td({ children, mono }: { children: React.ReactNode; mono?: boolean }) {
+function Td({ children, mono, title }: { children: React.ReactNode; mono?: boolean; title?: string }) {
   return (
-    <td className={`px-4 py-2.5 align-middle text-slate-800 ${mono ? "font-mono tabular-nums text-xs" : ""}`}>
+    <td title={title} className={`px-4 py-2.5 align-middle text-slate-800 ${mono ? "font-mono tabular-nums text-xs" : ""}`}>
       {children}
     </td>
   );
