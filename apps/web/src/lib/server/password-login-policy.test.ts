@@ -22,6 +22,6 @@ test("password login policy routes platform users to /platform and tenant users 
 });
 
 test("user type is derived from role rather than a hard-coded admin email alias", () => {
-  assert.equal(userTypeForUserRole("platform_superadmin", "admin@wathiqcare.online"), "PLATFORM_ADMIN");
-  assert.equal(userTypeForUserRole("doctor", "admin@wathiqcare.online"), "TENANT_USER");
+  assert.equal(userTypeForUserRole("platform_superadmin"), "PLATFORM_ADMIN");
+  assert.equal(userTypeForUserRole("doctor"), "TENANT_USER");
 });

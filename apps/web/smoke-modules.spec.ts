@@ -260,7 +260,7 @@ test.describe("Module Portal - Authenticated Browser Smoke Tests", () => {
 
     // If API was called, verify it succeeded
     if (apiCallSucceeded) {
-      expect(apiCallSucceeded).toBe(true);
+      expect(apiCallSucceeded as boolean).toBe(true);
     }
   });
 });

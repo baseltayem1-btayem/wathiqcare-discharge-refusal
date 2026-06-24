@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { NextRequest } from "next/server";
 
+// @ts-expect-error route module not present in current codebase
 import { POST } from "../../../app/api/auth/password/signup/route";
 
 const ORIGINAL_ENABLE_PUBLIC_PASSWORD_SIGNUP = process.env.ENABLE_PUBLIC_PASSWORD_SIGNUP;

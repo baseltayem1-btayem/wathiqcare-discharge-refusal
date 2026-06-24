@@ -76,8 +76,7 @@ test("secure signing email fails when the provider rejects the patient recipient
   assert.equal(result.status, "failed");
   assert.equal(result.recipient, "patient@example.com");
   assert.match(result.failureReason || "", /did not accept/i);
-});import assert from "node:assert/strict";
-import test from "node:test";
+});
 import { resetEnvironmentConfig } from "@/lib/environment/environment";
 import { getPilotEmailOverrideConfig } from "@/lib/server/pilot-email-override";
 
