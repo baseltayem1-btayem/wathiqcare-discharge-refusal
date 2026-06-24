@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import {
@@ -16,15 +16,17 @@ import {
   Wind,
 } from "lucide-react";
 
-import DoctorHome from "./components/screens/DoctorHome";
-import CreateConsent from "./components/screens/CreateConsent";
-import ConsentRecords from "./components/screens/ConsentRecords";
-import ApprovedForms from "./components/screens/ApprovedForms";
-import AnesthesiaQueue from "./components/screens/AnesthesiaQueue";
-import PatientEducation from "./components/screens/PatientEducation";
-import ComplianceReview from "./components/screens/ComplianceReview";
-import AuditTrail from "./components/screens/AuditTrail";
-import Settings from "./components/screens/Settings";
+import {
+  DoctorHome,
+  CreateConsent,
+  ConsentRecords,
+  ApprovedForms,
+  AnesthesiaQueue,
+  PatientEducation,
+  ComplianceReview,
+  AuditTrail,
+  Settings,
+} from "./components/screens";
 
 type Lang = "en" | "ar";
 
@@ -101,7 +103,7 @@ export default function DoctorWorkspaceOnlyApp() {
   );
 
   function renderScreen() {
-    if (active === "home") return <DoctorHome lang={lang} setScreen={setActive as never} />;
+    if (active === "home") return <DoctorHome lang={lang} onNavigate={(s) => setActive(s as Screen)} />;
     if (active === "create") return <CreateConsent lang={lang} />;
     if (active === "pending") return <ConsentRecords lang={lang} initialFilter="pending" />;
     if (active === "records") return <ConsentRecords lang={lang} />;
