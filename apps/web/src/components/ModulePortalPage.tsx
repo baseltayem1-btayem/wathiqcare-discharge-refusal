@@ -18,6 +18,9 @@ function ModuleIcon({ moduleKey }: { moduleKey: ModuleKey }) {
   if (moduleKey === "informed-consents") {
     return <ClipboardCheck className="h-5 w-5 text-[var(--primary)]" />;
   }
+  if (moduleKey === "wathiqnote") {
+    return <Landmark className="h-5 w-5 text-[var(--primary)]" />;
+  }
   if (moduleKey === "promissory-notes") {
     return <Landmark className="h-5 w-5 text-[var(--primary)]" />;
   }

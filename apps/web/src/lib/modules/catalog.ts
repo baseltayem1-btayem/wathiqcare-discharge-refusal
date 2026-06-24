@@ -1,7 +1,7 @@
 import { canonicalizeUserRole } from "@/lib/server/roles";
 import { INFORMED_CONSENTS_ALLOWED_ROLES } from "@/lib/modules/informed-consents-release";
 
-export type ModuleKey = "informed-consents" | "promissory-notes" | "discharge-refusal";
+export type ModuleKey = "informed-consents" | "promissory-notes" | "discharge-refusal" | "wathiqnote";
 
 export type ModuleAccessContext = {
   role?: string | null;
@@ -60,17 +60,34 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
     allowedRoles: INFORMED_CONSENTS_ALLOWED_ROLES,
   },
   {
-    key: "promissory-notes",
-    slug: "promissory-notes",
-    arabicTitle: "تطبيق السندات لأمر الإلكترونية",
-    englishTitle: "Electronic Promissory Notes",
+    key: "wathiqnote",
+    slug: "wathiqnote",
+    arabicTitle: "وثيق نوت للمؤسسات",
+    englishTitle: "WathiqNote Enterprise Workspace",
     shortDescription: {
-      ar: "إدارة السندات لأمر الإلكترونية، التعهدات المالية، الإقرارات الرقمية، والأرشفة النظامية الداعمة.",
-      en: "Manage electronic promissory notes, financial undertakings, digital acknowledgments, and supporting legal records.",
+      ar: "مساحة عمل قانونية مالية لإدارة السندات، الفوترة، المطالبات، والأدلة الرقمية.",
+      en: "Legal-financial workspace for note issuance, billing, claims, and digital evidence.",
     },
     executiveDescription: {
-      ar: "عمليات رقمية منضبطة للسندات لأمر والتعهدات المالية مع إقرار إلكتروني وأرشفة قانونية قابلة للإثبات.",
-      en: "Governed digital workflows for promissory notes and financial undertakings with secure acknowledgments and defensible legal archiving.",
+      ar: "منصة موحدة لإصدار السندات الإلكترونية، متابعة الحالة، إدارة المستخدمين، والتدقيق القانوني ضمن بيئة المؤسسة.",
+      en: "Unified platform for electronic note issuance, status tracking, user management, and legal audit within the enterprise.",
+    },
+    status: "live",
+    href: "/modules/wathiqnote",
+    allowedRoles: ["tenant_owner", "tenant_admin", "legal_admin", "finance_officer", "compliance"],
+  },
+  {
+    key: "promissory-notes",
+    slug: "promissory-notes",
+    arabicTitle: "وثيق نوت للمؤسسات — الإصدار القديم",
+    englishTitle: "WathiqNote Enterprise Workspace (Legacy)",
+    shortDescription: {
+      ar: "مسار توافقي قديم لوثيق نوت. يُفضّل استخدام /modules/wathiqnote.",
+      en: "Legacy compatibility path for WathiqNote. Prefer /modules/wathiqnote.",
+    },
+    executiveDescription: {
+      ar: "مسار توافقي يحافظ على الروابط القديمة /modules/promissory-notes/enterprise.",
+      en: "Compatibility path preserving legacy /modules/promissory-notes/enterprise links.",
     },
     status: "live",
     href: "/modules/promissory-notes/enterprise",
@@ -131,6 +148,9 @@ export function getAccessibleModules(access: ModuleAccessContext): ModuleDefinit
 export function resolveModuleKeyFromPath(pathname: string): ModuleKey | null {
   if (pathname.startsWith("/modules/informed-consents")) {
     return "informed-consents";
+  }
+  if (pathname.startsWith("/modules/wathiqnote")) {
+    return "wathiqnote";
   }
   if (pathname.startsWith("/modules/promissory-notes")) {
     return "promissory-notes";
