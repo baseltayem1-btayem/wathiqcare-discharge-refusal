@@ -1,13 +1,16 @@
 
 "use client";
-import { useState } from "react";
+import { useState, use } from "react";
 import AppShell from "@/components/AppShell";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/make-ui/tabs";
 
-type CaseWorkspacePageProps = { params: { id: string } };
+type CaseWorkspacePageProps = {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
 export default function CaseWorkspacePage({ params }: CaseWorkspacePageProps) {
-  const { id } = params;
+  const { id } = use(params);
   const [tab, setTab] = useState("overview");
 
   // Demo data for legal readiness and evidence

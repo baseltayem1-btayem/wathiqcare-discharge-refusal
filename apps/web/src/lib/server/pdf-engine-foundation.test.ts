@@ -79,6 +79,6 @@ test("informed consent evidence HTML respects language direction and verificatio
 
   assert.match(html, /dir="rtl"/);
   assert.match(html, /evidence-1/);
-  assert.match(html, /IMC official letterhead placeholder/);
+  assert.match(html, /IMC logo placeholder/);
   assert.match(html, /Legal footer/);
 });

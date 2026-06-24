@@ -1,10 +1,8 @@
 "use client";
 
 import * as React from "react";
-// @ts-ignore — optional shadcn/ui peer dependency not installed in this workspace
 import { Slot } from "@radix-ui/react-slot";
-// @ts-ignore — optional shadcn/ui peer dependency not installed in this workspace
-import { VariantProps, cva } from "class-variance-authority";
+import { type VariantProps, cva } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
 
 import { useIsMobile } from "./use-mobile";

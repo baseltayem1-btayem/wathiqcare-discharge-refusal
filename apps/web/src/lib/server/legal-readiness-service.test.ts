@@ -70,5 +70,5 @@ test("legal readiness blocks export when required legal evidence is missing", ()
   assert.ok(report.blockers.some((item) => item.includes("Minimum witnesses requirement not met")));
   assert.ok(report.blockers.some((item) => item.includes("شرح المخاطر")));
   assert.ok(report.blockers.some((item) => item.includes("consent")));
-  assert.ok(report.blockers.some((item) => item.includes("validation errors")));
+  assert.ok(report.blockers.some((item) => item.includes("validation error(s) remain open")));
 });
