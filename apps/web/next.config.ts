@@ -48,7 +48,13 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    return [];
+    return [
+      // Public-facing signing URL alias for promissory notes
+      {
+        source: "/public-signing/promissory-note/:token*",
+        destination: "/public/promissory-note-signing/:token*",
+      },
+    ];
   },
   async headers() {
     return [
