@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { usePathname } from "next/navigation";
 import LegalQueueNav from "./LegalQueueNav";
@@ -20,6 +20,7 @@ export default function ConditionalNav() {
     "/public-signing",
     "/modules/informed-consents",
     "/modules/promissory-notes",
+    "/modules/wathiqnote",
   ];
 
   if (

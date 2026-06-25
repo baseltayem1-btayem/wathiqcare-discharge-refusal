@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -24,14 +24,24 @@ const modules = [
     stats: ["Case File", "Patient Signature", "Legal Record"]
   },
   {
-    title: "Promissory Notes",
-    subtitle: "Financial undertaking workflow",
+    title: "WathiqNote Enterprise",
+    subtitle: "Billing · Claims · Evidence",
     description:
-      "Controlled legal workflow for undertakings, case tracking, approvals, and supporting documents.",
+      "Unified legal-financial workspace for electronic note issuance, status tracking, user management, and audit trails.",
+    href: "/modules/wathiqnote",
+    status: "Production Active",
+    accent: "from-[#073763] to-[#c9a13b]",
+    stats: ["Note Builder", "Claims Monitoring", "Audit Trail"]
+  },
+  {
+    title: "Promissory Notes (Legacy)",
+    subtitle: "Compatibility path",
+    description:
+      "Legacy compatibility route preserved for existing bookmarks. Prefer WathiqNote Enterprise.",
     href: "/modules/promissory-notes/enterprise",
-    status: "Active",
+    status: "Legacy",
     accent: "from-[#2f2f2f] to-[#c9a13b]",
-    stats: ["Legal Review", "Finance", "Approval"]
+    stats: ["Redirect", "Compatibility", "Deprecated"]
   }
 ];
 

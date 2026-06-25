@@ -1,6 +1,8 @@
 "use client";
 
 import { wathiqNoteProductionTemplates } from "@/data/wathiqnote/templates";
+import { clearToken } from "@/utils/api";
+import { useRouter } from "next/navigation";
 import React, { ReactNode, useEffect, useMemo, useState } from "react";
 import {
   Activity,
@@ -309,10 +311,12 @@ function LeftSidebar({
   lang,
   screen,
   setScreen,
+  onSignOut,
 }: {
   lang: Lang;
   screen: Screen;
   setScreen: (screen: Screen) => void;
+  onSignOut: () => void;
 }) {
   const itemClass = (active: boolean) =>
     `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
@@ -380,7 +384,11 @@ function LeftSidebar({
 
       <div className="border-t border-white/20 px-5 py-4">
         <div className="mb-3 text-xs text-white/60">PDPL · Audit · Evidence</div>
-        <button className="flex items-center gap-2 text-sm text-blue-100">
+        <button
+          type="button"
+          onClick={onSignOut}
+          className="flex items-center gap-2 text-sm text-blue-100 hover:text-white"
+        >
           <LogOut className="h-4 w-4" />
           {txt(lang, "تسجيل الخروج", "Sign Out")}
         </button>
@@ -3234,16 +3242,28 @@ export default function WathiqNoteWorkflowModule() {
   const [screen, setScreen] = useState<Screen>("dashboard");
   const [toast, setToast] = useState<Toast | null>(null);
   const dir = lang === "ar" ? "rtl" : "ltr";
+  const router = useRouter();
 
   function showToast(nextToast: Toast) {
     setToast(nextToast);
     window.setTimeout(() => setToast(null), 3000);
   }
 
+  async function handleSignOut() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch (error) {
+      console.error("Logout request failed", error);
+    } finally {
+      clearToken();
+      router.push("/login");
+    }
+  }
+
   return (
     <main dir={dir} lang={lang} className="flex h-screen overflow-hidden bg-[#F3F6FA] text-slate-900">
       <ToastView toast={toast} />
-      <LeftSidebar lang={lang} screen={screen} setScreen={setScreen} />
+      <LeftSidebar lang={lang} screen={screen} setScreen={setScreen} onSignOut={handleSignOut} />
       <section className="flex min-w-0 flex-1 flex-col">
         <TopBar lang={lang} setLang={setLang} />
         <div className="flex-1 overflow-y-auto p-8">

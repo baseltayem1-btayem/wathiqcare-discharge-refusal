@@ -26,6 +26,7 @@ const SEGMENT_KEY_MAP: Record<string, string> = {
   "legal-package": "breadcrumbs.legalPackage",
   settings: "breadcrumbs.settings",
   "informed-consents": "breadcrumbs.informedConsents",
+  "wathiqnote": "breadcrumbs.wathiqnote",
   "promissory-notes": "breadcrumbs.promissoryNotes",
   "discharge-refusal": "breadcrumbs.dischargeRefusal",
   templates: "breadcrumbs.templates",
@@ -58,6 +59,8 @@ function fallbackArabicLabel(segment: string): string {
       return "المنصة";
     case "informed-consents":
       return "الموافقات المستنيرة";
+    case "wathiqnote":
+      return "وثيق نوت للمؤسسات";
     case "promissory-notes":
       return "السندات لأمر الإلكترونية";
     case "discharge-refusal":

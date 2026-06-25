@@ -5,10 +5,10 @@ import { requirePageAuthClaimsOrRedirect } from "@/lib/server/pageAuth";
 
 export const dynamic = "force-dynamic";
 
-export default async function WathiqNoteEnterpriseModule() {
-  const auth = await requirePageAuthClaimsOrRedirect("/modules/promissory-notes/enterprise");
+export default async function WathiqNotePageWrapper() {
+  const auth = await requirePageAuthClaimsOrRedirect("/modules/wathiqnote");
 
-  if (!canAccessModule("promissory-notes", { role: auth.role, platformRole: auth.platform_role })) {
+  if (!canAccessModule("wathiqnote", { role: auth.role, platformRole: auth.platform_role })) {
     return (
       <AccessDenied
         resource="WathiqNote Enterprise Workspace"
