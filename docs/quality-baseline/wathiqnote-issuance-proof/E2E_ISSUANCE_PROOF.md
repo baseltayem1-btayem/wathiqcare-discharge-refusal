@@ -6,8 +6,8 @@
 **Domain:** https://wathiqcare.online  
 **Route:** `/modules/wathiqnote`  
 **Branch:** `feature/wathiqnote-route-activation` → merged to `main`  
-**Production commit:** `2972ca4`  
-**Vercel production deployment:** `wathiqcare-discharge-refusal-40gt33wsw-wathiqcare.vercel.app`
+**Production commit:** `74712617`  
+**Vercel production deployment:** `wathiqcare-discharge-refusal-rifnb6224-wathiqcare.vercel.app`
 
 ### Summary
 
@@ -15,6 +15,11 @@ Clicking the button **"إصدار السند وإرسال رابط التوقي�
 
 1. `POST /api/modules/promissory-notes` → **HTTP 201 Created**
 2. `POST /api/modules/promissory-notes/{id}/debtor-signing/start` → **HTTP 200 OK**
+
+PDF actions were also fixed and verified:
+
+- `GET /api/modules/promissory-notes/{id}/pdf?lang=ar` → **HTTP 200** (`Content-Type: application/pdf`, inline)
+- `GET /api/modules/promissory-notes/{id}/pdf?lang=ar&download=1` → **HTTP 200** (`Content-Disposition: attachment`)
 
 ### Production Test Result
 
@@ -112,6 +117,13 @@ Production environment variables are configured in Vercel:
 - `TAQNYAT_SMS_ENABLED`
 
 The production test confirmed both the signing-link SMS and the OTP SMS returned status `sent` with Taqnyat provider message IDs recorded in the SMS audit log.
+
+### PDF Generation Fix
+
+Missing route: `app/api/modules/promissory-notes/[id]/pdf/route.ts`  
+Added service: `src/lib/server/promissory-note-pdf-render-service.ts`
+
+Both "عرض PDF" (`inline`) and "تحميل PDF" (`attachment`) buttons now return valid `%PDF-1.4` binaries from `wathiqcare.online`.
 
 ### Production Screenshots
 
