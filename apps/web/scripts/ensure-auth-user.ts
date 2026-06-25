@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { PrismaClient, MembershipStatus, SubscriberModuleAccessStatus, UserType } from "@prisma/client";
+import { PrismaClient, $Enums, type MembershipRole, type MembershipStatus, type SubscriberModuleAccessStatus, type UserType } from "@prisma/client";
 import { ensurePasswordResetSchema } from "../src/lib/server/auth-reset";
 import { extractDomain, normalizeEmail } from "../src/lib/server/auth-domain-policy";
 import { MODULE_DEFINITIONS, type ModuleKey } from "../src/lib/modules/catalog";
@@ -61,9 +61,9 @@ function parseUserType(value: string | null | undefined): UserType | null {
   if (!normalized) {
     return null;
   }
-  if (normalized === UserType.PLATFORM_ADMIN) return UserType.PLATFORM_ADMIN;
-  if (normalized === UserType.TENANT_ADMIN) return UserType.TENANT_ADMIN;
-  if (normalized === UserType.TENANT_USER) return UserType.TENANT_USER;
+  if (normalized === $Enums.UserType.PLATFORM_ADMIN) return $Enums.UserType.PLATFORM_ADMIN;
+  if (normalized === $Enums.UserType.TENANT_ADMIN) return $Enums.UserType.TENANT_ADMIN;
+  if (normalized === $Enums.UserType.TENANT_USER) return $Enums.UserType.TENANT_USER;
   throw new Error(`Invalid --user-type value: ${value}`);
 }
 
@@ -238,7 +238,7 @@ async function ensureModuleAccess(tenantId: string, moduleKeys: ModuleKey[]) {
     await prisma.subscriberModuleAccess.upsert({
       where: { subscriberId_moduleKey: { subscriberId: tenantId, moduleKey } },
       update: {
-        status: SubscriberModuleAccessStatus.ACTIVE,
+        status: $Enums.SubscriberModuleAccessStatus.ACTIVE,
         activatedAt: new Date(),
         deactivatedAt: null,
         notes: "Ensured by auth user remediation",
@@ -246,7 +246,7 @@ async function ensureModuleAccess(tenantId: string, moduleKeys: ModuleKey[]) {
       create: {
         subscriberId: tenantId,
         moduleKey,
-        status: SubscriberModuleAccessStatus.ACTIVE,
+        status: $Enums.SubscriberModuleAccessStatus.ACTIVE,
         activatedAt: new Date(),
         notes: "Ensured by auth user remediation",
       },
@@ -259,8 +259,8 @@ async function ensureModuleAccess(tenantId: string, moduleKeys: ModuleKey[]) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const canonicalRole = canonicalizeUserRole(args.role);
-  const membershipRole = membershipRoleForUserRole(canonicalRole);
-  const resolvedUserType = args.userType ?? userTypeForUserRole(canonicalRole);
+  const membershipRole: MembershipRole = membershipRoleForUserRole(canonicalRole);
+  const resolvedUserType: UserType = args.userType ?? userTypeForUserRole(canonicalRole);
 
   const existing = await prisma.user.findUnique({
     where: { email: args.email },
@@ -360,12 +360,12 @@ async function main() {
 
   await prisma.tenantMembership.upsert({
     where: { tenantId_userId: { tenantId: tenant.id, userId: user.id } },
-    update: { role: membershipRole, status: MembershipStatus.ACTIVE },
+    update: { role: membershipRole, status: $Enums.MembershipStatus.ACTIVE },
     create: {
       tenantId: tenant.id,
       userId: user.id,
       role: membershipRole,
-      status: MembershipStatus.ACTIVE,
+      status: $Enums.MembershipStatus.ACTIVE,
     },
   });
 

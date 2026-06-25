@@ -142,6 +142,12 @@ export const ENABLE_DYNAMIC_CONSENT_ENGINE = envBool(
   false
 );
 
+/** Enable the Content Mapping Engine for procedure → consent form + education material resolution */
+export const ENABLE_CONTENT_MAPPING_ENGINE = envBool(
+  "FF_ENABLE_CONTENT_MAPPING_ENGINE",
+  false
+);
+
 // ---------------------------------------------------------------------------
 // Legal & Compliance
 // ---------------------------------------------------------------------------
@@ -193,6 +199,7 @@ export const FEATURE_FLAGS = {
   ENABLE_PDF_WATERMARK,
   ENABLE_BILINGUAL_PDF,
   ENABLE_DYNAMIC_CONSENT_ENGINE,
+  ENABLE_CONTENT_MAPPING_ENGINE,
   ENABLE_PDPL_NOTICES,
   ENABLE_LEGAL_HOLD,
   ENABLE_RETENTION_POLICY,

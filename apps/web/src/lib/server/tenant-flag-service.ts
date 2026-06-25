@@ -1,5 +1,5 @@
-﻿import { Prisma } from "@prisma/client";
-import { FeatureFlagScope } from "@/lib/server/prisma-enums";
+import { Prisma } from "@prisma/client";
+import { $Enums, type FeatureFlagScope } from "@prisma/client";
 import { FEATURE_FLAGS, type FeatureFlag } from "@/lib/config/feature-flags";
 import { getPrisma } from "@/lib/server/prisma";
 import type { ModuleKey } from "@/lib/modules/catalog";
@@ -44,11 +44,11 @@ function normalizeFlagKey(key: string): FeatureFlag {
 }
 
 function buildScopeRef(scope: FeatureFlagScope, tenantId?: string | null, moduleKey?: string | null): string {
-  if (scope === FeatureFlagScope.GLOBAL) {
+  if (scope === $Enums.FeatureFlagScope.GLOBAL) {
     return "global";
   }
 
-  if (scope === FeatureFlagScope.TENANT) {
+  if (scope === $Enums.FeatureFlagScope.TENANT) {
     if (!tenantId) {
       throw new Error("tenantId is required for tenant scoped overrides");
     }
@@ -68,7 +68,7 @@ async function upsertFlag(args: UpsertArgs): Promise<TenantFlagRecord> {
   const record = await prisma().featureFlagOverride.upsert({
     where: {
       scope_scopeRef_key: {
-        scope: args.scope,
+        scope: args.scope as $Enums.FeatureFlagScope,
         scopeRef,
         key: args.key,
       },
@@ -81,7 +81,7 @@ async function upsertFlag(args: UpsertArgs): Promise<TenantFlagRecord> {
       metadata: args.metadata ?? undefined,
     },
     create: {
-      scope: args.scope,
+      scope: args.scope as $Enums.FeatureFlagScope,
       scopeRef,
       key: args.key,
       value: args.value,
@@ -105,7 +105,7 @@ async function upsertFlag(args: UpsertArgs): Promise<TenantFlagRecord> {
 
 export async function setGlobalFeatureFlag(key: FeatureFlag | string, value: boolean, updatedBy?: string | null): Promise<TenantFlagRecord> {
   return upsertFlag({
-    scope: FeatureFlagScope.GLOBAL,
+    scope: $Enums.FeatureFlagScope.GLOBAL,
     key: normalizeFlagKey(key),
     value,
     updatedBy,
@@ -114,7 +114,7 @@ export async function setGlobalFeatureFlag(key: FeatureFlag | string, value: boo
 
 export async function setTenantFeatureFlag(tenantId: string, key: FeatureFlag | string, value: boolean, updatedBy?: string | null): Promise<TenantFlagRecord> {
   return upsertFlag({
-    scope: FeatureFlagScope.TENANT,
+    scope: $Enums.FeatureFlagScope.TENANT,
     key: normalizeFlagKey(key),
     value,
     tenantId,
@@ -124,7 +124,7 @@ export async function setTenantFeatureFlag(tenantId: string, key: FeatureFlag | 
 
 export async function setModuleFeatureFlag(tenantId: string, moduleKey: ModuleKey, key: FeatureFlag | string, value: boolean, updatedBy?: string | null): Promise<TenantFlagRecord> {
   return upsertFlag({
-    scope: FeatureFlagScope.MODULE,
+    scope: $Enums.FeatureFlagScope.MODULE,
     key: normalizeFlagKey(key),
     value,
     tenantId,
@@ -138,7 +138,7 @@ async function readOverride(scope: FeatureFlagScope, key: FeatureFlag, tenantId?
   const record = await prisma().featureFlagOverride.findUnique({
     where: {
       scope_scopeRef_key: {
-        scope,
+        scope: scope as $Enums.FeatureFlagScope,
         scopeRef,
         key,
       },
@@ -152,10 +152,10 @@ async function readOverride(scope: FeatureFlagScope, key: FeatureFlag, tenantId?
 export async function resolveFeatureFlag(key: FeatureFlag | string, tenantId?: string | null, moduleKey?: ModuleKey | null): Promise<TenantFlagResolution> {
   const normalizedKey = normalizeFlagKey(key);
   const envDefault = FEATURE_FLAGS[normalizedKey];
-  const globalValue = await readOverride(FeatureFlagScope.GLOBAL, normalizedKey);
-  const tenantValue = tenantId ? await readOverride(FeatureFlagScope.TENANT, normalizedKey, tenantId) : null;
+  const globalValue = await readOverride($Enums.FeatureFlagScope.GLOBAL, normalizedKey);
+  const tenantValue = tenantId ? await readOverride($Enums.FeatureFlagScope.TENANT, normalizedKey, tenantId) : null;
   const moduleValue = tenantId && moduleKey
-    ? await readOverride(FeatureFlagScope.MODULE, normalizedKey, tenantId, moduleKey)
+    ? await readOverride($Enums.FeatureFlagScope.MODULE, normalizedKey, tenantId, moduleKey)
     : null;
 
   const resolvedValue = moduleValue ?? tenantValue ?? globalValue ?? envDefault;
@@ -174,9 +174,9 @@ export async function listTenantFeatureFlagOverrides(tenantId: string): Promise<
   const rows = await prisma().featureFlagOverride.findMany({
     where: {
       OR: [
-        { scope: FeatureFlagScope.GLOBAL },
-        { scope: FeatureFlagScope.TENANT, tenantId },
-        { scope: FeatureFlagScope.MODULE, tenantId },
+        { scope: $Enums.FeatureFlagScope.GLOBAL },
+        { scope: $Enums.FeatureFlagScope.TENANT, tenantId },
+        { scope: $Enums.FeatureFlagScope.MODULE, tenantId },
       ],
     },
     orderBy: [{ scope: "asc" }, { key: "asc" }, { moduleKey: "asc" }],

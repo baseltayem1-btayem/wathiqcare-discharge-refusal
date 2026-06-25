@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import chromium from "@sparticuz/chromium";
@@ -8,7 +8,7 @@ import type { Browser, LaunchOptions } from "puppeteer";
 import QRCode from "qrcode";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { ConsentRiskClass } from "@/lib/server/prisma-enums";
+import { $Enums, type ConsentRiskClass } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { normalizeArabicForPatientFacingText } from "@/lib/server/arabic-mojibake-guard";
@@ -698,10 +698,10 @@ export async function buildFinalConsentPdfPayload(args: {
   const sectionInterpreter = getSection(document, ["interpreter_acknowledgment"]);
   const anesthesiaSection = getSectionByTitle(document, /anesthesia/i);
 
-  const commonRisks = riskListByClass(document, ConsentRiskClass.COMMON);
-  const uncommonRisks = riskListByClass(document, ConsentRiskClass.LESS_COMMON);
-  const seriousRisks = riskListByClass(document, ConsentRiskClass.SERIOUS);
-  const lifeThreateningRisks = riskListByClass(document, ConsentRiskClass.LIFE_THREATENING);
+  const commonRisks = riskListByClass(document, $Enums.ConsentRiskClass.COMMON);
+  const uncommonRisks = riskListByClass(document, $Enums.ConsentRiskClass.LESS_COMMON);
+  const seriousRisks = riskListByClass(document, $Enums.ConsentRiskClass.SERIOUS);
+  const lifeThreateningRisks = riskListByClass(document, $Enums.ConsentRiskClass.LIFE_THREATENING);
 
   const patientSignatureRaw = document.signatures.find((item) => item.role === "PATIENT") || null;
   const guardianSignatureRaw = document.signatures.find((item) => item.role === "GUARDIAN") || null;
@@ -1040,7 +1040,7 @@ export async function buildFinalConsentPdfPayload(args: {
   addSectionRows("financial_acknowledgment", "Ø§Ù„Ø¥Ù‚Ø±Ø§Ø± Ø§Ù„Ù…Ø§Ù„ÙŠ", "Financial Acknowledgment", [...FINANCIAL_ACKNOWLEDGMENT_ROWS]);
 
   const otpVerified = signatureSecurity.otpVerified === true || signatureOrchestration.otpVerified === true;
-  const auditReference = evidenceVault.verificationToken || effectiveHash || document.id;
+  const auditReference = (evidenceVault.verificationToken as string | undefined) || effectiveHash || document.id;
   const evidencePackageReference =
     document.evidencePackages[0]?.id || normalizeText((evidenceVault.evidencePackageV2Id as string | undefined) || "") || null;
   const latestIp = patientSignatureRaw?.ipAddress || guardianSignatureRaw?.ipAddress || document.timelineEvents.at(-1)?.ipAddress || null;
@@ -2096,7 +2096,7 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
 
     const lang = args.lang || "bilingual";
 
-    return new NextResponse(pdf, {
+    return new NextResponse(pdf as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

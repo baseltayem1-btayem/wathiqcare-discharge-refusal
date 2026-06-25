@@ -1,5 +1,5 @@
 ﻿import { Prisma } from "@prisma/client";
-import { CaseStatus, DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
+import { $Enums, type CaseStatus, type DocumentStatus, type DocumentType } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import {
     requireTenantId,
@@ -406,8 +406,8 @@ function mapWorkflowDocument(document: {
         generated_at: document.generatedAt.toISOString(),
         templateVersion: document.versionLabel,
         generationStatus: document.status.toLowerCase(),
-        signedStatus: Boolean(document.signedAt || document.status === DocumentStatus.SIGNED),
-        archivedStatus: document.status === DocumentStatus.ARCHIVED,
+        signedStatus: Boolean(document.signedAt || document.status === $Enums.DocumentStatus.SIGNED),
+        archivedStatus: document.status === $Enums.DocumentStatus.ARCHIVED,
         createdBy: document.generatedBy?.fullName ?? null,
         signedBy: document.signedBy?.fullName ?? null,
         signedAt: toIsoString(document.signedAt),
@@ -510,7 +510,7 @@ function buildWorkflowState(caseRecord: AuthorizedCaseRecord): Omit<WorkflowSnap
             false,
         lifecycle_status:
             readString(storedWorkflow, "lifecycle_status") ||
-            (caseRecord.status === CaseStatus.CLOSED ? "closed" : "active"),
+            (caseRecord.status === $Enums.CaseStatus.CLOSED ? "closed" : "active"),
         case_status:
             readString(storedWorkflow, "case_status") ||
             readString(metadata, "case_status") ||
@@ -609,7 +609,7 @@ async function persistWorkflowState(
         where: { id: caseRecord.id },
         data: {
             workflowType: "discharge_refusal",
-            status: workflow.status === "closed" ? CaseStatus.CLOSED : CaseStatus.IN_PROGRESS,
+            status: workflow.status === "closed" ? $Enums.CaseStatus.CLOSED : $Enums.CaseStatus.IN_PROGRESS,
             metadata,
             updatedByUserId: auth.sub,
             version: { increment: 1 },
@@ -665,9 +665,9 @@ async function createGeneratedDocument(
             caseId: workflow.case_id,
             documentType:
                 templateKey === "financial_responsibility_notice"
-                    ? DocumentType.FINANCIAL_RESPONSIBILITY_NOTICE
-                    : DocumentType.DISCHARGE_REFUSAL_FORM,
-            status: DocumentStatus.GENERATED,
+                    ? $Enums.DocumentType.FINANCIAL_RESPONSIBILITY_NOTICE
+                    : $Enums.DocumentType.DISCHARGE_REFUSAL_FORM,
+            status: $Enums.DocumentStatus.GENERATED,
             documentCode,
             titleEn:
                 templateKey === "financial_responsibility_notice"

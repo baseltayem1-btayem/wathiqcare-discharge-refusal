@@ -1,4 +1,4 @@
-import { DataClassification, RetentionActionStatus } from "@/lib/server/prisma-enums";
+import { $Enums, type DataClassification, type RetentionActionStatus } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -23,7 +23,7 @@ export async function ensureDefaultRetentionPolicy(tenantId: string) {
       },
     },
     update: {
-      dataType: DataClassification.PATIENT_SENSITIVE,
+      dataType: $Enums.DataClassification.PATIENT_SENSITIVE,
       retentionYears: 10,
       legalHoldRequired: true,
       requiresLegalApproval: true,
@@ -32,7 +32,7 @@ export async function ensureDefaultRetentionPolicy(tenantId: string) {
     },
     create: {
       tenantId,
-      dataType: DataClassification.PATIENT_SENSITIVE,
+      dataType: $Enums.DataClassification.PATIENT_SENSITIVE,
       recordCategory: "discharge_refusal_cases",
       retentionYears: 10,
       legalHoldRequired: true,
@@ -51,7 +51,7 @@ export async function getRetentionDashboard(tenantId: string) {
     prisma().retentionAction.findMany({ where: { tenantId }, orderBy: { scheduledFor: "asc" }, take: 100 }).catch(() => []),
   ]);
 
-  const upcomingActions = actions.filter((item) => item.status === RetentionActionStatus.PENDING);
+  const upcomingActions = actions.filter((item) => item.status === $Enums.RetentionActionStatus.PENDING);
 
   return {
     policies,
@@ -62,7 +62,7 @@ export async function getRetentionDashboard(tenantId: string) {
       policyCount: policies.length,
       actionCount: actions.length,
       upcomingActionCount: upcomingActions.length,
-      legalHoldCount: actions.filter((item) => item.status === RetentionActionStatus.LEGAL_HOLD).length,
+      legalHoldCount: actions.filter((item) => item.status === $Enums.RetentionActionStatus.LEGAL_HOLD).length,
     },
   };
 }
@@ -97,7 +97,7 @@ export async function createRetentionEntry(
       },
       create: {
         tenantId: auth.tenant_id,
-        dataType: DataClassification.PATIENT_SENSITIVE,
+        dataType: $Enums.DataClassification.PATIENT_SENSITIVE,
         recordCategory: payload.recordCategory.trim(),
         retentionYears: Math.max(1, Math.floor(payload.retentionYears ?? 10)),
       },
@@ -132,7 +132,7 @@ export async function createRetentionEntry(
       targetType: payload.targetType.trim(),
       targetId: payload.targetId.trim(),
       holdReason: payload.holdReason?.trim() || null,
-      status: payload.holdReason ? RetentionActionStatus.LEGAL_HOLD : RetentionActionStatus.PENDING,
+      status: payload.holdReason ? $Enums.RetentionActionStatus.LEGAL_HOLD : $Enums.RetentionActionStatus.PENDING,
       scheduledFor: payload.scheduledFor ? new Date(payload.scheduledFor) : calculateRetentionDueDate(new Date(), 10),
     },
   });

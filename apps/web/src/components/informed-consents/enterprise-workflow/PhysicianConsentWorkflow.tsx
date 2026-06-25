@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 
 
 import ConsentSearchEngine from "./ConsentSearchEngine";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Search,
@@ -757,6 +757,39 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
     actorName: auth?.name ?? auth?.email ?? "Physician",
     actorRole: auth?.role ?? auth?.platform_role ?? "PHYSICIAN",
   };
+
+  const [contentMappingEnabled, setContentMappingEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadContentMappingFlag() {
+      try {
+        const response = await fetch(
+          `/api/modules/informed-consents/content-mapping/feature-flag?tenantId=${encodeURIComponent(apiContext.tenantId)}`,
+        );
+        const payload = await response.json().catch(() => null);
+
+        if (!cancelled) {
+          setContentMappingEnabled(Boolean(payload?.ok && payload?.enabled));
+        }
+      } catch {
+        if (!cancelled) {
+          setContentMappingEnabled(false);
+        }
+      }
+    }
+
+    loadContentMappingFlag();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiContext.tenantId]);
+
+  const educationViewedRef = useRef<string | null>(null);
+  const consentReadyAuditSentRef = useRef(false);
+
   const [reviewTeam, setReviewTeam] = useState<CollaborationReviewTeam>({});
   const [reviewTeamLoading, setReviewTeamLoading] = useState(false);
   const [reviewTeamError, setReviewTeamError] = useState("");
@@ -817,11 +850,22 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
     let cancelled = false;
 
     async function loadImcLibrary() {
+      if (!contentMappingEnabled) {
+        if (!cancelled) {
+          setImcLibraryLoading(false);
+          setImcLibraryItems([]);
+          setImcLibraryError("");
+        }
+        return;
+      }
+
       setImcLibraryLoading(true);
       setImcLibraryError("");
 
       try {
-        const response = await fetch("/api/modules/informed-consents/imc-library");
+        const response = await fetch(
+          `/api/modules/informed-consents/imc-library?tenantId=${encodeURIComponent(apiContext.tenantId)}`,
+        );
         const payload = await response.json().catch(() => null);
 
         if (!response.ok || !payload?.ok) {
@@ -848,16 +892,18 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [contentMappingEnabled, apiContext.tenantId]);
 
   useEffect(() => {
     let cancelled = false;
     const procedure = workflow.procedureName.trim();
 
     async function resolveImcPackage() {
-      if (procedure.length < 2) {
-        setSelectedImcPackage(null);
-        setImcResolveError("");
+      if (procedure.length < 2 || !contentMappingEnabled) {
+        if (!cancelled) {
+          setSelectedImcPackage(null);
+          setImcResolveError("");
+        }
         return;
       }
 
@@ -866,12 +912,20 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
 
       try {
         const response = await fetch(
-          `/api/modules/informed-consents/imc-library/resolve?procedure=${encodeURIComponent(procedure)}`,
+          `/api/modules/informed-consents/content-mapping/resolve?procedure=${encodeURIComponent(procedure)}&tenantId=${encodeURIComponent(apiContext.tenantId)}`,
         );
         const payload = await response.json().catch(() => null);
 
         if (!response.ok || !payload?.ok) {
-          throw new Error(payload?.message || payload?.error || "Failed to resolve IMC approved consent package.");
+          throw new Error(payload?.message || payload?.error || "Failed to resolve content mapping.");
+        }
+
+        if (!payload.featureFlagEnabled) {
+          if (!cancelled) {
+            setSelectedImcPackage(null);
+            setImcResolveLoading(false);
+          }
+          return;
         }
 
         const resolvedPackage = (payload.package || null) as ImcConsentPackage | null;
@@ -881,19 +935,30 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
         setSelectedImcPackage(resolvedPackage);
 
         if (resolvedPackage?.procedureConsent) {
+          const hasEducation = Boolean(resolvedPackage.patientEducation);
+
           setWorkflow((current) => ({
             ...current,
             templateName: resolvedPackage.procedureConsent?.titleEn || current.templateName,
             consentCategory: resolvedPackage.procedureConsent?.templateType || current.consentCategory,
-            educationPackage: resolvedPackage.patientEducation?.titleEn || current.educationPackage,
+            educationRequired: hasEducation,
+            educationPackage: hasEducation
+              ? resolvedPackage.patientEducation?.titleEn || current.educationPackage
+              : "",
             anesthesiaReviewRequired:
               current.anesthesiaReviewRequired || Boolean(resolvedPackage.procedureConsent?.requiresAnesthesia),
+          }));
+        } else {
+          setWorkflow((current) => ({
+            ...current,
+            educationRequired: true,
+            educationPackage: current.educationPackage || "Standard procedure education package",
           }));
         }
       } catch (error) {
         if (!cancelled) {
           setSelectedImcPackage(null);
-          setImcResolveError(error instanceof Error ? error.message : "Failed to resolve IMC approved consent package.");
+          setImcResolveError(error instanceof Error ? error.message : "Failed to resolve content mapping.");
         }
       } finally {
         if (!cancelled) {
@@ -907,7 +972,7 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
     return () => {
       cancelled = true;
     };
-  }, [workflow.procedureName]);
+  }, [workflow.procedureName, contentMappingEnabled, apiContext.tenantId]);
   const [patientQuery, setPatientQuery] = useState("");
   const [patientResults, setPatientResults] = useState<PatientSearchItem[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientSearchItem | null>(null);
@@ -1047,6 +1112,45 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
 
 
   const activeStep = workflowSteps[activeStepIndex];
+
+  useEffect(() => {
+    if (!contentMappingEnabled) return;
+    if (activeStep.key !== "education") {
+      educationViewedRef.current = null;
+      return;
+    }
+
+    const educationAssetId = selectedImcPackage?.patientEducation?.id;
+    if (!educationAssetId) return;
+    if (educationViewedRef.current === educationAssetId) return;
+
+    educationViewedRef.current = educationAssetId;
+
+    fetch(
+      `/api/modules/informed-consents/content-mapping/audit?tenantId=${encodeURIComponent(apiContext.tenantId)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "education_material_viewed",
+          summary: `Education material viewed: ${selectedImcPackage.patientEducation?.titleEn}`,
+          metadata: {
+            procedureNameEn: workflow.procedureName,
+            educationAssetId,
+            viewedBy: "PHYSICIAN",
+            viewedAt: new Date().toISOString(),
+          },
+        }),
+      },
+    ).catch(() => undefined);
+  }, [
+    activeStep.key,
+    contentMappingEnabled,
+    selectedImcPackage?.patientEducation?.id,
+    selectedImcPackage?.patientEducation?.titleEn,
+    workflow.procedureName,
+    apiContext.tenantId,
+  ]);
 
   const completionSummary = useMemo(() => {
     const patientReady = Boolean(workflow.patientName && workflow.mrn && workflow.encounterNo);
@@ -1379,6 +1483,28 @@ export function PhysicianConsentWorkflow({ auth }: PhysicianConsentWorkflowProps
     if (completionSummary.sendBlocked) {
       handleRefocus();
       return;
+    }
+
+    if (contentMappingEnabled && !consentReadyAuditSentRef.current) {
+      consentReadyAuditSentRef.current = true;
+      fetch(
+        `/api/modules/informed-consents/content-mapping/audit?tenantId=${encodeURIComponent(apiContext.tenantId)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "consent_ready_for_signature",
+            summary: `Consent package ready for signature: ${workflow.procedureName}`,
+            metadata: {
+              procedureNameEn: workflow.procedureName,
+              consentDocumentId: consentDocumentId || null,
+              templateVersionId: selectedRuntimeTemplate?.templateVersionId || null,
+              educationAssetId: selectedImcPackage?.patientEducation?.id || null,
+              language: "bilingual",
+            },
+          }),
+        },
+      ).catch(() => undefined);
     }
 
     setLinkActionState({ mode: "send", tone: null, message: "", messageAr: "" });
@@ -2045,7 +2171,7 @@ function IssueConsentWorkspace({
           </button>
         }
       >
-        <WorkflowStepper activeStepIndex={activeStepIndex} setActiveStepIndex={setActiveStepIndex} refocusTarget={refocusTarget} />
+        <WorkflowStepper activeStepIndex={activeStepIndex} setActiveStepIndex={setActiveStepIndex} refocusTarget={refocusTarget} educationRequired={workflow.educationRequired} />
 
         <div className="mt-6 rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#FFFFFF_0%,#FBFDFF_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
           {activeStep.key === "patientEncounter" && (
@@ -2354,10 +2480,12 @@ function WorkflowStepper({
   activeStepIndex,
   setActiveStepIndex,
   refocusTarget,
+  educationRequired,
 }: {
   activeStepIndex: number;
   setActiveStepIndex: (index: number) => void;
   refocusTarget: RefocusTarget;
+  educationRequired: boolean;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -2367,6 +2495,7 @@ function WorkflowStepper({
           const isActive = index === activeStepIndex;
           const isRefocusTarget = refocusTarget.section === "issueConsent" && refocusTarget.step === step.key;
           const meta = workflowStepMeta[step.key];
+          const isEducationNotApplicable = step.key === "education" && !educationRequired;
 
           return (
             <button
@@ -2402,9 +2531,11 @@ function WorkflowStepper({
                 <span className="min-w-0">
                   <span className={["block text-xs font-extrabold uppercase tracking-[0.12em]", isActive ? "text-[#C9A13B]" : "text-[#94A3B8]"] .join(" ")}>{meta.eyebrow}</span>
                   <span className={["mt-1 block text-sm font-extrabold", isActive ? "text-white" : "text-[#002B5C]"].join(" ")}>
-                    {step.label}
+                    {isEducationNotApplicable ? `${step.label} (N/A)` : step.label}
                   </span>
-                  <span className={["block text-xs", isActive ? "text-white/80" : "text-[#64748B]"].join(" ")}>{step.labelAr}</span>
+                  <span className={["block text-xs", isActive ? "text-white/80" : "text-[#64748B]"].join(" ")}>
+                    {isEducationNotApplicable ? "غير مطلوب" : step.labelAr}
+                  </span>
                   <span className={["mt-2 block text-xs leading-5", isActive ? "text-white/72" : "text-[#64748B]"].join(" ")}>
                     {meta.description}
                   </span>

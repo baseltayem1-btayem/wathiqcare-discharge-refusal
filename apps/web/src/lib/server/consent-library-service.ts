@@ -1,18 +1,6 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
-import {
-  ConsentAlertLevel,
-  ConsentCommitteeType,
-  ConsentDocumentStatus,
-  ConsentEvidenceCopyType,
-  ConsentMethod,
-  ConsentReviewDecision,
-  ConsentRiskClass,
-  ConsentRiskSeverity,
-  ConsentSectionKind,
-  ConsentSignatureRole,
-  ConsentTemplateStatus,
-} from "@/lib/server/prisma-enums";
+import { $Enums, type ConsentAlertLevel, type ConsentCommitteeType, type ConsentDocumentStatus, type ConsentEvidenceCopyType, type ConsentReviewDecision, type ConsentRiskClass, type ConsentRiskSeverity, type ConsentSectionKind, type ConsentSignatureRole } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -58,11 +46,11 @@ export const SPECIALTY_OPTIONS = [
 ] as const;
 
 const RISK_CLASS_ORDER: ConsentRiskClass[] = [
-  ConsentRiskClass.COMMON,
-  ConsentRiskClass.LESS_COMMON,
-  ConsentRiskClass.RARE,
-  ConsentRiskClass.SERIOUS,
-  ConsentRiskClass.LIFE_THREATENING,
+  $Enums.ConsentRiskClass.COMMON,
+  $Enums.ConsentRiskClass.LESS_COMMON,
+  $Enums.ConsentRiskClass.RARE,
+  $Enums.ConsentRiskClass.SERIOUS,
+  $Enums.ConsentRiskClass.LIFE_THREATENING,
 ];
 
 const DEFAULT_AI_WARNING_AR = "AI-assisted draft pending physician validation.";
@@ -346,7 +334,7 @@ function resolveSectionGovernance(
   sectionKind: ConsentSectionKind,
   isEditableByPhysician: boolean,
 ): FieldGovernanceRule {
-  if (sectionKind === ConsentSectionKind.FIXED_LEGAL) {
+  if (sectionKind === $Enums.ConsentSectionKind.FIXED_LEGAL) {
     return {
       editableBy: "GOVERNANCE",
       aiAllowed: false,
@@ -356,7 +344,7 @@ function resolveSectionGovernance(
     };
   }
 
-  if (sectionKind === ConsentSectionKind.DYNAMIC_MEDICAL) {
+  if (sectionKind === $Enums.ConsentSectionKind.DYNAMIC_MEDICAL) {
     return {
       editableBy: isEditableByPhysician ? "PHYSICIAN" : "SYSTEM",
       aiAllowed: true,
@@ -450,49 +438,49 @@ function generateReference(prefix: string): string {
   return `${prefix}-${nowIsoStamp()}-${tail}`;
 }
 
-function normalizeConsentMethod(value: string | null | undefined): ConsentMethod {
+function normalizeConsentMethod(value: string | null | undefined): $Enums.ConsentMethod {
   const normalized = (value || "").trim().toUpperCase();
-  if (normalized === ConsentMethod.OTP) return ConsentMethod.OTP;
-  if (normalized === ConsentMethod.WITNESS_ACKNOWLEDGMENT) return ConsentMethod.WITNESS_ACKNOWLEDGMENT;
-  if (normalized === ConsentMethod.WRITTEN) return ConsentMethod.WRITTEN;
-  return ConsentMethod.ELECTRONIC_SIGNATURE;
+  if (normalized === $Enums.ConsentMethod.OTP) return $Enums.ConsentMethod.OTP;
+  if (normalized === $Enums.ConsentMethod.WITNESS_ACKNOWLEDGMENT) return $Enums.ConsentMethod.WITNESS_ACKNOWLEDGMENT;
+  if (normalized === $Enums.ConsentMethod.WRITTEN) return $Enums.ConsentMethod.WRITTEN;
+  return $Enums.ConsentMethod.ELECTRONIC_SIGNATURE;
 }
 
 function normalizeSignatureRole(value: string | null | undefined): ConsentSignatureRole {
   const normalized = (value || "").trim().toUpperCase();
-  if (normalized === ConsentSignatureRole.PHYSICIAN) return ConsentSignatureRole.PHYSICIAN;
-  if (normalized === ConsentSignatureRole.WITNESS) return ConsentSignatureRole.WITNESS;
-  if (normalized === ConsentSignatureRole.INTERPRETER) return ConsentSignatureRole.INTERPRETER;
-  if (normalized === ConsentSignatureRole.GUARDIAN) return ConsentSignatureRole.GUARDIAN;
-  return ConsentSignatureRole.PATIENT;
+  if (normalized === $Enums.ConsentSignatureRole.PHYSICIAN) return $Enums.ConsentSignatureRole.PHYSICIAN;
+  if (normalized === $Enums.ConsentSignatureRole.WITNESS) return $Enums.ConsentSignatureRole.WITNESS;
+  if (normalized === $Enums.ConsentSignatureRole.INTERPRETER) return $Enums.ConsentSignatureRole.INTERPRETER;
+  if (normalized === $Enums.ConsentSignatureRole.GUARDIAN) return $Enums.ConsentSignatureRole.GUARDIAN;
+  return $Enums.ConsentSignatureRole.PATIENT;
 }
 
 function normalizeRiskClass(value: string | null | undefined): ConsentRiskClass {
   const normalized = (value || "").trim().toUpperCase();
-  if (normalized === ConsentRiskClass.LESS_COMMON) return ConsentRiskClass.LESS_COMMON;
-  if (normalized === ConsentRiskClass.RARE) return ConsentRiskClass.RARE;
-  if (normalized === ConsentRiskClass.SERIOUS) return ConsentRiskClass.SERIOUS;
-  if (normalized === ConsentRiskClass.LIFE_THREATENING) return ConsentRiskClass.LIFE_THREATENING;
-  return ConsentRiskClass.COMMON;
+  if (normalized === $Enums.ConsentRiskClass.LESS_COMMON) return $Enums.ConsentRiskClass.LESS_COMMON;
+  if (normalized === $Enums.ConsentRiskClass.RARE) return $Enums.ConsentRiskClass.RARE;
+  if (normalized === $Enums.ConsentRiskClass.SERIOUS) return $Enums.ConsentRiskClass.SERIOUS;
+  if (normalized === $Enums.ConsentRiskClass.LIFE_THREATENING) return $Enums.ConsentRiskClass.LIFE_THREATENING;
+  return $Enums.ConsentRiskClass.COMMON;
 }
 
 function normalizeRiskSeverity(value: string | null | undefined): ConsentRiskSeverity {
   const normalized = (value || "").trim().toUpperCase();
-  if (normalized === ConsentRiskSeverity.MEDIUM) return ConsentRiskSeverity.MEDIUM;
-  if (normalized === ConsentRiskSeverity.HIGH) return ConsentRiskSeverity.HIGH;
-  if (normalized === ConsentRiskSeverity.CRITICAL) return ConsentRiskSeverity.CRITICAL;
-  return ConsentRiskSeverity.LOW;
+  if (normalized === $Enums.ConsentRiskSeverity.MEDIUM) return $Enums.ConsentRiskSeverity.MEDIUM;
+  if (normalized === $Enums.ConsentRiskSeverity.HIGH) return $Enums.ConsentRiskSeverity.HIGH;
+  if (normalized === $Enums.ConsentRiskSeverity.CRITICAL) return $Enums.ConsentRiskSeverity.CRITICAL;
+  return $Enums.ConsentRiskSeverity.LOW;
 }
 
 function normalizeAlertLevel(value: string | null | undefined): ConsentAlertLevel {
   const normalized = (value || "").trim().toUpperCase();
-  if (normalized === ConsentAlertLevel.WARNING) return ConsentAlertLevel.WARNING;
-  if (normalized === ConsentAlertLevel.HIGH_ALERT) return ConsentAlertLevel.HIGH_ALERT;
-  if (normalized === ConsentAlertLevel.LEGAL_CRITICAL) return ConsentAlertLevel.LEGAL_CRITICAL;
-  return ConsentAlertLevel.INFO;
+  if (normalized === $Enums.ConsentAlertLevel.WARNING) return $Enums.ConsentAlertLevel.WARNING;
+  if (normalized === $Enums.ConsentAlertLevel.HIGH_ALERT) return $Enums.ConsentAlertLevel.HIGH_ALERT;
+  if (normalized === $Enums.ConsentAlertLevel.LEGAL_CRITICAL) return $Enums.ConsentAlertLevel.LEGAL_CRITICAL;
+  return $Enums.ConsentAlertLevel.INFO;
 }
 
-async function writeConsentAudit(args: {
+export async function writeConsentAudit(args: {
   tenantId: string;
   auth: AuthContext;
   action: string;
@@ -751,7 +739,7 @@ export async function createConsentTemplate(
         consentType,
         specialty,
         department: payload.department?.trim() || null,
-        status: ConsentTemplateStatus.DRAFT,
+        status: $Enums.ConsentTemplateStatus.DRAFT,
         titleAr: (payload.titleAr || "Ù†Ù…ÙˆØ°Ø¬ Ù…ÙˆØ§ÙÙ‚Ø© Ø·Ø¨ÙŠØ©").trim(),
         titleEn: (payload.titleEn || "Medical Consent Form").trim(),
         summaryAr: payload.summaryAr?.trim() || null,
@@ -765,7 +753,7 @@ export async function createConsentTemplate(
         templateId: template.id,
         versionLabel: "v1.0",
         versionNumber: 1,
-        status: ConsentTemplateStatus.DRAFT,
+        status: $Enums.ConsentTemplateStatus.DRAFT,
         legalTextAr:
           payload.legalTextAr?.trim() ||
           "Ø£Ù‚Ø± Ø¨Ø£Ù† Ø§Ù„Ø·Ø¨ÙŠØ¨ Ø´Ø±Ø­ Ù„ÙŠ Ø·Ø¨ÙŠØ¹Ø© Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡ Ø§Ù„Ø·Ø¨ÙŠ ÙˆØ§Ù„ÙÙˆØ§Ø¦Ø¯ ÙˆØ§Ù„Ù…Ø®Ø§Ø·Ø± ÙˆØ§Ù„Ø¨Ø¯Ø§Ø¦Ù„ ÙˆØ§Ù„Ù…Ø¶Ø§Ø¹ÙØ§Øª Ø§Ù„Ù…Ø­ØªÙ…Ù„Ø© Ø¨Ù„ØºØ© ÙˆØ§Ø¶Ø­Ø© ÙˆÙ…ÙÙ‡ÙˆÙ…Ø©.",
@@ -800,7 +788,8 @@ export async function createConsentTemplate(
     if (sections.length > 0) {
       await tx.consentTemplateSection.createMany({
         data: sections.map((section, index) => ({
-          sectionKind: (section.sectionKind?.trim().toUpperCase() as ConsentSectionKind) || ConsentSectionKind.DYNAMIC_MEDICAL,
+          sectionKind:
+            (section.sectionKind?.trim().toUpperCase() as $Enums.ConsentSectionKind) || $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
           sectionKey: (section.sectionKey || `section_${index + 1}`).trim().toLowerCase(),
           titleAr: (section.titleAr || `Ø§Ù„Ù‚Ø³Ù… ${index + 1}`).trim(),
           titleEn: (section.titleEn || `Section ${index + 1}`).trim(),
@@ -813,7 +802,7 @@ export async function createConsentTemplate(
           sortOrder: section.sortOrder ?? (index + 1) * 10,
           metadata: {
             governance: resolveSectionGovernance(
-              ((section.sectionKind?.trim().toUpperCase() as ConsentSectionKind) || ConsentSectionKind.DYNAMIC_MEDICAL),
+              ((section.sectionKind?.trim().toUpperCase() as $Enums.ConsentSectionKind) || $Enums.ConsentSectionKind.DYNAMIC_MEDICAL),
               section.isEditableByPhysician ?? true,
             ),
           } as JsonInputValue,
@@ -933,7 +922,7 @@ export async function createTemplateVersion(
   const syncIssues = validateBilingualSync({
     record: nextRecordForSync,
     expectedVersion: versionLabel,
-    status: ConsentTemplateStatus.DRAFT,
+    status: $Enums.ConsentTemplateStatus.DRAFT,
     requireApprovedPair: false,
   });
 
@@ -948,7 +937,7 @@ export async function createTemplateVersion(
         templateId,
         versionLabel,
         versionNumber: newVersionNumber,
-        status: ConsentTemplateStatus.DRAFT,
+        status: $Enums.ConsentTemplateStatus.DRAFT,
         legalTextAr: payload.legalTextAr?.trim() || sourceVersion.legalTextAr,
         legalTextEn: payload.legalTextEn?.trim() || sourceVersion.legalTextEn,
         pdplTextAr: payload.pdplTextAr?.trim() || sourceVersion.pdplTextAr,
@@ -1036,11 +1025,11 @@ export async function setTemplateVersionStatus(
     throw new ApiError(400, "templateId and templateVersionId are required");
   }
 
-  if (!Object.values(ConsentTemplateStatus).includes(statusRaw as ConsentTemplateStatus)) {
+  if (!Object.values($Enums.ConsentTemplateStatus).includes(statusRaw as $Enums.ConsentTemplateStatus)) {
     throw new ApiError(400, "Invalid template status");
   }
 
-  const status = statusRaw as ConsentTemplateStatus;
+  const status = statusRaw as $Enums.ConsentTemplateStatus;
 
   const result = await prisma().$transaction(async (tx) => {
     const existingVersion = await tx.consentTemplateVersion.findFirst({
@@ -1055,7 +1044,7 @@ export async function setTemplateVersionStatus(
       record: existingVersion as unknown as Record<string, unknown>,
       expectedVersion: existingVersion.versionLabel,
       status,
-      requireApprovedPair: status === ConsentTemplateStatus.APPROVED || status === ConsentTemplateStatus.ACTIVE,
+      requireApprovedPair: status === $Enums.ConsentTemplateStatus.APPROVED || status === $Enums.ConsentTemplateStatus.ACTIVE,
     });
 
     if (syncIssues.length > 0) {
@@ -1063,13 +1052,13 @@ export async function setTemplateVersionStatus(
     }
 
     const lifecycleStage =
-      status === ConsentTemplateStatus.DRAFT
+      status === $Enums.ConsentTemplateStatus.DRAFT
         ? "Draft"
-        : status === ConsentTemplateStatus.UNDER_REVIEW
+        : status === $Enums.ConsentTemplateStatus.UNDER_REVIEW
           ? "Legal Review"
-          : status === ConsentTemplateStatus.APPROVED
+          : status === $Enums.ConsentTemplateStatus.APPROVED
             ? "Approved"
-            : status === ConsentTemplateStatus.ACTIVE
+            : status === $Enums.ConsentTemplateStatus.ACTIVE
               ? "Active"
               : "Retired";
 
@@ -1077,8 +1066,8 @@ export async function setTemplateVersionStatus(
       where: { id: templateVersionId },
       data: {
         status,
-        approvedByUserId: status === ConsentTemplateStatus.APPROVED || status === ConsentTemplateStatus.ACTIVE ? auth.sub : null,
-        approvedAt: status === ConsentTemplateStatus.APPROVED || status === ConsentTemplateStatus.ACTIVE ? new Date() : null,
+        approvedByUserId: status === $Enums.ConsentTemplateStatus.APPROVED || status === $Enums.ConsentTemplateStatus.ACTIVE ? auth.sub : null,
+        approvedAt: status === $Enums.ConsentTemplateStatus.APPROVED || status === $Enums.ConsentTemplateStatus.ACTIVE ? new Date() : null,
         metadata: {
           ...(asRecord(existingVersion.metadata) || {}),
           lifecycle: {
@@ -1096,21 +1085,21 @@ export async function setTemplateVersionStatus(
       },
     });
 
-    if (status === ConsentTemplateStatus.ACTIVE) {
+    if (status === $Enums.ConsentTemplateStatus.ACTIVE) {
       await tx.consentTemplate.updateMany({
         where: { id: templateId, tenantId },
         data: {
-          status: ConsentTemplateStatus.ACTIVE,
+          status: $Enums.ConsentTemplateStatus.ACTIVE,
           currentVersionId: templateVersionId,
         },
       });
     }
 
-    if (status === ConsentTemplateStatus.ARCHIVED) {
+    if (status === $Enums.ConsentTemplateStatus.ARCHIVED) {
       await tx.consentTemplate.updateMany({
         where: { id: templateId, tenantId, currentVersionId: templateVersionId },
         data: {
-          status: ConsentTemplateStatus.DRAFT,
+          status: $Enums.ConsentTemplateStatus.DRAFT,
           currentVersionId: null,
         },
       });
@@ -1121,7 +1110,7 @@ export async function setTemplateVersionStatus(
       templateVersionId,
       status,
       syncValidated: true,
-      retiredPair: status === ConsentTemplateStatus.ARCHIVED,
+      retiredPair: status === $Enums.ConsentTemplateStatus.ARCHIVED,
     };
   });
 
@@ -1227,7 +1216,7 @@ export async function listConsentDocuments(
     where: {
       tenantId,
       ...(args.caseId ? { caseId: args.caseId } : {}),
-      ...(status && Object.values(ConsentDocumentStatus).includes(status as ConsentDocumentStatus)
+      ...(status && Object.values($Enums.ConsentDocumentStatus).includes(status as ConsentDocumentStatus)
         ? { status: status as ConsentDocumentStatus }
         : {}),
     },
@@ -1381,7 +1370,7 @@ export async function createConsentDocument(
         templateId,
         templateVersionId: version.id,
         consentReference: generateReference("IC"),
-        status: ConsentDocumentStatus.DRAFT,
+        status: $Enums.ConsentDocumentStatus.DRAFT,
         language: payload.language || "bilingual",
         patientName: caseRecord.patientName || "Unknown Patient",
         mrn: caseRecord.medicalRecordNo || null,
@@ -1448,7 +1437,7 @@ export async function createConsentDocument(
               effectiveFrom: version.effectiveFrom,
               effectiveTo: version.effectiveTo,
             },
-            status: ConsentDocumentStatus.DRAFT,
+            status: $Enums.ConsentDocumentStatus.DRAFT,
           }),
           ...(payload.metadata || {}),
         } as JsonInputValue,
@@ -1535,7 +1524,7 @@ export async function updateConsentDocument(
     throw new ApiError(404, "Consent document not found");
   }
 
-  if (existing.status === ConsentDocumentStatus.FINALIZED) {
+  if (existing.status === $Enums.ConsentDocumentStatus.FINALIZED) {
     throw new ApiError(409, "Finalized consent cannot be edited");
   }
 
@@ -1646,8 +1635,8 @@ export async function updateConsentDocument(
           },
         } as JsonInputValue,
         status:
-          existing.status === ConsentDocumentStatus.AI_DRAFT
-            ? ConsentDocumentStatus.PHYSICIAN_REVIEW
+          existing.status === $Enums.ConsentDocumentStatus.AI_DRAFT
+            ? $Enums.ConsentDocumentStatus.PHYSICIAN_REVIEW
             : existing.status,
       },
     });
@@ -1756,7 +1745,7 @@ export async function approveConsentDocument(
     throw new ApiError(404, "Consent document not found");
   }
 
-  if (doc.status === ConsentDocumentStatus.FINALIZED) {
+  if (doc.status === $Enums.ConsentDocumentStatus.FINALIZED) {
     throw new ApiError(409, "Finalized consent cannot be approved again");
   }
 
@@ -1790,7 +1779,7 @@ export async function approveConsentDocument(
       physicianLicense,
       physicianNotesAr: payload.physicianNotesAr?.trim() || doc.physicianNotesAr,
       physicianNotesEn: payload.physicianNotesEn?.trim() || doc.physicianNotesEn,
-      status: ConsentDocumentStatus.APPROVED,
+      status: $Enums.ConsentDocumentStatus.APPROVED,
       approvedAt: new Date(),
       approvedByUserId: auth.sub,
       aiValidatedAt: new Date(),
@@ -1853,14 +1842,14 @@ export async function addConsentSignature(
     throw new ApiError(404, "Consent document not found");
   }
 
-  if (doc.status === ConsentDocumentStatus.FINALIZED) {
+  if (doc.status === $Enums.ConsentDocumentStatus.FINALIZED) {
     throw new ApiError(409, "Finalized consent cannot accept signatures");
   }
 
   const signableStatuses: ConsentDocumentStatus[] = [
-    ConsentDocumentStatus.APPROVED,
-    ConsentDocumentStatus.READY_FOR_SIGNATURE,
-    ConsentDocumentStatus.SIGNED,
+    $Enums.ConsentDocumentStatus.APPROVED,
+    $Enums.ConsentDocumentStatus.READY_FOR_SIGNATURE,
+    $Enums.ConsentDocumentStatus.SIGNED,
   ];
 
   if (!signableStatuses.includes(doc.status)) {
@@ -1893,12 +1882,12 @@ export async function addConsentSignature(
   });
 
   const signatures = [...doc.signatures, signature];
-  const hasPatient = signatures.some((item) => item.role === ConsentSignatureRole.PATIENT || item.role === ConsentSignatureRole.GUARDIAN);
-  const hasPhysician = signatures.some((item) => item.role === ConsentSignatureRole.PHYSICIAN);
+  const hasPatient = signatures.some((item) => item.role === $Enums.ConsentSignatureRole.PATIENT || item.role === $Enums.ConsentSignatureRole.GUARDIAN);
+  const hasPhysician = signatures.some((item) => item.role === $Enums.ConsentSignatureRole.PHYSICIAN);
 
   const nextStatus = hasPatient && hasPhysician
-    ? ConsentDocumentStatus.SIGNED
-    : ConsentDocumentStatus.READY_FOR_SIGNATURE;
+    ? $Enums.ConsentDocumentStatus.SIGNED
+    : $Enums.ConsentDocumentStatus.READY_FOR_SIGNATURE;
 
   await prisma().consentDocument.update({
     where: { id },
@@ -1946,15 +1935,15 @@ export async function finalizeConsentDocument(
     throw new ApiError(404, "Consent document not found");
   }
 
-  if (doc.status === ConsentDocumentStatus.FINALIZED) {
+  if (doc.status === $Enums.ConsentDocumentStatus.FINALIZED) {
     return getConsentDocument(auth, id);
   }
 
-  if (doc.status !== ConsentDocumentStatus.SIGNED) {
+  if (doc.status !== $Enums.ConsentDocumentStatus.SIGNED) {
     throw new ApiError(409, "Consent must be fully signed before finalization");
   }
 
-  const hasPhysician = doc.signatures.some((item) => item.role === ConsentSignatureRole.PHYSICIAN);
+  const hasPhysician = doc.signatures.some((item) => item.role === $Enums.ConsentSignatureRole.PHYSICIAN);
   if (!hasPhysician) {
     throw new ApiError(409, "Physician signature is mandatory before finalization");
   }
@@ -1982,9 +1971,9 @@ export async function finalizeConsentDocument(
     blockers.push("Consequences of refusal section is incomplete");
   }
 
-  const hasWitness = doc.signatures.some((item) => item.role === ConsentSignatureRole.WITNESS);
-  const hasGuardian = doc.signatures.some((item) => item.role === ConsentSignatureRole.GUARDIAN);
-  const hasInterpreter = doc.signatures.some((item) => item.role === ConsentSignatureRole.INTERPRETER);
+  const hasWitness = doc.signatures.some((item) => item.role === $Enums.ConsentSignatureRole.WITNESS);
+  const hasGuardian = doc.signatures.some((item) => item.role === $Enums.ConsentSignatureRole.GUARDIAN);
+  const hasInterpreter = doc.signatures.some((item) => item.role === $Enums.ConsentSignatureRole.INTERPRETER);
   const metadata = asRecord(doc.metadata) || {};
   const signatureSecurity = asRecord(metadata.signatureSecurity) || {};
   const orchestration = asRecord(metadata.signatureOrchestration) || {};
@@ -2003,15 +1992,15 @@ export async function finalizeConsentDocument(
     blockers.push("Interpreter confirmation is required");
   }
 
-  const otpRequired = signatureSecurity.otpRequired === true || doc.signatures.some((item) => item.signatureMethod === ConsentMethod.OTP);
+  const otpRequired = signatureSecurity.otpRequired === true || doc.signatures.some((item) => item.signatureMethod === $Enums.ConsentMethod.OTP);
   const otpVerified = signatureSecurity.otpVerified === true || orchestration.otpVerified === true;
   if (otpRequired && !otpVerified) {
     blockers.push("OTP verification is required before final signature");
   }
 
   const versionApproved = (
-    doc.templateVersion.status === ConsentTemplateStatus.ACTIVE
-    || doc.templateVersion.status === ConsentTemplateStatus.APPROVED
+    doc.templateVersion.status === $Enums.ConsentTemplateStatus.ACTIVE
+    || doc.templateVersion.status === $Enums.ConsentTemplateStatus.APPROVED
   ) && Boolean(doc.templateVersion.approvedAt);
   if (!versionApproved) {
     blockers.push("Template version is not approved");
@@ -2068,7 +2057,7 @@ export async function finalizeConsentDocument(
       effectiveFrom: doc.templateVersion.effectiveFrom,
       effectiveTo: doc.templateVersion.effectiveTo,
     },
-    status: ConsentDocumentStatus.FINALIZED,
+    status: $Enums.ConsentDocumentStatus.FINALIZED,
   });
 
   const immutablePdfHash = payload.immutablePdfHash?.trim() || crypto
@@ -2098,7 +2087,7 @@ export async function finalizeConsentDocument(
   const updated = await prisma().consentDocument.update({
     where: { id },
     data: {
-      status: ConsentDocumentStatus.FINALIZED,
+      status: $Enums.ConsentDocumentStatus.FINALIZED,
       finalizedAt: new Date(),
       finalizedByUserId: auth.sub,
       immutablePdfUrl: payload.immutablePdfUrl?.trim() || doc.immutablePdfUrl,
@@ -2129,7 +2118,7 @@ export async function finalizeConsentDocument(
       {
         tenantId,
         consentDocumentId: id,
-        copyType: ConsentEvidenceCopyType.PATIENT_COPY,
+        copyType: $Enums.ConsentEvidenceCopyType.PATIENT_COPY,
         fileName: `CONSENT-${updated.consentReference}-PATIENT.pdf`,
         checksumHash: immutablePdfHash,
         generatedBy: auth.sub,
@@ -2137,7 +2126,7 @@ export async function finalizeConsentDocument(
       {
         tenantId,
         consentDocumentId: id,
-        copyType: ConsentEvidenceCopyType.MEDICAL_RECORD_COPY,
+        copyType: $Enums.ConsentEvidenceCopyType.MEDICAL_RECORD_COPY,
         fileName: `CONSENT-${updated.consentReference}-MR.pdf`,
         checksumHash: immutablePdfHash,
         generatedBy: auth.sub,
@@ -2145,7 +2134,7 @@ export async function finalizeConsentDocument(
       {
         tenantId,
         consentDocumentId: id,
-        copyType: ConsentEvidenceCopyType.LEGAL_ARCHIVE_COPY,
+        copyType: $Enums.ConsentEvidenceCopyType.LEGAL_ARCHIVE_COPY,
         fileName: `CONSENT-${updated.consentReference}-LEGAL.pdf`,
         checksumHash: immutablePdfHash,
         generatedBy: auth.sub,
@@ -2665,7 +2654,7 @@ export async function generateProcedureAwareContent(
         refusalRisksEn: sanitizedRefusalEn,
         expectedOutcomesAr: sanitizedExpectedAr,
         expectedOutcomesEn: sanitizedExpectedEn,
-        status: ConsentDocumentStatus.AI_DRAFT,
+        status: $Enums.ConsentDocumentStatus.AI_DRAFT,
         aiGeneratedAt: new Date(),
         aiGeneratedByUserId: auth.sub,
         generatedByModel: prompt?.generatorModel || DEFAULT_GENERATOR_MODEL,
@@ -2827,10 +2816,10 @@ export async function submitCommitteeReview(
   const committeeType = (payload.committeeType || "LEGAL").trim().toUpperCase() as ConsentCommitteeType;
   const decision = (payload.decision || "PENDING").trim().toUpperCase() as ConsentReviewDecision;
 
-  if (!Object.values(ConsentCommitteeType).includes(committeeType)) {
+  if (!Object.values($Enums.ConsentCommitteeType).includes(committeeType)) {
     throw new ApiError(400, "Invalid committeeType");
   }
-  if (!Object.values(ConsentReviewDecision).includes(decision)) {
+  if (!Object.values($Enums.ConsentReviewDecision).includes(decision)) {
     throw new ApiError(400, "Invalid review decision");
   }
 
@@ -2845,7 +2834,7 @@ export async function submitCommitteeReview(
       reviewerUserId: auth.sub,
       commentsAr: payload.commentsAr?.trim() || null,
       commentsEn: payload.commentsEn?.trim() || null,
-      reviewedAt: decision === ConsentReviewDecision.PENDING ? null : new Date(),
+      reviewedAt: decision === $Enums.ConsentReviewDecision.PENDING ? null : new Date(),
     },
   });
 
@@ -2865,9 +2854,9 @@ export async function submitCommitteeReview(
     };
 
     const status =
-      decision === ConsentReviewDecision.APPROVED && committeeType === ConsentCommitteeType.COMPLIANCE
-        ? ConsentTemplateStatus.APPROVED
-        : ConsentTemplateStatus.UNDER_REVIEW;
+      decision === $Enums.ConsentReviewDecision.APPROVED && committeeType === $Enums.ConsentCommitteeType.COMPLIANCE
+        ? $Enums.ConsentTemplateStatus.APPROVED
+        : $Enums.ConsentTemplateStatus.UNDER_REVIEW;
 
     await prisma().consentTemplateVersion.update({
       where: { id: versionId },
@@ -2877,7 +2866,7 @@ export async function submitCommitteeReview(
           ...(asRecord(target.metadata) || {}),
           lifecycle: {
             ...currentLifecycle,
-            stage: decision === ConsentReviewDecision.REJECTED ? "Draft" : stageByCommittee[committeeType],
+            stage: decision === $Enums.ConsentReviewDecision.REJECTED ? "Draft" : stageByCommittee[committeeType],
             lastCommittee: committeeType,
             lastDecision: decision,
             transitionedAt: new Date().toISOString(),

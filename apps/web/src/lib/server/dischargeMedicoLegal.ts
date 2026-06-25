@@ -133,7 +133,7 @@ export async function resolveLegalEscalation(args: {
 	await prisma().case.update({
 		where: { id: caseRecord.id },
 		data: {
-			status: args.closeCase ? CaseStatus.CLOSED : caseRecord.status,
+			status: args.closeCase ? $Enums.CaseStatus.CLOSED : caseRecord.status,
 			closedAt: args.closeCase ? new Date() : caseRecord.closedAt,
 			metadata: buildLegalMetadata(metadata, {
 				status: "resolved",
@@ -368,13 +368,13 @@ function isRefusalCase(caseRecord: { workflowType: string | null; caseType: Case
 	const metadata = asRecord(caseRecord.metadata);
 	return (
 		caseRecord.workflowType === "discharge_refusal" ||
-		caseRecord.caseType === CaseType.DISCHARGE_REFUSAL ||
+		caseRecord.caseType === $Enums.CaseType.DISCHARGE_REFUSAL ||
 		Boolean(getWorkflowRecord(metadata))
 	);
 }
 import type { AuditLog } from "@prisma/client";
 import { Prisma } from "@prisma/client";
-import { CaseStatus, CaseType } from "@/lib/server/prisma-enums";
+import { $Enums, type CaseStatus, type CaseType } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { requireTenantId, type AuthContext } from "@/lib/server/auth";
 

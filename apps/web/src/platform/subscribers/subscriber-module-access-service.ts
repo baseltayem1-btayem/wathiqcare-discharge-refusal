@@ -1,4 +1,4 @@
-import { SubscriberModuleAccessStatus } from "@/lib/server/prisma-enums";
+import { $Enums, type SubscriberModuleAccessStatus } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { MODULE_DEFINITIONS, type ModuleKey } from "@/lib/modules/catalog";
@@ -53,11 +53,11 @@ export async function suspendAllSubscriberModules(subscriberId: string, actorId?
     where: {
       subscriberId,
       status: {
-        in: [SubscriberModuleAccessStatus.ACTIVE, SubscriberModuleAccessStatus.TRIAL],
+        in: [$Enums.SubscriberModuleAccessStatus.ACTIVE, $Enums.SubscriberModuleAccessStatus.TRIAL],
       },
     },
     data: {
-      status: SubscriberModuleAccessStatus.SUSPENDED,
+      status: $Enums.SubscriberModuleAccessStatus.SUSPENDED,
       deactivatedBy: actorId ?? null,
       deactivatedAt: now,
       notes: notePrefix,
@@ -146,7 +146,7 @@ export async function getSubscriberModuleAccessDashboard(
         expiryDate: row.expiryDate,
         expiresSoon,
         isExpired,
-        emergencySuspended: row.status === SubscriberModuleAccessStatus.SUSPENDED,
+        emergencySuspended: row.status === $Enums.SubscriberModuleAccessStatus.SUSPENDED,
         activatedAt: row.activatedAt,
         activatedBy: row.activatedBy,
         deactivatedAt: row.deactivatedAt,
@@ -186,7 +186,7 @@ export async function getSubscriberModuleAccessDashboard(
 }
 
 export async function upsertSubscriberModuleAccess(input: SubscriberModuleAccessInput) {
-  const isActivating = input.status === SubscriberModuleAccessStatus.ACTIVE || input.status === SubscriberModuleAccessStatus.TRIAL;
+  const isActivating = input.status === $Enums.SubscriberModuleAccessStatus.ACTIVE || input.status === $Enums.SubscriberModuleAccessStatus.TRIAL;
 
   return prisma().subscriberModuleAccess.upsert({
     where: {
@@ -196,7 +196,7 @@ export async function upsertSubscriberModuleAccess(input: SubscriberModuleAccess
       },
     },
     update: {
-      status: input.status,
+      status: input.status as $Enums.SubscriberModuleAccessStatus,
       activatedBy: isActivating ? (input.activatedBy || null) : undefined,
       activatedAt: isActivating ? new Date() : undefined,
       deactivatedBy: !isActivating ? (input.deactivatedBy || null) : undefined,
@@ -208,7 +208,7 @@ export async function upsertSubscriberModuleAccess(input: SubscriberModuleAccess
     create: {
       subscriberId: input.subscriberId,
       moduleKey: input.moduleKey,
-      status: input.status,
+      status: input.status as $Enums.SubscriberModuleAccessStatus,
       activatedBy: isActivating ? (input.activatedBy || null) : null,
       activatedAt: isActivating ? new Date() : null,
       deactivatedBy: !isActivating ? (input.deactivatedBy || null) : null,
@@ -234,7 +234,7 @@ export async function bootstrapSubscriberModuleAccess(subscriberId: string) {
         create: {
           subscriberId,
           moduleKey,
-          status: SubscriberModuleAccessStatus.ACTIVE,
+          status: $Enums.SubscriberModuleAccessStatus.ACTIVE,
           activatedAt: new Date(),
           notes: "Default activation at subscriber creation",
         },
@@ -279,8 +279,8 @@ export async function assertSubscriberModuleAccess(args: {
   }
 
   if (
-    moduleAccess.status !== SubscriberModuleAccessStatus.ACTIVE
-    && moduleAccess.status !== SubscriberModuleAccessStatus.TRIAL
+    moduleAccess.status !== $Enums.SubscriberModuleAccessStatus.ACTIVE
+    && moduleAccess.status !== $Enums.SubscriberModuleAccessStatus.TRIAL
   ) {
     throw new ApiError(403, `Module ${args.moduleKey} is ${moduleAccess.status.toLowerCase()} for this subscriber`);
   }
@@ -297,7 +297,7 @@ export function toModuleAccessStatus(value: string | null | undefined): Subscrib
   if (!normalized) {
     return null;
   }
-  return Object.values(SubscriberModuleAccessStatus).includes(normalized as SubscriberModuleAccessStatus)
+  return Object.values($Enums.SubscriberModuleAccessStatus).includes(normalized as $Enums.SubscriberModuleAccessStatus)
     ? (normalized as SubscriberModuleAccessStatus)
     : null;
 }

@@ -1,8 +1,8 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { Prisma } from "@prisma/client";
-import { DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
+import { $Enums, type DocumentStatus, type DocumentType } from "@prisma/client";
 import type { NextRequest } from "next/server";
 
 import type { AuthContext } from "@/lib/server/auth";
@@ -122,12 +122,12 @@ const PACKAGE_METADATA_KEY = "legal_package_module";
 const MAX_AUDIT_EVENTS = 100;
 
 const TEMPLATE_FILES: Array<{ key: string; fileName: string; documentType: DocumentType }> = [
-  { key: "discharge_refusal_form", fileName: "discharge-refusal.ar.html", documentType: DocumentType.DISCHARGE_REFUSAL_FORM },
-  { key: "financial_responsibility_notification", fileName: "financial-notification.ar.html", documentType: DocumentType.FINANCIAL_RESPONSIBILITY_NOTICE },
-  { key: "financial_undertaking", fileName: "financial-undertaking.ar.html", documentType: DocumentType.CASE_FILE },
-  { key: "discharge_notification", fileName: "discharge-notification.ar.html", documentType: DocumentType.CASE_FILE },
-  { key: "risk_disclosure", fileName: "risk-disclosure.ar.html", documentType: DocumentType.CASE_FILE },
-  { key: "court_evidence_report", fileName: "court-evidence-report.ar.html", documentType: DocumentType.CASE_FILE },
+  { key: "discharge_refusal_form", fileName: "discharge-refusal.ar.html", documentType: $Enums.DocumentType.DISCHARGE_REFUSAL_FORM },
+  { key: "financial_responsibility_notification", fileName: "financial-notification.ar.html", documentType: $Enums.DocumentType.FINANCIAL_RESPONSIBILITY_NOTICE },
+  { key: "financial_undertaking", fileName: "financial-undertaking.ar.html", documentType: $Enums.DocumentType.CASE_FILE },
+  { key: "discharge_notification", fileName: "discharge-notification.ar.html", documentType: $Enums.DocumentType.CASE_FILE },
+  { key: "risk_disclosure", fileName: "risk-disclosure.ar.html", documentType: $Enums.DocumentType.CASE_FILE },
+  { key: "court_evidence_report", fileName: "court-evidence-report.ar.html", documentType: $Enums.DocumentType.CASE_FILE },
 ];
 
 function sha256(value: Buffer | string): string {
@@ -393,8 +393,8 @@ async function createDocumentRecord(args: {
     data: {
       tenantId: args.auth.tenant_id!,
       caseId: args.caseId,
-      documentType: args.documentType,
-      status: args.status || DocumentStatus.GENERATED,
+      documentType: args.documentType as $Enums.DocumentType,
+      status: (args.status || $Enums.DocumentStatus.GENERATED) as $Enums.DocumentStatus,
       documentCode: `${args.templateKey.toUpperCase()}-${version}`,
       titleEn: args.titleEn,
       titleAr: args.titleAr,
@@ -577,7 +577,7 @@ export async function generateLegalPackageModule(auth: AuthContext, caseId: stri
       html: rendered,
       titleAr: "Ù…Ø³ØªÙ†Ø¯ Ø¶Ù…Ù† Ø§Ù„Ø­Ø²Ù…Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ©",
       titleEn: "Legal package document",
-      status: DocumentStatus.GENERATED,
+      status: $Enums.DocumentStatus.GENERATED,
       metadata: {
         legal_package_case_id: caseId,
         legal_package_document_type: template.key,
@@ -803,8 +803,8 @@ export async function refreshLegalPackageSignatureStatus(auth: AuthContext, case
     data: {
       tenantId: auth.tenant_id!,
       caseId,
-      documentType: DocumentType.CASE_FILE,
-      status: DocumentStatus.SIGNED,
+      documentType: $Enums.DocumentType.CASE_FILE,
+      status: $Enums.DocumentStatus.SIGNED,
       documentCode: `LEGAL-PACKAGE-SIGNED-${Date.now()}`,
       titleEn: "Signed legal package document",
       titleAr: "Ù†Ø³Ø®Ø© Ø§Ù„Ø­Ø²Ù…Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ© Ø§Ù„Ù…ÙˆÙ‚Ø¹Ø©",
@@ -830,8 +830,8 @@ export async function refreshLegalPackageSignatureStatus(auth: AuthContext, case
     data: {
       tenantId: auth.tenant_id!,
       caseId,
-      documentType: DocumentType.CASE_FILE,
-      status: DocumentStatus.ARCHIVED,
+      documentType: $Enums.DocumentType.CASE_FILE,
+      status: $Enums.DocumentStatus.ARCHIVED,
       documentCode: `LEGAL-PACKAGE-CERT-${Date.now()}`,
       titleEn: "Signature certificate",
       titleAr: "Ø´Ù‡Ø§Ø¯Ø© Ø§Ù„ØªÙˆÙ‚ÙŠØ¹",
@@ -925,13 +925,13 @@ export async function generateCourtBundle(auth: AuthContext, caseId: string, req
   const courtDoc = await createDocumentRecord({
     auth,
     caseId,
-    documentType: DocumentType.CASE_FILE,
+    documentType: $Enums.DocumentType.CASE_FILE,
     templateKey: "legal_package_court_bundle_index",
     fileName: `court-evidence-index-${caseId}.html`,
     html,
     titleAr: "ÙÙ‡Ø±Ø³ Ù…Ù„Ù Ø§Ù„Ù…Ø­ÙƒÙ…Ø©",
     titleEn: "Court evidence package index",
-    status: DocumentStatus.ARCHIVED,
+    status: $Enums.DocumentStatus.ARCHIVED,
     metadata: {
       package_hash: state.package_hash,
       signed_pdf_file_id: state.signature_request.signed_pdf_file_id,

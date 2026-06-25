@@ -1,4 +1,4 @@
-import { CaseType } from "@/lib/server/prisma-enums";
+import { $Enums, type CaseType } from "@prisma/client";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
@@ -472,7 +472,7 @@ export async function getLegalRiskDashboard(
   const rawCases = await prisma().case.findMany({
     where: {
       tenantId,
-      caseType: CaseType.DISCHARGE_REFUSAL,
+      caseType: $Enums.CaseType.DISCHARGE_REFUSAL,
     },
     include: {
       documents: {

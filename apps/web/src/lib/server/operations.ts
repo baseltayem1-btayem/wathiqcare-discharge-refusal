@@ -1,12 +1,5 @@
-﻿import { Prisma } from "@prisma/client";
-import {
-  EscalationLevel,
-  NotificationChannel,
-  NotificationStatus,
-  OperationDepartment,
-  OperationPriority,
-  SlaState,
-} from "@/lib/server/prisma-enums";
+import { Prisma } from "@prisma/client";
+import { $Enums, type EscalationLevel, type NotificationChannel, type NotificationStatus, type OperationDepartment, type OperationPriority, type SlaState } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { writeAuditLog } from "@/lib/server/saas-services";
@@ -25,7 +18,7 @@ export const DEPARTMENT_LABELS: Record<OperationDepartment, string> = {
   ADMIN_MEDICAL_DIRECTOR: "Admin / Medical Director",
 };
 
-const ALL_DEPARTMENTS = Object.values(OperationDepartment);
+const ALL_DEPARTMENTS = Object.values($Enums.OperationDepartment);
 
 const WORKFLOW_STEPS = [
   "case_created",
@@ -80,32 +73,32 @@ export function departmentForRole(
 ): OperationDepartment {
   const normalized = (role ?? "").trim().toLowerCase();
 
-  if (normalized.includes("pharmacy")) return OperationDepartment.PHARMACY;
-  if (normalized.includes("nurs")) return OperationDepartment.NURSING;
-  if (normalized.includes("legal")) return OperationDepartment.LEGAL;
-  if (normalized.includes("lab")) return OperationDepartment.LABORATORY;
-  if (normalized.includes("radio")) return OperationDepartment.RADIOLOGY;
+  if (normalized.includes("pharmacy")) return $Enums.OperationDepartment.PHARMACY;
+  if (normalized.includes("nurs")) return $Enums.OperationDepartment.NURSING;
+  if (normalized.includes("legal")) return $Enums.OperationDepartment.LEGAL;
+  if (normalized.includes("lab")) return $Enums.OperationDepartment.LABORATORY;
+  if (normalized.includes("radio")) return $Enums.OperationDepartment.RADIOLOGY;
   if (
     normalized.includes("patient_affairs") ||
     normalized.includes("relations")
   ) {
-    return OperationDepartment.PATIENT_RELATIONS;
+    return $Enums.OperationDepartment.PATIENT_RELATIONS;
   }
   if (
     normalized.includes("billing") ||
     normalized.includes("insurance")
   ) {
-    return OperationDepartment.BILLING_INSURANCE;
+    return $Enums.OperationDepartment.BILLING_INSURANCE;
   }
   if (
     normalized.includes("platform") ||
     normalized.includes("director") ||
     normalized.includes("admin")
   ) {
-    return OperationDepartment.ADMIN_MEDICAL_DIRECTOR;
+    return $Enums.OperationDepartment.ADMIN_MEDICAL_DIRECTOR;
   }
 
-  return OperationDepartment.CASE_MANAGEMENT;
+  return $Enums.OperationDepartment.CASE_MANAGEMENT;
 }
 
 function minutesBetween(from: Date, to: Date): number {
@@ -115,15 +108,15 @@ function minutesBetween(from: Date, to: Date): number {
 function slaStateFromDeadline(
   deadline: Date | null,
   now: Date = new Date(),
-): SlaState {
-  if (!deadline) return SlaState.ON_TRACK;
+): $Enums.SlaState {
+  if (!deadline) return $Enums.SlaState.ON_TRACK;
 
   const minutesLeft = minutesBetween(now, deadline);
 
-  if (minutesLeft <= 0) return SlaState.BREACHED;
-  if (minutesLeft <= 60) return SlaState.AT_RISK;
+  if (minutesLeft <= 0) return $Enums.SlaState.BREACHED;
+  if (minutesLeft <= 60) return $Enums.SlaState.AT_RISK;
 
-  return SlaState.ON_TRACK;
+  return $Enums.SlaState.ON_TRACK;
 }
 
 async function resolveSlaDeadline(args: {
@@ -148,12 +141,12 @@ async function resolveSlaDeadline(args: {
 
 function nextEscalationLevel(current: EscalationLevel): EscalationLevel {
   switch (current) {
-    case EscalationLevel.NONE:
-      return EscalationLevel.SUPERVISOR;
-    case EscalationLevel.SUPERVISOR:
-      return EscalationLevel.MANAGER;
+    case $Enums.EscalationLevel.NONE:
+      return $Enums.EscalationLevel.SUPERVISOR;
+    case $Enums.EscalationLevel.SUPERVISOR:
+      return $Enums.EscalationLevel.MANAGER;
     default:
-      return EscalationLevel.DIRECTOR;
+      return $Enums.EscalationLevel.DIRECTOR;
   }
 }
 
@@ -189,10 +182,10 @@ export async function ensureOperationStateForCase(args: {
       assignedDepartment,
       assignmentTimestamp: now,
       waitingTimeMinutes: 0,
-      priority: args.priority ?? OperationPriority.NORMAL,
+      priority: (args.priority ?? $Enums.OperationPriority.NORMAL) as $Enums.OperationPriority,
       slaDeadline,
       slaState: slaStateFromDeadline(slaDeadline, now),
-      escalationLevel: EscalationLevel.NONE,
+      escalationLevel: $Enums.EscalationLevel.NONE,
       lastActionAt: now,
       lastActionByUserId: args.actorUserId,
       completedStepsCount: 1,
@@ -221,11 +214,11 @@ export async function createOperationNotification(args: {
       caseId: args.caseId ?? null,
       recipientUserId: args.recipientUserId,
       triggeredByUserId: args.triggeredByUserId ?? null,
-      channel: NotificationChannel.IN_APP,
+      channel: $Enums.NotificationChannel.IN_APP,
       eventType: args.eventType,
       title: args.title,
       message: args.message,
-      status: NotificationStatus.SENT,
+      status: $Enums.NotificationStatus.SENT,
       sentAt: now,
       metadata: args.metadata as JsonInputValue | undefined,
     },
@@ -237,11 +230,11 @@ export async function createOperationNotification(args: {
       caseId: args.caseId ?? null,
       recipientUserId: args.recipientUserId,
       triggeredByUserId: args.triggeredByUserId ?? null,
-      channel: NotificationChannel.EMAIL,
+      channel: $Enums.NotificationChannel.EMAIL,
       eventType: args.eventType,
       title: args.title,
       message: args.message,
-      status: NotificationStatus.SENT,
+      status: $Enums.NotificationStatus.SENT,
       sentAt: now,
       metadata: args.metadata as JsonInputValue | undefined,
     });
@@ -284,7 +277,7 @@ export async function assignCaseOperation(args: {
       assignedDepartment: args.toDepartment,
       assignmentTimestamp: now,
       waitingTimeMinutes: 0,
-      priority: args.priority ?? currentState.priority,
+      priority: (args.priority ?? currentState.priority) as $Enums.OperationPriority,
       slaDeadline,
       slaState: slaStateFromDeadline(slaDeadline, now),
       lastActionAt: now,
@@ -391,9 +384,9 @@ export async function recordCaseStepAction(args: {
 
   const nextSlaState =
     args.action === "sla_breached"
-      ? SlaState.BREACHED
+      ? $Enums.SlaState.BREACHED
       : args.action === "delay_detected"
-        ? SlaState.AT_RISK
+        ? $Enums.SlaState.AT_RISK
         : slaStateFromDeadline(slaDeadline, now);
 
   await prisma().caseOperationState.update({
@@ -528,8 +521,8 @@ export async function runSlaSweepForTenant(
     const nextState = slaStateFromDeadline(state.slaDeadline, now);
 
     if (nextState === state.slaState) {
-      if (nextState === SlaState.AT_RISK) atRisk += 1;
-      if (nextState === SlaState.BREACHED) breached += 1;
+      if (nextState === $Enums.SlaState.AT_RISK) atRisk += 1;
+      if (nextState === $Enums.SlaState.BREACHED) breached += 1;
       continue;
     }
 
@@ -543,11 +536,11 @@ export async function runSlaSweepForTenant(
       },
     });
 
-    if (nextState === SlaState.AT_RISK) {
+    if (nextState === $Enums.SlaState.AT_RISK) {
       atRisk += 1;
     }
 
-    if (nextState === SlaState.BREACHED) {
+    if (nextState === $Enums.SlaState.BREACHED) {
       breached += 1;
 
       if (state.assignedToUserId) {

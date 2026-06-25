@@ -1,4 +1,4 @@
-import { CaseType } from "@/lib/server/prisma-enums";
+import { $Enums, type CaseType } from "@prisma/client";
 import type { AuthContext } from "@/lib/server/auth";
 import { requireTenantId } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
@@ -324,7 +324,7 @@ export async function getComplianceDashboard(auth: AuthContext) {
       where: {
         tenantId,
         OR: [
-          { caseType: CaseType.DISCHARGE_REFUSAL },
+          { caseType: $Enums.CaseType.DISCHARGE_REFUSAL },
           { workflowType: "discharge_refusal" },
         ],
       },

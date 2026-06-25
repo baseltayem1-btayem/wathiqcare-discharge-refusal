@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -240,7 +240,7 @@ export async function startPromissoryDebtorSigning(
   const otpCode = generateOtp();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + SIGNING_LINK_EXPIRES_MINUTES * 60 * 1000);
-  const signingUrl = `${getRequestBaseUrl(request)}/public/promissory-note-signing/${token}`;
+  const signingUrl = `${getRequestBaseUrl(request)}/public-signing/promissory-note/${token}`;
 
   const linkMessage = buildPromissoryNoteSigningLinkSms({
     signingUrl,

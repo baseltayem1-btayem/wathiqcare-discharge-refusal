@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 
@@ -111,7 +111,9 @@ import {
   Send,
   Shield,
   Stethoscope,
-, Languages, RefreshCw} from "lucide-react";
+  Languages,
+  RefreshCw,
+} from "lucide-react";
 
 
 const WATHIQCARE_API_BASE = "/api/modules/informed-consents";

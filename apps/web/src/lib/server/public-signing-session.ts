@@ -8,6 +8,7 @@ const PUBLIC_SIGNING_SESSION_COOKIE_NAME = "wathiqcare_public_signing_session";
 
 export type PublicSigningSessionPayload = {
   documentId: string;
+  token?: string;
   tokenHash: string;
   signerRole: string;
   tenantId: string;

@@ -1,6 +1,6 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { Prisma, type ConsentRecord } from "@prisma/client";
-import { ConsentMethod } from "@/lib/server/prisma-enums";
+import { $Enums, type ConsentMethod } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -16,14 +16,14 @@ function normalizeConsentMethod(value: string | null | undefined): ConsentMethod
   const normalized = (value ?? "").trim().toUpperCase();
   switch (normalized) {
     case "OTP":
-      return ConsentMethod.OTP;
+      return $Enums.ConsentMethod.OTP;
     case "WITNESS_ACKNOWLEDGMENT":
     case "WITNESS":
-      return ConsentMethod.WITNESS_ACKNOWLEDGMENT;
+      return $Enums.ConsentMethod.WITNESS_ACKNOWLEDGMENT;
     case "WRITTEN":
-      return ConsentMethod.WRITTEN;
+      return $Enums.ConsentMethod.WRITTEN;
     default:
-      return ConsentMethod.ELECTRONIC_SIGNATURE;
+      return $Enums.ConsentMethod.ELECTRONIC_SIGNATURE;
   }
 }
 
@@ -66,12 +66,12 @@ async function createConsentRecordWithFallback(args: {
     lawfulBasis:
       args.payload.lawfulBasis?.trim() || "PDPL healthcare and legal obligation basis",
     consentType: args.payload.consentType?.trim() || "informed_refusal_consent",
-    consentMethod: normalizedMethod,
+    consentMethod: normalizedMethod as $Enums.ConsentMethod,
     documentVersion: args.payload.documentVersion?.trim() || "1.0",
     documentHash: args.documentHash,
     witnessName: args.payload.witnessName?.trim() || null,
     otpReference: args.payload.otpReference?.trim() || null,
-    metadata: metadataValue as JsonInputValue,
+    metadata: metadataValue as Prisma.InputJsonValue,
   };
 
   try {
@@ -170,7 +170,7 @@ async function createConsentRecordWithFallback(args: {
       processingPurpose: row.processing_purpose,
       lawfulBasis: row.lawful_basis,
       consentType: row.consent_type,
-      consentMethod: normalizeConsentMethod(row.consent_method),
+      consentMethod: normalizeConsentMethod(row.consent_method) as $Enums.ConsentMethod,
       consentedAt: row.consented_at,
       documentId: row.document_id,
       documentVersion: row.document_version,

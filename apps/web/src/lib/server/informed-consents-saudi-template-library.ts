@@ -1,4 +1,4 @@
-import { ConsentSectionKind } from "@/lib/server/prisma-enums";
+import { $Enums, type ConsentSectionKind } from "@prisma/client";
 import { AR_CONSENT_TEXT } from "@/lib/server/consent.ar";
 import { EN_CONSENT_TEXT } from "@/lib/server/consent.en";
 
@@ -492,7 +492,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
   return [
     {
       sectionKey: "01_consent_title",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "عنوان الموافقة",
       titleEn: "Consent Title",
       contentAr: seed.titleAr,
@@ -503,7 +503,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "02_patient_information",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "بيانات المريض",
       titleEn: "Patient Information",
       contentAr: "- اسم المريض\n- رقم الملف الطبي\n- رقم الهوية / الإقامة\n- تاريخ الميلاد\n- العمر\n- الجنس\n- رقم التواصل\n- اللغة المفضلة\n- الحاجة إلى مترجم: نعم / لا",
@@ -514,7 +514,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "03_physician_information",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "بيانات الطبيب / الممارس الصحي",
       titleEn: "Physician / Practitioner Information",
       contentAr: "- اسم الطبيب\n- التخصص\n- القسم\n- رقم الترخيص المهني\n- اسم المنشأة",
@@ -525,7 +525,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "04_description",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "وصف الإجراء / العلاج / الخدمة",
       titleEn: "Description of Procedure / Treatment / Service",
       contentAr: `وصف الحالة والإجراء المقترح:\n${seed.specificAr}`,
@@ -536,7 +536,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "05_diagnosis_indication",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "التشخيص / الداعي الطبي",
       titleEn: "Diagnosis / Indication",
       contentAr: "[يُدخل الطبيب التشخيص أو السبب الطبي]",
@@ -547,7 +547,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "06_expected_benefits",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "المنافع المتوقعة",
       titleEn: "Expected Benefits",
       contentAr: `- ${AR_STANDARD_BENEFITS}`,
@@ -558,7 +558,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "07_material_risks",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "المخاطر الجوهرية",
       titleEn: "Material Risks",
       contentAr: `- ${AR_STANDARD_RISKS}`,
@@ -569,7 +569,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "08_possible_complications",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "المضاعفات المحتملة",
       titleEn: "Possible Complications",
       contentAr: "[المضاعفات المحتملة وفق الحالة السريرية]",
@@ -580,7 +580,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "09_serious_complications",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "المضاعفات الجسيمة",
       titleEn: "Serious Complications",
       contentAr: `- ${AR_STANDARD_SERIOUS}`,
@@ -591,7 +591,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "10_alternatives",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "البدائل",
       titleEn: "Alternative Options",
       contentAr: `- ${AR_STANDARD_ALTERNATIVES}`,
@@ -602,7 +602,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "11_refusal_consequences",
-      sectionKind: ConsentSectionKind.DYNAMIC_MEDICAL,
+      sectionKind: $Enums.ConsentSectionKind.DYNAMIC_MEDICAL,
       titleAr: "نتائج الرفض أو التأجيل",
       titleEn: "Consequences of Refusal or Delay",
       contentAr: `- ${AR_STANDARD_REFUSAL}`,
@@ -613,7 +613,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "12_questions_confirmation",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "إقرار بالشرح والفهم",
       titleEn: "Questions and Explanation Confirmation",
       contentAr: AR_INTRO_2,
@@ -624,7 +624,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "13_voluntary_statement",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "بيان الموافقة الطوعية",
       titleEn: "Voluntary Consent Statement",
       contentAr: AR_VOLUNTARY,
@@ -635,7 +635,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "14_no_guarantee",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "عدم ضمان النتيجة",
       titleEn: "No Guarantee of Outcome",
       contentAr: AR_NO_GUARANTEE,
@@ -646,7 +646,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "15_right_to_refuse_withdraw",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "حق الرفض أو السحب",
       titleEn: "Right to Refuse / Withdraw",
       contentAr: "أفهم أن لي الحق في رفض الإجراء أو سحب الموافقة قبل التنفيذ، مع تحملي للنتائج الطبية المترتبة على ذلك.",
@@ -657,7 +657,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "16_pdpl_clause",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "بند الخصوصية وحماية البيانات",
       titleEn: "PDPL and Data Processing Clause",
       contentAr: AR_PDPL,
@@ -668,7 +668,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "17_guardian_clause",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "بند ولي الأمر / الممثل",
       titleEn: "Guardian / Representative Clause",
       contentAr: "يُستكمل هذا البند عند توقيع ولي أمر أو ممثل نظامي مع إثبات الصفة النظامية.",
@@ -679,7 +679,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "18_interpreter_clause",
-      sectionKind: ConsentSectionKind.INTERPRETER,
+      sectionKind: $Enums.ConsentSectionKind.INTERPRETER,
       titleAr: "بند المترجم",
       titleEn: "Interpreter Clause",
       contentAr: "يُستكمل هذا البند إذا كانت لغة المريض لا تتطابق مع لغة نموذج الموافقة.",
@@ -690,7 +690,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "19_witness_clause",
-      sectionKind: ConsentSectionKind.WITNESS,
+      sectionKind: $Enums.ConsentSectionKind.WITNESS,
       titleAr: "بند الشاهد",
       titleEn: "Witness Clause",
       contentAr: "يُثبت الشاهد أن الشرح تم وأن التوقيع تم بإرادة حرة.",
@@ -701,7 +701,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "20_physician_declaration",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "إقرار الطبيب",
       titleEn: "Physician Declaration",
       contentAr: "أقر كطبيب مرخص أنني شرحت للمريض كافة المعلومات الجوهرية بلغة مفهومة.",
@@ -712,7 +712,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "21_patient_ack",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "إقرار المريض / الولي",
       titleEn: "Patient / Guardian Acknowledgment",
       contentAr: "أقر بأنني قرأت وفهمت ووافقت دون إكراه.",
@@ -723,7 +723,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "22_signature_block",
-      sectionKind: ConsentSectionKind.SIGNATURE,
+      sectionKind: $Enums.ConsentSectionKind.SIGNATURE,
       titleAr: "كتلة التوقيعات",
       titleEn: "Signature Block",
       contentAr: "- اسم المريض/الولي\n- الصفة\n- التوقيع\n- التاريخ والوقت\n- اسم الطبيب وتوقيعه\n- اسم الشاهد وتوقيعه\n- اسم المترجم وتوقيعه",
@@ -734,7 +734,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "23_otp_validation",
-      sectionKind: ConsentSectionKind.SIGNATURE,
+      sectionKind: $Enums.ConsentSectionKind.SIGNATURE,
       titleAr: "التحقق الإلكتروني OTP",
       titleEn: "OTP / Electronic Signature Validation",
       contentAr: "لا يُعتد بالإغلاق النهائي حتى تحقق OTP أو توقيع رقمي موثوق.",
@@ -745,7 +745,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "24_qr_verification",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "التحقق عبر QR",
       titleEn: "QR Verification",
       contentAr: "يتم تضمين رمز QR للتحقق من أصالة المستند وسلامة التجزئة القانونية.",
@@ -756,7 +756,7 @@ export function buildSaudiTemplateSections(seed: SaudiEnterpriseTemplateSeed): S
     },
     {
       sectionKey: "25_legal_seal_audit",
-      sectionKind: ConsentSectionKind.FIXED_LEGAL,
+      sectionKind: $Enums.ConsentSectionKind.FIXED_LEGAL,
       titleAr: "الختم القانوني وسجل التدقيق",
       titleEn: "Legal Seal and Audit Trail",
       contentAr: "يُختم المستند بخلاصة قانونية (هاش الختم القانوني) مع ربط كامل بسجل تدقيق غير قابل للتلاعب.",

@@ -12,7 +12,7 @@ import {
   type EducationSessionState,
 } from "@/lib/server/education-session-service";
 import { recordEvidenceEvent } from "@/lib/server/evidence-package-2-service";
-import { ConsentDocumentStatus, ConsentEvidenceCopyType, ConsentMethod, ConsentSignatureRole } from "@/lib/server/prisma-enums";
+import { $Enums, type ConsentDocumentStatus, type ConsentEvidenceCopyType, type ConsentMethod, type ConsentSignatureRole } from "@prisma/client";
 import {
   type PublicSigningSessionPayload,
   createPublicSigningSessionCookieValue,
@@ -386,9 +386,9 @@ export async function ensurePublicFinalConsentPdfState(args: {
       throw new ApiError(404, "Consent document not found");
     }
 
-    if (current.status === ConsentDocumentStatus.SIGNED) {
+    if (current.status === $Enums.ConsentDocumentStatus.SIGNED) {
       await finalizeConsentDocument(publicSigningSystemAuth(context.tenantId), context.documentId, {}, args.request);
-    } else if (current.status !== ConsentDocumentStatus.FINALIZED) {
+    } else if (current.status !== $Enums.ConsentDocumentStatus.FINALIZED) {
       const pendingState = {
         status: "pending" as const,
         error: "Final PDF is not ready until all required signatures are completed.",
@@ -515,7 +515,7 @@ function getNullableString(value: unknown): string | null {
 }
 
 function getFiniteNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return repairArabicMojibake(value);
+  if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim()) {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
@@ -574,8 +574,8 @@ function getLocalizedFaqArray(value: unknown): LocalizedFaq[] {
 
 function normalizeSignerRole(value: string): string {
   const normalized = value.trim().toUpperCase();
-  if (normalized === ConsentSignatureRole.GUARDIAN) return ConsentSignatureRole.GUARDIAN;
-  return ConsentSignatureRole.PATIENT;
+  if (normalized === $Enums.ConsentSignatureRole.GUARDIAN) return $Enums.ConsentSignatureRole.GUARDIAN;
+  return $Enums.ConsentSignatureRole.PATIENT;
 }
 
 function computePublicSessionExpiry(): string {
@@ -687,7 +687,7 @@ async function writePublicConsentAudit(args: {
       actorUserId: null,
       actorRole: args.signerRole,
       summary: args.summary,
-      metadata: args.metadata,
+      metadata: args.metadata as Prisma.InputJsonValue,
     },
   });
 
@@ -742,12 +742,19 @@ async function ensureOtpChallengeVerified(challengeId: string): Promise<void> {
   }
 }
 
+type ProcedureEducationWithAssets = Prisma.ProcedureEducationGetPayload<{
+  include: {
+    currentVersion: true;
+    assets: { orderBy: { sortOrder: "asc" } };
+  };
+}>;
+
 async function getLinkedEducationPackage(tenantId: string, templateId: string, templateVersionId: string): Promise<LinkedEducationPackagePayload | null> {
   try {
-    const packages = await prisma().procedureEducation.findMany({
+    const packages = (await prisma().procedureEducation.findMany({
       where: {
         tenantId,
-        status: "APPROVED",
+        status: $Enums.ProcedureEducationStatus.APPROVED,
         currentVersionId: { not: null },
       },
       include: {
@@ -756,7 +763,7 @@ async function getLinkedEducationPackage(tenantId: string, templateId: string, t
           orderBy: { sortOrder: "asc" },
         },
       },
-    });
+    })) as ProcedureEducationWithAssets[];
 
     for (const item of packages) {
       const version = item.currentVersion;
@@ -1412,11 +1419,11 @@ export async function recordPublicDecisionEvent(args: {
 
 function buildEvidenceCopyFileName(reference: string, copyType: string): string {
   switch (copyType) {
-    case ConsentEvidenceCopyType.PATIENT_COPY:
+    case $Enums.ConsentEvidenceCopyType.PATIENT_COPY:
       return `CONSENT-${reference}-PATIENT.pdf`;
-    case ConsentEvidenceCopyType.MEDICAL_RECORD_COPY:
+    case $Enums.ConsentEvidenceCopyType.MEDICAL_RECORD_COPY:
       return `CONSENT-${reference}-MR.pdf`;
-    case ConsentEvidenceCopyType.LEGAL_ARCHIVE_COPY:
+    case $Enums.ConsentEvidenceCopyType.LEGAL_ARCHIVE_COPY:
       return `CONSENT-${reference}-LEGAL.pdf`;
     default:
       return `CONSENT-${reference}-EVIDENCE.pdf`;
@@ -1447,9 +1454,9 @@ async function persistPublicSigningEvidencePackages(args: {
 }): Promise<void> {
   const reference = (args.consentReference || args.documentId).replace(/[^a-zA-Z0-9_-]/g, "_");
   const copyTypes = [
-    ConsentEvidenceCopyType.PATIENT_COPY,
-    ConsentEvidenceCopyType.MEDICAL_RECORD_COPY,
-    ConsentEvidenceCopyType.LEGAL_ARCHIVE_COPY,
+    $Enums.ConsentEvidenceCopyType.PATIENT_COPY,
+    $Enums.ConsentEvidenceCopyType.MEDICAL_RECORD_COPY,
+    $Enums.ConsentEvidenceCopyType.LEGAL_ARCHIVE_COPY,
   ];
   const filePrefix = args.decision.status === "CONSENT_REFUSED" ? `REFUSAL-${reference}` : reference;
   const metadata: Prisma.InputJsonValue = {
@@ -1551,7 +1558,7 @@ async function persistPublicSigningEvidencePackages(args: {
       patientName: args.patientName,
       documentId: args.documentId,
       consentReference: args.consentReference,
-      copyType: ConsentEvidenceCopyType.PATIENT_COPY,
+      copyType: $Enums.ConsentEvidenceCopyType.PATIENT_COPY,
       recipientEmail: args.patientEmail,
     }).catch(() => undefined);
   }
@@ -1666,7 +1673,7 @@ async function buildPreOtpBootstrapPayload(
     throw new ApiError(404, "Consent document not found");
   }
 
-  if (doc.status === ConsentDocumentStatus.SIGNED || doc.status === ConsentDocumentStatus.FINALIZED) {
+  if (doc.status === $Enums.ConsentDocumentStatus.SIGNED || doc.status === $Enums.ConsentDocumentStatus.FINALIZED) {
     throw new ApiError(404, "Invalid or expired signing token");
   }
 
@@ -1923,7 +1930,7 @@ export async function requestSigningOtp(args: {
 }): Promise<{ challengeId: string; expiresAt: string; deliveryStatus: "sent" | "failed"; fallbackMode: boolean; maskedPhone: string }> {
   const context = await getSigningTokenContext(args.token);
   const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
-  if (doc.status === ConsentDocumentStatus.SIGNED || doc.status === ConsentDocumentStatus.FINALIZED) {
+  if (doc.status === $Enums.ConsentDocumentStatus.SIGNED || doc.status === $Enums.ConsentDocumentStatus.FINALIZED) {
     throw new ApiError(409, "Signing flow already completed for this document");
   }
   const recipientEmail = getSecureSigningRecipientEmail(doc.metadata);
@@ -2274,14 +2281,14 @@ export async function submitPublicSigningSignature(args: {
 
   const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
   const patientEmail = getSecureSigningRecipientEmail(doc.metadata);
-  if (doc.status === ConsentDocumentStatus.FINALIZED) {
+  if (doc.status === $Enums.ConsentDocumentStatus.FINALIZED) {
     throw new ApiError(409, "Finalized consent cannot accept signatures");
   }
 
   const signableStatuses = [
-    ConsentDocumentStatus.APPROVED,
-    ConsentDocumentStatus.READY_FOR_SIGNATURE,
-    ConsentDocumentStatus.SIGNED,
+    $Enums.ConsentDocumentStatus.APPROVED,
+    $Enums.ConsentDocumentStatus.READY_FOR_SIGNATURE,
+    $Enums.ConsentDocumentStatus.SIGNED,
   ];
   if (!signableStatuses.includes(doc.status)) {
     console.warn(
@@ -2345,7 +2352,7 @@ export async function submitPublicSigningSignature(args: {
     await prisma().consentDocument.update({
       where: { id: context.documentId },
       data: {
-        status: ConsentDocumentStatus.SIGNED,
+        status: $Enums.ConsentDocumentStatus.SIGNED,
         metadata: mergeDecisionExecutionContext({
           rawMetadata: doc.metadata,
           eventType: "REFUSAL_ACKNOWLEDGED",
@@ -2405,7 +2412,7 @@ export async function submitPublicSigningSignature(args: {
       signerRole,
       metadata: {
         signerName,
-        signatureMethod: ConsentMethod.OTP,
+        signatureMethod: $Enums.ConsentMethod.OTP,
         tokenHash: context.publicSession.tokenHash,
         challengeId: context.publicSession.challengeId,
         documentHash,
@@ -2453,11 +2460,11 @@ export async function submitPublicSigningSignature(args: {
 
     return {
       documentId: context.documentId,
-      status: ConsentDocumentStatus.SIGNED,
+      status: $Enums.ConsentDocumentStatus.SIGNED,
       signatureId,
       signerRole,
       signerName,
-      signatureMethod: ConsentMethod.OTP,
+      signatureMethod: $Enums.ConsentMethod.OTP,
       signedAt: capturedAt,
       evidence: {
         documentHash,
@@ -2479,7 +2486,7 @@ export async function submitPublicSigningSignature(args: {
       consentDocumentId: context.documentId,
       role: signerRole,
       signerName,
-      signatureMethod: ConsentMethod.OTP,
+      signatureMethod: $Enums.ConsentMethod.OTP,
       ipAddress: requestIpAddress,
       userAgent: requestUserAgent,
       metadata: {
@@ -2494,14 +2501,14 @@ export async function submitPublicSigningSignature(args: {
   });
 
   const signatures = [...doc.signatures, signature];
-  const hasPatient = signatures.some((item) => item.role === ConsentSignatureRole.PATIENT || item.role === ConsentSignatureRole.GUARDIAN);
-  const hasPhysician = signatures.some((item) => item.role === ConsentSignatureRole.PHYSICIAN);
-  const signerCompletesWorkflow = signerRole === ConsentSignatureRole.PATIENT || signerRole === ConsentSignatureRole.GUARDIAN;
+  const hasPatient = signatures.some((item) => item.role === $Enums.ConsentSignatureRole.PATIENT || item.role === $Enums.ConsentSignatureRole.GUARDIAN);
+  const hasPhysician = signatures.some((item) => item.role === $Enums.ConsentSignatureRole.PHYSICIAN);
+  const signerCompletesWorkflow = signerRole === $Enums.ConsentSignatureRole.PATIENT || signerRole === $Enums.ConsentSignatureRole.GUARDIAN;
   const nextStatus = signerCompletesWorkflow
-    ? ConsentDocumentStatus.SIGNED
+    ? $Enums.ConsentDocumentStatus.SIGNED
     : (hasPatient && hasPhysician
-    ? ConsentDocumentStatus.SIGNED
-    : ConsentDocumentStatus.READY_FOR_SIGNATURE);
+    ? $Enums.ConsentDocumentStatus.SIGNED
+    : $Enums.ConsentDocumentStatus.READY_FOR_SIGNATURE);
 
   await prisma().consentDocument.update({
     where: { id: context.documentId },
@@ -2543,7 +2550,7 @@ export async function submitPublicSigningSignature(args: {
     signerRole,
     metadata: {
       signerName,
-      signatureMethod: ConsentMethod.OTP,
+      signatureMethod: $Enums.ConsentMethod.OTP,
       tokenHash: context.publicSession.tokenHash,
       challengeId: context.publicSession.challengeId,
       nextStatus,

@@ -227,6 +227,9 @@ apps/api/backend/generated/signed_documents/
 # Playwright
 /test-results/
 /playwright-report/
+
+# Local verification screenshots
+/screenshots/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/

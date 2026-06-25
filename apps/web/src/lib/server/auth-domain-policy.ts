@@ -1,4 +1,4 @@
-import { SubscriptionStatus } from "@/lib/server/prisma-enums";
+import { $Enums, type SubscriptionStatus } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 
@@ -186,7 +186,7 @@ export async function enforceSharedPostAuthAccessForMethod(
             where: {
                 tenantId: user.tenantId,
                 status: {
-                    in: [SubscriptionStatus.TRIALING, SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE],
+                    in: [$Enums.SubscriptionStatus.TRIALING, $Enums.SubscriptionStatus.ACTIVE, $Enums.SubscriptionStatus.PAST_DUE],
                 },
             },
             select: { id: true },

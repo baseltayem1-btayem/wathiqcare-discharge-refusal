@@ -1,4 +1,4 @@
-import { DataClassification } from "@/lib/server/prisma-enums";
+import { $Enums } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { dataClassificationPolicy, type DataClassificationKey } from "@/config/data-classification-policy";
@@ -64,7 +64,7 @@ export async function ensureDefaultResidencyRules(tenantId: string) {
         where: {
           tenantId_dataType: {
             tenantId,
-            dataType: dataType as DataClassification,
+            dataType: dataType as $Enums.DataClassification,
           },
         },
         update: {
@@ -76,7 +76,7 @@ export async function ensureDefaultResidencyRules(tenantId: string) {
         },
         create: {
           tenantId,
-          dataType: dataType as DataClassification,
+          dataType: dataType as $Enums.DataClassification,
           residencyScope: rule.residency,
           hostingRegion: getDefaultResidencyRegion(),
           exportAllowed: rule.residency !== "KSA_ONLY",

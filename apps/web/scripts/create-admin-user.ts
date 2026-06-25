@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { UserType } from "@prisma/client";
+import { $Enums } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import { hashPassword } from "@/lib/server/password";
 
@@ -58,7 +58,7 @@ async function main() {
       data: {
         tenantId: tenant.id,
         role: ADMIN_ROLE,
-        userType: UserType.TENANT_ADMIN,
+        userType: $Enums.UserType.TENANT_ADMIN,
         isActive: true,
         emailVerified: true,
         emailVerifiedAt: new Date(),
@@ -76,7 +76,7 @@ async function main() {
       email,
       fullName: "WathiqCare Administrator",
       role: ADMIN_ROLE,
-      userType: UserType.TENANT_ADMIN,
+      userType: $Enums.UserType.TENANT_ADMIN,
       isActive: true,
       emailVerified: true,
       emailVerifiedAt: new Date(),

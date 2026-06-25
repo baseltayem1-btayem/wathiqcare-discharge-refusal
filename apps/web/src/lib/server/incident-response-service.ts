@@ -1,4 +1,4 @@
-import { IncidentSeverity, IncidentStatus } from "@/lib/server/prisma-enums";
+import { $Enums, type IncidentSeverity, type IncidentStatus } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -11,13 +11,13 @@ function parseSeverity(value: string | null | undefined): IncidentSeverity {
   const normalized = (value ?? "").trim().toUpperCase();
   switch (normalized) {
     case "HIGH":
-      return IncidentSeverity.HIGH;
+      return $Enums.IncidentSeverity.HIGH;
     case "MEDIUM":
-      return IncidentSeverity.MEDIUM;
+      return $Enums.IncidentSeverity.MEDIUM;
     case "LOW":
-      return IncidentSeverity.LOW;
+      return $Enums.IncidentSeverity.LOW;
     default:
-      return IncidentSeverity.CRITICAL;
+      return $Enums.IncidentSeverity.CRITICAL;
   }
 }
 
@@ -26,7 +26,7 @@ function parseStatus(value: string | null | undefined): IncidentStatus {
   if (normalized in IncidentStatus) {
     return IncidentStatus[normalized as keyof typeof IncidentStatus];
   }
-  return IncidentStatus.DETECTED;
+  return $Enums.IncidentStatus.DETECTED;
 }
 
 export function buildIncidentSla(severity: IncidentSeverity, detectedAt = new Date()) {
@@ -35,7 +35,7 @@ export function buildIncidentSla(severity: IncidentSeverity, detectedAt = new Da
   return {
     internalEscalationDueAt: new Date(base + oneHour),
     clientNotificationDueAt: new Date(base + 48 * oneHour),
-    regulatorNotificationDueAt: severity === IncidentSeverity.LOW ? null : new Date(base + 72 * oneHour),
+    regulatorNotificationDueAt: severity === $Enums.IncidentSeverity.LOW ? null : new Date(base + 72 * oneHour),
   };
 }
 
@@ -122,8 +122,8 @@ export async function createSecurityIncident(
     data: {
       tenantId: auth.tenant_id,
       caseId: payload.caseId?.trim() || null,
-      severity,
-      status: parseStatus(payload.status),
+      severity: severity as $Enums.IncidentSeverity,
+      status: parseStatus(payload.status) as $Enums.IncidentStatus,
       title: payload.title.trim(),
       summary: payload.summary.trim(),
       affectedScope: payload.affectedScope?.trim() || "clinical_workflow",

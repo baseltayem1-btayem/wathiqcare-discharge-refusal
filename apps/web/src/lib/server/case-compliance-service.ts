@@ -1,6 +1,6 @@
 ﻿import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
-import { DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
+import { $Enums, type DocumentStatus, type DocumentType } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -596,8 +596,8 @@ export async function generateLegalPackageForCase(auth: AuthContext, caseId: str
     data: {
       tenantId: auth.tenant_id!,
       caseId,
-      documentType: DocumentType.CASE_FILE,
-      status: DocumentStatus.GENERATED,
+      documentType: $Enums.DocumentType.CASE_FILE,
+      status: $Enums.DocumentStatus.GENERATED,
       documentCode: `LEGAL-PKG-${version}`,
       titleEn: "Saudi Medico-Legal Evidence Package",
       titleAr: "Ø­Ø²Ù…Ø© Ø§Ù„Ø£Ø¯Ù„Ø© Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØ© Ø§Ù„Ø·Ø¨ÙŠØ©",

@@ -1,4 +1,4 @@
-import { BackupJobStatus, DataClassification } from "@/lib/server/prisma-enums";
+import { $Enums, type BackupJobStatus, type DataClassification } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -10,10 +10,10 @@ const prisma = () => getPrisma();
 
 function parseBackupStatus(value: string | null | undefined): BackupJobStatus {
   const normalized = (value ?? "").trim().toUpperCase();
-  if (normalized in BackupJobStatus) {
-    return BackupJobStatus[normalized as keyof typeof BackupJobStatus];
+  if (normalized in $Enums.BackupJobStatus) {
+    return $Enums.BackupJobStatus[normalized as keyof typeof $Enums.BackupJobStatus];
   }
-  return BackupJobStatus.SCHEDULED;
+  return $Enums.BackupJobStatus.SCHEDULED;
 }
 
 export function summarizeBackupReadiness(
@@ -102,12 +102,12 @@ export async function createBackupJob(
   const job = await prisma().backupJob.create({
     data: {
       tenantId: auth.tenant_id,
-      classification: DataClassification.BACKUP,
+      classification: $Enums.DataClassification.BACKUP,
       backupType: payload.backupType?.trim() || "scheduled_snapshot",
       storageLocation: payload.storageLocation.trim(),
       region: payload.region?.trim() || "saudi-arabia-riyadh",
       encrypted: payload.encrypted !== false,
-      status: parseBackupStatus(payload.status),
+      status: parseBackupStatus(payload.status) as $Enums.BackupJobStatus,
       startedAt: new Date(),
       completedAt: payload.status?.toUpperCase() === "SUCCEEDED" ? new Date() : null,
       restoreVerifiedAt: payload.restoreResultStatus?.trim() ? new Date() : null,

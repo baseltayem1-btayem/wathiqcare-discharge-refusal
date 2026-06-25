@@ -1,6 +1,6 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
-import { DocumentStatus, DocumentType } from "@/lib/server/prisma-enums";
+import { $Enums, type DocumentStatus, type DocumentType } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
@@ -591,8 +591,8 @@ export async function createSecureLink(args: {
       id: linkId,
       tenantId: args.tenantId,
       caseId: args.caseId,
-      documentType: DocumentType.OTHER,
-      status: DocumentStatus.GENERATED,
+      documentType: $Enums.DocumentType.OTHER,
+      status: $Enums.DocumentStatus.GENERATED,
       documentCode: `${SECURE_LINK_CODE_PREFIX}${tokenHash}`,
       titleEn: "Secure Patient Decision Link",
       titleAr: "Ø±Ø§Ø¨Ø· Ù‚Ø±Ø§Ø± Ø®Ø±ÙˆØ¬ Ø¢Ù…Ù†",
@@ -696,7 +696,7 @@ export async function revokeSecureLink(args: {
   await prisma().document.update({
     where: { id: document.id },
     data: {
-      status: DocumentStatus.ARCHIVED,
+      status: $Enums.DocumentStatus.ARCHIVED,
       payloadJson: updatedPayload as unknown as JsonInputValue,
       sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
     },
@@ -801,7 +801,7 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
     await prisma().document.update({
       where: { id: document.id },
       data: {
-        status: DocumentStatus.SIGNED,
+        status: $Enums.DocumentStatus.SIGNED,
         payloadJson: updatedPayload as unknown as JsonInputValue,
         signedAt: new Date(submittedAt),
         sizeBytes: BigInt(Buffer.byteLength(JSON.stringify(updatedPayload), "utf8")),
@@ -919,14 +919,14 @@ export async function downloadPublicSecureLinkArtifact(
   ensureLinkActive(payload);
 
   const documentType =
-    kind === "refusal_acknowledgement" ? "DISCHARGE_REFUSAL_FORM" : "CASE_FILE";
+    kind === "refusal_acknowledgement" ? "DISCHARGE_REFUSAL_FORM" as const : "CASE_FILE" as const;
 
   const pdfDoc = await prisma().document.findFirst({
     where: {
       caseId: payload.case_id,
       tenantId: payload.tenant_id,
       mimeType: "application/pdf",
-      documentType: documentType as import("@prisma/client").DocumentType,
+      documentType,
     },
     orderBy: { createdAt: "desc" },
     select: { storagePath: true, mimeType: true, fileName: true },

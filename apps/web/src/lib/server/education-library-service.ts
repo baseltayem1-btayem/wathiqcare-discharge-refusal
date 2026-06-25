@@ -1,11 +1,101 @@
 import crypto from "node:crypto";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import { ApiError } from "@/lib/server/http";
 
-const prisma = () => getPrisma();
-
 type JsonObject = Record<string, unknown>;
+
+type EducationVersion = {
+  id: string;
+  tenantId: string;
+  educationPackageId: string;
+  versionLabel: string;
+  versionNumber: number;
+  status: string;
+  contentHash: string | null;
+  linkedTemplateIds: unknown;
+  linkedTemplateVersionIds: unknown;
+  manifestJson: unknown;
+  metadata: unknown;
+  approvedByUserId: string | null;
+  approvedAt: Date | null;
+  assets: EducationAsset[];
+};
+
+type EducationAsset = {
+  id: string;
+  tenantId: string;
+  educationPackageId: string;
+  versionId: string | null;
+  assetKey: string;
+  assetType: string;
+  title: string;
+  locale: string;
+  sourceUri: string | null;
+  thumbnailUri: string | null;
+  contentHash: string;
+  sortOrder: number;
+  metadata: unknown;
+};
+
+type EducationPackage = {
+  id: string;
+  tenantId: string;
+  packageKey: string;
+  titleAr: string;
+  titleEn: string;
+  summaryAr: string | null;
+  summaryEn: string | null;
+  clinicalDomain: string | null;
+  procedureCode: string | null;
+  status: string;
+  currentVersionId: string | null;
+  currentVersion: EducationVersion | null;
+  versions: EducationVersion[];
+  assets: EducationAsset[];
+  createdByUserId: string | null;
+  approvedByUserId: string | null;
+  approvedAt: Date | null;
+  metadata: unknown;
+};
+
+type EducationEvidencePackage = {
+  id: string;
+  tenantId: string;
+  educationPackageId: string;
+  versionId: string;
+  consentTemplateId: string | null;
+  consentTemplateVersionId: string | null;
+  evidenceHash: string;
+  packageSummary: string | null;
+  metadata: unknown;
+};
+
+type EducationModelDelegate<T> = {
+  findFirst(args?: unknown): Promise<T | null>;
+  findUniqueOrThrow(args: unknown): Promise<T>;
+  create(args: { data: unknown }): Promise<T>;
+  update(args: { where: unknown; data: unknown }): Promise<T>;
+};
+
+type EducationAssetDelegate = {
+  createMany(args: { data: unknown[] }): Promise<{ count: number }>;
+  findMany(args?: unknown): Promise<EducationAsset[]>;
+};
+
+type EducationAuditEventDelegate = {
+  create(args: { data: unknown }): Promise<unknown>;
+};
+
+type EducationPrismaClient = PrismaClient & {
+  educationAuditEvent: EducationAuditEventDelegate;
+  educationPackage: EducationModelDelegate<EducationPackage>;
+  educationVersion: EducationModelDelegate<EducationVersion>;
+  educationAsset: EducationAssetDelegate;
+  educationEvidencePackage: EducationModelDelegate<EducationEvidencePackage>;
+};
+
+const prisma = (): EducationPrismaClient => getPrisma() as unknown as EducationPrismaClient;
 
 export type EducationAssetInput = {
   assetKey: string;
@@ -245,7 +335,8 @@ export async function createEducationPackage(input: CreateEducationPackageInput)
     placeholderAssets: normalizedAssets,
   });
 
-  return prisma().$transaction(async (tx) => {
+  return prisma().$transaction(async (rawTx) => {
+    const tx = rawTx as unknown as EducationPrismaClient;
     const educationPackage = await tx.educationPackage.create({
       data: {
         tenantId,
@@ -340,7 +431,8 @@ export async function approveEducationPackage(input: ApproveEducationPackageInpu
     throw new ApiError(400, "tenantId and packageId are required");
   }
 
-  return prisma().$transaction(async (tx) => {
+  return prisma().$transaction(async (rawTx) => {
+    const tx = rawTx as unknown as EducationPrismaClient;
     const educationPackage = await tx.educationPackage.findFirst({
       where: { id: packageId, tenantId },
       include: {
@@ -439,7 +531,8 @@ export async function createEducationPackageVersion(input: CreateEducationPackag
     throw new ApiError(400, "tenantId, packageId, and versionLabel are required");
   }
 
-  return prisma().$transaction(async (tx) => {
+  return prisma().$transaction(async (rawTx) => {
+    const tx = rawTx as unknown as EducationPrismaClient;
     const educationPackage = await tx.educationPackage.findFirst({
       where: { id: packageId, tenantId },
       include: {
@@ -555,7 +648,8 @@ export async function linkEducationPackageToConsentTemplate(input: LinkEducation
     throw new ApiError(400, "tenantId, packageId, consentTemplateId, and consentTemplateVersionId are required");
   }
 
-  return prisma().$transaction(async (tx) => {
+  return prisma().$transaction(async (rawTx) => {
+    const tx = rawTx as unknown as EducationPrismaClient;
     const templateVersion = await tx.consentTemplateVersion.findFirst({
       where: {
         id: consentTemplateVersionId,
@@ -641,7 +735,8 @@ export async function generateEducationEvidencePackage(input: GenerateEducationE
     throw new ApiError(400, "tenantId and packageId are required");
   }
 
-  return prisma().$transaction(async (tx) => {
+  return prisma().$transaction(async (rawTx) => {
+    const tx = rawTx as unknown as EducationPrismaClient;
     const educationPackage = await tx.educationPackage.findFirst({
       where: { id: packageId, tenantId },
       include: {

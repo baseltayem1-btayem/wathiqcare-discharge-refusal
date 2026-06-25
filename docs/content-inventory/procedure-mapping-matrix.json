@@ -1,0 +1,5886 @@
+{
+  "source": "apps/web/src/components/informed-consents/enterprise-workflow/imcApprovedConsentLibrary.generated.ts",
+  "generatedAt": "2026-06-25T18:58:05.071Z",
+  "totalProcedures": 243,
+  "mappings": [
+    {
+      "procedureId": "abdominal-aortic-aneurysm",
+      "procedureNameEn": "Abdominal Aortic Aneurysm",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Abdominal Aortic Aneurysm.pdf"
+      ],
+      "educationMaterials": [
+        "Abdominal Aortic Aneurysm - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "abdominoperineal-resection-of-rectum",
+      "procedureNameEn": "Abdominoperineal Resection of Rectum",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Abdominoperineal Resection of Rectum.pdf"
+      ],
+      "educationMaterials": [
+        "Abdominoperineal Resection of Rectum - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "abdominoplasty",
+      "procedureNameEn": "Abdominoplasty",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Abdominoplasty.pdf"
+      ],
+      "educationMaterials": [
+        "Abdominoplasty - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "adenotonsillectomy",
+      "procedureNameEn": "Adenotonsillectomy",
+      "procedureNameAr": "",
+      "specialty": "ENT",
+      "department": "ENT",
+      "categoryCode": "ENT",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Adenotonsillectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Adenotonsillectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "allergen-immunotherapy",
+      "procedureNameEn": "Allergen Immunotherapy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Allergen Immunotherapy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "allergy-skin-test-consent-and-informed",
+      "procedureNameEn": "Allergy Skin Test consent and informed",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Allergy Skin Test consent and informed.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "amniocentesis-chorionic-villus-sampling",
+      "procedureNameEn": "Amniocentesis Chorionic Villus Sampling",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Amniocentesis Chorionic Villus Sampling - Patient  Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Amniocentesis Chorionic Villus Sampling - Patient  Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "amputation",
+      "procedureNameEn": "Amputation",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Amputation.pdf"
+      ],
+      "educationMaterials": [
+        "Amputation - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "anesthesia-patient-consent",
+      "procedureNameEn": "Anesthesia - Patient Consent",
+      "procedureNameAr": "",
+      "specialty": "Anesthesia",
+      "department": "Anesthesia",
+      "categoryCode": "ANESTHESIA",
+      "consentType": "ANESTHESIA_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Anesthesia - Patient Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "angiogram-and-plasty-stenting",
+      "procedureNameEn": "Angiogram and Plasty Stenting",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Angiogram and Plasty Stenting.pdf"
+      ],
+      "educationMaterials": [
+        "Angiogram and Plasty Stenting - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "angiogram-with-mechanical-thrombectomy-any-body-part",
+      "procedureNameEn": "Angiogram with mechanical Thrombectomy (any body part)",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Angiogram with mechanical Thrombectomy (any body part).pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "appendicectomy-open",
+      "procedureNameEn": "Appendicectomy - Open",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Appendicectomy - Open.pdf"
+      ],
+      "educationMaterials": [
+        "Appendicectomy - Open - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "arteriovenous-fistula",
+      "procedureNameEn": "Arteriovenous Fistula",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Arteriovenous Fistula.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "arteriovenous-goretex-loop-graft",
+      "procedureNameEn": "Arteriovenous Goretex Loop Graft",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Arteriovenous Goretex Loop Graft.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "arthrogram",
+      "procedureNameEn": "Arthrogram",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Arthrogram.pdf"
+      ],
+      "educationMaterials": [
+        "Arthrogram - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "arthroplasty-consent",
+      "procedureNameEn": "Arthroplasty Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Arthroplasty Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "aspiration-drainage-under-imaging",
+      "procedureNameEn": "Aspiration Drainage Under Imaging",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Aspiration Drainage Under Imaging.pdf"
+      ],
+      "educationMaterials": [
+        "Aspiration Drainage under Imaging - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "bartholin-s-glands",
+      "procedureNameEn": "Bartholin's Glands",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Bartholin's Glands.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "biopsy-under-imaging",
+      "procedureNameEn": "Biopsy Under Imaging",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Biopsy Under Imaging.pdf"
+      ],
+      "educationMaterials": [
+        "Biopsy Under Imaging - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "blepharoplasty",
+      "procedureNameEn": "Blepharoplasty",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Blepharoplasty.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "blood-and-blood-products-transfusion",
+      "procedureNameEn": "Blood and Blood Products Transfusion",
+      "procedureNameAr": "",
+      "specialty": "Blood Transfusion",
+      "department": "Medical",
+      "categoryCode": "BLOOD_TRANSFUSION",
+      "consentType": "BLOOD_TRANSFUSION_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Blood and Blood Products Transfusion.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "blood-and-blood-products-transfusion-consent",
+      "procedureNameEn": "Blood and blood products transfusion consent",
+      "procedureNameAr": "",
+      "specialty": "Blood Transfusion",
+      "department": "Medical",
+      "categoryCode": "BLOOD_TRANSFUSION",
+      "consentType": "BLOOD_TRANSFUSION_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Blood and blood products transfusion consent - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Blood and blood products transfusion consent - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "breast-abscess-haematoma",
+      "procedureNameEn": "Breast Abscess Haematoma",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Breast Abscess Haematoma.pdf"
+      ],
+      "educationMaterials": [
+        "Breast Abscess Haematoma - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "breast-biopsy-aspiration",
+      "procedureNameEn": "Breast Biopsy Aspiration",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Breast Biopsy Aspiration.pdf"
+      ],
+      "educationMaterials": [
+        "Breast Biopsy Aspiration - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "breast-microdochotomy",
+      "procedureNameEn": "Breast Microdochotomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Breast Microdochotomy.pdf"
+      ],
+      "educationMaterials": [
+        "Breast Microdochotomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "breast-wide-local-excision",
+      "procedureNameEn": "Breast Wide LocaL Excision",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Breast Wide LocaL Excision.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "burch-colposuspension",
+      "procedureNameEn": "Burch Colposuspension",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Burch Colposuspension.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "burns",
+      "procedureNameEn": "Burns",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Burns.pdf"
+      ],
+      "educationMaterials": [
+        "Burns - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "burns-child-young-person",
+      "procedureNameEn": "Burns (Child-Young Person)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Burns (Child-Young Person).pdf"
+      ],
+      "educationMaterials": [
+        "Burns (Child-Young Person) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "caesarean-section",
+      "procedureNameEn": "Caesarean Section",
+      "procedureNameAr": "",
+      "specialty": "Obstetrics & Gynecology",
+      "department": "OB/GYN",
+      "categoryCode": "OB_GYN",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Caesarean Section.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "capsule-endoscopy",
+      "procedureNameEn": "Capsule Endoscopy",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Capsule Endoscopy.pdf"
+      ],
+      "educationMaterials": [
+        "Capsule Endoscopy - Patient copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cardioversion",
+      "procedureNameEn": "Cardioversion",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Cardioversion.pdf"
+      ],
+      "educationMaterials": [
+        "Cardioversion - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "carotid-endarterectomy",
+      "procedureNameEn": "Carotid Endarterectomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Carotid Endarterectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Carotid Endarterectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "carotid-stenting",
+      "procedureNameEn": "Carotid Stenting",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Carotid Stenting (1).pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cataract-surgery",
+      "procedureNameEn": "Cataract Surgery",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cataract Surgery.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "catheter-check-with-iv-iodinated-contrast",
+      "procedureNameEn": "Catheter Check with IV Iodinated Contrast",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Catheter Check with IV Iodinated Contrast - Patient  Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Catheter Check with IV Iodinated Contrast - Patient  Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cautery-to-cervix",
+      "procedureNameEn": "Cautery to Cervix",
+      "procedureNameAr": "",
+      "specialty": "Obstetrics & Gynecology",
+      "department": "OB/GYN",
+      "categoryCode": "OB_GYN",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cautery to Cervix.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "central-vascular-access-device-insertion",
+      "procedureNameEn": "Central Vascular Access Device Insertion",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Central Vascular Access Device Insertion.pdf"
+      ],
+      "educationMaterials": [
+        "Central Vascular Access Device Insertion - Patient  Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cerebral-angiogram-aneurysm-coiling-flow-diverter",
+      "procedureNameEn": "Cerebral Angiogram - Aneurysm Coiling - Flow Diverter",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Cerebral Angiogram - Aneurysm Coiling - Flow Diverter.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cerebral-angiogram-cerebral-thrombectomy",
+      "procedureNameEn": "Cerebral Angiogram - Cerebral Thrombectomy",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Cerebral Angiogram - Cerebral Thrombectomy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cerebral-vasospasm-treatment",
+      "procedureNameEn": "Cerebral Vasospasm Treatment",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Cerebral Vasospasm Treatment.pdf"
+      ],
+      "educationMaterials": [
+        "Cerebral Vasospasm Treatment - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "chalazion-curettage",
+      "procedureNameEn": "Chalazion Curettage",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Chalazion Curettage.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "chemabrasion-and-dermabrasion",
+      "procedureNameEn": "Chemabrasion and Dermabrasion",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Chemabrasion and Dermabrasion.pdf"
+      ],
+      "educationMaterials": [
+        "Chemabrasion and Dermabrasion - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cholangiogram-percutaneous-or-biliary-drainstent",
+      "procedureNameEn": "Cholangiogram (Percutaneous) &or Biliary DrainStent",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Cholangiogram (Percutaneous) &or Biliary DrainStent.pdf"
+      ],
+      "educationMaterials": [
+        "Cholangiogram (Percutaneous) &or Biliary DrainStent - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cholecystectomy-laparoscopic",
+      "procedureNameEn": "Cholecystectomy Laparoscopic",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cholecystectomy Laparoscopic.pdf"
+      ],
+      "educationMaterials": [
+        "Cholecystectomy Laparoscopic - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cholecystectomy-open",
+      "procedureNameEn": "Cholecystectomy Open",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cholecystectomy Open.pdf"
+      ],
+      "educationMaterials": [
+        "Cholecystectomy Open - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cholecystectomy-open-and-exploration-of-the-common-bile-duct",
+      "procedureNameEn": "Cholecystectomy Open and Exploration of the Common Bile Duct",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cholecystectomy Open and Exploration of the Common Bile Duct.pdf"
+      ],
+      "educationMaterials": [
+        "Cholecystectomy Open and Exploration of the Common Bile Duct - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cholecystoduodenostomy-enterostomy",
+      "procedureNameEn": "Cholecystoduodenostomy - Enterostomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Cholecystoduodenostomy - Enterostomy.pdf"
+      ],
+      "educationMaterials": [
+        "Cholecystoduodenostomy - Enterostomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "circumcision-adult",
+      "procedureNameEn": "Circumcision - (Adult)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Circumcision - (Adult).pdf"
+      ],
+      "educationMaterials": [
+        "Circumcision - (Adult) Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "circumcision-child-young-person",
+      "procedureNameEn": "Circumcision (Child-Young Person)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Circumcision (Child-Young Person).pdf"
+      ],
+      "educationMaterials": [
+        "Circumcision (Child-Young Person) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "coiling-embolisation-of-intracranial-aneurysm",
+      "procedureNameEn": "Coiling embolisation of Intracranial Aneurysm",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Coiling embolisation of Intracranial Aneurysm.pdf"
+      ],
+      "educationMaterials": [
+        "Coiling embolisation of Intracranial Aneurysm - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "colonoscopy",
+      "procedureNameEn": "Colonoscopy",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Colonoscopy.pdf"
+      ],
+      "educationMaterials": [
+        "Colonoscopy - Patient copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "colposuspension",
+      "procedureNameEn": "Colposuspension",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Colposuspension.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "colposuspension-cystoscopy",
+      "procedureNameEn": "Colposuspension & Cystoscopy",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Colposuspension & Cystoscopy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cone-biopsy",
+      "procedureNameEn": "Cone Biopsy",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Cone Biopsy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-for-anesthesia-patient-education",
+      "procedureNameEn": "Consent for Anesthesia - Patient Education",
+      "procedureNameAr": "",
+      "specialty": "Anesthesia",
+      "department": "Anesthesia",
+      "categoryCode": "ANESTHESIA",
+      "consentType": "ANESTHESIA_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent for Anesthesia - Patient Education.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-for-tympanoplasty-with-or-without-mastoidectomy",
+      "procedureNameEn": "Consent for Tympanoplasty with or without mastoidectomy",
+      "procedureNameAr": "",
+      "specialty": "ENT",
+      "department": "ENT",
+      "categoryCode": "ENT",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Consent for Tympanoplasty with or without mastoidectomy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-botulinium",
+      "procedureNameEn": "Consent Form - Botulinium",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form - Botulinium.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-chemical-peeling",
+      "procedureNameEn": "Consent Form - Chemical Peeling",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form - Chemical Peeling.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-filler",
+      "procedureNameEn": "Consent Form - Filler",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form - Filler.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-injection",
+      "procedureNameEn": "Consent Form - Injection",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form - Injection.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-laser-treatment-skin-rejuvantion-and-scar-treatment",
+      "procedureNameEn": "Consent Form - Laser Treatment Skin Rejuvantion and Scar Treatment",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Consent Form - Laser Treatment Skin Rejuvantion and Scar Treatment.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-skin-lesion-treatment",
+      "procedureNameEn": "Consent Form - Skin Lesion Treatment",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Consent Form - Skin Lesion Treatment.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-high-intensity-focused-ultrasound-hifu-consent",
+      "procedureNameEn": "Consent Form -High-Intensity Focused Ultrasound (HIFU) Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form -High-Intensity Focused Ultrasound (HIFU) Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-hydrafacial-consent-form",
+      "procedureNameEn": "Consent Form -HydraFacial Consent Form",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form -HydraFacial Consent Form.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-isotretinoin-consent-form",
+      "procedureNameEn": "Consent Form -Isotretinoin Consent Form",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form -Isotretinoin Consent Form.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-laser-hair-removal-consent",
+      "procedureNameEn": "Consent Form -Laser Hair Removal Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form -Laser Hair Removal Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-microneedling-radiofrequency-matrix-pro-consent",
+      "procedureNameEn": "Consent Form -Microneedling Radiofrequency (Matrix Pro) Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form -Microneedling Radiofrequency (Matrix Pro) Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-phototherapy-excimer-laser-consent-form",
+      "procedureNameEn": "Consent Form -Phototherapy Excimer Laser Consent Form",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form -Phototherapy Excimer Laser Consent Form.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-q-switched-and-pico-laser-informed-consent-form",
+      "procedureNameEn": "Consent Form -Q Switched and Pico Laser Informed Consent Form",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form -Q Switched and Pico Laser Informed Consent Form.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-regenera-activa-consent-form",
+      "procedureNameEn": "Consent Form -Regenera Activa Consent Form",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form -Regenera Activa Consent Form.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "consent-form-bariatric",
+      "procedureNameEn": "Consent Form Bariatric",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Consent Form Bariatric.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cosmetic-surgery",
+      "procedureNameEn": "Cosmetic Surgery",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cosmetic Surgery.pdf"
+      ],
+      "educationMaterials": [
+        "Cosmetic Surgery - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cranial-surgery",
+      "procedureNameEn": "Cranial Surgery",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cranial Surgery.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "critical-care-consent",
+      "procedureNameEn": "Critical Care Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Critical Care Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ct-computed-tomography",
+      "procedureNameEn": "CT (Computed Tomography)",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "CT (Computed Tomography) - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "CT (Computed Tomography) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ct-cardiac",
+      "procedureNameEn": "CT Cardiac",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "CT Cardiac - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "CT Cardiac - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ct-colonoscopy",
+      "procedureNameEn": "CT Colonoscopy",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "CT Colonoscopy - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "CT Colonoscopy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cystogram",
+      "procedureNameEn": "Cystogram",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Cystogram - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Cystogram - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cystoscopy",
+      "procedureNameEn": "Cystoscopy",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cystoscopy.pdf"
+      ],
+      "educationMaterials": [
+        "Cystoscopy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cystoscopy-and-crushing-of-stone",
+      "procedureNameEn": "Cystoscopy and crushing of stone",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cystoscopy and crushing of stone.pdf"
+      ],
+      "educationMaterials": [
+        "Cystoscopy and crushing of stone - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cystoscopy-and-removal-of-bladder-tumour",
+      "procedureNameEn": "Cystoscopy and removal of bladder tumour",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cystoscopy and removal of bladder tumour.pdf"
+      ],
+      "educationMaterials": [
+        "Cystoscopy and removal of bladder tumour - Patient  Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cystoscopy-and-retrograde-pyelogram-insertion-of-ureteric-stent",
+      "procedureNameEn": "Cystoscopy and retrograde pyelogram insertion of ureteric stent",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cystoscopy and retrograde pyelogram insertion of ureteric stent.pdf"
+      ],
+      "educationMaterials": [
+        "Cystoscopy and retrograde pyelogram insertion of ureteric stent - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cystoscopy-and-ureteroscopy-and-fragmentation-of-stone-lithocast",
+      "procedureNameEn": "Cystoscopy and ureteroscopy and fragmentation of stone (lithocast)",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cystoscopy and ureteroscopy and fragmentation of stone  (lithocast) - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Cystoscopy and ureteroscopy and fragmentation of stone  (lithocast) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cystoscopy-with-passage-of-ureteric-catheter",
+      "procedureNameEn": "Cystoscopy with Passage of Ureteric catheter",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cystoscopy with Passage of Ureteric catheter.pdf"
+      ],
+      "educationMaterials": [
+        "Cystoscopy with Passage of Ureteric catheter - Patient  Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "cystotomy-supra-pubic",
+      "procedureNameEn": "Cystotomy (Supra-Pubic)",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Cystotomy (Supra-Pubic).pdf"
+      ],
+      "educationMaterials": [
+        "Cystotomy (Supra-Pubic) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "d-c-dilation-curettage",
+      "procedureNameEn": "D & C (Dilation & Curettage)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "D & C (Dilation & Curettage).pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "dacrocystogram",
+      "procedureNameEn": "Dacrocystogram",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Dacrocystogram - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Dacrocystogram - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "dacryocystorhinostomy",
+      "procedureNameEn": "Dacryocystorhinostomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Dacryocystorhinostomy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "diagnostic-hysteroscopy-dilatation-curettage-d-c",
+      "procedureNameEn": "Diagnostic Hysteroscopy Dilatation & Curettage (D & C)",
+      "procedureNameAr": "",
+      "specialty": "Obstetrics & Gynecology",
+      "department": "OB/GYN",
+      "categoryCode": "OB_GYN",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Diagnostic Hysteroscopy Dilatation & Curettage (D &  C).pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "drainage-of-a-pseudocyst",
+      "procedureNameEn": "Drainage of a Pseudocyst",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Drainage of a Pseudocyst.pdf"
+      ],
+      "educationMaterials": [
+        "Drainage of a Pseudocyst - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "drug-challenge-testing",
+      "procedureNameEn": "Drug Challenge Testing",
+      "procedureNameAr": "",
+      "specialty": "Allergy / Immunology",
+      "department": "Allergy",
+      "categoryCode": "ALLERGY_IMMUNOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Drug Challenge Testing - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Drug Challenge Testing - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "drug-challenge-testing-intradermal-skin-test",
+      "procedureNameEn": "Drug Challenge Testing (Intradermal Skin Test)",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Drug Challenge Testing (Intradermal Skin Test).pdf"
+      ],
+      "educationMaterials": [
+        "Drug Challenge Testing (Intradermal Skin Test)-Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "drug-challenge-testing-intravenous",
+      "procedureNameEn": "Drug Challenge Testing (Intravenous)",
+      "procedureNameAr": "",
+      "specialty": "Allergy / Immunology",
+      "department": "Allergy",
+      "categoryCode": "ALLERGY_IMMUNOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Drug Challenge Testing (Intravenous).pdf"
+      ],
+      "educationMaterials": [
+        "Drug Challenge Testing (Intravenous) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "drug-challenge-testing-oral",
+      "procedureNameEn": "Drug Challenge Testing (Oral)",
+      "procedureNameAr": "",
+      "specialty": "Allergy / Immunology",
+      "department": "Allergy",
+      "categoryCode": "ALLERGY_IMMUNOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Drug Challenge Testing (Oral).pdf"
+      ],
+      "educationMaterials": [
+        "Drug Challenge Testing (Oral) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "drug-challenge-testing-subcutaneous",
+      "procedureNameEn": "Drug Challenge Testing (Subcutaneous)",
+      "procedureNameAr": "",
+      "specialty": "Allergy / Immunology",
+      "department": "Allergy",
+      "categoryCode": "ALLERGY_IMMUNOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Drug Challenge Testing (Subcutaneous) - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Drug Challenge Testing (Subcutaneous) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "embolisation-uterine-artery-eua",
+      "procedureNameEn": "Embolisation - Uterine Artery (EUA)",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Embolisation - Uterine Artery (EUA).pdf"
+      ],
+      "educationMaterials": [
+        "Embolisation - Uterine Artery (EUA) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "embolisation-of-blood-vessels-any-body-part",
+      "procedureNameEn": "Embolisation of blood vessels (any body part)",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Embolisation of blood vessels (any body part).pdf"
+      ],
+      "educationMaterials": [
+        "Embolisation of blood vessels (any body part)- Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "endometrial-resection-ablation",
+      "procedureNameEn": "Endometrial Resection Ablation",
+      "procedureNameAr": "",
+      "specialty": "Obstetrics & Gynecology",
+      "department": "OB/GYN",
+      "categoryCode": "OB_GYN",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Endometrial Resection Ablation.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ercp-gastroendoscopy",
+      "procedureNameEn": "ERCP Gastroendoscopy",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "ERCP Gastroendoscopy.pdf"
+      ],
+      "educationMaterials": [
+        "ERCP Gastroendoscopy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "excision-of-a-lesion-and-flap-repair",
+      "procedureNameEn": "Excision of a Lesion and Flap Repair",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Excision of a Lesion and Flap Repair.pdf"
+      ],
+      "educationMaterials": [
+        "Excision of a Lesion and Flap Repair - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "excision-of-a-skin-lesion-or-subcutaneous-lump",
+      "procedureNameEn": "Excision of a Skin Lesion or Subcutaneous Lump",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Excision of a Skin Lesion or Subcutaneous Lump.pdf"
+      ],
+      "educationMaterials": [
+        "Excision of a Skin Lesion or Subcutaneous Lump - Patient  Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "exclusively-breastfed-baby-complementary-feed-consent",
+      "procedureNameEn": "Exclusively Breastfed Baby Complementary Feed Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Exclusively Breastfed Baby Complementary Feed  Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "eyelid-entropion-or-ectropion-repair",
+      "procedureNameEn": "Eyelid Entropion or Ectropion Repair",
+      "procedureNameAr": "",
+      "specialty": "Ophthalmology",
+      "department": "Ophthalmology",
+      "categoryCode": "OPHTHALMOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Eyelid Entropion or Ectropion Repair.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "eyelid-surgery-blepharoplasty",
+      "procedureNameEn": "Eyelid Surgery (Blepharoplasty)",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Eyelid Surgery (Blepharoplasty).pdf"
+      ],
+      "educationMaterials": [
+        "Eyelid Surgery (Blepharoplasty) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "eylea-aflibercept",
+      "procedureNameEn": "Eylea (Aflibercept)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Eylea (Aflibercept).pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "facelift",
+      "procedureNameEn": "Facelift",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Facelift.pdf"
+      ],
+      "educationMaterials": [
+        "Facelift - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "female-sterilisation",
+      "procedureNameEn": "Female Sterilisation",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Female Sterilisation.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "femoropopliteal-bypass",
+      "procedureNameEn": "Femoropopliteal Bypass",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Femoropopliteal Bypass.pdf"
+      ],
+      "educationMaterials": [
+        "Femoropopliteal Bypass - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "femto-intracorneal-ring-implantation",
+      "procedureNameEn": "Femto-Intracorneal Ring implantation",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Femto-Intracorneal Ring implantation.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "femto-lasik-surgery",
+      "procedureNameEn": "Femto-LASIK_Surgery",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Femto-LASIK_Surgery.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "fibroadenoma-cyst",
+      "procedureNameEn": "Fibroadenoma Cyst",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Fibroadenoma Cyst.pdf"
+      ],
+      "educationMaterials": [
+        "Fibroadenoma Cyst - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "fine-needle-aspiration",
+      "procedureNameEn": "Fine needle aspiration",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Fine needle aspiration.pdf"
+      ],
+      "educationMaterials": [
+        "Fine needle aspiration - Patient copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "fistula-faecal-small-bowel-gastric",
+      "procedureNameEn": "Fistula Faecal Small Bowel Gastric",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Fistula Faecal Small Bowel Gastric.pdf"
+      ],
+      "educationMaterials": [
+        "Fistula Faecal Small Bowel Gastric - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "fistula-in-ano",
+      "procedureNameEn": "Fistula in Ano",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Fistula in Ano.pdf"
+      ],
+      "educationMaterials": [
+        "Fistula in Ano - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "fistulogram-sinogram",
+      "procedureNameEn": "Fistulogram - Sinogram",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Fistulogram - Sinogram - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Fistulogram - Sinogram - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "flexible-cystoscopy-under-local-anaesthetic",
+      "procedureNameEn": "Flexible Cystoscopy under local anaesthetic",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Flexible Cystoscopy under local anaesthetic.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ganglion-bursa",
+      "procedureNameEn": "Ganglion Bursa",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Ganglion Bursa.pdf"
+      ],
+      "educationMaterials": [
+        "Ganglion Bursa - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "gastrectomy",
+      "procedureNameEn": "Gastrectomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Gastrectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Gastrectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "gastrostomy-insertion",
+      "procedureNameEn": "Gastrostomy Insertion",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Gastrostomy Insertion.pdf"
+      ],
+      "educationMaterials": [
+        "Gastrostomy Insertion - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "gastrostomy-gastrojejunostomy-insertion",
+      "procedureNameEn": "Gastrostomy-Gastrojejunostomy Insertion",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Gastrostomy-Gastrojejunostomy Insertion.pdf"
+      ],
+      "educationMaterials": [
+        "Gastrostomy-Gastrojejunostomy Insertion - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "generic-medical-imaging-consent",
+      "procedureNameEn": "Generic Medical Imaging Consent",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Generic Medical Imaging Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "haemorrhoid-stapled",
+      "procedureNameEn": "Haemorrhoid - Stapled",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Haemorrhoid - Stapled.pdf"
+      ],
+      "educationMaterials": [
+        "Haemorrhoid - Stapled - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "haemorrhoid-removal",
+      "procedureNameEn": "Haemorrhoid Removal",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Haemorrhoid Removal.pdf"
+      ],
+      "educationMaterials": [
+        "Haemorrhoid Removal - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "hernia-inguinal-repair-child-young-person",
+      "procedureNameEn": "Hernia - Inguinal Repair (Child-Young Person)",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Hernia - Inguinal Repair (Child-Young Person).pdf"
+      ],
+      "educationMaterials": [
+        "Hernia - Inguinal Repair (Child-Young Person) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "hernia-laparoscopic-inguinal-hernia-repair",
+      "procedureNameEn": "Hernia - Laparoscopic Inguinal Hernia Repair",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Hernia - Laparoscopic inguinal hernia repair.pdf"
+      ],
+      "educationMaterials": [
+        "Hernia - Laparoscopic Inguinal Hernia Repair - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "hernia-open-inguinal-hernia-repair",
+      "procedureNameEn": "Hernia - Open Inguinal Hernia Repair",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Hernia - Open Inguinal Hernia Repair.pdf"
+      ],
+      "educationMaterials": [
+        "Hernia - Open Inguinal Hernia Repair - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "hernia-ventral-incision-umbilical",
+      "procedureNameEn": "Hernia - Ventral Incision Umbilical",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Hernia - Ventral Incision Umbilical.pdf"
+      ],
+      "educationMaterials": [
+        "Hernia - Ventral Incision Umbilical - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "home-sleep-study-consent",
+      "procedureNameEn": "Home Sleep Study Consent",
+      "procedureNameAr": "",
+      "specialty": "Research",
+      "department": "Research",
+      "categoryCode": "RESEARCH",
+      "consentType": "RESEARCH_CLINICAL_TRIAL_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Home Sleep Study Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "hydatid-cyst-of-the-liver",
+      "procedureNameEn": "Hydatid Cyst of the Liver",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Hydatid Cyst of the Liver.pdf"
+      ],
+      "educationMaterials": [
+        "Hydatid Cyst of the Liver - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "hydrocele-repair-child-young-person",
+      "procedureNameEn": "Hydrocele repair (Child-Young Person)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Hydrocele repair (Child-Young Person).pdf"
+      ],
+      "educationMaterials": [
+        "Hydrocele repair (Child-Young Person) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "hysterosalpingogram-hsg",
+      "procedureNameEn": "Hysterosalpingogram (HSG)",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Hysterosalpingogram (HSG).pdf"
+      ],
+      "educationMaterials": [
+        "Hysterosalpingogram (HSG) - Patient Copy (1).pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "hysteroscopy-and-curettage",
+      "procedureNameEn": "Hysteroscopy and Curettage",
+      "procedureNameAr": "",
+      "specialty": "Obstetrics & Gynecology",
+      "department": "OB/GYN",
+      "categoryCode": "OB_GYN",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Hysteroscopy and Curettage.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "informed-consent-for-corneal-transplant-surgery",
+      "procedureNameEn": "Informed Consent for Corneal Transplant Surgery",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Informed Consent for Corneal Transplant Surgery.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "informed-consent-for-pain-procedures",
+      "procedureNameEn": "Informed Consent for Pain Procedures",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Informed Consent for Pain Procedures.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ingrown-toenail-s-removal-of-nail-bed",
+      "procedureNameEn": "Ingrown Toenail(s) & Removal of Nail Bed",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Ingrown Toenail(s) & Removal of Nail Bed.pdf"
+      ],
+      "educationMaterials": [
+        "Ingrown Toenail(s) & Removal of Nail Bed - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "insertion-of-progesterone-releasing-intrauterine-device",
+      "procedureNameEn": "Insertion of Progesterone-Releasing Intrauterine Device",
+      "procedureNameAr": "",
+      "specialty": "Obstetrics & Gynecology",
+      "department": "OB/GYN",
+      "categoryCode": "OB_GYN",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Insertion of Progesterone-Releasing Intrauterine  Device.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "insertion-of-suburethral-and-midurethral-tape-for-stress-incontinence-and-cystoscopy",
+      "procedureNameEn": "Insertion of Suburethral and Midurethral Tape for Stress Incontinence and Cystoscopy",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Insertion of Suburethral and Midurethral Tape for Stress  Incontinence and Cystoscopy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "insertion-of-tension-free-vaginal-tape-for-stress-incontinence-and-cystoscopy",
+      "procedureNameEn": "Insertion of Tension Free Vaginal Tape for Stress Incontinence and Cystoscopy",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Insertion of Tension Free Vaginal Tape for Stress Incontinence and Cystoscopy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "intercostal-catheter-insertion",
+      "procedureNameEn": "Intercostal Catheter Insertion",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Intercostal Catheter Insertion.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "intussusception",
+      "procedureNameEn": "Intussusception",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Intussusception.pdf"
+      ],
+      "educationMaterials": [
+        "Intussusception - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "intussusception-repair-child-young-person",
+      "procedureNameEn": "Intussusception Repair (Child-Young Person)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Intussusception Repair (Child-Young Person).pdf"
+      ],
+      "educationMaterials": [
+        "Intussusception Repair (Child-Young Person) - Patient Copy (2).pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "inverted-nipple-repair",
+      "procedureNameEn": "Inverted nipple repair",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Inverted nipple repair.pdf"
+      ],
+      "educationMaterials": [
+        "Inverted nipple repair - Patient copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "iodinated-contrast-injection-egfr",
+      "procedureNameEn": "Iodinated Contrast Injection eGFR",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Iodinated Contrast Injection eGFR.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ischiorectal-perianal-abscess",
+      "procedureNameEn": "Ischiorectal Perianal Abscess",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Ischiorectal Perianal Abscess.pdf"
+      ],
+      "educationMaterials": [
+        "Ischiorectal Perianal Abscess - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ivc-filter-insertion-removal",
+      "procedureNameEn": "IVC Filter Insertion Removal",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "IVC Filter Insertion Removal.pdf"
+      ],
+      "educationMaterials": [
+        "IVC Filter Insertion Removal - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ivp-intravenous-pyelogram",
+      "procedureNameEn": "IVP (Intravenous Pyelogram)",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "IVP (Intravenous Pyelogram) - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "IVP (Intravenous Pyelogram) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "knee-arthroscopy-consent",
+      "procedureNameEn": "Knee Arthroscopy Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Knee Arthroscopy Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "knee-arthroscopy-consent-patient-s-copy",
+      "procedureNameEn": "Knee Arthroscopy Consent - Patient's Copy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Knee Arthroscopy Consent - Patient's Copy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "laparoscopy",
+      "procedureNameEn": "Laparoscopy",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Laparoscopy.pdf"
+      ],
+      "educationMaterials": [
+        "Laparoscopy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "laparostomy",
+      "procedureNameEn": "Laparostomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Laparostomy.pdf"
+      ],
+      "educationMaterials": [
+        "Laparostomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "laparotomy",
+      "procedureNameEn": "Laparotomy",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Laparotomy.pdf"
+      ],
+      "educationMaterials": [
+        "Laparotomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "large-loop-excision-of-transformation-zone-lletz-of-the-cervix",
+      "procedureNameEn": "Large Loop Excision of Transformation Zone (LLETZ) of the Cervix",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Large Loop Excision of Transformation Zone (LLETZ) of the Cervix.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "lipectomy-suction",
+      "procedureNameEn": "Lipectomy - Suction",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Lipectomy - Suction.pdf"
+      ],
+      "educationMaterials": [
+        "Lipectomy - Suction - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "lipectomy-apronectomy",
+      "procedureNameEn": "Lipectomy (Apronectomy)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Lipectomy (Apronectomy).pdf"
+      ],
+      "educationMaterials": [
+        "Lipectomy (Apronectomy) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "liver-abscess",
+      "procedureNameEn": "Liver Abscess",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Liver Abscess.pdf"
+      ],
+      "educationMaterials": [
+        "Liver Abscess - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "liver-biopsy",
+      "procedureNameEn": "Liver Biopsy",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Liver Biopsy.pdf"
+      ],
+      "educationMaterials": [
+        "Liver Biopsy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "liver-resection",
+      "procedureNameEn": "Liver Resection",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Liver Resection.pdf"
+      ],
+      "educationMaterials": [
+        "Liver Resection - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "lucentis-ranibizumab-intravitreal-injection",
+      "procedureNameEn": "Lucentis (Ranibizumab Intravitreal Injection)",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Lucentis (Ranibizumab Intravitreal Injection).pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "lumbar-puncture-guided",
+      "procedureNameEn": "Lumbar Puncture (Guided)",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Lumbar Puncture (Guided).pdf"
+      ],
+      "educationMaterials": [
+        "Lumbar Puncture (Guided) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "lumbar-puncture-for-intrathecal-chemotherapy",
+      "procedureNameEn": "Lumbar Puncture for Intrathecal Chemotherapy",
+      "procedureNameAr": "",
+      "specialty": "Oncology / Hematology",
+      "department": "Oncology",
+      "categoryCode": "ONCOLOGY_HEMATOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Lumbar Puncture for Intrathecal Chemotherapy.pdf"
+      ],
+      "educationMaterials": [
+        "Lumbar Puncture for Intrathecal Chemotherapy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "mastectomy",
+      "procedureNameEn": "Mastectomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Mastectomy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "medically-indicated-complementary-feed-consent",
+      "procedureNameEn": "Medically Indicated Complementary Feed Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Medically Indicated Complementary Feed Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "microlaryngoscopy",
+      "procedureNameEn": "Microlaryngoscopy",
+      "procedureNameAr": "",
+      "specialty": "ENT",
+      "department": "ENT",
+      "categoryCode": "ENT",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Microlaryngoscopy.pdf"
+      ],
+      "educationMaterials": [
+        "Microlaryngoscopy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "mri-magnetic-resonance-imaging",
+      "procedureNameEn": "MRI (Magnetic Resonance Imaging)",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "MRI (Magnetic Resonance Imaging) - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "MRI (Magnetic Resonance Imaging) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "mri-with-or-without-contrast",
+      "procedureNameEn": "MRI with or without contrast",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "DIAGNOSTIC_IMAGING_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "MRI with or without contrast.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "myringotomy",
+      "procedureNameEn": "Myringotomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Myringotomy.pdf"
+      ],
+      "educationMaterials": [
+        "Myringotomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "neck-dissection-consent",
+      "procedureNameEn": "Neck Dissection Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Neck Dissection Consent.pdf"
+      ],
+      "educationMaterials": [
+        "Neck Dissection Consent - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "nephrectomy",
+      "procedureNameEn": "Nephrectomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Nephrectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Nephrectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "nephrostomy-andor-ureteric-stent-insertion",
+      "procedureNameEn": "Nephrostomy andor Ureteric Stent Insertion",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Nephrostomy andor Ureteric Stent Insertion (1).pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "nonpalpable-breast-lump-localisation",
+      "procedureNameEn": "Nonpalpable Breast Lump Localisation",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Nonpalpable Breast Lump Localisation.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "oesophagectomy",
+      "procedureNameEn": "Oesophagectomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Oesophagectomy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "oesophagoscopy",
+      "procedureNameEn": "Oesophagoscopy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Oesophagoscopy.pdf"
+      ],
+      "educationMaterials": [
+        "Oesophagoscopy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "orchidectomy",
+      "procedureNameEn": "Orchidectomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Orchidectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Orchidectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "orchidopexy-repair-of-undescended-testicles-child-young-person",
+      "procedureNameEn": "Orchidopexy Repair of Undescended Testicles (Child-Young Person)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Orchidopexy Repair of Undescended Testicles (Child-Young Person).pdf"
+      ],
+      "educationMaterials": [
+        "Orchidopexy Repair of Undescended Testicles (Child-Young Person) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "orthopedic-surgery",
+      "procedureNameEn": "Orthopedic Surgery",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Orthopedic Surgery.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "otoplasty-repair-of-prominent-ears",
+      "procedureNameEn": "Otoplasty-Repair of Prominent Ears",
+      "procedureNameAr": "",
+      "specialty": "ENT",
+      "department": "ENT",
+      "categoryCode": "ENT",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Otoplasty-Repair of Prominent Ears.pdf"
+      ],
+      "educationMaterials": [
+        "Otoplasty-Repair of Prominent Ears - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ovarian-cystectomy-oophorectomy",
+      "procedureNameEn": "Ovarian Cystectomy_Oophorectomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Ovarian Cystectomy_Oophorectomy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ozurdex",
+      "procedureNameEn": "Ozurdex",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Ozurdex.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "palatoplasty-with-implants-repaired",
+      "procedureNameEn": "Palatoplasty with implants (Repaired)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Palatoplasty with implants (Repaired).pdf"
+      ],
+      "educationMaterials": [
+        "Palatoplasty with implants (Repaired) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "pancreatitis-operation-for-acute-pancreatitis",
+      "procedureNameEn": "Pancreatitis - Operation for Acute Pancreatitis",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Pancreatitis - Operation for Acute Pancreatitis.pdf"
+      ],
+      "educationMaterials": [
+        "Pancreatitis - Operation for Acute Pancreatitis - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "paracentesis-abdominus",
+      "procedureNameEn": "Paracentesis Abdominus",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Paracentesis Abdominus.pdf"
+      ],
+      "educationMaterials": [
+        "Paracentesis Abdominus - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "paraphimosis-repair",
+      "procedureNameEn": "Paraphimosis repair",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Paraphimosis repair.pdf"
+      ],
+      "educationMaterials": [
+        "Paraphimosis repair - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "paraphimosis-repair-child-young-person-pediatric-opinion",
+      "procedureNameEn": "Paraphimosis Repair (Child-Young Person) (PEDIATRIC OPINION)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Paraphimosis Repair (Child-Young Person) (PEDIATRIC OPINION).pdf"
+      ],
+      "educationMaterials": [
+        "Paraphimosis Repair (Child-Young Person) - Patient Copy (PEDIATRIC OPINION).pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "parotidectomy",
+      "procedureNameEn": "Parotidectomy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Parotidectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Parotidectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "passage-of-sounds",
+      "procedureNameEn": "Passage of sounds",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Passage of sounds.pdf"
+      ],
+      "educationMaterials": [
+        "Passage of sounds - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "percutaneous-endoscopic-gastrostomy-tube",
+      "procedureNameEn": "Percutaneous Endoscopic Gastrostomy Tube",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Percutaneous Endoscopic Gastrostomy Tube.pdf"
+      ],
+      "educationMaterials": [
+        "Percutaneous Endoscopic Gastrostomy Tube - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "percutaneous-nephrolithotomy-pcnl",
+      "procedureNameEn": "Percutaneous Nephrolithotomy (PCNL)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Percutaneous Nephrolithotomy (PCNL).pdf"
+      ],
+      "educationMaterials": [
+        "Percutaneous Nephrolithotomy (PCNL) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "pilonidal-sinus",
+      "procedureNameEn": "Pilonidal Sinus",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Pilonidal Sinus.pdf"
+      ],
+      "educationMaterials": [
+        "Pilonidal Sinus - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "plain-cath-insertion",
+      "procedureNameEn": "Plain Cath Insertion",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Plain Cath Insertion.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "port-a-cath-insertion",
+      "procedureNameEn": "Port-A-Cath Insertion",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Port-A-Cath Insertion.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "postop-instruction-of-stapedectomy-procedure",
+      "procedureNameEn": "Postop Instruction of Stapedectomy Procedure",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Postop Instruction of Stapedectomy Procedure.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "probing-and-irrigation",
+      "procedureNameEn": "Probing and Irrigation",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Probing and Irrigation.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "prostatectomy-radical",
+      "procedureNameEn": "Prostatectomy (Radical)",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Prostatectomy (Radical).pdf"
+      ],
+      "educationMaterials": [
+        "Prostatectomy (Radical) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "pterygium-excision-with-autograft",
+      "procedureNameEn": "Pterygium Excision with Autograft",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Pterygium Excision with Autograft.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "ptosis",
+      "procedureNameEn": "Ptosis",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Ptosis.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "punctoplasty",
+      "procedureNameEn": "Punctoplasty",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Punctoplasty.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "pyloromyotomy-child-young-person",
+      "procedureNameEn": "Pyloromyotomy (Child-Young Person)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Pyloromyotomy (Child-Young Person).pdf"
+      ],
+      "educationMaterials": [
+        "Pyloromyotomy (Child-Young Person) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "pyloromyotomy-ramstedts-operation-child-young-person-pediatric-opinion",
+      "procedureNameEn": "Pyloromyotomy (Ramstedts Operation) (Child-Young Person) (PEDIATRIC OPINION)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Pyloromyotomy (Ramstedts Operation) (Child-Young Person)(PEDIATRIC OPINION).pdf"
+      ],
+      "educationMaterials": [
+        "Pyloromyotomy (Ramstedts Operation) (Child-Young Person) - Patient Copy (PEDIATRIC OPINION).pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "reduction-mammoplasty",
+      "procedureNameEn": "Reduction Mammoplasty",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Reduction Mammoplasty.pdf"
+      ],
+      "educationMaterials": [
+        "Reduction Mammoplasty - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "reflux-operation-laparoscopic",
+      "procedureNameEn": "Reflux Operation - Laparoscopic",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Reflux Operation - Laparoscopic.pdf"
+      ],
+      "educationMaterials": [
+        "Reflux Operation - Laparoscopic - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "reflux-operation-open",
+      "procedureNameEn": "Reflux Operation Open",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Reflux Operation Open.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "removal-of-ectopic-pregnancy-by-laparoscopy-laparotomy",
+      "procedureNameEn": "Removal of Ectopic Pregnancy by Laparoscopy Laparotomy",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Removal of Ectopic Pregnancy by Laparoscopy  Laparotomy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "removal-of-genital-warts",
+      "procedureNameEn": "Removal of Genital Warts",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Removal of Genital Warts.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "rhinoplasty-surgery-consent",
+      "procedureNameEn": "Rhinoplasty Surgery Consent",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Rhinoplasty Surgery Consent.pdf"
+      ],
+      "educationMaterials": [
+        "Rhinoplasty Surgery Consent - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "rigid-oesophagoscopy",
+      "procedureNameEn": "Rigid Oesophagoscopy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Rigid Oesophagoscopy.pdf"
+      ],
+      "educationMaterials": [
+        "Rigid Oesophagoscopy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "septoplasty-and-turbinectomy",
+      "procedureNameEn": "Septoplasty and Turbinectomy",
+      "procedureNameAr": "",
+      "specialty": "ENT",
+      "department": "ENT",
+      "categoryCode": "ENT",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Septoplasty and Turbinectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Septoplasty and Turbinectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "shoulder-arthroscopy",
+      "procedureNameEn": "Shoulder Arthroscopy",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Shoulder Arthroscopy - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Shoulder Arthroscopy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "shoulder-arthroscopy-consent",
+      "procedureNameEn": "Shoulder Arthroscopy Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Shoulder Arthroscopy Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "sino-nasal-surgery",
+      "procedureNameEn": "Sino-Nasal Surgery",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Sino-Nasal Surgery.pdf"
+      ],
+      "educationMaterials": [
+        "Sino-Nasal Surgery - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "skin-graft",
+      "procedureNameEn": "Skin Graft",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Skin Graft.pdf"
+      ],
+      "educationMaterials": [
+        "Skin Graft - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "spine-surgery",
+      "procedureNameEn": "Spine Surgery",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Spine Surgery.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "stapedectomy-informed-with-consent",
+      "procedureNameEn": "Stapedectomy Informed with Consent",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Stapedectomy Informed with Consent.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "subcutaneous-mastectomy",
+      "procedureNameEn": "Subcutaneous mastectomy",
+      "procedureNameAr": "",
+      "specialty": "Allergy / Immunology",
+      "department": "Allergy",
+      "categoryCode": "ALLERGY_IMMUNOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Subcutaneous mastectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Subcutaneous mastectomy- Patient copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "submucosal-diathemy-smd",
+      "procedureNameEn": "Submucosal Diathemy (SMD)",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Submucosal Diathemy (SMD).pdf"
+      ],
+      "educationMaterials": [
+        "Submucosal Diathemy (SMD) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "suction-evacuation-of-uterine-contents",
+      "procedureNameEn": "Suction Evacuation of Uterine Contents",
+      "procedureNameAr": "",
+      "specialty": "Obstetrics & Gynecology",
+      "department": "OB/GYN",
+      "categoryCode": "OB_GYN",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Suction Evacuation of Uterine Contents.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "supra-pubic-catheter-insertion",
+      "procedureNameEn": "Supra-Pubic catheter insertion",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Supra-Pubic catheter insertion.pdf"
+      ],
+      "educationMaterials": [
+        "Supra-Pubic catheter insertion - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "swallow-meal",
+      "procedureNameEn": "Swallow Meal",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Swallow Meal.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "termination-of-pregnancy-1st-trimester",
+      "procedureNameEn": "Termination of Pregnancy - 1st Trimester",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Termination of Pregnancy - 1st Trimester.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "termination-of-pregnancy-2nd-trimester",
+      "procedureNameEn": "Termination of Pregnancy - 2nd Trimester",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Termination of Pregnancy - 2nd Trimester.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "thoracentesis-pleural-tap",
+      "procedureNameEn": "Thoracentesis (Pleural Tap)",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Thoracentesis (Pleural Tap).pdf"
+      ],
+      "educationMaterials": [
+        "Thoracentesis (Pleural Tap) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "thyroidectomy",
+      "procedureNameEn": "Thyroidectomy",
+      "procedureNameAr": "",
+      "specialty": "ENT",
+      "department": "ENT",
+      "categoryCode": "ENT",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Thyroidectomy - Patient Copy.pdf"
+      ],
+      "educationMaterials": [
+        "Thyroidectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": true,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "thyroplasty-type-1-consent",
+      "procedureNameEn": "Thyroplasty Type 1 Consent",
+      "procedureNameAr": "",
+      "specialty": "ENT",
+      "department": "ENT",
+      "categoryCode": "ENT",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Thyroplasty Type 1 Consent.pdf"
+      ],
+      "educationMaterials": [
+        "Thyroplasty Type 1 Consent - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "tracheostomy-informed-consent",
+      "procedureNameEn": "Tracheostomy Informed Consent",
+      "procedureNameAr": "",
+      "specialty": "ENT",
+      "department": "ENT",
+      "categoryCode": "ENT",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Tracheostomy Informed Consent.pdf"
+      ],
+      "educationMaterials": [
+        "Tracheostomy Informed Consent - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "transduodenal-sphincteroplasty",
+      "procedureNameEn": "Transduodenal Sphincteroplasty",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Transduodenal Sphincteroplasty.pdf"
+      ],
+      "educationMaterials": [
+        "Transduodenal Sphincteroplasty - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "transerethal-prostatectomy",
+      "procedureNameEn": "Transerethal Prostatectomy",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Transerethal Prostatectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Transerethal Prostatectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "transesophageal-echocardiogram",
+      "procedureNameEn": "Transesophageal Echocardiogram",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Transesophageal Echocardiogram.pdf"
+      ],
+      "educationMaterials": [
+        "Transesophageal Echocardiogram - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "upper-gastrointestinal-endoscopy",
+      "procedureNameEn": "Upper Gastrointestinal Endoscopy",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Upper Gastrointestinal Endoscopy.pdf"
+      ],
+      "educationMaterials": [
+        "Upper Gastrointestinal Endoscopy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "upper-gastrointestinal-endoscopy-for-bleeding",
+      "procedureNameEn": "Upper Gastrointestinal Endoscopy for Bleeding",
+      "procedureNameAr": "",
+      "specialty": "Gastroenterology / Endoscopy",
+      "department": "Endoscopy",
+      "categoryCode": "GASTRO_ENDOSCOPY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Upper Gastrointestinal Endoscopy for Bleeding.pdf"
+      ],
+      "educationMaterials": [
+        "Upper Gastrointestinal Endoscopy for Bleeding - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "uvulopalatopharyngoplasty",
+      "procedureNameEn": "Uvulopalatopharyngoplasty",
+      "procedureNameAr": "",
+      "specialty": "ENT",
+      "department": "ENT",
+      "categoryCode": "ENT",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Uvulopalatopharyngoplasty.pdf"
+      ],
+      "educationMaterials": [
+        "Uvulopalatopharyngoplasty - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "vaginal-repair-with-or-without-sacrospinous-colpopexy",
+      "procedureNameEn": "Vaginal Repair With or without Sacrospinous Colpopexy",
+      "procedureNameAr": "",
+      "specialty": "Obstetrics & Gynecology",
+      "department": "OB/GYN",
+      "categoryCode": "OB_GYN",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Vaginal Repair With or without Sacrospinous Colpopexy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "vaginal-repair-without-mesh",
+      "procedureNameEn": "Vaginal Repair without Mesh",
+      "procedureNameAr": "",
+      "specialty": "Obstetrics & Gynecology",
+      "department": "OB/GYN",
+      "categoryCode": "OB_GYN",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Vaginal Repair without Mesh.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "varicocele-open",
+      "procedureNameEn": "Varicocele - Open",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Varicocele - Open.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "varicocoele-laparoscopic-division-of-testicular-veins",
+      "procedureNameEn": "Varicocoele (Laparoscopic Division of Testicular Veins)",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Varicocoele (Laparoscopic Division of Testicular Veins).pdf"
+      ],
+      "educationMaterials": [
+        "Varicocoele (Laparoscopic Division of Testicular Veins) - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "varicose-veins",
+      "procedureNameEn": "Varicose Veins",
+      "procedureNameAr": "",
+      "specialty": "Vascular Surgery",
+      "department": "Surgery",
+      "categoryCode": "VASCULAR_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Varicose Veins.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "vasectomy",
+      "procedureNameEn": "Vasectomy",
+      "procedureNameAr": "",
+      "specialty": "Urology",
+      "department": "Urology",
+      "categoryCode": "UROLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Vasectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Vasectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "vermilionectomy",
+      "procedureNameEn": "Vermilionectomy",
+      "procedureNameAr": "",
+      "specialty": "ENT",
+      "department": "ENT",
+      "categoryCode": "ENT",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Vermilionectomy.pdf"
+      ],
+      "educationMaterials": [
+        "Vermilionectomy - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "vitrectomy-surgery",
+      "procedureNameEn": "Vitrectomy Surgery",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Vitrectomy Surgery.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "vocal-cord-injection-under-la",
+      "procedureNameEn": "Vocal Cord Injection under LA",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Vocal Cord Injection under LA.pdf"
+      ],
+      "educationMaterials": [
+        "Vocal Cord Injection under LA - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "warts",
+      "procedureNameEn": "Warts",
+      "procedureNameAr": "",
+      "specialty": "General / Other",
+      "department": "General",
+      "categoryCode": "GENERAL_OTHER",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Warts.pdf"
+      ],
+      "educationMaterials": [
+        "Warts - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "whipples-operation",
+      "procedureNameEn": "Whipples Operation",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Whipples Operation.pdf"
+      ],
+      "educationMaterials": [
+        "Whipples Operation - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "wide-local-excision-sentinel-lymph-node-biopsy",
+      "procedureNameEn": "Wide local excision sentinel lymph node biopsy",
+      "procedureNameAr": "",
+      "specialty": "Radiology / Interventional Radiology",
+      "department": "Radiology",
+      "categoryCode": "INTERVENTIONAL_RADIOLOGY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": false,
+      "consentForms": [
+        "Wide local excision sentinel lymph node biopsy.pdf"
+      ],
+      "educationMaterials": [],
+      "hasConsent": true,
+      "hasEducation": false,
+      "sameFileUsedForBoth": false,
+      "completeness": "CONSENT_ONLY",
+      "missingFields": [
+        "titleAr"
+      ]
+    },
+    {
+      "procedureId": "wounds-skin-tissue-mucus-membranes",
+      "procedureNameEn": "Wounds-Skin-Tissue-Mucus Membranes",
+      "procedureNameAr": "",
+      "specialty": "General Surgery",
+      "department": "Surgery",
+      "categoryCode": "GENERAL_SURGERY",
+      "consentType": "PROCEDURE_CONSENT",
+      "language": "bilingual",
+      "version": "v1.0",
+      "anesthesiaRequired": true,
+      "consentForms": [
+        "Wounds-Skin-Tissue-Mucus Membranes.pdf"
+      ],
+      "educationMaterials": [
+        "Wounds-Skin-Tissue-Mucus Membranes - Patient Copy.pdf"
+      ],
+      "hasConsent": true,
+      "hasEducation": true,
+      "sameFileUsedForBoth": false,
+      "completeness": "COMPLETE",
+      "missingFields": [
+        "titleAr"
+      ]
+    }
+  ]
+}

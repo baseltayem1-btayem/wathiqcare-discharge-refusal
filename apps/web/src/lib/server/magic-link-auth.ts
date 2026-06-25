@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { UserType } from "@/lib/server/prisma-enums";
+import { $Enums, type UserType } from "@prisma/client";
 import { ApiError } from "@/lib/server/http";
 import {
   evaluatePostAuthSnapshot,
@@ -112,15 +112,15 @@ function toSessionUserTypeFromStored(
   userRole: string,
   email: string,
 ): "platform_admin" | "tenant_admin" | "tenant_user" {
-  if (storedUserType === UserType.PLATFORM_ADMIN) {
+  if (storedUserType === $Enums.UserType.PLATFORM_ADMIN) {
     return "platform_admin";
   }
 
-  if (storedUserType === UserType.TENANT_ADMIN) {
+  if (storedUserType === $Enums.UserType.TENANT_ADMIN) {
     return "tenant_admin";
   }
 
-  if (storedUserType === UserType.TENANT_USER) {
+  if (storedUserType === $Enums.UserType.TENANT_USER) {
     return "tenant_user";
   }
 
@@ -180,7 +180,7 @@ async function assertMagicLinkAccessAllowed(
     memberships: Array<{ status: string }>;
   },
 ): Promise<void> {
-  if (user.userType === UserType.PLATFORM_ADMIN) {
+  if (user.userType === $Enums.UserType.PLATFORM_ADMIN) {
     return;
   }
 
@@ -304,7 +304,7 @@ export const magicLinkAuth = async (email: string): Promise<MagicLinkRequestUser
     throw new ApiError(403, "Secure Link sign-in is disabled for this tenant");
   }
 
-  const isPlatformUser = user?.userType === UserType.PLATFORM_ADMIN;
+  const isPlatformUser = user?.userType === $Enums.UserType.PLATFORM_ADMIN;
   const userDomainEligible =
     !!user?.tenantId && !!domain && (isPlatformUser ? true : await isTenantDomainAllowed(user.tenantId, domain));
 

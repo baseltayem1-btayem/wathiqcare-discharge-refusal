@@ -1,10 +1,5 @@
-﻿import { Prisma } from "@prisma/client";
-import {
-  BillingInterval,
-  PlanCode,
-  SubscriptionStatus,
-  UsageMetric,
-} from "@/lib/server/prisma-enums";
+import { Prisma } from "@prisma/client";
+import { $Enums, type BillingInterval, type PlanCode, type SubscriptionStatus, type UsageMetric } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
@@ -31,9 +26,9 @@ export type TenantSubscriptionSummary = {
 };
 
 const SUBSCRIPTION_ALLOWED_STATUSES: SubscriptionStatus[] = [
-  SubscriptionStatus.TRIALING,
-  SubscriptionStatus.ACTIVE,
-  SubscriptionStatus.PAST_DUE,
+  $Enums.SubscriptionStatus.TRIALING,
+  $Enums.SubscriptionStatus.ACTIVE,
+  $Enums.SubscriptionStatus.PAST_DUE,
 ];
 
 function startOfUtcMonth(date = new Date()): Date {
@@ -60,11 +55,11 @@ function parsePlanLimit(features: unknown, key: string): bigint | null {
 
 function usageMetricToPlanKey(metric: UsageMetric): string | null {
   switch (metric) {
-    case UsageMetric.CASES:
+    case $Enums.UsageMetric.CASES:
       return "maxCasesPerMonth";
-    case UsageMetric.DOCUMENTS:
+    case $Enums.UsageMetric.DOCUMENTS:
       return "maxDocumentsPerMonth";
-    case UsageMetric.API_REQUESTS:
+    case $Enums.UsageMetric.API_REQUESTS:
       return "maxApiRequestsPerMonth";
     default:
       return null;
@@ -77,7 +72,7 @@ async function createDefaultTrialSubscription(
   const starterPlan = await prisma().plan.findFirst({
     where: {
       isActive: true,
-      code: PlanCode.STARTER,
+      code: $Enums.PlanCode.STARTER,
     },
   });
 
@@ -100,8 +95,8 @@ async function createDefaultTrialSubscription(
     data: {
       tenantId,
       planId: fallbackPlan.id,
-      status: SubscriptionStatus.TRIALING,
-      billingInterval: BillingInterval.MONTHLY,
+      status: $Enums.SubscriptionStatus.TRIALING,
+      billingInterval: $Enums.BillingInterval.MONTHLY,
       seatLimit: fallbackPlan.seatLimit,
       trialEndsAt,
       currentPeriodStart: now,
@@ -168,13 +163,13 @@ export async function enforcePlanUsage(
   const aggregate = await prisma().usageRecord.aggregate({
     where: {
       tenantId,
-      metric,
+      metric: metric as $Enums.UsageMetric,
       periodDate: { gte: currentMonthStart },
     },
     _sum: { value: true },
   });
 
-  const used = aggregate._sum.value ?? BigInt(0);
+  const used = aggregate._sum?.value ?? BigInt(0);
 
   if (used + incrementBy > limit) {
     throw new ApiError(
@@ -196,7 +191,7 @@ export async function recordUsage(
     where: {
       tenantId_metric_periodDate: {
         tenantId,
-        metric,
+        metric: metric as $Enums.UsageMetric,
         periodDate,
       },
     },
@@ -206,7 +201,7 @@ export async function recordUsage(
     },
     create: {
       tenantId,
-      metric,
+      metric: metric as $Enums.UsageMetric,
       value: incrementBy,
       unit: "count",
       periodDate,
@@ -225,7 +220,7 @@ export async function syncActiveUserUsage(
     where: {
       tenantId_metric_periodDate: {
         tenantId,
-        metric: UsageMetric.ACTIVE_USERS,
+        metric: $Enums.UsageMetric.ACTIVE_USERS,
         periodDate,
       },
     },
@@ -234,7 +229,7 @@ export async function syncActiveUserUsage(
     },
     create: {
       tenantId,
-      metric: UsageMetric.ACTIVE_USERS,
+      metric: $Enums.UsageMetric.ACTIVE_USERS,
       value: BigInt(activeUsers),
       unit: "count",
       periodDate,

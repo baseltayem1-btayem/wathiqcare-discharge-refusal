@@ -1,4 +1,4 @@
-import { MembershipRole, UserType } from "@/lib/server/prisma-enums";
+import { $Enums, type MembershipRole, type UserType } from "@prisma/client";
 
 export const PLATFORM_ROLES = ["platform_superadmin", "platform_admin"] as const;
 export type PlatformRole = (typeof PLATFORM_ROLES)[number];
@@ -116,20 +116,20 @@ export function userRoleAllows(
 export function membershipRoleForUserRole(role: CanonicalUserRole): MembershipRole {
     switch (role) {
         case "tenant_owner":
-            return MembershipRole.OWNER;
+            return $Enums.MembershipRole.OWNER;
         case "tenant_admin":
         case "legal_admin":
-            return MembershipRole.ADMIN;
+            return $Enums.MembershipRole.ADMIN;
         case "doctor":
-            return MembershipRole.MANAGER;
+            return $Enums.MembershipRole.MANAGER;
         case "medical_director":
-            return MembershipRole.OWNER;
+            return $Enums.MembershipRole.OWNER;
         case "it_admin":
         case "finance_officer":
         case "bed_manager":
         case "pharmacist":
         case "lab_tech":
-            return MembershipRole.ADMIN;
+            return $Enums.MembershipRole.ADMIN;
         case "patient_affairs":
         case "social_services":
         case "quality":
@@ -137,15 +137,15 @@ export function membershipRoleForUserRole(role: CanonicalUserRole): MembershipRo
         case "auditor":
         case "read_only_manager":
         case "viewer":
-            return MembershipRole.VIEWER;
+            return $Enums.MembershipRole.VIEWER;
         case "nursing":
         case "reception":
-            return MembershipRole.MEMBER;
+            return $Enums.MembershipRole.MEMBER;
         case "platform_superadmin":
         case "platform_admin":
-            return MembershipRole.ADMIN;
+            return $Enums.MembershipRole.ADMIN;
         default:
-            return MembershipRole.MEMBER;
+            return $Enums.MembershipRole.MEMBER;
     }
 }
 
@@ -160,12 +160,12 @@ export function platformRoleForUserRole(role: string | null | undefined): Platfo
 export function userTypeForUserRole(role: string | null | undefined): UserType {
     const normalized = canonicalizeUserRole(role);
     if (normalized === "platform_superadmin" || normalized === "platform_admin") {
-        return UserType.PLATFORM_ADMIN;
+        return $Enums.UserType.PLATFORM_ADMIN;
     }
 
     if (normalized === "tenant_owner" || normalized === "tenant_admin" || normalized === "legal_admin") {
-        return UserType.TENANT_ADMIN;
+        return $Enums.UserType.TENANT_ADMIN;
     }
 
-    return UserType.TENANT_USER;
+    return $Enums.UserType.TENANT_USER;
 }

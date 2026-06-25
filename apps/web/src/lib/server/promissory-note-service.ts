@@ -1,6 +1,6 @@
 ﻿import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
-import { PromissoryNoteStatus } from "@/lib/server/prisma-enums";
+import { $Enums, type PromissoryNoteStatus } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -41,7 +41,7 @@ function normalizePromissoryStatus(value: string | null | undefined): Promissory
   }
 
   const normalized = value.trim().toUpperCase();
-  return Object.values(PromissoryNoteStatus).includes(normalized as PromissoryNoteStatus)
+  return Object.values($Enums.PromissoryNoteStatus).includes(normalized as PromissoryNoteStatus)
     ? (normalized as PromissoryNoteStatus)
     : null;
 }
@@ -170,7 +170,7 @@ export async function createTenantPromissoryNote(
       amount,
       currency: payload.currency?.trim().toUpperCase() || "SAR",
       dueDate,
-      status: PromissoryNoteStatus.ACTIVE,
+      status: $Enums.PromissoryNoteStatus.ACTIVE,
       documentVersion: payload.documentVersion?.trim() || "1.0",
       documentHash: hashPromissoryPayload(documentPayload),
       metadata: (payload.metadata ?? documentPayload) as JsonInputValue,
@@ -238,22 +238,22 @@ function requireLifecycleTransitionAllowed(
   nextStatus: PromissoryNoteStatus,
   payload: UpdatePromissoryLifecyclePayload,
 ): void {
-  if (currentStatus === PromissoryNoteStatus.SETTLED) {
+  if (currentStatus === $Enums.PromissoryNoteStatus.SETTLED) {
     throw new ApiError(409, "Settled promissory notes cannot be modified or voided");
   }
 
-  if (currentStatus === PromissoryNoteStatus.VOID) {
+  if (currentStatus === $Enums.PromissoryNoteStatus.VOID) {
     throw new ApiError(409, "Voided promissory notes cannot be modified or settled");
   }
 
-  if (nextStatus === PromissoryNoteStatus.VOID) {
+  if (nextStatus === $Enums.PromissoryNoteStatus.VOID) {
     const reason = payload.reason?.trim();
     if (!reason) {
       throw new ApiError(400, "reason is required when voiding a promissory note");
     }
   }
 
-  if (nextStatus === PromissoryNoteStatus.SETTLED) {
+  if (nextStatus === $Enums.PromissoryNoteStatus.SETTLED) {
     const reference = payload.reference?.trim();
     const method = payload.method?.trim();
     const amount = payload.amount === undefined || payload.amount === null || payload.amount === "" ? null : Number(payload.amount);
@@ -391,7 +391,7 @@ export async function settleTenantPromissoryNote(
   return updateTenantPromissoryLifecycleStatus(
     auth,
     noteId,
-    PromissoryNoteStatus.SETTLED,
+    $Enums.PromissoryNoteStatus.SETTLED,
     "promissory_note_settled",
     "PROMISSORY_NOTE_SETTLED",
     payload,
@@ -408,7 +408,7 @@ export async function cancelTenantPromissoryNote(
   return updateTenantPromissoryLifecycleStatus(
     auth,
     noteId,
-    PromissoryNoteStatus.VOID,
+    $Enums.PromissoryNoteStatus.VOID,
     "promissory_note_voided",
     "PROMISSORY_NOTE_VOIDED",
     payload,

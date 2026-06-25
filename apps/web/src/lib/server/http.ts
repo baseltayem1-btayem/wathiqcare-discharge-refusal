@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 export class ApiError extends Error {
   status: number;
+  statusCode: number;
   code?: string;
   fields?: Record<string, string>;
 
@@ -15,6 +16,7 @@ export class ApiError extends Error {
   ) {
     super(message);
     this.status = status;
+    this.statusCode = status;
     this.code = options?.code;
     this.fields = options?.fields;
   }

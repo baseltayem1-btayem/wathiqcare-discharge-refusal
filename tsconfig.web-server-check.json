@@ -1,0 +1,10 @@
+{
+  "extends": "./apps/web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "exclude": [
+    "node_modules",
+    "./apps/web/src/components/informed-consents/enterprise-workflow/StableFigmaInformedConsentsFrame.tsx"
+  ]
+}

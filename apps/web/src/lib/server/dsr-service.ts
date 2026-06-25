@@ -1,4 +1,4 @@
-import { DsrRequestStatus, DsrRequestType } from "@/lib/server/prisma-enums";
+import { $Enums, type DsrRequestStatus, type DsrRequestType } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
@@ -71,17 +71,17 @@ function parseRequestType(value: string | null | undefined): DsrRequestType {
   const normalized = (value ?? "").trim().toUpperCase();
   switch (normalized) {
     case "CORRECTION":
-      return DsrRequestType.CORRECTION;
+      return $Enums.DsrRequestType.CORRECTION;
     case "DELETION":
-      return DsrRequestType.DELETION;
+      return $Enums.DsrRequestType.DELETION;
     case "RESTRICTION":
     case "RESTRICTION_OBJECTION":
     case "OBJECTION":
-      return DsrRequestType.RESTRICTION_OBJECTION;
+      return $Enums.DsrRequestType.RESTRICTION_OBJECTION;
     case "EXPORT":
-      return DsrRequestType.EXPORT;
+      return $Enums.DsrRequestType.EXPORT;
     default:
-      return DsrRequestType.ACCESS;
+      return $Enums.DsrRequestType.ACCESS;
   }
 }
 
@@ -90,7 +90,7 @@ function parseStatus(value: string | null | undefined): DsrRequestStatus {
   if (normalized in DsrRequestStatus) {
     return DsrRequestStatus[normalized as keyof typeof DsrRequestStatus];
   }
-  return DsrRequestStatus.REQUESTED;
+  return $Enums.DsrRequestStatus.REQUESTED;
 }
 
 export async function listDataSubjectRequests(tenantId: string) {
@@ -129,7 +129,7 @@ export async function createDataSubjectRequest(
     data: {
       tenantId: auth.tenant_id,
       caseId: payload.caseId?.trim() || null,
-      requestType: parseRequestType(payload.requestType),
+      requestType: parseRequestType(payload.requestType) as $Enums.DsrRequestType,
       requesterName: payload.requesterName.trim(),
       requesterIdNumber: payload.requesterIdNumber?.trim() || null,
       requestReason: payload.requestReason?.trim() || null,
@@ -193,7 +193,9 @@ export async function updateDataSubjectRequest(
   const updated = await prisma().dataSubjectRequest.update({
     where: { id: existing.id },
     data: {
-      status: payload.status ? parseStatus(payload.status) : existing.status,
+      status: payload.status
+        ? (parseStatus(payload.status) as $Enums.DsrRequestStatus)
+        : existing.status,
       extendedDueAt,
       extensionReason: payload.extensionReason?.trim() || existing.extensionReason,
       identityVerifiedAt:
