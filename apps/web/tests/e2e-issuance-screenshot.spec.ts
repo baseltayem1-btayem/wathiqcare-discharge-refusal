@@ -37,6 +37,7 @@ const token = signJwt({
 });
 
 async function setupContext(page: Page) {
+  const isHttps = BASE_URL.startsWith("https://");
   await page.context().addCookies([
     {
       name: "wathiqcare_access_token",
@@ -44,7 +45,7 @@ async function setupContext(page: Page) {
       domain: new URL(BASE_URL).hostname,
       path: "/",
       httpOnly: true,
-      secure: false,
+      secure: isHttps,
       sameSite: "Lax",
     },
   ]);
@@ -53,7 +54,7 @@ async function setupContext(page: Page) {
 test("end-to-end promissory note issuance with signing URL", async ({ page }) => {
   await setupContext(page);
 
-  await page.goto(`${BASE_URL}/modules/promissory-notes/enterprise`);
+  await page.goto(`${BASE_URL}/modules/wathiqnote`);
   await page.waitForLoadState("networkidle");
   await page.screenshot({ path: "test-results/e2e-issuance-01-dashboard.png" });
 
