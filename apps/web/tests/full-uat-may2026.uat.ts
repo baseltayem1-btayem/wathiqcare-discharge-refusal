@@ -21,7 +21,10 @@ const PREVIEW_URL =
 
 const PATIENT_OTP = "123456";
 const SIGNING_TOKEN = "test-patient-signing";
-const TEST_PASSWORD = "WathiqCare@2026";
+const TEST_PASSWORD = process.env.UAT_TEST_PASSWORD?.trim() || "";
+if (!TEST_PASSWORD) {
+  throw new Error("UAT_TEST_PASSWORD is required");
+}
 
 const SCREENSHOT_DIR = path.join(
   process.cwd(),

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sprint 3 — CKE Informed Consent UI Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; }
+  </style>
+</head>
+<body class="bg-[#eef4fb] p-8">
+  <div class="mx-auto max-w-3xl space-y-8">
+    <h1 class="text-2xl font-extrabold text-[#002B5C]">Sprint 3 UI Preview — CKE Integration</h1>
+
+    <!-- Procedure step with CKE assembly -->
+    <div class="rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#FFFFFF_0%,#FBFDFF_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+      <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-[#C9A13B]">Clinical Disclosure</p>
+      <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-[#002B5C]">Procedure</h2>
+
+      <div class="mt-4 rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
+        <h4 class="mb-3 text-sm font-bold text-[#002B5C]">
+          Clinical Knowledge Engine
+          <span class="block text-xs font-medium text-[#4B5563]">محرك المعرفة السريرية</span>
+        </h4>
+        <div class="space-y-2 text-sm text-[#475569]">
+          <p><span class="font-semibold">Selected:</span> Appendectomy</p>
+          <p><span class="font-semibold">Package:</span> 1.0.0</p>
+          <p><span class="font-semibold">Status:</span> ready</p>
+          <p><span class="font-semibold">Education:</span> Appendectomy Education</p>
+        </div>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        <label class="block">
+          <span class="text-sm font-extrabold text-[#002B5C]">Procedure Name</span>
+          <input type="text" value="Appendectomy" class="mt-2 w-full rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm" />
+        </label>
+        <label class="block">
+          <span class="text-sm font-extrabold text-[#002B5C]">Procedure Site / Laterality</span>
+          <input type="text" value="Not applicable" class="mt-2 w-full rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm" />
+        </label>
+      </div>
+
+      <div class="mt-4 rounded-xl border border-[#D8DCE3] bg-white p-4 text-sm">
+        <h5 class="mb-2 font-bold text-[#002B5C]">CKE Assembly Summary / ملخص محرك المعرفة السريرية</h5>
+        <ul class="space-y-1 text-[#475569]">
+          <li><span class="font-semibold">Package:</span> 1.0.0</li>
+          <li><span class="font-semibold">Status:</span> ready</li>
+          <li><span class="font-semibold">Risks:</span> 3</li>
+          <li><span class="font-semibold">Required participants:</span> None</li>
+          <li><span class="font-semibold">Suggestions:</span> Patient education is recommended for this procedure.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Education step with material present -->
+    <div class="rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#FFFFFF_0%,#FBFDFF_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+      <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-[#C9A13B]">Patient Education</p>
+      <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-[#002B5C]">Education</h2>
+
+      <label class="mt-4 flex items-center justify-between rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4 text-sm">
+        <span class="font-bold text-[#002B5C]">
+          Patient education package required before signing
+          <span class="block text-xs font-medium text-[#4B5563]">حزمة تثقيف المريض مطلوبة قبل التوقيع</span>
+        </span>
+        <input type="checkbox" checked class="h-4 w-4" />
+      </label>
+
+      <label class="mt-3 block">
+        <span class="text-sm font-extrabold text-[#002B5C]">Education Package</span>
+        <select class="mt-2 w-full rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm">
+          <option>Appendectomy Education</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- Education step when material not available -->
+    <div class="rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#FFFFFF_0%,#FBFDFF_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+      <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-[#C9A13B]">Patient Education</p>
+      <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-[#002B5C]">Education — Not Available</h2>
+
+      <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <span class="font-bold">Education Not Available</span>
+        <span class="mx-2">/</span>
+        <span>التثقيف غير متوفر</span>
+        <p class="mt-1 text-xs">No CKE education material is linked to this procedure. The consent workflow can continue without it.</p>
+      </div>
+
+      <label class="mt-3 flex items-center justify-between rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4 text-sm opacity-60">
+        <span class="font-bold text-[#002B5C]">
+          Patient education package required before signing
+          <span class="block text-xs font-medium text-[#4B5563]">حزمة تثقيف المريض مطلوبة قبل التوقيع</span>
+        </span>
+        <input type="checkbox" disabled class="h-4 w-4" />
+      </label>
+
+      <label class="mt-3 block opacity-60">
+        <span class="text-sm font-extrabold text-[#002B5C]">Education Package</span>
+        <select disabled class="mt-2 w-full rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm">
+          <option>Standard procedure education package</option>
+        </select>
+      </label>
+    </div>
+  </div>
+</body>
+</html>

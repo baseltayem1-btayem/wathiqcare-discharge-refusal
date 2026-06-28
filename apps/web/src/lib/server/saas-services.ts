@@ -1,4 +1,4 @@
-﻿import { Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import {
   $Enums,
   BillingInterval,
@@ -9,7 +9,11 @@ import {
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
-import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
+import {
+  appendAuditEventInTransaction,
+  withAtomicAuditTransaction,
+  type AuditArgs,
+} from "@/lib/server/audit-foundation";
 
 const prisma = () => getPrisma();
 
@@ -300,64 +304,19 @@ export async function getTenantSubscriptionSummary(
   };
 }
 
-type AuditArgs = {
-  tenantId: string;
-  userId: string;
-  entityType: string;
-  entityId: string;
-  action: string;
-  details?: string;
-  caseId?: string | null;
-  documentId?: string | null;
-  moduleKey?: string | null;
-  requestId?: string | null;
-  correlationId?: string | null;
-  metadataJson?: JsonInputValue;
-  request?: NextRequest;
-};
-
-export async function writeAuditLog(args: AuditArgs): Promise<void> {
-  const ip =
-    args.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    null;
-
-  const userAgent = args.request?.headers.get("user-agent") ?? null;
-
-  await prisma().auditLog.create({
-    data: {
-      tenantId: args.tenantId,
-      userId: args.userId,
-      entityType: args.entityType,
-      entityId: args.entityId,
-      action: args.action,
-      details: args.details,
-      caseId: args.caseId,
-      documentId: args.documentId,
-      ipAddress: ip,
-      userAgent,
-      metadataJson: args.metadataJson,
-    },
-  });
-
-  try {
-    await appendAuditChainEvent({
-      tenantId: args.tenantId,
-      caseId: args.caseId ?? null,
-      eventType: String(args.action).toUpperCase(),
-      actorId: args.userId,
-      payloadSummary: args.details || `${args.entityType}:${args.action}`,
-      metadataJson: {
-        entityType: args.entityType,
-        entityId: args.entityId,
-        moduleKey: args.moduleKey ?? null,
-        requestId: args.requestId ?? null,
-        correlationId: args.correlationId ?? null,
-        documentId: args.documentId ?? null,
-        metadata: args.metadataJson ?? null,
-      },
-      request: args.request,
-    });
-  } catch (auditChainError) {
-    console.error("audit chain append failed (non-fatal)", auditChainError);
+export async function writeAuditLog(
+  args: AuditArgs & { tx?: PrismaClient | Prisma.TransactionClient },
+): Promise<void> {
+  if (args.tx) {
+    await appendAuditEventInTransaction(args as AuditArgs & { tx: PrismaClient | Prisma.TransactionClient });
+    return;
   }
+
+  await withAtomicAuditTransaction(
+    (tx) => appendAuditEventInTransaction({ ...args, tx }),
+    {
+      operationName: "writeAuditLog",
+      correlationId: args.correlationId ?? undefined,
+    },
+  );
 }

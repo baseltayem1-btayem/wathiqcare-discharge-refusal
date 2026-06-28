@@ -1,10 +1,10 @@
 import crypto from "node:crypto";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
-import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
+import { appendAuditChainEvent, appendAuditChainEventInTransaction } from "@/lib/server/audit-chain-service";
 import {
   deriveEducationSessionState,
   mergeEducationSessionContext,
@@ -28,6 +28,7 @@ import {
 import { sendPatientCopyNotificationEmail, sendSigningOtpEmail } from "@/lib/server/pilot-email-override";
 import { validateSigningToken } from "@/lib/server/signature-orchestration-service";
 import { executeUnifiedDisclosureShadowMode } from "@/lib/projection/unified-disclosure-shadow-mode";
+import { logRuntimeEvent, logRuntimeIncident } from "@/lib/server/runtime-observability";
 import {
   evaluateControlledAuthoritativePilot,
   recordControlledPilotObservation,
@@ -683,32 +684,46 @@ async function writePublicConsentAudit(args: {
   signerRole: string;
   metadata?: Record<string, unknown>;
   request?: NextRequest;
+  tx?: PrismaClient | Prisma.TransactionClient;
 }) {
-  await prisma().consentAuditEvent.create({
-    data: {
-      tenantId: args.tenantId,
-      consentDocumentId: args.consentDocumentId,
-      action: args.action,
-      source: "public-signing",
-      actorUserId: null,
-      actorRole: args.signerRole,
-      summary: args.summary,
-      metadata: args.metadata as Prisma.InputJsonValue,
-    },
-  });
+  const write = async (tx: PrismaClient | Prisma.TransactionClient) => {
+    const audit = await tx.consentAuditEvent.create({
+      data: {
+        tenantId: args.tenantId,
+        consentDocumentId: args.consentDocumentId,
+        action: args.action,
+        source: "public-signing",
+        actorUserId: null,
+        actorRole: args.signerRole,
+        summary: args.summary,
+        metadata: args.metadata as Prisma.InputJsonValue,
+      },
+    });
 
-  await appendAuditChainEvent({
-    tenantId: args.tenantId,
-    eventType: args.action,
-    actorId: "public_signer",
-    actorRole: args.signerRole,
-    payloadSummary: args.summary,
-    metadataJson: {
-      consentDocumentId: args.consentDocumentId,
-      ...(args.metadata || {}),
-    },
-    request: args.request,
-  }).catch(() => undefined);
+    await appendAuditChainEventInTransaction(
+      {
+        tenantId: args.tenantId,
+        eventType: args.action,
+        actorId: "public_signer",
+        actorRole: args.signerRole,
+        payloadSummary: args.summary,
+        metadataJson: {
+          consentDocumentId: args.consentDocumentId,
+          ...(args.metadata || {}),
+        },
+        request: args.request,
+      },
+      tx,
+    );
+
+    return audit;
+  };
+
+  if (args.tx) {
+    return write(args.tx);
+  }
+
+  return prisma().$transaction(write);
 }
 
 async function getLatestOtpEventByChallenge(challengeId: string, eventType: string): Promise<OtpChallengePayload | null> {
@@ -1085,38 +1100,41 @@ export async function recordPublicEducationEvent(args: {
     pdfsPresented,
   };
 
-  await prisma().consentDocument.update({
-    where: { id: doc.id },
-    data: {
-      metadata: mergeEducationExecutionContext(
-        doc.metadata,
-        linkedEducationPackage,
-        args.eventType,
-        context.sessionId,
-        doc.id,
-        {
-          language: getNullableString(args.language),
-          durationSeconds: args.durationSeconds ?? null,
-          scrollCompletion: args.scrollCompletion ?? null,
-          assetViews,
-          acknowledgement: args.acknowledgement,
-        },
-      ) as Prisma.InputJsonValue,
-    },
-  });
+  await prisma().$transaction(async (tx) => {
+    await tx.consentDocument.update({
+      where: { id: doc.id },
+      data: {
+        metadata: mergeEducationExecutionContext(
+          doc.metadata,
+          linkedEducationPackage,
+          args.eventType,
+          context.sessionId,
+          doc.id,
+          {
+            language: getNullableString(args.language),
+            durationSeconds: args.durationSeconds ?? null,
+            scrollCompletion: args.scrollCompletion ?? null,
+            assetViews,
+            acknowledgement: args.acknowledgement,
+          },
+        ) as Prisma.InputJsonValue,
+      },
+    });
 
-  await writePublicConsentAudit({
-    tenantId: context.tenantId,
-    consentDocumentId: doc.id,
-    action: args.eventType,
-    summary: buildPublicEducationEventSummary(
-      args.eventType,
-      linkedEducationPackage.packageKey,
-      getNullableString(args.language),
-    ),
-    signerRole: context.signerRole,
-    metadata,
-    request: args.request,
+    await writePublicConsentAudit({
+      tenantId: context.tenantId,
+      consentDocumentId: doc.id,
+      action: args.eventType,
+      summary: buildPublicEducationEventSummary(
+        args.eventType,
+        linkedEducationPackage.packageKey,
+        getNullableString(args.language),
+      ),
+      signerRole: context.signerRole,
+      metadata,
+      request: args.request,
+      tx,
+    });
   });
 
   return getEducationStatus(context.tenantId, doc.id, linkedEducationPackage, context.sessionId);
@@ -1378,38 +1396,41 @@ export async function recordPublicDecisionEvent(args: {
     : null;
   const consentHash = buildConsentContentHash(doc);
 
-  await prisma().consentDocument.update({
-    where: { id: doc.id },
-    data: {
-      metadata: mergeDecisionExecutionContext({
-        rawMetadata: doc.metadata,
-        eventType: args.eventType,
+  await prisma().$transaction(async (tx) => {
+    await tx.consentDocument.update({
+      where: { id: doc.id },
+      data: {
+        metadata: mergeDecisionExecutionContext({
+          rawMetadata: doc.metadata,
+          eventType: args.eventType,
+          decisionStatus: nextDecisionStatus,
+          consentHash,
+          consentVersion: doc.templateVersion.versionLabel,
+          education,
+          refusalForm,
+          refusalAcknowledged: args.refusalAcknowledged,
+        }) as Prisma.InputJsonValue,
+      },
+    });
+
+    await writePublicConsentAudit({
+      tenantId: context.tenantId,
+      consentDocumentId: doc.id,
+      action: args.eventType,
+      summary: buildPublicDecisionEventSummary(args.eventType, nextDecisionStatus),
+      signerRole: context.signerRole,
+      metadata: {
         decisionStatus: nextDecisionStatus,
         consentHash,
         consentVersion: doc.templateVersion.versionLabel,
-        education,
-        refusalForm,
-        refusalAcknowledged: args.refusalAcknowledged,
-      }) as Prisma.InputJsonValue,
-    },
-  });
-
-  await writePublicConsentAudit({
-    tenantId: context.tenantId,
-    consentDocumentId: doc.id,
-    action: args.eventType,
-    summary: buildPublicDecisionEventSummary(args.eventType, nextDecisionStatus),
-    signerRole: context.signerRole,
-    metadata: {
-      decisionStatus: nextDecisionStatus,
-      consentHash,
-      consentVersion: doc.templateVersion.versionLabel,
-      educationVersion: education.versionLabel,
-      educationHash: education.contentHash,
-      refusalFormHash: refusalForm?.formHash || null,
-      refusalAcknowledged: Boolean(args.refusalAcknowledged),
-    },
-    request: args.request,
+        educationVersion: education.versionLabel,
+        educationHash: education.contentHash,
+        refusalFormHash: refusalForm?.formHash || null,
+        refusalAcknowledged: Boolean(args.refusalAcknowledged),
+      },
+      request: args.request,
+      tx,
+    });
   });
 
   const updatedDoc = await loadPublicDocumentRecord(context.tenantId, doc.id);
@@ -1429,28 +1450,31 @@ function buildEvidenceCopyFileName(reference: string, copyType: string): string 
   }
 }
 
-async function persistPublicSigningEvidencePackages(args: {
-  tenantId: string;
-  documentId: string;
-  caseId: string | null;
-  patientName: string | null;
-  patientEmail: string | null;
-  consentReference: string | null;
-  generatedAt: Date;
-  generatedBy: string;
-  pdfHash: string;
-  documentHash: string;
-  otpHash: string;
-  otpVerifiedAt: string;
-  ipAddress: string | null;
-  userAgent: string | null;
-  education: EducationStatus;
-  decision: DecisionStatus;
-  signerName: string;
-  signatureHash: string | null;
-  signatureId: string;
-  consentVersion: string;
-}): Promise<void> {
+async function persistPublicSigningEvidencePackages(
+  args: {
+    tenantId: string;
+    documentId: string;
+    caseId: string | null;
+    patientName: string | null;
+    patientEmail: string | null;
+    consentReference: string | null;
+    generatedAt: Date;
+    generatedBy: string;
+    pdfHash: string;
+    documentHash: string;
+    otpHash: string;
+    otpVerifiedAt: string;
+    ipAddress: string | null;
+    userAgent: string | null;
+    education: EducationStatus;
+    decision: DecisionStatus;
+    signerName: string;
+    signatureHash: string | null;
+    signatureId: string;
+    consentVersion: string;
+  },
+  tx?: PrismaClient | Prisma.TransactionClient,
+): Promise<void> {
   const reference = (args.consentReference || args.documentId).replace(/[^a-zA-Z0-9_-]/g, "_");
   const copyTypes = [
     ConsentEvidenceCopyType.PATIENT_COPY,
@@ -1502,7 +1526,9 @@ async function persistPublicSigningEvidencePackages(args: {
     refusalForm: args.decision.refusalForm,
   };
 
-  const existing = await prisma().consentEvidencePackage.findMany({
+  const client = tx ?? prisma();
+
+  const existing = await client.consentEvidencePackage.findMany({
     where: {
       tenantId: args.tenantId,
       consentDocumentId: args.documentId,
@@ -1521,7 +1547,7 @@ async function persistPublicSigningEvidencePackages(args: {
     const row = existingByType.get(copyType);
 
     if (row) {
-      await prisma().consentEvidencePackage.update({
+      await client.consentEvidencePackage.update({
         where: { id: row.id },
         data: {
           fileName,
@@ -1535,7 +1561,7 @@ async function persistPublicSigningEvidencePackages(args: {
       continue;
     }
 
-    await prisma().consentEvidencePackage.create({
+    await client.consentEvidencePackage.create({
       data: {
         tenantId: args.tenantId,
         consentDocumentId: args.documentId,
@@ -1551,15 +1577,19 @@ async function persistPublicSigningEvidencePackages(args: {
   }
 
   if (args.patientEmail) {
-    await sendPatientCopyNotificationEmail({
-      tenantId: args.tenantId,
-      caseId: args.caseId,
-      patientName: args.patientName,
-      documentId: args.documentId,
-      consentReference: args.consentReference,
-      copyType: ConsentEvidenceCopyType.PATIENT_COPY,
-      recipientEmail: args.patientEmail,
-    }).catch(() => undefined);
+    try {
+      await sendPatientCopyNotificationEmail({
+        tenantId: args.tenantId,
+        caseId: args.caseId,
+        patientName: args.patientName,
+        documentId: args.documentId,
+        consentReference: args.consentReference,
+        copyType: ConsentEvidenceCopyType.PATIENT_COPY,
+        recipientEmail: args.patientEmail,
+      });
+    } catch (error) {
+      console.error("[public-signing] patient copy notification email failed", error);
+    }
   }
 }
 
@@ -1808,15 +1838,30 @@ async function buildPublicSigningDocumentPayload(context: SigningTokenContext): 
 
   const arabicDiagnostics = collectPatientFacingArabicDiagnostics(payload);
   if (arabicDiagnostics.length > 0) {
-    console.error("[PUBLIC_SIGNING_ARABIC_MOJIBAKE_BLOCKED]", {
-      documentId: payload.documentId,
-      consentReference: payload.consentReference,
-      diagnostics: arabicDiagnostics,
+    logRuntimeIncident({
+      module: "public_signing",
+      type: "PDF_FAILURE",
+      operation: "build_public_signing_document_payload",
+      tenantId: context.tenantId,
+      details: {
+        documentId: payload.documentId,
+        consentReference: payload.consentReference,
+        reason: "arabic_mojibake_diagnostics_detected",
+        diagnosticCount: arabicDiagnostics.length,
+        diagnostics: arabicDiagnostics,
+      },
     });
-    console.warn(
-      "Arabic mojibake diagnostics detected in patient signing view; allowing controlled pilot rendering.",
-      arabicDiagnostics,
-    );
+    logRuntimeEvent({
+      module: "public_signing",
+      event: "arabic_mojibake_diagnostics_detected",
+      severity: "warn",
+      tenantId: context.tenantId,
+      details: {
+        documentId: payload.documentId,
+        reason: "allowing_controlled_pilot_rendering",
+        diagnosticCount: arabicDiagnostics.length,
+      },
+    });
   }
 
   const shadowResult = executeUnifiedDisclosureShadowMode({
@@ -1901,8 +1946,14 @@ async function getFailedAttemptCount(challengeId: string): Promise<number> {
   return typeof raw === "string" ? Number.parseInt(raw, 10) : Number(raw);
 }
 
-async function insertOtpEvent(eventType: string, payload: Record<string, unknown>, processed = false): Promise<void> {
-  await prisma().$executeRawUnsafe(
+async function insertOtpEvent(
+  eventType: string,
+  payload: Record<string, unknown>,
+  processed = false,
+  tx?: PrismaClient | Prisma.TransactionClient,
+): Promise<void> {
+  const client = tx ?? prisma();
+  await client.$executeRawUnsafe(
     `INSERT INTO webhook_events (provider_key, event_type, raw_payload, hmac_verified, processed)
      VALUES ($1, $2, $3::jsonb, TRUE, $4)`,
     OTP_PROVIDER_KEY,
@@ -1912,8 +1963,12 @@ async function insertOtpEvent(eventType: string, payload: Record<string, unknown
   );
 }
 
-async function markOtpChallengeProcessed(rowId: string): Promise<void> {
-  await prisma().$executeRawUnsafe(
+async function markOtpChallengeProcessed(
+  rowId: string,
+  tx?: PrismaClient | Prisma.TransactionClient,
+): Promise<void> {
+  const client = tx ?? prisma();
+  await client.$executeRawUnsafe(
     `UPDATE webhook_events
      SET processed = TRUE, processed_at = NOW()
      WHERE id = $1::uuid`,
@@ -2010,64 +2065,66 @@ export async function requestSigningOtp(args: {
 
   deliveryStatus = otpEmailDeliveryStatus === "sent" || smsDeliveryStatus === "sent" ? "sent" : "failed";
 
-  await insertOtpEvent(OTP_REQUESTED_EVENT, payload, false);
+  await prisma().$transaction(async (tx) => {
+    await insertOtpEvent(OTP_REQUESTED_EVENT, payload, false, tx);
 
-  void recordEvidenceEvent({
-    tenantId: context.tenantId,
-    consentDocumentId: context.documentId,
-    eventType: "OTP_REQUESTED",
-    eventTimestamp: new Date(),
-    otpSentTime: new Date(),
-    otpVerificationStatus: deliveryStatus === "sent" ? "SENT" : "FAILED_TO_SEND",
-    maskedMobileNumber: payload.maskedPhone,
-    metadata: {
-      moduleType: context.moduleType,
-      sessionId: context.sessionId,
-      challengeId,
-      otpEmailDeliveryStatus,
-      otpEmailAuditId,
-      otpEmailRecipient,
-      smsDeliveryStatus,
-    },
-  }).catch(() => undefined);
+    await recordEvidenceEvent({
+      tenantId: context.tenantId,
+      consentDocumentId: context.documentId,
+      eventType: "OTP_REQUESTED",
+      eventTimestamp: new Date(),
+      otpSentTime: new Date(),
+      otpVerificationStatus: deliveryStatus === "sent" ? "SENT" : "FAILED_TO_SEND",
+      maskedMobileNumber: payload.maskedPhone,
+      metadata: {
+        moduleType: context.moduleType,
+        sessionId: context.sessionId,
+        challengeId,
+        otpEmailDeliveryStatus,
+        otpEmailAuditId,
+        otpEmailRecipient,
+        smsDeliveryStatus,
+      },
+    }, tx);
 
-  await appendAuditChainEvent({
-    tenantId: context.tenantId,
-    eventType: "PUBLIC_SIGNING_OTP_REQUESTED",
-    actorId: "public_signer",
-    actorRole: "patient",
-    payloadSummary: `OTP requested for signing session ${context.sessionId}`,
-    metadataJson: {
-      challengeId,
-      tokenHash: payload.tokenHash,
-      maskedPhone: payload.maskedPhone,
-      moduleType: context.moduleType,
-      deliveryStatus,
-      otpEmailDeliveryStatus,
-      otpEmailAuditId,
-      otpEmailRecipient,
-      smsDeliveryStatus,
-    },
-    request: args.request,
-  });
+    await appendAuditChainEvent({
+      tenantId: context.tenantId,
+      eventType: "PUBLIC_SIGNING_OTP_REQUESTED",
+      actorId: "public_signer",
+      actorRole: "patient",
+      payloadSummary: `OTP requested for signing session ${context.sessionId}`,
+      metadataJson: {
+        challengeId,
+        tokenHash: payload.tokenHash,
+        maskedPhone: payload.maskedPhone,
+        moduleType: context.moduleType,
+        deliveryStatus,
+        otpEmailDeliveryStatus,
+        otpEmailAuditId,
+        otpEmailRecipient,
+        smsDeliveryStatus,
+      },
+      request: args.request,
+    }, tx);
 
-  await recordSmsAuditAttempt({
-    tenantId: context.tenantId,
-    recipient: mobile,
-    status: smsDeliveryStatus,
-    statusCode,
-    failureReason,
-    notificationType: "secure_signing_otp",
-    metadata: {
-      challengeId,
-      sessionId: context.sessionId,
-      documentId: context.documentId,
-      moduleType: context.moduleType,
-      providerResponse,
-      otpEmailDeliveryStatus,
-      otpEmailAuditId,
-      otpEmailRecipient,
-    },
+    await recordSmsAuditAttempt({
+      tenantId: context.tenantId,
+      recipient: mobile,
+      status: smsDeliveryStatus,
+      statusCode,
+      failureReason,
+      notificationType: "secure_signing_otp",
+      metadata: {
+        challengeId,
+        sessionId: context.sessionId,
+        documentId: context.documentId,
+        moduleType: context.moduleType,
+        providerResponse,
+        otpEmailDeliveryStatus,
+        otpEmailAuditId,
+        otpEmailRecipient,
+      },
+    }, tx);
   });
 
   return {
@@ -2115,27 +2172,29 @@ export async function verifySigningOtp(args: {
     && crypto.timingSafeEqual(expectedBuffer, actualBuffer);
 
   if (!verified) {
-    await insertOtpEvent(OTP_VERIFY_FAILED_EVENT, {
-      challengeId: active.payload.challengeId,
-      tokenHash: active.payload.tokenHash,
-      sessionId: context.sessionId,
-      documentId: context.documentId,
-      moduleType: context.moduleType,
-    }, true);
-
-    void recordEvidenceEvent({
-      tenantId: context.tenantId,
-      consentDocumentId: context.documentId,
-      eventType: "OTP_VERIFY_FAILED",
-      eventTimestamp: new Date(),
-      otpVerificationStatus: "FAILED",
-      maskedMobileNumber: active.payload.maskedPhone,
-      metadata: {
-        moduleType: context.moduleType,
-        sessionId: context.sessionId,
+    await prisma().$transaction(async (tx) => {
+      await insertOtpEvent(OTP_VERIFY_FAILED_EVENT, {
         challengeId: active.payload.challengeId,
-      },
-    }).catch(() => undefined);
+        tokenHash: active.payload.tokenHash,
+        sessionId: context.sessionId,
+        documentId: context.documentId,
+        moduleType: context.moduleType,
+      }, true, tx);
+
+      await recordEvidenceEvent({
+        tenantId: context.tenantId,
+        consentDocumentId: context.documentId,
+        eventType: "OTP_VERIFY_FAILED",
+        eventTimestamp: new Date(),
+        otpVerificationStatus: "FAILED",
+        maskedMobileNumber: active.payload.maskedPhone,
+        metadata: {
+          moduleType: context.moduleType,
+          sessionId: context.sessionId,
+          challengeId: active.payload.challengeId,
+        },
+      }, tx);
+    });
 
     const latestAttempts = await getFailedAttemptCount(active.payload.challengeId);
     return {
@@ -2147,17 +2206,7 @@ export async function verifySigningOtp(args: {
     };
   }
 
-  await markOtpChallengeProcessed(active.rowId);
   const verifiedAt = new Date().toISOString();
-  await insertOtpEvent(OTP_VERIFIED_EVENT, {
-    challengeId: active.payload.challengeId,
-    tokenHash: active.payload.tokenHash,
-    sessionId: context.sessionId,
-    documentId: context.documentId,
-    moduleType: context.moduleType,
-    verifiedAt,
-  }, true);
-
   const doc = await loadPublicDocumentRecord(context.tenantId, context.documentId);
   const linkedEducationPackage = await getLinkedEducationPackage(
     context.tenantId,
@@ -2186,66 +2235,79 @@ export async function verifySigningOtp(args: {
     expiresAt: publicSessionExpiresAt,
   });
 
-  void recordEvidenceEvent({
-    tenantId: context.tenantId,
-    consentDocumentId: context.documentId,
-    eventType: "PATIENT_SIGNATURE_VERIFIED_BY_OTP",
-    eventTimestamp: new Date(),
-    otpVerificationTime: new Date(),
-    otpVerificationStatus: "VERIFIED",
-    maskedMobileNumber: active.payload.maskedPhone,
-    educationViewed: Boolean(education.viewedAt),
-    signatureTimestamp: new Date(verifiedAt),
-    signerIdentity: context.signerRole,
-    ipAddress: getClientIpAddress(args.request) || undefined,
-    browser: args.request?.headers.get("user-agent") || undefined,
-    metadata: {
-      moduleType: context.moduleType,
+  await prisma().$transaction(async (tx) => {
+    await markOtpChallengeProcessed(active.rowId, tx);
+    await insertOtpEvent(OTP_VERIFIED_EVENT, {
+      challengeId: active.payload.challengeId,
+      tokenHash: active.payload.tokenHash,
       sessionId: context.sessionId,
-      challengeId: active.payload.challengeId,
-      tokenHash: active.payload.tokenHash,
-      otpHash: active.payload.otpHash,
-      documentHash,
-      educationCompleted: education.completed,
-      patientAcknowledged: education.patientAcknowledged,
-      educationDisplayedAt: education.viewedAt,
-      educationAcknowledgedAt: education.acknowledgedAt,
-      educationDurationSeconds: education.durationSeconds,
-      educationScrollCompletion: education.scrollCompletion,
-      educationVersion: education.versionLabel,
-      educationHash: education.contentHash,
-    },
-  }).catch(() => undefined);
-
-  await writePublicConsentAudit({
-    tenantId: context.tenantId,
-    consentDocumentId: context.documentId,
-    action: "PATIENT_SIGNATURE_VERIFIED_BY_OTP",
-    summary: `OTP verified for ${context.signerRole.toLowerCase()} signature on consent ${doc.consentReference}`,
-    signerRole: context.signerRole,
-    metadata: {
-      challengeId: active.payload.challengeId,
-      tokenHash: active.payload.tokenHash,
-      documentHash,
-      educationCompleted: education.completed,
-      patientAcknowledged: education.patientAcknowledged,
-    },
-    request: args.request,
-  });
-
-  await appendAuditChainEvent({
-    tenantId: context.tenantId,
-    eventType: "PUBLIC_SIGNING_OTP_VERIFIED",
-    actorId: "public_signer",
-    actorRole: "patient",
-    payloadSummary: `OTP verified for signing session ${context.sessionId}`,
-    metadataJson: {
-      challengeId: active.payload.challengeId,
-      tokenHash: active.payload.tokenHash,
-      moduleType: context.moduleType,
       documentId: context.documentId,
-    },
-    request: args.request,
+      moduleType: context.moduleType,
+      verifiedAt,
+    }, true, tx);
+
+    await recordEvidenceEvent({
+      tenantId: context.tenantId,
+      consentDocumentId: context.documentId,
+      eventType: "PATIENT_SIGNATURE_VERIFIED_BY_OTP",
+      eventTimestamp: new Date(),
+      otpVerificationTime: new Date(),
+      otpVerificationStatus: "VERIFIED",
+      maskedMobileNumber: active.payload.maskedPhone,
+      educationViewed: Boolean(education.viewedAt),
+      signatureTimestamp: new Date(verifiedAt),
+      signerIdentity: context.signerRole,
+      ipAddress: getClientIpAddress(args.request) || undefined,
+      browser: args.request?.headers.get("user-agent") || undefined,
+      metadata: {
+        moduleType: context.moduleType,
+        sessionId: context.sessionId,
+        challengeId: active.payload.challengeId,
+        tokenHash: active.payload.tokenHash,
+        otpHash: active.payload.otpHash,
+        documentHash,
+        educationCompleted: education.completed,
+        patientAcknowledged: education.patientAcknowledged,
+        educationDisplayedAt: education.viewedAt,
+        educationAcknowledgedAt: education.acknowledgedAt,
+        educationDurationSeconds: education.durationSeconds,
+        educationScrollCompletion: education.scrollCompletion,
+        educationVersion: education.versionLabel,
+        educationHash: education.contentHash,
+      },
+    }, tx);
+
+    await writePublicConsentAudit({
+      tenantId: context.tenantId,
+      consentDocumentId: context.documentId,
+      action: "PATIENT_SIGNATURE_VERIFIED_BY_OTP",
+      summary: `OTP verified for ${context.signerRole.toLowerCase()} signature on consent ${doc.consentReference}`,
+      signerRole: context.signerRole,
+      metadata: {
+        challengeId: active.payload.challengeId,
+        tokenHash: active.payload.tokenHash,
+        documentHash,
+        educationCompleted: education.completed,
+        patientAcknowledged: education.patientAcknowledged,
+      },
+      request: args.request,
+      tx,
+    });
+
+    await appendAuditChainEvent({
+      tenantId: context.tenantId,
+      eventType: "PUBLIC_SIGNING_OTP_VERIFIED",
+      actorId: "public_signer",
+      actorRole: "patient",
+      payloadSummary: `OTP verified for signing session ${context.sessionId}`,
+      metadataJson: {
+        challengeId: active.payload.challengeId,
+        tokenHash: active.payload.tokenHash,
+        moduleType: context.moduleType,
+        documentId: context.documentId,
+      },
+      request: args.request,
+    }, tx);
   });
 
   return {
@@ -2290,14 +2352,19 @@ export async function submitPublicSigningSignature(args: {
     ConsentDocumentStatus.SIGNED,
   ] as const;
   if (!signableStatuses.some((s) => s === doc.status)) {
-    console.warn(
-      "Public signing continued despite non-signable consent status after patient review/OTP workflow.",
-      {
+    logRuntimeEvent({
+      request: args.request,
+      module: "public_signing",
+      event: "public_signing_non_signable_status",
+      severity: "warn",
+      operation: "submitPublicSigningSignature",
+      details: {
         documentId: doc.id,
         status: doc.status,
         tokenHash: context.publicSession.tokenHash,
+        reason: "continued_after_patient_review_otp_workflow",
       },
-    );
+    });
   }
 
   if (doc.signatures.some((signature) => signature.role === signerRole)) {
@@ -2348,115 +2415,119 @@ export async function submitPublicSigningSignature(args: {
     const signatureId = crypto.randomUUID();
     const capturedAt = new Date().toISOString();
     const refusalForm = decision.refusalForm || buildRefusalFormPayload({ doc, education });
-    await prisma().consentDocument.update({
-      where: { id: context.documentId },
-      data: {
-        status: ConsentDocumentStatus.SIGNED,
-        metadata: mergeDecisionExecutionContext({
-          rawMetadata: doc.metadata,
-          eventType: "REFUSAL_ACKNOWLEDGED",
-          decisionStatus: decision.status,
-          consentHash: buildConsentContentHash(doc),
-          consentVersion: doc.templateVersion.versionLabel,
-          education,
-          refusalForm,
-          refusalAcknowledged: true,
-          refusalSignature: {
-            signatureId,
-            signerName,
-            signatureHash,
-            capturedAt,
-            ipAddress: requestIpAddress,
-            userAgent: requestUserAgent,
-            otpVerifiedAt: context.publicSession.verifiedAt,
-          },
-        }) as Prisma.InputJsonValue,
-      },
-    });
 
-    await persistPublicSigningEvidencePackages({
-      tenantId: context.tenantId,
-      documentId: context.documentId,
-      caseId: doc.caseId,
-      patientName: doc.patientName,
-      patientEmail: null,
-      consentReference: doc.consentReference,
-      generatedAt: new Date(capturedAt),
-      generatedBy: "public_signer",
-      pdfHash: doc.auditChecksum || doc.immutablePdfHash || documentHash,
-      documentHash,
-      otpHash: latestRequestedChallenge.otpHash,
-      otpVerifiedAt: context.publicSession.verifiedAt,
-      ipAddress: requestIpAddress,
-      userAgent: requestUserAgent,
-      education,
-      decision: {
-        ...decision,
-        refusalAcknowledged: true,
-        refusalSignedAt: capturedAt,
-        refusalSignatureCaptured: true,
-        refusalSignatureId: signatureId,
-        refusalForm,
-      },
-      signerName,
-      signatureHash,
-      signatureId,
-      consentVersion: doc.templateVersion.versionLabel,
-    });
+    await prisma().$transaction(async (tx) => {
+      await tx.consentDocument.update({
+        where: { id: context.documentId },
+        data: {
+          status: ConsentDocumentStatus.SIGNED,
+          metadata: mergeDecisionExecutionContext({
+            rawMetadata: doc.metadata,
+            eventType: "REFUSAL_ACKNOWLEDGED",
+            decisionStatus: decision.status,
+            consentHash: buildConsentContentHash(doc),
+            consentVersion: doc.templateVersion.versionLabel,
+            education,
+            refusalForm,
+            refusalAcknowledged: true,
+            refusalSignature: {
+              signatureId,
+              signerName,
+              signatureHash,
+              capturedAt,
+              ipAddress: requestIpAddress,
+              userAgent: requestUserAgent,
+              otpVerifiedAt: context.publicSession.verifiedAt,
+            },
+          }) as Prisma.InputJsonValue,
+        },
+      });
 
-    await writePublicConsentAudit({
-      tenantId: context.tenantId,
-      consentDocumentId: context.documentId,
-      action: "REFUSAL_SIGNED",
-      summary: `Treatment refusal form signed for consent ${doc.consentReference}`,
-      signerRole,
-      metadata: {
-        signerName,
-        signatureMethod: $Enums.ConsentMethod.OTP,
-        tokenHash: context.publicSession.tokenHash,
-        challengeId: context.publicSession.challengeId,
+      await persistPublicSigningEvidencePackages({
+        tenantId: context.tenantId,
+        documentId: context.documentId,
+        caseId: doc.caseId,
+        patientName: doc.patientName,
+        patientEmail: null,
+        consentReference: doc.consentReference,
+        generatedAt: new Date(capturedAt),
+        generatedBy: "public_signer",
+        pdfHash: doc.auditChecksum || doc.immutablePdfHash || documentHash,
         documentHash,
-        refusalFormHash: refusalForm.formHash,
-        educationCompleted: education.completed,
-        patientAcknowledged: education.patientAcknowledged,
-        signatureHash,
-      },
-      request: args.request,
-    });
-
-    void recordEvidenceEvent({
-      tenantId: context.tenantId,
-      consentDocumentId: context.documentId,
-      eventType: "REFUSAL_SIGNED",
-      eventTimestamp: new Date(capturedAt),
-      signatureTimestamp: new Date(capturedAt),
-      signerIdentity: signerName,
-      consentTemplate: doc.template.titleEn,
-      consentVersion: doc.templateVersion.versionLabel,
-      consentLanguage: "bilingual",
-      ipAddress: requestIpAddress || undefined,
-      browser: requestUserAgent || undefined,
-      otpVerificationTime: new Date(context.publicSession.verifiedAt),
-      otpVerificationStatus: "VERIFIED",
-      educationViewed: Boolean(education.viewedAt),
-      metadata: {
         otpHash: latestRequestedChallenge.otpHash,
-        tokenHash: context.publicSession.tokenHash,
-        challengeId: context.publicSession.challengeId,
-        documentHash,
-        refusalFormHash: refusalForm.formHash,
-        educationCompleted: education.completed,
-        patientAcknowledged: education.patientAcknowledged,
-        educationDisplayedAt: education.viewedAt,
-        educationAcknowledgedAt: education.acknowledgedAt,
-        educationDurationSeconds: education.durationSeconds,
-        educationScrollCompletion: education.scrollCompletion,
-        educationVersion: education.versionLabel,
-        educationHash: education.contentHash,
+        otpVerifiedAt: context.publicSession.verifiedAt,
+        ipAddress: requestIpAddress,
+        userAgent: requestUserAgent,
+        education,
+        decision: {
+          ...decision,
+          refusalAcknowledged: true,
+          refusalSignedAt: capturedAt,
+          refusalSignatureCaptured: true,
+          refusalSignatureId: signatureId,
+          refusalForm,
+        },
+        signerName,
         signatureHash,
-        decisionStatus: decision.status,
-      },
-    }).catch(() => undefined);
+        signatureId,
+        consentVersion: doc.templateVersion.versionLabel,
+      }, tx);
+
+      await writePublicConsentAudit({
+        tenantId: context.tenantId,
+        consentDocumentId: context.documentId,
+        action: "REFUSAL_SIGNED",
+        summary: `Treatment refusal form signed for consent ${doc.consentReference}`,
+        signerRole,
+        metadata: {
+          signerName,
+          signatureMethod: $Enums.ConsentMethod.OTP,
+          tokenHash: context.publicSession.tokenHash,
+          challengeId: context.publicSession.challengeId,
+          documentHash,
+          refusalFormHash: refusalForm.formHash,
+          educationCompleted: education.completed,
+          patientAcknowledged: education.patientAcknowledged,
+          signatureHash,
+        },
+        request: args.request,
+        tx,
+      });
+
+      await recordEvidenceEvent({
+        tenantId: context.tenantId,
+        consentDocumentId: context.documentId,
+        eventType: "REFUSAL_SIGNED",
+        eventTimestamp: new Date(capturedAt),
+        signatureTimestamp: new Date(capturedAt),
+        signerIdentity: signerName,
+        consentTemplate: doc.template.titleEn,
+        consentVersion: doc.templateVersion.versionLabel,
+        consentLanguage: "bilingual",
+        ipAddress: requestIpAddress || undefined,
+        browser: requestUserAgent || undefined,
+        otpVerificationTime: new Date(context.publicSession.verifiedAt),
+        otpVerificationStatus: "VERIFIED",
+        educationViewed: Boolean(education.viewedAt),
+        metadata: {
+          otpHash: latestRequestedChallenge.otpHash,
+          tokenHash: context.publicSession.tokenHash,
+          challengeId: context.publicSession.challengeId,
+          documentHash,
+          refusalFormHash: refusalForm.formHash,
+          educationCompleted: education.completed,
+          patientAcknowledged: education.patientAcknowledged,
+          educationDisplayedAt: education.viewedAt,
+          educationAcknowledgedAt: education.acknowledgedAt,
+          educationDurationSeconds: education.durationSeconds,
+          educationScrollCompletion: education.scrollCompletion,
+          educationVersion: education.versionLabel,
+          educationHash: education.contentHash,
+          signatureHash,
+          decisionStatus: decision.status,
+        },
+      }, tx);
+    });
 
     return {
       documentId: context.documentId,
@@ -2480,120 +2551,127 @@ export async function submitPublicSigningSignature(args: {
     };
   }
 
-  const signature = await prisma().consentDocumentSignature.create({
-    data: {
+  const signerCompletesWorkflow = signerRole === ConsentSignatureRole.PATIENT || signerRole === ConsentSignatureRole.GUARDIAN;
+
+  const { signature, nextStatus } = await prisma().$transaction(async (tx) => {
+    const signature = await tx.consentDocumentSignature.create({
+      data: {
+        tenantId: context.tenantId,
+        consentDocumentId: context.documentId,
+        role: signerRole,
+        signerName,
+        signatureMethod: $Enums.ConsentMethod.OTP,
+        ipAddress: requestIpAddress,
+        userAgent: requestUserAgent,
+        signatureHash,
+        metadata: {
+          capturedBy: "public_signer",
+          tokenHash: context.publicSession.tokenHash,
+          challengeId: context.publicSession.challengeId,
+          otpVerifiedAt: context.publicSession.verifiedAt,
+          signatureProvided: Boolean(args.signatureDataUrl),
+          signatureHash,
+        },
+      },
+    });
+
+    const signatures = [...doc.signatures, signature];
+    const hasPatient = signatures.some((item) => item.role === ConsentSignatureRole.PATIENT || item.role === ConsentSignatureRole.GUARDIAN);
+    const hasPhysician = signatures.some((item) => item.role === ConsentSignatureRole.PHYSICIAN);
+    const nextStatus = signerCompletesWorkflow
+      ? ConsentDocumentStatus.SIGNED
+      : (hasPatient && hasPhysician
+      ? ConsentDocumentStatus.SIGNED
+      : ConsentDocumentStatus.READY_FOR_SIGNATURE);
+
+    await tx.consentDocument.update({
+      where: { id: context.documentId },
+      data: {
+        status: nextStatus,
+      },
+    });
+
+    const pdfHash = doc.auditChecksum || doc.immutablePdfHash || documentHash;
+    await persistPublicSigningEvidencePackages({
       tenantId: context.tenantId,
-      consentDocumentId: context.documentId,
-      role: signerRole,
-      signerName,
-      signatureMethod: $Enums.ConsentMethod.OTP,
+      documentId: context.documentId,
+      caseId: doc.caseId,
+      patientName: doc.patientName,
+      patientEmail,
+      consentReference: doc.consentReference,
+      generatedAt: signature.signedAt,
+      generatedBy: "public_signer",
+      pdfHash,
+      documentHash,
+      otpHash: latestRequestedChallenge.otpHash,
+      otpVerifiedAt: context.publicSession.verifiedAt,
       ipAddress: requestIpAddress,
       userAgent: requestUserAgent,
+      education,
+      decision,
+      signerName,
+      signatureHash,
+      signatureId: signature.id,
+      consentVersion: doc.templateVersion.versionLabel,
+    }, tx);
+
+    await writePublicConsentAudit({
+      tenantId: context.tenantId,
+      consentDocumentId: context.documentId,
+      action: "PATIENT_SIGNATURE_CAPTURED",
+      summary: `Signature captured (${signerRole}) for consent ${doc.consentReference}`,
+      signerRole,
       metadata: {
-        capturedBy: "public_signer",
+        signerName,
+        signatureMethod: $Enums.ConsentMethod.OTP,
         tokenHash: context.publicSession.tokenHash,
         challengeId: context.publicSession.challengeId,
-        otpVerifiedAt: context.publicSession.verifiedAt,
-        signatureProvided: Boolean(args.signatureDataUrl),
+        nextStatus,
+        documentHash,
+        educationCompleted: education.completed,
+        patientAcknowledged: education.patientAcknowledged,
         signatureHash,
       },
-    },
+      request: args.request,
+      tx,
+    });
+
+    await recordEvidenceEvent({
+      tenantId: context.tenantId,
+      consentDocumentId: context.documentId,
+      eventType: "PATIENT_SIGNATURE_CAPTURED",
+      eventTimestamp: signature.signedAt,
+      signatureTimestamp: signature.signedAt,
+      signerIdentity: signerName,
+      consentTemplate: doc.template.titleEn,
+      consentVersion: doc.templateVersion.versionLabel,
+      consentLanguage: "bilingual",
+      ipAddress: signature.ipAddress || undefined,
+      browser: signature.userAgent || undefined,
+      otpVerificationTime: new Date(context.publicSession.verifiedAt),
+      otpVerificationStatus: "VERIFIED",
+      educationViewed: Boolean(education.viewedAt),
+      metadata: {
+        otpHash: latestRequestedChallenge.otpHash,
+        tokenHash: context.publicSession.tokenHash,
+        challengeId: context.publicSession.challengeId,
+        documentHash,
+        pdfHash,
+        educationCompleted: education.completed,
+        patientAcknowledged: education.patientAcknowledged,
+        educationDisplayedAt: education.viewedAt,
+        educationAcknowledgedAt: education.acknowledgedAt,
+        educationDurationSeconds: education.durationSeconds,
+        educationScrollCompletion: education.scrollCompletion,
+        educationVersion: education.versionLabel,
+        educationHash: education.contentHash,
+        signatureHash,
+        signatureProvided: Boolean(args.signatureDataUrl),
+      },
+    }, tx);
+
+    return { signature, nextStatus };
   });
-
-  const signatures = [...doc.signatures, signature];
-  const hasPatient = signatures.some((item) => item.role === ConsentSignatureRole.PATIENT || item.role === ConsentSignatureRole.GUARDIAN);
-  const hasPhysician = signatures.some((item) => item.role === ConsentSignatureRole.PHYSICIAN);
-  const signerCompletesWorkflow = signerRole === ConsentSignatureRole.PATIENT || signerRole === ConsentSignatureRole.GUARDIAN;
-  const nextStatus = signerCompletesWorkflow
-    ? ConsentDocumentStatus.SIGNED
-    : (hasPatient && hasPhysician
-    ? ConsentDocumentStatus.SIGNED
-    : ConsentDocumentStatus.READY_FOR_SIGNATURE);
-
-  await prisma().consentDocument.update({
-    where: { id: context.documentId },
-    data: {
-      status: nextStatus,
-    },
-  });
-
-  const pdfHash = doc.auditChecksum || doc.immutablePdfHash || documentHash;
-  await persistPublicSigningEvidencePackages({
-    tenantId: context.tenantId,
-    documentId: context.documentId,
-    caseId: doc.caseId,
-    patientName: doc.patientName,
-    patientEmail,
-    consentReference: doc.consentReference,
-    generatedAt: signature.signedAt,
-    generatedBy: "public_signer",
-    pdfHash,
-    documentHash,
-    otpHash: latestRequestedChallenge.otpHash,
-    otpVerifiedAt: context.publicSession.verifiedAt,
-    ipAddress: requestIpAddress,
-    userAgent: requestUserAgent,
-    education,
-    decision,
-    signerName,
-    signatureHash,
-    signatureId: signature.id,
-    consentVersion: doc.templateVersion.versionLabel,
-  });
-
-  await writePublicConsentAudit({
-    tenantId: context.tenantId,
-    consentDocumentId: context.documentId,
-    action: "PATIENT_SIGNATURE_CAPTURED",
-    summary: `Signature captured (${signerRole}) for consent ${doc.consentReference}`,
-    signerRole,
-    metadata: {
-      signerName,
-      signatureMethod: $Enums.ConsentMethod.OTP,
-      tokenHash: context.publicSession.tokenHash,
-      challengeId: context.publicSession.challengeId,
-      nextStatus,
-      documentHash,
-      educationCompleted: education.completed,
-      patientAcknowledged: education.patientAcknowledged,
-      signatureHash,
-    },
-    request: args.request,
-  });
-
-  void recordEvidenceEvent({
-    tenantId: context.tenantId,
-    consentDocumentId: context.documentId,
-    eventType: "PATIENT_SIGNATURE_CAPTURED",
-    eventTimestamp: signature.signedAt,
-    signatureTimestamp: signature.signedAt,
-    signerIdentity: signerName,
-    consentTemplate: doc.template.titleEn,
-    consentVersion: doc.templateVersion.versionLabel,
-    consentLanguage: "bilingual",
-    ipAddress: signature.ipAddress || undefined,
-    browser: signature.userAgent || undefined,
-    otpVerificationTime: new Date(context.publicSession.verifiedAt),
-    otpVerificationStatus: "VERIFIED",
-    educationViewed: Boolean(education.viewedAt),
-    metadata: {
-      otpHash: latestRequestedChallenge.otpHash,
-      tokenHash: context.publicSession.tokenHash,
-      challengeId: context.publicSession.challengeId,
-      documentHash,
-      pdfHash,
-      educationCompleted: education.completed,
-      patientAcknowledged: education.patientAcknowledged,
-      educationDisplayedAt: education.viewedAt,
-      educationAcknowledgedAt: education.acknowledgedAt,
-      educationDurationSeconds: education.durationSeconds,
-      educationScrollCompletion: education.scrollCompletion,
-      educationVersion: education.versionLabel,
-      educationHash: education.contentHash,
-      signatureHash,
-      signatureProvided: Boolean(args.signatureDataUrl),
-    },
-  }).catch(() => undefined);
 
   const finalPdf = signerCompletesWorkflow
     ? await ensurePublicFinalConsentPdfState({

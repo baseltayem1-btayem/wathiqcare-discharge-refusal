@@ -32,12 +32,25 @@ function loadEnv() {
   loadEnvFile(path.join(repoRoot, "apps", "web", ".env.local"));
 }
 
+function requireEnv(name) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(
+      `FATAL: ${name} is required. Pilot validation scripts must not use hardcoded passwords. ` +
+        "Set the pilot validation password in the environment and retry."
+    );
+  }
+  return value;
+}
+
+const PILOT_VALIDATION_PASSWORD = requireEnv("PILOT_VALIDATION_PASSWORD");
+
 const PILOT_USERS = [
-  { email: "dr.ahmed@wathiqcare.med.sa", role: "doctor", label: "Pilot Physician", password: "WathiqCare@2026" },
-  { email: "medicaldirector@wathiqcare.med.sa", role: "medical_director", label: "Medical Director", password: "WathiqCare@2026" },
-  { email: "nursingsupervisor@wathiqcare.med.sa", role: "nursing", label: "Nursing Supervisor", password: "WathiqCare@2026" },
-  { email: "legalreviewer@wathiqcare.med.sa", role: "legal_admin", label: "Legal Reviewer", password: "WathiqCare@2026" },
-  { email: "compliance@wathiqcare.med.sa", role: "compliance", label: "Compliance Reviewer", password: "WathiqCare@2026" },
+  { email: "dr.ahmed@wathiqcare.med.sa", role: "doctor", label: "Pilot Physician", password: PILOT_VALIDATION_PASSWORD },
+  { email: "medicaldirector@wathiqcare.med.sa", role: "medical_director", label: "Medical Director", password: PILOT_VALIDATION_PASSWORD },
+  { email: "nursingsupervisor@wathiqcare.med.sa", role: "nursing", label: "Nursing Supervisor", password: PILOT_VALIDATION_PASSWORD },
+  { email: "legalreviewer@wathiqcare.med.sa", role: "legal_admin", label: "Legal Reviewer", password: PILOT_VALIDATION_PASSWORD },
+  { email: "compliance@wathiqcare.med.sa", role: "compliance", label: "Compliance Reviewer", password: PILOT_VALIDATION_PASSWORD },
 ];
 
 const PILOT_MRNS = [

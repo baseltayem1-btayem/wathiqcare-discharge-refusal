@@ -8,7 +8,7 @@ import { getSessionCookieName } from "@/lib/server/sessionCookie";
 import { verifyAndDecodeJwt } from "@/lib/server/jwt";
 import { getUserResetState } from "@/lib/server/auth-reset";
 import { DatabaseUnavailableError, runDbOperation } from "@/lib/server/db-resilience";
-import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
+import { logRuntimeEvent, logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
 
 export type AuthContext = {
   sub: string;
@@ -233,25 +233,33 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
 
   if (!platformRole && !tenantActive) {
     if (bypassTenantInactiveForAdmin) {
-      console.warn("AUTH_STATE_BYPASS", {
-        reason: "tenant_inactive",
-        userId: user.id,
-        tenantId: user.tenantId,
-        userType: user.userType,
-        tenantActive,
-        membershipActive,
-        role: user.role,
-        roleAssigned,
+      logRuntimeEvent({
+        request,
+        module: "auth",
+        event: "AUTH_STATE_BYPASS",
+        severity: "warn",
+        details: {
+          reason: "tenant_inactive",
+          userType: user.userType,
+          tenantActive,
+          membershipActive,
+          role: user.role,
+          roleAssigned,
+        },
       });
     } else {
-      console.warn("AUTH_STATE_FAILURE", {
-        reason: "tenant_inactive",
-        userId: user.id,
-        tenantId: user.tenantId,
-        tenantActive,
-        membershipActive,
-        role: user.role,
-        roleAssigned,
+      logRuntimeEvent({
+        request,
+        module: "auth",
+        event: "AUTH_STATE_FAILURE",
+        severity: "warn",
+        details: {
+          reason: "tenant_inactive",
+          tenantActive,
+          membershipActive,
+          role: user.role,
+          roleAssigned,
+        },
       });
       throw new ApiError(403, "Tenant is inactive");
     }
@@ -259,14 +267,18 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
 
   if (!platformRole) {
     if (!membershipActive) {
-      console.warn("AUTH_STATE_FAILURE", {
-        reason: "membership_inactive",
-        userId: user.id,
-        tenantId: user.tenantId,
-        tenantActive,
-        membershipActive,
-        role: user.role,
-        roleAssigned,
+      logRuntimeEvent({
+        request,
+        module: "auth",
+        event: "AUTH_STATE_FAILURE",
+        severity: "warn",
+        details: {
+          reason: "membership_inactive",
+          tenantActive,
+          membershipActive,
+          role: user.role,
+          roleAssigned,
+        },
       });
       throw new ApiError(403, "Tenant membership is inactive");
     }
@@ -343,7 +355,14 @@ async function writePlatformApiAccessAttempt(args: {
       )
     `;
   } catch (accessLogError) {
-    console.error("platform access attempt log write failed (non-fatal)", accessLogError);
+    logRuntimeIncident({
+      request: args.request,
+      module: "auth",
+      type: "UNHANDLED_EXCEPTION",
+      operation: "write_platform_access_attempt",
+      error: accessLogError,
+      details: { reason: "platform_access_attempt_log_write_failed" },
+    });
   }
 
   if (!args.auth?.tenant_id || !args.auth?.sub) {
@@ -370,7 +389,14 @@ async function writePlatformApiAccessAttempt(args: {
       request: args.request,
     });
   } catch (auditError) {
-    console.error("platform access audit log write failed (non-fatal)", auditError);
+    logRuntimeIncident({
+      request: args.request,
+      module: "auth",
+      type: "UNHANDLED_EXCEPTION",
+      operation: "write_platform_access_audit",
+      error: auditError,
+      details: { reason: "platform_access_audit_log_write_failed" },
+    });
   }
 }
 

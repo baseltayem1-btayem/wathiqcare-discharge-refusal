@@ -12,6 +12,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { logRuntimeEvent, sanitizeLogDetails } from "@/lib/server/runtime-observability";
 
 // ---------------------------------------------------------------------------
 // Error Codes
@@ -225,7 +226,15 @@ export function handleRouteError(
     }
   }
 
-  console.error("[PlatformError] Unhandled:", err);
+  logRuntimeEvent({
+    module: "platform_errors",
+    event: "unhandled_route_error",
+    severity: "error",
+    details: {
+      errorName: err instanceof Error ? err.name : "UnknownError",
+      errorMessage: err instanceof Error ? err.message : String(err ?? ""),
+    },
+  });
   return apiError("INTERNAL_ERROR", defaultMessage, 500);
 }
 
@@ -262,7 +271,7 @@ export async function logPlatformError(input: ErrorLogInput): Promise<void> {
       input.errorCode,
       input.errorMessage,
       input.stackTrace ?? null,
-      JSON.stringify(input.context ?? {})
+      JSON.stringify(sanitizeLogDetails(input.context ?? {}))
     );
   } catch {
     // Never throw from error logger

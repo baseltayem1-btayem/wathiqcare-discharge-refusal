@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logRuntimeEvent, redactValue } from "@/lib/server/runtime-observability";
 
 export class ApiError extends Error {
   status: number;
@@ -50,20 +51,23 @@ type FailureLogContext = {
 };
 
 export function logApiFailure(context: FailureLogContext): void {
-  const payload = {
-    traceId: context.traceId,
-    status: context.status,
-    message: context.message,
-    code: context.code ?? null,
-    errorName: context.error instanceof Error ? context.error.name : undefined,
-  };
+  const errorName = context.error instanceof Error ? context.error.name : "UnknownError";
+  const errorMessage = context.error instanceof Error ? context.error.message : String(context.error ?? "");
 
-  if (context.status >= 500) {
-    console.error("API_FAILURE", payload, context.error);
-    return;
-  }
-
-  console.warn("API_FAILURE", payload);
+  logRuntimeEvent({
+    module: "api",
+    event: "api_failure",
+    severity: context.status >= 500 ? "error" : "warn",
+    operation: "api_request",
+    details: {
+      traceId: context.traceId,
+      status: context.status,
+      message: context.message,
+      code: context.code ?? null,
+      errorName,
+      errorMessage: redactValue("errorMessage", errorMessage),
+    },
+  });
 }
 
 export function jsonSuccess<T>(data: T, init: JsonResponseInit = {}) {

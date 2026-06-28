@@ -1,0 +1,51 @@
+{
+  "total": 6,
+  "identical": 0,
+  "acceptable": 0,
+  "review": 6,
+  "missing": 0,
+  "screenshots": [
+    {
+      "identical": false,
+      "diff_pixels": 1661264,
+      "diff_percent": 76.55,
+      "name": "01-initial.png",
+      "status": "review"
+    },
+    {
+      "identical": false,
+      "diff_pixels": 1606285,
+      "diff_percent": 74.02,
+      "name": "02-patient-selected.png",
+      "status": "review"
+    },
+    {
+      "identical": false,
+      "diff_pixels": 1732292,
+      "diff_percent": 57.64,
+      "name": "03-procedure-selected.png",
+      "status": "review"
+    },
+    {
+      "identical": false,
+      "diff_pixels": 1725075,
+      "diff_percent": 57.4,
+      "name": "04-draft-approved.png",
+      "status": "review"
+    },
+    {
+      "identical": false,
+      "diff_pixels": 2162591,
+      "diff_percent": 71.14,
+      "name": "05-send-modal.png",
+      "status": "review"
+    },
+    {
+      "identical": false,
+      "diff_pixels": 1105568,
+      "diff_percent": 65.73,
+      "name": "06-timeline.png",
+      "status": "review"
+    }
+  ]
+}

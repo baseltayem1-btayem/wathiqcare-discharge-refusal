@@ -16,7 +16,7 @@
  *   - assigned role vs expected role
  *   - tenant assignment + domain allowed
  *   - hashed password present
- *   - password matches WathiqCare@2026
+ *   - password matches UAT_PILOT_PASSWORD env var
  *   - password_reset_required flag
  *   - session_revoked_at set
  *   - failedLoginAttempts + lockedUntil
@@ -106,6 +106,15 @@ if (!process.env.DATABASE_URL) {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
+function requireEnv(name) {
+  const value = (process.env[name] || "").trim();
+  if (!value) {
+    console.error(`[uat-diagnose] ERROR: ${name} is required.`);
+    process.exit(1);
+  }
+  return value;
+}
+
 const APPLY = process.argv.includes("--apply");
 const BCRYPT_ROUNDS = 12;
 
@@ -116,7 +125,7 @@ const PILOT_TENANT = {
   allowedDomains: ["wathiqcare.med.sa", "wathiqcare.online"],
 };
 
-const PILOT_PASSWORD = "WathiqCare@2026";
+const PILOT_PASSWORD = requireEnv("UAT_PILOT_PASSWORD");
 
 const UAT_USERS = [
   {
@@ -663,7 +672,7 @@ function buildMarkdown(results, applyResults, loginResults) {
   if (applyResults && applyResults.length > 0) {
     lines.push(`## Remediation Applied`);
     lines.push(``);
-    lines.push(`The following accounts were upserted with password \`WathiqCare@2026\`:`);
+    lines.push(`The following accounts were upserted with password from UAT_PILOT_PASSWORD:`);
     lines.push(``);
     for (const r of applyResults) {
       lines.push(`- **${r.email}** (${r.label}) → userId: \`${r.userId}\``);

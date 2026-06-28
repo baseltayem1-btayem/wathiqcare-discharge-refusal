@@ -1,0 +1,7 @@
+[
+  {
+    "type": "request",
+    "method": "GET",
+    "url": "http://localhost:3000/api/modules/informed-consents/content-mapping/feature-flag?tenantId=tenant-pending"
+  }
+]

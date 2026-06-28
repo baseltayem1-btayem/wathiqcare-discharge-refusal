@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
@@ -26,10 +26,21 @@ const PRIVILEGED_ROLE_SET = new Set([
 const STEP_UP_COOKIE_NAME = "wathiqcare_step_up";
 const STEP_UP_CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const STEP_UP_SESSION_TTL_MS = 15 * 60 * 1000;
-const STEP_UP_SECRET =
-  process.env.WATHIQ_STEP_UP_SECRET ||
-  process.env.JWT_SECRET ||
-  "wathiqcare-step-up-dev-secret";
+let _stepUpSecret: string | undefined;
+
+function getStepUpSecret(): string {
+  if (_stepUpSecret === undefined) {
+    const value = process.env.WATHIQ_STEP_UP_SECRET?.trim() || process.env.JWT_SECRET?.trim();
+    if (!value) {
+      throw new Error(
+        "FATAL: WATHIQ_STEP_UP_SECRET (or JWT_SECRET fallback) is required. " +
+          "Set a strong random secret and restart the server."
+      );
+    }
+    _stepUpSecret = value;
+  }
+  return _stepUpSecret;
+}
 
 type RawStepUpRevocationRow = {
   step_up_revoked_at: Date | null;
@@ -52,7 +63,7 @@ function hashStepUpCode(code: string): string {
 
 function signStepUpPayload(payload: SignedStepUpPayload): string {
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const signature = crypto.createHmac("sha256", STEP_UP_SECRET).update(encoded).digest("base64url");
+  const signature = crypto.createHmac("sha256", getStepUpSecret()).update(encoded).digest("base64url");
   return `${encoded}.${signature}`;
 }
 
@@ -66,7 +77,7 @@ function readSignedStepUpPayload(token: string | null | undefined): SignedStepUp
     return null;
   }
 
-  const expected = crypto.createHmac("sha256", STEP_UP_SECRET).update(encoded).digest("base64url");
+  const expected = crypto.createHmac("sha256", getStepUpSecret()).update(encoded).digest("base64url");
   const expectedBuffer = Buffer.from(expected);
   const signatureBuffer = Buffer.from(signature);
 

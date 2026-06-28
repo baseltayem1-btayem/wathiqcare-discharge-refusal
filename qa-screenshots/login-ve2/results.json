@@ -1,0 +1,54 @@
+[
+  {
+    "name": "login-desktop-en",
+    "lang": "en",
+    "dir": "ltr",
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "url": "http://localhost:3001/login",
+    "status": 200,
+    "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+    "screenshot": "C:\\work\\wathiqnote-approved-source-q1bib96s3\\qa-screenshots\\login-ve2\\login-desktop-en.png"
+  },
+  {
+    "name": "login-desktop-ar",
+    "lang": "ar",
+    "dir": "rtl",
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "url": "http://localhost:3001/login",
+    "status": 200,
+    "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+    "screenshot": "C:\\work\\wathiqnote-approved-source-q1bib96s3\\qa-screenshots\\login-ve2\\login-desktop-ar.png"
+  },
+  {
+    "name": "login-mobile-en",
+    "lang": "en",
+    "dir": "ltr",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "url": "http://localhost:3001/login",
+    "status": 200,
+    "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+    "screenshot": "C:\\work\\wathiqnote-approved-source-q1bib96s3\\qa-screenshots\\login-ve2\\login-mobile-en.png"
+  },
+  {
+    "name": "login-mobile-ar",
+    "lang": "ar",
+    "dir": "rtl",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "url": "http://localhost:3001/login",
+    "status": 200,
+    "title": "WathiqCare™ | Enterprise Healthcare Legal Automation Platform",
+    "screenshot": "C:\\work\\wathiqnote-approved-source-q1bib96s3\\qa-screenshots\\login-ve2\\login-mobile-ar.png"
+  }
+]

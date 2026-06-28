@@ -7,6 +7,7 @@ import { ApiError } from "@/lib/server/http";
 import { buildSecureSigningLinkSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
 import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
+import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 
 const prisma = () => getPrisma();
 
@@ -364,7 +365,14 @@ export async function sendModuleSecureSigningLink(args: {
       },
     });
   } catch (error) {
-    console.error("[module-secure-signing] appendAuditChainEvent failed", error);
+    logRuntimeIncident({
+      module: "secure_signing",
+      type: "UNHANDLED_EXCEPTION",
+      operation: "sendModuleSecureSigningLink",
+      tenantId: args.tenantId,
+      error,
+      details: { reason: "append_audit_chain_event_failed" },
+    });
   }
 
   const status = await loadBadgeFlags({

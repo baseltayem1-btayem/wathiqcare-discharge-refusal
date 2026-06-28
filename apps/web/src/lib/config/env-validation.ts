@@ -10,12 +10,28 @@ const REQUIRED_SERVER_ENV = [
   'DATABASE_URL',
   'DATABASE_URL_POOLED',
   'DATABASE_URL_UNPOOLED',
-  'NEXTAUTH_SECRET',
   'JWT_SECRET_KEY',
-  'BASE_URL',
-  'APP_URL',
-  'STORAGE_PROVIDER',
-  'STORAGE_BUCKET',
+  'PUBLIC_LINK_TOKEN_PEPPER',
+  'WATHIQ_STEP_UP_SECRET',
+] as const;
+
+const FORBIDDEN_SECRET_VALUES = [
+  "",
+  "change-me",
+  "change_me",
+  "replace-with-strong-secret",
+  "replace-with-strong-random-secret",
+  "replace-with-strong-random-pepper",
+  "wathiqcare-step-up-dev-secret",
+  "wathiqcare-public-link-pepper",
+  "admin@wathiqcare.online",
+  "admin@wathiqcare.com",
+  "Admin@Wathiqcare2026!",
+  "Reset@Wathiqcare2026!",
+  "testpassword",
+  "password",
+  "secret",
+  "123456",
 ] as const;
 
 export type RequiredServerEnvKey = (typeof REQUIRED_SERVER_ENV)[number];
@@ -33,6 +49,12 @@ let localEnvCache: Map<string, string> | null = null;
 
 function hasValue(value: string | undefined): boolean {
   return Boolean(value && value.trim());
+}
+
+function isPlaceholderSecret(value: string | undefined): boolean {
+  if (!hasValue(value)) return true;
+  const normalized = value.trim().toLowerCase();
+  return FORBIDDEN_SECRET_VALUES.some((forbidden) => normalized === forbidden.toLowerCase());
 }
 
 function normalizeEnvValue(value: string): string {
@@ -128,7 +150,24 @@ export function assertRuntimeEnv(options: EnvValidationOptions = {}): void {
     throw new Error('Runtime configuration error: DATABASE_URL is required but missing');
   }
 
-  const missingNonCritical = REQUIRED_SERVER_ENV.filter((key) => !hasValue(process.env[key]));
+  const missingCritical = REQUIRED_SERVER_ENV.filter((key) => !hasValue(process.env[key]));
+  if (missingCritical.length > 0) {
+    throw new Error(
+      `Runtime configuration error: missing required environment variables: ${missingCritical.join(', ')}`
+    );
+  }
+
+  const secretKeys = REQUIRED_SERVER_ENV.filter((key) =>
+    ['JWT_SECRET_KEY', 'PUBLIC_LINK_TOKEN_PEPPER', 'WATHIQ_STEP_UP_SECRET'].includes(key)
+  );
+  const placeholderSecrets = secretKeys.filter((key) =>
+    isPlaceholderSecret(process.env[key])
+  );
+  if (placeholderSecrets.length > 0) {
+    throw new Error(
+      `Runtime configuration error: the following secrets are missing or use unsafe placeholder values: ${placeholderSecrets.join(', ')}`
+    );
+  }
 
   if (options.log !== false) {
     const context = options.context ? `[${options.context}] ` : '';
@@ -137,8 +176,8 @@ export function assertRuntimeEnv(options: EnvValidationOptions = {}): void {
       .join(', ');
     console.info(`${context}environment validation status: ${statusText}`);
 
-    if (missingNonCritical.length > 0) {
-      console.warn(`${context}non-critical missing env vars: ${missingNonCritical.join(', ')}`);
+    if (missingCritical.length > 0) {
+      console.warn(`${context}non-critical missing env vars: ${missingCritical.join(', ')}`);
     }
   }
 }

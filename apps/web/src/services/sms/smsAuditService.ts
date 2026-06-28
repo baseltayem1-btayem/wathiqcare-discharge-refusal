@@ -1,4 +1,4 @@
-﻿import { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 
 const prisma = () => getPrisma();
@@ -14,8 +14,12 @@ export type SmsAuditArgs = {
   metadata?: Record<string, unknown>;
 };
 
-export async function recordSmsAuditAttempt(args: SmsAuditArgs): Promise<void> {
-  await prisma().notificationDeliveryAttempt.create({
+export async function recordSmsAuditAttempt(
+  args: SmsAuditArgs,
+  tx?: PrismaClient | Prisma.TransactionClient,
+): Promise<void> {
+  const client = tx ?? prisma();
+  await client.notificationDeliveryAttempt.create({
     data: {
       tenantId: args.tenantId,
       caseId: args.caseId ?? null,
@@ -26,7 +30,7 @@ export async function recordSmsAuditAttempt(args: SmsAuditArgs): Promise<void> {
       status: args.status,
       statusCode: args.statusCode ?? null,
       failureReason: args.failureReason ?? null,
-      metadataJson: (args.metadata ?? {}) as JsonInputValue,
+      metadataJson: (args.metadata ?? {}) as Prisma.InputJsonValue,
     },
   });
 }

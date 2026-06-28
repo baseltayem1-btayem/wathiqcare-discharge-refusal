@@ -37,7 +37,16 @@ logger = logging.getLogger(__name__)
 _DEFAULT_EXPIRY_MINUTES = 10
 _DEFAULT_MAX_ACTIVE_LINKS_PER_CASE = 10
 _DEFAULT_ISSUE_COOLDOWN_SECONDS = 300
-_DEFAULT_TOKEN_PEPPER = "wathiqcare-public-link-pepper"
+
+
+def _pepper() -> str:
+    value = os.getenv("PUBLIC_LINK_TOKEN_PEPPER")
+    if not value:
+        raise RuntimeError(
+            "FATAL: PUBLIC_LINK_TOKEN_PEPPER is required. "
+            "Set a strong random secret and restart the server."
+        )
+    return value
 
 _PUBLIC_LEGAL_NOTICE = (
     "This secure link provides access to discharge decision data through a "
@@ -54,10 +63,6 @@ def _parse_positive_int_env(name: str, default: int) -> int:
     except (TypeError, ValueError):
         return default
     return value if value > 0 else default
-
-
-def _pepper() -> str:
-    return os.getenv("PUBLIC_LINK_TOKEN_PEPPER", _DEFAULT_TOKEN_PEPPER)
 
 
 def _expiry_minutes() -> int:
