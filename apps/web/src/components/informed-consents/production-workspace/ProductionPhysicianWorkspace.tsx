@@ -11,19 +11,20 @@ import {
   Input,
   Stack,
 } from "@/components/design-system";
-import { ClinicalWorkspaceShell } from "@/app/prototype/clinical-workspace-2/components/ClinicalWorkspaceShell";
-import { ContextBar } from "@/app/prototype/clinical-workspace-2/components/ContextBar";
-import { ActionRail } from "@/app/prototype/clinical-workspace-2/components/ActionRail";
-import { PatientEncounterSelector } from "@/app/prototype/clinical-workspace-2/components/PatientEncounterSelector";
-import { ClinicalKnowledgePackageCard } from "@/app/prototype/clinical-workspace-2/components/ClinicalKnowledgePackageCard";
-import { DraftPreviewPanel } from "@/app/prototype/clinical-workspace-2/components/DraftPreviewPanel";
-import { ReadinessSidebar } from "@/app/prototype/clinical-workspace-2/components/ReadinessSidebar";
-import { SendConfirmationModal } from "@/app/prototype/clinical-workspace-2/components/SendConfirmationModal";
-import { ClinicalTimelinePanel } from "@/app/prototype/clinical-workspace-2/components/timeline/ClinicalTimelinePanel";
+import { ClinicalWorkspaceShell } from "./components/ClinicalWorkspaceShell";
+import { ContextBar } from "./components/ContextBar";
+import { ActionRail } from "./components/ActionRail";
+import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
+import { ClinicalKnowledgePackageCard } from "./components/ClinicalKnowledgePackageCard";
+import { DraftPreviewPanel } from "./components/DraftPreviewPanel";
+import { ReadinessSidebar } from "./components/ReadinessSidebar";
+import { SendConfirmationModal } from "./components/SendConfirmationModal";
+import { ClinicalTimelinePanel } from "./components/timeline/ClinicalTimelinePanel";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
 import { mapAssemblyToMock } from "./lib/map-assembly";
 import { toMockPatient, toMockEncounter, toMockProcedure, toMockTimelineEvents } from "./lib/map-context";
+import "./workspace.css";
 
 interface ProductionPhysicianWorkspaceProps {
   physician: PhysicianContext;
