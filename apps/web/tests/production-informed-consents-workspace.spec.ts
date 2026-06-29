@@ -1,13 +1,17 @@
 import { test, expect } from "@playwright/test";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:3000";
 
 const TEST_PHYSICIAN = {
   email: "smoke-physician@wathiqcare.test",
-  password: "SmokeTest123!",
+  password: process.env.TEST_PHYSICIAN_PASSWORD ?? "",
 };
 
-async function authenticateContext(context) {
+if (!TEST_PHYSICIAN.password) {
+  throw new Error("TEST_PHYSICIAN_PASSWORD environment variable is required");
+}
+
+async function authenticateContext(context: import("@playwright/test").BrowserContext) {
   const response = await context.request.post(`${BASE_URL}/api/auth/password/login`, {
     data: {
       email: TEST_PHYSICIAN.email,
@@ -36,9 +40,9 @@ test.describe("Production Informed Consents Workspace", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page).toHaveURL(/\/modules\/informed-consents$/);
-    await expect(page.locator("text=Informed Consent — Clinical Workspace")).toBeVisible();
-    await expect(page.locator("text=Patient & Encounter")).toBeVisible();
-    await expect(page.locator("text=Case Readiness")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Clinical Knowledge Package" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Readiness Checklist" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Decision Support & Alerts" })).toBeVisible();
 
     const body = page.locator("body");
     await expect(body).not.toContainText(/not authorized|permission denied/i);
@@ -86,8 +90,8 @@ test.describe("Production Informed Consents Workspace", () => {
     await page.goto(`${BASE_URL}/modules/informed-consents`);
     await page.waitForLoadState("networkidle");
 
-    await expect(page.locator("text=Informed Consent — Clinical Workspace")).toBeVisible();
-    await expect(page.locator("text=Patient & Encounter")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Clinical Knowledge Package" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Readiness Checklist" })).toBeVisible();
   });
 
   test("workspace renders in Arabic RTL mode", async ({ page, context }) => {
@@ -100,6 +104,6 @@ test.describe("Production Informed Consents Workspace", () => {
     const htmlDir = await page.locator("html").getAttribute("dir");
     expect(htmlDir).toBe("rtl");
 
-    await expect(page.locator("text=المريض").or(page.locator("text=Patient & Encounter"))).toBeVisible();
+    await expect(page.locator(':text-is("Patient:")')).toBeVisible();
   });
 });

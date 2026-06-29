@@ -12,6 +12,7 @@ const REQUIRED_SERVER_ENV = [
   'DATABASE_URL_UNPOOLED',
   'JWT_SECRET_KEY',
   'PUBLIC_LINK_TOKEN_PEPPER',
+  'PUBLIC_SIGNING_OTP_PEPPER',
   'WATHIQ_STEP_UP_SECRET',
 ] as const;
 
@@ -24,6 +25,7 @@ const FORBIDDEN_SECRET_VALUES = [
   "replace-with-strong-random-pepper",
   "wathiqcare-step-up-dev-secret",
   "wathiqcare-public-link-pepper",
+  "wathiqcare-signing-otp-pepper",
   "admin@wathiqcare.online",
   "admin@wathiqcare.com",
   "Admin@Wathiqcare2026!",

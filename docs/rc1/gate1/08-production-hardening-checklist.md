@@ -25,7 +25,7 @@ Production hardening is inadequate for RC1. Default/hardcoded secrets exist in m
 - **Priority:** Critical
 - **Description:** Multiple secrets fall back to hardcoded values if environment variables are unset:
   - `apps/web/src/lib/server/security-policy-service.ts` lines 29–32: `STEP_UP_SECRET` defaults to `"wathiqcare-step-up-dev-secret"`.
-  - `apps/web/scripts/prod-release-gate.cjs` lines 15–16: release-gate passwords default to `Admin@Wathiqcare2026!` / `Reset@Wathiqcare2026!`.
+  - `apps/web/scripts/prod-release-gate.cjs` lines 15–16: release-gate passwords default to `[REDACTED]` / `Reset@Wathiqcare2026!`.
   - `apps/api/backend/services/secure_link_service.py` lines 40, 60: `PUBLIC_LINK_TOKEN_PEPPER` defaults to `"wathiqcare-public-link-pepper"`.
   - `backend/core/security.py` line 12: `JWT_SECRET_KEY` defaults to `"change-me"`.
 - **Risk:** Token forgery and backdoor authentication if any env var is omitted.

@@ -45,7 +45,7 @@ The repository is in a dirty, unmerged state with a large number of untracked te
 
 ### RH-HIGH-02 — Hardcoded admin credentials in tracked file
 - **Priority:** High
-- **Description:** `tmp-login-test.cjs` (tracked) contains `email: "admin@wathiqcare.online", password: "Admin@Wathiqcare2026!"`.
+- **Description:** `tmp-login-test.cjs` (tracked) contains `email: "admin@wathiqcare.online", password: "[REDACTED]"`.
 - **Risk:** Real admin credentials exposed in version control; can be replayed if still valid.
 - **Recommendation:** Delete the file from history, rotate the admin password, and read credentials from environment variables only.
 - **Estimated effort:** 2–4 hours

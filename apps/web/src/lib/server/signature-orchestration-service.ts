@@ -6,6 +6,7 @@
  * Provider adapters are injected — no provider-specific code here.
  */
 
+import crypto from "node:crypto";
 import { getPrisma } from "@/lib/server/prisma";
 import {
   type SigningSessionInput,
@@ -25,6 +26,10 @@ import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
 import { ApiError } from "@/lib/server/http";
 
 const prisma = () => getPrisma();
+
+function computeSigningTokenHash(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
 
 // ---------------------------------------------------------------------------
 // Provider Registry
@@ -110,15 +115,16 @@ export async function createSigningSession(
   const sessionId = rows[0]?.id;
   if (!sessionId) throw new SignatureProviderError("Failed to create signing session.");
 
-  // Persist secure tokens
+  // Persist secure token hashes (P0-003: never store raw tokens)
   for (const t of tokenRows) {
+    const tokenHash = computeSigningTokenHash(t.token);
     await prisma().$executeRawUnsafe(
-            `INSERT INTO signing_secure_tokens (session_id, tenant_id, signer_role, token, expires_at)
-        VALUES ($1::uuid, $2::uuid, $3, $4, $5::timestamptz)`,
+            `INSERT INTO signing_secure_tokens (session_id, tenant_id, signer_role, token_hash, token, expires_at)
+        VALUES ($1::uuid, $2::uuid, $3, $4, NULL, $5::timestamptz)`,
       sessionId,
       input.tenantId,
       t.signerRole,
-      t.token,
+      tokenHash,
       t.expiresAt.toISOString()
     );
   }
@@ -172,6 +178,8 @@ export async function validateSigningToken(
     throw new ApiError(400, "Invalid or expired signing token");
   }
 
+  const tokenHash = computeSigningTokenHash(normalizedToken);
+
   const rows = await prisma().$queryRawUnsafe<
     Array<{
       id: string;
@@ -189,9 +197,9 @@ export async function validateSigningToken(
             s.document_id, s.module_type, s.tenant_id
      FROM signing_secure_tokens t
      JOIN signing_sessions s ON s.id = t.session_id
-     WHERE t.token = $1
+     WHERE t.token_hash = $1
      LIMIT 1`,
-    normalizedToken
+    tokenHash
   );
 
   const row = rows[0];
@@ -218,10 +226,11 @@ export async function validateSigningToken(
 // ---------------------------------------------------------------------------
 
 export async function markTokenUsed(token: string, ipAddress?: string): Promise<void> {
+  const tokenHash = computeSigningTokenHash(token.trim());
   await prisma().$executeRawUnsafe(
-    `UPDATE signing_secure_tokens SET used_at = NOW(), ip_on_use = $1 WHERE token = $2`,
+    `UPDATE signing_secure_tokens SET used_at = NOW(), ip_on_use = $1 WHERE token_hash = $2`,
     ipAddress ?? null,
-    token
+    tokenHash
   );
 }
 

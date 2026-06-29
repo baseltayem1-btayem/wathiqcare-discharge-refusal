@@ -10,14 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/design-system";
-import type { Patient, Encounter, Procedure, MockClinicalKnowledgeAssembly } from "../types/workspace";
+import type { ProductionPatient, ProductionEncounter, ClinicalKnowledgeAssembly } from "../types";
+
+interface ProcedureSummary {
+  nameEn?: string;
+}
 
 interface SendConfirmationModalProps {
   open: boolean;
-  patient?: Patient;
-  encounter?: Encounter;
-  procedure?: Procedure;
-  assembly?: MockClinicalKnowledgeAssembly;
+  patient?: ProductionPatient;
+  encounter?: ProductionEncounter;
+  procedure?: ProcedureSummary;
+  assembly?: ClinicalKnowledgeAssembly;
   onConfirm: () => void;
   onCancel: () => void;
 }

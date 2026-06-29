@@ -109,6 +109,7 @@ type DecisionInput = {
   typed_name: string;
   refusal_acknowledged?: boolean;
   signature_data?: string;
+  otp_code: string;
 };
 
 type PublicDecisionAuditAction = {
@@ -901,6 +902,19 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
     const document = await getStoredSecureLinkByToken(token);
     const payload = parseSecureLinkPayload(document);
     ensureLinkActive(payload);
+
+    // P0-002: require identity verification before accepting a binding decision.
+    const otpCode = input.otp_code?.trim();
+    if (!otpCode) {
+      throw new ApiError(400, "رمز التحقق مطلوب لتسجيل القرار");
+    }
+    const otpResult = await verifyPublicSecureLinkOtp(token, otpCode, {
+      ip: request?.headers.get("x-wathiqcare-forwarded-for") || request?.headers.get("x-forwarded-for") || null,
+      userAgent: request?.headers.get("user-agent") || null,
+    });
+    if (!otpResult.verified) {
+      throw new ApiError(400, `رمز التحقق غير صحيح. المحاولات المتبقية: ${otpResult.attempts_remaining}`);
+    }
 
     if (payload.decision_type && payload.decision_submitted_at) {
       return {

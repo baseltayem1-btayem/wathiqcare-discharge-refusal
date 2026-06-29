@@ -3,15 +3,15 @@
 import { useState } from "react";
 import { Search, User, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Stack } from "@/components/design-system";
-import type { Patient, Encounter } from "../types/workspace";
+import type { ProductionPatient, ProductionEncounter } from "../types";
 
 interface PatientEncounterSelectorProps {
-  selectedPatient?: Patient;
-  selectedEncounter?: Encounter;
-  onSelectPatient: (patient: Patient) => void;
-  onSelectEncounter: (encounter: Encounter) => void;
-  patients: Patient[];
-  encounters: Encounter[];
+  selectedPatient?: ProductionPatient;
+  selectedEncounter?: ProductionEncounter;
+  onSelectPatient: (patient: ProductionPatient) => void;
+  onSelectEncounter: (encounter: ProductionEncounter) => void;
+  patients: ProductionPatient[];
+  encounters: ProductionEncounter[];
   patientsLoading?: boolean;
   encountersLoading?: boolean;
   error?: string;

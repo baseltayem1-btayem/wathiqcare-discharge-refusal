@@ -1,29 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Stethoscope, Search, Send } from "lucide-react";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Input,
-  Stack,
-} from "@/components/design-system";
-import { ClinicalWorkspaceShell } from "./components/ClinicalWorkspaceShell";
-import { ContextBar } from "./components/ContextBar";
-import { ActionRail } from "./components/ActionRail";
-import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
-import { ClinicalKnowledgePackageCard } from "./components/ClinicalKnowledgePackageCard";
-import { DraftPreviewPanel } from "./components/DraftPreviewPanel";
-import { ReadinessSidebar } from "./components/ReadinessSidebar";
-import { SendConfirmationModal } from "./components/SendConfirmationModal";
-import { ClinicalTimelinePanel } from "./components/timeline/ClinicalTimelinePanel";
+import { useState } from "react";
+import { Stethoscope, Search } from "lucide-react";
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Stack } from "@/components/design-system";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
-import { mapAssemblyToMock } from "./lib/map-assembly";
-import { toMockPatient, toMockEncounter, toMockProcedure, toMockTimelineEvents } from "./lib/map-context";
+import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
+import { SendConfirmationModal } from "./components/SendConfirmationModal";
+import { CanvaWorkspaceShell } from "./components/canva/CanvaWorkspaceShell";
+import { CanvaTopBar } from "./components/canva/CanvaTopBar";
+import { CanvaWorkspacePage } from "./components/canva/CanvaWorkspacePage";
+import {
+  PatientsPage,
+  EncountersPage,
+  ProceduresPage,
+  KnowledgePage,
+  TemplatesPage,
+  AnalyticsPage,
+  AuditPage,
+  SettingsPage,
+} from "./components/canva/pages";
+import type { WorkspacePageId } from "./components/canva/CanvaWorkspaceNav";
 import "./workspace.css";
 
 interface ProductionPhysicianWorkspaceProps {
@@ -42,35 +39,18 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     readiness,
     assemblyLoading,
     assemblyError,
+    sendLoading,
     searchForPatients,
     selectPatient,
     selectEncounter,
     resolveAssembly,
-    setAnesthesia,
-    setEducationIncluded,
-    setPhysicianNotes,
     approveDraft,
-    acknowledgeAlert,
     send,
-    reset,
   } = useProductionWorkspace(physician);
 
+  const [activePage, setActivePage] = useState<WorkspacePageId>("workspace");
   const [procedureQuery, setProcedureQuery] = useState("");
   const [sendModalOpen, setSendModalOpen] = useState(false);
-
-  const mappedAssembly = mapAssemblyToMock(state.assembly);
-  const mappedPatient = useMemo(
-    () => (state.patient ? toMockPatient(state.patient) : undefined),
-    [state.patient],
-  );
-  const mappedEncounter = useMemo(
-    () => (state.encounter ? toMockEncounter(state.encounter) : undefined),
-    [state.encounter],
-  );
-  const mappedProcedure = useMemo(() => toMockProcedure(state.assembly), [state.assembly]);
-  const mappedPatients = useMemo(() => patients.map(toMockPatient), [patients]);
-  const mappedEncounters = useMemo(() => encounters.map(toMockEncounter), [encounters]);
-  const mappedTimeline = useMemo(() => toMockTimelineEvents(state.timeline), [state.timeline]);
 
   function handleApprove() {
     approveDraft();
@@ -85,183 +65,131 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     setSendModalOpen(false);
   }
 
-  function handleJump(target: string) {
-    const el = document.getElementById(`section-${target}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
+  const renderWorkspaceContent = () => (
+    <div className="space-y-3">
+      <PatientEncounterSelector
+        selectedPatient={state.patient}
+        selectedEncounter={state.encounter}
+        onSelectPatient={selectPatient}
+        onSelectEncounter={selectEncounter}
+        patients={patients}
+        encounters={encounters}
+        patientsLoading={patientsLoading}
+        encountersLoading={encountersLoading}
+        error={patientsError || encountersError}
+        onSearchQueryChange={(q) => {
+          setProcedureQuery("");
+          void searchForPatients(q);
+        }}
+      />
 
-  const renderMainContent = () => {
-    if (state.step === "sent" && state.signingResult) {
-      return (
-        <div className="space-y-6">
-          <Card className="p-5 border-[var(--wc-success)]/30 bg-[var(--wc-success-bg)]">
-            <div className="flex items-start gap-3">
-              <Send className="w-5 h-5 text-[var(--wc-success)] mt-0.5" />
-              <div>
-                <div className="font-semibold text-[var(--wc-text)]">Consent dispatched to patient.</div>
-                <div className="text-sm text-[var(--wc-text-muted)] mt-1">
-                  A secure signing link has been sent to the patient&apos;s mobile number.
-                </div>
-                {state.signingResult.signingUrl && (
-                  <div className="mt-3 text-xs break-all text-[var(--wc-text-muted)]">
-                    {state.signingResult.signingUrl}
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-          <ClinicalTimelinePanel events={mappedTimeline} lang="en" />
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        <PatientEncounterSelector
-          selectedPatient={mappedPatient}
-          selectedEncounter={mappedEncounter}
-          onSelectPatient={selectPatient}
-          onSelectEncounter={selectEncounter}
-          patients={mappedPatients}
-          encounters={mappedEncounters}
-          patientsLoading={patientsLoading}
-          encountersLoading={encountersLoading}
-          error={patientsError || encountersError}
-          onSearchQueryChange={(q) => {
-            setProcedureQuery("");
-            void searchForPatients(q);
-          }}
-        />
-
-        {/* Procedure resolver */}
-        <Card className="overflow-hidden" id="section-procedure">
-          <CardHeader className="workspace-card-header">
-            <Stack direction="row" align="center" gap={2}>
-              <Stethoscope className="w-5 h-5 text-[var(--wc-blue)]" />
-              <CardTitle className="workspace-section-title">2. Procedure</CardTitle>
-            </Stack>
-          </CardHeader>
-          <CardContent className="p-5 space-y-4">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={procedureQuery}
-                onChange={(e) => setProcedureQuery(e.target.value)}
-                placeholder="Search procedure or specialty"
-                startIcon={<Search className="w-4 h-4" />}
-                disabled={!state.encounter || assemblyLoading}
-                className="flex-1"
-              />
-              <Button
-                variant="brand"
-                size="sm"
-                uppercase={false}
-                onClick={() => void resolveAssembly(procedureQuery)}
-                disabled={!state.encounter || !procedureQuery.trim() || assemblyLoading}
-              >
-                {assemblyLoading ? "Resolving…" : "Resolve"}
-              </Button>
-            </div>
-            {assemblyError && <div className="text-sm text-[var(--wc-danger)]">{assemblyError}</div>}
-            {!state.assembly && !assemblyLoading && !assemblyError && (
-              <div className="text-sm text-[var(--wc-text-muted)]">
-                Select an encounter, then type a procedure name and click Resolve to load the Clinical Knowledge Package.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {mappedAssembly && (
-          <>
-            <ClinicalKnowledgePackageCard
-              assembly={mappedAssembly}
-              procedure={mappedProcedure}
-              anesthesiaOverride={state.anesthesiaOverride}
-              educationIncluded={state.educationIncluded}
-              alerts={[]} // Production alerts are embedded in assembly.blockers/suggestions
-              acknowledgedAlertIds={state.acknowledgedAlerts}
-              onAnesthesiaChange={setAnesthesia}
-              onEducationToggle={setEducationIncluded}
-              onAcknowledgeAlert={acknowledgeAlert}
+      {/* Procedure resolver */}
+      <Card className="overflow-hidden" id="section-procedure">
+        <CardHeader className="workspace-card-header">
+          <Stack direction="row" align="center" gap={2}>
+            <Stethoscope className="w-5 h-5 text-[var(--wc-blue)]" />
+            <CardTitle className="workspace-section-title">Procedure</CardTitle>
+          </Stack>
+        </CardHeader>
+        <CardContent className="p-5 space-y-4">
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              value={procedureQuery}
+              onChange={(e) => setProcedureQuery(e.target.value)}
+              placeholder="Search procedure or specialty"
+              startIcon={<Search className="w-4 h-4" />}
+              disabled={!state.encounter || assemblyLoading}
+              className="flex-1"
             />
-            <DraftPreviewPanel
-              patient={mappedPatient}
-              encounter={mappedEncounter}
-              procedure={mappedProcedure}
-              assembly={mappedAssembly}
-              educationIncluded={state.educationIncluded}
-              physicianNotes={state.physicianNotes}
-              onNotesChange={setPhysicianNotes}
-            />
-          </>
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <>
-      <ClinicalWorkspaceShell
-        title="Informed Consent — Clinical Workspace"
-        subtitle="Patient → Encounter → Procedure → Clinical Knowledge Package"
-        eyebrow="Informed Consent"
-        showPrototypeBanner={false}
-        showPreviewBadge={false}
-        contextBar={
-          <ContextBar
-            patient={mappedPatient}
-            encounter={mappedEncounter}
-            procedure={mappedProcedure}
-            anesthesia={state.anesthesiaOverride}
-          />
-        }
-        actionRail={
-          <ActionRail
-            draftReady={readiness.draftReady}
-            sendReady={readiness.sendReady}
-            draftApproved={state.draftApproved}
-            sent={state.step === "sent"}
-            mode="physician"
-            canPreviewPatient={false}
-            onApprove={handleApprove}
-            onSend={handleSend}
-            onReset={reset}
-            onPreviewPatient={() => {}}
-            onViewTimeline={() => handleJump("timeline")}
-            onBackToPhysician={() => {}}
-          />
-        }
-        sidebar={
-          <div className="space-y-6">
-            <ReadinessSidebar
-              patientReady={readiness.patientReady}
-              encounterReady={readiness.encounterReady}
-              procedureReady={!!state.assembly}
-              assemblyReady={readiness.assemblyReady}
-              blockersResolved={readiness.blockersResolved}
-              draftApproved={state.draftApproved}
-              sendReady={readiness.sendReady}
-              progressPercentage={readiness.progressPercentage}
-              blockers={mappedAssembly?.blockers ?? []}
-              onJump={handleJump}
-            />
+            <Button
+              variant="brand"
+              size="sm"
+              uppercase={false}
+              onClick={() => void resolveAssembly(procedureQuery)}
+              disabled={!state.encounter || !procedureQuery.trim() || assemblyLoading}
+            >
+              {assemblyLoading ? "Resolving…" : "Resolve"}
+            </Button>
           </div>
-        }
-      >
-        {renderMainContent()}
-      </ClinicalWorkspaceShell>
+          {assemblyError && <div className="text-sm text-[var(--wc-danger)]">{assemblyError}</div>}
+          {!state.assembly && !assemblyLoading && !assemblyError && (
+            <div className="text-sm text-[var(--wc-text-muted)]">
+              Select an encounter, then type a procedure name and click Resolve to load the Clinical Knowledge Package.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <CanvaWorkspacePage
+        patient={state.patient}
+        encounter={state.encounter}
+        assembly={state.assembly}
+        readiness={readiness}
+        state={state}
+        timeline={state.timeline}
+        sendLoading={sendLoading}
+        onSend={handleSend}
+        onApproveDraft={handleApprove}
+      />
 
       <SendConfirmationModal
         open={sendModalOpen}
-        patient={mappedPatient}
-        encounter={mappedEncounter}
-        procedure={mappedProcedure}
-        assembly={mappedAssembly}
+        patient={state.patient}
+        encounter={state.encounter}
+        procedure={
+          state.assembly
+            ? {
+                nameEn: state.assembly.procedureNameEn,
+              }
+            : undefined
+        }
+        assembly={state.assembly}
         onConfirm={handleConfirmSend}
         onCancel={() => setSendModalOpen(false)}
       />
-    </>
+    </div>
+  );
+
+  const renderPage = () => {
+    switch (activePage) {
+      case "workspace":
+        return renderWorkspaceContent();
+      case "patients":
+        return <PatientsPage patients={patients} />;
+      case "encounters":
+        return <EncountersPage encounters={encounters} />;
+      case "procedures":
+        return <ProceduresPage />;
+      case "knowledge":
+        return <KnowledgePage />;
+      case "templates":
+        return <TemplatesPage />;
+      case "analytics":
+        return <AnalyticsPage />;
+      case "audit":
+        return <AuditPage timeline={state.timeline} />;
+      case "settings":
+        return <SettingsPage physician={physician} />;
+      default:
+        return renderWorkspaceContent();
+    }
+  };
+
+  return (
+    <CanvaWorkspaceShell
+      activePage={activePage}
+      onPageChange={setActivePage}
+      physician={physician}
+      topBar={
+        <CanvaTopBar
+          patient={state.patient}
+          encounter={state.encounter}
+          assembly={state.assembly}
+        />
+      }
+    >
+      {renderPage()}
+    </CanvaWorkspaceShell>
   );
 }

@@ -1,5 +1,7 @@
 import type { ClinicalKnowledgeAssembly } from "@/lib/clinical-knowledge/types";
 
+export type { ClinicalKnowledgeAssembly };
+
 export type ProductionPatient = {
   id: string;
   mrn: string;

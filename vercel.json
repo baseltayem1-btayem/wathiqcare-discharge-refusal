@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run runtime:pre-vercel && npm run prisma:generate && npm run build",
+  "buildCommand": "npm run runtime:pre-vercel && npm run prisma:generate && node scripts/run-sql-migrations.cjs && next build --webpack && node scripts/write-deterministic-routes-manifest.cjs",
   "installCommand": "npm install && npm run prisma:generate",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",

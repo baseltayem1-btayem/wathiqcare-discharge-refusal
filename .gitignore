@@ -15,6 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!apps/web/src/components/informed-consents/production-workspace/lib/
 lib64/
 parts/
 sdist/
@@ -265,4 +266,8 @@ apps/web/artifacts/release-gate/*.json
 
 # WathiqCare — temporary ad-hoc scripts often contain credentials or session tokens
 __*.cjs
+__*.ps1
 __tmp_*.ts
+task.ps1
+run_task.ps1
+test_login.ps1

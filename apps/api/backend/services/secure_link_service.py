@@ -26,6 +26,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from backend.core.database import SessionLocal
+from backend.core.email_service import EmailConfigurationError, EmailService
 from backend.models.audit_log import AuditLog
 from backend.models.discharge_case import DischargeCase
 from backend.models.discharge_execution_item import DischargeExecutionItem
@@ -37,6 +38,10 @@ logger = logging.getLogger(__name__)
 _DEFAULT_EXPIRY_MINUTES = 10
 _DEFAULT_MAX_ACTIVE_LINKS_PER_CASE = 10
 _DEFAULT_ISSUE_COOLDOWN_SECONDS = 300
+
+_DEFAULT_OTP_EXPIRY_MINUTES = 10
+_DEFAULT_OTP_MAX_ATTEMPTS = 3
+_DEFAULT_OTP_LOCKOUT_MINUTES = 15
 
 
 def _pepper() -> str:
@@ -93,6 +98,14 @@ def _hash_token(raw_token: str) -> str:
         raw_token.encode("utf-8"),
         hashlib.sha256,
     ).hexdigest()
+
+
+def _hash_otp(otp_code: str) -> str:
+    return hashlib.sha256(otp_code.encode("utf-8")).hexdigest()
+
+
+def _generate_otp_code() -> str:
+    return f"{secrets.randbelow(900000) + 100000:06d}"
 
 
 class SecureLinkRateLimitError(ValueError):
@@ -335,6 +348,187 @@ def update_delivery_status(link_id: str, *, status: str) -> None:
         db.close()
 
 
+def _parse_int_column(value: Optional[str], default: int = 0) -> int:
+    if value is None:
+        return default
+    try:
+        return max(0, int(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _mask_email(email: str) -> str:
+    at_idx = email.find("@")
+    if at_idx <= 2:
+        return f"***{email[at_idx:]}"
+    return f"{email[:2]}***{email[at_idx:]}"
+
+
+def _send_secure_link_otp_email(*, link: SecureDischargeLink, case_reference: str, otp_code: str) -> dict:
+    subject = f"WathiqCare | Secure Link Verification Code - {case_reference}"
+    html_body = f"""
+<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.7">
+  <p>رمز التحقق الخاص بك:</p>
+  <p style="font-size:24px;letter-spacing:0.18em;font-weight:bold;">{otp_code}</p>
+  <p>مرجع الحالة: <strong>{case_reference}</strong></p>
+  <p>ينتهي الرمز خلال {_DEFAULT_OTP_EXPIRY_MINUTES} دقائق.</p>
+  <p style="font-size:12px;color:#888">لا تشارك هذا الرمز مع أحد.</p>
+</div>
+"""
+    text_body = f"Your secure link verification code is: {otp_code}\nCase Reference: {case_reference}\nExpires in {_DEFAULT_OTP_EXPIRY_MINUTES} minutes."
+
+    try:
+        EmailService().send_email(
+            tenant_id=link.tenant_id,
+            created_by=link.created_by,
+            recipients=[link.recipient_email],
+            cc=[],
+            case_id=link.case_id,
+            patient_id=None,
+            subject=subject,
+            html_body=html_body,
+            text_body=text_body,
+            template_name=None,
+            template_vars=None,
+            attachments=[],
+            attachment_document_ids=[],
+        )
+        return {"status": "sent", "failure_reason": None}
+    except EmailConfigurationError as exc:
+        logger.warning("secure_link_otp_email_not_configured link_id=%s reason=%s", link.id, exc)
+        return {"status": "not_configured", "failure_reason": str(exc)}
+    except Exception as exc:
+        logger.error("secure_link_otp_email_failed link_id=%s error=%s", link.id, exc)
+        return {"status": "failed", "failure_reason": str(exc)}
+
+
+def request_secure_link_otp(raw_token: str) -> dict:
+    """Generate and deliver a one-time code for the secure link."""
+    db = SessionLocal()
+    try:
+        link = _load_valid_link(db, raw_token)
+
+        locked_until = link.otp_locked_until
+        if locked_until and locked_until.replace(tzinfo=timezone.utc) if locked_until.tzinfo is None else locked_until > datetime.now(timezone.utc):
+            raise ValueError("تم قفل الرابط بسبب محاولات فاشلة متعددة. يرجى المحاولة لاحقًا.")
+
+        otp_code = _generate_otp_code()
+        otp_hash = _hash_otp(otp_code)
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=_DEFAULT_OTP_EXPIRY_MINUTES)
+
+        link.otp_hash = otp_hash
+        link.otp_expires_at = expires_at.replace(tzinfo=None)
+        link.otp_attempts = "0"
+        link.otp_locked_until = None
+        db.commit()
+
+        case = db.query(DischargeCase).filter(DischargeCase.id == link.case_id).first()
+        case_reference = case.case_number if case and case.case_number else link.case_id
+        delivery = _send_secure_link_otp_email(link=link, case_reference=case_reference, otp_code=otp_code)
+
+        _write_audit(
+            db,
+            tenant_id=link.tenant_id,
+            user_id=link.created_by,
+            entity_id=link.id,
+            action="secure_link_otp_requested",
+            details=f"delivery_status={delivery['status']} masked_email={_mask_email(link.recipient_email)}",
+        )
+        db.commit()
+
+        return {
+            "success": delivery["status"] in ("sent", "not_configured"),
+            "delivery_status": delivery["status"],
+            "failure_reason": delivery["failure_reason"],
+            "masked_email": _mask_email(link.recipient_email),
+        }
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def verify_secure_link_otp(raw_token: str, otp_code: str) -> dict:
+    """Verify a one-time code for the secure link."""
+    db = SessionLocal()
+    try:
+        link = _load_valid_link(db, raw_token)
+
+        locked_until = link.otp_locked_until
+        if locked_until and (locked_until.replace(tzinfo=timezone.utc) if locked_until.tzinfo is None else locked_until) > datetime.now(timezone.utc):
+            raise ValueError("تم قفل الرابط بسبب محاولات فاشلة متعددة. يرجى المحاولة لاحقًا.")
+
+        stored_hash = link.otp_hash
+        expires_at = link.otp_expires_at
+        attempts = _parse_int_column(link.otp_attempts)
+
+        if not stored_hash or not expires_at:
+            raise ValueError("لم يتم طلب رمز تحقق لهذا الرابط")
+
+        if datetime.now(timezone.utc) > (expires_at.replace(tzinfo=timezone.utc) if expires_at.tzinfo is None else expires_at):
+            raise ValueError("انتهت صلاحية رمز التحقق")
+
+        if attempts >= _DEFAULT_OTP_MAX_ATTEMPTS:
+            lockout_until = datetime.now(timezone.utc) + timedelta(minutes=_DEFAULT_OTP_LOCKOUT_MINUTES)
+            link.otp_locked_until = lockout_until.replace(tzinfo=None)
+            db.commit()
+            raise ValueError("تم قفل الرابط بسبب محاولات فاشلة متعددة. يرجى المحاولة لاحقًا.")
+
+        submitted_hash = _hash_otp(otp_code)
+        verified = hmac.compare_digest(stored_hash, submitted_hash)
+
+        if not verified:
+            next_attempts = attempts + 1
+            link.otp_attempts = str(next_attempts)
+            if next_attempts >= _DEFAULT_OTP_MAX_ATTEMPTS:
+                lockout_until = datetime.now(timezone.utc) + timedelta(minutes=_DEFAULT_OTP_LOCKOUT_MINUTES)
+                link.otp_locked_until = lockout_until.replace(tzinfo=None)
+            db.commit()
+
+            _write_audit(
+                db,
+                tenant_id=link.tenant_id,
+                user_id=link.created_by,
+                entity_id=link.id,
+                action="secure_link_otp_rejected",
+                details=f"attempts={next_attempts}",
+            )
+            db.commit()
+
+            return {
+                "success": True,
+                "verified": False,
+                "attempts_remaining": max(0, _DEFAULT_OTP_MAX_ATTEMPTS - next_attempts),
+            }
+
+        link.otp_hash = None
+        link.otp_expires_at = None
+        link.otp_attempts = "0"
+        link.otp_locked_until = None
+        db.commit()
+
+        _write_audit(
+            db,
+            tenant_id=link.tenant_id,
+            user_id=link.created_by,
+            entity_id=link.id,
+            action="secure_link_otp_verified",
+        )
+        db.commit()
+
+        return {
+            "success": True,
+            "verified": True,
+            "attempts_remaining": _DEFAULT_OTP_MAX_ATTEMPTS,
+        }
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
 def validate_token(
     raw_token: str,
     *,
@@ -413,6 +607,7 @@ def submit_decision(
     signature_data: Optional[str] = None,
     ip_address: Optional[str] = None,
     user_agent: Optional[str] = None,
+    otp_code: Optional[str] = None,
 ) -> dict:
     normalized_decision = decision_type.strip().lower()
     normalized_name = typed_name.strip()
@@ -427,6 +622,55 @@ def submit_decision(
     db = SessionLocal()
     try:
         link = _load_valid_link(db, raw_token)
+
+        # P0-002: require identity verification before accepting a binding decision.
+        locked_until = link.otp_locked_until
+        if locked_until and (locked_until.replace(tzinfo=timezone.utc) if locked_until.tzinfo is None else locked_until) > datetime.now(timezone.utc):
+            raise ValueError("تم قفل الرابط بسبب محاولات فاشلة متعددة. يرجى المحاولة لاحقًا.")
+
+        stored_hash = link.otp_hash
+        expires_at = link.otp_expires_at
+        attempts = _parse_int_column(link.otp_attempts)
+
+        if not otp_code or not otp_code.strip():
+            raise ValueError("رمز التحقق مطلوب لتسجيل القرار")
+        if not stored_hash or not expires_at:
+            raise ValueError("لم يتم التحقق من الهوية. يرجى طلب رمز تحقق جديد.")
+        if datetime.now(timezone.utc) > (expires_at.replace(tzinfo=timezone.utc) if expires_at.tzinfo is None else expires_at):
+            raise ValueError("انتهت صلاحية رمز التحقق. يرجى طلب رمز جديد.")
+        if attempts >= _DEFAULT_OTP_MAX_ATTEMPTS:
+            lockout_until = datetime.now(timezone.utc) + timedelta(minutes=_DEFAULT_OTP_LOCKOUT_MINUTES)
+            link.otp_locked_until = lockout_until.replace(tzinfo=None)
+            db.commit()
+            raise ValueError("تم قفل الرابط بسبب محاولات فاشلة متعددة. يرجى المحاولة لاحقًا.")
+
+        submitted_hash = _hash_otp(otp_code.strip())
+        if not hmac.compare_digest(stored_hash, submitted_hash):
+            next_attempts = attempts + 1
+            link.otp_attempts = str(next_attempts)
+            if next_attempts >= _DEFAULT_OTP_MAX_ATTEMPTS:
+                lockout_until = datetime.now(timezone.utc) + timedelta(minutes=_DEFAULT_OTP_LOCKOUT_MINUTES)
+                link.otp_locked_until = lockout_until.replace(tzinfo=None)
+            db.commit()
+
+            _write_audit(
+                db,
+                tenant_id=link.tenant_id,
+                user_id=link.created_by,
+                entity_id=link.id,
+                action="secure_link_decision_otp_rejected",
+                details=f"attempts={next_attempts}",
+            )
+            db.commit()
+
+            raise ValueError("رمز التحقق غير صحيح")
+
+        # OTP verified: clear it so it cannot be replayed.
+        link.otp_hash = None
+        link.otp_expires_at = None
+        link.otp_attempts = "0"
+        link.otp_locked_until = None
+
         case = db.query(DischargeCase).filter(DischargeCase.id == link.case_id).first()
         if not case:
             raise ValueError("حالة التصريح غير موجودة")

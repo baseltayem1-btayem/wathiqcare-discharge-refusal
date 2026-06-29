@@ -236,13 +236,9 @@ export async function getStepUpStatusFromRequest(args: {
     tenantId: args.tenantId,
     revokedAt,
   });
-  const headerVerified =
-    args.request.headers.get("x-wathiq-step-up") === "verified" ||
-    args.request.headers.get("x-mfa-verified") === "true";
-
   return {
-    verified: headerVerified || cookieVerified,
-    method: headerVerified ? "header" : cookieVerified ? "cookie" : "none",
+    verified: cookieVerified,
+    method: cookieVerified ? "cookie" : "none",
     expiresAt: cookieVerified ? cookiePayload?.exp ?? null : null,
   };
 }

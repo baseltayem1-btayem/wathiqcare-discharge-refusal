@@ -474,7 +474,10 @@ function tokenHash(token: string): string {
 }
 
 function otpHash(otpCode: string): string {
-  const pepper = process.env.PUBLIC_SIGNING_OTP_PEPPER?.trim() || "wathiqcare-signing-otp-pepper";
+  const pepper = process.env.PUBLIC_SIGNING_OTP_PEPPER?.trim();
+  if (!pepper) {
+    throw new Error("PUBLIC_SIGNING_OTP_PEPPER is required for OTP hashing.");
+  }
   return crypto.createHmac("sha256", pepper).update(otpCode).digest("hex");
 }
 

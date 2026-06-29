@@ -48,7 +48,7 @@ Technical debt is high. There are two nearly identical Python backends, multiple
 ### TD-HIGH-03 — Hardcoded default passwords in release-gate script
 - **Priority:** High
 - **Description:** `apps/web/scripts/prod-release-gate.cjs` lines 15–16 set:
-  - `DEFAULT_PASSWORD = process.env.RELEASE_GATE_PASSWORD || "Admin@Wathiqcare2026!"`
+  - `DEFAULT_PASSWORD = process.env.RELEASE_GATE_PASSWORD || "[REDACTED]"`
   - `RESET_PASSWORD = process.env.RELEASE_GATE_RESET_PASSWORD || "Reset@Wathiqcare2026!"`
 - **Risk:** Backdoor credentials if the script is run without env vars.
 - **Recommendation:** Remove defaults; fail immediately if env vars are unset.

@@ -84,8 +84,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With", "X-Wathiqcare-Forwarded-For", "X-Wathiqcare-Real-Ip", "X-Wathiqcare-User-Agent"],
 )
 
 rate_limiter = SensitiveRouteRateLimiter(
@@ -210,7 +210,8 @@ app.include_router(integration_router)
 app.include_router(emails_router)
 app.include_router(workflow_router)
 app.include_router(system_inspect_router)
-app.include_router(sms_test_router)
+if os.getenv("WATHIQCARE_BACKEND_SMS_TEST_ENABLED", "false").lower() == "true":
+    app.include_router(sms_test_router)
 app.include_router(sms_evidence_router)
 app.include_router(secure_links_router)
 app.include_router(medico_legal_forms_router)

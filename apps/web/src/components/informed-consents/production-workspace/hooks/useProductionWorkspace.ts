@@ -36,6 +36,20 @@ export type ProductionWorkspaceState = {
   acknowledgedAlerts: Set<string>;
 };
 
+export type Readiness = {
+  patientReady: boolean;
+  encounterReady: boolean;
+  assemblyReady: boolean;
+  blockersResolved: boolean;
+  draftReady: boolean;
+  sendReady: boolean;
+  completedChecks: number;
+  totalChecks: number;
+  progressPercentage: number;
+  blockers: ProductionAssembly["blockers"];
+  unacknowledgedBlockers: ProductionAssembly["blockers"];
+};
+
 export function useProductionWorkspace(physician: PhysicianContext) {
   const [state, setState] = useState<ProductionWorkspaceState>({
     step: "patient",
@@ -217,7 +231,9 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         caseId: state.patient.caseId || state.encounter.id,
         patientName: state.patient.name,
         mobileNumber: state.patient.mobileNumber || "",
-        recipientEmail: "patient@example.com", // Placeholder: production should derive from patient or encounter record
+        // Patient email is not available in the current patient record; use a clearly
+        // marked unavailable address so the secure-signing service can still attempt SMS delivery.
+        recipientEmail: "no-patient-email@unavailable.wathiqcare.local",
         locale: state.patient.languagePreference === "ar" ? "ar" : "en",
       });
 

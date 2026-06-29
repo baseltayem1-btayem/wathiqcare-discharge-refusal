@@ -37,14 +37,14 @@ All Gate-1 Critical secrets findings were remediated. Default secrets were remov
 - **Residual risk:** Low. Secret is now read from environment only.
 
 ### SEC-02 — Release-gate script defaulted passwords
-- **Original finding:** `apps/web/scripts/prod-release-gate.cjs` defaulted `RELEASE_GATE_PASSWORD` and `RELEASE_GATE_RESET_PASSWORD` to `Admin@Wathiqcare2026!` / `Reset@Wathiqcare2026!`.
-- **Root cause:** Script used `process.env.RELEASE_GATE_PASSWORD || "Admin@Wathiqcare2026!"`.
+- **Original finding:** `apps/web/scripts/prod-release-gate.cjs` defaulted `RELEASE_GATE_PASSWORD` and `RELEASE_GATE_RESET_PASSWORD` to `[REDACTED]` / `Reset@Wathiqcare2026!`.
+- **Root cause:** Script used `process.env.RELEASE_GATE_PASSWORD || "[REDACTED]"`.
 - **Fix implemented:**
   - Added a `requireEnv(name)` helper that throws if the variable is missing or empty.
   - Both passwords are now required environment variables.
 - **Files changed:** `apps/web/scripts/prod-release-gate.cjs`
 - **Verification evidence:**
-  - `grep -n "Admin@Wathiqcare2026!" apps/web/scripts/prod-release-gate.cjs` → no matches.
+  - `grep -n "[REDACTED]" apps/web/scripts/prod-release-gate.cjs` → no matches.
 - **Residual risk:** Low. Script fails fast if passwords are not configured.
 
 ### SEC-03 — PUBLIC_LINK_TOKEN_PEPPER defaulted in Python service
@@ -104,7 +104,7 @@ All Gate-1 Critical secrets findings were remediated. Default secrets were remov
 - **Residual risk:** High residual until the Taqnyat token/API key is rotated, because the value was exposed in git history.
 
 ### SEC-08 — tmp-login-test.cjs contained admin credentials
-- **Original finding:** `tmp-login-test.cjs` contained `admin@wathiqcare.online` / `Admin@Wathiqcare2026!`.
+- **Original finding:** `tmp-login-test.cjs` contained `admin@wathiqcare.online` / `[REDACTED]`.
 - **Root cause:** Temporary credential test script was tracked.
 - **Fix implemented:**
   - `git rm -f tmp-login-test.cjs`
@@ -117,7 +117,7 @@ All Gate-1 Critical secrets findings were remediated. Default secrets were remov
 - **Residual risk:** Medium. Credentials remain in git history; admin password should be rotated.
 
 ### SEC-09 — Demo seed scripts used hardcoded passwords
-- **Original finding:** `apps/web/scripts/seed-demo-users.mjs` used `DemoPlatformAdmin@2026!`, `WathiqCare@2026`, etc.
+- **Original finding:** `apps/web/scripts/seed-demo-users.mjs` used `DemoPlatformAdmin@2026!`, `[REDACTED]`, etc.
 - **Root cause:** Demo fixture passwords were hardcoded.
 - **Fix implemented:**
   - Added `requireEnv` helper.
@@ -125,29 +125,29 @@ All Gate-1 Critical secrets findings were remediated. Default secrets were remov
   - All pilot users now use `PILOT_DEFAULT_PASSWORD`.
 - **Files changed:** `apps/web/scripts/seed-demo-users.mjs`
 - **Verification evidence:**
-  - `grep -n "DemoPlatformAdmin@2026!\|WathiqCare@2026" apps/web/scripts/seed-demo-users.mjs` → no matches.
+  - `grep -n "DemoPlatformAdmin@2026!\|[REDACTED]" apps/web/scripts/seed-demo-users.mjs` → no matches.
 - **Residual risk:** Low. Scripts fail fast if env vars are missing.
 
 ### SEC-10 — Pilot validation script used hardcoded passwords
-- **Original finding:** `apps/web/scripts/validate-pilot-uat-readiness.mjs` used `WathiqCare@2026` for all pilot users.
+- **Original finding:** `apps/web/scripts/validate-pilot-uat-readiness.mjs` used `[REDACTED]` for all pilot users.
 - **Root cause:** Pilot fixture passwords were hardcoded.
 - **Fix implemented:**
   - Added `requireEnv` helper.
   - All pilot users now use `PILOT_VALIDATION_PASSWORD`.
 - **Files changed:** `apps/web/scripts/validate-pilot-uat-readiness.mjs`
 - **Verification evidence:**
-  - `grep -n "WathiqCare@2026" apps/web/scripts/validate-pilot-uat-readiness.mjs` → no matches.
+  - `grep -n "[REDACTED]" apps/web/scripts/validate-pilot-uat-readiness.mjs` → no matches.
 - **Residual risk:** Low.
 
 ### SEC-11 — Live validation script used hardcoded admin password
-- **Original finding:** `apps/web/scripts/live-validation-3111.cjs` used `Admin@Wathiqcare2026!`.
+- **Original finding:** `apps/web/scripts/live-validation-3111.cjs` used `[REDACTED]`.
 - **Root cause:** Validation script password was hardcoded.
 - **Fix implemented:**
   - Added `requireEnv` helper.
   - Script now uses `VALIDATION_ADMIN_PASSWORD`.
 - **Files changed:** `apps/web/scripts/live-validation-3111.cjs`
 - **Verification evidence:**
-  - `grep -n "Admin@Wathiqcare2026!" apps/web/scripts/live-validation-3111.cjs` → no matches.
+  - `grep -n "[REDACTED]" apps/web/scripts/live-validation-3111.cjs` → no matches.
 - **Residual risk:** Low.
 
 ### SEC-12 — Playwright specs used hardcoded demo credentials
@@ -174,18 +174,18 @@ All Gate-1 Critical secrets findings were remediated. Default secrets were remov
 - **Residual risk:** Low.
 
 ### SEC-14 — UAT seed script used hardcoded pilot password
-- **Original finding:** `apps/web/scripts/seed-uat-users.mjs` set `PILOT_PASSWORD = "WathiqCare@2026"`.
+- **Original finding:** `apps/web/scripts/seed-uat-users.mjs` set `PILOT_PASSWORD = "[REDACTED]"`.
 - **Root cause:** UAT fixture password was hardcoded.
 - **Fix implemented:**
   - Added `requireEnv` helper.
   - `PILOT_PASSWORD` now reads from `UAT_PILOT_PASSWORD`.
 - **Files changed:** `apps/web/scripts/seed-uat-users.mjs`
 - **Verification evidence:**
-  - `grep -n "WathiqCare@2026" apps/web/scripts/seed-uat-users.mjs` → no matches.
+  - `grep -n "[REDACTED]" apps/web/scripts/seed-uat-users.mjs` → no matches.
 - **Residual risk:** Low.
 
 ### SEC-15 — UAT diagnosis script used hardcoded pilot password
-- **Original finding:** `apps/web/scripts/diagnose-uat-accounts.mjs` set `PILOT_PASSWORD = "WathiqCare@2026"`.
+- **Original finding:** `apps/web/scripts/diagnose-uat-accounts.mjs` set `PILOT_PASSWORD = "[REDACTED]"`.
 - **Root cause:** Diagnostic script password was hardcoded.
 - **Fix implemented:**
   - Added `requireEnv` helper.
@@ -193,17 +193,17 @@ All Gate-1 Critical secrets findings were remediated. Default secrets were remov
   - Updated report text to avoid printing the literal password.
 - **Files changed:** `apps/web/scripts/diagnose-uat-accounts.mjs`
 - **Verification evidence:**
-  - `grep -n "WathiqCare@2026" apps/web/scripts/diagnose-uat-accounts.mjs` → no matches.
+  - `grep -n "[REDACTED]" apps/web/scripts/diagnose-uat-accounts.mjs` → no matches.
 - **Residual risk:** Low.
 
 ### SEC-16 — Full UAT Playwright spec used hardcoded test password
-- **Original finding:** `apps/web/tests/full-uat-may2026.uat.ts` set `TEST_PASSWORD = "WathiqCare@2026"`.
+- **Original finding:** `apps/web/tests/full-uat-may2026.uat.ts` set `TEST_PASSWORD = "[REDACTED]"`.
 - **Root cause:** UAT test fixture password was hardcoded.
 - **Fix implemented:**
   - Reads `UAT_TEST_PASSWORD` from env, throws if missing.
 - **Files changed:** `apps/web/tests/full-uat-may2026.uat.ts`
 - **Verification evidence:**
-  - `grep -n "WathiqCare@2026" apps/web/tests/full-uat-may2026.uat.ts` → no matches.
+  - `grep -n "[REDACTED]" apps/web/tests/full-uat-may2026.uat.ts` → no matches.
 - **Residual risk:** Low.
 
 ### SEC-17 — Root Python backend secure-link service defaulted pepper
@@ -218,18 +218,18 @@ All Gate-1 Critical secrets findings were remediated. Default secrets were remov
 - **Residual risk:** Medium. The root `backend/` directory still exists; deployment of this directory would disable other hardening.
 
 ### SEC-18 — Admin bootstrap script used hardcoded fallback passwords
-- **Original finding:** `prisma/ensure-admin-access.js` used `DEFAULT_SUPERADMIN_PASSWORD = "Admin@Wathiqcare2026!"` and `DEFAULT_PLATFORM_ADMIN_PASSWORD = "Platform@Wathiqcare2026!"` as fallbacks.
+- **Original finding:** `prisma/ensure-admin-access.js` used `DEFAULT_SUPERADMIN_PASSWORD = "[REDACTED]"` and `DEFAULT_PLATFORM_ADMIN_PASSWORD = "[REDACTED]"` as fallbacks.
 - **Root cause:** `getPassword()` returned fallback values when env vars were missing.
 - **Fix implemented:**
   - Removed fallback constants.
   - Replaced `getPassword()` with `requireEnv()` that throws if `WATHIQCARE_SUPERADMIN_PASSWORD` or `WATHIQCARE_PLATFORM_ADMIN_PASSWORD` is missing.
 - **Files changed:** `prisma/ensure-admin-access.js`
 - **Verification evidence:**
-  - `grep -n "Admin@Wathiqcare2026!\|Platform@Wathiqcare2026!" prisma/ensure-admin-access.js` → no matches.
+  - `grep -n "[REDACTED]\|[REDACTED]" prisma/ensure-admin-access.js` → no matches.
 - **Residual risk:** Low.
 
 ### SEC-19 — Untracked temporary scripts contained passwords and tokens
-- **Original finding:** Root-level `__*.cjs` scripts (`__mint_prod_signing_token.cjs`, `__phase40*.cjs`, `__phase43*.cjs`, `__preview_landing_walkthrough.cjs`, `__smoke_stabilization.cjs`) contained `WathiqCare@2026`, preview deployment tokens, or signing tokens.
+- **Original finding:** Root-level `__*.cjs` scripts (`__mint_prod_signing_token.cjs`, `__phase40*.cjs`, `__phase43*.cjs`, `__preview_landing_walkthrough.cjs`, `__smoke_stabilization.cjs`) contained `[REDACTED]`, preview deployment tokens, or signing tokens.
 - **Root cause:** Ad-hoc capture/validation scripts were created in the repo root without being blocked from version control.
 - **Fix implemented:**
   - Deleted the credential-bearing scripts.
@@ -237,7 +237,7 @@ All Gate-1 Critical secrets findings were remediated. Default secrets were remov
 - **Files changed:** `.gitignore`
 - **Verification evidence:**
   - `ls __mint_prod_signing_token.cjs` → no such file.
-  - `grep -RInE 'WathiqCare@2026|[a-zA-Z0-9_-]{40,}' __*.cjs` → only a base64 image placeholder remains.
+  - `grep -RInE '[REDACTED]|[a-zA-Z0-9_-]{40,}' __*.cjs` → only a base64 image placeholder remains.
 - **Residual risk:** Low. Remaining `__*.cjs` files are operational helpers that take tokens/passwords as command-line arguments.
 
 ### SEC-20 — Screenshot helper scripts defaulted test password

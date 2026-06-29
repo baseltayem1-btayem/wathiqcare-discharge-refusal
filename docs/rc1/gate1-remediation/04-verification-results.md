@@ -56,7 +56,7 @@ Interpretation:
 Command executed:
 
 ```bash
-grep -RInE 'wathiqcare-step-up-dev-secret|wathiqcare-public-link-pepper|Admin@Wathiqcare2026|WathiqCare@2026|DemoPlatformAdmin@2026|Test@Secure123!|DevPass123' \
+grep -RInE 'wathiqcare-step-up-dev-secret|wathiqcare-public-link-pepper|Admin@Wathiqcare2026|[REDACTED]|DemoPlatformAdmin@2026|Test@Secure123!|DevPass123' \
   --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --include='*.cjs' --include='*.py' . \
   | grep -v node_modules | grep -v '\.next' | grep -v 'env-validation.ts' | grep -v 'main.py'
 ```

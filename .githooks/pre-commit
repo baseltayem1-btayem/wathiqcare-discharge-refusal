@@ -1,0 +1,25 @@
+#!/bin/sh
+# Pre-commit hook: block commits of env files and obvious secrets.
+# To enable: git config core.hooksPath .githooks
+
+set -e
+
+# Block .env files and common secret file names
+blocked_files=$(git diff --cached --name-only --diff-filter=ACMR | grep -iE '\.env(\.|$)|\.envrc$|\.pypirc$|cookies\.txt$|secret.*\.(json|yaml|yml)$|.*_secret\.(json|yaml|yml)$' || true)
+if [ -n "$blocked_files" ]; then
+  echo "Blocked commit: the following files look like environment/secret files:" >&2
+  echo "$blocked_files" >&2
+  echo "Add them to .gitignore if they are local-only, or use a secret manager." >&2
+  exit 1
+fi
+
+# Block common secret patterns in staged content
+# DATABASE_URL with password, JWT_SECRET_KEY, private keys, AWS keys
+secrets=$(git diff --cached --no-ext-diff -U0 | grep -iE 'DATABASE_URL=.*://.*:|JWT_SECRET_KEY=|PRIVATE_KEY|-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[a-zA-Z0-9]{36}' || true)
+if [ -n "$secrets" ]; then
+  echo "Blocked commit: possible secret detected in staged changes:" >&2
+  echo "$secrets" >&2
+  exit 1
+fi
+
+exit 0
