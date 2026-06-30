@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
@@ -5,8 +6,15 @@ import type {
   ContentMappingFound,
   ContentMappingResult,
   ImcConsentPackage,
+  MappedConsentForm,
+  MappedEducationMaterial,
 } from "@/lib/server/content-mapping-service";
 import type { CkeConsentMappingResult } from "@/lib/server/clinical-knowledge/informed-consent-integration";
+import type {
+  ClinicalKnowledgeAssembly,
+  ClinicalKnowledgeConsentForm,
+  ClinicalKnowledgeEducationMaterial,
+} from "@/lib/clinical-knowledge/types";
 
 export type ContentMappingResolveDependencies = {
   requireModuleOperationalAccess: (request: NextRequest, moduleKey: string) => Promise<AuthContext>;
@@ -35,6 +43,97 @@ export type ContentMappingResolveDependencies = {
 function getTenantId(auth: { tenant_id?: string | null }, queryTenantId: string | null): string | null {
   if (queryTenantId) return queryTenantId;
   return auth.tenant_id ?? null;
+}
+
+function mapStaticConsentForm(
+  tenantId: string,
+  form: MappedConsentForm,
+): ClinicalKnowledgeConsentForm {
+  const now = new Date().toISOString();
+  return {
+    id: form.templateId,
+    tenantId,
+    code: form.templateCode,
+    titleEn: form.titleEn,
+    titleAr: form.titleAr,
+    formType: form.templateCode as ClinicalKnowledgeConsentForm["formType"],
+    riskLevel: "STANDARD",
+    status: "PUBLISHED",
+    version: "v1.0",
+    effectiveDate: now,
+    expiryDate: null,
+    governanceSnapshot: null,
+    pdfTemplateUrl: form.publicPath,
+    requiresWitness: false,
+    requiresInterpreter: false,
+    createdByUserId: "",
+    publishedByUserId: null,
+    createdAt: now,
+    updatedAt: now,
+    sections: [],
+  };
+}
+
+function mapStaticEducationMaterial(
+  tenantId: string,
+  material: MappedEducationMaterial,
+): ClinicalKnowledgeEducationMaterial {
+  const now = new Date().toISOString();
+  return {
+    id: material.educationId,
+    tenantId,
+    code: material.assetId,
+    titleEn: material.titleEn,
+    titleAr: material.titleAr,
+    assetType: material.assetType as ClinicalKnowledgeEducationMaterial["assetType"],
+    assetUrl: material.publicPath,
+    durationMinutes: material.durationMinutes ?? null,
+    status: "PUBLISHED",
+    version: "v1.0",
+    effectiveDate: now,
+    expiryDate: null,
+    governanceSnapshot: null,
+    createdByUserId: "",
+    publishedByUserId: null,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function buildStaticClinicalKnowledgeAssembly(
+  tenantId: string,
+  mapping: ContentMappingFound,
+  pkg: ImcConsentPackage,
+): ClinicalKnowledgeAssembly {
+  const now = new Date().toISOString();
+  const consentForm = mapping.consentForm
+    ? mapStaticConsentForm(tenantId, mapping.consentForm)
+    : undefined;
+
+  const educationMaterials = mapping.educationMaterial
+    ? [mapStaticEducationMaterial(tenantId, mapping.educationMaterial)]
+    : [];
+
+  return {
+    assemblyId: randomUUID(),
+    tenantId,
+    procedureId: mapping.procedureCatalogId ?? mapping.procedureId,
+    procedureCode: mapping.procedureId,
+    procedureNameEn: mapping.procedureNameEn,
+    procedureNameAr: mapping.procedureNameAr,
+    packageId: pkg.procedureConsent?.id ?? mapping.procedureId,
+    packageVersion: mapping.version,
+    status: "ready",
+    consentForm,
+    educationMaterials,
+    riskDisclosures: [],
+    decisionRules: [],
+    suggestions: [],
+    blockers: [],
+    requiredParticipants: mapping.anesthesiaRequired ? ["witness"] : [],
+    packageSnapshot: null,
+    assembledAt: now,
+  };
 }
 
 export async function handleContentMappingResolve(
@@ -244,6 +343,7 @@ export async function handleContentMappingResolve(
   }
 
   const pkg = deps.buildImcConsentPackage(result);
+  const clinicalKnowledgeAssembly = buildStaticClinicalKnowledgeAssembly(tenantId, result, pkg);
 
   return NextResponse.json({
     ok: true,
@@ -252,5 +352,6 @@ export async function handleContentMappingResolve(
     ckeEnabled: false,
     mapping: result,
     package: pkg,
+    clinicalKnowledgeAssembly,
   });
 }
