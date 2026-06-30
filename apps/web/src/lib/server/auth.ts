@@ -96,7 +96,10 @@ function isTruthyEnvFlag(value: string | undefined, fallback: boolean): boolean 
 
 const prisma = () => getPrisma();
 
-export async function requireAuth(request: NextRequest): Promise<AuthContext> {
+export async function requireAuth(
+  request: NextRequest,
+  options?: { allowPasswordReset?: boolean },
+): Promise<AuthContext> {
   const startedAt = Date.now();
   const token = readToken(request);
   if (!token) {
@@ -197,7 +200,7 @@ export async function requireAuth(request: NextRequest): Promise<AuthContext> {
       throw error;
     }
   })();
-  if (resetState.passwordResetRequired) {
+  if (resetState.passwordResetRequired && !options?.allowPasswordReset) {
     throw new ApiError(403, "Password reset required");
   }
 
