@@ -118,6 +118,14 @@ export default function LangLoginPage() {
     complianceDesc: isRtl ? "متابعة متطلبات التنظيم بشكل آني." : "Real-time alignment with regulations.",
     governanceTitle: isRtl ? "حوكمة واضحة" : "Clear Governance",
     governanceDesc: isRtl ? "قرارات دقيقة مدعومة بسياق قانوني." : "Precise decisions with legal context.",
+    pdplLabel: isRtl ? "الخصوصية السعودية" : "Saudi PDPL",
+    pdplSublabel: isRtl ? "حماية البيانات الشخصية" : "Personal Data Protection",
+    isoLabel: isRtl ? "ISO 27001" : "ISO 27001",
+    isoSublabel: isRtl ? "أمن المعلومات" : "Information Security",
+    auditLabel: isRtl ? "تدقيق مؤسسي" : "Enterprise Audit",
+    auditSublabel: isRtl ? "سجل نشاطات كامل" : "Full Activity Logs",
+    authLabel: isRtl ? "مصادقة آمنة" : "Secure Authentication",
+    authSublabel: isRtl ? "تشفير على مستوى البنك" : "Bank-Grade Encryption",
   };
 
   async function handlePasswordSubmit(e: React.FormEvent) {
@@ -217,6 +225,44 @@ export default function LangLoginPage() {
               ))}
             </Stack>
 
+            <div className="login-security-cards" aria-label={isRtl ? "شهادات الأمن والامتثال" : "Security & Compliance Certifications"}>
+              <article className="login-security-card">
+                <div className="login-security-icon">
+                  <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className={`login-security-label ${isRtl ? "arabic-body" : ""}`}>{copy.pdplLabel}</p>
+                  <p className={`login-security-sublabel ${isRtl ? "arabic-body" : ""}`}>{copy.pdplSublabel}</p>
+                </div>
+              </article>
+              <article className="login-security-card">
+                <div className="login-security-icon">
+                  <Lock className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className={`login-security-label ${isRtl ? "arabic-body" : ""}`}>{copy.isoLabel}</p>
+                  <p className={`login-security-sublabel ${isRtl ? "arabic-body" : ""}`}>{copy.isoSublabel}</p>
+                </div>
+              </article>
+              <article className="login-security-card">
+                <div className="login-security-icon">
+                  <Scale className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className={`login-security-label ${isRtl ? "arabic-body" : ""}`}>{copy.auditLabel}</p>
+                  <p className={`login-security-sublabel ${isRtl ? "arabic-body" : ""}`}>{copy.auditSublabel}</p>
+                </div>
+              </article>
+              <article className="login-security-card">
+                <div className="login-security-icon">
+                  <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className={`login-security-label ${isRtl ? "arabic-body" : ""}`}>{copy.authLabel}</p>
+                  <p className={`login-security-sublabel ${isRtl ? "arabic-body" : ""}`}>{copy.authSublabel}</p>
+                </div>
+              </article>
+            </div>
           </div>
         </Section>
 
