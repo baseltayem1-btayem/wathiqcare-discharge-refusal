@@ -308,8 +308,13 @@ function buildClientRequestId(): string {
 }
 
 function appendDefaultClientHeaders(headers: Headers): void {
+  const requestId = buildClientRequestId();
   if (!headers.has("x-request-id")) {
-    headers.set("x-request-id", buildClientRequestId());
+    headers.set("x-request-id", requestId);
+  }
+
+  if (!headers.has("x-correlation-id")) {
+    headers.set("x-correlation-id", requestId);
   }
 
   if (!headers.has("x-client-platform")) {

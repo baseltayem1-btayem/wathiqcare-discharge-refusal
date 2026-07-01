@@ -7,6 +7,7 @@ import { ApiError } from "@/lib/server/http";
 import { buildSecureSigningLinkSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
 import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
+import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 
 const prisma = () => getPrisma();
 
@@ -248,9 +249,12 @@ export async function sendModuleSecureSigningLink(args: {
   mobileNumber: string;
   recipientEmail: string;
   locale?: "ar" | "en";
+  dryRun?: boolean;
 }): Promise<SecureSigningWorkflow> {
   const normalizedMobile = normalizePhoneNumber(args.mobileNumber);
   const normalizedRecipientEmail = normalizeRecipientEmail(args.recipientEmail);
+  const dryRun = args.dryRun === true;
+  const isPlaceholderEmail = normalizedRecipientEmail === "no-patient-email@unavailable.wathiqcare.local";
 
   if (!isValidRecipientEmail(normalizedRecipientEmail)) {
     throw new ApiError(400, "Invalid email address");
@@ -264,21 +268,26 @@ export async function sendModuleSecureSigningLink(args: {
     `Generated At: ${new Date().toISOString()}`,
   ]);
 
-  const session = await createSigningSession({
-    tenantId: args.tenantId,
-    documentId: args.documentId,
-    moduleType: args.moduleType,
-    initiatedBy: args.initiatedBy,
-    pdfBytes,
-    signers: [
-      {
-        role: "PATIENT",
-        name: args.patientName || "Patient",
-        mobile: normalizedMobile || undefined,
-      },
-    ],
-    expiryHours: Math.max(1, Math.ceil(Number(process.env.SIGNING_LINK_EXPIRY_MINUTES || "30") / 60)),
-  });
+  const session = dryRun
+    ? {
+        sessionId: "dry-run-session-id",
+        signerLinks: { PATIENT: "https://dry-run.wathiqcare.local/sign/dry-run-token/workflow" },
+      }
+    : await createSigningSession({
+        tenantId: args.tenantId,
+        documentId: args.documentId,
+        moduleType: args.moduleType,
+        initiatedBy: args.initiatedBy,
+        pdfBytes,
+        signers: [
+          {
+            role: "PATIENT",
+            name: args.patientName || "Patient",
+            mobile: normalizedMobile || undefined,
+          },
+        ],
+        expiryHours: Math.max(1, Math.ceil(Number(process.env.SIGNING_LINK_EXPIRY_MINUTES || "30") / 60)),
+      });
 
   const token = extractToken(session.signerLinks.PATIENT);
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
@@ -290,7 +299,12 @@ export async function sendModuleSecureSigningLink(args: {
   let statusCode: number | null = null;
   let providerResponse: Record<string, unknown> | null = null;
 
-  if (normalizedMobile && isTaqnyatReady()) {
+  if (dryRun) {
+    smsDeliveryStatus = "sent";
+    smsFailureReason = null;
+    statusCode = 200;
+    providerResponse = { code: "DRY_RUN", message: "SMS delivery skipped in dry-run mode" };
+  } else if (normalizedMobile && isTaqnyatReady()) {
     const sms = await sendTaqnyatMessage({
       recipient: normalizedMobile,
       message: buildSecureSigningLinkSms({
@@ -308,71 +322,102 @@ export async function sendModuleSecureSigningLink(args: {
     smsFailureReason = normalizedMobile ? "TAQNYAT_NOT_CONFIGURED" : "MOBILE_NOT_AVAILABLE";
   }
 
-  await recordSmsAuditAttempt({
-    tenantId: args.tenantId,
-    recipient: normalizedMobile || "unknown",
-    status: smsDeliveryStatus,
-    statusCode,
-    failureReason: smsFailureReason,
-    notificationType: "secure_signing_link",
-    metadata: {
-      moduleKey: args.moduleKey,
-      caseId: args.caseId,
-      documentId: args.documentId,
-      sessionId: session.sessionId,
-      tokenHash,
-      signingUrl,
-      providerResponse,
-    },
-  });
-
-  const secureSigningEmail = await sendSecureSigningLinkEmail({
-    tenantId: args.tenantId,
-    caseId: args.caseId,
-    patientName: args.patientName,
-    recipientEmail: normalizedRecipientEmail,
-    mobileNumber: normalizedMobile || "unknown",
-    signingUrl,
-    expiresMinutes: Number(process.env.SIGNING_LINK_EXPIRY_MINUTES || "30"),
-    documentId: args.documentId,
-    sessionId: session.sessionId,
-    moduleKey: args.moduleKey,
-    locale: args.locale,
-  });
-
-  if (secureSigningEmail.status !== "sent") {
-    throw new ApiError(502, secureSigningEmail.failureReason || "Failed to send secure signing link email");
-  }
-
-  try {
-    await appendAuditChainEvent({
+  if (!dryRun) {
+    await recordSmsAuditAttempt({
       tenantId: args.tenantId,
-      caseId: args.caseId,
-      eventType: "SECURE_SIGNING_LINK_CREATED",
-      actorId: args.initiatedBy,
-      actorRole: "system",
-      payloadSummary: `Secure signing link created for ${args.moduleKey}`,
-      metadataJson: {
+      recipient: normalizedMobile || "unknown",
+      status: smsDeliveryStatus,
+      statusCode,
+      failureReason: smsFailureReason,
+      notificationType: "secure_signing_link",
+      metadata: {
         moduleKey: args.moduleKey,
+        caseId: args.caseId,
         documentId: args.documentId,
         sessionId: session.sessionId,
         tokenHash,
-        smsDeliveryStatus,
-        emailDeliveryStatus: secureSigningEmail.status,
-        emailDeliveryAuditId: secureSigningEmail.auditId,
-        emailRecipient: secureSigningEmail.recipient,
+        signingUrl,
+        providerResponse,
       },
     });
-  } catch (error) {
-    console.error("[module-secure-signing] appendAuditChainEvent failed", error);
   }
 
-  const status = await loadBadgeFlags({
-    tenantId: args.tenantId,
-    sessionId: session.sessionId,
-    tokenHash,
-    smsDeliveryStatus,
-  });
+  const secureSigningEmail = dryRun
+    ? {
+        recipient: normalizedRecipientEmail,
+        status: "sent" as const,
+        auditId: "dry-run-email-audit-id",
+        diagnostics: null,
+        failureReason: null,
+      }
+    : await sendSecureSigningLinkEmail({
+        tenantId: args.tenantId,
+        caseId: args.caseId,
+        patientName: args.patientName,
+        recipientEmail: normalizedRecipientEmail,
+        mobileNumber: normalizedMobile || "unknown",
+        signingUrl,
+        expiresMinutes: Number(process.env.SIGNING_LINK_EXPIRY_MINUTES || "30"),
+        documentId: args.documentId,
+        sessionId: session.sessionId,
+        moduleKey: args.moduleKey,
+        locale: args.locale,
+      });
+
+  if (secureSigningEmail.status !== "sent" && !isPlaceholderEmail) {
+    throw new ApiError(502, secureSigningEmail.failureReason || "Failed to send secure signing link email");
+  }
+
+  if (!dryRun) {
+    try {
+      await appendAuditChainEvent({
+        tenantId: args.tenantId,
+        caseId: args.caseId,
+        eventType: "SECURE_SIGNING_LINK_CREATED",
+        actorId: args.initiatedBy,
+        actorRole: "system",
+        payloadSummary: `Secure signing link created for ${args.moduleKey}`,
+        metadataJson: {
+          moduleKey: args.moduleKey,
+          documentId: args.documentId,
+          sessionId: session.sessionId,
+          tokenHash,
+          smsDeliveryStatus,
+          emailDeliveryStatus: secureSigningEmail.status,
+          emailDeliveryAuditId: secureSigningEmail.auditId,
+          emailRecipient: secureSigningEmail.recipient,
+        },
+      });
+    } catch (error) {
+      logRuntimeIncident({
+        module: "secure_signing",
+        type: "UNHANDLED_EXCEPTION",
+        operation: "sendModuleSecureSigningLink",
+        tenantId: args.tenantId,
+        error,
+        details: { reason: "append_audit_chain_event_failed" },
+      });
+    }
+  }
+
+  const status = dryRun
+    ? deriveSecureSigningBadgeFlags({
+        tokenFound: true,
+        tokenExpired: false,
+        tokenUsed: false,
+        tokenRevoked: false,
+        otpRequestedCount: 0,
+        otpVerifiedCount: 0,
+        otpFailedCount: 0,
+        smsSent: true,
+        smsFailed: false,
+      })
+    : await loadBadgeFlags({
+        tenantId: args.tenantId,
+        sessionId: session.sessionId,
+        tokenHash,
+        smsDeliveryStatus,
+      });
 
   return {
     sessionId: session.sessionId,

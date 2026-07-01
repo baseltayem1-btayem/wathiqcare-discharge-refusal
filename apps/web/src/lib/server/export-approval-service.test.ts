@@ -1,3 +1,5 @@
+process.env.WATHIQ_STEP_UP_SECRET ||= "test-step-up-secret-32chars-long!!";
+
 import assert from "node:assert/strict";
 import test from "node:test";
 

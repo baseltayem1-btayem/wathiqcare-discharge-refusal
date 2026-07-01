@@ -13,6 +13,7 @@ import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { normalizeArabicForPatientFacingText } from "@/lib/server/arabic-mojibake-guard";
 import { resolveConsentSignaturePresentation } from "@/lib/signature/signature-display";
+import { logRuntimeEvent, logRuntimeIncident } from "@/lib/server/runtime-observability";
 
 const prisma = () => getPrisma();
 
@@ -482,7 +483,12 @@ async function ensurePdfFontsLoaded(): Promise<void> {
       ),
     ]);
   } catch (error) {
-    console.warn("PDF Arabic font loading skipped", error);
+    logRuntimeEvent({
+      module: "pdf_renderer",
+      event: "pdf_arabic_font_loading_skipped",
+      severity: "warn",
+      details: { reason: "font_download_failed", errorName: error instanceof Error ? error.name : "Unknown" },
+    });
   }
 }
 
@@ -1946,7 +1952,7 @@ td {
   </html>`;
 }
 
-async function renderPdfWithExternalRenderer(html: string): Promise<Buffer | null> {
+export async function renderPdfWithExternalRenderer(html: string): Promise<Buffer | null> {
   const baseUrl = process.env.PDF_RENDERER_URL?.trim();
 
   if (!baseUrl) {
@@ -1955,10 +1961,13 @@ async function renderPdfWithExternalRenderer(html: string): Promise<Buffer | nul
 
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/render`;
 
+  const rendererSecret = process.env.PDF_RENDERER_SECRET?.trim();
+
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(rendererSecret ? { "x-wathiq-internal-secret": rendererSecret } : {}),
     },
     body: JSON.stringify({ html }),
     cache: "no-store",
@@ -2087,7 +2096,14 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
         pdfEngine = "external-renderer";
       }
     } catch (externalError) {
-      console.error("External PDF renderer failed, falling back to internal Puppeteer", externalError);
+      logRuntimeIncident({
+        request: args.request,
+        module: "pdf_renderer",
+        type: "PDF_FAILURE",
+        operation: "renderFinalConsentPdfResponse",
+        error: externalError,
+        details: { reason: "external_renderer_failed_falling_back_to_internal" },
+      });
     }
 
     if (!pdf) {
@@ -2112,7 +2128,14 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
 
-    console.error("renderFinalConsentPdfResponse", error);
+    logRuntimeIncident({
+      request: args.request,
+      module: "pdf_renderer",
+      type: "PDF_FAILURE",
+      operation: "renderFinalConsentPdfResponse",
+      error,
+      details: { reason: "pdf_generation_failed" },
+    });
 
     return NextResponse.json(
       { error: "Failed to generate final consent PDF" },
@@ -2120,13 +2143,20 @@ export async function renderFinalConsentPdfResponse(args: RenderArgs): Promise<N
     );
   }
 }
-async function buildFinalConsentPdfRenderContext(
-  args: RenderArgs,
+type RenderContextArgs = {
+  documentId: string;
+  tenantId: string;
+  requestOrigin: string;
+  copyType: "PATIENT_COPY" | "MEDICAL_RECORD_COPY" | "LEGAL_ARCHIVE_COPY";
+};
+
+async function buildFinalConsentPdfRenderContextWithOrigin(
+  args: RenderContextArgs,
 ): Promise<{ payload: FinalConsentPdfPayload; html: string }> {
   const payload = await buildFinalConsentPdfPayload({
     documentId: args.documentId,
     tenantId: args.tenantId,
-    requestOrigin: args.request.nextUrl.origin,
+    requestOrigin: args.requestOrigin,
   });
 
   const qrDataUrl = await QRCode.toDataURL(payload.qrPayload, {
@@ -2150,6 +2180,57 @@ async function buildFinalConsentPdfRenderContext(
   return { payload, html };
 }
 
+async function buildFinalConsentPdfRenderContext(
+  args: RenderArgs,
+): Promise<{ payload: FinalConsentPdfPayload; html: string }> {
+  return buildFinalConsentPdfRenderContextWithOrigin({
+    documentId: args.documentId,
+    tenantId: args.tenantId,
+    requestOrigin: args.request.nextUrl.origin,
+    copyType: args.copyType,
+  });
+}
+
+export async function computeFinalConsentPdfByteHash(args: {
+  documentId: string;
+  tenantId: string;
+  requestOrigin: string;
+  copyType?: "PATIENT_COPY" | "MEDICAL_RECORD_COPY" | "LEGAL_ARCHIVE_COPY";
+}): Promise<{ hash: string; engine: string; generatedAt: string }> {
+  const { html } = await buildFinalConsentPdfRenderContextWithOrigin({
+    documentId: args.documentId,
+    tenantId: args.tenantId,
+    requestOrigin: args.requestOrigin,
+    copyType: args.copyType || "PATIENT_COPY",
+  });
+
+  let pdfEngine = "internal-puppeteer";
+  let pdf: Buffer | null = null;
+
+  try {
+    pdf = await renderPdfWithExternalRenderer(html);
+    if (pdf) {
+      pdfEngine = "external-renderer";
+    }
+  } catch (externalError) {
+    logRuntimeIncident({
+      module: "pdf_renderer",
+      type: "PDF_FAILURE",
+      operation: "computeFinalConsentPdfByteHash",
+      tenantId: args.tenantId,
+      error: externalError,
+      details: { reason: "external_renderer_failed_during_byte_hash", documentId: args.documentId },
+    });
+  }
+
+  if (!pdf) {
+    pdf = await renderPdfInternallyWithPuppeteer(html);
+  }
+
+  const hash = crypto.createHash("sha256").update(pdf).digest("hex");
+  return { hash, engine: pdfEngine, generatedAt: new Date().toISOString() };
+}
+
 export async function renderFinalConsentHtmlPreviewResponse(args: RenderArgs): Promise<NextResponse> {
   try {
     const { html } = await buildFinalConsentPdfRenderContext(args);
@@ -2166,7 +2247,14 @@ export async function renderFinalConsentHtmlPreviewResponse(args: RenderArgs): P
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
 
-    console.error("renderFinalConsentHtmlPreviewResponse", error);
+    logRuntimeIncident({
+      request: args.request,
+      module: "pdf_renderer",
+      type: "PDF_FAILURE",
+      operation: "renderFinalConsentHtmlPreviewResponse",
+      error,
+      details: { reason: "html_preview_generation_failed" },
+    });
 
     return NextResponse.json(
       { error: "Failed to generate final consent HTML preview" },

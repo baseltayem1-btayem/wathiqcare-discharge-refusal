@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 
-export type RuntimeSeverity = "debug" | "info" | "warn" | "error" | "critical";
+export type RuntimeSeverity = "trace" | "debug" | "info" | "warn" | "error" | "critical";
 
 type RuntimeMetricKey =
   | "response_time_ms"
@@ -10,7 +10,17 @@ type RuntimeMetricKey =
   | "pdf_generation_duration_ms"
   | "session_validation_duration_ms";
 
-type RuntimeIncidentType = "DB_FAILURE" | "PDF_FAILURE" | "QR_VERIFICATION_FAILURE" | "OTP_FAILURE" | "AUTH_FAILURE";
+type RuntimeIncidentType =
+  | "DB_FAILURE"
+  | "PDF_FAILURE"
+  | "QR_VERIFICATION_FAILURE"
+  | "OTP_FAILURE"
+  | "AUTH_FAILURE"
+  | "AUTHORIZATION_FAILURE"
+  | "EXTERNAL_SERVICE_FAILURE"
+  | "TIMEOUT"
+  | "CIRCUIT_BREAKER_OPEN"
+  | "UNHANDLED_EXCEPTION";
 
 type RuntimeMetricsStore = {
   counters: Record<RuntimeMetricKey, number>;
@@ -37,31 +47,144 @@ function hashIdentifier(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
 }
 
-function redactValue(key: string, value: unknown): unknown {
-  if (value == null) {
-    return value;
+// Matches keys that should never be emitted in plain text, regardless of value.
+const SENSITIVE_KEY_PATTERNS = [
+  "password",
+  "secret",
+  "token",
+  "apikey",
+  "api_key",
+  "auth",
+  "authorization",
+  "cookie",
+  "session",
+  "otp",
+  "code",
+  "signature",
+  "signaturedataurl",
+  "signature_image",
+  "privatekey",
+  "private_key",
+  "connectionstring",
+  "connection_string",
+  "databaseurl",
+  "database_url",
+];
+
+// Matches keys whose *values* are likely to contain PHI/PII and must be redacted.
+const PHI_KEY_PATTERNS = [
+  "patient",
+  "patientname",
+  "fullname",
+  "firstname",
+  "lastname",
+  "mrn",
+  "medicalrecord",
+  "nationalid",
+  "national_id",
+  "iqama",
+  "idnumber",
+  "id_number",
+  "email",
+  "phone",
+  "mobile",
+  "address",
+  "dob",
+  "dateofbirth",
+  "birth",
+  "gender",
+  "diagnosis",
+  "clinicalnotes",
+  "clinical_notes",
+  "medicalhistory",
+  "medical_history",
+  "allergies",
+  "medication",
+  "treatment",
+  "procedure",
+  "physicianname",
+  "signername",
+  "witnessname",
+  "guardianname",
+  "interpretername",
+];
+
+function keyMatchesAny(key: string, patterns: string[]): boolean {
+  const normalized = key.toLowerCase().replace(/[-_\s]/g, "");
+  return patterns.some((pattern) => normalized.includes(pattern.replace(/[-_\s]/g, "")));
+}
+
+function isSensitiveKey(key: string): boolean {
+  return keyMatchesAny(key, SENSITIVE_KEY_PATTERNS);
+}
+
+function isPhiKey(key: string): boolean {
+  return keyMatchesAny(key, PHI_KEY_PATTERNS);
+}
+
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 4) {
+    return "[REDACTED_PHONE]";
   }
-  const normalized = key.toLowerCase();
-  if (
-    normalized.includes("patient")
-    || normalized.includes("mrn")
-    || normalized.includes("full_name")
-    || normalized.includes("name")
-    || normalized.includes("email")
-  ) {
+  return `${digits.slice(0, 3)}****${digits.slice(-2)}`;
+}
+
+function maskEmail(value: string): string {
+  const [localPart, domain] = value.split("@");
+  if (!domain) {
+    return "[REDACTED_EMAIL]";
+  }
+  const visibleLocal = localPart.slice(0, 2);
+  const visibleDomain = domain.split(".")[0]?.slice(0, 2) ?? "";
+  const tld = domain.slice(domain.lastIndexOf("."));
+  return `${visibleLocal}****@${visibleDomain}****${tld}`;
+}
+
+function redactStringForKey(key: string, value: string): string {
+  if (isSensitiveKey(key)) {
     return "[REDACTED]";
   }
 
+  const lowerKey = key.toLowerCase();
+
+  if (lowerKey.includes("user_id") || lowerKey.includes("userid") || lowerKey === "sub") {
+    return `u_${hashIdentifier(value)}`;
+  }
+
+  if (lowerKey.includes("tenant_id") || lowerKey.includes("tenantid")) {
+    return `t_${hashIdentifier(value)}`;
+  }
+
+  if (lowerKey.includes("email")) {
+    return maskEmail(value);
+  }
+
+  if (lowerKey.includes("phone") || lowerKey.includes("mobile") || lowerKey.includes("msisdn")) {
+    return maskPhone(value);
+  }
+
+  if (isPhiKey(key)) {
+    return "[REDACTED]";
+  }
+
+  if (value.length > 1000) {
+    return `${value.slice(0, 997)}...`;
+  }
+
+  return value;
+}
+
+export function redactValue(key: string, value: unknown): unknown {
+  if (value == null) {
+    return value;
+  }
+
   if (typeof value === "string") {
-    if (normalized.includes("userid") || normalized === "user_id" || normalized === "userid") {
-      return `u_${hashIdentifier(value)}`;
-    }
-    if (normalized.includes("tenantid") || normalized === "tenant_id") {
-      return `t_${hashIdentifier(value)}`;
-    }
-    if (value.length > 300) {
-      return `${value.slice(0, 297)}...`;
-    }
+    return redactStringForKey(key, value);
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
     return value;
   }
 
@@ -78,6 +201,10 @@ function redactValue(key: string, value: unknown): unknown {
   }
 
   return value;
+}
+
+export function sanitizeLogDetails(details: Record<string, unknown>): Record<string, unknown> {
+  return redactValue("details", details) as Record<string, unknown>;
 }
 
 function buildMetricsStore(): RuntimeMetricsStore {
@@ -101,8 +228,9 @@ function metricsStore(): RuntimeMetricsStore {
 }
 
 export function getRuntimeCorrelationId(request?: NextRequest | null): string {
-  const fromHeader = request?.headers.get("x-runtime-correlation-id")?.trim();
-  return fromHeader || randomId();
+  const fromRuntimeHeader = request?.headers.get("x-runtime-correlation-id")?.trim();
+  const fromCorrelationHeader = request?.headers.get("x-correlation-id")?.trim();
+  return fromRuntimeHeader || fromCorrelationHeader || randomId();
 }
 
 export function getRequestId(request?: NextRequest | null): string {
@@ -135,34 +263,50 @@ export function logRuntimeEvent(args: {
   module: string;
   event: string;
   severity: RuntimeSeverity;
+  operation?: string;
+  service?: string;
+  tenantId?: string | null;
+  durationMs?: number;
   details?: Record<string, unknown>;
   runtimeCorrelationId?: string;
+  requestId?: string;
 }): void {
-  const requestId = getRequestId(args.request);
-  const runtimeCorrelationId = args.runtimeCorrelationId || getRuntimeCorrelationId(args.request);
+  const requestId = args.requestId ?? getRequestId(args.request);
+  const runtimeCorrelationId = args.runtimeCorrelationId ?? getRuntimeCorrelationId(args.request);
+  const tenantId = args.tenantId ?? (args.auth?.tenant_id || null);
 
   const payload = {
     timestamp: nowIso(),
+    service: args.service ?? "wathiqcare-web",
+    module: args.module,
+    operation: args.operation ?? args.event,
+    severity: args.severity,
+    event: args.event,
     requestId,
     runtimeCorrelationId,
     userId: args.auth?.sub ? `u_${hashIdentifier(args.auth.sub)}` : null,
-    module: args.module,
-    severity: args.severity,
-    event: args.event,
-    details: redactValue("details", args.details ?? {}),
+    tenantId: tenantId ? `t_${hashIdentifier(tenantId)}` : null,
+    durationMs: args.durationMs ?? null,
+    details: sanitizeLogDetails(args.details ?? {}),
   };
 
-  if (args.severity === "critical" || args.severity === "error") {
-    console.error("RUNTIME_EVENT", JSON.stringify(payload));
-    return;
-  }
+  const serialized = JSON.stringify(payload);
 
-  if (args.severity === "warn") {
-    console.warn("RUNTIME_EVENT", JSON.stringify(payload));
-    return;
+  switch (args.severity) {
+    case "critical":
+    case "error":
+      console.error("RUNTIME_EVENT", serialized);
+      break;
+    case "warn":
+      console.warn("RUNTIME_EVENT", serialized);
+      break;
+    case "debug":
+    case "trace":
+      console.debug("RUNTIME_EVENT", serialized);
+      break;
+    default:
+      console.info("RUNTIME_EVENT", serialized);
   }
-
-  console.info("RUNTIME_EVENT", JSON.stringify(payload));
 }
 
 export function logRuntimeIncident(args: {
@@ -170,9 +314,12 @@ export function logRuntimeIncident(args: {
   auth?: Pick<AuthContext, "sub"> | null;
   module: string;
   type: RuntimeIncidentType;
+  operation?: string;
   error?: unknown;
   details?: Record<string, unknown>;
   runtimeCorrelationId?: string;
+  tenantId?: string | null;
+  durationMs?: number;
 }): void {
   const errorName = args.error instanceof Error ? args.error.name : "UnknownError";
   const errorMessage = args.error instanceof Error ? args.error.message : args.error ? String(args.error) : "incident";
@@ -181,9 +328,12 @@ export function logRuntimeIncident(args: {
     request: args.request,
     auth: args.auth,
     module: args.module,
+    operation: args.operation,
     event: args.type,
     severity: "error",
     runtimeCorrelationId: args.runtimeCorrelationId,
+    tenantId: args.tenantId,
+    durationMs: args.durationMs,
     details: {
       errorName,
       errorMessage,

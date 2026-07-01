@@ -31,6 +31,26 @@ function sha256(value: unknown): string {
   return crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
+type OtpRow = {
+  id: string;
+  event_type: string;
+  raw_payload: unknown;
+  created_at: Date | string;
+};
+
+async function readOtpRowsByDocument(documentId: string): Promise<OtpRow[]> {
+  return prisma().$queryRawUnsafe<OtpRow[]>(
+    `SELECT id, event_type, raw_payload, created_at
+     FROM webhook_events
+     WHERE provider_key = $1
+       AND event_type IN ('OTP_REQUESTED', 'OTP_VERIFIED', 'OTP_VERIFY_FAILED')
+       AND raw_payload ->> 'documentId' = $2
+     ORDER BY created_at ASC`,
+    "public_signing_otp",
+    documentId,
+  );
+}
+
 function evidencePath(tenantId: string, documentId: string): string {
   return `/${tenantId}/informed-consents/${documentId}/evidence-package/`;
 }
@@ -181,14 +201,20 @@ export async function buildImmutableEvidencePackage(
   };
 
   const signatureEvidence = doc.signatures.map((item) => ({
+    id: item.id,
     role: item.role,
     signerName: item.signerName,
     signedAt: item.signedAt.toISOString(),
     method: item.signatureMethod,
+    signatureHash: item.signatureHash,
     metadata: item.metadata,
   }));
 
+  const auditEventIds = doc.auditEvents.map((item) => item.id);
+  const timelineEventIds = doc.timelineEvents.map((item) => item.id);
+
   const auditTimeline = doc.timelineEvents.map((item) => ({
+    id: item.id,
     action: item.action,
     actorUserId: item.actorUserId,
     actorRole: item.actorRole,
@@ -200,6 +226,7 @@ export async function buildImmutableEvidencePackage(
   }));
 
   const aiMetadata = asRecord(asRecord(doc.metadata).aiAssist);
+  const signedVersionLinkage = asRecord(asRecord(doc.metadata).signedVersionLinkage);
   const qrVerification = {
     qrPayload: doc.qrPayload,
     immutablePdfHash: doc.immutablePdfHash,
@@ -208,12 +235,16 @@ export async function buildImmutableEvidencePackage(
   };
 
   const evidenceV2 = await buildEvidencePackageV2(auth, doc.id);
+  const otpRows = await readOtpRowsByDocument(doc.id);
+  const otpEventIds = otpRows.map((row) => row.id);
 
   const packagePayload = {
     finalPdfUrl: doc.immutablePdfUrl,
+    finalPdfHash: doc.immutablePdfHash,
     draftPdfSnapshot: doc.immutablePdfUrl,
     wordingSnapshot,
     templateSnapshot,
+    signedVersionLinkage,
     patientContext,
     encounterContext,
     physicianSnapshot: {
@@ -223,7 +254,10 @@ export async function buildImmutableEvidencePackage(
     },
     aiMetadataSnapshot: aiMetadata,
     signatures: signatureEvidence,
+    auditEventIds,
+    timelineEventIds,
     auditTimeline,
+    otpEventIds,
     qrVerification,
     educationSummary: evidenceV2.educationSummary,
     consentSummary: evidenceV2.consentSummary,

@@ -5,60 +5,69 @@ const appRoot = process.cwd().endsWith("apps\\web")
   ? process.cwd()
   : `${process.cwd()}\\apps\\web`;
 
+const DEMO_DEFAULT_PASSWORD = process.env.DEMO_DEFAULT_PASSWORD || "";
+const DEMO_ROTATED_PASSWORD = process.env.DEMO_ROTATED_PASSWORD || "";
+
+if (!DEMO_DEFAULT_PASSWORD || !DEMO_ROTATED_PASSWORD) {
+  throw new Error(
+    "FATAL: DEMO_DEFAULT_PASSWORD and DEMO_ROTATED_PASSWORD environment variables are required for module-access tests."
+  );
+}
+
 const DEMO_ACCOUNTS = [
   {
     label: "Platform Admin",
     email: "demo.platform.admin@wathiqcare.local",
-    password: "DemoPlatformAdmin@2026!",
-    nextPassword: "RotatedPlatformDemo@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
+    nextPassword: DEMO_ROTATED_PASSWORD,
     expectedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
     blockedModules: [],
   },
   {
     label: "Legal Affairs User",
     email: "demo.legal.affairs@demo-imc.local",
-    password: "DemoLegalAffairs@2026!",
-    nextPassword: "RotatedLegalDemo@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
+    nextPassword: DEMO_ROTATED_PASSWORD,
     expectedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
     blockedModules: [],
   },
   {
     label: "Doctor User",
     email: "demo.doctor@demo-imc.local",
-    password: "DemoDoctor@2026!",
-    nextPassword: "RotatedDoctorDemo@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
+    nextPassword: DEMO_ROTATED_PASSWORD,
     expectedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
     blockedModules: ["/modules/promissory-notes"],
   },
   {
     label: "Nurse User",
     email: "demo.nurse@demo-imc.local",
-    password: "DemoNurse@2026!",
-    nextPassword: "RotatedNurseDemo@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
+    nextPassword: DEMO_ROTATED_PASSWORD,
     expectedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
     blockedModules: ["/modules/promissory-notes"],
   },
   {
     label: "Medical Director User",
     email: "demo.medical.director@demo-imc.local",
-    password: "DemoMedicalDirector@2026!",
-    nextPassword: "RotatedMedicalDirectorDemo@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
+    nextPassword: DEMO_ROTATED_PASSWORD,
     expectedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
     blockedModules: ["/modules/promissory-notes"],
   },
   {
     label: "Quality Compliance User",
     email: "demo.compliance@demo-imc.local",
-    password: "DemoCompliance@2026!",
-    nextPassword: "RotatedComplianceDemo@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
+    nextPassword: DEMO_ROTATED_PASSWORD,
     expectedModules: ["/modules/informed-consents", "/modules/promissory-notes", "/modules/discharge-refusal"],
     blockedModules: [],
   },
   {
     label: "Finance Authorized Admin User",
     email: "demo.finance@demo-imc.local",
-    password: "DemoFinance@2026!",
-    nextPassword: "RotatedFinanceDemo@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
+    nextPassword: DEMO_ROTATED_PASSWORD,
     expectedModules: ["/modules/promissory-notes"],
     blockedModules: ["/modules/informed-consents", "/modules/discharge-refusal"],
   },

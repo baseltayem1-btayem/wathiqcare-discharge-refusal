@@ -9,3 +9,4 @@ __tests__/
 *.spec.ts
 *.test.ts
 tmp/
+apps/web/src/app/prototype/

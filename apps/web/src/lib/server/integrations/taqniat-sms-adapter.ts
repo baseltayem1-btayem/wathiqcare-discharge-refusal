@@ -8,6 +8,15 @@
  */
 
 import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
+import { logRuntimeEvent } from "@/lib/server/runtime-observability";
+
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 4) {
+    return "[REDACTED_PHONE]";
+  }
+  return `${digits.slice(0, 3)}****${digits.slice(-2)}`;
+}
 
 export interface SmsDeliveryResult {
   messageId?: string;
@@ -39,10 +48,16 @@ export class TaqniatSmsAdapter {
    */
   async send(message: SmsMessage): Promise<SmsDeliveryResult> {
     if (!this.isConfigured) {
-      console.warn(
-        `[TaqniatSmsAdapter] Not configured — stub mode. Set ${SIGNATURE_CONFIG.taqniatApiKeyEnv}.`,
-        { to: message.to, bodyPreview: message.body.substring(0, 50) }
-      );
+      logRuntimeEvent({
+        module: "sms_adapter",
+        event: "taqniat_stub_mode",
+        severity: "warn",
+        details: {
+          to: maskPhone(message.to),
+          bodyPreview: message.body.substring(0, 50),
+          reason: "api_key_not_configured",
+        },
+      });
       return { status: "stub" };
     }
 

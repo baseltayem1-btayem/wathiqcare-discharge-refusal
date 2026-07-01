@@ -1,3 +1,5 @@
+import { logRuntimeIncident } from "@/lib/server/runtime-observability";
+
 export const MAGIC_LINK_GENERIC_RESPONSE = {
     success: true,
     message: "If your account is eligible, a login link has been sent.",
@@ -220,7 +222,7 @@ export async function handleMagicLinkRequestFlow(args: {
                     request,
                 });
             } catch (auditError) {
-                console.error("magic-link request: audit write failed", auditError);
+                logRuntimeIncident({ module: "magic_link", type: "UNHANDLED_EXCEPTION", operation: "magic_link_request_audit", error: auditError, details: { reason: "audit_write_failed" } });
             }
         } catch (error) {
             const status = readErrorStatus(error);
@@ -229,7 +231,7 @@ export async function handleMagicLinkRequestFlow(args: {
                 return MAGIC_LINK_GENERIC_RESPONSE;
             }
 
-            console.error("magic-link request failed", error);
+            logRuntimeIncident({ module: "magic_link", type: "UNHANDLED_EXCEPTION", operation: "magic_link_request", error, details: { reason: "magic_link_delivery_failed" } });
             await deps.recordAttempt(email, false, "MAGIC_LINK_DELIVERY_FAILED", request);
             return MAGIC_LINK_GENERIC_RESPONSE;
         }
@@ -287,7 +289,7 @@ export async function handleMagicLinkVerifyFlow(args: {
                 request,
             });
         } catch (auditError) {
-            console.error("magic-link verify: audit write failed", auditError);
+            logRuntimeIncident({ module: "magic_link", type: "UNHANDLED_EXCEPTION", operation: "magic_link_verify_audit", error: auditError, details: { reason: "audit_write_failed" } });
         }
 
         return {

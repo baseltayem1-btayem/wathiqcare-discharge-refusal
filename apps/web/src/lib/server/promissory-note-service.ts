@@ -5,8 +5,7 @@ import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
-import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
-import { writeAuditLog } from "@/lib/server/saas-services";
+import { appendAuditEventInTransaction } from "@/lib/server/audit-foundation";
 
 type ListPromissoryArgs = {
   caseId?: string;
@@ -159,56 +158,45 @@ export async function createTenantPromissoryNote(
     metadata: payload.metadata ?? null,
   };
 
-  const created = await prisma().promissoryNote.create({
-    data: {
+  const created = await prisma().$transaction(async (tx) => {
+    const note = await tx.promissoryNote.create({
+      data: {
+        tenantId,
+        caseId,
+        noteNumber: buildNoteNumber(),
+        debtorName,
+        debtorIdNumber: payload.debtorIdNumber?.trim() || null,
+        issuerName: payload.issuerName?.trim() || null,
+        amount,
+        currency: payload.currency?.trim().toUpperCase() || "SAR",
+        dueDate,
+        status: PromissoryNoteStatus.ACTIVE as $Enums.PromissoryNoteStatus,
+        documentVersion: payload.documentVersion?.trim() || "1.0",
+        documentHash: hashPromissoryPayload(documentPayload),
+        metadata: (payload.metadata ?? documentPayload) as JsonInputValue,
+      },
+    });
+
+    await appendAuditEventInTransaction({
       tenantId,
+      userId: auth.sub,
+      entityType: "promissory_note",
+      entityId: note.id,
+      action: "promissory_note_created",
+      details: `Promissory note ${note.noteNumber} created`,
       caseId,
-      noteNumber: buildNoteNumber(),
-      debtorName,
-      debtorIdNumber: payload.debtorIdNumber?.trim() || null,
-      issuerName: payload.issuerName?.trim() || null,
-      amount,
-      currency: payload.currency?.trim().toUpperCase() || "SAR",
-      dueDate,
-      status: PromissoryNoteStatus.ACTIVE as $Enums.PromissoryNoteStatus,
-      documentVersion: payload.documentVersion?.trim() || "1.0",
-      documentHash: hashPromissoryPayload(documentPayload),
-      metadata: (payload.metadata ?? documentPayload) as JsonInputValue,
-    },
-  });
+      metadataJson: {
+        noteNumber: note.noteNumber,
+        amount: note.amount.toString(),
+        currency: note.currency,
+        dueDate: note.dueDate.toISOString(),
+      },
+      request,
+      tx,
+    });
 
-  await writeAuditLog({
-    tenantId,
-    userId: auth.sub,
-    entityType: "promissory_note",
-    entityId: created.id,
-    action: "promissory_note_created",
-    details: `Promissory note ${created.noteNumber} created`,
-    caseId,
-    metadataJson: {
-      noteNumber: created.noteNumber,
-      amount: created.amount.toString(),
-      currency: created.currency,
-      dueDate: created.dueDate.toISOString(),
-    },
-    request,
+    return note;
   });
-
-  await appendAuditChainEvent({
-    tenantId,
-    caseId,
-    eventType: "PROMISSORY_NOTE_CREATED",
-    actorId: auth.sub,
-    actorRole: auth.role ?? null,
-    payloadSummary: `Promissory note created (${created.noteNumber})`,
-    documentVersion: created.documentVersion,
-    metadataJson: {
-      promissoryNoteId: created.id,
-      noteNumber: created.noteNumber,
-      documentHash: created.documentHash,
-    },
-    request,
-  }).catch(() => undefined);
 
   return {
     ...created,

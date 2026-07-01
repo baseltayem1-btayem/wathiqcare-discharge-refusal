@@ -32,14 +32,15 @@
     "uat:biometric-local-agent": "node scripts/uat/digitalpersona-local-agent-stub.mjs",
     "audit:language": "npx tsx scripts/language-audit/runAll.ts",
     "audit:language:gate": "npx tsx scripts/language-audit/ciGate.ts",
-    "uat:full-consent": "npx tsx scripts/uat/run-full-consent-uat.ts"
+    "uat:full-consent": "npx tsx scripts/uat/run-full-consent-uat.ts",
+    "worker:module-jobs": "cd apps/web && npx tsx ../worker/module-jobs-runner.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^25.5.2",
     "postcss": "^8.5.10",
-    "prisma": "^6.19.2",
+    "prisma": "6.19.2",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.22.3"
   },

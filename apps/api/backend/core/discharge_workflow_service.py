@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -159,6 +160,9 @@ OTP_METADATA_DIR = Path("backend/generated/document_otp")
 OTP_METADATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
+logger = logging.getLogger(__name__)
+
+
 @dataclass
 class CaseBundle:
     discharge_case: DischargeCase
@@ -258,8 +262,19 @@ def _log_generation_failure_audit(
             ),
         )
         db.commit()
-    except Exception:
+    except Exception as exc:
         db.rollback()
+        # RC1 Gate 1.3A: failure-audit writes must never fail silently.
+        # Log the incident so operations can investigate; re-raise to surface
+        # the failure to the caller instead of masking it.
+        logger.exception(
+            "audit_failure_persist_failed action=%s case_id=%s reason=%s error=%s",
+            action,
+            case_id,
+            reason,
+            exc,
+        )
+        raise
     finally:
         db.close()
 

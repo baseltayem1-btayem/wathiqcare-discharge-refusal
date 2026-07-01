@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowUpLeft,
   ArrowUpRight,
   CheckCircle2,
   Eye,
@@ -18,6 +19,21 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { apiFetch } from "@/utils/api";
+import {
+  Alert,
+  Button,
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Container,
+  Form,
+  FormField,
+  Grid,
+  Input,
+  Section,
+  Stack,
+} from "@/components/design-system";
 
 function normalizePostLoginDestination(nextCandidate: string | null, fallbackPath: string): string {
   const fallback = fallbackPath.trim() || "/modules";
@@ -93,7 +109,7 @@ export default function LangLoginPage() {
     invalidCredentials: isRtl ? "البريد الإلكتروني أو كلمة المرور غير صحيحة" : "Invalid email or password",
     panelTitle: isRtl ? "WathiqCare™" : "WathiqCare™",
     panelSubtitle: isRtl
-      ? "Enterprise Healthcare Legal Automation Platform"
+      ? "منصة الأتمتة القانونية للرعاية الصحية"
       : "Enterprise Healthcare Legal Automation Platform",
     badge: isRtl ? "منصة موثوقة" : "Trusted Platform",
     privacyTitle: isRtl ? "خصوصية طبية" : "Medical Privacy",
@@ -102,6 +118,14 @@ export default function LangLoginPage() {
     complianceDesc: isRtl ? "متابعة متطلبات التنظيم بشكل آني." : "Real-time alignment with regulations.",
     governanceTitle: isRtl ? "حوكمة واضحة" : "Clear Governance",
     governanceDesc: isRtl ? "قرارات دقيقة مدعومة بسياق قانوني." : "Precise decisions with legal context.",
+    pdplLabel: isRtl ? "الخصوصية السعودية" : "Saudi PDPL",
+    pdplSublabel: isRtl ? "حماية البيانات الشخصية" : "Personal Data Protection",
+    isoLabel: isRtl ? "ISO 27001" : "ISO 27001",
+    isoSublabel: isRtl ? "أمن المعلومات" : "Information Security",
+    auditLabel: isRtl ? "تدقيق مؤسسي" : "Enterprise Audit",
+    auditSublabel: isRtl ? "سجل نشاطات كامل" : "Full Activity Logs",
+    authLabel: isRtl ? "مصادقة آمنة" : "Secure Authentication",
+    authSublabel: isRtl ? "تشفير على مستوى البنك" : "Bank-Grade Encryption",
   };
 
   async function handlePasswordSubmit(e: React.FormEvent) {
@@ -135,17 +159,33 @@ export default function LangLoginPage() {
     }
   }
 
+  const brandFeatures = [
+    { icon: ShieldCheck, title: copy.privacyTitle, desc: copy.privacyDesc },
+    { icon: CheckCircle2, title: copy.complianceTitle, desc: copy.complianceDesc },
+    { icon: Scale, title: copy.governanceTitle, desc: copy.governanceDesc },
+  ];
+
   return (
-    <main className="auth-shell min-h-screen" dir={isRtl ? "rtl" : "ltr"}>
-      <div className="auth-grid mx-auto grid min-h-screen w-full max-w-[1740px] grid-cols-1 lg:grid-cols-2">
-        <section className={`auth-brand relative overflow-hidden px-6 py-8 sm:px-10 lg:px-14 lg:py-12 ${isRtl ? "lg:order-1" : "lg:order-2"}`}>
-          <div className="auth-brand-noise absolute inset-0" aria-hidden="true" />
-          <div className="auth-orb auth-orb-a absolute -top-20 -left-16 h-72 w-72 rounded-full" aria-hidden="true" />
-          <div className="auth-orb auth-orb-b absolute bottom-0 right-0 h-80 w-80 rounded-full" aria-hidden="true" />
+    <main className="login-root min-h-screen" dir={isRtl ? "rtl" : "ltr"}>
+      <Container
+        as="div"
+        size="full"
+        className="login-grid mx-auto grid min-h-screen w-full max-w-[1740px] grid-cols-1 lg:grid-cols-2 !px-0"
+      >
+        {/* Brand panel */}
+        <Section
+          spacing="none"
+          className={`login-brand relative overflow-hidden px-6 py-5 sm:py-8 sm:px-10 lg:px-14 lg:py-12 ${
+            isRtl ? "lg:order-1" : "lg:order-2"
+          }`}
+        >
+          <div className="login-brand-texture absolute inset-0" aria-hidden="true" />
+          <div className="login-orb login-orb--top absolute -top-20 -start-16 h-72 w-72 rounded-full" aria-hidden="true" />
+          <div className="login-orb login-orb--bottom absolute -bottom-0 -end-0 h-80 w-80 rounded-full" aria-hidden="true" />
 
           <div className="relative z-10 flex h-full w-full max-w-[720px] flex-col">
-            <div className="mb-10 flex items-start justify-between gap-4">
-              <div className="logo-shell w-[228px] sm:w-[278px]">
+            <div className="mb-5 flex items-start justify-between gap-4 sm:mb-10">
+              <div className="login-logo-shell">
                 <Image
                   src="/images/wathiqcare-logo.png"
                   alt="WathiqCare"
@@ -155,356 +195,251 @@ export default function LangLoginPage() {
                   priority
                 />
               </div>
-              <span className={`chip ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
-                <ShieldCheck className="h-4 w-4" />
+              <span className="login-trust-badge">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                 {copy.badge}
               </span>
             </div>
 
-            <div className="max-w-[540px] space-y-4">
-              <h1 className={`text-3xl font-semibold leading-tight text-white sm:text-4xl ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
-                {copy.panelTitle}
-              </h1>
-              <p className={`text-base leading-7 text-[#d8e8ff] sm:text-lg ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
-                {copy.panelSubtitle}
+            <div className="max-w-[540px] space-y-3 sm:space-y-4">
+              <p className="login-eyebrow">{copy.panelTitle}</p>
+              <h1 className={`login-headline ${isRtl ? "arabic-headline" : ""}`}>{copy.panelSubtitle}</h1>
+              <p className={`login-lead ${isRtl ? "arabic-body" : ""}`}>
+                {isRtl
+                  ? "حلول موثوقة لإدارة الموافقات والتفويضات القانونية في البيئات الصحية."
+                  : "Trusted solutions for managing consents and legal authorizations in healthcare environments."}
               </p>
             </div>
 
-            <div className="mt-10 space-y-4">
-              {[
-                { icon: ShieldCheck, title: copy.privacyTitle, desc: copy.privacyDesc },
-                { icon: CheckCircle2, title: copy.complianceTitle, desc: copy.complianceDesc },
-                { icon: Scale, title: copy.governanceTitle, desc: copy.governanceDesc },
-              ].map((item) => (
-                <article key={item.title} className="brand-item">
-                  <item.icon className="h-5 w-5 text-[#b9d8ff]" />
+            <Stack direction="column" gap={4} className="mt-6 sm:mt-10">
+              {brandFeatures.map((item) => (
+                <article key={item.title} className="login-feature">
+                  <div className="login-feature-icon">
+                    <item.icon className="h-5 w-5" aria-hidden="true" />
+                  </div>
                   <div>
-                    <h2 className={`text-base font-semibold text-white ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
-                      {item.title}
-                    </h2>
-                    <p className={`mt-1 text-sm text-[#cfe3ff] ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
-                      {item.desc}
-                    </p>
+                    <h2 className={`login-feature-title ${isRtl ? "arabic-body" : ""}`}>{item.title}</h2>
+                    <p className={`login-feature-desc ${isRtl ? "arabic-body" : ""}`}>{item.desc}</p>
                   </div>
                 </article>
               ))}
+            </Stack>
+
+            <div className="login-security-cards" aria-label={isRtl ? "شهادات الأمن والامتثال" : "Security & Compliance Certifications"}>
+              <article className="login-security-card">
+                <div className="login-security-icon">
+                  <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className={`login-security-label ${isRtl ? "arabic-body" : ""}`}>{copy.pdplLabel}</p>
+                  <p className={`login-security-sublabel ${isRtl ? "arabic-body" : ""}`}>{copy.pdplSublabel}</p>
+                </div>
+              </article>
+              <article className="login-security-card">
+                <div className="login-security-icon">
+                  <Lock className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className={`login-security-label ${isRtl ? "arabic-body" : ""}`}>{copy.isoLabel}</p>
+                  <p className={`login-security-sublabel ${isRtl ? "arabic-body" : ""}`}>{copy.isoSublabel}</p>
+                </div>
+              </article>
+              <article className="login-security-card">
+                <div className="login-security-icon">
+                  <Scale className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className={`login-security-label ${isRtl ? "arabic-body" : ""}`}>{copy.auditLabel}</p>
+                  <p className={`login-security-sublabel ${isRtl ? "arabic-body" : ""}`}>{copy.auditSublabel}</p>
+                </div>
+              </article>
+              <article className="login-security-card">
+                <div className="login-security-icon">
+                  <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className={`login-security-label ${isRtl ? "arabic-body" : ""}`}>{copy.authLabel}</p>
+                  <p className={`login-security-sublabel ${isRtl ? "arabic-body" : ""}`}>{copy.authSublabel}</p>
+                </div>
+              </article>
             </div>
           </div>
-        </section>
+        </Section>
 
-        <section className={`auth-form-wrap flex items-center justify-center px-5 py-8 sm:px-10 lg:px-14 lg:py-12 ${isRtl ? "lg:order-2" : "lg:order-1"}`}>
+        {/* Form panel */}
+        <Section
+          spacing="none"
+          className={`login-form-wrap flex items-center justify-center px-5 py-5 sm:py-8 sm:px-10 lg:px-14 lg:py-12 ${
+            isRtl ? "lg:order-2" : "lg:order-1"
+          }`}
+        >
           <div className="w-full max-w-[600px]">
-            <div className="mb-6 flex items-center justify-between gap-3">
-              <Link href={`/${lang}`} className="home-link">
-                <ArrowUpRight className="h-4 w-4" />
+            <div className="mb-5 flex items-center justify-between gap-3 sm:mb-6">
+              <Link href={`/${lang}`} className="login-home-link">
+                {isRtl ? (
+                  <ArrowUpLeft className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                )}
                 {copy.home}
               </Link>
 
-              <span className="inline-flex rounded-full border border-[#cfdaea] bg-white px-4 py-2 text-sm font-semibold text-[#15457c] shadow-[0_8px_24px_rgba(27,56,93,0.08)]" aria-disabled="true">
+              <span className="login-lang-pill" aria-disabled="true">
                 {isRtl ? "العربية" : "EN"}
               </span>
             </div>
 
-            <div className="auth-card rounded-[32px] border border-[#d9e3f0] bg-white p-6 sm:p-10">
-              <div className="mb-7 space-y-2">
-                <h2 className={`text-[2rem] font-semibold leading-tight text-[#18324f] ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
+            <Card variant="default" className="login-card">
+              <CardHeader className="login-card-header p-0">
+                <CardTitle className={`login-card-title ${isRtl ? "arabic-headline" : ""}`}>
                   {copy.title}
-                </h2>
-                <p className={`text-[1.01rem] text-[#5e7289] ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
+                </CardTitle>
+                <CardDescription className={`login-card-subtitle ${isRtl ? "arabic-body" : ""}`}>
                   {copy.subtitle}
-                </p>
-              </div>
+                </CardDescription>
+              </CardHeader>
 
-              <form onSubmit={handlePasswordSubmit} className="space-y-5" noValidate>
-                <div className="space-y-2.5">
-                  <label htmlFor="email" className={`text-sm font-semibold text-[#324862] ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
-                    {copy.emailLabel}
-                  </label>
-                  <div className="auth-input-wrap">
-                    <Mail className="h-5 w-5 text-[#2f77b7]" aria-hidden="true" />
-                    <input
-                      id="email"
-                      type="email"
-                      required
-                      autoComplete="username"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder={copy.emailPlaceholder}
-                      className={`auth-input ${isRtl ? "text-right" : "text-left"} ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}
-                    />
-                  </div>
-                </div>
+              <Form onSubmit={handlePasswordSubmit} className="space-y-5" noValidate>
+                <FormField
+                  name="email"
+                  label={<span className={isRtl ? "arabic-body" : ""}>{copy.emailLabel}</span>}
+                  htmlFor="email"
+                  className="login-field"
+                  labelClassName="login-field-label"
+                >
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    autoComplete="username"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={copy.emailPlaceholder}
+                    size="xl"
+                    startIcon={<Mail className="h-5 w-5" aria-hidden="true" />}
+                    className={`login-input-wrap ${isRtl ? "text-right arabic-body" : "text-left"}`}
+                  />
+                </FormField>
 
-                <div className="space-y-2.5">
-                  <label htmlFor="password" className={`text-sm font-semibold text-[#324862] ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
-                    {copy.passwordLabel}
-                  </label>
-                  <div className="auth-input-wrap">
-                    <Lock className="h-5 w-5 text-[#2f77b7]" aria-hidden="true" />
-                    <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className={`auth-input ${isRtl ? "text-right" : "text-left"} ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="auth-eye-btn"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                </div>
+                <FormField
+                  name="password"
+                  label={<span className={isRtl ? "arabic-body" : ""}>{copy.passwordLabel}</span>}
+                  htmlFor="password"
+                  className="login-field"
+                  labelClassName="login-field-label"
+                >
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    size="xl"
+                    startIcon={<Lock className="h-5 w-5" aria-hidden="true" />}
+                    endIcon={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="login-eye-btn"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-pressed={showPassword}
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    }
+                    className={`login-input-wrap ${isRtl ? "text-right arabic-body" : "text-left"}`}
+                  />
+                </FormField>
 
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <label className={`inline-flex cursor-pointer items-center gap-2 text-[#4f6278] ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
+                <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <label
+                    className={`login-remember inline-flex cursor-pointer items-center gap-2 ${
+                      isRtl ? "arabic-body" : ""
+                    }`}
+                  >
                     <input
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="h-4 w-4 rounded border-[#b8c9dd] text-[#0e376d] focus:ring-[#4b9cd3]"
+                      className="login-checkbox"
                     />
                     {copy.rememberMe}
                   </label>
-                  <span className={`font-semibold text-[#5b6f86] ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`} aria-disabled="true">
+                  <button
+                    type="button"
+                    className={`login-forgot ${isRtl ? "arabic-body" : ""}`}
+                    aria-disabled="true"
+                    disabled
+                  >
                     {copy.forgotPassword}
-                  </span>
+                  </button>
                 </div>
 
                 {error ? (
-                  <div role="alert" className={`rounded-2xl border border-[#f2c7c7] bg-[#fff5f5] px-4 py-3 text-sm text-[#8f3232] ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
+                  <Alert variant="error" className={`login-error ${isRtl ? "arabic-body" : ""}`}>
                     {error}
-                  </div>
+                  </Alert>
                 ) : null}
 
-                <button type="submit" disabled={loading} className={`auth-primary-btn ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
+                <Button
+                  type="submit"
+                  variant="brand"
+                  size="xl"
+                  fullWidth
+                  uppercase={false}
+                  disabled={loading}
+                  className={`login-primary-btn ${isRtl ? "arabic-body" : ""}`}
+                >
                   {loading ? copy.signingIn : copy.signIn}
-                </button>
+                </Button>
 
-                <button type="button" disabled className={`auth-secondary-btn ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`} aria-disabled="true">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="xl"
+                  fullWidth
+                  uppercase={false}
+                  disabled
+                  className={`login-secondary-btn ${isRtl ? "arabic-body" : ""}`}
+                >
                   <span className="font-semibold">{copy.imcBtn}</span>
-                  <span className="text-xs text-[#6f8197]">{copy.imcSoon}</span>
-                </button>
-              </form>
+                  <span className="login-secondary-btn-hint">{copy.imcSoon}</span>
+                </Button>
+              </Form>
 
-              <footer className={`mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-[#e9eff6] pt-5 text-sm text-[#5b6f86] ${isRtl ? "font-[\"IBM_Plex_Sans_Arabic\",\"DIN_Next_Arabic\",sans-serif]" : ""}`}>
-                <a href="mailto:support@wathiqcare.online" className="inline-flex items-center gap-2 hover:text-[#113d6e]">
-                  <Phone className="h-4 w-4" />
+              <footer className={`login-footer ${isRtl ? "arabic-body" : ""}`}>
+                <a href="mailto:support@wathiqcare.online" className="login-footer-link">
+                  <Phone className="h-4 w-4" aria-hidden="true" />
                   {copy.support}
                 </a>
-                <span className="inline-flex items-center gap-2 text-[#5b6f86]" aria-disabled="true">
-                  <ShieldCheck className="h-4 w-4" />
+                <span className="login-footer-item" aria-disabled="true">
+                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                   {copy.privacy}
                 </span>
-                <a href="mailto:care@wathiqcare.online" className="inline-flex items-center gap-2 hover:text-[#113d6e]">
-                  <ArrowUpRight className="h-4 w-4" />
+                <a href="mailto:care@wathiqcare.online" className="login-footer-link">
+                  {isRtl ? (
+                    <ArrowUpLeft className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                  )}
                   {copy.contact}
                 </a>
               </footer>
-            </div>
+            </Card>
+
+            <p
+              className={`login-mobile-copy mt-6 text-center text-xs text-[#5b6f86] lg:hidden ${
+                isRtl ? "arabic-body" : ""
+              }`}
+            >
+              © {new Date().getFullYear()} WathiqCare. {isRtl ? "جميع الحقوق محفوظة." : "All rights reserved."}
+            </p>
           </div>
-        </section>
-      </div>
+        </Section>
+      </Container>
 
-      <style jsx>{`
-        .auth-shell {
-          background:
-            radial-gradient(circle at 82% 10%, rgba(173, 213, 255, 0.28), transparent 34%),
-            linear-gradient(180deg, #f2f7fc 0%, #edf3fa 100%);
-        }
-
-        .auth-brand {
-          background: linear-gradient(158deg, #0a2a53 0%, #123f74 52%, #1e5b95 100%);
-        }
-
-        .auth-brand-noise {
-          background-image:
-            linear-gradient(118deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 46%),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-            linear-gradient(0deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-          background-size: 100% 100%, 46px 46px, 46px 46px;
-          opacity: 0.42;
-        }
-
-        .auth-orb {
-          filter: blur(0.6px);
-        }
-
-        .auth-orb-a {
-          background: radial-gradient(circle, rgba(146, 200, 255, 0.28) 0%, rgba(146, 200, 255, 0) 68%);
-        }
-
-        .auth-orb-b {
-          background: radial-gradient(circle, rgba(71, 148, 222, 0.28) 0%, rgba(71, 148, 222, 0) 70%);
-        }
-
-        .logo-shell {
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.34);
-          background: rgba(255, 255, 255, 0.97);
-          padding: 0.75rem 0.95rem;
-          box-shadow: 0 12px 26px rgba(7, 31, 62, 0.28);
-        }
-
-        .chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.45rem;
-          border-radius: 999px;
-          border: 1px solid rgba(255, 255, 255, 0.34);
-          background: rgba(255, 255, 255, 0.1);
-          padding: 0.45rem 0.85rem;
-          color: rgba(255, 255, 255, 0.95);
-          font-size: 0.74rem;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-        }
-
-        .brand-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 0.75rem;
-          border-radius: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.24);
-          background: rgba(255, 255, 255, 0.1);
-          padding: 0.9rem;
-          backdrop-filter: blur(1.8px);
-        }
-
-        .auth-card {
-          box-shadow: 0 30px 70px rgba(17, 47, 81, 0.16);
-        }
-
-        .home-link {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.45rem;
-          border-radius: 999px;
-          border: 1px solid #cfdaea;
-          background: #ffffff;
-          padding: 0.55rem 0.95rem;
-          font-size: 0.9rem;
-          font-weight: 600;
-          color: #1f4a7b;
-          box-shadow: 0 8px 24px rgba(27, 56, 93, 0.08);
-        }
-
-        .auth-input-wrap {
-          display: flex;
-          align-items: center;
-          gap: 0.78rem;
-          min-height: 58px;
-          border-radius: 15px;
-          border: 1px solid #d2ddea;
-          background: #f9fbfe;
-          padding-inline: 1rem;
-          transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
-        }
-
-        .auth-input-wrap:focus-within {
-          border-color: #4a8fcd;
-          box-shadow: 0 0 0 3px rgba(67, 143, 206, 0.16);
-          background: #ffffff;
-        }
-
-        .auth-input {
-          width: 100%;
-          border: 0;
-          outline: 0;
-          background: transparent;
-          color: #1e334d;
-          font-size: 1rem;
-        }
-
-        .auth-input::placeholder {
-          color: #8ea0b7;
-        }
-
-        .auth-eye-btn {
-          color: #6f87a4;
-          transition: color 180ms ease;
-        }
-
-        .auth-eye-btn:hover {
-          color: #1e598f;
-        }
-
-        .auth-primary-btn {
-          width: 100%;
-          min-height: 56px;
-          border-radius: 15px;
-          border: 0;
-          background: linear-gradient(136deg, #0d3568 0%, #1f5a95 100%);
-          color: #ffffff;
-          font-size: 1rem;
-          font-weight: 700;
-          box-shadow: 0 14px 30px rgba(14, 56, 105, 0.28);
-          transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
-        }
-
-        .auth-primary-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 16px 36px rgba(14, 56, 105, 0.34);
-        }
-
-        .auth-primary-btn:disabled {
-          cursor: not-allowed;
-          opacity: 0.74;
-        }
-
-        @media (min-width: 700px) {
-          .auth-grid {
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-          }
-        }
-
-        .auth-secondary-btn {
-          width: 100%;
-          min-height: 56px;
-          border-radius: 15px;
-          border: 1px solid #cfdaea;
-          background: #f4f8fc;
-          color: #3d5673;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          line-height: 1.15;
-          cursor: not-allowed;
-        }
-
-        @media (max-width: 1023px) {
-          .auth-brand {
-            min-height: 42vh;
-          }
-
-          .auth-form-wrap {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-          }
-        }
-
-        @media (max-width: 639px) {
-          .auth-brand {
-            min-height: 38vh;
-          }
-
-          .chip {
-            font-size: 0.68rem;
-            letter-spacing: 0.04em;
-          }
-
-          .auth-card {
-            border-radius: 26px;
-          }
-        }
-      `}</style>
     </main>
   );
 }

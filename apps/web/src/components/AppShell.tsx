@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, ClipboardCheck, FileCheck2, FilePlus2, FileSearch, FileUp, LogOut, Send, ShieldCheck, Sparkles, Stethoscope } from "lucide-react";
+import { BarChart3, ClipboardCheck, FileCheck2, FilePlus2, FileSearch, FileUp, LogOut, Send, ShieldCheck } from "lucide-react";
 import AppBreadcrumbs from "@/components/AppBreadcrumbs";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import WathiqCareShell from "@/components/WathiqCareShell";
 import { resolveSmartNavigation, type SmartActionKey, type SmartResolvedAction } from "@/components/navigation/smartNavigation";
-import { useAiLegalIntelligence } from "@/components/navigation/useAiLegalIntelligence";
 import { useCaseWorkflow } from "@/components/navigation/useCaseWorkflow";
 import NotificationBell from "@/components/operations/NotificationBell";
 import AdminReleaseFooterBadge from "@/components/release/AdminReleaseFooterBadge";
@@ -365,11 +364,6 @@ export default function AppShell({
     .map((action) => resolveAction(action))
     .filter((action): action is NonNullable<ReturnType<typeof resolveAction>> => Boolean(action));
 
-  const { insight: aiInsight, loading: aiInsightLoading } = useAiLegalIntelligence(routeCaseId);
-  const aiGapCount = (aiInsight?.aiAssessment.clinicalDocumentationGaps.length || 0)
-    + (aiInsight?.aiAssessment.legalDocumentationGaps.length || 0);
-  const aiNextStep = aiInsight?.aiAssessment.recommendedNextSteps[0] || null;
-
   const tenantName = tenantBranding?.name?.trim() || t("app.tenantName");
   const tenantLogoUrl = tenantBranding?.logoUrl ?? null;
 
@@ -428,18 +422,7 @@ export default function AppShell({
         active: pathname === item.href || pathname.startsWith(`${item.href}/`),
         ariaLabel: t(item.labelKey || ""),
       }))}
-      moduleMeta={(
-        <>
-          <span className="wc-module-pill">{isRtl ? "منصة رفض الخروج" : "Discharge Refusal Platform"}</span>
-          <span className="wc-module-pill">{t(`shell.smartNavigation.modules.${smartResolution.moduleKey}`)}</span>
-          <span className="wc-module-pill">{t(`shell.smartNavigation.stages.${smartResolution.workflowStageKey}`)}</span>
-          <span className="wc-module-pill">{smartResolution.source === "backend-driven" ? t("shell.smartNavigation.backendWorkflow") : t("shell.smartNavigation.suggestedWorkflow")}</span>
-          <span className="wc-module-pill">
-            <Stethoscope className="h-3 w-3" />
-            <span>{t("app.secureMode")}</span>
-          </span>
-        </>
-      )}
+      moduleMeta={null}
       nextAction={nextAction ? { href: nextAction.href, label: nextAction.label, icon: nextAction.icon, ariaLabel: nextAction.ariaLabel, variant: "primary" } : null}
       quickActions={quickActions.map((action) => ({
         href: action.href,
@@ -472,26 +455,6 @@ export default function AppShell({
           <div className="wc-panel">
             <AppBreadcrumbs caseLabel={breadcrumbCaseLabel} />
           </div>
-          {routeCaseId ? (
-            <div className="wc-panel wc-panel-inline">
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-700">
-                <Sparkles className="h-3.5 w-3.5 text-[var(--primary)]" />
-                <span className="font-semibold">{t("shell.aiInsights.title")}</span>
-                <span className="wc-module-pill">{aiInsight?.source === "ai-assisted" ? t("shell.aiInsights.sourceAi") : t("shell.aiInsights.sourceUnavailable")}</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                {aiInsightLoading ? <span>{t("shell.aiInsights.loading")}</span> : null}
-                {!aiInsightLoading ? <span className="wc-module-pill">{t("shell.aiInsights.risk")}: {aiInsight?.aiAssessment.riskLevel || "UNKNOWN"}</span> : null}
-                {!aiInsightLoading ? <span className="wc-module-pill">{t("shell.aiInsights.gaps")}: {aiGapCount}</span> : null}
-                {!aiInsightLoading && aiNextStep ? <span className="wc-module-pill">{t("shell.aiInsights.nextStep")}: {aiNextStep}</span> : null}
-              </div>
-            </div>
-          ) : null}
-          <div className="wc-panel wc-panel-inline">
-            <span><strong>{t("shell.session")}:</strong> {tenantName}</span>
-            <span><strong>{t("shell.route")}:</strong> <span className="font-mono">{pathname}</span></span>
-            <span><strong>{t("app.activeWorkspace")}:</strong> IMC</span>
-          </div>
         </div>
       )}
       toolbarExtras={actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -500,7 +463,6 @@ export default function AppShell({
           <div className="flex flex-wrap items-center justify-center gap-3">
             <span>WathiqCare™ Enterprise Healthcare Legal Automation Platform</span>
             <span>© 2026 International Medical Center (IMC). All rights reserved.</span>
-            <span>CR: 4030143596</span>
           </div>
           <AdminReleaseFooterBadge
             userType={viewerUserType}

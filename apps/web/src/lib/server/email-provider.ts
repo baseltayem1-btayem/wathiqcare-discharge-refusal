@@ -8,8 +8,8 @@ type EmailTemplateOptions = {
     title: string;
     preheader?: string;
     bodyHtml: string;
-    ctaUrl: string;
-    ctaText: string;
+    ctaUrl?: string;
+    ctaText?: string;
     expiresNote?: string;
     securityNote: string;
 };
@@ -17,8 +17,8 @@ type EmailTemplateOptions = {
 type EmailTextOptions = {
     title: string;
     bodyLines: string[];
-    ctaUrl: string;
-    ctaLabel: string;
+    ctaUrl?: string;
+    ctaLabel?: string;
     expiresNote?: string;
     securityNote: string;
 };
@@ -55,6 +55,7 @@ ${preheaderHtml}
           <td style="background:#ffffff;padding:32px 32px 24px;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0;">
             <h1 style="margin:0 0 12px;font-size:20px;font-weight:700;color:#0f172a;line-height:1.3;">${opts.title}</h1>
             ${opts.bodyHtml}
+            ${opts.ctaUrl && opts.ctaText ? `
             <!-- CTA Button -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 0;">
               <tr><td align="center">
@@ -69,6 +70,7 @@ ${preheaderHtml}
               If the button doesn't work, copy this link into your browser:<br />
               <a href="${opts.ctaUrl}" style="color:#0891b2;word-break:break-all;">${opts.ctaUrl}</a>
             </p>
+            ` : ""}
             ${expiresHtml}
           </td>
         </tr>
@@ -100,9 +102,11 @@ export function buildWathiqCareEmailText(opts: EmailTextOptions): string {
         "",
         ...opts.bodyLines,
         "",
-        `${opts.ctaLabel}: ${opts.ctaUrl}`,
-        "",
     ];
+
+    if (opts.ctaLabel && opts.ctaUrl) {
+        lines.push(`${opts.ctaLabel}: ${opts.ctaUrl}`, "");
+    }
     if (opts.expiresNote) {
         lines.push(opts.expiresNote, "");
     }

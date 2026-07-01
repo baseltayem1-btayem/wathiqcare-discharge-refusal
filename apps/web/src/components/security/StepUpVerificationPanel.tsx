@@ -23,7 +23,6 @@ type StepUpChallengeResponse = {
   challengeToken: string;
   expiresAt?: string;
   deliveryHint?: string;
-  debugCode?: string;
 };
 
 export default function StepUpVerificationPanel({
@@ -36,7 +35,6 @@ export default function StepUpVerificationPanel({
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [challengeToken, setChallengeToken] = useState("");
   const [deliveryHint, setDeliveryHint] = useState("");
-  const [debugCode, setDebugCode] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
@@ -82,7 +80,6 @@ export default function StepUpVerificationPanel({
       });
       setChallengeToken(response.challengeToken);
       setDeliveryHint(response.deliveryHint ?? "registered authenticator");
-      setDebugCode(response.debugCode ?? "");
       setMessage(`Verification code issued to ${response.deliveryHint ?? "your registered channel"}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to issue a verification code.");
@@ -184,11 +181,6 @@ export default function StepUpVerificationPanel({
                   </Button>
                 </div>
                 <p className="text-xs text-slate-500">Delivery target: {deliveryHint || "registered authenticator"}</p>
-                {debugCode ? (
-                  <p className="text-xs text-slate-500">
-                    Dev code: <span className="font-mono font-semibold text-slate-700">{debugCode}</span>
-                  </p>
-                ) : null}
               </div>
             ) : null}
           </>

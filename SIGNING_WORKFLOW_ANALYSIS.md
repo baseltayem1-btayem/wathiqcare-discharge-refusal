@@ -161,7 +161,7 @@ export async function requestSigningOtp(args: {
    }
    
    function otpHash(otpCode: string): string {
-     const pepper = process.env.PUBLIC_SIGNING_OTP_PEPPER || "wathiqcare-signing-otp-pepper";
+     const pepper = process.env.PUBLIC_SIGNING_OTP_PEPPER || "[REDACTED]";
      return crypto.createHmac("sha256", pepper).update(otpCode).digest("hex");
    }
    ```
@@ -329,7 +329,7 @@ export async function verifySigningOtp(args: {
 
 - **OTP Validity**: 10 minutes (`OTP_EXPIRY_MINUTES`)
 - **Max Attempts**: 3 (`OTP_MAX_ATTEMPTS`)
-- **Pepper**: `process.env.PUBLIC_SIGNING_OTP_PEPPER` (default: "wathiqcare-signing-otp-pepper")
+- **Pepper**: `process.env.PUBLIC_SIGNING_OTP_PEPPER` (default: "[REDACTED]")
 - **SMS Provider**: Taqnyat
 
 ---
@@ -1066,7 +1066,7 @@ audit_chain_events
 
 ```bash
 # Signing Configuration
-PUBLIC_SIGNING_OTP_PEPPER=wathiqcare-signing-otp-pepper
+PUBLIC_SIGNING_OTP_PEPPER=[REDACTED]
 PUBLIC_SIGNING_LINK_EXPIRY_HOURS=72
 NEXTAUTH_URL=https://wathiqcare.online
 

@@ -59,6 +59,15 @@ loadEnvFile(path.join(repoRoot, "apps", "web", ".env.local"));
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
+function requireEnv(name) {
+  const value = (process.env[name] || "").trim();
+  if (!value) {
+    console.error(`[seed-uat-users] ERROR: ${name} is required.`);
+    process.exit(1);
+  }
+  return value;
+}
+
 const BCRYPT_ROUNDS = 12;
 
 const PILOT_IMC_TENANT = {
@@ -69,9 +78,9 @@ const PILOT_IMC_TENANT = {
   allowedDomains: ["wathiqcare.med.sa", "wathiqcare.online"],
 };
 
-const PILOT_PASSWORD = "WathiqCare@2026";
+const PILOT_PASSWORD = requireEnv("UAT_PILOT_PASSWORD");
 
-/** The 5 required UAT accounts. Password is the same for all. */
+/** The 5 required UAT accounts. Password is read from UAT_PILOT_PASSWORD. */
 const UAT_USERS = [
   {
     email: "dr.ahmed@wathiqcare.med.sa",

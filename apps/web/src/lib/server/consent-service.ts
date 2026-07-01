@@ -1,13 +1,12 @@
 import crypto from "node:crypto";
-import { Prisma, type ConsentRecord, $Enums } from "@prisma/client";
+import { Prisma, PrismaClient, type ConsentRecord, $Enums } from "@prisma/client";
 import { ConsentMethod } from "@/lib/server/prisma-enums";
 import type { NextRequest } from "next/server";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
-import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
+import { appendAuditEventInTransaction } from "@/lib/server/audit-foundation";
 import { asRecord } from "@/lib/server/compliance-utils";
-import { writeAuditLog } from "@/lib/server/saas-services";
 import { assertWitnessIntegrityOrThrow } from "@/lib/server/witness-integrity-service";
 
 const prisma = () => getPrisma();
@@ -55,7 +54,9 @@ async function createConsentRecordWithFallback(args: {
     documentSnapshot?: Record<string, unknown>;
   };
   documentHash: string;
+  tx?: PrismaClient | Prisma.TransactionClient;
 }): Promise<ConsentRecord> {
+  const client = args.tx ?? prisma();
   const normalizedMethod = normalizeConsentMethod(args.payload.consentMethod);
   const metadataValue = args.payload.documentSnapshot ?? args.payload;
   const createData = {
@@ -75,7 +76,7 @@ async function createConsentRecordWithFallback(args: {
   };
 
   try {
-    return await prisma().consentRecord.create({ data: createData });
+    return await client.consentRecord.create({ data: createData });
   } catch (error) {
     if (!isMissingConsentMethodEnumError(error)) {
       throw error;
@@ -83,7 +84,7 @@ async function createConsentRecordWithFallback(args: {
 
     const generatedId = crypto.randomUUID();
 
-    const inserted = await prisma().$queryRaw<Array<{
+    const inserted = await client.$queryRaw<Array<{
       id: string;
       tenant_id: string;
       case_id: string;
@@ -224,65 +225,61 @@ export async function recordCaseConsent(
     documentSnapshot?: Record<string, unknown>;
   },
   request?: NextRequest,
+  tx?: PrismaClient | Prisma.TransactionClient,
 ) {
   const caseRecord = await getAuthorizedCase(auth, caseId);
   assertWitnessIntegrityOrThrow(caseRecord.metadata);
   const documentHash = hashDocumentVersion(payload.documentSnapshot ?? payload);
 
-  const record = await createConsentRecordWithFallback({
-    tenantId: auth.tenant_id!,
-    caseId,
-    payload,
-    documentHash,
-  });
+  const operation = async (client: PrismaClient | Prisma.TransactionClient) => {
+    const record = await createConsentRecordWithFallback({
+      tenantId: auth.tenant_id!,
+      caseId,
+      payload,
+      documentHash,
+      tx: client,
+    });
 
-  const metadata = asRecord(caseRecord.metadata);
-  await prisma().case.update({
-    where: { id: caseId },
-    data: {
-      metadata: {
-        ...(metadata ?? {}),
-        consent: {
-          record_id: record.id,
-          consent_method: record.consentMethod,
-          document_hash: record.documentHash,
-          consented_at: record.consentedAt.toISOString(),
-        },
-      } as JsonInputValue,
-    },
-  });
+    const metadata = asRecord(caseRecord.metadata);
+    await client.case.update({
+      where: { id: caseId },
+      data: {
+        metadata: {
+          ...(metadata ?? {}),
+          consent: {
+            record_id: record.id,
+            consent_method: record.consentMethod,
+            document_hash: record.documentHash,
+            consented_at: record.consentedAt.toISOString(),
+          },
+        } as JsonInputValue,
+      },
+    });
 
-  await writeAuditLog({
-    tenantId: auth.tenant_id!,
-    userId: auth.sub,
-    entityType: "consent_record",
-    entityId: record.id,
-    action: "consent_recorded",
-    details: `Consent captured via ${record.consentMethod}`,
-    caseId,
-    metadataJson: {
-      consentMethod: record.consentMethod,
-      documentHash: record.documentHash,
-    },
-    request,
-  });
+    await appendAuditEventInTransaction({
+      tenantId: auth.tenant_id!,
+      userId: auth.sub,
+      entityType: "consent_record",
+      entityId: record.id,
+      action: "consent_recorded",
+      details: `Consent captured via ${record.consentMethod}`,
+      caseId,
+      metadataJson: {
+        consentMethod: record.consentMethod,
+        documentHash: record.documentHash,
+      },
+      request,
+      tx: client,
+    });
 
-  await appendAuditChainEvent({
-    tenantId: auth.tenant_id!,
-    caseId,
-    eventType: "CONSENT_RECORDED",
-    actorId: auth.sub,
-    actorRole: auth.role ?? null,
-    payloadSummary: `Consent recorded (${record.consentMethod})`,
-    documentVersion: record.documentVersion,
-    metadataJson: {
-      consentRecordId: record.id,
-      documentHash: record.documentHash,
-    },
-    request,
-  }).catch(() => undefined);
+    return record;
+  };
 
-  return record;
+  if (tx) {
+    return operation(tx);
+  }
+
+  return prisma().$transaction(operation);
 }
 
 export async function getConsentSummary(tenantId: string) {

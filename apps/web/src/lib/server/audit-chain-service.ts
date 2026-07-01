@@ -1,5 +1,5 @@
-﻿import crypto from "node:crypto";
-import { Prisma } from "@prisma/client";
+import crypto from "node:crypto";
+import { Prisma, PrismaClient } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
@@ -115,7 +115,7 @@ export function verifyAuditChain(events: VerifiableChainEvent[]): AuditChainVeri
   };
 }
 
-export async function appendAuditChainEvent(args: {
+export type AppendAuditChainEventArgs = {
   tenantId: string;
   caseId?: string | null;
   eventType: string;
@@ -125,27 +125,30 @@ export async function appendAuditChainEvent(args: {
   documentVersion?: string | null;
   metadataJson?: unknown;
   request?: NextRequest;
-}) {
+};
+
+function extractRequestSource(request?: NextRequest) {
+  return {
+    sourceIp: request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+    deviceInfo: request?.headers.get("user-agent") ?? null,
+    sessionInfo: request?.headers.get("x-session-id") ?? null,
+  };
+}
+
+function validateAppendAuditChainEventArgs(args: AppendAuditChainEventArgs): void {
   if (!args.tenantId || !args.eventType || !args.payloadSummary) {
     throw new ApiError(400, "Missing mandatory audit chain fields");
   }
+}
 
-  const auditChainEvent = getAuditChainEventDelegate();
-
-  const previous = await auditChainEvent.findFirst({
-    where: {
-      tenantId: args.tenantId,
-      ...(args.caseId ? { caseId: args.caseId } : {}),
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const sourceIp = args.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
-  const deviceInfo = args.request?.headers.get("user-agent") ?? null;
-  const sessionInfo = args.request?.headers.get("x-session-id") ?? null;
-  const occurredAt = new Date();
+function buildAuditChainCreateData(
+  args: AppendAuditChainEventArgs,
+  previousHash: string | null | undefined,
+  occurredAt: Date,
+  source: ReturnType<typeof extractRequestSource>,
+) {
   const currentHash = buildAuditChainHash({
-    previousHash: previous?.currentHash ?? null,
+    previousHash: previousHash ?? null,
     tenantId: args.tenantId,
     caseId: args.caseId ?? null,
     eventType: args.eventType,
@@ -157,29 +160,75 @@ export async function appendAuditChainEvent(args: {
     metadataJson: args.metadataJson ?? null,
   });
 
-  return auditChainEvent.create({
-    data: {
+  return {
+    tenantId: args.tenantId,
+    caseId: args.caseId ?? null,
+    eventType: args.eventType,
+    actorId: args.actorId ?? null,
+    actorRole: args.actorRole ?? null,
+    sourceIp: source.sourceIp,
+    deviceInfo: source.deviceInfo,
+    sessionInfo: source.sessionInfo,
+    previousHash: previousHash ?? null,
+    currentHash,
+    payloadSummary: args.payloadSummary,
+    documentVersion: args.documentVersion ?? null,
+    metadataJson:
+      args.metadataJson === undefined
+        ? undefined
+        : args.metadataJson === null
+          ? Prisma.JsonNull
+          : (args.metadataJson as JsonInputValue),
+    createdAt: occurredAt,
+  };
+}
+
+export async function appendAuditChainEventInTransaction(
+  args: AppendAuditChainEventArgs,
+  tx: PrismaClient | Prisma.TransactionClient,
+) {
+  validateAppendAuditChainEventArgs(args);
+
+  const previous = await tx.auditChainEvent.findFirst({
+    where: {
       tenantId: args.tenantId,
-      caseId: args.caseId ?? null,
-      eventType: args.eventType,
-      actorId: args.actorId ?? null,
-      actorRole: args.actorRole ?? null,
-      sourceIp,
-      deviceInfo,
-      sessionInfo,
-      previousHash: previous?.currentHash ?? null,
-      currentHash,
-      payloadSummary: args.payloadSummary,
-      documentVersion: args.documentVersion ?? null,
-      metadataJson:
-        args.metadataJson === undefined
-          ? undefined
-          : args.metadataJson === null
-            ? Prisma.JsonNull
-            : (args.metadataJson as JsonInputValue),
-      createdAt: occurredAt,
+      ...(args.caseId ? { caseId: args.caseId } : {}),
     },
+    orderBy: { createdAt: "desc" },
   });
+
+  const occurredAt = new Date();
+  const source = extractRequestSource(args.request);
+  const data = buildAuditChainCreateData(args, previous?.currentHash ?? null, occurredAt, source);
+
+  return tx.auditChainEvent.create({ data });
+}
+
+export async function appendAuditChainEvent(
+  args: AppendAuditChainEventArgs,
+  tx?: PrismaClient | Prisma.TransactionClient,
+) {
+  if (tx) {
+    return appendAuditChainEventInTransaction(args, tx);
+  }
+
+  validateAppendAuditChainEventArgs(args);
+
+  const auditChainEvent = getAuditChainEventDelegate();
+
+  const previous = await auditChainEvent.findFirst({
+    where: {
+      tenantId: args.tenantId,
+      ...(args.caseId ? { caseId: args.caseId } : {}),
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const occurredAt = new Date();
+  const source = extractRequestSource(args.request);
+  const data = buildAuditChainCreateData(args, previous?.currentHash ?? null, occurredAt, source);
+
+  return auditChainEvent.create({ data });
 }
 
 export async function getCaseAuditChain(tenantId: string, caseId: string) {

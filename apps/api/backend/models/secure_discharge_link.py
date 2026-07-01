@@ -48,4 +48,10 @@ class SecureDischargeLink(Base):
     decision_user_agent = Column(Text, nullable=True)
     refusal_acknowledged_at = Column(DateTime, nullable=True)
 
+    # identity verification (OTP) for public secure-link decisions
+    otp_hash = Column(String, nullable=True)
+    otp_expires_at = Column(DateTime, nullable=True)
+    otp_attempts = Column(String, nullable=True)  # stored as integer string
+    otp_locked_until = Column(DateTime, nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

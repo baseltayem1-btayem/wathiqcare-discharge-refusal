@@ -15,7 +15,7 @@
 
 **`ADDITIVE APPROVED BASELINE READY FOR USER VISUAL APPROVAL`**
 
-— with explicit caveat that authenticated physician-journey screenshots (Steps 1–8, `/modules`, `/create`) could not be captured in this session because the dev demo credential (`dr.ahmed@wathiqcare.med.sa` / `WathiqCare@2026`) is rejected by the live Neon production DB (`wathiqcare_prod_20260323093007`) — `/api/auth/login` returned HTTP 401 *"Invalid email or password"*. Phase 43B hard rules forbid seeding/migrating/modifying auth, so I did not bypass the gate. Authenticated screenshots are a re-capture step that requires a working demo credential.
+— with explicit caveat that authenticated physician-journey screenshots (Steps 1–8, `/modules`, `/create`) could not be captured in this session because the dev demo credential (`dr.ahmed@wathiqcare.med.sa` / `[REDACTED]`) is rejected by the live Neon production DB (`wathiqcare_prod_20260323093007`) — `/api/auth/login` returned HTTP 401 *"Invalid email or password"*. Phase 43B hard rules forbid seeding/migrating/modifying auth, so I did not bypass the gate. Authenticated screenshots are a re-capture step that requires a working demo credential.
 
 ---
 

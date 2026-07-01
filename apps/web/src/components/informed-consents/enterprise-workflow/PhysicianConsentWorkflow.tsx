@@ -3,7 +3,7 @@
 
 
 import ConsentSearchEngine from "./ConsentSearchEngine";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Search,
@@ -35,6 +35,9 @@ import {
 
 import { ConsentCollaborationPanel } from "@/components/informed-consents/collaboration/ConsentCollaborationPanel";
 import { EnterpriseSupportSettingsPanel } from "@/components/informed-consents/enterprise-workflow/EnterpriseSupportSettingsPanel";
+import { useClinicalKnowledgeFlags } from "@/components/clinical-knowledge/shared/useClinicalKnowledgeFlags";
+import { ClinicalKnowledgeAssemblyPanel } from "@/components/clinical-knowledge/ClinicalKnowledgeAssemblyPanel";
+import type { ClinicalKnowledgeAssembly } from "@/lib/clinical-knowledge/types";
 
 type EnterpriseSection = "issueConsent" | "consentLibrary" | "collaboration" | "statusAudit" | "supportSettings";
 
@@ -108,6 +111,7 @@ type RuntimeConsentTemplate = {
 type ImcConsentCatalogItem = {
   id: string;
   titleEn: string;
+  titleAr?: string;
   fileName: string;
   publicPath: string;
   specialty: string;
@@ -128,6 +132,62 @@ type ImcConsentPackage = {
   anesthesiaEducation?: ImcConsentCatalogItem;
   matches: ImcConsentCatalogItem[];
 };
+
+function assemblyToImcConsentPackage(assembly: ClinicalKnowledgeAssembly): ImcConsentPackage {
+  const form = assembly.consentForm;
+  const education = assembly.educationMaterials[0];
+  const consentCatalogItem: ImcConsentCatalogItem | undefined = form
+    ? {
+        id: form.id,
+        titleEn: form.titleEn,
+        titleAr: form.titleAr,
+        fileName: form.pdfTemplateUrl ? form.pdfTemplateUrl.split("/").pop() || `${form.code}.pdf` : `${form.code}.pdf`,
+        publicPath: form.pdfTemplateUrl || "",
+        specialty: "",
+        templateType: form.formType === "ANESTHESIA_CONSENT"
+          ? "Anesthesia Consent"
+          : form.formType === "BLOOD_TRANSFUSION_CONSENT"
+            ? "Blood Transfusion Consent"
+            : form.formType === "RESEARCH_CLINICAL_TRIAL_CONSENT"
+              ? "Research Consent"
+              : "Surgical Consent",
+        status: "ACTIVE" as const,
+        source: "cke-assembly" as const,
+        requiresAnesthesia: false,
+        isPatientCopy: false,
+        isEducation: false,
+        isAnesthesia: false,
+        lengthBytes: 0,
+      }
+    : undefined;
+
+  const educationCatalogItem: ImcConsentCatalogItem | undefined = education
+    ? {
+        id: education.id,
+        titleEn: `${education.titleEn} — Patient Education`,
+        titleAr: education.titleAr
+          ? `${education.titleAr} — نسخة المريض`
+          : "نسخة تثقيف المريض",
+        fileName: education.assetUrl ? education.assetUrl.split("/").pop() || `${education.code}.pdf` : `${education.code}.pdf`,
+        publicPath: education.assetUrl,
+        specialty: "",
+        templateType: consentCatalogItem?.templateType || "Surgical Consent",
+        status: "ACTIVE" as const,
+        source: "cke-assembly" as const,
+        requiresAnesthesia: false,
+        isPatientCopy: true,
+        isEducation: true,
+        isAnesthesia: false,
+        lengthBytes: 0,
+      }
+    : undefined;
+
+  return {
+    procedureConsent: consentCatalogItem,
+    patientEducation: educationCatalogItem,
+    matches: consentCatalogItem ? [consentCatalogItem] : [],
+  };
+}
 type WorkflowStepKey =
   | "patientEncounter"
   | "category"
@@ -189,12 +249,14 @@ type CompletionSummary = {
 
 type PhysicianConsentWorkflowProps = {
   auth?: {
+    sub?: string | null;
     role?: string | null;
     platform_role?: string | null;
     userId?: string | null;
     email?: string | null;
     name?: string | null;
     tenantId?: string | null;
+    tenant_id?: string | null;
   };
   lang?: "en" | "ar";
 };
@@ -418,14 +480,14 @@ const workspaceSections: Array<{
 ];
 
 const initialState: WorkflowState = {
-  patientName: "Demo Patient",
-  mrn: "MRN-000001",
-  encounterNo: "ENC-2026-0001",
-  department: "Surgery",
-  consentCategory: "Surgical Consent",
-  templateName: "General Surgery Consent - Bilingual",
-  procedureName: "Appendectomy",
-  procedureSite: "Not applicable",
+  patientName: "",
+  mrn: "",
+  encounterNo: "",
+  department: "",
+  consentCategory: "",
+  templateName: "",
+  procedureName: "",
+  procedureSite: "",
   physicianNotes: "",
   anesthesiaDecision: "NONE",
   anesthesiaReviewRequired: false,
@@ -754,11 +816,48 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
   });
 
   const apiContext = {
-    tenantId: auth?.tenantId ?? "tenant-pending",
-    actorUserId: auth?.userId ?? auth?.email ?? "actor-pending",
+    tenantId: auth?.tenantId ?? auth?.tenant_id ?? "tenant-pending",
+    actorUserId: auth?.userId ?? auth?.sub ?? auth?.email ?? "actor-pending",
     actorName: auth?.name ?? auth?.email ?? "Physician",
     actorRole: auth?.role ?? auth?.platform_role ?? "PHYSICIAN",
   };
+
+  const [contentMappingEnabled, setContentMappingEnabled] = useState(false);
+  const {
+    masterEnabled: ckeEnabled,
+    informedConsentUiEnabled: ckeUiEnabled,
+  } = useClinicalKnowledgeFlags(apiContext.tenantId);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadContentMappingFlag() {
+      try {
+        const response = await fetch(
+          `/api/modules/informed-consents/content-mapping/feature-flag?tenantId=${encodeURIComponent(apiContext.tenantId)}`,
+        );
+        const payload = await response.json().catch(() => null);
+
+        if (!cancelled) {
+          setContentMappingEnabled(Boolean(payload?.ok && payload?.enabled));
+        }
+      } catch {
+        if (!cancelled) {
+          setContentMappingEnabled(false);
+        }
+      }
+    }
+
+    loadContentMappingFlag();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiContext.tenantId]);
+
+  const educationViewedRef = useRef<string | null>(null);
+  const consentReadyAuditSentRef = useRef(false);
+
   const [reviewTeam, setReviewTeam] = useState<CollaborationReviewTeam>({});
   const [reviewTeamLoading, setReviewTeamLoading] = useState(false);
   const [reviewTeamError, setReviewTeamError] = useState("");
@@ -810,6 +909,7 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
 
   const [imcLibraryItems, setImcLibraryItems] = useState<ImcConsentCatalogItem[]>([]);
   const [selectedImcPackage, setSelectedImcPackage] = useState<ImcConsentPackage | null>(null);
+  const [clinicalKnowledgeAssembly, setClinicalKnowledgeAssembly] = useState<ClinicalKnowledgeAssembly | null>(null);
   const [imcLibraryLoading, setImcLibraryLoading] = useState(false);
   const [imcLibraryError, setImcLibraryError] = useState("");
   const [imcResolveLoading, setImcResolveLoading] = useState(false);
@@ -819,11 +919,22 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
     let cancelled = false;
 
     async function loadImcLibrary() {
+      if (!contentMappingEnabled) {
+        if (!cancelled) {
+          setImcLibraryLoading(false);
+          setImcLibraryItems([]);
+          setImcLibraryError("");
+        }
+        return;
+      }
+
       setImcLibraryLoading(true);
       setImcLibraryError("");
 
       try {
-        const response = await fetch("/api/modules/informed-consents/imc-library");
+        const response = await fetch(
+          `/api/modules/informed-consents/imc-library?tenantId=${encodeURIComponent(apiContext.tenantId)}`,
+        );
         const payload = await response.json().catch(() => null);
 
         if (!response.ok || !payload?.ok) {
@@ -850,16 +961,20 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [contentMappingEnabled, apiContext.tenantId]);
 
   useEffect(() => {
     let cancelled = false;
     const procedure = workflow.procedureName.trim();
 
     async function resolveImcPackage() {
-      if (procedure.length < 2) {
-        setSelectedImcPackage(null);
-        setImcResolveError("");
+      if (procedure.length < 2 || !contentMappingEnabled || clinicalKnowledgeAssembly) {
+        if (!cancelled) {
+          if (!clinicalKnowledgeAssembly) {
+            setSelectedImcPackage(null);
+          }
+          setImcResolveError("");
+        }
         return;
       }
 
@@ -868,12 +983,20 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
 
       try {
         const response = await fetch(
-          `/api/modules/informed-consents/imc-library/resolve?procedure=${encodeURIComponent(procedure)}`,
+          `/api/modules/informed-consents/content-mapping/resolve?procedure=${encodeURIComponent(procedure)}&tenantId=${encodeURIComponent(apiContext.tenantId)}`,
         );
         const payload = await response.json().catch(() => null);
 
         if (!response.ok || !payload?.ok) {
-          throw new Error(payload?.message || payload?.error || "Failed to resolve IMC approved consent package.");
+          throw new Error(payload?.message || payload?.error || "Failed to resolve content mapping.");
+        }
+
+        if (!payload.featureFlagEnabled) {
+          if (!cancelled) {
+            setSelectedImcPackage(null);
+            setImcResolveLoading(false);
+          }
+          return;
         }
 
         const resolvedPackage = (payload.package || null) as ImcConsentPackage | null;
@@ -883,19 +1006,30 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
         setSelectedImcPackage(resolvedPackage);
 
         if (resolvedPackage?.procedureConsent) {
+          const hasEducation = Boolean(resolvedPackage.patientEducation);
+
           setWorkflow((current) => ({
             ...current,
             templateName: resolvedPackage.procedureConsent?.titleEn || current.templateName,
             consentCategory: resolvedPackage.procedureConsent?.templateType || current.consentCategory,
-            educationPackage: resolvedPackage.patientEducation?.titleEn || current.educationPackage,
+            educationRequired: hasEducation,
+            educationPackage: hasEducation
+              ? resolvedPackage.patientEducation?.titleEn || current.educationPackage
+              : "",
             anesthesiaReviewRequired:
               current.anesthesiaReviewRequired || Boolean(resolvedPackage.procedureConsent?.requiresAnesthesia),
+          }));
+        } else {
+          setWorkflow((current) => ({
+            ...current,
+            educationRequired: true,
+            educationPackage: current.educationPackage || "Standard procedure education package",
           }));
         }
       } catch (error) {
         if (!cancelled) {
           setSelectedImcPackage(null);
-          setImcResolveError(error instanceof Error ? error.message : "Failed to resolve IMC approved consent package.");
+          setImcResolveError(error instanceof Error ? error.message : "Failed to resolve content mapping.");
         }
       } finally {
         if (!cancelled) {
@@ -909,7 +1043,7 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
     return () => {
       cancelled = true;
     };
-  }, [workflow.procedureName]);
+  }, [workflow.procedureName, contentMappingEnabled, apiContext.tenantId, clinicalKnowledgeAssembly]);
   const [patientQuery, setPatientQuery] = useState("");
   const [patientResults, setPatientResults] = useState<PatientSearchItem[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientSearchItem | null>(null);
@@ -1049,6 +1183,45 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
 
 
   const activeStep = workflowSteps[activeStepIndex];
+
+  useEffect(() => {
+    if (!contentMappingEnabled) return;
+    if (activeStep.key !== "education") {
+      educationViewedRef.current = null;
+      return;
+    }
+
+    const educationAssetId = selectedImcPackage?.patientEducation?.id;
+    if (!educationAssetId) return;
+    if (educationViewedRef.current === educationAssetId) return;
+
+    educationViewedRef.current = educationAssetId;
+
+    fetch(
+      `/api/modules/informed-consents/content-mapping/audit?tenantId=${encodeURIComponent(apiContext.tenantId)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "education_material_viewed",
+          summary: `Education material viewed: ${selectedImcPackage.patientEducation?.titleEn}`,
+          metadata: {
+            procedureNameEn: workflow.procedureName,
+            educationAssetId,
+            viewedBy: "PHYSICIAN",
+            viewedAt: new Date().toISOString(),
+          },
+        }),
+      },
+    ).catch(() => undefined);
+  }, [
+    activeStep.key,
+    contentMappingEnabled,
+    selectedImcPackage?.patientEducation?.id,
+    selectedImcPackage?.patientEducation?.titleEn,
+    workflow.procedureName,
+    apiContext.tenantId,
+  ]);
 
   const completionSummary = useMemo(() => {
     const patientReady = Boolean(workflow.patientName && workflow.mrn && workflow.encounterNo);
@@ -1256,6 +1429,45 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
       consentStatus: requiresAnesthesiaReview(decision) ? "IN_REVIEW" : current.consentStatus,
     }));
   }
+
+  function handleCkeAssemblyReady(assembly: ClinicalKnowledgeAssembly) {
+    setClinicalKnowledgeAssembly(assembly);
+    const pkg = assemblyToImcConsentPackage(assembly);
+    setSelectedImcPackage(pkg);
+    const hasEducation = assembly.educationMaterials.length > 0;
+    setWorkflow((current) => ({
+      ...current,
+      procedureName: assembly.procedureNameEn,
+      templateName: assembly.consentForm?.titleEn || current.templateName,
+      consentCategory: pkg.procedureConsent?.templateType || current.consentCategory,
+      educationRequired: hasEducation,
+      educationPackage: hasEducation
+        ? assembly.educationMaterials[0]?.titleEn || current.educationPackage
+        : "",
+    }));
+  }
+
+  function handleCkeAssemblyBlocked(assembly: ClinicalKnowledgeAssembly) {
+    setClinicalKnowledgeAssembly(assembly);
+    setSelectedImcPackage(null);
+    if (assembly.blockers.length > 0) {
+      prependNotification({
+        eventType: "cke-assembly-blocked",
+        title: "Clinical Knowledge Engine blocked this procedure",
+        titleAr: "محرك المعرفة السريرية منع هذا الإجراء",
+        message: assembly.blockers.map((b) => b.messageEn).join(" "),
+        messageAr: assembly.blockers.map((b) => b.messageAr).join(" "),
+        targetSection: "issueConsent",
+        targetStep: "procedure",
+      });
+    }
+  }
+
+  function handleProcedureNameChange(value: string) {
+    setClinicalKnowledgeAssembly(null);
+    setWorkflow((current) => ({ ...current, procedureName: value }));
+  }
+
   const [consentDocumentId, setConsentDocumentId] = useState("");
   const [draftPdfUrl, setDraftPdfUrl] = useState("");
   const [draftGenerationLoading, setDraftGenerationLoading] = useState(false);
@@ -1381,6 +1593,28 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
     if (completionSummary.sendBlocked) {
       handleRefocus();
       return;
+    }
+
+    if (contentMappingEnabled && !consentReadyAuditSentRef.current) {
+      consentReadyAuditSentRef.current = true;
+      fetch(
+        `/api/modules/informed-consents/content-mapping/audit?tenantId=${encodeURIComponent(apiContext.tenantId)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "consent_ready_for_signature",
+            summary: `Consent package ready for signature: ${workflow.procedureName}`,
+            metadata: {
+              procedureNameEn: workflow.procedureName,
+              consentDocumentId: consentDocumentId || null,
+              templateVersionId: selectedRuntimeTemplate?.templateVersionId || null,
+              educationAssetId: selectedImcPackage?.patientEducation?.id || null,
+              language: "bilingual",
+            },
+          }),
+        },
+      ).catch(() => undefined);
     }
 
     setLinkActionState({ mode: "send", tone: null, message: "", messageAr: "" });
@@ -1561,6 +1795,13 @@ export function PhysicianConsentWorkflow({ auth, lang = "en" }: PhysicianConsent
               onRefocus={handleRefocus}
               refocusTarget={refocusTarget}
               dir={currentLang === "ar" ? "rtl" : "ltr"}
+              ckeEnabled={ckeEnabled}
+              ckeUiEnabled={ckeUiEnabled}
+              ckeTenantId={apiContext.tenantId}
+              clinicalKnowledgeAssembly={clinicalKnowledgeAssembly}
+              onCkeAssemblyReady={handleCkeAssemblyReady}
+              onCkeAssemblyBlocked={handleCkeAssemblyBlocked}
+              onProcedureNameChange={handleProcedureNameChange}
             />
           ) : activeSection === "collaboration" ? (
             <WorkspaceCard
@@ -1942,6 +2183,13 @@ function IssueConsentWorkspace({
   onRefocus,
   refocusTarget,
   dir = "ltr",
+  ckeEnabled = false,
+  ckeUiEnabled = false,
+  ckeTenantId = "",
+  clinicalKnowledgeAssembly = null,
+  onCkeAssemblyReady,
+  onCkeAssemblyBlocked,
+  onProcedureNameChange,
 }: {
   activeStep: (typeof workflowSteps)[number];
   activeStepIndex: number;
@@ -1985,6 +2233,13 @@ function IssueConsentWorkspace({
   onRefocus: () => void;
   refocusTarget: RefocusTarget;
   dir?: "ltr" | "rtl";
+  ckeEnabled?: boolean;
+  ckeUiEnabled?: boolean;
+  ckeTenantId?: string;
+  clinicalKnowledgeAssembly?: ClinicalKnowledgeAssembly | null;
+  onCkeAssemblyReady?: (assembly: ClinicalKnowledgeAssembly) => void;
+  onCkeAssemblyBlocked?: (assembly: ClinicalKnowledgeAssembly) => void;
+  onProcedureNameChange?: (value: string) => void;
 }) {
   const actionGuidance = getCurrentActionGuidance(activeStep.key, workflow, completionSummary);
   const stepMeta = workflowStepMeta[activeStep.key];
@@ -2058,7 +2313,7 @@ function IssueConsentWorkspace({
           </button>
         }
       >
-        <WorkflowStepper activeStepIndex={activeStepIndex} setActiveStepIndex={setActiveStepIndex} refocusTarget={refocusTarget} />
+        <WorkflowStepper activeStepIndex={activeStepIndex} setActiveStepIndex={setActiveStepIndex} refocusTarget={refocusTarget} educationRequired={workflow.educationRequired} />
 
         <div className="mt-6 rounded-[28px] border border-[#D8DCE3] bg-[linear-gradient(180deg,#FFFFFF_0%,#FBFDFF_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
           {activeStep.key === "patientEncounter" && (
@@ -2112,9 +2367,62 @@ function IssueConsentWorkspace({
 
           {activeStep.key === "procedure" && (
             <div className="grid grid-cols-1 gap-4">
-              <Field label="Procedure Name" value={workflow.procedureName} onChange={(value) => updateWorkflow("procedureName", value)} />
+              {ckeEnabled && ckeUiEnabled && (
+                <div className="rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4">
+                  <h4 className="mb-3 text-sm font-bold text-[#002B5C]">
+                    Clinical Knowledge Engine
+                    <span className="block text-xs font-medium text-[#4B5563]">
+                      محرك المعرفة السريرية
+                    </span>
+                  </h4>
+                  <ClinicalKnowledgeAssemblyPanel
+                    tenantId={ckeTenantId}
+                    onAssemblyReady={onCkeAssemblyReady || (() => undefined)}
+                    onAssemblyBlocked={onCkeAssemblyBlocked || (() => undefined)}
+                  />
+                </div>
+              )}
+              <Field label="Procedure Name" value={workflow.procedureName} onChange={onProcedureNameChange || ((value) => updateWorkflow("procedureName", value))} />
               <Field label="Procedure Site / Laterality" value={workflow.procedureSite} onChange={(value) => updateWorkflow("procedureSite", value)} />
               <TextAreaField label="Physician Disclosure Notes" value={workflow.physicianNotes} onChange={(value) => updateWorkflow("physicianNotes", value)} />
+
+              {clinicalKnowledgeAssembly && (
+                <div className="rounded-xl border border-[#D8DCE3] bg-white p-4 text-sm">
+                  <h5 className="mb-2 font-bold text-[#002B5C]">
+                    CKE Assembly Summary / ملخص محرك المعرفة السريرية
+                  </h5>
+                  <ul className="space-y-1 text-[#475569]">
+                    <li>
+                      <span className="font-semibold">Package:</span>{" "}
+                      {clinicalKnowledgeAssembly.packageVersion}
+                    </li>
+                    <li>
+                      <span className="font-semibold">Status:</span>{" "}
+                      {clinicalKnowledgeAssembly.status}
+                    </li>
+                    <li>
+                      <span className="font-semibold">Risks:</span>{" "}
+                      {clinicalKnowledgeAssembly.riskDisclosures.length}
+                    </li>
+                    <li>
+                      <span className="font-semibold">Required participants:</span>{" "}
+                      {clinicalKnowledgeAssembly.requiredParticipants.join(", ") || "None"}
+                    </li>
+                    {clinicalKnowledgeAssembly.blockers.length > 0 && (
+                      <li className="text-red-600">
+                        <span className="font-semibold">Blockers:</span>{" "}
+                        {clinicalKnowledgeAssembly.blockers.map((b) => b.messageEn).join("; ")}
+                      </li>
+                    )}
+                    {clinicalKnowledgeAssembly.suggestions.length > 0 && (
+                      <li>
+                        <span className="font-semibold">Suggestions:</span>{" "}
+                        {clinicalKnowledgeAssembly.suggestions.map((s) => s.messageEn).join("; ")}
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -2127,6 +2435,17 @@ function IssueConsentWorkspace({
 
           {activeStep.key === "education" && (
             <div className="space-y-4">
+              {clinicalKnowledgeAssembly && clinicalKnowledgeAssembly.educationMaterials.length === 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                  <span className="font-bold">Education Not Available</span>
+                  <span className="mx-2">/</span>
+                  <span>التثقيف غير متوفر</span>
+                  <p className="mt-1 text-xs">
+                    No CKE education material is linked to this procedure. The consent workflow can continue without it.
+                  </p>
+                </div>
+              )}
+
               <label className="flex items-center justify-between rounded-xl border border-[#D8DCE3] bg-[#F8FAFC] p-4 text-sm">
                 <span className="font-bold text-[#002B5C]">
                   Patient education package required before signing
@@ -2136,7 +2455,8 @@ function IssueConsentWorkspace({
                   type="checkbox"
                   checked={workflow.educationRequired}
                   onChange={(event) => updateWorkflow("educationRequired", event.target.checked)}
-                  className="h-4 w-4"
+                  disabled={Boolean(clinicalKnowledgeAssembly && clinicalKnowledgeAssembly.educationMaterials.length === 0)}
+                  className="h-4 w-4 disabled:opacity-40"
                 />
               </label>
 
@@ -2144,6 +2464,7 @@ function IssueConsentWorkspace({
                 label="Education Package"
                 value={workflow.educationPackage}
                 onChange={(value) => updateWorkflow("educationPackage", value)}
+                disabled={Boolean(clinicalKnowledgeAssembly && clinicalKnowledgeAssembly.educationMaterials.length === 0)}
                 options={[
                   "Standard procedure education package",
                   "Surgical risks and alternatives package",
@@ -2369,10 +2690,12 @@ function WorkflowStepper({
   activeStepIndex,
   setActiveStepIndex,
   refocusTarget,
+  educationRequired,
 }: {
   activeStepIndex: number;
   setActiveStepIndex: (index: number) => void;
   refocusTarget: RefocusTarget;
+  educationRequired: boolean;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -2382,6 +2705,7 @@ function WorkflowStepper({
           const isActive = index === activeStepIndex;
           const isRefocusTarget = refocusTarget.section === "issueConsent" && refocusTarget.step === step.key;
           const meta = workflowStepMeta[step.key];
+          const isEducationNotApplicable = step.key === "education" && !educationRequired;
 
           return (
             <button
@@ -2417,9 +2741,11 @@ function WorkflowStepper({
                 <span className="min-w-0">
                   <span className={["block text-xs font-extrabold uppercase tracking-[0.12em]", isActive ? "text-[#C9A13B]" : "text-[#94A3B8]"] .join(" ")}>{meta.eyebrow}</span>
                   <span className={["mt-1 block text-sm font-extrabold", isActive ? "text-white" : "text-[#002B5C]"].join(" ")}>
-                    {step.label}
+                    {isEducationNotApplicable ? `${step.label} (N/A)` : step.label}
                   </span>
-                  <span className={["block text-xs", isActive ? "text-white/80" : "text-[#64748B]"].join(" ")}>{step.labelAr}</span>
+                  <span className={["block text-xs", isActive ? "text-white/80" : "text-[#64748B]"].join(" ")}>
+                    {isEducationNotApplicable ? "غير مطلوب" : step.labelAr}
+                  </span>
                   <span className={["mt-2 block text-xs leading-5", isActive ? "text-white/72" : "text-[#64748B]"].join(" ")}>
                     {meta.description}
                   </span>
@@ -3506,19 +3832,22 @@ function SelectField({
   value,
   onChange,
   options,
+  disabled,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: string[];
+  disabled?: boolean;
 }) {
   return (
-    <label className="block">
+    <label className={`block ${disabled ? "opacity-60" : ""}`}>
       <span className="text-sm font-extrabold text-[#002B5C]">{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm outline-none focus:border-[#002B5C] focus:ring-2 focus:ring-[#002B5C]/10"
+        disabled={disabled}
+        className="mt-2 w-full rounded-xl border border-[#D8DCE3] bg-white px-4 py-3 text-sm outline-none focus:border-[#002B5C] focus:ring-2 focus:ring-[#002B5C]/10 disabled:cursor-not-allowed disabled:bg-gray-100"
       >
         {options.map((option) => (
           <option key={option} value={option}>

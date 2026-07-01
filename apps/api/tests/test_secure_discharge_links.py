@@ -108,6 +108,18 @@ def _auth_headers(user_id: str = USER_ID) -> dict:
     return {"Authorization": f"Bearer {_make_staff_token(user_id)}"}
 
 
+def _request_otp_for_token(token: str) -> str:
+    """Request an OTP for the secure link using a deterministic code in tests."""
+    fixed_otp = "123456"
+    with patch(
+        "backend.services.secure_link_service._generate_otp_code",
+        return_value=fixed_otp,
+    ):
+        resp = client.post(f"/api/discharge/secure/{token}/otp")
+    assert resp.status_code in (200, 201), resp.text
+    return fixed_otp
+
+
 # ── fixtures ─────────────────────────────────────────────────────────────────
 
 @pytest.fixture(scope="module", autouse=True)
@@ -692,6 +704,55 @@ class TestSecureLinkDiagnostics:
 
 
 class TestPublicDecisionSubmission:
+    def test_decision_without_otp_is_rejected(self):
+        with patch(
+            "backend.api.routers.secure_links._try_send_email",
+            return_value="not_configured",
+        ):
+            create_resp = client.post(
+                f"/api/discharge/cases/{CASE_ID}/secure-link",
+                json={"recipient_email": "missing-otp@example.com"},
+                headers=_auth_headers(),
+            )
+        assert create_resp.status_code in (200, 201), create_resp.text
+        token = create_resp.json()["url"].split("/secure/")[-1]
+
+        resp = client.post(
+            f"/api/discharge/secure/{token}/decision",
+            json={
+                "decision": "accept",
+                "typed_name": "No Otp",
+                "refusal_acknowledged": False,
+            },
+        )
+        assert resp.status_code == 422, resp.text
+
+    def test_decision_with_invalid_otp_is_rejected(self):
+        with patch(
+            "backend.api.routers.secure_links._try_send_email",
+            return_value="not_configured",
+        ):
+            create_resp = client.post(
+                f"/api/discharge/cases/{CASE_ID}/secure-link",
+                json={"recipient_email": "invalid-otp@example.com"},
+                headers=_auth_headers(),
+            )
+        assert create_resp.status_code in (200, 201), create_resp.text
+        token = create_resp.json()["url"].split("/secure/")[-1]
+
+        _request_otp_for_token(token)
+
+        resp = client.post(
+            f"/api/discharge/secure/{token}/decision",
+            json={
+                "decision": "accept",
+                "typed_name": "Wrong Otp",
+                "refusal_acknowledged": False,
+                "otp_code": "000000",
+            },
+        )
+        assert resp.status_code == 400, resp.text
+
     def test_accept_submission_persists_decision(self):
         with patch(
             "backend.api.routers.secure_links._try_send_email",
@@ -706,12 +767,15 @@ class TestPublicDecisionSubmission:
         accept_url = create_resp.json()["url"]
         accept_token = accept_url.split("/secure/")[-1]
 
+        otp_code = _request_otp_for_token(accept_token)
+
         submit_resp = client.post(
             f"/api/discharge/secure/{accept_token}/decision",
             json={
                 "decision": "accept",
                 "typed_name": "Khaled Al-Harbi",
                 "refusal_acknowledged": False,
+                "otp_code": otp_code,
             },
             headers={
                 "x-forwarded-for": "203.0.113.20",
@@ -719,6 +783,7 @@ class TestPublicDecisionSubmission:
             },
         )
         assert submit_resp.status_code == 200, submit_resp.text
+
         body = submit_resp.json()
         assert body["decision_type"] == "accept"
         assert body["typed_name"] == "Khaled Al-Harbi"
@@ -759,12 +824,15 @@ class TestPublicDecisionSubmission:
         refusal_token = refusal_url.split("/secure/")[-1]
         _state["decision_link_token"] = refusal_token
 
+        otp_code = _request_otp_for_token(refusal_token)
+
         rejected_resp = client.post(
             f"/api/discharge/secure/{refusal_token}/decision",
             json={
                 "decision": "refuse",
                 "typed_name": "Maha Al-Otaibi",
                 "refusal_acknowledged": False,
+                "otp_code": otp_code,
             },
         )
         assert rejected_resp.status_code == 400, rejected_resp.text
@@ -781,12 +849,15 @@ class TestPublicDecisionSubmission:
         )
         assert open_resp.status_code == 200, open_resp.text
 
+        otp_code = _request_otp_for_token(refusal_token)
+
         submit_resp = client.post(
             f"/api/discharge/secure/{refusal_token}/decision",
             json={
                 "decision": "refuse",
                 "typed_name": "Maha Al-Otaibi",
                 "refusal_acknowledged": True,
+                "otp_code": otp_code,
             },
             headers={
                 "x-forwarded-for": "203.0.113.10",
@@ -897,6 +968,7 @@ class TestSignatureAndConditionalSections:
             db.close()
 
         token = self._create_fresh_link("sig-accept@example.com")
+        otp_code = _request_otp_for_token(token)
         resp = client.post(
             f"/api/discharge/secure/{token}/decision",
             json={
@@ -904,6 +976,7 @@ class TestSignatureAndConditionalSections:
                 "typed_name": "Faisal Al-Ghamdi",
                 "refusal_acknowledged": False,
                 "signature_data": self.FAKE_SIGNATURE,
+                "otp_code": otp_code,
             },
         )
         assert resp.status_code == 200, resp.text
@@ -935,6 +1008,7 @@ class TestSignatureAndConditionalSections:
             db.close()
 
         token = self._create_fresh_link("sig-refuse@example.com")
+        otp_code = _request_otp_for_token(token)
         resp = client.post(
             f"/api/discharge/secure/{token}/decision",
             json={
@@ -942,6 +1016,7 @@ class TestSignatureAndConditionalSections:
                 "typed_name": "Noura Al-Zahrani",
                 "refusal_acknowledged": True,
                 "signature_data": self.FAKE_SIGNATURE,
+                "otp_code": otp_code,
             },
         )
         assert resp.status_code == 200, resp.text
@@ -978,12 +1053,14 @@ class TestSignatureAndConditionalSections:
             db.close()
 
         token = self._create_fresh_link("sig-fallback@example.com")
+        otp_code = _request_otp_for_token(token)
         resp = client.post(
             f"/api/discharge/secure/{token}/decision",
             json={
                 "decision": "accept",
                 "typed_name": "Omar Al-Dosari",
                 "refusal_acknowledged": False,
+                "otp_code": otp_code,
                 # signature_data intentionally omitted
             },
         )

@@ -58,9 +58,6 @@ const TENANT_DOMAIN = "wathiqcare.online";
 const SUPERADMIN_EMAIL = "admin@wathiqcare.online";
 const PLATFORM_ADMIN_EMAIL = "admin@wathiqcare.med.sa";
 
-const DEFAULT_SUPERADMIN_PASSWORD = "Admin@Wathiqcare2026!";
-const DEFAULT_PLATFORM_ADMIN_PASSWORD = "Platform@Wathiqcare2026!";
-
 async function clearResetEnforcement(userId) {
   try {
     await prisma.$executeRaw`
@@ -78,14 +75,12 @@ async function clearResetEnforcement(userId) {
   }
 }
 
-function getPassword(envName, fallback) {
-  const value = (process.env[envName] || "").trim();
-  if (value) {
-    return value;
+function requireEnv(name) {
+  const value = (process.env[name] || "").trim();
+  if (!value) {
+    throw new Error(`[ensure-admin-access] ERROR: ${name} is required.`);
   }
-
-  console.warn(`[ensure-admin-access] WARN: ${envName} not set; using fallback temporary password internally.`);
-  return fallback;
+  return value;
 }
 
 async function ensureTenant() {
@@ -213,8 +208,8 @@ async function ensureUser({
 }
 
 async function main() {
-  const superadminPassword = getPassword("WATHIQCARE_SUPERADMIN_PASSWORD", DEFAULT_SUPERADMIN_PASSWORD);
-  const platformAdminPassword = getPassword("WATHIQCARE_PLATFORM_ADMIN_PASSWORD", DEFAULT_PLATFORM_ADMIN_PASSWORD);
+  const superadminPassword = requireEnv("WATHIQCARE_SUPERADMIN_PASSWORD");
+  const platformAdminPassword = requireEnv("WATHIQCARE_PLATFORM_ADMIN_PASSWORD");
 
   const tenant = await ensureTenant();
 
