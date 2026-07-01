@@ -98,8 +98,8 @@ export const SIGNATURE_CONFIG = {
   pdfFillerBaseUrl: process.env.PDF_FILLER_BASE_URL || "",
   /** PDF Filler API key env var name (never the value) */
   pdfFillerApiKeyEnv: "PDF_FILLER_API_KEY",
-  /** Taqniat API URL */
-  taqniatApiUrl: process.env.TAQNIAT_API_URL || "https://api.taqniat.sa/v1",
+  /** Taqniat API URL — supports both TAQNIAT_API_URL and TAQNYAT_API_URL */
+  taqniatApiUrl: process.env.TAQNYAT_API_URL || process.env.TAQNIAT_API_URL || "https://api.taqniat.sa/v1",
   /** Taqniat API key env var name */
   taqniatApiKeyEnv: "TAQNIAT_API_KEY",
   /** Signing webhook verification secret env var name */

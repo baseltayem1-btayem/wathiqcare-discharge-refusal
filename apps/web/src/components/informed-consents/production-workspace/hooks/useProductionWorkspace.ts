@@ -34,6 +34,8 @@ export type ProductionWorkspaceState = {
   timeline: TimelineEvent[];
   acknowledgedBlockers: Set<string>;
   acknowledgedAlerts: Set<string>;
+  dryRunSuccess?: boolean;
+  dryRunResult?: SecureSigningResult;
 };
 
 export type Readiness = {
@@ -60,6 +62,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     timeline: [],
     acknowledgedBlockers: new Set(),
     acknowledgedAlerts: new Set(),
+    dryRunSuccess: false,
   });
 
   const [patients, setPatients] = useState<ProductionPatient[]>([]);
@@ -249,9 +252,40 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         sentAt: new Date().toISOString(),
         signingResult: result,
         timeline,
+        dryRunSuccess: false,
+        dryRunResult: undefined,
       }));
     } catch (error) {
       setSendError(error instanceof Error ? error.message : "Failed to send consent.");
+    } finally {
+      setSendLoading(false);
+    }
+  }, [physician.tenantId, state.patient, state.encounter, state.assembly]);
+
+  const sendDryRun = useCallback(async () => {
+    if (!state.patient || !state.encounter || !state.assembly) return;
+    setSendError("");
+    setSendLoading(true);
+    try {
+      const documentId = crypto.randomUUID();
+      const result = await sendSecureSigningLink({
+        tenantId: physician.tenantId,
+        documentId,
+        caseId: state.patient.caseId || state.encounter.id,
+        patientName: state.patient.name,
+        mobileNumber: state.patient.mobileNumber || "",
+        recipientEmail: "no-patient-email@unavailable.wathiqcare.local",
+        locale: state.patient.languagePreference === "ar" ? "ar" : "en",
+        dryRun: true,
+      });
+
+      setState((s) => ({
+        ...s,
+        dryRunSuccess: true,
+        dryRunResult: result,
+      }));
+    } catch (error) {
+      setSendError(error instanceof Error ? error.message : "Dry-run failed.");
     } finally {
       setSendLoading(false);
     }
@@ -267,6 +301,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       timeline: [],
       acknowledgedBlockers: new Set(),
       acknowledgedAlerts: new Set(),
+      dryRunSuccess: false,
     });
     setPatients([]);
     setEncounters([]);
@@ -322,6 +357,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     acknowledgeBlocker,
     acknowledgeAlert,
     send,
+    sendDryRun,
     reset,
   };
 }

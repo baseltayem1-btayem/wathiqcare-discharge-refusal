@@ -80,6 +80,7 @@ export async function sendSecureSigningLink(args: {
   mobileNumber: string;
   recipientEmail: string;
   locale?: "ar" | "en";
+  dryRun?: boolean;
 }): Promise<SecureSigningResult> {
   const response = await fetch("/api/modules/informed-consents/send", {
     method: "POST",

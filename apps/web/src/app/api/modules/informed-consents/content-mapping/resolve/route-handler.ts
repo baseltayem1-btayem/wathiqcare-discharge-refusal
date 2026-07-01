@@ -8,6 +8,77 @@ import type {
 } from "@/lib/server/content-mapping-service";
 import type { CkeConsentMappingResult } from "@/lib/server/clinical-knowledge/informed-consent-integration";
 
+import type { ClinicalKnowledgeAssembly } from "@/lib/clinical-knowledge/types";
+
+function buildStaticClinicalKnowledgeAssembly(
+  result: ContentMappingFound,
+  pkg: ImcConsentPackage,
+): ClinicalKnowledgeAssembly {
+  const now = new Date().toISOString();
+  return {
+    assemblyId: `static-${result.procedureId}`,
+    tenantId: result.procedureCatalogId ?? "static",
+    procedureId: result.procedureId,
+    procedureCode: result.procedureId,
+    procedureNameEn: result.procedureNameEn,
+    procedureNameAr: result.procedureNameAr,
+    packageId: result.consentForm.templateId,
+    packageVersion: result.version,
+    status: "ready",
+    consentForm: {
+      id: result.consentForm.templateId,
+      tenantId: result.procedureCatalogId ?? "static",
+      code: result.consentForm.templateCode,
+      titleEn: result.consentForm.titleEn,
+      titleAr: result.consentForm.titleAr,
+      formType: result.consentType as
+        | "PROCEDURE_CONSENT"
+        | "ANESTHESIA_CONSENT"
+        | "BLOOD_TRANSFUSION_CONSENT"
+        | "HIGH_RISK_PROCEDURE_CONSENT"
+        | "DIAGNOSTIC_IMAGING_CONSENT"
+        | "RESEARCH_CLINICAL_TRIAL_CONSENT"
+        | "TELEMEDICINE_CONSENT"
+        | "VACCINATION_CONSENT",
+      riskLevel: "STANDARD",
+      status: "PUBLISHED",
+      version: result.version,
+      effectiveDate: now,
+      pdfTemplateUrl: result.consentForm.publicPath,
+      requiresWitness: false,
+      requiresInterpreter: false,
+      createdByUserId: "system",
+      createdAt: now,
+      updatedAt: now,
+    },
+    educationMaterials: result.educationMaterial
+      ? [
+          {
+            id: result.educationMaterial.educationId,
+            tenantId: result.procedureCatalogId ?? "static",
+            code: result.educationMaterial.assetId,
+            titleEn: result.educationMaterial.titleEn,
+            titleAr: result.educationMaterial.titleAr,
+            assetType: "PDF",
+            assetUrl: result.educationMaterial.publicPath,
+            status: "PUBLISHED",
+            version: result.version,
+            effectiveDate: now,
+            createdByUserId: "system",
+            createdAt: now,
+            updatedAt: now,
+          },
+        ]
+      : [],
+    riskDisclosures: [],
+    decisionRules: [],
+    suggestions: [],
+    blockers: [],
+    requiredParticipants: [],
+    assembledAt: now,
+  };
+}
+
 export type ContentMappingResolveDependencies = {
   requireModuleOperationalAccess: (request: NextRequest, moduleKey: string) => Promise<AuthContext>;
   resolveFeatureFlag: (key: string, tenantId: string, moduleKey: string) => Promise<{ resolvedValue: boolean }>;
@@ -244,6 +315,7 @@ export async function handleContentMappingResolve(
   }
 
   const pkg = deps.buildImcConsentPackage(result);
+  const clinicalKnowledgeAssembly = buildStaticClinicalKnowledgeAssembly(result, pkg);
 
   return NextResponse.json({
     ok: true,
@@ -252,5 +324,6 @@ export async function handleContentMappingResolve(
     ckeEnabled: false,
     mapping: result,
     package: pkg,
+    clinicalKnowledgeAssembly,
   });
 }

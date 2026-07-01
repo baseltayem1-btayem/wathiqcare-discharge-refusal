@@ -46,6 +46,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     resolveAssembly,
     approveDraft,
     send,
+    sendDryRun,
   } = useProductionWorkspace(physician);
 
   const [activePage, setActivePage] = useState<WorkspacePageId>("workspace");
@@ -65,8 +66,19 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     setSendModalOpen(false);
   }
 
+  async function handleDryRunSend() {
+    await sendDryRun();
+    setSendModalOpen(false);
+  }
+
   const renderWorkspaceContent = () => (
     <div className="space-y-3">
+      {state.dryRunSuccess && (
+        <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-sm text-emerald-800">
+          <strong>Dry-run successful.</strong> Inputs validated and provider status checked. No signing session, secure token, SMS, email, or OTP was created. Review the provider status before confirming the real send.
+        </div>
+      )}
+
       <PatientEncounterSelector
         selectedPatient={state.patient}
         selectedEncounter={state.encounter}
@@ -146,7 +158,9 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         }
         assembly={state.assembly}
         onConfirm={handleConfirmSend}
+        onDryRun={handleDryRunSend}
         onCancel={() => setSendModalOpen(false)}
+        dryRunLoading={sendLoading}
       />
     </div>
   );

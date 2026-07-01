@@ -150,6 +150,9 @@ test("static path returns mapping with education and writes audit events", async
   assert.equal(body.ckeEnabled, false);
   assert.equal(body.mapping.consentForm.titleEn, "Appendectomy Consent");
   assert.equal(body.mapping.educationMaterial.titleEn, "Appendectomy Education");
+  assert.ok(body.clinicalKnowledgeAssembly, "static path must return clinicalKnowledgeAssembly");
+  assert.equal(body.clinicalKnowledgeAssembly.procedureCode, "appendectomy");
+  assert.equal(body.clinicalKnowledgeAssembly.status, "ready");
 
   const actions = audits.map((a) => a.action);
   assert.deepEqual(actions, [
@@ -176,6 +179,8 @@ test("static path emits education_not_available when education is missing", asyn
   const body = await response.json();
   assert.equal(body.found, true);
   assert.equal(body.mapping.educationMaterial, null);
+  assert.ok(body.clinicalKnowledgeAssembly, "static path must return clinicalKnowledgeAssembly even without education");
+  assert.equal(body.clinicalKnowledgeAssembly.educationMaterials.length, 0);
   const actions = audits.map((a) => a.action);
   assert.ok(actions.includes("education_not_available"));
   assert.ok(!actions.includes("education_material_loaded"));

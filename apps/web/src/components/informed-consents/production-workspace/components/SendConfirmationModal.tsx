@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, ShieldCheck, Smartphone } from "lucide-react";
+import { Send, ShieldCheck, Smartphone, FlaskConical } from "lucide-react";
 import {
   Button,
   Dialog,
@@ -23,7 +23,9 @@ interface SendConfirmationModalProps {
   procedure?: ProcedureSummary;
   assembly?: ClinicalKnowledgeAssembly;
   onConfirm: () => void;
+  onDryRun: () => void;
   onCancel: () => void;
+  dryRunLoading?: boolean;
 }
 
 export function SendConfirmationModal({
@@ -33,7 +35,9 @@ export function SendConfirmationModal({
   procedure,
   assembly,
   onConfirm,
+  onDryRun,
   onCancel,
+  dryRunLoading,
 }: SendConfirmationModalProps) {
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
@@ -80,9 +84,18 @@ export function SendConfirmationModal({
           </span>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2">
           <Button variant="outline" size="sm" uppercase={false} onClick={onCancel}>
             Cancel
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            uppercase={false}
+            onClick={onDryRun}
+            disabled={dryRunLoading}
+          >
+            <FlaskConical className="w-4 h-4" /> {dryRunLoading ? "Running dry-run…" : "Dry-run send"}
           </Button>
           <Button variant="success" size="sm" uppercase={false} onClick={onConfirm}>
             <Smartphone className="w-4 h-4" /> Confirm send
