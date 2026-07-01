@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { sendModuleSecureSigningLink } from "@/lib/server/module-secure-signing-service";
+import { isTaqnyatReady } from "@/services/sms/taqnyatClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -47,6 +48,9 @@ export async function POST(request: NextRequest) {
       ok: true,
       dryRun: true,
       message: "Send validation passed. No consent sent.",
+      providerStatus: {
+        smsReady: isTaqnyatReady(),
+      },
     });
   }
 
