@@ -16,6 +16,7 @@ eggs/
 .eggs/
 lib/
 !apps/web/src/components/informed-consents/production-workspace/lib/
+!sms-gateway-proxy/src/lib/
 lib64/
 parts/
 sdist/
@@ -271,3 +272,4 @@ __tmp_*.ts
 task.ps1
 run_task.ps1
 test_login.ps1
+!sms-gateway-proxy/src/lib/**
