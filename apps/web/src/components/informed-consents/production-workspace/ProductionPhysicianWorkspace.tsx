@@ -46,6 +46,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     resolveAssembly,
     approveDraft,
     send,
+    sendDryRun,
   } = useProductionWorkspace(physician);
 
   const [activePage, setActivePage] = useState<WorkspacePageId>("workspace");
@@ -62,6 +63,11 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
 
   async function handleConfirmSend() {
     await send();
+    setSendModalOpen(false);
+  }
+
+  async function handleDryRunSend() {
+    await sendDryRun();
     setSendModalOpen(false);
   }
 
@@ -133,6 +139,17 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         onApproveDraft={handleApprove}
       />
 
+      {state.dryRunSuccess && (
+        <Card className="border-emerald-200 bg-emerald-50">
+          <CardContent className="p-4">
+            <p className="text-sm font-semibold text-emerald-800">Dry-run successful</p>
+            <p className="text-xs text-emerald-700">
+              {state.dryRunMessage || "Send validation passed. No consent was sent to the patient."}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <SendConfirmationModal
         open={sendModalOpen}
         patient={state.patient}
@@ -146,6 +163,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         }
         assembly={state.assembly}
         onConfirm={handleConfirmSend}
+        onDryRun={handleDryRunSend}
         onCancel={() => setSendModalOpen(false)}
       />
     </div>

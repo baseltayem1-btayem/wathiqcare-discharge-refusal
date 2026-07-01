@@ -6,6 +6,12 @@ import { sendModuleSecureSigningLink } from "@/lib/server/module-secure-signing-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+function isDryRunEnabled(body: Record<string, unknown>): boolean {
+  if (body.dryRun === true) return true;
+  const envFlag = process.env.FF_INFORMED_CONSENT_SEND_DRY_RUN?.trim().toLowerCase();
+  return envFlag === "true" || envFlag === "1" || envFlag === "yes";
+}
+
 export async function POST(request: NextRequest) {
   const auth = await requireModuleOperationalAccess(request, "informed-consents");
   const tenantId = auth.tenant_id || "";
@@ -28,6 +34,20 @@ export async function POST(request: NextRequest) {
       { ok: false, error: "Missing required fields: documentId, caseId, patientName, mobileNumber, recipientEmail" },
       { status: 400 },
     );
+  }
+
+  if (isDryRunEnabled(body)) {
+    console.log("[informed-consents-send] dry-run validation passed", {
+      tenantId,
+      moduleKey: "informed_consent",
+      documentId,
+      locale,
+    });
+    return NextResponse.json({
+      ok: true,
+      dryRun: true,
+      message: "Send validation passed. No consent sent.",
+    });
   }
 
   try {

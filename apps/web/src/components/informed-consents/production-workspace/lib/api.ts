@@ -96,6 +96,34 @@ export async function sendSecureSigningLink(args: {
   return payload.workflow as SecureSigningResult;
 }
 
+export async function dryRunSendSecureSigningLink(args: {
+  tenantId: string;
+  documentId: string;
+  caseId: string;
+  patientName: string;
+  mobileNumber: string;
+  recipientEmail: string;
+  locale?: "ar" | "en";
+}): Promise<{ ok: boolean; dryRun: boolean; message?: string }> {
+  const response = await fetch("/api/modules/informed-consents/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...args, dryRun: true }),
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+
+  if (!response.ok || !payload.ok) {
+    throw new Error(String(payload.error || "Dry-run send validation failed."));
+  }
+
+  return {
+    ok: true,
+    dryRun: Boolean(payload.dryRun),
+    message: String(payload.message || "Dry-run passed."),
+  };
+}
+
 export async function fetchTimeline(args: {
   tenantId: string;
   caseId?: string;

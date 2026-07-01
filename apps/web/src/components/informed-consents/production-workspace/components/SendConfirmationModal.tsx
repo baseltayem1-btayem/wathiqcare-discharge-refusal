@@ -23,6 +23,7 @@ interface SendConfirmationModalProps {
   procedure?: ProcedureSummary;
   assembly?: ClinicalKnowledgeAssembly;
   onConfirm: () => void;
+  onDryRun?: () => void;
   onCancel: () => void;
 }
 
@@ -33,6 +34,7 @@ export function SendConfirmationModal({
   procedure,
   assembly,
   onConfirm,
+  onDryRun,
   onCancel,
 }: SendConfirmationModalProps) {
   return (
@@ -84,6 +86,11 @@ export function SendConfirmationModal({
           <Button variant="outline" size="sm" uppercase={false} onClick={onCancel}>
             Cancel
           </Button>
+          {onDryRun && (
+            <Button variant="brand" size="sm" uppercase={false} onClick={onDryRun}>
+              <Smartphone className="w-4 h-4" /> Dry-run send
+            </Button>
+          )}
           <Button variant="success" size="sm" uppercase={false} onClick={onConfirm}>
             <Smartphone className="w-4 h-4" /> Confirm send
           </Button>
