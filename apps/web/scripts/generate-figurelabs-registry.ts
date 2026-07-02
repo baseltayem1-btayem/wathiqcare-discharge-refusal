@@ -79,6 +79,7 @@ function specialtySlug(specialtyNameEn: string, specialtyCode: string): string {
     TRANSFUSION_MEDICINE: "transfusion-medicine",
     BREAST_SURGERY: "breast-surgery",
     ENDOCRINE_SURGERY: "endocrine-surgery",
+    COLORECTAL_SURGERY: "colorectal-surgery",
   };
   return known[specialtyCode] || slugify(specialtyNameEn);
 }

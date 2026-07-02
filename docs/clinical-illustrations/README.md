@@ -5,6 +5,7 @@ This directory contains the production registry for patient-facing medical illus
 ## Files
 
 - `procedure_illustration_registry.csv` — the master registry of every procedure in the Clinical Knowledge Engine, with a ready-to-paste FigureLabs prompt, file naming convention, and review status for each row.
+- `batches/figurelabs_batch_01_priority_20.csv` — example priority batch for the first 20 clinically clear illustrations. Use additional batch files (`figurelabs_batch_02_*.csv`, etc.) to organize rollout.
 
 ## Purpose
 

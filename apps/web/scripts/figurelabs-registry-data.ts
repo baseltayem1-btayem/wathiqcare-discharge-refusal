@@ -355,14 +355,102 @@ const SPECIALTY_KEYWORDS: Array<{ keywords: string[]; specialty: SpecialtyInfo }
   },
 ];
 
+const IMAGING_GUIDED_KEYWORDS = [
+  "under imaging",
+  "ct-guided",
+  "ultrasound-guided",
+  "fluoroscopy",
+  "angiogram",
+  "embolisation",
+  "catheter",
+  "contrast injection",
+  "biopsy under imaging",
+  "aspiration drainage under imaging",
+  "fistulogram",
+  "sinogram",
+  "cystogram",
+  "ivp",
+  "intravenous pyelogram",
+  "generic medical imaging",
+  "iodinated contrast",
+];
+
+function isImagingGuided(procedureNameEn: string): boolean {
+  const lower = procedureNameEn.toLowerCase();
+  return IMAGING_GUIDED_KEYWORDS.some((k) => lower.includes(k));
+}
+
+function correctRadiologyMisclassification(
+  procedureNameEn: string,
+  currentSpecialty: SpecialtyInfo,
+): SpecialtyInfo {
+  if (!currentSpecialty.nameEn.toLowerCase().includes("radiology")) return currentSpecialty;
+  if (isImagingGuided(procedureNameEn)) return currentSpecialty;
+
+  const lower = procedureNameEn.toLowerCase();
+
+  if (
+    lower.includes("abdominoperineal") ||
+    lower.includes("rectum") ||
+    lower.includes("anal") ||
+    lower.includes("perineal") ||
+    lower.includes("hemorrhoid") ||
+    lower.includes("haemorrhoid") ||
+    lower.includes("fistula in ano") ||
+    lower.includes("fissure") ||
+    lower.includes("appendic") ||
+    lower.includes("colectomy") ||
+    lower.includes("colostomy") ||
+    lower.includes("bowel") ||
+    lower.includes("intussusception") ||
+    lower.includes("pilonidal")
+  ) {
+    return specialty("Colorectal Surgery / General Surgery", "جراحة القولون والمستقيم / الجراحة العامة", "COLORECTAL_SURGERY");
+  }
+
+  if (lower.includes("mastectomy") || lower.includes("breast")) {
+    return specialty("Breast Surgery", "جراحة الثدي", "BREAST_SURGERY");
+  }
+
+  if (lower.includes("thyroidectomy") || lower.includes("parathyroid")) {
+    return specialty("Endocrine Surgery", "جراحة الغدد الصماء", "ENDOCRINE_SURGERY");
+  }
+
+  if (lower.includes("hernia")) {
+    return specialty("General Surgery / Other", "الجراحة العامة / أخرى", "GENERAL_SURGERY");
+  }
+
+  if (
+    lower.includes("lipectomy") ||
+    lower.includes("liposuction") ||
+    lower.includes("apronectomy") ||
+    lower.includes("abdominoplasty") ||
+    lower.includes("skin graft") ||
+    lower.includes("facelift") ||
+    lower.includes("rhinoplasty") ||
+    lower.includes("vermilionectomy") ||
+    lower.includes("warts removal") ||
+    lower.includes("skin lesion")
+  ) {
+    return specialty("Plastic / Dermatologic Surgery", "جراحة التجميل / الجلدية", "PLASTIC_DERMATOLOGY");
+  }
+
+  if (lower.includes("endometrial resection") || lower.includes("endometrial ablation")) {
+    return specialty("Obstetrics & Gynecology", "النساء والتوليد", "OBSTETRICS_GYNECOLOGY");
+  }
+
+  // Fallback for any other surgical procedure misclassified as Radiology.
+  return specialty("General Surgery / Other", "الجراحة العامة / أخرى", "GENERAL_SURGERY");
+}
+
 export function inferSpecialty(procedureNameEn: string, currentSpecialty: SpecialtyInfo): SpecialtyInfo {
   const lower = procedureNameEn.toLowerCase();
   for (const rule of SPECIALTY_KEYWORDS) {
     if (rule.keywords.some((k) => lower.includes(k))) {
-      return rule.specialty;
+      return correctRadiologyMisclassification(procedureNameEn, rule.specialty);
     }
   }
-  return currentSpecialty;
+  return correctRadiologyMisclassification(procedureNameEn, currentSpecialty);
 }
 
 const ANATOMY_KEYWORDS: Array<{ keywords: string[]; anatomy: string }> = [
@@ -483,7 +571,7 @@ const ANATOMY_KEYWORDS: Array<{ keywords: string[]; anatomy: string }> = [
   { keywords: ["laparotomy"], anatomy: "Abdominal cavity and incision" },
   { keywords: ["laparoscopy"], anatomy: "Abdominal cavity with laparoscope and ports" },
   { keywords: ["laparostomy"], anatomy: "Open abdomen with temporary closure" },
-  { keywords: ["abdominoperineal resection"], anatomy: "Rectum, anus, and perineum" },
+  { keywords: ["abdominoperineal resection"], anatomy: "Rectum, anus, perineum, and lower pelvis" },
   { keywords: ["intussusception"], anatomy: "Intestine and intussuscepted bowel segment" },
   { keywords: ["fistula in ano", "ischiorectal", "perianal abscess"], anatomy: "Anal canal and perianal tissues" },
   { keywords: ["fistula faecal", "small bowel gastric fistula"], anatomy: "Bowel and connected organ at fistula site" },
@@ -533,7 +621,7 @@ const ANATOMY_KEYWORDS: Array<{ keywords: string[]; anatomy: string }> = [
   { keywords: ["home sleep study"], anatomy: "Sleep monitoring sensors and breathing" },
   // Other specific
   { keywords: ["fine needle aspiration"], anatomy: "Target nodule/lesion and fine needle" },
-  { keywords: ["abdominoperineal resection"], anatomy: "Rectum and perineum" },
+  { keywords: ["abdominoperineal resection"], anatomy: "Rectum, anus, perineum, and lower pelvis" },
 ];
 
 export function inferAnatomyRegion(procedureNameEn: string, specialtyNameEn: string): string {
@@ -605,7 +693,16 @@ const PROCESS_KEYWORDS = [
 
 export function inferIllustrationType(procedureNameEn: string): "anatomy_procedure_education" | "process_education" {
   const lower = procedureNameEn.toLowerCase();
-  if (PROCESS_KEYWORDS.some((k) => lower.includes(k))) return "process_education";
+  if (
+    PROCESS_KEYWORDS.some((k) => {
+      // Short tokens like "ct" must match as a whole word to avoid matching
+      // surgical suffixes such as "ectomy", "mastoidectomy", etc.
+      if (k.length <= 3) return new RegExp(`\\b${k}\\b`).test(lower);
+      return lower.includes(k);
+    })
+  ) {
+    return "process_education";
+  }
   return "anatomy_procedure_education";
 }
 
