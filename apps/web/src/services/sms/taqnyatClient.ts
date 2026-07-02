@@ -5,12 +5,23 @@ export type TaqnyatSendArgs = {
   message: string;
 };
 
+export type SmsProvider = "taqnyat" | "sms_proxy";
+
 export type TaqnyatSendResult = {
   ok: boolean;
   statusCode: number;
   providerMessageId: string | null;
   response: Record<string, unknown> | null;
+  provider: SmsProvider | null;
 };
+
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 4) {
+    return "[REDACTED_PHONE]";
+  }
+  return `${digits.slice(0, 3)}****${digits.slice(-2)}`;
+}
 
 function getSenderName(): string {
   return (
@@ -34,11 +45,107 @@ function getBearerToken(): string {
   );
 }
 
-export function isTaqnyatReady(): boolean {
-  return isSmsEnabled() && Boolean(getBearerToken());
+function getSmsProxyUrl(): string {
+  return process.env.SMS_PROXY_URL?.trim() ?? "";
 }
 
-export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
+function getSmsProxySecret(): string {
+  return process.env.SMS_PROXY_SECRET?.trim() ?? "";
+}
+
+function getSmsProxySenderName(): string {
+  return process.env.SMS_PROXY_SENDER_NAME?.trim() ?? "WATHIQID";
+}
+
+function isSmsProxyConfigured(): boolean {
+  return Boolean(getSmsProxyUrl() && getSmsProxySecret());
+}
+
+/**
+ * Normalize a Saudi mobile number to the proxy/Taqnyat-successful format:
+ * 9665XXXXXXXX without a leading '+'.
+ */
+export function normalizeSaudiMobileForSms(recipient: string): string {
+  let digits = recipient.replace(/\D/g, "");
+
+  if (digits.startsWith("+")) {
+    digits = digits.slice(1);
+  }
+  if (digits.startsWith("00")) {
+    digits = digits.slice(2);
+  }
+  if (digits.startsWith("0") && digits.length === 10) {
+    digits = `966${digits.slice(1)}`;
+  }
+  if (digits.startsWith("5") && digits.length === 9) {
+    digits = `966${digits}`;
+  }
+
+  return digits;
+}
+
+export function isTaqnyatReady(): boolean {
+  return isSmsProxyConfigured() || (isSmsEnabled() && Boolean(getBearerToken()));
+}
+
+function buildSendResult(
+  response: Response,
+  parsed: Record<string, unknown> | null,
+  provider: SmsProvider,
+): TaqnyatSendResult {
+  const messageId =
+    typeof parsed?.messageId === "string"
+      ? parsed.messageId
+      : typeof parsed?.message_id === "string"
+        ? parsed.message_id
+        : null;
+
+  return {
+    ok: response.ok,
+    statusCode: response.status,
+    providerMessageId: messageId,
+    response: parsed,
+    provider,
+  };
+}
+
+async function sendViaSmsProxy(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
+  const proxyUrl = getSmsProxyUrl().replace(/\/$/, "");
+  const secret = getSmsProxySecret();
+  const senderName = getSmsProxySenderName();
+  const normalizedRecipient = normalizeSaudiMobileForSms(args.recipient);
+
+  // Safe logging: mask recipient, never log secret.
+  console.log("[sms_proxy] sending via proxy", {
+    recipient: maskPhone(normalizedRecipient),
+    senderName,
+    messageLength: args.message.length,
+  });
+
+  const response = await fetch(`${proxyUrl}/api/v1/sms/send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-wathiqcare-sms-secret": secret,
+    },
+    body: JSON.stringify({
+      recipient: normalizedRecipient,
+      senderName,
+      message: args.message,
+    }),
+  });
+
+  let parsed: Record<string, unknown> | null = null;
+  try {
+    parsed = (await response.json()) as Record<string, unknown>;
+  } catch {
+    parsed = null;
+  }
+
+  return buildSendResult(response, parsed, "sms_proxy");
+}
+
+async function sendViaDirectTaqnyat(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
   const bearerToken = getBearerToken();
   if (!isSmsEnabled() || !bearerToken) {
     return {
@@ -46,8 +153,17 @@ export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<Taqnyat
       statusCode: 503,
       providerMessageId: null,
       response: { code: "TAQNYAT_NOT_CONFIGURED_OR_DISABLED" },
+      provider: null,
     };
   }
+
+  const normalizedRecipient = normalizeSaudiMobileForSms(args.recipient);
+
+  console.log("[taqnyat] sending via direct API", {
+    recipient: maskPhone(normalizedRecipient),
+    sender: getSenderName(),
+    messageLength: args.message.length,
+  });
 
   const response = await fetch(`${SIGNATURE_CONFIG.taqniatApiUrl.replace(/\/$/, "")}/messages`, {
     method: "POST",
@@ -56,7 +172,7 @@ export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<Taqnyat
       Authorization: `Bearer ${bearerToken}`,
     },
     body: JSON.stringify({
-      recipients: [args.recipient],
+      recipients: [normalizedRecipient],
       body: args.message,
       sender: getSenderName(),
     }),
@@ -69,10 +185,13 @@ export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<Taqnyat
     parsed = null;
   }
 
-  return {
-    ok: response.ok,
-    statusCode: response.status,
-    providerMessageId: typeof parsed?.message_id === "string" ? parsed.message_id : null,
-    response: parsed,
-  };
+  return buildSendResult(response, parsed, "taqnyat");
+}
+
+export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
+  if (isSmsProxyConfigured()) {
+    return sendViaSmsProxy(args);
+  }
+
+  return sendViaDirectTaqnyat(args);
 }

@@ -3,6 +3,8 @@ import { getPrisma } from "@/lib/server/prisma";
 
 const prisma = () => getPrisma();
 
+export type SmsProvider = "taqnyat" | "sms_proxy";
+
 export type SmsAuditArgs = {
   tenantId: string;
   recipient: string;
@@ -11,6 +13,7 @@ export type SmsAuditArgs = {
   statusCode?: number | null;
   failureReason?: string | null;
   notificationType: string;
+  provider?: SmsProvider | null;
   metadata?: Record<string, unknown>;
 };
 
@@ -24,7 +27,7 @@ export async function recordSmsAuditAttempt(
       tenantId: args.tenantId,
       caseId: args.caseId ?? null,
       channel: "sms",
-      provider: "taqnyat",
+      provider: args.provider ?? "taqnyat",
       recipient: args.recipient,
       notificationType: args.notificationType,
       status: args.status,

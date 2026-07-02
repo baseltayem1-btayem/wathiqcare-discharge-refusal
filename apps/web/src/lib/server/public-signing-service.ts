@@ -42,7 +42,7 @@ import { finalizeConsentDocument } from "@/lib/server/consent-library-service";
 import { buildFinalConsentPdfPayload } from "@/lib/server/informed-consents-final-pdf-payload";
 import { buildSigningOtpSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
-import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
+import { recordSmsAuditAttempt, type SmsProvider } from "@/services/sms/smsAuditService";
 
 const prisma = () => getPrisma();
 
@@ -2030,6 +2030,7 @@ export async function requestSigningOtp(args: {
   let statusCode: number | null = null;
   let providerResponse: Record<string, unknown> | null = null;
   let failureReason: string | null = null;
+  let smsProvider: SmsProvider | null = null;
   let otpEmailDeliveryStatus: "sent" | "failed" | "disabled" = "disabled";
   let otpEmailAuditId: string | null = null;
   let otpEmailRecipient: string | null = null;
@@ -2061,6 +2062,7 @@ export async function requestSigningOtp(args: {
     smsDeliveryStatus = sendResult.ok ? "sent" : "failed";
     statusCode = sendResult.statusCode;
     providerResponse = sendResult.response;
+    smsProvider = sendResult.provider;
     failureReason = sendResult.ok ? null : "TAQNYAT_DELIVERY_FAILED";
   } else {
     failureReason = "TAQNYAT_NOT_CONFIGURED";
@@ -2117,6 +2119,7 @@ export async function requestSigningOtp(args: {
       statusCode,
       failureReason,
       notificationType: "secure_signing_otp",
+      provider: smsProvider,
       metadata: {
         challengeId,
         sessionId: context.sessionId,

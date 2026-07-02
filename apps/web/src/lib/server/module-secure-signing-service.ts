@@ -6,7 +6,7 @@ import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { ApiError } from "@/lib/server/http";
 import { buildSecureSigningLinkSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
-import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
+import { recordSmsAuditAttempt, type SmsProvider } from "@/services/sms/smsAuditService";
 import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 
 const prisma = () => getPrisma();
@@ -290,6 +290,7 @@ export async function sendModuleSecureSigningLink(args: {
   let smsFailureReason: string | null = null;
   let statusCode: number | null = null;
   let providerResponse: Record<string, unknown> | null = null;
+  let smsProvider: SmsProvider | null = null;
 
   if (normalizedMobile && isTaqnyatReady()) {
     const sms = await sendTaqnyatMessage({
@@ -305,6 +306,7 @@ export async function sendModuleSecureSigningLink(args: {
     smsFailureReason = sms.ok ? null : "TAQNYAT_DELIVERY_FAILED";
     statusCode = sms.statusCode;
     providerResponse = sms.response;
+    smsProvider = sms.provider;
   } else {
     smsFailureReason = normalizedMobile ? "TAQNYAT_NOT_CONFIGURED" : "MOBILE_NOT_AVAILABLE";
   }
@@ -316,6 +318,7 @@ export async function sendModuleSecureSigningLink(args: {
     statusCode,
     failureReason: smsFailureReason,
     notificationType: "secure_signing_link",
+    provider: smsProvider,
     metadata: {
       moduleKey: args.moduleKey,
       caseId: args.caseId,
