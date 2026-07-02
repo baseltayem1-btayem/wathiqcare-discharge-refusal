@@ -52,6 +52,7 @@ export function mapAssemblyToMock(
       riskLevel: mapRiskLevel(r.riskLevel),
       incidenceRate: r.incidenceRate ?? undefined,
     })),
+    illustrations: assembly.illustrations ?? [],
     suggestions: assembly.suggestions.map((s) => ({
       id: s.id,
       type: mapSuggestionType(s.type),

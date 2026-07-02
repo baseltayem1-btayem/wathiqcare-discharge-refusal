@@ -8,7 +8,7 @@
  * repeatedly for the same tenant without creating duplicates.
  */
 
-import { PrismaClient, type Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { buildImcSeedPlan, countSeedPlan } from "../src/lib/server/clinical-knowledge/migration/seed-from-imc";
 import { buildDefaultRuleCreateInputs } from "../src/lib/server/clinical-knowledge/rules/default-rules";
 
@@ -81,6 +81,14 @@ async function main() {
     if (plan.riskDisclosures.length) {
       await tx.riskDisclosure.createMany({
         data: plan.riskDisclosures,
+        skipDuplicates: true,
+      });
+    }
+
+    // 5.5 educational illustrations
+    if (plan.illustrations.length) {
+      await tx.clinicalKnowledgeIllustration.createMany({
+        data: plan.illustrations,
         skipDuplicates: true,
       });
     }

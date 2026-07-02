@@ -43,6 +43,8 @@ import { buildFinalConsentPdfPayload } from "@/lib/server/informed-consents-fina
 import { buildSigningOtpSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
 import { recordSmsAuditAttempt, type SmsProvider } from "@/services/sms/smsAuditService";
+import { getApprovedIllustrationsForDocument } from "@/lib/server/clinical-knowledge/services/illustration-service";
+import type { ClinicalKnowledgeIllustration } from "@/lib/clinical-knowledge/types";
 
 const prisma = () => getPrisma();
 
@@ -261,6 +263,7 @@ export type PublicSigningDocumentPayload = {
     completedAt: string | null;
     session: EducationSessionState;
   };
+  illustrations: ClinicalKnowledgeIllustration[];
 };
 
 type LocalizedLine = { ar: string; en: string };
@@ -1755,6 +1758,7 @@ async function buildPublicSigningDocumentPayload(context: SigningTokenContext): 
   );
   const education = await getEducationStatus(context.tenantId, context.documentId, linkedEducationPackage, context.sessionId);
   const decision = await getDecisionStatus(context.tenantId, doc, education);
+  const illustrations = await getApprovedIllustrationsForDocument(context.tenantId, doc.plannedProcedure);
   const metadata = asRecord(doc.metadata) || {};
   const wordingSnapshot = asRecord(metadata.wordingSnapshot) || {};
   const fixedClauses = asRecord(wordingSnapshot.fixedClauses) || {};
@@ -1837,6 +1841,7 @@ async function buildPublicSigningDocumentPayload(context: SigningTokenContext): 
     signatureCaptured,
     decision: normalizedDecision,
     education: normalizedEducation,
+    illustrations,
   };
 
   const arabicDiagnostics = collectPatientFacingArabicDiagnostics(payload);

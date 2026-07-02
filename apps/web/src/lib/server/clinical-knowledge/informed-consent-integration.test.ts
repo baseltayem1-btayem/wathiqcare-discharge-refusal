@@ -69,6 +69,7 @@ function buildFakeAssembly(
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     })),
+    illustrations: [],
     decisionRules: [],
     suggestions: [],
     blockers: [],

@@ -16,6 +16,12 @@ export type ClinicalKnowledgeStatus =
   | "ARCHIVED"
   | "REJECTED";
 
+export type ClinicalKnowledgeIllustrationStatus =
+  | "draft"
+  | "medical_review"
+  | "approved"
+  | "rejected";
+
 export type ClinicalKnowledgePackageItemType =
   | "CONSENT_FORM"
   | "EDUCATION_MATERIAL"
@@ -210,6 +216,35 @@ export interface ClinicalKnowledgeRiskDisclosure {
   updatedAt: string;
 }
 
+export interface ClinicalKnowledgeIllustration {
+  id: string;
+  tenantId: string;
+  procedureId: string;
+  procedureNameEn: string;
+  procedureNameAr: string;
+  specialty?: string | null;
+  anatomyRegion?: string | null;
+  anatomyImageUrl?: string | null;
+  procedureImageUrl?: string | null;
+  anatomyPromptEn?: string | null;
+  anatomyPromptAr?: string | null;
+  procedurePromptEn?: string | null;
+  procedurePromptAr?: string | null;
+  patientDisplayDisclaimerEn?: string | null;
+  patientDisplayDisclaimerAr?: string | null;
+  source?: string | null;
+  version?: string | null;
+  patientFacing: boolean;
+  imageReviewStatus: ClinicalKnowledgeIllustrationStatus;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  effectiveDate: string;
+  expiryDate?: string | null;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ClinicalKnowledgeDecisionRule {
   id: string;
   tenantId: string;
@@ -257,6 +292,7 @@ export interface ClinicalKnowledgeAssembly {
   consentForm?: ClinicalKnowledgeConsentForm;
   educationMaterials: ClinicalKnowledgeEducationMaterial[];
   riskDisclosures: ClinicalKnowledgeRiskDisclosure[];
+  illustrations: ClinicalKnowledgeIllustration[];
   decisionRules: ClinicalKnowledgeDecisionRule[];
   suggestions: ClinicalSuggestion[];
   blockers: ConsentBlocker[];

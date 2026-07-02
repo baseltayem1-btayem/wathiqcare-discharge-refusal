@@ -42,6 +42,7 @@ import {
   Download,
   FileText,
   Hash,
+  ImageIcon,
   Info,
   Loader2,
   Lock,
@@ -61,6 +62,7 @@ import {
   SecureNoticeBadge,
   type Lang,
 } from "../shared";
+import type { ClinicalKnowledgeIllustration } from "@/lib/clinical-knowledge/types";
 
 /* ════════════════════════════════════════════════════════════════════════
  *  Server contract types (mirror PublicSigningWorkflow payloads)
@@ -154,6 +156,7 @@ type FullDocument = {
   signatureCaptured?: boolean;
   decision?: DecisionPayload | null;
   education?: EducationPayload | null;
+  illustrations?: ClinicalKnowledgeIllustration[];
 };
 
 type DocumentResponse =
@@ -1233,6 +1236,111 @@ export function ApprovedPatientWorkflow({
               </p>
             </Card>
           ) : null}
+
+          {/* Educational illustrations — only approved images are returned by the server */}
+          {(() => {
+            const illustrations = doc.illustrations ?? [];
+            if (illustrations.length === 0) {
+              return (
+                <Card className="p-4 flex items-start gap-3">
+                  <ImageIcon size={16} className="text-muted-foreground mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">
+                    {lang === "ar"
+                      ? "الصور التوضيحية التعليمية بانتظار الموافقة الطبية."
+                      : "Educational illustration pending medical approval."}
+                  </p>
+                </Card>
+              );
+            }
+            return (
+              <div className="flex flex-col gap-3">
+                {illustrations.map((illustration) => (
+                <Card key={illustration.id} className="overflow-hidden">
+                  <div
+                    className={cls(
+                      "px-4 py-3 border-b border-border",
+                      lang === "ar" ? "text-right" : "text-left",
+                    )}
+                  >
+                    <h2 className="text-sm font-semibold text-foreground">
+                      {lang === "ar" ? "صور توضيحية تعليمية" : "Educational Illustrations"}
+                    </h2>
+                  </div>
+                  <div className="p-4 flex flex-col gap-3">
+                    {illustration.anatomyImageUrl && (
+                      <div>
+                        <div
+                          className={cls(
+                            "text-xs font-semibold text-muted-foreground mb-1",
+                            lang === "ar" ? "text-right" : "text-left",
+                          )}
+                        >
+                          {lang === "ar" ? "التشريح" : "Anatomy"}
+                        </div>
+                        {/* eslint-disable-next-line @next/next/no-img-element -- patient-facing educational illustration; external URLs */}
+                        <img
+                          src={illustration.anatomyImageUrl}
+                          alt={illustration.anatomyPromptEn || illustration.procedureNameEn}
+                          className="w-full max-h-48 object-contain rounded"
+                        />
+                        {illustration.anatomyPromptAr && lang === "ar" ? (
+                          <p className="text-sm text-foreground/80 text-right mt-1">
+                            {illustration.anatomyPromptAr}
+                          </p>
+                        ) : illustration.anatomyPromptEn ? (
+                          <p className="text-sm text-foreground/80 mt-1">
+                            {illustration.anatomyPromptEn}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                    {illustration.procedureImageUrl && (
+                      <div>
+                        <div
+                          className={cls(
+                            "text-xs font-semibold text-muted-foreground mb-1",
+                            lang === "ar" ? "text-right" : "text-left",
+                          )}
+                        >
+                          {lang === "ar" ? "الإجراء" : "Procedure"}
+                        </div>
+                        {/* eslint-disable-next-line @next/next/no-img-element -- patient-facing educational illustration; external URLs */}
+                        <img
+                          src={illustration.procedureImageUrl}
+                          alt={illustration.procedurePromptEn || illustration.procedureNameEn}
+                          className="w-full max-h-48 object-contain rounded"
+                        />
+                        {illustration.procedurePromptAr && lang === "ar" ? (
+                          <p className="text-sm text-foreground/80 text-right mt-1">
+                            {illustration.procedurePromptAr}
+                          </p>
+                        ) : illustration.procedurePromptEn ? (
+                          <p className="text-sm text-foreground/80 mt-1">
+                            {illustration.procedurePromptEn}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                    {(lang === "ar"
+                      ? illustration.patientDisplayDisclaimerAr
+                      : illustration.patientDisplayDisclaimerEn) && (
+                      <p
+                        className={cls(
+                          "text-xs text-muted-foreground italic",
+                          lang === "ar" ? "text-right" : "text-left",
+                        )}
+                      >
+                        {lang === "ar"
+                          ? illustration.patientDisplayDisclaimerAr
+                          : illustration.patientDisplayDisclaimerEn}
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+            );
+          })()}
 
           {benefits.length > 0 ? (
             <Card className="p-4 flex flex-col gap-2.5">

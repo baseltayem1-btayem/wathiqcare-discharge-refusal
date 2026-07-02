@@ -9,6 +9,7 @@ import type {
   PatientLanguage,
   TextSize,
 } from "./patient-journey";
+import type { ClinicalKnowledgeIllustration } from "@/lib/clinical-knowledge/types";
 
 export type CapacityStatus = "competent" | "minor" | "incapacitated" | "guardian-required";
 export type LanguagePreference = "en" | "ar" | "bilingual";
@@ -125,6 +126,7 @@ export interface MockClinicalKnowledgeAssembly {
   consentForm?: MockConsentForm;
   educationMaterials: MockEducationMaterial[];
   riskDisclosures: MockRiskDisclosure[];
+  illustrations: ClinicalKnowledgeIllustration[];
   suggestions: MockClinicalSuggestion[];
   blockers: MockConsentBlocker[];
   requiredParticipants: ("witness" | "interpreter" | "guardian")[];

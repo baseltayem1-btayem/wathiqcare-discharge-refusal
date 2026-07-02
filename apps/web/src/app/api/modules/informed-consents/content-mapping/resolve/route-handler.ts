@@ -127,6 +127,7 @@ function buildStaticClinicalKnowledgeAssembly(
     consentForm,
     educationMaterials,
     riskDisclosures: [],
+    illustrations: [],
     decisionRules: [],
     suggestions: [],
     blockers: [],

@@ -63,3 +63,29 @@ test("seed plan counts match IMC library size", () => {
   assert.equal(plan.procedures.length, imcApprovedConsentLibraryGenerated.length);
   assert.equal(plan.consentForms.length, imcApprovedConsentLibraryGenerated.length);
 });
+
+test("seed plan includes approved FigureLabs illustration for Laparoscopic Cholecystectomy", () => {
+  const plan = buildImcSeedPlan({ tenantId: "tenant-test" });
+
+  const illustration = plan.illustrations.find(
+    (i) => i.procedureNameEn === "Laparoscopic Cholecystectomy",
+  );
+
+  assert.ok(illustration, "expected Laparoscopic Cholecystectomy illustration");
+  assert.equal(illustration.imageReviewStatus, "approved");
+  assert.equal(illustration.patientFacing, true);
+  assert.equal(illustration.source, "FigureLabs");
+  assert.equal(illustration.version, "v1");
+  assert.equal(
+    illustration.procedureImageUrl,
+    "/educational/clinical-illustrations/general-surgery/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png",
+  );
+  assert.ok(
+    illustration.patientDisplayDisclaimerEn?.includes("patient education only"),
+    "expected English disclaimer",
+  );
+  assert.ok(
+    illustration.patientDisplayDisclaimerAr?.includes("لأغراض التثقيف فقط"),
+    "expected Arabic disclaimer",
+  );
+});

@@ -21,6 +21,7 @@ import type {
   ClinicalKnowledgeGovernanceEntityType,
   ClinicalKnowledgeGovernanceEventType,
 } from "@prisma/client";
+import { ClinicalKnowledgeIllustrationStatus } from "@prisma/client";
 
 const SEED_VERSION = "1.0.0";
 const SEED_USER_ID = "system-migration";
@@ -38,6 +39,7 @@ export interface ImcSeedPlan {
   }>;
   educationMaterials: Prisma.EducationMaterialCreateManyInput[];
   riskDisclosures: Prisma.RiskDisclosureCreateManyInput[];
+  illustrations: Prisma.ClinicalKnowledgeIllustrationCreateManyInput[];
   packages: Array<{
     package: Prisma.ClinicalKnowledgePackageCreateInput;
     items: Prisma.PackageItemCreateManyInput[];
@@ -194,6 +196,14 @@ export function buildImcSeedPlan(options: ImcSeedOptions): ImcSeedPlan {
     }
   }
 
+  // ── Phase 2.5: approved educational illustrations ─────────────────────────
+  const illustrationByProcedureId = buildIllustrationInputs({
+    tenantId,
+    procedureByCode,
+    createdByUserId,
+    effectiveDate,
+  });
+
   // ── Phase 3: packages and items ──────────────────────────────────────────
   for (const item of imcApprovedConsentLibraryGenerated) {
     const procedure = procedureByCode.get(item.id);
@@ -316,6 +326,7 @@ export function buildImcSeedPlan(options: ImcSeedOptions): ImcSeedPlan {
     consentForms: Array.from(formById.values()),
     educationMaterials: Array.from(educationById.values()),
     riskDisclosures: Array.from(riskById.values()),
+    illustrations: Array.from(illustrationByProcedureId.values()),
     packages,
     governanceEvents,
     warnings,
@@ -451,6 +462,90 @@ function consentTypeToRiskLevel(
   return "STANDARD";
 }
 
+interface BuildIllustrationInputsOptions {
+  tenantId: string;
+  procedureByCode: Map<string, Prisma.ClinicalProcedureCreateManyInput>;
+  createdByUserId: string;
+  effectiveDate: Date;
+}
+
+function buildIllustrationInputs(
+  options: BuildIllustrationInputsOptions,
+): Map<string, Prisma.ClinicalKnowledgeIllustrationCreateManyInput> {
+  const { tenantId, procedureByCode, createdByUserId, effectiveDate } = options;
+  const illustrations = new Map<string, Prisma.ClinicalKnowledgeIllustrationCreateManyInput>();
+
+  const approvedIllustrations: Array<
+    Pick<
+      Prisma.ClinicalKnowledgeIllustrationCreateManyInput,
+      | "procedureImageUrl"
+      | "anatomyImageUrl"
+      | "procedurePromptEn"
+      | "procedurePromptAr"
+      | "anatomyPromptEn"
+      | "anatomyPromptAr"
+      | "patientDisplayDisclaimerEn"
+      | "patientDisplayDisclaimerAr"
+      | "specialty"
+      | "anatomyRegion"
+    > & {
+      procedureCode: string;
+      procedureNameEn: string;
+      procedureNameAr: string;
+    }
+  > = [
+    {
+      procedureCode: "imc-cholecystectomy-laparoscopic",
+      procedureNameEn: "Laparoscopic Cholecystectomy",
+      procedureNameAr: "استئصال المرارة بالمنظار",
+      specialty: "General Surgery",
+      anatomyRegion: "Gallbladder, liver, bile ducts, upper right abdomen",
+      procedureImageUrl:
+        "/educational/clinical-illustrations/general-surgery/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png",
+      procedurePromptEn: "Laparoscopic cholecystectomy — anatomy and procedure overview.",
+      procedurePromptAr: "استئصال المرارة بالمنظار — نظرة عامة على التشريح والإجراء.",
+      patientDisplayDisclaimerEn:
+        "This illustration is for patient education only and does not replace the physician’s explanation.",
+      patientDisplayDisclaimerAr:
+        "هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.",
+    },
+  ];
+
+  for (const approved of approvedIllustrations) {
+    const procedure = procedureByCode.get(approved.procedureCode);
+    if (!procedure || !procedure.id) continue;
+
+    const id = generateStableId(tenantId, "illustration", approved.procedureCode);
+    illustrations.set(procedure.id as string, {
+      id,
+      tenantId,
+      procedureId: procedure.id as string,
+      procedureNameEn: approved.procedureNameEn,
+      procedureNameAr: approved.procedureNameAr,
+      specialty: approved.specialty,
+      anatomyRegion: approved.anatomyRegion,
+      anatomyImageUrl: approved.anatomyImageUrl ?? null,
+      procedureImageUrl: approved.procedureImageUrl ?? null,
+      anatomyPromptEn: approved.anatomyPromptEn ?? null,
+      anatomyPromptAr: approved.anatomyPromptAr ?? null,
+      procedurePromptEn: approved.procedurePromptEn ?? null,
+      procedurePromptAr: approved.procedurePromptAr ?? null,
+      patientDisplayDisclaimerEn: approved.patientDisplayDisclaimerEn ?? null,
+      patientDisplayDisclaimerAr: approved.patientDisplayDisclaimerAr ?? null,
+      source: "FigureLabs",
+      version: "v1",
+      patientFacing: true,
+      imageReviewStatus: ClinicalKnowledgeIllustrationStatus.approved,
+      reviewedBy: "FigureLabs Medical Review",
+      reviewedAt: effectiveDate,
+      effectiveDate,
+      createdByUserId,
+    });
+  }
+
+  return illustrations;
+}
+
 export function countSeedPlan(plan: ImcSeedPlan): Record<string, number> {
   return {
     specialties: plan.specialties.length,
@@ -459,6 +554,7 @@ export function countSeedPlan(plan: ImcSeedPlan): Record<string, number> {
     consentFormSections: plan.consentForms.reduce((sum, f) => sum + f.sections.length, 0),
     educationMaterials: plan.educationMaterials.length,
     riskDisclosures: plan.riskDisclosures.length,
+    illustrations: plan.illustrations.length,
     packages: plan.packages.length,
     packageItems: plan.packages.reduce((sum, p) => sum + p.items.length, 0),
     governanceEvents: plan.governanceEvents.length,

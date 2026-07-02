@@ -15,6 +15,7 @@ import { getConsentFormsByIds } from "./form-service";
 import { getEducationMaterialsByIds } from "./education-service";
 import { getRiskDisclosuresByIds } from "./risk-service";
 import { evaluateRules } from "./rule-service";
+import { getApprovedIllustrationsForProcedure } from "./illustration-service";
 import type {
   ClinicalKnowledgeAssembly,
   ClinicalKnowledgeAssemblyRequest,
@@ -65,10 +66,11 @@ export async function assembleKnowledgePackage(
     };
   }
 
-  const [consentForms, educationMaterials, riskDisclosures] = await Promise.all([
+  const [consentForms, educationMaterials, riskDisclosures, illustrations] = await Promise.all([
     getConsentFormsByIds(tenantId, [formItem.itemId]),
     getEducationMaterialsByIds(tenantId, educationItems.map((i) => i.itemId)),
     getRiskDisclosuresByIds(tenantId, riskItems.map((i) => i.itemId)),
+    getApprovedIllustrationsForProcedure(tenantId, procedure.id),
   ]);
 
   const consentForm = consentForms[0];
@@ -102,6 +104,7 @@ export async function assembleKnowledgePackage(
     consentForm,
     educationMaterials,
     riskDisclosures,
+    illustrations,
     decisionRules: [], // populated on demand by rule-service if needed
     suggestions: ruleEvaluation.suggestions,
     blockers: ruleEvaluation.blockers,

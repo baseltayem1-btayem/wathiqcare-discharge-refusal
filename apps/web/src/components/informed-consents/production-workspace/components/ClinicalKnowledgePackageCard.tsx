@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ShieldAlert, AlertCircle, Info, CheckCircle2, Users, FileText } from "lucide-react";
+import { BookOpen, ShieldAlert, AlertCircle, Info, CheckCircle2, Users, FileText, ImageIcon } from "lucide-react";
 import {
   Alert,
   Badge,
@@ -139,6 +139,61 @@ export function ClinicalKnowledgePackageCard({
             <div className="text-sm text-[var(--wc-text-muted)]">No education material matched.</div>
           ) : (
             <div className="text-sm text-[var(--wc-text-muted)]">Education excluded by physician.</div>
+          )}
+        </div>
+
+        {/* Educational illustrations */}
+        <div className="space-y-2">
+          <div className="text-xs font-bold uppercase tracking-wider text-[var(--wc-text-muted)]">
+            Educational illustrations
+          </div>
+          {assembly.illustrations.length > 0 ? (
+            <Stack direction="column" gap={3}>
+              {assembly.illustrations.map((illustration) => (
+                <div
+                  key={illustration.id}
+                  className="space-y-2 p-3 rounded-lg border border-[var(--wc-border)] bg-[var(--wc-surface-2)]"
+                >
+                  {illustration.anatomyImageUrl && (
+                    <div>
+                      <div className="text-xs font-semibold text-[var(--wc-text-muted)] mb-1">Anatomy</div>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- educational illustration placeholder; external URLs */}
+                      <img
+                        src={illustration.anatomyImageUrl}
+                        alt={illustration.anatomyPromptEn || illustration.procedureNameEn}
+                        className="w-full max-h-48 object-contain rounded"
+                      />
+                    </div>
+                  )}
+                  {illustration.procedureImageUrl && (
+                    <div>
+                      <div className="text-xs font-semibold text-[var(--wc-text-muted)] mb-1">Procedure</div>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- educational illustration placeholder; external URLs */}
+                      <img
+                        src={illustration.procedureImageUrl}
+                        alt={illustration.procedurePromptEn || illustration.procedureNameEn}
+                        className="w-full max-h-48 object-contain rounded"
+                      />
+                    </div>
+                  )}
+                  {(illustration.anatomyPromptEn || illustration.procedurePromptEn) && (
+                    <div className="text-sm text-[var(--wc-text)]">
+                      {illustration.procedurePromptEn || illustration.anatomyPromptEn}
+                    </div>
+                  )}
+                  {illustration.patientDisplayDisclaimerEn && (
+                    <div className="text-xs text-[var(--wc-text-muted)] italic">
+                      {illustration.patientDisplayDisclaimerEn}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </Stack>
+          ) : (
+            <div className="flex items-start gap-3 text-sm text-[var(--wc-text-muted)]">
+              <ImageIcon className="w-4 h-4 mt-0.5 shrink-0" />
+              Educational illustration pending medical approval.
+            </div>
           )}
         </div>
 
