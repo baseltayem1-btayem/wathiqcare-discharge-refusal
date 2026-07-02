@@ -24,7 +24,6 @@ import {
 } from "@/lib/server/password-login-policy";
 import { logRuntimeIncident, recordRuntimeMetric } from "@/lib/server/runtime-observability";
 import { assertRuntimeWriteAllowed } from "@/lib/server/runtime-modes";
-import { resolveRuntimeDatabaseUrl } from "@/lib/config/env-validation";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -446,21 +445,9 @@ export async function POST(request: NextRequest) {
     const user = await findUserByEmailWithDomain(prisma, email);
 
     if (!user) {
-      let dbHost = "unknown";
-      try {
-        const dbUrl = resolveRuntimeDatabaseUrl();
-        if (dbUrl) {
-          dbHost = new URL(dbUrl).host;
-        }
-      } catch {
-        dbHost = "parse-error";
-      }
-      const userCount = await prisma.user.count().catch(() => -1);
       console.warn("AUTH_USER_NOT_FOUND", {
         route: "/api/auth/password/login",
         email,
-        dbHost,
-        userCount,
       });
 
       await recordLoginAttempt({
