@@ -280,3 +280,30 @@ export const BATCH_1_ILLUSTRATIONS: Record<string, BatchIllustration> = {
     notes: "Image integrated from FigureLabs separated package; authorization certificate pending.",
   },
 };
+
+/**
+ * Batch 2: next 20 normalized procedures from the master registry, selected
+ * after excluding Batch 1. These are queued for FigureLabs generation.
+ */
+export const BATCH_2_KEYS: string[] = [
+  "abdominal-aortic-aneurysm",
+  "abdominoperineal-resection-of-rectum",
+  "abdominoplasty",
+  "adenotonsillectomy",
+  "allergen-immunotherapy",
+  "allergy-skin-test-consent-and-informed",
+  "amniocentesis-chorionic-villus-sampling",
+  "amputation",
+  "angiogram-with-mechanical-thrombectomy-any-body-part",
+  "arteriovenous-fistula",
+  "arteriovenous-goretex-loop-graft",
+  "arthrogram",
+  "arthroplasty-consent",
+  "aspiration-drainage-under-imaging",
+  "bartholin-s-glands",
+  "biopsy-under-imaging",
+  "blepharoplasty",
+  "blood-and-blood-products-transfusion-consent",
+  "breast-abscess-haematoma",
+  "breast-biopsy-aspiration",
+];

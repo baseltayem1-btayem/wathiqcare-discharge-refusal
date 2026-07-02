@@ -5,9 +5,11 @@ This directory contains the production registry for patient-facing medical illus
 ## Files
 
 - `procedure_illustration_registry.csv` — the master registry of every procedure in the Clinical Knowledge Engine, with a ready-to-paste FigureLabs prompt, file naming convention, and review status for each row.
-- `batches/figurelabs_batch_01_priority_20.csv` — example priority batch for the first 20 clinically clear illustrations.
-- `batches/figurelabs_batch_01_production_checklist.md` — human-friendly checklist for requesting, reviewing, and exporting Batch 1 illustrations.
-- Use additional batch files (`figurelabs_batch_02_*.csv` and matching checklists) to organize rollout.
+- `batches/figurelabs_batch_01_priority_20.csv` — the first 20 clinically clear illustrations (integrated; approved).
+- `batches/figurelabs_batch_01_production_checklist.md` — human-friendly checklist for Batch 1.
+- `batches/figurelabs_batch_02_priority_20.csv` — the next 20 normalized procedures queued for FigureLabs generation.
+- `batches/figurelabs_batch_02_production_checklist.md` — human-friendly checklist for Batch 2.
+- Use additional batch files (`figurelabs_batch_03_*.csv` and matching checklists) to organize rollout.
 
 ## Purpose
 
@@ -27,6 +29,15 @@ Batch 1 (procedures 2–20 plus the previously approved Laparoscopic Cholecystec
 - The duplicate in `99_excluded_duplicate/` was excluded.
 - All 20 Batch 1 rows are marked `approved` and `patientFacing = true`.
 - Authorization certificates are still pending; placeholder certificate paths are documented in the registry.
+
+## Batch 2 generation queue
+
+Batch 2 contains the next 20 normalized procedures from the master registry, selected after excluding Batch 1.
+
+- Manifest: `docs/clinical-illustrations/batches/figurelabs_batch_02_priority_20.csv`
+- Checklist: `docs/clinical-illustrations/batches/figurelabs_batch_02_production_checklist.md`
+- Status: `draft` / `patientFacing = false` until FigureLabs images are generated and reviewed.
+- The shared registry data in `apps/web/src/lib/server/clinical-knowledge/migration/figurelabs-batch-data.ts` now includes `BATCH_2_KEYS` so the seed mapping can be wired to the approved images once they arrive.
 
 ## Generating the registry
 
