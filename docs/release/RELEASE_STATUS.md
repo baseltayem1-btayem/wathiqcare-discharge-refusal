@@ -4,9 +4,9 @@
 **Date:** 2026-06-29 (UTC)  
 **Release Commander:** Release Commander (automated session)  
 **Production URL:** https://wathiqcare.online  
-**Validated Preview URL:** https://wathiqcare-discharge-refusal-evwlbnqx8-wathiqcare.vercel.app  
+**Validated Preview URL:** https://wathiqcare-discharge-refusal-mgchr0e2r-wathiqcare.vercel.app  
 **Source Branch:** `feature/clinical-knowledge-engine-mvp`  
-**Source Commit:** Current worktree (post-P0-remediation)  
+**Source Commit:** `e2b2e7de7ff59199ff5c0e60c8d350cf4c4ee6cc`  
 
 ---
 
@@ -16,9 +16,9 @@
 |----------|--------|
 | **Production Promotion** | **NO GO** |
 | **Preview Deployment** | **GO** — validated and stable |
-| **IMC Go-Live (tomorrow)** | **Blocked** until P0-006/P0-007 and P0-008 are resolved or formally accepted |
+| **IMC Go-Live** | **Blocked** until P0-006/P0-007 and P0-008 are resolved or formally accepted |
 
-**Summary:** A fresh Preview deployment was created from the current source, all required environment variables were confirmed present, and the complete Playwright smoke suite passed (7/7). All verifiable P0 source-code remediations (P0-001 through P0-005) are working. Production promotion remains blocked by (1) unresolved credential exposure in git history and (2) the FastAPI backend hardening not being verifiable on this Preview deployment.
+**Summary:** A fresh Preview deployment was created from commit `e2b2e7de`, all required environment variables were confirmed present and non-empty, and the complete Playwright smoke suite passed (7/7). All verifiable P0 source-code remediations (P0-001 through P0-005) are working. Production promotion remains blocked by (1) unresolved credential exposure in git history and (2) the FastAPI backend hardening not being verifiable on this Preview deployment.
 
 ---
 
@@ -28,11 +28,11 @@
 
 | Item | Fix | Location / Method |
 |------|-----|-------------------|
-| Missing Preview env var `PUBLIC_SIGNING_OTP_PEPPER` | Added a strong random value to the Preview environment | Vercel CLI |
-| Build command skipped SQL migrations | Updated `vercel.json` to explicitly run `node scripts/run-sql-migrations.cjs` before `next build` | `vercel.json` |
-| Fresh Preview deployment | Deployed current source to a new Preview URL | `vercel --target preview` |
-| Smoke-physician test account | Reset password and corrected role to `doctor` so module access works | `npm run auth:ensure-user` + direct DB fix |
-| SQL migrations on Preview | Applied `0030_signing_token_hash.sql`; made `signing_secure_tokens.token` nullable; revoked legacy raw tokens | `npx prisma db execute` |
+| Fresh Preview deployment | Deployed `e2b2e7de` to a new Preview URL | `vercel --target preview` |
+| Missing Preview env vars | Added/updated strong random values for `PUBLIC_SIGNING_OTP_PEPPER`, `WATHIQ_STEP_UP_SECRET`, `PUBLIC_LINK_TOKEN_PEPPER`, and `PILOT_DOCTOR_PASSWORD` | Vercel CLI |
+| Build command runs SQL migrations | `vercel.json` explicitly runs `node scripts/run-sql-migrations.cjs` before `next build` | `vercel.json` |
+| Smoke-physician test account | Ensured user exists and corrected role to `doctor` so module access works | `npm run auth:ensure-user` + direct DB role fix |
+| SQL migrations on Preview | Applied; `signing_secure_tokens.token` nullable; legacy raw tokens revoked | Build-time migration |
 
 ### P0 Blockers Verified on Preview
 
@@ -41,20 +41,20 @@
 | P0-001 | Step-up header bypass no longer works (`/api/auth/me` with bypass headers returns `verified: false`) | ✅ Pass |
 | P0-002 | Secure-link OTP endpoints exist and enforce OTP | ✅ Pass |
 | P0-003 | New signing tokens stored as SHA-256 hash; `token` column nullable; old raw tokens revoked | ✅ Pass |
-| P0-004 | `PUBLIC_SIGNING_OTP_PEPPER` set; no hardcoded fallback triggered | ✅ Pass |
+| P0-004 | `PUBLIC_SIGNING_OTP_PEPPER` set; OTP hashing works; no hardcoded fallback triggered | ✅ Pass |
 | P0-005 | Public final-pdf route resolves | ✅ Pass |
-| P0-006 / P0-007 | Hardcoded credentials removed from tracked files; pre-commit hook added | ✅ Source clean |
-| P0-008 | Backend proxy disabled on Preview; dangerous endpoints not reachable | ⚠️ Conditional |
+| P0-006 / P0-007 | Hardcoded credentials removed from tracked files; pre-commit hook added; history still contains `.env` | ❌ Blocker |
+| P0-008 | Backend proxy disabled on Preview; dangerous endpoints not reachable; hardened backend not exercised | ⚠️ Conditional |
 
 ---
 
 ## Smoke Test Results — Validated Preview
 
-All tests executed against `https://wathiqcare-discharge-refusal-evwlbnqx8-wathiqcare.vercel.app` on 2026-06-29.
+All tests executed against `https://wathiqcare-discharge-refusal-mgchr0e2r-wathiqcare.vercel.app` on 2026-06-29.
 
 | # | Test | Expected | Actual | Status |
 |---|------|----------|--------|--------|
-| 1 | `GET /api/health` | 200 OK | 200 OK, DB latency ~4 ms | ✅ PASS |
+| 1 | `GET /api/health` | 200 OK | 200 OK | ✅ PASS |
 | 2 | `GET /login` (unauthenticated) | 200 OK | 200 OK | ✅ PASS |
 | 3 | `POST /api/auth/password/login` (valid credentials) | 200 + access token | 200 + JWT | ✅ PASS |
 | 4 | `GET /modules/informed-consents` (authenticated) | 200 OK | 200 OK, production workspace rendered | ✅ PASS |
@@ -66,6 +66,11 @@ All tests executed against `https://wathiqcare-discharge-refusal-evwlbnqx8-wathi
 | 10 | `/sign/test-token` (patient signing surface) | 200 OK | 200 OK | ✅ PASS |
 | 11 | Public final-pdf route resolves | Route matched | `X-Matched-Path` correct | ✅ PASS |
 | 12 | Audit timeline endpoint | 200 + events | Events returned | ✅ PASS |
+| 13 | P0-001 step-up bypass | `stepUp.verified: false` | Verified false with bypass headers | ✅ PASS |
+| 14 | P0-002 secure-link OTP | Endpoints exist and require OTP | Confirmed | ✅ PASS |
+| 15 | P0-003 token hashing | New rows have `token_hash`, no raw `token` | Confirmed via DB query | ✅ PASS |
+| 16 | P0-004 OTP pepper | Pepper set and functional | Confirmed | ✅ PASS |
+| 17 | P0-005 final-pdf route | Route resolves | Confirmed | ✅ PASS |
 
 ### Playwright automated results
 
@@ -80,7 +85,7 @@ All tests executed against `https://wathiqcare-discharge-refusal-evwlbnqx8-wathi
 
 ### 1. P0-006 / P0-007 — Credential exposure in git history
 
-The current working tree no longer contains hardcoded passwords or `.env` files, and `.githooks/pre-commit` blocks future commits. However, the repository history still contains `.env` files (including `DATABASE_URL`) and previously exposed credentials. Security/DevOps must:
+The current working tree no longer contains hardcoded passwords or `.env` files, and `.githooks/pre-commit` blocks future commits. However, the repository history still contains `.env` files (including `DATABASE_URL` with password) and previously exposed credentials. Security/DevOps must:
 
 - Rotate every secret that appeared in history.
 - Rewrite history (e.g., `git-filter-repo`) or force-push a cleaned tree.
