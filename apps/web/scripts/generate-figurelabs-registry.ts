@@ -80,6 +80,8 @@ function specialtySlug(specialtyNameEn: string, specialtyCode: string): string {
     BREAST_SURGERY: "breast-surgery",
     ENDOCRINE_SURGERY: "endocrine-surgery",
     COLORECTAL_SURGERY: "colorectal-surgery",
+    PULMONOLOGY_INTERVENTIONAL: "pulmonology-interventional-radiology",
+    NEURO_RADIO_ANESTHESIA: "neurology-radiology-anesthesia",
   };
   return known[specialtyCode] || slugify(specialtyNameEn);
 }
@@ -167,9 +169,12 @@ function main() {
     const correctedSpecialty = inferSpecialty(procedureNameEn, rawSpecialty);
     const approved = isApprovedLapChole(canonicalProcedureKey, procedureNameEn);
 
+    const finalCanonicalKey = approved ? APPROVED_LAP_CHOLE.canonicalProcedureKey : canonicalProcedureKey;
+    const finalSpecialty = approved ? APPROVED_LAP_CHOLE.specialty : correctedSpecialty;
+
     const anatomyRegion = approved
       ? APPROVED_LAP_CHOLE.anatomyRegion
-      : inferAnatomyRegion(procedureNameEn, correctedSpecialty.nameEn);
+      : inferAnatomyRegion(procedureNameEn, finalSpecialty.nameEn);
 
     const illustrationType = approved
       ? "anatomy_procedure_education"
@@ -177,18 +182,23 @@ function main() {
 
     const arabic = approved
       ? { name: APPROVED_LAP_CHOLE.procedureNameAr }
-      : getArabicName(canonicalProcedureKey, procedureNameEn);
+      : getArabicName(finalCanonicalKey, procedureNameEn);
 
     const procedureNameAr = arabic.name;
-    const aliases = getAliases(canonicalProcedureKey, procedureNameEn, procedureNameAr);
+    const aliases = approved
+      ? APPROVED_LAP_CHOLE.aliases
+      : getAliases(finalCanonicalKey, procedureNameEn, procedureNameAr);
 
     const imageFileName = approved
       ? APPROVED_LAP_CHOLE.imageFileName
-      : `${canonicalProcedureKey}_${illustrationType}_v1_draft.png`;
+      : `${finalCanonicalKey}_${illustrationType}_v1_draft.png`;
 
-    const specialtySlugValue = specialtySlug(correctedSpecialty.nameEn, correctedSpecialty.code);
-    const imagePublicPath = `apps/web/public/educational/clinical-illustrations/${specialtySlugValue}/${canonicalProcedureKey}/${imageFileName}`;
-    const certificatePath = `docs/clinical-illustrations/figurelabs/${canonicalProcedureKey}/${canonicalProcedureKey}_figurelabs_authorization_certificate_v1.pdf`;
+    const imagePublicPath = approved
+      ? APPROVED_LAP_CHOLE.imagePublicPath
+      : `apps/web/public/educational/clinical-illustrations/${specialtySlug(finalSpecialty.nameEn, finalSpecialty.code)}/${finalCanonicalKey}/${imageFileName}`;
+    const certificatePath = approved
+      ? APPROVED_LAP_CHOLE.certificatePath
+      : `docs/clinical-illustrations/figurelabs/${finalCanonicalKey}/${finalCanonicalKey}_figurelabs_authorization_certificate_v1.pdf`;
 
     const notesParts: string[] = [];
     if (arabic.note) notesParts.push(arabic.note);
@@ -198,17 +208,17 @@ function main() {
     const figureLabsPrompt = buildFigureLabsPrompt({
       procedureNameEn,
       procedureNameAr,
-      specialty: correctedSpecialty.nameEn,
+      specialty: finalSpecialty.nameEn,
       anatomyRegion,
       illustrationType,
     });
 
     rows.push({
       sequence: i + 1,
-      specialty: correctedSpecialty.nameEn,
+      specialty: finalSpecialty.nameEn,
       procedureNameEn,
       procedureNameAr,
-      canonicalProcedureKey,
+      canonicalProcedureKey: finalCanonicalKey,
       aliases: aliases.join(" | "),
       anatomyRegion,
       illustrationType,

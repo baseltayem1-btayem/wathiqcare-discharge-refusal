@@ -1,9 +1,9 @@
 sequence,specialty,procedureNameEn,procedureNameAr,canonicalProcedureKey,anatomyRegion,illustrationType,figureLabsPrompt,imageFileName,imagePublicPath,certificatePath,imageReviewStatus,patientFacing,notes
-1,Gastroenterology / Hepatobiliary Surgery,Cholecystectomy Laparoscopic,استئصال المرارة بالمنظار,cholecystectomy-laparoscopic,"Gallbladder, liver, bile ducts, upper right abdomen",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+1,General Surgery / Other,Cholecystectomy Laparoscopic,استئصال المرارة بالمنظار,laparoscopic-cholecystectomy,"Gallbladder, liver, bile ducts, upper right abdomen",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Cholecystectomy Laparoscopic
 Procedure (Arabic): استئصال المرارة بالمنظار
-Specialty: Gastroenterology / Hepatobiliary Surgery
+Specialty: General Surgery / Other
 Anatomical region / focus: Gallbladder, liver, bile ducts, upper right abdomen
 Illustration type: anatomy_procedure_education
 
@@ -16,12 +16,12 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png,apps/web/public/educational/clinical-illustrations/gastroenterology/cholecystectomy-laparoscopic/laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png,docs/clinical-illustrations/figurelabs/cholecystectomy-laparoscopic/cholecystectomy-laparoscopic_figurelabs_authorization_certificate_v1.pdf,approved,true,
-2,Colorectal Surgery / General Surgery,Appendicectomy - Open,استئصال الزائدة الدودية بالجراحة المفتوحة,appendicectomy-open,Appendix and lower right abdomen,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png,apps/web/public/educational/clinical-illustrations/general-surgery/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png,docs/clinical-illustrations/figurelabs/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_figurelabs_authorization_certificate_v1.pdf,approved,true,
+2,General Surgery / Other,Appendicectomy - Open,استئصال الزائدة الدودية بالجراحة المفتوحة,appendicectomy-open,Appendix and lower right abdomen,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Appendicectomy - Open
 Procedure (Arabic): استئصال الزائدة الدودية بالجراحة المفتوحة
-Specialty: Colorectal Surgery / General Surgery
+Specialty: General Surgery / Other
 Anatomical region / focus: Appendix and lower right abdomen
 Illustration type: anatomy_procedure_education
 
@@ -34,7 +34,7 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",appendicectomy-open_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/colorectal-surgery/appendicectomy-open/appendicectomy-open_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/appendicectomy-open/appendicectomy-open_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+- Include a blank area at the bottom for the informed consent disclaimer",appendicectomy-open_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/appendicectomy-open/appendicectomy-open_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/appendicectomy-open/appendicectomy-open_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
 3,Obstetrics & Gynecology,Caesarean Section,الولادة القيصرية,caesarean-section,"Uterus, lower abdominal wall, and fetus in utero",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Caesarean Section
@@ -125,11 +125,11 @@ Requirements:
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
 - Include a blank area at the bottom for the informed consent disclaimer",central-vascular-access-device-insertion_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/vascular-surgery/central-vascular-access-device-insertion/central-vascular-access-device-insertion_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/central-vascular-access-device-insertion/central-vascular-access-device-insertion_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
-8,General Surgery / Other,Blood and Blood Products Transfusion,نقل الدم ومشتقاته,blood-and-blood-products-transfusion,"Intravenous line, blood bag, and infusion pathway",process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+8,Transfusion Medicine / Blood Transfusion,Blood and Blood Products Transfusion,نقل الدم ومشتقاته,blood-and-blood-products-transfusion,"Intravenous line, blood bag, and infusion pathway",process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Blood and Blood Products Transfusion
 Procedure (Arabic): نقل الدم ومشتقاته
-Specialty: General Surgery / Other
+Specialty: Transfusion Medicine / Blood Transfusion
 Anatomical region / focus: Intravenous line, blood bag, and infusion pathway
 Illustration type: process_education
 
@@ -142,7 +142,7 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",blood-and-blood-products-transfusion_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/blood-and-blood-products-transfusion/blood-and-blood-products-transfusion_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/blood-and-blood-products-transfusion/blood-and-blood-products-transfusion_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+- Include a blank area at the bottom for the informed consent disclaimer",blood-and-blood-products-transfusion_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/transfusion-medicine/blood-and-blood-products-transfusion/blood-and-blood-products-transfusion_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/blood-and-blood-products-transfusion/blood-and-blood-products-transfusion_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
 9,Urology,Cystoscopy,تنظير المثانة,cystoscopy,"Bladder, urethra, and ureteric orifices",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Cystoscopy
@@ -161,12 +161,12 @@ Requirements:
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
 - Include a blank area at the bottom for the informed consent disclaimer",cystoscopy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/urology/cystoscopy/cystoscopy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cystoscopy/cystoscopy_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
-10,General Surgery / Other,Thoracentesis (Pleural Tap),بزل الصدر,thoracentesis-pleural-tap,Anatomy specific to Thoracentesis (Pleural Tap),anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+10,Pulmonology / Interventional Radiology,Thoracentesis (Pleural Tap),بزل الصدر,thoracentesis-pleural-tap,"Pleural space, lung, and chest wall",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Thoracentesis (Pleural Tap)
 Procedure (Arabic): بزل الصدر
-Specialty: General Surgery / Other
-Anatomical region / focus: Anatomy specific to Thoracentesis (Pleural Tap)
+Specialty: Pulmonology / Interventional Radiology
+Anatomical region / focus: Pleural space, lung, and chest wall
 Illustration type: anatomy_procedure_education
 
 Requirements:
@@ -178,7 +178,7 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",thoracentesis-pleural-tap_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/thoracentesis-pleural-tap/thoracentesis-pleural-tap_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/thoracentesis-pleural-tap/thoracentesis-pleural-tap_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+- Include a blank area at the bottom for the informed consent disclaimer",thoracentesis-pleural-tap_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/pulmonology-interventional-radiology/thoracentesis-pleural-tap/thoracentesis-pleural-tap_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/thoracentesis-pleural-tap/thoracentesis-pleural-tap_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
 11,"Ear, Nose and Throat",Tracheostomy Informed Consent,موافقة فتح القصبة الهوائية,tracheostomy-informed-consent,"Neck, trachea, and stoma site",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Tracheostomy Informed Consent
@@ -323,11 +323,11 @@ Requirements:
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
 - Include a blank area at the bottom for the informed consent disclaimer",cerebral-angiogram-cerebral-thrombectomy_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/neurosurgery-neuro-interventional-radiology/cerebral-angiogram-cerebral-thrombectomy/cerebral-angiogram-cerebral-thrombectomy_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cerebral-angiogram-cerebral-thrombectomy/cerebral-angiogram-cerebral-thrombectomy_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
-19,General Surgery / Other,Lumbar Puncture (Guided),Lumbar Puncture (Guided),lumbar-puncture-guided,Lower spine and spinal canal,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+19,Neurology / Radiology / Anesthesia,Lumbar Puncture (Guided),Lumbar Puncture (Guided),lumbar-puncture-guided,Lower spine and spinal canal,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Lumbar Puncture (Guided)
 Procedure (Arabic): Lumbar Puncture (Guided)
-Specialty: General Surgery / Other
+Specialty: Neurology / Radiology / Anesthesia
 Anatomical region / focus: Lower spine and spinal canal
 Illustration type: anatomy_procedure_education
 
@@ -340,7 +340,7 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",lumbar-puncture-guided_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/lumbar-puncture-guided/lumbar-puncture-guided_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/lumbar-puncture-guided/lumbar-puncture-guided_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+- Include a blank area at the bottom for the informed consent disclaimer",lumbar-puncture-guided_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/neurology-radiology-anesthesia/lumbar-puncture-guided/lumbar-puncture-guided_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/lumbar-puncture-guided/lumbar-puncture-guided_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
 20,Anesthesia / Pain / Critical Care,Anesthesia - Patient Consent,موافقة المريض على التخدير,anesthesia-patient-consent,"Airway, lungs, and anesthesia monitoring setup",process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Anesthesia - Patient Consent

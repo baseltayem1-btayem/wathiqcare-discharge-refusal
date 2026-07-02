@@ -34,6 +34,7 @@ export const DEFAULT_DISCLAIMER_AR =
 
 // Approved Laparoscopic Cholecystectomy constants (must remain unchanged).
 export const APPROVED_LAP_CHOLE = {
+  canonicalProcedureKey: "laparoscopic-cholecystectomy",
   keys: new Set(["laparoscopic-cholecystectomy", "cholecystectomy-laparoscopic"]),
   aliases: [
     "Laparoscopic Cholecystectomy",
@@ -41,8 +42,13 @@ export const APPROVED_LAP_CHOLE = {
     "Lap Chole",
     "استئصال المرارة بالمنظار",
   ],
+  specialty: specialty("General Surgery / Other", "الجراحة العامة / أخرى", "GENERAL_SURGERY"),
   anatomyRegion: "Gallbladder, liver, bile ducts, upper right abdomen",
   imageFileName: "laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png",
+  imagePublicPath:
+    "apps/web/public/educational/clinical-illustrations/general-surgery/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png",
+  certificatePath:
+    "docs/clinical-illustrations/figurelabs/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_figurelabs_authorization_certificate_v1.pdf",
   imageReviewStatus: "approved",
   patientFacing: true,
   disclaimerEn: DEFAULT_DISCLAIMER_EN,
@@ -132,8 +138,6 @@ const SPECIALTY_KEYWORDS: Array<{ keywords: string[]; specialty: SpecialtyInfo }
       "vasospasm",
       "brain",
       "spine surgery",
-      "lumbar puncture",
-      "intrathecal",
     ],
     specialty: specialty("Neurosurgery / Neuro-interventional Radiology", "جراحة الأعصاب / الأشعة التداخلية العصبية", "NEURO_INTERVENTIONAL"),
   },
@@ -329,7 +333,15 @@ const SPECIALTY_KEYWORDS: Array<{ keywords: string[]; specialty: SpecialtyInfo }
       "blood and blood products",
       "blood transfusion",
     ],
-    specialty: specialty("Transfusion Medicine", "طب نقل الدم", "TRANSFUSION_MEDICINE"),
+    specialty: specialty("Transfusion Medicine / Blood Transfusion", "طب نقل الدم / نقل الدم", "TRANSFUSION_MEDICINE"),
+  },
+  {
+    keywords: ["thoracentesis", "pleural tap", "pleural effusion drainage"],
+    specialty: specialty("Pulmonology / Interventional Radiology", "أمراض الرئة / الأشعة التداخلية", "PULMONOLOGY_INTERVENTIONAL"),
+  },
+  {
+    keywords: ["lumbar puncture", "intrathecal"],
+    specialty: specialty("Neurology / Radiology / Anesthesia", "الأعصاب / الأشعة / التخدير", "NEURO_RADIO_ANESTHESIA"),
   },
   {
     keywords: [
@@ -446,8 +458,15 @@ function correctRadiologyMisclassification(
 export function inferSpecialty(procedureNameEn: string, currentSpecialty: SpecialtyInfo): SpecialtyInfo {
   const lower = procedureNameEn.toLowerCase();
   for (const rule of SPECIALTY_KEYWORDS) {
-    if (rule.keywords.some((k) => lower.includes(k))) {
-      return correctRadiologyMisclassification(procedureNameEn, rule.specialty);
+    if (
+      rule.keywords.some((k) => {
+        // Short tokens like "ct" must match as whole words to avoid matching
+        // surgical terms such as "products", "ectomy", "mastoidectomy", etc.
+        if (k.length <= 3) return new RegExp(`\\b${k}\\b`).test(lower);
+        return lower.includes(k);
+      })
+    ) {
+      return rule.specialty;
     }
   }
   return correctRadiologyMisclassification(procedureNameEn, currentSpecialty);
@@ -555,6 +574,7 @@ const ANATOMY_KEYWORDS: Array<{ keywords: string[]; anatomy: string }> = [
   { keywords: ["hydatid cyst"], anatomy: "Liver and hydatid cyst" },
   { keywords: ["pancreatitis"], anatomy: "Pancreas and surrounding tissues" },
   { keywords: ["paracentesis"], anatomy: "Abdominal cavity and ascitic fluid" },
+  { keywords: ["thoracentesis", "pleural tap"], anatomy: "Pleural space, lung, and chest wall" },
   { keywords: ["cholangiogram", "biliary drain", "biliary stent"], anatomy: "Bile ducts and biliary tree" },
   { keywords: ["swallow meal"], anatomy: "Pharynx and esophagus during swallowing" },
   // General surgery / abdominal wall

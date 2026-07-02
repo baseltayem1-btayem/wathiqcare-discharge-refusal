@@ -16,7 +16,7 @@ const OUTPUT_PATH = "../../docs/clinical-illustrations/batches/figurelabs_batch_
 
 // Priority order and canonical keys for Batch 1.
 const PRIORITY_KEYS = [
-  "cholecystectomy-laparoscopic", // Laparoscopic Cholecystectomy
+  "laparoscopic-cholecystectomy", // Laparoscopic Cholecystectomy
   "appendicectomy-open", // Appendicectomy - Open
   "caesarean-section", // Caesarean Section
   "colonoscopy", // Colonoscopy
