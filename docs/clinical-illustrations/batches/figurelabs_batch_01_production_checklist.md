@@ -13,6 +13,7 @@ Do not use screenshots. Export clean PNGs only. Store authorization certificates
 - **Anatomy region / focus:** Gallbladder, liver, bile ducts, upper right abdomen
 - **Illustration type:** anatomy_procedure_education
 - **Status:** already_approved
+- **Notes:** Approved FigureLabs educational illustration.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -41,7 +42,7 @@ Requirements:
 
 - **Image filename:** `laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png`
 - **Public image path:** `apps/web/public/educational/clinical-illustrations/general-surgery/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png`
-- **Certificate path:** `docs/clinical-illustrations/figurelabs/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_figurelabs_authorization_certificate_v1.pdf`
+- **Certificate path:** `docs/clinical-illustrations/figurelabs/laparoscopic-cholecystectomy/laparoscopic-cholecystectomy_figurelabs_authorization_certificate_v1.pdf`
 
 ---
 
@@ -52,8 +53,8 @@ Requirements:
 - **Specialty:** General Surgery / Other
 - **Anatomy region / focus:** Appendix and lower right abdomen
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -93,8 +94,8 @@ Requirements:
 - **Specialty:** Obstetrics & Gynecology
 - **Anatomy region / focus:** Uterus, lower abdominal wall, and fetus in utero
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -134,8 +135,8 @@ Requirements:
 - **Specialty:** Gastroenterology / Hepatobiliary Surgery
 - **Anatomy region / focus:** Large intestine and rectum
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -175,8 +176,8 @@ Requirements:
 - **Specialty:** Gastroenterology / Hepatobiliary Surgery
 - **Anatomy region / focus:** Esophagus, stomach, and duodenum
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -216,8 +217,8 @@ Requirements:
 - **Specialty:** Radiology / Interventional Radiology
 - **Anatomy region / focus:** Arterial tree and catheter access site
 - **Illustration type:** process_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -257,8 +258,8 @@ Requirements:
 - **Specialty:** Vascular Surgery
 - **Anatomy region / focus:** Central vein and catheter/port device
 - **Illustration type:** process_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -298,8 +299,8 @@ Requirements:
 - **Specialty:** Transfusion Medicine / Blood Transfusion
 - **Anatomy region / focus:** Intravenous line, blood bag, and infusion pathway
 - **Illustration type:** process_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -339,8 +340,8 @@ Requirements:
 - **Specialty:** Urology
 - **Anatomy region / focus:** Bladder, urethra, and ureteric orifices
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -380,8 +381,8 @@ Requirements:
 - **Specialty:** Pulmonology / Interventional Radiology
 - **Anatomy region / focus:** Pleural space, lung, and chest wall
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -421,8 +422,8 @@ Requirements:
 - **Specialty:** Ear, Nose and Throat
 - **Anatomy region / focus:** Neck, trachea, and stoma site
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -462,8 +463,8 @@ Requirements:
 - **Specialty:** Gastroenterology / Hepatobiliary Surgery
 - **Anatomy region / focus:** Liver
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -503,8 +504,8 @@ Requirements:
 - **Specialty:** Gastroenterology / Hepatobiliary Surgery
 - **Anatomy region / focus:** Stomach and abdominal wall with feeding tube
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -544,8 +545,8 @@ Requirements:
 - **Specialty:** Endocrine Surgery
 - **Anatomy region / focus:** Thyroid gland and neck structures
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -583,10 +584,10 @@ Requirements:
 - **Procedure name (EN):** Hernia - Open Inguinal Hernia Repair
 - **Procedure name (AR):** ترتيب الفتق الإربي بالجراحة المفتوحة
 - **Specialty:** General Surgery / Other
-- **Anatomy region / focus:** Abdominal wall and hernia sac at affected site
+- **Anatomy region / focus:** Abdominal wall and groin region
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -596,7 +597,7 @@ Create a patient-friendly, non-graphic, non-bloody medical illustration for info
 Procedure (English): Hernia - Open Inguinal Hernia Repair
 Procedure (Arabic): ترتيب الفتق الإربي بالجراحة المفتوحة
 Specialty: General Surgery / Other
-Anatomical region / focus: Abdominal wall and hernia sac at affected site
+Anatomical region / focus: Abdominal wall and groin region
 Illustration type: anatomy_procedure_education
 
 Requirements:
@@ -624,10 +625,10 @@ Requirements:
 - **Procedure name (EN):** Hernia - Laparoscopic Inguinal Hernia Repair
 - **Procedure name (AR):** ترتيب الفتق الإربي بالمنظار
 - **Specialty:** General Surgery / Other
-- **Anatomy region / focus:** Abdominal wall and hernia sac at affected site
+- **Anatomy region / focus:** Abdominal wall and groin region with laparoscopic ports
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -637,7 +638,7 @@ Create a patient-friendly, non-graphic, non-bloody medical illustration for info
 Procedure (English): Hernia - Laparoscopic Inguinal Hernia Repair
 Procedure (Arabic): ترتيب الفتق الإربي بالمنظار
 Specialty: General Surgery / Other
-Anatomical region / focus: Abdominal wall and hernia sac at affected site
+Anatomical region / focus: Abdominal wall and groin region with laparoscopic ports
 Illustration type: anatomy_procedure_education
 
 Requirements:
@@ -667,8 +668,8 @@ Requirements:
 - **Specialty:** Ophthalmology
 - **Anatomy region / focus:** Eye, cornea, lens, and iris
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -708,8 +709,8 @@ Requirements:
 - **Specialty:** Neurosurgery / Neuro-interventional Radiology
 - **Anatomy region / focus:** Brain arteries and clot retrieval path
 - **Illustration type:** process_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -749,8 +750,8 @@ Requirements:
 - **Specialty:** Neurology / Radiology / Anesthesia
 - **Anatomy region / focus:** Lower spine and spinal canal
 - **Illustration type:** anatomy_procedure_education
-- **Status:** pending_generation
-- **Notes:** Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; Arabic translation requires clinical review; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -790,8 +791,8 @@ Requirements:
 - **Specialty:** Anesthesia / Pain / Critical Care
 - **Anatomy region / focus:** Airway, lungs, and anesthesia monitoring setup
 - **Illustration type:** process_education
-- **Status:** pending_generation
-- **Notes:** Pending FigureLabs generation and medical review.
+- **Status:** already_approved
+- **Notes:** Image integrated from FigureLabs separated package; authorization certificate pending.
 
 ### FigureLabs prompt (copy/paste)
 
@@ -827,5 +828,5 @@ Requirements:
 
 ## Summary
 
-- **Already approved / completed:** 1
-- **Pending FigureLabs generation:** 19
+- **Already approved / completed:** 20
+- **Pending FigureLabs generation:** 0

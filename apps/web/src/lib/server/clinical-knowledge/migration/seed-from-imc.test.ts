@@ -88,12 +88,15 @@ test("seed plan includes approved FigureLabs illustration for Laparoscopic Chole
     illustration.patientDisplayDisclaimerAr?.includes("لأغراض التثقيف فقط"),
     "expected Arabic disclaimer",
   );
+  const synonyms = Array.isArray(illustration.synonyms)
+    ? illustration.synonyms
+    : [];
   assert.ok(
-    illustration.synonyms.includes("Cholecystectomy Laparoscopic"),
+    synonyms.includes("Cholecystectomy Laparoscopic"),
     "expected alias for Cholecystectomy Laparoscopic",
   );
   assert.ok(
-    illustration.synonyms.includes("Lap Chole"),
+    synonyms.includes("Lap Chole"),
     "expected alias for Lap Chole",
   );
 });

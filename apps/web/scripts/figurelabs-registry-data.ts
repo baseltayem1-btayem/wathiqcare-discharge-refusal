@@ -6,20 +6,20 @@
  * illustration type, and review notes).
  */
 
-export interface SpecialtyInfo {
-  nameEn: string;
-  nameAr: string;
-  code: string;
-}
+import {
+  BATCH_1_ILLUSTRATIONS as SourceBatch1,
+  type SpecialtyInfo,
+  type ClinicalOverride,
+} from "../src/lib/server/clinical-knowledge/migration/figurelabs-batch-data";
 
-export interface ClinicalOverride {
-  specialty?: SpecialtyInfo;
-  anatomyRegion?: string;
-  illustrationType?: "anatomy_procedure_education" | "process_education";
-  aliases?: string[];
-  procedureNameAr?: string;
-  notes?: string;
-}
+export type { SpecialtyInfo, ClinicalOverride };
+export const BATCH_1_ILLUSTRATIONS = SourceBatch1;
+
+// Approved Laparoscopic Cholecystectomy constants (must remain unchanged).
+export const APPROVED_LAP_CHOLE = {
+  keys: new Set(["laparoscopic-cholecystectomy", "cholecystectomy-laparoscopic"]),
+  ...BATCH_1_ILLUSTRATIONS["laparoscopic-cholecystectomy"],
+};
 
 export const DEFAULT_SPECIALTY: SpecialtyInfo = {
   nameEn: "General Surgery / Other",
@@ -32,29 +32,8 @@ export const DEFAULT_DISCLAIMER_EN =
 export const DEFAULT_DISCLAIMER_AR =
   "هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.";
 
-// Approved Laparoscopic Cholecystectomy constants (must remain unchanged).
-export const APPROVED_LAP_CHOLE = {
-  canonicalProcedureKey: "laparoscopic-cholecystectomy",
-  keys: new Set(["laparoscopic-cholecystectomy", "cholecystectomy-laparoscopic"]),
-  aliases: [
-    "Laparoscopic Cholecystectomy",
-    "Cholecystectomy Laparoscopic",
-    "Lap Chole",
-    "استئصال المرارة بالمنظار",
-  ],
-  specialty: specialty("General Surgery / Other", "الجراحة العامة / أخرى", "GENERAL_SURGERY"),
-  anatomyRegion: "Gallbladder, liver, bile ducts, upper right abdomen",
-  imageFileName: "laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png",
-  imagePublicPath:
-    "apps/web/public/educational/clinical-illustrations/general-surgery/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png",
-  certificatePath:
-    "docs/clinical-illustrations/figurelabs/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_figurelabs_authorization_certificate_v1.pdf",
-  imageReviewStatus: "approved",
-  patientFacing: true,
-  disclaimerEn: DEFAULT_DISCLAIMER_EN,
-  disclaimerAr: DEFAULT_DISCLAIMER_AR,
-  procedureNameAr: "استئصال المرارة بالمنظار",
-};
+
+
 
 function slugify(input: string): string {
   return input
@@ -649,7 +628,7 @@ export function inferAnatomyRegion(procedureNameEn: string, specialtyNameEn: str
 
   // Approved exception
   if (APPROVED_LAP_CHOLE.keys.has(slugify(procedureNameEn)) || lower.includes("cholecystectomy")) {
-    return APPROVED_LAP_CHOLE.anatomyRegion;
+    return APPROVED_LAP_CHOLE.anatomyRegion!;
   }
 
   for (const rule of ANATOMY_KEYWORDS) {
@@ -884,7 +863,7 @@ export function getArabicName(canonicalKey: string, procedureNameEn: string): { 
 }
 
 const ADDITIONAL_ALIASES: Record<string, string[]> = {
-  "cholecystectomy-laparoscopic": APPROVED_LAP_CHOLE.aliases,
+  "cholecystectomy-laparoscopic": APPROVED_LAP_CHOLE.aliases!,
 };
 
 export function getAliases(canonicalKey: string, procedureNameEn: string, procedureNameAr: string): string[] {

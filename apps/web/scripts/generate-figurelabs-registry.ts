@@ -13,17 +13,16 @@
  */
 
 import { writeFileSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, basename } from "node:path";
 import { buildImcSeedPlan } from "../src/lib/server/clinical-knowledge/migration/seed-from-imc";
 import {
-  APPROVED_LAP_CHOLE,
+  BATCH_1_ILLUSTRATIONS,
   DEFAULT_DISCLAIMER_EN,
   DEFAULT_DISCLAIMER_AR,
   inferSpecialty,
   inferAnatomyRegion,
   inferIllustrationType,
   getArabicName,
-  getAliases,
   buildFigureLabsPrompt,
   type SpecialtyInfo,
 } from "./figurelabs-registry-data";
@@ -84,14 +83,6 @@ function specialtySlug(specialtyNameEn: string, specialtyCode: string): string {
     NEURO_RADIO_ANESTHESIA: "neurology-radiology-anesthesia",
   };
   return known[specialtyCode] || slugify(specialtyNameEn);
-}
-
-function isApprovedLapChole(canonicalKey: string, procedureNameEn: string): boolean {
-  return (
-    APPROVED_LAP_CHOLE.keys.has(canonicalKey) ||
-    procedureNameEn.toLowerCase() === "laparoscopic cholecystectomy" ||
-    procedureNameEn.toLowerCase() === "cholecystectomy laparoscopic"
-  );
 }
 
 function csvEscape(value: string | number | boolean): string {
@@ -167,43 +158,56 @@ function main() {
     seenKeys.add(canonicalProcedureKey);
 
     const correctedSpecialty = inferSpecialty(procedureNameEn, rawSpecialty);
-    const approved = isApprovedLapChole(canonicalProcedureKey, procedureNameEn);
+    const batchOverride = Object.values(BATCH_1_ILLUSTRATIONS).find(
+      (o) =>
+        o.procedureNameEn === procedureNameEn ||
+        o.aliases?.includes(procedureNameEn) ||
+        slugify(o.procedureNameEn) === canonicalProcedureKey,
+    );
 
-    const finalCanonicalKey = approved ? APPROVED_LAP_CHOLE.canonicalProcedureKey : canonicalProcedureKey;
-    const finalSpecialty = approved ? APPROVED_LAP_CHOLE.specialty : correctedSpecialty;
+    let finalCanonicalKey: string;
+    let finalSpecialty: SpecialtyInfo;
+    let anatomyRegion: string;
+    let illustrationType: string;
+    let procedureNameAr: string;
+    let aliases: string[];
+    let imageFileName: string;
+    let imagePublicPath: string;
+    let imageReviewStatus: "approved" | "draft" = "draft";
+    let patientFacing: boolean = false;
+    let notes: string;
 
-    const anatomyRegion = approved
-      ? APPROVED_LAP_CHOLE.anatomyRegion
-      : inferAnatomyRegion(procedureNameEn, finalSpecialty.nameEn);
+    if (batchOverride) {
+      finalCanonicalKey = slugify(batchOverride.procedureNameEn);
+      finalSpecialty = batchOverride.specialty!;
+      anatomyRegion = batchOverride.anatomyRegion!;
+      illustrationType = batchOverride.illustrationType!;
+      procedureNameAr = batchOverride.procedureNameAr ?? procedureNameEn;
+      aliases = batchOverride.aliases ?? [batchOverride.procedureNameEn, procedureNameAr];
+      imageFileName = basename(batchOverride.procedureImageUrl);
+      imagePublicPath = batchOverride.procedureImageUrl;
+      imageReviewStatus = batchOverride.imageReviewStatus;
+      patientFacing = batchOverride.patientFacing;
+      const noteParts: string[] = [];
+      if (batchOverride.notes) noteParts.push(batchOverride.notes);
+      notes = noteParts.join(" ").trim();
+    } else {
+      finalCanonicalKey = canonicalProcedureKey;
+      finalSpecialty = correctedSpecialty;
+      anatomyRegion = inferAnatomyRegion(procedureNameEn, finalSpecialty.nameEn);
+      illustrationType = inferIllustrationType(procedureNameEn);
+      const arabic = getArabicName(finalCanonicalKey, procedureNameEn);
+      procedureNameAr = arabic.name;
+      aliases = [procedureNameEn, procedureNameAr];
+      imageFileName = `${finalCanonicalKey}_${illustrationType}_v1_draft.png`;
+      imagePublicPath = `apps/web/public/educational/clinical-illustrations/${specialtySlug(finalSpecialty.nameEn, finalSpecialty.code)}/${finalCanonicalKey}/${imageFileName}`;
+      const noteParts: string[] = [];
+      if (arabic.note) noteParts.push(arabic.note);
+      noteParts.push("Pending FigureLabs generation and medical review.");
+      notes = noteParts.join(" ").trim();
+    }
 
-    const illustrationType = approved
-      ? "anatomy_procedure_education"
-      : inferIllustrationType(procedureNameEn);
-
-    const arabic = approved
-      ? { name: APPROVED_LAP_CHOLE.procedureNameAr }
-      : getArabicName(finalCanonicalKey, procedureNameEn);
-
-    const procedureNameAr = arabic.name;
-    const aliases = approved
-      ? APPROVED_LAP_CHOLE.aliases
-      : getAliases(finalCanonicalKey, procedureNameEn, procedureNameAr);
-
-    const imageFileName = approved
-      ? APPROVED_LAP_CHOLE.imageFileName
-      : `${finalCanonicalKey}_${illustrationType}_v1_draft.png`;
-
-    const imagePublicPath = approved
-      ? APPROVED_LAP_CHOLE.imagePublicPath
-      : `apps/web/public/educational/clinical-illustrations/${specialtySlug(finalSpecialty.nameEn, finalSpecialty.code)}/${finalCanonicalKey}/${imageFileName}`;
-    const certificatePath = approved
-      ? APPROVED_LAP_CHOLE.certificatePath
-      : `docs/clinical-illustrations/figurelabs/${finalCanonicalKey}/${finalCanonicalKey}_figurelabs_authorization_certificate_v1.pdf`;
-
-    const notesParts: string[] = [];
-    if (arabic.note) notesParts.push(arabic.note);
-    if (!approved) notesParts.push("Pending FigureLabs generation and medical review.");
-    const notes = notesParts.join(" ").trim();
+    const certificatePath = `docs/clinical-illustrations/figurelabs/${finalCanonicalKey}/${finalCanonicalKey}_figurelabs_authorization_certificate_v1.pdf`;
 
     const figureLabsPrompt = buildFigureLabsPrompt({
       procedureNameEn,
@@ -226,8 +230,8 @@ function main() {
       imageFileName,
       imagePublicPath,
       certificatePath,
-      imageReviewStatus: approved ? APPROVED_LAP_CHOLE.imageReviewStatus : "draft",
-      patientFacing: approved ? APPROVED_LAP_CHOLE.patientFacing : false,
+      imageReviewStatus,
+      patientFacing,
       source: "FigureLabs",
       version: "v1",
       disclaimerEn: DEFAULT_DISCLAIMER_EN,

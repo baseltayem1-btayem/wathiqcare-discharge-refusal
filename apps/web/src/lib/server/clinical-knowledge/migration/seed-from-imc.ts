@@ -22,6 +22,7 @@ import type {
   ClinicalKnowledgeGovernanceEventType,
 } from "@prisma/client";
 import { ClinicalKnowledgeIllustrationStatus } from "@prisma/client";
+import { BATCH_1_ILLUSTRATIONS } from "./figurelabs-batch-data";
 
 const SEED_VERSION = "1.0.0";
 const SEED_USER_ID = "system-migration";
@@ -475,74 +476,38 @@ function buildIllustrationInputs(
   const { tenantId, procedureByCode, createdByUserId, effectiveDate } = options;
   const illustrations = new Map<string, Prisma.ClinicalKnowledgeIllustrationCreateManyInput>();
 
-  const approvedIllustrations: Array<
-    Pick<
-      Prisma.ClinicalKnowledgeIllustrationCreateManyInput,
-      | "procedureImageUrl"
-      | "anatomyImageUrl"
-      | "procedurePromptEn"
-      | "procedurePromptAr"
-      | "anatomyPromptEn"
-      | "anatomyPromptAr"
-      | "patientDisplayDisclaimerEn"
-      | "patientDisplayDisclaimerAr"
-      | "specialty"
-      | "anatomyRegion"
-    > & {
-      procedureCode: string;
-      procedureNameEn: string;
-      procedureNameAr: string;
-      synonyms?: string[];
-    }
-  > = [
-    {
-      procedureCode: "imc-cholecystectomy-laparoscopic",
-      procedureNameEn: "Laparoscopic Cholecystectomy",
-      procedureNameAr: "استئصال المرارة بالمنظار",
-      synonyms: [
-        "Laparoscopic Cholecystectomy",
-        "Cholecystectomy Laparoscopic",
-        "Lap Chole",
-        "استئصال المرارة بالمنظار",
-      ],
-      specialty: "General Surgery",
-      anatomyRegion: "Gallbladder, liver, bile ducts, upper right abdomen",
-      procedureImageUrl:
-        "/educational/clinical-illustrations/general-surgery/laparoscopic-cholecystectomy/laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png",
-      procedurePromptEn: "Laparoscopic cholecystectomy — anatomy and procedure overview.",
-      procedurePromptAr: "استئصال المرارة بالمنظار — نظرة عامة على التشريح والإجراء.",
-      patientDisplayDisclaimerEn:
-        "This illustration is for patient education only and does not replace the physician’s explanation.",
-      patientDisplayDisclaimerAr:
-        "هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.",
-    },
-  ];
-
-  for (const approved of approvedIllustrations) {
-    const procedure = procedureByCode.get(approved.procedureCode);
+  for (const [key, batch] of Object.entries(BATCH_1_ILLUSTRATIONS)) {
+    const procedureCode = key === "laparoscopic-cholecystectomy" ? "imc-cholecystectomy-laparoscopic" : `imc-${key}`;
+    const procedure = procedureByCode.get(procedureCode);
     if (!procedure || !procedure.id) continue;
 
-    const id = generateStableId(tenantId, "illustration", approved.procedureCode);
+    const publicImageUrl = batch.procedureImageUrl.replace(/^apps\/web\/public/, "");
+    const id = generateStableId(tenantId, "illustration", procedureCode);
+
     illustrations.set(procedure.id as string, {
       id,
       tenantId,
       procedureId: procedure.id as string,
-      procedureNameEn: approved.procedureNameEn,
-      procedureNameAr: approved.procedureNameAr,
-      specialty: approved.specialty,
-      anatomyRegion: approved.anatomyRegion,
-      anatomyImageUrl: approved.anatomyImageUrl ?? null,
-      procedureImageUrl: approved.procedureImageUrl ?? null,
-      synonyms: approved.synonyms ?? [],
-      anatomyPromptEn: approved.anatomyPromptEn ?? null,
-      anatomyPromptAr: approved.anatomyPromptAr ?? null,
-      procedurePromptEn: approved.procedurePromptEn ?? null,
-      procedurePromptAr: approved.procedurePromptAr ?? null,
-      patientDisplayDisclaimerEn: approved.patientDisplayDisclaimerEn ?? null,
-      patientDisplayDisclaimerAr: approved.patientDisplayDisclaimerAr ?? null,
+      procedureNameEn: batch.procedureNameEn,
+      procedureNameAr: batch.procedureNameAr ?? "",
+      specialty: batch.specialty?.nameEn ?? "",
+      anatomyRegion: batch.anatomyRegion ?? "",
+      anatomyImageUrl: null,
+      procedureImageUrl: publicImageUrl,
+      synonyms: (batch.aliases ?? [batch.procedureNameEn, batch.procedureNameAr]).filter(
+        (s): s is string => typeof s === "string" && s.length > 0,
+      ),
+      anatomyPromptEn: null,
+      anatomyPromptAr: null,
+      procedurePromptEn: `${batch.procedureNameEn} — anatomy and procedure overview.`,
+      procedurePromptAr: `${batch.procedureNameAr ?? batch.procedureNameEn} — نظرة عامة على التشريح والإجراء.`,
+      patientDisplayDisclaimerEn:
+        "This illustration is for patient education only and does not replace the physician’s explanation.",
+      patientDisplayDisclaimerAr:
+        "هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.",
       source: "FigureLabs",
       version: "v1",
-      patientFacing: true,
+      patientFacing: batch.patientFacing,
       imageReviewStatus: ClinicalKnowledgeIllustrationStatus.approved,
       reviewedBy: "FigureLabs Medical Review",
       reviewedAt: effectiveDate,

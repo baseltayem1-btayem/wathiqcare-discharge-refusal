@@ -5,9 +5,16 @@
  *   npx tsx scripts/validate-figurelabs-registry.ts
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
+import { BATCH_1_ILLUSTRATIONS } from "./figurelabs-registry-data";
 
 const CSV_PATH = "../../docs/clinical-illustrations/procedure_illustration_registry.csv";
+const BATCH_1_NAMES = new Set(
+  Object.values(BATCH_1_ILLUSTRATIONS).flatMap((b) => [
+    b.procedureNameEn.toLowerCase(),
+    ...(b.aliases ?? []).map((a) => a.toLowerCase()),
+  ]),
+);
 
 function parseCsv(content: string): Record<string, string>[] {
   const rows: string[][] = [];
@@ -93,6 +100,13 @@ function main() {
     if (!row.imagePublicPath?.startsWith(expectedPrefix)) {
       errors.push(`Invalid imagePublicPath for key ${key || row.sequence}: ${row.imagePublicPath}`);
     }
+
+    if (row.imageReviewStatus === "approved") {
+      const publicFile = row.imagePublicPath.replace(/^apps\/web\//, "");
+      if (!existsSync(publicFile)) {
+        errors.push(`Approved image file missing for key ${key || row.sequence}: ${publicFile}`);
+      }
+    }
   }
 
   const approvedLapChole = rows.find(
@@ -118,6 +132,13 @@ function main() {
     }
   }
 
+  const batchRows = rows.filter((r) => BATCH_1_NAMES.has(r.procedureNameEn.toLowerCase()));
+  if (batchRows.length !== Object.keys(BATCH_1_ILLUSTRATIONS).length) {
+    errors.push(
+      `Expected ${Object.keys(BATCH_1_ILLUSTRATIONS).length} Batch 1 rows, found ${batchRows.length}`,
+    );
+  }
+
   const genericPhraseRows = rows.filter((r) =>
     r.anatomyRegion.toLowerCase().includes("surgical field related to"),
   );
@@ -127,19 +148,18 @@ function main() {
     );
   }
 
-  const lapCholeNames = new Set(["laparoscopic cholecystectomy", "cholecystectomy laparoscopic"]);
-  const nonApprovedApproved = rows.filter(
-    (r) => !lapCholeNames.has(r.procedureNameEn.toLowerCase()) && r.imageReviewStatus === "approved",
+  const nonBatchApproved = rows.filter(
+    (r) => !BATCH_1_NAMES.has(r.procedureNameEn.toLowerCase()) && r.imageReviewStatus === "approved",
   );
-  if (nonApprovedApproved.length) {
-    errors.push(`${nonApprovedApproved.length} non-Lap-Chole row(s) have imageReviewStatus = approved`);
+  if (nonBatchApproved.length) {
+    errors.push(`${nonBatchApproved.length} non-Batch-1 row(s) have imageReviewStatus = approved`);
   }
 
-  const nonApprovedPatientFacing = rows.filter(
-    (r) => !lapCholeNames.has(r.procedureNameEn.toLowerCase()) && r.patientFacing === "true",
+  const nonBatchPatientFacing = rows.filter(
+    (r) => !BATCH_1_NAMES.has(r.procedureNameEn.toLowerCase()) && r.patientFacing === "true",
   );
-  if (nonApprovedPatientFacing.length) {
-    errors.push(`${nonApprovedPatientFacing.length} non-Lap-Chole row(s) have patientFacing = true`);
+  if (nonBatchPatientFacing.length) {
+    errors.push(`${nonBatchPatientFacing.length} non-Batch-1 row(s) have patientFacing = true`);
   }
 
   console.log(`Validated ${rows.length} rows.`);

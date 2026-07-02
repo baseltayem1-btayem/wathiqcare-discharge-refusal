@@ -18,6 +18,16 @@ The registry maps every seeded Clinical Knowledge Engine procedure to a planned 
 - Where the exported PNG and authorization certificate must be stored.
 - Whether the image is approved and patient-facing.
 
+## Batch 1 image integration
+
+Batch 1 (procedures 2–20 plus the previously approved Laparoscopic Cholecystectomy) has been integrated from the FigureLabs separated image package:
+
+- Source ZIP: `C:\Users\basel\Downloads\figurelabs_separated_images_for_kimi.zip`
+- 19 new PNG files copied from `02_project_ready_paths/` to `apps/web/public/educational/clinical-illustrations/`
+- The duplicate in `99_excluded_duplicate/` was excluded.
+- All 20 Batch 1 rows are marked `approved` and `patientFacing = true`.
+- Authorization certificates are still pending; placeholder certificate paths are documented in the registry.
+
 ## Generating the registry
 
 The registry is derived directly from the Clinical Knowledge Engine seed plan so it always matches the seeded procedure list.
