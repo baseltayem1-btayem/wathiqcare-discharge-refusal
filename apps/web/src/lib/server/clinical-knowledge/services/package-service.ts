@@ -13,7 +13,8 @@ import type {
 
 export interface EffectivePackageInput {
   tenantId: string;
-  procedureCode: string;
+  procedureCode?: string;
+  procedureId?: string;
   asOf?: Date;
 }
 
@@ -26,21 +27,28 @@ export interface EffectivePackageResult {
 export async function getEffectivePackageForProcedure(
   input: EffectivePackageInput,
 ): Promise<EffectivePackageResult> {
-  const { tenantId, procedureCode, asOf = new Date() } = input;
+  const { tenantId, procedureCode, procedureId, asOf = new Date() } = input;
   const prisma = getPrisma();
 
-  const procedure = await prisma.clinicalProcedure.findFirst({
-    where: { tenantId, code: procedureCode },
-  });
+  let resolvedProcedureId = procedureId;
+  if (!resolvedProcedureId && procedureCode) {
+    const procedure = await prisma.clinicalProcedure.findFirst({
+      where: { tenantId, code: procedureCode },
+    });
+    if (!procedure) {
+      return { found: false, fallbackReason: "PROCEDURE_NOT_FOUND" };
+    }
+    resolvedProcedureId = procedure.id;
+  }
 
-  if (!procedure) {
+  if (!resolvedProcedureId) {
     return { found: false, fallbackReason: "PROCEDURE_NOT_FOUND" };
   }
 
   const pkg = await prisma.clinicalKnowledgePackage.findFirst({
     where: {
       tenantId,
-      procedureId: procedure.id,
+      procedureId: resolvedProcedureId,
       status: "PUBLISHED",
       effectiveDate: { lte: asOf },
       OR: [{ expiryDate: null }, { expiryDate: { gte: asOf } }],

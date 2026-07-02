@@ -75,6 +75,31 @@ export async function getProcedureByCode(
   return procedure ? mapProcedure(procedure) : null;
 }
 
+export async function getProcedureByIdentifier(
+  tenantId: string,
+  identifier: string,
+): Promise<ClinicalKnowledgeProcedure | null> {
+  const prisma = getPrisma();
+  const normalized = identifier.trim();
+  if (!normalized) return null;
+
+  const procedure = await prisma.clinicalProcedure.findFirst({
+    where: {
+      tenantId,
+      OR: [
+        { code: { equals: normalized, mode: "insensitive" } },
+        { nameEn: { equals: normalized, mode: "insensitive" } },
+        { nameAr: { equals: normalized, mode: "insensitive" } },
+        { shortNameEn: { equals: normalized, mode: "insensitive" } },
+        { shortNameAr: { equals: normalized, mode: "insensitive" } },
+        { keywords: { has: normalized.toLowerCase() } },
+      ],
+    },
+    include: { specialty: { select: { code: true, nameEn: true, nameAr: true } } },
+  });
+  return procedure ? mapProcedure(procedure) : null;
+}
+
 export async function getProcedureById(
   tenantId: string,
   id: string,

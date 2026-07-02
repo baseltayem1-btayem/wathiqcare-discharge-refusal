@@ -224,6 +224,7 @@ export interface ClinicalKnowledgeIllustration {
   procedureNameAr: string;
   specialty?: string | null;
   anatomyRegion?: string | null;
+  synonyms: string[];
   anatomyImageUrl?: string | null;
   procedureImageUrl?: string | null;
   anatomyPromptEn?: string | null;

@@ -2948,6 +2948,7 @@ model ClinicalKnowledgeIllustration {
   procedureNameAr            String                              @map("procedure_name_ar")
   specialty                  String?
   anatomyRegion              String?                             @map("anatomy_region")
+  synonyms                   String[]                            @default([]) @map("synonyms")
   anatomyImageUrl            String?                             @map("anatomy_image_url")
   procedureImageUrl          String?                             @map("procedure_image_url")
   anatomyPromptEn            String?                             @map("anatomy_prompt_en")

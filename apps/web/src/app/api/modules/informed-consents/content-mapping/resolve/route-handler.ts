@@ -14,6 +14,7 @@ import type {
   ClinicalKnowledgeAssembly,
   ClinicalKnowledgeConsentForm,
   ClinicalKnowledgeEducationMaterial,
+  ClinicalKnowledgeIllustration,
 } from "@/lib/clinical-knowledge/types";
 
 export type ContentMappingResolveDependencies = {
@@ -38,6 +39,10 @@ export type ContentMappingResolveDependencies = {
     input: { tenantId: string; procedureCode: string; patientContext?: { capacityStatus?: string; languagePreference?: string } },
     options?: { assemblyResolver?: unknown },
   ) => Promise<CkeConsentMappingResult>;
+  getApprovedIllustrationsForProcedureByNames: (
+    tenantId: string,
+    names: string[],
+  ) => Promise<ClinicalKnowledgeIllustration[]>;
 };
 
 function getTenantId(auth: { tenant_id?: string | null }, queryTenantId: string | null): string | null {
@@ -345,6 +350,12 @@ export async function handleContentMappingResolve(
 
   const pkg = deps.buildImcConsentPackage(result);
   const clinicalKnowledgeAssembly = buildStaticClinicalKnowledgeAssembly(tenantId, result, pkg);
+
+  const staticIllustrations = await deps.getApprovedIllustrationsForProcedureByNames(tenantId, [
+    result.procedureNameEn,
+    result.procedureNameAr,
+  ]);
+  clinicalKnowledgeAssembly.illustrations = staticIllustrations;
 
   return NextResponse.json({
     ok: true,

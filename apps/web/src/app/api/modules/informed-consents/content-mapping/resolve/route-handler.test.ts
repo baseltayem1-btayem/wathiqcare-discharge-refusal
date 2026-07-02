@@ -59,6 +59,7 @@ function buildDeps(overrides: Partial<ContentMappingResolveDependencies> = {}): 
       educationNotAvailable: false,
       auditEvents: [],
     }),
+    getApprovedIllustrationsForProcedureByNames: async () => [],
     ...overrides,
   } as unknown as ContentMappingResolveDependencies;
 }

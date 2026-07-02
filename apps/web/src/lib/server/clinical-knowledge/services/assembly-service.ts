@@ -7,7 +7,7 @@
 
 import { randomUUID } from "crypto";
 import {
-  getProcedureByCode,
+  getProcedureByIdentifier,
   searchProcedures,
 } from "./procedure-service";
 import { getEffectivePackageForProcedure } from "./package-service";
@@ -15,7 +15,10 @@ import { getConsentFormsByIds } from "./form-service";
 import { getEducationMaterialsByIds } from "./education-service";
 import { getRiskDisclosuresByIds } from "./risk-service";
 import { evaluateRules } from "./rule-service";
-import { getApprovedIllustrationsForProcedure } from "./illustration-service";
+import {
+  getApprovedIllustrationsForProcedure,
+  getApprovedIllustrationsForProcedureByNames,
+} from "./illustration-service";
 import type {
   ClinicalKnowledgeAssembly,
   ClinicalKnowledgeAssemblyRequest,
@@ -34,7 +37,7 @@ export async function assembleKnowledgePackage(
 ): Promise<AssemblyResult> {
   const { tenantId, procedureCode, patientContext = {}, physicianContext } = request;
 
-  const procedure = await getProcedureByCode(tenantId, procedureCode);
+  const procedure = await getProcedureByIdentifier(tenantId, procedureCode);
   if (!procedure) {
     return {
       found: false,
@@ -44,7 +47,7 @@ export async function assembleKnowledgePackage(
 
   const packageResult = await getEffectivePackageForProcedure({
     tenantId,
-    procedureCode,
+    procedureId: procedure.id,
   });
 
   if (!packageResult.found || !packageResult.package) {
@@ -66,12 +69,29 @@ export async function assembleKnowledgePackage(
     };
   }
 
-  const [consentForms, educationMaterials, riskDisclosures, illustrations] = await Promise.all([
-    getConsentFormsByIds(tenantId, [formItem.itemId]),
-    getEducationMaterialsByIds(tenantId, educationItems.map((i) => i.itemId)),
-    getRiskDisclosuresByIds(tenantId, riskItems.map((i) => i.itemId)),
-    getApprovedIllustrationsForProcedure(tenantId, procedure.id),
-  ]);
+  const procedureNames = [
+    procedure.nameEn,
+    procedure.nameAr,
+    procedure.shortNameEn,
+    procedure.shortNameAr,
+  ].filter((n): n is string => Boolean(n));
+
+  const [consentForms, educationMaterials, riskDisclosures, directIllustrations, aliasIllustrations] =
+    await Promise.all([
+      getConsentFormsByIds(tenantId, [formItem.itemId]),
+      getEducationMaterialsByIds(tenantId, educationItems.map((i) => i.itemId)),
+      getRiskDisclosuresByIds(tenantId, riskItems.map((i) => i.itemId)),
+      getApprovedIllustrationsForProcedure(tenantId, procedure.id),
+      getApprovedIllustrationsForProcedureByNames(tenantId, procedureNames),
+    ]);
+
+  const illustrationById = new Map<string, (typeof directIllustrations)[number]>();
+  for (const illustration of [...directIllustrations, ...aliasIllustrations]) {
+    if (!illustrationById.has(illustration.id)) {
+      illustrationById.set(illustration.id, illustration);
+    }
+  }
+  const illustrations = Array.from(illustrationById.values());
 
   const consentForm = consentForms[0];
   if (!consentForm) {

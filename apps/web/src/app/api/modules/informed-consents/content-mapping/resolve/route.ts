@@ -7,6 +7,7 @@ import {
   buildImcConsentPackage,
 } from "@/lib/server/content-mapping-service";
 import { resolveCkeConsentMapping } from "@/lib/server/clinical-knowledge/informed-consent-integration";
+import { getApprovedIllustrationsForProcedureByNames } from "@/lib/server/clinical-knowledge/services/illustration-service";
 import { handleContentMappingResolve } from "./route-handler";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ const dependencies = {
   resolveContentMapping,
   buildImcConsentPackage,
   resolveCkeConsentMapping,
+  getApprovedIllustrationsForProcedureByNames,
 } as ContentMappingResolveDependencies;
 
 export async function GET(request: NextRequest) {

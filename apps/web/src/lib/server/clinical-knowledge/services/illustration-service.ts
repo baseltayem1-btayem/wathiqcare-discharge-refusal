@@ -35,6 +35,39 @@ export async function getApprovedIllustrationsForProcedure(
   return rows.map(mapIllustration);
 }
 
+export async function getApprovedIllustrationsForProcedureByNames(
+  tenantId: string,
+  names: string[],
+  asOf: Date = new Date(),
+): Promise<ClinicalKnowledgeIllustration[]> {
+  const prisma = getPrisma();
+  const normalizedNames = names.map((n) => n.trim()).filter(Boolean);
+  if (normalizedNames.length === 0) return [];
+
+  const rows = await prisma.clinicalKnowledgeIllustration.findMany({
+    where: {
+      tenantId,
+      imageReviewStatus: "approved",
+      patientFacing: true,
+      AND: [
+        {
+          effectiveDate: { lte: asOf },
+          OR: [{ expiryDate: null }, { expiryDate: { gte: asOf } }],
+        },
+        {
+          OR: [
+            { procedureNameEn: { in: normalizedNames, mode: "insensitive" } },
+            { procedureNameAr: { in: normalizedNames, mode: "insensitive" } },
+            { synonyms: { hasSome: normalizedNames } },
+          ],
+        },
+      ],
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+  return rows.map(mapIllustration);
+}
+
 export async function getIllustrationsByProcedureId(
   tenantId: string,
   procedureId: string,
@@ -89,6 +122,7 @@ function mapIllustration(
     procedureNameAr: string;
     specialty: string | null;
     anatomyRegion: string | null;
+    synonyms: string[];
     anatomyImageUrl: string | null;
     procedureImageUrl: string | null;
     anatomyPromptEn: string | null;
@@ -118,6 +152,7 @@ function mapIllustration(
     procedureNameAr: row.procedureNameAr,
     specialty: row.specialty,
     anatomyRegion: row.anatomyRegion,
+    synonyms: row.synonyms,
     anatomyImageUrl: row.anatomyImageUrl,
     procedureImageUrl: row.procedureImageUrl,
     anatomyPromptEn: row.anatomyPromptEn,

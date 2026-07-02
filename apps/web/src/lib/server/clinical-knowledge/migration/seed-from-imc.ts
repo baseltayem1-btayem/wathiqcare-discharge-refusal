@@ -492,12 +492,19 @@ function buildIllustrationInputs(
       procedureCode: string;
       procedureNameEn: string;
       procedureNameAr: string;
+      synonyms?: string[];
     }
   > = [
     {
       procedureCode: "imc-cholecystectomy-laparoscopic",
       procedureNameEn: "Laparoscopic Cholecystectomy",
       procedureNameAr: "استئصال المرارة بالمنظار",
+      synonyms: [
+        "Laparoscopic Cholecystectomy",
+        "Cholecystectomy Laparoscopic",
+        "Lap Chole",
+        "استئصال المرارة بالمنظار",
+      ],
       specialty: "General Surgery",
       anatomyRegion: "Gallbladder, liver, bile ducts, upper right abdomen",
       procedureImageUrl:
@@ -526,6 +533,7 @@ function buildIllustrationInputs(
       anatomyRegion: approved.anatomyRegion,
       anatomyImageUrl: approved.anatomyImageUrl ?? null,
       procedureImageUrl: approved.procedureImageUrl ?? null,
+      synonyms: approved.synonyms ?? [],
       anatomyPromptEn: approved.anatomyPromptEn ?? null,
       anatomyPromptAr: approved.anatomyPromptAr ?? null,
       procedurePromptEn: approved.procedurePromptEn ?? null,
