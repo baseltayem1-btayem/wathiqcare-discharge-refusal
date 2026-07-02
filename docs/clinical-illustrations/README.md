@@ -131,4 +131,5 @@ Only rows where `imageReviewStatus = approved` and `patientFacing = true` are el
 - Do not include patient-identifiable information in prompts, file names, or illustrations.
 - Do not use screenshots as source material.
 - Do not display any image to patients until it is approved and marked `patientFacing = true`.
+- Arabic procedure names in the registry are provided where reasonably clear; rows without a verified Arabic translation keep the English name and include a note for clinical review.
 - Keep the registry committed and version-controlled so changes are auditable.

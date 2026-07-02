@@ -6,11 +6,27 @@
  *
  * Outputs:
  *   docs/clinical-illustrations/procedure_illustration_registry.csv
+ *
+ * This script pulls the procedure list from the Clinical Knowledge Engine seed
+ * plan and applies a clinical QA pass (specialty correction, anatomy regions,
+ * Arabic names, illustration type, and FigureLabs prompts).
  */
 
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { buildImcSeedPlan } from "../src/lib/server/clinical-knowledge/migration/seed-from-imc";
+import {
+  APPROVED_LAP_CHOLE,
+  DEFAULT_DISCLAIMER_EN,
+  DEFAULT_DISCLAIMER_AR,
+  inferSpecialty,
+  inferAnatomyRegion,
+  inferIllustrationType,
+  getArabicName,
+  getAliases,
+  buildFigureLabsPrompt,
+  type SpecialtyInfo,
+} from "./figurelabs-registry-data";
 
 interface RegistryRow {
   sequence: number;
@@ -36,22 +52,6 @@ interface RegistryRow {
 
 const OUTPUT_PATH = "../../docs/clinical-illustrations/procedure_illustration_registry.csv";
 
-const APPROVED_LAP_CHOLE = {
-  keys: new Set(["laparoscopic-cholecystectomy", "cholecystectomy-laparoscopic"]),
-  aliases: ["Laparoscopic Cholecystectomy", "Cholecystectomy Laparoscopic", "Lap Chole", "استئصال المرارة بالمنظار"],
-  anatomyRegion: "Gallbladder, liver, bile ducts, upper right abdomen",
-  imageFileName: "laparoscopic_cholecystectomy_anatomy_procedure_education_v1_approved.png",
-  imageReviewStatus: "approved",
-  patientFacing: true,
-  disclaimerEn: "This illustration is for patient education only and does not replace the physician’s explanation.",
-  disclaimerAr: "هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.",
-};
-
-const DEFAULT_DISCLAIMER_EN =
-  "This illustration is for patient education only and does not replace the physician’s explanation.";
-const DEFAULT_DISCLAIMER_AR =
-  "هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.";
-
 function slugify(input: string): string {
   return input
     .toLowerCase()
@@ -67,106 +67,20 @@ function specialtySlug(specialtyNameEn: string, specialtyCode: string): string {
     ANESTHESIA: "anesthesia",
     RADIOLOGY: "radiology",
     GASTROENTEROLOGY: "gastroenterology",
+    OPHTHALMOLOGY: "ophthalmology",
+    CARDIOLOGY: "cardiology",
+    NEURO_INTERVENTIONAL: "neurosurgery-neuro-interventional-radiology",
+    VASCULAR_SURGERY: "vascular-surgery",
+    ORTHOPEDICS: "orthopedics",
+    OBSTETRICS_GYNECOLOGY: "obstetrics-gynecology",
+    UROLOGY: "urology",
+    PLASTIC_DERMATOLOGY: "plastic-dermatologic-surgery",
+    ALLERGY_IMMUNOLOGY: "allergy-immunology",
+    TRANSFUSION_MEDICINE: "transfusion-medicine",
+    BREAST_SURGERY: "breast-surgery",
+    ENDOCRINE_SURGERY: "endocrine-surgery",
   };
   return known[specialtyCode] || slugify(specialtyNameEn);
-}
-
-function inferAnatomyRegion(procedureNameEn: string, specialtyCode: string, specialtyNameEn: string): string {
-  const lower = procedureNameEn.toLowerCase();
-
-  // Approved exception
-  if (
-    lower.includes("cholecystectomy") ||
-    lower.includes("lap chole") ||
-    lower.includes("laparoscopic cholecystectomy")
-  ) {
-    return APPROVED_LAP_CHOLE.anatomyRegion;
-  }
-
-  if (lower.includes("appendectomy")) return "Appendix and lower right abdomen";
-  if (lower.includes("hernia")) return "Abdominal wall and groin region";
-  if (lower.includes("hemorrhoid")) return "Anal canal and lower rectum";
-  if (lower.includes("fissure")) return "Anal canal";
-  if (lower.includes("fistula")) return "Perianal region";
-  if (lower.includes("tonsil")) return "Oropharynx and tonsils";
-  if (lower.includes("adenoid")) return "Nasopharynx and adenoids";
-  if (lower.includes("myringotomy") || lower.includes("grommet")) return "Middle ear and tympanic membrane";
-  if (lower.includes("septoplasty")) return "Nasal septum and nasal cavity";
-  if (lower.includes("sinus")) return "Paranasal sinuses";
-  if (lower.includes("endoscopy") || lower.includes("colonoscopy") || lower.includes("gastroscopy")) {
-    return "Gastrointestinal tract";
-  }
-  if (lower.includes("biopsy")) return "Target tissue site (procedure-specific)";
-  if (lower.includes("injection") || lower.includes("block")) return "Target nerve or joint region";
-
-  switch (specialtyCode) {
-    case "ENT":
-      return "Ear, nose, throat and adjacent head/neck structures";
-    case "ANESTHESIA":
-      return "Whole body / systemic anesthesia process";
-    case "RADIOLOGY":
-      return "Relevant body region for imaging or interventional procedure";
-    case "GASTROENTEROLOGY":
-      return "Gastrointestinal tract";
-    case "GENERAL_SURGERY":
-    default:
-      return `Surgical field related to ${specialtyNameEn}`;
-  }
-}
-
-function inferIllustrationType(procedureNameEn: string, specialtyCode: string): string {
-  const lower = procedureNameEn.toLowerCase();
-  const processKeywords = [
-    "anesthesia",
-    "sedation",
-    "imaging",
-    "x-ray",
-    "ultrasound",
-    "scan",
-    "consultation",
-    "counseling",
-    "line insertion",
-    "catheter insertion",
-    "infusion",
-    "monitoring",
-  ];
-  if (specialtyCode === "ANESTHESIA" || specialtyCode === "RADIOLOGY") return "process_education";
-  if (processKeywords.some((k) => lower.includes(k))) return "process_education";
-  return "anatomy_procedure_education";
-}
-
-function buildPrompt(row: {
-  procedureNameEn: string;
-  procedureNameAr: string;
-  specialty: string;
-  anatomyRegion: string;
-  illustrationType: string;
-}): string {
-  const typeInstruction =
-    row.illustrationType === "process_education"
-      ? "Focus on the care pathway, device, instrument, or procedural steps rather than internal organ anatomy."
-      : "Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path where applicable.";
-
-  return [
-    `Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.`,
-    ``,
-    `Procedure (English): ${row.procedureNameEn}`,
-    `Procedure (Arabic): ${row.procedureNameAr}`,
-    `Specialty: ${row.specialty}`,
-    `Anatomical region / focus: ${row.anatomyRegion}`,
-    `Illustration type: ${row.illustrationType}`,
-    ``,
-    `Requirements:`,
-    `- Clean, professional, hospital-grade patient education style`,
-    `- ${typeInstruction}`,
-    `- Use soft clinical colors on a white or very light background`,
-    `- Label the main anatomical structures or steps clearly in English`,
-    `- Leave adequate space for Arabic label overlays`,
-    `- Include short callout labels for the procedural target or key step`,
-    `- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery`,
-    `- Landscape orientation, high resolution, suitable for informed consent display`,
-    `- Include a blank area at the bottom for the informed consent disclaimer`,
-  ].join("\n");
 }
 
 function isApprovedLapChole(canonicalKey: string, procedureNameEn: string): boolean {
@@ -186,7 +100,7 @@ function csvEscape(value: string | number | boolean): string {
 }
 
 function toCsv(rows: RegistryRow[]): string {
-  const headers = [
+  const headers: (keyof RegistryRow)[] = [
     "sequence",
     "specialty",
     "procedureNameEn",
@@ -210,11 +124,7 @@ function toCsv(rows: RegistryRow[]): string {
 
   const lines = [headers.join(",")];
   for (const row of rows) {
-    lines.push(
-      headers
-        .map((h) => csvEscape(row[h as keyof RegistryRow]))
-        .join(","),
-    );
+    lines.push(headers.map((h) => csvEscape(row[h])).join(","));
   }
   return lines.join("\n");
 }
@@ -222,12 +132,13 @@ function toCsv(rows: RegistryRow[]): string {
 function main() {
   const plan = buildImcSeedPlan({ tenantId: "registry-generation", createdByUserId: "system" });
 
-  const specialtyById = new Map<string, { nameEn: string; nameAr: string; code: string }>();
+  const specialtyById = new Map<string, SpecialtyInfo>();
   for (const s of plan.specialties) {
     if (s.id) {
+      const rawName = (s.nameEn as string) || "General Surgery / Other";
       specialtyById.set(s.id as string, {
-        nameEn: (s.nameEn as string) || "General Surgery",
-        nameAr: (s.nameAr as string) || "الجراحة العامة",
+        nameEn: rawName,
+        nameAr: (s.nameAr as string) || rawName,
         code: (s.code as string) || "GENERAL_SURGERY",
       });
     }
@@ -238,14 +149,13 @@ function main() {
 
   for (let i = 0; i < plan.procedures.length; i++) {
     const proc = plan.procedures[i];
-    const specialty = specialtyById.get(proc.specialtyId as string) || {
-      nameEn: "General Surgery",
-      nameAr: "الجراحة العامة",
+    const rawSpecialty = specialtyById.get(proc.specialtyId as string) || {
+      nameEn: "General Surgery / Other",
+      nameAr: "الجراحة العامة / أخرى",
       code: "GENERAL_SURGERY",
     };
 
     const procedureNameEn = (proc.nameEn as string) || "";
-    const procedureNameAr = (proc.nameAr as string) || procedureNameEn;
     const canonicalProcedureKey = slugify(procedureNameEn);
 
     if (seenKeys.has(canonicalProcedureKey)) {
@@ -253,41 +163,52 @@ function main() {
     }
     seenKeys.add(canonicalProcedureKey);
 
+    const correctedSpecialty = inferSpecialty(procedureNameEn, rawSpecialty);
     const approved = isApprovedLapChole(canonicalProcedureKey, procedureNameEn);
+
     const anatomyRegion = approved
       ? APPROVED_LAP_CHOLE.anatomyRegion
-      : inferAnatomyRegion(procedureNameEn, specialty.code, specialty.nameEn);
+      : inferAnatomyRegion(procedureNameEn, correctedSpecialty.nameEn);
+
     const illustrationType = approved
       ? "anatomy_procedure_education"
-      : inferIllustrationType(procedureNameEn, specialty.code);
+      : inferIllustrationType(procedureNameEn);
 
-    const aliases = approved
-      ? APPROVED_LAP_CHOLE.aliases.join(" | ")
-      : [procedureNameEn, procedureNameAr].join(" | ");
+    const arabic = approved
+      ? { name: APPROVED_LAP_CHOLE.procedureNameAr }
+      : getArabicName(canonicalProcedureKey, procedureNameEn);
+
+    const procedureNameAr = arabic.name;
+    const aliases = getAliases(canonicalProcedureKey, procedureNameEn, procedureNameAr);
 
     const imageFileName = approved
       ? APPROVED_LAP_CHOLE.imageFileName
       : `${canonicalProcedureKey}_${illustrationType}_v1_draft.png`;
 
-    const specialtySlugValue = specialtySlug(specialty.nameEn, specialty.code);
+    const specialtySlugValue = specialtySlug(correctedSpecialty.nameEn, correctedSpecialty.code);
     const imagePublicPath = `apps/web/public/educational/clinical-illustrations/${specialtySlugValue}/${canonicalProcedureKey}/${imageFileName}`;
     const certificatePath = `docs/clinical-illustrations/figurelabs/${canonicalProcedureKey}/${canonicalProcedureKey}_figurelabs_authorization_certificate_v1.pdf`;
 
-    const figureLabsPrompt = buildPrompt({
+    const notesParts: string[] = [];
+    if (arabic.note) notesParts.push(arabic.note);
+    if (!approved) notesParts.push("Pending FigureLabs generation and medical review.");
+    const notes = notesParts.join(" ").trim();
+
+    const figureLabsPrompt = buildFigureLabsPrompt({
       procedureNameEn,
       procedureNameAr,
-      specialty: specialty.nameEn,
+      specialty: correctedSpecialty.nameEn,
       anatomyRegion,
       illustrationType,
     });
 
     rows.push({
       sequence: i + 1,
-      specialty: specialty.nameEn,
+      specialty: correctedSpecialty.nameEn,
       procedureNameEn,
       procedureNameAr,
       canonicalProcedureKey,
-      aliases,
+      aliases: aliases.join(" | "),
       anatomyRegion,
       illustrationType,
       figureLabsPrompt,
@@ -298,11 +219,9 @@ function main() {
       patientFacing: approved ? APPROVED_LAP_CHOLE.patientFacing : false,
       source: "FigureLabs",
       version: "v1",
-      disclaimerEn: approved ? APPROVED_LAP_CHOLE.disclaimerEn : DEFAULT_DISCLAIMER_EN,
-      disclaimerAr: approved ? APPROVED_LAP_CHOLE.disclaimerAr : DEFAULT_DISCLAIMER_AR,
-      notes: approved
-        ? "Approved FigureLabs educational illustration."
-        : "Pending FigureLabs generation and medical review.",
+      disclaimerEn: DEFAULT_DISCLAIMER_EN,
+      disclaimerAr: DEFAULT_DISCLAIMER_AR,
+      notes,
     });
   }
 

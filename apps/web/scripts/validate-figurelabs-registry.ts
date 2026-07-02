@@ -118,6 +118,30 @@ function main() {
     }
   }
 
+  const genericPhraseRows = rows.filter((r) =>
+    r.anatomyRegion.toLowerCase().includes("surgical field related to"),
+  );
+  if (genericPhraseRows.length) {
+    errors.push(
+      `${genericPhraseRows.length} row(s) still contain generic anatomy phrase "Surgical field related to"`,
+    );
+  }
+
+  const lapCholeNames = new Set(["laparoscopic cholecystectomy", "cholecystectomy laparoscopic"]);
+  const nonApprovedApproved = rows.filter(
+    (r) => !lapCholeNames.has(r.procedureNameEn.toLowerCase()) && r.imageReviewStatus === "approved",
+  );
+  if (nonApprovedApproved.length) {
+    errors.push(`${nonApprovedApproved.length} non-Lap-Chole row(s) have imageReviewStatus = approved`);
+  }
+
+  const nonApprovedPatientFacing = rows.filter(
+    (r) => !lapCholeNames.has(r.procedureNameEn.toLowerCase()) && r.patientFacing === "true",
+  );
+  if (nonApprovedPatientFacing.length) {
+    errors.push(`${nonApprovedPatientFacing.length} non-Lap-Chole row(s) have patientFacing = true`);
+  }
+
   console.log(`Validated ${rows.length} rows.`);
 
   if (errors.length) {
