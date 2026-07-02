@@ -115,6 +115,17 @@ async function main() {
       : false;
     console.log(`[imc-doctor-pilot] Password hash matches IMC@imc2026: ${hashMatchesBefore}`);
 
+    // Check recent failed login attempts that trigger rate limiting.
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const failedAttempts = await prisma.$queryRaw`
+      SELECT COUNT(*) AS count
+      FROM login_attempts
+      WHERE LOWER(email) = LOWER(${PILOT_DOCTOR_EMAIL})
+        AND success = false
+        AND created_at > ${fifteenMinutesAgo}
+    `;
+    console.log(`[imc-doctor-pilot] Recent failed login attempts: ${Number(failedAttempts[0]?.count ?? 0)}`);
+
     if (!APPLY) {
       console.log("[imc-doctor-pilot] Dry-run complete. Pass --apply to write changes.");
       return;
@@ -174,8 +185,17 @@ async function main() {
     await prisma.$executeRaw`
       UPDATE users
       SET password_reset_required = FALSE,
-          session_revoked_at = NULL
+          session_revoked_at = NULL,
+          failed_login_attempts = 0,
+          locked_until = NULL
       WHERE id = ${userId}
+    `;
+
+    // Clear rate-limiting login_attempts history for this account so the
+    // deployed login endpoint no longer returns 429.
+    await prisma.$executeRaw`
+      DELETE FROM login_attempts
+      WHERE LOWER(email) = LOWER(${PILOT_DOCTOR_EMAIL})
     `;
 
     await prisma.tenantMembership.upsert({
