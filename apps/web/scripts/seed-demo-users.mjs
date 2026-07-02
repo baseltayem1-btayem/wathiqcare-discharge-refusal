@@ -71,6 +71,14 @@ function requireEnv(name) {
 const DEMO_DEFAULT_PASSWORD = requireEnv("DEMO_DEFAULT_PASSWORD");
 const PILOT_DEFAULT_PASSWORD = requireEnv("PILOT_DEFAULT_PASSWORD");
 
+/**
+ * Unified password for IMC doctor / physician pilot accounts.
+ * Can be overridden via IMC_DOCTOR_PILOT_PASSWORD env var; defaults to the
+ * canonical pilot doctor password requested for the IMC Preview.
+ */
+const IMC_DOCTOR_PILOT_PASSWORD =
+  process.env.IMC_DOCTOR_PILOT_PASSWORD?.trim() || "IMC@imc2026";
+
 async function hashPassword(password) {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
@@ -166,7 +174,7 @@ const PILOT_USERS = [
   {
     email: "dr.ahmed@wathiqcare.med.sa",
     fullName: "Dr. Ahmed Pilot Physician",
-    password: PILOT_PASSWORD,
+    password: IMC_DOCTOR_PILOT_PASSWORD,
     label: "Pilot Physician",
     role: "doctor",
     userType: "TENANT_USER",

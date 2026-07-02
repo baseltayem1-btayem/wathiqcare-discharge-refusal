@@ -45,8 +45,16 @@ function requireEnv(name) {
 
 const PILOT_VALIDATION_PASSWORD = requireEnv("PILOT_VALIDATION_PASSWORD");
 
+/**
+ * Unified password for IMC doctor / physician pilot accounts.
+ * Can be overridden via IMC_DOCTOR_PILOT_PASSWORD env var; defaults to the
+ * canonical pilot doctor password requested for the IMC Preview.
+ */
+const IMC_DOCTOR_PILOT_PASSWORD =
+  process.env.IMC_DOCTOR_PILOT_PASSWORD?.trim() || "IMC@imc2026";
+
 const PILOT_USERS = [
-  { email: "dr.ahmed@wathiqcare.med.sa", role: "doctor", label: "Pilot Physician", password: PILOT_VALIDATION_PASSWORD },
+  { email: "dr.ahmed@wathiqcare.med.sa", role: "doctor", label: "Pilot Physician", password: IMC_DOCTOR_PILOT_PASSWORD },
   { email: "medicaldirector@wathiqcare.med.sa", role: "medical_director", label: "Medical Director", password: PILOT_VALIDATION_PASSWORD },
   { email: "nursingsupervisor@wathiqcare.med.sa", role: "nursing", label: "Nursing Supervisor", password: PILOT_VALIDATION_PASSWORD },
   { email: "legalreviewer@wathiqcare.med.sa", role: "legal_admin", label: "Legal Reviewer", password: PILOT_VALIDATION_PASSWORD },
