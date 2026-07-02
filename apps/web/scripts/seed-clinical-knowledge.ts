@@ -6,6 +6,11 @@
  *
  * This script is additive and idempotent (uses stable IDs). It can be run
  * repeatedly for the same tenant without creating duplicates.
+ *
+ * The seed is performed in separate phases instead of one large interactive
+ * transaction. This avoids Prisma P2028 transaction timeouts against remote
+ * Preview / Production databases while keeping each phase atomic and
+ * rerunnable thanks to upserts and skipDuplicates.
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -36,96 +41,119 @@ async function main() {
     console.warn("Seed warnings:", plan.warnings);
   }
 
-  await prisma.$transaction(async (tx) => {
-    // 1. specialties
-    if (plan.specialties.length) {
-      await tx.clinicalSpecialty.createMany({
-        data: plan.specialties,
-        skipDuplicates: true,
-      });
-    }
+  // Phase 1: specialties
+  if (plan.specialties.length) {
+    console.log(`Seeding ${plan.specialties.length} specialty(s)...`);
+    await prisma.clinicalSpecialty.createMany({
+      data: plan.specialties,
+      skipDuplicates: true,
+    });
+  }
 
-    // 2. procedures
-    if (plan.procedures.length) {
-      await tx.clinicalProcedure.createMany({
-        data: plan.procedures,
-        skipDuplicates: true,
-      });
-    }
+  // Phase 2: procedures
+  if (plan.procedures.length) {
+    console.log(`Seeding ${plan.procedures.length} procedure(s)...`);
+    await prisma.clinicalProcedure.createMany({
+      data: plan.procedures,
+      skipDuplicates: true,
+    });
+  }
 
-    // 3. consent forms (with tenant relation, so create individually)
-    for (const entry of plan.consentForms) {
-      await tx.consentForm.upsert({
+  // Phase 3: consent forms + sections
+  // Each form is processed independently so a remote transaction timeout cannot
+  // roll back the entire seed. Stable IDs make reruns safe.
+  if (plan.consentForms.length) {
+    console.log(`Seeding ${plan.consentForms.length} consent form(s)...`);
+    for (let i = 0; i < plan.consentForms.length; i++) {
+      const entry = plan.consentForms[i];
+      if ((i + 1) % 50 === 0 || i === plan.consentForms.length - 1) {
+        console.log(`  ...form ${i + 1}/${plan.consentForms.length}`);
+      }
+
+      await prisma.consentForm.upsert({
         where: { id: entry.form.id as string },
         update: {},
         create: entry.form,
       });
 
       if (entry.sections.length) {
-        await tx.consentFormSection.createMany({
+        await prisma.consentFormSection.createMany({
           data: entry.sections,
           skipDuplicates: true,
         });
       }
     }
+  }
 
-    // 4. education materials
-    if (plan.educationMaterials.length) {
-      await tx.educationMaterial.createMany({
-        data: plan.educationMaterials,
-        skipDuplicates: true,
-      });
-    }
+  // Phase 4: education materials
+  if (plan.educationMaterials.length) {
+    console.log(`Seeding ${plan.educationMaterials.length} education material(s)...`);
+    await prisma.educationMaterial.createMany({
+      data: plan.educationMaterials,
+      skipDuplicates: true,
+    });
+  }
 
-    // 5. risk disclosures
-    if (plan.riskDisclosures.length) {
-      await tx.riskDisclosure.createMany({
-        data: plan.riskDisclosures,
-        skipDuplicates: true,
-      });
-    }
+  // Phase 5: risk disclosures
+  if (plan.riskDisclosures.length) {
+    console.log(`Seeding ${plan.riskDisclosures.length} risk disclosure(s)...`);
+    await prisma.riskDisclosure.createMany({
+      data: plan.riskDisclosures,
+      skipDuplicates: true,
+    });
+  }
 
-    // 5.5 educational illustrations
-    if (plan.illustrations.length) {
-      await tx.clinicalKnowledgeIllustration.createMany({
-        data: plan.illustrations,
-        skipDuplicates: true,
-      });
-    }
+  // Phase 5.5: educational illustrations
+  if (plan.illustrations.length) {
+    console.log(`Seeding ${plan.illustrations.length} illustration(s)...`);
+    await prisma.clinicalKnowledgeIllustration.createMany({
+      data: plan.illustrations,
+      skipDuplicates: true,
+    });
+  }
 
-    // 6. packages + items
-    for (const pkg of plan.packages) {
-      await tx.clinicalKnowledgePackage.upsert({
+  // Phase 6: packages + items
+  if (plan.packages.length) {
+    console.log(`Seeding ${plan.packages.length} package(s)...`);
+    for (let i = 0; i < plan.packages.length; i++) {
+      const pkg = plan.packages[i];
+      if ((i + 1) % 50 === 0 || i === plan.packages.length - 1) {
+        console.log(`  ...package ${i + 1}/${plan.packages.length}`);
+      }
+
+      await prisma.clinicalKnowledgePackage.upsert({
         where: { id: pkg.package.id as string },
         update: {},
         create: pkg.package,
       });
 
       if (pkg.items.length) {
-        await tx.packageItem.createMany({
+        await prisma.packageItem.createMany({
           data: pkg.items,
           skipDuplicates: true,
         });
       }
     }
+  }
 
-    // 7. governance events
-    if (plan.governanceEvents.length) {
-      await tx.governanceEvent.createMany({
-        data: plan.governanceEvents,
-        skipDuplicates: true,
-      });
-    }
+  // Phase 7: governance events
+  if (plan.governanceEvents.length) {
+    console.log(`Seeding ${plan.governanceEvents.length} governance event(s)...`);
+    await prisma.governanceEvent.createMany({
+      data: plan.governanceEvents,
+      skipDuplicates: true,
+    });
+  }
 
-    // 8. default decision rules
-    const defaultRules = buildDefaultRuleCreateInputs(tenantId, createdByUserId);
-    if (defaultRules.length) {
-      await tx.decisionRule.createMany({
-        data: defaultRules,
-        skipDuplicates: true,
-      });
-    }
-  });
+  // Phase 8: default decision rules
+  const defaultRules = buildDefaultRuleCreateInputs(tenantId, createdByUserId);
+  if (defaultRules.length) {
+    console.log(`Seeding ${defaultRules.length} default decision rule(s)...`);
+    await prisma.decisionRule.createMany({
+      data: defaultRules,
+      skipDuplicates: true,
+    });
+  }
 
   console.log("Clinical Knowledge Engine seeded successfully.");
 }
