@@ -15,7 +15,6 @@ import { dirname } from "node:path";
 const BATCH_CSV = "../../docs/clinical-illustrations/batches/figurelabs_batch_02_priority_20.csv";
 const BATCH_CHECKLIST = "../../docs/clinical-illustrations/batches/figurelabs_batch_02_production_checklist.md";
 const OUTPUT_DIR = "../../.tmp-handoff/figurelabs_batch_02_handoff_package";
-const ZIP_PATH = "../../figurelabs_batch_02_handoff_package.zip";
 
 const STATUS = {
   production_status: "pending_figurelabs_generation",
@@ -296,7 +295,6 @@ Arabic translations marked "subject to clinical review" are in
   // Zip the package.
   const outputDirParent = dirname(OUTPUT_DIR);
   const zipName = "figurelabs_batch_02_handoff_package.zip";
-  const zipAbsolute = `${outputDirParent}/${zipName}`;
   const zipTarget = `${process.cwd()}/${zipName}`;
 
   let zipped = false;
