@@ -15,7 +15,7 @@ export type ProductionPatient = {
   mobileNumber?: string | null;
   emergencyContact?: string | null;
   emergencyContactPhone?: string | null;
-  source?: "trakcare" | "case_fallback";
+  source?: "trakcare" | "case_fallback" | "pilot_fallback";
   languagePreference?: "en" | "ar" | "bilingual";
   capacityStatus?: "competent" | "minor" | "incapacitated" | "guardian-required";
 };
@@ -36,7 +36,7 @@ export type ProductionEncounter = {
   caseNumber?: string | null;
   syncStatus?: "SYNCED" | "CACHED" | "UAT_MOCK";
   isMock?: boolean;
-  source?: "trakcare" | "cached_local" | "uat_mock";
+  source?: "trakcare" | "cached_local" | "uat_mock" | "pilot_fallback";
 };
 
 export type ProductionProcedure = {

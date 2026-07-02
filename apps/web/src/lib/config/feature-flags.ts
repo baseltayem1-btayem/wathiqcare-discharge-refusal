@@ -114,6 +114,9 @@ export const ENABLE_EMR_MAPPING = envBool("FF_ENABLE_EMR_MAPPING", false);
 /** Enable TrakCare live patient context fetch */
 export const ENABLE_TRAKCARE_LIVE = envBool("FF_ENABLE_TRAKCARE_LIVE", false);
 
+/** Enable static IMC pilot patient fallback in the Informed Consents workspace */
+export const ENABLE_IMC_PILOT_PATIENTS = envBool("ENABLE_IMC_PILOT_PATIENTS", true);
+
 /** Enable provider webhook processing (signature, delivery callbacks) */
 export const ENABLE_WEBHOOKS = envBool("FF_ENABLE_WEBHOOKS", true);
 
@@ -284,6 +287,7 @@ export const FEATURE_FLAGS = {
   ENABLE_RISK_ENGINE,
   ENABLE_EMR_MAPPING,
   ENABLE_TRAKCARE_LIVE,
+  ENABLE_IMC_PILOT_PATIENTS,
   ENABLE_WEBHOOKS,
   ENABLE_ANALYTICS,
   ENABLE_BACKGROUND_JOBS,

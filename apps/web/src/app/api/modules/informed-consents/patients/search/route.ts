@@ -2,9 +2,29 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { getPrisma } from "@/lib/server/prisma";
+import { ENABLE_IMC_PILOT_PATIENTS } from "@/lib/config/feature-flags";
+import { imcPilotPatients } from "@/components/informed-consents/production-workspace/lib/pilot-patients";
+import type { ProductionPatient } from "@/components/informed-consents/production-workspace/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+function toProductionPatient(pilotPatient: (typeof imcPilotPatients)[number]) {
+  return {
+    id: pilotPatient.pilotId,
+    mrn: pilotPatient.mrn,
+    name: pilotPatient.name,
+    caseId: pilotPatient.pilotId,
+    caseNumber: pilotPatient.visitNo,
+    dateOfBirth: pilotPatient.dateOfBirth,
+    gender: pilotPatient.gender,
+    nationalId: pilotPatient.nationalId,
+    mobileNumber: pilotPatient.mobile,
+    source: "pilot_fallback" as const,
+    languagePreference: "bilingual" as const,
+    capacityStatus: "competent" as const,
+  };
+}
 
 export async function GET(request: NextRequest) {
   const auth = await requireModuleOperationalAccess(request, "informed-consents");
@@ -47,7 +67,7 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  const results = cases.map((caseRecord) => {
+  const results: ProductionPatient[] = cases.map((caseRecord) => {
     const metadata = (caseRecord.metadata || {}) as Record<string, unknown>;
     const mobile = metadata && typeof metadata === "object" && !Array.isArray(metadata)
       ? String((metadata.mobileNumber ?? metadata.phone ?? metadata.patientPhone ?? "") || "")
@@ -84,6 +104,29 @@ export async function GET(request: NextRequest) {
           (r.mobileNumber && r.mobileNumber.includes(query)),
       )
     : results;
+
+  // Static IMC pilot fallback — gated by feature flag and never mixed with real records unless enabled.
+  if (ENABLE_IMC_PILOT_PATIENTS) {
+    const pilotMatches = imcPilotPatients
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(normalizedQuery) ||
+          p.mrn.toLowerCase().includes(normalizedQuery) ||
+          p.urn.toLowerCase().includes(normalizedQuery) ||
+          p.nationalId.toLowerCase().includes(normalizedQuery) ||
+          p.mobile.includes(query),
+      )
+      .map(toProductionPatient);
+
+    // Append pilot results after real results; deduplicate by MRN just in case.
+    const seenMrn = new Set(filtered.map((r) => r.mrn));
+    for (const pilot of pilotMatches) {
+      if (!seenMrn.has(pilot.mrn)) {
+        filtered.push(pilot);
+        seenMrn.add(pilot.mrn);
+      }
+    }
+  }
 
   return NextResponse.json(filtered);
 }
