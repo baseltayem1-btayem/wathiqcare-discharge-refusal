@@ -1997,7 +1997,7 @@ async function renderPdfInternallyWithPuppeteer(html: string): Promise<Buffer> {
     });
 
     await page.setContent(html, {
-      waitUntil: "networkidle0",
+      waitUntil: "networkidle0" as "load",
     });
 
     await page.addStyleTag({

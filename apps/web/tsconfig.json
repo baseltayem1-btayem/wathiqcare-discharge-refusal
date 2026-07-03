@@ -48,6 +48,10 @@
   ],
   "exclude": [
     "node_modules",
+    "tests",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "scripts/.tmp*",
     "src/lib/server/education-library-service.ts",
     "scripts/phase6a-general-anesthesia-package.ts",
     "scripts/phase6b-core-clinical-educational-library.ts",

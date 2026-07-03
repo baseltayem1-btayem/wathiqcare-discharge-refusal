@@ -259,7 +259,7 @@ export function getRuntimeMetricsSnapshot() {
 
 export function logRuntimeEvent(args: {
   request?: NextRequest | null;
-  auth?: Pick<AuthContext, "sub"> | null;
+  auth?: Pick<AuthContext, "sub" | "tenant_id"> | null;
   module: string;
   event: string;
   severity: RuntimeSeverity;
@@ -311,7 +311,7 @@ export function logRuntimeEvent(args: {
 
 export function logRuntimeIncident(args: {
   request?: NextRequest | null;
-  auth?: Pick<AuthContext, "sub"> | null;
+  auth?: Pick<AuthContext, "sub" | "tenant_id"> | null;
   module: string;
   type: RuntimeIncidentType;
   operation?: string;

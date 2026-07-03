@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { assertRuntimeEnv, resolveRuntimeDatabaseUrl } from "../config/env-validation";
 
 declare global {
@@ -59,7 +59,7 @@ function createAuditProtectionMiddleware() {
     | typeof import("./audit-foundation")
     | undefined;
 
-  return async (params: Prisma.MiddlewareParams, next: Prisma.MiddlewareNext): Promise<unknown> => {
+  return async (params: { model?: string; action: string }, next: (params: { model?: string; action: string }) => Promise<unknown>): Promise<unknown> => {
     if (params.model && isMutatingAuditAction(params.action)) {
       if (!auditFoundation) {
         auditFoundation = await import("./audit-foundation");
@@ -83,8 +83,9 @@ export function getPrisma(): PrismaClient {
       new PrismaClient({
         datasourceUrl: normalizeDatabaseUrl(resolveApplicationDatabaseUrl()),
       });
-    if (typeof prisma.$use === "function") {
-      prisma.$use(createAuditProtectionMiddleware());
+    const prismaWithMiddleware = prisma as unknown as { $use?: (middleware: unknown) => void };
+    if (typeof prismaWithMiddleware.$use === "function") {
+      prismaWithMiddleware.$use(createAuditProtectionMiddleware());
     }
     if (process.env.NODE_ENV !== "production") {
       global.__wathiqcarePrisma__ = prisma;

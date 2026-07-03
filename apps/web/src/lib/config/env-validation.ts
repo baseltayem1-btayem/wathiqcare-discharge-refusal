@@ -55,7 +55,7 @@ function hasValue(value: string | undefined): boolean {
 
 function isPlaceholderSecret(value: string | undefined): boolean {
   if (!hasValue(value)) return true;
-  const normalized = value.trim().toLowerCase();
+  const normalized = (value || "").trim().toLowerCase();
   return FORBIDDEN_SECRET_VALUES.some((forbidden) => normalized === forbidden.toLowerCase());
 }
 

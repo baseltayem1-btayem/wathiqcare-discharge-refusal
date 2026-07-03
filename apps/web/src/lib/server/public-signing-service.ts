@@ -16,7 +16,6 @@ import {
   $Enums,
   ConsentDocumentStatus,
   ConsentEvidenceCopyType,
-  ConsentMethod,
   ConsentSignatureRole,
 } from "@prisma/client";
 import {
@@ -416,6 +415,20 @@ export async function ensurePublicFinalConsentPdfState(args: {
       requestOrigin: args.request.nextUrl.origin,
     });
 
+    await writePublicConsentAudit({
+      tenantId: context.tenantId,
+      consentDocumentId: context.documentId,
+      action: "final_pdf_generated",
+      summary: `Final signed PDF generated for consent ${context.documentId}`,
+      signerRole: "patient",
+      metadata: {
+        documentId: context.documentId,
+        sessionId: context.sessionId,
+        token: args.token,
+      },
+      request: args.request,
+    });
+
     return {
       status: "generated",
       error: null,
@@ -603,25 +616,6 @@ function normalizeDecisionStatus(value: unknown): PublicDecisionStatus {
   return normalizePublicDecisionStatus(value);
 }
 
-
-function repairArabicMojibake(value: string): string {
-  if (!value) return value;
-
-  const looksCorrupted =
-    value.includes("?") ||
-    value.includes("?") ||
-    value.includes("?") ||
-    value.includes("?") ||
-    value.includes("?");
-
-  if (!looksCorrupted) return value;
-
-  try {
-    return Buffer.from(value, "latin1").toString("utf8");
-  } catch {
-    return value;
-  }
-}
 
 function normalizeArabicText(value: string | null | undefined): string {
   return normalizeArabicForPatientFacingText(getString(value));
@@ -2305,6 +2299,23 @@ export async function verifySigningOtp(args: {
       tx,
     });
 
+    await writePublicConsentAudit({
+      tenantId: context.tenantId,
+      consentDocumentId: context.documentId,
+      action: "otp_verified",
+      summary: `OTP verified for ${context.signerRole.toLowerCase()} signature on consent ${doc.consentReference}`,
+      signerRole: context.signerRole,
+      metadata: {
+        challengeId: active.payload.challengeId,
+        tokenHash: active.payload.tokenHash,
+        documentHash,
+        educationCompleted: education.completed,
+        patientAcknowledged: education.patientAcknowledged,
+      },
+      request: args.request,
+      tx,
+    });
+
     await appendAuditChainEvent({
       tenantId: context.tenantId,
       eventType: "PUBLIC_SIGNING_OTP_VERIFIED",
@@ -2631,6 +2642,27 @@ export async function submitPublicSigningSignature(args: {
       consentDocumentId: context.documentId,
       action: "PATIENT_SIGNATURE_CAPTURED",
       summary: `Signature captured (${signerRole}) for consent ${doc.consentReference}`,
+      signerRole,
+      metadata: {
+        signerName,
+        signatureMethod: $Enums.ConsentMethod.OTP,
+        tokenHash: context.publicSession.tokenHash,
+        challengeId: context.publicSession.challengeId,
+        nextStatus,
+        documentHash,
+        educationCompleted: education.completed,
+        patientAcknowledged: education.patientAcknowledged,
+        signatureHash,
+      },
+      request: args.request,
+      tx,
+    });
+
+    await writePublicConsentAudit({
+      tenantId: context.tenantId,
+      consentDocumentId: context.documentId,
+      action: "consent_signed",
+      summary: `Consent signed by ${signerRole.toLowerCase()} for consent ${doc.consentReference}`,
       signerRole,
       metadata: {
         signerName,

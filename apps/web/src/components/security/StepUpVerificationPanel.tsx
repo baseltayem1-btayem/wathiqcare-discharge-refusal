@@ -62,6 +62,7 @@ export default function StepUpVerificationPanel({
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void syncStatus();
   }, [syncStatus]);
 
@@ -106,7 +107,7 @@ export default function StepUpVerificationPanel({
       setExpiresAt(response.expiresAt ?? null);
       setChallengeToken("");
       setCode("");
-      setDebugCode("");
+
       setMessage("Step-up verified. You can continue with the privileged action.");
     } catch (err) {
       setVerified(false);
@@ -127,7 +128,7 @@ export default function StepUpVerificationPanel({
       setExpiresAt(null);
       setChallengeToken("");
       setCode("");
-      setDebugCode("");
+
       setMessage("Step-up session cleared.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to clear step-up session.");

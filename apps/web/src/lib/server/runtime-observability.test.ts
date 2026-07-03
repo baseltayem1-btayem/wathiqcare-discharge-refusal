@@ -58,7 +58,7 @@ test("getRuntimeCorrelationId falls back from x-correlation-id", () => {
     get(name: string) {
       return this.headers.get(name);
     },
-  } as unknown as import("next/server").NextRequest;
+  } as any as import("next/server").NextRequest;
 
   assert.equal(getRuntimeCorrelationId(request), "corr-123");
 });
@@ -72,7 +72,7 @@ test("getRuntimeCorrelationId prefers x-runtime-correlation-id", () => {
     get(name: string) {
       return this.headers.get(name);
     },
-  } as unknown as import("next/server").NextRequest;
+  } as any as import("next/server").NextRequest;
 
   assert.equal(getRuntimeCorrelationId(request), "runtime-123");
 });

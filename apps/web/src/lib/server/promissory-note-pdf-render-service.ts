@@ -72,7 +72,7 @@ async function renderPdfBuffer(html: string): Promise<Buffer> {
 
   try {
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    await page.setContent(html, { waitUntil: "networkidle0" as "load" });
     const rendered = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -163,9 +163,9 @@ export async function generatePromissoryNotePdf(
     issueDate,
     issueCity,
     paymentCity,
-    debtorName: note.debtorName,
-    debtorId: note.debtorIdNumber || undefined,
-    creditorName: note.issuerName,
+    debtorName: note.debtorName ?? undefined,
+    debtorId: note.debtorIdNumber ?? undefined,
+    creditorName: note.issuerName ?? undefined,
     creditorCR: undefined,
     reason,
     referenceNumber: note.noteNumber,
