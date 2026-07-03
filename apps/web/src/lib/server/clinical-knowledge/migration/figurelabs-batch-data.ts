@@ -444,3 +444,31 @@ export const BATCH_4_KEYS: string[] = [
   "consent-form-q-switched-and-pico-laser-informed-consent-form",
   "consent-form-regenera-activa-consent-form",
 ];
+
+/**
+ * Batch 5: next 20 normalized procedures from the master registry, selected
+ * after excluding Batch 1, Batch 2, Batch 3, Batch 4, and Patient Copy / Patient
+ * Education entries. These are queued for FigureLabs generation.
+ */
+export const BATCH_5_KEYS: string[] = [
+  "consent-form-skin-lesion-treatment",
+  "cosmetic-surgery",
+  "cranial-surgery",
+  "critical-care-consent",
+  "ct-cardiac",
+  "ct-colonoscopy",
+  "ct-computed-tomography",
+  "cystogram",
+  "cystoscopy-and-crushing-of-stone",
+  "cystoscopy-and-removal-of-bladder-tumour",
+  "cystoscopy-and-retrograde-pyelogram-insertion-of-ureteric-stent",
+  "cystoscopy-and-ureteroscopy-and-fragmentation-of-stone-lithocast",
+  "cystoscopy-with-passage-of-ureteric-catheter",
+  "cystotomy-supra-pubic",
+  "d-c-dilation-curettage",
+  "dacrocystogram",
+  "dacryocystorhinostomy",
+  "diagnostic-hysteroscopy-dilatation-curettage-d-c",
+  "drainage-of-a-pseudocyst",
+  "drug-challenge-testing",
+];
