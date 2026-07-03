@@ -1,8 +1,8 @@
 sequence,specialty,procedureNameEn,procedureNameAr,canonicalProcedureKey,aliases,anatomyRegion,illustrationType,figureLabsPrompt,imageFileName,imagePublicPath,certificatePath,imageReviewStatus,patientFacing,source,version,disclaimerEn,disclaimerAr,notes
-1,Vascular Surgery,Abdominal Aortic Aneurysm,تمدد الأبهر البطني,abdominal-aortic-aneurysm,Abdominal Aortic Aneurysm | تمدد الأبهر البطني,Abdominal aorta and surrounding arteries,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+1,Vascular Surgery,Abdominal Aortic Aneurysm,تمدد الشريان الأبهر البطني,abdominal-aortic-aneurysm,Abdominal Aortic Aneurysm | تمدد الشريان الأبهر البطني,Abdominal aorta and surrounding arteries,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Abdominal Aortic Aneurysm
-Procedure (Arabic): تمدد الأبهر البطني
+Procedure (Arabic): تمدد الشريان الأبهر البطني
 Specialty: Vascular Surgery
 Anatomical region / focus: Abdominal aorta and surrounding arteries
 Illustration type: anatomy_procedure_education
@@ -16,11 +16,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",abdominal-aortic-aneurysm_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/vascular-surgery/abdominal-aortic-aneurysm/abdominal-aortic-aneurysm_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/abdominal-aortic-aneurysm/abdominal-aortic-aneurysm_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-2,General Surgery / Other,Abdominoperineal Resection of Rectum,استئصال المستقيم البطني العجاني,abdominoperineal-resection-of-rectum,Abdominoperineal Resection of Rectum | استئصال المستقيم البطني العجاني,"Rectum, anus, perineum, and lower pelvis",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",abdominal-aortic-aneurysm_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/vascular-surgery/abdominal-aortic-aneurysm/abdominal-aortic-aneurysm_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/abdominal-aortic-aneurysm/abdominal-aortic-aneurysm_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+2,General Surgery / Other,Abdominoperineal Resection of Rectum,استئصال المستقيم بطريق البطن والعجان,abdominoperineal-resection-of-rectum,Abdominoperineal Resection of Rectum | استئصال المستقيم بطريق البطن والعجان,"Rectum, anus, perineum, and lower pelvis",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Abdominoperineal Resection of Rectum
-Procedure (Arabic): استئصال المستقيم البطني العجاني
+Procedure (Arabic): استئصال المستقيم بطريق البطن والعجان
 Specialty: General Surgery / Other
 Anatomical region / focus: Rectum, anus, perineum, and lower pelvis
 Illustration type: anatomy_procedure_education
@@ -34,11 +34,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",abdominoperineal-resection-of-rectum_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/abdominoperineal-resection-of-rectum/abdominoperineal-resection-of-rectum_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/abdominoperineal-resection-of-rectum/abdominoperineal-resection-of-rectum_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-3,General Surgery / Other,Abdominoplasty,تجميل البطن,abdominoplasty,Abdominoplasty | تجميل البطن,Abdominal wall and skin,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",abdominoperineal-resection-of-rectum_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/abdominoperineal-resection-of-rectum/abdominoperineal-resection-of-rectum_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/abdominoperineal-resection-of-rectum/abdominoperineal-resection-of-rectum_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+3,General Surgery / Other,Abdominoplasty,شد البطن,abdominoplasty,Abdominoplasty | شد البطن,Abdominal wall and skin,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Abdominoplasty
-Procedure (Arabic): تجميل البطن
+Procedure (Arabic): شد البطن
 Specialty: General Surgery / Other
 Anatomical region / focus: Abdominal wall and skin
 Illustration type: anatomy_procedure_education
@@ -52,11 +52,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",abdominoplasty_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/abdominoplasty/abdominoplasty_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/abdominoplasty/abdominoplasty_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-4,"Ear, Nose and Throat",Adenotonsillectomy,استئصال اللوزتين والغدة الأدينية,adenotonsillectomy,Adenotonsillectomy | استئصال اللوزتين والغدة الأدينية,"Oropharynx, tonsils, and adenoids",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",abdominoplasty_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/abdominoplasty/abdominoplasty_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/abdominoplasty/abdominoplasty_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+4,"Ear, Nose and Throat",Adenotonsillectomy,استئصال اللحمية واللوزتين,adenotonsillectomy,Adenotonsillectomy | استئصال اللحمية واللوزتين,"Oropharynx, tonsils, and adenoids",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Adenotonsillectomy
-Procedure (Arabic): استئصال اللوزتين والغدة الأدينية
+Procedure (Arabic): استئصال اللحمية واللوزتين
 Specialty: Ear, Nose and Throat
 Anatomical region / focus: Oropharynx, tonsils, and adenoids
 Illustration type: anatomy_procedure_education
@@ -70,11 +70,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",adenotonsillectomy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/ent/adenotonsillectomy/adenotonsillectomy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/adenotonsillectomy/adenotonsillectomy_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-5,Allergy & Immunology,Allergen Immunotherapy,علاج المناعة بالمستضدات,allergen-immunotherapy,Allergen Immunotherapy | علاج المناعة بالمستضدات,Upper arm subcutaneous injection site,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",adenotonsillectomy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/ent/adenotonsillectomy/adenotonsillectomy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/adenotonsillectomy/adenotonsillectomy_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+5,Allergy & Immunology,Allergen Immunotherapy,العلاج المناعي للحساسية,allergen-immunotherapy,Allergen Immunotherapy | العلاج المناعي للحساسية,Upper arm subcutaneous injection site,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Allergen Immunotherapy
-Procedure (Arabic): علاج المناعة بالمستضدات
+Procedure (Arabic): العلاج المناعي للحساسية
 Specialty: Allergy & Immunology
 Anatomical region / focus: Upper arm subcutaneous injection site
 Illustration type: anatomy_procedure_education
@@ -88,29 +88,29 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",allergen-immunotherapy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/allergy-immunology/allergen-immunotherapy/allergen-immunotherapy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/allergen-immunotherapy/allergen-immunotherapy_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-6,Allergy & Immunology,Allergy Skin Test consent and informed,اختبار الحساسية الجلدي,allergy-skin-test-consent-and-informed,Allergy Skin Test consent and informed | اختبار الحساسية الجلدي,Forearm or back skin with test sites,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",allergen-immunotherapy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/allergy-immunology/allergen-immunotherapy/allergen-immunotherapy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/allergen-immunotherapy/allergen-immunotherapy_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+6,Allergy & Immunology,Allergy Skin Test consent and informed,موافقة واختبار حساسية الجلد,allergy-skin-test-consent-and-informed,Allergy Skin Test consent and informed | موافقة واختبار حساسية الجلد,Forearm or back skin with test sites,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Allergy Skin Test consent and informed
-Procedure (Arabic): اختبار الحساسية الجلدي
+Procedure (Arabic): موافقة واختبار حساسية الجلد
 Specialty: Allergy & Immunology
 Anatomical region / focus: Forearm or back skin with test sites
-Illustration type: process_education
+Illustration type: anatomy_procedure_education
 
 Requirements:
 - Clean, professional, hospital-grade patient education style
-- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
 - Use soft clinical colors on a white or very light background
 - Label the main anatomical structures or steps clearly in English
 - Leave adequate space for Arabic label overlays
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",allergy-skin-test-consent-and-informed_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/allergy-immunology/allergy-skin-test-consent-and-informed/allergy-skin-test-consent-and-informed_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/allergy-skin-test-consent-and-informed/allergy-skin-test-consent-and-informed_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-7,Obstetrics & Gynecology,Amniocentesis Chorionic Villus Sampling,أخذ عينة السائل الأمنيوسي أو الزغابات المشيمية,amniocentesis-chorionic-villus-sampling,Amniocentesis Chorionic Villus Sampling | أخذ عينة السائل الأمنيوسي أو الزغابات المشيمية,"Uterus, placenta, and amniotic fluid",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",allergy-skin-test-consent-and-informed_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/allergy-immunology/allergy-skin-test-consent-and-informed/allergy-skin-test-consent-and-informed_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/allergy-skin-test-consent-and-informed/allergy-skin-test-consent-and-informed_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+7,Obstetrics & Gynecology,Amniocentesis Chorionic Villus Sampling,بزل السائل الأمنيوسي وأخذ عينة من الزغابات المشيمية,amniocentesis-chorionic-villus-sampling,Amniocentesis Chorionic Villus Sampling | بزل السائل الأمنيوسي وأخذ عينة من الزغابات المشيمية,"Uterus, placenta, and amniotic fluid",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Amniocentesis Chorionic Villus Sampling
-Procedure (Arabic): أخذ عينة السائل الأمنيوسي أو الزغابات المشيمية
+Procedure (Arabic): بزل السائل الأمنيوسي وأخذ عينة من الزغابات المشيمية
 Specialty: Obstetrics & Gynecology
 Anatomical region / focus: Uterus, placenta, and amniotic fluid
 Illustration type: anatomy_procedure_education
@@ -124,11 +124,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",amniocentesis-chorionic-villus-sampling_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/amniocentesis-chorionic-villus-sampling/amniocentesis-chorionic-villus-sampling_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/amniocentesis-chorionic-villus-sampling/amniocentesis-chorionic-villus-sampling_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-8,General Surgery / Other,Amputation,بتر العضو,amputation,Amputation | بتر العضو,Affected limb and amputation level,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",amniocentesis-chorionic-villus-sampling_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/amniocentesis-chorionic-villus-sampling/amniocentesis-chorionic-villus-sampling_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/amniocentesis-chorionic-villus-sampling/amniocentesis-chorionic-villus-sampling_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+8,General Surgery / Other,Amputation,البتر,amputation,Amputation | البتر,Affected limb and amputation level,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Amputation
-Procedure (Arabic): بتر العضو
+Procedure (Arabic): البتر
 Specialty: General Surgery / Other
 Anatomical region / focus: Affected limb and amputation level
 Illustration type: anatomy_procedure_education
@@ -142,7 +142,7 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",amputation_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/amputation/amputation_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/amputation/amputation_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
+- Include a blank area at the bottom for the informed consent disclaimer",amputation_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/amputation/amputation_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/amputation/amputation_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
 9,Anesthesia / Pain / Critical Care,Anesthesia - Patient Consent,موافقة المريض على التخدير,anesthesia-patient-consent,Anesthesia - Patient Consent | موافقة المريض على التخدير,"Airway, lungs, and anesthesia monitoring setup",process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Anesthesia - Patient Consent
@@ -179,10 +179,10 @@ Requirements:
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
 - Include a blank area at the bottom for the informed consent disclaimer",angiogram-and-plasty-stenting_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/angiogram-and-plasty-stenting/angiogram-and-plasty-stenting_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/angiogram-and-plasty-stenting/angiogram-and-plasty-stenting_figurelabs_authorization_certificate_v1.pdf,approved,true,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Image integrated from FigureLabs separated package; authorization certificate pending.
-11,Radiology / Interventional Radiology,Angiogram with mechanical Thrombectomy (any body part),Angiogram with mechanical Thrombectomy (any body part),angiogram-with-mechanical-thrombectomy-any-body-part,Angiogram with mechanical Thrombectomy (any body part) | Angiogram with mechanical Thrombectomy (any body part),Whole-body or region-specific CT scanner cross-section,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+11,Radiology / Interventional Radiology,Angiogram with mechanical Thrombectomy (any body part),تصوير الأوعية مع استئصال الخثرة ميكانيكيًا، لأي موضع بالجسم,angiogram-with-mechanical-thrombectomy-any-body-part,Angiogram with mechanical Thrombectomy (any body part) | تصوير الأوعية مع استئصال الخثرة ميكانيكيًا، لأي موضع بالجسم,Whole-body or region-specific CT scanner cross-section,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Angiogram with mechanical Thrombectomy (any body part)
-Procedure (Arabic): Angiogram with mechanical Thrombectomy (any body part)
+Procedure (Arabic): تصوير الأوعية مع استئصال الخثرة ميكانيكيًا، لأي موضع بالجسم
 Specialty: Radiology / Interventional Radiology
 Anatomical region / focus: Whole-body or region-specific CT scanner cross-section
 Illustration type: process_education
@@ -196,7 +196,7 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",angiogram-with-mechanical-thrombectomy-any-body-part_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/angiogram-with-mechanical-thrombectomy-any-body-part/angiogram-with-mechanical-thrombectomy-any-body-part_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/angiogram-with-mechanical-thrombectomy-any-body-part/angiogram-with-mechanical-thrombectomy-any-body-part_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+- Include a blank area at the bottom for the informed consent disclaimer",angiogram-with-mechanical-thrombectomy-any-body-part_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/angiogram-with-mechanical-thrombectomy-any-body-part/angiogram-with-mechanical-thrombectomy-any-body-part_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/angiogram-with-mechanical-thrombectomy-any-body-part/angiogram-with-mechanical-thrombectomy-any-body-part_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
 12,General Surgery / Other,Appendicectomy - Open,استئصال الزائدة الدودية بالجراحة المفتوحة,appendicectomy-open,Appendicectomy - Open | استئصال الزائدة الدودية بالجراحة المفتوحة,Appendix and lower right abdomen,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Appendicectomy - Open
@@ -215,10 +215,10 @@ Requirements:
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
 - Include a blank area at the bottom for the informed consent disclaimer",appendicectomy-open_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/appendicectomy-open/appendicectomy-open_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/appendicectomy-open/appendicectomy-open_figurelabs_authorization_certificate_v1.pdf,approved,true,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Image integrated from FigureLabs separated package; authorization certificate pending.
-13,Vascular Surgery,Arteriovenous Fistula, fistula دموية شريانية وريدية,arteriovenous-fistula,Arteriovenous Fistula |  fistula دموية شريانية وريدية,Forearm or upper-arm artery and vein connection for dialysis access,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+13,Vascular Surgery,Arteriovenous Fistula,الناسور الشرياني الوريدي,arteriovenous-fistula,Arteriovenous Fistula | الناسور الشرياني الوريدي,Forearm or upper-arm artery and vein connection for dialysis access,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Arteriovenous Fistula
-Procedure (Arabic):  fistula دموية شريانية وريدية
+Procedure (Arabic): الناسور الشرياني الوريدي
 Specialty: Vascular Surgery
 Anatomical region / focus: Forearm or upper-arm artery and vein connection for dialysis access
 Illustration type: anatomy_procedure_education
@@ -232,11 +232,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",arteriovenous-fistula_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-fistula/arteriovenous-fistula_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arteriovenous-fistula/arteriovenous-fistula_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-14,Vascular Surgery,Arteriovenous Goretex Loop Graft, graft جورتكس وريدي شرياني,arteriovenous-goretex-loop-graft,Arteriovenous Goretex Loop Graft |  graft جورتكس وريدي شرياني,Forearm or upper-arm artery and vein with synthetic graft for dialysis access,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",arteriovenous-fistula_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-fistula/arteriovenous-fistula_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arteriovenous-fistula/arteriovenous-fistula_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+14,Vascular Surgery,Arteriovenous Goretex Loop Graft,وصلة شريانية وريدية صناعية على شكل حلقة,arteriovenous-goretex-loop-graft,Arteriovenous Goretex Loop Graft | وصلة شريانية وريدية صناعية على شكل حلقة,Forearm or upper-arm artery and vein with synthetic graft for dialysis access,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Arteriovenous Goretex Loop Graft
-Procedure (Arabic):  graft جورتكس وريدي شرياني
+Procedure (Arabic): وصلة شريانية وريدية صناعية على شكل حلقة
 Specialty: Vascular Surgery
 Anatomical region / focus: Forearm or upper-arm artery and vein with synthetic graft for dialysis access
 Illustration type: anatomy_procedure_education
@@ -250,11 +250,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",arteriovenous-goretex-loop-graft_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-goretex-loop-graft/arteriovenous-goretex-loop-graft_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arteriovenous-goretex-loop-graft/arteriovenous-goretex-loop-graft_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-15,Orthopedics,Arthrogram,تصوير المفصل بالحقن الظليل,arthrogram,Arthrogram | تصوير المفصل بالحقن الظليل,Affected joint and needle/contrast path,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",arteriovenous-goretex-loop-graft_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-goretex-loop-graft/arteriovenous-goretex-loop-graft_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arteriovenous-goretex-loop-graft/arteriovenous-goretex-loop-graft_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+15,Orthopedics,Arthrogram,تصوير المفصل بالصبغة,arthrogram,Arthrogram | تصوير المفصل بالصبغة,Affected joint and needle/contrast path,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Arthrogram
-Procedure (Arabic): تصوير المفصل بالحقن الظليل
+Procedure (Arabic): تصوير المفصل بالصبغة
 Specialty: Orthopedics
 Anatomical region / focus: Affected joint and needle/contrast path
 Illustration type: anatomy_procedure_education
@@ -268,7 +268,7 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",arthrogram_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/orthopedics/arthrogram/arthrogram_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arthrogram/arthrogram_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
+- Include a blank area at the bottom for the informed consent disclaimer",arthrogram_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/orthopedics/arthrogram/arthrogram_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arthrogram/arthrogram_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
 16,Orthopedics,Arthroplasty Consent,موافقة استبدال المفصل,arthroplasty-consent,Arthroplasty Consent | موافقة استبدال المفصل,Affected joint and surrounding bones,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Arthroplasty Consent
@@ -286,11 +286,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",arthroplasty-consent_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/orthopedics/arthroplasty-consent/arthroplasty-consent_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arthroplasty-consent/arthroplasty-consent_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-17,Radiology / Interventional Radiology,Aspiration Drainage Under Imaging,Aspiration Drainage Under Imaging,aspiration-drainage-under-imaging,Aspiration Drainage Under Imaging | Aspiration Drainage Under Imaging,Fluid collection and drainage catheter,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",arthroplasty-consent_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/orthopedics/arthroplasty-consent/arthroplasty-consent_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/arthroplasty-consent/arthroplasty-consent_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+17,Radiology / Interventional Radiology,Aspiration Drainage Under Imaging,بزل أو تصريف السوائل تحت توجيه التصوير,aspiration-drainage-under-imaging,Aspiration Drainage Under Imaging | بزل أو تصريف السوائل تحت توجيه التصوير,Fluid collection and drainage catheter,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Aspiration Drainage Under Imaging
-Procedure (Arabic): Aspiration Drainage Under Imaging
+Procedure (Arabic): بزل أو تصريف السوائل تحت توجيه التصوير
 Specialty: Radiology / Interventional Radiology
 Anatomical region / focus: Fluid collection and drainage catheter
 Illustration type: process_education
@@ -304,11 +304,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",aspiration-drainage-under-imaging_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/aspiration-drainage-under-imaging/aspiration-drainage-under-imaging_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/aspiration-drainage-under-imaging/aspiration-drainage-under-imaging_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
-18,Obstetrics & Gynecology,Bartholin's Glands,غدة بارثولين,bartholin-s-glands,Bartholin's Glands | غدة بارثولين,Bartholin gland region,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",aspiration-drainage-under-imaging_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/aspiration-drainage-under-imaging/aspiration-drainage-under-imaging_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/aspiration-drainage-under-imaging/aspiration-drainage-under-imaging_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+18,Obstetrics & Gynecology,Bartholin's Glands,غدد بارثولين,bartholin-s-glands,Bartholin's Glands | غدد بارثولين,Bartholin gland region,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Bartholin's Glands
-Procedure (Arabic): غدة بارثولين
+Procedure (Arabic): غدد بارثولين
 Specialty: Obstetrics & Gynecology
 Anatomical region / focus: Bartholin gland region
 Illustration type: anatomy_procedure_education
@@ -322,11 +322,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",bartholin-s-glands_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/bartholin-s-glands/bartholin-s-glands_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/bartholin-s-glands/bartholin-s-glands_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-19,Radiology / Interventional Radiology,Biopsy Under Imaging,أخذ خزعة تحت التصوير الإشعاعي,biopsy-under-imaging,Biopsy Under Imaging | أخذ خزعة تحت التصوير الإشعاعي,Target lesion and biopsy needle path under imaging,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",bartholin-s-glands_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/bartholin-s-glands/bartholin-s-glands_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/bartholin-s-glands/bartholin-s-glands_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+19,Radiology / Interventional Radiology,Biopsy Under Imaging,خزعة تحت توجيه التصوير,biopsy-under-imaging,Biopsy Under Imaging | خزعة تحت توجيه التصوير,Target lesion and biopsy needle path under imaging,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Biopsy Under Imaging
-Procedure (Arabic): أخذ خزعة تحت التصوير الإشعاعي
+Procedure (Arabic): خزعة تحت توجيه التصوير
 Specialty: Radiology / Interventional Radiology
 Anatomical region / focus: Target lesion and biopsy needle path under imaging
 Illustration type: process_education
@@ -340,11 +340,11 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",biopsy-under-imaging_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/biopsy-under-imaging/biopsy-under-imaging_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/biopsy-under-imaging/biopsy-under-imaging_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-20,Ophthalmology,Blepharoplasty,تجميل الجفن,blepharoplasty,Blepharoplasty | تجميل الجفن,Upper and/or lower eyelids,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",biopsy-under-imaging_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/biopsy-under-imaging/biopsy-under-imaging_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/biopsy-under-imaging/biopsy-under-imaging_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+20,Ophthalmology,Blepharoplasty,رأب الجفن,blepharoplasty,Blepharoplasty | رأب الجفن,Upper and/or lower eyelids,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Blepharoplasty
-Procedure (Arabic): تجميل الجفن
+Procedure (Arabic): رأب الجفن
 Specialty: Ophthalmology
 Anatomical region / focus: Upper and/or lower eyelids
 Illustration type: anatomy_procedure_education
@@ -358,7 +358,7 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",blepharoplasty_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/ophthalmology/blepharoplasty/blepharoplasty_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/blepharoplasty/blepharoplasty_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
+- Include a blank area at the bottom for the informed consent disclaimer",blepharoplasty_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/ophthalmology/blepharoplasty/blepharoplasty_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/blepharoplasty/blepharoplasty_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
 21,Transfusion Medicine / Blood Transfusion,Blood and Blood Products Transfusion,نقل الدم ومشتقاته,blood-and-blood-products-transfusion,Blood and Blood Products Transfusion | نقل الدم ومشتقاته,"Intravenous line, blood bag, and infusion pathway",process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Blood and Blood Products Transfusion
@@ -377,28 +377,28 @@ Requirements:
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
 - Include a blank area at the bottom for the informed consent disclaimer",blood-and-blood-products-transfusion_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/transfusion-medicine/blood-and-blood-products-transfusion/blood-and-blood-products-transfusion_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/blood-and-blood-products-transfusion/blood-and-blood-products-transfusion_figurelabs_authorization_certificate_v1.pdf,approved,true,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Image integrated from FigureLabs separated package; authorization certificate pending.
-22,Transfusion Medicine / Blood Transfusion,Blood and blood products transfusion consent,Blood and blood products transfusion consent,blood-and-blood-products-transfusion-consent,Blood and blood products transfusion consent | Blood and blood products transfusion consent,"Intravenous line, blood bag, and infusion pathway",process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+22,Transfusion Medicine / Blood Transfusion,Blood and blood products transfusion consent,موافقة نقل الدم ومشتقاته,blood-and-blood-products-transfusion-consent,Blood and blood products transfusion consent | موافقة نقل الدم ومشتقاته,"Intravenous line, blood bag, and infusion pathway",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Blood and blood products transfusion consent
-Procedure (Arabic): Blood and blood products transfusion consent
+Procedure (Arabic): موافقة نقل الدم ومشتقاته
 Specialty: Transfusion Medicine / Blood Transfusion
 Anatomical region / focus: Intravenous line, blood bag, and infusion pathway
-Illustration type: process_education
+Illustration type: anatomy_procedure_education
 
 Requirements:
 - Clean, professional, hospital-grade patient education style
-- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
 - Use soft clinical colors on a white or very light background
 - Label the main anatomical structures or steps clearly in English
 - Leave adequate space for Arabic label overlays
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",blood-and-blood-products-transfusion-consent_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/transfusion-medicine/blood-and-blood-products-transfusion-consent/blood-and-blood-products-transfusion-consent_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/blood-and-blood-products-transfusion-consent/blood-and-blood-products-transfusion-consent_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
-23,Breast Surgery,Breast Abscess Haematoma,خراج أو ورم دموي في الثدي,breast-abscess-haematoma,Breast Abscess Haematoma | خراج أو ورم دموي في الثدي,Breast abscess cavity,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",blood-and-blood-products-transfusion-consent_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/transfusion-medicine/blood-and-blood-products-transfusion-consent/blood-and-blood-products-transfusion-consent_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/blood-and-blood-products-transfusion-consent/blood-and-blood-products-transfusion-consent_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+23,Breast Surgery,Breast Abscess Haematoma,خراج أو تجمع دموي في الثدي,breast-abscess-haematoma,Breast Abscess Haematoma | خراج أو تجمع دموي في الثدي,Breast abscess cavity,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Breast Abscess Haematoma
-Procedure (Arabic): خراج أو ورم دموي في الثدي
+Procedure (Arabic): خراج أو تجمع دموي في الثدي
 Specialty: Breast Surgery
 Anatomical region / focus: Breast abscess cavity
 Illustration type: anatomy_procedure_education
@@ -412,25 +412,25 @@ Requirements:
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",breast-abscess-haematoma_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/breast-surgery/breast-abscess-haematoma/breast-abscess-haematoma_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/breast-abscess-haematoma/breast-abscess-haematoma_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
-24,Breast Surgery,Breast Biopsy Aspiration,خزعة أو شفط الثدي,breast-biopsy-aspiration,Breast Biopsy Aspiration | خزعة أو شفط الثدي,Breast tissue and target lesion,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+- Include a blank area at the bottom for the informed consent disclaimer",breast-abscess-haematoma_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/breast-surgery/breast-abscess-haematoma/breast-abscess-haematoma_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/breast-abscess-haematoma/breast-abscess-haematoma_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
+24,Breast Surgery,Breast Biopsy Aspiration,خزعة أو بزل من الثدي,breast-biopsy-aspiration,Breast Biopsy Aspiration | خزعة أو بزل من الثدي,Breast tissue and target lesion,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Breast Biopsy Aspiration
-Procedure (Arabic): خزعة أو شفط الثدي
+Procedure (Arabic): خزعة أو بزل من الثدي
 Specialty: Breast Surgery
 Anatomical region / focus: Breast tissue and target lesion
-Illustration type: anatomy_procedure_education
+Illustration type: process_education
 
 Requirements:
 - Clean, professional, hospital-grade patient education style
-- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
 - Use soft clinical colors on a white or very light background
 - Label the main anatomical structures or steps clearly in English
 - Leave adequate space for Arabic label overlays
 - Include short callout labels for the procedural target or key step
 - Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
 - Landscape orientation, high resolution, suitable for informed consent display
-- Include a blank area at the bottom for the informed consent disclaimer",breast-biopsy-aspiration_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/breast-surgery/breast-biopsy-aspiration/breast-biopsy-aspiration_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/breast-biopsy-aspiration/breast-biopsy-aspiration_figurelabs_authorization_certificate_v1.pdf,draft,false,FigureLabs,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Pending FigureLabs generation and medical review.
+- Include a blank area at the bottom for the informed consent disclaimer",breast-biopsy-aspiration_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/breast-surgery/breast-biopsy-aspiration/breast-biopsy-aspiration_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/breast-biopsy-aspiration/breast-biopsy-aspiration_figurelabs_authorization_certificate_v1.pdf,pending_clinical_review,false,ChatGPT,v1,This illustration is for patient education only and does not replace the physician's explanation.,هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.,Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation.
 25,Breast Surgery,Breast Microdochotomy,جراحة قنوات الثدي الدقيقة,breast-microdochotomy,Breast Microdochotomy | جراحة قنوات الثدي الدقيقة,Breast duct and nipple area,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
 
 Procedure (English): Breast Microdochotomy

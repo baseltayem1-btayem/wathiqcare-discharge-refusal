@@ -2693,6 +2693,8 @@ enum ClinicalKnowledgeIllustrationStatus {
   medical_review
   approved
   rejected
+  generated_by_chatgpt_draft
+  pending_clinical_review
 }
 
 model ClinicalSpecialty {
@@ -2951,6 +2953,15 @@ model ClinicalKnowledgeIllustration {
   synonyms                   String[]                            @default([]) @map("synonyms")
   anatomyImageUrl            String?                             @map("anatomy_image_url")
   procedureImageUrl          String?                             @map("procedure_image_url")
+  imageBaseUrl               String?                             @map("image_base_url")
+  imageEnUrl                 String?                             @map("image_en_url")
+  imageArUrl                 String?                             @map("image_ar_url")
+  labelsEn                   Json?                               @map("labels_en")
+  labelsAr                   Json?                               @map("labels_ar")
+  languageDirection          String?                             @map("language_direction")
+  productionStatus           String?                             @map("production_status")
+  integrationStatus          String?                             @map("integration_status")
+  arabicReviewStatus         String?                             @map("arabic_review_status")
   anatomyPromptEn            String?                             @map("anatomy_prompt_en")
   anatomyPromptAr            String?                             @map("anatomy_prompt_ar")
   procedurePromptEn          String?                             @map("procedure_prompt_en")

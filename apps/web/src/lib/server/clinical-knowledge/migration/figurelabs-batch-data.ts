@@ -24,8 +24,17 @@ export interface ClinicalOverride {
 export interface BatchIllustration extends ClinicalOverride {
   procedureNameEn: string;
   procedureImageUrl: string;
-  imageReviewStatus: "approved" | "draft";
+  imageReviewStatus: "approved" | "draft" | "pending_clinical_review" | "generated_by_chatgpt_draft";
   patientFacing: boolean;
+  imageBaseUrl?: string;
+  imageEnUrl?: string;
+  imageArUrl?: string;
+  labelsEn?: string[];
+  labelsAr?: string[];
+  languageDirection?: string;
+  productionStatus?: string;
+  integrationStatus?: string;
+  arabicReviewStatus?: string;
 }
 
 function specialty(nameEn: string, nameAr: string, code: string): SpecialtyInfo {
@@ -280,6 +289,38 @@ export const BATCH_1_ILLUSTRATIONS: Record<string, BatchIllustration> = {
     notes: "Image integrated from FigureLabs separated package; authorization certificate pending.",
   },
 };
+
+// Apply bilingual / review tracking defaults to Batch 1 (already approved FigureLabs assets).
+for (const b of Object.values(BATCH_1_ILLUSTRATIONS)) {
+  b.imageBaseUrl = b.procedureImageUrl;
+  b.imageEnUrl = b.procedureImageUrl;
+  b.labelsEn = b.labelsEn ?? [];
+  b.labelsAr = b.labelsAr ?? [];
+  b.languageDirection = b.languageDirection ?? "both";
+  b.productionStatus = b.productionStatus ?? "approved";
+  b.integrationStatus = b.integrationStatus ?? "integrated";
+  b.arabicReviewStatus = b.arabicReviewStatus ?? "approved";
+}
+
+// Batch 2 ChatGPT-generated draft illustrations (provisional, not patient-facing).
+import _batch2Generated from "./figurelabs-batch-2-generated.json";
+
+const batch2GeneratedRaw = _batch2Generated as Record<
+  string,
+  Omit<BatchIllustration, "specialty"> & {
+    specialtyNameEn: string;
+    specialtyNameAr: string;
+    specialtyCode: string;
+  }
+>;
+
+export const BATCH_2_GENERATED: Record<string, BatchIllustration> = {};
+for (const [key, raw] of Object.entries(batch2GeneratedRaw)) {
+  BATCH_2_GENERATED[key] = {
+    ...raw,
+    specialty: specialty(raw.specialtyNameEn, raw.specialtyNameAr, raw.specialtyCode),
+  };
+}
 
 /**
  * Batch 2: next 20 normalized procedures from the master registry, selected

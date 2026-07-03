@@ -17,6 +17,7 @@ import { dirname, basename } from "node:path";
 import { buildImcSeedPlan } from "../src/lib/server/clinical-knowledge/migration/seed-from-imc";
 import {
   BATCH_1_ILLUSTRATIONS,
+  BATCH_2_GENERATED,
   DEFAULT_DISCLAIMER_EN,
   DEFAULT_DISCLAIMER_AR,
   inferSpecialty,
@@ -158,7 +159,13 @@ function main() {
     seenKeys.add(canonicalProcedureKey);
 
     const correctedSpecialty = inferSpecialty(procedureNameEn, rawSpecialty);
-    const batchOverride = Object.values(BATCH_1_ILLUSTRATIONS).find(
+    const batch1Override = Object.values(BATCH_1_ILLUSTRATIONS).find(
+      (o) =>
+        o.procedureNameEn === procedureNameEn ||
+        o.aliases?.includes(procedureNameEn) ||
+        slugify(o.procedureNameEn) === canonicalProcedureKey,
+    );
+    const batch2Override = Object.values(BATCH_2_GENERATED).find(
       (o) =>
         o.procedureNameEn === procedureNameEn ||
         o.aliases?.includes(procedureNameEn) ||
@@ -173,23 +180,39 @@ function main() {
     let aliases: string[];
     let imageFileName: string;
     let imagePublicPath: string;
-    let imageReviewStatus: "approved" | "draft" = "draft";
+    let imageReviewStatus: string = "draft";
     let patientFacing: boolean = false;
     let notes: string;
+    let source: string = "FigureLabs";
 
-    if (batchOverride) {
-      finalCanonicalKey = slugify(batchOverride.procedureNameEn);
-      finalSpecialty = batchOverride.specialty!;
-      anatomyRegion = batchOverride.anatomyRegion!;
-      illustrationType = batchOverride.illustrationType!;
-      procedureNameAr = batchOverride.procedureNameAr ?? procedureNameEn;
-      aliases = batchOverride.aliases ?? [batchOverride.procedureNameEn, procedureNameAr];
-      imageFileName = basename(batchOverride.procedureImageUrl);
-      imagePublicPath = batchOverride.procedureImageUrl;
-      imageReviewStatus = batchOverride.imageReviewStatus;
-      patientFacing = batchOverride.patientFacing;
+    if (batch1Override) {
+      finalCanonicalKey = slugify(batch1Override.procedureNameEn);
+      finalSpecialty = batch1Override.specialty!;
+      anatomyRegion = batch1Override.anatomyRegion!;
+      illustrationType = batch1Override.illustrationType!;
+      procedureNameAr = batch1Override.procedureNameAr ?? procedureNameEn;
+      aliases = batch1Override.aliases ?? [batch1Override.procedureNameEn, procedureNameAr];
+      imageFileName = basename(batch1Override.procedureImageUrl);
+      imagePublicPath = batch1Override.procedureImageUrl;
+      imageReviewStatus = batch1Override.imageReviewStatus;
+      patientFacing = batch1Override.patientFacing;
       const noteParts: string[] = [];
-      if (batchOverride.notes) noteParts.push(batchOverride.notes);
+      if (batch1Override.notes) noteParts.push(batch1Override.notes);
+      notes = noteParts.join(" ").trim();
+    } else if (batch2Override) {
+      finalCanonicalKey = slugify(batch2Override.procedureNameEn);
+      finalSpecialty = batch2Override.specialty!;
+      anatomyRegion = batch2Override.anatomyRegion!;
+      illustrationType = batch2Override.illustrationType!;
+      procedureNameAr = batch2Override.procedureNameAr ?? procedureNameEn;
+      aliases = batch2Override.aliases ?? [batch2Override.procedureNameEn, procedureNameAr];
+      imageFileName = basename(batch2Override.procedureImageUrl);
+      imagePublicPath = batch2Override.procedureImageUrl;
+      imageReviewStatus = batch2Override.imageReviewStatus;
+      patientFacing = batch2Override.patientFacing;
+      source = "ChatGPT";
+      const noteParts: string[] = [];
+      if (batch2Override.notes) noteParts.push(batch2Override.notes);
       notes = noteParts.join(" ").trim();
     } else {
       finalCanonicalKey = canonicalProcedureKey;
@@ -232,7 +255,7 @@ function main() {
       certificatePath,
       imageReviewStatus,
       patientFacing,
-      source: "FigureLabs",
+      source,
       version: "v1",
       disclaimerEn: DEFAULT_DISCLAIMER_EN,
       disclaimerAr: DEFAULT_DISCLAIMER_AR,
