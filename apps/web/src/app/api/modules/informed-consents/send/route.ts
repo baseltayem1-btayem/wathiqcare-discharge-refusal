@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { sendModuleSecureSigningLink } from "@/lib/server/module-secure-signing-service";
+import { writeConsentAudit } from "@/lib/server/consent-library-service";
 import { isTaqnyatReady } from "@/services/sms/taqnyatClient";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,23 @@ export async function POST(request: NextRequest) {
       moduleKey: "informed_consent",
       documentId,
       locale,
+    });
+    await writeConsentAudit({
+      tenantId,
+      auth,
+      action: "consent_dry_run_sent",
+      summary: `Dry-run send validation passed for document ${documentId}`,
+      source: "informed-consents-send",
+      caseId,
+      metadata: {
+        documentId,
+        caseId,
+        patientName,
+        mobileNumber,
+        locale,
+        dryRun: true,
+      },
+      request,
     });
     return NextResponse.json({
       ok: true,

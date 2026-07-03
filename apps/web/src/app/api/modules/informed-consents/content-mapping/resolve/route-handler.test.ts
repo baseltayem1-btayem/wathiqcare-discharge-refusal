@@ -27,6 +27,7 @@ function buildDeps(overrides: Partial<ContentMappingResolveDependencies> = {}): 
 
   return {
     requireModuleOperationalAccess: async () => auth,
+    requireInformedConsentPermission: () => undefined,
     resolveFeatureFlag: async () => ({ resolvedValue: true }),
     writeConsentAudit: async () => undefined,
     resolveContentMapping: async () => ({
@@ -300,6 +301,71 @@ test("returns 400 when procedure is missing", async () => {
   assert.equal(response.status, 400);
   const body = await response.json();
   assert.equal(body.ok, false);
+});
+
+test("reviewMode enforces clinical_knowledge:review_illustrations permission", async () => {
+  let permissionChecked = false;
+  const deps = buildDeps({
+    requireInformedConsentPermission: (_auth, permission) => {
+      if (permission === "clinical_knowledge:review_illustrations") {
+        permissionChecked = true;
+      }
+    },
+    resolveCkeConsentMapping: async () => ({
+      found: true as const,
+      mapping: staticFoundResult(true),
+      package: {
+        procedureConsent: {
+          id: "form-1",
+          titleEn: "Appendectomy Consent",
+          titleAr: "",
+          fileName: "appendectomy.pdf",
+          publicPath: "/forms/appendectomy.pdf",
+          specialty: "",
+          templateType: "Surgical Consent",
+          status: "ACTIVE" as const,
+          source: "cke-assembly",
+          requiresAnesthesia: false,
+          isPatientCopy: false,
+          isEducation: false,
+          isAnesthesia: false,
+          lengthBytes: 0,
+        },
+        matches: [],
+      },
+      clinicalKnowledgeAssembly: {
+        assemblyId: "assembly-1",
+        tenantId: "tenant-a",
+        procedureId: "proc-1",
+        procedureCode: "appendectomy",
+        procedureNameEn: "Appendectomy",
+        procedureNameAr: "استئصال الزائدة",
+        packageId: "pkg-1",
+        packageVersion: "1.0.0",
+        status: "ready",
+        educationMaterials: [],
+        riskDisclosures: [],
+        illustrations: [],
+        decisionRules: [],
+        suggestions: [],
+        blockers: [],
+        requiredParticipants: [],
+        assembledAt: new Date().toISOString(),
+      },
+      educationNotAvailable: false,
+      auditEvents: [],
+    }),
+  });
+
+  const response = await handleContentMappingResolve(
+    makeRequest({ procedure: "appendectomy", tenantId: "tenant-a", useCke: "true", reviewMode: "true" }),
+    deps,
+  );
+
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
+  assert.equal(permissionChecked, true);
 });
 
 test("returns 400 when tenant is missing", async () => {

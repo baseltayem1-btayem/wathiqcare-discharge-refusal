@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Stethoscope, Search } from "lucide-react";
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Stack } from "@/components/design-system";
+import { Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Input, Stack } from "@/components/design-system";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
 import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
@@ -44,6 +44,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     selectPatient,
     selectEncounter,
     resolveAssembly,
+    setReviewMode,
     approveDraft,
     send,
     sendDryRun,
@@ -118,6 +119,14 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               {assemblyLoading ? "Resolving…" : "Resolve"}
             </Button>
           </div>
+          <label className="flex items-center gap-2 text-sm text-[var(--wc-text)] cursor-pointer">
+            <Checkbox
+              checked={state.reviewMode}
+              onChange={(e) => setReviewMode(e.target.checked)}
+            />
+            Internal review mode — show draft illustrations
+            <span className="text-xs text-[var(--wc-text-muted)]">(physician/clinical reviewer only)</span>
+          </label>
           {assemblyError && <div className="text-sm text-[var(--wc-danger)]">{assemblyError}</div>}
           {!state.assembly && !assemblyLoading && !assemblyError && (
             <div className="text-sm text-[var(--wc-text-muted)]">

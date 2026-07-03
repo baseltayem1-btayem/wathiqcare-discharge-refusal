@@ -25,6 +25,7 @@ interface SendConfirmationModalProps {
   onConfirm: () => void;
   onDryRun?: () => void;
   onCancel: () => void;
+  allowRealSend?: boolean;
 }
 
 export function SendConfirmationModal({
@@ -36,6 +37,7 @@ export function SendConfirmationModal({
   onConfirm,
   onDryRun,
   onCancel,
+  allowRealSend = false,
 }: SendConfirmationModalProps) {
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
@@ -45,7 +47,9 @@ export function SendConfirmationModal({
             <Send className="w-5 h-5" /> Send consent to patient
           </DialogTitle>
           <DialogDescription>
-            You are about to dispatch the informed consent to the patient&apos;s secure signing session.
+            {allowRealSend
+              ? "You are about to dispatch the informed consent to the patient\'s secure signing session."
+              : "IMC Physician Pilot: only dry-run validation is permitted. No real SMS or email will be sent."}
           </DialogDescription>
         </DialogHeader>
 
@@ -91,9 +95,11 @@ export function SendConfirmationModal({
               <Smartphone className="w-4 h-4" /> Dry-run send
             </Button>
           )}
-          <Button variant="success" size="sm" uppercase={false} onClick={onConfirm}>
-            <Smartphone className="w-4 h-4" /> Confirm send
-          </Button>
+          {allowRealSend && (
+            <Button variant="success" size="sm" uppercase={false} onClick={onConfirm}>
+              <Smartphone className="w-4 h-4" /> Confirm send
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

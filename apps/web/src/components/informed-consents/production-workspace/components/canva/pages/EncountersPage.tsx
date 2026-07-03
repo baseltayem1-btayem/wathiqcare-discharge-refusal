@@ -58,7 +58,12 @@ export function EncountersPage({ encounters }: EncountersPageProps) {
                   <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>
                 </td>
                 <td className="px-2 py-2 border-b border-slate-50">
-                  <button type="button" className="text-blue-600 font-medium">
+                  <button
+                    type="button"
+                    disabled
+                    title="Not available in IMC pilot"
+                    className="text-slate-400 font-medium cursor-not-allowed"
+                  >
                     Open
                   </button>
                 </td>

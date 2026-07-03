@@ -30,6 +30,7 @@ export type ProductionWorkspaceState = {
   educationIncluded: boolean;
   physicianNotes: string;
   draftApproved: boolean;
+  reviewMode: boolean;
   sentAt?: string;
   signingResult?: SecureSigningResult;
   dryRunSuccess?: boolean;
@@ -60,6 +61,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     educationIncluded: true,
     physicianNotes: "",
     draftApproved: false,
+    reviewMode: false,
     timeline: [],
     acknowledgedBlockers: new Set(),
     acknowledgedAlerts: new Set(),
@@ -157,6 +159,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         const result = await resolveContentMapping({
           procedure: procedureName,
           tenantId: physician.tenantId,
+          reviewMode: state.reviewMode,
           patientContext: {
             capacityStatus: state.patient.capacityStatus || "competent",
             languagePreference: state.patient.languagePreference || "bilingual",
@@ -187,7 +190,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         setAssemblyLoading(false);
       }
     },
-    [physician, state.patient, state.encounter],
+    [physician, state.patient, state.encounter, state.reviewMode],
   );
 
   const setAnesthesia = useCallback((decision: ProductionWorkspaceState["anesthesiaOverride"]) => {
@@ -200,6 +203,10 @@ export function useProductionWorkspace(physician: PhysicianContext) {
 
   const setPhysicianNotes = useCallback((notes: string) => {
     setState((s) => ({ ...s, physicianNotes: notes }));
+  }, []);
+
+  const setReviewMode = useCallback((reviewMode: boolean) => {
+    setState((s) => ({ ...s, reviewMode }));
   }, []);
 
   const approveDraft = useCallback(() => {
@@ -276,10 +283,17 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         locale: state.patient.languagePreference === "ar" ? "ar" : "en",
       });
 
+      const timeline = await fetchTimeline({
+        tenantId: physician.tenantId,
+        caseId: state.patient.caseId,
+        documentId,
+      });
+
       setState((s) => ({
         ...s,
         dryRunSuccess: true,
         dryRunMessage: result.message,
+        timeline,
       }));
     } catch (error) {
       setSendError(error instanceof Error ? error.message : "Dry-run send validation failed.");
@@ -300,6 +314,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       timeline: [],
       acknowledgedBlockers: new Set(),
       acknowledgedAlerts: new Set(),
+      reviewMode: false,
     });
     setPatients([]);
     setEncounters([]);
@@ -351,6 +366,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     setAnesthesia,
     setEducationIncluded,
     setPhysicianNotes,
+    setReviewMode,
     approveDraft,
     acknowledgeBlocker,
     acknowledgeAlert,

@@ -19,6 +19,10 @@ import type {
 
 export type ContentMappingResolveDependencies = {
   requireModuleOperationalAccess: (request: NextRequest, moduleKey: string) => Promise<AuthContext>;
+  requireInformedConsentPermission: (
+    auth: AuthContext,
+    permission: "clinical_knowledge:review_illustrations",
+  ) => void;
   resolveFeatureFlag: (key: string, tenantId: string, moduleKey: string) => Promise<{ resolvedValue: boolean }>;
   writeConsentAudit: (args: {
     tenantId: string;
@@ -36,10 +40,19 @@ export type ContentMappingResolveDependencies = {
   }) => Promise<ContentMappingResult>;
   buildImcConsentPackage: (result: ContentMappingFound) => ImcConsentPackage;
   resolveCkeConsentMapping: (
-    input: { tenantId: string; procedureCode: string; patientContext?: { capacityStatus?: string; languagePreference?: string } },
+    input: {
+      tenantId: string;
+      procedureCode: string;
+      reviewMode?: boolean;
+      patientContext?: { capacityStatus?: string; languagePreference?: string };
+    },
     options?: { assemblyResolver?: unknown },
   ) => Promise<CkeConsentMappingResult>;
   getApprovedIllustrationsForProcedureByNames: (
+    tenantId: string,
+    names: string[],
+  ) => Promise<ClinicalKnowledgeIllustration[]>;
+  getInternalReviewIllustrationsForProcedureByNames?: (
     tenantId: string,
     names: string[],
   ) => Promise<ClinicalKnowledgeIllustration[]>;
@@ -147,6 +160,7 @@ export async function handleContentMappingResolve(
   deps: ContentMappingResolveDependencies,
 ) {
   const auth = await deps.requireModuleOperationalAccess(request, "informed-consents");
+
   const { searchParams } = new URL(request.url);
 
   const procedure = (searchParams.get("procedure") || "").trim();
@@ -156,6 +170,11 @@ export async function handleContentMappingResolve(
     | "ar"
     | "bilingual";
   const useCke = searchParams.get("useCke") === "true";
+  const reviewMode = searchParams.get("reviewMode") === "true";
+
+  if (reviewMode) {
+    deps.requireInformedConsentPermission(auth, "clinical_knowledge:review_illustrations");
+  }
 
   if (!procedure) {
     return NextResponse.json(
@@ -196,6 +215,7 @@ export async function handleContentMappingResolve(
       tenantId,
       preferredLanguage,
       useCke,
+      reviewMode,
     },
     request,
   });
@@ -217,6 +237,7 @@ export async function handleContentMappingResolve(
       const ckeResult = await deps.resolveCkeConsentMapping({
         tenantId,
         procedureCode: procedure,
+        reviewMode,
         patientContext: { capacityStatus: "competent", languagePreference: preferredLanguage },
       });
 
@@ -351,10 +372,16 @@ export async function handleContentMappingResolve(
   const pkg = deps.buildImcConsentPackage(result);
   const clinicalKnowledgeAssembly = buildStaticClinicalKnowledgeAssembly(tenantId, result, pkg);
 
-  const staticIllustrations = await deps.getApprovedIllustrationsForProcedureByNames(tenantId, [
-    result.procedureNameEn,
-    result.procedureNameAr,
-  ]);
+  const staticIllustrations = reviewMode
+    ? await (deps.getInternalReviewIllustrationsForProcedureByNames ??
+        deps.getApprovedIllustrationsForProcedureByNames)(tenantId, [
+        result.procedureNameEn,
+        result.procedureNameAr,
+      ])
+    : await deps.getApprovedIllustrationsForProcedureByNames(tenantId, [
+        result.procedureNameEn,
+        result.procedureNameAr,
+      ]);
   clinicalKnowledgeAssembly.illustrations = staticIllustrations;
 
   return NextResponse.json({

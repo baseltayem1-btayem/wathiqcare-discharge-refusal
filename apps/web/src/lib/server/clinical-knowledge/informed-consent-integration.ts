@@ -25,6 +25,7 @@ import type {
 export type CkeConsentMappingInput = {
   tenantId: string;
   procedureCode: string;
+  reviewMode?: boolean;
   patientContext?: ClinicalKnowledgeAssemblyRequest["patientContext"];
   physicianContext?: ClinicalKnowledgeAssemblyRequest["physicianContext"];
 };
@@ -193,15 +194,16 @@ export async function resolveCkeConsentMapping(
   options?: CkeConsentMappingOptions,
 ): Promise<CkeConsentMappingResult> {
   const resolver = options?.assemblyResolver ?? assembleKnowledgePackage;
-  const { tenantId, procedureCode, patientContext, physicianContext } = input;
+  const { tenantId, procedureCode, reviewMode, patientContext, physicianContext } = input;
 
   const auditEvents: CkeConsentMappingAuditEvent[] = [
     {
       action: "cke_assembly_requested",
-      summary: `CKE assembly requested for procedure "${procedureCode}"`,
+      summary: `CKE assembly requested for procedure "${procedureCode}"${reviewMode ? " (internal review mode)" : ""}`,
       metadata: {
         tenantId,
         procedureCode,
+        reviewMode: Boolean(reviewMode),
         patientContext,
         physicianContext,
       },
@@ -213,6 +215,7 @@ export async function resolveCkeConsentMapping(
     assemblyResult = await resolver({
       tenantId,
       procedureCode,
+      reviewMode,
       patientContext,
       physicianContext,
     });

@@ -81,9 +81,20 @@ function Badge({ children, className }: { children: React.ReactNode; className?:
   );
 }
 
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+function Card({
+  children,
+  className,
+  id,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  id?: string;
+}) {
   return (
-    <div className={["bg-white border border-slate-200 rounded-[10px] p-[14px]", className].join(" ")}>
+    <div
+      id={id}
+      className={["bg-white border border-slate-200 rounded-[10px] p-[14px]", className].join(" ")}
+    >
       {children}
     </div>
   );
@@ -148,7 +159,7 @@ export function CanvaWorkspacePage({
       {/* Top row: Package + Readiness */}
       <div className="grid grid-cols-[1fr_240px] gap-3">
         {/* Clinical Knowledge Package card */}
-        <Card>
+        <Card id="package-preview">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <h2 className="font-bold text-sm text-slate-800">
@@ -165,6 +176,7 @@ export function CanvaWorkspacePage({
             <button
               type="button"
               disabled={!assembly}
+              onClick={() => document.getElementById("package-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })}
               className="text-blue-600 text-[11px] font-medium flex items-center gap-1 disabled:text-slate-500"
             >
               <Eye className="w-3 h-3" /> Preview Package
@@ -217,6 +229,39 @@ export function CanvaWorkspacePage({
                   <PackageStat value={assembly.riskDisclosures.length} label="Risks" />
                   <PackageStat value={assembly.suggestions.filter((s: ClinicalSuggestion) => s.type === "missing-alternative").length} label="Alternatives" />
                 </div>
+
+                {assembly.illustrations.length > 0 && (
+                  <div className="pt-3 border-t border-slate-100">
+                    <h4 className="text-[11px] font-semibold text-slate-700 mb-2">
+                      Educational illustrations
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {assembly.illustrations.map((illustration) => (
+                        <div key={illustration.id} className="space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-medium text-slate-700 truncate">
+                              {illustration.procedureNameEn}
+                            </span>
+                            {illustration.imageReviewStatus !== "approved" && (
+                              <Badge className="bg-amber-100 text-amber-700">Draft — pending review</Badge>
+                            )}
+                            {illustration.imageReviewStatus === "approved" && !illustration.patientFacing && (
+                              <Badge className="bg-slate-100 text-slate-600">Not patient-facing</Badge>
+                            )}
+                          </div>
+                          {illustration.procedureImageUrl && (
+                            /* eslint-disable-next-line @next/next/no-img-element -- educational illustration preview in internal review */
+                            <img
+                              src={illustration.procedureImageUrl}
+                              alt={illustration.procedureNameEn}
+                              className="w-full h-24 object-contain rounded border border-slate-200 bg-slate-50"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

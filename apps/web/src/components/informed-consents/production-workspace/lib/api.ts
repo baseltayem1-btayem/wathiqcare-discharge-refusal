@@ -27,6 +27,7 @@ export async function getPatientEncounters(mrn: string): Promise<ProductionEncou
 export async function resolveContentMapping(args: {
   procedure: string;
   tenantId: string;
+  reviewMode?: boolean;
   patientContext?: {
     capacityStatus?: string;
     languagePreference?: string;
@@ -52,6 +53,9 @@ export async function resolveContentMapping(args: {
   params.set("tenantId", args.tenantId);
   params.set("useCke", "true");
   params.set("language", args.patientContext?.languagePreference || "bilingual");
+  if (args.reviewMode) {
+    params.set("reviewMode", "true");
+  }
 
   const response = await fetch(`/api/modules/informed-consents/content-mapping/resolve?${params.toString()}`);
   const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;

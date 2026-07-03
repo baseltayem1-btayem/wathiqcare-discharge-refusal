@@ -7,6 +7,17 @@ import { CanvaWorkspaceNav, type WorkspacePageId } from "./CanvaWorkspaceNav";
 import { CanvaSidebarProfile } from "./CanvaSidebarProfile";
 import type { PhysicianContext } from "../../types";
 
+function PilotBadge() {
+  return (
+    <div className="mx-2 mb-2 px-2 py-1 rounded-md bg-amber-50 border border-amber-200">
+      <p className="text-[9px] font-semibold text-amber-700 uppercase tracking-wide">
+        IMC Physician Pilot
+      </p>
+      <p className="text-[8px] text-amber-600">Internal Use Only</p>
+    </div>
+  );
+}
+
 interface CanvaWorkspaceShellProps {
   activePage: WorkspacePageId;
   onPageChange: (page: WorkspacePageId) => void;
@@ -47,7 +58,8 @@ export function CanvaWorkspaceShell({
         </div>
 
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          <CanvaWorkspaceNav activePage={activePage} onPageChange={onPageChange} />
+          <PilotBadge />
+          <CanvaWorkspaceNav activePage={activePage} onPageChange={onPageChange} pilotMode />
         </nav>
 
         <div className="p-3 border-t border-slate-100">
