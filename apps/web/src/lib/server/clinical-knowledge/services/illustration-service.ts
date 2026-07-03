@@ -80,6 +80,53 @@ export async function getIllustrationsByProcedureId(
   return rows.map(mapIllustration);
 }
 
+/**
+ * Internal review retrieval of illustrations for a procedure.
+ *
+ * Returns ALL illustrations linked to the procedure (approved, draft, rejected,
+ * patient-facing or not). This MUST only be called from authenticated internal
+ * review endpoints — never from patient-facing flows.
+ */
+export async function getInternalReviewIllustrationsForProcedure(
+  tenantId: string,
+  procedureId: string,
+): Promise<ClinicalKnowledgeIllustration[]> {
+  const prisma = getPrisma();
+  const rows = await prisma.clinicalKnowledgeIllustration.findMany({
+    where: { tenantId, procedureId },
+    orderBy: { updatedAt: "desc" },
+  });
+  return rows.map(mapIllustration);
+}
+
+/**
+ * Internal review retrieval of illustrations by procedure name / aliases.
+ *
+ * Returns ALL name-matched illustrations regardless of approval or patientFacing
+ * status. This MUST only be called from authenticated internal review endpoints.
+ */
+export async function getInternalReviewIllustrationsForProcedureByNames(
+  tenantId: string,
+  names: string[],
+): Promise<ClinicalKnowledgeIllustration[]> {
+  const prisma = getPrisma();
+  const normalizedNames = names.map((n) => n.trim()).filter(Boolean);
+  if (normalizedNames.length === 0) return [];
+
+  const rows = await prisma.clinicalKnowledgeIllustration.findMany({
+    where: {
+      tenantId,
+      OR: [
+        { procedureNameEn: { in: normalizedNames, mode: "insensitive" } },
+        { procedureNameAr: { in: normalizedNames, mode: "insensitive" } },
+        { synonyms: { hasSome: normalizedNames } },
+      ],
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+  return rows.map(mapIllustration);
+}
+
 export async function getApprovedIllustrationsForDocument(
   tenantId: string,
   plannedProcedure: string | null | undefined,

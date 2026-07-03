@@ -305,6 +305,7 @@ export interface ClinicalKnowledgeAssembly {
 export interface ClinicalKnowledgeAssemblyRequest {
   tenantId: string;
   procedureCode: string;
+  reviewMode?: boolean;
   patientContext?: {
     capacityStatus?: "competent" | "minor" | "incapacitated" | "guardian-required";
     languagePreference?: "en" | "ar" | "bilingual";

@@ -154,6 +154,21 @@ export function ClinicalKnowledgePackageCard({
                   key={illustration.id}
                   className="space-y-2 p-3 rounded-lg border border-[var(--wc-border)] bg-[var(--wc-surface-2)]"
                 >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-semibold text-[var(--wc-text)]">
+                      {illustration.procedureNameEn}
+                    </div>
+                    {illustration.imageReviewStatus !== "approved" && (
+                      <Badge variant="warning" size="sm">
+                        Draft illustration — pending clinical review
+                      </Badge>
+                    )}
+                    {illustration.imageReviewStatus === "approved" && !illustration.patientFacing && (
+                      <Badge variant="secondary" size="sm">
+                        Not patient-facing
+                      </Badge>
+                    )}
+                  </div>
                   {illustration.anatomyImageUrl && (
                     <div>
                       <div className="text-xs font-semibold text-[var(--wc-text-muted)] mb-1">Anatomy</div>

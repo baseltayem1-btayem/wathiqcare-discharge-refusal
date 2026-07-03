@@ -4,6 +4,7 @@ import { requireModuleOperationalAccess } from "@/lib/server/auth";
 import { resolveFeatureFlag } from "@/lib/server/tenant-flag-service";
 import { assembleKnowledgePackage } from "@/lib/server/clinical-knowledge/services";
 import { handleApiError } from "@/lib/server/http";
+import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
 import type { ClinicalKnowledgeAssemblyRequest } from "@/lib/clinical-knowledge/types";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json()) as Partial<ClinicalKnowledgeAssemblyRequest>;
     const procedureCode = body.procedureCode?.trim();
+    const reviewMode = body.reviewMode === true;
 
     if (!procedureCode) {
       return NextResponse.json(
@@ -68,9 +70,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (reviewMode) {
+      requireInformedConsentPermission(auth, "clinical_knowledge:review_illustrations");
+    }
+
     const result = await assembleKnowledgePackage({
       tenantId,
       procedureCode,
+      reviewMode,
       patientContext: body.patientContext,
       physicianContext: body.physicianContext,
     });

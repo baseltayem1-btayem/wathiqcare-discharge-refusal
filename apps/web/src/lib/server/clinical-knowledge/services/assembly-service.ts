@@ -18,6 +18,8 @@ import { evaluateRules } from "./rule-service";
 import {
   getApprovedIllustrationsForProcedure,
   getApprovedIllustrationsForProcedureByNames,
+  getInternalReviewIllustrationsForProcedure,
+  getInternalReviewIllustrationsForProcedureByNames,
 } from "./illustration-service";
 import type {
   ClinicalKnowledgeAssembly,
@@ -35,7 +37,7 @@ export interface AssemblyResult {
 export async function assembleKnowledgePackage(
   request: ClinicalKnowledgeAssemblyRequest,
 ): Promise<AssemblyResult> {
-  const { tenantId, procedureCode, patientContext = {}, physicianContext } = request;
+  const { tenantId, procedureCode, reviewMode, patientContext = {}, physicianContext } = request;
 
   const procedure = await getProcedureByIdentifier(tenantId, procedureCode);
   if (!procedure) {
@@ -76,13 +78,23 @@ export async function assembleKnowledgePackage(
     procedure.shortNameAr,
   ].filter((n): n is string => Boolean(n));
 
+  const illustrationFetchers = reviewMode
+    ? {
+        byProcedure: getInternalReviewIllustrationsForProcedure,
+        byNames: getInternalReviewIllustrationsForProcedureByNames,
+      }
+    : {
+        byProcedure: getApprovedIllustrationsForProcedure,
+        byNames: getApprovedIllustrationsForProcedureByNames,
+      };
+
   const [consentForms, educationMaterials, riskDisclosures, directIllustrations, aliasIllustrations] =
     await Promise.all([
       getConsentFormsByIds(tenantId, [formItem.itemId]),
       getEducationMaterialsByIds(tenantId, educationItems.map((i) => i.itemId)),
       getRiskDisclosuresByIds(tenantId, riskItems.map((i) => i.itemId)),
-      getApprovedIllustrationsForProcedure(tenantId, procedure.id),
-      getApprovedIllustrationsForProcedureByNames(tenantId, procedureNames),
+      illustrationFetchers.byProcedure(tenantId, procedure.id),
+      illustrationFetchers.byNames(tenantId, procedureNames),
     ]);
 
   const illustrationById = new Map<string, (typeof directIllustrations)[number]>();
