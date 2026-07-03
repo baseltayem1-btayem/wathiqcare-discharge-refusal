@@ -1,0 +1,322 @@
+{
+  "circumcision-child-young-person": {
+    "procedureNameEn": "Circumcision (Child-Young Person)",
+    "procedureNameAr": "ختان الأطفال",
+    "specialtyNameEn": "Urology",
+    "specialtyNameAr": "المسالك البولية",
+    "specialtyCode": "UROLOGY",
+    "anatomyRegion": "Penis and foreskin",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/urology/circumcision-child-young-person/circumcision-child-young-person_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/urology/circumcision-child-young-person/circumcision-child-young-person_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/urology/circumcision-child-young-person/circumcision-child-young-person_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Circumcision (Child-Young Person)",
+      "Penis and foreskin",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "ختان الأطفال",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "coiling-embolisation-of-intracranial-aneurysm": {
+    "procedureNameEn": "Coiling embolisation of Intracranial Aneurysm",
+    "procedureNameAr": "Coiling embolisation of Intracranial Aneurysm",
+    "specialtyNameEn": "Neurosurgery / Neuro-interventional Radiology",
+    "specialtyNameAr": "جراحة الأعصاب / الأشعة التداخلية العصبية",
+    "specialtyCode": "NEURO_INTERVENTIONAL",
+    "anatomyRegion": "Target artery/vein and embolization material",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/neurosurgery-neuro-interventional-radiology/coiling-embolisation-of-intracranial-aneurysm/coiling-embolisation-of-intracranial-aneurysm_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/neurosurgery-neuro-interventional-radiology/coiling-embolisation-of-intracranial-aneurysm/coiling-embolisation-of-intracranial-aneurysm_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/neurosurgery-neuro-interventional-radiology/coiling-embolisation-of-intracranial-aneurysm/coiling-embolisation-of-intracranial-aneurysm_process_education_v1_draft.png",
+    "labelsEn": [
+      "Coiling embolisation of Intracranial Aneurysm",
+      "Target artery/vein and embolization material",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Coiling embolisation of Intracranial Aneurysm",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "colposuspension": {
+    "procedureNameEn": "Colposuspension",
+    "procedureNameAr": "تعليق عنق الرحم",
+    "specialtyNameEn": "General Surgery / Other",
+    "specialtyNameAr": "الجراحة العامة / أخرى",
+    "specialtyCode": "GENERAL_SURGERY",
+    "anatomyRegion": "Anatomy specific to Colposuspension",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/colposuspension/colposuspension_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/colposuspension/colposuspension_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/colposuspension/colposuspension_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Colposuspension",
+      "Anatomy specific to Colposuspension",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "تعليق عنق الرحم",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "colposuspension-cystoscopy": {
+    "procedureNameEn": "Colposuspension & Cystoscopy",
+    "procedureNameAr": "Colposuspension & Cystoscopy",
+    "specialtyNameEn": "Urology",
+    "specialtyNameAr": "المسالك البولية",
+    "specialtyCode": "UROLOGY",
+    "anatomyRegion": "Bladder, urethra, and ureteric orifices",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/urology/colposuspension-cystoscopy/colposuspension-cystoscopy_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/urology/colposuspension-cystoscopy/colposuspension-cystoscopy_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/urology/colposuspension-cystoscopy/colposuspension-cystoscopy_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Colposuspension & Cystoscopy",
+      "Bladder, urethra, and ureteric orifices",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Colposuspension & Cystoscopy",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "cone-biopsy": {
+    "procedureNameEn": "Cone Biopsy",
+    "procedureNameAr": "خزعة مخروطية من عنق الرحم",
+    "specialtyNameEn": "Obstetrics & Gynecology",
+    "specialtyNameAr": "النساء والتوليد",
+    "specialtyCode": "OBSTETRICS_GYNECOLOGY",
+    "anatomyRegion": "Cervix and transformation zone",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/cone-biopsy/cone-biopsy_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/cone-biopsy/cone-biopsy_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/cone-biopsy/cone-biopsy_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Cone Biopsy",
+      "Cervix and transformation zone",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "خزعة مخروطية من عنق الرحم",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "consent-for-tympanoplasty-with-or-without-mastoidectomy": {
+    "procedureNameEn": "Consent for Tympanoplasty with or without mastoidectomy",
+    "procedureNameAr": "Consent for Tympanoplasty with or without mastoidectomy",
+    "specialtyNameEn": "Ear, Nose and Throat",
+    "specialtyNameAr": "أنف وأذن وحنجرة",
+    "specialtyCode": "ENT",
+    "anatomyRegion": "Tympanic membrane and middle ear",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/ent/consent-for-tympanoplasty-with-or-without-mastoidectomy/consent-for-tympanoplasty-with-or-without-mastoidectomy_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/ent/consent-for-tympanoplasty-with-or-without-mastoidectomy/consent-for-tympanoplasty-with-or-without-mastoidectomy_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/ent/consent-for-tympanoplasty-with-or-without-mastoidectomy/consent-for-tympanoplasty-with-or-without-mastoidectomy_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Consent for Tympanoplasty with or without mastoidectomy",
+      "Tympanic membrane and middle ear",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Consent for Tympanoplasty with or without mastoidectomy",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "consent-form-bariatric": {
+    "procedureNameEn": "Consent Form Bariatric",
+    "procedureNameAr": "Consent Form Bariatric",
+    "specialtyNameEn": "General Surgery / Other",
+    "specialtyNameAr": "الجراحة العامة / أخرى",
+    "specialtyCode": "GENERAL_SURGERY",
+    "anatomyRegion": "Stomach and bariatric surgical anatomy",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/consent-form-bariatric/consent-form-bariatric_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/consent-form-bariatric/consent-form-bariatric_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/consent-form-bariatric/consent-form-bariatric_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Consent Form Bariatric",
+      "Stomach and bariatric surgical anatomy",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Consent Form Bariatric",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "consent-form-botulinium": {
+    "procedureNameEn": "Consent Form - Botulinium",
+    "procedureNameAr": "Consent Form - Botulinium",
+    "specialtyNameEn": "Plastic / Dermatologic Surgery",
+    "specialtyNameAr": "جراحة التجميل / الجلدية",
+    "specialtyCode": "PLASTIC_DERMATOLOGIC",
+    "anatomyRegion": "Facial muscles and injection sites",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-botulinium/consent-form-botulinium_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-botulinium/consent-form-botulinium_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-botulinium/consent-form-botulinium_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Consent Form - Botulinium",
+      "Facial muscles and injection sites",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Consent Form - Botulinium",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "consent-form-chemical-peeling": {
+    "procedureNameEn": "Consent Form - Chemical Peeling",
+    "procedureNameAr": "Consent Form - Chemical Peeling",
+    "specialtyNameEn": "Plastic / Dermatologic Surgery",
+    "specialtyNameAr": "جراحة التجميل / الجلدية",
+    "specialtyCode": "PLASTIC_DERMATOLOGIC",
+    "anatomyRegion": "Anatomy specific to Consent Form - Chemical Peeling",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-chemical-peeling/consent-form-chemical-peeling_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-chemical-peeling/consent-form-chemical-peeling_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-chemical-peeling/consent-form-chemical-peeling_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Consent Form - Chemical Peeling",
+      "Anatomy specific to Consent Form - Chemical Peeling",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Consent Form - Chemical Peeling",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "consent-form-filler": {
+    "procedureNameEn": "Consent Form - Filler",
+    "procedureNameAr": "Consent Form - Filler",
+    "specialtyNameEn": "Plastic / Dermatologic Surgery",
+    "specialtyNameAr": "جراحة التجميل / الجلدية",
+    "specialtyCode": "PLASTIC_DERMATOLOGIC",
+    "anatomyRegion": "Facial soft tissue and injection planes",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-filler/consent-form-filler_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-filler/consent-form-filler_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-filler/consent-form-filler_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Consent Form - Filler",
+      "Facial soft tissue and injection planes",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Consent Form - Filler",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  }
+}
