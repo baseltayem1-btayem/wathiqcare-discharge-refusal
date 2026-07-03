@@ -15,6 +15,19 @@ export type TaqnyatSendResult = {
   provider: SmsProvider | null;
 };
 
+const SMS_REQUEST_TIMEOUT_MS = 5000;
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function maskPhone(value: string): string {
   const digits = value.replace(/\D/g, "");
   if (digits.length <= 4) {
@@ -123,7 +136,7 @@ async function sendViaSmsProxy(args: TaqnyatSendArgs): Promise<TaqnyatSendResult
   });
 
   try {
-    const response = await fetch(`${proxyUrl}/api/v1/sms/send`, {
+    const response = await fetchWithTimeout(`${proxyUrl}/api/v1/sms/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -134,7 +147,7 @@ async function sendViaSmsProxy(args: TaqnyatSendArgs): Promise<TaqnyatSendResult
         senderName,
         message: args.message,
       }),
-    });
+    }, SMS_REQUEST_TIMEOUT_MS);
 
     let parsed: Record<string, unknown> | null = null;
     try {
@@ -178,7 +191,7 @@ async function sendViaDirectTaqnyat(args: TaqnyatSendArgs): Promise<TaqnyatSendR
   });
 
   try {
-    const response = await fetch(`${SIGNATURE_CONFIG.taqniatApiUrl.replace(/\/$/, "")}/messages`, {
+    const response = await fetchWithTimeout(`${SIGNATURE_CONFIG.taqniatApiUrl.replace(/\/$/, "")}/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -189,7 +202,7 @@ async function sendViaDirectTaqnyat(args: TaqnyatSendArgs): Promise<TaqnyatSendR
         body: args.message,
         sender: getSenderName(),
       }),
-    });
+    }, SMS_REQUEST_TIMEOUT_MS);
 
     let parsed: Record<string, unknown> | null = null;
     try {
