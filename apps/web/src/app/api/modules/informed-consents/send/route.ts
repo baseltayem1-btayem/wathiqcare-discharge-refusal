@@ -5,6 +5,7 @@ import { sendModuleSecureSigningLink } from "@/lib/server/module-secure-signing-
 import { writeConsentAudit } from "@/lib/server/consent-library-service";
 import { isTaqnyatReady } from "@/services/sms/taqnyatClient";
 import { logRuntimeIncident } from "@/lib/server/runtime-observability";
+import { getPrisma } from "@/lib/server/prisma";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -195,6 +196,29 @@ export async function POST(request: NextRequest) {
       mobileNumber,
       recipientEmail,
       locale,
+    });
+
+    // Persist the pilot recipient contact details on the consent document so
+    // downstream OTP/email fallback and audit have a stable source of truth.
+    const prisma = getPrisma();
+    const existingDoc = await prisma.consentDocument.findFirst({
+      where: { id: documentId, tenantId },
+      select: { metadata: true },
+    });
+    const existingMetadata = (existingDoc?.metadata ?? {}) as Record<string, unknown>;
+    await prisma.consentDocument.update({
+      where: { id: documentId },
+      data: {
+        metadata: {
+          ...existingMetadata,
+          secureSigningWorkflow: {
+            ...(existingMetadata.secureSigningWorkflow as Record<string, unknown> ?? {}),
+            recipientEmail: workflow.recipientEmail,
+            mobileNumber: workflow.recipientMobile,
+            sentAt: new Date().toISOString(),
+          },
+        } as unknown as import("@prisma/client").Prisma.InputJsonValue,
+      },
     });
 
     await writeConsentAudit({

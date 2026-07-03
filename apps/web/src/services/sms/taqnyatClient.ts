@@ -122,27 +122,39 @@ async function sendViaSmsProxy(args: TaqnyatSendArgs): Promise<TaqnyatSendResult
     messageLength: args.message.length,
   });
 
-  const response = await fetch(`${proxyUrl}/api/v1/sms/send`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-wathiqcare-sms-secret": secret,
-    },
-    body: JSON.stringify({
-      recipient: normalizedRecipient,
-      senderName,
-      message: args.message,
-    }),
-  });
-
-  let parsed: Record<string, unknown> | null = null;
   try {
-    parsed = (await response.json()) as Record<string, unknown>;
-  } catch {
-    parsed = null;
-  }
+    const response = await fetch(`${proxyUrl}/api/v1/sms/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-wathiqcare-sms-secret": secret,
+      },
+      body: JSON.stringify({
+        recipient: normalizedRecipient,
+        senderName,
+        message: args.message,
+      }),
+    });
 
-  return buildSendResult(response, parsed, "sms_proxy");
+    let parsed: Record<string, unknown> | null = null;
+    try {
+      parsed = (await response.json()) as Record<string, unknown>;
+    } catch {
+      parsed = null;
+    }
+
+    return buildSendResult(response, parsed, "sms_proxy");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[sms_proxy] network error", { error: message, recipient: maskPhone(normalizedRecipient) });
+    return {
+      ok: false,
+      statusCode: 0,
+      providerMessageId: null,
+      response: { code: "SMS_PROXY_NETWORK_ERROR", error: message },
+      provider: "sms_proxy",
+    };
+  }
 }
 
 async function sendViaDirectTaqnyat(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
@@ -165,27 +177,39 @@ async function sendViaDirectTaqnyat(args: TaqnyatSendArgs): Promise<TaqnyatSendR
     messageLength: args.message.length,
   });
 
-  const response = await fetch(`${SIGNATURE_CONFIG.taqniatApiUrl.replace(/\/$/, "")}/messages`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${bearerToken}`,
-    },
-    body: JSON.stringify({
-      recipients: [normalizedRecipient],
-      body: args.message,
-      sender: getSenderName(),
-    }),
-  });
-
-  let parsed: Record<string, unknown> | null = null;
   try {
-    parsed = (await response.json()) as Record<string, unknown>;
-  } catch {
-    parsed = null;
-  }
+    const response = await fetch(`${SIGNATURE_CONFIG.taqniatApiUrl.replace(/\/$/, "")}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${bearerToken}`,
+      },
+      body: JSON.stringify({
+        recipients: [normalizedRecipient],
+        body: args.message,
+        sender: getSenderName(),
+      }),
+    });
 
-  return buildSendResult(response, parsed, "taqnyat");
+    let parsed: Record<string, unknown> | null = null;
+    try {
+      parsed = (await response.json()) as Record<string, unknown>;
+    } catch {
+      parsed = null;
+    }
+
+    return buildSendResult(response, parsed, "taqnyat");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[taqnyat] network error", { error: message, recipient: maskPhone(normalizedRecipient) });
+    return {
+      ok: false,
+      statusCode: 0,
+      providerMessageId: null,
+      response: { code: "TAQNYAT_NETWORK_ERROR", error: message },
+      provider: "taqnyat",
+    };
+  }
 }
 
 export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
