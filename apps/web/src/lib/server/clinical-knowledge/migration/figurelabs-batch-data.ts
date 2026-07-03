@@ -322,6 +322,26 @@ for (const [key, raw] of Object.entries(batch2GeneratedRaw)) {
   };
 }
 
+// Batch 3 ChatGPT-generated draft illustrations (provisional, not patient-facing).
+import _batch3Generated from "./figurelabs-batch-3-generated.json";
+
+const batch3GeneratedRaw = _batch3Generated as Record<
+  string,
+  Omit<BatchIllustration, "specialty"> & {
+    specialtyNameEn: string;
+    specialtyNameAr: string;
+    specialtyCode: string;
+  }
+>;
+
+export const BATCH_3_GENERATED: Record<string, BatchIllustration> = {};
+for (const [key, raw] of Object.entries(batch3GeneratedRaw)) {
+  BATCH_3_GENERATED[key] = {
+    ...raw,
+    specialty: specialty(raw.specialtyNameEn, raw.specialtyNameAr, raw.specialtyCode),
+  };
+}
+
 /**
  * Batch 2: next 20 normalized procedures from the master registry, selected
  * after excluding Batch 1. These are queued for FigureLabs generation.

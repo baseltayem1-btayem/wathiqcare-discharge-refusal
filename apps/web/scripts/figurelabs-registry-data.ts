@@ -9,6 +9,7 @@
 import {
   BATCH_1_ILLUSTRATIONS as SourceBatch1,
   BATCH_2_GENERATED as SourceBatch2,
+  BATCH_3_GENERATED as SourceBatch3,
   type SpecialtyInfo,
   type ClinicalOverride,
 } from "../src/lib/server/clinical-knowledge/migration/figurelabs-batch-data";
@@ -16,6 +17,7 @@ import {
 export type { SpecialtyInfo, ClinicalOverride };
 export const BATCH_1_ILLUSTRATIONS = SourceBatch1;
 export const BATCH_2_GENERATED = SourceBatch2;
+export const BATCH_3_GENERATED = SourceBatch3;
 
 // Approved Laparoscopic Cholecystectomy constants (must remain unchanged).
 export const APPROVED_LAP_CHOLE = {

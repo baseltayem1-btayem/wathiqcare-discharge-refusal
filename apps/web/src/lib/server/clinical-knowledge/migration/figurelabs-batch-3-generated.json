@@ -1,0 +1,322 @@
+{
+  "breast-microdochotomy": {
+    "procedureNameEn": "Breast Microdochotomy",
+    "procedureNameAr": "جراحة قنوات الثدي الدقيقة",
+    "specialtyNameEn": "Breast Surgery",
+    "specialtyNameAr": "جراحة الثدي",
+    "specialtyCode": "BREAST_SURGERY",
+    "anatomyRegion": "Breast duct and nipple area",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-microdochotomy/breast-microdochotomy_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-microdochotomy/breast-microdochotomy_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-microdochotomy/breast-microdochotomy_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Breast duct and nipple area",
+      "Breast Microdochotomy",
+      "Procedure concept",
+      "Patient education draft",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "جراحة قنوات الثدي الدقيقة",
+      "رسم تعليمي للمريض",
+      "مسودة للمراجعة الطبية",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "breast-wide-local-excision": {
+    "procedureNameEn": "Breast Wide LocaL Excision",
+    "procedureNameAr": "استئصال محدود في الثدي",
+    "specialtyNameEn": "Breast Surgery",
+    "specialtyNameAr": "جراحة الثدي",
+    "specialtyCode": "BREAST_SURGERY",
+    "anatomyRegion": "Breast tissue and target lesion",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-wide-local-excision/breast-wide-local-excision_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-wide-local-excision/breast-wide-local-excision_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-wide-local-excision/breast-wide-local-excision_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Breast tissue and target lesion",
+      "Breast Wide LocaL Excision",
+      "Procedure concept",
+      "Patient education draft",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "استئصال محدود في الثدي",
+      "رسم تعليمي للمريض",
+      "مسودة للمراجعة الطبية",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "burch-colposuspension": {
+    "procedureNameEn": "Burch Colposuspension",
+    "procedureNameAr": "تعليق عنق الرحم برباط كوبر",
+    "specialtyNameEn": "General Surgery / Other",
+    "specialtyNameAr": "الجراحة العامة / أخرى",
+    "specialtyCode": "GENERAL_SURGERY",
+    "anatomyRegion": "Anatomy specific to Burch Colposuspension",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/burch-colposuspension/burch-colposuspension_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/burch-colposuspension/burch-colposuspension_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/burch-colposuspension/burch-colposuspension_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Anatomy specific to Burch Colposuspension",
+      "Burch Colposuspension",
+      "Procedure concept",
+      "Patient education draft",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "تعليق عنق الرحم برباط كوبر",
+      "رسم تعليمي للمريض",
+      "مسودة للمراجعة الطبية",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "burns": {
+    "procedureNameEn": "Burns",
+    "procedureNameAr": "الحروق",
+    "specialtyNameEn": "General Surgery / Other",
+    "specialtyNameAr": "الجراحة العامة / أخرى",
+    "specialtyCode": "GENERAL_SURGERY",
+    "anatomyRegion": "Affected skin and superficial tissue layers",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/burns/burns_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/burns/burns_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/burns/burns_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Affected skin and superficial tissue layers",
+      "Burns",
+      "Procedure concept",
+      "Patient education draft",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "الحروق",
+      "رسم تعليمي للمريض",
+      "مسودة للمراجعة الطبية",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "burns-child-young-person": {
+    "procedureNameEn": "Burns (Child-Young Person)",
+    "procedureNameAr": "Burns (Child-Young Person)",
+    "specialtyNameEn": "General Surgery / Other",
+    "specialtyNameAr": "الجراحة العامة / أخرى",
+    "specialtyCode": "GENERAL_SURGERY",
+    "anatomyRegion": "Affected skin and superficial tissue layers",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/burns-child-young-person/burns-child-young-person_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/burns-child-young-person/burns-child-young-person_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/burns-child-young-person/burns-child-young-person_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Affected skin and superficial tissue layers",
+      "Burns (Child-Young Person)",
+      "Procedure concept",
+      "Patient education draft",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Burns (Child-Young Person)",
+      "رسم تعليمي للمريض",
+      "مسودة للمراجعة الطبية",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "capsule-endoscopy": {
+    "procedureNameEn": "Capsule Endoscopy",
+    "procedureNameAr": "تنظير الكبسولة",
+    "specialtyNameEn": "Gastroenterology / Hepatobiliary Surgery",
+    "specialtyNameAr": "أمراض الجهاز الهضمي / جراحة الكبد والمرارة",
+    "specialtyCode": "GASTROENTEROLOGY",
+    "anatomyRegion": "Small intestine with capsule endoscope",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/gastroenterology/capsule-endoscopy/capsule-endoscopy_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/gastroenterology/capsule-endoscopy/capsule-endoscopy_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/gastroenterology/capsule-endoscopy/capsule-endoscopy_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Small intestine with capsule endoscope",
+      "Capsule Endoscopy",
+      "Procedure concept",
+      "Patient education draft",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "تنظير الكبسولة",
+      "رسم تعليمي للمريض",
+      "مسودة للمراجعة الطبية",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "cardioversion": {
+    "procedureNameEn": "Cardioversion",
+    "procedureNameAr": "إعادة ضبط القلب بالصدمات الكهربائية",
+    "specialtyNameEn": "Cardiology",
+    "specialtyNameAr": "أمراض القلب",
+    "specialtyCode": "CARDIOLOGY",
+    "anatomyRegion": "Chest, heart, and external defibrillator pads",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/cardiology/cardioversion/cardioversion_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/cardiology/cardioversion/cardioversion_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/cardiology/cardioversion/cardioversion_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Chest, heart, and external defibrillator pads",
+      "Cardioversion",
+      "Procedure concept",
+      "Patient education draft",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "إعادة ضبط القلب بالصدمات الكهربائية",
+      "رسم تعليمي للمريض",
+      "مسودة للمراجعة الطبية",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "carotid-endarterectomy": {
+    "procedureNameEn": "Carotid Endarterectomy",
+    "procedureNameAr": "استئصال بطانة الشريان السباتي",
+    "specialtyNameEn": "Vascular Surgery",
+    "specialtyNameAr": "جراحة الأوعية الدموية",
+    "specialtyCode": "VASCULAR_SURGERY",
+    "anatomyRegion": "Carotid artery in the neck",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/carotid-endarterectomy/carotid-endarterectomy_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/carotid-endarterectomy/carotid-endarterectomy_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/carotid-endarterectomy/carotid-endarterectomy_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Carotid artery in the neck",
+      "Carotid Endarterectomy",
+      "Procedure concept",
+      "Patient education draft",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "استئصال بطانة الشريان السباتي",
+      "رسم تعليمي للمريض",
+      "مسودة للمراجعة الطبية",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "carotid-stenting": {
+    "procedureNameEn": "Carotid Stenting",
+    "procedureNameAr": "تركيب دعامة في الشريان السباتي",
+    "specialtyNameEn": "Vascular Surgery",
+    "specialtyNameAr": "جراحة الأوعية الدموية",
+    "specialtyCode": "VASCULAR_SURGERY",
+    "anatomyRegion": "Carotid artery in the neck",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/carotid-stenting/carotid-stenting_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/carotid-stenting/carotid-stenting_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/carotid-stenting/carotid-stenting_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Carotid artery in the neck",
+      "Carotid Stenting",
+      "Procedure concept",
+      "Patient education draft",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "تركيب دعامة في الشريان السباتي",
+      "رسم تعليمي للمريض",
+      "مسودة للمراجعة الطبية",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "catheter-check-with-iv-iodinated-contrast": {
+    "procedureNameEn": "Catheter Check with IV Iodinated Contrast",
+    "procedureNameAr": "Catheter Check with IV Iodinated Contrast",
+    "specialtyNameEn": "Radiology / Interventional Radiology",
+    "specialtyNameAr": "الأشعة / الأشعة التداخلية",
+    "specialtyCode": "RADIOLOGY",
+    "anatomyRegion": "Existing catheter and contrast injection path",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/radiology/catheter-check-with-iv-iodinated-contrast/catheter-check-with-iv-iodinated-contrast_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/radiology/catheter-check-with-iv-iodinated-contrast/catheter-check-with-iv-iodinated-contrast_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/radiology/catheter-check-with-iv-iodinated-contrast/catheter-check-with-iv-iodinated-contrast_process_education_v1_draft.png",
+    "labelsEn": [
+      "Existing catheter and contrast injection path",
+      "Catheter Check with IV Iodinated Contrast",
+      "Procedure concept",
+      "Patient education draft",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Catheter Check with IV Iodinated Contrast",
+      "رسم تعليمي للمريض",
+      "مسودة للمراجعة الطبية",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  }
+}
