@@ -20,6 +20,7 @@ import {
   BATCH_2_GENERATED,
   BATCH_3_GENERATED,
   BATCH_4_GENERATED,
+  BATCH_5_GENERATED,
   DEFAULT_DISCLAIMER_EN,
   DEFAULT_DISCLAIMER_AR,
   inferSpecialty,
@@ -185,6 +186,12 @@ function main() {
         o.aliases?.includes(procedureNameEn) ||
         slugify(o.procedureNameEn) === canonicalProcedureKey,
     );
+    const batch5Override = Object.values(BATCH_5_GENERATED).find(
+      (o) =>
+        o.procedureNameEn === procedureNameEn ||
+        o.aliases?.includes(procedureNameEn) ||
+        slugify(o.procedureNameEn) === canonicalProcedureKey,
+    );
 
     let finalCanonicalKey: string;
     let finalSpecialty: SpecialtyInfo;
@@ -257,6 +264,21 @@ function main() {
       source = "ChatGPT";
       const noteParts: string[] = [];
       if (batch4Override.notes) noteParts.push(batch4Override.notes);
+      notes = noteParts.join(" ").trim();
+    } else if (batch5Override) {
+      finalCanonicalKey = slugify(batch5Override.procedureNameEn);
+      finalSpecialty = batch5Override.specialty!;
+      anatomyRegion = batch5Override.anatomyRegion!;
+      illustrationType = batch5Override.illustrationType!;
+      procedureNameAr = batch5Override.procedureNameAr ?? procedureNameEn;
+      aliases = batch5Override.aliases ?? [batch5Override.procedureNameEn, procedureNameAr];
+      imageFileName = basename(batch5Override.procedureImageUrl);
+      imagePublicPath = batch5Override.procedureImageUrl;
+      imageReviewStatus = batch5Override.imageReviewStatus;
+      patientFacing = batch5Override.patientFacing;
+      source = "ChatGPT";
+      const noteParts: string[] = [];
+      if (batch5Override.notes) noteParts.push(batch5Override.notes);
       notes = noteParts.join(" ").trim();
     } else {
       finalCanonicalKey = canonicalProcedureKey;

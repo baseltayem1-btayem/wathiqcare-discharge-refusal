@@ -1,0 +1,322 @@
+{
+  "consent-form-skin-lesion-treatment": {
+    "procedureNameEn": "Consent Form - Skin Lesion Treatment",
+    "procedureNameAr": "Consent Form - Skin Lesion Treatment",
+    "specialtyNameEn": "Plastic / Dermatologic Surgery",
+    "specialtyNameAr": "جراحة التجميل / الجلدية",
+    "specialtyCode": "PLASTIC_DERMATOLOGIC",
+    "anatomyRegion": "Anatomy specific to Consent Form - Skin Lesion Treatment",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-skin-lesion-treatment/consent-form-skin-lesion-treatment_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-skin-lesion-treatment/consent-form-skin-lesion-treatment_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-skin-lesion-treatment/consent-form-skin-lesion-treatment_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Consent Form - Skin Lesion Treatment",
+      "Anatomy specific to Consent Form - Skin Lesion Treatment",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Consent Form - Skin Lesion Treatment",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "cosmetic-surgery": {
+    "procedureNameEn": "Cosmetic Surgery",
+    "procedureNameAr": "Cosmetic Surgery",
+    "specialtyNameEn": "Plastic / Dermatologic Surgery",
+    "specialtyNameAr": "جراحة التجميل / الجلدية",
+    "specialtyCode": "PLASTIC_DERMATOLOGIC",
+    "anatomyRegion": "Anatomy specific to Cosmetic Surgery",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/cosmetic-surgery/cosmetic-surgery_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/cosmetic-surgery/cosmetic-surgery_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/cosmetic-surgery/cosmetic-surgery_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Cosmetic Surgery",
+      "Anatomy specific to Cosmetic Surgery",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Cosmetic Surgery",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "cranial-surgery": {
+    "procedureNameEn": "Cranial Surgery",
+    "procedureNameAr": "Cranial Surgery",
+    "specialtyNameEn": "Neurosurgery / Neuro-interventional Radiology",
+    "specialtyNameAr": "جراحة الأعصاب / الأشعة التداخلية العصبية",
+    "specialtyCode": "NEURO_INTERVENTIONAL",
+    "anatomyRegion": "Skull and underlying brain",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/neurosurgery-neuro-interventional-radiology/cranial-surgery/cranial-surgery_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/neurosurgery-neuro-interventional-radiology/cranial-surgery/cranial-surgery_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/neurosurgery-neuro-interventional-radiology/cranial-surgery/cranial-surgery_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Cranial Surgery",
+      "Skull and underlying brain",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Cranial Surgery",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "critical-care-consent": {
+    "procedureNameEn": "Critical Care Consent",
+    "procedureNameAr": "Critical Care Consent",
+    "specialtyNameEn": "Anesthesia / Pain / Critical Care",
+    "specialtyNameAr": "التخدير / الألم / العناية المركزة",
+    "specialtyCode": "ANESTHESIA",
+    "anatomyRegion": "Critical care environment and monitoring devices",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/anesthesia/critical-care-consent/critical-care-consent_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/anesthesia/critical-care-consent/critical-care-consent_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/anesthesia/critical-care-consent/critical-care-consent_process_education_v1_draft.png",
+    "labelsEn": [
+      "Critical Care Consent",
+      "Critical care environment and monitoring devices",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Critical Care Consent",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "ct-cardiac": {
+    "procedureNameEn": "CT Cardiac",
+    "procedureNameAr": "CT Cardiac",
+    "specialtyNameEn": "Cardiology",
+    "specialtyNameAr": "أمراض القلب",
+    "specialtyCode": "CARDIOLOGY",
+    "anatomyRegion": "Whole-body or region-specific CT scanner cross-section",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/cardiology/ct-cardiac/ct-cardiac_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/cardiology/ct-cardiac/ct-cardiac_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/cardiology/ct-cardiac/ct-cardiac_process_education_v1_draft.png",
+    "labelsEn": [
+      "CT Cardiac",
+      "Whole-body or region-specific CT scanner cross-section",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "CT Cardiac",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "ct-colonoscopy": {
+    "procedureNameEn": "CT Colonoscopy",
+    "procedureNameAr": "CT Colonoscopy",
+    "specialtyNameEn": "Gastroenterology / Hepatobiliary Surgery",
+    "specialtyNameAr": "أمراض الجهاز الهضمي / جراحة الكبد والمرارة",
+    "specialtyCode": "GASTROENTEROLOGY",
+    "anatomyRegion": "Large intestine and rectum",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/gastroenterology/ct-colonoscopy/ct-colonoscopy_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/gastroenterology/ct-colonoscopy/ct-colonoscopy_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/gastroenterology/ct-colonoscopy/ct-colonoscopy_process_education_v1_draft.png",
+    "labelsEn": [
+      "CT Colonoscopy",
+      "Large intestine and rectum",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "CT Colonoscopy",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "ct-computed-tomography": {
+    "procedureNameEn": "CT (Computed Tomography)",
+    "procedureNameAr": "CT (Computed Tomography)",
+    "specialtyNameEn": "Radiology / Interventional Radiology",
+    "specialtyNameAr": "الأشعة / الأشعة التداخلية",
+    "specialtyCode": "RADIOLOGY",
+    "anatomyRegion": "Whole-body or region-specific CT scanner cross-section",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/radiology/ct-computed-tomography/ct-computed-tomography_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/radiology/ct-computed-tomography/ct-computed-tomography_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/radiology/ct-computed-tomography/ct-computed-tomography_process_education_v1_draft.png",
+    "labelsEn": [
+      "CT (Computed Tomography)",
+      "Whole-body or region-specific CT scanner cross-section",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "CT (Computed Tomography)",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "cystogram": {
+    "procedureNameEn": "Cystogram",
+    "procedureNameAr": "Cystogram",
+    "specialtyNameEn": "Radiology / Interventional Radiology",
+    "specialtyNameAr": "الأشعة / الأشعة التداخلية",
+    "specialtyCode": "RADIOLOGY",
+    "anatomyRegion": "Bladder and contrast-filled urinary tract",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/radiology/cystogram/cystogram_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/radiology/cystogram/cystogram_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/radiology/cystogram/cystogram_process_education_v1_draft.png",
+    "labelsEn": [
+      "Cystogram",
+      "Bladder and contrast-filled urinary tract",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Cystogram",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "cystoscopy-and-crushing-of-stone": {
+    "procedureNameEn": "Cystoscopy and crushing of stone",
+    "procedureNameAr": "Cystoscopy and crushing of stone",
+    "specialtyNameEn": "Urology",
+    "specialtyNameAr": "المسالك البولية",
+    "specialtyCode": "UROLOGY",
+    "anatomyRegion": "Bladder, urethra, and ureteric orifices",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/urology/cystoscopy-and-crushing-of-stone/cystoscopy-and-crushing-of-stone_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/urology/cystoscopy-and-crushing-of-stone/cystoscopy-and-crushing-of-stone_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/urology/cystoscopy-and-crushing-of-stone/cystoscopy-and-crushing-of-stone_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Cystoscopy and crushing of stone",
+      "Bladder, urethra, and ureteric orifices",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "Cystoscopy and crushing of stone",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "cystoscopy-and-removal-of-bladder-tumour": {
+    "procedureNameEn": "Cystoscopy and removal of bladder tumour",
+    "procedureNameAr": "تنظير المثانة وإزالة ورم المثانة",
+    "specialtyNameEn": "Urology",
+    "specialtyNameAr": "المسالك البولية",
+    "specialtyCode": "UROLOGY",
+    "anatomyRegion": "Bladder, urethra, and ureteric orifices",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/urology/cystoscopy-and-removal-of-bladder-tumour/cystoscopy-and-removal-of-bladder-tumour_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/urology/cystoscopy-and-removal-of-bladder-tumour/cystoscopy-and-removal-of-bladder-tumour_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/urology/cystoscopy-and-removal-of-bladder-tumour/cystoscopy-and-removal-of-bladder-tumour_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Cystoscopy and removal of bladder tumour",
+      "Bladder, urethra, and ureteric orifices",
+      "Procedure concept",
+      "Draft educational image",
+      "Informed consent discussion area"
+    ],
+    "labelsAr": [
+      "تنظير المثانة وإزالة ورم المثانة",
+      "المفهوم الطبي للإجراء",
+      "رسم تعليمي مبدئي",
+      "مساحة مخصصة لمناقشة الموافقة المستنيرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  }
+}

@@ -22,7 +22,7 @@ import type {
   ClinicalKnowledgeGovernanceEventType,
 } from "@prisma/client";
 import { ClinicalKnowledgeIllustrationStatus } from "@prisma/client";
-import { BATCH_1_ILLUSTRATIONS, BATCH_2_GENERATED, BATCH_3_GENERATED, BATCH_4_GENERATED } from "./figurelabs-batch-data";
+import { BATCH_1_ILLUSTRATIONS, BATCH_2_GENERATED, BATCH_3_GENERATED, BATCH_4_GENERATED, BATCH_5_GENERATED } from "./figurelabs-batch-data";
 
 const SEED_VERSION = "1.0.0";
 const SEED_USER_ID = "system-migration";
@@ -626,6 +626,56 @@ function buildIllustrationInputs(
   }
 
   for (const [key, batch] of Object.entries(BATCH_4_GENERATED)) {
+    const procedureCode = `imc-${key}`;
+    const procedure = procedureByCode.get(procedureCode);
+    if (!procedure || !procedure.id) continue;
+    if (illustrations.has(procedure.id as string)) continue;
+
+    const publicImageUrl = batch.procedureImageUrl.replace(/^apps\/web\/public/, "");
+    const id = generateStableId(tenantId, "illustration", procedureCode);
+
+    illustrations.set(procedure.id as string, {
+      id,
+      tenantId,
+      procedureId: procedure.id as string,
+      procedureNameEn: batch.procedureNameEn,
+      procedureNameAr: batch.procedureNameAr ?? "",
+      specialty: batch.specialty?.nameEn ?? "",
+      anatomyRegion: batch.anatomyRegion ?? "",
+      anatomyImageUrl: null,
+      procedureImageUrl: publicImageUrl,
+      imageBaseUrl: batch.imageBaseUrl ? batch.imageBaseUrl.replace(/^apps\/web\/public/, "") : publicImageUrl,
+      imageEnUrl: batch.imageEnUrl ? batch.imageEnUrl.replace(/^apps\/web\/public/, "") : publicImageUrl,
+      imageArUrl: batch.imageArUrl ? batch.imageArUrl.replace(/^apps\/web\/public/, "") : null,
+      labelsEn: batch.labelsEn ?? [],
+      labelsAr: batch.labelsAr ?? [],
+      languageDirection: batch.languageDirection ?? "both",
+      productionStatus: batch.productionStatus ?? "generated_by_chatgpt_draft",
+      integrationStatus: batch.integrationStatus ?? "provisionally_integrated",
+      arabicReviewStatus: batch.arabicReviewStatus ?? "pending_clinical_translation_review",
+      synonyms: (batch.aliases ?? [batch.procedureNameEn, batch.procedureNameAr]).filter(
+        (s): s is string => typeof s === "string" && s.length > 0,
+      ),
+      anatomyPromptEn: null,
+      anatomyPromptAr: null,
+      procedurePromptEn: `${batch.procedureNameEn} — anatomy and procedure overview.`,
+      procedurePromptAr: `${batch.procedureNameAr ?? batch.procedureNameEn} — نظرة عامة على التشريح والإجراء.`,
+      patientDisplayDisclaimerEn:
+        "This illustration is for patient education only and does not replace the physician’s explanation.",
+      patientDisplayDisclaimerAr:
+        "هذه الصورة لأغراض التثقيف فقط ولا تُغني عن شرح الطبيب المعالج.",
+      source: "ChatGPT",
+      version: "v1",
+      patientFacing: batch.patientFacing,
+      imageReviewStatus: ClinicalKnowledgeIllustrationStatus.pending_clinical_review,
+      reviewedBy: null,
+      reviewedAt: null,
+      effectiveDate,
+      createdByUserId,
+    });
+  }
+
+  for (const [key, batch] of Object.entries(BATCH_5_GENERATED)) {
     const procedureCode = `imc-${key}`;
     const procedure = procedureByCode.get(procedureCode);
     if (!procedure || !procedure.id) continue;

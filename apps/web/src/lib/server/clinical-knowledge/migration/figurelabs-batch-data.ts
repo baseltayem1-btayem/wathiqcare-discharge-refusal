@@ -345,6 +345,9 @@ for (const [key, raw] of Object.entries(batch3GeneratedRaw)) {
 // Batch 4 ChatGPT-generated draft illustrations (provisional, not patient-facing).
 import _batch4Generated from "./figurelabs-batch-4-generated.json";
 
+// Batch 5 ChatGPT-generated draft illustrations (provisional, not patient-facing).
+import _batch5Generated from "./figurelabs-batch-5-generated.json";
+
 const batch4GeneratedRaw = _batch4Generated as Record<
   string,
   Omit<BatchIllustration, "specialty"> & {
@@ -357,6 +360,23 @@ const batch4GeneratedRaw = _batch4Generated as Record<
 export const BATCH_4_GENERATED: Record<string, BatchIllustration> = {};
 for (const [key, raw] of Object.entries(batch4GeneratedRaw)) {
   BATCH_4_GENERATED[key] = {
+    ...raw,
+    specialty: specialty(raw.specialtyNameEn, raw.specialtyNameAr, raw.specialtyCode),
+  };
+}
+
+const batch5GeneratedRaw = _batch5Generated as Record<
+  string,
+  Omit<BatchIllustration, "specialty"> & {
+    specialtyNameEn: string;
+    specialtyNameAr: string;
+    specialtyCode: string;
+  }
+>;
+
+export const BATCH_5_GENERATED: Record<string, BatchIllustration> = {};
+for (const [key, raw] of Object.entries(batch5GeneratedRaw)) {
+  BATCH_5_GENERATED[key] = {
     ...raw,
     specialty: specialty(raw.specialtyNameEn, raw.specialtyNameAr, raw.specialtyCode),
   };
