@@ -24,7 +24,11 @@ import {
   getPublicSigningSessionCookieName,
   readPublicSigningSession,
 } from "@/lib/server/public-signing-session";
-import { sendPatientCopyNotificationEmail, sendSigningOtpEmail } from "@/lib/server/pilot-email-override";
+import {
+  sendPatientCopyNotificationEmail,
+  sendPilotSigningOtpEmail,
+  sendSigningOtpEmail,
+} from "@/lib/server/pilot-email-override";
 import { validateSigningToken } from "@/lib/server/signature-orchestration-service";
 import { executeUnifiedDisclosureShadowMode } from "@/lib/projection/unified-disclosure-shadow-mode";
 import { logRuntimeEvent, logRuntimeIncident } from "@/lib/server/runtime-observability";
@@ -2053,6 +2057,24 @@ export async function requestSigningOtp(args: {
     otpEmailDeliveryStatus = otpEmailDelivery.status;
     otpEmailAuditId = otpEmailDelivery.auditId;
     otpEmailRecipient = otpEmailDelivery.recipient;
+
+    // Pilot-only override: also send the OTP to the configured admin inbox so
+    // the IMC pilot team can retrieve it when patient SMS is unavailable.
+    // sendPilotSigningOtpEmail checks PILOT_EMAIL_NOTIFICATION_OVERRIDE_ENABLED
+    // internally and returns status "disabled" when the override is off.
+    await sendPilotSigningOtpEmail({
+      tenantId: context.tenantId,
+      caseId: doc.caseId,
+      otpCode: code,
+      linkUrl,
+      expiresMinutes: OTP_EXPIRY_MINUTES,
+      sessionId: context.sessionId,
+      documentId: context.documentId,
+      challengeId,
+      mobileNumber: mobile,
+      moduleType: context.moduleType,
+      locale: args.locale,
+    });
   }
 
   let smsDeliveryStatus: "sent" | "failed" = "failed";
