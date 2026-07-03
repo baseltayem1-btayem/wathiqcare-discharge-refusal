@@ -4,6 +4,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
+import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 
 type JsonObject = Record<string, unknown>;
 
@@ -161,40 +162,56 @@ export async function recordEvidenceEvent(
   tx?: PrismaClient | Prisma.TransactionClient,
 ) {
   const client = tx ?? getPrisma();
-  return client.evidenceEvent.create({
-    data: {
-      tenantId: input.tenantId,
-      packageId: input.packageId,
-      caseId: input.caseId,
-      consentDocumentId: input.consentDocumentId,
-      eventType: input.eventType,
-      eventTimestamp: input.eventTimestamp ?? new Date(),
-      sequenceNo: input.sequenceNo,
-      procedureName: input.procedureName,
-      educationVersion: input.educationVersion,
-      educationLanguage: input.educationLanguage,
-      assetsPresented: input.assetsPresented,
-      imagesPresented: input.imagesPresented,
-      videosPresented: input.videosPresented,
-      pdfsPresented: input.pdfsPresented,
-      educationViewed: input.educationViewed,
-      viewDurationSeconds: input.viewDurationSeconds,
-      consentTemplate: input.consentTemplate,
-      consentVersion: input.consentVersion,
-      consentLanguage: input.consentLanguage,
-      consentTimestamp: input.consentTimestamp,
-      signerIdentity: input.signerIdentity,
-      signatureTimestamp: input.signatureTimestamp,
-      browser: input.browser,
-      deviceType: input.deviceType,
-      ipAddress: input.ipAddress,
-      otpSentTime: input.otpSentTime,
-      otpVerificationTime: input.otpVerificationTime,
-      otpVerificationStatus: input.otpVerificationStatus,
-      maskedMobileNumber: input.maskedMobileNumber,
-      metadata: input.metadata as Prisma.InputJsonValue,
-    },
-  });
+  try {
+    return await client.evidenceEvent.create({
+      data: {
+        tenantId: input.tenantId,
+        packageId: input.packageId,
+        caseId: input.caseId,
+        consentDocumentId: input.consentDocumentId,
+        eventType: input.eventType,
+        eventTimestamp: input.eventTimestamp ?? new Date(),
+        sequenceNo: input.sequenceNo,
+        procedureName: input.procedureName,
+        educationVersion: input.educationVersion,
+        educationLanguage: input.educationLanguage,
+        assetsPresented: input.assetsPresented,
+        imagesPresented: input.imagesPresented,
+        videosPresented: input.videosPresented,
+        pdfsPresented: input.pdfsPresented,
+        educationViewed: input.educationViewed,
+        viewDurationSeconds: input.viewDurationSeconds,
+        consentTemplate: input.consentTemplate,
+        consentVersion: input.consentVersion,
+        consentLanguage: input.consentLanguage,
+        consentTimestamp: input.consentTimestamp,
+        signerIdentity: input.signerIdentity,
+        signatureTimestamp: input.signatureTimestamp,
+        browser: input.browser,
+        deviceType: input.deviceType,
+        ipAddress: input.ipAddress,
+        otpSentTime: input.otpSentTime,
+        otpVerificationTime: input.otpVerificationTime,
+        otpVerificationStatus: input.otpVerificationStatus,
+        maskedMobileNumber: input.maskedMobileNumber,
+        metadata: input.metadata as Prisma.InputJsonValue,
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("does not exist in the current database")) {
+      logRuntimeIncident({
+        module: "evidence-package-2",
+        type: "UNHANDLED_EXCEPTION",
+        operation: "recordEvidenceEvent",
+        tenantId: input.tenantId,
+        error,
+        details: { consentDocumentId: input.consentDocumentId, eventType: input.eventType },
+      });
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentId: string) {
