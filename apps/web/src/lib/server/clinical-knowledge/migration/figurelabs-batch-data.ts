@@ -348,3 +348,31 @@ export const BATCH_2_KEYS: string[] = [
   "breast-abscess-haematoma",
   "breast-biopsy-aspiration",
 ];
+
+/**
+ * Batch 3: next 20 normalized procedures from the master registry, selected
+ * after excluding Batch 1, Batch 2, and Patient Copy / Patient Education entries.
+ * These are queued for FigureLabs generation.
+ */
+export const BATCH_3_KEYS: string[] = [
+  "breast-microdochotomy",
+  "breast-wide-local-excision",
+  "burch-colposuspension",
+  "burns",
+  "burns-child-young-person",
+  "capsule-endoscopy",
+  "cardioversion",
+  "carotid-endarterectomy",
+  "carotid-stenting",
+  "catheter-check-with-iv-iodinated-contrast",
+  "cautery-to-cervix",
+  "cerebral-angiogram-aneurysm-coiling-flow-diverter",
+  "cerebral-vasospasm-treatment",
+  "chalazion-curettage",
+  "chemabrasion-and-dermabrasion",
+  "cholangiogram-percutaneous-or-biliary-drainstent",
+  "cholecystectomy-open",
+  "cholecystectomy-open-and-exploration-of-the-common-bile-duct",
+  "cholecystoduodenostomy-enterostomy",
+  "circumcision-adult",
+];
