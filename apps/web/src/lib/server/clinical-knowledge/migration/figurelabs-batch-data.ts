@@ -396,3 +396,31 @@ export const BATCH_3_KEYS: string[] = [
   "cholecystoduodenostomy-enterostomy",
   "circumcision-adult",
 ];
+
+/**
+ * Batch 4: next 20 normalized procedures from the master registry, selected
+ * after excluding Batch 1, Batch 2, Batch 3, and Patient Copy / Patient Education
+ * entries. These are queued for FigureLabs generation.
+ */
+export const BATCH_4_KEYS: string[] = [
+  "circumcision-child-young-person",
+  "coiling-embolisation-of-intracranial-aneurysm",
+  "colposuspension",
+  "colposuspension-cystoscopy",
+  "cone-biopsy",
+  "consent-for-tympanoplasty-with-or-without-mastoidectomy",
+  "consent-form-bariatric",
+  "consent-form-botulinium",
+  "consent-form-chemical-peeling",
+  "consent-form-filler",
+  "consent-form-high-intensity-focused-ultrasound-hifu-consent",
+  "consent-form-hydrafacial-consent-form",
+  "consent-form-injection",
+  "consent-form-isotretinoin-consent-form",
+  "consent-form-laser-hair-removal-consent",
+  "consent-form-laser-treatment-skin-rejuvantion-and-scar-treatment",
+  "consent-form-microneedling-radiofrequency-matrix-pro-consent",
+  "consent-form-phototherapy-excimer-laser-consent-form",
+  "consent-form-q-switched-and-pico-laser-informed-consent-form",
+  "consent-form-regenera-activa-consent-form",
+];
