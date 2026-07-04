@@ -6,19 +6,18 @@ import type { ProductionPatient, ProductionEncounter, ClinicalKnowledgeAssembly 
 interface CanvaTopBarProps {
   patient?: ProductionPatient;
   encounter?: ProductionEncounter;
+  selectedProcedureTitle?: string;
   assembly?: ClinicalKnowledgeAssembly;
 }
 
-export function CanvaTopBar({ patient, encounter, assembly }: CanvaTopBarProps) {
+export function CanvaTopBar({ patient, encounter, selectedProcedureTitle, assembly }: CanvaTopBarProps) {
   const { lang, setLang, isRtl } = useI18n();
 
   function toggleLang() {
     setLang(lang === "en" ? "ar" : "en");
   }
 
-  const procedureLabel = assembly
-    ? assembly.procedureNameEn || assembly.procedureNameAr
-    : undefined;
+  const procedureLabel = selectedProcedureTitle || (assembly ? assembly.procedureNameEn || assembly.procedureNameAr : undefined);
 
   return (
     <header className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0">

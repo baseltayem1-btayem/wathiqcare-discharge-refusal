@@ -37,26 +37,24 @@ export async function GET(request: NextRequest) {
 
   // List endpoint (no procedure param)
   if (!procedure) {
-    if (!flag.resolvedValue) {
-      return NextResponse.json({
-        ok: true,
-        featureFlagEnabled: false,
-        procedures: [],
-      });
-    }
+    const procedures = clinicalContentRegistry.listProcedures().map((p) => ({
+      id: p.id,
+      procedureCode: p.procedureCode,
+      categoryCode: p.categoryCode,
+      consentType: typeof p.metadata.consentType === "string" ? p.metadata.consentType : undefined,
+      templateType: typeof p.metadata.templateType === "string" ? p.metadata.templateType : undefined,
+      titleEn: p.titleEn,
+      titleAr: p.titleAr,
+      specialty: p.specialty,
+      department: p.department,
+      anesthesiaRequired: p.anesthesiaRequired,
+    }));
 
     return NextResponse.json({
       ok: true,
-      featureFlagEnabled: true,
-      procedures: clinicalContentRegistry.listProcedures().map((p) => ({
-        id: p.id,
-        titleEn: p.titleEn,
-        titleAr: p.titleAr,
-        specialty: p.specialty,
-        department: p.department,
-        anesthesiaRequired: p.anesthesiaRequired,
-      })),
-      total: clinicalContentRegistry.listProcedures().length,
+      featureFlagEnabled: flag.resolvedValue,
+      procedures,
+      total: procedures.length,
     });
   }
 

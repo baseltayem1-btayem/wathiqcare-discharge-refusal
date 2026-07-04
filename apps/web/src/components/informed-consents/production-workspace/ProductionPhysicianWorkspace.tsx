@@ -42,6 +42,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     assemblyError,
     proceduresLoading,
     filteredProcedures,
+    procedureSearchMessage,
     sendLoading,
     searchForPatients,
     selectPatient,
@@ -120,7 +121,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
           <div className="space-y-3">
             <div className="flex gap-2">
               <select
-                value={state.selectedProcedureName || ""}
+                value={state.selectedProcedureId || ""}
                 onChange={(e) => selectProcedure(e.target.value)}
                 disabled={!state.encounter || proceduresLoading || assemblyLoading}
                 className="flex-1 h-10 rounded-md border border-[var(--wc-border)] bg-[var(--wc-surface)] px-3 text-sm text-[var(--wc-text)] focus:outline-none focus:ring-2 focus:ring-[var(--wc-blue)] disabled:opacity-50"
@@ -129,7 +130,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
                   {proceduresLoading ? "Loading procedures…" : "Select a procedure"}
                 </option>
                 {filteredProcedures.map((p) => (
-                  <option key={p.id} value={p.titleEn}>
+                  <option key={p.id} value={p.id}>
                     {p.titleEn} {p.titleAr ? ` / ${p.titleAr}` : ""} — {p.specialty}
                   </option>
                 ))}
@@ -139,7 +140,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
                 size="sm"
                 uppercase={false}
                 onClick={() => void resolveAssembly()}
-                disabled={!state.encounter || !state.selectedProcedureName || assemblyLoading}
+                disabled={!state.encounter || !state.selectedProcedureId || assemblyLoading}
               >
                 {assemblyLoading ? "Resolving…" : "Load package"}
               </Button>
@@ -155,10 +156,13 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
                 className="flex-1"
               />
             </div>
-            {state.selectedProcedureName && !state.assembly && (
+            {state.selectedProcedureTitle && !state.assembly && (
               <div className="text-sm text-[var(--wc-text-muted)]">
-                Selected: <span className="font-medium text-[var(--wc-text)]">{state.selectedProcedureName}</span>. Click <strong>Load package</strong> to assemble the consent form.
+                Selected: <span className="font-medium text-[var(--wc-text)]">{state.selectedProcedureTitle}</span>. Click <strong>Load package</strong> to assemble the consent form.
               </div>
+            )}
+            {procedureSearchMessage && (
+              <div className="text-sm text-[var(--wc-text-muted)]">{procedureSearchMessage}</div>
             )}
           </div>
           <label className="flex items-center gap-2 text-sm text-[var(--wc-text)] cursor-pointer">
@@ -261,6 +265,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         <CanvaTopBar
           patient={state.patient}
           encounter={state.encounter}
+          selectedProcedureTitle={state.selectedProcedureTitle}
           assembly={state.assembly}
         />
       }

@@ -42,9 +42,12 @@ export type ProductionEncounter = {
 
 export type ProductionProcedure = {
   id: string;
-  code: string;
-  nameEn: string;
-  nameAr: string;
+  procedureCode?: string;
+  categoryCode?: string;
+  consentType?: string;
+  templateType?: string;
+  titleEn: string;
+  titleAr: string;
   specialty: string;
   department?: string;
   anesthesiaRequired: boolean;
