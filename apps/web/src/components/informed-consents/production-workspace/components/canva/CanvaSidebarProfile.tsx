@@ -10,63 +10,47 @@ interface CanvaSidebarProfileProps {
 }
 
 export function CanvaSidebarProfile({ physician }: CanvaSidebarProfileProps) {
-  const { lang, isRtl } = useI18n();
+  const { isRtl } = useI18n();
 
   const imcPhysician = useMemo(
     () => findImcGeneralSurgeryPhysician(physician.name),
     [physician.name]
   );
 
-  if (!imcPhysician) {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-semibold text-slate-500">
-            {physician.name?.charAt(0).toUpperCase() || "?"}
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold truncate text-slate-700">
-              {physician.name || "Physician"}
-            </p>
-            <p className="text-[9px] text-slate-500">
-              {isRtl ? "الملف غير متوفر" : "Profile unavailable"}
-            </p>
-          </div>
-        </div>
-        <div className="text-[9px] text-slate-500 leading-tight">
-          <p>{isRtl ? "المركز الطبي الدولي" : "International Medical Center"}</p>
-          <p>{isRtl ? "جدة، المملكة العربية السعودية" : "Jeddah, Saudi Arabia"}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const displayName = lang === "ar" && imcPhysician.nameAr ? imcPhysician.nameAr : imcPhysician.nameEn;
-  const specialty = lang === "ar" && imcPhysician.specialtyAr ? imcPhysician.specialtyAr : imcPhysician.specialtyEn;
+  const displayName = physician.name || (isRtl ? "طبيب" : "Physician");
+  const initials = displayName
+    .split(" ")
+    .map((n) => n.charAt(0).toUpperCase())
+    .slice(0, 2)
+    .join("");
+  const role = physician.role || physician.platformRole || physician.specialty || (isRtl ? "طبيب" : "Physician");
 
   return (
     <div className="space-y-2">
-      <a
-        href={imcPhysician.profileUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 group"
-      >
-        <img
-          src={imcPhysician.photoUrl}
-          alt={displayName}
-          className="w-8 h-8 rounded-full object-cover shrink-0"
-          loading="lazy"
-        />
+      <div className="flex items-center gap-2">
+        {imcPhysician ? (
+          // eslint-disable-next-line @next/next/no-img-element -- sidebar avatar from external IMC source
+          <img
+            src={imcPhysician.photoUrl}
+            alt={displayName}
+            className="w-8 h-8 rounded-full object-cover shrink-0"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-semibold text-blue-700">
+            {initials || "?"}
+          </div>
+        )}
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold truncate text-slate-800 group-hover:text-blue-600">
+          <p className="text-[11px] font-semibold truncate text-slate-800">
             {displayName}
           </p>
-          <p className="text-[9px] text-slate-500 truncate">{specialty}</p>
+          <p className="text-[9px] text-slate-500 truncate">{role}</p>
         </div>
-      </a>
+      </div>
       <div className="text-[9px] text-slate-500 leading-tight">
-        <p>{lang === "ar" && imcPhysician.departmentAr ? imcPhysician.departmentAr : imcPhysician.departmentEn}</p>
+        <p className="truncate" title={physician.email}>{physician.email}</p>
+        <p>{physician.tenantId}</p>
         <p>{isRtl ? "المركز الطبي الدولي" : "International Medical Center"}</p>
         <p>{isRtl ? "جدة، المملكة العربية السعودية" : "Jeddah, Saudi Arabia"}</p>
       </div>

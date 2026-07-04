@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Eye,
   Check,
@@ -12,7 +12,7 @@ import {
   Download,
 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
-import { Button } from "@/components/design-system";
+import { Button, Checkbox } from "@/components/design-system";
 import type {
   ProductionPatient,
   ProductionEncounter,
@@ -25,6 +25,7 @@ import type {
   ClinicalSuggestion,
   ConsentBlocker,
 } from "@/lib/clinical-knowledge/types";
+import { ConsentPreviewModal } from "../ConsentPreviewModal";
 
 interface CanvaWorkspacePageProps {
   patient?: ProductionPatient;
@@ -36,6 +37,7 @@ interface CanvaWorkspacePageProps {
   sendLoading: boolean;
   onSend: () => void;
   onApproveDraft: () => void;
+  onMarkPreviewReviewed?: () => void;
 }
 
 function ProgressRing({ percentage }: { percentage: number }) {
@@ -123,8 +125,10 @@ export function CanvaWorkspacePage({
   sendLoading,
   onSend,
   onApproveDraft,
+  onMarkPreviewReviewed,
 }: CanvaWorkspacePageProps) {
   const { lang } = useI18n();
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const packageTitle = useMemo(() => {
     if (!assembly) return undefined;
@@ -135,12 +139,19 @@ export function CanvaWorkspacePage({
 
   const consentForm = assembly?.consentForm;
 
+  const consentSections = assembly?.consentForm?.sections || [];
+  const hasConsentContent = consentSections.length > 0;
+
   const checklistItems = [
-    { done: readiness.patientReady, label: "Patient Selected" },
-    { done: readiness.encounterReady, label: "Procedure Selected" },
-    { done: readiness.assemblyReady && readiness.blockersResolved, label: "Knowledge Package Ready" },
-    { done: readiness.assemblyReady && readiness.blockersResolved, label: "Risk Level Assessed" },
-    { done: state.draftApproved, label: "Consent Pending", pendingHighlight: true },
+    { done: readiness.patientReady, label: "Patient selected" },
+    { done: readiness.encounterReady, label: "Encounter selected" },
+    { done: readiness.procedureSelected, label: "Procedure selected" },
+    { done: readiness.assemblyReady && readiness.blockersResolved, label: "Knowledge package ready" },
+    { done: hasConsentContent, label: "Consent content loaded" },
+    { done: readiness.educationReady, label: "Education material ready" },
+    { done: readiness.previewReviewed, label: "Preview reviewed" },
+    { done: readiness.contactAvailable && readiness.allowlisted, label: "Recipient allowlisted" },
+    { done: state.draftApproved, label: "Draft approved" },
   ];
 
   const sendDisabled = !readiness.sendReady || sendLoading;
@@ -148,11 +159,17 @@ export function CanvaWorkspacePage({
     if (sendLoading) return "Sending…";
     if (!readiness.patientReady) return "Select a patient first";
     if (!readiness.encounterReady) return "Select an encounter first";
-    if (!readiness.assemblyReady) return "Resolve a procedure first";
+    if (!readiness.procedureSelected) return "Select a procedure first";
+    if (!readiness.assemblyReady) return "Load the knowledge package first";
     if (!readiness.blockersResolved) return "Resolve blockers first";
+    if (!hasConsentContent) return "Consent form has no content";
+    if (!readiness.educationReady) return "Education material missing";
+    if (!readiness.previewReviewed) return "Review the patient preview first";
+    if (!readiness.contactAvailable) return "Enter patient contact";
+    if (!readiness.allowlisted) return "Recipient is not allowlisted";
     if (!state.draftApproved) return "Approve the draft first";
     return undefined;
-  }, [readiness, sendLoading, state.draftApproved]);
+  }, [readiness, sendLoading, state.draftApproved, hasConsentContent]);
 
   return (
     <div className="space-y-3">
@@ -223,45 +240,134 @@ export function CanvaWorkspacePage({
                     </p>
                   </div>
                 </div>
+                {!hasConsentContent && (
+                  <div className="flex items-start gap-2 p-2 rounded-lg bg-red-50 text-red-700 text-[11px]">
+                    <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+                    <span>
+                      No consent form content is available for this package. Sending is blocked until real sections,
+                      risks, and benefits are loaded.
+                    </span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-4 gap-2 text-center text-[10px] pt-2 border-t border-slate-100">
-                  <PackageStat value={consentForm ? 7 : 0} label="Sections" />
-                  <PackageStat value={assembly.suggestions.filter((s: ClinicalSuggestion) => s.type === "education-recommended").length} label="Key Benefits" />
+                  <PackageStat value={consentSections.length} label="Sections" />
+                  <PackageStat
+                    value={assembly.educationMaterials.filter((e: ClinicalKnowledgeEducationMaterial) => e.assetType === "PDF" || e.assetType === "TEXT").length}
+                    label="Benefits / Info"
+                  />
                   <PackageStat value={assembly.riskDisclosures.length} label="Risks" />
-                  <PackageStat value={assembly.suggestions.filter((s: ClinicalSuggestion) => s.type === "missing-alternative").length} label="Alternatives" />
+                  <PackageStat
+                    value={assembly.suggestions.filter((s: ClinicalSuggestion) => s.type === "missing-alternative").length}
+                    label="Alternatives"
+                  />
                 </div>
 
-                {assembly.illustrations.length > 0 && (
+                <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    uppercase={false}
+                    disabled={!assembly}
+                    onClick={() => setPreviewOpen(true)}
+                    className="text-[11px] border-slate-200"
+                  >
+                    <Eye className="w-3 h-3 mr-1" /> Preview patient-facing consent
+                  </Button>
+                  <label className="flex items-center gap-2 text-[11px] text-slate-700 cursor-pointer">
+                    <Checkbox
+                      checked={state.previewReviewed}
+                      onChange={() => onMarkPreviewReviewed?.()}
+                      disabled={!assembly || state.previewReviewed || !hasConsentContent}
+                    />
+                    I have reviewed the patient preview
+                  </label>
+                </div>
+
+                {assembly.educationMaterials.length > 0 && (
                   <div className="pt-3 border-t border-slate-100">
                     <h4 className="text-[11px] font-semibold text-slate-700 mb-2">
-                      Educational illustrations
+                      Education materials
+                    </h4>
+                    <ul className="space-y-1">
+                      {assembly.educationMaterials.map((material: ClinicalKnowledgeEducationMaterial) => (
+                        <li
+                          key={material.id}
+                          className="flex items-center justify-between text-[10px] text-slate-600 p-2 rounded border border-slate-100"
+                        >
+                          <span className="font-medium text-slate-700 truncate">
+                            {lang === "ar" && material.titleAr ? material.titleAr : material.titleEn}
+                          </span>
+                          <span className="shrink-0">
+                            {material.status === "PUBLISHED" ? (
+                              <Badge className="bg-green-100 text-green-700">Approved</Badge>
+                            ) : (
+                              <Badge className="bg-amber-100 text-amber-700">Draft</Badge>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {assembly.illustrations.filter((i) => i.imageReviewStatus === "approved" && i.patientFacing).length > 0 && (
+                  <div className="pt-3 border-t border-slate-100">
+                    <h4 className="text-[11px] font-semibold text-slate-700 mb-2">
+                      Approved patient-facing illustrations
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
-                      {assembly.illustrations.map((illustration) => (
-                        <div key={illustration.id} className="space-y-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-medium text-slate-700 truncate">
+                      {assembly.illustrations
+                        .filter((i) => i.imageReviewStatus === "approved" && i.patientFacing)
+                        .map((illustration) => (
+                          <div key={illustration.id} className="space-y-1">
+                            <span className="text-[10px] font-medium text-slate-700 truncate block">
                               {illustration.procedureNameEn}
                             </span>
-                            {illustration.imageReviewStatus !== "approved" && (
-                              <Badge className="bg-amber-100 text-amber-700">Draft — pending review</Badge>
-                            )}
-                            {illustration.imageReviewStatus === "approved" && !illustration.patientFacing && (
-                              <Badge className="bg-slate-100 text-slate-600">Not patient-facing</Badge>
+                            {(illustration.procedureImageUrl || illustration.anatomyImageUrl) && (
+                              /* eslint-disable-next-line @next/next/no-img-element -- approved educational illustration preview */
+                              <img
+                                src={illustration.procedureImageUrl || illustration.anatomyImageUrl || ""}
+                                alt={illustration.procedureNameEn}
+                                className="w-full h-24 object-contain rounded border border-slate-200 bg-slate-50"
+                              />
                             )}
                           </div>
-                          {illustration.procedureImageUrl && (
-                            /* eslint-disable-next-line @next/next/no-img-element -- educational illustration preview in internal review */
-                            <img
-                              src={illustration.procedureImageUrl}
-                              alt={illustration.procedureNameEn}
-                              className="w-full h-24 object-contain rounded border border-slate-200 bg-slate-50"
-                            />
-                          )}
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 )}
+
+                {state.reviewMode &&
+                  assembly.illustrations.filter((i) => i.imageReviewStatus !== "approved").length > 0 && (
+                    <div className="pt-3 border-t border-dashed border-slate-200">
+                      <h4 className="text-[11px] font-semibold text-amber-700 mb-2">
+                        Internal review — draft illustrations
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3 opacity-70">
+                        {assembly.illustrations
+                          .filter((i) => i.imageReviewStatus !== "approved")
+                          .map((illustration) => (
+                            <div key={illustration.id} className="space-y-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-medium text-slate-700 truncate">
+                                  {illustration.procedureNameEn}
+                                </span>
+                                <Badge className="bg-amber-100 text-amber-700">Draft</Badge>
+                              </div>
+                              {(illustration.procedureImageUrl || illustration.anatomyImageUrl) && (
+                                /* eslint-disable-next-line @next/next/no-img-element -- internal draft illustration preview */
+                                <img
+                                  src={illustration.procedureImageUrl || illustration.anatomyImageUrl || ""}
+                                  alt={illustration.procedureNameEn}
+                                  className="w-full h-24 object-contain rounded border border-slate-200 bg-slate-50"
+                                />
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           ) : (
@@ -290,7 +396,7 @@ export function CanvaWorkspacePage({
             {checklistItems.map((item, idx) => (
               <div key={idx} className="flex items-center gap-1.5">
                 <ChecklistDot done={item.done} />
-                <span className={item.pendingHighlight && !item.done ? "text-red-600" : "text-slate-700"}>
+                <span className={item.done ? "text-slate-700" : "text-slate-500"}>
                   {item.label}
                 </span>
               </div>
@@ -545,6 +651,15 @@ export function CanvaWorkspacePage({
           </Card>
         </div>
       </div>
+
+      <ConsentPreviewModal
+        open={previewOpen}
+        assembly={assembly}
+        reviewMode={state.reviewMode}
+        onClose={() => setPreviewOpen(false)}
+        onMarkReviewed={onMarkPreviewReviewed}
+        reviewed={state.previewReviewed}
+      />
 
       {/* Footer */}
       <footer className="text-center text-[9px] text-slate-500 pt-2">

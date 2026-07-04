@@ -104,7 +104,10 @@ export function PatientEncounterSelector({
                           {patient.mrn} • {patient.dateOfBirth}
                         </div>
                       </div>
-                      <div className="text-xs text-[var(--wc-text-muted)]">{patient.mobileNumber}</div>
+                      <div className="text-xs text-[var(--wc-text-muted)] text-right">
+                        <div>{patient.mobileNumber}</div>
+                        {patient.email && <div className="text-[10px]">{patient.email}</div>}
+                      </div>
                     </div>
                   </Button>
                 ))}
@@ -119,6 +122,7 @@ export function PatientEncounterSelector({
                   <div className="font-bold text-[var(--wc-navy)]">{selectedPatient.name}</div>
                   <div className="text-xs text-[var(--wc-text-muted)]">
                     {selectedPatient.mrn} • DOB {selectedPatient.dateOfBirth} • {selectedPatient.mobileNumber}
+                    {selectedPatient.email && <span> • {selectedPatient.email}</span>}
                   </div>
                 </div>
                 <Button

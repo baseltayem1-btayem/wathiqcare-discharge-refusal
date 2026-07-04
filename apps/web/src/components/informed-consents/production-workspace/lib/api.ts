@@ -147,3 +147,99 @@ export async function fetchTimeline(args: {
 
   return Array.isArray(payload) ? payload : [];
 }
+
+export async function createConsentDocument(args: {
+  caseId: string;
+  templateId?: string;
+  language?: "ar" | "en" | "bilingual";
+  physicianName?: string;
+  physicianSpecialty?: string;
+  department?: string;
+  diagnosis?: string;
+  plannedProcedure?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<{ id: string; consentReference: string; status: string; patientName?: string | null; mrn?: string | null }> {
+  const response = await fetch("/api/modules/informed-consents/documents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!response.ok || !payload.ok) {
+    throw new Error(String(payload.error || "Failed to create consent document."));
+  }
+  const doc = payload.document as Record<string, unknown>;
+  return {
+    id: String(doc.id),
+    consentReference: String(doc.consentReference),
+    status: String(doc.status),
+    patientName: doc.patientName ? String(doc.patientName) : null,
+    mrn: doc.mrn ? String(doc.mrn) : null,
+  };
+}
+
+export async function sendSecureSigningLinkForDocument(args: {
+  documentId: string;
+  caseId: string;
+  patientName: string;
+  mobileNumber: string;
+  recipientEmail: string;
+  physicianName?: string;
+  locale?: "ar" | "en";
+}): Promise<SecureSigningResult> {
+  const response = await fetch(`/api/modules/informed-consents/documents/${encodeURIComponent(args.documentId)}/secure-signing`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!response.ok || !payload.ok) {
+    throw new Error(String(payload.error || "Failed to send secure signing link."));
+  }
+  return payload.workflow as SecureSigningResult;
+}
+
+export async function checkSendEligibility(args: {
+  mobileNumber: string;
+  recipientEmail: string;
+}): Promise<{ pilotEnabled: boolean; allowlisted: boolean; reason: string }> {
+  const response = await fetch("/api/modules/informed-consents/send-eligibility", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!response.ok || !payload.ok) {
+    throw new Error(String(payload.error || "Failed to check send eligibility."));
+  }
+  return {
+    pilotEnabled: Boolean(payload.pilotEnabled),
+    allowlisted: Boolean(payload.allowlisted),
+    reason: String(payload.reason),
+  };
+}
+
+export async function fetchProcedures(tenantId: string): Promise<
+  Array<{
+    id: string;
+    titleEn: string;
+    titleAr: string;
+    specialty: string;
+    department: string;
+    anesthesiaRequired: boolean;
+  }>
+> {
+  const response = await fetch(`/api/modules/clinical-content/procedures?tenantId=${encodeURIComponent(tenantId)}`);
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!response.ok || !payload.ok) {
+    throw new Error(String(payload.error || "Failed to load procedures."));
+  }
+  return Array.isArray(payload.procedures) ? (payload.procedures as Array<{
+    id: string;
+    titleEn: string;
+    titleAr: string;
+    specialty: string;
+    department: string;
+    anesthesiaRequired: boolean;
+  }>) : [];
+}

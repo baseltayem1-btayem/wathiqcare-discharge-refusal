@@ -15,6 +15,7 @@ export type ProductionPatient = {
   mobileNumber?: string | null;
   emergencyContact?: string | null;
   emergencyContactPhone?: string | null;
+  email?: string | null;
   source?: "trakcare" | "case_fallback" | "pilot_fallback";
   languagePreference?: "en" | "ar" | "bilingual";
   capacityStatus?: "competent" | "minor" | "incapacitated" | "guardian-required";

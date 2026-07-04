@@ -6,6 +6,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Input, Stac
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
 import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
+import { SendRecipientCard } from "./components/SendRecipientCard";
 import { SendConfirmationModal } from "./components/SendConfirmationModal";
 import { CanvaWorkspaceShell } from "./components/canva/CanvaWorkspaceShell";
 import { CanvaTopBar } from "./components/canva/CanvaTopBar";
@@ -39,19 +40,25 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     readiness,
     assemblyLoading,
     assemblyError,
+    proceduresLoading,
+    filteredProcedures,
     sendLoading,
     searchForPatients,
     selectPatient,
     selectEncounter,
+    setProcedureQuery,
+    selectProcedure,
     resolveAssembly,
     setReviewMode,
+    setRecipientMobile,
+    setRecipientEmail,
+    setPreviewReviewed,
     approveDraft,
     send,
     sendDryRun,
   } = useProductionWorkspace(physician);
 
   const [activePage, setActivePage] = useState<WorkspacePageId>("workspace");
-  const [procedureQuery, setProcedureQuery] = useState("");
   const [sendModalOpen, setSendModalOpen] = useState(false);
 
   function handleApprove() {
@@ -90,6 +97,17 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         }}
       />
 
+      <SendRecipientCard
+        mobile={state.recipientMobile}
+        email={state.recipientEmail}
+        allowlisted={state.sendEligibility?.allowlisted}
+        pilotEnabled={state.sendEligibility?.pilotEnabled}
+        reason={state.sendEligibility?.reason}
+        onMobileChange={setRecipientMobile}
+        onEmailChange={setRecipientEmail}
+        disabled={sendLoading}
+      />
+
       {/* Procedure resolver */}
       <Card className="overflow-hidden" id="section-procedure">
         <CardHeader className="workspace-card-header">
@@ -99,25 +117,49 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
           </Stack>
         </CardHeader>
         <CardContent className="p-5 space-y-4">
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              value={procedureQuery}
-              onChange={(e) => setProcedureQuery(e.target.value)}
-              placeholder="Search procedure or specialty"
-              startIcon={<Search className="w-4 h-4" />}
-              disabled={!state.encounter || assemblyLoading}
-              className="flex-1"
-            />
-            <Button
-              variant="brand"
-              size="sm"
-              uppercase={false}
-              onClick={() => void resolveAssembly(procedureQuery)}
-              disabled={!state.encounter || !procedureQuery.trim() || assemblyLoading}
-            >
-              {assemblyLoading ? "Resolving…" : "Resolve"}
-            </Button>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <select
+                value={state.selectedProcedureName || ""}
+                onChange={(e) => selectProcedure(e.target.value)}
+                disabled={!state.encounter || proceduresLoading || assemblyLoading}
+                className="flex-1 h-10 rounded-md border border-[var(--wc-border)] bg-[var(--wc-surface)] px-3 text-sm text-[var(--wc-text)] focus:outline-none focus:ring-2 focus:ring-[var(--wc-blue)] disabled:opacity-50"
+              >
+                <option value="">
+                  {proceduresLoading ? "Loading procedures…" : "Select a procedure"}
+                </option>
+                {filteredProcedures.map((p) => (
+                  <option key={p.id} value={p.titleEn}>
+                    {p.titleEn} {p.titleAr ? ` / ${p.titleAr}` : ""} — {p.specialty}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="brand"
+                size="sm"
+                uppercase={false}
+                onClick={() => void resolveAssembly()}
+                disabled={!state.encounter || !state.selectedProcedureName || assemblyLoading}
+              >
+                {assemblyLoading ? "Resolving…" : "Load package"}
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={state.procedureQuery}
+                onChange={(e) => setProcedureQuery(e.target.value)}
+                placeholder="Or search procedure / specialty / Arabic name"
+                startIcon={<Search className="w-4 h-4" />}
+                disabled={!state.encounter || assemblyLoading}
+                className="flex-1"
+              />
+            </div>
+            {state.selectedProcedureName && !state.assembly && (
+              <div className="text-sm text-[var(--wc-text-muted)]">
+                Selected: <span className="font-medium text-[var(--wc-text)]">{state.selectedProcedureName}</span>. Click <strong>Load package</strong> to assemble the consent form.
+              </div>
+            )}
           </div>
           <label className="flex items-center gap-2 text-sm text-[var(--wc-text)] cursor-pointer">
             <Checkbox
@@ -130,7 +172,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
           {assemblyError && <div className="text-sm text-[var(--wc-danger)]">{assemblyError}</div>}
           {!state.assembly && !assemblyLoading && !assemblyError && (
             <div className="text-sm text-[var(--wc-text-muted)]">
-              Select an encounter, then type a procedure name and click Resolve to load the Clinical Knowledge Package.
+              Select an encounter, then choose a procedure and click Load package to assemble the consent form.
             </div>
           )}
         </CardContent>
@@ -146,6 +188,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         sendLoading={sendLoading}
         onSend={handleSend}
         onApproveDraft={handleApprove}
+        onMarkPreviewReviewed={() => setPreviewReviewed(true)}
       />
 
       {state.dryRunSuccess && (
@@ -171,6 +214,12 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
             : undefined
         }
         assembly={state.assembly}
+        recipientMobile={state.recipientMobile}
+        recipientEmail={state.recipientEmail}
+        allowlisted={state.sendEligibility?.allowlisted}
+        pilotEnabled={state.sendEligibility?.pilotEnabled}
+        eligibilityReason={state.sendEligibility?.reason}
+        allowRealSend={readiness.sendReady}
         onConfirm={handleConfirmSend}
         onDryRun={handleDryRunSend}
         onCancel={() => setSendModalOpen(false)}

@@ -20,6 +20,7 @@ function toProductionPatient(pilotPatient: (typeof imcPilotPatients)[number]) {
     gender: pilotPatient.gender,
     nationalId: pilotPatient.nationalId,
     mobileNumber: pilotPatient.mobile,
+    email: pilotPatient.email,
     source: "pilot_fallback" as const,
     languagePreference: "bilingual" as const,
     capacityStatus: "competent" as const,
@@ -72,6 +73,9 @@ export async function GET(request: NextRequest) {
     const mobile = metadata && typeof metadata === "object" && !Array.isArray(metadata)
       ? String((metadata.mobileNumber ?? metadata.phone ?? metadata.patientPhone ?? "") || "")
       : "";
+    const email = metadata && typeof metadata === "object" && !Array.isArray(metadata)
+      ? String((metadata.email ?? metadata.patientEmail ?? metadata.emailAddress ?? "") || "")
+      : "";
     const gender = metadata && typeof metadata === "object" && !Array.isArray(metadata)
       ? String((metadata.gender ?? "") || "")
       : "";
@@ -89,6 +93,7 @@ export async function GET(request: NextRequest) {
       gender: gender || null,
       nationalId: caseRecord.patientIdNumber,
       mobileNumber: mobile || null,
+      email: email || null,
       source: "case_fallback" as const,
       languagePreference: "bilingual" as const,
       capacityStatus: "competent" as const,

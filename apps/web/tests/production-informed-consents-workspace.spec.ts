@@ -77,8 +77,8 @@ test.describe("Production Informed Consents Workspace", () => {
     await encounterButton.click();
 
     // Procedure section should become active
-    const procedureInput = page.locator('input[placeholder*="Search procedure"]').first();
-    await expect(procedureInput).toBeEnabled();
+    const procedureSelect = page.locator('#section-procedure select').first();
+    await expect(procedureSelect).toBeEnabled();
 
     // Context bar should reflect selection
     await expect(page.locator("text=DEMO PATIENT CONSENT").first()).toBeVisible();

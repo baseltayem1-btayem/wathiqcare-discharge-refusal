@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Circle, AlertCircle, Send } from "lucide-react";
-import { Alert, Button, Card, CardContent, CardHeader, CardTitle, Progress, Stack } from "@/components/design-system";
+import { Alert, Button, Card, CardContent, CardHeader, CardTitle, Progress } from "@/components/design-system";
 import type { MockClinicalKnowledgeAssembly } from "../types/workspace";
 
 interface ReadinessSidebarProps {
