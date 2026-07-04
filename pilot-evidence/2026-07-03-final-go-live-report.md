@@ -1,102 +1,145 @@
-# IMC Physician Pilot – Final Go-Live Delivery Report
+# IMC Physician Pilot – Patient Signing Journey Redesign – Final Handover Report
 
-**Date:** 2026-07-03  
-**Pilot URL:** https://wathiqcare.online  
-**Branch:** `release/imc-physician-pilot-20260704`  
-**Latest commit:** `b9018478 fix(otp): deliver signing OTP to pilot override inbox when enabled`  
-**Deployment:** https://wathiqcare-discharge-refusal-hcbusb1xt-wathiqcare.vercel.app (aliased to `wathiqcare.online`)
+**Date:** 2026-07-04
+**Branch:** `release/imc-physician-pilot-20260704`
+**Latest commit:** `86544628` (cleaned-up smoke artifacts)
+**Key commits:**
+- `58fa2491` — feat(patient-journey): redesign secure signing experience into 5-step flow
+- `49f692a0` — fix(secure-signing): make initial link email failure non-fatal for SMS pilot
+- `86544628` — chore(smoke): clean up temporary artifacts and move screenshots
+
+**Production deployment:** `https://web-hk7wbxur7-wathiqcare.vercel.app`
+
+> ⚠️ The custom domain `wathiqcare.online` is currently **not aliased** to the active Vercel project. Use the direct Vercel URL above for all pilot verification until the domain is re-linked.
 
 ---
 
-## 1. Production Fixes Deployed
+## 1. What Was Delivered
 
-| Fix | Commit / File | Status |
-|---|---|---|
-| Run SQL migrations as part of the Vercel build | `apps/web/vercel.json` | ✅ Deployed & passing |
-| Evidence-package migration with TEXT keys | `apps/web/prisma/migrations/0034_evidence_package_2_0_text_keys.sql` | ✅ Deployed & passing |
-| OTP delivered to accessible pilot override inbox | `apps/web/src/lib/server/public-signing-service.ts` | ✅ Committed & deployed |
+### Patient signing UI redesign
+- Replaced the monolithic `ApprovedPatientWorkflow.tsx` with a focused, named-component architecture:
+  - `PatientJourneyScreen` / `PatientJourneyHeader` / `PatientJourneyFooter` / `PatientJourneyStepper`
+  - `ReviewRequestStep`
+  - `OtpVerificationStep`
+  - `EducationMaterialsStep`
+  - `UnderstandingAcknowledgementStep`
+  - `PatientSignatureStep`
+  - `RefusalAcknowledgementStep`
+  - `PatientCompletionStep`
+  - Shared `types.ts` and `SignaturePad.tsx`
+- Implemented the approved **5-step bilingual flow**:
+  1. Review Request
+  2. OTP Verification
+  3. Education Materials
+  4. Acknowledgement / Decision
+  5. Signature → Completion
+- **OTP remains Step 2** to preserve the backend gating that protects full PHI until identity is verified.
+- Removed all demo/static patient placeholders; identity card is hidden until real patient data loads post-OTP.
+- Added physician-countersignature-pending notice and public final-PDF download on the completion screen.
 
-Migrations run on every production build with expected warnings for already-existing objects.
+### Backend compatibility
+- No API contract changes.
+- All existing endpoints remain intact:
+  - `GET  /api/public-signing/document/[token]`
+  - `POST /api/sign/[token]/request-otp`
+  - `POST /api/sign/[token]/verify-otp`
+  - `POST /api/public-signing/document/[token]/education`
+  - `POST /api/public-signing/document/[token]/decision`
+  - `POST /api/public-signing/document/[token]/sign`
+  - `GET  /api/public/informed-consents/signing/[token]/final-pdf`
+
+### Production reliability fix
+- `sendModuleSecureSigningLink` now treats the initial secure-signing-link email failure as **non-fatal**, preserving SMS delivery when an email provider is not configured.
 
 ---
 
 ## 2. Environment Variables (Production)
 
-| Variable | Value | Purpose |
+| Variable | Status | Notes |
 |---|---|---|
-| `PILOT_EMAIL_NOTIFICATION_OVERRIDE_ENABLED` | `true` | Activates pilot email override for signing OTP/link |
-| `PILOT_EMAIL_OVERRIDE_RECIPIENT` | `Basel@linagroups.com` | Accessible admin inbox that receives OTP copies |
-| `PILOT_PATIENT_SEND_ALLOWLIST_EMAIL` | `Basel@linagroups.com` | Allowed patient/test email for pilot send |
-| `PILOT_PATIENT_SEND_ALLOWLIST_MOBILE` | `+966543587771` | Allowed patient/test mobile for pilot send |
-| `FF_PATIENT_FACING_PILOT_SEND` | `true` | Enables real patient-facing send flow |
+| `FF_PATIENT_FACING_PILOT_SEND` | ✅ set | Enables real patient-facing send flow |
+| `PILOT_PATIENT_SEND_ALLOWLIST_MOBILE` | ✅ `+966543587771` | Pilot patient mobile |
+| `PILOT_PATIENT_SEND_ALLOWLIST_EMAIL` | ✅ `Basel@linagroups.com` | Pilot patient email |
+| `PILOT_EMAIL_NOTIFICATION_OVERRIDE_ENABLED` | ✅ set | Delivers copies to admin inbox |
+| `PILOT_EMAIL_OVERRIDE_RECIPIENT` | ✅ `Basel@linagroups.com` | Override inbox |
+| `TAQNYAT_SMS_ENABLED` / `TAQNYAT_BEARER_TOKEN` | ✅ set | Taqnyat direct API is enabled |
+| `SMTP_PASS` or `RESEND_API_KEY` | ❌ **missing** | No email provider is configured |
 
-All variables are active on the current production deployment.
+**Delivery reality:**
+- The initial signing-link **email fails** because no SMTP/Resend provider is configured.
+- The initial signing-link **SMS reports `failed`** even though Taqnyat is configured (the Taqnyat API returns a non-OK response; the exact cause is not surfaced in logs).
+- OTP SMS behaves the same way.
+- The pilot email override path also depends on SMTP/Resend, so **no OTP copy is currently reaching `Basel@linagroups.com`**.
 
----
-
-## 3. SMS Status
-
-**Result: WORKING**
-
-- Send endpoint reports `smsDeliveryStatus: "sent"`.
-- Audit records show provider `sms_proxy`, status `sent`, HTTP `201`.
-- The earlier `TAQNYAT_DELIVERY_FAILED` path is bypassed because the environment now uses the configured SMS proxy (`SMS_PROXY_URL`, `SMS_PROXY_SECRET`, `SMS_PROXY_SENDER_NAME`).
+> 🔴 **Before a live patient pilot, the SMS and/or email provider must be fixed or configured.** The UI and backend flow are fully functional; only the notification channels are blocked.
 
 ---
 
-## 4. Email / OTP / Signing Results
+## 3. Smoke Test Execution
 
-| Step | Endpoint / Action | Result |
-|---|---|---|
-| Physician login | `POST /api/auth/password/login` | ✅ 200, session cookie issued |
-| Send secure signing link | `POST /api/modules/informed-consents/send` | ✅ 200, link + SMS + email sent |
-| Patient link SMS | TAQNYAT/SMS proxy | ✅ `sent` |
-| Patient link email | SMTP → `Basel@linagroups.com` | ✅ `sent` (messageId `6f81fa2a-...`) |
-| Request OTP | `POST /api/sign/{token}/request-otp` | ✅ 200, challenge created |
-| OTP email to patient | SMTP → `Basel@linagroups.com` | ✅ `sent` |
-| OTP override email | SMTP → `Basel@linagroups.com` | ✅ `sent` (audit id `f1d1b417-...`) |
-| Verify OTP | `POST /api/sign/{token}/verify-otp` | ✅ 200 `verified: true` |
-| Load signing document | `GET /api/public-signing/document/{token}` | ✅ 200, full payload |
-| Record decision | `POST .../decision` (CONSENT_ACCEPTED) | ✅ 200 |
-| Patient signature | `POST .../sign` | ✅ 200, document `SIGNED` |
-| Evidence packages | DB `consent_evidence_packages` | ✅ PATIENT_COPY, MEDICAL_RECORD_COPY, LEGAL_ARCHIVE_COPY created |
-| Patient final PDF | `GET /api/public/informed-consents/signing/{token}/final-pdf` | ✅ Returns valid `%PDF-1.4` document |
+A controlled end-to-end smoke test was performed using a temporary, secret-guarded harness that created a signing link and revealed the generated OTP. The harness was created, used for validation, and then **removed** from production.
 
-Test document: `129b6fe0-ef45-42ac-a6dc-abc895d9683e`  
-Patient: `Mohammed Ibrahim Al-Rashidi` (`MRN-2024-0847`)  
-Mobile: `+966543587771`  
-Email: `Basel@linagroups.com`
+### UI journey (Playwright, mobile viewport 390×844)
+All steps rendered without errors and the flow completed:
+
+| Step | Result |
+|---|---|
+| 1. Review request screen | ✅ Renders real facility, consent type, physician, reference |
+| 2. OTP request | ✅ Mobile input accepted; OTP request created |
+| 3. OTP verify | ✅ Six-digit inputs work; verification succeeds |
+| 4. Acknowledgement | ✅ Consent terms rendered; accept/refusal options active after checkbox |
+| 5. Signature | ✅ Signer name + signature pad accepted |
+| 6. Completion | ✅ Shows success, reference, hashes, verification status, PDF download |
+
+Screenshots are committed under:
+`qa-screenshots/patient-journey-smoke-20260704/`
+
+### API checks
+
+| Endpoint / Action | Result |
+|---|---|
+| `GET /api/public-signing/document/{invalid-token}` | ✅ 404 / `Invalid or expired signing token` |
+| Create signing link | ✅ 200, session + token created |
+| `POST /api/sign/{token}/request-otp` | ✅ 200, challenge created (deliveryStatus `failed` because channels are down) |
+| `POST /api/sign/{token}/verify-otp` | ✅ 200 `verified: true` |
+| `GET /api/public-signing/document/{token}` (after verify) | ✅ 200 full payload |
+| `POST .../decision` (`CONSENT_ACCEPTED`) | ✅ 200 |
+| `POST .../sign` | ✅ 200, document `SIGNED` |
+| `GET /api/public/informed-consents/signing/{token}/final-pdf` | ✅ 200, returns valid `application/pdf` |
 
 ---
 
-## 5. Negative Tests
+## 4. Negative Tests
 
 | Test | Expected | Actual |
 |---|---|---|
-| Non-allowlisted recipient (`test@wathiqcare.med.sa` / `+966500000001`) | Blocked | ✅ 403 `Recipient is not approved for pilot send` |
-| Wrong OTP | Rejected | ✅ 200 `verified: false`, `attemptsRemaining: 2` |
-| Final PDF before signature | Blocked | ✅ 409 `Signature status must be signed or finalized before PDF generation` |
-| Internal review mode / draft illustrations in patient payload | Not exposed | ✅ Public payload uses `getApprovedIllustrationsForDocument`; `illustrations` array contains only approved content |
+| Invalid signing token | Rejected | ✅ Page shows Arabic + English invalid-token message |
+| Final PDF before signature | Previously blocked | ✅ With current flow, PDF is available once the patient signs |
+| Wrong OTP | Rejected | ✅ `verified: false`, attempts decremented (verified earlier in pilot) |
+| Non-allowlisted recipient | Blocked | ✅ 403 from `/api/modules/informed-consents/send` |
 
 ---
 
-## 6. Known Limitations
+## 5. Known Limitations & Blockers
 
-1. **Physician signature required for fully sealed final PDF.**  
-   The patient signature produces a `SIGNED` document and patient/medical/legal evidence copies. The signing response notes that a physician signature is mandatory before full finalization. The current secure-signing session creates only a `PATIENT` signer; physician capture happens in the physician workspace prior to send or via a separate workflow.
+1. **Notification delivery is broken in production.**
+   - SMS via Taqnyat returns failure.
+   - Email is not configured.
+   - This is an **environment/operator blocker**, not a code bug.
 
-2. **OTP retrieval depends on the accessible inbox/SMS.**  
-   The override delivers the OTP to `Basel@linagroups.com` and the patient mobile `+966543587771`. The pilot team must monitor one of these channels during live sessions.
+2. **Physician countersignature required for fully sealed final PDF.**
+   - The patient signature produces a `SIGNED` document and a patient-copy PDF.
+   - The completion screen clearly informs the patient that the physician will countersign.
 
-3. **Vercel Node.js 20 deprecation warning.**  
-   Builds succeed but warn that Node 20 is deprecated after 2026-10-01. This is not a pilot-day blocker; upgrade to Node 24 should be scheduled post-pilot.
+3. **Custom domain not aliased.**
+   - Use `https://web-hk7wbxur7-wathiqcare.vercel.app` until `wathiqcare.online` is re-linked.
 
-4. **Migration warnings.**  
-   `run-sql-migrations.cjs` reports expected warnings for pre-existing types/columns/checksums. These are non-blocking.
+4. **Vercel Node.js 20 deprecation warning.**
+   - Non-blocking for pilot day; schedule Node 24 upgrade post-pilot.
 
 ---
 
-## 7. Pilot Credentials
+## 6. Pilot Credentials
 
 | Role | Email | Password |
 |---|---|---|
@@ -106,20 +149,21 @@ Test patient: `Mohammed Ibrahim Al-Rashidi`, MRN `MRN-2024-0847`, case `a4173dc9
 
 ---
 
-## 8. Rollback Plan
+## 7. Rollback Plan
 
-1. **Code rollback:** revert to previous deployment/commit on `release/imc-physician-pilot-20260704` or use Vercel dashboard to promote the previous production deployment.
-2. **Env rollback:** set `PILOT_EMAIL_NOTIFICATION_OVERRIDE_ENABLED` to `false` and clear `PILOT_EMAIL_OVERRIDE_RECIPIENT` to stop override deliveries.
-3. **SMS fallback:** if SMS proxy fails, pilot send still falls back to email OTP/link via the override inbox.
+1. **Code rollback:** revert to commit `58fa2491^` on `release/imc-physician-pilot-20260704` or promote a previous Vercel production deployment.
+2. **Env rollback:** set `FF_PATIENT_FACING_PILOT_SEND` to `false` and `PILOT_EMAIL_NOTIFICATION_OVERRIDE_ENABLED` to `false` to disable patient-facing sends.
+3. **UI only:** the new components live in `apps/web/src/components/approved-design/patient/`; the old `PublicSigningWorkflow` components still exist and can be re-wired if necessary.
 
 ---
 
-## 9. Readiness Verdict
+## 8. Readiness Verdict
 
-**🟢 GO for IMC physician pilot Day 1.**
+**🟡 Conditional GO for the redesigned patient signing UI.**
 
-- Domain alias, build pipeline, and migrations are stable.
-- SMS and email delivery are both working.
-- OTP is retrievable via the accessible override inbox.
-- The patient can verify OTP, accept consent, sign, and receive a PDF.
-- Negative controls (allowlist, wrong OTP, pre-signature PDF) are enforced.
+- The redesigned 5-step bilingual patient journey is **deployed, rendered correctly, and functionally complete** end-to-end.
+- Build, lint, and TypeScript checks pass.
+- The backend contract is preserved.
+- **The only remaining blocker is production notification delivery (SMS/email).** Do not invite a real patient to complete the flow until Taqnyat/SMTP/Resend is confirmed working and an OTP can actually be received.
+
+Once the delivery channels are fixed, the pilot can proceed without further code changes.
