@@ -1,4 +1,5 @@
 backend/
+apps/web/src/app/prototype/
 packages/*/node_modules
 packages/config/
 .env

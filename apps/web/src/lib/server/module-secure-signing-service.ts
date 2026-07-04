@@ -6,7 +6,8 @@ import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { ApiError } from "@/lib/server/http";
 import { buildSecureSigningLinkSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
-import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
+import { recordSmsAuditAttempt, type SmsProvider } from "@/services/sms/smsAuditService";
+import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 
 const prisma = () => getPrisma();
 
@@ -289,6 +290,7 @@ export async function sendModuleSecureSigningLink(args: {
   let smsFailureReason: string | null = null;
   let statusCode: number | null = null;
   let providerResponse: Record<string, unknown> | null = null;
+  let smsProvider: SmsProvider | null = null;
 
   if (normalizedMobile && isTaqnyatReady()) {
     const sms = await sendTaqnyatMessage({
@@ -304,6 +306,7 @@ export async function sendModuleSecureSigningLink(args: {
     smsFailureReason = sms.ok ? null : "TAQNYAT_DELIVERY_FAILED";
     statusCode = sms.statusCode;
     providerResponse = sms.response;
+    smsProvider = sms.provider;
   } else {
     smsFailureReason = normalizedMobile ? "TAQNYAT_NOT_CONFIGURED" : "MOBILE_NOT_AVAILABLE";
   }
@@ -315,6 +318,7 @@ export async function sendModuleSecureSigningLink(args: {
     statusCode,
     failureReason: smsFailureReason,
     notificationType: "secure_signing_link",
+    provider: smsProvider,
     metadata: {
       moduleKey: args.moduleKey,
       caseId: args.caseId,
@@ -340,8 +344,14 @@ export async function sendModuleSecureSigningLink(args: {
     locale: args.locale,
   });
 
+  const isPlaceholderEmail = normalizedRecipientEmail === "no-patient-email@unavailable.wathiqcare.local";
+
   if (secureSigningEmail.status !== "sent") {
-    throw new ApiError(502, secureSigningEmail.failureReason || "Failed to send secure signing link email");
+    // Email delivery is treated as best-effort for the controlled SMS pilot.
+    // SMS remains the primary patient notification channel; audit visibility is preserved.
+    secureSigningEmail.failureReason = isPlaceholderEmail
+      ? "SKIPPED_PLACEHOLDER_EMAIL"
+      : (secureSigningEmail.failureReason || "Secure signing link email failed; continuing with SMS");
   }
 
   try {
@@ -364,7 +374,14 @@ export async function sendModuleSecureSigningLink(args: {
       },
     });
   } catch (error) {
-    console.error("[module-secure-signing] appendAuditChainEvent failed", error);
+    logRuntimeIncident({
+      module: "secure_signing",
+      type: "UNHANDLED_EXCEPTION",
+      operation: "sendModuleSecureSigningLink",
+      tenantId: args.tenantId,
+      error,
+      details: { reason: "append_audit_chain_event_failed" },
+    });
   }
 
   const status = await loadBadgeFlags({

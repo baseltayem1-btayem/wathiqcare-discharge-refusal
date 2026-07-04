@@ -36,6 +36,13 @@ export const T = {
     legalTitle: "لوحة الامتثال القانوني",
     language: "EN",
     secureNotice: "اتصال آمن ومشفر",
+    journeySteps: [
+      "مراجعة الطلب",
+      "التحقق",
+      "التثقيف",
+      "الإقرار",
+      "التوقيع",
+    ],
     // Patient flow
     welcome: "مرحبًا بك",
     landingSubtitle: "منصة الموافقات الطبية المعتمدة",
@@ -103,6 +110,13 @@ export const T = {
     legalTitle: "Legal Compliance Dashboard",
     language: "AR",
     secureNotice: "Encrypted secure connection",
+    journeySteps: [
+      "Review Request",
+      "Verify",
+      "Education",
+      "Acknowledge",
+      "Sign",
+    ],
     welcome: "Welcome",
     landingSubtitle: "Verified medical consent platform",
     beginConsent: "Begin Consent Review",

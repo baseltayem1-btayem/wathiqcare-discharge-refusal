@@ -3,10 +3,15 @@ import { test, expect } from "@playwright/test";
 // Test configuration - runs authenticated tests for module portal
 const BASE_URL = "http://localhost:3000";
 
+const SMOKE_TEST_PASSWORD = process.env.SMOKE_TEST_PASSWORD?.trim();
+if (!SMOKE_TEST_PASSWORD) {
+  throw new Error("FATAL: SMOKE_TEST_PASSWORD environment variable is required for smoke-modules tests.");
+}
+
 // Platform admin credentials (update to match your test setup)
 const PLATFORM_ADMIN_CREDENTIALS = {
   email: "admin@wathiqcare.test",
-  password: "Test@Secure123!",
+  password: SMOKE_TEST_PASSWORD,
 };
 
 test.describe("Module Portal - Authenticated Browser Smoke Tests", () => {

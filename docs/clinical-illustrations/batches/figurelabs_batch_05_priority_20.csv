@@ -1,0 +1,361 @@
+sequence,specialty,procedureNameEn,procedureNameAr,canonicalProcedureKey,anatomyRegion,illustrationType,figureLabsPrompt,imageFileName,imagePublicPath,certificatePath,imageReviewStatus,patientFacing,notes
+1,Plastic / Dermatologic Surgery,Consent Form - Skin Lesion Treatment,Consent Form - Skin Lesion Treatment,consent-form-skin-lesion-treatment,Anatomy specific to Consent Form - Skin Lesion Treatment,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form - Skin Lesion Treatment
+Procedure (Arabic): Consent Form - Skin Lesion Treatment
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Anatomy specific to Consent Form - Skin Lesion Treatment
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-skin-lesion-treatment_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-skin-lesion-treatment/consent-form-skin-lesion-treatment_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-skin-lesion-treatment/consent-form-skin-lesion-treatment_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+2,Plastic / Dermatologic Surgery,Cosmetic Surgery,Cosmetic Surgery,cosmetic-surgery,Anatomy specific to Cosmetic Surgery,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Cosmetic Surgery
+Procedure (Arabic): Cosmetic Surgery
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Anatomy specific to Cosmetic Surgery
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",cosmetic-surgery_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/cosmetic-surgery/cosmetic-surgery_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cosmetic-surgery/cosmetic-surgery_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+3,Neurosurgery / Neuro-interventional Radiology,Cranial Surgery,Cranial Surgery,cranial-surgery,Skull and underlying brain,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Cranial Surgery
+Procedure (Arabic): Cranial Surgery
+Specialty: Neurosurgery / Neuro-interventional Radiology
+Anatomical region / focus: Skull and underlying brain
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",cranial-surgery_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/neurosurgery-neuro-interventional-radiology/cranial-surgery/cranial-surgery_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cranial-surgery/cranial-surgery_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+4,Anesthesia / Pain / Critical Care,Critical Care Consent,Critical Care Consent,critical-care-consent,Critical care environment and monitoring devices,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Critical Care Consent
+Procedure (Arabic): Critical Care Consent
+Specialty: Anesthesia / Pain / Critical Care
+Anatomical region / focus: Critical care environment and monitoring devices
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",critical-care-consent_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/anesthesia/critical-care-consent/critical-care-consent_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/critical-care-consent/critical-care-consent_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+5,Cardiology,CT Cardiac,CT Cardiac,ct-cardiac,Whole-body or region-specific CT scanner cross-section,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): CT Cardiac
+Procedure (Arabic): CT Cardiac
+Specialty: Cardiology
+Anatomical region / focus: Whole-body or region-specific CT scanner cross-section
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",ct-cardiac_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/cardiology/ct-cardiac/ct-cardiac_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/ct-cardiac/ct-cardiac_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+6,Gastroenterology / Hepatobiliary Surgery,CT Colonoscopy,CT Colonoscopy,ct-colonoscopy,Large intestine and rectum,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): CT Colonoscopy
+Procedure (Arabic): CT Colonoscopy
+Specialty: Gastroenterology / Hepatobiliary Surgery
+Anatomical region / focus: Large intestine and rectum
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",ct-colonoscopy_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/gastroenterology/ct-colonoscopy/ct-colonoscopy_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/ct-colonoscopy/ct-colonoscopy_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+7,Radiology / Interventional Radiology,CT (Computed Tomography),CT (Computed Tomography),ct-computed-tomography,Whole-body or region-specific CT scanner cross-section,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): CT (Computed Tomography)
+Procedure (Arabic): CT (Computed Tomography)
+Specialty: Radiology / Interventional Radiology
+Anatomical region / focus: Whole-body or region-specific CT scanner cross-section
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",ct-computed-tomography_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/ct-computed-tomography/ct-computed-tomography_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/ct-computed-tomography/ct-computed-tomography_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+8,Radiology / Interventional Radiology,Cystogram,Cystogram,cystogram,Bladder and contrast-filled urinary tract,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Cystogram
+Procedure (Arabic): Cystogram
+Specialty: Radiology / Interventional Radiology
+Anatomical region / focus: Bladder and contrast-filled urinary tract
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",cystogram_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/radiology/cystogram/cystogram_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cystogram/cystogram_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+9,Urology,Cystoscopy and crushing of stone,Cystoscopy and crushing of stone,cystoscopy-and-crushing-of-stone,"Bladder, urethra, and ureteric orifices",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Cystoscopy and crushing of stone
+Procedure (Arabic): Cystoscopy and crushing of stone
+Specialty: Urology
+Anatomical region / focus: Bladder, urethra, and ureteric orifices
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",cystoscopy-and-crushing-of-stone_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/urology/cystoscopy-and-crushing-of-stone/cystoscopy-and-crushing-of-stone_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cystoscopy-and-crushing-of-stone/cystoscopy-and-crushing-of-stone_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+10,Urology,Cystoscopy and removal of bladder tumour,تنظير المثانة وإزالة ورم المثانة,cystoscopy-and-removal-of-bladder-tumour,"Bladder, urethra, and ureteric orifices",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Cystoscopy and removal of bladder tumour
+Procedure (Arabic): تنظير المثانة وإزالة ورم المثانة
+Specialty: Urology
+Anatomical region / focus: Bladder, urethra, and ureteric orifices
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",cystoscopy-and-removal-of-bladder-tumour_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/urology/cystoscopy-and-removal-of-bladder-tumour/cystoscopy-and-removal-of-bladder-tumour_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cystoscopy-and-removal-of-bladder-tumour/cystoscopy-and-removal-of-bladder-tumour_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+11,Urology,Cystoscopy and retrograde pyelogram insertion of ureteric stent,Cystoscopy and retrograde pyelogram insertion of ureteric stent,cystoscopy-and-retrograde-pyelogram-insertion-of-ureteric-stent,"Bladder, urethra, and ureteric orifices",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Cystoscopy and retrograde pyelogram insertion of ureteric stent
+Procedure (Arabic): Cystoscopy and retrograde pyelogram insertion of ureteric stent
+Specialty: Urology
+Anatomical region / focus: Bladder, urethra, and ureteric orifices
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",cystoscopy-and-retrograde-pyelogram-insertion-of-ureteric-stent_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/urology/cystoscopy-and-retrograde-pyelogram-insertion-of-ureteric-stent/cystoscopy-and-retrograde-pyelogram-insertion-of-ureteric-stent_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cystoscopy-and-retrograde-pyelogram-insertion-of-ureteric-stent/cystoscopy-and-retrograde-pyelogram-insertion-of-ureteric-stent_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+12,Urology,Cystoscopy and ureteroscopy and fragmentation of stone (lithocast),تنظير المثانة والحالب وتفتيت الحصاة,cystoscopy-and-ureteroscopy-and-fragmentation-of-stone-lithocast,"Bladder, urethra, and ureteric orifices",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Cystoscopy and ureteroscopy and fragmentation of stone (lithocast)
+Procedure (Arabic): تنظير المثانة والحالب وتفتيت الحصاة
+Specialty: Urology
+Anatomical region / focus: Bladder, urethra, and ureteric orifices
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",cystoscopy-and-ureteroscopy-and-fragmentation-of-stone-lithocast_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/urology/cystoscopy-and-ureteroscopy-and-fragmentation-of-stone-lithocast/cystoscopy-and-ureteroscopy-and-fragmentation-of-stone-lithocast_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cystoscopy-and-ureteroscopy-and-fragmentation-of-stone-lithocast/cystoscopy-and-ureteroscopy-and-fragmentation-of-stone-lithocast_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+13,Urology,Cystoscopy with Passage of Ureteric catheter,Cystoscopy with Passage of Ureteric catheter,cystoscopy-with-passage-of-ureteric-catheter,"Bladder, urethra, and ureteric orifices",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Cystoscopy with Passage of Ureteric catheter
+Procedure (Arabic): Cystoscopy with Passage of Ureteric catheter
+Specialty: Urology
+Anatomical region / focus: Bladder, urethra, and ureteric orifices
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",cystoscopy-with-passage-of-ureteric-catheter_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/urology/cystoscopy-with-passage-of-ureteric-catheter/cystoscopy-with-passage-of-ureteric-catheter_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cystoscopy-with-passage-of-ureteric-catheter/cystoscopy-with-passage-of-ureteric-catheter_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+14,Urology,Cystotomy (Supra-Pubic),Cystotomy (Supra-Pubic),cystotomy-supra-pubic,Anatomy specific to Cystotomy (Supra-Pubic),anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Cystotomy (Supra-Pubic)
+Procedure (Arabic): Cystotomy (Supra-Pubic)
+Specialty: Urology
+Anatomical region / focus: Anatomy specific to Cystotomy (Supra-Pubic)
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",cystotomy-supra-pubic_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/urology/cystotomy-supra-pubic/cystotomy-supra-pubic_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cystotomy-supra-pubic/cystotomy-supra-pubic_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+15,Obstetrics & Gynecology,D & C (Dilation & Curettage),كشط الرحم وتوسيع عنقه,d-c-dilation-curettage,Uterus and cervical canal,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): D & C (Dilation & Curettage)
+Procedure (Arabic): كشط الرحم وتوسيع عنقه
+Specialty: Obstetrics & Gynecology
+Anatomical region / focus: Uterus and cervical canal
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",d-c-dilation-curettage_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/d-c-dilation-curettage/d-c-dilation-curettage_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/d-c-dilation-curettage/d-c-dilation-curettage_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+16,Ophthalmology,Dacrocystogram,Dacrocystogram,dacrocystogram,"Lacrimal duct, tear sac, and nasal cavity",process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Dacrocystogram
+Procedure (Arabic): Dacrocystogram
+Specialty: Ophthalmology
+Anatomical region / focus: Lacrimal duct, tear sac, and nasal cavity
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",dacrocystogram_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/ophthalmology/dacrocystogram/dacrocystogram_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/dacrocystogram/dacrocystogram_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+17,Ophthalmology,Dacryocystorhinostomy,ربط كيس الدمع بالأنف,dacryocystorhinostomy,"Lacrimal duct, tear sac, and nasal cavity",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Dacryocystorhinostomy
+Procedure (Arabic): ربط كيس الدمع بالأنف
+Specialty: Ophthalmology
+Anatomical region / focus: Lacrimal duct, tear sac, and nasal cavity
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",dacryocystorhinostomy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/ophthalmology/dacryocystorhinostomy/dacryocystorhinostomy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/dacryocystorhinostomy/dacryocystorhinostomy_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+18,Obstetrics & Gynecology,Diagnostic Hysteroscopy Dilatation & Curettage (D & C),تنظير الرحم التشخيصي مع كشط الرحم,diagnostic-hysteroscopy-dilatation-curettage-d-c,Uterus and cervical canal,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Diagnostic Hysteroscopy Dilatation & Curettage (D & C)
+Procedure (Arabic): تنظير الرحم التشخيصي مع كشط الرحم
+Specialty: Obstetrics & Gynecology
+Anatomical region / focus: Uterus and cervical canal
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",diagnostic-hysteroscopy-dilatation-curettage-d-c_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/diagnostic-hysteroscopy-dilatation-curettage-d-c/diagnostic-hysteroscopy-dilatation-curettage-d-c_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/diagnostic-hysteroscopy-dilatation-curettage-d-c/diagnostic-hysteroscopy-dilatation-curettage-d-c_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+19,General Surgery / Other,Drainage of a Pseudocyst,تصريف كيسة زائفة,drainage-of-a-pseudocyst,Anatomy specific to Drainage of a Pseudocyst,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Drainage of a Pseudocyst
+Procedure (Arabic): تصريف كيسة زائفة
+Specialty: General Surgery / Other
+Anatomical region / focus: Anatomy specific to Drainage of a Pseudocyst
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",drainage-of-a-pseudocyst_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/drainage-of-a-pseudocyst/drainage-of-a-pseudocyst_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/drainage-of-a-pseudocyst/drainage-of-a-pseudocyst_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+20,Allergy & Immunology,Drug Challenge Testing,اختبار تحدي الدواء,drug-challenge-testing,Arm or oral drug administration path,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Drug Challenge Testing
+Procedure (Arabic): اختبار تحدي الدواء
+Specialty: Allergy & Immunology
+Anatomical region / focus: Arm or oral drug administration path
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",drug-challenge-testing_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/allergy-immunology/drug-challenge-testing/drug-challenge-testing_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/drug-challenge-testing/drug-challenge-testing_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.

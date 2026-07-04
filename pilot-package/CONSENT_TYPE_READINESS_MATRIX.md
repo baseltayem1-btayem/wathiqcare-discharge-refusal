@@ -63,6 +63,16 @@ A consent type may **only** appear in the selector if it satisfies **all** of th
 
 Any type missing **one or more** of R1–R6 is held in `coming-soon` (or `disabled` if intentionally turned off).
 
+### R7 — Pilot scope exclusion for interpreter / witness workflows
+
+The controlled pilot explicitly excludes interpreter and witness signing
+workflows.  A template that sets `requires_witness` or `requires_interpreter` to
+true is blocked server-side in `createConsentDocument` and cannot be dispatched.
+The issuance UI (`InformedConsentIssuancePage.tsx`) hard-codes witness and
+interpreter readiness checks to `false` for the pilot.  This rule will be
+removed once interpreter/witness workflows are implemented and legally signed
+off for general availability.
+
 ---
 
 ## 4. Promotion Procedure (`coming-soon` → `pilot-ready`)

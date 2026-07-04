@@ -40,6 +40,36 @@ _startup_complete = False
 _startup_error = None
 _startup_timestamp = 0
 
+_REQUIRED_SECRETS = [
+    "JWT_SECRET_KEY",
+    "PUBLIC_LINK_TOKEN_PEPPER",
+]
+
+_FORBIDDEN_SECRET_VALUES = {
+    "",
+    "change-me",
+    "wathiqcare-public-link-pepper",
+}
+
+
+def _validate_runtime_config() -> None:
+    """Fail fast if required secrets are missing or use unsafe placeholder values."""
+    missing = [name for name in _REQUIRED_SECRETS if not os.getenv(name)]
+    if missing:
+        raise RuntimeError(
+            f"FATAL: missing required environment variables: {', '.join(missing)}"
+        )
+
+    unsafe = [
+        name
+        for name in _REQUIRED_SECRETS
+        if os.getenv(name, "").strip().lower() in _FORBIDDEN_SECRET_VALUES
+    ]
+    if unsafe:
+        raise RuntimeError(
+            f"FATAL: the following secrets use unsafe placeholder values: {', '.join(unsafe)}"
+        )
+
 app = FastAPI(title="WathiqCare Core API", version="0.1.0")
 
 default_cors_origins = [
@@ -54,8 +84,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With", "X-Wathiqcare-Forwarded-For", "X-Wathiqcare-Real-Ip", "X-Wathiqcare-User-Agent"],
 )
 
 rate_limiter = SensitiveRouteRateLimiter(
@@ -133,7 +163,15 @@ def readiness():
 def _startup_integration_scheduler() -> None:
     global _startup_complete, _startup_error, _startup_timestamp
     _startup_timestamp = time.time()
-    
+
+    try:
+        _validate_runtime_config()
+        logger.info("Runtime configuration validation passed")
+    except Exception as e:
+        logger.error(f"Runtime configuration validation failed: {e}", exc_info=True)
+        _startup_error = str(e)
+        return
+
     try:
         logger.info("Database initialization starting")
         init_database()
@@ -172,7 +210,8 @@ app.include_router(integration_router)
 app.include_router(emails_router)
 app.include_router(workflow_router)
 app.include_router(system_inspect_router)
-app.include_router(sms_test_router)
+if os.getenv("WATHIQCARE_BACKEND_SMS_TEST_ENABLED", "false").lower() == "true":
+    app.include_router(sms_test_router)
 app.include_router(sms_evidence_router)
 app.include_router(secure_links_router)
 app.include_router(medico_legal_forms_router)

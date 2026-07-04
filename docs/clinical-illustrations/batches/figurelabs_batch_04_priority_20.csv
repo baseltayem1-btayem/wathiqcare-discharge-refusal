@@ -1,0 +1,361 @@
+sequence,specialty,procedureNameEn,procedureNameAr,canonicalProcedureKey,anatomyRegion,illustrationType,figureLabsPrompt,imageFileName,imagePublicPath,certificatePath,imageReviewStatus,patientFacing,notes
+1,Urology,Circumcision (Child-Young Person),ختان الأطفال,circumcision-child-young-person,Penis and foreskin,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Circumcision (Child-Young Person)
+Procedure (Arabic): ختان الأطفال
+Specialty: Urology
+Anatomical region / focus: Penis and foreskin
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",circumcision-child-young-person_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/urology/circumcision-child-young-person/circumcision-child-young-person_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/circumcision-child-young-person/circumcision-child-young-person_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+2,Neurosurgery / Neuro-interventional Radiology,Coiling embolisation of Intracranial Aneurysm,Coiling embolisation of Intracranial Aneurysm,coiling-embolisation-of-intracranial-aneurysm,Target artery/vein and embolization material,process_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Coiling embolisation of Intracranial Aneurysm
+Procedure (Arabic): Coiling embolisation of Intracranial Aneurysm
+Specialty: Neurosurgery / Neuro-interventional Radiology
+Anatomical region / focus: Target artery/vein and embolization material
+Illustration type: process_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Focus on the care pathway, device, instrument, or procedural steps rather than detailed internal organ anatomy.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",coiling-embolisation-of-intracranial-aneurysm_process_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/neurosurgery-neuro-interventional-radiology/coiling-embolisation-of-intracranial-aneurysm/coiling-embolisation-of-intracranial-aneurysm_process_education_v1_draft.png,docs/clinical-illustrations/figurelabs/coiling-embolisation-of-intracranial-aneurysm/coiling-embolisation-of-intracranial-aneurysm_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+3,General Surgery / Other,Colposuspension,تعليق عنق الرحم,colposuspension,Anatomy specific to Colposuspension,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Colposuspension
+Procedure (Arabic): تعليق عنق الرحم
+Specialty: General Surgery / Other
+Anatomical region / focus: Anatomy specific to Colposuspension
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",colposuspension_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/colposuspension/colposuspension_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/colposuspension/colposuspension_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+4,Urology,Colposuspension & Cystoscopy,Colposuspension & Cystoscopy,colposuspension-cystoscopy,"Bladder, urethra, and ureteric orifices",anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Colposuspension & Cystoscopy
+Procedure (Arabic): Colposuspension & Cystoscopy
+Specialty: Urology
+Anatomical region / focus: Bladder, urethra, and ureteric orifices
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",colposuspension-cystoscopy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/urology/colposuspension-cystoscopy/colposuspension-cystoscopy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/colposuspension-cystoscopy/colposuspension-cystoscopy_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+5,Obstetrics & Gynecology,Cone Biopsy,خزعة مخروطية من عنق الرحم,cone-biopsy,Cervix and transformation zone,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Cone Biopsy
+Procedure (Arabic): خزعة مخروطية من عنق الرحم
+Specialty: Obstetrics & Gynecology
+Anatomical region / focus: Cervix and transformation zone
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",cone-biopsy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/cone-biopsy/cone-biopsy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/cone-biopsy/cone-biopsy_figurelabs_authorization_certificate_v1.pdf,draft,false,Pending FigureLabs generation and medical review.
+6,"Ear, Nose and Throat",Consent for Tympanoplasty with or without mastoidectomy,Consent for Tympanoplasty with or without mastoidectomy,consent-for-tympanoplasty-with-or-without-mastoidectomy,Tympanic membrane and middle ear,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent for Tympanoplasty with or without mastoidectomy
+Procedure (Arabic): Consent for Tympanoplasty with or without mastoidectomy
+Specialty: Ear, Nose and Throat
+Anatomical region / focus: Tympanic membrane and middle ear
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-for-tympanoplasty-with-or-without-mastoidectomy_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/ent/consent-for-tympanoplasty-with-or-without-mastoidectomy/consent-for-tympanoplasty-with-or-without-mastoidectomy_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-for-tympanoplasty-with-or-without-mastoidectomy/consent-for-tympanoplasty-with-or-without-mastoidectomy_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+7,General Surgery / Other,Consent Form Bariatric,Consent Form Bariatric,consent-form-bariatric,Stomach and bariatric surgical anatomy,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form Bariatric
+Procedure (Arabic): Consent Form Bariatric
+Specialty: General Surgery / Other
+Anatomical region / focus: Stomach and bariatric surgical anatomy
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-bariatric_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/consent-form-bariatric/consent-form-bariatric_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-bariatric/consent-form-bariatric_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+8,Plastic / Dermatologic Surgery,Consent Form - Botulinium,Consent Form - Botulinium,consent-form-botulinium,Facial muscles and injection sites,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form - Botulinium
+Procedure (Arabic): Consent Form - Botulinium
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Facial muscles and injection sites
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-botulinium_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-botulinium/consent-form-botulinium_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-botulinium/consent-form-botulinium_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+9,Plastic / Dermatologic Surgery,Consent Form - Chemical Peeling,Consent Form - Chemical Peeling,consent-form-chemical-peeling,Anatomy specific to Consent Form - Chemical Peeling,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form - Chemical Peeling
+Procedure (Arabic): Consent Form - Chemical Peeling
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Anatomy specific to Consent Form - Chemical Peeling
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-chemical-peeling_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-chemical-peeling/consent-form-chemical-peeling_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-chemical-peeling/consent-form-chemical-peeling_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+10,Plastic / Dermatologic Surgery,Consent Form - Filler,Consent Form - Filler,consent-form-filler,Facial soft tissue and injection planes,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form - Filler
+Procedure (Arabic): Consent Form - Filler
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Facial soft tissue and injection planes
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-filler_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-filler/consent-form-filler_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-filler/consent-form-filler_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+11,General Surgery / Other,Consent Form -High-Intensity Focused Ultrasound (HIFU) Consent,Consent Form -High-Intensity Focused Ultrasound (HIFU) Consent,consent-form-high-intensity-focused-ultrasound-hifu-consent,Anatomy specific to Consent Form -High-Intensity Focused Ultrasound (HIFU) Consent,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form -High-Intensity Focused Ultrasound (HIFU) Consent
+Procedure (Arabic): Consent Form -High-Intensity Focused Ultrasound (HIFU) Consent
+Specialty: General Surgery / Other
+Anatomical region / focus: Anatomy specific to Consent Form -High-Intensity Focused Ultrasound (HIFU) Consent
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-high-intensity-focused-ultrasound-hifu-consent_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/consent-form-high-intensity-focused-ultrasound-hifu-consent/consent-form-high-intensity-focused-ultrasound-hifu-consent_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-high-intensity-focused-ultrasound-hifu-consent/consent-form-high-intensity-focused-ultrasound-hifu-consent_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+12,Plastic / Dermatologic Surgery,Consent Form -HydraFacial Consent Form,Consent Form -HydraFacial Consent Form,consent-form-hydrafacial-consent-form,Anatomy specific to Consent Form -HydraFacial Consent Form,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form -HydraFacial Consent Form
+Procedure (Arabic): Consent Form -HydraFacial Consent Form
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Anatomy specific to Consent Form -HydraFacial Consent Form
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-hydrafacial-consent-form_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-hydrafacial-consent-form/consent-form-hydrafacial-consent-form_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-hydrafacial-consent-form/consent-form-hydrafacial-consent-form_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+13,General Surgery / Other,Consent Form - Injection,Consent Form - Injection,consent-form-injection,Whole-body or region-specific CT scanner cross-section,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form - Injection
+Procedure (Arabic): Consent Form - Injection
+Specialty: General Surgery / Other
+Anatomical region / focus: Whole-body or region-specific CT scanner cross-section
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-injection_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/consent-form-injection/consent-form-injection_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-injection/consent-form-injection_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+14,Plastic / Dermatologic Surgery,Consent Form -Isotretinoin Consent Form,Consent Form -Isotretinoin Consent Form,consent-form-isotretinoin-consent-form,Anatomy specific to Consent Form -Isotretinoin Consent Form,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form -Isotretinoin Consent Form
+Procedure (Arabic): Consent Form -Isotretinoin Consent Form
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Anatomy specific to Consent Form -Isotretinoin Consent Form
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-isotretinoin-consent-form_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-isotretinoin-consent-form/consent-form-isotretinoin-consent-form_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-isotretinoin-consent-form/consent-form-isotretinoin-consent-form_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+15,Plastic / Dermatologic Surgery,Consent Form -Laser Hair Removal Consent,Consent Form -Laser Hair Removal Consent,consent-form-laser-hair-removal-consent,Anatomy specific to Consent Form -Laser Hair Removal Consent,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form -Laser Hair Removal Consent
+Procedure (Arabic): Consent Form -Laser Hair Removal Consent
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Anatomy specific to Consent Form -Laser Hair Removal Consent
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-laser-hair-removal-consent_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-laser-hair-removal-consent/consent-form-laser-hair-removal-consent_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-laser-hair-removal-consent/consent-form-laser-hair-removal-consent_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+16,General Surgery / Other,Consent Form - Laser Treatment Skin Rejuvantion and Scar Treatment,Consent Form - Laser Treatment Skin Rejuvantion and Scar Treatment,consent-form-laser-treatment-skin-rejuvantion-and-scar-treatment,Anatomy specific to Consent Form - Laser Treatment Skin Rejuvantion and Scar Treatment,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form - Laser Treatment Skin Rejuvantion and Scar Treatment
+Procedure (Arabic): Consent Form - Laser Treatment Skin Rejuvantion and Scar Treatment
+Specialty: General Surgery / Other
+Anatomical region / focus: Anatomy specific to Consent Form - Laser Treatment Skin Rejuvantion and Scar Treatment
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-laser-treatment-skin-rejuvantion-and-scar-treatment_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/general-surgery/consent-form-laser-treatment-skin-rejuvantion-and-scar-treatment/consent-form-laser-treatment-skin-rejuvantion-and-scar-treatment_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-laser-treatment-skin-rejuvantion-and-scar-treatment/consent-form-laser-treatment-skin-rejuvantion-and-scar-treatment_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+17,Plastic / Dermatologic Surgery,Consent Form -Microneedling Radiofrequency (Matrix Pro) Consent,Consent Form -Microneedling Radiofrequency (Matrix Pro) Consent,consent-form-microneedling-radiofrequency-matrix-pro-consent,Anatomy specific to Consent Form -Microneedling Radiofrequency (Matrix Pro) Consent,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form -Microneedling Radiofrequency (Matrix Pro) Consent
+Procedure (Arabic): Consent Form -Microneedling Radiofrequency (Matrix Pro) Consent
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Anatomy specific to Consent Form -Microneedling Radiofrequency (Matrix Pro) Consent
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-microneedling-radiofrequency-matrix-pro-consent_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-microneedling-radiofrequency-matrix-pro-consent/consent-form-microneedling-radiofrequency-matrix-pro-consent_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-microneedling-radiofrequency-matrix-pro-consent/consent-form-microneedling-radiofrequency-matrix-pro-consent_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+18,Plastic / Dermatologic Surgery,Consent Form -Phototherapy Excimer Laser Consent Form,Consent Form -Phototherapy Excimer Laser Consent Form,consent-form-phototherapy-excimer-laser-consent-form,Anatomy specific to Consent Form -Phototherapy Excimer Laser Consent Form,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form -Phototherapy Excimer Laser Consent Form
+Procedure (Arabic): Consent Form -Phototherapy Excimer Laser Consent Form
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Anatomy specific to Consent Form -Phototherapy Excimer Laser Consent Form
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-phototherapy-excimer-laser-consent-form_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-phototherapy-excimer-laser-consent-form/consent-form-phototherapy-excimer-laser-consent-form_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-phototherapy-excimer-laser-consent-form/consent-form-phototherapy-excimer-laser-consent-form_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+19,Plastic / Dermatologic Surgery,Consent Form -Q Switched and Pico Laser Informed Consent Form,Consent Form -Q Switched and Pico Laser Informed Consent Form,consent-form-q-switched-and-pico-laser-informed-consent-form,Anatomy specific to Consent Form -Q Switched and Pico Laser Informed Consent Form,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form -Q Switched and Pico Laser Informed Consent Form
+Procedure (Arabic): Consent Form -Q Switched and Pico Laser Informed Consent Form
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Anatomy specific to Consent Form -Q Switched and Pico Laser Informed Consent Form
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-q-switched-and-pico-laser-informed-consent-form_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-q-switched-and-pico-laser-informed-consent-form/consent-form-q-switched-and-pico-laser-informed-consent-form_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-q-switched-and-pico-laser-informed-consent-form/consent-form-q-switched-and-pico-laser-informed-consent-form_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.
+20,Plastic / Dermatologic Surgery,Consent Form -Regenera Activa Consent Form,Consent Form -Regenera Activa Consent Form,consent-form-regenera-activa-consent-form,Whole-body or region-specific CT scanner cross-section,anatomy_procedure_education,"Create a patient-friendly, non-graphic, non-bloody medical illustration for informed consent education.
+
+Procedure (English): Consent Form -Regenera Activa Consent Form
+Procedure (Arabic): Consent Form -Regenera Activa Consent Form
+Specialty: Plastic / Dermatologic Surgery
+Anatomical region / focus: Whole-body or region-specific CT scanner cross-section
+Illustration type: anatomy_procedure_education
+
+Requirements:
+- Clean, professional, hospital-grade patient education style
+- Show the relevant human anatomy clearly and the basic concept of the procedure, including the instrument or treatment path when applicable.
+- Use soft clinical colors on a white or very light background
+- Label the main anatomical structures or steps clearly in English
+- Leave adequate space for Arabic label overlays
+- Include short callout labels for the procedural target or key step
+- Do not include any patient-identifiable information, hospital logos, watermarks, or frightening imagery
+- Landscape orientation, high resolution, suitable for informed consent display
+- Include a blank area at the bottom for the informed consent disclaimer",consent-form-regenera-activa-consent-form_anatomy_procedure_education_v1_draft.png,apps/web/public/educational/clinical-illustrations/plastic-dermatologic-surgery/consent-form-regenera-activa-consent-form/consent-form-regenera-activa-consent-form_anatomy_procedure_education_v1_draft.png,docs/clinical-illustrations/figurelabs/consent-form-regenera-activa-consent-form/consent-form-regenera-activa-consent-form_figurelabs_authorization_certificate_v1.pdf,draft,false,Arabic translation requires clinical review. Pending FigureLabs generation and medical review.

@@ -3,7 +3,12 @@ import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:3003";
-const JWT_SECRET = "d78c1dd46cb62cab2453022c6cf07ef447e5ce62a6f8da761bd137f6ff1ff6a2";
+const JWT_SECRET = process.env.E2E_JWT_SECRET?.trim();
+if (!JWT_SECRET) {
+  throw new Error(
+    "FATAL: E2E_JWT_SECRET environment variable is required for e2e-issuance-screenshot tests."
+  );
+}
 const USER_ID = "f13fd86f-2884-41da-8a3a-dc240b0d2f02";
 const EMAIL = "tenant.admin@test.wathiqcare.online";
 const ROLE = "tenant_admin";

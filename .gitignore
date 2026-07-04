@@ -15,6 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!apps/web/src/components/informed-consents/production-workspace/lib/
 lib64/
 parts/
 sdist/
@@ -255,3 +256,18 @@ backups/figma-restore-20260608/
 .env.staging
 .env.vercel.prod.readonly
 .env.production*
+
+# WathiqCare — never commit runtime credential artifacts or leaked reports
+cookies.txt
+*-prod-release-gate.json
+FINAL_LIVE_SMS_VALIDATION_REPORT.md
+tmp-login-test.cjs
+apps/web/artifacts/release-gate/*.json
+
+# WathiqCare — temporary ad-hoc scripts often contain credentials or session tokens
+__*.cjs
+__*.ps1
+__tmp_*.ts
+task.ps1
+run_task.ps1
+test_login.ps1

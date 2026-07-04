@@ -1,0 +1,588 @@
+{
+  "abdominal-aortic-aneurysm": {
+    "procedureNameEn": "Abdominal Aortic Aneurysm",
+    "procedureNameAr": "تمدد الشريان الأبهر البطني",
+    "specialtyNameEn": "Vascular Surgery",
+    "specialtyNameAr": "جراحة الأوعية الدموية",
+    "specialtyCode": "VASCULAR_SURGERY",
+    "anatomyRegion": "Abdominal aorta and surrounding arteries",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/abdominal-aortic-aneurysm/abdominal-aortic-aneurysm_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/abdominal-aortic-aneurysm/abdominal-aortic-aneurysm_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/abdominal-aortic-aneurysm/abdominal-aortic-aneurysm_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Aorta",
+      "Aneurysm area",
+      "Planned monitoring or repair pathway"
+    ],
+    "labelsAr": [
+      "الشريان الأبهر",
+      "منطقة التمدد",
+      "مسار المتابعة أو الإصلاح المخطط"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "abdominoperineal-resection-of-rectum": {
+    "procedureNameEn": "Abdominoperineal Resection of Rectum",
+    "procedureNameAr": "استئصال المستقيم بطريق البطن والعجان",
+    "specialtyNameEn": "General Surgery / Other",
+    "specialtyNameAr": "الجراحة العامة / أخرى",
+    "specialtyCode": "GENERAL_SURGERY",
+    "anatomyRegion": "Rectum, anus, perineum, and lower pelvis",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/abdominoperineal-resection-of-rectum/abdominoperineal-resection-of-rectum_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/abdominoperineal-resection-of-rectum/abdominoperineal-resection-of-rectum_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/abdominoperineal-resection-of-rectum/abdominoperineal-resection-of-rectum_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Colon",
+      "Rectum / planned resection area",
+      "Possible stoma pathway"
+    ],
+    "labelsAr": [
+      "القولون",
+      "المستقيم / منطقة الاستئصال المخطط",
+      "مسار الفتحة المحتملة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "abdominoplasty": {
+    "procedureNameEn": "Abdominoplasty",
+    "procedureNameAr": "شد البطن",
+    "specialtyNameEn": "General Surgery / Other",
+    "specialtyNameAr": "الجراحة العامة / أخرى",
+    "specialtyCode": "GENERAL_SURGERY",
+    "anatomyRegion": "Abdominal wall and skin",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/abdominoplasty/abdominoplasty_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/abdominoplasty/abdominoplasty_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/abdominoplasty/abdominoplasty_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Abdominal wall",
+      "Planned skin contour line",
+      "Muscle tightening area"
+    ],
+    "labelsAr": [
+      "جدار البطن",
+      "خط تحديد الجلد المخطط",
+      "منطقة شد العضلات"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "adenotonsillectomy": {
+    "procedureNameEn": "Adenotonsillectomy",
+    "procedureNameAr": "استئصال اللحمية واللوزتين",
+    "specialtyNameEn": "Ear, Nose and Throat",
+    "specialtyNameAr": "أنف وأذن وحنجرة",
+    "specialtyCode": "ENT",
+    "anatomyRegion": "Oropharynx, tonsils, and adenoids",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/ent/adenotonsillectomy/adenotonsillectomy_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/ent/adenotonsillectomy/adenotonsillectomy_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/ent/adenotonsillectomy/adenotonsillectomy_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Tonsils",
+      "Adenoid area",
+      "Mouth and throat pathway"
+    ],
+    "labelsAr": [
+      "اللوزتان",
+      "منطقة اللحمية",
+      "مسار الفم والحلق"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "allergen-immunotherapy": {
+    "procedureNameEn": "Allergen Immunotherapy",
+    "procedureNameAr": "العلاج المناعي للحساسية",
+    "specialtyNameEn": "Allergy & Immunology",
+    "specialtyNameAr": "الحساسية والمناعة",
+    "specialtyCode": "ALLERGY_IMMUNOLOGY",
+    "anatomyRegion": "Upper arm subcutaneous injection site",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/allergy-immunology/allergen-immunotherapy/allergen-immunotherapy_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/allergy-immunology/allergen-immunotherapy/allergen-immunotherapy_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/allergy-immunology/allergen-immunotherapy/allergen-immunotherapy_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Allergy assessment",
+      "Small measured allergen dose",
+      "Observation after dose",
+      "Treatment plan over time"
+    ],
+    "labelsAr": [
+      "تقييم الحساسية",
+      "جرعة محسوبة صغيرة من مسبب الحساسية",
+      "الملاحظة بعد الجرعة",
+      "خطة العلاج على مدى الزمن"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "allergy-skin-test-consent-and-informed": {
+    "procedureNameEn": "Allergy Skin Test consent and informed",
+    "procedureNameAr": "موافقة واختبار حساسية الجلد",
+    "specialtyNameEn": "Allergy & Immunology",
+    "specialtyNameAr": "الحساسية والمناعة",
+    "specialtyCode": "ALLERGY_IMMUNOLOGY",
+    "anatomyRegion": "Forearm or back skin with test sites",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/allergy-immunology/allergy-skin-test-consent-and-informed/allergy-skin-test-consent-and-informed_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/allergy-immunology/allergy-skin-test-consent-and-informed/allergy-skin-test-consent-and-informed_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/allergy-immunology/allergy-skin-test-consent-and-informed/allergy-skin-test-consent-and-informed_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Skin test sites",
+      "Small skin drops / pricks",
+      "Reaction observation area"
+    ],
+    "labelsAr": [
+      "مواضع اختبار الجلد",
+      "قطرات أو وخزات جلدية صغيرة",
+      "منطقة ملاحظة التفاعل"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "amniocentesis-chorionic-villus-sampling": {
+    "procedureNameEn": "Amniocentesis Chorionic Villus Sampling",
+    "procedureNameAr": "بزل السائل الأمنيوسي وأخذ عينة من الزغابات المشيمية",
+    "specialtyNameEn": "Obstetrics & Gynecology",
+    "specialtyNameAr": "النساء والتوليد",
+    "specialtyCode": "OBSTETRICS_GYNECOLOGY",
+    "anatomyRegion": "Uterus, placenta, and amniotic fluid",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/amniocentesis-chorionic-villus-sampling/amniocentesis-chorionic-villus-sampling_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/amniocentesis-chorionic-villus-sampling/amniocentesis-chorionic-villus-sampling_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/amniocentesis-chorionic-villus-sampling/amniocentesis-chorionic-villus-sampling_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Uterus",
+      "Amniotic fluid / placenta area",
+      "Image-guided needle pathway"
+    ],
+    "labelsAr": [
+      "الرحم",
+      "السائل الأمنيوسي / منطقة المشيمة",
+      "مسار الإبرة بتوجيه التصوير"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "amputation": {
+    "procedureNameEn": "Amputation",
+    "procedureNameAr": "البتر",
+    "specialtyNameEn": "General Surgery / Other",
+    "specialtyNameAr": "الجراحة العامة / أخرى",
+    "specialtyCode": "GENERAL_SURGERY",
+    "anatomyRegion": "Affected limb and amputation level",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/amputation/amputation_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/amputation/amputation_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/general-surgery/amputation/amputation_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Limb anatomy",
+      "Planned surgical level",
+      "Protective dressing / recovery area"
+    ],
+    "labelsAr": [
+      "تشريح الطرف",
+      "المستوى الجراحي المخطط",
+      "منطقة الضماد الوقائي / التعافي"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "angiogram-with-mechanical-thrombectomy-any-body-part": {
+    "procedureNameEn": "Angiogram with mechanical Thrombectomy (any body part)",
+    "procedureNameAr": "تصوير الأوعية مع استئصال الخثرة ميكانيكيًا، لأي موضع بالجسم",
+    "specialtyNameEn": "Radiology / Interventional Radiology",
+    "specialtyNameAr": "الأشعة / الأشعة التداخلية",
+    "specialtyCode": "RADIOLOGY",
+    "anatomyRegion": "Whole-body or region-specific CT scanner cross-section",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/radiology/angiogram-with-mechanical-thrombectomy-any-body-part/angiogram-with-mechanical-thrombectomy-any-body-part_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/radiology/angiogram-with-mechanical-thrombectomy-any-body-part/angiogram-with-mechanical-thrombectomy-any-body-part_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/radiology/angiogram-with-mechanical-thrombectomy-any-body-part/angiogram-with-mechanical-thrombectomy-any-body-part_process_education_v1_draft.png",
+    "labelsEn": [
+      "Blood vessel",
+      "Clot / blockage",
+      "Thrombectomy device path"
+    ],
+    "labelsAr": [
+      "وعاء دموي",
+      "الخثرة / موضع الانسداد",
+      "مسار جهاز استئصال الخثرة"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "arteriovenous-fistula": {
+    "procedureNameEn": "Arteriovenous Fistula",
+    "procedureNameAr": "الناسور الشرياني الوريدي",
+    "specialtyNameEn": "Vascular Surgery",
+    "specialtyNameAr": "جراحة الأوعية الدموية",
+    "specialtyCode": "VASCULAR_SURGERY",
+    "anatomyRegion": "Forearm or upper-arm artery and vein connection for dialysis access",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-fistula/arteriovenous-fistula_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-fistula/arteriovenous-fistula_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-fistula/arteriovenous-fistula_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Artery",
+      "Vein",
+      "Fistula connection",
+      "Dialysis access site"
+    ],
+    "labelsAr": [
+      "الشريان",
+      "الوريد",
+      "وصلة الناسور",
+      "موضع الوصول لغسيل الكلى"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "arteriovenous-goretex-loop-graft": {
+    "procedureNameEn": "Arteriovenous Goretex Loop Graft",
+    "procedureNameAr": "وصلة شريانية وريدية صناعية على شكل حلقة",
+    "specialtyNameEn": "Vascular Surgery",
+    "specialtyNameAr": "جراحة الأوعية الدموية",
+    "specialtyCode": "VASCULAR_SURGERY",
+    "anatomyRegion": "Forearm or upper-arm artery and vein with synthetic graft for dialysis access",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-goretex-loop-graft/arteriovenous-goretex-loop-graft_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-goretex-loop-graft/arteriovenous-goretex-loop-graft_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/vascular-surgery/arteriovenous-goretex-loop-graft/arteriovenous-goretex-loop-graft_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Artery",
+      "Vein",
+      "Synthetic graft loop",
+      "Dialysis access site"
+    ],
+    "labelsAr": [
+      "الشريان",
+      "الوريد",
+      "حلقة الوصلة الصناعية",
+      "موضع الوصول لغسيل الكلى"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "arthrogram": {
+    "procedureNameEn": "Arthrogram",
+    "procedureNameAr": "تصوير المفصل بالصبغة",
+    "specialtyNameEn": "Orthopedics",
+    "specialtyNameAr": "جراحة العظام",
+    "specialtyCode": "ORTHOPEDICS",
+    "anatomyRegion": "Affected joint and needle/contrast path",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/orthopedics/arthrogram/arthrogram_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/orthopedics/arthrogram/arthrogram_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/orthopedics/arthrogram/arthrogram_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Joint space",
+      "Contrast injection pathway",
+      "Imaging guidance"
+    ],
+    "labelsAr": [
+      "حيز المفصل",
+      "مسار حقن الصبغة",
+      "التوجيه بالتصوير"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "arthroplasty-consent": {
+    "procedureNameEn": "Arthroplasty Consent",
+    "procedureNameAr": "موافقة استبدال المفصل",
+    "specialtyNameEn": "Orthopedics",
+    "specialtyNameAr": "جراحة العظام",
+    "specialtyCode": "ORTHOPEDICS",
+    "anatomyRegion": "Affected joint and surrounding bones",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/orthopedics/arthroplasty-consent/arthroplasty-consent_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/orthopedics/arthroplasty-consent/arthroplasty-consent_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/orthopedics/arthroplasty-consent/arthroplasty-consent_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Joint area",
+      "Prosthetic implant",
+      "Bone alignment plan"
+    ],
+    "labelsAr": [
+      "منطقة المفصل",
+      "الغرسة الصناعية",
+      "خطة محاذاة العظم"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "aspiration-drainage-under-imaging": {
+    "procedureNameEn": "Aspiration Drainage Under Imaging",
+    "procedureNameAr": "بزل أو تصريف السوائل تحت توجيه التصوير",
+    "specialtyNameEn": "Radiology / Interventional Radiology",
+    "specialtyNameAr": "الأشعة / الأشعة التداخلية",
+    "specialtyCode": "RADIOLOGY",
+    "anatomyRegion": "Fluid collection and drainage catheter",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/radiology/aspiration-drainage-under-imaging/aspiration-drainage-under-imaging_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/radiology/aspiration-drainage-under-imaging/aspiration-drainage-under-imaging_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/radiology/aspiration-drainage-under-imaging/aspiration-drainage-under-imaging_process_education_v1_draft.png",
+    "labelsEn": [
+      "Fluid collection",
+      "Needle / drainage path",
+      "Imaging guidance"
+    ],
+    "labelsAr": [
+      "تجمع السوائل",
+      "مسار الإبرة / التصريف",
+      "التوجيه بالتصوير"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "bartholin-s-glands": {
+    "procedureNameEn": "Bartholin's Glands",
+    "procedureNameAr": "غدد بارثولين",
+    "specialtyNameEn": "Obstetrics & Gynecology",
+    "specialtyNameAr": "النساء والتوليد",
+    "specialtyCode": "OBSTETRICS_GYNECOLOGY",
+    "anatomyRegion": "Bartholin gland region",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/bartholin-s-glands/bartholin-s-glands_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/bartholin-s-glands/bartholin-s-glands_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/obstetrics-gynecology/bartholin-s-glands/bartholin-s-glands_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Bartholin gland",
+      "Vaginal opening",
+      "Drainage / treatment area"
+    ],
+    "labelsAr": [
+      "غدة بارثولين",
+      "فتحة المهبل",
+      "منطقة التصريف / العلاج"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "biopsy-under-imaging": {
+    "procedureNameEn": "Biopsy Under Imaging",
+    "procedureNameAr": "خزعة تحت توجيه التصوير",
+    "specialtyNameEn": "Radiology / Interventional Radiology",
+    "specialtyNameAr": "الأشعة / الأشعة التداخلية",
+    "specialtyCode": "RADIOLOGY",
+    "anatomyRegion": "Target lesion and biopsy needle path under imaging",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/radiology/biopsy-under-imaging/biopsy-under-imaging_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/radiology/biopsy-under-imaging/biopsy-under-imaging_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/radiology/biopsy-under-imaging/biopsy-under-imaging_process_education_v1_draft.png",
+    "labelsEn": [
+      "Target tissue",
+      "Sample needle path",
+      "Imaging guidance"
+    ],
+    "labelsAr": [
+      "النسيج المستهدف",
+      "مسار إبرة العينة",
+      "التوجيه بالتصوير"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "blepharoplasty": {
+    "procedureNameEn": "Blepharoplasty",
+    "procedureNameAr": "رأب الجفن",
+    "specialtyNameEn": "Ophthalmology",
+    "specialtyNameAr": "طب العيون",
+    "specialtyCode": "OPHTHALMOLOGY",
+    "anatomyRegion": "Upper and/or lower eyelids",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/ophthalmology/blepharoplasty/blepharoplasty_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/ophthalmology/blepharoplasty/blepharoplasty_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/ophthalmology/blepharoplasty/blepharoplasty_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Upper eyelid fold",
+      "Eye anatomy",
+      "Planned contour area"
+    ],
+    "labelsAr": [
+      "ثنية الجفن العلوي",
+      "تشريح العين",
+      "منطقة التحديد المخطط"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "blood-and-blood-products-transfusion-consent": {
+    "procedureNameEn": "Blood and blood products transfusion consent",
+    "procedureNameAr": "موافقة نقل الدم ومشتقاته",
+    "specialtyNameEn": "Transfusion Medicine / Blood Transfusion",
+    "specialtyNameAr": "طب نقل الدم / نقل الدم",
+    "specialtyCode": "TRANSFUSION_MEDICINE",
+    "anatomyRegion": "Intravenous line, blood bag, and infusion pathway",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/transfusion-medicine/blood-and-blood-products-transfusion-consent/blood-and-blood-products-transfusion-consent_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/transfusion-medicine/blood-and-blood-products-transfusion-consent/blood-and-blood-products-transfusion-consent_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/transfusion-medicine/blood-and-blood-products-transfusion-consent/blood-and-blood-products-transfusion-consent_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Blood bag / product",
+      "IV line pathway",
+      "Patient vein access"
+    ],
+    "labelsAr": [
+      "كيس الدم / المشتق",
+      "مسار الخط الوريدي",
+      "الوصول إلى وريد المريض"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "breast-abscess-haematoma": {
+    "procedureNameEn": "Breast Abscess Haematoma",
+    "procedureNameAr": "خراج أو تجمع دموي في الثدي",
+    "specialtyNameEn": "Breast Surgery",
+    "specialtyNameAr": "جراحة الثدي",
+    "specialtyCode": "BREAST_SURGERY",
+    "anatomyRegion": "Breast abscess cavity",
+    "illustrationType": "anatomy_procedure_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-abscess-haematoma/breast-abscess-haematoma_anatomy_procedure_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-abscess-haematoma/breast-abscess-haematoma_anatomy_procedure_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-abscess-haematoma/breast-abscess-haematoma_anatomy_procedure_education_v1_draft.png",
+    "labelsEn": [
+      "Breast tissue",
+      "Fluid collection / haematoma area",
+      "Drainage or treatment path"
+    ],
+    "labelsAr": [
+      "نسيج الثدي",
+      "منطقة تجمع السوائل / التجمع الدموي",
+      "مسار التصريف أو العلاج"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  },
+  "breast-biopsy-aspiration": {
+    "procedureNameEn": "Breast Biopsy Aspiration",
+    "procedureNameAr": "خزعة أو بزل من الثدي",
+    "specialtyNameEn": "Breast Surgery",
+    "specialtyNameAr": "جراحة الثدي",
+    "specialtyCode": "BREAST_SURGERY",
+    "anatomyRegion": "Breast tissue and target lesion",
+    "illustrationType": "process_education",
+    "procedureImageUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-biopsy-aspiration/breast-biopsy-aspiration_process_education_v1_draft.png",
+    "imageBaseUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-biopsy-aspiration/breast-biopsy-aspiration_process_education_v1_draft.png",
+    "imageEnUrl": "apps/web/public/educational/clinical-illustrations/breast-surgery/breast-biopsy-aspiration/breast-biopsy-aspiration_process_education_v1_draft.png",
+    "labelsEn": [
+      "Breast tissue",
+      "Target sample area",
+      "Biopsy / aspiration needle path"
+    ],
+    "labelsAr": [
+      "نسيج الثدي",
+      "منطقة أخذ العينة المستهدفة",
+      "مسار إبرة الخزعة / البزل"
+    ],
+    "languageDirection": "both",
+    "imageReviewStatus": "pending_clinical_review",
+    "productionStatus": "generated_by_chatgpt_draft",
+    "integrationStatus": "provisionally_integrated",
+    "patientFacing": false,
+    "arabicReviewStatus": "pending_clinical_translation_review",
+    "notes": "Draft clinical education illustration generated using ChatGPT; requires clinical and Arabic translation review before patient-facing activation."
+  }
+}

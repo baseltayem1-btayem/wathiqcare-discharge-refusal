@@ -1,397 +1,52 @@
 /**
- * Approved Healthcare Consent Platform Design — Patient Workflow
+ * Approved WathiqCare Patient Secure Signing Journey
  *
- * Ports the 7 approved patient screens (Landing / OTP / Education /
- * Consent Review / Decision / Signature / Confirmation) plus the refusal
- * branch, verbatim from design/figma/wathiqcare-v1.1/src/app/App.tsx, and
- * wires every screen to the real WathiqCare public-signing APIs:
+ * Production-ready, bilingual patient workflow split into focused step
+ * components. Preserves the public-signing backend contract:
  *
- *   - GET  /api/public-signing/document/[token]          (bootstrap + full doc)
- *   - POST /api/sign/[token]/request-otp                 (real OTP via SMS+email)
- *   - POST /api/sign/[token]/verify-otp                  (HttpOnly session cookie)
+ *   - GET  /api/public-signing/document/[token]
+ *   - POST /api/sign/[token]/request-otp
+ *   - POST /api/sign/[token]/verify-otp
  *   - POST /api/public-signing/document/[token]/education
  *   - POST /api/public-signing/document/[token]/decision
- *   - POST /api/public-signing/document/[token]/sign     (canvas data URL)
- *
- * NOTE on screen order: the approved Vite design lists OTP between Decision
- * and Signature (step 5 of 7). The production OTP engine is server-enforced
- * to gate every authenticated read (education / decision / signature). To
- * preserve every approved screen visually while honoring the immutable OTP
- * contract, OTP is rendered immediately after Landing and the remaining
- * approved screens (Education / Review / Decision / Signature / Confirmation)
- * follow. No screen is removed, redesigned, or replaced.
+ *   - POST /api/public-signing/document/[token]/sign
+ *   - GET  /api/public/informed-consents/signing/[token]/final-pdf
  */
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { Card, type Lang } from "../shared";
 import {
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  AlertCircle,
-  AlertTriangle,
-  Building2,
-  Check,
-  CheckCircle,
-  ChevronRight,
-  Clock,
-  Download,
-  FileText,
-  Hash,
-  Info,
-  Loader2,
-  Lock,
-  MoreVertical,
-  Phone,
-  Shield,
-  Stethoscope,
-  User,
-  XCircle,
-} from "lucide-react";
-
-import {
-  Alert,
-  Card,
-  cls,
-  MobileHeader,
-  SecureNoticeBadge,
-  type Lang,
-} from "../shared";
-
-/* ════════════════════════════════════════════════════════════════════════
- *  Server contract types (mirror PublicSigningWorkflow payloads)
- * ════════════════════════════════════════════════════════════════════════ */
-
-type Bootstrap = {
-  documentId: string;
-  moduleType: "INFORMED_CONSENT" | "DISCHARGE_REFUSAL" | "LEGAL_CONSENT" | string;
-  signerRole: "PATIENT" | "GUARDIAN" | string;
-  facilityName?: string | null;
-  templateTitleAr?: string | null;
-  templateTitleEn?: string | null;
-  locale?: "ar" | "en" | "bilingual" | string | null;
-  educationRequired?: boolean;
-  maskedMobile?: string | null;
-  otpRequiredAt?: string | null;
-};
-
-type Section = {
-  id: string;
-  sectionKey?: string;
-  sectionKind?: string;
-  titleAr?: string | null;
-  titleEn?: string | null;
-  contentAr?: string | null;
-  contentEn?: string | null;
-};
-
-type EducationFaq = {
-  questionAr?: string | null;
-  questionEn?: string | null;
-  answerAr?: string | null;
-  answerEn?: string | null;
-};
-
-type EducationListItem = { ar?: string | null; en?: string | null };
-
-type EducationPayload = {
-  required?: boolean;
-  packageId?: string | null;
-  packageKey?: string | null;
-  titleAr?: string | null;
-  titleEn?: string | null;
-  versionId?: string | null;
-  versionLabel?: string | null;
-  summary?: { ar?: string | null; en?: string | null } | null;
-  risks?: EducationListItem[] | null;
-  benefits?: EducationListItem[] | null;
-  faq?: EducationFaq[] | null;
-  preProcedureInstructions?: EducationListItem[] | null;
-  postProcedureInstructions?: EducationListItem[] | null;
-  completed?: boolean;
-  patientAcknowledged?: boolean;
-};
-
-type DecisionPayload = {
-  status?: "UNDECIDED" | "CONSENT_ACCEPTED" | "CONSENT_REFUSED" | string;
-  consentPresentedAt?: string | null;
-  selectedAt?: string | null;
-  refusalAcknowledged?: boolean;
-  refusalAcknowledgedAt?: string | null;
-  refusalForm?: {
-    statementAr?: string | null;
-    statementEn?: string | null;
-    acknowledgementAr?: string | null;
-    acknowledgementEn?: string | null;
-    formHash?: string | null;
-  } | null;
-};
-
-type FullDocument = {
-  documentId: string;
-  consentReference?: string | null;
-  status?: string;
-  signerRole?: string;
-  patientName?: string | null;
-  patientMrn?: string | null;
-  mrn?: string | null;
-  physicianName?: string | null;
-  diagnosis?: string | null;
-  plannedProcedure?: string | null;
-  templateTitleAr?: string | null;
-  templateTitleEn?: string | null;
-  versionLabel?: string | null;
-  facilityName?: string | null;
-  sections?: Section[];
-  legalTextAr?: string | null;
-  legalTextEn?: string | null;
-  pdplTextAr?: string | null;
-  pdplTextEn?: string | null;
-  signatureCaptured?: boolean;
-  decision?: DecisionPayload | null;
-  education?: EducationPayload | null;
-};
-
-type DocumentResponse =
-  | { phase: "pre-otp"; bootstrap: Bootstrap }
-  | (FullDocument & { phase?: undefined });
-
-type SignatureResult = {
-  documentId: string;
-  signatureId: string;
-  status: string;
-  signerName: string;
-  signedAt: string;
-  evidence?: {
-    documentHash?: string | null;
-    otpHash?: string | null;
-    educationCompleted?: boolean;
-    patientAcknowledged?: boolean;
-    decisionStatus?: string;
-  } | null;
-};
-
-/* ════════════════════════════════════════════════════════════════════════
- *  Screens
- * ════════════════════════════════════════════════════════════════════════ */
-
-type PatientScreen =
-  | "landing"
-  | "otp"
-  | "education"
-  | "review"
-  | "decision"
-  | "signature"
-  | "confirmation"
-  | "refusal-ack"
-  | "refusal-signature"
-  | "refusal-confirmed";
-
-/* ════════════════════════════════════════════════════════════════════════
- *  Helpers
- * ════════════════════════════════════════════════════════════════════════ */
-
-function pickLocalized(
-  lang: Lang,
-  ar?: string | null,
-  en?: string | null,
-): string {
-  const isAr = lang === "ar";
-  if (isAr) return (ar?.trim() || en?.trim() || "").toString();
-  return (en?.trim() || ar?.trim() || "").toString();
-}
-
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    credentials: "include",
-    cache: "no-store",
-    ...init,
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    let message = `HTTP ${res.status}`;
-    try {
-      const data = text ? JSON.parse(text) : null;
-      if (data && typeof data.error === "string") message = data.error;
-    } catch {
-      /* ignore */
-    }
-    const error = new Error(message) as Error & { status?: number };
-    error.status = res.status;
-    throw error;
-  }
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    return text as unknown as T;
-  }
-}
-
-function formatTimestamp(iso: string, lang: Lang): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(lang === "ar" ? "ar-SA" : "en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-}
-
-function shortHash(s?: string | null): string {
-  if (!s) return "—";
-  return `${s.slice(0, 8)}…${s.slice(-6)}`;
-}
-
-/* ════════════════════════════════════════════════════════════════════════
- *  Signature canvas — real pointer capture → data URL
- * ════════════════════════════════════════════════════════════════════════ */
-
-type SignaturePadHandle = {
-  isEmpty(): boolean;
-  clear(): void;
-  toDataUrl(): string | null;
-};
-
-const SignaturePad = (() => {
-  type Props = {
-    lang: Lang;
-    onChange?: (hasInk: boolean) => void;
-    padRef: React.MutableRefObject<SignaturePadHandle | null>;
-  };
-  function Inner({ lang, onChange, padRef }: Props) {
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const drawingRef = useRef(false);
-    const lastRef = useRef<{ x: number; y: number } | null>(null);
-    const [hasInk, setHasInk] = useState(false);
-
-    const resize = useCallback(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ratio = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * ratio;
-      canvas.height = rect.height * ratio;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.scale(ratio, ratio);
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = "#1B4F8A";
-    }, []);
-
-    useEffect(() => {
-      resize();
-      const onResize = () => resize();
-      window.addEventListener("resize", onResize);
-      return () => window.removeEventListener("resize", onResize);
-    }, [resize]);
-
-    const pointFrom = (e: PointerEvent | React.PointerEvent) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return { x: 0, y: 0 };
-      const rect = canvas.getBoundingClientRect();
-      return {
-        x: (e.clientX ?? 0) - rect.left,
-        y: (e.clientY ?? 0) - rect.top,
-      };
-    };
-
-    const start = (e: React.PointerEvent) => {
-      e.preventDefault();
-      (e.target as Element).setPointerCapture?.(e.pointerId);
-      drawingRef.current = true;
-      lastRef.current = pointFrom(e);
-    };
-
-    const move = (e: React.PointerEvent) => {
-      if (!drawingRef.current) return;
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d");
-      if (!canvas || !ctx) return;
-      const p = pointFrom(e);
-      const last = lastRef.current || p;
-      ctx.beginPath();
-      ctx.moveTo(last.x, last.y);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-      lastRef.current = p;
-      if (!hasInk) {
-        setHasInk(true);
-        onChange?.(true);
-      }
-    };
-
-    const end = () => {
-      drawingRef.current = false;
-      lastRef.current = null;
-    };
-
-    useImperativeHandle(padRef, () => ({
-      isEmpty: () => !hasInk,
-      clear: () => {
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext("2d");
-        if (!canvas || !ctx) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        setHasInk(false);
-        onChange?.(false);
-      },
-      toDataUrl: () => {
-        const canvas = canvasRef.current;
-        if (!canvas || !hasInk) return null;
-        return canvas.toDataURL("image/png");
-      },
-    }));
-
-    return (
-      <div
-        className={cls(
-          "relative rounded-xl border-2 bg-white overflow-hidden touch-none select-none",
-          hasInk
-            ? "border-primary"
-            : "border-dashed border-border",
-        )}
-        style={{ height: 180 }}
-      >
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 w-full h-full cursor-crosshair"
-          onPointerDown={start}
-          onPointerMove={move}
-          onPointerUp={end}
-          onPointerCancel={end}
-          onPointerLeave={end}
-        />
-        {!hasInk ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
-            <div className="w-8 h-0.5 bg-muted-foreground/30 rounded" />
-            <p className="text-xs text-muted-foreground">
-              {lang === "ar" ? "ارسم توقيعك هنا" : "Draw your signature here"}
-            </p>
-          </div>
-        ) : null}
-        <div className="absolute bottom-8 left-8 right-8 h-px bg-muted-foreground/20" />
-      </div>
-    );
-  }
-  return Inner;
-})();
-
-/* ════════════════════════════════════════════════════════════════════════
- *  Component
- * ════════════════════════════════════════════════════════════════════════ */
+  DocumentResponse,
+  fetchJson,
+  FullDocument,
+  PatientScreen,
+  pickLocalized,
+  SignatureResult,
+} from "./types";
+import { PatientCompletionStep } from "./PatientCompletionStep";
+import { PatientJourneyScreen } from "./PatientJourneyScreen";
+import { PatientSignatureStep } from "./PatientSignatureStep";
+import { RefusalAcknowledgementStep } from "./RefusalAcknowledgementStep";
+import { ReviewRequestStep } from "./ReviewRequestStep";
+import { OtpVerificationStep } from "./OtpVerificationStep";
+import { EducationMaterialsStep } from "./EducationMaterialsStep";
+import { UnderstandingAcknowledgementStep } from "./UnderstandingAcknowledgementStep";
+import { SignaturePadHandle } from "./SignaturePad";
 
 export type ApprovedPatientWorkflowProps = {
   token: string;
   initialLang?: Lang;
+};
+
+const STEP_MAP: Record<Exclude<PatientScreen, "refusal-ack" | "refusal-signature" | "refusal-confirmed">, number> = {
+  review: 1,
+  otp: 2,
+  education: 3,
+  acknowledgement: 4,
+  signature: 5,
+  confirmation: 5,
 };
 
 export function ApprovedPatientWorkflow({
@@ -399,9 +54,9 @@ export function ApprovedPatientWorkflow({
   initialLang = "ar",
 }: ApprovedPatientWorkflowProps) {
   const [lang, setLang] = useState<Lang>(initialLang);
-  const [screen, setScreen] = useState<PatientScreen>("landing");
+  const [screen, setScreen] = useState<PatientScreen>("review");
 
-  const [bootstrap, setBootstrap] = useState<Bootstrap | null>(null);
+  const [bootstrap, setBootstrap] = useState<FullDocument | null>(null);
   const [doc, setDoc] = useState<FullDocument | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -412,31 +67,23 @@ export function ApprovedPatientWorkflow({
   const [otpDigits, setOtpDigits] = useState<string[]>([
     "", "", "", "", "", "",
   ]);
-  const otpInputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const [otpStage, setOtpStage] = useState<"request" | "verify">("request");
   const [otpRequesting, setOtpRequesting] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
-  const [otpStage, setOtpStage] = useState<"request" | "verify">("request");
   const [otpError, setOtpError] = useState<string | null>(null);
   const [otpExpiresAt, setOtpExpiresAt] = useState<string | null>(null);
   const [maskedPhone, setMaskedPhone] = useState<string | null>(null);
-  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(
-    null,
-  );
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
 
   /* Education state */
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [educationEventLogged, setEducationEventLogged] = useState(false);
   const [educationCompleting, setEducationCompleting] = useState(false);
-
-  /* Review state */
-  const [reviewAcked, setReviewAcked] = useState(false);
 
   /* Decision state */
   const [decisionSubmitting, setDecisionSubmitting] = useState(false);
   const [decisionError, setDecisionError] = useState<string | null>(null);
 
   /* Refusal state */
-  const [refusalAcked, setRefusalAcked] = useState(false);
   const [refusalAckSubmitting, setRefusalAckSubmitting] = useState(false);
 
   /* Signature state */
@@ -460,29 +107,62 @@ export function ApprovedPatientWorkflow({
         `/api/public-signing/document/${encodeURIComponent(token)}`,
       );
       if ("phase" in data && data.phase === "pre-otp") {
-        setBootstrap(data.bootstrap);
+        setBootstrap({
+          documentId: data.bootstrap.documentId,
+          consentReference: null,
+          status: "PRE_OTP",
+          signerRole: data.bootstrap.signerRole,
+          patientName: null,
+          patientMrn: null,
+          mrn: null,
+          physicianName: null,
+          diagnosis: null,
+          plannedProcedure: null,
+          templateTitleAr: data.bootstrap.templateTitleAr,
+          templateTitleEn: data.bootstrap.templateTitleEn,
+          versionLabel: null,
+          facilityName: data.bootstrap.facilityName,
+          sections: [],
+          legalTextAr: null,
+          legalTextEn: null,
+          pdplTextAr: null,
+          pdplTextEn: null,
+          signatureCaptured: false,
+          decision: null,
+          education: null,
+          illustrations: [],
+        });
         setDoc(null);
         return "pre-otp" as const;
       }
       setDoc(data as FullDocument);
-      // facility name may come from bootstrap; preserve if present
       setBootstrap((b) =>
-        b
-          ? b
-          : {
-              documentId: (data as FullDocument).documentId,
-              moduleType: "INFORMED_CONSENT",
-              signerRole: (data as FullDocument).signerRole || "PATIENT",
-              facilityName: (data as FullDocument).facilityName ?? null,
-              templateTitleAr: (data as FullDocument).templateTitleAr ?? null,
-              templateTitleEn: (data as FullDocument).templateTitleEn ?? null,
-              locale: "bilingual",
-              educationRequired: Boolean(
-                (data as FullDocument).education?.required,
-              ),
-            },
+        b ?? {
+          documentId: (data as FullDocument).documentId,
+          consentReference: (data as FullDocument).consentReference,
+          status: (data as FullDocument).status,
+          signerRole: (data as FullDocument).signerRole,
+          patientName: (data as FullDocument).patientName,
+          patientMrn: (data as FullDocument).patientMrn,
+          mrn: (data as FullDocument).mrn,
+          physicianName: (data as FullDocument).physicianName,
+          diagnosis: (data as FullDocument).diagnosis,
+          plannedProcedure: (data as FullDocument).plannedProcedure,
+          templateTitleAr: (data as FullDocument).templateTitleAr,
+          templateTitleEn: (data as FullDocument).templateTitleEn,
+          versionLabel: (data as FullDocument).versionLabel,
+          facilityName: (data as FullDocument).facilityName,
+          sections: (data as FullDocument).sections,
+          legalTextAr: (data as FullDocument).legalTextAr,
+          legalTextEn: (data as FullDocument).legalTextEn,
+          pdplTextAr: (data as FullDocument).pdplTextAr,
+          pdplTextEn: (data as FullDocument).pdplTextEn,
+          signatureCaptured: (data as FullDocument).signatureCaptured,
+          decision: (data as FullDocument).decision,
+          education: (data as FullDocument).education,
+          illustrations: (data as FullDocument).illustrations,
+        },
       );
-      // pre-fill signer name from real patient name
       const realName = (data as FullDocument).patientName?.trim();
       if (realName) setSignerName((current) => current || realName);
       return "full" as const;
@@ -501,15 +181,13 @@ export function ApprovedPatientWorkflow({
   }, [token, lang]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadDocument();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, loadDocument]);
 
   /* ── Derived display values from real data ───────────────────────── */
   const facilityName =
-    doc?.facilityName ||
-    bootstrap?.facilityName ||
-    (lang === "ar" ? "—" : "—");
+    doc?.facilityName || bootstrap?.facilityName || (lang === "ar" ? "—" : "—");
   const procedureTitle = pickLocalized(
     lang,
     doc?.templateTitleAr || bootstrap?.templateTitleAr,
@@ -519,7 +197,7 @@ export function ApprovedPatientWorkflow({
   const patientName = doc?.patientName?.trim() || "";
   const patientMrn = doc?.patientMrn?.trim() || doc?.mrn?.trim() || "";
   const educationRequired =
-    bootstrap?.educationRequired ?? doc?.education?.required ?? false;
+    bootstrap?.education?.required ?? doc?.education?.required ?? false;
   const consentRef = doc?.consentReference?.trim() || "";
   const versionLabel = doc?.versionLabel?.trim() || "";
 
@@ -561,9 +239,7 @@ export function ApprovedPatientWorkflow({
     const m = mobile.trim();
     if (m.length < 7) {
       setOtpError(
-        lang === "ar"
-          ? "أدخل رقم جوال صحيح"
-          : "Enter a valid mobile number",
+        lang === "ar" ? "أدخل رقم جوال صحيح" : "Enter a valid mobile number",
       );
       return;
     }
@@ -576,53 +252,24 @@ export function ApprovedPatientWorkflow({
         deliveryStatus?: string;
         fallbackMode?: boolean;
         maskedPhone?: string;
-      }>(
-        `/api/sign/${encodeURIComponent(token)}/request-otp`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ mobileNumber: m, locale: lang }),
-        },
-      );
+      }>(`/api/sign/${encodeURIComponent(token)}/request-otp`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mobileNumber: m, locale: lang }),
+      });
       setOtpExpiresAt(data.expiresAt || null);
       setMaskedPhone(data.maskedPhone || m.replace(/.(?=.{4})/g, "*"));
       setOtpStage("verify");
-      setTimeout(() => otpInputsRef.current[0]?.focus(), 50);
     } catch (err) {
       const e = err as Error;
       setOtpError(
         e.message ||
-          (lang === "ar"
-            ? "تعذر إرسال رمز التحقق"
-            : "Unable to send OTP"),
+          (lang === "ar" ? "تعذر إرسال رمز التحقق" : "Unable to send OTP"),
       );
     } finally {
       setOtpRequesting(false);
     }
   }, [mobile, lang, token]);
-
-  const handleOtpDigitChange = useCallback(
-    (idx: number, value: string) => {
-      if (!/^\d*$/.test(value)) return;
-      const ch = value.slice(-1);
-      setOtpDigits((cur) => {
-        const next = [...cur];
-        next[idx] = ch;
-        return next;
-      });
-      if (ch && idx < 5) otpInputsRef.current[idx + 1]?.focus();
-    },
-    [],
-  );
-
-  const handleOtpKey = useCallback(
-    (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Backspace" && !otpDigits[idx] && idx > 0) {
-        otpInputsRef.current[idx - 1]?.focus();
-      }
-    },
-    [otpDigits],
-  );
 
   const handleVerifyOtp = useCallback(async () => {
     const code = otpDigits.join("");
@@ -640,14 +287,11 @@ export function ApprovedPatientWorkflow({
       const data = await fetchJson<{
         verified: boolean;
         attemptsRemaining?: number;
-      }>(
-        `/api/sign/${encodeURIComponent(token)}/verify-otp`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ otpCode: code }),
-        },
-      );
+      }>(`/api/sign/${encodeURIComponent(token)}/verify-otp`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ otpCode: code }),
+      });
       if (!data.verified) {
         setAttemptsRemaining(data.attemptsRemaining ?? null);
         setOtpError(
@@ -656,12 +300,11 @@ export function ApprovedPatientWorkflow({
             : "Incorrect code. Please try again.",
         );
         setOtpDigits(["", "", "", "", "", ""]);
-        otpInputsRef.current[0]?.focus();
         return;
       }
       const phase = await loadDocument();
       if (phase === "full") {
-        setScreen(educationRequired ? "education" : "review");
+        setScreen(educationRequired ? "education" : "acknowledgement");
       }
     } catch (err) {
       const e = err as Error & { status?: number };
@@ -682,9 +325,7 @@ export function ApprovedPatientWorkflow({
       } else {
         setOtpError(
           e.message ||
-            (lang === "ar"
-              ? "تعذر التحقق من الرمز"
-              : "OTP verification failed"),
+            (lang === "ar" ? "تعذر التحقق من الرمز" : "OTP verification failed"),
         );
       }
     } finally {
@@ -693,7 +334,7 @@ export function ApprovedPatientWorkflow({
   }, [otpDigits, lang, token, loadDocument, educationRequired]);
 
   /* ════════════════════════════════════════════════════════════════
-   *  Education action — mark completed + acknowledged then advance
+   *  Education action
    * ════════════════════════════════════════════════════════════════ */
 
   const handleCompleteEducation = useCallback(async () => {
@@ -723,10 +364,9 @@ export function ApprovedPatientWorkflow({
           }),
         },
       );
-      setScreen("review");
-    } catch (err) {
-      /* server may 409 if already completed — proceed anyway */
-      setScreen("review");
+      setScreen("acknowledgement");
+    } catch {
+      setScreen("acknowledgement");
     } finally {
       setEducationCompleting(false);
     }
@@ -752,7 +392,6 @@ export function ApprovedPatientWorkflow({
         if (eventType === "CONSENT_ACCEPTED") {
           setScreen("signature");
         } else {
-          // reload to surface server-generated refusalForm
           await loadDocument();
           setScreen("refusal-ack");
         }
@@ -760,9 +399,7 @@ export function ApprovedPatientWorkflow({
         const e = err as Error;
         setDecisionError(
           e.message ||
-            (lang === "ar"
-              ? "تعذر تسجيل القرار"
-              : "Decision recording failed"),
+            (lang === "ar" ? "تعذر تسجيل القرار" : "Decision recording failed"),
         );
       } finally {
         setDecisionSubmitting(false);
@@ -791,9 +428,7 @@ export function ApprovedPatientWorkflow({
       const e = err as Error;
       setDecisionError(
         e.message ||
-          (lang === "ar"
-            ? "تعذر تسجيل الإقرار"
-            : "Acknowledgement failed"),
+          (lang === "ar" ? "تعذر تسجيل الإقرار" : "Acknowledgement failed"),
       );
     } finally {
       setRefusalAckSubmitting(false);
@@ -879,1371 +514,168 @@ export function ApprovedPatientWorkflow({
     );
   }
 
-  const dir = lang === "ar" ? "rtl" : "ltr";
-  const langClass = lang === "ar" ? "font-[Noto_Sans_Arabic]" : "font-[Inter]";
+  const activeStep = STEP_MAP[screen as keyof typeof STEP_MAP];
+  const stepProp = activeStep ? activeStep : undefined;
 
-  /* ───── Landing ───── */
-  if (screen === "landing") {
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
+  const screenBack = (): PatientScreen | undefined => {
+    switch (screen) {
+      case "otp":
+        return "review";
+      case "education":
+        return "otp";
+      case "acknowledgement":
+        return educationRequired ? "education" : "otp";
+      case "signature":
+        return "acknowledgement";
+      case "refusal-ack":
+        return "acknowledgement";
+      case "refusal-signature":
+        return "refusal-ack";
+      default:
+        return undefined;
+    }
+  };
+
+  const onBack = screenBack()
+    ? () => setScreen(screenBack() as PatientScreen)
+    : undefined;
+
+  return (
+    <PatientJourneyScreen
+      lang={lang}
+      facilityName={facilityName}
+      step={stepProp}
+      onLangToggle={toggleLang}
+      onBack={onBack}
+    >
+      {screen === "review" && bootstrap ? (
+        <ReviewRequestStep
           lang={lang}
-          title={lang === "ar" ? "الموافقة الطبية" : "Medical Consent"}
-          onLangToggle={toggleLang}
+          facilityName={facilityName}
+          procedureTitle={procedureTitle}
+          physicianName={physicianName}
+          patientName={patientName}
+          patientMrn={patientMrn}
+          consentRef={consentRef}
+          versionLabel={versionLabel}
+          onProceed={() => setScreen("otp")}
         />
-        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
-          <div
-            className={cls(
-              "flex flex-col gap-1",
-              lang === "ar" ? "items-end text-right" : "items-start text-left",
-            )}
-          >
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mb-1">
-              <FileText size={22} className="text-white" />
-            </div>
-            <h1 className="text-xl font-bold text-foreground leading-tight">
-              {lang === "ar" ? "موافقة طبية إلكترونية" : "Electronic Medical Consent"}
-            </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {lang === "ar"
-                ? "مرحباً، نطلب منك مراجعة وتوقيع موافقة طبية رسمية."
-                : "Welcome, we ask you to review and sign an official medical consent."}
-            </p>
-          </div>
+      ) : null}
 
-          {patientName ? (
-            <Card className="p-4">
-              <div
-                className={cls(
-                  "flex items-center gap-3",
-                  lang === "ar" && "flex-row-reverse",
-                )}
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <User size={18} className="text-primary" />
-                </div>
-                <div
-                  className={cls(
-                    "flex-1",
-                    lang === "ar" ? "text-right" : "text-left",
-                  )}
-                >
-                  <p className="text-sm font-semibold text-foreground">
-                    {patientName}
-                  </p>
-                  {patientMrn ? (
-                    <p className="text-xs font-mono text-muted-foreground">
-                      {patientMrn}
-                    </p>
-                  ) : null}
-                </div>
-                <CheckCircle size={16} className="text-emerald-500" />
-              </div>
-            </Card>
-          ) : null}
-
-          <Card className="p-4 flex flex-col gap-3">
-            <div
-              className={cls(
-                "flex flex-col gap-1",
-                lang === "ar" ? "text-right" : "text-left",
-              )}
-            >
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                {lang === "ar" ? "نوع الموافقة" : "Consent Type"}
-              </p>
-              <p className="text-sm font-semibold text-foreground leading-snug">
-                {procedureTitle || (lang === "ar" ? "—" : "—")}
-              </p>
-              {versionLabel ? (
-                <p className="text-[10px] font-mono text-muted-foreground">
-                  {versionLabel}
-                </p>
-              ) : null}
-            </div>
-            <div className="h-px bg-border" />
-            {physicianName ? (
-              <div
-                className={cls(
-                  "flex items-center gap-2",
-                  lang === "ar" ? "flex-row-reverse" : "flex-row",
-                )}
-              >
-                <Stethoscope size={14} className="text-muted-foreground shrink-0" />
-                <p className="text-xs text-muted-foreground">{physicianName}</p>
-              </div>
-            ) : null}
-            <div
-              className={cls(
-                "flex items-center gap-2",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <Building2 size={14} className="text-muted-foreground shrink-0" />
-              <p className="text-xs text-muted-foreground">{facilityName}</p>
-            </div>
-          </Card>
-
-          <SecureNoticeBadge lang={lang} />
-
-          <Alert type="info" lang={lang}>
-            {lang === "ar"
-              ? "هذا الطلب صادر رسمياً من الفريق الطبي. لا يُطلب منك أي دفع."
-              : "This request is officially issued by your medical team. No payment is required."}
-          </Alert>
-
-          <button
-            onClick={() => setScreen("otp")}
-            className={cls(
-              "w-full py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors active:scale-[0.99]",
-              lang === "ar" ? "flex-row-reverse" : "flex-row",
-            )}
-          >
-            {lang === "ar" ? "متابعة" : "Proceed"}
-            <ChevronRight size={16} className={lang === "ar" ? "rotate-180" : ""} />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ───── OTP ───── */
-  if (screen === "otp") {
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
+      {screen === "otp" ? (
+        <OtpVerificationStep
           lang={lang}
-          title={lang === "ar" ? "التحقق برمز OTP" : "OTP Verification"}
-          onLangToggle={toggleLang}
-          onBack={() => setScreen("landing")}
+          mobile={mobile}
+          setMobile={setMobile}
+          otpDigits={otpDigits}
+          setOtpDigits={setOtpDigits}
+          otpStage={otpStage}
+          setOtpStage={setOtpStage}
+          maskedPhone={maskedPhone}
+          otpExpiresAt={otpExpiresAt}
+          attemptsRemaining={attemptsRemaining}
+          otpError={otpError}
+          otpRequesting={otpRequesting}
+          otpVerifying={otpVerifying}
+          onRequest={handleRequestOtp}
+          onVerify={handleVerifyOtp}
         />
-        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full items-center">
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-            <Phone size={24} className="text-primary" />
-          </div>
-          <div
-            className={cls(
-              "flex flex-col gap-1 w-full",
-              lang === "ar" ? "items-end text-right" : "items-start text-left",
-            )}
-          >
-            <h1 className="text-lg font-bold text-foreground">
-              {lang === "ar" ? "التحقق برمز OTP" : "OTP Verification"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {otpStage === "request"
-                ? lang === "ar"
-                  ? "أدخل رقم جوالك لاستلام رمز التحقق عبر رسالة SMS."
-                  : "Enter your mobile number to receive the OTP via SMS."
-                : lang === "ar"
-                  ? "أدخل الرمز المرسل إلى جوالك."
-                  : "Enter the code sent to your mobile."}
-            </p>
-            {otpStage === "verify" && maskedPhone ? (
-              <p className="text-sm font-mono font-semibold text-primary">
-                {maskedPhone}
-              </p>
-            ) : null}
-          </div>
+      ) : null}
 
-          {otpStage === "request" ? (
-            <div className="w-full flex flex-col gap-3">
-              <input
-                type="tel"
-                inputMode="tel"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                placeholder={lang === "ar" ? "+9665XXXXXXXX" : "+9665XXXXXXXX"}
-                className="w-full px-3 py-3 rounded-lg border-2 border-border bg-card text-sm focus:outline-none focus:border-primary"
-                dir="ltr"
-              />
-              {otpError ? (
-                <Alert type="warning" lang={lang}>{otpError}</Alert>
-              ) : null}
-              <button
-                onClick={handleRequestOtp}
-                disabled={otpRequesting}
-                className={cls(
-                  "w-full py-3.5 rounded-lg font-semibold text-sm transition-colors",
-                  otpRequesting
-                    ? "bg-muted text-muted-foreground"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90",
-                )}
-              >
-                {otpRequesting
-                  ? lang === "ar"
-                    ? "جارٍ الإرسال…"
-                    : "Sending…"
-                  : lang === "ar"
-                    ? "إرسال الرمز"
-                    : "Send Code"}
-              </button>
-            </div>
-          ) : (
-            <div className="w-full flex flex-col gap-4 items-center">
-              <div className="flex gap-2 justify-center" dir="ltr">
-                {otpDigits.map((d, i) => (
-                  <input
-                    key={i}
-                    ref={(el) => {
-                      otpInputsRef.current[i] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={d}
-                    onChange={(e) => handleOtpDigitChange(i, e.target.value)}
-                    onKeyDown={(e) => handleOtpKey(i, e)}
-                    aria-label={`OTP digit ${i + 1}`}
-                    className={cls(
-                      "w-11 h-13 text-center text-xl font-bold rounded-lg border-2 bg-card focus:outline-none transition-colors",
-                      d ? "border-primary text-primary" : "border-border text-foreground",
-                    )}
-                  />
-                ))}
-              </div>
-              {otpExpiresAt ? (
-                <div
-                  className={cls(
-                    "flex items-center gap-1 text-xs text-muted-foreground",
-                    lang === "ar" ? "flex-row-reverse" : "flex-row",
-                  )}
-                >
-                  <Clock size={12} />
-                  <span>
-                    {lang === "ar" ? "صالح حتى" : "Valid until"}{" "}
-                    {formatTimestamp(otpExpiresAt, lang)}
-                  </span>
-                </div>
-              ) : null}
-              {attemptsRemaining !== null && attemptsRemaining > 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {lang === "ar"
-                    ? `محاولات متبقية: ${attemptsRemaining}`
-                    : `Attempts remaining: ${attemptsRemaining}`}
-                </p>
-              ) : null}
-              {otpError ? (
-                <Alert type="warning" lang={lang}>{otpError}</Alert>
-              ) : null}
-              <button
-                onClick={() => {
-                  setOtpStage("request");
-                  setOtpDigits(["", "", "", "", "", ""]);
-                  setOtpError(null);
-                }}
-                className="text-sm text-primary underline-offset-2 hover:underline"
-              >
-                {lang === "ar" ? "إعادة إرسال الرمز" : "Resend code"}
-              </button>
-              <button
-                onClick={handleVerifyOtp}
-                disabled={otpVerifying}
-                className={cls(
-                  "w-full py-3.5 rounded-lg font-semibold text-sm transition-colors",
-                  otpVerifying
-                    ? "bg-muted text-muted-foreground"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90",
-                )}
-              >
-                {otpVerifying
-                  ? lang === "ar"
-                    ? "جارٍ التحقق…"
-                    : "Verifying…"
-                  : lang === "ar"
-                    ? "تحقق"
-                    : "Verify"}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  /* ───── Education ───── */
-  if (screen === "education" && doc?.education) {
-    const ed = doc.education;
-    const summary = pickLocalized(lang, ed.summary?.ar, ed.summary?.en);
-    const benefits = (ed.benefits || []).map((b) =>
-      pickLocalized(lang, b.ar, b.en),
-    );
-    const risks = (ed.risks || []).map((r) => pickLocalized(lang, r.ar, r.en));
-    const faq = ed.faq || [];
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
+      {screen === "education" && doc ? (
+        <EducationMaterialsStep
           lang={lang}
-          title={
-            pickLocalized(lang, ed.titleAr, ed.titleEn) ||
-            (lang === "ar" ? "تثقيف ما قبل الإجراء" : "Pre-Procedure Education")
-          }
-          onLangToggle={toggleLang}
-          onBack={() => setScreen("otp")}
+          doc={doc}
+          onComplete={handleCompleteEducation}
+          completing={educationCompleting}
         />
-        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
-          <div
-            className={cls(
-              "flex flex-col gap-1",
-              lang === "ar" ? "items-end text-right" : "items-start text-left",
-            )}
-          >
-            <h1 className="text-lg font-bold text-foreground">
-              {pickLocalized(lang, ed.titleAr, ed.titleEn) ||
-                (lang === "ar" ? "تثقيف ما قبل الإجراء" : "Pre-Procedure Education")}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {lang === "ar"
-                ? "اقرأ المعلومات التالية بعناية قبل اتخاذ قرارك."
-                : "Please read the following carefully before deciding."}
-            </p>
-          </div>
+      ) : null}
 
-          {summary ? (
-            <Card className="p-4 flex flex-col gap-2">
-              <div
-                className={cls(
-                  "flex items-center gap-2",
-                  lang === "ar" ? "flex-row-reverse" : "flex-row",
-                )}
-              >
-                <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center">
-                  <Info size={13} className="text-blue-600" />
-                </div>
-                <h2 className="text-sm font-semibold text-foreground">
-                  {lang === "ar" ? "ما هو الإجراء؟" : "What is the procedure?"}
-                </h2>
-              </div>
-              <p
-                className={cls(
-                  "text-sm text-muted-foreground leading-relaxed whitespace-pre-line",
-                  lang === "ar" ? "text-right" : "text-left",
-                )}
-              >
-                {summary}
-              </p>
-            </Card>
-          ) : null}
-
-          {benefits.length > 0 ? (
-            <Card className="p-4 flex flex-col gap-2.5">
-              <div
-                className={cls(
-                  "flex items-center gap-2",
-                  lang === "ar" ? "flex-row-reverse" : "flex-row",
-                )}
-              >
-                <div className="w-6 h-6 rounded bg-emerald-100 flex items-center justify-center">
-                  <Check size={13} className="text-emerald-600" />
-                </div>
-                <h2 className="text-sm font-semibold text-foreground">
-                  {lang === "ar" ? "الفوائد" : "Benefits"}
-                </h2>
-              </div>
-              {benefits.map((b, i) => (
-                <div
-                  key={i}
-                  className={cls(
-                    "flex items-start gap-2",
-                    lang === "ar" ? "flex-row-reverse" : "flex-row",
-                  )}
-                >
-                  <CheckCircle size={14} className="text-emerald-500 mt-0.5 shrink-0" />
-                  <span
-                    className={cls(
-                      "text-sm text-foreground/80",
-                      lang === "ar" ? "text-right" : "text-left",
-                    )}
-                  >
-                    {b}
-                  </span>
-                </div>
-              ))}
-            </Card>
-          ) : null}
-
-          {risks.length > 0 ? (
-            <Card className="p-4 flex flex-col gap-2.5">
-              <div
-                className={cls(
-                  "flex items-center gap-2",
-                  lang === "ar" ? "flex-row-reverse" : "flex-row",
-                )}
-              >
-                <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center">
-                  <AlertTriangle size={13} className="text-amber-600" />
-                </div>
-                <h2 className="text-sm font-semibold text-foreground">
-                  {lang === "ar" ? "المخاطر" : "Risks"}
-                </h2>
-              </div>
-              {risks.map((r, i) => (
-                <div
-                  key={i}
-                  className={cls(
-                    "flex items-start gap-2",
-                    lang === "ar" ? "flex-row-reverse" : "flex-row",
-                  )}
-                >
-                  <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
-                  <span
-                    className={cls(
-                      "text-sm text-foreground/80",
-                      lang === "ar" ? "text-right" : "text-left",
-                    )}
-                  >
-                    {r}
-                  </span>
-                </div>
-              ))}
-            </Card>
-          ) : null}
-
-          {(ed.preProcedureInstructions || []).length > 0 ? (
-            <Card className="p-4 flex flex-col gap-2">
-              <div
-                className={cls(
-                  "flex items-center gap-2",
-                  lang === "ar" ? "flex-row-reverse" : "flex-row",
-                )}
-              >
-                <div className="w-6 h-6 rounded bg-purple-100 flex items-center justify-center">
-                  <MoreVertical size={13} className="text-purple-600" />
-                </div>
-                <h2 className="text-sm font-semibold text-foreground">
-                  {lang === "ar" ? "تعليمات قبل الإجراء" : "Pre-Procedure Instructions"}
-                </h2>
-              </div>
-              <ul className="list-disc ps-5 text-sm text-muted-foreground leading-relaxed space-y-1">
-                {(ed.preProcedureInstructions || []).map((i, idx) => (
-                  <li key={idx}>{pickLocalized(lang, i.ar, i.en)}</li>
-                ))}
-              </ul>
-            </Card>
-          ) : null}
-
-          {faq.length > 0 ? (
-            <Card className="overflow-hidden">
-              <div
-                className={cls(
-                  "px-4 py-3 border-b border-border",
-                  lang === "ar" ? "text-right" : "text-left",
-                )}
-              >
-                <h2 className="text-sm font-semibold text-foreground">
-                  {lang === "ar" ? "أسئلة متكررة" : "Frequently Asked"}
-                </h2>
-              </div>
-              {faq.map((item, i) => {
-                const q = pickLocalized(lang, item.questionAr, item.questionEn);
-                const a = pickLocalized(lang, item.answerAr, item.answerEn);
-                return (
-                  <div key={i} className="border-b border-border last:border-0">
-                    <button
-                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                      className={cls(
-                        "w-full px-4 py-3 flex items-center gap-2 hover:bg-muted/50 transition-colors",
-                        lang === "ar"
-                          ? "flex-row-reverse text-right"
-                          : "flex-row text-left",
-                      )}
-                    >
-                      <span className="flex-1 text-sm font-medium text-foreground">
-                        {q}
-                      </span>
-                      <ChevronRight
-                        size={14}
-                        className={cls(
-                          "text-muted-foreground transition-transform shrink-0",
-                          openFaq === i ? "rotate-90" : "",
-                        )}
-                      />
-                    </button>
-                    {openFaq === i ? (
-                      <div
-                        className={cls(
-                          "px-4 pb-3 text-sm text-muted-foreground leading-relaxed",
-                          lang === "ar" ? "text-right" : "text-left",
-                        )}
-                      >
-                        {a}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </Card>
-          ) : null}
-
-          <button
-            onClick={handleCompleteEducation}
-            disabled={educationCompleting}
-            className={cls(
-              "w-full py-3.5 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors",
-              lang === "ar" ? "flex-row-reverse" : "flex-row",
-              educationCompleting
-                ? "bg-muted text-muted-foreground"
-                : "bg-primary text-primary-foreground hover:bg-primary/90",
-            )}
-          >
-            {educationCompleting
-              ? lang === "ar"
-                ? "جارٍ المتابعة…"
-                : "Continuing…"
-              : lang === "ar"
-                ? "متابعة المراجعة"
-                : "Continue to Review"}
-            <ChevronRight size={16} className={lang === "ar" ? "rotate-180" : ""} />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ───── Review ───── */
-  if (screen === "review" && doc) {
-    const legalText = pickLocalized(lang, doc.legalTextAr, doc.legalTextEn);
-    const pdplText = pickLocalized(lang, doc.pdplTextAr, doc.pdplTextEn);
-    const sections = doc.sections || [];
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
+      {screen === "acknowledgement" && doc ? (
+        <UnderstandingAcknowledgementStep
           lang={lang}
-          title={lang === "ar" ? "مراجعة الموافقة" : "Consent Review"}
-          onLangToggle={toggleLang}
-          onBack={() => setScreen(educationRequired ? "education" : "otp")}
+          doc={doc}
+          procedureTitle={procedureTitle}
+          consentRef={consentRef}
+          onAccept={() => submitDecision("CONSENT_ACCEPTED")}
+          onRefuse={() => submitDecision("CONSENT_REFUSED")}
+          submitting={decisionSubmitting}
+          error={decisionError}
         />
-        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
-          <div
-            className={cls(
-              "flex flex-col gap-1",
-              lang === "ar" ? "items-end text-right" : "items-start text-left",
-            )}
-          >
-            <h1 className="text-lg font-bold text-foreground">
-              {lang === "ar" ? "مراجعة الموافقة" : "Consent Review"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {lang === "ar"
-                ? "اقرأ بنود الموافقة بدقة قبل اتخاذ قرارك."
-                : "Read the consent terms carefully before deciding."}
-            </p>
-          </div>
+      ) : null}
 
-          <Card className="p-4 flex flex-col gap-3">
-            <div
-              className={cls(
-                "flex items-center gap-2",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <FileText size={16} className="text-primary" />
-              <h2 className="text-sm font-semibold text-foreground">
-                {procedureTitle}
-              </h2>
-            </div>
-            <div className="h-px bg-border" />
-            <div className="bg-muted/40 rounded p-3 max-h-72 overflow-y-auto space-y-3">
-              {sections.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {lang === "ar" ? "لا يوجد محتوى." : "No content."}
-                </p>
-              ) : (
-                sections.map((s) => {
-                  const title = pickLocalized(lang, s.titleAr, s.titleEn);
-                  const body = pickLocalized(lang, s.contentAr, s.contentEn);
-                  return (
-                    <div key={s.id}>
-                      {title ? (
-                        <p
-                          className={cls(
-                            "text-sm font-semibold text-foreground",
-                            lang === "ar" ? "text-right" : "text-left",
-                          )}
-                        >
-                          {title}
-                        </p>
-                      ) : null}
-                      {body ? (
-                        <p
-                          className={cls(
-                            "text-sm text-foreground/80 leading-relaxed whitespace-pre-line",
-                            lang === "ar" ? "text-right" : "text-left",
-                          )}
-                        >
-                          {body}
-                        </p>
-                      ) : null}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-            {legalText ? (
-              <Alert type="info" lang={lang}>{legalText}</Alert>
-            ) : null}
-          </Card>
-
-          {pdplText ? (
-            <Card className="p-3">
-              <div
-                className={cls(
-                  "flex items-center gap-2 mb-1",
-                  lang === "ar" ? "flex-row-reverse" : "flex-row",
-                )}
-              >
-                <Shield size={12} className="text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  {lang === "ar" ? "حماية البيانات" : "Data Protection"}
-                </span>
-              </div>
-              <p
-                className={cls(
-                  "text-xs text-muted-foreground leading-relaxed",
-                  lang === "ar" ? "text-right" : "text-left",
-                )}
-              >
-                {pdplText}
-              </p>
-            </Card>
-          ) : null}
-
-          {consentRef ? (
-            <Card className="p-3 flex flex-col gap-1">
-              <div
-                className={cls(
-                  "flex items-center gap-2",
-                  lang === "ar" ? "flex-row-reverse" : "flex-row",
-                )}
-              >
-                <Hash size={12} className="text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  {lang === "ar" ? "رقم المرجع" : "Reference"}
-                </span>
-              </div>
-              <p className="font-mono text-[10px] text-muted-foreground break-all">
-                {consentRef}
-              </p>
-            </Card>
-          ) : null}
-
-          <button
-            onClick={() => setReviewAcked((v) => !v)}
-            className={cls(
-              "flex items-start gap-3 p-3 rounded-lg border transition-colors",
-              lang === "ar" ? "flex-row-reverse text-right" : "flex-row text-left",
-              reviewAcked
-                ? "border-primary bg-primary/5"
-                : "border-border bg-card",
-            )}
-          >
-            <div
-              className={cls(
-                "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-                reviewAcked ? "bg-primary border-primary" : "border-border bg-white",
-              )}
-            >
-              {reviewAcked ? <Check size={12} className="text-white" /> : null}
-            </div>
-            <span className="text-sm text-foreground leading-relaxed">
-              {lang === "ar"
-                ? "أقر أنني قرأت بنود الموافقة وفهمتها بالكامل."
-                : "I confirm I have read and fully understood the consent terms."}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setScreen("decision")}
-            disabled={!reviewAcked}
-            className={cls(
-              "w-full py-3.5 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors",
-              lang === "ar" ? "flex-row-reverse" : "flex-row",
-              reviewAcked
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-muted text-muted-foreground cursor-not-allowed",
-            )}
-          >
-            {lang === "ar" ? "اتخاذ القرار" : "Make Decision"}
-            <ChevronRight size={16} className={lang === "ar" ? "rotate-180" : ""} />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ───── Decision ───── */
-  if (screen === "decision" && doc) {
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
+      {screen === "signature" && doc ? (
+        <PatientSignatureStep
           lang={lang}
-          title={lang === "ar" ? "قرارك" : "Your Decision"}
-          onLangToggle={toggleLang}
-          onBack={() => setScreen("review")}
+          patientName={patientName || (lang === "ar" ? "المريض" : "Patient")}
+          patientMrn={patientMrn || (lang === "ar" ? "—" : "—")}
+          signerName={signerName}
+          setSignerName={setSignerName}
+          padRef={padRef}
+          hasInk={signatureHasInk}
+          setHasInk={setSignatureHasInk}
+          onSubmit={() => submitSignature("consent")}
+          submitting={signing}
+          error={signError}
+          mode="consent"
+          onBack={() => setScreen("acknowledgement")}
         />
-        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
-          <div
-            className={cls(
-              "flex flex-col gap-1",
-              lang === "ar" ? "items-end text-right" : "items-start text-left",
-            )}
-          >
-            <h1 className="text-lg font-bold text-foreground">
-              {lang === "ar" ? "قرارك" : "Your Decision"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {lang === "ar"
-                ? "اختر بين الموافقة أو الرفض. كلاهما حق قانوني محفوظ."
-                : "Choose to accept or refuse. Both are legally protected choices."}
-            </p>
-          </div>
+      ) : null}
 
-          {patientName ? (
-            <Card className="p-4">
-              <div
-                className={cls(
-                  "flex items-center gap-3",
-                  lang === "ar" && "flex-row-reverse",
-                )}
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <User size={18} className="text-primary" />
-                </div>
-                <div
-                  className={cls(
-                    "flex-1",
-                    lang === "ar" ? "text-right" : "text-left",
-                  )}
-                >
-                  <p className="text-sm font-semibold text-foreground">
-                    {patientName}
-                  </p>
-                  {patientMrn ? (
-                    <p className="text-xs font-mono text-muted-foreground">
-                      {patientMrn}
-                    </p>
-                  ) : null}
-                </div>
-                <CheckCircle size={16} className="text-emerald-500" />
-              </div>
-            </Card>
-          ) : null}
-
-          <div
-            className={cls(
-              "p-3 rounded-lg bg-muted/50 border border-border flex flex-col gap-1",
-              lang === "ar" ? "text-right" : "text-left",
-            )}
-          >
-            <p className="text-xs text-muted-foreground">
-              {lang === "ar" ? "الإجراء المقترح" : "Proposed Procedure"}
-            </p>
-            <p className="text-sm font-semibold text-foreground">
-              {procedureTitle}
-            </p>
-          </div>
-
-          {decisionError ? (
-            <Alert type="warning" lang={lang}>{decisionError}</Alert>
-          ) : null}
-
-          <div className="flex flex-col gap-3 mt-2">
-            <button
-              onClick={() => submitDecision("CONSENT_ACCEPTED")}
-              disabled={decisionSubmitting}
-              className="w-full rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4 flex flex-col items-center gap-1 hover:border-emerald-400 hover:bg-emerald-100 transition-colors active:scale-[0.99] disabled:opacity-60"
-            >
-              <CheckCircle size={28} className="text-emerald-600" />
-              <span className="text-base font-bold text-emerald-700">
-                {lang === "ar" ? "أوافق على الإجراء" : "I Accept the Procedure"}
-              </span>
-              <span className="text-xs text-emerald-600/70">
-                {lang === "ar"
-                  ? "سيُطلب توقيعك مباشرة"
-                  : "You will sign next"}
-              </span>
-            </button>
-            <button
-              onClick={() => submitDecision("CONSENT_REFUSED")}
-              disabled={decisionSubmitting}
-              className="w-full rounded-xl border-2 border-red-200 bg-red-50 p-4 flex flex-col items-center gap-1 hover:border-red-400 hover:bg-red-100 transition-colors active:scale-[0.99] disabled:opacity-60"
-            >
-              <XCircle size={28} className="text-red-600" />
-              <span className="text-base font-bold text-red-700">
-                {lang === "ar" ? "أرفض الإجراء" : "I Refuse the Procedure"}
-              </span>
-              <span className="text-xs text-red-600/70">
-                {lang === "ar"
-                  ? "سيُسجَّل قرارك ويتم إعلام الفريق الطبي"
-                  : "Your refusal is recorded and the team is notified"}
-              </span>
-            </button>
-          </div>
-
-          <Alert type="info" lang={lang}>
-            {lang === "ar"
-              ? "كلا القرارين مُسجَّل قانونياً بسلسلة مراجعة كاملة."
-              : "Both decisions are legally recorded with a full audit chain."}
-          </Alert>
-        </div>
-      </div>
-    );
-  }
-
-  /* ───── Signature (accept path) ───── */
-  if (screen === "signature" && doc) {
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
+      {screen === "refusal-ack" && doc ? (
+        <RefusalAcknowledgementStep
           lang={lang}
-          title={lang === "ar" ? "توقيع الموافقة" : "Sign Consent"}
-          onLangToggle={toggleLang}
-          onBack={() => setScreen("decision")}
+          doc={doc}
+          onAck={submitRefusalAck}
+          submitting={refusalAckSubmitting}
+          error={decisionError}
         />
-        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
-          <div
-            className={cls(
-              "flex flex-col gap-1",
-              lang === "ar" ? "items-end text-right" : "items-start text-left",
-            )}
-          >
-            <h1 className="text-lg font-bold text-foreground">
-              {lang === "ar" ? "توقيع الموافقة" : "Sign Consent"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {lang === "ar"
-                ? "ارسم توقيعك في المربع أدناه."
-                : "Draw your signature in the pad below."}
-            </p>
-          </div>
+      ) : null}
 
-          {patientName ? (
-            <Card className="p-4">
-              <div
-                className={cls(
-                  "flex items-center gap-3",
-                  lang === "ar" && "flex-row-reverse",
-                )}
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <User size={18} className="text-primary" />
-                </div>
-                <div
-                  className={cls(
-                    "flex-1",
-                    lang === "ar" ? "text-right" : "text-left",
-                  )}
-                >
-                  <p className="text-sm font-semibold text-foreground">
-                    {patientName}
-                  </p>
-                  {patientMrn ? (
-                    <p className="text-xs font-mono text-muted-foreground">
-                      {patientMrn}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            </Card>
-          ) : null}
-
-          <label
-            className={cls(
-              "text-xs font-semibold text-muted-foreground uppercase tracking-wide",
-              lang === "ar" ? "text-right" : "text-left",
-            )}
-          >
-            {lang === "ar" ? "الاسم الكامل للموقّع" : "Signer Full Name"}
-          </label>
-          <input
-            value={signerName}
-            onChange={(e) => setSignerName(e.target.value)}
-            placeholder={lang === "ar" ? "أدخل اسمك الكامل" : "Enter full name"}
-            className="w-full px-3 py-2.5 rounded-lg border-2 border-border bg-card text-sm focus:outline-none focus:border-primary"
-          />
-
-          <SignaturePad
-            lang={lang}
-            padRef={padRef}
-            onChange={setSignatureHasInk}
-          />
-
-          {signatureHasInk ? (
-            <button
-              onClick={() => {
-                padRef.current?.clear();
-              }}
-              className="text-sm text-muted-foreground hover:text-foreground underline-offset-2 hover:underline self-center"
-            >
-              {lang === "ar" ? "مسح التوقيع" : "Clear signature"}
-            </button>
-          ) : null}
-
-          <div
-            className={cls(
-              "flex items-start gap-2 text-xs text-muted-foreground",
-              lang === "ar" ? "flex-row-reverse text-right" : "flex-row",
-            )}
-          >
-            <Lock size={12} className="shrink-0 mt-0.5" />
-            <span>
-              {lang === "ar"
-                ? "توقيعك مرتبط ببصمة OTP وسلسلة مراجعة قانونية."
-                : "Your signature is bound to the OTP hash and a legal audit chain."}
-            </span>
-          </div>
-
-          {signError ? <Alert type="warning" lang={lang}>{signError}</Alert> : null}
-
-          <button
-            onClick={() => submitSignature("consent")}
-            disabled={signing || !signatureHasInk || !signerName.trim()}
-            className={cls(
-              "w-full py-3.5 rounded-lg font-semibold text-sm transition-colors mt-auto",
-              signing || !signatureHasInk || !signerName.trim()
-                ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : "bg-primary text-primary-foreground hover:bg-primary/90",
-            )}
-          >
-            {signing
-              ? lang === "ar"
-                ? "جارٍ التسجيل…"
-                : "Submitting…"
-              : lang === "ar"
-                ? "تأكيد التوقيع"
-                : "Confirm Signature"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ───── Refusal acknowledgement ───── */
-  if (screen === "refusal-ack" && doc) {
-    const statement = pickLocalized(
-      lang,
-      doc.decision?.refusalForm?.statementAr,
-      doc.decision?.refusalForm?.statementEn,
-    );
-    const ackText = pickLocalized(
-      lang,
-      doc.decision?.refusalForm?.acknowledgementAr,
-      doc.decision?.refusalForm?.acknowledgementEn,
-    );
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
+      {screen === "refusal-signature" && doc ? (
+        <PatientSignatureStep
           lang={lang}
-          title={lang === "ar" ? "نموذج رفض العلاج" : "Treatment Refusal Form"}
-          onLangToggle={toggleLang}
-          onBack={() => setScreen("decision")}
-        />
-        <div className="flex-1 px-4 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
-          <div
-            className={cls(
-              "flex flex-col gap-2",
-              lang === "ar" ? "items-end text-right" : "items-start text-left",
-            )}
-          >
-            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-              <XCircle size={20} className="text-red-600" />
-            </div>
-            <h1 className="text-lg font-bold text-foreground">
-              {lang === "ar" ? "نموذج رفض العلاج" : "Treatment Refusal Form"}
-            </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {lang === "ar"
-                ? "اقرأ نموذج الرفض الرسمي بعناية ثم أكّد إقرارك."
-                : "Read the official refusal form carefully and confirm your acknowledgement."}
-            </p>
-          </div>
-
-          {statement ? (
-            <Card className="p-4">
-              <p
-                className={cls(
-                  "text-sm text-foreground leading-relaxed whitespace-pre-line",
-                  lang === "ar" ? "text-right" : "text-left",
-                )}
-              >
-                {statement}
-              </p>
-            </Card>
-          ) : null}
-
-          <Alert type="warning" lang={lang}>
-            {lang === "ar"
-              ? "رفضك مُسجَّل قانونياً وسيُحفظ في ملفك الطبي مع بصمة زمنية معتمدة."
-              : "Your refusal is legally recorded and stored in your medical file with a certified timestamp."}
-          </Alert>
-
-          <button
-            onClick={() => setRefusalAcked((v) => !v)}
-            className={cls(
-              "flex items-start gap-3 p-3 rounded-lg border transition-colors",
-              lang === "ar" ? "flex-row-reverse text-right" : "flex-row text-left",
-              refusalAcked
-                ? "border-orange-400 bg-orange-50"
-                : "border-border bg-card",
-            )}
-          >
-            <div
-              className={cls(
-                "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-                refusalAcked
-                  ? "bg-orange-500 border-orange-500"
-                  : "border-border bg-white",
-              )}
-            >
-              {refusalAcked ? <Check size={12} className="text-white" /> : null}
-            </div>
-            <span className="text-sm text-foreground leading-relaxed">
-              {ackText ||
-                (lang === "ar"
-                  ? "أقر بأنني قرأت نموذج الرفض وأفهم تبعاته."
-                  : "I acknowledge I have read the refusal form and understand its consequences.")}
-            </span>
-          </button>
-
-          {decisionError ? <Alert type="warning" lang={lang}>{decisionError}</Alert> : null}
-
-          <button
-            onClick={submitRefusalAck}
-            disabled={!refusalAcked || refusalAckSubmitting}
-            className={cls(
-              "w-full py-3.5 rounded-lg font-semibold text-sm transition-colors",
-              !refusalAcked || refusalAckSubmitting
-                ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : "bg-red-600 text-white hover:bg-red-700",
-            )}
-          >
-            {refusalAckSubmitting
-              ? lang === "ar"
-                ? "جارٍ التسجيل…"
-                : "Submitting…"
-              : lang === "ar"
-                ? "تأكيد الإقرار والمتابعة"
-                : "Confirm Acknowledgement & Continue"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ───── Refusal signature ───── */
-  if (screen === "refusal-signature" && doc) {
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
-          lang={lang}
-          title={lang === "ar" ? "توقيع نموذج الرفض" : "Sign Refusal Form"}
-          onLangToggle={toggleLang}
+          patientName={patientName || (lang === "ar" ? "المريض" : "Patient")}
+          patientMrn={patientMrn || (lang === "ar" ? "—" : "—")}
+          signerName={signerName}
+          setSignerName={setSignerName}
+          padRef={padRef}
+          hasInk={signatureHasInk}
+          setHasInk={setSignatureHasInk}
+          onSubmit={() => submitSignature("refusal")}
+          submitting={signing}
+          error={signError}
+          mode="refusal"
           onBack={() => setScreen("refusal-ack")}
         />
-        <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-md mx-auto w-full">
-          <div
-            className={cls(
-              "flex flex-col gap-1",
-              lang === "ar" ? "items-end text-right" : "items-start text-left",
-            )}
-          >
-            <h1 className="text-lg font-bold text-foreground">
-              {lang === "ar" ? "توقيع نموذج الرفض" : "Sign Refusal Form"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {lang === "ar"
-                ? "ارسم توقيعك أدناه لتأكيد قرار الرفض."
-                : "Draw your signature below to confirm the refusal."}
-            </p>
-          </div>
+      ) : null}
 
-          <input
-            value={signerName}
-            onChange={(e) => setSignerName(e.target.value)}
-            placeholder={lang === "ar" ? "الاسم الكامل" : "Full name"}
-            className="w-full px-3 py-2.5 rounded-lg border-2 border-border bg-card text-sm focus:outline-none focus:border-primary"
-          />
-
-          <SignaturePad
-            lang={lang}
-            padRef={padRef}
-            onChange={setSignatureHasInk}
-          />
-
-          {signatureHasInk ? (
-            <button
-              onClick={() => padRef.current?.clear()}
-              className="text-sm text-muted-foreground hover:text-foreground underline-offset-2 hover:underline self-center"
-            >
-              {lang === "ar" ? "مسح التوقيع" : "Clear signature"}
-            </button>
-          ) : null}
-
-          {signError ? <Alert type="warning" lang={lang}>{signError}</Alert> : null}
-
-          <button
-            onClick={() => submitSignature("refusal")}
-            disabled={signing || !signatureHasInk || !signerName.trim()}
-            className={cls(
-              "w-full py-3.5 rounded-lg font-semibold text-sm transition-colors mt-auto",
-              signing || !signatureHasInk || !signerName.trim()
-                ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : "bg-red-600 text-white hover:bg-red-700",
-            )}
-          >
-            {signing
-              ? lang === "ar"
-                ? "جارٍ التسجيل…"
-                : "Submitting…"
-              : lang === "ar"
-                ? "تأكيد الرفض"
-                : "Confirm Refusal"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ───── Confirmation (consent accepted + signed) ───── */
-  if (screen === "confirmation" && signResult) {
-    const pdfHref = `/api/modules/informed-consents/documents/${encodeURIComponent(
-      signResult.documentId,
-    )}/pdf`;
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
+      {screen === "confirmation" && signResult ? (
+        <PatientCompletionStep
           lang={lang}
-          title={lang === "ar" ? "تم تسجيل موافقتك" : "Your Consent is Recorded"}
-          onLangToggle={toggleLang}
+          mode="consent"
+          signResult={signResult}
+          consentRef={consentRef}
+          token={token}
+          onDone={() => {
+            /* Patient-safe noop; page can be closed. */
+          }}
         />
-        <div className="flex-1 px-4 py-8 flex flex-col gap-5 max-w-md mx-auto w-full items-center text-center">
-          <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
-            <CheckCircle size={40} className="text-emerald-600" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <h1 className="text-xl font-bold text-foreground">
-              {lang === "ar" ? "تم تسجيل موافقتك" : "Your Consent is Recorded"}
-            </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {lang === "ar"
-                ? "شكراً لك. تم حفظ موافقتك في السجل الطبي مع سلسلة مراجعة كاملة."
-                : "Thank you. Your consent is stored in the medical record with a full audit chain."}
-            </p>
-          </div>
+      ) : null}
 
-          <Card className="p-4 w-full flex flex-col gap-3">
-            <div
-              className={cls(
-                "flex justify-between items-center gap-3",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <span className="text-xs text-muted-foreground">
-                {lang === "ar" ? "رقم المرجع" : "Reference"}
-              </span>
-              <span className="font-mono text-xs font-bold text-primary break-all">
-                {consentRef || signResult.documentId.slice(0, 12)}
-              </span>
-            </div>
-            <div className="h-px bg-border" />
-            <div
-              className={cls(
-                "flex justify-between items-center gap-3",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <span className="text-xs text-muted-foreground">
-                {lang === "ar" ? "معرّف التوقيع" : "Signature ID"}
-              </span>
-              <span className="font-mono text-xs text-foreground/80 break-all">
-                {signResult.signatureId}
-              </span>
-            </div>
-            <div className="h-px bg-border" />
-            <div
-              className={cls(
-                "flex justify-between items-center gap-3",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <span className="text-xs text-muted-foreground">
-                {lang === "ar" ? "الطابع الزمني" : "Timestamp"}
-              </span>
-              <span className="font-mono text-xs text-foreground/70">
-                {formatTimestamp(signResult.signedAt, lang)}
-              </span>
-            </div>
-            {signResult.evidence?.documentHash ? (
-              <>
-                <div className="h-px bg-border" />
-                <div
-                  className={cls(
-                    "flex justify-between items-center gap-3",
-                    lang === "ar" ? "flex-row-reverse" : "flex-row",
-                  )}
-                >
-                  <span className="text-xs text-muted-foreground">
-                    {lang === "ar" ? "بصمة المستند" : "Document Hash"}
-                  </span>
-                  <span className="font-mono text-[10px] text-foreground/60">
-                    {shortHash(signResult.evidence.documentHash)}
-                  </span>
-                </div>
-              </>
-            ) : null}
-            {signResult.evidence?.otpHash ? (
-              <>
-                <div className="h-px bg-border" />
-                <div
-                  className={cls(
-                    "flex justify-between items-center gap-3",
-                    lang === "ar" ? "flex-row-reverse" : "flex-row",
-                  )}
-                >
-                  <span className="text-xs text-muted-foreground">
-                    {lang === "ar" ? "بصمة OTP" : "OTP Hash"}
-                  </span>
-                  <span className="font-mono text-[10px] text-foreground/60">
-                    {shortHash(signResult.evidence.otpHash)}
-                  </span>
-                </div>
-              </>
-            ) : null}
-            <div className="h-px bg-border" />
-            <div
-              className={cls(
-                "flex justify-between items-center gap-3",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <span className="text-xs text-muted-foreground">
-                {lang === "ar" ? "حالة التحقق" : "Verification"}
-              </span>
-              <div className="flex items-center gap-1">
-                <Shield size={12} className="text-emerald-600" />
-                <span className="text-xs text-emerald-600 font-semibold">
-                  OTP + Signature
-                </span>
-              </div>
-            </div>
-          </Card>
-
-          <a
-            href={pdfHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cls(
-              "w-full py-3 rounded-lg border border-primary text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors",
-              lang === "ar" ? "flex-row-reverse" : "flex-row",
-            )}
-          >
-            <Download size={15} />
-            {lang === "ar" ? "تنزيل نسخة PDF" : "Download PDF Copy"}
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  /* ───── Refusal confirmation ───── */
-  if (screen === "refusal-confirmed" && signResult) {
-    return (
-      <div
-        dir={dir}
-        className={cls("min-h-screen bg-background flex flex-col", langClass)}
-      >
-        <MobileHeader
+      {screen === "refusal-confirmed" && signResult ? (
+        <PatientCompletionStep
           lang={lang}
-          title={lang === "ar" ? "تم تسجيل قرار الرفض" : "Refusal Recorded"}
-          onLangToggle={toggleLang}
+          mode="refusal"
+          signResult={signResult}
+          consentRef={consentRef}
+          token={token}
+          onDone={() => {
+            /* Patient-safe noop; page can be closed. */
+          }}
         />
-        <div className="flex-1 px-4 py-10 flex flex-col gap-5 max-w-md mx-auto w-full items-center text-center">
-          <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center">
-            <AlertCircle size={40} className="text-orange-600" />
-          </div>
-          <h1 className="text-xl font-bold text-foreground">
-            {lang === "ar" ? "تم تسجيل قرار الرفض" : "Refusal Recorded"}
-          </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {lang === "ar"
-              ? "تم حفظ قرارك في السجل الطبي مع سلسلة مراجعة قانونية كاملة."
-              : "Your decision is stored in the medical record with a full legal audit chain."}
-          </p>
-          <Card className="p-4 w-full">
-            <div
-              className={cls(
-                "flex justify-between items-center gap-3",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <span className="text-xs text-muted-foreground">
-                {lang === "ar" ? "رقم المرجع" : "Reference"}
-              </span>
-              <span className="font-mono text-xs font-bold text-orange-600 break-all">
-                {consentRef || signResult.documentId.slice(0, 12)}
-              </span>
-            </div>
-            <div className="h-px bg-border my-2" />
-            <div
-              className={cls(
-                "flex justify-between items-center gap-3",
-                lang === "ar" ? "flex-row-reverse" : "flex-row",
-              )}
-            >
-              <span className="text-xs text-muted-foreground">
-                {lang === "ar" ? "معرّف التوقيع" : "Signature ID"}
-              </span>
-              <span className="font-mono text-xs text-foreground/80 break-all">
-                {signResult.signatureId}
-              </span>
-            </div>
-          </Card>
-          <Alert type="warning" lang={lang}>
-            {lang === "ar"
-              ? "تم إبلاغ الفريق الطبي بقرار الرفض."
-              : "The medical team has been notified of the refusal."}
-          </Alert>
-        </div>
-      </div>
-    );
-  }
-
-  /* Fallback */
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Card className="max-w-md p-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          {lang === "ar" ? "جارٍ التحميل…" : "Loading…"}
-        </p>
-      </Card>
-    </div>
+      ) : null}
+    </PatientJourneyScreen>
   );
 }
 

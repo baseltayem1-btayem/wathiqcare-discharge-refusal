@@ -57,6 +57,28 @@ const prisma = new PrismaClient();
 
 const BCRYPT_ROUNDS = 12;
 
+function requireEnv(name) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(
+      `FATAL: ${name} is required. Demo seed scripts must not use hardcoded passwords. ` +
+        "Set a strong demo password in the environment and retry."
+    );
+  }
+  return value;
+}
+
+const DEMO_DEFAULT_PASSWORD = requireEnv("DEMO_DEFAULT_PASSWORD");
+const PILOT_DEFAULT_PASSWORD = requireEnv("PILOT_DEFAULT_PASSWORD");
+
+/**
+ * Unified password for IMC doctor / physician pilot accounts.
+ * Can be overridden via IMC_DOCTOR_PILOT_PASSWORD env var; defaults to the
+ * canonical pilot doctor password requested for the IMC Preview.
+ */
+const IMC_DOCTOR_PILOT_PASSWORD =
+  process.env.IMC_DOCTOR_PILOT_PASSWORD?.trim() || "IMC@imc2026";
+
 async function hashPassword(password) {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
@@ -80,13 +102,13 @@ const PILOT_IMC_TENANT = {
   allowedDomains: ["wathiqcare.med.sa", "wathiqcare.online"],
 };
 
-const PILOT_PASSWORD = "WathiqCare@2026";
+const PILOT_PASSWORD = PILOT_DEFAULT_PASSWORD;
 
 const DEMO_USERS = [
   {
     email: "demo.platform.admin@wathiqcare.local",
     fullName: "DEMO Platform Admin",
-    password: "DemoPlatformAdmin@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
     label: "Platform Admin",
     role: "platform_admin",
     userType: "PLATFORM_ADMIN",
@@ -95,7 +117,7 @@ const DEMO_USERS = [
   {
     email: "demo.legal.affairs@demo-imc.local",
     fullName: "DEMO Legal Affairs User",
-    password: "DemoLegalAffairs@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
     label: "Legal Affairs User",
     role: "legal_admin",
     userType: "TENANT_ADMIN",
@@ -104,7 +126,7 @@ const DEMO_USERS = [
   {
     email: "demo.doctor@demo-imc.local",
     fullName: "DEMO Doctor User",
-    password: "DemoDoctor@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
     label: "Doctor User",
     role: "doctor",
     userType: "TENANT_USER",
@@ -113,7 +135,7 @@ const DEMO_USERS = [
   {
     email: "demo.nurse@demo-imc.local",
     fullName: "DEMO Nurse User",
-    password: "DemoNurse@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
     label: "Nurse User",
     role: "nursing",
     userType: "TENANT_USER",
@@ -122,7 +144,7 @@ const DEMO_USERS = [
   {
     email: "demo.medical.director@demo-imc.local",
     fullName: "DEMO Medical Director User",
-    password: "DemoMedicalDirector@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
     label: "Medical Director User",
     role: "medical_director",
     userType: "TENANT_USER",
@@ -131,7 +153,7 @@ const DEMO_USERS = [
   {
     email: "demo.compliance@demo-imc.local",
     fullName: "DEMO Quality Compliance User",
-    password: "DemoCompliance@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
     label: "Quality / Compliance User",
     role: "compliance",
     userType: "TENANT_USER",
@@ -140,7 +162,7 @@ const DEMO_USERS = [
   {
     email: "demo.finance@demo-imc.local",
     fullName: "DEMO Finance Admin User",
-    password: "DemoFinance@2026!",
+    password: DEMO_DEFAULT_PASSWORD,
     label: "Finance / Authorized Admin User",
     role: "finance_officer",
     userType: "TENANT_USER",
@@ -152,7 +174,7 @@ const PILOT_USERS = [
   {
     email: "dr.ahmed@wathiqcare.med.sa",
     fullName: "Dr. Ahmed Pilot Physician",
-    password: PILOT_PASSWORD,
+    password: IMC_DOCTOR_PILOT_PASSWORD,
     label: "Pilot Physician",
     role: "doctor",
     userType: "TENANT_USER",

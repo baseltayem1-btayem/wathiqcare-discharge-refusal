@@ -32,12 +32,33 @@ function loadEnv() {
   loadEnvFile(path.join(repoRoot, "apps", "web", ".env.local"));
 }
 
+function requireEnv(name) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(
+      `FATAL: ${name} is required. Pilot validation scripts must not use hardcoded passwords. ` +
+        "Set the pilot validation password in the environment and retry."
+    );
+  }
+  return value;
+}
+
+const PILOT_VALIDATION_PASSWORD = requireEnv("PILOT_VALIDATION_PASSWORD");
+
+/**
+ * Unified password for IMC doctor / physician pilot accounts.
+ * Can be overridden via IMC_DOCTOR_PILOT_PASSWORD env var; defaults to the
+ * canonical pilot doctor password requested for the IMC Preview.
+ */
+const IMC_DOCTOR_PILOT_PASSWORD =
+  process.env.IMC_DOCTOR_PILOT_PASSWORD?.trim() || "IMC@imc2026";
+
 const PILOT_USERS = [
-  { email: "dr.ahmed@wathiqcare.med.sa", role: "doctor", label: "Pilot Physician", password: "WathiqCare@2026" },
-  { email: "medicaldirector@wathiqcare.med.sa", role: "medical_director", label: "Medical Director", password: "WathiqCare@2026" },
-  { email: "nursingsupervisor@wathiqcare.med.sa", role: "nursing", label: "Nursing Supervisor", password: "WathiqCare@2026" },
-  { email: "legalreviewer@wathiqcare.med.sa", role: "legal_admin", label: "Legal Reviewer", password: "WathiqCare@2026" },
-  { email: "compliance@wathiqcare.med.sa", role: "compliance", label: "Compliance Reviewer", password: "WathiqCare@2026" },
+  { email: "dr.ahmed@wathiqcare.med.sa", role: "doctor", label: "Pilot Physician", password: IMC_DOCTOR_PILOT_PASSWORD },
+  { email: "medicaldirector@wathiqcare.med.sa", role: "medical_director", label: "Medical Director", password: PILOT_VALIDATION_PASSWORD },
+  { email: "nursingsupervisor@wathiqcare.med.sa", role: "nursing", label: "Nursing Supervisor", password: PILOT_VALIDATION_PASSWORD },
+  { email: "legalreviewer@wathiqcare.med.sa", role: "legal_admin", label: "Legal Reviewer", password: PILOT_VALIDATION_PASSWORD },
+  { email: "compliance@wathiqcare.med.sa", role: "compliance", label: "Compliance Reviewer", password: PILOT_VALIDATION_PASSWORD },
 ];
 
 const PILOT_MRNS = [

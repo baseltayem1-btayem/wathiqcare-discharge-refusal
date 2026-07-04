@@ -1,13 +1,15 @@
 import "server-only";
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { getPrisma } from "@/lib/server/prisma";
 import type { AuthContext } from "@/lib/server/auth";
 import { ApiError } from "@/lib/server/http";
+import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 
 type JsonObject = Record<string, unknown>;
 
 type OtpRow = {
+  id: string;
   event_type: string;
   raw_payload: unknown;
   created_at: Date | string;
@@ -67,7 +69,7 @@ function parseOtpPayload(raw: unknown): JsonObject {
 
 async function readOtpRowsByDocument(documentId: string): Promise<OtpRow[]> {
   return getPrisma().$queryRawUnsafe<OtpRow[]>(
-    `SELECT event_type, raw_payload, created_at
+    `SELECT id, event_type, raw_payload, created_at
      FROM webhook_events
      WHERE provider_key = $1
        AND event_type IN ('OTP_REQUESTED', 'OTP_VERIFIED', 'OTP_VERIFY_FAILED')
@@ -124,72 +126,92 @@ function maxDate(values: Array<Date | null | undefined>): Date | null {
   return valid.sort((a, b) => b.getTime() - a.getTime())[0];
 }
 
-export async function recordEvidenceEvent(input: {
-  tenantId: string;
-  packageId?: string;
-  caseId?: string;
-  consentDocumentId?: string;
-  eventType: string;
-  eventTimestamp?: Date;
-  sequenceNo?: number;
-  procedureName?: string | null;
-  educationVersion?: string | null;
-  educationLanguage?: string | null;
-  assetsPresented?: number;
-  imagesPresented?: number;
-  videosPresented?: number;
-  pdfsPresented?: number;
-  educationViewed?: boolean;
-  viewDurationSeconds?: number;
-  consentTemplate?: string;
-  consentVersion?: string;
-  consentLanguage?: string;
-  consentTimestamp?: Date;
-  signerIdentity?: string | null;
-  signatureTimestamp?: Date | null;
-  browser?: string;
-  deviceType?: string;
-  ipAddress?: string | null;
-  otpSentTime?: Date | null;
-  otpVerificationTime?: Date | null;
-  otpVerificationStatus?: string | null;
-  maskedMobileNumber?: string | null;
-  metadata?: JsonObject;
-}) {
-  return getPrisma().evidenceEvent.create({
-    data: {
-      tenantId: input.tenantId,
-      packageId: input.packageId,
-      caseId: input.caseId,
-      consentDocumentId: input.consentDocumentId,
-      eventType: input.eventType,
-      eventTimestamp: input.eventTimestamp ?? new Date(),
-      sequenceNo: input.sequenceNo,
-      procedureName: input.procedureName,
-      educationVersion: input.educationVersion,
-      educationLanguage: input.educationLanguage,
-      assetsPresented: input.assetsPresented,
-      imagesPresented: input.imagesPresented,
-      videosPresented: input.videosPresented,
-      pdfsPresented: input.pdfsPresented,
-      educationViewed: input.educationViewed,
-      viewDurationSeconds: input.viewDurationSeconds,
-      consentTemplate: input.consentTemplate,
-      consentVersion: input.consentVersion,
-      consentLanguage: input.consentLanguage,
-      consentTimestamp: input.consentTimestamp,
-      signerIdentity: input.signerIdentity,
-      signatureTimestamp: input.signatureTimestamp,
-      browser: input.browser,
-      deviceType: input.deviceType,
-      ipAddress: input.ipAddress,
-      otpSentTime: input.otpSentTime,
-      otpVerificationTime: input.otpVerificationTime,
-      otpVerificationStatus: input.otpVerificationStatus,
-      maskedMobileNumber: input.maskedMobileNumber,
-      metadata: input.metadata as Prisma.InputJsonValue,
-    },
-  });
+export async function recordEvidenceEvent(
+  input: {
+    tenantId: string;
+    packageId?: string;
+    caseId?: string;
+    consentDocumentId?: string;
+    eventType: string;
+    eventTimestamp?: Date;
+    sequenceNo?: number;
+    procedureName?: string | null;
+    educationVersion?: string | null;
+    educationLanguage?: string | null;
+    assetsPresented?: number;
+    imagesPresented?: number;
+    videosPresented?: number;
+    pdfsPresented?: number;
+    educationViewed?: boolean;
+    viewDurationSeconds?: number;
+    consentTemplate?: string;
+    consentVersion?: string;
+    consentLanguage?: string;
+    consentTimestamp?: Date;
+    signerIdentity?: string | null;
+    signatureTimestamp?: Date | null;
+    browser?: string;
+    deviceType?: string;
+    ipAddress?: string | null;
+    otpSentTime?: Date | null;
+    otpVerificationTime?: Date | null;
+    otpVerificationStatus?: string | null;
+    maskedMobileNumber?: string | null;
+    metadata?: JsonObject;
+  },
+  tx?: PrismaClient | Prisma.TransactionClient,
+) {
+  const client = tx ?? getPrisma();
+  try {
+    return await client.evidenceEvent.create({
+      data: {
+        tenantId: input.tenantId,
+        packageId: input.packageId,
+        caseId: input.caseId,
+        consentDocumentId: input.consentDocumentId,
+        eventType: input.eventType,
+        eventTimestamp: input.eventTimestamp ?? new Date(),
+        sequenceNo: input.sequenceNo,
+        procedureName: input.procedureName,
+        educationVersion: input.educationVersion,
+        educationLanguage: input.educationLanguage,
+        assetsPresented: input.assetsPresented,
+        imagesPresented: input.imagesPresented,
+        videosPresented: input.videosPresented,
+        pdfsPresented: input.pdfsPresented,
+        educationViewed: input.educationViewed,
+        viewDurationSeconds: input.viewDurationSeconds,
+        consentTemplate: input.consentTemplate,
+        consentVersion: input.consentVersion,
+        consentLanguage: input.consentLanguage,
+        consentTimestamp: input.consentTimestamp,
+        signerIdentity: input.signerIdentity,
+        signatureTimestamp: input.signatureTimestamp,
+        browser: input.browser,
+        deviceType: input.deviceType,
+        ipAddress: input.ipAddress,
+        otpSentTime: input.otpSentTime,
+        otpVerificationTime: input.otpVerificationTime,
+        otpVerificationStatus: input.otpVerificationStatus,
+        maskedMobileNumber: input.maskedMobileNumber,
+        metadata: input.metadata as Prisma.InputJsonValue,
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("does not exist in the current database")) {
+      logRuntimeIncident({
+        module: "evidence-package-2",
+        type: "UNHANDLED_EXCEPTION",
+        operation: "recordEvidenceEvent",
+        tenantId: input.tenantId,
+        error,
+        details: { consentDocumentId: input.consentDocumentId, eventType: input.eventType },
+      });
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentId: string) {
@@ -255,9 +277,12 @@ export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentI
 
   const otpSentTime = toDate(otpRequested?.created_at);
   const otpVerificationTime = toDate(otpVerified?.created_at);
+  const otpRequestEventId = otpRequested?.id || null;
+  const otpVerifyEventId = otpVerified?.id || null;
 
   const firstSignature = doc.signatures[0] || null;
   const latestSignature = doc.signatures[doc.signatures.length - 1] || null;
+  const latestSignatureHash = latestSignature?.signatureHash || null;
 
   const browser = detectBrowser(firstSignature?.userAgent);
   const deviceType = detectDeviceType(firstSignature?.userAgent);
@@ -354,6 +379,9 @@ export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentI
         educationEventCount: educationEvents.length,
         signatureCount: doc.signatures.length,
         otpRows: otpRows.length,
+        otpRequestEventId,
+        otpVerifyEventId,
+        signatureHash: latestSignatureHash,
       } as Prisma.InputJsonValue,
     },
   });
@@ -392,6 +420,9 @@ export async function buildEvidencePackageV2(auth: AuthContext, consentDocumentI
       maskedMobileNumber,
       metadata: {
         label: item.label,
+        otpRequestEventId,
+        otpVerifyEventId,
+        signatureHash: latestSignatureHash,
       },
     });
     sequenceNo += 10;

@@ -1,0 +1,599 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type {
+  ProductionPatient,
+  ProductionEncounter,
+  ProductionAssembly,
+  PhysicianContext,
+  SecureSigningResult,
+  TimelineEvent,
+} from "../types";
+import {
+  searchPatients,
+  getPatientEncounters,
+  resolveContentMapping,
+  dryRunSendSecureSigningLink,
+  fetchTimeline,
+  createConsentDocument,
+  sendSecureSigningLinkForDocument,
+  checkSendEligibility,
+  fetchProcedures,
+} from "../lib/api";
+
+export type WorkspaceStep = "patient" | "encounter" | "procedure" | "review" | "sent";
+
+export type ProductionWorkspaceState = {
+  step: WorkspaceStep;
+  patient?: ProductionPatient;
+  encounter?: ProductionEncounter;
+  procedureQuery: string;
+  selectedProcedureName?: string;
+  assembly?: ProductionAssembly;
+  anesthesiaOverride?: "NONE" | "LOCAL" | "SEDATION" | "REGIONAL" | "GENERAL";
+  educationIncluded: boolean;
+  physicianNotes: string;
+  draftApproved: boolean;
+  reviewMode: boolean;
+  previewReviewed: boolean;
+  recipientMobile: string;
+  recipientEmail: string;
+  sendEligibility?: { pilotEnabled: boolean; allowlisted: boolean; reason: string };
+  sentAt?: string;
+  signingResult?: SecureSigningResult;
+  dryRunSuccess?: boolean;
+  dryRunMessage?: string;
+  timeline: TimelineEvent[];
+  acknowledgedBlockers: Set<string>;
+  acknowledgedAlerts: Set<string>;
+};
+
+export type Readiness = {
+  patientReady: boolean;
+  encounterReady: boolean;
+  procedureSelected: boolean;
+  assemblyReady: boolean;
+  blockersResolved: boolean;
+  educationReady: boolean;
+  previewReviewed: boolean;
+  contactAvailable: boolean;
+  allowlisted: boolean;
+  draftApproved: boolean;
+  sendReady: boolean;
+  completedChecks: number;
+  totalChecks: number;
+  progressPercentage: number;
+  blockers: ProductionAssembly["blockers"];
+  unacknowledgedBlockers: ProductionAssembly["blockers"];
+  missingItems: string[];
+};
+
+function normalizeMobile(value: string): string {
+  const compact = value.replace(/[\s\-()]/g, "");
+  if (!compact) return "";
+  if (compact.startsWith("+")) return compact;
+  if (compact.startsWith("00")) return `+${compact.slice(2)}`;
+  if (compact.startsWith("966")) return `+${compact}`;
+  if (compact.startsWith("05") && compact.length === 10) return `+966${compact.slice(1)}`;
+  return compact;
+}
+
+function hasContact(mobile: string, email: string): boolean {
+  return Boolean(normalizeMobile(mobile) || email.trim());
+}
+
+export function useProductionWorkspace(physician: PhysicianContext) {
+  const [state, setState] = useState<ProductionWorkspaceState>({
+    step: "patient",
+    procedureQuery: "",
+    educationIncluded: true,
+    physicianNotes: "",
+    draftApproved: false,
+    reviewMode: false,
+    previewReviewed: false,
+    recipientMobile: "",
+    recipientEmail: "",
+    timeline: [],
+    acknowledgedBlockers: new Set(),
+    acknowledgedAlerts: new Set(),
+  });
+
+  const [patients, setPatients] = useState<ProductionPatient[]>([]);
+  const [patientsLoading, setPatientsLoading] = useState(false);
+  const [patientsError, setPatientsError] = useState<string>("");
+
+  const [encounters, setEncounters] = useState<ProductionEncounter[]>([]);
+  const [encountersLoading, setEncountersLoading] = useState(false);
+  const [encountersError, setEncountersError] = useState<string>("");
+
+  const [assemblyLoading, setAssemblyLoading] = useState(false);
+  const [assemblyError, setAssemblyError] = useState<string>("");
+
+  const [procedures, setProcedures] = useState<Array<{ id: string; titleEn: string; titleAr: string; specialty: string; department: string; anesthesiaRequired: boolean }>>([]);
+  const [proceduresLoading, setProceduresLoading] = useState(false);
+  const [proceduresError, setProceduresError] = useState<string>("");
+
+  const [sendLoading, setSendLoading] = useState(false);
+  const [sendError, setSendError] = useState<string>("");
+
+  const searchForPatients = useCallback(async (query: string) => {
+    setPatientsError("");
+    if (!query || query.length < 2) {
+      setPatients([]);
+      return;
+    }
+    setPatientsLoading(true);
+    try {
+      const results = await searchPatients(query);
+      setPatients(results);
+    } catch (error) {
+      setPatients([]);
+      setPatientsError(error instanceof Error ? error.message : "Patient search failed.");
+    } finally {
+      setPatientsLoading(false);
+    }
+  }, []);
+
+  const loadEncounters = useCallback(async (patient: ProductionPatient) => {
+    setEncountersError("");
+    setEncountersLoading(true);
+    try {
+      const results = await getPatientEncounters(patient.mrn);
+      setEncounters(results);
+      return results;
+    } catch (error) {
+      setEncounters([]);
+      setEncountersError(error instanceof Error ? error.message : "Failed to load encounters.");
+      return [];
+    } finally {
+      setEncountersLoading(false);
+    }
+  }, []);
+
+  const loadProcedures = useCallback(async () => {
+    setProceduresError("");
+    setProceduresLoading(true);
+    try {
+      const results = await fetchProcedures(physician.tenantId);
+      setProcedures(results);
+    } catch (error) {
+      setProcedures([]);
+      setProceduresError(error instanceof Error ? error.message : "Failed to load procedures.");
+    } finally {
+      setProceduresLoading(false);
+    }
+  }, [physician.tenantId]);
+
+  /* eslint-disable react-hooks/set-state-in-effect -- one-time catalog initialization */
+  useEffect(() => {
+    void loadProcedures();
+  }, [loadProcedures]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const refreshSendEligibility = useCallback(async (mobile: string, email: string) => {
+    if (!hasContact(mobile, email)) {
+      setState((s) => ({
+        ...s,
+        sendEligibility: { pilotEnabled: false, allowlisted: false, reason: "Patient contact is missing." },
+      }));
+      return;
+    }
+    try {
+      const result = await checkSendEligibility({ mobileNumber: mobile, recipientEmail: email });
+      setState((s) => ({ ...s, sendEligibility: result }));
+    } catch {
+      setState((s) => ({
+        ...s,
+        sendEligibility: { pilotEnabled: false, allowlisted: false, reason: "Unable to verify recipient eligibility." },
+      }));
+    }
+  }, []);
+
+  const selectPatient = useCallback(
+    async (patient: ProductionPatient) => {
+      const patientEncounters = await loadEncounters(patient);
+      const defaultEncounter = patientEncounters[0];
+      const mobile = patient.mobileNumber || "";
+      const email = patient.email || "";
+      setState((s) => ({
+        ...s,
+        step: defaultEncounter ? "procedure" : "encounter",
+        patient,
+        encounter: defaultEncounter,
+        assembly: undefined,
+        selectedProcedureName: undefined,
+        anesthesiaOverride: undefined,
+        draftApproved: false,
+        previewReviewed: false,
+        sentAt: undefined,
+        signingResult: undefined,
+        recipientMobile: mobile,
+        recipientEmail: email,
+        timeline: [],
+        acknowledgedBlockers: new Set(),
+        acknowledgedAlerts: new Set(),
+      }));
+      void refreshSendEligibility(mobile, email);
+    },
+    [loadEncounters, refreshSendEligibility],
+  );
+
+  const selectEncounter = useCallback((encounter: ProductionEncounter) => {
+    setState((s) => ({
+      ...s,
+      step: "procedure",
+      encounter,
+      assembly: undefined,
+      selectedProcedureName: undefined,
+      procedureQuery: "",
+      anesthesiaOverride: undefined,
+      draftApproved: false,
+      previewReviewed: false,
+      sentAt: undefined,
+      signingResult: undefined,
+    }));
+  }, []);
+
+  const setProcedureQuery = useCallback((procedureQuery: string) => {
+    setState((s) => ({ ...s, procedureQuery }));
+  }, []);
+
+  const selectProcedure = useCallback((procedureName: string) => {
+    setState((s) => ({
+      ...s,
+      selectedProcedureName: procedureName,
+      procedureQuery: procedureName,
+      assembly: undefined,
+      draftApproved: false,
+      previewReviewed: false,
+    }));
+  }, []);
+
+  const setRecipientMobile = useCallback((recipientMobile: string) => {
+    setState((s) => ({ ...s, recipientMobile }));
+  }, []);
+
+  const setRecipientEmail = useCallback((recipientEmail: string) => {
+    setState((s) => ({ ...s, recipientEmail }));
+  }, []);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void refreshSendEligibility(state.recipientMobile, state.recipientEmail);
+    }, 400);
+    return () => window.clearTimeout(timeout);
+  }, [state.recipientMobile, state.recipientEmail, refreshSendEligibility]);
+
+  const resolveAssembly = useCallback(async () => {
+    if (!state.patient || !state.encounter) return;
+    const procedureName = state.selectedProcedureName || state.procedureQuery.trim();
+    if (!procedureName) {
+      setAssemblyError("Select or type a procedure first.");
+      return;
+    }
+    setAssemblyError("");
+    setAssemblyLoading(true);
+    try {
+      const result = await resolveContentMapping({
+        procedure: procedureName,
+        tenantId: physician.tenantId,
+        reviewMode: state.reviewMode,
+        patientContext: {
+          capacityStatus: state.patient.capacityStatus || "competent",
+          languagePreference: state.patient.languagePreference || "bilingual",
+        },
+        physicianContext: {
+          physicianId: physician.userId,
+          name: physician.name,
+          licenseNumber: physician.licenseNumber || "",
+          specialty: physician.specialty || state.encounter.physicianSpecialty || "",
+          department: physician.department || state.encounter.department || "",
+        },
+      });
+
+      if (!result.ok || !result.found || !result.clinicalKnowledgeAssembly) {
+        throw new Error(result.error || "Procedure could not be resolved to a clinical knowledge package.");
+      }
+
+      setState((s) => ({
+        ...s,
+        procedureQuery: procedureName,
+        selectedProcedureName: procedureName,
+        assembly: result.clinicalKnowledgeAssembly,
+        step: "review",
+        draftApproved: false,
+        previewReviewed: false,
+      }));
+    } catch (error) {
+      setAssemblyError(error instanceof Error ? error.message : "Failed to resolve procedure.");
+    } finally {
+      setAssemblyLoading(false);
+    }
+  }, [physician, state.patient, state.encounter, state.reviewMode, state.selectedProcedureName, state.procedureQuery]);
+
+  const setAnesthesia = useCallback((decision: ProductionWorkspaceState["anesthesiaOverride"]) => {
+    setState((s) => ({ ...s, anesthesiaOverride: decision }));
+  }, []);
+
+  const setEducationIncluded = useCallback((included: boolean) => {
+    setState((s) => ({ ...s, educationIncluded: included }));
+  }, []);
+
+  const setPhysicianNotes = useCallback((notes: string) => {
+    setState((s) => ({ ...s, physicianNotes: notes }));
+  }, []);
+
+  const setReviewMode = useCallback((reviewMode: boolean) => {
+    setState((s) => ({ ...s, reviewMode }));
+  }, []);
+
+  const setPreviewReviewed = useCallback((previewReviewed: boolean) => {
+    setState((s) => ({ ...s, previewReviewed }));
+  }, []);
+
+  const approveDraft = useCallback(() => {
+    setState((s) => ({ ...s, draftApproved: true }));
+  }, []);
+
+  const acknowledgeBlocker = useCallback((key: string) => {
+    setState((s) => {
+      const next = new Set(s.acknowledgedBlockers);
+      next.add(key);
+      return { ...s, acknowledgedBlockers: next };
+    });
+  }, []);
+
+  const acknowledgeAlert = useCallback((id: string) => {
+    setState((s) => {
+      const next = new Set(s.acknowledgedAlerts);
+      next.add(id);
+      return { ...s, acknowledgedAlerts: next };
+    });
+  }, []);
+
+  const validateSendPrerequisites = useCallback((): string | undefined => {
+    if (!state.patient) return "Select a patient first.";
+    if (!state.encounter) return "Select an encounter first.";
+    if (!state.selectedProcedureName) return "Select a specific procedure first.";
+    if (!state.assembly) return "Resolve a clinical knowledge package first.";
+    if (state.assembly.status !== "ready") return "The knowledge package is not ready.";
+    const blockers = state.assembly.blockers.filter((b) => !state.acknowledgedBlockers.has(b.key));
+    if (blockers.length > 0) return "Resolve or acknowledge all blockers first.";
+    if (!state.previewReviewed) return "Review the patient-facing preview first.";
+    if (!hasContact(state.recipientMobile, state.recipientEmail)) {
+      return "Patient mobile number or email is required before sending.";
+    }
+    if (!state.sendEligibility?.allowlisted) {
+      return state.sendEligibility?.reason || "Recipient is not approved for pilot send.";
+    }
+    if (!state.draftApproved) return "Approve the draft before sending.";
+    return undefined;
+  }, [state]);
+
+  const send = useCallback(async () => {
+    const validationError = validateSendPrerequisites();
+    if (validationError) {
+      setSendError(validationError);
+      return;
+    }
+    if (!state.patient || !state.encounter || !state.assembly) return;
+
+    setSendError("");
+    setSendLoading(true);
+    try {
+      const document = await createConsentDocument({
+        caseId: state.patient.caseId || state.encounter.id,
+        templateId: state.assembly.consentForm?.id,
+        language: state.patient.languagePreference === "ar" ? "ar" : state.patient.languagePreference === "en" ? "en" : "bilingual",
+        physicianName: physician.name,
+        physicianSpecialty: physician.specialty || state.encounter.physicianSpecialty || undefined,
+        department: physician.department || state.encounter.department || undefined,
+        diagnosis: state.encounter.diagnosis || undefined,
+        plannedProcedure: state.selectedProcedureName,
+        metadata: {
+          procedureId: state.assembly.procedureId,
+          procedureCode: state.assembly.procedureCode,
+          packageId: state.assembly.packageId,
+          patientLanguagePreference: state.patient.languagePreference,
+        },
+      });
+
+      const result = await sendSecureSigningLinkForDocument({
+        documentId: document.id,
+        caseId: state.patient.caseId || state.encounter.id,
+        patientName: state.patient.name,
+        mobileNumber: normalizeMobile(state.recipientMobile) || "",
+        recipientEmail: state.recipientEmail.trim().toLowerCase() || "no-patient-email@unavailable.wathiqcare.local",
+        physicianName: physician.name,
+        locale: state.patient.languagePreference === "en" ? "en" : "ar",
+      });
+
+      const timeline = await fetchTimeline({
+        tenantId: physician.tenantId,
+        caseId: state.patient.caseId,
+        documentId: document.id,
+      });
+
+      setState((s) => ({
+        ...s,
+        step: "sent",
+        sentAt: new Date().toISOString(),
+        signingResult: result,
+        timeline,
+      }));
+    } catch (error) {
+      setSendError(error instanceof Error ? error.message : "Failed to send consent.");
+    } finally {
+      setSendLoading(false);
+    }
+  }, [physician, state, validateSendPrerequisites]);
+
+  const sendDryRun = useCallback(async () => {
+    if (!state.patient || !state.encounter || !state.assembly) return;
+    setSendError("");
+    setSendLoading(true);
+    try {
+      const result = await dryRunSendSecureSigningLink({
+        tenantId: physician.tenantId,
+        documentId: "dry-run",
+        caseId: state.patient.caseId || state.encounter.id,
+        patientName: state.patient.name,
+        mobileNumber: normalizeMobile(state.recipientMobile) || "+966500000000",
+        recipientEmail: state.recipientEmail.trim().toLowerCase() || "no-patient-email@unavailable.wathiqcare.local",
+        locale: state.patient.languagePreference === "en" ? "en" : "ar",
+      });
+
+      const timeline = await fetchTimeline({
+        tenantId: physician.tenantId,
+        caseId: state.patient.caseId,
+        documentId: "dry-run",
+      });
+
+      setState((s) => ({
+        ...s,
+        dryRunSuccess: true,
+        dryRunMessage: result.message,
+        timeline,
+      }));
+    } catch (error) {
+      setSendError(error instanceof Error ? error.message : "Dry-run send validation failed.");
+    } finally {
+      setSendLoading(false);
+    }
+  }, [physician.tenantId, state.patient, state.encounter, state.assembly, state.recipientMobile, state.recipientEmail]);
+
+  const reset = useCallback(() => {
+    setState({
+      step: "patient",
+      procedureQuery: "",
+      educationIncluded: true,
+      physicianNotes: "",
+      draftApproved: false,
+      reviewMode: false,
+      previewReviewed: false,
+      recipientMobile: "",
+      recipientEmail: "",
+      dryRunSuccess: false,
+      dryRunMessage: undefined,
+      timeline: [],
+      acknowledgedBlockers: new Set(),
+      acknowledgedAlerts: new Set(),
+    });
+    setPatients([]);
+    setEncounters([]);
+  }, []);
+
+  const readiness = useMemo(() => {
+    const patientReady = !!state.patient;
+    const encounterReady = !!state.encounter;
+    const procedureSelected = !!state.selectedProcedureName && !!state.assembly;
+    const assemblyReady = state.assembly?.status === "ready";
+    const blockers = state.assembly?.blockers ?? [];
+    const unacknowledgedBlockers = blockers.filter((b) => !state.acknowledgedBlockers.has(b.key));
+    const blockersResolved = unacknowledgedBlockers.length === 0;
+    const hasEducation = (state.assembly?.educationMaterials.length || 0) > 0;
+    const educationReady = assemblyReady && (hasEducation || blockersResolved);
+    const contactAvailable = hasContact(state.recipientMobile, state.recipientEmail);
+    const allowlisted = Boolean(state.sendEligibility?.allowlisted);
+    const previewReviewed = state.previewReviewed;
+    const draftApproved = state.draftApproved;
+
+    const missingItems: string[] = [];
+    if (!patientReady) missingItems.push("Patient selected");
+    if (!encounterReady) missingItems.push("Encounter selected");
+    if (!procedureSelected) missingItems.push("Procedure selected");
+    if (!assemblyReady) missingItems.push("Consent form loaded");
+    if (!educationReady) missingItems.push("Education material loaded or confirmed unavailable");
+    if (!previewReviewed) missingItems.push("Patient-facing preview reviewed");
+    if (!contactAvailable) missingItems.push("Patient contact available");
+    if (!allowlisted) missingItems.push("Recipient allowlisted");
+    if (!blockersResolved) missingItems.push("Send blockers resolved");
+    if (!draftApproved) missingItems.push("Draft approved");
+
+    const checks = [
+      patientReady,
+      encounterReady,
+      procedureSelected,
+      assemblyReady,
+      educationReady,
+      previewReviewed,
+      contactAvailable,
+      allowlisted,
+      blockersResolved,
+      draftApproved,
+    ];
+    const completedChecks = checks.filter(Boolean).length;
+    const totalChecks = checks.length;
+    const sendReady = completedChecks === totalChecks && missingItems.length === 0;
+
+    return {
+      patientReady,
+      encounterReady,
+      procedureSelected,
+      assemblyReady,
+      blockersResolved,
+      educationReady,
+      previewReviewed,
+      contactAvailable,
+      allowlisted,
+      draftApproved,
+      sendReady,
+      completedChecks,
+      totalChecks,
+      progressPercentage: Math.round((completedChecks / totalChecks) * 100),
+      blockers,
+      unacknowledgedBlockers,
+      missingItems,
+    };
+  }, [state]);
+
+  const filteredProcedures = useMemo(() => {
+    const q = state.procedureQuery.trim().toLowerCase();
+    if (!q) return procedures;
+    return procedures.filter(
+      (p) =>
+        p.titleEn.toLowerCase().includes(q) ||
+        p.titleAr.toLowerCase().includes(q) ||
+        p.specialty.toLowerCase().includes(q) ||
+        p.department.toLowerCase().includes(q),
+    );
+  }, [procedures, state.procedureQuery]);
+
+  return {
+    state,
+    patients,
+    patientsLoading,
+    patientsError,
+    encounters,
+    encountersLoading,
+    encountersError,
+    assemblyLoading,
+    assemblyError,
+    procedures,
+    proceduresLoading,
+    proceduresError,
+    filteredProcedures,
+    sendLoading,
+    sendError,
+    readiness,
+    searchForPatients,
+    selectPatient,
+    selectEncounter,
+    setProcedureQuery,
+    selectProcedure,
+    setRecipientMobile,
+    setRecipientEmail,
+    resolveAssembly,
+    setAnesthesia,
+    setEducationIncluded,
+    setPhysicianNotes,
+    setReviewMode,
+    setPreviewReviewed,
+    approveDraft,
+    acknowledgeBlocker,
+    acknowledgeAlert,
+    send,
+    sendDryRun,
+    reset,
+  };
+}

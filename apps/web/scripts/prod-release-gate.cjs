@@ -12,8 +12,17 @@ const {
 } = require("@prisma/client");
 
 const BASE_URL = (process.env.VALIDATION_BASE_URL || "http://127.0.0.1:3113").replace(/\/$/, "");
-const DEFAULT_PASSWORD = process.env.RELEASE_GATE_PASSWORD || "Admin@Wathiqcare2026!";
-const RESET_PASSWORD = process.env.RELEASE_GATE_RESET_PASSWORD || "Reset@Wathiqcare2026!";
+
+function requireEnv(name) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`FATAL: ${name} is required. Set a strong release-gate password and retry.`);
+  }
+  return value;
+}
+
+const DEFAULT_PASSWORD = requireEnv("RELEASE_GATE_PASSWORD");
+const RESET_PASSWORD = requireEnv("RELEASE_GATE_RESET_PASSWORD");
 const REPORT_PATH = path.resolve(process.cwd(), "artifacts", "release-gate", "final-prod-release-gate.json");
 const SESSION_COOKIE_NAME = "wathiqcare_access_token";
 

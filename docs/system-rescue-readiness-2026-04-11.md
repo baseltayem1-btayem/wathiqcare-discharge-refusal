@@ -12,7 +12,7 @@ Decision: CONDITIONAL NO-GO FOR FULL GO-LIVE
 - Controlled tenant recovery is complete.
 - Required tenant test credential is validated:
   - `tenant_admin@demo.com`
-  - `Demo@123`
+  - `[REDACTED]`
 - Tenant-admin can now:
   - log in
   - reach `/dashboard`

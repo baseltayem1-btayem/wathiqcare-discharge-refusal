@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import {
   $Enums,
@@ -21,6 +21,8 @@ import { getPrisma } from "@/lib/server/prisma";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { writeAuditLog } from "@/lib/server/saas-services";
 import { hasInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
+import { computeFinalConsentPdfByteHash } from "@/lib/server/informed-consents-final-pdf-payload";
+import { logRuntimeIncident } from "@/lib/server/runtime-observability";
 
 const prisma = () => getPrisma();
 
@@ -285,6 +287,34 @@ function computeFixedClauseChecksum(input: Record<string, unknown>): string {
   return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 }
 
+function computeSignatureEvidenceHash(args: {
+  role: string;
+  signerName: string;
+  signerIdNumber?: string | null;
+  signerLicense?: string | null;
+  signatureMethod: string;
+  signedAt: string;
+  signatureImageDataUrl?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}): string {
+  if (args.signatureImageDataUrl) {
+    return crypto.createHash("sha256").update(args.signatureImageDataUrl).digest("hex");
+  }
+
+  const canonical = {
+    role: args.role,
+    signerName: args.signerName,
+    signerIdNumber: args.signerIdNumber || null,
+    signerLicense: args.signerLicense || null,
+    signatureMethod: args.signatureMethod,
+    signedAt: args.signedAt,
+    ipAddress: args.ipAddress || null,
+    userAgent: args.userAgent || null,
+  };
+  return crypto.createHash("sha256").update(JSON.stringify(canonical)).digest("hex");
+}
+
 function validateBilingualSync(args: {
   record: Record<string, unknown>;
   expectedVersion?: string | null;
@@ -493,7 +523,7 @@ function normalizeAlertLevel(value: string | null | undefined): ConsentAlertLeve
   return ConsentAlertLevel.INFO;
 }
 
-async function writeConsentAudit(args: {
+export async function writeConsentAudit(args: {
   tenantId: string;
   auth: AuthContext;
   action: string;
@@ -1336,6 +1366,18 @@ export async function createConsentDocument(
     throw new ApiError(404, "Template not found");
   }
 
+  // Pilot scope exclusion: interpreter and witness signing workflows are not
+  // implemented for the controlled pilot.  Block issuance of templates that
+  // explicitly require these roles.  See
+  // `pilot-package/CONSENT_TYPE_READINESS_MATRIX.md` and
+  // `docs/rc2-operational-readiness/09-go-live-readiness.md` §3.
+  if (template.requiresWitness || template.requiresInterpreter) {
+    throw new ApiError(
+      422,
+      "This consent template requires a witness or interpreter, which is not yet supported in the pilot scope.",
+    );
+  }
+
   const templateVersionId = payload.templateVersionId?.trim() || template.currentVersionId || undefined;
   if (!templateVersionId) {
     throw new ApiError(400, "Template has no active version");
@@ -1875,6 +1917,29 @@ export async function addConsentSignature(
     throw new ApiError(400, "signerName is required");
   }
 
+  const signatureMethod = normalizeConsentMethod(payload.signatureMethod);
+  const signedAtIso = new Date().toISOString();
+  const ipAddress = request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+  const userAgent = request?.headers.get("user-agent") || null;
+  const providedMetadata = asRecord(payload.metadata) || {};
+  const signatureImageDataUrl =
+    typeof providedMetadata.signatureImageDataUrl === "string"
+      ? providedMetadata.signatureImageDataUrl
+      : typeof providedMetadata.signatureDataUrl === "string"
+        ? providedMetadata.signatureDataUrl
+        : null;
+  const signatureHash = computeSignatureEvidenceHash({
+    role,
+    signerName,
+    signerIdNumber: payload.signerIdNumber?.trim() || null,
+    signerLicense: payload.signerLicense?.trim() || null,
+    signatureMethod,
+    signedAt: signedAtIso,
+    signatureImageDataUrl,
+    ipAddress,
+    userAgent,
+  });
+
   const signature = await prisma().consentDocumentSignature.create({
     data: {
       tenantId,
@@ -1883,12 +1948,15 @@ export async function addConsentSignature(
       signerName,
       signerIdNumber: payload.signerIdNumber?.trim() || null,
       signerLicense: payload.signerLicense?.trim() || null,
-      signatureMethod: normalizeConsentMethod(payload.signatureMethod),
-      ipAddress: request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null,
-      userAgent: request?.headers.get("user-agent") || null,
+      signatureMethod,
+      ipAddress,
+      userAgent,
+      signatureHash,
       metadata: {
         capturedBy: auth.sub,
-        ...(asRecord(payload.metadata) || {}),
+        signatureHash,
+        signatureImageDataUrl: signatureImageDataUrl || undefined,
+        ...providedMetadata,
       },
     },
   });
@@ -2072,7 +2140,7 @@ export async function finalizeConsentDocument(
     status: ConsentDocumentStatus.FINALIZED,
   });
 
-  const immutablePdfHash = payload.immutablePdfHash?.trim() || crypto
+  const fallbackMetadataHash = crypto
     .createHash("sha256")
     .update(JSON.stringify({
       consentReference: doc.consentReference,
@@ -2086,6 +2154,85 @@ export async function finalizeConsentDocument(
       })),
     }))
     .digest("hex");
+
+  let pdfByteHashResult: { hash: string; engine: string } | null = null;
+  if (request) {
+    try {
+      const requestOrigin = request.nextUrl?.origin || new URL(request.url).origin;
+      pdfByteHashResult = await computeFinalConsentPdfByteHash({
+        documentId: id,
+        tenantId,
+        requestOrigin,
+        copyType: "LEGAL_ARCHIVE_COPY",
+      });
+    } catch (byteHashError) {
+      logRuntimeIncident({
+        request,
+        module: "consent_library",
+        type: "PDF_FAILURE",
+        operation: "finalizeConsentDocument",
+        tenantId,
+        error: byteHashError,
+        details: { reason: "pdf_byte_hash_generation_failed", fallback: "metadata_hash" },
+      });
+    }
+  }
+
+  const immutablePdfHash = payload.immutablePdfHash?.trim()
+    || pdfByteHashResult?.hash
+    || fallbackMetadataHash;
+
+  const clinicalKnowledgeAssembly = asRecord(asRecord(doc.metadata)?.clinicalKnowledgeAssembly);
+  const signedVersionLinkage = {
+    templateVersion: {
+      id: doc.templateVersion.id,
+      versionLabel: doc.templateVersion.versionLabel,
+      versionNumber: doc.templateVersion.versionNumber,
+      approvedAt: doc.templateVersion.approvedAt?.toISOString() || null,
+      legalHash: doc.templateVersion.legalHash || null,
+    },
+    clinicalKnowledgePackage: clinicalKnowledgeAssembly
+      ? {
+          packageId: clinicalKnowledgeAssembly.packageId,
+          packageVersion: clinicalKnowledgeAssembly.packageVersion,
+          procedureId: clinicalKnowledgeAssembly.procedureId,
+          procedureCode: clinicalKnowledgeAssembly.procedureCode,
+          consentForm: clinicalKnowledgeAssembly.consentForm
+            ? {
+                id: (clinicalKnowledgeAssembly.consentForm as Record<string, unknown>).id,
+                version: (clinicalKnowledgeAssembly.consentForm as Record<string, unknown>).version,
+                code: (clinicalKnowledgeAssembly.consentForm as Record<string, unknown>).code,
+              }
+            : null,
+          educationMaterials: Array.isArray(clinicalKnowledgeAssembly.educationMaterials)
+            ? clinicalKnowledgeAssembly.educationMaterials.map((item: unknown) => ({
+                id: (item as Record<string, unknown>).id,
+                version: (item as Record<string, unknown>).version,
+                code: (item as Record<string, unknown>).code,
+              }))
+            : [],
+          riskDisclosures: Array.isArray(clinicalKnowledgeAssembly.riskDisclosures)
+            ? clinicalKnowledgeAssembly.riskDisclosures.map((item: unknown) => ({
+                id: (item as Record<string, unknown>).id,
+                version: (item as Record<string, unknown>).version,
+                code: (item as Record<string, unknown>).code,
+              }))
+            : [],
+          decisionRules: Array.isArray(clinicalKnowledgeAssembly.decisionRules)
+            ? clinicalKnowledgeAssembly.decisionRules.map((item: unknown) => ({
+                id: (item as Record<string, unknown>).id,
+                code: (item as Record<string, unknown>).code,
+              }))
+            : [],
+        }
+      : null,
+    documentVersion: doc.documentVersion,
+    fixedClauseChecksum,
+    pdfByteHash: pdfByteHashResult
+      ? { hash: pdfByteHashResult.hash, engine: pdfByteHashResult.engine }
+      : null,
+    finalizedAt: new Date().toISOString(),
+  };
 
   const qrPayload = [
     `CONSENT:${doc.consentReference}`,
@@ -2110,6 +2257,7 @@ export async function finalizeConsentDocument(
       metadata: {
         ...(asRecord(doc.metadata) || {}),
         finalizedWordingSnapshot: wordingSnapshot,
+        signedVersionLinkage,
         governance: {
           ...(asRecord(asRecord(doc.metadata)?.governance) || {}),
           lifecycle: {
