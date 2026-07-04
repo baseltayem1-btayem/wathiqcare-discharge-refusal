@@ -347,12 +347,11 @@ export async function sendModuleSecureSigningLink(args: {
   const isPlaceholderEmail = normalizedRecipientEmail === "no-patient-email@unavailable.wathiqcare.local";
 
   if (secureSigningEmail.status !== "sent") {
-    if (!isPlaceholderEmail) {
-      throw new ApiError(502, secureSigningEmail.failureReason || "Failed to send secure signing link email");
-    }
-    // Placeholder email is expected to be undeliverable because no patient email is captured.
-    // Make this non-fatal for the controlled SMS pilot while preserving audit visibility.
-    secureSigningEmail.failureReason = "SKIPPED_PLACEHOLDER_EMAIL";
+    // Email delivery is treated as best-effort for the controlled SMS pilot.
+    // SMS remains the primary patient notification channel; audit visibility is preserved.
+    secureSigningEmail.failureReason = isPlaceholderEmail
+      ? "SKIPPED_PLACEHOLDER_EMAIL"
+      : (secureSigningEmail.failureReason || "Secure signing link email failed; continuing with SMS");
   }
 
   try {
