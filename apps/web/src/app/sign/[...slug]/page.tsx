@@ -27,10 +27,8 @@ export default async function PublicSignCatchAllPage({ params, searchParams }: S
   const initialLang = lang === "en" ? "en" : "ar";
 
   return (
-    <main className="min-h-screen bg-slate-50 py-6 px-4 sm:px-6">
-      <div className="mx-auto w-full max-w-3xl">
-        <ApprovedPatientWorkflow token={token} initialLang={initialLang} />
-      </div>
+    <main className="min-h-screen bg-background">
+      <ApprovedPatientWorkflow token={token} initialLang={initialLang} />
     </main>
   );
 }
