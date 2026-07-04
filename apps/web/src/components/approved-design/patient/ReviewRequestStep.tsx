@@ -47,7 +47,9 @@ export function ReviewRequestStep({
         </p>
       </div>
 
-      <PatientIdentityCard lang={lang} name={patientName} mrn={patientMrn} />
+      {patientName ? (
+        <PatientIdentityCard lang={lang} name={patientName} mrn={patientMrn} />
+      ) : null}
 
       <Card className="p-4 flex flex-col gap-3">
         <div
