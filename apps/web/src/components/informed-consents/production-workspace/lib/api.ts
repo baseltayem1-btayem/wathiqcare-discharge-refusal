@@ -2,6 +2,7 @@ import type {
   ProductionPatient,
   ProductionEncounter,
   ProductionAssembly,
+  ProductionProcedure,
   SecureSigningResult,
   TimelineEvent,
 } from "../types";
@@ -220,26 +221,12 @@ export async function checkSendEligibility(args: {
 }
 
 export async function fetchProcedures(tenantId: string): Promise<
-  Array<{
-    id: string;
-    titleEn: string;
-    titleAr: string;
-    specialty: string;
-    department: string;
-    anesthesiaRequired: boolean;
-  }>
+  ProductionProcedure[]
 > {
   const response = await fetch(`/api/modules/clinical-content/procedures?tenantId=${encodeURIComponent(tenantId)}`);
   const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
   if (!response.ok || !payload.ok) {
     throw new Error(String(payload.error || "Failed to load procedures."));
   }
-  return Array.isArray(payload.procedures) ? (payload.procedures as Array<{
-    id: string;
-    titleEn: string;
-    titleAr: string;
-    specialty: string;
-    department: string;
-    anesthesiaRequired: boolean;
-  }>) : [];
+  return Array.isArray(payload.procedures) ? (payload.procedures as ProductionProcedure[]) : [];
 }

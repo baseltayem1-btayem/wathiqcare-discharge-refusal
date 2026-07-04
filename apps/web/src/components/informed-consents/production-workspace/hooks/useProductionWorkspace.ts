@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
   ProductionPatient,
   ProductionEncounter,
   ProductionAssembly,
+  ProductionProcedure,
   PhysicianContext,
   SecureSigningResult,
   TimelineEvent,
@@ -28,7 +30,9 @@ export type ProductionWorkspaceState = {
   patient?: ProductionPatient;
   encounter?: ProductionEncounter;
   procedureQuery: string;
-  selectedProcedureName?: string;
+  selectedProcedureId?: string;
+  selectedProcedureTitle?: string;
+  selectedProcedure?: ProductionProcedure;
   assembly?: ProductionAssembly;
   anesthesiaOverride?: "NONE" | "LOCAL" | "SEDATION" | "REGIONAL" | "GENERAL";
   educationIncluded: boolean;
@@ -109,12 +113,16 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   const [assemblyLoading, setAssemblyLoading] = useState(false);
   const [assemblyError, setAssemblyError] = useState<string>("");
 
-  const [procedures, setProcedures] = useState<Array<{ id: string; titleEn: string; titleAr: string; specialty: string; department: string; anesthesiaRequired: boolean }>>([]);
+  const [procedures, setProcedures] = useState<ProductionProcedure[]>([]);
   const [proceduresLoading, setProceduresLoading] = useState(false);
   const [proceduresError, setProceduresError] = useState<string>("");
+  const [procedureSearchMessage, setProcedureSearchMessage] = useState<string>("");
 
   const [sendLoading, setSendLoading] = useState(false);
   const [sendError, setSendError] = useState<string>("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const searchForPatients = useCallback(async (query: string) => {
     setPatientsError("");
@@ -201,7 +209,9 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         patient,
         encounter: defaultEncounter,
         assembly: undefined,
-        selectedProcedureName: undefined,
+        selectedProcedureId: undefined,
+        selectedProcedureTitle: undefined,
+        selectedProcedure: undefined,
         anesthesiaOverride: undefined,
         draftApproved: false,
         previewReviewed: false,
@@ -224,7 +234,9 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       step: "procedure",
       encounter,
       assembly: undefined,
-      selectedProcedureName: undefined,
+      selectedProcedureId: undefined,
+      selectedProcedureTitle: undefined,
+      selectedProcedure: undefined,
       procedureQuery: "",
       anesthesiaOverride: undefined,
       draftApproved: false,
@@ -238,16 +250,18 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     setState((s) => ({ ...s, procedureQuery }));
   }, []);
 
-  const selectProcedure = useCallback((procedureName: string) => {
+  const selectProcedure = useCallback((procedureId: string) => {
+    const selectedProcedure = procedures.find((procedure) => procedure.id === procedureId);
     setState((s) => ({
       ...s,
-      selectedProcedureName: procedureName,
-      procedureQuery: procedureName,
+      selectedProcedureId: selectedProcedure?.id,
+      selectedProcedureTitle: selectedProcedure?.titleEn,
+      selectedProcedure,
       assembly: undefined,
       draftApproved: false,
       previewReviewed: false,
     }));
-  }, []);
+  }, [procedures]);
 
   const setRecipientMobile = useCallback((recipientMobile: string) => {
     setState((s) => ({ ...s, recipientMobile }));
@@ -266,16 +280,22 @@ export function useProductionWorkspace(physician: PhysicianContext) {
 
   const resolveAssembly = useCallback(async () => {
     if (!state.patient || !state.encounter) return;
-    const procedureName = state.selectedProcedureName || state.procedureQuery.trim();
-    if (!procedureName) {
-      setAssemblyError("Select or type a procedure first.");
+    if (!state.selectedProcedure) {
+      setAssemblyError("Select a procedure from the list first.");
       return;
     }
+    const selectedProcedure = state.selectedProcedure;
+    const procedureIdentifier = selectedProcedure.titleEn;
     setAssemblyError("");
     setAssemblyLoading(true);
     try {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.set("encounterId", state.encounter.encounterId || state.encounter.id);
+      nextParams.set("procedureId", state.selectedProcedure.id);
+      router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
+
       const result = await resolveContentMapping({
-        procedure: procedureName,
+        procedure: procedureIdentifier,
         tenantId: physician.tenantId,
         reviewMode: state.reviewMode,
         patientContext: {
@@ -297,8 +317,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
 
       setState((s) => ({
         ...s,
-        procedureQuery: procedureName,
-        selectedProcedureName: procedureName,
+        selectedProcedureId: selectedProcedure.id,
+        selectedProcedureTitle: selectedProcedure.titleEn,
         assembly: result.clinicalKnowledgeAssembly,
         step: "review",
         draftApproved: false,
@@ -309,7 +329,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     } finally {
       setAssemblyLoading(false);
     }
-  }, [physician, state.patient, state.encounter, state.reviewMode, state.selectedProcedureName, state.procedureQuery]);
+  }, [pathname, physician, router, searchParams, state.patient, state.encounter, state.reviewMode, state.selectedProcedure]);
 
   const setAnesthesia = useCallback((decision: ProductionWorkspaceState["anesthesiaOverride"]) => {
     setState((s) => ({ ...s, anesthesiaOverride: decision }));
@@ -354,7 +374,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   const validateSendPrerequisites = useCallback((): string | undefined => {
     if (!state.patient) return "Select a patient first.";
     if (!state.encounter) return "Select an encounter first.";
-    if (!state.selectedProcedureName) return "Select a specific procedure first.";
+    if (!state.selectedProcedureId) return "Select a specific procedure first.";
     if (!state.assembly) return "Resolve a clinical knowledge package first.";
     if (state.assembly.status !== "ready") return "The knowledge package is not ready.";
     const blockers = state.assembly.blockers.filter((b) => !state.acknowledgedBlockers.has(b.key));
@@ -389,10 +409,14 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         physicianSpecialty: physician.specialty || state.encounter.physicianSpecialty || undefined,
         department: physician.department || state.encounter.department || undefined,
         diagnosis: state.encounter.diagnosis || undefined,
-        plannedProcedure: state.selectedProcedureName,
+        plannedProcedure: state.selectedProcedureTitle,
         metadata: {
+          selectedProcedureId: state.selectedProcedureId,
+          selectedProcedureTitle: state.selectedProcedureTitle,
           procedureId: state.assembly.procedureId,
           procedureCode: state.assembly.procedureCode,
+          selectedProcedureCode: state.selectedProcedure?.procedureCode,
+          selectedCategoryCode: state.selectedProcedure?.categoryCode,
           packageId: state.assembly.packageId,
           patientLanguagePreference: state.patient.languagePreference,
         },
@@ -486,7 +510,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
   const readiness = useMemo(() => {
     const patientReady = !!state.patient;
     const encounterReady = !!state.encounter;
-    const procedureSelected = !!state.selectedProcedureName && !!state.assembly;
+    const procedureSelected = !!state.selectedProcedureId;
     const assemblyReady = state.assembly?.status === "ready";
     const blockers = state.assembly?.blockers ?? [];
     const unacknowledgedBlockers = blockers.filter((b) => !state.acknowledgedBlockers.has(b.key));
@@ -555,9 +579,38 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         p.titleEn.toLowerCase().includes(q) ||
         p.titleAr.toLowerCase().includes(q) ||
         p.specialty.toLowerCase().includes(q) ||
-        p.department.toLowerCase().includes(q),
+        (p.department || "").toLowerCase().includes(q) ||
+        (p.procedureCode || "").toLowerCase().includes(q) ||
+        (p.categoryCode || "").toLowerCase().includes(q) ||
+        (p.consentType || "").toLowerCase().includes(q) ||
+        (p.templateType || "").toLowerCase().includes(q),
     );
   }, [procedures, state.procedureQuery]);
+
+  const visibleProcedures = useMemo(() => {
+    if (!state.selectedProcedure) {
+      return filteredProcedures;
+    }
+    const hasSelected = filteredProcedures.some((procedure) => procedure.id === state.selectedProcedure?.id);
+    return hasSelected ? filteredProcedures : [state.selectedProcedure, ...filteredProcedures];
+  }, [filteredProcedures, state.selectedProcedure]);
+
+  useEffect(() => {
+    const query = state.procedureQuery.trim();
+    if (!query) {
+      setProcedureSearchMessage("");
+      return;
+    }
+
+    if (filteredProcedures.length === 0) {
+      const message = `No procedures matched "${query}". Try ICU, specialty, category, or code.`;
+      setProcedureSearchMessage(message);
+      console.debug("[informed-consents] procedure search returned no matches", { query, totalProcedures: procedures.length });
+      return;
+    }
+
+    setProcedureSearchMessage("");
+  }, [filteredProcedures.length, procedures.length, state.procedureQuery]);
 
   return {
     state,
@@ -572,7 +625,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     procedures,
     proceduresLoading,
     proceduresError,
-    filteredProcedures,
+    filteredProcedures: visibleProcedures,
+    procedureSearchMessage,
     sendLoading,
     sendError,
     readiness,
