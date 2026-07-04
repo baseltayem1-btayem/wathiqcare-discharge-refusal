@@ -554,8 +554,8 @@ export function ApprovedPatientWorkflow({
           facilityName={facilityName}
           procedureTitle={procedureTitle}
           physicianName={physicianName}
-          patientName={patientName || (lang === "ar" ? "المريض" : "Patient")}
-          patientMrn={patientMrn || (lang === "ar" ? "—" : "—")}
+          patientName={patientName}
+          patientMrn={patientMrn}
           consentRef={consentRef}
           versionLabel={versionLabel}
           onProceed={() => setScreen("otp")}
