@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     select: { id: true, currentVersionId: true },
   });
 
-  if (!template) {
+  if (!template || !template.currentVersionId) {
     const created = await createConsentTemplate(auth, {
       templateCode: `SMOKE-${Date.now()}`,
       consentType: "GENERAL_CONSENT",
