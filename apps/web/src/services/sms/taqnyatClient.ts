@@ -5,12 +5,36 @@ export type TaqnyatSendArgs = {
   message: string;
 };
 
+export type SmsProvider = "taqnyat" | "sms_proxy";
+
 export type TaqnyatSendResult = {
   ok: boolean;
   statusCode: number;
   providerMessageId: string | null;
   response: Record<string, unknown> | null;
+  provider: SmsProvider | null;
 };
+
+const SMS_REQUEST_TIMEOUT_MS = 5000;
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 4) {
+    return "[REDACTED_PHONE]";
+  }
+  return `${digits.slice(0, 3)}****${digits.slice(-2)}`;
+}
 
 function getSenderName(): string {
   return (
@@ -34,11 +58,119 @@ function getBearerToken(): string {
   );
 }
 
-export function isTaqnyatReady(): boolean {
-  return isSmsEnabled() && Boolean(getBearerToken());
+function getSmsProxyUrl(): string {
+  return process.env.SMS_PROXY_URL?.trim() ?? "";
 }
 
-export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
+function getSmsProxySecret(): string {
+  return process.env.SMS_PROXY_SECRET?.trim() ?? "";
+}
+
+function getSmsProxySenderName(): string {
+  return process.env.SMS_PROXY_SENDER_NAME?.trim() ?? "WATHIQID";
+}
+
+function isSmsProxyConfigured(): boolean {
+  return Boolean(getSmsProxyUrl() && getSmsProxySecret());
+}
+
+/**
+ * Normalize a Saudi mobile number to the proxy/Taqnyat-successful format:
+ * 9665XXXXXXXX without a leading '+'.
+ */
+export function normalizeSaudiMobileForSms(recipient: string): string {
+  let digits = recipient.replace(/\D/g, "");
+
+  if (digits.startsWith("+")) {
+    digits = digits.slice(1);
+  }
+  if (digits.startsWith("00")) {
+    digits = digits.slice(2);
+  }
+  if (digits.startsWith("0") && digits.length === 10) {
+    digits = `966${digits.slice(1)}`;
+  }
+  if (digits.startsWith("5") && digits.length === 9) {
+    digits = `966${digits}`;
+  }
+
+  return digits;
+}
+
+export function isTaqnyatReady(): boolean {
+  return isSmsProxyConfigured() || (isSmsEnabled() && Boolean(getBearerToken()));
+}
+
+function buildSendResult(
+  response: Response,
+  parsed: Record<string, unknown> | null,
+  provider: SmsProvider,
+): TaqnyatSendResult {
+  const messageId =
+    typeof parsed?.messageId === "string"
+      ? parsed.messageId
+      : typeof parsed?.message_id === "string"
+        ? parsed.message_id
+        : null;
+
+  return {
+    ok: response.ok,
+    statusCode: response.status,
+    providerMessageId: messageId,
+    response: parsed,
+    provider,
+  };
+}
+
+async function sendViaSmsProxy(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
+  const proxyUrl = getSmsProxyUrl().replace(/\/$/, "");
+  const secret = getSmsProxySecret();
+  const senderName = getSmsProxySenderName();
+  const normalizedRecipient = normalizeSaudiMobileForSms(args.recipient);
+
+  // Safe logging: mask recipient, never log secret.
+  console.log("[sms_proxy] sending via proxy", {
+    recipient: maskPhone(normalizedRecipient),
+    senderName,
+    messageLength: args.message.length,
+  });
+
+  try {
+    const response = await fetchWithTimeout(`${proxyUrl}/api/v1/sms/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-wathiqcare-sms-secret": secret,
+      },
+      body: JSON.stringify({
+        recipient: normalizedRecipient,
+        senderName,
+        message: args.message,
+      }),
+    }, SMS_REQUEST_TIMEOUT_MS);
+
+    let parsed: Record<string, unknown> | null = null;
+    try {
+      parsed = (await response.json()) as Record<string, unknown>;
+    } catch {
+      parsed = null;
+    }
+
+    return buildSendResult(response, parsed, "sms_proxy");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[sms_proxy] network error", { error: message, recipient: maskPhone(normalizedRecipient) });
+    return {
+      ok: false,
+      statusCode: 0,
+      providerMessageId: null,
+      response: { code: "SMS_PROXY_NETWORK_ERROR", error: message },
+      provider: "sms_proxy",
+    };
+  }
+}
+
+async function sendViaDirectTaqnyat(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
   const bearerToken = getBearerToken();
   if (!isSmsEnabled() || !bearerToken) {
     return {
@@ -46,33 +178,57 @@ export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<Taqnyat
       statusCode: 503,
       providerMessageId: null,
       response: { code: "TAQNYAT_NOT_CONFIGURED_OR_DISABLED" },
+      provider: null,
     };
   }
 
-  const response = await fetch(`${SIGNATURE_CONFIG.taqniatApiUrl.replace(/\/$/, "")}/messages`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${bearerToken}`,
-    },
-    body: JSON.stringify({
-      recipients: [args.recipient],
-      body: args.message,
-      sender: getSenderName(),
-    }),
+  const normalizedRecipient = normalizeSaudiMobileForSms(args.recipient);
+
+  console.log("[taqnyat] sending via direct API", {
+    recipient: maskPhone(normalizedRecipient),
+    sender: getSenderName(),
+    messageLength: args.message.length,
   });
 
-  let parsed: Record<string, unknown> | null = null;
   try {
-    parsed = (await response.json()) as Record<string, unknown>;
-  } catch {
-    parsed = null;
+    const response = await fetchWithTimeout(`${SIGNATURE_CONFIG.taqniatApiUrl.replace(/\/$/, "")}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${bearerToken}`,
+      },
+      body: JSON.stringify({
+        recipients: [normalizedRecipient],
+        body: args.message,
+        sender: getSenderName(),
+      }),
+    }, SMS_REQUEST_TIMEOUT_MS);
+
+    let parsed: Record<string, unknown> | null = null;
+    try {
+      parsed = (await response.json()) as Record<string, unknown>;
+    } catch {
+      parsed = null;
+    }
+
+    return buildSendResult(response, parsed, "taqnyat");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[taqnyat] network error", { error: message, recipient: maskPhone(normalizedRecipient) });
+    return {
+      ok: false,
+      statusCode: 0,
+      providerMessageId: null,
+      response: { code: "TAQNYAT_NETWORK_ERROR", error: message },
+      provider: "taqnyat",
+    };
+  }
+}
+
+export async function sendTaqnyatMessage(args: TaqnyatSendArgs): Promise<TaqnyatSendResult> {
+  if (isSmsProxyConfigured()) {
+    return sendViaSmsProxy(args);
   }
 
-  return {
-    ok: response.ok,
-    statusCode: response.status,
-    providerMessageId: typeof parsed?.message_id === "string" ? parsed.message_id : null,
-    response: parsed,
-  };
+  return sendViaDirectTaqnyat(args);
 }

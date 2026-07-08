@@ -8,6 +8,7 @@ import {
   type EmailDiagnostics,
 } from "@/lib/server/email-provider";
 import { getPrisma } from "@/lib/server/prisma";
+import { ensureNotificationDeliveryAttemptSchema } from "@/services/sms/smsAuditService";
 
 const prisma = () => getPrisma();
 
@@ -92,6 +93,7 @@ async function recordEmailAuditAttempt(args: {
   diagnostics?: EmailDiagnostics | null;
   metadata?: Record<string, unknown>;
 }): Promise<string | null> {
+  await ensureNotificationDeliveryAttemptSchema();
   const created = await prisma().notificationDeliveryAttempt.create({
     data: {
       tenantId: args.tenantId,
@@ -203,7 +205,7 @@ function buildEnterpriseSecureSigningEmailTemplate(args: {
                     <p style="margin:0;font-size:14px;line-height:22px;color:#2F2F2F;">✓ Electronic Audit Trail Enabled</p>
                     <hr style="border:none;border-top:1px solid #dbe7f4;margin:12px 0;" />
                     <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ تم التحقق من الطلب من المركز الطبي الدولي</p>
-                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ مدعوم من وثيق كير</p>
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ مدعوم من واثق كير</p>
                     <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ وصول آمن ومشفر</p>
                     <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ يتطلب التحقق عبر رمز OTP</p>
                     <p style="margin:0;font-size:14px;line-height:22px;color:#2F2F2F;" dir="rtl">✓ سجل تدقيق إلكتروني مفعل</p>
@@ -316,7 +318,7 @@ function buildEnterpriseSecureSigningEmailTemplate(args: {
     "",
     "مؤشرات الثقة:",
     "- تم التحقق من الطلب من المركز الطبي الدولي",
-    "- مدعوم من وثيق كير",
+    "- مدعوم من واثق كير",
     "- وصول آمن ومشفر",
     "- يتطلب التحقق عبر رمز OTP",
     "- سجل تدقيق إلكتروني مفعل",

@@ -1,11 +1,58 @@
-﻿import crypto from "node:crypto";
-import { Prisma } from "@prisma/client";
+import crypto from "node:crypto";
+import { Prisma, PrismaClient } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { getPrisma } from "@/lib/server/prisma";
 import { toIsoString } from "@/lib/server/compliance-utils";
 
 const prisma = () => getPrisma();
+
+const AUDIT_CHAIN_SCHEMA_STATEMENTS = [
+  `
+    CREATE TABLE IF NOT EXISTS audit_chain_events (
+      id VARCHAR PRIMARY KEY,
+      tenant_id VARCHAR NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      case_id VARCHAR REFERENCES cases(id) ON DELETE SET NULL,
+      event_type VARCHAR NOT NULL,
+      actor_id VARCHAR,
+      actor_role VARCHAR,
+      source_ip VARCHAR,
+      device_info VARCHAR,
+      session_info VARCHAR,
+      previous_hash VARCHAR,
+      current_hash VARCHAR NOT NULL UNIQUE,
+      payload_summary VARCHAR NOT NULL,
+      document_version VARCHAR,
+      metadata_json JSONB,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_audit_chain_events_case
+      ON audit_chain_events(tenant_id, case_id, created_at ASC)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_audit_chain_events_event_type
+      ON audit_chain_events(tenant_id, event_type, created_at ASC)
+  `,
+];
+
+let auditChainSchemaBootstrapPromise: Promise<void> | null = null;
+
+async function ensureAuditChainSchema() {
+  if (!auditChainSchemaBootstrapPromise) {
+    auditChainSchemaBootstrapPromise = (async () => {
+      for (const statement of AUDIT_CHAIN_SCHEMA_STATEMENTS) {
+        await prisma().$executeRawUnsafe(statement);
+      }
+    })().catch((error) => {
+      auditChainSchemaBootstrapPromise = null;
+      throw error;
+    });
+  }
+
+  return auditChainSchemaBootstrapPromise;
+}
 
 type AuditChainEventDelegate = {
   findFirst: (args: unknown) => Promise<{ currentHash?: string | null } | null>;
@@ -115,7 +162,7 @@ export function verifyAuditChain(events: VerifiableChainEvent[]): AuditChainVeri
   };
 }
 
-export async function appendAuditChainEvent(args: {
+export type AppendAuditChainEventArgs = {
   tenantId: string;
   caseId?: string | null;
   eventType: string;
@@ -125,27 +172,30 @@ export async function appendAuditChainEvent(args: {
   documentVersion?: string | null;
   metadataJson?: unknown;
   request?: NextRequest;
-}) {
+};
+
+function extractRequestSource(request?: NextRequest) {
+  return {
+    sourceIp: request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+    deviceInfo: request?.headers.get("user-agent") ?? null,
+    sessionInfo: request?.headers.get("x-session-id") ?? null,
+  };
+}
+
+function validateAppendAuditChainEventArgs(args: AppendAuditChainEventArgs): void {
   if (!args.tenantId || !args.eventType || !args.payloadSummary) {
     throw new ApiError(400, "Missing mandatory audit chain fields");
   }
+}
 
-  const auditChainEvent = getAuditChainEventDelegate();
-
-  const previous = await auditChainEvent.findFirst({
-    where: {
-      tenantId: args.tenantId,
-      ...(args.caseId ? { caseId: args.caseId } : {}),
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const sourceIp = args.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
-  const deviceInfo = args.request?.headers.get("user-agent") ?? null;
-  const sessionInfo = args.request?.headers.get("x-session-id") ?? null;
-  const occurredAt = new Date();
+function buildAuditChainCreateData(
+  args: AppendAuditChainEventArgs,
+  previousHash: string | null | undefined,
+  occurredAt: Date,
+  source: ReturnType<typeof extractRequestSource>,
+) {
   const currentHash = buildAuditChainHash({
-    previousHash: previous?.currentHash ?? null,
+    previousHash: previousHash ?? null,
     tenantId: args.tenantId,
     caseId: args.caseId ?? null,
     eventType: args.eventType,
@@ -157,32 +207,81 @@ export async function appendAuditChainEvent(args: {
     metadataJson: args.metadataJson ?? null,
   });
 
-  return auditChainEvent.create({
-    data: {
+  return {
+    tenantId: args.tenantId,
+    caseId: args.caseId ?? null,
+    eventType: args.eventType,
+    actorId: args.actorId ?? null,
+    actorRole: args.actorRole ?? null,
+    sourceIp: source.sourceIp,
+    deviceInfo: source.deviceInfo,
+    sessionInfo: source.sessionInfo,
+    previousHash: previousHash ?? null,
+    currentHash,
+    payloadSummary: args.payloadSummary,
+    documentVersion: args.documentVersion ?? null,
+    metadataJson:
+      args.metadataJson === undefined
+        ? undefined
+        : args.metadataJson === null
+          ? Prisma.JsonNull
+          : (args.metadataJson as JsonInputValue),
+    createdAt: occurredAt,
+  };
+}
+
+export async function appendAuditChainEventInTransaction(
+  args: AppendAuditChainEventArgs,
+  tx: PrismaClient | Prisma.TransactionClient,
+) {
+  validateAppendAuditChainEventArgs(args);
+  await ensureAuditChainSchema();
+
+  const previous = await tx.auditChainEvent.findFirst({
+    where: {
       tenantId: args.tenantId,
-      caseId: args.caseId ?? null,
-      eventType: args.eventType,
-      actorId: args.actorId ?? null,
-      actorRole: args.actorRole ?? null,
-      sourceIp,
-      deviceInfo,
-      sessionInfo,
-      previousHash: previous?.currentHash ?? null,
-      currentHash,
-      payloadSummary: args.payloadSummary,
-      documentVersion: args.documentVersion ?? null,
-      metadataJson:
-        args.metadataJson === undefined
-          ? undefined
-          : args.metadataJson === null
-            ? Prisma.JsonNull
-            : (args.metadataJson as JsonInputValue),
-      createdAt: occurredAt,
+      ...(args.caseId ? { caseId: args.caseId } : {}),
     },
+    orderBy: { createdAt: "desc" },
   });
+
+  const occurredAt = new Date();
+  const source = extractRequestSource(args.request);
+  const data = buildAuditChainCreateData(args, previous?.currentHash ?? null, occurredAt, source);
+
+  return tx.auditChainEvent.create({ data });
+}
+
+export async function appendAuditChainEvent(
+  args: AppendAuditChainEventArgs,
+  tx?: PrismaClient | Prisma.TransactionClient,
+) {
+  if (tx) {
+    return appendAuditChainEventInTransaction(args, tx);
+  }
+
+  validateAppendAuditChainEventArgs(args);
+  await ensureAuditChainSchema();
+
+  const auditChainEvent = getAuditChainEventDelegate();
+
+  const previous = await auditChainEvent.findFirst({
+    where: {
+      tenantId: args.tenantId,
+      ...(args.caseId ? { caseId: args.caseId } : {}),
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const occurredAt = new Date();
+  const source = extractRequestSource(args.request);
+  const data = buildAuditChainCreateData(args, previous?.currentHash ?? null, occurredAt, source);
+
+  return auditChainEvent.create({ data });
 }
 
 export async function getCaseAuditChain(tenantId: string, caseId: string) {
+  await ensureAuditChainSchema();
   const auditChainEvent = getAuditChainEventDelegate();
 
   const events = await auditChainEvent.findMany({

@@ -13,7 +13,7 @@
 // ---------------------------------------------------------------------------
 
 export const PLATFORM_NAME = process.env.PLATFORM_NAME || "WathiqCare";
-export const PLATFORM_NAME_AR = process.env.PLATFORM_NAME_AR || "وثيق كير";
+export const PLATFORM_NAME_AR = process.env.PLATFORM_NAME_AR || "واثق كير";
 
 export const BRAND = {
   ROYAL_BLUE: "#002B5C",

@@ -1,4 +1,4 @@
-const fs = require("node:fs");
+﻿const fs = require("node:fs");
 const path = require("node:path");
 
 function writeIfPossible(targetPath, content) {
@@ -67,8 +67,14 @@ for (const duplicatedRoot of duplicatedRoots) {
   copyIfPossible(path.resolve(sourceAppRoot, ".next"), `${duplicatedRoot}/.next`, `.next copy (${duplicatedRoot})`);
 }
 
+const excludedRootEntries = new Set([
+  ".next",
+  "node_modules",
+  "tsconfig.tsbuildinfo",
+]);
+
 for (const entry of fs.readdirSync(sourceAppRoot, { withFileTypes: true })) {
-  if (entry.name === ".next" || entry.name === "node_modules") {
+  if (excludedRootEntries.has(entry.name)) {
     continue;
   }
 
@@ -102,3 +108,4 @@ try {
   const message = error && error.message ? error.message : String(error);
   console.warn(`[routes-manifest] skip node_modules link: ${message}`);
 }
+

@@ -6,6 +6,7 @@
  * Provider adapters are injected — no provider-specific code here.
  */
 
+import crypto from "node:crypto";
 import { getPrisma } from "@/lib/server/prisma";
 import {
   type SigningSessionInput,
@@ -25,6 +26,155 @@ import { SIGNATURE_CONFIG } from "@/lib/config/platform-config";
 import { ApiError } from "@/lib/server/http";
 
 const prisma = () => getPrisma();
+
+const SIGNING_SCHEMA_STATEMENTS = [
+  `
+    CREATE TABLE IF NOT EXISTS signing_sessions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      tenant_id UUID NOT NULL,
+      document_id UUID NOT NULL,
+      module_type TEXT NOT NULL
+        CHECK (module_type IN ('informed_consent','discharge_refusal','promissory_note')),
+      provider_key TEXT NOT NULL,
+      provider_session_id TEXT,
+      status TEXT NOT NULL DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING','SENT','PARTIALLY_SIGNED','COMPLETED','EXPIRED','REVOKED')),
+      required_signers JSONB NOT NULL DEFAULT '[]',
+      completed_signers JSONB NOT NULL DEFAULT '[]',
+      signer_links JSONB NOT NULL DEFAULT '{}',
+      expires_at TIMESTAMPTZ,
+      completed_at TIMESTAMPTZ,
+      revoked_at TIMESTAMPTZ,
+      revoked_reason TEXT,
+      signed_pdf_key TEXT,
+      initiated_by_id UUID NOT NULL,
+      resend_count INT NOT NULL DEFAULT 0,
+      last_resent_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS signing_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      session_id UUID NOT NULL REFERENCES signing_sessions(id) ON DELETE CASCADE,
+      tenant_id UUID NOT NULL,
+      event_type TEXT NOT NULL,
+      signer_role TEXT,
+      provider_key TEXT NOT NULL,
+      provider_event_id TEXT,
+      payload JSONB NOT NULL DEFAULT '{}',
+      ip_address TEXT,
+      timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS signing_secure_tokens (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      session_id UUID NOT NULL REFERENCES signing_sessions(id) ON DELETE CASCADE,
+      tenant_id UUID NOT NULL,
+      signer_role TEXT NOT NULL,
+      token TEXT UNIQUE,
+      token_hash TEXT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
+      revoked_at TIMESTAMPTZ,
+      ip_on_use TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    ALTER TABLE signing_secure_tokens
+      ADD COLUMN IF NOT EXISTS token_hash TEXT NULL
+  `,
+  `
+    ALTER TABLE signing_secure_tokens
+      ALTER COLUMN token DROP NOT NULL
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS webhook_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      tenant_id UUID,
+      provider_key TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      raw_payload JSONB NOT NULL,
+      hmac_verified BOOLEAN NOT NULL DEFAULT FALSE,
+      processed BOOLEAN NOT NULL DEFAULT FALSE,
+      processed_at TIMESTAMPTZ,
+      processing_error TEXT,
+      received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_ss_tenant_document
+      ON signing_sessions (tenant_id, document_id)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_ss_provider_session
+      ON signing_sessions (provider_session_id)
+      WHERE provider_session_id IS NOT NULL
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_ss_status
+      ON signing_sessions (status)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_se_session
+      ON signing_events (session_id)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_se_tenant_event
+      ON signing_events (tenant_id, event_type)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_sst_token
+      ON signing_secure_tokens (token)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_sst_session
+      ON signing_secure_tokens (session_id)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_sst_expires
+      ON signing_secure_tokens (expires_at)
+      WHERE used_at IS NULL AND revoked_at IS NULL
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_sst_token_hash
+      ON signing_secure_tokens (token_hash)
+      WHERE revoked_at IS NULL AND used_at IS NULL
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_we_provider_event
+      ON webhook_events (provider_key, event_type)
+  `,
+  `
+    CREATE INDEX IF NOT EXISTS idx_we_unprocessed
+      ON webhook_events (processed, received_at)
+      WHERE processed = FALSE
+  `,
+];
+
+let signingSchemaBootstrapPromise: Promise<void> | null = null;
+
+async function ensureSigningSchema() {
+  if (!signingSchemaBootstrapPromise) {
+    signingSchemaBootstrapPromise = (async () => {
+      for (const statement of SIGNING_SCHEMA_STATEMENTS) {
+        await prisma().$executeRawUnsafe(statement);
+      }
+    })().catch((error) => {
+      signingSchemaBootstrapPromise = null;
+      throw error;
+    });
+  }
+
+  return signingSchemaBootstrapPromise;
+}
+
+function computeSigningTokenHash(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
 
 // ---------------------------------------------------------------------------
 // Provider Registry
@@ -62,6 +212,7 @@ export async function createSigningSession(
   input: SigningSessionInput
 ): Promise<SigningSession> {
   assertSignaturesEnabled();
+  await ensureSigningSchema();
 
   const providerKey = defaultProviderKey();
   const expiresAt = computeSigningExpiry(input.expiryHours);
@@ -110,15 +261,16 @@ export async function createSigningSession(
   const sessionId = rows[0]?.id;
   if (!sessionId) throw new SignatureProviderError("Failed to create signing session.");
 
-  // Persist secure tokens
+  // Persist secure token hashes (P0-003: never store raw tokens)
   for (const t of tokenRows) {
+    const tokenHash = computeSigningTokenHash(t.token);
     await prisma().$executeRawUnsafe(
-            `INSERT INTO signing_secure_tokens (session_id, tenant_id, signer_role, token, expires_at)
-        VALUES ($1::uuid, $2::uuid, $3, $4, $5::timestamptz)`,
+            `INSERT INTO signing_secure_tokens (session_id, tenant_id, signer_role, token_hash, token, expires_at)
+        VALUES ($1::uuid, $2::uuid, $3, $4, NULL, $5::timestamptz)`,
       sessionId,
       input.tenantId,
       t.signerRole,
-      t.token,
+      tokenHash,
       t.expiresAt.toISOString()
     );
   }
@@ -167,10 +319,13 @@ export async function validateSigningToken(
   signerRole: string;
   tenantId: string;
 }> {
+  await ensureSigningSchema();
   const normalizedToken = token.trim();
   if (!normalizedToken) {
     throw new ApiError(400, "Invalid or expired signing token");
   }
+
+  const tokenHash = computeSigningTokenHash(normalizedToken);
 
   const rows = await prisma().$queryRawUnsafe<
     Array<{
@@ -189,9 +344,9 @@ export async function validateSigningToken(
             s.document_id, s.module_type, s.tenant_id
      FROM signing_secure_tokens t
      JOIN signing_sessions s ON s.id = t.session_id
-     WHERE t.token = $1
+     WHERE t.token_hash = $1
      LIMIT 1`,
-    normalizedToken
+    tokenHash
   );
 
   const row = rows[0];
@@ -218,10 +373,12 @@ export async function validateSigningToken(
 // ---------------------------------------------------------------------------
 
 export async function markTokenUsed(token: string, ipAddress?: string): Promise<void> {
+  await ensureSigningSchema();
+  const tokenHash = computeSigningTokenHash(token.trim());
   await prisma().$executeRawUnsafe(
-    `UPDATE signing_secure_tokens SET used_at = NOW(), ip_on_use = $1 WHERE token = $2`,
+    `UPDATE signing_secure_tokens SET used_at = NOW(), ip_on_use = $1 WHERE token_hash = $2`,
     ipAddress ?? null,
-    token
+    tokenHash
   );
 }
 
@@ -234,6 +391,7 @@ export async function processSigningWebhook(
   receivedHmac: string,
   providerKey: string
 ): Promise<void> {
+  await ensureSigningSchema();
   // Verify HMAC
   const valid = verifyWebhookSignature(rawBody, receivedHmac);
   if (!valid) {
@@ -309,6 +467,7 @@ export async function resendSigningLink(
   tenantId: string
 ): Promise<void> {
   assertSignaturesEnabled();
+  await ensureSigningSchema();
 
   const sessions = await prisma().$queryRawUnsafe<
     Array<{ provider_session_id: string; provider_key: string; resend_count: number }>
@@ -345,6 +504,7 @@ export async function revokeSigningSession(
   reason: string
 ): Promise<void> {
   assertSignaturesEnabled();
+  await ensureSigningSchema();
 
   const sessions = await prisma().$queryRawUnsafe<
     Array<{ provider_session_id: string; provider_key: string }>
@@ -386,6 +546,7 @@ export async function retrieveSignedPdf(
   tenantId: string
 ): Promise<Buffer> {
   assertSignaturesEnabled();
+  await ensureSigningSchema();
 
   const sessions = await prisma().$queryRawUnsafe<
     Array<{ provider_session_id: string; provider_key: string; status: string }>
@@ -419,6 +580,7 @@ async function logSigningEvent(
   signerRole?: string,
   metadata?: Record<string, unknown>
 ): Promise<void> {
+  await ensureSigningSchema();
   await prisma().$executeRawUnsafe(
     `INSERT INTO signing_events (session_id, tenant_id, event_type, signer_role, provider_key, payload)
      VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::jsonb)`,

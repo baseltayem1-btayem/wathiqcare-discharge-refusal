@@ -30,7 +30,7 @@ export async function GET(
       `${download ? "attachment" : "inline"}; filename="${filename}"`,
     );
 
-    return new NextResponse(buffer, { status: 200, headers });
+    return new NextResponse(buffer as unknown as BodyInit, { status: 200, headers });
   } catch (error) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });

@@ -449,6 +449,16 @@ model Tenant {
   procedureEducationLocalizations     ProcedureEducationLocalization[]
   procedureEducationAuditEvents       ProcedureEducationAuditEvent[]
   featureFlagOverrides                FeatureFlagOverride[]
+  clinicalSpecialties                 ClinicalSpecialty[]
+  clinicalProcedures                  ClinicalProcedure[]
+  clinicalKnowledgePackages           ClinicalKnowledgePackage[]
+  clinicalKnowledgeIllustrations      ClinicalKnowledgeIllustration[]
+  clinicalConsentForms                ConsentForm[]
+  clinicalConsentFormSections         ConsentFormSection[]
+  clinicalEducationMaterials          EducationMaterial[]
+  clinicalRiskDisclosures             RiskDisclosure[]
+  clinicalDecisionRules               DecisionRule[]
+  clinicalGovernanceEvents            GovernanceEvent[]
 
   @@map("tenants")
 }
@@ -1879,6 +1889,7 @@ model ConsentDocumentSignature {
   signedAt          DateTime             @default(now()) @map("signed_at")
   ipAddress         String?              @map("ip_address")
   userAgent         String?              @map("user_agent")
+  signatureHash     String?              @map("signature_hash")
   metadata          Json?
   createdAt         DateTime             @default(now()) @map("created_at")
 
@@ -2595,4 +2606,385 @@ model ConsentSourceSnapshot {
   @@index([tenantId, consentDocumentId, createdAt], map: "idx_consent_source_snapshots_doc_created")
   @@index([tenantId, sourceTransactionId], map: "idx_consent_source_snapshots_tenant_tx")
   @@map("consent_source_snapshots")
+}
+
+// ── Clinical Knowledge Engine (MVP) ─────────────────────────────────────────
+
+enum ClinicalKnowledgeStatus {
+  DRAFT
+  UNDER_REVIEW
+  MEDICALLY_APPROVED
+  LEGALLY_APPROVED
+  PUBLISHED
+  SUPERSEDED
+  ARCHIVED
+  REJECTED
+}
+
+enum ClinicalKnowledgePackageItemType {
+  CONSENT_FORM
+  EDUCATION_MATERIAL
+  RISK_DISCLOSURE
+  DECISION_RULE
+}
+
+enum ClinicalKnowledgeConsentFormType {
+  PROCEDURE_CONSENT
+  ANESTHESIA_CONSENT
+  BLOOD_TRANSFUSION_CONSENT
+  HIGH_RISK_PROCEDURE_CONSENT
+  DIAGNOSTIC_IMAGING_CONSENT
+  RESEARCH_CLINICAL_TRIAL_CONSENT
+  TELEMEDICINE_CONSENT
+  VACCINATION_CONSENT
+}
+
+enum ClinicalKnowledgeRiskLevel {
+  STANDARD
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ClinicalKnowledgeEducationAssetType {
+  PDF
+  VIDEO
+  INTERACTIVE
+  TEXT
+}
+
+enum ClinicalKnowledgeDecisionRuleStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+enum ClinicalKnowledgeParticipantType {
+  WITNESS
+  INTERPRETER
+  GUARDIAN
+  ANESTHESIOLOGIST
+  SECOND_PHYSICIAN
+}
+
+enum ClinicalKnowledgeGovernanceEntityType {
+  PROCEDURE
+  PACKAGE
+  FORM
+  EDUCATION
+  RISK
+  RULE
+}
+
+enum ClinicalKnowledgeGovernanceEventType {
+  CREATED
+  SUBMITTED_FOR_REVIEW
+  MEDICALLY_APPROVED
+  LEGALLY_APPROVED
+  PUBLISHED
+  SUPERSEDED
+  ARCHIVED
+  REJECTED
+  MODIFIED
+}
+
+enum ClinicalKnowledgeIllustrationStatus {
+  draft
+  medical_review
+  approved
+  rejected
+  generated_by_chatgpt_draft
+  pending_clinical_review
+}
+
+model ClinicalSpecialty {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  code      String
+  nameEn    String   @map("name_en")
+  nameAr    String   @map("name_ar")
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant     Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedures ClinicalProcedure[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@map("clinical_specialties")
+}
+
+model ClinicalProcedure {
+  id                     String  @id @default(uuid())
+  tenantId               String  @map("tenant_id")
+  code                   String
+  nameEn                 String  @map("name_en")
+  nameAr                 String  @map("name_ar")
+  shortNameEn            String? @map("short_name_en")
+  shortNameAr            String? @map("short_name_ar")
+  specialtyId            String  @map("specialty_id")
+  departmentName         String  @map("department_name")
+  categoryCode           String  @map("category_code")
+  typicalDurationMinutes Int?    @map("typical_duration_minutes")
+  anesthesiaRequired     Boolean @default(false) @map("anesthesia_required")
+  keywords               String[] @default([])
+  externalMappings       Json?   @map("external_mappings")
+  status                 String  @default("draft")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant                          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  specialty     ClinicalSpecialty               @relation(fields: [specialtyId], references: [id], onDelete: Restrict)
+  packages      ClinicalKnowledgePackage[]
+  illustrations ClinicalKnowledgeIllustration[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@index([tenantId, specialtyId])
+  @@map("clinical_procedures")
+}
+
+model ClinicalKnowledgePackage {
+  id                         String                  @id @default(uuid())
+  tenantId                   String                  @map("tenant_id")
+  procedureId                String                  @map("procedure_id")
+  version                    String
+  versionMajor               Int                     @map("version_major")
+  versionMinor               Int                     @map("version_minor")
+  versionPatch               Int                     @map("version_patch")
+  effectiveDate              DateTime                @map("effective_date")
+  expiryDate                 DateTime?               @map("expiry_date")
+  status                     ClinicalKnowledgeStatus @default(DRAFT)
+  governanceSnapshot         Json?                   @map("governance_snapshot")
+  requiredParticipantsSnapshot Json?                 @map("required_participants_snapshot")
+  packageSnapshot            Json?                   @map("package_snapshot")
+  supersededByPackageId      String?                 @map("superseded_by_package_id")
+  createdByUserId            String                  @map("created_by_user_id")
+  publishedByUserId          String?                 @map("published_by_user_id")
+  createdAt                  DateTime                @default(now()) @map("created_at")
+  updatedAt                  DateTime                @updatedAt @map("updated_at")
+
+  tenant            Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedure         ClinicalProcedure          @relation(fields: [procedureId], references: [id], onDelete: Restrict)
+  items             PackageItem[]
+
+  @@unique([tenantId, procedureId, version])
+  @@index([tenantId, procedureId, status])
+  @@index([tenantId, status, effectiveDate, expiryDate])
+  @@map("clinical_knowledge_packages")
+}
+
+model PackageItem {
+  id               String                        @id @default(uuid())
+  tenantId         String                        @map("tenant_id")
+  packageId        String                        @map("package_id")
+  itemType         ClinicalKnowledgePackageItemType @map("item_type")
+  itemId           String                        @map("item_id")
+  orderIndex       Int                           @map("order_index")
+  isRequired       Boolean                       @default(true) @map("is_required")
+  packageOverrides Json?                         @map("package_overrides")
+
+  package ClinicalKnowledgePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, packageId])
+  @@index([tenantId, itemType, itemId])
+  @@map("clinical_package_items")
+}
+
+model ConsentForm {
+  id                  String                        @id @default(uuid())
+  tenantId            String                        @map("tenant_id")
+  code                String
+  titleEn             String                        @map("title_en")
+  titleAr             String                        @map("title_ar")
+  formType            ClinicalKnowledgeConsentFormType @map("form_type")
+  riskLevel           ClinicalKnowledgeRiskLevel    @default(STANDARD) @map("risk_level")
+  status              ClinicalKnowledgeStatus       @default(DRAFT)
+  version             String
+  effectiveDate       DateTime                      @map("effective_date")
+  expiryDate          DateTime?                     @map("expiry_date")
+  governanceSnapshot  Json?                         @map("governance_snapshot")
+  pdfTemplateUrl      String?                       @map("pdf_template_url")
+  requiresWitness     Boolean                       @default(false) @map("requires_witness")
+  requiresInterpreter Boolean                       @default(false) @map("requires_interpreter")
+  createdByUserId     String                        @map("created_by_user_id")
+  publishedByUserId   String?                       @map("published_by_user_id")
+  createdAt           DateTime                      @default(now()) @map("created_at")
+  updatedAt           DateTime                      @updatedAt @map("updated_at")
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sections ConsentFormSection[]
+
+  @@unique([tenantId, code, version])
+  @@index([tenantId, status])
+  @@index([tenantId, formType, status])
+  @@map("clinical_consent_forms")
+}
+
+model ConsentFormSection {
+  id                  String   @id @default(uuid())
+  tenantId            String   @map("tenant_id")
+  formId              String   @map("form_id")
+  type                String
+  orderIndex          Int      @map("order_index")
+  titleEn             String?  @map("title_en")
+  titleAr             String?  @map("title_ar")
+  contentEn           String?  @map("content_en") @db.Text
+  contentAr           String?  @map("content_ar") @db.Text
+  isRequired          Boolean  @default(true) @map("is_required")
+  isEditableByPhysician Boolean @default(false) @map("is_editable_by_physician")
+
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  form   ConsentForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, formId, orderIndex])
+  @@map("clinical_consent_form_sections")
+}
+
+model EducationMaterial {
+  id                String                        @id @default(uuid())
+  tenantId          String                        @map("tenant_id")
+  code              String
+  titleEn           String                        @map("title_en")
+  titleAr           String                        @map("title_ar")
+  assetType         ClinicalKnowledgeEducationAssetType @map("asset_type")
+  assetUrl          String                        @map("asset_url")
+  durationMinutes   Int?                          @map("duration_minutes")
+  status            ClinicalKnowledgeStatus       @default(DRAFT)
+  version           String
+  effectiveDate     DateTime                      @map("effective_date")
+  expiryDate        DateTime?                     @map("expiry_date")
+  governanceSnapshot Json?                        @map("governance_snapshot")
+  createdByUserId   String                        @map("created_by_user_id")
+  publishedByUserId String?                       @map("published_by_user_id")
+  createdAt         DateTime                      @default(now()) @map("created_at")
+  updatedAt         DateTime                      @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code, version])
+  @@index([tenantId, status])
+  @@map("clinical_education_materials")
+}
+
+model RiskDisclosure {
+  id                String                        @id @default(uuid())
+  tenantId          String                        @map("tenant_id")
+  code              String
+  titleEn           String                        @map("title_en")
+  titleAr           String                        @map("title_ar")
+  descriptionEn     String                        @map("description_en") @db.Text
+  descriptionAr     String                        @map("description_ar") @db.Text
+  riskLevel         ClinicalKnowledgeRiskLevel    @default(STANDARD) @map("risk_level")
+  incidenceRate     String?                       @map("incidence_rate")
+  specialtyIds      String[]                      @default([]) @map("specialty_ids")
+  status            ClinicalKnowledgeStatus       @default(DRAFT)
+  version           String
+  effectiveDate     DateTime                      @map("effective_date")
+  expiryDate        DateTime?                     @map("expiry_date")
+  governanceSnapshot Json?                        @map("governance_snapshot")
+  createdByUserId   String                        @map("created_by_user_id")
+  publishedByUserId String?                       @map("published_by_user_id")
+  createdAt         DateTime                      @default(now()) @map("created_at")
+  updatedAt         DateTime                      @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code, version])
+  @@index([tenantId, status])
+  @@map("clinical_risk_disclosures")
+}
+
+model DecisionRule {
+  id               String                       @id @default(uuid())
+  tenantId         String                       @map("tenant_id")
+  code             String
+  nameEn           String                       @map("name_en")
+  nameAr           String                       @map("name_ar")
+  description      String?                      @db.Text
+  priority         Int                          @default(0)
+  condition        Json
+  action           Json
+  status           ClinicalKnowledgeDecisionRuleStatus @default(DRAFT)
+  effectiveDate    DateTime                     @map("effective_date")
+  expiryDate       DateTime?                    @map("expiry_date")
+  createdByUserId  String                       @map("created_by_user_id")
+  approvedByUserId String?                      @map("approved_by_user_id")
+  createdAt        DateTime                     @default(now()) @map("created_at")
+  updatedAt        DateTime                     @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@map("clinical_decision_rules")
+}
+
+model GovernanceEvent {
+  id            String                              @id @default(uuid())
+  tenantId      String                              @map("tenant_id")
+  entityType    ClinicalKnowledgeGovernanceEntityType @map("entity_type")
+  entityId      String                              @map("entity_id")
+  eventType     ClinicalKnowledgeGovernanceEventType  @map("event_type")
+  actorUserId   String                              @map("actor_user_id")
+  actorRole     String                              @map("actor_role")
+  comment       String?                             @db.Text
+  metadata      Json?
+  previousHash  String?                             @map("previous_hash")
+  eventHash     String                              @map("event_hash")
+  createdAt     DateTime                            @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, entityType, entityId])
+  @@index([tenantId, entityType, entityId, createdAt])
+  @@map("clinical_governance_events")
+}
+
+model ClinicalKnowledgeIllustration {
+  id                         String                              @id @default(uuid())
+  tenantId                   String                              @map("tenant_id")
+  procedureId                String                              @map("procedure_id")
+  procedureNameEn            String                              @map("procedure_name_en")
+  procedureNameAr            String                              @map("procedure_name_ar")
+  specialty                  String?
+  anatomyRegion              String?                             @map("anatomy_region")
+  synonyms                   String[]                            @default([]) @map("synonyms")
+  anatomyImageUrl            String?                             @map("anatomy_image_url")
+  procedureImageUrl          String?                             @map("procedure_image_url")
+  imageBaseUrl               String?                             @map("image_base_url")
+  imageEnUrl                 String?                             @map("image_en_url")
+  imageArUrl                 String?                             @map("image_ar_url")
+  labelsEn                   Json?                               @map("labels_en")
+  labelsAr                   Json?                               @map("labels_ar")
+  languageDirection          String?                             @map("language_direction")
+  productionStatus           String?                             @map("production_status")
+  integrationStatus          String?                             @map("integration_status")
+  arabicReviewStatus         String?                             @map("arabic_review_status")
+  anatomyPromptEn            String?                             @map("anatomy_prompt_en")
+  anatomyPromptAr            String?                             @map("anatomy_prompt_ar")
+  procedurePromptEn          String?                             @map("procedure_prompt_en")
+  procedurePromptAr          String?                             @map("procedure_prompt_ar")
+  patientDisplayDisclaimerEn String?                             @map("patient_display_disclaimer_en")
+  patientDisplayDisclaimerAr String?                             @map("patient_display_disclaimer_ar")
+  source                     String?
+  version                    String?
+  patientFacing              Boolean                             @default(true) @map("patient_facing")
+  imageReviewStatus          ClinicalKnowledgeIllustrationStatus @default(draft) @map("image_review_status")
+  reviewedBy                 String?                             @map("reviewed_by")
+  reviewedAt                 DateTime?                           @map("reviewed_at")
+  effectiveDate              DateTime                            @default(now()) @map("effective_date")
+  expiryDate                 DateTime?                           @map("expiry_date")
+  createdByUserId            String                              @map("created_by_user_id")
+  createdAt                  DateTime                            @default(now()) @map("created_at")
+  updatedAt                  DateTime                            @updatedAt @map("updated_at")
+
+  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedure ClinicalProcedure @relation(fields: [procedureId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, procedureId])
+  @@index([tenantId, imageReviewStatus])
+  @@index([tenantId, procedureId, imageReviewStatus, effectiveDate, expiryDate])
+  @@map("clinical_knowledge_illustrations")
 }

@@ -35,6 +35,25 @@ type UpsertArgs = {
   metadata?: JsonInputValue;
 };
 
+export function isMissingFeatureFlagStoreError(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return false;
+  }
+
+  if (error.code === "P2021") {
+    return true;
+  }
+
+  if (error.code !== "P2010") {
+    return false;
+  }
+
+  const rawCode = typeof error.meta?.code === "string" ? error.meta.code : "";
+  const rawMessage = typeof error.meta?.message === "string" ? error.meta.message : "";
+
+  return rawCode === "42P01" || /relation .*feature_flag_overrides.* does not exist/i.test(rawMessage);
+}
+
 function normalizeFlagKey(key: string): FeatureFlag {
   const normalized = key.trim().toUpperCase();
   if (!(normalized in FEATURE_FLAGS)) {
@@ -135,18 +154,26 @@ export async function setModuleFeatureFlag(tenantId: string, moduleKey: ModuleKe
 
 async function readOverride(scope: FeatureFlagScope, key: FeatureFlag, tenantId?: string | null, moduleKey?: ModuleKey | null): Promise<boolean | null> {
   const scopeRef = buildScopeRef(scope, tenantId, moduleKey);
-  const record = await prisma().featureFlagOverride.findUnique({
-    where: {
-      scope_scopeRef_key: {
-        scope: scope as $Enums.FeatureFlagScope,
-        scopeRef,
-        key,
+  try {
+    const record = await prisma().featureFlagOverride.findUnique({
+      where: {
+        scope_scopeRef_key: {
+          scope: scope as $Enums.FeatureFlagScope,
+          scopeRef,
+          key,
+        },
       },
-    },
-    select: { value: true },
-  });
+      select: { value: true },
+    });
 
-  return record?.value ?? null;
+    return record?.value ?? null;
+  } catch (error) {
+    if (isMissingFeatureFlagStoreError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
 }
 
 export async function resolveFeatureFlag(key: FeatureFlag | string, tenantId?: string | null, moduleKey?: ModuleKey | null): Promise<TenantFlagResolution> {

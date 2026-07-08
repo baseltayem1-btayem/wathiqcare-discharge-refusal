@@ -5,7 +5,9 @@ import type { NextRequest } from "next/server";
 import { ApiError } from "@/lib/server/http";
 import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { getPrisma } from "@/lib/server/prisma";
+import { ensureNotificationDeliveryAttemptSchema } from "@/services/sms/smsAuditService";
 import { writeAuditLog } from "@/lib/server/saas-services";
+import { logRuntimeEvent, sanitizeLogDetails } from "@/lib/server/runtime-observability";
 import {
   buildWathiqCareEmailHtml,
   buildWathiqCareEmailText,
@@ -48,6 +50,8 @@ type SecureLinkPayload = {
   provider_result?: Record<string, unknown> | null;
   otp_hash?: string | null;
   otp_expires_at?: string | null;
+  otp_attempts?: number | null;
+  otp_locked_until?: string | null;
 };
 
 type CreateSecureLinkResult = {
@@ -106,6 +110,7 @@ type DecisionInput = {
   typed_name: string;
   refusal_acknowledged?: boolean;
   signature_data?: string;
+  otp_code: string;
 };
 
 type PublicDecisionAuditAction = {
@@ -246,12 +251,12 @@ function computeSignatureHash(input: string): string {
 }
 
 function logSecureLinkPublicEvent(event: string, data: Record<string, unknown>): void {
-  console.warn(JSON.stringify({
-    timestamp: new Date().toISOString(),
-    component: "secure_link",
+  logRuntimeEvent({
+    module: "secure_link",
     event,
-    ...data,
-  }));
+    severity: "info",
+    details: sanitizeLogDetails(data),
+  });
 }
 
 async function appendPublicDecisionAudit(args: {
@@ -318,16 +323,31 @@ async function appendPublicDecisionAudit(args: {
       request: args.request,
     });
 
-    await appendAuditChainEvent({
-      tenantId: args.payload.tenant_id,
-      caseId: args.payload.case_id,
-      eventType: auditAction.eventType,
-      actorId: null,
-      actorRole: "public_secure_party",
-      payloadSummary: auditAction.details,
-      metadataJson: baseMetadata,
-      request: args.request,
-    }).catch(() => undefined);
+    try {
+      await appendAuditChainEvent({
+        tenantId: args.payload.tenant_id,
+        caseId: args.payload.case_id,
+        eventType: auditAction.eventType,
+        actorId: null,
+        actorRole: "public_secure_party",
+        payloadSummary: auditAction.details,
+        metadataJson: baseMetadata,
+        request: args.request,
+      });
+    } catch (error) {
+      console.error("[secure-links] appendAuditChainEvent failed", error);
+      logRuntimeEvent({
+        module: "secure_link",
+        event: "audit_chain_failed",
+        severity: "error",
+        tenantId: args.payload.tenant_id,
+        details: {
+          caseId: args.payload.case_id,
+          documentId: args.document.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+    }
   }
 }
 
@@ -442,6 +462,134 @@ async function sendSecureLinkEmail(args: {
       smtp_rejected: diagnostics.smtpRejected ?? [],
     },
   };
+}
+
+type SecureLinkOtpDeliveryResult = {
+  status: "sent" | "failed" | "not_configured";
+  failureReason: string | null;
+  diagnostics: {
+    provider: string;
+    messageId: string | null;
+    smtpAccepted: string[];
+    smtpRejected: string[];
+  } | null;
+};
+
+async function sendSecureLinkOtpEmail(args: {
+  recipientEmail: string;
+  otpCode: string;
+  caseReference: string;
+  linkId: string;
+  expiresMinutes: number;
+}): Promise<SecureLinkOtpDeliveryResult> {
+  const recipientEmail = args.recipientEmail.trim().toLowerCase();
+
+  if (!isValidEmail(recipientEmail)) {
+    return { status: "failed", failureReason: "Invalid recipient email", diagnostics: null };
+  }
+
+  if (!(process.env.SMTP_PASS?.trim() || process.env.RESEND_API_KEY?.trim())) {
+    return {
+      status: "not_configured",
+      failureReason: "Email provider not configured",
+      diagnostics: null,
+    };
+  }
+
+  const subject = `WathiqCare | Secure Link OTP - ${args.caseReference}`;
+  const expiresNote = `This verification code expires in ${args.expiresMinutes} minutes.`;
+  const html = buildWathiqCareEmailHtml({
+    title: "Secure Link Verification Code",
+    preheader: `Your one-time code for case ${args.caseReference}.`,
+    bodyHtml: `<p>Your secure decision-link verification code is:</p><p><strong style="font-size:20px;letter-spacing:0.18em;">${args.otpCode}</strong></p><p>Case Reference: <strong>${args.caseReference}</strong></p><p>Link ID: <strong>${args.linkId}</strong></p>`,
+    expiresNote,
+    securityNote: "Do not share this code with anyone. If you did not request it, contact support immediately.",
+  });
+  const text = buildWathiqCareEmailText({
+    title: "Secure Link Verification Code",
+    bodyLines: [
+      `Your secure decision-link verification code is: ${args.otpCode}`,
+      `Case Reference: ${args.caseReference}`,
+      `Link ID: ${args.linkId}`,
+    ],
+    expiresNote,
+    securityNote: "Do not share this code with anyone.",
+  });
+
+  try {
+    const diagnostics = await sendEmailWithDiagnostics({
+      to: recipientEmail,
+      subject,
+      html,
+      text,
+    });
+
+    const accepted = diagnostics.smtpAccepted ?? [];
+    const rejected = diagnostics.smtpRejected ?? [];
+    const acceptedRecipient = accepted.includes(recipientEmail);
+    const rejectedRecipient = rejected.includes(recipientEmail);
+
+    if (!acceptedRecipient && (rejected.length > 0 || rejectedRecipient)) {
+      return {
+        status: "failed",
+        failureReason: "Email provider did not accept the recipient address",
+        diagnostics: {
+          provider: diagnostics.provider,
+          messageId: diagnostics.messageId ?? null,
+          smtpAccepted: accepted,
+          smtpRejected: rejected,
+        },
+      };
+    }
+
+    return {
+      status: "sent",
+      failureReason: null,
+      diagnostics: {
+        provider: diagnostics.provider,
+        messageId: diagnostics.messageId ?? null,
+        smtpAccepted: accepted,
+        smtpRejected: rejected,
+      },
+    };
+  } catch (error) {
+    return {
+      status: "failed",
+      failureReason: error instanceof Error ? error.message : String(error),
+      diagnostics: null,
+    };
+  }
+}
+
+async function recordSecureLinkOtpDelivery(args: {
+  tenantId: string;
+  caseId: string;
+  documentId: string;
+  recipientEmail: string;
+  result: SecureLinkOtpDeliveryResult;
+  otpHash: string;
+}): Promise<void> {
+  await ensureNotificationDeliveryAttemptSchema();
+  await prisma().notificationDeliveryAttempt.create({
+    data: {
+      tenantId: args.tenantId,
+      caseId: args.caseId,
+      channel: "email",
+      provider: args.result.diagnostics?.provider ?? "smtp",
+      recipient: args.recipientEmail,
+      notificationType: "secure_link_otp",
+      status: args.result.status,
+      failureReason: args.result.failureReason,
+      metadataJson: {
+        documentId: args.documentId,
+        otpHash: args.otpHash,
+        provider: args.result.diagnostics?.provider ?? null,
+        messageId: args.result.diagnostics?.messageId ?? null,
+        smtpAccepted: args.result.diagnostics?.smtpAccepted ?? [],
+        smtpRejected: args.result.diagnostics?.smtpRejected ?? [],
+      } as Prisma.JsonObject,
+    },
+  });
 }
 
 function mapLinkRecord(payload: SecureLinkPayload): SecureLinkRecord {
@@ -625,7 +773,9 @@ export async function createSecureLink(args: {
       delivery_channel: delivery.deliveryChannel,
     },
     request: args.request,
-  }).catch(() => undefined);
+  }).catch((error) => {
+    console.error("[secure-links] writeAuditLog failed for secure_link_created", error);
+  });
 
   return {
     link_id: linkId,
@@ -712,7 +862,9 @@ export async function revokeSecureLink(args: {
     caseId: args.caseId,
     documentId: args.linkId,
     request: args.request,
-  }).catch(() => undefined);
+  }).catch((error) => {
+    console.error("[secure-links] writeAuditLog failed for secure_link_revoked", error);
+  });
 }
 
 export async function getPublicSecureLink(token: string): Promise<PublicSecureCase> {
@@ -752,6 +904,19 @@ export async function submitPublicSecureLinkDecision(token: string, input: Decis
     const document = await getStoredSecureLinkByToken(token);
     const payload = parseSecureLinkPayload(document);
     ensureLinkActive(payload);
+
+    // P0-002: require identity verification before accepting a binding decision.
+    const otpCode = input.otp_code?.trim();
+    if (!otpCode) {
+      throw new ApiError(400, "رمز التحقق مطلوب لتسجيل القرار");
+    }
+    const otpResult = await verifyPublicSecureLinkOtp(token, otpCode, {
+      ip: request?.headers.get("x-wathiqcare-forwarded-for") || request?.headers.get("x-forwarded-for") || null,
+      userAgent: request?.headers.get("user-agent") || null,
+    });
+    if (!otpResult.verified) {
+      throw new ApiError(400, `رمز التحقق غير صحيح. المحاولات المتبقية: ${otpResult.attempts_remaining}`);
+    }
 
     if (payload.decision_type && payload.decision_submitted_at) {
       return {
@@ -945,9 +1110,12 @@ export async function downloadPublicSecureLinkArtifact(
   }
 }
 
+const SECURE_LINK_OTP_MAX_ATTEMPTS = 3;
+const SECURE_LINK_OTP_LOCKOUT_MINUTES = 15;
+
 export async function requestPublicSecureLinkOtp(
   token: string,
-): Promise<{ success: boolean; message: string; masked_email: string }> {
+): Promise<{ success: boolean; message: string; masked_email: string; delivery_status: "sent" | "failed" | "not_configured"; failure_reason: string | null }> {
   const document = await getStoredSecureLinkByToken(token);
   const payload = parseSecureLinkPayload(document);
   ensureLinkActive(payload);
@@ -958,7 +1126,13 @@ export async function requestPublicSecureLinkOtp(
   const otpHash = computeSignatureHash(otpCode);
   const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-  const updatedPayload: SecureLinkPayload = { ...payload, otp_hash: otpHash, otp_expires_at: otpExpiresAt };
+  const updatedPayload: SecureLinkPayload = {
+    ...payload,
+    otp_hash: otpHash,
+    otp_expires_at: otpExpiresAt,
+    otp_attempts: 0,
+    otp_locked_until: null,
+  };
   await prisma().document.update({
     where: { id: document.id },
     data: { payloadJson: updatedPayload as unknown as JsonInputValue },
@@ -969,43 +1143,133 @@ export async function requestPublicSecureLinkOtp(
   const maskedEmail =
     atIdx > 2 ? `${email.slice(0, 2)}***@${email.slice(atIdx + 1)}` : `***@${email.slice(atIdx + 1)}`;
 
-  logSecureLinkPublicEvent("public_secure_link_otp_requested", {
-    secure_token_hash: computeTokenHash(token),
+  const delivery = await sendSecureLinkOtpEmail({
+    recipientEmail: email,
+    otpCode,
+    caseReference: payload.case_reference,
+    linkId: payload.link_id,
+    expiresMinutes: 10,
   });
 
-  return { success: true, message: "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚ Ø¥Ù„Ù‰ Ø¨Ø±ÙŠØ¯Ùƒ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ", masked_email: maskedEmail };
+  try {
+    await recordSecureLinkOtpDelivery({
+      tenantId: payload.tenant_id,
+      caseId: payload.case_id,
+      documentId: document.id,
+      recipientEmail: email,
+      result: delivery,
+      otpHash,
+    });
+  } catch (error) {
+    logRuntimeEvent({
+      module: "secure_link",
+      event: "otp_delivery_audit_failed",
+      severity: "error",
+      tenantId: payload.tenant_id,
+      details: {
+        caseId: payload.case_id,
+        documentId: document.id,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    });
+  }
+
+  logSecureLinkPublicEvent("public_secure_link_otp_requested", {
+    secure_token_hash: computeTokenHash(token),
+    delivery_status: delivery.status,
+  });
+
+  const message =
+    delivery.status === "sent"
+      ? "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚ Ø¥Ù„Ù‰ Ø¨Ø±ÙŠØ¯Ùƒ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ"
+      : delivery.status === "not_configured"
+        ? "Email provider not configured"
+        : "Failed to send verification code";
+
+  return {
+    success: delivery.status === "sent" || delivery.status === "not_configured",
+    message,
+    masked_email: maskedEmail,
+    delivery_status: delivery.status,
+    failure_reason: delivery.failureReason,
+  };
 }
 
 export async function verifyPublicSecureLinkOtp(
   token: string,
   otpCode: string,
   context: { ip: string | null; userAgent: string | null },
-): Promise<{ success: boolean; verified: boolean }> {
+): Promise<{ success: boolean; verified: boolean; attempts_remaining: number }> {
   const document = await getStoredSecureLinkByToken(token);
   const payload = parseSecureLinkPayload(document);
   ensureLinkActive(payload);
 
   const storedHash = payload.otp_hash;
   const expiresAt = payload.otp_expires_at;
+  const attempts = payload.otp_attempts ?? 0;
+  const lockedUntil = payload.otp_locked_until ? new Date(payload.otp_locked_until) : null;
 
   if (!storedHash || !expiresAt) {
     throw new ApiError(400, "Ù„Ù… ÙŠØªÙ… Ø·Ù„Ø¨ Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚");
+  }
+
+  if (lockedUntil && lockedUntil.getTime() > Date.now()) {
+    throw new ApiError(429, "Account locked due to too many failed attempts");
   }
 
   if (new Date(expiresAt).getTime() <= Date.now()) {
     throw new ApiError(410, "Ø§Ù†ØªÙ‡Øª ØµÙ„Ø§Ø­ÙŠØ© Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚");
   }
 
+  if (attempts >= SECURE_LINK_OTP_MAX_ATTEMPTS) {
+    const lockoutUntil = new Date(Date.now() + SECURE_LINK_OTP_LOCKOUT_MINUTES * 60 * 1000).toISOString();
+    await prisma().document.update({
+      where: { id: document.id },
+      data: {
+        payloadJson: {
+          ...payload,
+          otp_locked_until: lockoutUntil,
+        } as unknown as JsonInputValue,
+      },
+    });
+    throw new ApiError(429, "Account locked due to too many failed attempts");
+  }
+
   const submittedHash = computeSignatureHash(otpCode);
-  if (submittedHash !== storedHash) {
+  const storedBuffer = Buffer.from(storedHash, "hex");
+  const submittedBuffer = Buffer.from(submittedHash, "hex");
+  const verified =
+    storedBuffer.length > 0
+    && storedBuffer.length === submittedBuffer.length
+    && crypto.timingSafeEqual(storedBuffer, submittedBuffer);
+
+  if (!verified) {
+    const nextAttempts = attempts + 1;
+    const updates: SecureLinkPayload = { ...payload, otp_attempts: nextAttempts };
+    if (nextAttempts >= SECURE_LINK_OTP_MAX_ATTEMPTS) {
+      updates.otp_locked_until = new Date(Date.now() + SECURE_LINK_OTP_LOCKOUT_MINUTES * 60 * 1000).toISOString();
+    }
+    await prisma().document.update({
+      where: { id: document.id },
+      data: { payloadJson: updates as unknown as JsonInputValue },
+    });
+
     logSecureLinkPublicEvent("public_secure_link_otp_rejected", {
       secure_token_hash: computeTokenHash(token),
       ip: context.ip,
+      attempts: nextAttempts,
     });
-    throw new ApiError(401, "Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚ ØºÙŠØ± ØµØ­ÙŠØ­");
+
+    return { success: true, verified: false, attempts_remaining: Math.max(0, SECURE_LINK_OTP_MAX_ATTEMPTS - nextAttempts) };
   }
 
-  const updatedPayload: SecureLinkPayload = { ...payload, otp_hash: null, otp_expires_at: null };
+  const updatedPayload: SecureLinkPayload = {
+    ...payload,
+    otp_hash: null,
+    otp_expires_at: null,
+    otp_attempts: 0,
+    otp_locked_until: null,
+  };
   await prisma().document.update({
     where: { id: document.id },
     data: { payloadJson: updatedPayload as unknown as JsonInputValue },
@@ -1016,5 +1280,5 @@ export async function verifyPublicSecureLinkOtp(
     ip: context.ip,
   });
 
-  return { success: true, verified: true };
+  return { success: true, verified: true, attempts_remaining: SECURE_LINK_OTP_MAX_ATTEMPTS };
 }

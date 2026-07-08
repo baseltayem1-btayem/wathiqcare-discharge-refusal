@@ -6,7 +6,9 @@ import { appendAuditChainEvent } from "@/lib/server/audit-chain-service";
 import { ApiError } from "@/lib/server/http";
 import { buildSecureSigningLinkSms } from "@/services/sms/smsTemplates";
 import { isTaqnyatReady, sendTaqnyatMessage } from "@/services/sms/taqnyatClient";
-import { recordSmsAuditAttempt } from "@/services/sms/smsAuditService";
+import { recordSmsAuditAttempt, type SmsProvider } from "@/services/sms/smsAuditService";
+import { logRuntimeIncident } from "@/lib/server/runtime-observability";
+import { ENABLE_IMC_PILOT_PATIENTS } from "@/lib/config/feature-flags";
 
 const prisma = () => getPrisma();
 
@@ -66,6 +68,44 @@ function normalizePhoneNumber(value: string): string {
 
 function normalizeRecipientEmail(value: string): string {
   return value.trim().toLowerCase();
+}
+
+function isPreviewOtpInspectionEnabled(): boolean {
+  return process.env.VERCEL_ENV === "preview" && ENABLE_IMC_PILOT_PATIENTS;
+}
+
+function parseRecord(value: unknown): Record<string, unknown> | null {
+  if (!value) return null;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+  return typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function deriveOtpCodeFromHash(expectedHash: string): string | null {
+  const pepper = process.env.PUBLIC_SIGNING_OTP_PEPPER?.trim();
+  if (!pepper) {
+    throw new ApiError(500, "Preview OTP inspector is unavailable");
+  }
+
+  for (let otp = 0; otp < 1_000_000; otp += 1) {
+    const candidate = otp.toString().padStart(6, "0");
+    const candidateHash = crypto.createHmac("sha256", pepper).update(candidate).digest("hex");
+    if (candidateHash === expectedHash) {
+      return candidate;
+    }
+  }
+
+  return null;
 }
 
 function isValidRecipientEmail(value: string): boolean {
@@ -130,9 +170,9 @@ function buildPdfBuffer(title: string, lines: string[]): Buffer {
   return Buffer.from(`%PDF-1.4\n${body}${xref}`, "utf8");
 }
 
-function buildSigningUrlFromToken(token: string): string {
+function buildSigningUrlFromToken(token: string, baseUrl?: string): string {
   const encoded = encodeURIComponent(token);
-  const configured = process.env.SECURE_SIGNING_BASE_URL?.trim();
+  const configured = baseUrl?.trim() || process.env.SECURE_SIGNING_BASE_URL?.trim();
   if (configured) {
     const base = configured.replace(/\/$/, "");
     if (base.endsWith("/sign")) {
@@ -248,6 +288,7 @@ export async function sendModuleSecureSigningLink(args: {
   mobileNumber: string;
   recipientEmail: string;
   locale?: "ar" | "en";
+  baseUrl?: string;
 }): Promise<SecureSigningWorkflow> {
   const normalizedMobile = normalizePhoneNumber(args.mobileNumber);
   const normalizedRecipientEmail = normalizeRecipientEmail(args.recipientEmail);
@@ -282,13 +323,14 @@ export async function sendModuleSecureSigningLink(args: {
 
   const token = extractToken(session.signerLinks.PATIENT);
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-  const signingUrl = buildSigningUrlFromToken(token);
+  const signingUrl = buildSigningUrlFromToken(token, args.baseUrl);
   const now = new Date().toISOString();
 
   let smsDeliveryStatus: "sent" | "failed" = "failed";
   let smsFailureReason: string | null = null;
   let statusCode: number | null = null;
   let providerResponse: Record<string, unknown> | null = null;
+  let smsProvider: SmsProvider | null = null;
 
   if (normalizedMobile && isTaqnyatReady()) {
     const sms = await sendTaqnyatMessage({
@@ -304,6 +346,7 @@ export async function sendModuleSecureSigningLink(args: {
     smsFailureReason = sms.ok ? null : "TAQNYAT_DELIVERY_FAILED";
     statusCode = sms.statusCode;
     providerResponse = sms.response;
+    smsProvider = sms.provider;
   } else {
     smsFailureReason = normalizedMobile ? "TAQNYAT_NOT_CONFIGURED" : "MOBILE_NOT_AVAILABLE";
   }
@@ -315,6 +358,7 @@ export async function sendModuleSecureSigningLink(args: {
     statusCode,
     failureReason: smsFailureReason,
     notificationType: "secure_signing_link",
+    provider: smsProvider,
     metadata: {
       moduleKey: args.moduleKey,
       caseId: args.caseId,
@@ -340,8 +384,14 @@ export async function sendModuleSecureSigningLink(args: {
     locale: args.locale,
   });
 
+  const isPlaceholderEmail = normalizedRecipientEmail === "no-patient-email@unavailable.wathiqcare.local";
+
   if (secureSigningEmail.status !== "sent") {
-    throw new ApiError(502, secureSigningEmail.failureReason || "Failed to send secure signing link email");
+    // Email delivery is treated as best-effort for the controlled SMS pilot.
+    // SMS remains the primary patient notification channel; audit visibility is preserved.
+    secureSigningEmail.failureReason = isPlaceholderEmail
+      ? "SKIPPED_PLACEHOLDER_EMAIL"
+      : (secureSigningEmail.failureReason || "Secure signing link email failed; continuing with SMS");
   }
 
   try {
@@ -364,7 +414,14 @@ export async function sendModuleSecureSigningLink(args: {
       },
     });
   } catch (error) {
-    console.error("[module-secure-signing] appendAuditChainEvent failed", error);
+    logRuntimeIncident({
+      module: "secure_signing",
+      type: "UNHANDLED_EXCEPTION",
+      operation: "sendModuleSecureSigningLink",
+      tenantId: args.tenantId,
+      error,
+      details: { reason: "append_audit_chain_event_failed" },
+    });
   }
 
   const status = await loadBadgeFlags({
@@ -464,5 +521,64 @@ export async function refreshModuleSecureSigningStatus(args: {
     ...args.workflow,
     status,
     updatedAt: new Date().toISOString(),
+  };
+}
+
+export async function getPreviewSigningOtp(args: {
+  tenantId: string;
+  documentId: string;
+  sessionId: string;
+}): Promise<{ otpCode: string; challengeId: string; expiresAt: string; maskedPhone: string }> {
+  if (!isPreviewOtpInspectionEnabled()) {
+    throw new ApiError(404, "Preview OTP inspector is unavailable");
+  }
+
+  const sessionRows = await prisma().$queryRawUnsafe<Array<{ id: string }>>(
+    `SELECT id
+     FROM signing_sessions
+     WHERE tenant_id::text = $1
+       AND document_id::text = $2
+       AND id::text = $3
+     LIMIT 1`,
+    args.tenantId,
+    args.documentId,
+    args.sessionId,
+  );
+
+  if (!sessionRows[0]?.id) {
+    throw new ApiError(404, "Signing session not found");
+  }
+
+  const otpRows = await prisma().$queryRawUnsafe<Array<{ raw_payload: unknown }>>(
+    `SELECT raw_payload
+     FROM webhook_events
+     WHERE provider_key = $1
+       AND event_type = $2
+       AND raw_payload ->> 'sessionId' = $3
+       AND raw_payload ->> 'documentId' = $4
+     ORDER BY received_at DESC
+     LIMIT 1`,
+    OTP_PROVIDER_KEY,
+    OTP_REQUESTED_EVENT,
+    args.sessionId,
+    args.documentId,
+  );
+
+  const payload = parseRecord(otpRows[0]?.raw_payload);
+  const otpHash = typeof payload?.otpHash === "string" ? payload.otpHash : "";
+  if (!otpHash) {
+    throw new ApiError(404, "No preview OTP found for signing session");
+  }
+
+  const otpCode = deriveOtpCodeFromHash(otpHash);
+  if (!otpCode) {
+    throw new ApiError(500, "Failed to derive preview OTP");
+  }
+
+  return {
+    otpCode,
+    challengeId: typeof payload?.challengeId === "string" ? payload.challengeId : "",
+    expiresAt: typeof payload?.expiresAt === "string" ? payload.expiresAt : "",
+    maskedPhone: typeof payload?.maskedPhone === "string" ? payload.maskedPhone : "",
   };
 }
