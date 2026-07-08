@@ -1,4 +1,4 @@
-export { Button } from "./button";
+﻿export { Button } from "./button";
 export { Badge } from "./badge";
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./card";
 export { 
@@ -40,7 +40,6 @@ export {
   FormMessage, 
   FormItem 
 } from "./form";
-export { Input, Textarea, Select } from "./input";
 export { Popover, PopoverTrigger, PopoverContent, PopoverArrow } from "./popover";
 export { Progress } from "./progress";
 export { RadioGroup, RadioGroupItem, RadioGroupLabel } from "./radio-group";
@@ -58,3 +57,5 @@ export {
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./tooltip";
 export { cn } from "./utils";
+export { Input, Textarea, Select, Checkbox } from "./input";
+
