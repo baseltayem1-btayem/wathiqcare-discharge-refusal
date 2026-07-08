@@ -1,7 +1,7 @@
-import WathiqNoteEnterpriseModule from "@/components/modules/WathiqNoteEnterpriseModule";
+﻿import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default function ElectronicPromissoryNotesEnterprisePage() {
-  return <WathiqNoteEnterpriseModule />;
+export default function PromissoryNotesEnterpriseLegacyRedirectPage() {
+  redirect("/modules/wathiqnote");
 }
