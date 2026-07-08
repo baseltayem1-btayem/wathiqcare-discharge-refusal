@@ -117,9 +117,14 @@ export function CanvaWorkspacePage({
 
   const consentForm = assembly?.consentForm;
   const consentSections = consentForm?.sections || [];
+  const approvedPdfUrl = consentForm?.pdfTemplateUrl?.trim() || "";
   const hasApprovedPdfSource = Boolean(
-    consentForm?.pdfTemplateUrl
-    && (consentForm.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable,
+    approvedPdfUrl &&
+      (
+        (consentForm as unknown as Record<string, unknown> | undefined)?.sourceAvailable ||
+        (consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable ||
+        approvedPdfUrl.startsWith("/approved-consent-forms/")
+      ),
   );
   const hasConsentContent = hasApprovedPdfSource;
 

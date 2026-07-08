@@ -29,7 +29,11 @@ export function ComplianceReadinessPanel({ assembly, readiness, reviewMode }: Co
   const { lang } = useI18n();
   const consentForm = assembly?.consentForm;
   const approvedPdfUrl = consentForm?.pdfTemplateUrl?.trim() || "";
-  const sourceAvailable = Boolean((consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable);
+  const sourceAvailable = Boolean(
+    (consentForm as unknown as Record<string, unknown> | undefined)?.sourceAvailable ||
+      (consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable ||
+      approvedPdfUrl.startsWith("/approved-consent-forms/"),
+  );
   const hasApprovedPdfSource = Boolean(approvedPdfUrl && sourceAvailable);
   const publishedEducation = (assembly?.educationMaterials || []).filter((item) => item.status === "PUBLISHED").length;
   const totalEducation = assembly?.educationMaterials.length || 0;
