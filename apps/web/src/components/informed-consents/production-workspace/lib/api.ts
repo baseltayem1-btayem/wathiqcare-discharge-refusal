@@ -71,18 +71,87 @@ export async function resolveContentMapping(args: {
     return { ok: false, found: false, error: String(payload.error || "Content mapping request failed.") };
   }
 
-  if (!payload.found) {
-    return { ok: true, found: false, error: String(payload.error || "No content mapping found for this procedure.") };
+  if (payload.clinicalKnowledgeAssembly) {
+    return {
+      ok: true,
+      found: true,
+      ckeEnabled: Boolean(payload.ckeEnabled ?? true),
+      clinicalKnowledgeAssembly: payload.clinicalKnowledgeAssembly as ProductionAssembly,
+    };
   }
 
-  return {
-    ok: true,
-    found: true,
-    ckeEnabled: Boolean(payload.ckeEnabled),
-    clinicalKnowledgeAssembly: payload.clinicalKnowledgeAssembly as ProductionAssembly | undefined,
-  };
-}
+  const mapping = (payload.mapping || payload.package || {}) as Record<string, unknown>;
+  const packageRecord = (payload.package || {}) as Record<string, unknown>;
+  const consentTemplate = (packageRecord.consentTemplate || mapping || {}) as Record<string, unknown>;
 
+  const resolvedProcedureId = String(
+    mapping.procedureId ||
+      mapping.templateId ||
+      mapping.id ||
+      args.procedureId ||
+      args.procedureCode ||
+      args.procedure ||
+      "procedure"
+  );
+
+  const resolvedProcedureCode = String(
+    mapping.procedureCode ||
+      mapping.templateCode ||
+      mapping.templateId ||
+      args.procedureCode ||
+      resolvedProcedureId
+  );
+
+  const procedureNameEn = String(
+    mapping.procedure ||
+      mapping.procedureNameEn ||
+      mapping.titleEn ||
+      args.procedure ||
+      "Clinical Procedure"
+  );
+
+  const procedureNameAr = String(mapping.procedureNameAr || mapping.titleAr || "");
+
+  if (payload.ok === true && (payload.mapping || payload.package || payload.source === "forms_fallback_mapping")) {
+    const assembly = {
+      assemblyId: String(payload.assemblyId || `assembly-${resolvedProcedureId}`),
+      packageId: String(packageRecord.packageId || `package-${resolvedProcedureId}`),
+      procedureId: resolvedProcedureId,
+      procedureCode: resolvedProcedureCode,
+      procedureNameEn,
+      procedureNameAr,
+      status: "ready",
+      consentForm: {
+        id: String(consentTemplate.id || mapping.templateId || resolvedProcedureId),
+        code: String(consentTemplate.code || mapping.templateCode || resolvedProcedureCode),
+        titleEn: String(consentTemplate.titleEn || mapping.titleEn || procedureNameEn),
+        titleAr: String(consentTemplate.titleAr || mapping.titleAr || procedureNameAr),
+        formType: String(consentTemplate.formType || mapping.category || mapping.consentType || args.categoryCode || "procedure"),
+        riskLevel: String(consentTemplate.riskLevel || mapping.riskLevel || "medium"),
+        version: String(consentTemplate.version || mapping.version || "1.0"),
+        pdfTemplateUrl: String(consentTemplate.pdfTemplateUrl || consentTemplate.pdfUrl || mapping.pdfTemplateUrl || mapping.pdfUrl || ""),
+        sourceAvailable: true,
+        requiresWitness: Boolean(consentTemplate.requiresWitness || false),
+        requiresInterpreter: Boolean(consentTemplate.requiresInterpreter || false),
+      },
+      educationMaterials: [],
+      riskDisclosures: [],
+      illustrations: [],
+      suggestions: [],
+      blockers: [],
+      requiredParticipants: [],
+    } as ProductionAssembly;
+
+    return {
+      ok: true,
+      found: true,
+      ckeEnabled: true,
+      clinicalKnowledgeAssembly: assembly,
+    };
+  }
+
+  return { ok: true, found: false, error: String(payload.error || "No content mapping found for this procedure.") };
+}
 export async function sendSecureSigningLink(args: {
   tenantId: string;
   documentId: string;
@@ -278,4 +347,5 @@ export async function fetchProcedures(tenantId: string): Promise<
     } as ProductionProcedure;
   }).filter((procedure) => Boolean(procedure.id));
 }
+
 
