@@ -112,6 +112,18 @@ export async function resolveContentMapping(args: {
 
   const procedureNameAr = String(mapping.procedureNameAr || mapping.titleAr || "");
 
+  const approvedPdfUrl = String(
+    consentTemplate.pdfUrl ||
+      consentTemplate.pdfTemplateUrl ||
+      consentTemplate.sourcePdfUrl ||
+      consentTemplate.approvedPdfUrl ||
+      mapping.pdfUrl ||
+      mapping.pdfTemplateUrl ||
+      mapping.sourcePdfUrl ||
+      mapping.approvedPdfUrl ||
+      ""
+  );
+
   if (payload.ok === true && (payload.mapping || payload.package || payload.source === "forms_fallback_mapping")) {
     const assembly = {
       assemblyId: String(payload.assemblyId || `assembly-${resolvedProcedureId}`),
@@ -129,8 +141,11 @@ export async function resolveContentMapping(args: {
         formType: String(consentTemplate.formType || mapping.category || mapping.consentType || args.categoryCode || "procedure"),
         riskLevel: String(consentTemplate.riskLevel || mapping.riskLevel || "medium"),
         version: String(consentTemplate.version || mapping.version || "1.0"),
-        pdfTemplateUrl: String(consentTemplate.pdfTemplateUrl || consentTemplate.pdfUrl || mapping.pdfTemplateUrl || mapping.pdfUrl || ""),
-        sourceAvailable: true,
+        pdfTemplateUrl: approvedPdfUrl,
+        pdfUrl: approvedPdfUrl,
+        sourcePdfUrl: approvedPdfUrl,
+        approvedPdfUrl: approvedPdfUrl,
+        sourceAvailable: Boolean(approvedPdfUrl),
         requiresWitness: Boolean(consentTemplate.requiresWitness || false),
         requiresInterpreter: Boolean(consentTemplate.requiresInterpreter || false),
       },
@@ -347,5 +362,6 @@ export async function fetchProcedures(tenantId: string): Promise<
     } as ProductionProcedure;
   }).filter((procedure) => Boolean(procedure.id));
 }
+
 
 
