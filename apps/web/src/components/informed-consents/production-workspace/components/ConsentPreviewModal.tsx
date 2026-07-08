@@ -49,8 +49,12 @@ export function ConsentPreviewModal({
   }, [consentForm]);
   const approvedPdfUrl = consentForm?.pdfTemplateUrl?.trim() || "";
   const hasApprovedPdfSource = Boolean(
-    approvedPdfUrl
-    && (consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable,
+    approvedPdfUrl &&
+      (
+        consentForm?.sourceAvailable ||
+        (consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable ||
+        approvedPdfUrl.startsWith("/approved-consent-forms/")
+      ),
   );
 
   const approvedIllustrations = useMemo(
