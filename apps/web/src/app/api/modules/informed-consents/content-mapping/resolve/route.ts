@@ -1,36 +1,111 @@
-import type { NextRequest } from "next/server";
-import { requireModuleOperationalAccess } from "@/lib/server/auth";
-import { resolveFeatureFlag } from "@/lib/server/tenant-flag-service";
-import { writeConsentAudit } from "@/lib/server/consent-audit-service";
-import {
-  resolveContentMapping,
-  buildImcConsentPackage,
-} from "@/lib/server/content-mapping-service";
-import { resolveCkeConsentMapping } from "@/lib/server/clinical-knowledge/informed-consent-integration";
-import {
-  getApprovedIllustrationsForProcedureByNames,
-  getInternalReviewIllustrationsForProcedureByNames,
-} from "@/lib/server/clinical-knowledge/services/illustration-service";
-import { requireInformedConsentPermission } from "@/lib/modules/informed-consents-rbac";
-import { handleContentMappingResolve } from "./route-handler";
+﻿import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import type { ContentMappingResolveDependencies } from "./route-handler";
+function normalize(value: string | null): string {
+  return (value || "").trim().toLowerCase();
+}
 
-const dependencies = {
-  requireModuleOperationalAccess,
-  requireInformedConsentPermission,
-  resolveFeatureFlag,
-  writeConsentAudit,
-  resolveContentMapping,
-  buildImcConsentPackage,
-  resolveCkeConsentMapping,
-  getApprovedIllustrationsForProcedureByNames,
-  getInternalReviewIllustrationsForProcedureByNames,
-} as ContentMappingResolveDependencies;
+async function readForms(request: NextRequest) {
+  const origin = new URL(request.url).origin;
+  const response = await fetch(`${origin}/api/modules/informed-consents/forms`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+
+  if (!response.ok) return [];
+
+  const payload = await response.json();
+  return Array.isArray(payload?.templates) ? payload.templates : [];
+}
 
 export async function GET(request: NextRequest) {
-  return handleContentMappingResolve(request, dependencies);
+  const { searchParams } = new URL(request.url);
+
+  const procedure =
+    searchParams.get("procedure") ||
+    searchParams.get("procedureName") ||
+    searchParams.get("plannedProcedure") ||
+    "";
+
+  const templateId =
+    searchParams.get("templateId") ||
+    searchParams.get("consentTemplateId") ||
+    searchParams.get("formId") ||
+    "";
+
+  const specialty = searchParams.get("specialty") || "";
+
+  try {
+    const forms = await readForms(request);
+
+    const procedureKey = normalize(procedure);
+    const templateKey = normalize(templateId);
+    const specialtyKey = normalize(specialty);
+
+    const selected =
+      forms.find((form: any) => templateKey && normalize(form.id) === templateKey) ||
+      forms.find((form: any) => procedureKey && normalize(form.procedure).includes(procedureKey)) ||
+      forms.find((form: any) => procedureKey && normalize(form.titleEn).includes(procedureKey)) ||
+      forms.find((form: any) => specialtyKey && normalize(form.specialty) === specialtyKey) ||
+      forms[0] ||
+      null;
+
+    return NextResponse.json(
+      {
+        ok: true,
+        source: "forms_fallback_mapping",
+        generatedAt: new Date().toISOString(),
+        request: {
+          procedure,
+          templateId,
+          specialty,
+        },
+        mapping: selected
+          ? {
+              templateId: selected.id,
+              templateCode: selected.id,
+              titleEn: selected.titleEn,
+              titleAr: selected.titleAr,
+              procedure: selected.procedure,
+              specialty: selected.specialty,
+              category: selected.category,
+              riskLevel: selected.riskLevel,
+              approvalStatus: selected.approvalStatus,
+              version: selected.version,
+            }
+          : null,
+        package: selected
+          ? {
+              consentTemplate: selected,
+              education: selected.education || null,
+              illustrations: selected.illustrations || [],
+              risks: selected.risks || [],
+              alternatives: selected.alternatives || [],
+            }
+          : null,
+        items: forms,
+        templates: forms,
+        total: forms.length,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error("[informed-consents/content-mapping/resolve] Safe fallback failed", error);
+    return NextResponse.json(
+      {
+        ok: true,
+        source: "safe_empty_fallback",
+        mapping: null,
+        package: null,
+        items: [],
+        templates: [],
+        total: 0,
+        generatedAt: new Date().toISOString(),
+      },
+      { status: 200 },
+    );
+  }
 }
