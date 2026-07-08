@@ -8,6 +8,7 @@ import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader, WorkspaceField } fr
 import { EmptyState } from "./EmptyState";
 import { ErrorState } from "./ErrorState";
 import { LoadingState } from "./LoadingState";
+import { PdfObjectEmbedViewer } from "../PdfObjectEmbedViewer";
 
 interface ApprovedPdfViewerProps {
   assembly?: ClinicalKnowledgeAssembly;
@@ -88,10 +89,11 @@ export function ApprovedPdfViewer({ assembly, loading = false, reviewed, onOpenP
                 </div>
               </div>
 
-              <iframe
+              <PdfObjectEmbedViewer
                 title={lang === "ar" ? "معاينة ملف الموافقة المعتمد" : "Approved consent PDF preview"}
                 src={approvedPdfUrl}
-                className="h-[72vh] min-h-[720px] w-full bg-white"
+                className="rounded-none border-0 shadow-none"
+                viewerClassName="h-[72vh] min-h-[720px]"
               />
             </div>
 

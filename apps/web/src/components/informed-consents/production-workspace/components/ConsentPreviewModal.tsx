@@ -13,6 +13,7 @@ import {
 } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { ClinicalKnowledgeAssembly } from "../types";
+import { PdfObjectEmbedViewer } from "./PdfObjectEmbedViewer";
 
 interface ConsentPreviewModalProps {
   open: boolean;
@@ -118,10 +119,11 @@ export function ConsentPreviewModal({
           {hasApprovedPdfSource ? (
             <div className="space-y-3">
               <div className="rounded-lg border border-slate-200 overflow-hidden bg-slate-50">
-                <iframe
+                <PdfObjectEmbedViewer
                   title={isAr ? "معاينة ملف الموافقة المعتمد" : "Approved consent PDF preview"}
                   src={approvedPdfUrl}
-                  className="h-[60vh] w-full bg-white"
+                  className="rounded-none border-0 shadow-none"
+                  viewerClassName="h-[60vh] min-h-[520px]"
                 />
               </div>
               <div className="text-[11px] text-slate-500">
