@@ -1,5 +1,6 @@
 "use client";
 
+import { isAssemblyApprovedPdfSourceVerified } from "../utils/approvedPdfSource";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
@@ -521,7 +522,8 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     const patientReady = !!state.patient;
     const encounterReady = !!state.encounter;
     const procedureSelected = !!state.selectedProcedureId;
-    const assemblyReady = state.assembly?.status === "ready";
+    const pdfSourceVerified = isAssemblyApprovedPdfSourceVerified(state.assembly);
+    const assemblyReady = state.assembly?.status === "ready" && pdfSourceVerified;
     const blockers = state.assembly?.blockers ?? [];
     const unacknowledgedBlockers = blockers.filter((b) => !state.acknowledgedBlockers.has(b.key));
     const blockersResolved = unacknowledgedBlockers.length === 0;
@@ -536,7 +538,9 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     if (!patientReady) missingItems.push("Patient selected");
     if (!encounterReady) missingItems.push("Encounter selected");
     if (!procedureSelected) missingItems.push("Procedure selected");
-    if (!assemblyReady) missingItems.push("Consent form loaded");
+    if (!state.assembly) missingItems.push("Consent form loaded");
+    else if (!pdfSourceVerified) missingItems.push("Approved PDF source verified");
+    else if (!assemblyReady) missingItems.push("Consent form loaded");
     if (!educationReady) missingItems.push("Education material loaded or confirmed unavailable");
     if (!previewReviewed) missingItems.push("Patient-facing preview reviewed");
     if (!contactAvailable) missingItems.push("Patient contact available");

@@ -6,6 +6,7 @@ import type { ClinicalKnowledgeAssembly } from "../../types";
 import type { Readiness } from "../../hooks/useProductionWorkspace";
 import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader } from "../WorkspaceAtoms";
 import { EmptyState } from "./EmptyState";
+import { isAssemblyApprovedPdfSourceVerified } from "../../utils/approvedPdfSource";
 
 function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: string }) {
   return (
@@ -29,12 +30,7 @@ export function ComplianceReadinessPanel({ assembly, readiness, reviewMode }: Co
   const { lang } = useI18n();
   const consentForm = assembly?.consentForm;
   const approvedPdfUrl = consentForm?.pdfTemplateUrl?.trim() || "";
-  const sourceAvailable = Boolean(
-    (consentForm as unknown as Record<string, unknown> | undefined)?.sourceAvailable ||
-      (consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable ||
-      approvedPdfUrl.startsWith("/approved-consent-forms/"),
-  );
-  const hasApprovedPdfSource = Boolean(approvedPdfUrl && sourceAvailable);
+  const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(assembly);
   const publishedEducation = (assembly?.educationMaterials || []).filter((item) => item.status === "PUBLISHED").length;
   const totalEducation = assembly?.educationMaterials.length || 0;
 

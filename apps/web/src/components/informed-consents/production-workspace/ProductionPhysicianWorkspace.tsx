@@ -30,6 +30,7 @@ import { PhysicianWorkspaceHeader } from "./components/enterprise/PhysicianWorks
 import { ProcedureSelectionPanel } from "./components/enterprise/ProcedureSelectionPanel";
 import { ReadinessChecklist } from "./components/enterprise/ReadinessChecklist";
 import { SendToPatientPanel } from "./components/enterprise/SendToPatientPanel";
+import { isAssemblyApprovedPdfSourceVerified } from "./utils/approvedPdfSource";
 import "./workspace.css";
 
 interface ProductionPhysicianWorkspaceProps {
@@ -90,10 +91,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     setSendModalOpen(false);
   }
 
-  const hasApprovedPdfSource = Boolean(
-    state.assembly?.consentForm?.pdfTemplateUrl
-    && (state.assembly?.consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable,
-  );
+  const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(state.assembly);
 
   const sendReason = (() => {
     if (sendLoading) return "Sending…";
@@ -222,7 +220,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
         allowlisted={state.sendEligibility?.allowlisted}
         pilotEnabled={state.sendEligibility?.pilotEnabled}
         eligibilityReason={state.sendEligibility?.reason}
-        allowRealSend={readiness.sendReady}
+        allowRealSend={readiness.sendReady && hasApprovedPdfSource}
         onConfirm={handleConfirmSend}
         onDryRun={handleDryRunSend}
         onCancel={() => setSendModalOpen(false)}

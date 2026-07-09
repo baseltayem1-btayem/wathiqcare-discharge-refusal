@@ -32,6 +32,7 @@ import type {
   ConsentBlocker,
 } from "@/lib/clinical-knowledge/types";
 import { ConsentPreviewModal } from "../ConsentPreviewModal";
+import { isAssemblyApprovedPdfSourceVerified } from "../../utils/approvedPdfSource";
 import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader, WorkspaceField } from "../WorkspaceAtoms";
 
 interface CanvaWorkspacePageProps {
@@ -118,14 +119,7 @@ export function CanvaWorkspacePage({
   const consentForm = assembly?.consentForm;
   const consentSections = consentForm?.sections || [];
   const approvedPdfUrl = consentForm?.pdfTemplateUrl?.trim() || "";
-  const hasApprovedPdfSource = Boolean(
-    approvedPdfUrl &&
-      (
-        (consentForm as unknown as Record<string, unknown> | undefined)?.sourceAvailable ||
-        (consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable ||
-        approvedPdfUrl.startsWith("/approved-consent-forms/")
-      ),
-  );
+  const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(assembly);
   const hasConsentContent = hasApprovedPdfSource;
 
   const checklistItems = [
@@ -133,14 +127,14 @@ export function CanvaWorkspacePage({
     { done: readiness.encounterReady, label: "Encounter selected" },
     { done: readiness.procedureSelected, label: "Procedure selected" },
     { done: readiness.assemblyReady && readiness.blockersResolved, label: "Knowledge package ready" },
-    { done: hasConsentContent, label: "Consent content loaded" },
+    { done: hasConsentContent, label: "Approved PDF source verified" },
     { done: readiness.educationReady, label: "Education material ready" },
     { done: readiness.previewReviewed, label: "Preview reviewed" },
     { done: readiness.contactAvailable && readiness.allowlisted, label: "Recipient allowlisted" },
     { done: state.draftApproved, label: "Draft approved" },
   ];
 
-  const sendDisabled = !readiness.sendReady || sendLoading;
+  const sendDisabled = !readiness.sendReady || sendLoading || !hasApprovedPdfSource;
   const sendReason = useMemo(() => {
     if (sendLoading) return "Sending…";
     if (!readiness.patientReady) return "Select a patient first";
