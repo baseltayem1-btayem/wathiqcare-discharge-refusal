@@ -113,7 +113,6 @@ export function SendConfirmationModal({
             flows are handled by the existing production pipeline.
           </span>
         </div>
-
         <DialogFooter>
           <Button variant="outline" size="sm" uppercase={false} onClick={onCancel}>
             Cancel
@@ -132,4 +131,5 @@ export function SendConfirmationModal({
     </Dialog>
   );
 }
+
 
