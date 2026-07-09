@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Send, ShieldCheck, Smartphone, AlertTriangle } from "lucide-react";
 import {
@@ -78,11 +78,11 @@ export function SendConfirmationModal({
           </div>
           <div>
             <span className="text-[var(--wc-text-muted)]">Mobile:</span>{" "}
-            <span className="font-semibold text-[var(--wc-text)]">{normalizedMobile || "—"}</span>
+            <span className="font-semibold text-[var(--wc-text)]">{normalizedMobile || "â€”"}</span>
           </div>
           <div>
             <span className="text-[var(--wc-text-muted)]">Email:</span>{" "}
-            <span className="font-semibold text-[var(--wc-text)]">{email || "—"}</span>
+            <span className="font-semibold text-[var(--wc-text)]">{email || "â€”"}</span>
           </div>
           <div>
             <span className="text-[var(--wc-text-muted)]">Encounter:</span>{" "}
@@ -118,18 +118,18 @@ export function SendConfirmationModal({
           <Button variant="outline" size="sm" uppercase={false} onClick={onCancel}>
             Cancel
           </Button>
-          {onDryRun && (
-            <Button variant="brand" size="sm" uppercase={false} onClick={onDryRun}>
-              <Smartphone className="w-4 h-4" /> Dry-run send
-            </Button>
-          )}
-          {canSendReal && (
+          {canSendReal ? (
             <Button variant="success" size="sm" uppercase={false} onClick={onConfirm}>
               <Smartphone className="w-4 h-4" /> Confirm send
             </Button>
-          )}
+          ) : onDryRun ? (
+            <Button variant="brand" size="sm" uppercase={false} onClick={onDryRun}>
+              <Smartphone className="w-4 h-4" /> Dry-run send
+            </Button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
