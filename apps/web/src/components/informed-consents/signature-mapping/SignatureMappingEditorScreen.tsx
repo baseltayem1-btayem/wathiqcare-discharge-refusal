@@ -67,7 +67,7 @@ const DEFAULT_FORM = {
   fieldKey: "patientSignature",
   role: "patient",
   labelEn: "Patient Signature",
-  labelAr: "توقيع المريض",
+  labelAr: "",
   pageNumber: "1",
   x: "0.10",
   y: "0.78",
@@ -257,7 +257,7 @@ export default function SignatureMappingEditorScreen() {
               WathiqCare Clinical Consent Platform
             </div>
             <h1 className="text-3xl font-bold text-[#101828]">
-              Signature Field Mapping / تحديد مواضع التوقيع
+              Signature Field Mapping
             </h1>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-[#667085]">
               Configure where electronic signatures, timestamps, patient identifiers, and verification evidence will be stamped on the approved hospital PDF consent forms.
@@ -320,7 +320,7 @@ export default function SignatureMappingEditorScreen() {
                     <span className="font-semibold text-[#101828]">English:</span> {selectedTemplate.titleEn}
                   </div>
                   <div dir="rtl">
-                    <span className="font-semibold text-[#101828]">العربية:</span> {selectedTemplate.titleAr}
+                    <span className="font-semibold text-[#101828]">Arabic:</span> {selectedTemplate.titleAr}
                   </div>
                   <div>
                     <span className="font-semibold text-[#101828]">Specialty:</span> {selectedTemplate.specialty || "—"}
