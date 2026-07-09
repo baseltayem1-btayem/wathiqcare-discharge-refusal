@@ -15,6 +15,7 @@ import { getConsentFormsByIds } from "./form-service";
 import { getEducationMaterialsByIds } from "./education-service";
 import { getRiskDisclosuresByIds } from "./risk-service";
 import { evaluateRules } from "./rule-service";
+import { verifyPublicAssetSource } from "./source-verification";
 import {
   getApprovedIllustrationsForProcedure,
   getApprovedIllustrationsForProcedureByNames,
@@ -113,6 +114,37 @@ export async function assembleKnowledgePackage(
     };
   }
 
+  const approvedPdf = verifyPublicAssetSource(consentForm.pdfTemplateUrl);
+  const pdfBlockingReasons = approvedPdf.sourceVerified
+    ? []
+    : ["Approved consent PDF source is missing or inaccessible."];
+
+  const dispatchEligibility = {
+    canPreview: approvedPdf.sourceVerified,
+    canSend: approvedPdf.sourceVerified,
+    blockingReasons: pdfBlockingReasons,
+    warnings: educationMaterials.length === 0 ? ["No approved patient education materials available for this procedure."] : [],
+  };
+
+  const consentFormWithVerifiedSource = {
+    ...consentForm,
+    sourceAvailable: approvedPdf.sourceAvailable,
+    sourceVerified: approvedPdf.sourceVerified,
+    sourceStatusCode: approvedPdf.statusCode,
+    sourceVerificationReason: approvedPdf.reason,
+    approvedPdfUrl: approvedPdf.url,
+    sourcePdfUrl: approvedPdf.url,
+    governanceSnapshot: {
+      ...((consentForm.governanceSnapshot && typeof consentForm.governanceSnapshot === "object")
+        ? consentForm.governanceSnapshot
+        : {}),
+      sourceAvailable: approvedPdf.sourceAvailable,
+      sourceVerified: approvedPdf.sourceVerified,
+      sourceStatusCode: approvedPdf.statusCode,
+      sourceVerificationReason: approvedPdf.reason,
+    },
+  };
+
   const ruleEvaluation = await evaluateRules(tenantId, {
     anesthesiaRequired: procedure.anesthesiaRequired,
     riskLevel: consentForm.riskLevel,
@@ -121,7 +153,7 @@ export async function assembleKnowledgePackage(
     patientLanguagePreference: patientContext.languagePreference,
   });
 
-  const status = ruleEvaluation.blockers.length > 0 ? "blocked" : "ready";
+  const status = ruleEvaluation.blockers.length > 0 || !dispatchEligibility.canSend ? "blocked" : "ready";
 
   const assembly: ClinicalKnowledgeAssembly = {
     assemblyId: randomUUID(),
@@ -133,7 +165,7 @@ export async function assembleKnowledgePackage(
     packageId: pkg.id,
     packageVersion: pkg.version,
     status,
-    consentForm,
+    consentForm: consentFormWithVerifiedSource as typeof consentForm,
     educationMaterials,
     riskDisclosures,
     illustrations,
@@ -142,6 +174,8 @@ export async function assembleKnowledgePackage(
     blockers: ruleEvaluation.blockers,
     requiredParticipants: ruleEvaluation.requiredParticipants,
     packageSnapshot: pkg.packageSnapshot,
+    approvedPdf,
+    dispatchEligibility,
     assembledAt: new Date().toISOString(),
   };
 

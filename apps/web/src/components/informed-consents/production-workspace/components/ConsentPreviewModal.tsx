@@ -49,14 +49,13 @@ export function ConsentPreviewModal({
     return (consentForm?.sections || []).slice().sort((a, b) => a.orderIndex - b.orderIndex);
   }, [consentForm]);
   const approvedPdfUrl = consentForm?.pdfTemplateUrl?.trim() || "";
-  const hasApprovedPdfSource = Boolean(
-    approvedPdfUrl &&
-      (
-        consentForm?.sourceAvailable ||
-        (consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable ||
-        approvedPdfUrl.startsWith("/approved-consent-forms/")
-      ),
+  const consentFormMeta = consentForm as unknown as Record<string, unknown> | undefined;
+  const governanceSnapshot = consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined;
+  const sourceVerified = Boolean(
+    consentFormMeta?.sourceVerified === true ||
+      governanceSnapshot?.sourceVerified === true,
   );
+  const hasApprovedPdfSource = Boolean(approvedPdfUrl && sourceVerified);
 
   const approvedIllustrations = useMemo(
     () =>

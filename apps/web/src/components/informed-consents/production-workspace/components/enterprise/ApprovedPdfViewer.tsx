@@ -22,12 +22,13 @@ export function ApprovedPdfViewer({ assembly, loading = false, reviewed, onOpenP
   const { lang } = useI18n();
   const consentForm = assembly?.consentForm;
   const approvedPdfUrl = consentForm?.pdfTemplateUrl?.trim() || "";
-  const sourceAvailable = Boolean(
-    (consentForm as unknown as Record<string, unknown> | undefined)?.sourceAvailable ||
-      (consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined)?.sourceAvailable ||
-      approvedPdfUrl.startsWith("/approved-consent-forms/"),
+  const consentFormMeta = consentForm as unknown as Record<string, unknown> | undefined;
+  const governanceSnapshot = consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined;
+  const sourceVerified = Boolean(
+    consentFormMeta?.sourceVerified === true ||
+      governanceSnapshot?.sourceVerified === true,
   );
-  const hasApprovedPdfSource = Boolean(approvedPdfUrl && sourceAvailable);
+  const hasApprovedPdfSource = Boolean(approvedPdfUrl && sourceVerified);
 
   return (
     <WorkspaceCard className="overflow-hidden">

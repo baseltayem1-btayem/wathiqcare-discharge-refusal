@@ -5,11 +5,64 @@ import { sendModuleSecureSigningLink } from "@/lib/server/module-secure-signing-
 import { writeConsentAudit } from "@/lib/server/consent-library-service";
 import { isTaqnyatReady } from "@/services/sms/taqnyatClient";
 import { logRuntimeIncident } from "@/lib/server/runtime-observability";
+import { verifyPublicAssetSource } from "@/lib/server/clinical-knowledge/services/source-verification";
 import { getPrisma } from "@/lib/server/prisma";
 import { isAllowlistedRecipient } from "@/lib/server/workspace-consent-helpers";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+
+function resolveApprovedPdfSourceUrl(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const candidates = [
+      record.url,
+      record.href,
+      record.pdfUrl,
+      record.pdfTemplateUrl,
+      record.approvedPdfUrl,
+      record.sourcePdfUrl,
+      record.immutablePdfUrl,
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === "string" && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+  }
+
+  return "";
+}
+
+function resolveMetadataApprovedPdfSource(metadata: unknown, immutablePdfUrl?: string | null): string {
+  const direct = resolveApprovedPdfSourceUrl(immutablePdfUrl);
+  if (direct) return direct;
+
+  if (!metadata || typeof metadata !== "object") return "";
+
+  const record = metadata as Record<string, unknown>;
+  const candidates = [
+    record.approvedPdfUrl,
+    record.sourcePdfUrl,
+    record.pdfTemplateUrl,
+    record.immutablePdfUrl,
+    record.approvedLink,
+    record.approvedConsentSource,
+    record.consentForm,
+    record.package,
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = resolveApprovedPdfSourceUrl(candidate);
+    if (resolved) return resolved;
+  }
+
+  return "";
+}
 
 function isDryRunEnabled(body: Record<string, unknown>): boolean {
   if (body.dryRun === true) return true;
@@ -38,6 +91,83 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { ok: false, error: "Missing required fields: documentId, caseId, patientName, mobileNumber, recipientEmail" },
       { status: 400 },
+    );
+  }
+
+  const sendGatePrisma = getPrisma();
+  const consentDocument = await sendGatePrisma.consentDocument.findFirst({
+    where: { id: documentId, tenantId },
+    select: {
+      id: true,
+      status: true,
+      immutablePdfUrl: true,
+      metadata: true,
+      templateId: true,
+      templateVersionId: true,
+    },
+  });
+
+  if (!consentDocument) {
+    return NextResponse.json({ ok: false, error: "Consent document not found" }, { status: 404 });
+  }
+
+  if (consentDocument.status === "VOID") {
+    return NextResponse.json({ ok: false, error: "Consent document is void" }, { status: 422 });
+  }
+
+  const approvedPdfSourceUrl = resolveMetadataApprovedPdfSource(
+    consentDocument.metadata,
+    consentDocument.immutablePdfUrl,
+  );
+  const approvedPdfVerification = verifyPublicAssetSource(approvedPdfSourceUrl);
+
+  if (!approvedPdfVerification.sourceVerified) {
+    const reason = "Approved consent PDF source is missing or inaccessible.";
+
+    await writeConsentAudit({
+      tenantId,
+      auth,
+      action: "send_blocked_missing_approved_pdf_source",
+      summary: reason,
+      source: "informed-consents-send",
+      caseId,
+      consentDocumentId: documentId,
+      templateId: consentDocument.templateId,
+      templateVersionId: consentDocument.templateVersionId,
+      metadata: {
+        documentId,
+        caseId,
+        approvedPdfSourceUrl,
+        sourceAvailable: approvedPdfVerification.sourceAvailable,
+        sourceVerified: approvedPdfVerification.sourceVerified,
+        sourceStatusCode: approvedPdfVerification.statusCode,
+        sourceVerificationReason: approvedPdfVerification.reason,
+      },
+      request,
+    });
+
+    logRuntimeIncident({
+      module: "informed-consents-send",
+      type: "VALIDATION_FAILURE",
+      operation: "send_blocked_missing_approved_pdf_source",
+      tenantId,
+      error: new Error(reason),
+      details: {
+        caseId,
+        documentId,
+        approvedPdfSourceUrl,
+        sourceVerificationReason: approvedPdfVerification.reason,
+        sourceStatusCode: approvedPdfVerification.statusCode,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: reason,
+        sourceVerification: approvedPdfVerification,
+      },
+      { status: 422 },
     );
   }
 
