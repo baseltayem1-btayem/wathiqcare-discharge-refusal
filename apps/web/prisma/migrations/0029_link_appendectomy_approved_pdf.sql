@@ -1,4 +1,4 @@
-﻿-- Link the available approved Appendectomy PDF to matching clinical consent forms.
+-- Link the available approved Appendectomy PDF to matching clinical consent forms.
 -- This is intentionally narrow and non-destructive.
 
 UPDATE clinical_consent_forms
