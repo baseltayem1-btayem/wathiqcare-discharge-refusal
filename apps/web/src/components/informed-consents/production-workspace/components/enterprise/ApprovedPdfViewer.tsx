@@ -1,4 +1,5 @@
 "use client";
+import { isAssemblyApprovedPdfSourceVerified, resolveAssemblyApprovedPdfUrl } from "../../utils/approvedPdfSource";
 
 import { CheckCircle2, ExternalLink, Eye, FileCheck2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/design-system";
@@ -21,15 +22,8 @@ interface ApprovedPdfViewerProps {
 export function ApprovedPdfViewer({ assembly, loading = false, reviewed, onOpenPreview, onMarkReviewed }: ApprovedPdfViewerProps) {
   const { lang } = useI18n();
   const consentForm = assembly?.consentForm;
-  const approvedPdfUrl = consentForm?.pdfTemplateUrl?.trim() || "";
-  const consentFormMeta = consentForm as unknown as Record<string, unknown> | undefined;
-  const governanceSnapshot = consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined;
-  const sourceVerified = Boolean(
-    consentFormMeta?.sourceVerified === true ||
-      governanceSnapshot?.sourceVerified === true,
-  );
-  const hasApprovedPdfSource = Boolean(approvedPdfUrl && sourceVerified);
-
+  const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(assembly);
+  const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(assembly);
   return (
     <WorkspaceCard className="overflow-hidden">
       <WorkspaceCardHeader
