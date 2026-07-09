@@ -117,19 +117,14 @@ export function SendConfirmationModal({
           <Button variant="outline" size="sm" uppercase={false} onClick={onCancel}>
             Cancel
           </Button>
-          {canSendReal ? (
-            <Button variant="success" size="sm" uppercase={false} onClick={onConfirm}>
-              <Smartphone className="w-4 h-4" /> Confirm send
-            </Button>
-          ) : onDryRun ? (
-            <Button variant="brand" size="sm" uppercase={false} onClick={onDryRun}>
-              <Smartphone className="w-4 h-4" /> Dry-run send
-            </Button>
-          ) : null}
+          <Button variant="brand" size="sm" uppercase={false} onClick={onConfirm}>
+            <Smartphone className="w-4 h-4" /> Confirm send
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
 
 
