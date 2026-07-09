@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -122,7 +122,7 @@ export default function SignatureMappingEditorScreen() {
     setError(null);
 
     try {
-      const response = await fetch("/api/modules/informed-consents/forms", {
+      const response = await fetch("/api/modules/informed-consents/signature-mapping/forms", {
         cache: "no-store",
       });
       const body = await response.json();
