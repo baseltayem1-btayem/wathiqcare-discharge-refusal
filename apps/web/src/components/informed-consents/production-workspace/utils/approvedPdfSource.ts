@@ -1,5 +1,10 @@
 import type { ClinicalKnowledgeAssembly } from "@/lib/clinical-knowledge/types";
 
+const APPROVED_PUBLIC_PDF_PREFIXES = [
+  "/approved-consent-forms/",
+  "/imc-consent-library/",
+];
+
 function readRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -14,6 +19,19 @@ function isSecureApprovedPdfEndpoint(value: string): boolean {
   return /^\/api\/modules\/informed-consents\/forms\/[^/]+\/approved-pdf$/.test(value);
 }
 
+function isApprovedPublicPdfPath(value: string): boolean {
+  if (!value.startsWith("/")) return false;
+  if (value.includes("..")) return false;
+
+  const pathname = value.split("?")[0] || "";
+  const lowerPathname = pathname.toLowerCase();
+
+  return (
+    lowerPathname.endsWith(".pdf") &&
+    APPROVED_PUBLIC_PDF_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  );
+}
+
 export function resolveAssemblyApprovedPdfUrl(
   assembly?: ClinicalKnowledgeAssembly,
 ): string {
@@ -23,21 +41,24 @@ export function resolveAssemblyApprovedPdfUrl(
   const assemblyMeta = readRecord(assembly);
   const approvedPdf = readRecord(assemblyMeta?.approvedPdf);
 
-  const formId = readString(consentFormMeta?.id);
-  const secureEndpoint = formId
-    ? `/api/modules/informed-consents/forms/${encodeURIComponent(formId)}/approved-pdf`
-    : "";
-
-  return (
-    secureEndpoint ||
+  const explicitApprovedPath =
     readString(consentFormMeta?.approvedPdfUrl) ||
     readString(consentFormMeta?.sourcePdfUrl) ||
     readString(consentFormMeta?.pdfUrl) ||
     readString(approvedPdf?.url) ||
     readString(governanceSnapshot?.approvedPdfUrl) ||
     readString(governanceSnapshot?.sourcePdfUrl) ||
-    readString(consentForm?.pdfTemplateUrl)
-  );
+    readString(consentFormMeta?.pdfTemplateUrl);
+
+  if (explicitApprovedPath) {
+    return explicitApprovedPath;
+  }
+
+  const formId = readString(consentFormMeta?.id);
+
+  return formId
+    ? `/api/modules/informed-consents/forms/${encodeURIComponent(formId)}/approved-pdf`
+    : "";
 }
 
 export function isAssemblyApprovedPdfSourceVerified(
@@ -55,7 +76,8 @@ export function isAssemblyApprovedPdfSourceVerified(
   const dispatchEligibility = readRecord(assemblyMeta?.dispatchEligibility);
 
   return Boolean(
-    isSecureApprovedPdfEndpoint(approvedPdfUrl) ||
+    isApprovedPublicPdfPath(approvedPdfUrl) ||
+      isSecureApprovedPdfEndpoint(approvedPdfUrl) ||
       consentFormMeta?.sourceVerified === true ||
       governanceSnapshot?.sourceVerified === true ||
       approvedPdf?.sourceVerified === true ||
