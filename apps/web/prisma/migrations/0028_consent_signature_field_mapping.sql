@@ -1,4 +1,4 @@
-﻿CREATE TABLE IF NOT EXISTS consent_signature_field_mappings (
+CREATE TABLE IF NOT EXISTS consent_signature_field_mappings (
   id TEXT PRIMARY KEY,
 
   tenant_id TEXT NOT NULL,
