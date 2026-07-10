@@ -95,14 +95,29 @@ export function resolveAssemblyPatientCopyPdfUrl(
   const assemblyMeta = readRecord(assembly);
   const approvedPdf = readRecord(assemblyMeta?.approvedPdf);
 
-  return (
+  const explicitPatientCopyUrl =
     readString(consentFormMeta?.patientCopyPdfUrl) ||
     readString(consentFormMeta?.patientCopyUrl) ||
     readString(consentFormMeta?.patientCopyTemplateUrl) ||
     readString(consentFormMeta?.patientCopyPdfTemplateUrl) ||
     readString(governanceSnapshot?.patientCopyPdfUrl) ||
     readString(governanceSnapshot?.patientCopyUrl) ||
-    readString(approvedPdf?.patientCopyPdfUrl) ||
-    ""
-  );
+    readString(approvedPdf?.patientCopyPdfUrl);
+
+  if (explicitPatientCopyUrl) {
+    return explicitPatientCopyUrl;
+  }
+
+  const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(assembly);
+
+  if (
+    approvedPdfUrl.startsWith("/approved-consent-forms/") &&
+    approvedPdfUrl.toLowerCase().endsWith(".pdf")
+  ) {
+    const fileName = approvedPdfUrl.split("/").pop() || "";
+    const patientCopyFileName = fileName.replace(/\.pdf$/i, "-patient-copy.pdf");
+    return `/approved-consent-forms-patient-copy/${patientCopyFileName}`;
+  }
+
+  return "";
 }
