@@ -1,4 +1,5 @@
 "use client";
+import { isAssemblyApprovedPdfSourceVerified, resolveAssemblyApprovedPdfUrl, resolveAssemblyPatientCopyPdfUrl } from "../../utils/approvedPdfSource";
 
 import { CheckCircle2, ExternalLink, Eye, FileCheck2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/design-system";
@@ -21,15 +22,9 @@ interface ApprovedPdfViewerProps {
 export function ApprovedPdfViewer({ assembly, loading = false, reviewed, onOpenPreview, onMarkReviewed }: ApprovedPdfViewerProps) {
   const { lang } = useI18n();
   const consentForm = assembly?.consentForm;
-  const approvedPdfUrl = consentForm?.pdfTemplateUrl?.trim() || "";
-  const consentFormMeta = consentForm as unknown as Record<string, unknown> | undefined;
-  const governanceSnapshot = consentForm?.governanceSnapshot as Record<string, unknown> | null | undefined;
-  const sourceVerified = Boolean(
-    consentFormMeta?.sourceVerified === true ||
-      governanceSnapshot?.sourceVerified === true,
-  );
-  const hasApprovedPdfSource = Boolean(approvedPdfUrl && sourceVerified);
-
+  const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(assembly);
+  const patientCopyPdfUrl = resolveAssemblyPatientCopyPdfUrl(assembly);
+  const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(assembly);
   return (
     <WorkspaceCard className="overflow-hidden">
       <WorkspaceCardHeader
@@ -107,8 +102,13 @@ export function ApprovedPdfViewer({ assembly, loading = false, reviewed, onOpenP
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <a href={approvedPdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
-                  <ExternalLink className="size-3.5" /> {lang === "ar" ? "فتح في تبويب جديد" : "Open in new tab"}
+                  <ExternalLink className="size-3.5" /> {lang === "ar" ? "\u0641\u062A\u062D \u0646\u0645\u0648\u0630\u062C \u0627\u0644\u062A\u0648\u0642\u064A\u0639" : "Open signing form"}
                 </a>
+                {patientCopyPdfUrl ? (
+                  <a href={patientCopyPdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 shadow-sm transition hover:bg-emerald-100">
+                    <ExternalLink className="size-3.5" /> {lang === "ar" ? "\u0641\u062A\u062D \u0646\u0633\u062E\u0629 \u0627\u0644\u0645\u0631\u064A\u0636" : "Open patient copy"}
+                  </a>
+                ) : null}
                 <Button variant={reviewed ? "outline" : "brand"} size="sm" uppercase={false} disabled={reviewed} className="rounded-xl" onClick={onMarkReviewed}>
                   {reviewed ? (lang === "ar" ? "تم وسم المعاينة" : "Marked reviewed") : (lang === "ar" ? "تأكيد مراجعة المعاينة" : "Mark Preview Reviewed")}
                 </Button>
