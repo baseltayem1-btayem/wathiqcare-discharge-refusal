@@ -1,4 +1,4 @@
-import type { ClinicalKnowledgeAssembly } from "@/lib/clinical-knowledge/types";
+﻿import type { ClinicalKnowledgeAssembly } from "@/lib/clinical-knowledge/types";
 
 const APPROVED_PUBLIC_PDF_PREFIXES = [
   "/approved-consent-forms/",
@@ -83,5 +83,26 @@ export function isAssemblyApprovedPdfSourceVerified(
       approvedPdf?.sourceVerified === true ||
       dispatchEligibility?.canPreview === true ||
       dispatchEligibility?.canSend === true,
+  );
+}
+
+export function resolveAssemblyPatientCopyPdfUrl(
+  assembly?: ClinicalKnowledgeAssembly,
+): string {
+  const consentForm = assembly?.consentForm;
+  const consentFormMeta = readRecord(consentForm);
+  const governanceSnapshot = readRecord(consentForm?.governanceSnapshot);
+  const assemblyMeta = readRecord(assembly);
+  const approvedPdf = readRecord(assemblyMeta?.approvedPdf);
+
+  return (
+    readString(consentFormMeta?.patientCopyPdfUrl) ||
+    readString(consentFormMeta?.patientCopyUrl) ||
+    readString(consentFormMeta?.patientCopyTemplateUrl) ||
+    readString(consentFormMeta?.patientCopyPdfTemplateUrl) ||
+    readString(governanceSnapshot?.patientCopyPdfUrl) ||
+    readString(governanceSnapshot?.patientCopyUrl) ||
+    readString(approvedPdf?.patientCopyPdfUrl) ||
+    ""
   );
 }
