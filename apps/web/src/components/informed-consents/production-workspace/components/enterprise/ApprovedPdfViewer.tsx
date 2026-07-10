@@ -23,6 +23,7 @@ export function ApprovedPdfViewer({ assembly, loading = false, reviewed, onOpenP
   const { lang } = useI18n();
   const consentForm = assembly?.consentForm;
   const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(assembly);
+  const patientCopyPdfUrl = resolveAssemblyPatientCopyPdfUrl(assembly);
   const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(assembly);
   return (
     <WorkspaceCard className="overflow-hidden">
