@@ -10,6 +10,7 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
   requiresDoctorCompletion: true,
   supportsAnesthesiaWorkflow: true,
   blocksPatientDispatchUntilVerified: true,
+  coordinateMode: "NORMALIZED",
   fields: [
     {
       key: "condition_and_treatment",
@@ -21,6 +22,13 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
       maxLength: 1200,
       multiline: true,
       placeholderEn: "Document the patient's condition, proposed treatment, and clinical context.",
+      coordinates: {
+        page: 1,
+        x: 0.075,
+        y: 0.365,
+        size: 8,
+        maxWidth: 0.4,
+      },
     },
     {
       key: "procedure_site_side",
@@ -32,6 +40,13 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
       maxLength: 800,
       multiline: true,
       placeholderEn: "Document the procedure, site, side, or laterality where applicable.",
+      coordinates: {
+        page: 1,
+        x: 0.075,
+        y: 0.505,
+        size: 8,
+        maxWidth: 0.4,
+      },
     },
     {
       key: "significant_risks_options",
@@ -43,6 +58,13 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
       maxLength: 1600,
       multiline: true,
       placeholderEn: "Document significant risks, material risks, and available options.",
+      coordinates: {
+        page: 1,
+        x: 0.075,
+        y: 0.745,
+        size: 8,
+        maxWidth: 0.4,
+      },
     },
     {
       key: "risks_of_not_having_procedure",
@@ -54,6 +76,13 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
       maxLength: 1200,
       multiline: true,
       placeholderEn: "Document risks and consequences of refusing or delaying the procedure.",
+      coordinates: {
+        page: 2,
+        x: 0.075,
+        y: 0.245,
+        size: 8,
+        maxWidth: 0.4,
+      },
     },
     {
       key: "anesthesia_applies",
@@ -63,6 +92,13 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
       type: "CHECKBOX",
       required: true,
       sourcePath: "metadata.anesthesia.applies",
+      coordinates: {
+        page: 2,
+        x: 0.075,
+        y: 0.555,
+        size: 8,
+        maxWidth: 0.2,
+      },
     },
     {
       key: "anesthetic_type_discussed",
@@ -75,6 +111,13 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
       maxLength: 1000,
       multiline: true,
       placeholderEn: "Document the type of anesthesia discussed and reviewed.",
+      coordinates: {
+        page: 2,
+        x: 0.075,
+        y: 0.615,
+        size: 8,
+        maxWidth: 0.4,
+      },
     },
     {
       key: "treating_physician_signature",
@@ -82,6 +125,13 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
       role: "PHYSICIAN_REQUIRED",
       type: "SIGNATURE",
       required: true,
+      coordinates: {
+        page: 3,
+        x: 0.145,
+        y: 0.745,
+        size: 8,
+        maxWidth: 0.25,
+      },
     },
     {
       key: "patient_signature",
