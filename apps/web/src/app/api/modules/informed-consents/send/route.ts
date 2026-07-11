@@ -94,6 +94,68 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (isDryRunEnabled(body)) {
+    if (!isAllowlistedRecipient(mobileNumber, recipientEmail)) {
+      const maskedMobile = mobileNumber.replace(/\d(?=\d{4})/g, "*");
+      const maskedEmail = recipientEmail.replace(/(.{2}).*?(@.*)/, "$1***$2");
+      const reason = `Dry-run blocked: recipient not in pilot allowlist (mobile: ${maskedMobile}, email: ${maskedEmail})`;
+
+      await writeConsentAudit({
+        tenantId,
+        auth,
+        action: "dry_run_blocked_non_allowlisted_recipient",
+        summary: reason,
+        source: "informed-consents-send",
+        caseId,
+        metadata: {
+          documentId,
+          caseId,
+          patientName,
+          mobileNumber: maskedMobile,
+          recipientEmail: maskedEmail,
+          locale,
+          dryRun: true,
+        },
+        request,
+      });
+
+      return NextResponse.json(
+        { ok: false, dryRun: true, error: "Recipient is not approved for pilot send. Contact the platform administrator to add the recipient to the allowlist." },
+        { status: 403 },
+      );
+    }
+
+    await writeConsentAudit({
+      tenantId,
+      auth,
+      action: "consent_dry_run_sent",
+      summary: `Dry-run send validation passed for case ${caseId}`,
+      source: "informed-consents-send",
+      caseId,
+      metadata: {
+        documentId,
+        caseId,
+        patientName,
+        mobileNumber,
+        recipientEmail,
+        locale,
+        dryRun: true,
+        skippedDocumentLookup: documentId === "dry-run",
+      },
+      request,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      dryRun: true,
+      message: "Send validation passed. No consent sent.",
+      auditAction: "consent_dry_run_sent",
+      providerStatus: {
+        smsReady: isTaqnyatReady(),
+      },
+    });
+  }
+
   const sendGatePrisma = getPrisma();
   const consentDocument = await sendGatePrisma.consentDocument.findFirst({
     where: { id: documentId, tenantId },
@@ -169,40 +231,6 @@ export async function POST(request: NextRequest) {
       },
       { status: 422 },
     );
-  }
-
-  if (isDryRunEnabled(body)) {
-    console.log("[informed-consents-send] dry-run validation passed", {
-      tenantId,
-      moduleKey: "informed_consent",
-      documentId,
-      locale,
-    });
-    await writeConsentAudit({
-      tenantId,
-      auth,
-      action: "consent_dry_run_sent",
-      summary: `Dry-run send validation passed for document ${documentId}`,
-      source: "informed-consents-send",
-      caseId,
-      metadata: {
-        documentId,
-        caseId,
-        patientName,
-        mobileNumber,
-        locale,
-        dryRun: true,
-      },
-      request,
-    });
-    return NextResponse.json({
-      ok: true,
-      dryRun: true,
-      message: "Send validation passed. No consent sent.",
-      providerStatus: {
-        smsReady: isTaqnyatReady(),
-      },
-    });
   }
 
   await writeConsentAudit({
