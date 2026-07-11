@@ -5,6 +5,81 @@ const CONSENT_FIELD_MAPPINGS: ConsentFieldMapping[] = [
   ADENOTONSILLECTOMY_FIELD_MAPPING,
 ];
 
+const IMC_APPROVED_FORM_ID_PREFIX = "imc-approved-";
+
+function toTitleCaseFromSlug(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function createGenericImcApprovedFieldMapping(formId: string): ConsentFieldMapping | null {
+  if (!formId.startsWith(IMC_APPROVED_FORM_ID_PREFIX)) {
+    return null;
+  }
+
+  const slug = formId.slice(IMC_APPROVED_FORM_ID_PREFIX.length);
+
+  return {
+    formId,
+    slug,
+    titleEn: toTitleCaseFromSlug(slug),
+    layoutFamily: "IMC_GENERIC_APPROVED_CONSENT",
+    version: "0.1.0",
+    verificationStatus: "DRAFT",
+    requiresDoctorCompletion: true,
+    supportsAnesthesiaWorkflow: false,
+    blocksPatientDispatchUntilVerified: true,
+    fields: [
+      {
+        key: "condition_and_treatment",
+        section: "B",
+        labelEn: "Condition and treatment",
+        role: "PHYSICIAN_REQUIRED",
+        type: "MULTILINE_TEXT",
+        required: true,
+        maxLength: 1200,
+        multiline: true,
+        placeholderEn: "Document the patient condition, indication, and clinical context.",
+      },
+      {
+        key: "procedure_site_side",
+        section: "B",
+        labelEn: "Procedure, site and/or side",
+        role: "PHYSICIAN_REQUIRED",
+        type: "MULTILINE_TEXT",
+        required: true,
+        maxLength: 800,
+        multiline: true,
+        placeholderEn: "Document the procedure, site, side, or laterality where applicable.",
+      },
+      {
+        key: "treating_physician_signature",
+        labelEn: "Treating physician signature",
+        role: "PHYSICIAN_REQUIRED",
+        type: "SIGNATURE",
+        required: true,
+      },
+      {
+        key: "patient_signature",
+        labelEn: "Patient / guardian signature",
+        role: "PATIENT_REQUIRED",
+        type: "SIGNATURE",
+        required: true,
+      },
+      {
+        key: "signed_at",
+        labelEn: "Signed date and time",
+        role: "SYSTEM_AUTO",
+        type: "DATETIME",
+        required: true,
+      },
+    ],
+  };
+}
+
 export type ConsentFieldMappingReadiness = {
   formId: string;
   slug?: string;
@@ -34,7 +109,10 @@ export type ConsentFieldMappingReadiness = {
 };
 
 export function getConsentFieldMappingByFormId(formId: string): ConsentFieldMapping | null {
-  return CONSENT_FIELD_MAPPINGS.find((mapping) => mapping.formId === formId || mapping.slug === formId) ?? null;
+  const specificMapping = CONSENT_FIELD_MAPPINGS.find((mapping) => mapping.formId === formId || mapping.slug === formId);
+  if (specificMapping) return specificMapping;
+
+  return createGenericImcApprovedFieldMapping(formId);
 }
 
 export function listConsentFieldMappings(): ConsentFieldMapping[] {
