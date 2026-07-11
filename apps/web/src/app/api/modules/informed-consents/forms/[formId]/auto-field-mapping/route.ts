@@ -414,7 +414,7 @@ function buildRecommendedMapping(formId: string, detectedFields: DetectedField[]
   };
 }
 
-export async function POST(request: NextRequest, context: RouteContext) {
+async function handleAutoFieldMappingPost(request: NextRequest, context: RouteContext) {
   const auth = await requireModuleOperationalAccess(request, "informed-consents");
   if (!auth.ok) return auth.response;
 
@@ -461,4 +461,30 @@ export async function POST(request: NextRequest, context: RouteContext) {
     detectedFields,
     recommendedMapping,
   });
+}
+
+
+export async function POST(request: NextRequest, context: RouteContext) {
+  try {
+    return await handleAutoFieldMappingPost(request, context);
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+
+    console.error("AUTO_FIELD_MAPPING_ERROR", {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+    });
+
+    return NextResponse.json(
+      {
+        ok: false,
+        source: "pdf-auto-field-mapping-assistant",
+        error: "Auto field mapping failed.",
+        errorName: err.name,
+        errorMessage: err.message,
+      },
+      { status: 500 },
+    );
+  }
 }
