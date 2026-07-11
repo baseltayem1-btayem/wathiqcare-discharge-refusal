@@ -22,7 +22,9 @@ import {
   sendSecureSigningLinkForDocument,
   checkSendEligibility,
   fetchProcedures,
+  fetchConsentFieldMappingReadiness,
 } from "../lib/api";
+import type { ConsentFieldMappingReadiness } from "../lib/api";
 
 export type WorkspaceStep = "patient" | "encounter" | "procedure" | "review" | "sent";
 
@@ -44,6 +46,7 @@ export type ProductionWorkspaceState = {
   recipientMobile: string;
   recipientEmail: string;
   sendEligibility?: { pilotEnabled: boolean; allowlisted: boolean; reason: string };
+  fieldMappingReadiness?: ConsentFieldMappingReadiness;
   sentAt?: string;
   signingResult?: SecureSigningResult;
   dryRunSuccess?: boolean;
@@ -64,6 +67,11 @@ export type Readiness = {
   contactAvailable: boolean;
   allowlisted: boolean;
   draftApproved: boolean;
+  fieldMappingVerified: boolean;
+  doctorCompletionReady: boolean;
+  anesthesiaMappingReady: boolean;
+  patientSignatureMapped: boolean;
+  fieldMappingReadiness?: ConsentFieldMappingReadiness;
   sendReady: boolean;
   completedChecks: number;
   totalChecks: number;
@@ -210,6 +218,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         patient,
         encounter: defaultEncounter,
         assembly: undefined,
+        fieldMappingReadiness: undefined,
         selectedProcedureId: undefined,
         selectedProcedureTitle: undefined,
         selectedProcedure: undefined,
@@ -235,6 +244,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       step: "procedure",
       encounter,
       assembly: undefined,
+        fieldMappingReadiness: undefined,
       selectedProcedureId: undefined,
       selectedProcedureTitle: undefined,
       selectedProcedure: undefined,
@@ -259,6 +269,7 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       selectedProcedureTitle: selectedProcedure?.titleEn,
       selectedProcedure,
       assembly: undefined,
+        fieldMappingReadiness: undefined,
       draftApproved: false,
       previewReviewed: false,
     }));
@@ -319,11 +330,29 @@ export function useProductionWorkspace(physician: PhysicianContext) {
         throw new Error(result.error || "Procedure could not be resolved to a clinical knowledge package.");
       }
 
+      const mappingFormId = result.clinicalKnowledgeAssembly.consentForm?.id || selectedProcedure.id;
+      let fieldMappingReadiness: ConsentFieldMappingReadiness;
+      try {
+        fieldMappingReadiness = await fetchConsentFieldMappingReadiness(mappingFormId);
+      } catch (error) {
+        fieldMappingReadiness = {
+          formId: mappingFormId,
+          hasMapping: false,
+          verificationStatus: "MISSING",
+          sendBlocked: true,
+          blockers: [error instanceof Error ? error.message : "Consent field mapping readiness could not be loaded."],
+          requiredDoctorFields: [],
+          requiredAnesthesiaFields: [],
+          requiredPatientFields: [],
+        };
+      }
+
       setState((s) => ({
         ...s,
         selectedProcedureId: selectedProcedure.id,
         selectedProcedureTitle: selectedProcedure.titleEn,
         assembly: result.clinicalKnowledgeAssembly,
+        fieldMappingReadiness,
         step: "review",
         draftApproved: false,
         previewReviewed: false,
@@ -381,6 +410,14 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     if (!state.selectedProcedureId) return "Select a specific procedure first.";
     if (!state.assembly) return "Resolve a clinical knowledge package first.";
     if (state.assembly.status !== "ready") return "The knowledge package is not ready.";
+    if (!state.fieldMappingReadiness) return "Consent field mapping readiness must be loaded before sending.";
+    if (!state.fieldMappingReadiness.hasMapping) return "Consent field mapping is required before sending.";
+    if (state.fieldMappingReadiness.verificationStatus !== "VERIFIED") {
+      return "Consent field mapping must be clinically and legally verified before patient dispatch.";
+    }
+    if (state.fieldMappingReadiness.blockers.length > 0) {
+      return state.fieldMappingReadiness.blockers[0] || "Consent field mapping blockers must be resolved before sending.";
+    }
     const blockers = state.assembly.blockers.filter((b) => !state.acknowledgedBlockers.has(b.key));
     if (blockers.length > 0) return "Resolve or acknowledge all blockers first.";
     if (!state.previewReviewed) return "Review the patient-facing preview first.";
@@ -430,6 +467,18 @@ export function useProductionWorkspace(physician: PhysicianContext) {
           approvedConsentFormVersion: state.assembly.consentForm?.version,
           pdfTemplateUrl: state.assembly.consentForm?.pdfTemplateUrl,
           patientLanguagePreference: state.patient.languagePreference,
+          fieldMappingReadiness: state.fieldMappingReadiness
+            ? {
+                formId: state.fieldMappingReadiness.formId,
+                hasMapping: state.fieldMappingReadiness.hasMapping,
+                verificationStatus: state.fieldMappingReadiness.verificationStatus,
+                sendBlocked: state.fieldMappingReadiness.sendBlocked,
+                blockers: state.fieldMappingReadiness.blockers,
+                requiredDoctorFields: state.fieldMappingReadiness.requiredDoctorFields,
+                requiredAnesthesiaFields: state.fieldMappingReadiness.requiredAnesthesiaFields,
+                requiredPatientFields: state.fieldMappingReadiness.requiredPatientFields,
+              }
+            : undefined,
         },
       });
 
@@ -533,6 +582,17 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     const allowlisted = Boolean(state.sendEligibility?.allowlisted);
     const previewReviewed = state.previewReviewed;
     const draftApproved = state.draftApproved;
+    const fieldMappingReadiness = state.fieldMappingReadiness;
+    const fieldMappingVerified = Boolean(
+      fieldMappingReadiness?.hasMapping && fieldMappingReadiness.verificationStatus === "VERIFIED",
+    );
+    const doctorCompletionReady = Boolean(
+      fieldMappingVerified && (fieldMappingReadiness?.requiredDoctorFields.length || 0) === 0,
+    );
+    const anesthesiaMappingReady = Boolean(
+      fieldMappingVerified && (fieldMappingReadiness?.requiredAnesthesiaFields.length || 0) === 0,
+    );
+    const patientSignatureMapped = Boolean((fieldMappingReadiness?.requiredPatientFields.length || 0) > 0);
 
     const missingItems: string[] = [];
     if (!patientReady) missingItems.push("Patient selected");
@@ -541,6 +601,15 @@ export function useProductionWorkspace(physician: PhysicianContext) {
     if (!state.assembly) missingItems.push("Consent form loaded");
     else if (!pdfSourceVerified) missingItems.push("Approved PDF source verified");
     else if (!assemblyReady) missingItems.push("Consent form loaded");
+    if (!fieldMappingReadiness) {
+      missingItems.push("Consent field mapping loaded");
+    } else {
+      if (!fieldMappingReadiness.hasMapping) missingItems.push("Consent field mapping exists");
+      if (!fieldMappingVerified) missingItems.push("Consent field mapping verified");
+      if (!patientSignatureMapped) missingItems.push("Patient signature field mapped");
+      if (!doctorCompletionReady) missingItems.push("Doctor completion fields completed");
+      if (!anesthesiaMappingReady) missingItems.push("Anesthesia workflow reviewed when applicable");
+    }
     if (!educationReady) missingItems.push("Education material loaded or confirmed unavailable");
     if (!previewReviewed) missingItems.push("Patient-facing preview reviewed");
     if (!contactAvailable) missingItems.push("Patient contact available");
@@ -553,6 +622,10 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       encounterReady,
       procedureSelected,
       assemblyReady,
+      fieldMappingVerified,
+      doctorCompletionReady,
+      anesthesiaMappingReady,
+      patientSignatureMapped,
       educationReady,
       previewReviewed,
       contactAvailable,
@@ -575,6 +648,11 @@ export function useProductionWorkspace(physician: PhysicianContext) {
       contactAvailable,
       allowlisted,
       draftApproved,
+      fieldMappingVerified,
+      doctorCompletionReady,
+      anesthesiaMappingReady,
+      patientSignatureMapped,
+      fieldMappingReadiness,
       sendReady,
       completedChecks,
       totalChecks,

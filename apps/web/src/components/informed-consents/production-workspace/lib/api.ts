@@ -25,6 +25,71 @@ export async function getPatientEncounters(mrn: string): Promise<ProductionEncou
   return Array.isArray(payload) ? payload : [];
 }
 
+export type ConsentFieldMappingReadiness = {
+  ok?: boolean;
+  source?: string;
+  formId: string;
+  slug?: string;
+  hasMapping: boolean;
+  verificationStatus: string;
+  sendBlocked: boolean;
+  blockers: string[];
+  requiredDoctorFields: Array<{
+    key: string;
+    labelEn: string;
+    section?: string;
+    type: string;
+  }>;
+  requiredAnesthesiaFields: Array<{
+    key: string;
+    labelEn: string;
+    section?: string;
+    type: string;
+    requiredWhen?: string;
+  }>;
+  requiredPatientFields: Array<{
+    key: string;
+    labelEn: string;
+    type: string;
+  }>;
+};
+
+export async function fetchConsentFieldMappingReadiness(formId: string): Promise<ConsentFieldMappingReadiness> {
+  const response = await fetch(
+    `/api/modules/informed-consents/forms/${encodeURIComponent(formId)}/field-mapping`,
+    {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    },
+  );
+
+  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+
+  if (!response.ok || payload.ok === false) {
+    throw new Error(String(payload.error || "Failed to load consent field mapping readiness."));
+  }
+
+  return {
+    ok: Boolean(payload.ok ?? true),
+    source: payload.source ? String(payload.source) : undefined,
+    formId: String(payload.formId || formId),
+    slug: payload.slug ? String(payload.slug) : undefined,
+    hasMapping: Boolean(payload.hasMapping),
+    verificationStatus: String(payload.verificationStatus || "MISSING"),
+    sendBlocked: Boolean(payload.sendBlocked),
+    blockers: Array.isArray(payload.blockers) ? payload.blockers.map(String) : [],
+    requiredDoctorFields: Array.isArray(payload.requiredDoctorFields)
+      ? payload.requiredDoctorFields as ConsentFieldMappingReadiness["requiredDoctorFields"]
+      : [],
+    requiredAnesthesiaFields: Array.isArray(payload.requiredAnesthesiaFields)
+      ? payload.requiredAnesthesiaFields as ConsentFieldMappingReadiness["requiredAnesthesiaFields"]
+      : [],
+    requiredPatientFields: Array.isArray(payload.requiredPatientFields)
+      ? payload.requiredPatientFields as ConsentFieldMappingReadiness["requiredPatientFields"]
+      : [],
+  };
+}
+
 export async function resolveContentMapping(args: {
   procedure: string;
   tenantId: string;
