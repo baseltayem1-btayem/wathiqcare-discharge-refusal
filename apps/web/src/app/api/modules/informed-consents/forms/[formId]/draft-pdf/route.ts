@@ -285,6 +285,86 @@ async function drawDoctorValuesFromCoordinates(args: {
   return drawn;
 }
 
+
+async function drawAdenotonsillectomyRuntimeCoordinates(args: {
+  pdfDoc: PDFDocument;
+  formId: string;
+  values: Record<string, unknown>;
+}) {
+  const { pdfDoc, formId, values } = args;
+
+  if (formId !== "imc-approved-adenotonsillectomy") {
+    return 0;
+  }
+
+  const placements: Record<string, { page: number; x: number; y: number; size: number; maxWidth: number }> = {
+    condition_and_treatment: {
+      page: 1,
+      x: 0.085,
+      y: 0.292,
+      size: 8,
+      maxWidth: 0.39,
+    },
+    procedure_site_side: {
+      page: 1,
+      x: 0.085,
+      y: 0.398,
+      size: 8,
+      maxWidth: 0.39,
+    },
+    treating_physician_signature: {
+      page: 2,
+      x: 0.145,
+      y: 0.475,
+      size: 8,
+      maxWidth: 0.30,
+    },
+  };
+
+  const pages = pdfDoc.getPages();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  let drawn = 0;
+
+  for (const [key, placement] of Object.entries(placements)) {
+    const rawValue = values[key];
+    const text = toWinAnsiSafe(String(rawValue ?? "").trim());
+    if (!text) continue;
+
+    const pageIndex = Math.max(0, Math.min(pages.length - 1, placement.page - 1));
+    const page = pages[pageIndex];
+    if (!page) continue;
+
+    const pageWidth = page.getWidth();
+    const pageHeight = page.getHeight();
+
+    const x = placement.x * pageWidth;
+    const y = pageHeight * (1 - placement.y);
+    const maxWidth = placement.maxWidth * pageWidth;
+
+    const lines = splitOverlayLines(
+      text,
+      Math.max(24, Math.floor(maxWidth / Math.max(placement.size * 0.48, 3.5))),
+    );
+
+    let lineY = y;
+    for (const line of lines) {
+      page.drawText(line, {
+        x,
+        y: lineY,
+        size: placement.size,
+        font,
+        color: rgb(0.05, 0.09, 0.16),
+        maxWidth,
+      });
+      lineY -= placement.size + 2;
+    }
+
+    drawn += 1;
+  }
+
+  return drawn;
+}
+
 async function drawFallbackDoctorValues(args: {
   pdfDoc: PDFDocument;
   values: Record<string, unknown>;
@@ -450,8 +530,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     mapping: mapping as unknown as Record<string, unknown>,
     values,
   });
-  const drawnFields = coordinateDrawnFields > 0 ? 0 : await drawDoctorValues({ pdfDoc, mapping, values });
-  const totalDrawnFields = drawnFields + coordinateDrawnFields;
+  const runtimeCoordinateDrawnFields = coordinateDrawnFields > 0 ? 0 : await drawAdenotonsillectomyRuntimeCoordinates({
+    pdfDoc,
+    formId,
+    values,
+  });
+  const coordinateTotalDrawnFields = coordinateDrawnFields + runtimeCoordinateDrawnFields;
+  const drawnFields = coordinateTotalDrawnFields > 0 ? 0 : await drawDoctorValues({ pdfDoc, mapping, values });
+  const totalDrawnFields = drawnFields + coordinateTotalDrawnFields;
   const fallbackDrawnFields = totalDrawnFields > 0 ? 0 : await drawFallbackDoctorValues({ pdfDoc, values });
   const output = await pdfDoc.save();
 
@@ -463,6 +549,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       "X-WathiqCare-Draft-Overlay": "true",
       "X-WathiqCare-Drawn-Fields": String(drawnFields),
       "X-WathiqCare-Coordinate-Drawn-Fields": String(coordinateDrawnFields),
+      "X-WathiqCare-Runtime-Coordinate-Drawn-Fields": String(runtimeCoordinateDrawnFields),
       "X-WathiqCare-Total-Drawn-Fields": String(totalDrawnFields),
       "X-WathiqCare-Fallback-Drawn-Fields": String(fallbackDrawnFields),
       "Content-Disposition": "inline; filename=\"" + formId + "-doctor-draft-preview.pdf\"",
