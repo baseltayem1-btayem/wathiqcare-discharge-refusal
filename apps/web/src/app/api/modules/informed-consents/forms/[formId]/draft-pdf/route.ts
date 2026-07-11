@@ -108,6 +108,161 @@ function toWinAnsiSafe(text: string): string {
   return text.replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\u00FF]/g, "?");
 }
 
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function toNumber(value: unknown): number | null {
+  const num = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function getCoordinatePlacement(field: Record<string, unknown>): Record<string, unknown> | null {
+  const candidates = [
+    field.coordinates,
+    field.position,
+    field.pdf,
+    field.overlay,
+    field,
+  ];
+
+  for (const candidate of candidates) {
+    const record = toRecord(candidate);
+    if (!record) continue;
+
+    const x = toNumber(record.x);
+    const y = toNumber(record.y);
+
+    if (x !== null && y !== null) {
+      return record;
+    }
+  }
+
+  return null;
+}
+
+function resolvePageIndex(rawPage: unknown, totalPages: number): number {
+  const pageNumber = toNumber(rawPage);
+  if (pageNumber === null) return 0;
+
+  if (pageNumber >= 1 && pageNumber <= totalPages) {
+    return Math.floor(pageNumber) - 1;
+  }
+
+  if (pageNumber >= 0 && pageNumber < totalPages) {
+    return Math.floor(pageNumber);
+  }
+
+  return 0;
+}
+
+function resolveOverlayText(field: Record<string, unknown>, value: unknown): string {
+  const fieldType = String(field.type || "").toUpperCase();
+  const raw = String(value ?? "").trim();
+
+  if (fieldType === "CHECKBOX") {
+    if (raw === "true") return "Yes";
+    if (raw === "false") return "No";
+  }
+
+  return raw;
+}
+
+function splitOverlayLines(text: string, maxChars = 90): string[] {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) return [];
+
+  const words = normalized.split(" ");
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const next = current ? current + " " + word : word;
+    if (next.length > maxChars && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  }
+
+  if (current) lines.push(current);
+  return lines.slice(0, 4);
+}
+
+async function drawDoctorValuesFromCoordinates(args: {
+  pdfDoc: PDFDocument;
+  mapping: Record<string, unknown>;
+  values: Record<string, unknown>;
+}) {
+  const { pdfDoc, mapping, values } = args;
+  const fieldsRaw = Array.isArray(mapping.fields)
+    ? mapping.fields
+    : Object.values(toRecord(mapping.fields) ?? {});
+
+  const pages = pdfDoc.getPages();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const coordinateMode = String(mapping.coordinateMode || "").toUpperCase();
+
+  let drawn = 0;
+
+  for (const rawField of fieldsRaw) {
+    const field = toRecord(rawField);
+    if (!field) continue;
+
+    const key = String(field.key || "");
+    if (!key || !(key in values)) continue;
+
+    const text = toWinAnsiSafe(resolveOverlayText(field, values[key]));
+    if (!text.trim()) continue;
+
+    const placement = getCoordinatePlacement(field);
+    if (!placement) continue;
+
+    const xRaw = toNumber(placement.x);
+    const yRaw = toNumber(placement.y);
+    if (xRaw === null || yRaw === null) continue;
+
+    const pageIndex = resolvePageIndex(placement.page ?? placement.pageNumber ?? 1, pages.length);
+    const page = pages[pageIndex] ?? pages[0];
+    if (!page) continue;
+
+    const pageWidth = page.getWidth();
+    const pageHeight = page.getHeight();
+
+    const normalized =
+      coordinateMode === "NORMALIZED" ||
+      (xRaw >= 0 && xRaw <= 1 && yRaw >= 0 && yRaw <= 1);
+
+    const x = normalized ? xRaw * pageWidth : xRaw;
+    const y = normalized ? pageHeight * (1 - yRaw) : yRaw;
+
+    const size = toNumber(placement.size) ?? 8;
+    const maxWidthRaw = toNumber(placement.maxWidth) ?? 0.35;
+    const maxWidth = maxWidthRaw > 0 && maxWidthRaw <= 1 ? maxWidthRaw * pageWidth : maxWidthRaw;
+
+    const lines = splitOverlayLines(text, Math.max(24, Math.floor(maxWidth / Math.max(size * 0.48, 3.5))));
+    let lineY = y;
+
+    for (const line of lines) {
+      page.drawText(line, {
+        x,
+        y: lineY,
+        size,
+        font,
+        color: rgb(0.05, 0.09, 0.16),
+        maxWidth,
+      });
+      lineY -= size + 2;
+    }
+
+    drawn += 1;
+  }
+
+  return drawn;
+}
+
 async function drawFallbackDoctorValues(args: {
   pdfDoc: PDFDocument;
   values: Record<string, unknown>;
@@ -269,7 +424,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const drawnFields = await drawDoctorValues({ pdfDoc, mapping, values });
-  const fallbackDrawnFields = drawnFields > 0 ? 0 : await drawFallbackDoctorValues({ pdfDoc, values });
+  const coordinateDrawnFields = drawnFields > 0 ? 0 : await drawDoctorValuesFromCoordinates({ pdfDoc, mapping: mapping as unknown as Record<string, unknown>, values });
+  const totalDrawnFields = drawnFields + coordinateDrawnFields;
+  const fallbackDrawnFields = totalDrawnFields > 0 ? 0 : await drawFallbackDoctorValues({ pdfDoc, values });
   const output = await pdfDoc.save();
 
   return new NextResponse(Buffer.from(output), {
@@ -279,6 +436,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       "Cache-Control": "no-store",
       "X-WathiqCare-Draft-Overlay": "true",
       "X-WathiqCare-Drawn-Fields": String(drawnFields),
+      "X-WathiqCare-Coordinate-Drawn-Fields": String(coordinateDrawnFields),
+      "X-WathiqCare-Total-Drawn-Fields": String(totalDrawnFields),
       "X-WathiqCare-Fallback-Drawn-Fields": String(fallbackDrawnFields),
       "Content-Disposition": "inline; filename=\"" + formId + "-doctor-draft-preview.pdf\"",
     },
