@@ -24,6 +24,7 @@ import type { WorkspacePageId } from "./components/canva/CanvaWorkspaceNav";
 import { AuditEvidenceTimeline } from "./components/enterprise/AuditEvidenceTimeline";
 import { ApprovedPdfViewer } from "./components/enterprise/ApprovedPdfViewer";
 import { ComplianceReadinessPanel } from "./components/enterprise/ComplianceReadinessPanel";
+import { DoctorCompletionPanel } from "./components/enterprise/DoctorCompletionPanel";
 import { EnterpriseSidebar } from "./components/enterprise/EnterpriseSidebar";
 import { PatientContextRibbon } from "./components/enterprise/PatientContextRibbon";
 import { PhysicianWorkspaceHeader } from "./components/enterprise/PhysicianWorkspaceHeader";
@@ -64,6 +65,7 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     setRecipientMobile,
     setRecipientEmail,
     setPreviewReviewed,
+    setDoctorCompletionValue,
     approveDraft,
     send,
     sendDryRun,
@@ -100,6 +102,11 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
     if (!readiness.procedureSelected) return "Select a procedure first";
     if (!readiness.assemblyReady) return "Load the package first";
     if (!hasApprovedPdfSource) return "Approved PDF source is required";
+    if (!readiness.fieldMappingReadiness) return "Consent field mapping is loading";
+    if (!readiness.patientSignatureMapped) return "Patient signature field is not mapped";
+    if (!readiness.doctorCompletionReady) return "Complete required physician fields";
+    if (!readiness.anesthesiaMappingReady) return "Complete anesthesia review when applicable";
+    if (!readiness.fieldMappingVerified) return "Consent field mapping must be verified";
     if (!readiness.educationReady) return "Education material missing";
     if (!readiness.previewReviewed) return "Mark Preview Reviewed first";
     if (!readiness.contactAvailable) return "Enter patient contact";
@@ -152,6 +159,12 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
               onSelectProcedure={selectProcedure}
               onResolveAssembly={() => void resolveAssembly()}
               onReviewModeChange={setReviewMode}
+            />
+            <DoctorCompletionPanel
+              mapping={state.fieldMappingReadiness}
+              values={state.doctorCompletionValues}
+              onValueChange={setDoctorCompletionValue}
+              disabled={sendLoading}
             />
             <ReadinessChecklist readiness={readiness} />
           </div>
