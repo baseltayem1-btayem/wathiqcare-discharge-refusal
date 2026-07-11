@@ -108,6 +108,65 @@ function toWinAnsiSafe(text: string): string {
   return text.replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\u00FF]/g, "?");
 }
 
+async function drawFallbackDoctorValues(args: {
+  pdfDoc: PDFDocument;
+  values: Record<string, unknown>;
+}) {
+  const { pdfDoc, values } = args;
+  const pages = pdfDoc.getPages();
+  const page = pages[0];
+  if (!page) return 0;
+
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const width = page.getWidth();
+  const height = page.getHeight();
+  const entries = Object.entries(values)
+    .filter(([, value]) => String(value ?? '').trim().length > 0)
+    .slice(0, 12);
+
+  if (entries.length === 0) return 0;
+
+  const boxX = 28;
+  const boxY = Math.max(40, height - 190);
+  const boxW = Math.min(width - 56, 520);
+  const boxH = Math.min(150, 34 + entries.length * 13);
+
+  page.drawRectangle({
+    x: boxX,
+    y: boxY,
+    width: boxW,
+    height: boxH,
+    borderColor: rgb(0.08, 0.38, 0.75),
+    color: rgb(0.93, 0.97, 1),
+    borderWidth: 1,
+  });
+
+  page.drawText('Doctor-completed draft values', {
+    x: boxX + 10,
+    y: boxY + boxH - 18,
+    size: 9,
+    font: boldFont,
+    color: rgb(0.05, 0.09, 0.16),
+  });
+
+  let currentY = boxY + boxH - 34;
+  for (const [key, value] of entries) {
+    const line = toWinAnsiSafe(`${key}: ${String(value ?? '').trim()}`).slice(0, 105);
+    page.drawText(line, {
+      x: boxX + 10,
+      y: currentY,
+      size: 7.5,
+      font,
+      color: rgb(0.05, 0.09, 0.16),
+      maxWidth: boxW - 20,
+    });
+    currentY -= 12;
+  }
+
+  return entries.length;
+}
+
 async function drawDoctorValues(args: {
   pdfDoc: PDFDocument;
   mapping: unknown;
@@ -210,6 +269,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const drawnFields = await drawDoctorValues({ pdfDoc, mapping, values });
+  const fallbackDrawnFields = drawnFields > 0 ? 0 : await drawFallbackDoctorValues({ pdfDoc, values });
   const output = await pdfDoc.save();
 
   return new NextResponse(Buffer.from(output), {
@@ -219,6 +279,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       "Cache-Control": "no-store",
       "X-WathiqCare-Draft-Overlay": "true",
       "X-WathiqCare-Drawn-Fields": String(drawnFields),
+      "X-WathiqCare-Fallback-Drawn-Fields": String(fallbackDrawnFields),
       "Content-Disposition": "inline; filename=\"" + formId + "-doctor-draft-preview.pdf\"",
     },
   });
