@@ -22,6 +22,13 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
       maxLength: 1200,
       multiline: true,
       placeholderEn: "Document the patient's condition, proposed treatment, and clinical context.",
+      coordinates: {
+        page: 1,
+        x: 0.085,
+        y: 0.285,
+        size: 8,
+        maxWidth: 0.39,
+      },
     },
     {
       key: "procedure_site_side",
@@ -33,6 +40,13 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
       maxLength: 800,
       multiline: true,
       placeholderEn: "Document the procedure, site, side, or laterality where applicable.",
+      coordinates: {
+        page: 1,
+        x: 0.085,
+        y: 0.391,
+        size: 8,
+        maxWidth: 0.39,
+      },
     },
     {
       key: "significant_risks_options",
@@ -83,6 +97,13 @@ export const ADENOTONSILLECTOMY_FIELD_MAPPING: ConsentFieldMapping = {
       role: "PHYSICIAN_REQUIRED",
       type: "SIGNATURE",
       required: true,
+      coordinates: {
+        page: 2,
+        x: 0.145,
+        y: 0.468,
+        size: 8,
+        maxWidth: 0.3,
+      },
     },
     {
       key: "patient_signature",
