@@ -32,6 +32,7 @@ function createGenericImcApprovedFieldMapping(formId: string): ConsentFieldMappi
     requiresDoctorCompletion: true,
     supportsAnesthesiaWorkflow: false,
     blocksPatientDispatchUntilVerified: true,
+    coordinateMode: "NORMALIZED",
     fields: [
       {
         key: "condition_and_treatment",
@@ -43,6 +44,13 @@ function createGenericImcApprovedFieldMapping(formId: string): ConsentFieldMappi
         maxLength: 1200,
         multiline: true,
         placeholderEn: "Document the patient condition, indication, and clinical context.",
+        coordinates: {
+          page: 1,
+          x: 0.085,
+          y: 0.285,
+          size: 8,
+          maxWidth: 0.39,
+        },
       },
       {
         key: "procedure_site_side",
@@ -54,6 +62,13 @@ function createGenericImcApprovedFieldMapping(formId: string): ConsentFieldMappi
         maxLength: 800,
         multiline: true,
         placeholderEn: "Document the procedure, site, side, or laterality where applicable.",
+        coordinates: {
+          page: 1,
+          x: 0.085,
+          y: 0.391,
+          size: 8,
+          maxWidth: 0.39,
+        },
       },
       {
         key: "treating_physician_signature",
@@ -61,6 +76,13 @@ function createGenericImcApprovedFieldMapping(formId: string): ConsentFieldMappi
         role: "PHYSICIAN_REQUIRED",
         type: "SIGNATURE",
         required: true,
+        coordinates: {
+          page: 2,
+          x: 0.145,
+          y: 0.468,
+          size: 8,
+          maxWidth: 0.30,
+        },
       },
       {
         key: "patient_signature",
