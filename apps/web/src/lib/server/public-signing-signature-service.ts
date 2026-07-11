@@ -1,3 +1,4 @@
+import { buildConsentSignaturePersistencePayload, buildTabletSignatureEvidence } from "@/lib/signature/signature-evidence";
 import crypto from "node:crypto";
 import {
   $Enums,
@@ -628,6 +629,19 @@ export async function submitPublicSigningSignature(args: {
 
   const signerCompletesWorkflow = signerRole === ConsentSignatureRole.PATIENT || signerRole === ConsentSignatureRole.GUARDIAN;
 
+  const signaturePersistenceMetadata = args.signatureDataUrl
+    ? buildConsentSignaturePersistencePayload(
+        buildTabletSignatureEvidence({
+          signerRole,
+          signerName,
+          acknowledgmentAccepted: true,
+          otpVerified: true,
+          signatureDataUrl: args.signatureDataUrl,
+          deviceLabel: "public-signing-web",
+        }),
+      ).metadata
+    : {};
+
   const { signature, nextStatus, hasPhysician } = await prisma().$transaction(async (tx) => {
     const signature = await tx.consentDocumentSignature.create({
       data: {
@@ -640,6 +654,7 @@ export async function submitPublicSigningSignature(args: {
         userAgent: requestUserAgent,
         signatureHash,
         metadata: {
+          ...signaturePersistenceMetadata,
           capturedBy: "public_signer",
           tokenHash: context.publicSession.tokenHash,
           challengeId: context.publicSession.challengeId,
