@@ -17,14 +17,27 @@ interface ApprovedPdfViewerProps {
   reviewed: boolean;
   onOpenPreview: () => void;
   onMarkReviewed: () => void;
+  draftPdfUrl?: string;
+  draftPdfLoading?: boolean;
+  draftPdfError?: string;
 }
 
-export function ApprovedPdfViewer({ assembly, loading = false, reviewed, onOpenPreview, onMarkReviewed }: ApprovedPdfViewerProps) {
+export function ApprovedPdfViewer({
+  assembly,
+  loading = false,
+  reviewed,
+  onOpenPreview,
+  onMarkReviewed,
+  draftPdfUrl,
+  draftPdfLoading = false,
+  draftPdfError,
+}: ApprovedPdfViewerProps) {
   const { lang } = useI18n();
   const consentForm = assembly?.consentForm;
   const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(assembly);
   const patientCopyPdfUrl = resolveAssemblyPatientCopyPdfUrl(assembly);
   const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(assembly);
+  const displayedPdfUrl = draftPdfUrl || approvedPdfUrl;
   return (
     <WorkspaceCard className="overflow-hidden">
       <WorkspaceCardHeader
@@ -85,9 +98,25 @@ export function ApprovedPdfViewer({ assembly, loading = false, reviewed, onOpenP
                 </div>
               </div>
 
+              {draftPdfLoading ? (
+                <div className="mb-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-medium text-blue-800">
+                  Doctor-completed draft is being generated from the approved PDF source.
+                </div>
+              ) : null}
+              {draftPdfError ? (
+                <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
+                  {draftPdfError}
+                </div>
+              ) : null}
+              {draftPdfUrl ? (
+                <div className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-800">
+                  Showing doctor-completed draft PDF overlay. The original approved PDF remains immutable.
+                </div>
+              ) : null}
+
               <PdfObjectEmbedViewer
                 title={lang === "ar" ? "معاينة ملف الموافقة المعتمد" : "Approved consent PDF preview"}
-                src={approvedPdfUrl}
+                src={displayedPdfUrl}
                 className="rounded-none border-0 shadow-none"
                 viewerClassName="h-[72vh] min-h-[720px]"
               />
@@ -98,9 +127,14 @@ export function ApprovedPdfViewer({ assembly, loading = false, reviewed, onOpenP
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                   {lang === "ar" ? "مراجعة المصدر والإرسال" : "Source review & dispatch gate"}
                 </p>
-                <p className="mt-1 truncate text-sm text-slate-700">{approvedPdfUrl}</p>
+                <p className="mt-1 truncate text-sm text-slate-700">{displayedPdfUrl}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                {draftPdfUrl ? (
+                  <a href={draftPdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 shadow-sm transition hover:bg-blue-100">
+                    <ExternalLink className="size-3.5" /> Open filled draft
+                  </a>
+                ) : null}
                 <a href={approvedPdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
                   <ExternalLink className="size-3.5" /> {lang === "ar" ? "\u0641\u062A\u062D \u0646\u0645\u0648\u0630\u062C \u0627\u0644\u062A\u0648\u0642\u064A\u0639" : "Open signing form"}
                 </a>

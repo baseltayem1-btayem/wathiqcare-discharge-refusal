@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { isAssemblyApprovedPdfSourceVerified, resolveAssemblyApprovedPdfUrl } from "./utils/approvedPdfSource";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/design-system";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { PhysicianContext } from "./types";
 import { useProductionWorkspace } from "./hooks/useProductionWorkspace";
+import { createDoctorCompletedDraftPdfPreview } from "./lib/api";
 import { PatientEncounterSelector } from "./components/PatientEncounterSelector";
 import { ConsentPreviewModal } from "./components/ConsentPreviewModal";
 import { SendConfirmationModal } from "./components/SendConfirmationModal";
@@ -31,7 +33,7 @@ import { PhysicianWorkspaceHeader } from "./components/enterprise/PhysicianWorks
 import { ProcedureSelectionPanel } from "./components/enterprise/ProcedureSelectionPanel";
 import { ReadinessChecklist } from "./components/enterprise/ReadinessChecklist";
 import { SendToPatientPanel } from "./components/enterprise/SendToPatientPanel";
-import { isAssemblyApprovedPdfSourceVerified } from "./utils/approvedPdfSource";
+
 import "./workspace.css";
 
 interface ProductionPhysicianWorkspaceProps {
@@ -74,6 +76,9 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   const [activePage, setActivePage] = useState<WorkspacePageId>("workspace");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [draftPdfUrl, setDraftPdfUrl] = useState<string>();
+  const [draftPdfLoading, setDraftPdfLoading] = useState(false);
+  const [draftPdfError, setDraftPdfError] = useState<string>();
 
   function handleApprove() {
     approveDraft();
@@ -94,6 +99,63 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
   }
 
   const hasApprovedPdfSource = isAssemblyApprovedPdfSourceVerified(state.assembly);
+
+
+  useEffect(() => {
+    const formId = state.fieldMappingReadiness?.formId || state.assembly?.consentForm?.id || "";
+    const approvedPdfUrl = resolveAssemblyApprovedPdfUrl(state.assembly);
+    const values = state.doctorCompletionValues || {};
+    const hasDoctorValues = Object.values(values).some((value) => String(value || "").trim().length > 0);
+
+    if (!formId || !approvedPdfUrl || !hasDoctorValues) {
+      setDraftPdfLoading(false);
+      setDraftPdfError(undefined);
+      setDraftPdfUrl((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return undefined;
+      });
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setDraftPdfLoading(true);
+      setDraftPdfError(undefined);
+
+      createDoctorCompletedDraftPdfPreview(
+        {
+          formId,
+          approvedPdfUrl,
+          doctorCompletionValues: values,
+        },
+        controller.signal,
+      )
+        .then((url) => {
+          setDraftPdfUrl((previous) => {
+            if (previous) URL.revokeObjectURL(previous);
+            return url;
+          });
+        })
+        .catch((error) => {
+          if (controller.signal.aborted) return;
+          setDraftPdfError(
+            error instanceof Error
+              ? error.message
+              : "Doctor-completed draft PDF preview could not be generated.",
+          );
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setDraftPdfLoading(false);
+          }
+        });
+    }, 650);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [state.assembly, state.fieldMappingReadiness?.formId, state.doctorCompletionValues]);
 
   const sendReason = (() => {
     if (sendLoading) return "Sending…";
@@ -173,6 +235,9 @@ export function ProductionPhysicianWorkspace({ physician }: ProductionPhysicianW
             assembly={state.assembly}
             loading={assemblyLoading}
             reviewed={state.previewReviewed}
+                        draftPdfUrl={draftPdfUrl}
+            draftPdfLoading={draftPdfLoading}
+            draftPdfError={draftPdfError}
             onOpenPreview={() => setPreviewOpen(true)}
             onMarkReviewed={() => setPreviewReviewed(true)}
           />

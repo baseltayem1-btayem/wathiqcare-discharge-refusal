@@ -430,3 +430,34 @@ export async function fetchProcedures(tenantId: string): Promise<
 
 
 
+
+export async function createDoctorCompletedDraftPdfPreview(
+  args: {
+    formId: string;
+    approvedPdfUrl: string;
+    doctorCompletionValues: Record<string, string>;
+  },
+  signal?: AbortSignal,
+): Promise<string> {
+  const response = await fetch(
+    "/api/modules/informed-consents/forms/" + encodeURIComponent(args.formId) + "/draft-pdf",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/pdf" },
+      cache: "no-store",
+      signal,
+      body: JSON.stringify({
+        approvedPdfUrl: args.approvedPdfUrl,
+        doctorCompletionValues: args.doctorCompletionValues,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    throw new Error(String(payload.error || "Failed to generate doctor-completed draft PDF."));
+  }
+
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
