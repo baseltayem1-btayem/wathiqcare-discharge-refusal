@@ -1,0 +1,62 @@
+import type { ConsentFieldMapping } from "@/lib/consents/field-mapping/types";
+
+export const ARTHROGRAM_FIELD_MAPPING: ConsentFieldMapping = {
+  formId: "imc-approved-arthrogram",
+  slug: "arthrogram",
+  titleEn: "Arthrogram",
+  layoutFamily: "IMC_ARTHROGRAM_CONSENT",
+  version: "0.1.0",
+  verificationStatus: "DRAFT",
+  requiresDoctorCompletion: true,
+  supportsAnesthesiaWorkflow: false,
+  blocksPatientDispatchUntilVerified: true,
+  coordinateMode: "NORMALIZED",
+  fields: [
+    {
+      key: "procedure_site_side",
+      section: "B",
+      labelEn: "Procedure, site and/or side",
+      role: "PHYSICIAN_REQUIRED",
+      type: "MULTILINE_TEXT",
+      required: true,
+      maxLength: 800,
+      multiline: true,
+      placeholderEn: "Document the Arthrogram procedure, joint, site, side, or laterality where applicable.",
+      coordinates: {
+        page: 1,
+        x: 0.030,
+        y: 0.286,
+        size: 8,
+        maxWidth: 0.42,
+      },
+    },
+    {
+      key: "treating_physician_signature",
+      labelEn: "Treating physician signature",
+      role: "PHYSICIAN_REQUIRED",
+      type: "SIGNATURE",
+      required: true,
+      coordinates: {
+        page: 2,
+        x: 0.105,
+        y: 0.638,
+        size: 8,
+        maxWidth: 0.34,
+      },
+    },
+    {
+      key: "patient_signature",
+      labelEn: "Patient / guardian signature",
+      role: "PATIENT_REQUIRED",
+      type: "SIGNATURE",
+      required: true,
+    },
+    {
+      key: "signed_at",
+      labelEn: "Signed date and time",
+      role: "SYSTEM_AUTO",
+      type: "DATETIME",
+      required: true,
+    },
+  ],
+};
