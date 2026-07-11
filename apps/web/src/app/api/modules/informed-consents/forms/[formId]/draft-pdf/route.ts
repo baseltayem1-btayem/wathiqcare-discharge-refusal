@@ -191,6 +191,29 @@ function splitOverlayLines(text: string, maxChars = 90): string[] {
   return lines.slice(0, 4);
 }
 
+
+function collectCoordinateFieldsDeep(value: unknown, seen = new Set<unknown>()): Record<string, unknown>[] {
+  if (!value || typeof value !== "object") return [];
+  if (seen.has(value)) return [];
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => collectCoordinateFieldsDeep(item, seen));
+  }
+
+  const record = value as Record<string, unknown>;
+  const hasKey = typeof record.key === "string" && record.key.length > 0;
+  const hasPlacement = Boolean(getCoordinatePlacement(record));
+
+  const nested = Object.values(record).flatMap((item) => collectCoordinateFieldsDeep(item, seen));
+
+  if (hasKey && hasPlacement) {
+    return [record, ...nested];
+  }
+
+  return nested;
+}
+
 async function drawDoctorValuesFromCoordinates(args: {
   pdfDoc: PDFDocument;
   mapping: Record<string, unknown>;
@@ -198,9 +221,7 @@ async function drawDoctorValuesFromCoordinates(args: {
 }) {
   const { pdfDoc, mapping, values } = args;
   const effectiveMapping = toRecord(mapping.mapping) ?? mapping;
-  const fieldsRaw = Array.isArray(effectiveMapping.fields)
-    ? effectiveMapping.fields
-    : Object.values(toRecord(effectiveMapping.fields) ?? {});
+  const fieldsRaw = collectCoordinateFieldsDeep(effectiveMapping);
 
   const pages = pdfDoc.getPages();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -424,8 +445,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
 
   const pdfDoc = await PDFDocument.load(pdfBytes);
-  const drawnFields = await drawDoctorValues({ pdfDoc, mapping, values });
-  const coordinateDrawnFields = drawnFields > 0 ? 0 : await drawDoctorValuesFromCoordinates({ pdfDoc, mapping: mapping as unknown as Record<string, unknown>, values });
+  const coordinateDrawnFields = await drawDoctorValuesFromCoordinates({
+    pdfDoc,
+    mapping: mapping as unknown as Record<string, unknown>,
+    values,
+  });
+  const drawnFields = coordinateDrawnFields > 0 ? 0 : await drawDoctorValues({ pdfDoc, mapping, values });
   const totalDrawnFields = drawnFields + coordinateDrawnFields;
   const fallbackDrawnFields = totalDrawnFields > 0 ? 0 : await drawFallbackDoctorValues({ pdfDoc, values });
   const output = await pdfDoc.save();
