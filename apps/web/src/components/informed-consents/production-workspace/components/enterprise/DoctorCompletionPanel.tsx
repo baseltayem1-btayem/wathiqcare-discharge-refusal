@@ -5,6 +5,43 @@ import { useI18n } from "@/i18n/I18nProvider";
 import type { ConsentFieldMappingReadiness } from "../../lib/api";
 import { WorkspaceBadge, WorkspaceCard, WorkspaceCardHeader } from "../WorkspaceAtoms";
 
+type DoctorCompletionField = {
+  key: string;
+  labelEn?: string;
+  labelAr?: string;
+  section?: string;
+  type?: string;
+  role?: string;
+  required?: boolean;
+};
+
+function deriveRequiredDoctorFields(mapping?: ConsentFieldMappingReadiness): DoctorCompletionField[] {
+  const explicitFields = mapping?.requiredDoctorFields ?? [];
+  if (explicitFields.length > 0) return explicitFields as DoctorCompletionField[];
+
+  const nestedFields = Array.isArray(mapping?.mapping?.fields) ? mapping.mapping.fields : [];
+
+  return nestedFields
+    .filter((field): field is DoctorCompletionField => {
+      if (!field || typeof field !== 'object') return false;
+      const candidate = field as DoctorCompletionField;
+      return Boolean(
+        candidate.key &&
+        candidate.required === true &&
+        candidate.role === 'PHYSICIAN_REQUIRED'
+      );
+    })
+    .map((field) => ({
+      key: field.key,
+      labelEn: field.labelEn,
+      labelAr: field.labelAr,
+      section: field.section,
+      type: field.type,
+      role: field.role,
+      required: field.required,
+    }));
+}
+
 interface DoctorCompletionPanelProps {
   mapping?: ConsentFieldMappingReadiness;
   values: Record<string, string>;
