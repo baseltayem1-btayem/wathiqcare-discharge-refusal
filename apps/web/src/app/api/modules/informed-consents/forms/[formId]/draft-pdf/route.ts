@@ -197,13 +197,14 @@ async function drawDoctorValuesFromCoordinates(args: {
   values: Record<string, unknown>;
 }) {
   const { pdfDoc, mapping, values } = args;
-  const fieldsRaw = Array.isArray(mapping.fields)
-    ? mapping.fields
-    : Object.values(toRecord(mapping.fields) ?? {});
+  const effectiveMapping = toRecord(mapping.mapping) ?? mapping;
+  const fieldsRaw = Array.isArray(effectiveMapping.fields)
+    ? effectiveMapping.fields
+    : Object.values(toRecord(effectiveMapping.fields) ?? {});
 
   const pages = pdfDoc.getPages();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const coordinateMode = String(mapping.coordinateMode || "").toUpperCase();
+  const coordinateMode = String(effectiveMapping.coordinateMode || "").toUpperCase();
 
   let drawn = 0;
 
