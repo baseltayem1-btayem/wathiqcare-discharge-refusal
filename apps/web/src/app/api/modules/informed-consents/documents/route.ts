@@ -668,9 +668,28 @@ function buildApprovedLibraryPdfPath(
       "pdfTemplateUrl",
     );
 
-  if (configuredPath.startsWith("/")) {
-    return configuredPath;
-  }
+  const slugSource =
+    readApprovedLibraryString(
+      record,
+      "slug",
+    )
+    || readApprovedLibraryString(
+      record,
+      "id",
+    );
+
+  const normalizedSlug =
+    slugSource
+      .replace(
+        /^imc-approved-/i,
+        "",
+      )
+      .replace(
+        /\.pdf$/i,
+        "",
+      )
+      .trim()
+      .toLowerCase();
 
   const fileName =
     readApprovedLibraryString(
@@ -682,10 +701,6 @@ function buildApprovedLibraryPdfPath(
       "sourceFile",
     );
 
-  if (!fileName) {
-    return "";
-  }
-
   const normalizedFileName =
     fileName
       .replace(/\\/g, "/")
@@ -694,11 +709,58 @@ function buildApprovedLibraryPdfPath(
       .pop()
     || fileName;
 
+  const candidatePaths =
+    [
+      normalizedSlug
+        ? (
+          "/approved-consent-forms/"
+          + encodeURIComponent(
+            normalizedSlug,
+          )
+          + ".pdf"
+        )
+        : "",
+
+      configuredPath.startsWith("/")
+        ? configuredPath
+        : "",
+
+      normalizedFileName
+        ? (
+          "/approved-consent-forms/"
+          + encodeURIComponent(
+            normalizedFileName,
+          )
+        )
+        : "",
+
+      normalizedFileName
+        ? (
+          "/approved-consent-forms/"
+          + encodeURIComponent(
+            normalizedFileName.toLowerCase(),
+          )
+        )
+        : "",
+    ]
+      .filter(
+        (
+          value,
+          index,
+          values,
+        ) =>
+          Boolean(value)
+          && values.indexOf(value) === index,
+      );
+
   return (
-    "/approved-consent-forms/"
-    + encodeURIComponent(
-      normalizedFileName,
+    candidatePaths.find(
+      (candidatePath) =>
+        resolveApprovedConsentSource(
+          candidatePath,
+        ).available,
     )
+    || ""
   );
 }
 
@@ -1076,8 +1138,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const approvedLibraryIdentifier =
+      String(
+        requestMetadata.approvedLibraryItemId
+        || requestMetadata.expectedFormCode
+        || approvedConsentFormId,
+      ).trim();
+
     const pilotLibraryMaterializationAllowed =
-      ENABLE_IMC_PILOT_PATIENTS
+      process.env.VERCEL_ENV === "preview"
+      && ENABLE_IMC_PILOT_PATIENTS
       && requestMetadata.testOnly === true
       && requestMetadata.nonClinicalTest === true
       && requestMetadata.secureSigningBlocked === true
@@ -1097,7 +1167,7 @@ export async function POST(request: NextRequest) {
           tenantId,
 
           approvedConsentIdentifier:
-            approvedConsentFormId,
+            approvedLibraryIdentifier,
 
           actorUserId:
             auth.sub
@@ -1111,9 +1181,65 @@ export async function POST(request: NextRequest) {
     }
 
     const governanceSnapshot = (approvedConsentForm.governanceSnapshot || {}) as Record<string, unknown>;
-    const sourceInfo = resolveApprovedConsentSource(approvedConsentForm.pdfTemplateUrl);
-    if (governanceSnapshot.source !== "imc-approved-library" || !sourceInfo.available) {
-      return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
+
+    let approvedConsentPdfTemplateUrl =
+      approvedConsentForm.pdfTemplateUrl;
+
+    let sourceInfo =
+      resolveApprovedConsentSource(
+        approvedConsentPdfTemplateUrl,
+      );
+
+    if (
+      !sourceInfo.available
+      && pilotLibraryMaterializationAllowed
+    ) {
+      const approvedLibraryItem =
+        resolveApprovedLibraryItem(
+          approvedLibraryIdentifier,
+        );
+
+      if (approvedLibraryItem) {
+        const resolvedPilotPdfPath =
+          buildApprovedLibraryPdfPath(
+            approvedLibraryItem as unknown as Record<
+              string,
+              unknown
+            >,
+          );
+
+        const resolvedPilotSourceInfo =
+          resolveApprovedConsentSource(
+            resolvedPilotPdfPath,
+          );
+
+        if (
+          resolvedPilotPdfPath
+          && resolvedPilotSourceInfo.available
+        ) {
+          approvedConsentPdfTemplateUrl =
+            resolvedPilotPdfPath;
+
+          sourceInfo =
+            resolvedPilotSourceInfo;
+        }
+      }
+    }
+
+    if (
+      governanceSnapshot.source
+        !== "imc-approved-library"
+      || !sourceInfo.available
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: NO_APPROVED_CONSENT_MESSAGE,
+        },
+        {
+          status: 409,
+        },
+      );
     }
 
     const template = await resolveCompatibilityTemplate({
@@ -1184,6 +1310,8 @@ export async function POST(request: NextRequest) {
       diagnosis: diagnosis || undefined,
       plannedProcedure: plannedProcedure || undefined,
       metadata: {
+        ...requestMetadata,
+
         source: "production-physician-workspace",
         approvedConsentFormId: approvedConsentForm.id,
         clinicalConsentFormId: approvedConsentForm.id,
@@ -1195,8 +1323,11 @@ export async function POST(request: NextRequest) {
         approvedConsentFormEffectiveDate: approvedConsentForm.effectiveDate?.toISOString() || null,
         approvedConsentSourceAvailable: sourceInfo.available,
         approvedConsentSourceKind: sourceInfo.sourceKind,
-        pdfTemplateUrl: approvedConsentForm.pdfTemplateUrl,
-        sourcePath: approvedConsentForm.pdfTemplateUrl,
+        pdfTemplateUrl:
+          approvedConsentPdfTemplateUrl,
+
+        sourcePath:
+          approvedConsentPdfTemplateUrl,
         governanceSnapshot,
         templateId: template.id,
         templateVersionId: templateVersion.id,
@@ -1209,7 +1340,6 @@ export async function POST(request: NextRequest) {
         compatibilityTemplateCode: template.templateCode,
         selectedBy: auth.sub || auth.email || null,
         selectedAt: new Date().toISOString(),
-        ...requestMetadata,
       },
     });
 
