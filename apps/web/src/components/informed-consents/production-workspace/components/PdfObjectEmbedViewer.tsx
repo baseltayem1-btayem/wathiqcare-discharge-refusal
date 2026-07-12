@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as pdfjsLib from "pdfjs-dist/build/pdf.mjs";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.min.mjs";
 
 type PdfObjectEmbedViewerProps = {
   src?: string | null;
@@ -48,6 +46,10 @@ export function PdfObjectEmbedViewer({
         setStatus("loading");
         setErrorMessage("");
         setPageCount(0);
+
+        const pdfjsLib = await import("pdfjs-dist/build/pdf.mjs");
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "/vendor/pdfjs/pdf.worker.min.mjs";
 
         loadingTask = pdfjsLib.getDocument({
           url: safeSrc,
