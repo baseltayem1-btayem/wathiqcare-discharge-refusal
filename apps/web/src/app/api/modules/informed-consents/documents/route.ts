@@ -8,6 +8,8 @@ import { ApiError } from "@/lib/server/http";
 import { resolveApprovedConsentSource } from "@/lib/server/approved-consent-source";
 import { ENABLE_IMC_PILOT_PATIENTS } from "@/lib/config/feature-flags";
 import { imcPilotPatients } from "@/components/informed-consents/production-workspace/lib/pilot-patients";
+import { imcApprovedConsentLibraryGenerated } from "@/components/informed-consents/enterprise-workflow/imcApprovedConsentLibrary.generated";
+import { listRuntimeConsentTemplates } from "@/lib/server/informed-consents-template-catalog";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -604,6 +606,422 @@ async function resolveCompatibilityTemplate(args: {
   ) || fallbackTemplates[0] || null;
 }
 
+
+function normalizeApprovedLibraryValue(
+  value: unknown,
+): string {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function readApprovedLibraryString(
+  record: Record<string, unknown>,
+  key: string,
+): string {
+  const value = record[key];
+
+  return typeof value === "string"
+    ? value.trim()
+    : "";
+}
+
+function readApprovedLibraryBoolean(
+  record: Record<string, unknown>,
+  key: string,
+): boolean {
+  return record[key] === true;
+}
+
+function parseApprovedLibraryDate(
+  ...values: unknown[]
+): Date {
+  for (const value of values) {
+    if (
+      typeof value !== "string"
+      || !value.trim()
+    ) {
+      continue;
+    }
+
+    const parsed =
+      new Date(value);
+
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  return new Date();
+}
+
+function buildApprovedLibraryPdfPath(
+  record: Record<string, unknown>,
+): string {
+  const configuredPath =
+    readApprovedLibraryString(
+      record,
+      "pdfUrl",
+    )
+    || readApprovedLibraryString(
+      record,
+      "pdfTemplateUrl",
+    );
+
+  if (configuredPath.startsWith("/")) {
+    return configuredPath;
+  }
+
+  const fileName =
+    readApprovedLibraryString(
+      record,
+      "hospitalPdfFilename",
+    )
+    || readApprovedLibraryString(
+      record,
+      "sourceFile",
+    );
+
+  if (!fileName) {
+    return "";
+  }
+
+  const normalizedFileName =
+    fileName
+      .replace(/\\/g, "/")
+      .split("/")
+      .filter(Boolean)
+      .pop()
+    || fileName;
+
+  return (
+    "/approved-consent-forms/"
+    + encodeURIComponent(
+      normalizedFileName,
+    )
+  );
+}
+
+function resolveApprovedLibraryItem(
+  identifier: string,
+) {
+  const normalizedIdentifier =
+    normalizeApprovedLibraryValue(
+      identifier,
+    );
+
+  if (!normalizedIdentifier) {
+    return null;
+  }
+
+  return (
+    imcApprovedConsentLibraryGenerated.find(
+      (item) =>
+        normalizeApprovedLibraryValue(
+          item.id,
+        ) === normalizedIdentifier,
+    )
+    || imcApprovedConsentLibraryGenerated.find(
+      (item) => {
+        const record =
+          item as unknown as Record<
+            string,
+            unknown
+          >;
+
+        return (
+          normalizeApprovedLibraryValue(
+            record.slug,
+          ) === normalizedIdentifier
+        );
+      },
+    )
+    || null
+  );
+}
+
+function resolveApprovedLibraryFormType(
+  record: Record<string, unknown>,
+): string {
+  const value =
+    readApprovedLibraryString(
+      record,
+      "consentType",
+    ).toUpperCase();
+
+  const allowed =
+    new Set([
+      "PROCEDURE_CONSENT",
+      "ANESTHESIA_CONSENT",
+      "BLOOD_TRANSFUSION_CONSENT",
+      "DIAGNOSTIC_IMAGING_CONSENT",
+      "RESEARCH_CLINICAL_TRIAL_CONSENT",
+    ]);
+
+  return allowed.has(value)
+    ? value
+    : "PROCEDURE_CONSENT";
+}
+
+async function materializeApprovedLibraryConsentForm(
+  args: {
+    tenantId: string;
+    approvedConsentIdentifier: string;
+    actorUserId: string;
+  },
+) {
+  const item =
+    resolveApprovedLibraryItem(
+      args.approvedConsentIdentifier,
+    );
+
+  if (!item) {
+    return null;
+  }
+
+  const record =
+    item as unknown as Record<
+      string,
+      unknown
+    >;
+
+  const approvalStatus =
+    readApprovedLibraryString(
+      record,
+      "approvalStatus",
+    ).toLowerCase();
+
+  if (
+    approvalStatus
+    && approvalStatus !== "approved"
+    && approvalStatus !== "active"
+  ) {
+    throw new ApiError(
+      409,
+      NO_APPROVED_CONSENT_MESSAGE,
+    );
+  }
+
+  const pdfTemplateUrl =
+    buildApprovedLibraryPdfPath(
+      record,
+    );
+
+  const sourceInfo =
+    resolveApprovedConsentSource(
+      pdfTemplateUrl,
+    );
+
+  if (
+    !pdfTemplateUrl
+    || !sourceInfo.available
+  ) {
+    throw new ApiError(
+      409,
+      NO_APPROVED_CONSENT_MESSAGE,
+    );
+  }
+
+  const version =
+    readApprovedLibraryString(
+      record,
+      "version",
+    )
+    || "1.0";
+
+  const effectiveDate =
+    parseApprovedLibraryDate(
+      record.clinicalApprovalDate,
+      record.legalApprovalDate,
+      record.effectiveDate,
+    );
+
+  const formType =
+    resolveApprovedLibraryFormType(
+      record,
+    );
+
+  const titleEn =
+    String(item.titleEn || "").trim()
+    || args.approvedConsentIdentifier;
+
+  const titleAr =
+    String(item.titleAr || "").trim()
+    || titleEn;
+
+  const governanceSnapshot = {
+    source:
+      "imc-approved-library",
+
+    sourcePath:
+      pdfTemplateUrl,
+
+    sourceAvailable:
+      sourceInfo.available,
+
+    sourceKind:
+      sourceInfo.sourceKind,
+
+    approvalStatus:
+      approvalStatus || "approved",
+
+    legalApprovalDate:
+      readApprovedLibraryString(
+        record,
+        "legalApprovalDate",
+      )
+      || null,
+
+    clinicalApprovalDate:
+      readApprovedLibraryString(
+        record,
+        "clinicalApprovalDate",
+      )
+      || null,
+
+    governanceOwner:
+      readApprovedLibraryString(
+        record,
+        "governanceOwner",
+      )
+      || "IMC Consent Governance",
+
+    sourceFile:
+      readApprovedLibraryString(
+        record,
+        "sourceFile",
+      )
+      || readApprovedLibraryString(
+        record,
+        "hospitalPdfFilename",
+      )
+      || null,
+
+    checksum:
+      readApprovedLibraryString(
+        record,
+        "checksum",
+      )
+      || null,
+
+    materializedFrom:
+      "generated-imc-approved-library",
+
+    previewPilotMaterialization:
+      true,
+
+    materializedAt:
+      new Date().toISOString(),
+  };
+
+  const prisma =
+    getPrisma();
+
+  return prisma.consentForm.upsert({
+    where: {
+      tenantId_code_version: {
+        tenantId:
+          args.tenantId,
+
+        code:
+          item.id,
+
+        version,
+      },
+    },
+
+    update: {
+      titleEn,
+      titleAr,
+
+      formType:
+        formType as never,
+
+      status:
+        "PUBLISHED",
+
+      effectiveDate,
+
+      governanceSnapshot,
+
+      pdfTemplateUrl,
+
+      requiresWitness:
+        readApprovedLibraryBoolean(
+          record,
+          "requiresWitness",
+        ),
+
+      requiresInterpreter:
+        readApprovedLibraryBoolean(
+          record,
+          "requiresInterpreter",
+        ),
+
+      publishedByUserId:
+        args.actorUserId,
+    },
+
+    create: {
+      tenantId:
+        args.tenantId,
+
+      code:
+        item.id,
+
+      titleEn,
+      titleAr,
+
+      formType:
+        formType as never,
+
+      status:
+        "PUBLISHED",
+
+      version,
+
+      effectiveDate,
+
+      governanceSnapshot,
+
+      pdfTemplateUrl,
+
+      requiresWitness:
+        readApprovedLibraryBoolean(
+          record,
+          "requiresWitness",
+        ),
+
+      requiresInterpreter:
+        readApprovedLibraryBoolean(
+          record,
+          "requiresInterpreter",
+        ),
+
+      createdByUserId:
+        args.actorUserId,
+
+      publishedByUserId:
+        args.actorUserId,
+    },
+
+    select: {
+      id: true,
+      code: true,
+      titleEn: true,
+      titleAr: true,
+      formType: true,
+      requiresWitness: true,
+      requiresInterpreter: true,
+      status: true,
+      version: true,
+      effectiveDate: true,
+      governanceSnapshot: true,
+      pdfTemplateUrl: true,
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   const auth = await requireModuleOperationalAccess(request, "informed-consents");
   const tenantId = auth.tenant_id || "";
@@ -633,7 +1051,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
     }
 
-    const approvedConsentForm = await prisma.consentForm.findFirst({
+    let approvedConsentForm = await prisma.consentForm.findFirst({
       where: {
         tenantId,
         status: "PUBLISHED",
@@ -657,6 +1075,36 @@ export async function POST(request: NextRequest) {
         pdfTemplateUrl: true,
       },
     });
+
+    const pilotLibraryMaterializationAllowed =
+      ENABLE_IMC_PILOT_PATIENTS
+      && requestMetadata.testOnly === true
+      && requestMetadata.nonClinicalTest === true
+      && requestMetadata.secureSigningBlocked === true
+      && requestMetadata.patientMessagingBlocked === true;
+
+    if (
+      !approvedConsentForm
+      && pilotLibraryMaterializationAllowed
+    ) {
+      await listRuntimeConsentTemplates(
+        auth,
+        {},
+      );
+
+      approvedConsentForm =
+        await materializeApprovedLibraryConsentForm({
+          tenantId,
+
+          approvedConsentIdentifier:
+            approvedConsentFormId,
+
+          actorUserId:
+            auth.sub
+            || auth.email
+            || "preview-pilot-system",
+        });
+    }
 
     if (!approvedConsentForm) {
       return NextResponse.json({ ok: false, error: NO_APPROVED_CONSENT_MESSAGE }, { status: 409 });
