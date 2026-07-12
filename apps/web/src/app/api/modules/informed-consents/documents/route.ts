@@ -1371,31 +1371,102 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await requireModuleOperationalAccess(request, "informed-consents");
-  const tenantId = auth.tenant_id || "";
-  if (!tenantId) {
-    return NextResponse.json({ ok: false, error: "Missing tenant context" }, { status: 400 });
+  try {
+    const auth = await requireModuleOperationalAccess(request, "informed-consents");
+    const tenantId = auth.tenant_id || "";
+
+    if (!tenantId) {
+      return NextResponse.json(
+        { ok: false, error: "Missing tenant context" },
+        { status: 400 },
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+
+    const requestedLimit = Number(
+      searchParams.get("limit") || "25",
+    );
+
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 100)
+      : 25;
+
+    const prisma = getPrisma();
+
+    const documents = await prisma.consentDocument.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        consentReference: true,
+        status: true,
+        patientName: true,
+        mrn: true,
+        createdAt: true,
+        case: {
+          select: {
+            caseNumber: true,
+            medicalRecordNo: true,
+            patientName: true,
+          },
+        },
+        template: {
+          select: {
+            titleAr: true,
+            titleEn: true,
+            consentType: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(documents);
+  } catch (error: unknown) {
+    const errorStatus =
+      typeof error === "object" &&
+      error !== null &&
+      "status" in error
+        ? Number(
+            (error as { status?: unknown }).status,
+          )
+        : 500;
+
+    if (errorStatus === 401) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Unauthorized",
+          code: "AUTHENTICATION_REQUIRED",
+        },
+        { status: 401 },
+      );
+    }
+
+    if (errorStatus === 403) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Forbidden",
+          code: "INSUFFICIENT_ACCESS",
+        },
+        { status: 403 },
+      );
+    }
+
+    console.error(
+      "[informed-consents/documents] GET failed",
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Unable to load consent documents",
+        code: "DOCUMENT_LIST_FAILED",
+      },
+      { status: 500 },
+    );
   }
-
-  const { searchParams } = new URL(request.url);
-  const limit = Math.min(Number(searchParams.get("limit") || "25"), 100);
-
-  const prisma = getPrisma();
-  const documents = await prisma.consentDocument.findMany({
-    where: { tenantId },
-    orderBy: { createdAt: "desc" },
-    take: limit,
-    select: {
-      id: true,
-      consentReference: true,
-      status: true,
-      patientName: true,
-      mrn: true,
-      createdAt: true,
-      case: { select: { caseNumber: true, medicalRecordNo: true, patientName: true } },
-      template: { select: { titleAr: true, titleEn: true, consentType: true } },
-    },
-  });
-
-  return NextResponse.json(documents);
 }
